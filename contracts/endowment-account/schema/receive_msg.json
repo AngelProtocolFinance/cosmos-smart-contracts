@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ReceiveMsg",
+  "anyOf": [
+    {
+      "type": "object",
+      "required": [
+        "create_acct"
+      ],
+      "properties": {
+        "create_acct": {
+          "$ref": "#/definitions/CreateAcctMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "top_up"
+      ],
+      "properties": {
+        "top_up": {
+          "type": "object",
+          "required": [
+            "account_id"
+          ],
+          "properties": {
+            "account_id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "CreateAcctMsg": {
+      "type": "object",
+      "required": [
+        "arbiter",
+        "beneficiary"
+      ],
+      "properties": {
+        "arbiter": {
+          "type": "string"
+        },
+        "beneficiary": {
+          "type": "string"
+        },
+        "end_height": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "end_time": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        }
+      }
+    }
+  }
+}

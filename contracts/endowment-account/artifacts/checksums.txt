@@ -1,0 +1,1 @@
+cde468405b435ee4b5223b475923db86dfffbd1dcad8ec4ac733689659182745  endowment_account.wasm
