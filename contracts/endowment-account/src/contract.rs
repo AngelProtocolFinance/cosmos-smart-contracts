@@ -36,9 +36,6 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
-    // check correct msg args were sent along
-    msg.validate()?;
-
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     // convert given approved_coins to addr for storage
@@ -49,8 +46,6 @@ pub fn instantiate(
         deps.storage,
         &Config {
             owner: info.sender,
-            payout_rate: msg.payout_rate,
-            mgmnt_fee: msg.mgmnt_fee,
             cw20_approved_coins: approved_coins,
         },
     )?;
@@ -117,8 +112,6 @@ pub fn update_config(
 
     // update config attributes with newly passed args
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.mgmnt_fee = msg.mgmnt_fee.unwrap_or(config.mgmnt_fee);
-        config.payout_rate = msg.payout_rate.unwrap_or(config.payout_rate);
         config.cw20_approved_coins = approved_coins;
         Ok(config)
     })?;
@@ -326,8 +319,6 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
 
     let res = ConfigResponse {
-        payout_rate: config.payout_rate,
-        mgmnt_fee: config.mgmnt_fee,
         cw20_approved_coins: config.human_approved_coins(),
     };
     Ok(res)
@@ -395,8 +386,6 @@ mod tests {
     fn test_proper_initialization() {
         let mut deps = mock_dependencies(&[]);
         let instantiate_msg = InstantiateMsg {
-            mgmnt_fee: 10,
-            payout_rate: 500000,
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info("creator", &coins(100000, "earth"));
@@ -411,8 +400,6 @@ mod tests {
         let agent1 = String::from("agent007");
 
         let instantiate_msg = InstantiateMsg {
-            mgmnt_fee: 10,
-            payout_rate: 500000, //~34 days @ ~6 sec per block --> (500000*6/60/60/24)
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
@@ -420,9 +407,6 @@ mod tests {
 
         let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
         assert_eq!(0, res.messages.len());
-
-        let res = query_config(deps.as_ref()).unwrap();
-        assert_eq!(500000, res.payout_rate);
     }
 
     #[test]
@@ -432,8 +416,6 @@ mod tests {
         let agent2 = String::from("agent008");
 
         let instantiate_msg = InstantiateMsg {
-            mgmnt_fee: 10,
-            payout_rate: 500000, //~34 days @ ~6 sec per block --> (500000*6/60/60/24)
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
@@ -444,8 +426,6 @@ mod tests {
 
         // change the expirary to true and shorten payout to 15 days
         let msg = UpdateConfigMsg {
-            mgmnt_fee: Some(10),
-            payout_rate: Some(250000), //~17 days @ ~6 sec per block --> (250000*6/60/60/24)
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let res = execute(
@@ -459,12 +439,10 @@ mod tests {
 
         // check that new configs were set
         let res = query_config(deps.as_ref()).unwrap();
-        assert_eq!(250000, res.payout_rate);
+        assert_eq!(1, res.cw20_approved_coins.len());
 
         // Not just anyone can update the configs! Only owner can.
         let msg = UpdateConfigMsg {
-            mgmnt_fee: Some(10),
-            payout_rate: Some(250000), //~17 days @ ~6 sec per block --> (250000*6/60/60/24)
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent2.as_ref(), &coins(100000, "earth "));
@@ -481,8 +459,6 @@ mod tests {
         let agent2 = String::from("agent008");
 
         let instantiate_msg = InstantiateMsg {
-            mgmnt_fee: 10,
-            payout_rate: 500000, //~34 days @ ~6 sec per block --> (500000*6/60/60/24)
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
@@ -503,8 +479,6 @@ mod tests {
 
         // Agent1 should not be able to update the configs now
         let msg = UpdateConfigMsg {
-            mgmnt_fee: Some(10),
-            payout_rate: Some(250000), //~17 days @ ~6 sec per block --> (250000*6/60/60/24)
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "earth "));
@@ -521,8 +495,6 @@ mod tests {
         let agent2 = String::from("agent008");
 
         let instantiate_msg = InstantiateMsg {
-            mgmnt_fee: 10,
-            payout_rate: 500000, //~34 days @ ~6 sec per block --> (500000*6/60/60/24)
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
@@ -559,8 +531,6 @@ mod tests {
         let agent2 = String::from("agent008");
 
         let instantiate_msg = InstantiateMsg {
-            mgmnt_fee: 10,
-            payout_rate: 500000, //~34 days @ ~6 sec per block --> (500000*6/60/60/24)
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
@@ -632,8 +602,6 @@ mod tests {
         let agent2 = String::from("agent008");
 
         let instantiate_msg = InstantiateMsg {
-            mgmnt_fee: 10,
-            payout_rate: 500000, //~34 days @ ~6 sec per block --> (500000*6/60/60/24)
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
@@ -745,8 +713,6 @@ mod tests {
         let agent3 = String::from("agent006");
 
         let instantiate_msg = InstantiateMsg {
-            mgmnt_fee: 10,
-            payout_rate: 500000, //~34 days @ ~6 sec per block --> (500000*6/60/60/24)
             cw20_approved_coins: Some(vec![String::from("bar_token"), String::from("foo_token")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "bar_token"));

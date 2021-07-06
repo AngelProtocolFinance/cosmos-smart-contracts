@@ -10,8 +10,6 @@ use cw20::{Balance, Cw20CoinVerified};
 #[serde(rename_all = "snake_case")]
 pub struct Config {
     pub owner: Addr,
-    pub payout_rate: u32, // blocks per payout cycle
-    pub mgmnt_fee: u32,   // AUM fee taken
     // List of all possible contracts that we can accept Cw20 tokens from
     // that are accepted by the account during a top-up. This is required to avoid a DoS attack by topping-up
     // with an invalid cw20 contract. See https://github.com/CosmWasm/cosmwasm-plus/issues/19

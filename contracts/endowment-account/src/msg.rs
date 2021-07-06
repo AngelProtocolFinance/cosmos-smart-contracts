@@ -1,31 +1,13 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Coin, StdError, StdResult};
+use cosmwasm_std::{Addr, Coin};
 use cw20::{Cw20Coin, Cw20ReceiveMsg};
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
-    pub payout_rate: u32,                         // blocks per payout cycle
-    pub mgmnt_fee: u32,                           // AUM fee taken
-    pub cw20_approved_coins: Option<Vec<String>>, // All possible contracts that we can accept Cw20 tokens from
-}
-
-impl InstantiateMsg {
-    pub fn validate(&self) -> StdResult<()> {
-        // Check expires, payout_rate, mgmnt_fee
-        if Some(&self.payout_rate) == None {
-            return Err(StdError::generic_err(
-                "Payout Rate (blocks) and Expires configs must be given.",
-            ));
-        }
-        if self.mgmnt_fee > 100 {
-            return Err(StdError::generic_err(
-                "Management Fee must not exceed 100(%).",
-            ));
-        }
-        Ok(())
-    }
+    // All possible contracts that we can accept Cw20 tokens from
+    pub cw20_approved_coins: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
@@ -75,8 +57,6 @@ pub struct CreateAcctMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub payout_rate: Option<u32>,
-    pub mgmnt_fee: Option<u32>,
     pub cw20_approved_coins: Option<Vec<String>>,
 }
 
@@ -118,7 +98,5 @@ pub struct DetailsResponse {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub payout_rate: u32,
-    pub mgmnt_fee: u32,
     pub cw20_approved_coins: Vec<String>,
 }
