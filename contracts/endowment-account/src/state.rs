@@ -11,7 +11,7 @@ use cw20::{Balance, Cw20CoinVerified};
 pub struct Config {
     pub owner: Addr,
     pub liquid_account: Option<Addr>, // Address of Endowment Liquid Account SC
-    pub index_fund: Option<Addr>, // Address of Index Fund SC
+    pub index_fund: Option<Addr>,     // Address of Index Fund SC
     pub investment_strategy: Option<Addr>, // Address of Investment Strategy SC
     // List of all possible contracts that we can accept Cw20 tokens from
     // that are accepted by the account during a top-up. This is required to avoid a DoS attack by topping-up

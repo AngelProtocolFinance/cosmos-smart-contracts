@@ -7,7 +7,7 @@ use endowment_account::msg::{
     ConfigResponse, CreateAcctMsg, DetailsResponse, ExecuteMsg, InstantiateMsg, ListResponse,
     MigrateMsg, QueryMsg, ReceiveMsg, UpdateConfigMsg,
 };
-use endowment_account::state::{Config, Splits, SplitParameters, Account};
+use endowment_account::state::{Account, Config, SplitParameters, Splits};
 
 fn main() {
     let mut out_dir = current_dir().unwrap();

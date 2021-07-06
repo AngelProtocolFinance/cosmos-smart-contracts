@@ -13,7 +13,7 @@ use crate::msg::{
     ConfigResponse, CreateAcctMsg, DetailsResponse, ExecuteMsg, InstantiateMsg, MigrateMsg,
     QueryMsg, ReceiveMsg, UpdateConfigMsg,
 };
-use crate::state::{Account, Config, GenericBalance, Splits, SplitParameters, ACCOUNTS, CONFIG};
+use crate::state::{Account, Config, GenericBalance, SplitParameters, Splits, ACCOUNTS, CONFIG};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "endowment-account";
@@ -149,8 +149,8 @@ pub fn execute_create(
                 max: 100,
                 min: 20,
                 default: 50,
-            }
-        }
+            },
+        },
     };
 
     // try to store it, fail if the id was already in use
@@ -486,7 +486,9 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::UpdateOwner { new_owner: agent2.clone() },
+            ExecuteMsg::UpdateOwner {
+                new_owner: agent2.clone(),
+            },
         )
         .unwrap();
         assert_eq!(0, res.messages.len());
@@ -575,7 +577,9 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::Approve { address: agent1.clone() },
+            ExecuteMsg::Approve {
+                address: agent1.clone(),
+            },
         )
         .unwrap_err();
         assert_eq!(err, ContractError::Unauthorized {});
@@ -587,7 +591,9 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::Approve { address: agent1.clone() },
+            ExecuteMsg::Approve {
+                address: agent1.clone(),
+            },
         )
         .unwrap();
         assert_eq!(0, res.messages.len());
@@ -599,7 +605,9 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::Approve { address: agent1.clone() },
+            ExecuteMsg::Approve {
+                address: agent1.clone(),
+            },
         )
         .unwrap_err();
         assert_eq!(err, ContractError::AccountAlreadyApproved {});
@@ -646,7 +654,9 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::Approve { address: agent1.clone() },
+            ExecuteMsg::Approve {
+                address: agent1.clone(),
+            },
         )
         .unwrap();
         assert_eq!(0, res.messages.len());
@@ -658,7 +668,9 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::Terminate { address: agent1.clone() },
+            ExecuteMsg::Terminate {
+                address: agent1.clone(),
+            },
         )
         .unwrap_err();
         assert_eq!(err, ContractError::Unauthorized {});
@@ -670,7 +682,9 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::Terminate { address: agent1.clone() },
+            ExecuteMsg::Terminate {
+                address: agent1.clone(),
+            },
         )
         .unwrap();
         assert_eq!(0, res.messages.len());
@@ -754,7 +768,9 @@ mod tests {
         // should NOT be able to recieve any tokens before Account is approved
         let extra_native = vec![coin(250, "bar_token"), coin(300, "foo_token")];
         let info = mock_info(&agent3.clone(), &extra_native);
-        let deposit = ExecuteMsg::Deposit { address: agent1.clone() };
+        let deposit = ExecuteMsg::Deposit {
+            address: agent1.clone(),
+        };
         let err = execute(deps.as_mut(), mock_env(), info, deposit).unwrap_err();
         assert_eq!(err, ContractError::AccountNotApproved {});
 
@@ -765,7 +781,9 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::Approve { address: agent1.clone() },
+            ExecuteMsg::Approve {
+                address: agent1.clone(),
+            },
         )
         .unwrap();
         assert_eq!(0, res.messages.len());
@@ -773,7 +791,9 @@ mod tests {
         // try to top account up with 2 approved tokens
         let extra_native = vec![coin(250, "bar_token"), coin(300, "foo_token")];
         let info = mock_info(&agent3.clone(), &extra_native);
-        let deposit = ExecuteMsg::Deposit { address: agent1.clone() };
+        let deposit = ExecuteMsg::Deposit {
+            address: agent1.clone(),
+        };
         let res = execute(deps.as_mut(), mock_env(), info, deposit).unwrap();
         assert_eq!(0, res.messages.len());
         assert_eq!(attr("action", "deposit"), res.attributes[0]);
@@ -781,7 +801,9 @@ mod tests {
         // try to top account up with a non-approved tokens
         let bad_coins = vec![coin(250, "rat_poison"), coin(300, "squared")];
         let info = mock_info(&agent3.clone(), &bad_coins);
-        let deposit = ExecuteMsg::Deposit { address: agent1.clone() };
+        let deposit = ExecuteMsg::Deposit {
+            address: agent1.clone(),
+        };
         let err = execute(deps.as_mut(), mock_env(), info, deposit).unwrap_err();
         assert_eq!(err, ContractError::NotInApprovedCoins {});
     }
