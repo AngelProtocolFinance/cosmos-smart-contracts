@@ -4,9 +4,7 @@
   "type": "object",
   "required": [
     "cw20_approved_coins",
-    "mgmnt_fee",
-    "owner",
-    "payout_rate"
+    "owner"
   ],
   "properties": {
     "cw20_approved_coins": {
@@ -15,18 +13,38 @@
         "$ref": "#/definitions/Addr"
       }
     },
-    "mgmnt_fee": {
-      "type": "integer",
-      "format": "uint32",
-      "minimum": 0.0
+    "index_fund": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Addr"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "investment_strategy": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Addr"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "liquid_account": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Addr"
+        },
+        {
+          "type": "null"
+        }
+      ]
     },
     "owner": {
       "$ref": "#/definitions/Addr"
-    },
-    "payout_rate": {
-      "type": "integer",
-      "format": "uint32",
-      "minimum": 0.0
     }
   },
   "definitions": {

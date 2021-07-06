@@ -7,7 +7,7 @@ use endowment_account::msg::{
     ConfigResponse, CreateAcctMsg, DetailsResponse, ExecuteMsg, InstantiateMsg, ListResponse,
     MigrateMsg, QueryMsg, ReceiveMsg, UpdateConfigMsg,
 };
-use endowment_account::state::Config;
+use endowment_account::state::{Config, Splits, SplitParameters, Account};
 
 fn main() {
     let mut out_dir = current_dir().unwrap();
@@ -16,6 +16,9 @@ fn main() {
     remove_schemas(&out_dir).unwrap();
 
     export_schema(&schema_for!(Config), &out_dir);
+    export_schema(&schema_for!(Splits), &out_dir);
+    export_schema(&schema_for!(SplitParameters), &out_dir);
+    export_schema(&schema_for!(Account), &out_dir);
     export_schema(&schema_for!(ConfigResponse), &out_dir);
     export_schema(&schema_for!(CreateAcctMsg), &out_dir);
     export_schema(&schema_for!(DetailsResponse), &out_dir);

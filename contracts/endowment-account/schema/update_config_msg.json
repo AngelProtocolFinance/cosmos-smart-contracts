@@ -11,22 +11,6 @@
       "items": {
         "type": "string"
       }
-    },
-    "mgmnt_fee": {
-      "type": [
-        "integer",
-        "null"
-      ],
-      "format": "uint32",
-      "minimum": 0.0
-    },
-    "payout_rate": {
-      "type": [
-        "integer",
-        "null"
-      ],
-      "format": "uint32",
-      "minimum": 0.0
     }
   }
 }

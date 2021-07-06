@@ -3,9 +3,7 @@
   "title": "ConfigResponse",
   "type": "object",
   "required": [
-    "cw20_approved_coins",
-    "mgmnt_fee",
-    "payout_rate"
+    "cw20_approved_coins"
   ],
   "properties": {
     "cw20_approved_coins": {
@@ -13,16 +11,6 @@
       "items": {
         "type": "string"
       }
-    },
-    "mgmnt_fee": {
-      "type": "integer",
-      "format": "uint32",
-      "minimum": 0.0
-    },
-    "payout_rate": {
-      "type": "integer",
-      "format": "uint32",
-      "minimum": 0.0
     }
   }
 }

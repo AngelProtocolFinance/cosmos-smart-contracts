@@ -11,10 +11,10 @@
         "details": {
           "type": "object",
           "required": [
-            "account_id"
+            "address"
           ],
           "properties": {
-            "account_id": {
+            "address": {
               "type": "string"
             }
           }

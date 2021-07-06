@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Splits",
+  "type": "object",
+  "required": [
+    "deposit",
+    "interest"
+  ],
+  "properties": {
+    "deposit": {
+      "$ref": "#/definitions/SplitParameters"
+    },
+    "interest": {
+      "$ref": "#/definitions/SplitParameters"
+    }
+  },
+  "definitions": {
+    "SplitParameters": {
+      "type": "object",
+      "required": [
+        "default",
+        "max",
+        "min"
+      ],
+      "properties": {
+        "default": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "max": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "min": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        }
+      }
+    }
+  }
+}

@@ -17,36 +17,16 @@
     {
       "type": "object",
       "required": [
-        "top_up"
-      ],
-      "properties": {
-        "top_up": {
-          "type": "object",
-          "required": [
-            "account_id"
-          ],
-          "properties": {
-            "account_id": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
         "approve"
       ],
       "properties": {
         "approve": {
           "type": "object",
           "required": [
-            "account_id"
+            "address"
           ],
           "properties": {
-            "account_id": {
+            "address": {
               "type": "string"
             }
           }
@@ -57,16 +37,36 @@
     {
       "type": "object",
       "required": [
-        "refund"
+        "terminate"
       ],
       "properties": {
-        "refund": {
+        "terminate": {
           "type": "object",
           "required": [
-            "account_id"
+            "address"
           ],
           "properties": {
-            "account_id": {
+            "address": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "deposit"
+      ],
+      "properties": {
+        "deposit": {
+          "type": "object",
+          "required": [
+            "address"
+          ],
+          "properties": {
+            "address": {
               "type": "string"
             }
           }
@@ -190,22 +190,6 @@
           "items": {
             "type": "string"
           }
-        },
-        "mgmnt_fee": {
-          "type": [
-            "integer",
-            "null"
-          ],
-          "format": "uint32",
-          "minimum": 0.0
-        },
-        "payout_rate": {
-          "type": [
-            "integer",
-            "null"
-          ],
-          "format": "uint32",
-          "minimum": 0.0
         }
       }
     }

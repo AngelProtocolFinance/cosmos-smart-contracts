@@ -13,7 +13,7 @@ use crate::msg::{
     ConfigResponse, CreateAcctMsg, DetailsResponse, ExecuteMsg, InstantiateMsg, MigrateMsg,
     QueryMsg, ReceiveMsg, UpdateConfigMsg,
 };
-use crate::state::{Account, Config, GenericBalance, ACCOUNTS, CONFIG};
+use crate::state::{Account, Config, GenericBalance, Splits, SplitParameters, ACCOUNTS, CONFIG};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "endowment-account";
@@ -46,6 +46,9 @@ pub fn instantiate(
         deps.storage,
         &Config {
             owner: info.sender,
+            liquid_account: None,
+            index_fund: None,
+            investment_strategy: None,
             cw20_approved_coins: approved_coins,
         },
     )?;
@@ -136,7 +139,18 @@ pub fn execute_create(
             cw20: vec![],
         },
         approved: false,
-        liquid_acct: None,
+        splits: Splits {
+            deposit: SplitParameters {
+                max: 100,
+                min: 20,
+                default: 50,
+            },
+            interest: SplitParameters {
+                max: 100,
+                min: 20,
+                default: 50,
+            }
+        }
     };
 
     // try to store it, fail if the id was already in use

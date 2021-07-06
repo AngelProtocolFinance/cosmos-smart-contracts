@@ -10,6 +10,9 @@ use cw20::{Balance, Cw20CoinVerified};
 #[serde(rename_all = "snake_case")]
 pub struct Config {
     pub owner: Addr,
+    pub liquid_account: Option<Addr>, // Address of Endowment Liquid Account SC
+    pub index_fund: Option<Addr>, // Address of Index Fund SC
+    pub investment_strategy: Option<Addr>, // Address of Investment Strategy SC
     // List of all possible contracts that we can accept Cw20 tokens from
     // that are accepted by the account during a top-up. This is required to avoid a DoS attack by topping-up
     // with an invalid cw20 contract. See https://github.com/CosmWasm/cosmwasm-plus/issues/19
@@ -81,8 +84,9 @@ pub struct Account {
     pub originator: Addr,
     // Endowment Acct Balance, in Native and/or Cw20 tokens
     pub balance: GenericBalance,
-    // Liquid Account connected to the endowment account (created upon Approval by Arbiter)
-    pub liquid_acct: Option<String>,
+    // split parameters for incoming deposits and interest payments
+    // controls how much to send to Liquid vs Locked Account
+    pub splits: Splits,
     // When end height set and block height exceeds this value, the account is expired.
     // Once an account is expired, it can be returned to the owner (via "refund").
     pub end_height: Option<u64>,
@@ -90,6 +94,22 @@ pub struct Account {
     // block time exceeds this value, the account is expired.
     // Once an account is expired, it can be returned to the owner (via "refund").
     pub end_time: Option<u64>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+// max, min, ad default split parameters
+pub struct SplitParameters {
+    pub max: u8,
+    pub min: u8,
+    pub default: u8,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct Splits {
+    // Split Parameters for Deposits
+    pub deposit: SplitParameters,
+    // Split Parameters for Interest
+    pub interest: SplitParameters,
 }
 
 impl Account {

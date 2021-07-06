@@ -17,16 +17,16 @@
     {
       "type": "object",
       "required": [
-        "top_up"
+        "deposit"
       ],
       "properties": {
-        "top_up": {
+        "deposit": {
           "type": "object",
           "required": [
-            "account_id"
+            "address"
           ],
           "properties": {
-            "account_id": {
+            "address": {
               "type": "string"
             }
           }
