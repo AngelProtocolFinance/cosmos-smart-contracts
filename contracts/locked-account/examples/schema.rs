@@ -3,11 +3,11 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
-use endowment_account::msg::{
+use locked_account::msg::{
     ConfigResponse, CreateAcctMsg, DetailsResponse, ExecuteMsg, InstantiateMsg, ListResponse,
     MigrateMsg, QueryMsg, ReceiveMsg, UpdateConfigMsg,
 };
-use endowment_account::state::{Account, Config, SplitParameters, Splits};
+use locked_account::state::{Account, Config, SplitParameters, Splits};
 
 fn main() {
     let mut out_dir = current_dir().unwrap();
