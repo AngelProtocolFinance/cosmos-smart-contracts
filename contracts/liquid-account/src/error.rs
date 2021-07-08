@@ -10,4 +10,7 @@ pub enum ContractError {
     Unauthorized {},
     // Add any other custom errors you like here.
     // Look at https://docs.rs/thiserror/1.0.21/thiserror/ for details.
+
+    #[error("Cannot migrate from different contract type: {previous_contract}")]
+    CannotMigrate { previous_contract: String },
 }

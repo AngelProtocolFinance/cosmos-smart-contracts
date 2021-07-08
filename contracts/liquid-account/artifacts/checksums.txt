@@ -1,0 +1,1 @@
+41c08569513b5d401f3f5e99560147c588cef09eb2e3fbb0335d86a95e29daef  liquid_account.wasm
