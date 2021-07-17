@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    attr, entry_point, from_binary, to_binary, Addr, Api, BankMsg, Binary, Deps,
-    DepsMut, Env, MessageInfo, Response, StdResult, SubMsg, WasmMsg,
+    attr, entry_point, from_binary, to_binary, Addr, Api, BankMsg, Binary, Deps, DepsMut, Env,
+    MessageInfo, Response, StdResult, SubMsg, WasmMsg,
 };
 
 use cw2::{get_contract_version, set_contract_version};
@@ -69,9 +69,7 @@ pub fn execute(
         ExecuteMsg::UpdateConfig(msg) => update_config(deps, env, info, msg),
         ExecuteMsg::UpdateOwner { new_owner } => update_owner(deps, env, info, new_owner),
         ExecuteMsg::Terminate { account_id } => execute_terminate(deps, env, info, account_id),
-        ExecuteMsg::Deposit { account_id } => {
-            execute_deposit(deps, info, account_id)
-        }
+        ExecuteMsg::Deposit { account_id } => execute_deposit(deps, info, account_id),
     }
 }
 

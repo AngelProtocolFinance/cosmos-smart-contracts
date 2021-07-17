@@ -5,12 +5,12 @@ use cosmwasm_std::Coin;
 use cw20::{Cw20Coin, Cw20ReceiveMsg};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MigrateMsg { }
+pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
     pub charity_endowment_sc: String, // Address of Charity Endowment SC
-    pub index_fund_sc: String, // Address of Index Fund SC
+    pub index_fund_sc: String,        // Address of Index Fund SC
     // All possible contracts that we can accept Cw20 tokens from
     pub cw20_approved_coins: Option<Vec<String>>,
 }
