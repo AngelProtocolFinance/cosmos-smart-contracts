@@ -10,8 +10,8 @@ use cw20::{Balance, Cw20CoinVerified};
 #[serde(rename_all = "snake_case")]
 pub struct Config {
     pub owner: Addr, // DANO Address
-    pub charity_endowment_sc: Addr, // Address of Charity Endowment SC
-    pub index_fund_sc: Addr, // Address of Index Fund SC
+    pub charity_endowment_sc: Option<Addr>, // Address of Charity Endowment SC
+    pub index_fund_sc: Option<Addr>, // Address of Index Fund SC
     // List of all possible contracts that we can accept Cw20 tokens from
     // that are accepted by the account during a top-up. This is required to avoid a DoS attack by topping-up
     // with an invalid cw20 contract. See https://github.com/CosmWasm/cosmwasm-plus/issues/19
@@ -32,6 +32,7 @@ impl Config {
 #[serde(rename_all = "snake_case")]
 pub struct Account {
     pub balance: GenericBalance,
+    pub strategy: Strategy,
     pub split_deposit: SplitDetails,
     pub split_interest: SplitDetails,
 }
@@ -59,6 +60,15 @@ impl SplitDetails {
 pub struct Strategy {
     pub invested: Vec<StrategyComponent>,
     pub cash: u8, // possibly use impl function to calculate remainder from invested strategies instead?
+}
+
+impl Strategy {
+    pub fn default() -> Self {
+        Strategy {
+            invested: vec![],
+            cash: 100,
+        }
+    }
 }
 // TO DO: Add impl function to check strategy percentages + cash remaining all sums to 100%
 
@@ -120,5 +130,4 @@ pub struct AssetVault {
 
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const ACCOUNTS: Map<String, Account> = Map::new("account");
-pub const STRATEGIES: Map<String, Strategy> = Map::new("strategy");
 pub const VAULTS: Map<String, AssetVault> = Map::new("vault");

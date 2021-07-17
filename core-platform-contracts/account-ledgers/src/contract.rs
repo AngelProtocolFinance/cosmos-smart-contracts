@@ -1,10 +1,10 @@
 use cosmwasm_std::{
-    attr, entry_point, from_binary, to_binary, Addr, Api, BankMsg, Binary, CosmosMsg, Deps,
-    DepsMut, Env, MessageInfo, Response, StdResult, WasmMsg,
+    attr, entry_point, from_binary, to_binary, Addr, Api, BankMsg, Binary, Deps,
+    DepsMut, Env, MessageInfo, Response, StdResult, SubMsg, WasmMsg,
 };
 
 use cw2::{get_contract_version, set_contract_version};
-use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw20::{Balance, Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 
 use crate::error::ContractError;
 use crate::msg::{
@@ -13,7 +13,7 @@ use crate::msg::{
 };
 use crate::state::{
     Account, AssetVault, Config, GenericBalance, SplitDetails, Strategy, StrategyComponent,
-    ACCOUNTS, CONFIG, STRATEGIES, VAULTS,
+    ACCOUNTS, CONFIG, VAULTS,
 };
 
 // version info for future migration info
@@ -47,9 +47,8 @@ pub fn instantiate(
         deps.storage,
         &Config {
             owner: info.sender,
-            liquid_account: None,
-            index_fund: None,
-            investment_strategy: None,
+            charity_endowment_sc: None,
+            index_fund_sc: None,
             cw20_approved_coins: approved_coins,
         },
     )?;
@@ -65,14 +64,13 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateAcct(msg) => execute_create(deps, env, msg, &info.sender),
+        ExecuteMsg::CreateAcct(msg) => execute_create(deps, env, msg, &info.sender.clone()),
         ExecuteMsg::Receive(msg) => execute_receive(deps, env, info, msg),
         ExecuteMsg::UpdateConfig(msg) => update_config(deps, env, info, msg),
         ExecuteMsg::UpdateOwner { new_owner } => update_owner(deps, env, info, new_owner),
-        ExecuteMsg::Approve { address } => execute_approve(deps, env, info, address),
-        ExecuteMsg::Terminate { address } => execute_terminate(deps, env, info, address),
-        ExecuteMsg::Deposit { address } => {
-            execute_deposit(deps, address, Balance::from(info.funds))
+        ExecuteMsg::Terminate { account_id } => execute_terminate(deps, env, info, account_id),
+        ExecuteMsg::Deposit { account_id } => {
+            execute_deposit(deps, info, account_id)
         }
     }
 }
@@ -130,39 +128,20 @@ pub fn execute_create(
     sender: &Addr,
 ) -> Result<Response, ContractError> {
     let account = Account {
-        arbiter: deps.api.addr_validate(&msg.arbiter)?,
-        beneficiary: deps.api.addr_validate(&msg.beneficiary)?,
-        originator: sender.clone(),
-        end_height: msg.end_height,
-        end_time: msg.end_time,
         balance: GenericBalance {
             native: vec![],
             cw20: vec![],
         },
-        approved: false,
-        splits: Splits {
-            deposit: SplitParameters {
-                max: 100,
-                min: 20,
-                default: 50,
-            },
-            interest: SplitParameters {
-                max: 100,
-                min: 20,
-                default: 50,
-            },
-        },
+        strategy: Strategy::default(),
+        split_deposit: SplitDetails::default(),
+        split_interest: SplitDetails::default(),
     };
 
-    // try to store it, fail if the id was already in use
-    ACCOUNTS.update(
-        deps.storage,
-        sender.clone().into(),
-        |existing| match existing {
-            None => Ok(account),
-            Some(_) => Err(ContractError::AlreadyInUse {}),
-        },
-    )?;
+    // try to store it, fail if the account ID was already in use
+    ACCOUNTS.update(deps.storage, msg.account_id, |existing| match existing {
+        None => Ok(account),
+        Some(_) => Err(ContractError::AlreadyInUse {}),
+    })?;
 
     let res = Response {
         attributes: vec![attr("action", "create"), attr("id", sender.clone())],
@@ -178,31 +157,31 @@ pub fn execute_receive(
     wrapper: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
     let msg: ReceiveMsg = from_binary(&wrapper.msg)?;
-    let balance = Balance::Cw20(Cw20CoinVerified {
-        address: info.sender,
-        amount: wrapper.amount,
-    });
     let msg_sender = &deps.api.addr_validate(&wrapper.sender)?;
     match msg {
         ReceiveMsg::CreateAcct(msg) => execute_create(deps, env, msg, msg_sender),
-        ReceiveMsg::Deposit { address } => execute_deposit(deps, address, balance),
+        ReceiveMsg::Deposit { account_id } => execute_deposit(deps, info, account_id),
     }
 }
 
 pub fn execute_deposit(
     deps: DepsMut,
-    address: String,
-    balance: Balance,
+    info: MessageInfo,
+    account_id: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
     // this fails if no account is there
-    let mut account = ACCOUNTS.load(deps.storage, address.clone())?;
+    let mut account = ACCOUNTS.load(deps.storage, account_id.clone())?;
 
-    if !account.approved {
-        return Err(ContractError::AccountNotApproved {});
+    // this lookup fails if the native token deposit was not coming from one of the vaults
+    let vault = VAULTS.load(deps.storage, info.sender.to_string())?;
+
+    if !vault.approved {
+        return Err(ContractError::Unauthorized {});
     }
 
+    let balance = Balance::from(info.funds);
     if balance.is_empty() {
         return Err(ContractError::EmptyBalance {});
     }
@@ -221,10 +200,10 @@ pub fn execute_deposit(
     account.balance.add_tokens(balance);
 
     // and save
-    ACCOUNTS.save(deps.storage, address.clone(), &account)?;
+    ACCOUNTS.save(deps.storage, account_id.clone(), &account)?;
 
     let res = Response {
-        attributes: vec![attr("action", "deposit"), attr("id", address)],
+        attributes: vec![attr("action", "deposit"), attr("id", account_id)],
         ..Response::default()
     };
     Ok(res)
@@ -232,73 +211,45 @@ pub fn execute_deposit(
 
 pub fn execute_terminate(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
-    address: String,
+    account_id: String,
 ) -> Result<Response, ContractError> {
     // this fails if no account is found
-    let account = ACCOUNTS.load(deps.storage, address.clone())?;
+    let account = ACCOUNTS.load(deps.storage, account_id.clone())?;
+    let config = CONFIG.load(deps.storage)?;
 
-    if info.sender != account.arbiter {
+    if info.sender != config.charity_endowment_sc.unwrap() {
         Err(ContractError::Unauthorized {})
-    } else if account.is_expired(&env) {
-        Err(ContractError::Expired {})
     } else {
         // we delete the account
-        ACCOUNTS.remove(deps.storage, address.clone());
+        ACCOUNTS.remove(deps.storage, account_id.clone());
 
         // send all tokens out to the beneficiary
-        let messages = send_tokens(&account.beneficiary, &account.balance)?;
+        let _messages = send_tokens(&config.owner, &account.balance)?;
 
         let attributes = vec![
             attr("action", "terminate"),
-            attr("id", address),
-            attr("to", account.beneficiary),
+            attr("account_id", account_id.clone()),
+            attr("to", config.owner),
         ];
-        Ok(Response {
-            submessages: vec![],
-            messages,
-            attributes,
-            data: None,
-        })
+        let res = Response {
+            attributes: attributes,
+            ..Response::default()
+        };
+        Ok(res)
     }
 }
 
-pub fn execute_approve(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    address: String,
-) -> Result<Response, ContractError> {
-    // this fails if no account is found
-    let mut account = ACCOUNTS.load(deps.storage, address.clone())?;
-
-    if info.sender != account.arbiter {
-        Err(ContractError::Unauthorized {})
-    } else if account.is_expired(&env) {
-        Err(ContractError::Expired {})
-    } else if account.approved {
-        Err(ContractError::AccountAlreadyApproved {})
-    } else {
-        // approve the account
-        account.approved = true;
-        // and save it
-        ACCOUNTS.save(deps.storage, address.clone(), &account)?;
-
-        Ok(Response::default())
-    }
-}
-
-fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<CosmosMsg>> {
+fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<SubMsg>> {
     let native_balance = &balance.native;
-    let mut msgs: Vec<CosmosMsg> = if native_balance.is_empty() {
+    let mut msgs: Vec<SubMsg> = if native_balance.is_empty() {
         vec![]
     } else {
-        vec![BankMsg::Send {
+        vec![SubMsg::new(BankMsg::Send {
             to_address: to.into(),
             amount: native_balance.to_vec(),
-        }
-        .into()]
+        })]
     };
 
     let cw20_balance = &balance.cw20;
@@ -309,12 +260,12 @@ fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<CosmosMsg>>
                 recipient: to.into(),
                 amount: c.amount,
             };
-            let exec = WasmMsg::Execute {
+            let exec = SubMsg::new(WasmMsg::Execute {
                 contract_addr: c.address.to_string(),
                 msg: to_binary(&msg)?,
-                send: vec![],
-            };
-            Ok(exec.into())
+                funds: vec![],
+            });
+            Ok(exec)
         })
         .collect();
     msgs.append(&mut cw20_msgs?);
@@ -326,7 +277,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         // QueryMsg::List { address } => to_binary(&query_list(deps, address)?),
-        QueryMsg::Details { address } => to_binary(&query_details(deps, address)?),
+        QueryMsg::Details { account_id } => to_binary(&query_details(deps, account_id)?),
     }
 }
 
@@ -334,6 +285,8 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
 
     let res = ConfigResponse {
+        charity_endowment_sc: config.clone().charity_endowment_sc.unwrap().to_string(),
+        index_fund_sc: config.clone().index_fund_sc.unwrap().to_string(),
         cw20_approved_coins: config.human_approved_coins(),
     };
     Ok(res)
@@ -359,12 +312,6 @@ fn query_details(deps: Deps, address: String) -> StdResult<DetailsResponse> {
         .collect();
 
     let details = DetailsResponse {
-        arbiter: account.arbiter.into(),
-        beneficiary: account.beneficiary.into(),
-        owner: account.originator.into(),
-        approved: account.approved,
-        end_height: account.end_height,
-        end_time: account.end_time,
         native_balance,
         cw20_balance: cw20_balance?,
     };
@@ -372,7 +319,7 @@ fn query_details(deps: Deps, address: String) -> StdResult<DetailsResponse> {
 }
 
 // fn query_list(deps: Deps, address: Option<String>) -> StdResult<ListResponse> {
-//     // TO DO: Return a list of Account IDs
+//     // TO DO: Return a list of Accounts
 //     // Returns the list of addresses for all registered accounts in storage
 //     // let acct_list = ACCOUNTS.keys(&deps.storage, None, None).collect()?;
 //     Ok(ListResponse {
@@ -401,6 +348,8 @@ mod tests {
     fn test_proper_initialization() {
         let mut deps = mock_dependencies(&[]);
         let instantiate_msg = InstantiateMsg {
+            charity_endowment_sc: String::from("charity-endowment-sc"),
+            index_fund_sc: String::from("index-fund-sc"),
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info("creator", &coins(100000, "earth"));
@@ -415,6 +364,8 @@ mod tests {
         let agent1 = String::from("agent007");
 
         let instantiate_msg = InstantiateMsg {
+            charity_endowment_sc: String::from("charity-endowment-sc"),
+            index_fund_sc: String::from("index-fund-sc"),
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
@@ -431,6 +382,8 @@ mod tests {
         let agent2 = String::from("agent008");
 
         let instantiate_msg = InstantiateMsg {
+            charity_endowment_sc: String::from("charity-endowment-sc"),
+            index_fund_sc: String::from("index-fund-sc"),
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
@@ -441,6 +394,8 @@ mod tests {
 
         // change the expirary to true and shorten payout to 15 days
         let msg = UpdateConfigMsg {
+            charity_endowment_sc: Some(String::from("charity-endowment-sc")),
+            index_fund_sc: Some(String::from("index-fund-sc")),
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let res = execute(
@@ -458,6 +413,8 @@ mod tests {
 
         // Not just anyone can update the configs! Only owner can.
         let msg = UpdateConfigMsg {
+            charity_endowment_sc: Some(String::from("charity-endowment-sc")),
+            index_fund_sc: Some(String::from("index-fund-sc")),
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent2.as_ref(), &coins(100000, "earth "));
@@ -474,6 +431,8 @@ mod tests {
         let agent2 = String::from("agent008");
 
         let instantiate_msg = InstantiateMsg {
+            charity_endowment_sc: String::from("charity-endowment-sc"),
+            index_fund_sc: String::from("index-fund-sc"),
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
@@ -496,6 +455,8 @@ mod tests {
 
         // Agent1 should not be able to update the configs now
         let msg = UpdateConfigMsg {
+            charity_endowment_sc: Some(String::from("charity-endowment-sc")),
+            index_fund_sc: None,
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "earth "));
@@ -509,9 +470,10 @@ mod tests {
     fn test_create_account() {
         let mut deps = mock_dependencies(&[]);
         let agent1 = String::from("agent007");
-        let agent2 = String::from("agent008");
 
         let instantiate_msg = InstantiateMsg {
+            charity_endowment_sc: String::from("charity-endowment-sc"),
+            index_fund_sc: String::from("index-fund-sc"),
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
@@ -521,10 +483,7 @@ mod tests {
         assert_eq!(0, res.messages.len());
 
         let msg = CreateAcctMsg {
-            arbiter: agent1.clone(),
-            beneficiary: agent2.clone(),
-            end_height: None,
-            end_time: None,
+            account_id: String::from("locked_XXCETWTETGSGSRHJTUIQAADFAG"),
         };
         let res = execute(
             deps.as_mut(),
@@ -534,88 +493,6 @@ mod tests {
         )
         .unwrap();
         assert_eq!(0, res.messages.len());
-
-        // check that new account parameters were set correctly
-        let res = query_details(deps.as_ref(), agent1.clone()).unwrap();
-        assert_eq!(agent1.clone(), res.arbiter);
-        assert_eq!(agent2.clone(), res.beneficiary);
-    }
-
-    #[test]
-    fn test_approve_account() {
-        let mut deps = mock_dependencies(&[]);
-        let agent1 = String::from("agent007");
-        let agent2 = String::from("agent008");
-
-        let instantiate_msg = InstantiateMsg {
-            cw20_approved_coins: Some(vec![String::from("earth")]),
-        };
-        let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
-        let env = mock_env();
-
-        let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-        assert_eq!(0, res.messages.len());
-
-        let msg = CreateAcctMsg {
-            arbiter: agent1.clone(),
-            beneficiary: agent2.clone(),
-            end_height: None,
-            end_time: None,
-        };
-        let res = execute(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            ExecuteMsg::CreateAcct(msg),
-        )
-        .unwrap();
-        assert_eq!(0, res.messages.len());
-
-        // try to approve an account as a non-arbiter user
-        let info = mock_info(agent2.as_ref(), &coins(100000, "earth"));
-        let env = mock_env();
-        let err = execute(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            ExecuteMsg::Approve {
-                address: agent1.clone(),
-            },
-        )
-        .unwrap_err();
-        assert_eq!(err, ContractError::Unauthorized {});
-
-        // the arbiter of the account SHOULD be able to approve it
-        let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
-        let env = mock_env();
-        let res = execute(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            ExecuteMsg::Approve {
-                address: agent1.clone(),
-            },
-        )
-        .unwrap();
-        assert_eq!(0, res.messages.len());
-
-        // a second attempt to approve the account SHOULD fail
-        let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
-        let env = mock_env();
-        let err = execute(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            ExecuteMsg::Approve {
-                address: agent1.clone(),
-            },
-        )
-        .unwrap_err();
-        assert_eq!(err, ContractError::AccountAlreadyApproved {});
-
-        // check that the account details reflect its new TRUE approval status
-        let res = query_details(deps.as_ref(), agent1.clone()).unwrap();
-        assert_eq!(true, res.approved);
     }
 
     #[test]
@@ -625,6 +502,8 @@ mod tests {
         let agent2 = String::from("agent008");
 
         let instantiate_msg = InstantiateMsg {
+            charity_endowment_sc: String::from("charity-endowment-sc"),
+            index_fund_sc: String::from("index-fund-sc"),
             cw20_approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
@@ -634,30 +513,13 @@ mod tests {
         assert_eq!(0, res.messages.len());
 
         let msg = CreateAcctMsg {
-            arbiter: agent1.clone(),
-            beneficiary: agent2.clone(),
-            end_height: None,
-            end_time: None,
+            account_id: String::from("locked_XXCETWTETGSGSRHJTUIQAADFAG"),
         };
         let res = execute(
             deps.as_mut(),
             env.clone(),
             info.clone(),
             ExecuteMsg::CreateAcct(msg),
-        )
-        .unwrap();
-        assert_eq!(0, res.messages.len());
-
-        // account is approved
-        let info = mock_info(agent1.as_ref(), &coins(100000, "earth"));
-        let env = mock_env();
-        let res = execute(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            ExecuteMsg::Approve {
-                address: agent1.clone(),
-            },
         )
         .unwrap();
         assert_eq!(0, res.messages.len());
@@ -670,7 +532,7 @@ mod tests {
             env.clone(),
             info.clone(),
             ExecuteMsg::Terminate {
-                address: agent1.clone(),
+                account_id: agent1.clone(),
             },
         )
         .unwrap_err();
@@ -684,7 +546,7 @@ mod tests {
             env.clone(),
             info.clone(),
             ExecuteMsg::Terminate {
-                address: agent1.clone(),
+                account_id: agent1.clone(),
             },
         )
         .unwrap();
@@ -709,26 +571,26 @@ mod tests {
         let foo_token = Addr::unchecked("foo_token");
         tokens.add_tokens(Balance::Cw20(Cw20CoinVerified {
             address: foo_token.clone(),
-            amount: Uint128(12345),
+            amount: Uint128::from(12345 as u128),
         }));
         tokens.add_tokens(Balance::Cw20(Cw20CoinVerified {
             address: bar_token.clone(),
-            amount: Uint128(777),
+            amount: Uint128::from(777 as u128),
         }));
         tokens.add_tokens(Balance::Cw20(Cw20CoinVerified {
             address: foo_token.clone(),
-            amount: Uint128(23400),
+            amount: Uint128::from(23400 as u128),
         }));
         assert_eq!(
             tokens.cw20,
             vec![
                 Cw20CoinVerified {
                     address: foo_token,
-                    amount: Uint128(35745),
+                    amount: Uint128::from(35745 as u128),
                 },
                 Cw20CoinVerified {
                     address: bar_token,
-                    amount: Uint128(777),
+                    amount: Uint128::from(777 as u128),
                 }
             ]
         );
@@ -738,10 +600,11 @@ mod tests {
     fn test_account_receives_native_tokens() {
         let mut deps = mock_dependencies(&[]);
         let agent1 = String::from("agent007");
-        let agent2 = String::from("agent008");
         let agent3 = String::from("agent006");
 
         let instantiate_msg = InstantiateMsg {
+            charity_endowment_sc: String::from("charity-endowment-sc"),
+            index_fund_sc: String::from("index-fund-sc"),
             cw20_approved_coins: Some(vec![String::from("bar_token"), String::from("foo_token")]),
         };
         let info = mock_info(agent1.as_ref(), &coins(100000, "bar_token"));
@@ -751,10 +614,7 @@ mod tests {
         assert_eq!(0, res.messages.len());
 
         let msg = CreateAcctMsg {
-            arbiter: agent1.clone(),
-            beneficiary: agent2.clone(),
-            end_height: None,
-            end_time: None,
+            account_id: String::from("locked_XXCETWTETGSGSRHJTUIQAADFAG"),
         };
         let res = execute(
             deps.as_mut(),
@@ -770,30 +630,16 @@ mod tests {
         let extra_native = vec![coin(250, "bar_token"), coin(300, "foo_token")];
         let info = mock_info(&agent3.clone(), &extra_native);
         let deposit = ExecuteMsg::Deposit {
-            address: agent1.clone(),
+            account_id: agent1.clone(),
         };
         let err = execute(deps.as_mut(), mock_env(), info, deposit).unwrap_err();
         assert_eq!(err, ContractError::AccountNotApproved {});
-
-        // the arbiter of the account approves it
-        let info = mock_info(agent1.as_ref(), &coins(100000, "bar_token"));
-        let env = mock_env();
-        let res = execute(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            ExecuteMsg::Approve {
-                address: agent1.clone(),
-            },
-        )
-        .unwrap();
-        assert_eq!(0, res.messages.len());
 
         // try to top account up with 2 approved tokens
         let extra_native = vec![coin(250, "bar_token"), coin(300, "foo_token")];
         let info = mock_info(&agent3.clone(), &extra_native);
         let deposit = ExecuteMsg::Deposit {
-            address: agent1.clone(),
+            account_id: agent1.clone(),
         };
         let res = execute(deps.as_mut(), mock_env(), info, deposit).unwrap();
         assert_eq!(0, res.messages.len());
@@ -803,7 +649,7 @@ mod tests {
         let bad_coins = vec![coin(250, "rat_poison"), coin(300, "squared")];
         let info = mock_info(&agent3.clone(), &bad_coins);
         let deposit = ExecuteMsg::Deposit {
-            address: agent1.clone(),
+            account_id: agent1.clone(),
         };
         let err = execute(deps.as_mut(), mock_env(), info, deposit).unwrap_err();
         assert_eq!(err, ContractError::NotInApprovedCoins {});

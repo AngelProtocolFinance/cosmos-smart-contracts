@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Coin};
+use cosmwasm_std::Coin;
 use cw20::{Cw20Coin, Cw20ReceiveMsg};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -19,13 +19,10 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     CreateAcct(CreateAcctMsg),
-    // Approve allows an Endowment to start acepting funds and sets up a Liquid Account
-    // Only the arbiter can perform this action
-    Approve { address: String },
     // Destroys the endowment and returns all Balance funds to the beneficiary
-    Terminate { address: String },
+    Terminate { account_id: String },
     // Adds all sent native tokens to the contract
-    Deposit { address: String },
+    Deposit { account_id: String },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
     // Allows the SC owner (only!) to change ownership
@@ -39,26 +36,18 @@ pub enum ExecuteMsg {
 pub enum ReceiveMsg {
     CreateAcct(CreateAcctMsg),
     // Adds all sent native tokens to the contract
-    Deposit { address: String },
+    Deposit { account_id: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateAcctMsg {
-    // arbiter can decide to approve or refund the escrow
-    pub arbiter: String,
-    // if approved, funds go to the beneficiary
-    pub beneficiary: String,
-    // When end height set and block height exceeds this value, the escrow is expired.
-    // Once an escrow is expired, it can be returned to the original funder (via "refund").
-    pub end_height: Option<u64>,
-    // When end time (in seconds since epoch 00:00:00 UTC on 1 January 1970) is set and
-    // block time exceeds this value, the escrow is expired.
-    // Once an escrow is expired, it can be returned to the original funder (via "refund").
-    pub end_time: Option<u64>,
+    pub account_id: String, // Endowment EID + some prefix serves the Account ID
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
+    pub charity_endowment_sc: Option<String>,
+    pub index_fund_sc: Option<String>,
     pub cw20_approved_coins: Option<Vec<String>>,
 }
 
@@ -66,11 +55,11 @@ pub struct UpdateConfigMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Show all open Accounts. Return type is ListResponse.
-    // Accepts an optional argument of an originator address to filter by
-    // List { address: Option<String> },
+    // Accepts an optional argument of an originator account_id to filter by
+    // List { account_id: Option<String> },
     // Returns the details of the named escrow, error if not created
     // Return type: DetailsResponse.
-    Details { address: String },
+    Details { account_id: String },
     // Get all Config details for the contract
     Config {},
 }
@@ -83,22 +72,13 @@ pub struct ListResponse {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct DetailsResponse {
-    pub arbiter: Addr,
-    pub beneficiary: Addr,
-    pub owner: Addr,
-    pub approved: bool,
-    // When end height set and block height exceeds this value, the escrow is expired.
-    // Once an escrow is expired, it can be returned to the original funder (via "refund").
-    pub end_height: Option<u64>,
-    // When end time (in seconds since epoch 00:00:00 UTC on 1 January 1970) is set and
-    // block time exceeds this value, the escrow is expired.
-    // Once an escrow is expired, it can be returned to the original funder (via "refund").
-    pub end_time: Option<u64>,
     pub native_balance: Vec<Coin>,
     pub cw20_balance: Vec<Cw20Coin>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
+    pub charity_endowment_sc: String,
+    pub index_fund_sc: String,
     pub cw20_approved_coins: Vec<String>,
 }
