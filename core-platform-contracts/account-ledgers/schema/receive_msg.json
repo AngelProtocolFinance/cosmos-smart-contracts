@@ -1,14 +1,26 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "QueryMsg",
+  "title": "ReceiveMsg",
   "anyOf": [
     {
       "type": "object",
       "required": [
-        "details"
+        "create_acct"
       ],
       "properties": {
-        "details": {
+        "create_acct": {
+          "$ref": "#/definitions/CreateAcctMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "deposit"
+      ],
+      "properties": {
+        "deposit": {
           "type": "object",
           "required": [
             "account_id"
@@ -21,18 +33,19 @@
         }
       },
       "additionalProperties": false
-    },
-    {
+    }
+  ],
+  "definitions": {
+    "CreateAcctMsg": {
       "type": "object",
       "required": [
-        "config"
+        "account_id"
       ],
       "properties": {
-        "config": {
-          "type": "object"
+        "account_id": {
+          "type": "string"
         }
-      },
-      "additionalProperties": false
+      }
     }
-  ]
+  }
 }

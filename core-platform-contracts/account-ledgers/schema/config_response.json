@@ -1,9 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "InstantiateMsg",
+  "title": "ConfigResponse",
   "type": "object",
   "required": [
     "charity_endowment_sc",
+    "cw20_approved_coins",
     "index_fund_sc"
   ],
   "properties": {
@@ -11,10 +12,7 @@
       "type": "string"
     },
     "cw20_approved_coins": {
-      "type": [
-        "array",
-        "null"
-      ],
+      "type": "array",
       "items": {
         "type": "string"
       }
