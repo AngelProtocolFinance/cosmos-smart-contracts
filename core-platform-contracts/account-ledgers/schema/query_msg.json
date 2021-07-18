@@ -5,10 +5,50 @@
     {
       "type": "object",
       "required": [
-        "details"
+        "vault"
       ],
       "properties": {
-        "details": {
+        "vault": {
+          "type": "object",
+          "required": [
+            "address"
+          ],
+          "properties": {
+            "address": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "vault_list"
+      ],
+      "properties": {
+        "vault_list": {
+          "type": "object",
+          "properties": {
+            "non_approved": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "account"
+      ],
+      "properties": {
+        "account": {
           "type": "object",
           "required": [
             "account_id"
@@ -16,6 +56,26 @@
           "properties": {
             "account_id": {
               "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "account_list"
+      ],
+      "properties": {
+        "account_list": {
+          "type": "object",
+          "properties": {
+            "eid": {
+              "type": [
+                "string",
+                "null"
+              ]
             }
           }
         }

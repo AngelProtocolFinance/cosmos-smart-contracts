@@ -3,19 +3,14 @@
   "title": "Config",
   "type": "object",
   "required": [
+    "charity_endowment_sc",
     "cw20_approved_coins",
+    "index_fund_sc",
     "owner"
   ],
   "properties": {
     "charity_endowment_sc": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/Addr"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "$ref": "#/definitions/Addr"
     },
     "cw20_approved_coins": {
       "type": "array",
@@ -24,14 +19,7 @@
       }
     },
     "index_fund_sc": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/Addr"
-        },
-        {
-          "type": "null"
-        }
-      ]
+      "$ref": "#/definitions/Addr"
     },
     "owner": {
       "$ref": "#/definitions/Addr"

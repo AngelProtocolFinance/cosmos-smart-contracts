@@ -1,12 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ListResponse",
+  "title": "VaultListResponse",
   "type": "object",
   "required": [
-    "accounts"
+    "vaults"
   ],
   "properties": {
-    "accounts": {
+    "vaults": {
       "type": "array",
       "items": {
         "type": "string"

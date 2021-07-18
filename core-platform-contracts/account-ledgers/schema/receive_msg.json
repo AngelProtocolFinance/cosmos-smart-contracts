@@ -17,10 +17,10 @@
     {
       "type": "object",
       "required": [
-        "deposit"
+        "deposit_specific"
       ],
       "properties": {
-        "deposit": {
+        "deposit_specific": {
           "type": "object",
           "required": [
             "account_id"
@@ -33,16 +33,44 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "deposit_general"
+      ],
+      "properties": {
+        "deposit_general": {
+          "type": "object",
+          "required": [
+            "eid"
+          ],
+          "properties": {
+            "eid": {
+              "type": "string"
+            },
+            "split": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "format": "uint8",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
     }
   ],
   "definitions": {
     "CreateAcctMsg": {
       "type": "object",
       "required": [
-        "account_id"
+        "eid"
       ],
       "properties": {
-        "account_id": {
+        "eid": {
           "type": "string"
         }
       }

@@ -9,9 +9,9 @@ use cw20::{Balance, Cw20CoinVerified};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub owner: Addr,                        // DANO Address
-    pub charity_endowment_sc: Option<Addr>, // Address of Charity Endowment SC
-    pub index_fund_sc: Option<Addr>,        // Address of Index Fund SC
+    pub owner: Addr,                // DANO Address
+    pub charity_endowment_sc: Addr, // Address of Charity Endowment SC
+    pub index_fund_sc: Addr,        // Address of Index Fund SC
     // List of all possible contracts that we can accept Cw20 tokens from
     // that are accepted by the account during a top-up. This is required to avoid a DoS attack by topping-up
     // with an invalid cw20 contract. See https://github.com/CosmWasm/cosmwasm-plus/issues/19

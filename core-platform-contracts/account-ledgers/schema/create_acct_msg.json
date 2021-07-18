@@ -3,10 +3,10 @@
   "title": "CreateAcctMsg",
   "type": "object",
   "required": [
-    "account_id"
+    "eid"
   ],
   "properties": {
-    "account_id": {
+    "eid": {
       "type": "string"
     }
   }
