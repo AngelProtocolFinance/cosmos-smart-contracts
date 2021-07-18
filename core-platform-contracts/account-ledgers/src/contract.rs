@@ -854,13 +854,12 @@ mod tests {
     }
 
     #[test]
-    fn test_create_asset_vault() {
+    fn test_create_new_endowment_accounts() {
         let mut deps = mock_dependencies(&[]);
         // meet the cast of characters
         let ap_team = String::from("angelprotocolteamdano");
         let trusted_sc = String::from("XCEMQTWTETGSGSRHJTUIQADG");
         let pleb = String::from("plebAccount");
-        let asset_vault = String::from("greatestAssetVaultEver");
         // create an account id for a fictional Endowment (EID)
         let eid = String::from("GWRGDRGERGRGRGDRGDRGSGSDFS");
         let account_id = String::from("locked_GWRGDRGERGRGRGDRGDRGSGSDFS");
@@ -888,6 +887,19 @@ mod tests {
         .unwrap();
         assert_eq!(0, res.messages.len());
 
+        // test a non-owner account can't create accounts
+        let msg = CreateAcctMsg { eid: eid.clone() };
+        let info = mock_info(pleb.as_ref(), &coins(100000, "bar_token"));
+        let env = mock_env();
+        let err = execute(
+            deps.as_mut(),
+            env.clone(),
+            info.clone(),
+            ExecuteMsg::CreateAcct(msg),
+        )
+        .unwrap_err();
+        assert_eq!(err, ContractError::Unauthorized {});
+
         // create a set of new accounts
         let msg = CreateAcctMsg { eid: eid.clone() };
         let info = mock_info(trusted_sc.as_ref(), &coins(100000, "bar_token"));
@@ -900,6 +912,64 @@ mod tests {
         )
         .unwrap();
         assert_eq!(0, res.messages.len());
+
+        // should be able to get a created account now (ex. Locked Acct)
+        let res = query_account_details(deps.as_ref(), account_id.clone()).unwrap();
+        assert_eq!(account_id.clone(), res.account_id);
+    }
+
+    #[test]
+    fn test_create_asset_vault() {
+        let mut deps = mock_dependencies(&[]);
+        // meet the cast of characters
+        let ap_team = String::from("angelprotocolteamdano");
+        let trusted_sc = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let pleb = String::from("plebAccount");
+        let asset_vault = String::from("greatestAssetVaultEver");
+
+        let instantiate_msg = InstantiateMsg {
+            cw20_approved_coins: Some(vec![String::from("bar_token"), String::from("foo_token")]),
+        };
+        let info = mock_info(ap_team.as_ref(), &coins(100000, "bar_token"));
+        let env = mock_env();
+        let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+        assert_eq!(0, res.messages.len());
+
+        // update the approved coins list and trusted SC addresses
+        let msg = UpdateConfigMsg {
+            charity_endowment_sc: trusted_sc.clone(),
+            index_fund_sc: String::from("SDFGRHAETHADFARHSRTHADGG"),
+            cw20_approved_coins: Some(vec![String::from("earth"), String::from("mars")]),
+        };
+        let res = execute(
+            deps.as_mut(),
+            env.clone(),
+            info.clone(),
+            ExecuteMsg::UpdateConfig(msg),
+        )
+        .unwrap();
+        assert_eq!(0, res.messages.len());
+
+        // test a non-owner account can't add new vaults
+        let info = mock_info(pleb.as_ref(), &coins(100000, "bar_token"));
+        let env = mock_env();
+        let err = execute(
+            deps.as_mut(),
+            env.clone(),
+            info.clone(),
+            ExecuteMsg::VaultAdd {
+                vault_addr: asset_vault.clone(),
+                vault: AssetVault {
+                    name: String::from("Greatest Asset Vault Ever"),
+                    description: String::from(
+                        "We give investors a 1000% APY return on their assets.",
+                    ),
+                    approved: true,
+                },
+            },
+        )
+        .unwrap_err();
+        assert_eq!(err, ContractError::Unauthorized {});
 
         // create a new AssetVault
         let info = mock_info(ap_team.as_ref(), &coins(100000, "bar_token"));
@@ -922,7 +992,7 @@ mod tests {
         .unwrap();
         assert_eq!(0, res.messages.len());
 
-        // should be able to get a created account now
+        // should be able to get a created vault now
         let res = query_vault_details(deps.as_ref(), asset_vault.clone()).unwrap();
         assert_eq!(String::from("Greatest Asset Vault Ever"), res.name);
     }
@@ -933,7 +1003,7 @@ mod tests {
         // meet the cast of characters
         let ap_team = String::from("angelprotocolteamdano");
         let trusted_sc = String::from("XCEMQTWTETGSGSRHJTUIQADG");
-        let pleb = String::from("plebAccount");
+        let _pleb = String::from("plebAccount");
         let asset_vault = String::from("greatestAssetVaultEver");
         // create an account id for a fictional Endowment (EID)
         let eid = String::from("GWRGDRGERGRGRGDRGDRGSGSDFS");
