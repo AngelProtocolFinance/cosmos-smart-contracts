@@ -1,4 +1,5 @@
-use std::ops::Add;
+
+use std::string::String;
 
 use cosmwasm_std::{
     entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
@@ -7,12 +8,13 @@ use cosmwasm_std::{
 
 use crate::error::ContractError;
 use crate::msg::{
-    CountResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, MyCountResponse, QueryMsg,
+    CountResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, MyCountResponse, QueryMsg, FundResponse,
 };
-use crate::state::{MyState, State, MY_STATE, STATE};
+use crate::state::{MyState, State, MY_STATE, STATE, FUNDS}; 
 
 // Note, you can use StdResult in some functions where you do not
 // make use of the custom errors
+
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
@@ -88,7 +90,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetCount {} => to_binary(&query_count(deps)?),
         QueryMsg::GetMyCount { addr } => to_binary(&my_query_count(deps, addr)?),
-        QueryMsg::GetFund {fund_id} => to_binary(&query_fund(deps, fund_id)),
+        QueryMsg::GetFund {fund_id} => to_binary(&query_fund(deps, fund_id)?),
     }
 }
 
@@ -112,15 +114,16 @@ fn my_query_count(deps: Deps, addr: Addr) -> StdResult<MyCountResponse> {
 }
 
 fn query_fund(deps: Deps, fund_id: String) -> StdResult<FundResponse> {
-    let fund = FUNDS.load(deps.storage, &fund_id)?;
+    
+    let fund = FUNDS.load(deps.storage, fund_id)?;
     let name = fund.name;
     let description = fund.description;
     let members = fund.members;
 
     Ok(FundResponse {
-        name: String,
-        description: String,
-        members: Vec<String>,
+        name,
+        description,
+        members,
         })
     
 }
