@@ -50,7 +50,6 @@ pub fn execute(
 #[entry_point]
 pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-
         QueryMsg::GetFund {fund_id} => to_binary(&query_fund(_deps, fund_id)?),
     }
 
