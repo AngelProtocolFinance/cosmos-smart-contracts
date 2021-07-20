@@ -1,10 +1,15 @@
 use std::ops::Add;
 
-use cosmwasm_std::{Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, entry_point, to_binary, Uint128};
+use cosmwasm_std::{
+    entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    Uint128,
+};
 
 use crate::error::ContractError;
-use crate::msg::{CountResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, MyCountResponse, QueryMsg};
-use crate::state::{MY_STATE, STATE, State, MyState};
+use crate::msg::{
+    CountResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, MyCountResponse, QueryMsg,
+};
+use crate::state::{MyState, State, MY_STATE, STATE};
 
 // Note, you can use StdResult in some functions where you do not
 // make use of the custom errors
@@ -44,25 +49,30 @@ pub fn try_increment(deps: DepsMut, info: MessageInfo) -> Result<Response, Contr
         Ok(state)
     })?;
 
-    MY_STATE.update(deps.storage, info.sender.as_str().as_bytes(),
-     | state| -> Result<_, ContractError> {
-        match state {
-            None => {
-                Ok(MyState {
-                    count: Uint128::from(1u128)
-                })
-            },
-            Some(mut s) => {
-                s.count += s.count.add(Uint128::from(1u128));
-                Ok(s)
+    MY_STATE.update(
+        deps.storage,
+        info.sender.as_str().as_bytes(),
+        |state| -> Result<_, ContractError> {
+            match state {
+                None => Ok(MyState {
+                    count: Uint128::from(1u128),
+                }),
+                Some(mut s) => {
+                    s.count += s.count.add(Uint128::from(1u128));
+                    Ok(s)
+                }
             }
-        }
-     })?;
+        },
+    )?;
 
     Ok(Response::default())
 }
 
-pub fn try_reset(deps: DepsMut, info: MessageInfo, count: Uint128) -> Result<Response, ContractError> {
+pub fn try_reset(
+    deps: DepsMut,
+    info: MessageInfo,
+    count: Uint128,
+) -> Result<Response, ContractError> {
     STATE.update(deps.storage, |mut state| -> Result<_, ContractError> {
         if info.sender != state.owner {
             return Err(ContractError::Unauthorized {});
@@ -78,6 +88,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::GetCount {} => to_binary(&query_count(deps)?),
         QueryMsg::GetMyCount { addr } => to_binary(&my_query_count(deps, addr)?),
+        QueryMsg::GetFund {fund_id} => to_binary(&query_fund(deps, fund_id)),
     }
 }
 
@@ -89,9 +100,29 @@ fn query_count(deps: Deps) -> StdResult<CountResponse> {
 fn my_query_count(deps: Deps, addr: Addr) -> StdResult<MyCountResponse> {
     let state = MY_STATE.load(deps.storage, addr.as_str().as_bytes());
     match state {
-        Err(_) => Ok(MyCountResponse { addr, count: Uint128::from(0u128) }),
-        Ok(r) => Ok(MyCountResponse { addr, count: r.count })
+        Err(_) => Ok(MyCountResponse {
+            addr,
+            count: Uint128::from(0u128),
+        }),
+        Ok(r) => Ok(MyCountResponse {
+            addr,
+            count: r.count,
+        }),
     }
+}
+
+fn query_fund(deps: Deps, fund_id: String) -> StdResult<FundResponse> {
+    let fund = FUNDS.load(deps.storage, &fund_id)?;
+    let name = fund.name;
+    let description = fund.description;
+    let members = fund.members;
+
+    Ok(FundResponse {
+        name: String,
+        description: String,
+        members: Vec<String>,
+        })
+    
 }
 
 #[entry_point]
@@ -109,7 +140,9 @@ mod tests {
     fn proper_initialization() {
         let mut deps = mock_dependencies(&[]);
 
-        let msg = InstantiateMsg { count: Uint128::from(17u128) };
+        let msg = InstantiateMsg {
+            count: Uint128::from(17u128),
+        };
         let info = mock_info("creator", &coins(1000, "earth"));
 
         // we can just call .unwrap() to assert this was a success
@@ -126,7 +159,9 @@ mod tests {
     fn increment() {
         let mut deps = mock_dependencies(&coins(2, "token"));
 
-        let msg = InstantiateMsg { count: Uint128::from(17u128) };
+        let msg = InstantiateMsg {
+            count: Uint128::from(17u128),
+        };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
@@ -145,13 +180,17 @@ mod tests {
     fn reset() {
         let mut deps = mock_dependencies(&coins(2, "token"));
 
-        let msg = InstantiateMsg { count: Uint128::from(17u128) };
+        let msg = InstantiateMsg {
+            count: Uint128::from(17u128),
+        };
         let info = mock_info("creator", &coins(2, "token"));
         let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
         // beneficiary can release it
         let unauth_info = mock_info("anyone", &coins(2, "token"));
-        let msg = ExecuteMsg::Reset { count: Uint128::from(5u128) };
+        let msg = ExecuteMsg::Reset {
+            count: Uint128::from(5u128),
+        };
         let res = execute(deps.as_mut(), mock_env(), unauth_info, msg);
         match res {
             Err(ContractError::Unauthorized {}) => {}
@@ -160,7 +199,9 @@ mod tests {
 
         // only the original creator can reset the counter
         let auth_info = mock_info("creator", &coins(2, "token"));
-        let msg = ExecuteMsg::Reset { count: Uint128::from(5u128) };
+        let msg = ExecuteMsg::Reset {
+            count: Uint128::from(5u128),
+        };
         let _res = execute(deps.as_mut(), mock_env(), auth_info, msg).unwrap();
 
         // should now be 5

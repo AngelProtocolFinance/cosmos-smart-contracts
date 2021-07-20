@@ -1,6 +1,6 @@
+use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use cosmwasm_std::{Addr, Uint128};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -20,6 +20,7 @@ pub enum QueryMsg {
     // GetCount returns the current count as a json-encoded number
     GetCount {},
     GetMyCount { addr: Addr },
+    GetFund { fund_id: String },
 }
 
 // We define a custom struct for each query response
@@ -35,5 +36,11 @@ pub struct MyCountResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MigrateMsg {
+pub struct FundResponse {
+    pub name: String,
+    pub description: String,
+    pub members: Vec<String>,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MigrateMsg {}
