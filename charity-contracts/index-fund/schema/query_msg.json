@@ -1,6 +1,26 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "QueryMsg",
-  "type": "string",
-  "enum": []
+  "anyOf": [
+    {
+      "type": "object",
+      "required": [
+        "get_fund"
+      ],
+      "properties": {
+        "get_fund": {
+          "type": "object",
+          "required": [
+            "fund_id"
+          ],
+          "properties": {
+            "fund_id": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  ]
 }

@@ -2,7 +2,7 @@
 use std::string::String;
 
 use cosmwasm_std::{
-    entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
+    to_binary, entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use cw20::Balance;
 
@@ -49,7 +49,10 @@ pub fn execute(
 
 #[entry_point]
 pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    match msg {}
+    match msg {
+
+        QueryMsg::GetFund {fund_id} => to_binary(&query_fund(_deps, fund_id)?),
+    }
 
 }
 
@@ -93,7 +96,7 @@ mod tests {
         // we can just call .unwrap() to assert this was a success
         let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
         assert_eq!(0, res.messages.len());
-
+    }
     #[test]
     fn increment() {
         let mut deps = mock_dependencies(&coins(2, "token"));

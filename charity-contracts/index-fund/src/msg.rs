@@ -13,9 +13,7 @@ pub enum ExecuteMsg {}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-
 pub enum QueryMsg {
-    
     GetFund { fund_id: String },
 }
 
@@ -26,4 +24,5 @@ pub struct FundResponse {
     pub members: Vec<String>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {}
