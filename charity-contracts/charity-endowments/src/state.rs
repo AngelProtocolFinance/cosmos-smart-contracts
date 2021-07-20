@@ -1,25 +1,25 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Env, Timestamp};
 use cw_storage_plus::{Item, Map};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub owner: Addr, // DANO Address
+    pub owner: Addr,              // AP TEAM / DANO Address
     pub account_ledgers_sc: Addr, // Address of Account Ledgers SC
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Endowment {
-    pub originator: Addr, // address that originally setup the endowment account
+    pub originator: Addr,  // address that originally setup the endowment account
     pub beneficiary: Addr, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
-    pub approved: bool, // DANO has approved to receive donations & transact
+    pub approved: bool,    // DANO has approved to receive donations & transact
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
-    pub maturity_time: Option<u64>, // datetime int of endowment maturity
-    pub maturity_height: Option<u64>, // block equiv of the maturity_datetime
+    pub maturity_time: Option<u64>,     // datetime int of endowment maturity
+    pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
 }
 
 impl Endowment {
