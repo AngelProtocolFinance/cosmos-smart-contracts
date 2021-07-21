@@ -1,5 +1,4 @@
-Closes #issue_number
-
+Closes #<issue_number>
 
 ## Description of the Problem / Feature
 
