@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, Coin};
+use cosmwasm_std::{Addr, Coin, Decimal};
 use cw_storage_plus::{Item, Map};
 
 use cw20::{Balance, Cw20CoinVerified};
@@ -33,24 +33,27 @@ impl Config {
 pub struct Account {
     pub balance: GenericBalance,
     pub strategy: Strategy,
-    pub split_deposit: SplitDetails,
-    pub split_interest: SplitDetails,
+    pub rebalance: RebalanceDetails,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct SplitDetails {
-    pub max: u8,
-    pub min: u8,
-    pub default: u8, // for when a split parameter is not provided
+pub struct RebalanceDetails {
+    pub rebalance_liquid_invested_profits: bool, // should invested portions of the liquid account be rebalanced?
+    pub locked_interests_to_liquid: bool, // should Locked acct interest earned be distributed to the Liquid Acct?
+    pub interest_distribution: Decimal, // % of Locked acct interest earned to be distributed to the Liquid Acct
+    pub locked_principle_to_liquid: bool, // should Locked acct principle be distributed to the Liquid Acct?
+    pub principle_distribution: Decimal, // % of Locked acct principle to be distributed to the Liquid Acct
 }
 
-impl SplitDetails {
+impl RebalanceDetails {
     pub fn default() -> Self {
-        SplitDetails {
-            min: 0,
-            max: 100,
-            default: 50,
+        RebalanceDetails {
+            rebalance_liquid_invested_profits: false,
+            locked_interests_to_liquid: false,
+            interest_distribution: Decimal::percent(20),
+            locked_principle_to_liquid: false,
+            principle_distribution: Decimal::zero(),
         }
     }
 }

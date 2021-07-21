@@ -13,7 +13,7 @@ use crate::msg::{
     VaultListResponse,
 };
 use crate::state::{
-    Account, AssetVault, Config, GenericBalance, SplitDetails, Strategy, ACCOUNTS, CONFIG, VAULTS,
+    Account, AssetVault, Config, GenericBalance, RebalanceDetails, Strategy, ACCOUNTS, CONFIG, VAULTS,
 }; /*  */
 
 // version info for future migration info
@@ -233,8 +233,7 @@ pub fn execute_create(
             cw20: vec![],
         },
         strategy: Strategy::default(),
-        split_deposit: SplitDetails::default(),
-        split_interest: SplitDetails::default(),
+        rebalance: RebalanceDetails::default(),
     };
 
     // try to create both prefixed accounts based on EID passed

@@ -8,7 +8,7 @@ use account_ledgers::msg::{
     InstantiateMsg, QueryMsg, ReceiveMsg, UpdateConfigMsg, VaultDetailsResponse, VaultListResponse,
 };
 use account_ledgers::state::{
-    Account, AssetVault, Config, GenericBalance, SplitDetails, Strategy, StrategyComponent,
+    Account, AssetVault, Config, GenericBalance, RebalanceDetails, Strategy, StrategyComponent,
 };
 
 fn main() {
@@ -28,8 +28,8 @@ fn main() {
     export_schema(&schema_for!(GenericBalance), &out_dir);
     export_schema(&schema_for!(InstantiateMsg), &out_dir);
     export_schema(&schema_for!(QueryMsg), &out_dir);
+    export_schema(&schema_for!(RebalanceDetails), &out_dir);
     export_schema(&schema_for!(ReceiveMsg), &out_dir);
-    export_schema(&schema_for!(SplitDetails), &out_dir);
     export_schema(&schema_for!(Strategy), &out_dir);
     export_schema(&schema_for!(StrategyComponent), &out_dir);
     export_schema(&schema_for!(UpdateConfigMsg), &out_dir);

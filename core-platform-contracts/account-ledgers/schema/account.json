@@ -4,19 +4,15 @@
   "type": "object",
   "required": [
     "balance",
-    "split_deposit",
-    "split_interest",
+    "rebalance",
     "strategy"
   ],
   "properties": {
     "balance": {
       "$ref": "#/definitions/GenericBalance"
     },
-    "split_deposit": {
-      "$ref": "#/definitions/SplitDetails"
-    },
-    "split_interest": {
-      "$ref": "#/definitions/SplitDetails"
+    "rebalance": {
+      "$ref": "#/definitions/RebalanceDetails"
     },
     "strategy": {
       "$ref": "#/definitions/Strategy"
@@ -57,6 +53,10 @@
         }
       }
     },
+    "Decimal": {
+      "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+      "type": "string"
+    },
     "GenericBalance": {
       "type": "object",
       "required": [
@@ -78,28 +78,30 @@
         }
       }
     },
-    "SplitDetails": {
+    "RebalanceDetails": {
       "type": "object",
       "required": [
-        "default",
-        "max",
-        "min"
+        "interest_distribution",
+        "locked_interests_to_liquid",
+        "locked_principle_to_liquid",
+        "principle_distribution",
+        "rebalance_liquid_invested_profits"
       ],
       "properties": {
-        "default": {
-          "type": "integer",
-          "format": "uint8",
-          "minimum": 0.0
+        "interest_distribution": {
+          "$ref": "#/definitions/Decimal"
         },
-        "max": {
-          "type": "integer",
-          "format": "uint8",
-          "minimum": 0.0
+        "locked_interests_to_liquid": {
+          "type": "boolean"
         },
-        "min": {
-          "type": "integer",
-          "format": "uint8",
-          "minimum": 0.0
+        "locked_principle_to_liquid": {
+          "type": "boolean"
+        },
+        "principle_distribution": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "rebalance_liquid_invested_profits": {
+          "type": "boolean"
         }
       }
     },
