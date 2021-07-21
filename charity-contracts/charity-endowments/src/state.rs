@@ -11,7 +11,6 @@ pub struct Config {
     pub account_ledgers_sc: Addr, // Address of Account Ledgers SC
 }
 
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct SplitDetails {
@@ -39,7 +38,7 @@ pub struct Endowment {
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
-    pub split_to_liquid: SplitDetails   // set of max, min, and default Split paramenters to check user defined split input against
+    pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
 }
 
 impl Endowment {
