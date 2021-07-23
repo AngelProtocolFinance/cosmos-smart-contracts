@@ -4,7 +4,7 @@ use cosmwasm_std::{
 };
 
 use cw2::{get_contract_version, set_contract_version};
-use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw20::{Balance, Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 
 use crate::error::ContractError;
 use crate::msg::{
@@ -107,6 +107,10 @@ pub fn update_owner(
         config.owner = new_owner;
         Ok(config)
     })?;
+
+    // TO DO: Need to send out updateOwner messages to all other AP SC:
+    // Charity Endowment SC & Index Fund SC in CONFIG
+    // all Asset Vault SCs in VAULTS
 
     Ok(Response::default())
 }
@@ -442,14 +446,10 @@ pub fn execute_terminate(
 
 fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<SubMsg>> {
     let native_balance = &balance.native;
-    let mut msgs: Vec<SubMsg> = if native_balance.is_empty() {
-        vec![]
-    } else {
-        vec![SubMsg::new(BankMsg::Send {
-            to_address: to.into(),
-            amount: native_balance.to_vec(),
-        })]
-    };
+    let mut msgs: Vec<SubMsg> = vec![SubMsg::new(BankMsg::Send {
+        to_address: to.into(),
+        amount: native_balance.to_vec(),
+    })];
 
     let cw20_balance = &balance.cw20;
     let cw20_msgs: StdResult<Vec<_>> = cw20_balance
@@ -522,9 +522,6 @@ fn query_account_details(
     let account_id = format!("{}_{}", acct_type, eid);
     let account = ACCOUNTS.load(deps.storage, account_id.clone())?;
 
-    // transform tokens
-    let native_balance = account.balance.native;
-
     let cw20_balance: StdResult<Vec<_>> = account
         .balance
         .cw20
@@ -541,7 +538,6 @@ fn query_account_details(
         eid: eid,
         account: acct_type,
         strategy: account.strategy,
-        native_balance,
         cw20_balance: cw20_balance?,
     };
     Ok(details)
@@ -568,6 +564,7 @@ mod tests {
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coin, coins, Uint128};
+    use cw20::Cw20CoinVerified;
 
     #[test]
     fn test_proper_initialization() {

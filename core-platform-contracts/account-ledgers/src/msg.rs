@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Coin, Decimal};
+use cosmwasm_std::Decimal;
 use cw20::{Cw20Coin, Cw20ReceiveMsg};
 
 use crate::state::{AssetVault, Strategy};
@@ -134,7 +134,6 @@ pub struct VaultListResponse {
 pub struct AccountDetailsResponse {
     pub eid: String,     // EID
     pub account: String, // prefix ("locked" or "liquid")
-    pub native_balance: Vec<Coin>,
     pub cw20_balance: Vec<Cw20Coin>,
     pub strategy: Strategy,
 }

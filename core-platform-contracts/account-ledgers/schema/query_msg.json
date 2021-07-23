@@ -51,10 +51,14 @@
         "account": {
           "type": "object",
           "required": [
-            "account_id"
+            "acct_type",
+            "eid"
           ],
           "properties": {
-            "account_id": {
+            "acct_type": {
+              "type": "string"
+            },
+            "eid": {
               "type": "string"
             }
           }

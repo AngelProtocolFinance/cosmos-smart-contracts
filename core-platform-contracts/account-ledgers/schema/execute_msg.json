@@ -91,10 +91,14 @@
         "liquidate": {
           "type": "object",
           "required": [
-            "eid"
+            "beneficiary",
+            "liquidate"
           ],
           "properties": {
-            "eid": {
+            "beneficiary": {
+              "type": "string"
+            },
+            "liquidate": {
               "type": "string"
             }
           }
@@ -111,30 +115,14 @@
         "terminate": {
           "type": "object",
           "required": [
-            "eid"
+            "fund",
+            "terminate"
           ],
           "properties": {
-            "eid": {
+            "fund": {
               "type": "string"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "deposit"
-      ],
-      "properties": {
-        "deposit": {
-          "type": "object",
-          "required": [
-            "account_id"
-          ],
-          "properties": {
-            "account_id": {
+            },
+            "terminate": {
               "type": "string"
             }
           }
@@ -183,11 +171,15 @@
         "update_strategy": {
           "type": "object",
           "required": [
-            "account_id",
+            "acct_type",
+            "eid",
             "strategy"
           ],
           "properties": {
-            "account_id": {
+            "acct_type": {
+              "type": "string"
+            },
+            "eid": {
               "type": "string"
             },
             "strategy": {
