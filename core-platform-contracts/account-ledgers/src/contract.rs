@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    attr, entry_point, from_binary, to_binary, Addr, Api, BankMsg, Binary, Deps, DepsMut, Env,
-    MessageInfo, Response, StdResult, SubMsg, WasmMsg,
+    attr, entry_point, from_binary, to_binary, Addr, Api, BankMsg, Binary, Decimal, Deps, DepsMut,
+    Env, MessageInfo, Response, StdResult, SubMsg, WasmMsg,
 };
 
 use cw2::{get_contract_version, set_contract_version};
@@ -13,8 +13,9 @@ use crate::msg::{
     VaultListResponse,
 };
 use crate::state::{
-    Account, AssetVault, Config, GenericBalance, RebalanceDetails, Strategy, ACCOUNTS, CONFIG, VAULTS,
-}; /*  */
+    Account, AssetVault, Config, GenericBalance, RebalanceDetails, Strategy, ACCOUNTS, CONFIG,
+    VAULTS,
+};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "account-ledgers";
@@ -69,18 +70,23 @@ pub fn execute(
         ExecuteMsg::UpdateConfig(msg) => update_config(deps, env, info, msg),
         ExecuteMsg::UpdateOwner { new_owner } => update_owner(deps, env, info, new_owner),
         ExecuteMsg::UpdateStrategy {
-            account_id,
+            eid,
+            acct_type,
             strategy,
-        } => update_strategy(deps, env, info, account_id, strategy),
+        } => update_strategy(deps, env, info, eid, acct_type, strategy),
         ExecuteMsg::VaultAdd { vault_addr, vault } => vault_add(deps, env, info, vault_addr, vault),
         ExecuteMsg::VaultUpdateStatus {
             vault_addr,
             approved,
         } => vault_update_status(deps, env, info, vault_addr, approved),
         ExecuteMsg::VaultRemove { vault_addr } => vault_remove(deps, env, info, vault_addr),
-        ExecuteMsg::Liquidate { eid } => execute_liquidate(deps, env, info, eid),
-        ExecuteMsg::Terminate { eid } => execute_terminate(deps, env, info, eid),
-        ExecuteMsg::Deposit { account_id } => execute_investment_receipt(deps, info, account_id),
+        ExecuteMsg::Liquidate {
+            liquidate,
+            beneficiary,
+        } => execute_liquidate(deps, env, info, liquidate, beneficiary),
+        ExecuteMsg::Terminate { terminate, fund } => {
+            execute_terminate(deps, env, info, terminate, fund)
+        }
     }
 }
 
@@ -140,7 +146,8 @@ pub fn update_strategy(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    account_id: String,
+    eid: String,
+    acct_type: String,
     strategy: Strategy,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -149,6 +156,7 @@ pub fn update_strategy(
     }
 
     // this fails if no account is there
+    let account_id = format!("{}_{}", acct_type, eid);
     let mut account = ACCOUNTS.load(deps.storage, account_id.clone())?;
 
     // update account strategy attribute with the newly passed strategy
@@ -265,19 +273,22 @@ pub fn execute_receive(
     let msg_sender = &deps.api.addr_validate(&wrapper.sender)?;
     match msg {
         ReceiveMsg::CreateAcct(msg) => execute_create(deps, env, msg, msg_sender),
-        ReceiveMsg::DepositSpecific { account_id } => {
-            execute_deposit_specific(deps, info, account_id)
-        }
-        ReceiveMsg::DepositGeneral { eid, split } => {
-            execute_deposit_general(deps, info, eid, split)
+        ReceiveMsg::Deposit {
+            eid,
+            acct_type,
+            split,
+        } => execute_deposit(deps, info, eid, acct_type, split),
+        ReceiveMsg::VaultReceipt { eid, acct_type } => {
+            execute_vault_receipt(deps, info, eid, acct_type)
         }
     }
 }
 
-pub fn execute_investment_receipt(
+pub fn execute_vault_receipt(
     deps: DepsMut,
     info: MessageInfo,
-    account_id: String,
+    eid: String,
+    acct_type: String,
 ) -> Result<Response, ContractError> {
     // this lookup fails if the token deposit was not coming from an Asset Vault SC
     let vault = VAULTS.load(deps.storage, info.sender.to_string())?;
@@ -286,6 +297,7 @@ pub fn execute_investment_receipt(
     }
 
     // this fails if no account is there
+    let account_id = format!("{}_{}", acct_type, eid);
     let mut account = ACCOUNTS.load(deps.storage, account_id.clone())?;
 
     let balance = Balance::from(info.funds);
@@ -300,39 +312,26 @@ pub fn execute_investment_receipt(
 
     let res = Response {
         attributes: vec![
-            attr("action", "deposit_investment_receipt"),
-            attr("account_id", account_id),
-        ],
-        ..Response::default()
-    };
-    Ok(res)
-}
-
-pub fn execute_deposit_general(
-    _deps: DepsMut,
-    _info: MessageInfo,
-    eid: String,
-    split: Option<u8>,
-) -> Result<Response, ContractError> {
-    let res = Response {
-        attributes: vec![
-            attr("action", "deposit_general"),
+            attr("action", "vault_receipt"),
             attr("eid", eid),
-            attr("split", split.unwrap()),
+            attr("acct_type", acct_type),
         ],
         ..Response::default()
     };
     Ok(res)
 }
 
-pub fn execute_deposit_specific(
+pub fn execute_deposit(
     deps: DepsMut,
     info: MessageInfo,
-    account_id: String,
+    eid: String,
+    acct_type: String,
+    _split: Option<Decimal>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
     // this fails if no account is there
+    let account_id = format!("{}_{}", acct_type, eid);
     let mut account = ACCOUNTS.load(deps.storage, account_id.clone())?;
 
     // this lookup fails if the token deposit was not coming from:
@@ -377,19 +376,22 @@ pub fn execute_liquidate(
     _env: Env,
     info: MessageInfo,
     eid: String,
+    _beneficiary: String,
 ) -> Result<Response, ContractError> {
-    // this fails if no account is found
-    let account = ACCOUNTS.load(deps.storage, eid.clone())?;
     let config = CONFIG.load(deps.storage)?;
 
     if info.sender != config.charity_endowment_sc {
         Err(ContractError::Unauthorized {})
     } else {
-        // we delete the account
-        ACCOUNTS.remove(deps.storage, eid.clone());
-
-        // send all tokens out to the beneficiary
-        let _messages = send_tokens(&config.owner, &account.balance)?;
+        for prefix in ["locked", "liquid"].iter() {
+            let account_id = format!("{}_{}", prefix, eid);
+            // this fails if no account is found
+            let account = ACCOUNTS.load(deps.storage, account_id.clone())?;
+            // we delete the account
+            ACCOUNTS.remove(deps.storage, account_id.clone());
+            // send all tokens out to the index fund sc
+            let _messages = send_tokens(&config.index_fund_sc, &account.balance)?;
+        }
 
         let attributes = vec![
             attr("action", "liquidate"),
@@ -409,6 +411,7 @@ pub fn execute_terminate(
     _env: Env,
     info: MessageInfo,
     eid: String,
+    _fund: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     if info.sender != config.owner {
@@ -474,7 +477,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::Vault { address } => to_binary(&query_vault_details(deps, address)?),
         QueryMsg::VaultList { non_approved } => to_binary(&query_vault_list(deps, non_approved)?),
-        QueryMsg::Account { account_id } => to_binary(&query_account_details(deps, account_id)?),
+        QueryMsg::Account { eid, acct_type } => {
+            to_binary(&query_account_details(deps, eid, acct_type)?)
+        }
         QueryMsg::AccountList { eid } => to_binary(&query_account_list(deps, eid)?),
     }
 }
@@ -508,8 +513,13 @@ fn query_vault_list(_deps: Deps, _non_approved: Option<bool>) -> StdResult<Vault
     Ok(list)
 }
 
-fn query_account_details(deps: Deps, account_id: String) -> StdResult<AccountDetailsResponse> {
+fn query_account_details(
+    deps: Deps,
+    eid: String,
+    acct_type: String,
+) -> StdResult<AccountDetailsResponse> {
     // this fails if no account is found
+    let account_id = format!("{}_{}", acct_type, eid);
     let account = ACCOUNTS.load(deps.storage, account_id.clone())?;
 
     // transform tokens
@@ -528,7 +538,8 @@ fn query_account_details(deps: Deps, account_id: String) -> StdResult<AccountDet
         .collect();
 
     let details = AccountDetailsResponse {
-        account_id: account_id,
+        eid: eid,
+        account: acct_type,
         strategy: account.strategy,
         native_balance,
         cw20_balance: cw20_balance?,
@@ -788,7 +799,8 @@ mod tests {
             env.clone(),
             info.clone(),
             ExecuteMsg::Terminate {
-                eid: String::from("XCEMQTWTETGSGSRHJTUIQADG"),
+                terminate: String::from("XCEMQTWTETGSGSRHJTUIQADG"),
+                fund: String::from("1"),
             },
         )
         .unwrap_err();
@@ -802,7 +814,8 @@ mod tests {
             env.clone(),
             info.clone(),
             ExecuteMsg::Terminate {
-                eid: String::from("XCEMQTWTETGSGSRHJTUIQADG"),
+                terminate: String::from("XCEMQTWTETGSGSRHJTUIQADG"),
+                fund: String::from("1"),
             },
         )
         .unwrap();
@@ -861,7 +874,7 @@ mod tests {
         let pleb = String::from("plebAccount");
         // create an account id for a fictional Endowment (EID)
         let eid = String::from("GWRGDRGERGRGRGDRGDRGSGSDFS");
-        let account_id = String::from("locked_GWRGDRGERGRGRGDRGDRGSGSDFS");
+        let acct_type = String::from("locked");
 
         let instantiate_msg = InstantiateMsg {
             cw20_approved_coins: Some(vec![String::from("bar_token"), String::from("foo_token")]),
@@ -913,8 +926,11 @@ mod tests {
         assert_eq!(0, res.messages.len());
 
         // should be able to get a created account now (ex. Locked Acct)
-        let res = query_account_details(deps.as_ref(), account_id.clone()).unwrap();
-        assert_eq!(account_id.clone(), res.account_id);
+        let res = query_account_details(deps.as_ref(), eid.clone(), acct_type.clone()).unwrap();
+        assert_eq!(
+            format!("{}_{}", acct_type.clone(), eid.clone()),
+            format!("{}_{}", res.account, res.eid)
+        );
     }
 
     #[test]
@@ -994,106 +1010,5 @@ mod tests {
         // should be able to get a created vault now
         let res = query_vault_details(deps.as_ref(), asset_vault.clone()).unwrap();
         assert_eq!(String::from("Greatest Asset Vault Ever"), res.name);
-    }
-
-    #[test]
-    fn test_account_receives_native_tokens() {
-        let mut deps = mock_dependencies(&[]);
-        // meet the cast of characters
-        let ap_team = String::from("angelprotocolteamdano");
-        let trusted_sc = String::from("XCEMQTWTETGSGSRHJTUIQADG");
-        let _pleb = String::from("plebAccount");
-        let asset_vault = String::from("greatestAssetVaultEver");
-        // create an account id for a fictional Endowment (EID)
-        let eid = String::from("GWRGDRGERGRGRGDRGDRGSGSDFS");
-        let account_id = String::from("locked_GWRGDRGERGRGRGDRGDRGSGSDFS");
-
-        let instantiate_msg = InstantiateMsg {
-            cw20_approved_coins: Some(vec![String::from("bar_token"), String::from("foo_token")]),
-        };
-        let info = mock_info(ap_team.as_ref(), &coins(100000, "bar_token"));
-        let env = mock_env();
-        let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-        assert_eq!(0, res.messages.len());
-
-        // update the approved coins list and trusted SC addresses
-        let msg = UpdateConfigMsg {
-            charity_endowment_sc: trusted_sc.clone(),
-            index_fund_sc: String::from("SDFGRHAETHADFARHSRTHADGG"),
-            cw20_approved_coins: Some(vec![String::from("earth"), String::from("mars")]),
-        };
-        let res = execute(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            ExecuteMsg::UpdateConfig(msg),
-        )
-        .unwrap();
-        assert_eq!(0, res.messages.len());
-
-        // create a set of new accounts
-        let msg = CreateAcctMsg { eid: eid.clone() };
-        let info = mock_info(trusted_sc.as_ref(), &coins(100000, "bar_token"));
-        let env = mock_env();
-        let res = execute(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            ExecuteMsg::CreateAcct(msg),
-        )
-        .unwrap();
-        assert_eq!(0, res.messages.len());
-
-        // create a new AssetVault
-        let info = mock_info(ap_team.as_ref(), &coins(100000, "bar_token"));
-        let env = mock_env();
-        let res = execute(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            ExecuteMsg::VaultAdd {
-                vault_addr: asset_vault.clone(),
-                vault: AssetVault {
-                    name: String::from("Greatest Asset Vault Ever"),
-                    description: String::from(
-                        "We give investors a 1000% APY return on their assets.",
-                    ),
-                    approved: true,
-                },
-            },
-        )
-        .unwrap();
-        assert_eq!(0, res.messages.len());
-
-        // try to top account up with 2 approved tokens
-        let extra_native = vec![coin(250, "bar_token"), coin(300, "foo_token")];
-        let info = mock_info(&asset_vault.clone(), &extra_native);
-        let deposit = ExecuteMsg::Deposit {
-            account_id: account_id.clone(),
-        };
-        let res = execute(deps.as_mut(), mock_env(), info, deposit).unwrap();
-        assert_eq!(0, res.messages.len());
-        assert_eq!(
-            attr("action", "deposit_investment_receipt"),
-            res.attributes[0]
-        );
-
-        // // try to top account up with a non-approved tokens (from trusted SC source)
-        // let bad_coins = vec![coin(250, "rat_poison"), coin(300, "squared")];
-        // let info = mock_info(&asset_vault.clone(), &bad_coins);
-        // let deposit = ExecuteMsg::Deposit {
-        //     account_id: account_id.clone(),
-        // };
-        // let err = execute(deps.as_mut(), mock_env(), info, deposit).unwrap_err();
-        // assert_eq!(err, ContractError::NotInApprovedCoins {});
-
-        // // try to top up the account as a non-Trusted SC address
-        // let extra_native = vec![coin(250, "bar_token"), coin(300, "foo_token")];
-        // let info = mock_info(&pleb.clone(), &extra_native);
-        // let deposit = ExecuteMsg::Deposit {
-        //     account_id: account_id.clone(),
-        // };
-        // let err = execute(deps.as_mut(), mock_env(), info, deposit).unwrap_err();
-        // assert_eq!(err, ContractError::Unauthorized {});
     }
 }
