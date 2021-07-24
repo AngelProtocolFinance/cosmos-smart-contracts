@@ -1,1 +1,0 @@
-48469baca2e642adddb7503856e967bd5eb6451f9e4e9755e53e67dbccd69b2e  asset_vault_template.wasm
