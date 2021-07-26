@@ -171,12 +171,12 @@
         "update_strategy": {
           "type": "object",
           "required": [
-            "acct_type",
+            "account_type",
             "eid",
             "strategy"
           ],
           "properties": {
-            "acct_type": {
+            "account_type": {
               "type": "string"
             },
             "eid": {

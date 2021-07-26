@@ -23,11 +23,11 @@
         "deposit": {
           "type": "object",
           "required": [
-            "acct_type",
+            "account_type",
             "eid"
           ],
           "properties": {
-            "acct_type": {
+            "account_type": {
               "type": "string"
             },
             "eid": {
@@ -57,11 +57,11 @@
         "vault_receipt": {
           "type": "object",
           "required": [
-            "acct_type",
+            "account_type",
             "eid"
           ],
           "properties": {
-            "acct_type": {
+            "account_type": {
               "type": "string"
             },
             "eid": {

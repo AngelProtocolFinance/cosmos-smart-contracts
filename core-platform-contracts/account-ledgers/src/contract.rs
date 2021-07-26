@@ -71,9 +71,9 @@ pub fn execute(
         ExecuteMsg::UpdateOwner { new_owner } => update_owner(deps, env, info, new_owner),
         ExecuteMsg::UpdateStrategy {
             eid,
-            acct_type,
+            account_type,
             strategy,
-        } => update_strategy(deps, env, info, eid, acct_type, strategy),
+        } => update_strategy(deps, env, info, eid, account_type, strategy),
         ExecuteMsg::VaultAdd { vault_addr, vault } => vault_add(deps, env, info, vault_addr, vault),
         ExecuteMsg::VaultUpdateStatus {
             vault_addr,
@@ -151,7 +151,7 @@ pub fn update_strategy(
     _env: Env,
     info: MessageInfo,
     eid: String,
-    acct_type: String,
+    account_type: String,
     strategy: Strategy,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -160,7 +160,7 @@ pub fn update_strategy(
     }
 
     // this fails if no account is there
-    let account_id = format!("{}_{}", acct_type, eid);
+    let account_id = format!("{}_{}", account_type, eid);
     let mut account = ACCOUNTS.load(deps.storage, account_id.clone())?;
 
     // update account strategy attribute with the newly passed strategy
@@ -279,11 +279,11 @@ pub fn execute_receive(
         ReceiveMsg::CreateAcct(msg) => execute_create(deps, env, msg, msg_sender),
         ReceiveMsg::Deposit {
             eid,
-            acct_type,
+            account_type,
             split,
-        } => execute_deposit(deps, info, eid, acct_type, split),
-        ReceiveMsg::VaultReceipt { eid, acct_type } => {
-            execute_vault_receipt(deps, info, eid, acct_type)
+        } => execute_deposit(deps, info, eid, account_type, split),
+        ReceiveMsg::VaultReceipt { eid, account_type } => {
+            execute_vault_receipt(deps, info, eid, account_type)
         }
     }
 }
@@ -292,7 +292,7 @@ pub fn execute_vault_receipt(
     deps: DepsMut,
     info: MessageInfo,
     eid: String,
-    acct_type: String,
+    account_type: String,
 ) -> Result<Response, ContractError> {
     // this lookup fails if the token deposit was not coming from an Asset Vault SC
     let vault = VAULTS.load(deps.storage, info.sender.to_string())?;
@@ -301,7 +301,7 @@ pub fn execute_vault_receipt(
     }
 
     // this fails if no account is there
-    let account_id = format!("{}_{}", acct_type, eid);
+    let account_id = format!("{}_{}", account_type, eid);
     let mut account = ACCOUNTS.load(deps.storage, account_id.clone())?;
 
     let balance = Balance::from(info.funds);
@@ -318,7 +318,7 @@ pub fn execute_vault_receipt(
         attributes: vec![
             attr("action", "vault_receipt"),
             attr("eid", eid),
-            attr("acct_type", acct_type),
+            attr("account_type", account_type),
         ],
         ..Response::default()
     };
@@ -329,13 +329,13 @@ pub fn execute_deposit(
     deps: DepsMut,
     info: MessageInfo,
     eid: String,
-    acct_type: String,
+    account_type: String,
     _split: Option<Decimal>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
     // this fails if no account is there
-    let account_id = format!("{}_{}", acct_type, eid);
+    let account_id = format!("{}_{}", account_type, eid);
     let mut account = ACCOUNTS.load(deps.storage, account_id.clone())?;
 
     // this lookup fails if the token deposit was not coming from:
@@ -477,8 +477,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::Vault { address } => to_binary(&query_vault_details(deps, address)?),
         QueryMsg::VaultList { non_approved } => to_binary(&query_vault_list(deps, non_approved)?),
-        QueryMsg::Account { eid, acct_type } => {
-            to_binary(&query_account_details(deps, eid, acct_type)?)
+        QueryMsg::Account { eid, account_type } => {
+            to_binary(&query_account_details(deps, eid, account_type)?)
         }
         QueryMsg::AccountList { eid } => to_binary(&query_account_list(deps, eid)?),
     }
@@ -516,10 +516,10 @@ fn query_vault_list(_deps: Deps, _non_approved: Option<bool>) -> StdResult<Vault
 fn query_account_details(
     deps: Deps,
     eid: String,
-    acct_type: String,
+    account_type: String,
 ) -> StdResult<AccountDetailsResponse> {
     // this fails if no account is found
-    let account_id = format!("{}_{}", acct_type, eid);
+    let account_id = format!("{}_{}", account_type, eid);
     let account = ACCOUNTS.load(deps.storage, account_id.clone())?;
 
     let cw20_balance: StdResult<Vec<_>> = account
@@ -536,7 +536,7 @@ fn query_account_details(
 
     let details = AccountDetailsResponse {
         eid: eid,
-        account: acct_type,
+        account: account_type,
         strategy: account.strategy,
         cw20_balance: cw20_balance?,
     };
@@ -871,7 +871,7 @@ mod tests {
         let pleb = String::from("plebAccount");
         // create an account id for a fictional Endowment (EID)
         let eid = String::from("GWRGDRGERGRGRGDRGDRGSGSDFS");
-        let acct_type = String::from("locked");
+        let account_type = String::from("locked");
 
         let instantiate_msg = InstantiateMsg {
             cw20_approved_coins: Some(vec![String::from("bar_token"), String::from("foo_token")]),
@@ -923,9 +923,9 @@ mod tests {
         assert_eq!(0, res.messages.len());
 
         // should be able to get a created account now (ex. Locked Acct)
-        let res = query_account_details(deps.as_ref(), eid.clone(), acct_type.clone()).unwrap();
+        let res = query_account_details(deps.as_ref(), eid.clone(), account_type.clone()).unwrap();
         assert_eq!(
-            format!("{}_{}", acct_type.clone(), eid.clone()),
+            format!("{}_{}", account_type.clone(), eid.clone()),
             format!("{}_{}", res.account, res.eid)
         );
     }

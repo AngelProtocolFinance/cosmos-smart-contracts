@@ -53,7 +53,7 @@ pub enum ExecuteMsg {
     // Replace an Account's Strategy with that given.
     UpdateStrategy {
         eid: String,       // EID
-        acct_type: String, // prefix ("locked" or "liquid")
+        account_type: String, // prefix ("locked" or "liquid")
         strategy: Strategy,
     },
     // This accepts a properly-encoded ReceiveMsg from a cw20 contract
@@ -67,12 +67,12 @@ pub enum ReceiveMsg {
     // Add cw20 tokens sent for a specific account
     Deposit {
         eid: String,            // EID
-        acct_type: String,      // prefix ("locked" or "liquid")
+        account_type: String,      // prefix ("locked" or "liquid")
         split: Option<Decimal>, // optionally includes a split decimal value
     },
     VaultReceipt {
         eid: String,       // EID
-        acct_type: String, // prefix ("locked" or "liquid")
+        account_type: String, // prefix ("locked" or "liquid")
     },
 }
 
@@ -105,7 +105,7 @@ pub enum QueryMsg {
     // Returns AccountDetailsResponse
     Account {
         eid: String,       // EID
-        acct_type: String, // prefix ("locked" or "liquid")
+        account_type: String, // prefix ("locked" or "liquid")
     },
     // Get details on all Accounts. If passed, restrict to a given EID argument
     // Returns AccountListResponse
