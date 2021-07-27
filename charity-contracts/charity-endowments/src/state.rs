@@ -56,5 +56,20 @@ impl Endowment {
         false
     }
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct Strategy {
+    pub invested: Vec<StrategyComponent>,
+    pub cash: u8, // possibly use impl function to calculate remainder from invested strategies instead?
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct StrategyComponent {
+    pub address: Addr, // Asset Vault SC Address
+    pub percentage: u8,
+}
+
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const ENDOWMENTS: Map<String, Endowment> = Map::new("endowment");
