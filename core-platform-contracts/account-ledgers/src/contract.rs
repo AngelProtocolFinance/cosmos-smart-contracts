@@ -1,10 +1,10 @@
 use cosmwasm_std::{
-    attr, entry_point, from_binary, to_binary, Addr, Api, BankMsg, Binary, Decimal, Deps, DepsMut,
-    Env, MessageInfo, Response, StdResult, SubMsg, WasmMsg,
+    attr, entry_point, from_binary, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env,
+    MessageInfo, Response, StdResult, SubMsg, WasmMsg,
 };
 
 use cw2::{get_contract_version, set_contract_version};
-use cw20::{Balance, Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg, Cw20ReceiveMsg};
 
 use crate::error::ContractError;
 use crate::msg::{
@@ -21,36 +21,23 @@ use crate::state::{
 const CONTRACT_NAME: &str = "account-ledgers";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-pub fn addr_approved_coins(
-    approved_coins: &Option<Vec<String>>,
-    api: &dyn Api,
-) -> StdResult<Vec<Addr>> {
-    match approved_coins.as_ref() {
-        Some(v) => v.iter().map(|h| api.addr_validate(h)).collect(),
-        None => Ok(vec![]),
-    }
-}
-
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: InstantiateMsg,
+    _msg: InstantiateMsg,
 ) -> StdResult<Response> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-    // convert given approved_coins to addr for storage
-    let approved_coins = addr_approved_coins(&msg.cw20_approved_coins, deps.api)?;
 
     // apply the initial configs passed
     CONFIG.save(
         deps.storage,
         &Config {
-            owner: info.sender,
-            charity_endowment_sc: deps.api.addr_validate("XXXXXXXXXXXXXXXXXXXXXX")?,
-            index_fund_sc: deps.api.addr_validate("XXXXXXXXXXXXXXXXXXXXXX")?,
-            cw20_approved_coins: approved_coins,
+            owner_addr: info.sender,
+            charity_endowment_contract: deps.api.addr_validate("XXXXXXXXXXXXXXXXXXXXXX")?,
+            index_fund_contract: deps.api.addr_validate("XXXXXXXXXXXXXXXXXXXXXX")?,
+            approved_coins: vec![],
         },
     )?;
 
@@ -64,10 +51,16 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
+    let funds = Balance::from(info.funds.clone());
     match msg {
         ExecuteMsg::CreateAcct(msg) => execute_create(deps, env, msg, &info.sender.clone()),
-        ExecuteMsg::Receive(msg) => execute_receive(deps, env, info, msg),
         ExecuteMsg::UpdateConfig(msg) => update_config(deps, env, info, msg),
+        ExecuteMsg::Deposit(msg) => {
+            execute_deposit(deps, info, funds.clone(), msg.eid, msg.account_type)
+        }
+        ExecuteMsg::VaultReceipt(msg) => {
+            execute_vault_receipt(deps, info, funds.clone(), msg.eid, msg.account_type)
+        }
         ExecuteMsg::UpdateOwner { new_owner } => update_owner(deps, env, info, new_owner),
         ExecuteMsg::UpdateStrategy {
             eid,
@@ -80,13 +73,16 @@ pub fn execute(
             approved,
         } => vault_update_status(deps, env, info, vault_addr, approved),
         ExecuteMsg::VaultRemove { vault_addr } => vault_remove(deps, env, info, vault_addr),
-        ExecuteMsg::Liquidate {
-            liquidate,
-            beneficiary,
-        } => execute_liquidate(deps, env, info, liquidate, beneficiary),
-        ExecuteMsg::Terminate { terminate, fund } => {
-            execute_terminate(deps, env, info, terminate, fund)
+        ExecuteMsg::Liquidate { eid, beneficiary } => {
+            execute_liquidate(deps, env, info, eid, beneficiary)
         }
+        ExecuteMsg::TerminateToFund { eid, fund } => {
+            execute_terminate_to_fund(deps, env, info, eid, fund)
+        }
+        ExecuteMsg::TerminateToAddress { eid, beneficiary } => {
+            execute_terminate_to_address(deps, env, info, eid, beneficiary)
+        }
+        ExecuteMsg::Receive(msg) => execute_receive(deps, info, msg),
     }
 }
 
@@ -99,12 +95,12 @@ pub fn update_owner(
     let new_owner = deps.api.addr_validate(&new_owner)?;
     let config = CONFIG.load(deps.storage)?;
     // only the owner of the contract can update the configs...for now
-    if info.sender != config.owner {
+    if info.sender != config.owner_addr {
         return Err(ContractError::Unauthorized {});
     }
     // update config attributes with newly passed args
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.owner = new_owner;
+        config.owner_addr = new_owner;
         Ok(config)
     })?;
 
@@ -124,22 +120,20 @@ pub fn update_config(
     let config = CONFIG.load(deps.storage)?;
 
     // only the owner of the contract can update the configs
-    if info.sender != config.owner {
+    if info.sender != config.owner_addr {
         return Err(ContractError::Unauthorized {});
     }
 
-    // convert given approved_coins to addr for storage
-    let approved_coins = addr_approved_coins(&msg.cw20_approved_coins, deps.api)?;
-
     // validate SC address strings passed
-    let charity_endowment_sc = deps.api.addr_validate(&msg.charity_endowment_sc)?;
-    let index_fund_sc = deps.api.addr_validate(&msg.index_fund_sc)?;
+    let charity_endowment_contract = deps.api.addr_validate(&msg.charity_endowment_contract)?;
+    let index_fund_contract = deps.api.addr_validate(&msg.index_fund_contract)?;
 
     // update config attributes with newly passed args
+    let approved_coins_list = msg.addr_approved_list(deps.api)?;
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.charity_endowment_sc = charity_endowment_sc;
-        config.index_fund_sc = index_fund_sc;
-        config.cw20_approved_coins = approved_coins;
+        config.charity_endowment_contract = charity_endowment_contract;
+        config.index_fund_contract = index_fund_contract;
+        config.approved_coins = approved_coins_list;
         Ok(config)
     })?;
 
@@ -155,7 +149,7 @@ pub fn update_strategy(
     strategy: Strategy,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    if info.sender != config.charity_endowment_sc {
+    if info.sender != config.charity_endowment_contract {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -181,7 +175,7 @@ pub fn vault_add(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender != config.owner {
+    if info.sender != config.owner_addr {
         return Err(ContractError::Unauthorized {});
     }
     // save the new vault to storage
@@ -198,7 +192,7 @@ pub fn vault_update_status(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender != config.owner {
+    if info.sender != config.owner_addr {
         return Err(ContractError::Unauthorized {});
     }
     // try to look up the given vault in Storage
@@ -218,7 +212,7 @@ pub fn vault_remove(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender != config.owner {
+    if info.sender != config.owner_addr {
         return Err(ContractError::Unauthorized {});
     }
     // try to look up the given vault in Storage
@@ -235,7 +229,7 @@ pub fn execute_create(
     sender: &Addr,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    if sender != &config.charity_endowment_sc {
+    if sender != &config.charity_endowment_contract {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -269,21 +263,18 @@ pub fn execute_create(
 
 pub fn execute_receive(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     wrapper: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
-    let msg: ReceiveMsg = from_binary(&wrapper.msg)?;
-    let msg_sender = &deps.api.addr_validate(&wrapper.sender)?;
+    let balance = Balance::Cw20(Cw20CoinVerified {
+        address: info.sender.clone(),
+        amount: wrapper.amount,
+    });
+    let msg = from_binary(&wrapper.msg)?;
     match msg {
-        ReceiveMsg::CreateAcct(msg) => execute_create(deps, env, msg, msg_sender),
-        ReceiveMsg::Deposit {
-            eid,
-            account_type,
-            split,
-        } => execute_deposit(deps, info, eid, account_type, split),
-        ReceiveMsg::VaultReceipt { eid, account_type } => {
-            execute_vault_receipt(deps, info, eid, account_type)
+        ReceiveMsg::Deposit(msg) => execute_deposit(deps, info, balance, msg.eid, msg.account_type),
+        ReceiveMsg::VaultReceipt(msg) => {
+            execute_vault_receipt(deps, info, balance, msg.eid, msg.account_type)
         }
     }
 }
@@ -291,6 +282,7 @@ pub fn execute_receive(
 pub fn execute_vault_receipt(
     deps: DepsMut,
     info: MessageInfo,
+    balance: Balance,
     eid: String,
     account_type: String,
 ) -> Result<Response, ContractError> {
@@ -304,7 +296,6 @@ pub fn execute_vault_receipt(
     let account_id = format!("{}_{}", account_type, eid);
     let mut account = ACCOUNTS.load(deps.storage, account_id.clone())?;
 
-    let balance = Balance::from(info.funds);
     if balance.is_empty() {
         return Err(ContractError::EmptyBalance {});
     }
@@ -328,9 +319,9 @@ pub fn execute_vault_receipt(
 pub fn execute_deposit(
     deps: DepsMut,
     info: MessageInfo,
+    balance: Balance,
     eid: String,
     account_type: String,
-    _split: Option<Decimal>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -340,22 +331,18 @@ pub fn execute_deposit(
 
     // this lookup fails if the token deposit was not coming from:
     // an Asset Vault SC, the Charity Endownment SC, or the Index Fund SC
-    if info.sender != config.charity_endowment_sc || info.sender != config.index_fund_sc {
+    if info.sender != config.charity_endowment_contract || info.sender != config.index_fund_contract
+    {
         return Err(ContractError::Unauthorized {});
     }
 
-    let balance = Balance::from(info.funds);
     if balance.is_empty() {
         return Err(ContractError::EmptyBalance {});
     }
 
     if let Balance::Cw20(token) = &balance {
         // ensure the token is on the approved_coins
-        if !config
-            .cw20_approved_coins
-            .iter()
-            .any(|t| t == &token.address)
-        {
+        if !config.approved_coins.iter().any(|t| t == &token.address) {
             return Err(ContractError::NotInApprovedCoins {});
         }
     };
@@ -367,8 +354,9 @@ pub fn execute_deposit(
 
     let res = Response {
         attributes: vec![
-            attr("action", "deposit_specific"),
-            attr("account_id", account_id),
+            attr("action", "deposit"),
+            attr("eid", eid),
+            attr("account_type", account_type),
         ],
         ..Response::default()
     };
@@ -380,76 +368,119 @@ pub fn execute_liquidate(
     _env: Env,
     info: MessageInfo,
     eid: String,
-    _beneficiary: String,
+    beneficiary: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    if info.sender != config.charity_endowment_sc {
-        Err(ContractError::Unauthorized {})
-    } else {
-        for prefix in ["locked", "liquid"].iter() {
-            let account_id = format!("{}_{}", prefix, eid);
-            // this fails if no account is found
-            let account = ACCOUNTS.load(deps.storage, account_id.clone())?;
-            // we delete the account
-            ACCOUNTS.remove(deps.storage, account_id.clone());
-            // send all tokens out to the index fund sc
-            let _messages = send_tokens(&config.index_fund_sc, &account.balance)?;
-        }
-
-        let attributes = vec![
-            attr("action", "liquidate"),
-            attr("eid", eid.clone()),
-            attr("to", config.owner),
-        ];
-        let res = Response {
-            attributes: attributes,
-            ..Response::default()
-        };
-        Ok(res)
+    if info.sender != config.charity_endowment_contract {
+        return Err(ContractError::Unauthorized {});
     }
+    // validate the beneficiary address passed
+    let beneficiary_addr = deps.api.addr_validate(&beneficiary)?;
+
+    for prefix in ["locked", "liquid"].iter() {
+        let account_id = format!("{}_{}", prefix, eid);
+        // this fails if no account is found
+        let account = ACCOUNTS.load(deps.storage, account_id.clone())?;
+        // we delete the account
+        ACCOUNTS.remove(deps.storage, account_id.clone());
+        // send all tokens out to the index fund sc
+        let _messages = send_tokens(&config.index_fund_contract, &account.balance)?;
+    }
+
+    let attributes = vec![attr("action", "liquidate"), attr("to", beneficiary_addr)];
+    let res = Response {
+        attributes: attributes,
+        ..Response::default()
+    };
+    Ok(res)
 }
 
-pub fn execute_terminate(
+pub fn execute_terminate_to_address(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     eid: String,
-    _fund: String,
+    beneficiary: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    if info.sender != config.owner {
-        Err(ContractError::Unauthorized {})
-    } else {
-        for prefix in ["locked", "liquid"].iter() {
-            let account_id = format!("{}_{}", prefix, eid);
-            // this fails if no account is found
-            let account = ACCOUNTS.load(deps.storage, account_id.clone())?;
-            // we delete the account
-            ACCOUNTS.remove(deps.storage, account_id.clone());
-            // send all tokens out to the index fund sc
-            let _messages = send_tokens(&config.index_fund_sc, &account.balance)?;
-        }
 
-        let attributes = vec![
-            attr("action", "terminate"),
-            attr("eid", eid.clone()),
-            attr("to", config.index_fund_sc),
-        ];
-        let res = Response {
-            attributes: attributes,
-            ..Response::default()
-        };
-        Ok(res)
+    if info.sender != config.owner_addr {
+        return Err(ContractError::Unauthorized {});
     }
+
+    // validate the beneficiary address passed
+    let beneficiary_addr = deps.api.addr_validate(&beneficiary)?;
+
+    let mut messages = vec![];
+    for prefix in ["locked", "liquid"].iter() {
+        let account_id = format!("{}_{}", prefix, eid);
+        // this fails if no account is found
+        let account = ACCOUNTS.load(deps.storage, account_id.clone())?;
+        // we delete the account
+        ACCOUNTS.remove(deps.storage, account_id.clone());
+        // send all tokens out to the index fund sc
+        messages.append(&mut send_tokens(&beneficiary_addr, &account.balance)?);
+    }
+
+    let attributes = vec![attr("action", "terminate"), attr("to", beneficiary_addr)];
+    let res = Response {
+        messages: messages,
+        attributes: attributes,
+        ..Response::default()
+    };
+    Ok(res)
+}
+
+pub fn execute_terminate_to_fund(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    eid: String,
+    fund: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender != config.owner_addr {
+        return Err(ContractError::Unauthorized {});
+    }
+    let mut messages = vec![];
+    for prefix in ["locked", "liquid"].iter() {
+        let account_id = format!("{}_{}", prefix, eid);
+        // this fails if no account is found
+        let account = ACCOUNTS.load(deps.storage, account_id.clone())?;
+        // we delete the account
+        ACCOUNTS.remove(deps.storage, account_id.clone());
+        // send all tokens out to the index fund sc
+        messages.append(&mut send_tokens(
+            &config.index_fund_contract,
+            &account.balance,
+        )?);
+    }
+
+    let attributes = vec![
+        attr("action", "terminate"),
+        attr("fund_id", fund),
+        attr("to", config.index_fund_contract),
+    ];
+    let res = Response {
+        messages: messages,
+        attributes: attributes,
+        ..Response::default()
+    };
+    Ok(res)
 }
 
 fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<SubMsg>> {
     let native_balance = &balance.native;
-    let mut msgs: Vec<SubMsg> = vec![SubMsg::new(BankMsg::Send {
-        to_address: to.into(),
-        amount: native_balance.to_vec(),
-    })];
+    let mut msgs: Vec<SubMsg> = if native_balance.is_empty() {
+        vec![]
+    } else {
+        vec![SubMsg::new(BankMsg::Send {
+            to_address: to.into(),
+            amount: native_balance.to_vec(),
+        })]
+    };
 
     let cw20_balance = &balance.cw20;
     let cw20_msgs: StdResult<Vec<_>> = cw20_balance
@@ -488,9 +519,10 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
 
     let res = ConfigResponse {
-        charity_endowment_sc: config.charity_endowment_sc.to_string(),
-        index_fund_sc: config.index_fund_sc.to_string(),
-        cw20_approved_coins: config.human_approved_coins(),
+        owner_addr: config.owner_addr.to_string(),
+        charity_endowment_contract: config.charity_endowment_contract.to_string(),
+        index_fund_contract: config.index_fund_contract.to_string(),
+        approved_coins: config.human_approved_coins(),
     };
     Ok(res)
 }
@@ -522,7 +554,7 @@ fn query_account_details(
     let account_id = format!("{}_{}", account_type, eid);
     let account = ACCOUNTS.load(deps.storage, account_id.clone())?;
 
-    let cw20_balance: StdResult<Vec<_>> = account
+    let balance: StdResult<Vec<_>> = account
         .balance
         .cw20
         .into_iter()
@@ -536,9 +568,9 @@ fn query_account_details(
 
     let details = AccountDetailsResponse {
         eid: eid,
-        account: account_type,
+        account_type: account_type,
         strategy: account.strategy,
-        cw20_balance: cw20_balance?,
+        balance: balance?,
     };
     Ok(details)
 }
@@ -569,9 +601,7 @@ mod tests {
     #[test]
     fn test_proper_initialization() {
         let mut deps = mock_dependencies(&[]);
-        let instantiate_msg = InstantiateMsg {
-            cw20_approved_coins: Some(vec![String::from("earth")]),
-        };
+        let instantiate_msg = InstantiateMsg {};
         let info = mock_info("creator", &coins(100000, "earth"));
         let env = mock_env();
         let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
@@ -584,9 +614,7 @@ mod tests {
         // meet the cast of characters
         let ap_team = String::from("angelprotocolteamdano");
 
-        let instantiate_msg = InstantiateMsg {
-            cw20_approved_coins: Some(vec![String::from("earth")]),
-        };
+        let instantiate_msg = InstantiateMsg {};
         let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
         let env = mock_env();
         let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
@@ -598,12 +626,11 @@ mod tests {
         let mut deps = mock_dependencies(&[]);
         // meet the cast of characters
         let ap_team = String::from("angelprotocolteamdano");
-        let trusted_sc = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let charity_endowment_contract = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let index_fund_contract = String::from("SDFGRHAETHADFARHSRTHADGG");
         let pleb = String::from("plebAccount");
 
-        let instantiate_msg = InstantiateMsg {
-            cw20_approved_coins: Some(vec![String::from("earth")]),
-        };
+        let instantiate_msg = InstantiateMsg {};
         let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
         let env = mock_env();
         let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
@@ -611,9 +638,9 @@ mod tests {
 
         // update the approved coins list and trusted SC addresses
         let msg = UpdateConfigMsg {
-            charity_endowment_sc: trusted_sc.clone(),
-            index_fund_sc: String::from("SDFGRHAETHADFARHSRTHADGG"),
-            cw20_approved_coins: Some(vec![String::from("earth"), String::from("mars")]),
+            charity_endowment_contract: charity_endowment_contract.clone(),
+            index_fund_contract: index_fund_contract.clone(),
+            approved_coins: Some(vec![String::from("earth"), String::from("mars")]),
         };
         let res = execute(
             deps.as_mut(),
@@ -626,13 +653,17 @@ mod tests {
 
         // check that new configs were set
         let res = query_config(deps.as_ref()).unwrap();
-        assert_eq!(2, res.cw20_approved_coins.len());
+        assert_eq!(2, res.approved_coins.len());
+        assert_eq!(
+            charity_endowment_contract.clone(),
+            res.charity_endowment_contract
+        );
 
         // Not just anyone can update the configs! Only owner can.
         let msg = UpdateConfigMsg {
-            charity_endowment_sc: trusted_sc.clone(),
-            index_fund_sc: String::from("SDFGRHAETHADFARHSRTHADGG"),
-            cw20_approved_coins: Some(vec![String::from("earth")]),
+            charity_endowment_contract: charity_endowment_contract.clone(),
+            index_fund_contract: index_fund_contract.clone(),
+            approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(pleb.as_ref(), &coins(100000, "earth "));
         let env = mock_env();
@@ -646,12 +677,11 @@ mod tests {
         let mut deps = mock_dependencies(&[]);
         // meet the cast of characters
         let ap_team = String::from("angelprotocolteamdano");
-        let trusted_sc = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let charity_endowment_contract = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let index_fund_contract = String::from("SDFGRHAETHADFARHSRTHADGG");
         let pleb = String::from("plebAccount");
 
-        let instantiate_msg = InstantiateMsg {
-            cw20_approved_coins: Some(vec![String::from("earth")]),
-        };
+        let instantiate_msg = InstantiateMsg {};
         let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
         let env = mock_env();
         let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
@@ -669,11 +699,15 @@ mod tests {
         .unwrap();
         assert_eq!(0, res.messages.len());
 
+        // check changes saved and can be recalled
+        let res = query_config(deps.as_ref()).unwrap();
+        assert_eq!(pleb.clone(), res.owner_addr);
+
         // Original AP_Team address should not be able to update the configs now
         let msg = UpdateConfigMsg {
-            charity_endowment_sc: trusted_sc.clone(),
-            index_fund_sc: String::from("SDFGRHAETHADFARHSRTHADGG"),
-            cw20_approved_coins: Some(vec![String::from("earth")]),
+            charity_endowment_contract: charity_endowment_contract.clone(),
+            index_fund_contract: index_fund_contract.clone(),
+            approved_coins: Some(vec![String::from("earth")]),
         };
         let info = mock_info(ap_team.as_ref(), &coins(100000, "earth "));
         let env = mock_env();
@@ -687,12 +721,11 @@ mod tests {
         let mut deps = mock_dependencies(&[]);
         // meet the cast of characters
         let ap_team = String::from("angelprotocolteamdano");
-        let trusted_sc = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let charity_endowment_contract = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let index_fund_contract = String::from("SDFGRHAETHADFARHSRTHADGG");
         let pleb = String::from("plebAccount");
 
-        let instantiate_msg = InstantiateMsg {
-            cw20_approved_coins: Some(vec![String::from("earth")]),
-        };
+        let instantiate_msg = InstantiateMsg {};
         let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
         let env = mock_env();
         let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
@@ -700,9 +733,9 @@ mod tests {
 
         // update the approved coins list and trusted SC addresses
         let msg = UpdateConfigMsg {
-            charity_endowment_sc: trusted_sc.clone(),
-            index_fund_sc: String::from("SDFGRHAETHADFARHSRTHADGG"),
-            cw20_approved_coins: Some(vec![String::from("earth"), String::from("mars")]),
+            charity_endowment_contract: charity_endowment_contract.clone(),
+            index_fund_contract: index_fund_contract.clone(),
+            approved_coins: Some(vec![String::from("earth"), String::from("mars")]),
         };
         let res = execute(
             deps.as_mut(),
@@ -730,7 +763,7 @@ mod tests {
         assert_eq!(err, ContractError::Unauthorized {});
 
         // Create the account for real from the trusted SC address
-        let info = mock_info(&trusted_sc.clone(), &coins(100000, "earth"));
+        let info = mock_info(&charity_endowment_contract.clone(), &coins(100000, "earth"));
         let env = mock_env();
         let res = execute(
             deps.as_mut(),
@@ -747,12 +780,11 @@ mod tests {
         let mut deps = mock_dependencies(&[]);
         // meet the cast of characters
         let ap_team = String::from("angelprotocolteamdano");
-        let trusted_sc = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let charity_endowment_contract = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let index_fund_contract = String::from("SDFGRHAETHADFARHSRTHADGG");
         let pleb = String::from("plebAccount");
 
-        let instantiate_msg = InstantiateMsg {
-            cw20_approved_coins: Some(vec![String::from("earth")]),
-        };
+        let instantiate_msg = InstantiateMsg {};
         let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
         let env = mock_env();
         let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
@@ -760,9 +792,9 @@ mod tests {
 
         // update the approved coins list and trusted SC addresses
         let msg = UpdateConfigMsg {
-            charity_endowment_sc: trusted_sc.clone(),
-            index_fund_sc: String::from("SDFGRHAETHADFARHSRTHADGG"),
-            cw20_approved_coins: Some(vec![String::from("earth"), String::from("mars")]),
+            charity_endowment_contract: charity_endowment_contract.clone(),
+            index_fund_contract: index_fund_contract.clone(),
+            approved_coins: Some(vec![String::from("earth"), String::from("mars")]),
         };
         let res = execute(
             deps.as_mut(),
@@ -777,7 +809,7 @@ mod tests {
         let msg_locked = CreateAcctMsg {
             eid: String::from("XCEMQTWTETGSGSRHJTUIQADG"),
         };
-        let info = mock_info(trusted_sc.as_ref(), &coins(100000, "earth"));
+        let info = mock_info(charity_endowment_contract.as_ref(), &coins(100000, "earth"));
         let env = mock_env();
         let res = execute(
             deps.as_mut(),
@@ -795,9 +827,9 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::Terminate {
-                terminate: String::from("XCEMQTWTETGSGSRHJTUIQADG"),
-                fund: String::from("1"),
+            ExecuteMsg::TerminateToAddress {
+                eid: String::from("XCEMQTWTETGSGSRHJTUIQADG"),
+                beneficiary: ap_team.clone(),
             },
         )
         .unwrap_err();
@@ -810,9 +842,9 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::Terminate {
-                terminate: String::from("XCEMQTWTETGSGSRHJTUIQADG"),
-                fund: String::from("1"),
+            ExecuteMsg::TerminateToAddress {
+                eid: String::from("XCEMQTWTETGSGSRHJTUIQADG"),
+                beneficiary: ap_team.clone(),
             },
         )
         .unwrap();
@@ -867,15 +899,14 @@ mod tests {
         let mut deps = mock_dependencies(&[]);
         // meet the cast of characters
         let ap_team = String::from("angelprotocolteamdano");
-        let trusted_sc = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let charity_endowment_contract = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let index_fund_contract = String::from("SDFGRHAETHADFARHSRTHADGG");
         let pleb = String::from("plebAccount");
         // create an account id for a fictional Endowment (EID)
         let eid = String::from("GWRGDRGERGRGRGDRGDRGSGSDFS");
         let account_type = String::from("locked");
 
-        let instantiate_msg = InstantiateMsg {
-            cw20_approved_coins: Some(vec![String::from("bar_token"), String::from("foo_token")]),
-        };
+        let instantiate_msg = InstantiateMsg {};
         let info = mock_info(ap_team.as_ref(), &coins(100000, "bar_token"));
         let env = mock_env();
         let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
@@ -883,9 +914,9 @@ mod tests {
 
         // update the approved coins list and trusted SC addresses
         let msg = UpdateConfigMsg {
-            charity_endowment_sc: trusted_sc.clone(),
-            index_fund_sc: String::from("SDFGRHAETHADFARHSRTHADGG"),
-            cw20_approved_coins: Some(vec![String::from("earth"), String::from("mars")]),
+            charity_endowment_contract: charity_endowment_contract.clone(),
+            index_fund_contract: index_fund_contract.clone(),
+            approved_coins: Some(vec![String::from("earth"), String::from("mars")]),
         };
         let res = execute(
             deps.as_mut(),
@@ -911,7 +942,10 @@ mod tests {
 
         // create a set of new accounts
         let msg = CreateAcctMsg { eid: eid.clone() };
-        let info = mock_info(trusted_sc.as_ref(), &coins(100000, "bar_token"));
+        let info = mock_info(
+            charity_endowment_contract.as_ref(),
+            &coins(100000, "bar_token"),
+        );
         let env = mock_env();
         let res = execute(
             deps.as_mut(),
@@ -924,10 +958,8 @@ mod tests {
 
         // should be able to get a created account now (ex. Locked Acct)
         let res = query_account_details(deps.as_ref(), eid.clone(), account_type.clone()).unwrap();
-        assert_eq!(
-            format!("{}_{}", account_type.clone(), eid.clone()),
-            format!("{}_{}", res.account, res.eid)
-        );
+        assert_eq!(eid.clone(), res.eid);
+        assert_eq!(account_type.clone(), res.account_type);
     }
 
     #[test]
@@ -935,13 +967,12 @@ mod tests {
         let mut deps = mock_dependencies(&[]);
         // meet the cast of characters
         let ap_team = String::from("angelprotocolteamdano");
-        let trusted_sc = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let charity_endowment_contract = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let index_fund_contract = String::from("SDFGRHAETHADFARHSRTHADGG");
         let pleb = String::from("plebAccount");
         let asset_vault = String::from("greatestAssetVaultEver");
 
-        let instantiate_msg = InstantiateMsg {
-            cw20_approved_coins: Some(vec![String::from("bar_token"), String::from("foo_token")]),
-        };
+        let instantiate_msg = InstantiateMsg {};
         let info = mock_info(ap_team.as_ref(), &coins(100000, "bar_token"));
         let env = mock_env();
         let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
@@ -949,9 +980,9 @@ mod tests {
 
         // update the approved coins list and trusted SC addresses
         let msg = UpdateConfigMsg {
-            charity_endowment_sc: trusted_sc.clone(),
-            index_fund_sc: String::from("SDFGRHAETHADFARHSRTHADGG"),
-            cw20_approved_coins: Some(vec![String::from("earth"), String::from("mars")]),
+            charity_endowment_contract: charity_endowment_contract.clone(),
+            index_fund_contract: index_fund_contract.clone(),
+            approved_coins: Some(vec![String::from("earth"), String::from("mars")]),
         };
         let res = execute(
             deps.as_mut(),

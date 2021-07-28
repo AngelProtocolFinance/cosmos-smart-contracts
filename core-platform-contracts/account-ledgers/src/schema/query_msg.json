@@ -1,15 +1,23 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "ReceiveMsg",
+  "title": "QueryMsg",
   "anyOf": [
     {
       "type": "object",
       "required": [
-        "create_acct"
+        "vault"
       ],
       "properties": {
-        "create_acct": {
-          "$ref": "#/definitions/CreateAcctMsg"
+        "vault": {
+          "type": "object",
+          "required": [
+            "address"
+          ],
+          "properties": {
+            "address": {
+              "type": "string"
+            }
+          }
         }
       },
       "additionalProperties": false
@@ -17,10 +25,30 @@
     {
       "type": "object",
       "required": [
-        "deposit"
+        "vault_list"
       ],
       "properties": {
-        "deposit": {
+        "vault_list": {
+          "type": "object",
+          "properties": {
+            "non_approved": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "account"
+      ],
+      "properties": {
+        "account": {
           "type": "object",
           "required": [
             "account_type",
@@ -41,39 +69,34 @@
     {
       "type": "object",
       "required": [
-        "vault_receipt"
+        "account_list"
       ],
       "properties": {
-        "vault_receipt": {
+        "account_list": {
           "type": "object",
-          "required": [
-            "account_type",
-            "eid"
-          ],
           "properties": {
-            "account_type": {
-              "type": "string"
-            },
             "eid": {
-              "type": "string"
+              "type": [
+                "string",
+                "null"
+              ]
             }
           }
         }
       },
       "additionalProperties": false
-    }
-  ],
-  "definitions": {
-    "CreateAcctMsg": {
+    },
+    {
       "type": "object",
       "required": [
-        "eid"
+        "config"
       ],
       "properties": {
-        "eid": {
-          "type": "string"
+        "config": {
+          "type": "object"
         }
-      }
+      },
+      "additionalProperties": false
     }
-  }
+  ]
 }

@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::Decimal;
+use cosmwasm_std::{Addr, Api, StdResult};
 use cw20::{Cw20Coin, Cw20ReceiveMsg};
 
 use crate::state::{AssetVault, Strategy};
@@ -10,15 +10,16 @@ use crate::state::{AssetVault, Strategy};
 pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
-pub struct InstantiateMsg {
-    // All possible contracts that we can accept Cw20 tokens from
-    pub cw20_approved_coins: Option<Vec<String>>,
-}
+pub struct InstantiateMsg {}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     CreateAcct(CreateAcctMsg),
+    // Add tokens sent for a specific account
+    Deposit(DepositMsg),
+    // Tokens are sent back to an Account from an Asset Vault
+    VaultReceipt(DepositMsg),
     // Add new AssetVault to VAULTS
     VaultAdd {
         vault_addr: String,
@@ -35,14 +36,19 @@ pub enum ExecuteMsg {
     },
     // Winding up of an endowment in good standing. Returns all funds to the Beneficiary.
     Liquidate {
-        liquidate: String,   // EID
+        eid: String,         // EID
         beneficiary: String, // Addr of the Beneficiary to receive funds
     },
-    // Destroys the endowment and returns all Balance funds to the parent index fund (if available)
-    // and to the current active index fund if not.
-    Terminate {
-        terminate: String, // EID
-        fund: String,      // Addr of the Beneficiary to receive funds
+    // Destroys the endowment and returns all Balance funds to an index fund and to the
+    // Index Fund ID provided
+    TerminateToFund {
+        eid: String,  // EID
+        fund: String, // Index Fund ID to receive funds
+    },
+    // Destroys the endowment and returns all Balance funds to the beneficiary addr (DANO treasury)
+    TerminateToAddress {
+        eid: String,         // EID
+        beneficiary: String, // Addr of the Beneficiary to receive funds
     },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
@@ -52,7 +58,7 @@ pub enum ExecuteMsg {
     },
     // Replace an Account's Strategy with that given.
     UpdateStrategy {
-        eid: String,       // EID
+        eid: String,          // EID
         account_type: String, // prefix ("locked" or "liquid")
         strategy: Strategy,
     },
@@ -63,17 +69,16 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ReceiveMsg {
-    CreateAcct(CreateAcctMsg),
-    // Add cw20 tokens sent for a specific account
-    Deposit {
-        eid: String,            // EID
-        account_type: String,      // prefix ("locked" or "liquid")
-        split: Option<Decimal>, // optionally includes a split decimal value
-    },
-    VaultReceipt {
-        eid: String,       // EID
-        account_type: String, // prefix ("locked" or "liquid")
-    },
+    // Add tokens sent for a specific account
+    Deposit(DepositMsg),
+    // Tokens are sent back to an Account from an Asset Vault
+    VaultReceipt(DepositMsg),
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct DepositMsg {
+    pub eid: String,          // EID
+    pub account_type: String, // prefix ("locked" or "liquid")
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -83,9 +88,18 @@ pub struct CreateAcctMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub charity_endowment_sc: String,
-    pub index_fund_sc: String,
-    pub cw20_approved_coins: Option<Vec<String>>,
+    pub charity_endowment_contract: String,
+    pub index_fund_contract: String,
+    pub approved_coins: Option<Vec<String>>,
+}
+
+impl UpdateConfigMsg {
+    pub fn addr_approved_list(&self, api: &dyn Api) -> StdResult<Vec<Addr>> {
+        match self.approved_coins.as_ref() {
+            Some(v) => v.iter().map(|h| api.addr_validate(h)).collect(),
+            None => Ok(vec![]),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -104,7 +118,7 @@ pub enum QueryMsg {
     // Get details for a single Account, given an Account ID argument
     // Returns AccountDetailsResponse
     Account {
-        eid: String,       // EID
+        eid: String,          // EID
         account_type: String, // prefix ("locked" or "liquid")
     },
     // Get details on all Accounts. If passed, restrict to a given EID argument
@@ -132,9 +146,9 @@ pub struct VaultListResponse {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct AccountDetailsResponse {
-    pub eid: String,     // EID
-    pub account: String, // prefix ("locked" or "liquid")
-    pub cw20_balance: Vec<Cw20Coin>,
+    pub eid: String,          // EID
+    pub account_type: String, // prefix ("locked" or "liquid")
+    pub balance: Vec<Cw20Coin>,
     pub strategy: Strategy,
 }
 
@@ -145,7 +159,8 @@ pub struct AccountListResponse {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub charity_endowment_sc: String,
-    pub index_fund_sc: String,
-    pub cw20_approved_coins: Vec<String>,
+    pub owner_addr: String,
+    pub charity_endowment_contract: String,
+    pub index_fund_contract: String,
+    pub approved_coins: Vec<String>,
 }

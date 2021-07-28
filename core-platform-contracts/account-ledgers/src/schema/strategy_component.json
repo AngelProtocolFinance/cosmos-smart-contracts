@@ -1,28 +1,19 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Config",
+  "title": "StrategyComponent",
   "type": "object",
   "required": [
-    "approved_coins",
-    "charity_endowment_sc",
-    "index_fund_sc",
-    "owner"
+    "address",
+    "percentage"
   ],
   "properties": {
-    "approved_coins": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "charity_endowment_sc": {
+    "address": {
       "$ref": "#/definitions/Addr"
     },
-    "index_fund_sc": {
-      "$ref": "#/definitions/Addr"
-    },
-    "owner": {
-      "$ref": "#/definitions/Addr"
+    "percentage": {
+      "type": "integer",
+      "format": "uint8",
+      "minimum": 0.0
     }
   },
   "definitions": {

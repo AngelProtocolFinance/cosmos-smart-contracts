@@ -1,12 +1,12 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "InstantiateMsg",
+  "title": "VaultListResponse",
   "type": "object",
   "required": [
-    "approved_coins"
+    "vaults"
   ],
   "properties": {
-    "approved_coins": {
+    "vaults": {
       "type": "array",
       "items": {
         "type": "string"
