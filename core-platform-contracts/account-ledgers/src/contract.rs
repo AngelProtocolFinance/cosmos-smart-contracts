@@ -597,6 +597,7 @@ mod tests {
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coin, coins, Uint128};
     use cw20::Cw20CoinVerified;
+    use crate::msg::DepositMsg;
 
     #[test]
     fn test_proper_initialization() {
@@ -1039,4 +1040,97 @@ mod tests {
         let res = query_vault_details(deps.as_ref(), asset_vault.clone()).unwrap();
         assert_eq!(String::from("Greatest Asset Vault Ever"), res.name);
     }
+
+    #[test]
+    fn test_deposits_to_account_ledgers() {
+        let mut deps = mock_dependencies(&[]);
+        // meet the cast of characters
+        let ap_team = String::from("angelprotocolteamdano");
+        let charity_endowment_contract = String::from("XCEMQTWTETGSGSRHJTUIQADG");
+        let index_fund_contract = String::from("SDFGRHAETHADFARHSRTHADGG");
+        let pleb = String::from("plebAccount");
+        // create an account id for a fictional Endowment (EID)
+        let eid = String::from("GWRGDRGERGRGRGDRGDRGSGSDFS");
+        let account_type = String::from("locked");
+
+        let instantiate_msg = InstantiateMsg {};
+        let info = mock_info(ap_team.as_ref(), &coins(100000, "bar_token"));
+        let env = mock_env();
+        let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+        assert_eq!(0, res.messages.len());
+
+        // update the approved coins list and trusted SC addresses
+        let msg = UpdateConfigMsg {
+            charity_endowment_contract: charity_endowment_contract.clone(),
+            index_fund_contract: index_fund_contract.clone(),
+            approved_coins: Some(vec![String::from("earth"), String::from("mars")]),
+        };
+        let res = execute(
+            deps.as_mut(),
+            env.clone(),
+            info.clone(),
+            ExecuteMsg::UpdateConfig(msg),
+        )
+        .unwrap();
+        assert_eq!(0, res.messages.len());
+
+        let deposit_msg = DepositMsg {
+            eid: eid.clone(),
+            account_type: account_type.clone(),
+        };
+
+        // test that non-safe SC addresses cannot deposit directly
+        let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+            sender: String::from("mars"),
+            amount: Uint128::new(1000),
+            msg: to_binary(&ExecuteMsg::Deposit(deposit_msg.clone())).unwrap(),
+        });
+        let info = mock_info(pleb.as_ref(), &coins(100000, "mars"));
+        let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+        assert_eq!(err, ContractError::Unauthorized {});
+
+        // test that approved SC addresses cannot send zero balances
+        let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+            sender: String::from("mars"),
+            amount: Uint128::zero(),
+            msg: to_binary(&ExecuteMsg::Deposit(deposit_msg.clone())).unwrap(),
+        });
+        let info = mock_info(charity_endowment_contract.as_ref(), &coins(100000, "mars"));
+        let err = execute(deps.as_mut(), mock_env(), info, msg.clone()).unwrap_err();
+        assert_eq!(err, ContractError::EmptyBalance {});
+
+        // test that approved SC addresses cannot deposit unapproved coins
+        let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+            sender: String::from("bar_token"),
+            amount: Uint128::new(1000),
+            msg: to_binary(&ExecuteMsg::Deposit(deposit_msg.clone())).unwrap(),
+        });
+        let info = mock_info(index_fund_contract.as_ref(), &coins(100000, "bar_token"));
+        let err = execute(deps.as_mut(), mock_env(), info, msg.clone()).unwrap_err();
+        assert_eq!(err, ContractError::NotInApprovedCoins {});
+
+        // test that approved SC addresses can deposit approved coins
+        // with greater than zero balances and are credited to the correct EID's Ledger
+        let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+            sender: String::from("mars"),
+            amount: Uint128::new(1000),
+            msg: to_binary(&ExecuteMsg::Deposit(deposit_msg.clone())).unwrap(),
+        });
+        let info = mock_info(charity_endowment_contract.as_ref(), &coins(100000, "mars"));
+        let res = execute(deps.as_mut(), mock_env(), info, msg.clone()).unwrap();
+        assert_eq!(0, res.messages.len());
+
+        // check deposit saved and can be recalled
+        let res = query_account_details(deps.as_ref(), eid.clone(), account_type.clone()).unwrap();
+        assert_eq!(eid.clone(), res.eid);
+        assert_eq!(account_type.clone(), res.account_type);
+        assert_eq!(
+            vec![Cw20Coin {
+                address: String::from("mars"),
+                amount: Uint128::new(1000)
+            }],
+            res.balance
+        );
+    }
+
 }
