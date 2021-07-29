@@ -4,7 +4,7 @@ use std::fs::create_dir_all;
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
 use account_ledgers::msg::{
-    AccountDetailsResponse, AccountListResponse, ConfigResponse, CreateAcctMsg, ExecuteMsg,
+    AccountDetailsResponse, AccountListResponse, ConfigResponse, CreateAccountMsg, ExecuteMsg,
     InstantiateMsg, QueryMsg, ReceiveMsg, UpdateConfigMsg, VaultDetailsResponse, VaultListResponse,
 };
 use account_ledgers::state::{
@@ -23,7 +23,7 @@ fn main() {
     export_schema(&schema_for!(AssetVault), &out_dir);
     export_schema(&schema_for!(Config), &out_dir);
     export_schema(&schema_for!(ConfigResponse), &out_dir);
-    export_schema(&schema_for!(CreateAcctMsg), &out_dir);
+    export_schema(&schema_for!(CreateAccountMsg), &out_dir);
     export_schema(&schema_for!(ExecuteMsg), &out_dir);
     export_schema(&schema_for!(GenericBalance), &out_dir);
     export_schema(&schema_for!(InstantiateMsg), &out_dir);
