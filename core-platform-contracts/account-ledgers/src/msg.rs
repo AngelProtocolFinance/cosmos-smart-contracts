@@ -15,7 +15,7 @@ pub struct InstantiateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    CreateAcct(CreateAcctMsg),
+    CreateAccount(CreateAccountMsg),
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     // Tokens are sent back to an Account from an Asset Vault
@@ -82,7 +82,7 @@ pub struct DepositMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct CreateAcctMsg {
+pub struct CreateAccountMsg {
     pub eid: String, // Endowment EID serves as the base for prefixed account IDs
 }
 

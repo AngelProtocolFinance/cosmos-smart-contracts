@@ -8,7 +8,7 @@ use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg, Cw20ReceiveMsg};
 
 use crate::error::ContractError;
 use crate::msg::{
-    AccountDetailsResponse, AccountListResponse, ConfigResponse, CreateAcctMsg, ExecuteMsg,
+    AccountDetailsResponse, AccountListResponse, ConfigResponse, CreateAccountMsg, ExecuteMsg,
     InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg, UpdateConfigMsg, VaultDetailsResponse,
     VaultListResponse,
 };
@@ -53,13 +53,13 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     let funds = Balance::from(info.funds.clone());
     match msg {
-        ExecuteMsg::CreateAcct(msg) => execute_create(deps, env, msg, &info.sender.clone()),
+        ExecuteMsg::CreateAccount(msg) => execute_create(deps, env, msg, &info.sender.clone()),
         ExecuteMsg::UpdateConfig(msg) => update_config(deps, env, info, msg),
         ExecuteMsg::Deposit(msg) => {
-            execute_deposit(deps, info, funds.clone(), msg.eid, msg.account_type)
+            execute_deposit(deps, info.sender, funds.clone(), msg.eid, msg.account_type)
         }
         ExecuteMsg::VaultReceipt(msg) => {
-            execute_vault_receipt(deps, info, funds.clone(), msg.eid, msg.account_type)
+            execute_vault_receipt(deps, info.sender, funds.clone(), msg.eid, msg.account_type)
         }
         ExecuteMsg::UpdateOwner { new_owner } => update_owner(deps, env, info, new_owner),
         ExecuteMsg::UpdateStrategy {
@@ -225,7 +225,7 @@ pub fn vault_remove(
 pub fn execute_create(
     deps: DepsMut,
     _env: Env,
-    msg: CreateAcctMsg,
+    msg: CreateAccountMsg,
     sender: &Addr,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -270,24 +270,25 @@ pub fn execute_receive(
         address: info.sender.clone(),
         amount: wrapper.amount,
     });
+    let sender_addr = deps.api.addr_validate(&wrapper.sender)?;
     let msg = from_binary(&wrapper.msg)?;
     match msg {
-        ReceiveMsg::Deposit(msg) => execute_deposit(deps, info, balance, msg.eid, msg.account_type),
+        ReceiveMsg::Deposit(msg) => execute_deposit(deps, sender_addr, balance, msg.eid, msg.account_type),
         ReceiveMsg::VaultReceipt(msg) => {
-            execute_vault_receipt(deps, info, balance, msg.eid, msg.account_type)
+            execute_vault_receipt(deps, sender_addr, balance, msg.eid, msg.account_type)
         }
     }
 }
 
 pub fn execute_vault_receipt(
     deps: DepsMut,
-    info: MessageInfo,
+    sender: Addr,
     balance: Balance,
     eid: String,
     account_type: String,
 ) -> Result<Response, ContractError> {
     // this lookup fails if the token deposit was not coming from an Asset Vault SC
-    let vault = VAULTS.load(deps.storage, info.sender.to_string())?;
+    let vault = VAULTS.load(deps.storage, sender.to_string())?;
     if !vault.approved {
         return Err(ContractError::Unauthorized {});
     }
@@ -318,7 +319,7 @@ pub fn execute_vault_receipt(
 
 pub fn execute_deposit(
     deps: DepsMut,
-    info: MessageInfo,
+    sender: Addr,
     balance: Balance,
     eid: String,
     account_type: String,
@@ -331,7 +332,7 @@ pub fn execute_deposit(
 
     // this lookup fails if the token deposit was not coming from:
     // an Asset Vault SC, the Charity Endownment SC, or the Index Fund SC
-    if info.sender != config.charity_endowment_contract || info.sender != config.index_fund_contract
+    if sender != config.charity_endowment_contract || sender != config.index_fund_contract
     {
         return Err(ContractError::Unauthorized {});
     }
@@ -747,7 +748,7 @@ mod tests {
         .unwrap();
         assert_eq!(0, res.messages.len());
 
-        let msg = CreateAcctMsg {
+        let msg = CreateAccountMsg {
             eid: String::from("GWRGDRGERGRGRGDRGDRGSGSDFS"),
         };
 
@@ -758,7 +759,7 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::CreateAcct(msg.clone()),
+            ExecuteMsg::CreateAccount(msg.clone()),
         )
         .unwrap_err();
         assert_eq!(err, ContractError::Unauthorized {});
@@ -770,7 +771,7 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::CreateAcct(msg),
+            ExecuteMsg::CreateAccount(msg),
         )
         .unwrap();
         assert_eq!(0, res.messages.len());
@@ -807,7 +808,7 @@ mod tests {
         assert_eq!(0, res.messages.len());
 
         // create a new account
-        let msg_locked = CreateAcctMsg {
+        let msg_locked = CreateAccountMsg {
             eid: String::from("XCEMQTWTETGSGSRHJTUIQADG"),
         };
         let info = mock_info(charity_endowment_contract.as_ref(), &coins(100000, "earth"));
@@ -816,7 +817,7 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::CreateAcct(msg_locked),
+            ExecuteMsg::CreateAccount(msg_locked),
         )
         .unwrap();
         assert_eq!(0, res.messages.len());
@@ -929,20 +930,20 @@ mod tests {
         assert_eq!(0, res.messages.len());
 
         // test a non-owner account can't create accounts
-        let msg = CreateAcctMsg { eid: eid.clone() };
+        let msg = CreateAccountMsg { eid: eid.clone() };
         let info = mock_info(pleb.as_ref(), &coins(100000, "bar_token"));
         let env = mock_env();
         let err = execute(
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::CreateAcct(msg),
+            ExecuteMsg::CreateAccount(msg),
         )
         .unwrap_err();
         assert_eq!(err, ContractError::Unauthorized {});
 
         // create a set of new accounts
-        let msg = CreateAcctMsg { eid: eid.clone() };
+        let msg = CreateAccountMsg { eid: eid.clone() };
         let info = mock_info(
             charity_endowment_contract.as_ref(),
             &coins(100000, "bar_token"),
@@ -952,7 +953,7 @@ mod tests {
             deps.as_mut(),
             env.clone(),
             info.clone(),
-            ExecuteMsg::CreateAcct(msg),
+            ExecuteMsg::CreateAccount(msg),
         )
         .unwrap();
         assert_eq!(0, res.messages.len());
@@ -1074,6 +1075,23 @@ mod tests {
         .unwrap();
         assert_eq!(0, res.messages.len());
 
+        // create a set of new accounts
+        let msg = CreateAccountMsg { eid: eid.clone() };
+        let info = mock_info(
+            charity_endowment_contract.as_ref(),
+            &coins(100000, "mars"),
+        );
+        let env = mock_env();
+        let res = execute(
+            deps.as_mut(),
+            env.clone(),
+            info.clone(),
+            ExecuteMsg::CreateAccount(msg),
+        )
+        .unwrap();
+        assert_eq!(0, res.messages.len());
+
+        // deposit msg to be re-used
         let deposit_msg = DepositMsg {
             eid: eid.clone(),
             account_type: account_type.clone(),
