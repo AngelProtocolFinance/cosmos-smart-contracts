@@ -264,16 +264,18 @@ pub fn execute_create(
 pub fn execute_receive(
     deps: DepsMut,
     info: MessageInfo,
-    wrapper: Cw20ReceiveMsg,
+    cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
     let balance = Balance::Cw20(Cw20CoinVerified {
         address: info.sender.clone(),
-        amount: wrapper.amount,
+        amount: cw20_msg.amount,
     });
-    let sender_addr = deps.api.addr_validate(&wrapper.sender)?;
-    let msg = from_binary(&wrapper.msg)?;
+    let sender_addr = deps.api.addr_validate(&cw20_msg.sender)?;
+    let msg = from_binary(&cw20_msg.msg)?;
     match msg {
-        ReceiveMsg::Deposit(msg) => execute_deposit(deps, sender_addr, balance, msg.eid, msg.account_type),
+        ReceiveMsg::Deposit(msg) => {
+            execute_deposit(deps, sender_addr, balance, msg.eid, msg.account_type)
+        }
         ReceiveMsg::VaultReceipt(msg) => {
             execute_vault_receipt(deps, sender_addr, balance, msg.eid, msg.account_type)
         }
@@ -282,20 +284,17 @@ pub fn execute_receive(
 
 pub fn execute_vault_receipt(
     deps: DepsMut,
-    sender: Addr,
+    sender_addr: Addr,
     balance: Balance,
     eid: String,
     account_type: String,
 ) -> Result<Response, ContractError> {
-    // this lookup fails if the token deposit was not coming from an Asset Vault SC
-    let vault = VAULTS.load(deps.storage, sender.to_string())?;
-    if !vault.approved {
-        return Err(ContractError::Unauthorized {});
-    }
-
     // this fails if no account is there
     let account_id = format!("{}_{}", account_type, eid);
     let mut account = ACCOUNTS.load(deps.storage, account_id.clone())?;
+
+    // this lookup fails if the token deposit was not coming from an Asset Vault SC
+    let _vaults = VAULTS.load(deps.storage, sender_addr.to_string())?;
 
     if balance.is_empty() {
         return Err(ContractError::EmptyBalance {});
@@ -319,20 +318,19 @@ pub fn execute_vault_receipt(
 
 pub fn execute_deposit(
     deps: DepsMut,
-    sender: Addr,
+    sender_addr: Addr,
     balance: Balance,
     eid: String,
     account_type: String,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
     // this fails if no account is there
     let account_id = format!("{}_{}", account_type, eid);
     let mut account = ACCOUNTS.load(deps.storage, account_id.clone())?;
 
+    let config = CONFIG.load(deps.storage)?;
     // this lookup fails if the token deposit was not coming from:
     // an Asset Vault SC, the Charity Endownment SC, or the Index Fund SC
-    if sender != config.charity_endowment_contract || sender != config.index_fund_contract
+    if sender_addr != config.charity_endowment_contract || sender_addr != config.index_fund_contract
     {
         return Err(ContractError::Unauthorized {});
     }
@@ -353,11 +351,17 @@ pub fn execute_deposit(
     // and save
     ACCOUNTS.save(deps.storage, account_id.clone(), &account)?;
 
+    let msg_data = format!("{{ deposit: {{ \"account\": {} }}}}", account_id);
     let res = Response {
+        messages: vec![SubMsg::new(WasmMsg::Execute {
+            contract_addr: config.index_fund_contract.to_string(),
+            msg: Binary::from_base64(&msg_data)?,
+            funds: vec![],
+        })],
         attributes: vec![
             attr("action", "deposit"),
-            attr("eid", eid),
-            attr("account_type", account_type),
+            attr("eid", eid.clone()),
+            attr("account_type", account_type.clone()),
         ],
         ..Response::default()
     };
@@ -595,10 +599,10 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::msg::DepositMsg;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coin, coins, Uint128};
     use cw20::Cw20CoinVerified;
-    use crate::msg::DepositMsg;
 
     #[test]
     fn test_proper_initialization() {
@@ -1077,10 +1081,7 @@ mod tests {
 
         // create a set of new accounts
         let msg = CreateAccountMsg { eid: eid.clone() };
-        let info = mock_info(
-            charity_endowment_contract.as_ref(),
-            &coins(100000, "mars"),
-        );
+        let info = mock_info(charity_endowment_contract.as_ref(), &coins(100000, "mars"));
         let env = mock_env();
         let res = execute(
             deps.as_mut(),
@@ -1150,5 +1151,4 @@ mod tests {
             res.balance
         );
     }
-
 }
