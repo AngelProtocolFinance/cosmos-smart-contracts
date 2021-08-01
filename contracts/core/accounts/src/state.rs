@@ -1,4 +1,4 @@
-use angel_core::structs::Strategy;
+use angel_core::structs::{SplitDetails, Strategy};
 use cosmwasm_std::{Addr, Coin, Decimal, Env, Timestamp};
 use cw20::{Balance, Cw20CoinVerified};
 use cw_storage_plus::{Item, Map};
@@ -12,7 +12,7 @@ pub struct Config {
     pub registrar_contract: Addr,
     pub index_fund_contract: Addr,
     pub endowment_owner: Addr, // address that originally setup the endowment account
-    pub endowmwnt_beneficiary: Addr, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
+    pub endowment_beneficiary: Addr, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
     pub deposit_approved: bool,      // DANO has approved to receive donations & transact
     pub withdraw_approved: bool,     // DANO has approved to withdraw funds
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date

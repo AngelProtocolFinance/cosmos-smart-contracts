@@ -4,13 +4,20 @@
   "type": "object",
   "required": [
     "admin_addr",
+    "deposit_approved",
     "endowment_beneficiary",
     "endowment_owner",
-    "index_fund_contract"
+    "index_fund_contract",
+    "split_to_liquid",
+    "withdraw_approved",
+    "withdraw_before_maturity"
   ],
   "properties": {
     "admin_addr": {
       "type": "string"
+    },
+    "deposit_approved": {
+      "type": "boolean"
     },
     "endowment_beneficiary": {
       "type": "string"
@@ -20,6 +27,56 @@
     },
     "index_fund_contract": {
       "type": "string"
+    },
+    "maturity_height": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "maturity_time": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "split_to_liquid": {
+      "$ref": "#/definitions/SplitDetails"
+    },
+    "withdraw_approved": {
+      "type": "boolean"
+    },
+    "withdraw_before_maturity": {
+      "type": "boolean"
+    }
+  },
+  "definitions": {
+    "Decimal": {
+      "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+      "type": "string"
+    },
+    "SplitDetails": {
+      "type": "object",
+      "required": [
+        "default",
+        "max",
+        "min"
+      ],
+      "properties": {
+        "default": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "max": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "min": {
+          "$ref": "#/definitions/Decimal"
+        }
+      }
     }
   }
 }

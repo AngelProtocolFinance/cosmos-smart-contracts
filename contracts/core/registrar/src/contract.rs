@@ -9,6 +9,7 @@ use cosmwasm_std::{
     attr, entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
     SubMsg, WasmMsg,
 };
+use cw2::{get_contract_version, set_contract_version};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -21,6 +22,7 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let configs = Config {
         owner: info.sender, // msg.endowment.owner,
         index_fund_contract: deps
@@ -67,8 +69,16 @@ pub fn execute_update_owner(
         return Err(ContractError::Unauthorized {});
     }
 
-    config.owner = deps.api.addr_validate(&new_owner)?;
-    CONFIG.save(deps.storage, &config);
+    // apply the changes
+    CONFIG.save(
+        deps.storage,
+        &Config {
+            owner: deps.api.addr_validate(&new_owner)?,
+            index_fund_contract: config.index_fund_contract,
+            accounts_code_id: config.accounts_code_id,
+            approved_coins: config.approved_coins,
+        },
+    )?;
 
     let res = Response {
         attributes: vec![attr("action", "update_owner")],
@@ -89,11 +99,16 @@ pub fn execute_update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    config.index_fund_contract = deps.api.addr_validate(&msg.index_fund_contract)?;
-    config.approved_coins = msg.addr_approved_list(deps.api)?;
-    config.accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
-
-    CONFIG.save(deps.storage, &config);
+    // apply the changes
+    CONFIG.save(
+        deps.storage,
+        &Config {
+            owner: config.owner,
+            index_fund_contract: deps.api.addr_validate(&msg.index_fund_contract)?,
+            accounts_code_id: msg.accounts_code_id.unwrap_or(config.accounts_code_id),
+            approved_coins: msg.addr_approved_list(deps.api)?,
+        },
+    )?;
 
     let res = Response {
         attributes: vec![attr("action", "update_owner")],
@@ -105,7 +120,7 @@ pub fn execute_update_config(
 pub fn execute_create_endowment(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: CreateEndowmentMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -130,7 +145,7 @@ pub fn execute_create_endowment(
                 admin_addr: config.owner.to_string(),
                 index_fund_contract: config.index_fund_contract.to_string(),
                 endowment_owner: msg.endowment_owner,
-                endowmwnt_beneficiary: msg.endowmwnt_beneficiary,
+                endowment_beneficiary: msg.endowewnt_beneficiary,
                 deposit_approved: msg.deposit_approved,
                 withdraw_approved: msg.withdraw_approved,
                 withdraw_before_maturity: msg.withdraw_before_maturity,
@@ -234,8 +249,14 @@ fn query_vault_list(_deps: Deps, _non_approved: Option<bool>) -> StdResult<Vault
     Ok(list)
 }
 
-#[entry_point]
-pub fn migrate(_: DepsMut, _: Env, _: MigrateMsg) -> StdResult<Response> {
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let version = get_contract_version(deps.storage)?;
+    if version.contract != CONTRACT_NAME {
+        return Err(ContractError::CannotMigrate {
+            previous_contract: version.contract,
+        });
+    }
     Ok(Response::default())
 }
 
@@ -250,7 +271,7 @@ mod tests {
         let mut deps = mock_dependencies(&[]);
 
         let msg = InstantiateMsg {
-            accounts_code_id: 0u64,
+            accounts_code_id: Some(0u64),
         };
         let info = mock_info("creator", &coins(1000, "earth"));
 

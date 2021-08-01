@@ -11,7 +11,7 @@ pub struct InstantiateMsg {
     pub admin_addr: String,
     pub index_fund_contract: String,
     pub endowment_owner: String, // address that originally setup the endowment account
-    pub endowmwnt_beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
+    pub endowment_beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
     pub deposit_approved: bool,        // DANO has approved to receive donations & transact
     pub withdraw_approved: bool,       // DANO has approved to withdraw funds
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date

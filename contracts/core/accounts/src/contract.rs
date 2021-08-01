@@ -30,10 +30,16 @@ pub fn instantiate(
         deps.storage,
         &Config {
             admin_addr: info.sender.clone(),
-            endowment_owner: deps.api.addr_validate(&msg.endowment_owner)?,
-            endowment_beneficiary: deps.api.addr_validate(&msg.endowment_beneficiary)?,
             registrar_contract: info.sender,
             index_fund_contract: deps.api.addr_validate(&msg.index_fund_contract)?,
+            endowment_owner: deps.api.addr_validate(&msg.endowment_owner)?, // Addr
+            endowment_beneficiary: deps.api.addr_validate(&msg.endowment_beneficiary)?, // Addr
+            deposit_approved: msg.deposit_approved,                         // bool
+            withdraw_approved: msg.withdraw_approved,                       // bool
+            withdraw_before_maturity: msg.withdraw_before_maturity,         // bool
+            maturity_time: msg.maturity_time,                               // Option<u64>
+            maturity_height: msg.maturity_height,                           // Option<u64>
+            split_to_liquid: msg.split_to_liquid,                           // SplitDetails
         },
     )?;
 
@@ -459,6 +465,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 #[cfg(test)]
 mod tests {
     use super::*;
+    use angel_core::structs::SplitDetails;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
     use cosmwasm_std::{coin, coins, Uint128};
     use cw20::Cw20CoinVerified;
@@ -476,6 +483,12 @@ mod tests {
             index_fund_contract: index_fund_contract.clone(),
             endowment_owner: charity_addr.clone(),
             endowment_beneficiary: charity_addr.clone(),
+            deposit_approved: false,
+            withdraw_approved: false,
+            withdraw_before_maturity: false,
+            maturity_time: None,
+            maturity_height: None,
+            split_to_liquid: SplitDetails::default(),
         };
         let info = mock_info("creator", &coins(100000, "earth"));
         let env = mock_env();
@@ -496,6 +509,12 @@ mod tests {
             index_fund_contract: index_fund_contract.clone(),
             endowment_owner: charity_addr.clone(),
             endowment_beneficiary: charity_addr.clone(),
+            deposit_approved: false,
+            withdraw_approved: false,
+            withdraw_before_maturity: false,
+            maturity_time: None,
+            maturity_height: None,
+            split_to_liquid: SplitDetails::default(),
         };
         let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
         let env = mock_env();
@@ -517,6 +536,12 @@ mod tests {
             index_fund_contract: index_fund_contract.clone(),
             endowment_owner: charity_addr.clone(),
             endowment_beneficiary: charity_addr.clone(),
+            deposit_approved: false,
+            withdraw_approved: false,
+            withdraw_before_maturity: false,
+            maturity_time: None,
+            maturity_height: None,
+            split_to_liquid: SplitDetails::default(),
         };
         let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
         let env = mock_env();
@@ -563,6 +588,12 @@ mod tests {
             index_fund_contract: index_fund_contract.clone(),
             endowment_owner: charity_addr.clone(),
             endowment_beneficiary: charity_addr.clone(),
+            deposit_approved: false,
+            withdraw_approved: false,
+            withdraw_before_maturity: false,
+            maturity_time: None,
+            maturity_height: None,
+            split_to_liquid: SplitDetails::default(),
         };
         let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
         let env = mock_env();
@@ -611,6 +642,12 @@ mod tests {
             index_fund_contract: index_fund_contract.clone(),
             endowment_owner: charity_addr.clone(),
             endowment_beneficiary: charity_addr.clone(),
+            deposit_approved: false,
+            withdraw_approved: false,
+            withdraw_before_maturity: false,
+            maturity_time: None,
+            maturity_height: None,
+            split_to_liquid: SplitDetails::default(),
         };
         let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
         let env = mock_env();
@@ -717,6 +754,12 @@ mod tests {
             index_fund_contract: index_fund_contract.clone(),
             endowment_owner: charity_addr.clone(),
             endowment_beneficiary: charity_addr.clone(),
+            deposit_approved: false,
+            withdraw_approved: false,
+            withdraw_before_maturity: false,
+            maturity_time: None,
+            maturity_height: None,
+            split_to_liquid: SplitDetails::default(),
         };
         let info = mock_info(ap_team.as_ref(), &coins(100000, "bar_token"));
         let env = mock_env();
@@ -736,9 +779,5 @@ mod tests {
         )
         .unwrap();
         assert_eq!(0, res.messages.len());
-
-        // should be able to get a created account now (ex. Locked Acct)
-        let res = query_account_details(deps.as_ref().clone(), account_type.clone()).unwrap();
-        assert_eq!(account_type, res.account_type);
     }
 }

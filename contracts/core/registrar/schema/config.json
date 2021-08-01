@@ -3,11 +3,24 @@
   "title": "Config",
   "type": "object",
   "required": [
-    "account_ledgers_sc",
+    "accounts_code_id",
+    "approved_coins",
+    "index_fund_contract",
     "owner"
   ],
   "properties": {
-    "account_ledgers_sc": {
+    "accounts_code_id": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "approved_coins": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/Addr"
+      }
+    },
+    "index_fund_contract": {
       "$ref": "#/definitions/Addr"
     },
     "owner": {

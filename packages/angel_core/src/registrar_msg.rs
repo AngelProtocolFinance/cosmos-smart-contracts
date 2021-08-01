@@ -29,7 +29,7 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateEndowmentMsg {
     pub endowment_owner: String,
-    pub endowmwnt_beneficiary: String,
+    pub endowment_beneficiary: String,
     pub deposit_approved: bool,
     pub withdraw_approved: bool,
     pub withdraw_before_maturity: bool,
