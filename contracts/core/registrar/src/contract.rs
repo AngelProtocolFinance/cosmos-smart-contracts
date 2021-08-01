@@ -27,7 +27,7 @@ pub fn instantiate(
         owner: info.sender, // msg.endowment.owner,
         index_fund_contract: deps
             .api
-            .addr_validate(&"XXXXXXXXXXXXXXXXXXXXXXXXXXX".to_string())?,
+            .addr_validate(&"XXXXXXXXXXXXXXXXXXXXXXXX".to_string())?,
         approved_coins: vec![],
         accounts_code_id: msg.accounts_code_id.unwrap_or(0 as u64),
     };
@@ -145,7 +145,7 @@ pub fn execute_create_endowment(
                 admin_addr: config.owner.to_string(),
                 index_fund_contract: config.index_fund_contract.to_string(),
                 endowment_owner: msg.endowment_owner,
-                endowment_beneficiary: msg.endowewnt_beneficiary,
+                endowment_beneficiary: msg.endowment_beneficiary,
                 deposit_approved: msg.deposit_approved,
                 withdraw_approved: msg.withdraw_approved,
                 withdraw_before_maturity: msg.withdraw_before_maturity,

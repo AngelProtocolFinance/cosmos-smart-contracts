@@ -116,8 +116,8 @@
       "type": "object",
       "required": [
         "deposit_approved",
+        "endowment_beneficiary",
         "endowment_owner",
-        "endowmwnt_beneficiary",
         "withdraw_approved",
         "withdraw_before_maturity"
       ],
@@ -125,10 +125,10 @@
         "deposit_approved": {
           "type": "boolean"
         },
-        "endowment_owner": {
+        "endowment_beneficiary": {
           "type": "string"
         },
-        "endowmwnt_beneficiary": {
+        "endowment_owner": {
           "type": "string"
         },
         "maturity_height": {
