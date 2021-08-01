@@ -46,9 +46,9 @@ impl SplitDetails {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum EndowmentStatus {
-    Inactive, // Default state when new Endowment is created
+    Inactive = 0, // Default state when new Endowment is created
     // Statuses below are set by DANO or AP Team
-    Approved, // Allowed to recieve donations and process withdrawals
-    Frozen,   // Temp. hold is placed on withdraw from an Endowment
-    Closed,   // Status for final Liquidations(good-standing) or Terminations(poor-standing)
+    Approved = 1, // Allowed to receive donations and process withdrawals
+    Frozen = 2,   // Temp. hold is placed on withdraw from an Endowment
+    Closed = 3,   // Status for final Liquidations(good-standing) or Terminations(poor-standing)
 }

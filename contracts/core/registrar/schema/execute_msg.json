@@ -81,6 +81,18 @@
     {
       "type": "object",
       "required": [
+        "update_endowment_status"
+      ],
+      "properties": {
+        "update_endowment_status": {
+          "$ref": "#/definitions/UpdateEndowmentStatusMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "update_owner"
       ],
       "properties": {
@@ -155,6 +167,15 @@
         }
       }
     },
+    "EndowmentStatus": {
+      "type": "string",
+      "enum": [
+        "Inactive",
+        "Approved",
+        "Frozen",
+        "Closed"
+      ]
+    },
     "UpdateConfigMsg": {
       "type": "object",
       "required": [
@@ -180,6 +201,21 @@
         },
         "index_fund_contract": {
           "type": "string"
+        }
+      }
+    },
+    "UpdateEndowmentStatusMsg": {
+      "type": "object",
+      "required": [
+        "address",
+        "status"
+      ],
+      "properties": {
+        "address": {
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/definitions/EndowmentStatus"
         }
       }
     }

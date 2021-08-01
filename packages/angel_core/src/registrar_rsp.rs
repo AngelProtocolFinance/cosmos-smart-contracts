@@ -18,3 +18,9 @@ pub struct ConfigResponse {
     pub approved_coins: Vec<String>,
     pub accounts_code_id: u64,
 }
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+pub struct EndowmentStatusResponse {
+    pub adddress: String,
+    pub status: String,
+}

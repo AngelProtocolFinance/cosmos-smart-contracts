@@ -1,3 +1,4 @@
+use crate::structs::EndowmentStatus;
 use cosmwasm_std::{Addr, Api, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -21,6 +22,9 @@ pub enum ExecuteMsg {
     VaultRemove { vault_addr: String },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
+    // Allows the DANO / AP Team to update the status of an Endowment
+    // Approved, Frozen, (Liquidated, Terminated)
+    UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Allows the SC owner (only!) to change ownership
     UpdateOwner { new_owner: String },
     CreateEndowment(CreateEndowmentMsg),
@@ -51,6 +55,12 @@ impl UpdateConfigMsg {
             None => Ok(vec![]),
         }
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateEndowmentStatusMsg {
+    pub address: String,
+    pub status: EndowmentStatus,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

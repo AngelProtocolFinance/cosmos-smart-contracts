@@ -1,7 +1,8 @@
-use crate::state::{Config, CONFIG, VAULTS}; //REGISTRY,
+use crate::state::{Config, CONFIG, REGISTRY, VAULTS};
 use angel_core::error::ContractError;
 use angel_core::registrar_msg::{
     CreateEndowmentMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, UpdateConfigMsg,
+    UpdateEndowmentStatusMsg,
 };
 use angel_core::registrar_rsp::{ConfigResponse, VaultDetailsResponse, VaultListResponse};
 use angel_core::structs::SplitDetails;
@@ -47,6 +48,9 @@ pub fn execute(
     match msg {
         ExecuteMsg::CreateEndowment(msg) => execute_create_endowment(deps, env, info, msg),
         ExecuteMsg::UpdateConfig(msg) => execute_update_config(deps, env, info, msg),
+        ExecuteMsg::UpdateEndowmentStatus(msg) => {
+            execute_update_endowment_status(deps, env, info, msg)
+        }
         ExecuteMsg::UpdateOwner { new_owner } => execute_update_owner(deps, env, info, new_owner),
         ExecuteMsg::VaultAdd { vault_addr } => vault_add(deps, env, info, vault_addr),
         ExecuteMsg::VaultUpdateStatus {
@@ -55,6 +59,39 @@ pub fn execute(
         } => vault_update_status(deps, env, info, vault_addr, approved),
         ExecuteMsg::VaultRemove { vault_addr } => vault_remove(deps, env, info, vault_addr),
     }
+}
+
+pub fn execute_update_endowment_status(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateEndowmentStatusMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if config.owner != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // look up the endowment in the Registry. Will fail if doesn't exist
+    let _endowment_status = REGISTRY.load(deps.storage, msg.address.to_string())?;
+    // save the new endowment status to the Registry
+    REGISTRY.save(deps.storage, msg.address, &msg.status)?;
+
+    // TO DO: Take different actions based on the status passed
+    // if msg.status == EndowmentStatus::Approved {
+    //     // Allowed to receive donations and process withdrawals
+    // }
+
+    let res = Response {
+        messages: vec![
+            // TO DO: Send msg to the Accounts SC being updated to inform them of the new status changes
+            // TO DO: Send msg to the Index Fund SC to inform them of the new status changes for the given endowment
+        ],
+        attributes: vec![attr("action", "update_endowment_status")],
+        ..Response::default()
+    };
+    Ok(res)
 }
 
 pub fn execute_update_owner(
@@ -68,17 +105,12 @@ pub fn execute_update_owner(
     if config.owner != info.sender {
         return Err(ContractError::Unauthorized {});
     }
-
-    // apply the changes
-    CONFIG.save(
-        deps.storage,
-        &Config {
-            owner: deps.api.addr_validate(&new_owner)?,
-            index_fund_contract: config.index_fund_contract,
-            accounts_code_id: config.accounts_code_id,
-            approved_coins: config.approved_coins,
-        },
-    )?;
+    let new_owner_addr = deps.api.addr_validate(&new_owner)?;
+    // update config attributes with newly passed owner
+    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+        config.owner = new_owner_addr;
+        Ok(config)
+    })?;
 
     let res = Response {
         attributes: vec![attr("action", "update_owner")],
@@ -99,17 +131,16 @@ pub fn execute_update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    // apply the changes
-    CONFIG.save(
-        deps.storage,
-        &Config {
-            owner: config.owner,
-            index_fund_contract: deps.api.addr_validate(&msg.index_fund_contract)?,
-            accounts_code_id: msg.accounts_code_id.unwrap_or(config.accounts_code_id),
-            approved_coins: msg.addr_approved_list(deps.api)?,
-        },
-    )?;
+    let index_fund_contract_addr = deps.api.addr_validate(&msg.index_fund_contract)?;
+    let coins_addr_list = msg.addr_approved_list(deps.api)?;
 
+    // update config attributes with newly passed configs
+    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+        config.index_fund_contract = index_fund_contract_addr;
+        config.accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
+        config.approved_coins = coins_addr_list;
+        Ok(config)
+    })?;
     let res = Response {
         attributes: vec![attr("action", "update_owner")],
         ..Response::default()

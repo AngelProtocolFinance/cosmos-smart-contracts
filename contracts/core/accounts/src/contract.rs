@@ -128,7 +128,7 @@ pub fn update_config(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // only the owner of the contract can update the configs
+    // only the owner of the contract or endowment owner can update these configs
     if info.sender != config.registrar_contract || info.sender != config.endowment_owner {
         return Err(ContractError::Unauthorized {});
     }
@@ -747,7 +747,6 @@ mod tests {
         let ap_team = "angelprotocolteamdano".to_string();
         let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
         let index_fund_contract = "SDFGRHAETHADFARHSRTHADGG".to_string();
-        let account_type = "locked".to_string();
 
         let instantiate_msg = InstantiateMsg {
             admin_addr: ap_team.clone(),
