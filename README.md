@@ -19,4 +19,4 @@ core platform of smart contracts that support multiple verticals of specialized 
 - Rust
 - Cargo
 
-To keep code styles consistant, please install and use the code linter, [Rustfmt]()`.
+To keep code styles consistant, please install and use the code linter, [Rustfmt]().

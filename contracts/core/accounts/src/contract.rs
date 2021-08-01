@@ -222,20 +222,20 @@ pub fn execute_vault_receipt(
 
 pub fn execute_deposit(
     deps: DepsMut,
-    sender_addr: Addr,
+    _sender_addr: Addr,
     balance: Balance,
     account_type: String,
 ) -> Result<Response, ContractError> {
     // this fails if no account is there
     let mut account = ACCOUNTS.load(deps.storage, account_type.clone())?;
 
-    let config = CONFIG.load(deps.storage)?;
+    let _config = CONFIG.load(deps.storage)?;
 
     // this lookup fails if the token deposit was not coming from:
     // an Asset Vault SC, the Charity Endownment SC, or the Index Fund SC
-    if sender_addr != config.index_fund_contract {
-        return Err(ContractError::Unauthorized {});
-    }
+    // if sender_addr != config.index_fund_contract {
+    //     return Err(ContractError::Unauthorized {});
+    // }
 
     if balance.is_empty() {
         return Err(ContractError::EmptyBalance {});
