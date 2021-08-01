@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InstantiateMsg",
+  "type": "object",
+  "required": [
+    "admin_addr",
+    "endowment_beneficiary",
+    "endowment_owner",
+    "index_fund_contract"
+  ],
+  "properties": {
+    "admin_addr": {
+      "type": "string"
+    },
+    "endowment_beneficiary": {
+      "type": "string"
+    },
+    "endowment_owner": {
+      "type": "string"
+    },
+    "index_fund_contract": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ReceiveMsg",
+  "anyOf": [
+    {
+      "type": "object",
+      "required": [
+        "deposit"
+      ],
+      "properties": {
+        "deposit": {
+          "$ref": "#/definitions/DepositMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "vault_receipt"
+      ],
+      "properties": {
+        "vault_receipt": {
+          "$ref": "#/definitions/DepositMsg"
+        }
+      },
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "DepositMsg": {
+      "type": "object",
+      "required": [
+        "account_type"
+      ],
+      "properties": {
+        "account_type": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
