@@ -4,11 +4,13 @@ use angel_core::registrar_msg::{
     CreateEndowmentMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, UpdateConfigMsg,
     UpdateEndowmentStatusMsg,
 };
-use angel_core::registrar_rsp::{ConfigResponse, VaultDetailsResponse, VaultListResponse};
-use angel_core::structs::SplitDetails;
+use angel_core::registrar_rsp::{
+    ConfigResponse, EndowmentStatusResponse, VaultDetailsResponse, VaultListResponse,
+};
+use angel_core::structs::{EndowmentStatus, SplitDetails};
 use cosmwasm_std::{
-    attr, entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-    SubMsg, WasmMsg,
+    attr, entry_point, to_binary, Binary, ContractResult, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, Reply, ReplyOn, Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
 };
 use cw2::{get_contract_version, set_contract_version};
 
@@ -74,7 +76,12 @@ pub fn execute_update_endowment_status(
     }
 
     // look up the endowment in the Registry. Will fail if doesn't exist
-    let _endowment_status = REGISTRY.load(deps.storage, msg.address.to_string())?;
+    let endowment_status = REGISTRY.load(deps.storage, msg.address.to_string())?;
+
+    if endowment_status == msg.status {
+        return Err(ContractError::AccountAlreadyApproved {});
+    }
+
     // save the new endowment status to the Registry
     REGISTRY.save(deps.storage, msg.address, &msg.status)?;
 
@@ -150,7 +157,7 @@ pub fn execute_update_config(
 
 pub fn execute_create_endowment(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     msg: CreateEndowmentMsg,
 ) -> Result<Response, ContractError> {
@@ -160,32 +167,34 @@ pub fn execute_create_endowment(
         return Err(ContractError::ContractNotConfigured {});
     }
 
-    // /// Register the new Endowment on success Reply
-    // REGISTRY.save(
-    //     deps.storage,
-    //     info.sender.to_string(),
-    //     &EndowmentStatus::Inactive,
-    // );
+    let wasm_msg = WasmMsg::Instantiate {
+        code_id: config.accounts_code_id,
+        admin: Some(env.contract.address.to_string()),
+        label: "new endowment accounts".to_string(),
+        msg: to_binary(&angel_core::accounts_msg::InstantiateMsg {
+            admin_addr: config.owner.to_string(),
+            index_fund_contract: config.index_fund_contract.to_string(),
+            endowment_owner: msg.endowment_owner,
+            endowment_beneficiary: msg.endowment_beneficiary,
+            deposit_approved: msg.deposit_approved,
+            withdraw_approved: msg.withdraw_approved,
+            withdraw_before_maturity: msg.withdraw_before_maturity,
+            maturity_time: msg.maturity_time,
+            maturity_height: msg.maturity_height,
+            split_to_liquid: SplitDetails::default(),
+        })?,
+        funds: vec![],
+    };
+
+    let sub_message = SubMsg {
+        id: 0,
+        msg: CosmosMsg::Wasm(wasm_msg),
+        gas_limit: None,
+        reply_on: ReplyOn::Always,
+    };
 
     let res = Response {
-        messages: vec![SubMsg::new(WasmMsg::Instantiate {
-            code_id: config.accounts_code_id,
-            admin: Some(config.owner.to_string()),
-            label: "new endowment".to_string(),
-            msg: to_binary(&angel_core::accounts_msg::InstantiateMsg {
-                admin_addr: config.owner.to_string(),
-                index_fund_contract: config.index_fund_contract.to_string(),
-                endowment_owner: msg.endowment_owner,
-                endowment_beneficiary: msg.endowment_beneficiary,
-                deposit_approved: msg.deposit_approved,
-                withdraw_approved: msg.withdraw_approved,
-                withdraw_before_maturity: msg.withdraw_before_maturity,
-                maturity_time: msg.maturity_time,
-                maturity_height: msg.maturity_height,
-                split_to_liquid: SplitDetails::default(),
-            })?,
-            funds: vec![],
-        })],
+        messages: vec![sub_message],
         attributes: vec![attr("action", "create_endowment")],
         ..Response::default()
     };
@@ -243,6 +252,38 @@ pub fn vault_remove(
     let _vault = VAULTS.load(deps.storage, vault_addr.clone())?;
     // delete the vault
     VAULTS.remove(deps.storage, vault_addr);
+    Ok(Response::default())
+}
+
+/// Replies back to the registrar from instantiate calls to Accounts SC (@ some code_id)
+/// should be cuaght and handled to register the Endowment's newly created Accounts SC
+/// in the REGISTRY storage
+#[entry_point]
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        201 => new_accounts_reply(deps, env, msg.result),
+        _ => Err(ContractError::Unauthorized {}),
+    }
+}
+
+pub fn new_accounts_reply(
+    deps: DepsMut,
+    env: Env,
+    msg: ContractResult<SubMsgExecutionResponse>,
+) -> Result<Response, ContractError> {
+    match msg {
+        ContractResult::Ok(subcall) => {
+            // Register the new Endowment on success Reply
+            REGISTRY.save(
+                deps.storage,
+                env.contract.address.to_string(),
+                &EndowmentStatus::Inactive,
+            )?;
+            return Ok(Response::default());
+        }
+        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+    };
+
     Ok(Response::default())
 }
 

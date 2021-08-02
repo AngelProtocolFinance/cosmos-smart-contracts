@@ -36,6 +36,9 @@ pub enum ContractError {
     #[error("Cannot accept coins. Account is not approved yet.")]
     AccountNotApproved {},
 
+    #[error("Account creation error")]
+    AccountNotCreated {},
+
     #[error("Account is already approved")]
     AccountAlreadyApproved {},
 
