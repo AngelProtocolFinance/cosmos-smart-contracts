@@ -739,44 +739,4 @@ mod tests {
             ]
         );
     }
-
-    #[test]
-    fn test_create_new_endowment_accounts() {
-        let mut deps = mock_dependencies(&[]);
-        // meet the cast of characters
-        let ap_team = "angelprotocolteamdano".to_string();
-        let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-        let index_fund_contract = "SDFGRHAETHADFARHSRTHADGG".to_string();
-
-        let instantiate_msg = InstantiateMsg {
-            admin_addr: ap_team.clone(),
-            index_fund_contract: index_fund_contract.clone(),
-            endowment_owner: charity_addr.clone(),
-            endowment_beneficiary: charity_addr.clone(),
-            deposit_approved: false,
-            withdraw_approved: false,
-            withdraw_before_maturity: false,
-            maturity_time: None,
-            maturity_height: None,
-            split_to_liquid: SplitDetails::default(),
-        };
-        let info = mock_info(ap_team.as_ref(), &coins(100000, "bar_token"));
-        let env = mock_env();
-        let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-        assert_eq!(0, res.messages.len());
-
-        // update the approved coins list and trusted SC addresses
-        let msg = UpdateConfigMsg {
-            owner: charity_addr.clone(),
-            beneficiary: charity_addr.clone(),
-        };
-        let res = execute(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            ExecuteMsg::UpdateConfig(msg),
-        )
-        .unwrap();
-        assert_eq!(0, res.messages.len());
-    }
 }
