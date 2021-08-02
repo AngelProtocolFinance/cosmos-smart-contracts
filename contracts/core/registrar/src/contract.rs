@@ -4,9 +4,7 @@ use angel_core::registrar_msg::{
     CreateEndowmentMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, UpdateConfigMsg,
     UpdateEndowmentStatusMsg,
 };
-use angel_core::registrar_rsp::{
-    ConfigResponse, EndowmentStatusResponse, VaultDetailsResponse, VaultListResponse,
-};
+use angel_core::registrar_rsp::{ConfigResponse, VaultDetailsResponse, VaultListResponse};
 use angel_core::structs::{EndowmentStatus, SplitDetails};
 use cosmwasm_std::{
     attr, entry_point, to_binary, Binary, ContractResult, CosmosMsg, Deps, DepsMut, Env,
@@ -190,7 +188,7 @@ pub fn execute_create_endowment(
         id: 0,
         msg: CosmosMsg::Wasm(wasm_msg),
         gas_limit: None,
-        reply_on: ReplyOn::Always,
+        reply_on: ReplyOn::Success,
     };
 
     let res = Response {
@@ -261,7 +259,7 @@ pub fn vault_remove(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        201 => new_accounts_reply(deps, env, msg.result),
+        0 => new_accounts_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }
@@ -272,7 +270,7 @@ pub fn new_accounts_reply(
     msg: ContractResult<SubMsgExecutionResponse>,
 ) -> Result<Response, ContractError> {
     match msg {
-        ContractResult::Ok(subcall) => {
+        ContractResult::Ok(_subcall) => {
             // Register the new Endowment on success Reply
             REGISTRY.save(
                 deps.storage,
@@ -282,9 +280,7 @@ pub fn new_accounts_reply(
             return Ok(Response::default());
         }
         ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
-    };
-
-    Ok(Response::default())
+    }
 }
 
 #[entry_point]
