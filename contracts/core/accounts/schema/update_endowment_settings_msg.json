@@ -1,53 +1,21 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "InstantiateMsg",
+  "title": "UpdateEndowmentSettingsMsg",
   "type": "object",
   "required": [
-    "admin_addr",
-    "endowment_beneficiary",
-    "endowment_owner",
-    "index_fund_contract",
-    "registrar_contract",
-    "split_to_liquid",
-    "withdraw_before_maturity"
+    "beneficiary",
+    "owner",
+    "split_to_liquid"
   ],
   "properties": {
-    "admin_addr": {
+    "beneficiary": {
       "type": "string"
     },
-    "endowment_beneficiary": {
-      "type": "string"
-    },
-    "endowment_owner": {
-      "type": "string"
-    },
-    "index_fund_contract": {
-      "type": "string"
-    },
-    "maturity_height": {
-      "type": [
-        "integer",
-        "null"
-      ],
-      "format": "uint64",
-      "minimum": 0.0
-    },
-    "maturity_time": {
-      "type": [
-        "integer",
-        "null"
-      ],
-      "format": "uint64",
-      "minimum": 0.0
-    },
-    "registrar_contract": {
+    "owner": {
       "type": "string"
     },
     "split_to_liquid": {
       "$ref": "#/definitions/SplitDetails"
-    },
-    "withdraw_before_maturity": {
-      "type": "boolean"
     }
   },
   "definitions": {

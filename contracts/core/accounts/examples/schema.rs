@@ -4,7 +4,9 @@ use std::fs::create_dir_all;
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
 use accounts::state::Config;
-use angel_core::accounts_msg::{ExecuteMsg, InstantiateMsg, QueryMsg, ReceiveMsg, UpdateConfigMsg};
+use angel_core::accounts_msg::{
+    ExecuteMsg, InstantiateMsg, QueryMsg, ReceiveMsg, UpdateEndowmentSettingsMsg,
+};
 use angel_core::accounts_rsp::{AccountDetailsResponse, AccountListResponse, ConfigResponse};
 
 fn main() {
@@ -20,5 +22,5 @@ fn main() {
     export_schema(&schema_for!(InstantiateMsg), &out_dir);
     export_schema(&schema_for!(QueryMsg), &out_dir);
     export_schema(&schema_for!(ReceiveMsg), &out_dir);
-    export_schema(&schema_for!(UpdateConfigMsg), &out_dir);
+    export_schema(&schema_for!(UpdateEndowmentSettingsMsg), &out_dir);
 }

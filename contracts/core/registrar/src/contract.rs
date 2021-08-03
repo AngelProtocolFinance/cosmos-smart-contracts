@@ -25,7 +25,7 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     let configs = Config {
-        owner: info.sender, // msg.endowment.owner,
+        owner: info.sender,
         index_fund_contract: deps
             .api
             .addr_validate(&"XXXXXXXXXXXXXXXXXXXXXXXX".to_string())?,
@@ -171,15 +171,14 @@ pub fn execute_create_endowment(
         label: "new endowment accounts".to_string(),
         msg: to_binary(&angel_core::accounts_msg::InstantiateMsg {
             admin_addr: config.owner.to_string(),
+            registrar_contract: env.contract.address.to_string(),
             index_fund_contract: config.index_fund_contract.to_string(),
             endowment_owner: msg.endowment_owner,
             endowment_beneficiary: msg.endowment_beneficiary,
-            deposit_approved: msg.deposit_approved,
-            withdraw_approved: msg.withdraw_approved,
             withdraw_before_maturity: msg.withdraw_before_maturity,
             maturity_time: msg.maturity_time,
             maturity_height: msg.maturity_height,
-            split_to_liquid: SplitDetails::default(),
+            split_to_liquid: msg.split_to_liquid.unwrap_or(SplitDetails::default()),
         })?,
         funds: vec![],
     };
