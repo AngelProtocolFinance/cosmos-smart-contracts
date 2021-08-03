@@ -1,0 +1,11 @@
+[workspace]
+members = [
+    "packages/*",
+    "contracts/core/*",
+]
+exclude = []
+
+[profile.release]
+rpath = false
+lto = true
+overflow-checks = true
