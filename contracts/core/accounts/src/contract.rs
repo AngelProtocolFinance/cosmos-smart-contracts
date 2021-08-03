@@ -1,8 +1,6 @@
 use crate::state::{Account, Config, RebalanceDetails, ACCOUNTS, CONFIG};
-use angel_core::accounts_msg::{
-    ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg, UpdateEndowmentSettingsMsg,
-};
-use angel_core::accounts_rsp::{AccountDetailsResponse, AccountListResponse, ConfigResponse};
+use angel_core::accounts_msg::*;
+use angel_core::accounts_rsp::*;
 use angel_core::error::ContractError;
 use angel_core::structs::{GenericBalance, Strategy};
 use cosmwasm_std::{
@@ -76,7 +74,12 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     let balance = Balance::from(info.funds.clone());
     match msg {
-        ExecuteMsg::UpdateEndowmentSettings(msg) => update_endowment_settings(deps, env, info, msg),
+        ExecuteMsg::UpdateEndowmentSettings(msg) => {
+            execute_update_endowment_settings(deps, env, info, msg)
+        }
+        ExecuteMsg::UpdateEndowmentStatus(msg) => {
+            execute_update_endowment_status(deps, env, info, msg)
+        }
         ExecuteMsg::Deposit(msg) => {
             execute_deposit(deps, info.sender, balance.clone(), msg.account_type)
         }
@@ -120,7 +123,7 @@ pub fn update_registrar(
     Ok(Response::default())
 }
 
-pub fn update_endowment_settings(
+pub fn execute_update_endowment_settings(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
@@ -141,6 +144,27 @@ pub fn update_endowment_settings(
         config.endowment_owner = endowment_owner;
         config.endowment_beneficiary = endowment_beneficiary;
         config.split_to_liquid = msg.split_to_liquid;
+        Ok(config)
+    })?;
+
+    Ok(Response::default())
+}
+
+pub fn execute_update_endowment_status(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateEndowmentStatusMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    // only the Registrar SC can update these status configs
+    if info.sender != config.registrar_contract {
+        return Err(ContractError::Unauthorized {});
+    }
+    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+        config.deposit_approved = msg.deposit_approved;
+        config.withdraw_approved = msg.withdraw_approved;
         Ok(config)
     })?;
 

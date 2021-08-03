@@ -24,12 +24,15 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+    let index_fund_contract_addr = deps.api.addr_validate(
+        &msg.index_fund_contract
+            .unwrap_or("XXXXXXXXXXXXXXXXXXXXXXXX".to_string()),
+    )?;
+
     let configs = Config {
         owner: info.sender,
-        index_fund_contract: deps
-            .api
-            .addr_validate(&"XXXXXXXXXXXXXXXXXXXXXXXX".to_string())?,
-        approved_coins: vec![],
+        index_fund_contract: index_fund_contract_addr,
+        approved_coins: msg.approved_coins.unwrap_or(vec![]),
         accounts_code_id: msg.accounts_code_id.unwrap_or(0 as u64),
     };
 
@@ -61,6 +64,43 @@ pub fn execute(
     }
 }
 
+fn build_account_status_change_msg(
+    account: String,
+    deposit: bool,
+    withdraw: bool,
+) -> StdResult<SubMsg> {
+    let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: account,
+        msg: to_binary(&angel_core::accounts_msg::UpdateEndowmentStatusMsg {
+            deposit_approved: deposit,
+            withdraw_approved: withdraw,
+        })?,
+        funds: vec![],
+    });
+
+    Ok(SubMsg {
+        id: 0,
+        msg: wasm_msg,
+        gas_limit: None,
+        reply_on: ReplyOn::Never,
+    })
+}
+
+fn build_index_fund_member_removal_msg(account: String) -> StdResult<SubMsg> {
+    let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: account.clone(),
+        msg: to_binary(&angel_core::index_fund_msg::RemoveMemberMsg { member: account })?,
+        funds: vec![],
+    });
+
+    Ok(SubMsg {
+        id: 0,
+        msg: wasm_msg,
+        gas_limit: None,
+        reply_on: ReplyOn::Never,
+    })
+}
+
 pub fn execute_update_endowment_status(
     deps: DepsMut,
     _env: Env,
@@ -74,25 +114,46 @@ pub fn execute_update_endowment_status(
     }
 
     // look up the endowment in the Registry. Will fail if doesn't exist
-    let endowment_status = REGISTRY.load(deps.storage, msg.address.to_string())?;
+    let account_str = msg.address.to_string();
+    let endowment_status = REGISTRY.load(deps.storage, account_str.clone())?;
 
+    // check first that the current status is different from the new status sent
     if endowment_status == msg.status {
-        return Err(ContractError::AccountAlreadyApproved {});
+        return Ok(Response::default());
+    }
+
+    // check that the endowment has not been closed (liquidated or terminated) as this is not reversable
+    if endowment_status == EndowmentStatus::Closed {
+        return Err(ContractError::AccountClosed {});
     }
 
     // save the new endowment status to the Registry
     REGISTRY.save(deps.storage, msg.address, &msg.status)?;
 
-    // TO DO: Take different actions based on the status passed
-    // if msg.status == EndowmentStatus::Approved {
-    //     // Allowed to receive donations and process withdrawals
-    // }
+    // Take different actions on the affected Accounts SC, based on the status passed
+    // Build out list of SubMsgs to send to the Account SC and/or Index Fund SC
+    // 1. INDEX FUND - Update fund members list removing a member if the member can no longer accept deposits
+    // 2. ACCOUNTS - Update the Endowment deposit/withdraw approval config settings based on the new status
+
+    let sub_messages: Vec<SubMsg> = match msg.status {
+        // Allowed to receive donations and process withdrawals
+        EndowmentStatus::Approved => {
+            vec![build_account_status_change_msg(account_str.clone(), true, true).unwrap()]
+        }
+        // Can accept inbound deposits, but cannot withdraw funds out
+        EndowmentStatus::Frozen => {
+            vec![build_account_status_change_msg(account_str.clone(), true, false).unwrap()]
+        }
+        // Has been liquidated or terminated. Remove from Funds and lockdown money flows
+        EndowmentStatus::Closed => vec![
+            build_account_status_change_msg(account_str.clone(), true, true).unwrap(),
+            build_index_fund_member_removal_msg(account_str.clone()).unwrap(),
+        ],
+        _ => vec![],
+    };
 
     let res = Response {
-        messages: vec![
-            // TO DO: Send msg to the Accounts SC being updated to inform them of the new status changes
-            // TO DO: Send msg to the Index Fund SC to inform them of the new status changes for the given endowment
-        ],
+        messages: sub_messages,
         attributes: vec![attr("action", "update_endowment_status")],
         ..Response::default()
     };
@@ -338,6 +399,8 @@ mod tests {
         let mut deps = mock_dependencies(&[]);
 
         let msg = InstantiateMsg {
+            index_fund_contract: Some("INDEXTHADFARHSRTHADGG".to_string()),
+            approved_coins: Some(vec![]),
             accounts_code_id: Some(0u64),
         };
         let info = mock_info("creator", &coins(1000, "earth"));

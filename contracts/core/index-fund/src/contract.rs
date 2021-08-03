@@ -37,12 +37,33 @@ pub fn instantiate(
 // And declare a custom Error variant for the ones where you will want to make use of it
 #[entry_point]
 pub fn execute(
-    _deps: DepsMut,
+    deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    match msg {}
+    match msg {
+        ExecuteMsg::RemoveMember(msg) => execute_remove_member(deps, info, msg.member),
+    }
+}
+
+fn execute_remove_member(
+    deps: DepsMut,
+    info: MessageInfo,
+    member: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender != config.registrar_contract {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // check the string is proper addr
+    let _member_addr = deps.api.addr_validate(&member)?;
+
+    // TO DO: build out member replacement logic.
+    // Check all Funds for the given member and remove the member Addr, if found.
+    Ok(Response::default())
 }
 
 #[entry_point]

@@ -8,6 +8,8 @@ pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
+    pub index_fund_contract: Option<String>,
+    pub approved_coins: Option<Vec<Addr>>,
     pub accounts_code_id: Option<u64>,
 }
 

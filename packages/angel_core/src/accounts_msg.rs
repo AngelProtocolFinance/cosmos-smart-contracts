@@ -47,6 +47,8 @@ pub enum ExecuteMsg {
     },
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
+    // Update an Endowment ability to receive/send funds
+    UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Replace an Account's Strategy with that given.
     UpdateStrategy {
         account_type: String, // prefix ("locked" or "liquid")
@@ -61,6 +63,12 @@ pub struct UpdateEndowmentSettingsMsg {
     pub beneficiary: String,
     pub owner: String,
     pub split_to_liquid: SplitDetails,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateEndowmentStatusMsg {
+    pub deposit_approved: bool,
+    pub withdraw_approved: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
