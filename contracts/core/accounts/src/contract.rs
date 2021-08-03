@@ -1,10 +1,10 @@
-use crate::state::{Account, Config, GenericBalance, RebalanceDetails, ACCOUNTS, CONFIG};
+use crate::state::{Account, Config, RebalanceDetails, ACCOUNTS, CONFIG};
 use angel_core::accounts_msg::{
     ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg, UpdateEndowmentSettingsMsg,
 };
 use angel_core::accounts_rsp::{AccountDetailsResponse, AccountListResponse, ConfigResponse};
 use angel_core::error::ContractError;
-use angel_core::structs::Strategy;
+use angel_core::structs::{GenericBalance, Strategy};
 use cosmwasm_std::{
     attr, entry_point, from_binary, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env,
     MessageInfo, Response, StdResult, SubMsg, WasmMsg,

@@ -31,6 +31,7 @@ overflow-checks = true
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
+angel-core = { version = "0.1.0", path = "../../../packages/angel_core" }
 cw20 = "0.7.0"
 cw-controllers = "0.7.0"
 cw20-base = { version = "0.7.0", features = ["library"] }

@@ -1,11 +1,11 @@
+use crate::state::{Config, CONFIG};
+use angel_core::error::ContractError;
+use angel_core::index_fund_msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use angel_core::structs::SplitDetails;
 use cosmwasm_std::{
     entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use cw20::Balance;
-
-use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
-use crate::state::{Config, CONFIG};
 
 // Note, you can use StdResult in some functions where you do not
 // make use of the custom errors
@@ -19,12 +19,15 @@ pub fn instantiate(
     // Default placeholders used in config to check compiling. Should take from InistantiateMsg.
     let configs = Config {
         owner: info.sender,
-        account_ledgers_sc: deps.api.addr_validate(&msg.account_ledgers_sc)?,
-        terra_alliance: vec![],
-        active_fund_index: Uint128::zero(),
-        fund_rotation_limit: Uint128::from(500000 as u128), // blocks
-        fund_member_limit: 10,
-        funding_goal: Some(Balance::default()),
+        registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
+        terra_alliance: msg.terra_alliance.unwrap_or(vec![]),
+        active_fund_index: msg.active_fund_index.unwrap_or(Uint128::zero()),
+        fund_rotation_limit: msg
+            .fund_rotation_limit
+            .unwrap_or(Uint128::from(500000 as u128)), // blocks
+        fund_member_limit: msg.fund_member_limit.unwrap_or(10),
+        funding_goal: msg.funding_goal.unwrap_or(Some(Balance::default())),
+        split_to_liquid: msg.split_to_liquid.unwrap_or(SplitDetails::default()),
     };
     CONFIG.save(deps.storage, &configs)?;
 
@@ -63,7 +66,13 @@ mod tests {
         let mut deps = mock_dependencies(&[]);
 
         let msg = InstantiateMsg {
-            account_ledgers_sc: String::from("some-account-ledgers-sc"),
+            registrar_contract: String::from("some-registrar-sc"),
+            terra_alliance: Some(vec![]),
+            active_fund_index: Some(Uint128::from(1u128)),
+            fund_rotation_limit: Some(Uint128::from(500000u128)),
+            fund_member_limit: Some(10),
+            funding_goal: None,
+            split_to_liquid: None,
         };
         let info = mock_info("creator", &coins(1000, "earth"));
 

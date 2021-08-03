@@ -1,6 +1,5 @@
-use angel_core::structs::{SplitDetails, Strategy};
-use cosmwasm_std::{Addr, Coin, Decimal, Env, Timestamp};
-use cw20::{Balance, Cw20CoinVerified};
+use angel_core::structs::{GenericBalance, SplitDetails, Strategy};
+use cosmwasm_std::{Addr, Decimal, Env, Timestamp};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -8,7 +7,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub admin_addr: Addr, // DANO Address
+    pub admin_addr: Addr, // DANO/AP Team Address
     pub registrar_contract: Addr,
     pub index_fund_contract: Addr,
     pub endowment_owner: Addr, // address that originally setup the endowment account
@@ -64,47 +63,6 @@ impl RebalanceDetails {
             locked_principle_to_liquid: false,
             principle_distribution: Decimal::zero(),
         }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
-pub struct GenericBalance {
-    pub native: Vec<Coin>,
-    pub cw20: Vec<Cw20CoinVerified>,
-}
-
-impl GenericBalance {
-    pub fn add_tokens(&mut self, add: Balance) {
-        match add {
-            Balance::Native(balance) => {
-                for token in balance.0 {
-                    let index = self.native.iter().enumerate().find_map(|(i, exist)| {
-                        if exist.denom == token.denom {
-                            Some(i)
-                        } else {
-                            None
-                        }
-                    });
-                    match index {
-                        Some(idx) => self.native[idx].amount += token.amount,
-                        None => self.native.push(token),
-                    }
-                }
-            }
-            Balance::Cw20(token) => {
-                let index = self.cw20.iter().enumerate().find_map(|(i, exist)| {
-                    if exist.address == token.address {
-                        Some(i)
-                    } else {
-                        None
-                    }
-                });
-                match index {
-                    Some(idx) => self.cw20[idx].amount += token.amount,
-                    None => self.cw20.push(token),
-                }
-            }
-        };
     }
 }
 

@@ -1,10 +1,8 @@
+use angel_core::index_fund_msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
+use index_fund::state::{Config, IndexFund};
 use std::env::current_dir;
 use std::fs::create_dir_all;
-
-use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
-
-use index_fund::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use index_fund::state::{Config, GenericBalance, IndexFund};
 
 fn main() {
     let mut out_dir = current_dir().unwrap();
@@ -14,7 +12,6 @@ fn main() {
 
     export_schema(&schema_for!(Config), &out_dir);
     export_schema(&schema_for!(ExecuteMsg), &out_dir);
-    export_schema(&schema_for!(GenericBalance), &out_dir);
     export_schema(&schema_for!(IndexFund), &out_dir);
     export_schema(&schema_for!(InstantiateMsg), &out_dir);
     export_schema(&schema_for!(QueryMsg), &out_dir);
