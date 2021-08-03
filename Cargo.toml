@@ -1,8 +1,11 @@
 [workspace]
 members = [
-    "packages/*",
+    "packages/angel_core",
+    "packages/angel_portal",
     "contracts/core/*",
+    "contracts/portal/*",
 ]
+
 exclude = []
 
 [profile.release]

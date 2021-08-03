@@ -1,22 +1,9 @@
-# Angel Protocol Smart Contracts
- 
-## Components
+# Angel Protocol Portal Contracts
 
-### Core Contracts
-- [Accounts](./contracts/accounts) - Implementation of the Charity Endowment Accounts. 
-- [Registrar](./contracts/registrar) - Contracts for the creation and management of Endowment Accounts smart contracts
-core platform of smart contracts that support multiple verticals of specialized smart contracts. 
-- [Index Fund](./contracts/index-fund) - Contract that acts as a gateway for donors and Terra Charity Alliance members to donate to a groups of charitites as a single Index Fund (grouped by UN SDGs).
+This folder contains the source code for the Portal smart contracts. These contracts are responsible for acting as portals to various DeFi/TeFi yield opportunities that charity endowment accounts can paticipate in.
 
-### Gateway Contracts
-- [Vaults](./contracts/vaults) - Vaults allow endowments to invest their funds into various TeFi/DeFi protocols to earn yield, based on their Strategy allocations.  
+## Contracts
 
-
-## Getting setup locally to develop:
-
-### Requirements: 
-- [LocalTerra](https://github.com/terra-project/localterra)(main branch)
-- Rust
-- Cargo
-
-To keep code styles consistant, please install and use the code linter, [Rustfmt]().
+| Contract                                               | Reference                                                                                                      | Description                                                                   |
+| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| [`anchor`](../contracts/market)                        | [doc](https://app.gitbook.com/@AngelProtocolFinance/)                 | Handles deposits and withdrawals from Anchor Protocol's earn platform |
