@@ -1,0 +1,45 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "CreateEndowmentMsg",
+  "type": "object",
+  "required": [
+    "deposit_approved",
+    "endowment_beneficiary",
+    "endowment_owner",
+    "withdraw_approved",
+    "withdraw_before_maturity"
+  ],
+  "properties": {
+    "deposit_approved": {
+      "type": "boolean"
+    },
+    "endowment_beneficiary": {
+      "type": "string"
+    },
+    "endowment_owner": {
+      "type": "string"
+    },
+    "maturity_height": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "maturity_time": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "withdraw_approved": {
+      "type": "boolean"
+    },
+    "withdraw_before_maturity": {
+      "type": "boolean"
+    }
+  }
+}
