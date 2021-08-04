@@ -1,4 +1,4 @@
-use crate::structs::SplitDetails;
+use crate::structs::{IndexFund, SplitDetails};
 use cosmwasm_std::{Addr, Uint128};
 use cw20::Balance;
 use schemars::JsonSchema;
@@ -20,11 +20,35 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     // endpoint to remove a single member from all index funds that they may in
     RemoveMember(RemoveMemberMsg),
+    // create a new index fund
+    CreateFund(CreateFundMsg),
+    // remove a specific index fund
+    RemoveFund(RemoveFundMsg),
+    // updates the members in a given index fund
+    UpdateMembers(UpdateMembersMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct RemoveMemberMsg {
     pub member: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct CreateFundMsg {
+    pub fund_id: String,
+    pub fund: IndexFund,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct RemoveFundMsg {
+    pub fund_id: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateMembersMsg {
+    pub fund_id: String,
+    pub add: Vec<String>,
+    pub remove: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

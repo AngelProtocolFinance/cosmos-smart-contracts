@@ -1,6 +1,6 @@
-use crate::state::{Config, CONFIG};
+use crate::state::{Config, CONFIG, FUNDS};
 use angel_core::error::ContractError;
-use angel_core::index_fund_msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use angel_core::index_fund_msg::*;
 use angel_core::structs::SplitDetails;
 use cosmwasm_std::{
     entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
@@ -43,8 +43,87 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::CreateFund(msg) => execute_create_index_fund(deps, info, msg),
+        ExecuteMsg::RemoveFund(msg) => execute_remove_index_fund(deps, info, msg.fund_id),
         ExecuteMsg::RemoveMember(msg) => execute_remove_member(deps, info, msg.member),
+        ExecuteMsg::UpdateMembers(msg) => execute_update_fund_members(deps, info, msg),
     }
+}
+
+fn execute_create_index_fund(
+    deps: DepsMut,
+    info: MessageInfo,
+    msg: CreateFundMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Add the new Fund to FUNDS
+    FUNDS.save(deps.storage, msg.fund_id, &msg.fund)?;
+
+    Ok(Response::default())
+}
+
+fn execute_remove_index_fund(
+    deps: DepsMut,
+    info: MessageInfo,
+    fund_id: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // this will fail if fund ID passed is not found
+    let _fund = FUNDS.load(deps.storage, fund_id.clone());
+
+    // remove the fund from FUNDS
+    FUNDS.remove(deps.storage, fund_id);
+
+    Ok(Response::default())
+}
+
+fn execute_update_fund_members(
+    deps: DepsMut,
+    info: MessageInfo,
+    msg: UpdateMembersMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // this will fail if fund ID passed is not found
+    let mut fund = FUNDS.load(deps.storage, msg.fund_id.clone())?;
+
+    // add members to the fund, only if they do not already exist
+    for add in msg.add.into_iter() {
+        let add_addr = deps.api.addr_validate(&add)?;
+        let pos = fund.members.iter().position(|m| *m == add_addr);
+        // ignore if that member was found in the list
+        if pos != None {
+            fund.members.push(add_addr);
+        }
+    }
+
+    // remove the members to the fund
+    for remove in msg.remove.into_iter() {
+        let remove_addr = deps.api.addr_validate(&remove)?;
+        // ignore if no member is found
+        if let Some(pos) = fund.members.iter().position(|m| *m == remove_addr) {
+            fund.members.swap_remove(pos);
+        }
+    }
+
+    // save revised fund to storage
+    FUNDS.save(deps.storage, msg.fund_id, &fund)?;
+
+    Ok(Response::default())
 }
 
 fn execute_remove_member(
@@ -68,7 +147,10 @@ fn execute_remove_member(
 
 #[entry_point]
 pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    match msg {}
+    match msg {
+        // TO DO: look up a single fund details
+        // TO DO: look up list of all funds
+    }
 }
 
 #[entry_point]
