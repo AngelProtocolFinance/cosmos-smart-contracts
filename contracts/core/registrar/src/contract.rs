@@ -330,20 +330,53 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosmwasm_std::coins;
+    use cosmwasm_std::{coins, from_binary};
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+
+    const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
 
     #[test]
     fn proper_initialization() {
         let mut deps = mock_dependencies(&[]);
 
         let msg = InstantiateMsg {
-            accounts_code_id: Some(0u64),
+            accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         };
         let info = mock_info("creator", &coins(1000, "earth"));
-
-        // we can just call .unwrap() to assert this was a success
         let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
         assert_eq!(0, res.messages.len());
+
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+        let config_response: ConfigResponse = from_binary(&res).unwrap();
+
+        assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
+        assert_eq!("creator", config_response.owner);
+    }
+
+    #[test]
+    fn update_owner() {
+        let mut deps = mock_dependencies(&[]);
+
+        let msg = InstantiateMsg {
+            accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
+        };
+        let info = mock_info("creator", &coins(1000, "earth"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        let info = mock_info("ill-wisher", &coins(1000, "earth"));
+        let msg = ExecuteMsg::UpdateOwner { new_owner: String::from("alice") };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg);
+
+        assert_eq!(ContractError::Unauthorized {}, _res.unwrap_err());
+
+        let info = mock_info("creator", &coins(1000, "earth"));
+        let msg = ExecuteMsg::UpdateOwner { new_owner: String::from("alice") };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg);
+
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+        let config_response: ConfigResponse = from_binary(&res).unwrap();
+
+        assert_eq!("alice", config_response.owner);
     }
 }
