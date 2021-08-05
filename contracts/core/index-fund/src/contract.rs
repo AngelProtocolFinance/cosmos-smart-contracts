@@ -1,9 +1,11 @@
 use crate::state::{Config, CONFIG, FUNDS};
 use angel_core::error::ContractError;
 use angel_core::index_fund_msg::*;
+use angel_core::index_fund_rsp::*;
 use angel_core::structs::SplitDetails;
 use cosmwasm_std::{
-    entry_point, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdResult,
+    Uint128,
 };
 use cw20::Balance;
 
@@ -21,7 +23,7 @@ pub fn instantiate(
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         terra_alliance: msg.terra_alliance.unwrap_or(vec![]),
-        active_fund_index: msg.active_fund_index.unwrap_or(Uint128::zero()),
+        active_fund_index: msg.active_fund_index.unwrap_or(Uint128::zero().to_string()),
         fund_rotation_limit: msg
             .fund_rotation_limit
             .unwrap_or(Uint128::from(500000 as u128)), // blocks
@@ -53,7 +55,6 @@ pub fn execute(
 
 fn execute_update_owner(
     deps: DepsMut,
-    _env: Env,
     info: MessageInfo,
     new_owner: String,
 ) -> Result<Response, ContractError> {
@@ -160,19 +161,66 @@ fn execute_remove_member(
     }
 
     // check the string is proper addr
-    let _member_addr = deps.api.addr_validate(&member)?;
+    let member_addr = deps.api.addr_validate(&member)?;
 
-    // TO DO: build out member replacement logic.
-    // Check all Funds for the given member and remove the member Addr, if found.
+    // Check all Funds for the given member and remove the member if found
+    let keys = FUNDS.keys(deps.storage, None, None, Order::Ascending);
+    for key in keys.collect() {
+        let fund = FUNDS.load(deps.storage, key)?;
+        // ignore if no member is found
+        if let Some(pos) = fund.members.iter().position(|m| *m == member_addr) {
+            fund.members.swap_remove(pos);
+        }
+    }
     Ok(Response::default())
 }
 
 #[entry_point]
-pub fn query(_deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        // TO DO: look up a single fund details
-        // TO DO: look up list of all funds
+        QueryMsg::ConfigDetails {} => to_binary(&query_config(deps)?),
+        QueryMsg::FundsList {} => to_binary(&query_funds_list(deps)?),
+        QueryMsg::FundDetails { fund_id } => to_binary(&query_fund_details(deps, fund_id)?),
+        QueryMsg::ActiveFundDetails {} => to_binary(&query_active_fund_details(deps)?),
     }
+}
+
+fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
+    let config = CONFIG.load(deps.storage)?;
+    Ok(ConfigResponse {
+        owner: config.owner.to_string(),
+        active_fund_index: config.active_fund_index,
+        fund_rotation_limit: config.fund_rotation_limit,
+        fund_member_limit: config.fund_member_limit,
+        funding_goal: config.funding_goal.unwrap(),
+        split_to_liquid: config.split_to_liquid,
+    })
+}
+
+fn query_funds_list(deps: Deps) -> StdResult<FundListResponse> {
+    // Return a list of Index Funds
+    let funds = vec![];
+    let keys: Vec<String> = FUNDS
+        .keys(deps.storage, None, None, Order::Ascending)
+        .collect();
+    for key in keys.into_iter() {
+        let fund = FUNDS.load(deps.storage, key)?;
+        funds.push(fund);
+    }
+    Ok(FundListResponse { funds: funds })
+}
+
+fn query_fund_details(deps: Deps, fund_id: String) -> StdResult<FundDetailsResponse> {
+    Ok(FundDetailsResponse {
+        fund: FUNDS.may_load(deps.storage, fund_id)?,
+    })
+}
+
+fn query_active_fund_details(deps: Deps) -> StdResult<FundDetailsResponse> {
+    let config = CONFIG.load(deps.storage)?;
+    Ok(FundDetailsResponse {
+        fund: FUNDS.may_load(deps.storage, config.active_fund_index)?,
+    })
 }
 
 #[entry_point]
@@ -193,7 +241,7 @@ mod tests {
         let msg = InstantiateMsg {
             registrar_contract: String::from("some-registrar-sc"),
             terra_alliance: Some(vec![]),
-            active_fund_index: Some(Uint128::from(1u128)),
+            active_fund_index: Some("active_fund_index".to_string()),
             fund_rotation_limit: Some(Uint128::from(500000u128)),
             fund_member_limit: Some(10),
             funding_goal: None,

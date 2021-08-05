@@ -11,7 +11,7 @@ pub struct Config {
     pub owner: Addr,                   // DANO Address
     pub registrar_contract: Addr,      // Address of Registrar SC
     pub terra_alliance: Vec<Addr>,     // Terra Charity Alliance approved addresses
-    pub active_fund_index: Uint128,    // index ID of the Active IndexFund
+    pub active_fund_index: String,     // index ID of the Active IndexFund
     pub fund_rotation_limit: Uint128, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: u32,       // limit to number of members an IndexFund can have
     pub funding_goal: Option<Balance>, // donation funding limit to trigger early cycle of the Active IndexFund
