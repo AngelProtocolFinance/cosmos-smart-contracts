@@ -43,11 +43,33 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::UpdateOwner { new_owner } => execute_update_owner(deps, info, new_owner),
         ExecuteMsg::CreateFund(msg) => execute_create_index_fund(deps, info, msg),
         ExecuteMsg::RemoveFund(msg) => execute_remove_index_fund(deps, info, msg.fund_id),
         ExecuteMsg::RemoveMember(msg) => execute_remove_member(deps, info, msg.member),
         ExecuteMsg::UpdateMembers(msg) => execute_update_fund_members(deps, info, msg),
     }
+}
+
+fn execute_update_owner(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    new_owner: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    // only the owner/admin of the contract can update their address in the configs
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+    let new_owner = deps.api.addr_validate(&new_owner)?;
+    // update config attributes with newly passed args
+    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+        config.owner = new_owner;
+        Ok(config)
+    })?;
+
+    Ok(Response::default())
 }
 
 fn execute_create_index_fund(

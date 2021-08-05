@@ -18,6 +18,8 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    // updates the owner of the contract
+    UpdateOwner { new_owner: String },
     // endpoint to remove a single member from all index funds that they may in
     RemoveMember(RemoveMemberMsg),
     // create a new index fund
