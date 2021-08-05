@@ -555,7 +555,7 @@ mod tests {
             beneficiary: pleb.clone(),
             split_to_liquid: SplitDetails::default(),
         };
-        let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth "));
+        let info = mock_info(ap_team.as_ref(), &coins(100000, "earth "));
         let env = mock_env();
         let res = execute(
             deps.as_mut(),
