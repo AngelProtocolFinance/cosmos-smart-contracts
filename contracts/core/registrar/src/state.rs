@@ -29,6 +29,14 @@ pub struct AssetVault {
     pub approved: bool,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct EndowmentEntry {
+    pub name: String,
+    pub description: String,
+    pub status: EndowmentStatus,
+}
+
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const REGISTRY: Map<String, EndowmentStatus> = Map::new("endowment");
+pub const REGISTRY: Map<String, EndowmentEntry> = Map::new("endowment");
 pub const VAULTS: Map<String, bool> = Map::new("vault");

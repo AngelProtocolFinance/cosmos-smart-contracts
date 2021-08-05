@@ -12,6 +12,8 @@ pub struct Config {
     pub index_fund_contract: Addr,
     pub endowment_owner: Addr, // address that originally setup the endowment account
     pub endowment_beneficiary: Addr, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
+    pub name: String,                // name of the Charity Endowment
+    pub description: String,         // description of the Charity Endowment
     pub deposit_approved: bool,      // DANO has approved to receive donations & transact
     pub withdraw_approved: bool,     // DANO has approved to withdraw funds
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date

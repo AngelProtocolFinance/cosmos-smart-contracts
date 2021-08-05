@@ -1,10 +1,7 @@
-use crate::state::{Config, CONFIG, REGISTRY, VAULTS};
+use crate::state::{Config, EndowmentEntry, CONFIG, REGISTRY, VAULTS};
 use angel_core::error::ContractError;
-use angel_core::registrar_msg::{
-    CreateEndowmentMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, UpdateConfigMsg,
-    UpdateEndowmentStatusMsg,
-};
-use angel_core::registrar_rsp::{ConfigResponse, VaultDetailsResponse, VaultListResponse};
+use angel_core::registrar_msg::*;
+use angel_core::registrar_rsp::*;
 use angel_core::structs::{EndowmentStatus, SplitDetails};
 use cosmwasm_std::{
     attr, entry_point, to_binary, Binary, ContractResult, CosmosMsg, Deps, DepsMut, Env,
@@ -115,20 +112,21 @@ pub fn execute_update_endowment_status(
 
     // look up the endowment in the Registry. Will fail if doesn't exist
     let account_str = msg.address.to_string();
-    let endowment_status = REGISTRY.load(deps.storage, account_str.clone())?;
+    let mut endowment_entry = REGISTRY.load(deps.storage, account_str.clone())?;
 
     // check first that the current status is different from the new status sent
-    if endowment_status == msg.status {
+    if endowment_entry.status == msg.status {
         return Ok(Response::default());
     }
 
     // check that the endowment has not been closed (liquidated or terminated) as this is not reversable
-    if endowment_status == EndowmentStatus::Closed {
+    if endowment_entry.status == EndowmentStatus::Closed {
         return Err(ContractError::AccountClosed {});
     }
 
-    // save the new endowment status to the Registry
-    REGISTRY.save(deps.storage, msg.address, &msg.status)?;
+    // update entry status & save to the Registry
+    endowment_entry.status = msg.status.clone();
+    REGISTRY.save(deps.storage, msg.address, &endowment_entry)?;
 
     // Take different actions on the affected Accounts SC, based on the status passed
     // Build out list of SubMsgs to send to the Account SC and/or Index Fund SC
@@ -236,6 +234,8 @@ pub fn execute_create_endowment(
             index_fund_contract: config.index_fund_contract.to_string(),
             endowment_owner: msg.endowment_owner,
             endowment_beneficiary: msg.endowment_beneficiary,
+            name: msg.name,
+            description: msg.description,
             withdraw_before_maturity: msg.withdraw_before_maturity,
             maturity_time: msg.maturity_time,
             maturity_height: msg.maturity_height,
@@ -335,7 +335,11 @@ pub fn new_accounts_reply(
             REGISTRY.save(
                 deps.storage,
                 env.contract.address.to_string(),
-                &EndowmentStatus::Inactive,
+                &EndowmentEntry {
+                    name: "".to_string(),
+                    description: "".to_string(),
+                    status: EndowmentStatus::Inactive,
+                },
             )?;
             return Ok(Response::default());
         }
@@ -391,9 +395,10 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cosmwasm_std::coins;
     use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+    use cosmwasm_std::{coins, from_binary};
 
+    const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
     #[test]
     fn proper_initialization() {
         let mut deps = mock_dependencies(&[]);
@@ -401,12 +406,50 @@ mod tests {
         let msg = InstantiateMsg {
             index_fund_contract: Some("INDEXTHADFARHSRTHADGG".to_string()),
             approved_coins: Some(vec![]),
-            accounts_code_id: Some(0u64),
+            accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         };
         let info = mock_info("creator", &coins(1000, "earth"));
 
         // we can just call .unwrap() to assert this was a success
         let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
         assert_eq!(0, res.messages.len());
+
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+        let config_response: ConfigResponse = from_binary(&res).unwrap();
+
+        assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
+        assert_eq!("creator", config_response.owner);
+    }
+
+    #[test]
+    fn update_owner() {
+        let mut deps = mock_dependencies(&[]);
+
+        let msg = InstantiateMsg {
+            index_fund_contract: Some("INDEXTHADFARHSRTHADGG".to_string()),
+            approved_coins: Some(vec![]),
+            accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
+        };
+        let info = mock_info("creator", &coins(1000, "earth"));
+        let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+        let info = mock_info("ill-wisher", &coins(1000, "earth"));
+        let msg = ExecuteMsg::UpdateOwner {
+            new_owner: String::from("alice"),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg);
+
+        assert_eq!(ContractError::Unauthorized {}, _res.unwrap_err());
+
+        let info = mock_info("creator", &coins(1000, "earth"));
+        let msg = ExecuteMsg::UpdateOwner {
+            new_owner: String::from("alice"),
+        };
+        let _res = execute(deps.as_mut(), mock_env(), info, msg);
+
+        let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+        let config_response: ConfigResponse = from_binary(&res).unwrap();
+
+        assert_eq!("alice", config_response.owner);
     }
 }

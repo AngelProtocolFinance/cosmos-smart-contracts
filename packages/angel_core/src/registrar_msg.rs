@@ -36,6 +36,8 @@ pub enum ExecuteMsg {
 pub struct CreateEndowmentMsg {
     pub endowment_owner: String,
     pub endowment_beneficiary: String,
+    pub name: String,
+    pub description: String,
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,

@@ -32,12 +32,14 @@ pub fn instantiate(
             index_fund_contract: deps.api.addr_validate(&msg.index_fund_contract)?,
             endowment_owner: deps.api.addr_validate(&msg.endowment_owner)?, // Addr
             endowment_beneficiary: deps.api.addr_validate(&msg.endowment_beneficiary)?, // Addr
-            deposit_approved: false,                                        // bool
-            withdraw_approved: false,                                       // bool
-            withdraw_before_maturity: msg.withdraw_before_maturity,         // bool
-            maturity_time: msg.maturity_time,                               // Option<u64>
-            maturity_height: msg.maturity_height,                           // Option<u64>
-            split_to_liquid: msg.split_to_liquid,                           // SplitDetails
+            name: msg.name,
+            description: msg.description,
+            deposit_approved: false,                                // bool
+            withdraw_approved: false,                               // bool
+            withdraw_before_maturity: msg.withdraw_before_maturity, // bool
+            maturity_time: msg.maturity_time,                       // Option<u64>
+            maturity_height: msg.maturity_height,                   // Option<u64>
+            split_to_liquid: msg.split_to_liquid,                   // SplitDetails
         },
     )?;
 
@@ -510,6 +512,8 @@ mod tests {
             index_fund_contract: index_fund_contract.clone(),
             endowment_owner: charity_addr.clone(),
             endowment_beneficiary: charity_addr.clone(),
+            name: "Test Endowment".to_string(),
+            description: "Endowment to power an amazing charity".to_string(),
             withdraw_before_maturity: false,
             maturity_time: None,
             maturity_height: None,
@@ -536,6 +540,8 @@ mod tests {
             index_fund_contract: index_fund_contract.clone(),
             endowment_owner: charity_addr.clone(),
             endowment_beneficiary: charity_addr.clone(),
+            name: "Test Endowment".to_string(),
+            description: "Endowment to power an amazing charity".to_string(),
             withdraw_before_maturity: false,
             maturity_time: None,
             maturity_height: None,
@@ -563,6 +569,8 @@ mod tests {
             index_fund_contract: index_fund_contract.clone(),
             endowment_owner: charity_addr.clone(),
             endowment_beneficiary: charity_addr.clone(),
+            name: "Test Endowment".to_string(),
+            description: "Endowment to power an amazing charity".to_string(),
             withdraw_before_maturity: false,
             maturity_time: None,
             maturity_height: None,
@@ -625,6 +633,8 @@ mod tests {
             index_fund_contract: index_fund_contract.clone(),
             endowment_owner: charity_addr.clone(),
             endowment_beneficiary: charity_addr.clone(),
+            name: "Test Endowment".to_string(),
+            description: "Endowment to power an amazing charity".to_string(),
             withdraw_before_maturity: false,
             maturity_time: None,
             maturity_height: None,
@@ -688,6 +698,8 @@ mod tests {
             index_fund_contract: index_fund_contract.clone(),
             endowment_owner: charity_addr.clone(),
             endowment_beneficiary: charity_addr.clone(),
+            name: "Test Endowment".to_string(),
+            description: "Endowment to power an amazing charity".to_string(),
             withdraw_before_maturity: false,
             maturity_time: None,
             maturity_height: None,
