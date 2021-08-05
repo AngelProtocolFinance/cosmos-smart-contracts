@@ -353,6 +353,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::Vault { address } => to_binary(&query_vault_details(deps, address)?),
         QueryMsg::VaultList { non_approved } => to_binary(&query_vault_list(deps, non_approved)?),
+        QueryMsg::EndowmentList { non_approved } => {
+            to_binary(&query_endowment_list(deps, non_approved)?)
+        }
     }
 }
 
@@ -377,7 +380,19 @@ fn query_vault_details(deps: Deps, address: String) -> StdResult<VaultDetailsRes
 }
 
 fn query_vault_list(_deps: Deps, _non_approved: Option<bool>) -> StdResult<VaultListResponse> {
-    let list = VaultListResponse { vaults: vec![] };
+    let vaults = vec![];
+    let list = VaultListResponse { vaults: vaults };
+    Ok(list)
+}
+
+fn query_endowment_list(
+    _deps: Deps,
+    _non_approved: Option<bool>,
+) -> StdResult<EndowmentListResponse> {
+    let endowments = vec![];
+    let list = EndowmentListResponse {
+        endowments: endowments,
+    };
     Ok(list)
 }
 

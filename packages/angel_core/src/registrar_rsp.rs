@@ -1,3 +1,4 @@
+use crate::structs::AssetVault;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -10,6 +11,11 @@ pub struct VaultDetailsResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct VaultListResponse {
     pub vaults: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct EndowmentListResponse {
+    pub endowments: Vec<AssetVault>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

@@ -23,14 +23,6 @@ impl Config {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct AssetVault {
-    pub name: String,
-    pub description: String,
-    pub approved: bool,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
 pub struct EndowmentEntry {
     pub name: String,
     pub description: String,

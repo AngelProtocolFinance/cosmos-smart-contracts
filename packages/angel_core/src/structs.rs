@@ -5,6 +5,14 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub struct AssetVault {
+    pub name: String,
+    pub description: String,
+    pub approved: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub struct StrategyComponent {
     pub address: Addr, // Vault SC Address
     pub percentage: Decimal,

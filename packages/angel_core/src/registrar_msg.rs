@@ -70,12 +70,11 @@ pub struct UpdateEndowmentStatusMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get details on a specific Vault
-    // Returns VaultDetailsResponse
     Vault { address: String },
     // Gets list of all Vaults. Passing the optional non_approved arg to see all vaults, not just Approved
-    // Returns VaultListResponse
     VaultList { non_approved: Option<bool> },
+    // Gets list of all registered Endowments. Passing the optional non_approved arg to see all Endowments, not just Approved
+    EndowmentList { non_approved: Option<bool> },
     // Get all Config details for the contract
-    // Returns ConfigResponse
     Config {},
 }
