@@ -128,8 +128,8 @@ pub fn update_endowment_settings(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // only the endowment owner can update these configs
-    if info.sender != config.endowment_owner {
+    // only the SC admin can update these configs...for now
+    if info.sender != config.admin_addr {
         return Err(ContractError::Unauthorized {});
     }
 
