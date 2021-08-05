@@ -62,6 +62,8 @@ pub enum QueryMsg {
     FundDetails { fund_id: String },
     // return details on the currently active fund
     ActiveFundDetails {},
+    // get total donations given to Active Fund for a round
+    ActiveFundDonations {},
     // return config details
     ConfigDetails {},
 }

@@ -1,4 +1,4 @@
-use crate::state::{Config, CONFIG, FUNDS};
+use crate::state::{Config, CONFIG, CURRENT_DONATIONS, FUNDS};
 use angel_core::error::ContractError;
 use angel_core::index_fund_msg::*;
 use angel_core::index_fund_rsp::*;
@@ -6,7 +6,7 @@ use angel_core::structs::SplitDetails;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
-use cw20::Balance;
+use cw20::{Balance, Cw20Coin};
 
 // Note, you can use StdResult in some functions where you do not
 // make use of the custom errors
@@ -195,6 +195,7 @@ pub fn query(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::FundsList {} => to_binary(&query_funds_list(deps)?),
         QueryMsg::FundDetails { fund_id } => to_binary(&query_fund_details(deps, fund_id)?),
         QueryMsg::ActiveFundDetails {} => to_binary(&query_active_fund_details(deps)?),
+        QueryMsg::ActiveFundDonations {} => to_binary(&query_active_fund_donations(deps)?),
     }
 }
 
@@ -233,6 +234,33 @@ fn query_active_fund_details(deps: Deps) -> StdResult<FundDetailsResponse> {
     Ok(FundDetailsResponse {
         fund: FUNDS.may_load(deps.storage, config.active_fund_index)?,
     })
+}
+
+fn query_active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
+    let config = CONFIG.load(deps.storage)?;
+    let mut donors = vec![];
+    for tca in config.terra_alliance.into_iter() {
+        let donations = CURRENT_DONATIONS.may_load(deps.storage, tca.to_string())?;
+        if donations != None {
+            let cw20_bal: StdResult<Vec<_>> = donations
+                .unwrap()
+                .cw20
+                .into_iter()
+                .map(|token| {
+                    Ok(Cw20Coin {
+                        address: token.address.into(),
+                        amount: token.amount,
+                    })
+                })
+                .collect();
+            // add to response vector
+            donors.push(DonationDetailResponse {
+                address: tca.to_string(),
+                tokens: cw20_bal?,
+            });
+        }
+    }
+    Ok(DonationListResponse { donors: donors })
 }
 
 #[entry_point]

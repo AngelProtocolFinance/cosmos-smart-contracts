@@ -1,6 +1,6 @@
 use crate::structs::{IndexFund, SplitDetails};
 use cosmwasm_std::Uint128;
-use cw20::Balance;
+use cw20::{Balance, Cw20Coin};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -12,6 +12,17 @@ pub struct FundDetailsResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct FundListResponse {
     pub funds: Vec<IndexFund>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct DonationDetailResponse {
+    pub address: String,
+    pub tokens: Vec<Cw20Coin>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct DonationListResponse {
+    pub donors: Vec<DonationDetailResponse>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

@@ -20,5 +20,5 @@ pub struct Config {
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const DONATIONS: Map<Addr, GenericBalance> = Map::new("donation");
+pub const CURRENT_DONATIONS: Map<String, GenericBalance> = Map::new("current_donation");
 pub const FUNDS: Map<String, IndexFund> = Map::new("fund");
