@@ -53,7 +53,6 @@ pub fn execute(
 
 fn execute_update_owner(
     deps: DepsMut,
-    _env: Env,
     info: MessageInfo,
     new_owner: String,
 ) -> Result<Response, ContractError> {
