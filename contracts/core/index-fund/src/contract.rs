@@ -4,8 +4,7 @@ use angel_core::index_fund_msg::*;
 use angel_core::index_fund_rsp::*;
 use angel_core::structs::SplitDetails;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response, StdResult,
-    Uint128,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
 use cw20::Balance;
 
@@ -24,6 +23,7 @@ pub fn instantiate(
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         terra_alliance: msg.terra_alliance.unwrap_or(vec![]),
         active_fund_index: msg.active_fund_index.unwrap_or(Uint128::zero().to_string()),
+        funds_list: vec![],
         fund_rotation_limit: msg
             .fund_rotation_limit
             .unwrap_or(Uint128::from(500000 as u128)), // blocks
@@ -83,7 +83,11 @@ fn execute_create_index_fund(
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
-
+    // Add new fund_id to the funds keys list
+    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+        config.funds_list.push(format!("{}", msg.fund_id));
+        Ok(config)
+    })?;
     // Add the new Fund to FUNDS
     FUNDS.save(deps.storage, msg.fund_id, &msg.fund)?;
 
@@ -103,9 +107,19 @@ fn execute_remove_index_fund(
 
     // this will fail if fund ID passed is not found
     let _fund = FUNDS.load(deps.storage, fund_id.clone());
-
     // remove the fund from FUNDS
-    FUNDS.remove(deps.storage, fund_id);
+    FUNDS.remove(deps.storage, fund_id.clone());
+    // remove from fund keys list if it is in there
+    if let Some(pos) = config
+        .funds_list
+        .iter()
+        .position(|key| *key == fund_id.clone())
+    {
+        CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+            config.funds_list.swap_remove(pos);
+            Ok(config)
+        })?;
+    }
 
     Ok(Response::default())
 }
@@ -164,9 +178,8 @@ fn execute_remove_member(
     let member_addr = deps.api.addr_validate(&member)?;
 
     // Check all Funds for the given member and remove the member if found
-    let keys = FUNDS.keys(deps.storage, None, None, Order::Ascending);
-    for key in keys.collect() {
-        let fund = FUNDS.load(deps.storage, key)?;
+    for key in config.funds_list.into_iter() {
+        let mut fund = FUNDS.load(deps.storage, key)?;
         // ignore if no member is found
         if let Some(pos) = fund.members.iter().position(|m| *m == member_addr) {
             fund.members.swap_remove(pos);
@@ -198,12 +211,11 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 }
 
 fn query_funds_list(deps: Deps) -> StdResult<FundListResponse> {
+    let config = CONFIG.load(deps.storage)?;
+
     // Return a list of Index Funds
-    let funds = vec![];
-    let keys: Vec<String> = FUNDS
-        .keys(deps.storage, None, None, Order::Ascending)
-        .collect();
-    for key in keys.into_iter() {
+    let mut funds = vec![];
+    for key in config.funds_list.into_iter() {
         let fund = FUNDS.load(deps.storage, key)?;
         funds.push(fund);
     }

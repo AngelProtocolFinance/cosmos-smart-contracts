@@ -12,6 +12,7 @@ pub struct Config {
     pub registrar_contract: Addr,      // Address of Registrar SC
     pub terra_alliance: Vec<Addr>,     // Terra Charity Alliance approved addresses
     pub active_fund_index: String,     // index ID of the Active IndexFund
+    pub funds_list: Vec<String>,       // Vec of String IDs for all Funds
     pub fund_rotation_limit: Uint128, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: u32,       // limit to number of members an IndexFund can have
     pub funding_goal: Option<Balance>, // donation funding limit to trigger early cycle of the Active IndexFund
@@ -19,6 +20,5 @@ pub struct Config {
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const CURRENT_ROUND_DONATIONS: Map<String, GenericBalance> =
-    Map::new("current_round_donations"); // EID mapped to Balances of donations
-pub const FUNDS: Map<String, IndexFund> = Map::new("index_fund");
+pub const DONATIONS: Map<Addr, GenericBalance> = Map::new("donation");
+pub const FUNDS: Map<String, IndexFund> = Map::new("fund");
