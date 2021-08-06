@@ -8,7 +8,7 @@ members = [
 
 exclude = [
     "packages/angel_portal",
-    "contracts/portal/anchor",
+    "contracts/portal/portal-template",
 ]
 
 [profile.release]
