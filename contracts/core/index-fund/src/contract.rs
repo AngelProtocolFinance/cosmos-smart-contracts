@@ -2,7 +2,7 @@ use crate::state::{fund_read, fund_store, read_funds, Config, CONFIG, CURRENT_DO
 use angel_core::error::ContractError;
 use angel_core::index_fund_msg::*;
 use angel_core::index_fund_rsp::*;
-use angel_core::structs::SplitDetails;
+use angel_core::structs::{IndexFund, SplitDetails};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
@@ -47,7 +47,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::UpdateOwner { new_owner } => execute_update_owner(deps, info, new_owner),
-        ExecuteMsg::CreateFund(msg) => execute_create_index_fund(deps, info, msg),
+        ExecuteMsg::CreateFund { fund } => execute_create_index_fund(deps, info, fund),
         ExecuteMsg::RemoveFund(msg) => execute_remove_index_fund(deps, info, msg.fund_addr),
         ExecuteMsg::RemoveMember(msg) => execute_remove_member(deps, info, msg.member),
         ExecuteMsg::UpdateMembers(msg) => execute_update_fund_members(deps, info, msg),
@@ -77,16 +77,15 @@ fn execute_update_owner(
 fn execute_create_index_fund(
     deps: DepsMut,
     info: MessageInfo,
-    msg: CreateFundMsg,
+    fund: IndexFund,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
-    let addr = deps.api.addr_validate(&msg.fund_addr)?;
-    // Add the new Fund to FUNDS
-    fund_store(deps.storage).save(&addr.as_bytes(), &msg.fund)?;
+    // Add the new Fund
+    fund_store(deps.storage).save(&fund.address.as_bytes(), &fund)?;
 
     Ok(Response::default())
 }
@@ -161,16 +160,17 @@ fn execute_remove_member(
     }
 
     // check the string is proper addr
-    let _member_addr = deps.api.addr_validate(&member)?;
+    let member_addr = deps.api.addr_validate(&member)?;
 
     // Check all Funds for the given member and remove the member if found
-    // let funds = fund_store(deps.storage).range(None, None, Order::Ascending);
-    // for fund in funds {
-    //     // ignore if no member is found
-    //     if let Some(pos) = fund.members.iter().position(|m| *m == member_addr) {
-    //         fund.members.swap_remove(pos);
-    //     }
-    // }
+    let funds = read_funds(deps.storage)?;
+    for mut fund in funds.into_iter() {
+        // ignore if no member is found
+        if let Some(pos) = fund.members.iter().position(|m| *m == member_addr) {
+            fund.members.swap_remove(pos);
+            fund_store(deps.storage).save(&fund.address.as_bytes(), &fund)?;
+        }
+    }
     Ok(Response::default())
 }
 
