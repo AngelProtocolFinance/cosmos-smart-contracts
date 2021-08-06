@@ -1,5 +1,5 @@
 [package]
-name = "vault-template"
+name = "portal-template"
 version = "0.1.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"

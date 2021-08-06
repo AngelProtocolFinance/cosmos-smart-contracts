@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Coin, Decimal};
+use cosmwasm_std::{Addr, Coin, Decimal, Env, Timestamp};
 use cw20::{Balance, Cw20CoinVerified};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -46,12 +46,73 @@ impl SplitDetails {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct AssetVault {
+    pub address: Addr,
+    pub name: String,
+    pub description: String,
+    pub approved: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct EndowmentEntry {
+    pub address: Addr,
+    pub name: String,
+    pub description: String,
+    pub status: EndowmentStatus,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum EndowmentStatus {
     Inactive = 0, // Default state when new Endowment is created
     // Statuses below are set by DANO or AP Team
     Approved = 1, // Allowed to receive donations and process withdrawals
     Frozen = 2,   // Temp. hold is placed on withdraw from an Endowment
     Closed = 3,   // Status for final Liquidations(good-standing) or Terminations(poor-standing)
+}
+
+impl EndowmentStatus {
+    pub fn to_string(&self) -> String {
+        let val = match self {
+            EndowmentStatus::Inactive => "0",
+            EndowmentStatus::Approved => "1",
+            EndowmentStatus::Frozen => "2",
+            EndowmentStatus::Closed => "3",
+        };
+        return val.to_string();
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct IndexFund {
+    pub address: Addr,
+    pub name: String,
+    pub description: String,
+    pub members: Vec<Addr>,
+    // Fund Specific: over-riding SC level setting to handle a fixed split value
+    // Defines the % to split off into liquid account, and if defined overrides all other splits
+    pub split_to_liquid: Option<Decimal>,
+    // Used for one-off funds that have an end date (ex. disaster recovery funds)
+    pub expiry_time: Option<u64>,   // datetime int of index fund expiry
+    pub expiry_height: Option<u64>, // block equiv of the expiry_datetime
+}
+
+impl IndexFund {
+    pub fn is_expired(&self, env: &Env) -> bool {
+        if let Some(expiry_height) = self.expiry_height {
+            if env.block.height > expiry_height {
+                return true;
+            }
+        }
+        if let Some(expiry_time) = self.expiry_time {
+            if env.block.time > Timestamp::from_seconds(expiry_time) {
+                return true;
+            }
+        }
+        false
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]

@@ -1,6 +1,7 @@
 use angel_core::index_fund_msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use angel_core::structs::IndexFund;
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
-use index_fund::state::{Config, IndexFund};
+use index_fund::state::Config;
 use std::env::current_dir;
 use std::fs::create_dir_all;
 

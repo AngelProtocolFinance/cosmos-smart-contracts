@@ -89,6 +89,26 @@
     {
       "type": "object",
       "required": [
+        "update_admin"
+      ],
+      "properties": {
+        "update_admin": {
+          "type": "object",
+          "required": [
+            "new_admin"
+          ],
+          "properties": {
+            "new_admin": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "update_registrar"
       ],
       "properties": {
@@ -114,6 +134,18 @@
       "properties": {
         "update_endowment_settings": {
           "$ref": "#/definitions/UpdateEndowmentSettingsMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_endowment_status"
+      ],
+      "properties": {
+        "update_endowment_status": {
+          "$ref": "#/definitions/UpdateEndowmentStatusMsg"
         }
       },
       "additionalProperties": false
@@ -271,6 +303,21 @@
         },
         "split_to_liquid": {
           "$ref": "#/definitions/SplitDetails"
+        }
+      }
+    },
+    "UpdateEndowmentStatusMsg": {
+      "type": "object",
+      "required": [
+        "deposit_approved",
+        "withdraw_approved"
+      ],
+      "properties": {
+        "deposit_approved": {
+          "type": "boolean"
+        },
+        "withdraw_approved": {
+          "type": "boolean"
         }
       }
     }

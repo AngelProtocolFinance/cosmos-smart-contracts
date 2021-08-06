@@ -5,9 +5,11 @@
   "required": [
     "admin_addr",
     "deposit_approved",
+    "description",
     "endowment_beneficiary",
     "endowment_owner",
     "index_fund_contract",
+    "name",
     "registrar_contract",
     "split_to_liquid",
     "withdraw_approved",
@@ -19,6 +21,9 @@
     },
     "deposit_approved": {
       "type": "boolean"
+    },
+    "description": {
+      "type": "string"
     },
     "endowment_beneficiary": {
       "$ref": "#/definitions/Addr"
@@ -44,6 +49,9 @@
       ],
       "format": "uint64",
       "minimum": 0.0
+    },
+    "name": {
+      "type": "string"
     },
     "registrar_contract": {
       "$ref": "#/definitions/Addr"

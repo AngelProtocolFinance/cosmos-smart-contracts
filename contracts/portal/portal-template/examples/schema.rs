@@ -3,8 +3,8 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
-use asset_vault_template::msg::{ExecuteMsg, InstantiateMsg, InvestmentResponse, QueryMsg};
-use asset_vault_template::state::{Config, InvestmentInfo, Supply, TaxParameters};
+use portal_template::msg::{ExecuteMsg, InstantiateMsg, InvestmentResponse, QueryMsg};
+use portal_template::state::{Config, InvestmentInfo, Supply, TaxParameters};
 
 fn main() {
     let mut out_dir = current_dir().unwrap();

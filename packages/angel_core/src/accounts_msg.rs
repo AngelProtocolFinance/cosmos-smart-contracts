@@ -13,6 +13,8 @@ pub struct InstantiateMsg {
     pub index_fund_contract: String,
     pub endowment_owner: String, // address that originally setup the endowment account
     pub endowment_beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
+    pub name: String,                  // name of the Charity Endowment
+    pub description: String,           // description of the Charity Endowment
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
@@ -39,14 +41,18 @@ pub enum ExecuteMsg {
     TerminateToAddress {
         beneficiary: String, // Addr of the Beneficiary to receive funds
     },
-    // // Allows the contract parameter to be updated (only by the owner...for now)
-    // UpdateConfig(UpdateConfigMsg),
+    // update admin addr
+    UpdateAdmin {
+        new_admin: String,
+    },
     // Allows the SC owner (only!) to change ownership
     UpdateRegistrar {
         new_registrar: String,
     },
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
+    // Update an Endowment ability to receive/send funds
+    UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Replace an Account's Strategy with that given.
     UpdateStrategy {
         account_type: String, // prefix ("locked" or "liquid")
@@ -61,6 +67,12 @@ pub struct UpdateEndowmentSettingsMsg {
     pub beneficiary: String,
     pub owner: String,
     pub split_to_liquid: SplitDetails,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateEndowmentStatusMsg {
+    pub deposit_approved: bool,
+    pub withdraw_approved: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

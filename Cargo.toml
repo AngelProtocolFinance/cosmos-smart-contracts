@@ -1,12 +1,14 @@
 [workspace]
 members = [
     "packages/angel_core",
-    "contracts/core/*",
+    "contracts/core/accounts",
+    "contracts/core/index-fund",
+    "contracts/core/registrar",
 ]
 
 exclude = [
     "packages/angel_portal",
-    "contracts/portal/*",
+    "contracts/portal/portal-template",
 ]
 
 [profile.release]
