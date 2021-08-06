@@ -18,4 +18,5 @@ pub struct AccountDetailsResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub admin_addr: String,
+    pub registrar_contract: String,
 }

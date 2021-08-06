@@ -41,8 +41,10 @@ pub enum ExecuteMsg {
     TerminateToAddress {
         beneficiary: String, // Addr of the Beneficiary to receive funds
     },
-    // // Allows the contract parameter to be updated (only by the owner...for now)
-    // UpdateConfig(UpdateConfigMsg),
+    // update admin addr
+    UpdateAdmin {
+        new_admin: String,
+    },
     // Allows the SC owner (only!) to change ownership
     UpdateRegistrar {
         new_registrar: String,

@@ -91,6 +91,8 @@ pub fn execute(
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             update_registrar(deps, env, info, new_registrar)
         }
+        ExecuteMsg::UpdateAdmin { new_admin } => update_admin(deps, env, info, new_admin),
+
         ExecuteMsg::UpdateStrategy {
             account_type,
             strategy,
@@ -132,10 +134,12 @@ pub fn update_registrar(
     new_registrar: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+
     // only the owner of the contract can update the configs...for now
     if info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
+
     let new_registrar = deps.api.addr_validate(&new_registrar)?;
     // update config attributes with newly passed args
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
@@ -465,7 +469,8 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
 
     let res = ConfigResponse {
-        admin_addr: config.registrar_contract.to_string(),
+        admin_addr: config.admin_addr.to_string(),
+        registrar_contract: config.registrar_contract.to_string(),
     };
     Ok(res)
 }
@@ -575,7 +580,7 @@ mod tests {
     }
 
     #[test]
-    fn test_update_config() {
+    fn test_update_endowment_settings() {
         let mut deps = mock_dependencies(&[]);
         // meet the cast of characters
         let ap_team = "angelprotocolteamdano".to_string();
@@ -639,7 +644,7 @@ mod tests {
     }
 
     #[test]
-    fn test_change_contract_owner() {
+    fn test_change_registrar_contract() {
         let mut deps = mock_dependencies(&[]);
         // meet the cast of characters
         let ap_team = "angelprotocolteamdano".to_string();
@@ -682,29 +687,21 @@ mod tests {
 
         // check changes saved and can be recalled
         let res = query_config(deps.as_ref()).unwrap();
-        assert_eq!(pleb.clone(), res.admin_addr);
+        assert_eq!(pleb.clone(), res.registrar_contract);
 
-        // Original charity owner should not be able to update the configs now
-        let msg = UpdateEndowmentSettingsMsg {
-            owner: charity_addr.clone(),
-            beneficiary: pleb.clone(),
-            split_to_liquid: SplitDetails::default(),
+        // Original contract owner should not be able to update the registrar now
+        let msg = ExecuteMsg::UpdateRegistrar {
+            new_registrar: pleb.clone(),
         };
         let info = mock_info(ap_team.as_ref(), &coins(100000, "earth "));
         let env = mock_env();
         // This should fail with an error!
-        let err = execute(
-            deps.as_mut(),
-            env,
-            info,
-            ExecuteMsg::UpdateEndowmentSettings(msg),
-        )
-        .unwrap_err();
+        let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
         assert_eq!(err, ContractError::Unauthorized {});
     }
 
     #[test]
-    fn test_terminate_account() {
+    fn test_change_admin() {
         let mut deps = mock_dependencies(&[]);
         // meet the cast of characters
         let ap_team = "angelprotocolteamdano".to_string();
@@ -731,50 +728,33 @@ mod tests {
         let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
         assert_eq!(0, res.messages.len());
 
-        // update the endowment owner and beneficiary
-        let msg = UpdateEndowmentSettingsMsg {
-            owner: charity_addr.clone(),
-            beneficiary: pleb.clone(),
-            split_to_liquid: SplitDetails::default(),
+        // change the admin to some pleb
+        let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+        let env = mock_env();
+        let res = execute(
+            deps.as_mut(),
+            env.clone(),
+            info.clone(),
+            ExecuteMsg::UpdateAdmin {
+                new_admin: pleb.clone(),
+            },
+        )
+        .unwrap();
+        assert_eq!(0, res.messages.len());
+
+        // check changes saved and can be recalled
+        let res = query_config(deps.as_ref()).unwrap();
+        assert_eq!(pleb.clone(), res.admin_addr);
+
+        // Original owner should not be able to update the configs now
+        let msg = ExecuteMsg::UpdateAdmin {
+            new_admin: charity_addr.clone(),
         };
-        let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth"));
+        let info = mock_info(ap_team.as_ref(), &coins(100000, "earth "));
         let env = mock_env();
-        let res = execute(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            ExecuteMsg::UpdateEndowmentSettings(msg),
-        )
-        .unwrap();
-        assert_eq!(0, res.messages.len());
-
-        // only Registrar SC addr can send msg to terminate the account
-        let info = mock_info(&pleb.clone(), &coins(100000, "earth"));
-        let env = mock_env();
-        let err = execute(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            ExecuteMsg::TerminateToAddress {
-                beneficiary: ap_team.clone(),
-            },
-        )
-        .unwrap_err();
+        // This should fail with an error!
+        let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
         assert_eq!(err, ContractError::Unauthorized {});
-
-        // trigger account termination for real
-        let info = mock_info(registrar_contract.as_ref(), &coins(100000, "earth"));
-        let env = mock_env();
-        let res = execute(
-            deps.as_mut(),
-            env.clone(),
-            info.clone(),
-            ExecuteMsg::TerminateToAddress {
-                beneficiary: ap_team.clone(),
-            },
-        )
-        .unwrap();
-        assert_eq!(0, res.messages.len());
     }
 
     #[test]
