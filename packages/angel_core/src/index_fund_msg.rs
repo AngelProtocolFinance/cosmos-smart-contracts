@@ -1,4 +1,4 @@
-use crate::structs::SplitDetails;
+use crate::structs::{IndexFund, SplitDetails};
 use cosmwasm_std::{Addr, Uint128};
 use cw20::Balance;
 use schemars::JsonSchema;
@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub terra_alliance: Option<Vec<Addr>>, // Terra Charity Alliance approved addresses
-    pub active_fund_index: Option<Uint128>, // index ID of the Active IndexFund
+    pub active_fund_index: Option<String>, // index ID of the Active IndexFund
     pub fund_rotation_limit: Option<Uint128>, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: Option<u32>,       // limit to number of members an IndexFund can have
     pub funding_goal: Option<Option<Balance>>, // donation funding limit to trigger early cycle of the Active IndexFund
@@ -18,8 +18,16 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    // updates the owner of the contract
+    UpdateOwner { new_owner: String },
     // endpoint to remove a single member from all index funds that they may in
     RemoveMember(RemoveMemberMsg),
+    // create a new index fund
+    CreateFund(CreateFundMsg),
+    // remove a specific index fund
+    RemoveFund(RemoveFundMsg),
+    // updates the members in a given index fund
+    UpdateMembers(UpdateMembersMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -28,8 +36,37 @@ pub struct RemoveMemberMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct CreateFundMsg {
+    pub fund_id: String,
+    pub fund: IndexFund,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct RemoveFundMsg {
+    pub fund_id: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateMembersMsg {
+    pub fund_id: String,
+    pub add: Vec<String>,
+    pub remove: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum QueryMsg {}
+pub enum QueryMsg {
+    // returns a list of all funds
+    FundsList {},
+    // returns a single fund if the ID is valid
+    FundDetails { fund_id: String },
+    // return details on the currently active fund
+    ActiveFundDetails {},
+    // get total donations given to Active Fund for a round
+    ActiveFundDonations {},
+    // return config details
+    ConfigDetails {},
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {}

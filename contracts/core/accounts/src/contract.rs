@@ -104,18 +104,39 @@ pub fn execute(
     }
 }
 
+pub fn update_admin(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    new_admin: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    // only the owner/admin of the contract can update their address in the configs
+    if info.sender != config.admin_addr {
+        return Err(ContractError::Unauthorized {});
+    }
+    let new_admin = deps.api.addr_validate(&new_admin)?;
+    // update config attributes with newly passed args
+    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+        config.admin_addr = new_admin;
+        Ok(config)
+    })?;
+
+    Ok(Response::default())
+}
+
 pub fn update_registrar(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     new_registrar: String,
 ) -> Result<Response, ContractError> {
-    let new_registrar = deps.api.addr_validate(&new_registrar)?;
     let config = CONFIG.load(deps.storage)?;
     // only the owner of the contract can update the configs...for now
     if info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
+    let new_registrar = deps.api.addr_validate(&new_registrar)?;
     // update config attributes with newly passed args
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
         config.registrar_contract = new_registrar;
