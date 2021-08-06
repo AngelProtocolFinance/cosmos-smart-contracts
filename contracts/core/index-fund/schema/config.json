@@ -3,19 +3,17 @@
   "title": "Config",
   "type": "object",
   "required": [
-    "account_ledgers_sc",
-    "active_fund_index",
+    "active_fund",
     "fund_member_limit",
     "fund_rotation_limit",
     "owner",
+    "registrar_contract",
+    "split_to_liquid",
     "terra_alliance"
   ],
   "properties": {
-    "account_ledgers_sc": {
+    "active_fund": {
       "$ref": "#/definitions/Addr"
-    },
-    "active_fund_index": {
-      "$ref": "#/definitions/Uint128"
     },
     "fund_member_limit": {
       "type": "integer",
@@ -37,6 +35,12 @@
     },
     "owner": {
       "$ref": "#/definitions/Addr"
+    },
+    "registrar_contract": {
+      "$ref": "#/definitions/Addr"
+    },
+    "split_to_liquid": {
+      "$ref": "#/definitions/SplitDetails"
     },
     "terra_alliance": {
       "type": "array",
@@ -108,10 +112,33 @@
         }
       }
     },
+    "Decimal": {
+      "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+      "type": "string"
+    },
     "NativeBalance": {
       "type": "array",
       "items": {
         "$ref": "#/definitions/Coin"
+      }
+    },
+    "SplitDetails": {
+      "type": "object",
+      "required": [
+        "default",
+        "max",
+        "min"
+      ],
+      "properties": {
+        "default": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "max": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "min": {
+          "$ref": "#/definitions/Decimal"
+        }
       }
     },
     "Uint128": {

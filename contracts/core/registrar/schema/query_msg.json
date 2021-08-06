@@ -11,10 +11,10 @@
         "vault": {
           "type": "object",
           "required": [
-            "address"
+            "vault_addr"
           ],
           "properties": {
-            "address": {
+            "vault_addr": {
               "type": "string"
             }
           }
@@ -29,15 +29,19 @@
       ],
       "properties": {
         "vault_list": {
-          "type": "object",
-          "properties": {
-            "non_approved": {
-              "type": [
-                "boolean",
-                "null"
-              ]
-            }
-          }
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "endowment_list"
+      ],
+      "properties": {
+        "endowment_list": {
+          "type": "object"
         }
       },
       "additionalProperties": false

@@ -1,6 +1,74 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "QueryMsg",
-  "type": "string",
-  "enum": []
+  "anyOf": [
+    {
+      "type": "object",
+      "required": [
+        "funds_list"
+      ],
+      "properties": {
+        "funds_list": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "fund_details"
+      ],
+      "properties": {
+        "fund_details": {
+          "type": "object",
+          "required": [
+            "fund_addr"
+          ],
+          "properties": {
+            "fund_addr": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "active_fund_details"
+      ],
+      "properties": {
+        "active_fund_details": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "active_fund_donations"
+      ],
+      "properties": {
+        "active_fund_donations": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "config_details"
+      ],
+      "properties": {
+        "config_details": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    }
+  ]
 }

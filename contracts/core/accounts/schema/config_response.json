@@ -3,10 +3,14 @@
   "title": "ConfigResponse",
   "type": "object",
   "required": [
-    "admin_addr"
+    "admin_addr",
+    "registrar_contract"
   ],
   "properties": {
     "admin_addr": {
+      "type": "string"
+    },
+    "registrar_contract": {
       "type": "string"
     }
   }
