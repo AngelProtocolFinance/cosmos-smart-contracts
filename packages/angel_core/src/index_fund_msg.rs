@@ -1,6 +1,6 @@
 use crate::structs::{IndexFund, SplitDetails};
-use cosmwasm_std::{Addr, Uint128};
-use cw20::Balance;
+use cosmwasm_std::{Addr, Decimal, Uint128};
+use cw20::{Balance, Cw20ReceiveMsg};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub terra_alliance: Option<Vec<Addr>>, // Terra Charity Alliance approved addresses
-    pub active_fund: Option<String>,       // Address/Index ID of the Active IndexFund
+    pub active_fund: Option<u64>,          // Index ID of the Active IndexFund
     pub fund_rotation_limit: Option<Uint128>, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: Option<u32>,       // limit to number of members an IndexFund can have
     pub funding_goal: Option<Option<Balance>>, // donation funding limit to trigger early cycle of the Active IndexFund
@@ -20,6 +20,8 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     // updates the owner of the contract
     UpdateOwner { new_owner: String },
+    // replace TCA Member list with a new one
+    UpdateTcaList { new_list: Vec<String> },
     // endpoint to remove a single member from all index funds that they may in
     RemoveMember(RemoveMemberMsg),
     // create a new index fund
@@ -28,6 +30,8 @@ pub enum ExecuteMsg {
     RemoveFund(RemoveFundMsg),
     // updates the members in a given index fund
     UpdateMembers(UpdateMembersMsg),
+    // This accepts a properly-encoded ReceiveMsg from a cw20 contract
+    Recieve(Cw20ReceiveMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -37,14 +41,27 @@ pub struct RemoveMemberMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct RemoveFundMsg {
-    pub fund_addr: String,
+    pub fund_id: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateMembersMsg {
-    pub fund_addr: String,
+    pub fund_id: u64,
     pub add: Vec<String>,
     pub remove: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ReceiveMsg {
+    // Donor deposits tokens sent for an Index Fund
+    Deposit(DepositMsg),
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct DepositMsg {
+    pub fund_id: Option<u64>,
+    pub split: Option<Decimal>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -53,7 +70,7 @@ pub enum QueryMsg {
     // returns a list of all funds
     FundsList {},
     // returns a single fund if the ID is valid
-    FundDetails { fund_addr: String },
+    FundDetails { fund_id: u64 },
     // return details on the currently active fund
     ActiveFundDetails {},
     // get total donations given to Active Fund for a round

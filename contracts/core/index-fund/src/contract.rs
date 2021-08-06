@@ -4,9 +4,10 @@ use angel_core::index_fund_msg::*;
 use angel_core::index_fund_rsp::*;
 use angel_core::structs::{IndexFund, SplitDetails};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
+    entry_point, from_binary, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult, Uint128,
 };
-use cw20::{Balance, Cw20Coin};
+use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ReceiveMsg};
 
 // Note, you can use StdResult in some functions where you do not
 // make use of the custom errors
@@ -22,9 +23,7 @@ pub fn instantiate(
         owner: info.sender.clone(),
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         terra_alliance: msg.terra_alliance.unwrap_or(vec![]),
-        active_fund: deps
-            .api
-            .addr_validate(&msg.active_fund.unwrap_or(info.sender.to_string()))?,
+        active_fund: msg.active_fund.unwrap_or(0u64),
         fund_rotation_limit: msg
             .fund_rotation_limit
             .unwrap_or(Uint128::from(500000 as u128)), // blocks
@@ -47,10 +46,12 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::UpdateOwner { new_owner } => execute_update_owner(deps, info, new_owner),
+        ExecuteMsg::UpdateTcaList { new_list } => execute_update_tca_list(deps, info, new_list),
         ExecuteMsg::CreateFund { fund } => execute_create_index_fund(deps, info, fund),
-        ExecuteMsg::RemoveFund(msg) => execute_remove_index_fund(deps, info, msg.fund_addr),
+        ExecuteMsg::RemoveFund(msg) => execute_remove_index_fund(deps, info, msg.fund_id),
         ExecuteMsg::RemoveMember(msg) => execute_remove_member(deps, info, msg.member),
         ExecuteMsg::UpdateMembers(msg) => execute_update_fund_members(deps, info, msg),
+        ExecuteMsg::Recieve(msg) => execute_receive(deps, info, msg),
     }
 }
 
@@ -74,6 +75,30 @@ fn execute_update_owner(
     Ok(Response::default())
 }
 
+fn execute_update_tca_list(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_list: Vec<String>,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    // only the owner/admin of the contract can update the TCA Members List
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+    let tca_list = vec![];
+    for member in new_list.iter() {
+        tca_list.push(deps.api.addr_validate(&member)?);
+    }
+
+    // update config attributes with newly passed list
+    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+        config.terra_alliance = tca_list;
+        Ok(config)
+    })?;
+
+    Ok(Response::default())
+}
+
 fn execute_create_index_fund(
     deps: DepsMut,
     info: MessageInfo,
@@ -84,8 +109,11 @@ fn execute_create_index_fund(
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
+    // check that a fund does not already exists at the provided ID
+    let old_fund = fund_read(deps.storage).load(&fund.id.to_be_bytes())?;
+
     // Add the new Fund
-    fund_store(deps.storage).save(&fund.address.as_bytes(), &fund)?;
+    fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
 
     Ok(Response::default())
 }
@@ -93,18 +121,17 @@ fn execute_create_index_fund(
 fn execute_remove_index_fund(
     deps: DepsMut,
     info: MessageInfo,
-    fund_addr: String,
+    fund_id: u64,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
-    let addr = deps.api.addr_validate(&fund_addr)?;
     // this will fail if fund ID passed is not found
-    let _fund = fund_read(deps.storage).load(&addr.as_bytes())?;
+    let _fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
     // remove the fund from FUNDS
-    fund_store(deps.storage).remove(&addr.as_bytes());
+    fund_store(deps.storage).remove(&fund_id.to_be_bytes());
 
     Ok(Response::default())
 }
@@ -119,9 +146,8 @@ fn execute_update_fund_members(
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
-    let addr = deps.api.addr_validate(&msg.fund_addr)?;
     // this will fail if fund ID passed is not found
-    let mut fund = fund_read(deps.storage).load(&addr.as_bytes())?;
+    let mut fund = fund_read(deps.storage).load(&msg.fund_id.to_be_bytes())?;
 
     // add members to the fund, only if they do not already exist
     for add in msg.add.into_iter() {
@@ -143,7 +169,7 @@ fn execute_update_fund_members(
     }
 
     // save revised fund to storage
-    fund_store(deps.storage).save(&addr.as_bytes(), &fund)?;
+    fund_store(deps.storage).save(&msg.fund_id.to_be_bytes(), &fund)?;
 
     Ok(Response::default())
 }
@@ -168,9 +194,55 @@ fn execute_remove_member(
         // ignore if no member is found
         if let Some(pos) = fund.members.iter().position(|m| *m == member_addr) {
             fund.members.swap_remove(pos);
-            fund_store(deps.storage).save(&fund.address.as_bytes(), &fund)?;
+            fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
         }
     }
+    Ok(Response::default())
+}
+
+pub fn execute_receive(
+    deps: DepsMut,
+    info: MessageInfo,
+    cw20_msg: Cw20ReceiveMsg,
+) -> Result<Response, ContractError> {
+    let balance = Balance::Cw20(Cw20CoinVerified {
+        address: info.sender.clone(),
+        amount: cw20_msg.amount,
+    });
+    if balance.is_empty() {
+        return Err(ContractError::EmptyBalance {});
+    }
+    let sender_addr = deps.api.addr_validate(&cw20_msg.sender)?;
+    let msg = from_binary(&cw20_msg.msg)?;
+    match msg {
+        ReceiveMsg::Deposit(msg) => execute_deposit(deps, sender_addr, balance, msg),
+    }
+}
+
+fn execute_deposit(
+    deps: DepsMut,
+    sender_addr: Addr,
+    _balance: Balance,
+    msg: DepositMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    // check each of the currenly allowed TCA member addr
+    let mut tca_member = false;
+    for tca in config.terra_alliance.iter() {
+        if tca == &sender_addr {
+            tca_member = true;
+        }
+    }
+    // if the sender address is not among them raise err
+    if tca_member != true {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // set target fund tp either the active fund or provided fund ID
+    let _fund: u64 = match msg.fund_id {
+        Some(fund) => fund,
+        None => config.active_fund,
+    };
     Ok(Response::default())
 }
 
@@ -179,7 +251,7 @@ pub fn query(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::ConfigDetails {} => to_binary(&query_config(deps)?),
         QueryMsg::FundsList {} => to_binary(&query_funds_list(deps)?),
-        QueryMsg::FundDetails { fund_addr } => to_binary(&query_fund_details(deps, fund_addr)?),
+        QueryMsg::FundDetails { fund_id } => to_binary(&query_fund_details(deps, fund_id)?),
         QueryMsg::ActiveFundDetails {} => to_binary(&query_active_fund_details(deps)?),
         QueryMsg::ActiveFundDonations {} => to_binary(&query_active_fund_donations(deps)?),
     }
@@ -203,10 +275,9 @@ fn query_funds_list(deps: Deps) -> StdResult<FundListResponse> {
     Ok(FundListResponse { funds: funds })
 }
 
-fn query_fund_details(deps: Deps, fund_addr: String) -> StdResult<FundDetailsResponse> {
-    let addr = deps.api.addr_validate(&fund_addr)?;
+fn query_fund_details(deps: Deps, fund_id: u64) -> StdResult<FundDetailsResponse> {
     Ok(FundDetailsResponse {
-        fund: fund_read(deps.storage).may_load(&addr.as_bytes())?,
+        fund: fund_read(deps.storage).may_load(&fund_id.to_be_bytes())?,
     })
 }
 
@@ -262,7 +333,7 @@ mod tests {
         let msg = InstantiateMsg {
             registrar_contract: String::from("some-registrar-sc"),
             terra_alliance: Some(vec![]),
-            active_fund: Some("active_index_fund_addr".to_string()),
+            active_fund: Some("active_index_fund_id".to_string()),
             fund_rotation_limit: Some(Uint128::from(500000u128)),
             fund_member_limit: Some(10),
             funding_goal: None,

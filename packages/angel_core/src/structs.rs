@@ -87,7 +87,7 @@ impl EndowmentStatus {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct IndexFund {
-    pub address: Addr,
+    pub id: u64,
     pub name: String,
     pub description: String,
     pub members: Vec<Addr>,
