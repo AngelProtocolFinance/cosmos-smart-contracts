@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub terra_alliance: Option<Vec<Addr>>, // Terra Charity Alliance approved addresses
-    pub active_fund_index: Option<String>, // index ID of the Active IndexFund
+    pub active_fund: Option<String>,       // Address/Index ID of the Active IndexFund
     pub fund_rotation_limit: Option<Uint128>, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: Option<u32>,       // limit to number of members an IndexFund can have
     pub funding_goal: Option<Option<Balance>>, // donation funding limit to trigger early cycle of the Active IndexFund
@@ -37,18 +37,18 @@ pub struct RemoveMemberMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateFundMsg {
-    pub fund_id: String,
+    pub fund_addr: String,
     pub fund: IndexFund,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct RemoveFundMsg {
-    pub fund_id: String,
+    pub fund_addr: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateMembersMsg {
-    pub fund_id: String,
+    pub fund_addr: String,
     pub add: Vec<String>,
     pub remove: Vec<String>,
 }
@@ -59,7 +59,7 @@ pub enum QueryMsg {
     // returns a list of all funds
     FundsList {},
     // returns a single fund if the ID is valid
-    FundDetails { fund_id: String },
+    FundDetails { fund_addr: String },
     // return details on the currently active fund
     ActiveFundDetails {},
     // get total donations given to Active Fund for a round

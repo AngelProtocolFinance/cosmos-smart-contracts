@@ -28,7 +28,7 @@ pub struct DonationListResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: String,
-    pub active_fund_index: String,
+    pub active_fund: String,
     pub fund_rotation_limit: Uint128, // blocks
     pub fund_member_limit: u32,
     pub funding_goal: Balance,

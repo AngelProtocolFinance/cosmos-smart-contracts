@@ -1,8 +1,19 @@
-use angel_core::structs::EndowmentStatus;
-use cosmwasm_std::Addr;
-use cw_storage_plus::{Item, Map};
+use angel_core::structs::{AssetVault, EndowmentEntry};
+use cosmwasm_std::{Addr, Order, StdResult, Storage};
+use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
+use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
+// static PREFIX_REGISTRY_INDEXER: &[u8] = b"registry_indexer";
+// static PREFIX_VAULT_INDEXER: &[u8] = b"vault_indexer";
+// const MAX_LIMIT: u32 = 30;
+// const DEFAULT_LIMIT: u32 = 10;
+
+static PREFIX_REGISTRY: &[u8] = b"registry";
+static PREFIX_VAULT: &[u8] = b"vault";
+
+pub const CONFIG: Item<Config> = Item::new("config");
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -21,14 +32,42 @@ impl Config {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct EndowmentEntry {
-    pub name: String,
-    pub description: String,
-    pub status: EndowmentStatus,
+// REGISTRY Read/Write
+pub fn registry_store(storage: &mut dyn Storage) -> Bucket<EndowmentEntry> {
+    bucket(storage, PREFIX_REGISTRY)
 }
 
-pub const CONFIG: Item<Config> = Item::new("config");
-pub const REGISTRY: Map<String, EndowmentEntry> = Map::new("endowment");
-pub const VAULTS: Map<String, bool> = Map::new("vault");
+pub fn registry_read(storage: &dyn Storage) -> ReadonlyBucket<EndowmentEntry> {
+    bucket_read(storage, PREFIX_REGISTRY)
+}
+
+pub fn read_registry_entries<'a>(storage: &'a dyn Storage) -> StdResult<Vec<EndowmentEntry>> {
+    let entries: ReadonlyBucket<'a, EndowmentEntry> = ReadonlyBucket::new(storage, PREFIX_REGISTRY);
+    entries
+        .range(None, None, Order::Ascending)
+        .map(|item| {
+            let (_, v) = item?;
+            Ok(v)
+        })
+        .collect()
+}
+
+// VAULT Read/Write
+pub fn vault_store(storage: &mut dyn Storage) -> Bucket<AssetVault> {
+    bucket(storage, PREFIX_VAULT)
+}
+
+pub fn vault_read(storage: &dyn Storage) -> ReadonlyBucket<AssetVault> {
+    bucket_read(storage, PREFIX_VAULT)
+}
+
+pub fn read_vaults<'a>(storage: &'a dyn Storage) -> StdResult<Vec<AssetVault>> {
+    let entries: ReadonlyBucket<'a, AssetVault> = ReadonlyBucket::new(storage, PREFIX_VAULT);
+    entries
+        .range(None, None, Order::Ascending)
+        .map(|item| {
+            let (_, v) = item?;
+            Ok(v)
+        })
+        .collect()
+}

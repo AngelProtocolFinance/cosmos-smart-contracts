@@ -17,18 +17,27 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     // Add new AssetVault to VAULTS
-    VaultAdd { vault_addr: String },
+    VaultAdd {
+        vault_addr: String,
+        vault_name: String,
+        vault_description: String,
+    },
     // Mark an AssetVault as approved (or not)
-    VaultUpdateStatus { vault_addr: String, approved: bool },
+    VaultUpdateStatus {
+        vault_addr: String,
+        approved: bool,
+    },
     // Removes an AssetVault from VAULTS
-    VaultRemove { vault_addr: String },
+    // VaultRemove { vault_addr: String },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
     // Allows the DANO / AP Team to update the status of an Endowment
     // Approved, Frozen, (Liquidated, Terminated)
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Allows the SC owner (only!) to change ownership
-    UpdateOwner { new_owner: String },
+    UpdateOwner {
+        new_owner: String,
+    },
     CreateEndowment(CreateEndowmentMsg),
 }
 
@@ -62,7 +71,7 @@ impl UpdateConfigMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentStatusMsg {
-    pub address: String,
+    pub endowment_addr: String,
     pub status: EndowmentStatus,
 }
 
@@ -70,11 +79,11 @@ pub struct UpdateEndowmentStatusMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get details on a specific Vault
-    Vault { address: String },
-    // Gets list of all Vaults. Passing the optional non_approved arg to see all vaults, not just Approved
-    VaultList { non_approved: Option<bool> },
-    // Gets list of all registered Endowments. Passing the optional non_approved arg to see all Endowments, not just Approved
-    EndowmentList { non_approved: Option<bool> },
+    Vault { vault_addr: String },
+    // Gets list of all Vaults.
+    VaultList {},
+    // Gets list of all registered Endowments.
+    EndowmentList {},
     // Get all Config details for the contract
     Config {},
 }
