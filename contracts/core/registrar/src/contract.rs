@@ -63,7 +63,8 @@ pub fn execute(
         ExecuteMsg::VaultUpdateStatus {
             vault_addr,
             approved,
-        } => vault_update_status(deps, env, info, vault_addr, approved), // ExecuteMsg::VaultRemove { vault_addr } => vault_remove(deps, env, info, vault_addr),
+        } => vault_update_status(deps, env, info, vault_addr, approved),
+        ExecuteMsg::VaultRemove { vault_addr } => vault_remove(deps, env, info, vault_addr),
     }
 }
 

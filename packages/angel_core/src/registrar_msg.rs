@@ -27,8 +27,10 @@ pub enum ExecuteMsg {
         vault_addr: String,
         approved: bool,
     },
-    // Removes an AssetVault from VAULTS
-    // VaultRemove { vault_addr: String },
+    // Removes an AssetVault
+    VaultRemove {
+        vault_addr: String,
+    },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
     // Allows the DANO / AP Team to update the status of an Endowment
