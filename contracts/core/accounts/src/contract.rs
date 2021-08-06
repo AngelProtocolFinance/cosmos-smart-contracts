@@ -154,8 +154,8 @@ pub fn execute_update_endowment_settings(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // only the endowment owner can update these configs
-    if info.sender != config.endowment_owner {
+    // only the SC admin can update these configs...for now
+    if info.sender != config.admin_addr {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -608,7 +608,7 @@ mod tests {
             beneficiary: pleb.clone(),
             split_to_liquid: SplitDetails::default(),
         };
-        let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth "));
+        let info = mock_info(ap_team.as_ref(), &coins(100000, "earth "));
         let env = mock_env();
         let res = execute(
             deps.as_mut(),
