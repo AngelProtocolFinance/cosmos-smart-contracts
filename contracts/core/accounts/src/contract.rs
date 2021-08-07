@@ -18,7 +18,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -27,13 +27,13 @@ pub fn instantiate(
     CONFIG.save(
         deps.storage,
         &Config {
-            admin_addr: info.sender.clone(),
+            admin_addr: deps.api.addr_validate(&msg.admin_addr)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             index_fund_contract: deps.api.addr_validate(&msg.index_fund_contract)?,
             endowment_owner: deps.api.addr_validate(&msg.endowment_owner)?, // Addr
             endowment_beneficiary: deps.api.addr_validate(&msg.endowment_beneficiary)?, // Addr
-            name: msg.name,
-            description: msg.description,
+            name: msg.name.clone(),
+            description: msg.description.clone(),
             deposit_approved: false,                                // bool
             withdraw_approved: false,                               // bool
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
@@ -64,7 +64,10 @@ pub fn instantiate(
             },
         )?;
     }
-    Ok(Response::default())
+    Ok(Response {
+        attributes: vec![attr("name", msg.name), attr("description", msg.description)],
+        ..Response::default()
+    })
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -135,7 +138,7 @@ pub fn update_registrar(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // only the owner of the contract can update the configs...for now
+    // only the registrar contract can update it's address in the config
     if info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
