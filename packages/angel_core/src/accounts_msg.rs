@@ -35,7 +35,7 @@ pub enum ExecuteMsg {
     // Destroys the endowment and returns all Balance funds to an index fund and to the
     // Index Fund ID provided
     TerminateToFund {
-        fund: String, // Index Fund ID to receive funds
+        fund: u64, // Index Fund ID to receive funds
     },
     // Destroys the endowment and returns all Balance funds to the beneficiary addr (DANO treasury)
     TerminateToAddress {

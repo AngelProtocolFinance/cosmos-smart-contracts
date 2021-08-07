@@ -85,7 +85,7 @@ fn execute_update_tca_list(
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
-    let tca_list = vec![];
+    let mut tca_list = vec![];
     for member in new_list.iter() {
         tca_list.push(deps.api.addr_validate(&member)?);
     }
@@ -110,7 +110,7 @@ fn execute_create_index_fund(
         return Err(ContractError::Unauthorized {});
     }
     // check that a fund does not already exists at the provided ID
-    let old_fund = fund_read(deps.storage).load(&fund.id.to_be_bytes())?;
+    let _old_fund = fund_read(deps.storage).load(&fund.id.to_be_bytes())?;
 
     // Add the new Fund
     fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
@@ -239,15 +239,18 @@ fn execute_deposit(
     }
 
     // set target fund tp either the active fund or provided fund ID
-    let _fund: u64 = match msg.fund_id {
+    let fund_id: u64 = match msg.fund_id {
         Some(fund) => fund,
         None => config.active_fund,
     };
+    let _fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
+    // let member_portion = balance.amount / fund.members;
+
     Ok(Response::default())
 }
 
 #[entry_point]
-pub fn query(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::ConfigDetails {} => to_binary(&query_config(deps)?),
         QueryMsg::FundsList {} => to_binary(&query_funds_list(deps)?),
@@ -284,7 +287,7 @@ fn query_fund_details(deps: Deps, fund_id: u64) -> StdResult<FundDetailsResponse
 fn query_active_fund_details(deps: Deps) -> StdResult<FundDetailsResponse> {
     let config = CONFIG.load(deps.storage)?;
     Ok(FundDetailsResponse {
-        fund: fund_read(deps.storage).may_load(&config.active_fund.as_bytes())?,
+        fund: fund_read(deps.storage).may_load(&config.active_fund.to_be_bytes())?,
     })
 }
 
@@ -333,7 +336,7 @@ mod tests {
         let msg = InstantiateMsg {
             registrar_contract: String::from("some-registrar-sc"),
             terra_alliance: Some(vec![]),
-            active_fund: Some("active_index_fund_id".to_string()),
+            active_fund: Some(0u64),
             fund_rotation_limit: Some(Uint128::from(500000u128)),
             fund_member_limit: Some(10),
             funding_goal: None,

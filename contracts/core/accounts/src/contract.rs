@@ -390,7 +390,7 @@ pub fn execute_terminate_to_fund(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    fund: String,
+    fund: u64,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
