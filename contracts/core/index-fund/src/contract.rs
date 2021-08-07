@@ -46,6 +46,9 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::UpdateOwner { new_owner } => execute_update_owner(deps, info, new_owner),
+        ExecuteMsg::UpdateRegistrar { new_registrar } => {
+            execute_update_registrar(deps, info, new_registrar)
+        }
         ExecuteMsg::UpdateTcaList { new_list } => execute_update_tca_list(deps, info, new_list),
         ExecuteMsg::CreateFund { fund } => execute_create_index_fund(deps, info, fund),
         ExecuteMsg::RemoveFund(msg) => execute_remove_index_fund(deps, info, msg.fund_id),
@@ -69,6 +72,28 @@ fn execute_update_owner(
     // update config attributes with newly passed args
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
         config.owner = new_owner;
+        Ok(config)
+    })?;
+
+    Ok(Response::default())
+}
+
+pub fn execute_update_registrar(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_registrar: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    // only the registrar contract can update it's address in the config
+    if info.sender != config.registrar_contract {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let new_registrar = deps.api.addr_validate(&new_registrar)?;
+    // update config attributes with newly passed args
+    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+        config.registrar_contract = new_registrar;
         Ok(config)
     })?;
 
@@ -253,6 +278,7 @@ fn execute_deposit(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::ConfigDetails {} => to_binary(&query_config(deps)?),
+        QueryMsg::TcaList {} => to_binary(&query_tca_list(deps)?),
         QueryMsg::FundsList {} => to_binary(&query_funds_list(deps)?),
         QueryMsg::FundDetails { fund_id } => to_binary(&query_fund_details(deps, fund_id)?),
         QueryMsg::ActiveFundDetails {} => to_binary(&query_active_fund_details(deps)?),
@@ -269,6 +295,14 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         fund_member_limit: config.fund_member_limit,
         funding_goal: config.funding_goal.unwrap(),
         split_to_liquid: config.split_to_liquid,
+    })
+}
+
+fn query_tca_list(deps: Deps) -> StdResult<TcaListResponse> {
+    // Return a list of TCA Member Addrs
+    let config = CONFIG.load(deps.storage)?;
+    Ok(TcaListResponse {
+        tca_members: config.terra_alliance,
     })
 }
 

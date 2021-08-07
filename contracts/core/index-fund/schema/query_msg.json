@@ -23,11 +23,13 @@
         "fund_details": {
           "type": "object",
           "required": [
-            "fund_addr"
+            "fund_id"
           ],
           "properties": {
-            "fund_addr": {
-              "type": "string"
+            "fund_id": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
             }
           }
         }

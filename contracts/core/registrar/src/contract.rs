@@ -24,16 +24,12 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    let index_fund_contract_addr = deps.api.addr_validate(
-        &msg.index_fund_contract
-            .unwrap_or("XXXXXXXXXXXXXXXXXXXXXXXX".to_string()),
-    )?;
 
     let configs = Config {
-        owner: info.sender,
-        index_fund_contract: index_fund_contract_addr,
-        approved_coins: msg.approved_coins.unwrap_or(vec![]),
-        accounts_code_id: msg.accounts_code_id.unwrap_or(0 as u64),
+        owner: info.sender.clone(),
+        index_fund_contract: info.sender,
+        approved_coins: vec![],
+        accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -358,19 +354,39 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 
 pub fn new_accounts_reply(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     msg: ContractResult<SubMsgExecutionResponse>,
 ) -> Result<Response, ContractError> {
-    let addr = env.contract.address.clone();
     match msg {
-        ContractResult::Ok(_subcall) => {
+        ContractResult::Ok(subcall) => {
+            let mut endowment_addr = String::from("");
+            let mut endowment_name = String::from("");
+            let mut endowment_desc = String::from("");
+            for event in subcall.events {
+                if event.ty == "message".to_string() {
+                    for attrb in event.attributes {
+                        if attrb.key == "name" {
+                            endowment_name = attrb.value;
+                        } else if attrb.key == "name" {
+                            endowment_desc = attrb.value;
+                        }
+                    }
+                } else if event.ty == "instantiate_contract".to_string() {
+                    for attrb in event.attributes {
+                        if attrb.key == "contract_address" {
+                            endowment_addr = attrb.value;
+                        }
+                    }
+                }
+            }
             // Register the new Endowment on success Reply
+            let addr = deps.api.addr_validate(&endowment_addr)?;
             registry_store(deps.storage).save(
-                &addr.as_bytes(),
+                &addr.clone().as_bytes(),
                 &EndowmentEntry {
-                    address: env.contract.address,
-                    name: "".to_string(),
-                    description: "".to_string(),
+                    address: addr,
+                    name: endowment_name,
+                    description: endowment_desc,
                     status: EndowmentStatus::Inactive,
                 },
             )?;
@@ -447,7 +463,6 @@ mod tests {
         let mut deps = mock_dependencies(&[]);
 
         let msg = InstantiateMsg {
-            index_fund_contract: Some("INDEXTHADFARHSRTHADGG".to_string()),
             approved_coins: Some(vec![]),
             accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         };
@@ -466,7 +481,6 @@ mod tests {
         let mut deps = mock_dependencies(&[]);
 
         let msg = InstantiateMsg {
-            index_fund_contract: Some("INDEXTHADFARHSRTHADGG".to_string()),
             approved_coins: Some(vec![]),
             accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         };

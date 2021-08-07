@@ -3,15 +3,12 @@
   "title": "IndexFund",
   "type": "object",
   "required": [
-    "address",
     "description",
+    "id",
     "members",
     "name"
   ],
   "properties": {
-    "address": {
-      "$ref": "#/definitions/Addr"
-    },
     "description": {
       "type": "string"
     },
@@ -28,6 +25,11 @@
         "integer",
         "null"
       ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "id": {
+      "type": "integer",
       "format": "uint64",
       "minimum": 0.0
     },

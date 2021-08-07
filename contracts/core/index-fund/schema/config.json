@@ -13,7 +13,9 @@
   ],
   "properties": {
     "active_fund": {
-      "$ref": "#/definitions/Addr"
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
     },
     "fund_member_limit": {
       "type": "integer",

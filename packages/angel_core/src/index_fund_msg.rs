@@ -20,6 +20,8 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     // updates the owner of the contract
     UpdateOwner { new_owner: String },
+    // registrar SC can update its addr
+    UpdateRegistrar { new_registrar: String },
     // replace TCA Member list with a new one
     UpdateTcaList { new_list: Vec<String> },
     // endpoint to remove a single member from all index funds that they may in
@@ -77,6 +79,8 @@ pub enum QueryMsg {
     ActiveFundDonations {},
     // return config details
     ConfigDetails {},
+    // return list of TCA Members
+    TcaList {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
