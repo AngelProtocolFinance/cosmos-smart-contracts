@@ -77,8 +77,10 @@ pub enum QueryMsg {
     ActiveFundDetails {},
     // get total donations given to Active Fund for a round
     ActiveFundDonations {},
+    // return state details
+    State {},
     // return config details
-    ConfigDetails {},
+    Config {},
     // return list of TCA Members
     TcaList {},
 }

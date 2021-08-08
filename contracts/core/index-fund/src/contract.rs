@@ -1,4 +1,6 @@
-use crate::state::{fund_read, fund_store, read_funds, Config, CONFIG, CURRENT_DONATIONS};
+use crate::state::{
+    fund_read, fund_store, read_funds, Config, State, CONFIG, CURRENT_DONATIONS, STATE,
+};
 use angel_core::error::ContractError;
 use angel_core::index_fund_msg::*;
 use angel_core::index_fund_rsp::*;
@@ -22,8 +24,6 @@ pub fn instantiate(
     let configs = Config {
         owner: info.sender.clone(),
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-        terra_alliance: msg.terra_alliance.unwrap_or(vec![]),
-        active_fund: msg.active_fund.unwrap_or(0u64),
         fund_rotation_limit: msg
             .fund_rotation_limit
             .unwrap_or(Uint128::from(500000 as u128)), // blocks
@@ -33,6 +33,8 @@ pub fn instantiate(
     };
     CONFIG.save(deps.storage, &configs)?;
 
+    // setup default state values
+    STATE.save(deps.storage, &State::default())?;
     Ok(Response::default())
 }
 
@@ -116,9 +118,9 @@ fn execute_update_tca_list(
     }
 
     // update config attributes with newly passed list
-    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.terra_alliance = tca_list;
-        Ok(config)
+    STATE.update(deps.storage, |mut state| -> StdResult<_> {
+        state.terra_alliance = tca_list;
+        Ok(state)
     })?;
 
     Ok(Response::default())
@@ -250,10 +252,10 @@ fn execute_deposit(
     _balance: Balance,
     msg: DepositMsg,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
     // check each of the currenly allowed TCA member addr
     let mut tca_member = false;
-    for tca in config.terra_alliance.iter() {
+    for tca in state.terra_alliance.iter() {
         if tca == &sender_addr {
             tca_member = true;
         }
@@ -266,7 +268,7 @@ fn execute_deposit(
     // set target fund tp either the active fund or provided fund ID
     let fund_id: u64 = match msg.fund_id {
         Some(fund) => fund,
-        None => config.active_fund,
+        None => state.active_fund.unwrap(),
     };
     let _fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
     // let member_portion = balance.amount / fund.members;
@@ -277,7 +279,8 @@ fn execute_deposit(
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::ConfigDetails {} => to_binary(&query_config(deps)?),
+        QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::State {} => to_binary(&query_state(deps)?),
         QueryMsg::TcaList {} => to_binary(&query_tca_list(deps)?),
         QueryMsg::FundsList {} => to_binary(&query_funds_list(deps)?),
         QueryMsg::FundDetails { fund_id } => to_binary(&query_fund_details(deps, fund_id)?),
@@ -290,7 +293,6 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
-        active_fund: config.active_fund.to_string(),
         fund_rotation_limit: config.fund_rotation_limit,
         fund_member_limit: config.fund_member_limit,
         funding_goal: config.funding_goal.unwrap(),
@@ -298,11 +300,21 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     })
 }
 
+fn query_state(deps: Deps) -> StdResult<StateResponse> {
+    // return state values
+    let state = STATE.load(deps.storage)?;
+    Ok(StateResponse {
+        total_funds: state.total_funds,
+        active_fund: state.active_fund,
+        terra_alliance: state.tca_human_addresses(),
+    })
+}
+
 fn query_tca_list(deps: Deps) -> StdResult<TcaListResponse> {
     // Return a list of TCA Member Addrs
-    let config = CONFIG.load(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
     Ok(TcaListResponse {
-        tca_members: config.terra_alliance,
+        tca_members: state.terra_alliance,
     })
 }
 
@@ -319,16 +331,16 @@ fn query_fund_details(deps: Deps, fund_id: u64) -> StdResult<FundDetailsResponse
 }
 
 fn query_active_fund_details(deps: Deps) -> StdResult<FundDetailsResponse> {
-    let config = CONFIG.load(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
     Ok(FundDetailsResponse {
-        fund: fund_read(deps.storage).may_load(&config.active_fund.to_be_bytes())?,
+        fund: fund_read(deps.storage).may_load(&state.active_fund.unwrap().to_be_bytes())?,
     })
 }
 
 fn query_active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
-    let config = CONFIG.load(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
     let mut donors = vec![];
-    for tca in config.terra_alliance.into_iter() {
+    for tca in state.terra_alliance.into_iter() {
         let donations = CURRENT_DONATIONS.may_load(deps.storage, tca.to_string())?;
         if donations != None {
             let cw20_bal: StdResult<Vec<_>> = donations
