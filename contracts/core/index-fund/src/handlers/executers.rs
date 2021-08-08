@@ -1,9 +1,12 @@
 use crate::state::{fund_read, fund_store, read_funds, CONFIG, STATE};
 use angel_core::error::ContractError;
 use angel_core::index_fund_msg::*;
-use angel_core::structs::IndexFund;
-use cosmwasm_std::{from_binary, Addr, DepsMut, MessageInfo, Response, StdResult};
-use cw20::{Balance, Cw20CoinVerified, Cw20ReceiveMsg};
+use angel_core::structs::{IndexFund, SplitDetails};
+use cosmwasm_std::{
+    attr, from_binary, to_binary, Addr, CosmosMsg, Decimal, DepsMut, MessageInfo, ReplyOn,
+    Response, StdResult, SubMsg, Uint128, WasmMsg,
+};
+use cw20::Cw20ReceiveMsg;
 
 pub fn update_owner(
     deps: DepsMut,
@@ -180,27 +183,30 @@ pub fn receive(
     info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
-    let balance = Balance::Cw20(Cw20CoinVerified {
-        address: info.sender.clone(),
-        amount: cw20_msg.amount,
-    });
-    if balance.is_empty() {
+    let config = CONFIG.load(deps.storage)?;
+    // check that the signing token contract is from UST Address
+    if config.allowed_token != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+    if cw20_msg.amount.is_zero() {
         return Err(ContractError::EmptyBalance {});
     }
     let sender_addr = deps.api.addr_validate(&cw20_msg.sender)?;
     let msg = from_binary(&cw20_msg.msg)?;
     match msg {
-        ReceiveMsg::Deposit(msg) => deposit(deps, sender_addr, balance, msg),
+        ReceiveMsg::Deposit(msg) => deposit(deps, sender_addr, cw20_msg.amount, msg),
     }
 }
 
 pub fn deposit(
     deps: DepsMut,
     sender_addr: Addr,
-    _balance: Balance,
+    balance: Uint128,
     msg: DepositMsg,
 ) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
     let state = STATE.load(deps.storage)?;
+
     // check each of the currenly allowed TCA member addr
     let mut tca_member = false;
     for tca in state.terra_alliance.iter() {
@@ -215,11 +221,114 @@ pub fn deposit(
 
     // set target fund tp either the active fund or provided fund ID
     let fund_id: u64 = match msg.fund_id {
-        Some(fund) => fund,
+        Some(fund_id) => fund_id,
         None => state.active_fund.unwrap(),
     };
-    let _fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
-    // let member_portion = balance.amount / fund.members;
+    let fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
+    let split = calculate_split(
+        tca_member,
+        config.split_to_liquid,
+        fund.split_to_liquid,
+        msg.split,
+    );
+    let msgs = build_donation_messages(fund.members, split, config.allowed_token, balance);
 
-    Ok(Response::default())
+    Ok(Response {
+        messages: msgs,
+        attributes: vec![attr("action", "deposit")],
+        ..Response::default()
+    })
+}
+
+pub fn calculate_split(
+    tca: bool,
+    sc_split: SplitDetails,
+    fund_split: Option<Decimal>,
+    user_split: Option<Decimal>,
+) -> Decimal {
+    // calculate the split to use
+    let mut split = Decimal::zero(); // start with TCA member split (100% to locked)
+
+    // if the fund has a specific split amount set this overrides all other splits
+    match fund_split {
+        Some(s) => split = s,
+        None => {
+            if tca != true {
+                // if the user has provided a split, check it against the SC level configs
+                match user_split {
+                    Some(us) => {
+                        if us > sc_split.min && us < sc_split.max {
+                            split = us;
+                        }
+                    }
+                    None => {
+                        // use the SC default split
+                        split = sc_split.default;
+                    }
+                }
+            }
+        }
+    }
+
+    split
+}
+
+pub fn build_donation_messages(
+    members: Vec<Addr>,
+    split: Decimal,
+    token_addr: Addr,
+    balance: Uint128,
+) -> Vec<SubMsg> {
+    // set split percentages between locked & liquid accounts
+    let locked_percentage = Decimal::one() - split;
+    let liquid_percentage = split;
+    let member_portion = balance.multiply_ratio(1 as u128, members.len() as u128);
+    let mut messages = vec![];
+    for member in members.iter() {
+        // locked msg
+        messages.push(donation_submsg(
+            member.to_string(),
+            "locked".to_string(),
+            token_addr.clone(),
+            member_portion * locked_percentage,
+        ));
+        // liquid msg needed if split is greater than zero
+        if split > Decimal::zero() {
+            messages.push(donation_submsg(
+                member.to_string(),
+                "liquid".to_string(),
+                token_addr.clone(),
+                member_portion * liquid_percentage,
+            ));
+        }
+    }
+    return messages;
+}
+
+pub fn donation_submsg(
+    member_addr: String,
+    acct_type: String,
+    send_contract: Addr,
+    send_amount: Uint128,
+) -> SubMsg {
+    let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: member_addr,
+        msg: to_binary(&cw20::Cw20ReceiveMsg {
+            sender: send_contract.to_string(),
+            amount: send_amount,
+            msg: to_binary(&angel_core::accounts_msg::DepositMsg {
+                account_type: acct_type,
+            })
+            .unwrap(),
+        })
+        .unwrap(),
+        funds: vec![],
+    });
+
+    SubMsg {
+        id: 0,
+        msg: wasm_msg,
+        gas_limit: None,
+        reply_on: ReplyOn::Never,
+    }
 }

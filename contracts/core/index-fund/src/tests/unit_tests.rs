@@ -23,6 +23,7 @@ fn proper_initialization() {
         fund_member_limit: Some(20),
         funding_goal: None,
         split_to_liquid: None,
+        allowed_token: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
 
@@ -47,6 +48,7 @@ fn only_sc_owner_can_change_owner() {
         fund_member_limit: Some(20),
         funding_goal: None,
         split_to_liquid: None,
+        allowed_token: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -102,6 +104,7 @@ fn only_registrar_can_change_registrar_contract() {
         fund_member_limit: Some(20),
         funding_goal: None,
         split_to_liquid: None,
+        allowed_token: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -169,6 +172,7 @@ fn sc_owner_can_update_list_of_tca_members() {
         fund_member_limit: Some(20),
         funding_goal: None,
         split_to_liquid: None,
+        allowed_token: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -209,6 +213,7 @@ fn sc_owner_can_add_remove_funds() {
         fund_member_limit: Some(20),
         funding_goal: None,
         split_to_liquid: None,
+        allowed_token: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -274,6 +279,7 @@ fn sc_owner_can_update_fund_members() {
         fund_member_limit: Some(20),
         funding_goal: None,
         split_to_liquid: None,
+        allowed_token: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();

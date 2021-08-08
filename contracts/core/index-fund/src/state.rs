@@ -21,6 +21,7 @@ pub struct Config {
     pub fund_member_limit: u32,       // limit to number of members an IndexFund can have
     pub funding_goal: Option<Balance>, // donation funding limit to trigger early cycle of the Active IndexFund
     pub split_to_liquid: SplitDetails, // default %s to split off into liquid account, if donor provided split is not present
+    pub allowed_token: Addr,           // UST Token contract Address
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

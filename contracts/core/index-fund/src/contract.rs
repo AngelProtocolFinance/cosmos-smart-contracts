@@ -27,6 +27,10 @@ pub fn instantiate(
         fund_member_limit: msg.fund_member_limit.unwrap_or(10),
         funding_goal: msg.funding_goal.unwrap_or(Some(Balance::default())),
         split_to_liquid: msg.split_to_liquid.unwrap_or(SplitDetails::default()),
+        allowed_token: deps.api.addr_validate(
+            &msg.allowed_token
+                .unwrap_or("uusttokencontractaddress".to_string()),
+        )?,
     };
     CONFIG.save(deps.storage, &configs)?;
 
