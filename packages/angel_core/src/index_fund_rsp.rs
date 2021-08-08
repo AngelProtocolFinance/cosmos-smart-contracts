@@ -1,5 +1,5 @@
 use crate::structs::{IndexFund, SplitDetails};
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::Uint128;
 use cw20::{Balance, Cw20Coin};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -16,7 +16,7 @@ pub struct FundListResponse {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct TcaListResponse {
-    pub tca_members: Vec<Addr>,
+    pub tca_members: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
@@ -40,6 +40,7 @@ pub struct StateResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: String,
+    pub registrar_contract: String,
     pub fund_rotation_limit: Uint128, // blocks
     pub fund_member_limit: u32,
     pub funding_goal: Balance,

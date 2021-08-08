@@ -1,5 +1,5 @@
 use crate::structs::{IndexFund, SplitDetails};
-use cosmwasm_std::{Addr, Decimal, Uint128};
+use cosmwasm_std::{Decimal, Uint128};
 use cw20::{Balance, Cw20ReceiveMsg};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -7,8 +7,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub registrar_contract: String,
-    pub terra_alliance: Option<Vec<Addr>>, // Terra Charity Alliance approved addresses
-    pub active_fund: Option<u64>,          // Index ID of the Active IndexFund
     pub fund_rotation_limit: Option<Uint128>, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: Option<u32>,       // limit to number of members an IndexFund can have
     pub funding_goal: Option<Option<Balance>>, // donation funding limit to trigger early cycle of the Active IndexFund
