@@ -91,6 +91,11 @@ pub fn create_index_fund(
         None => {
             // Add the new Fund
             fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
+            // increment state funds totals
+            STATE.update(deps.storage, |mut state| -> StdResult<_> {
+                state.total_funds += 1;
+                Ok(state)
+            })?;
             return Ok(Response::default());
         }
     };
@@ -110,7 +115,11 @@ pub fn remove_index_fund(
     let _fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
     // remove the fund from FUNDS
     fund_store(deps.storage).remove(&fund_id.to_be_bytes());
-
+    // decrement state funds totals
+    STATE.update(deps.storage, |mut state| -> StdResult<_> {
+        state.total_funds -= 1;
+        Ok(state)
+    })?;
     Ok(Response::default())
 }
 
