@@ -50,4 +50,7 @@ pub enum ContractError {
 
     #[error("Contract is not properly configured")]
     ContractNotConfigured {},
+
+    #[error("Index Fund already exists with given ID")]
+    IndexFundAlreadyExists {},
 }

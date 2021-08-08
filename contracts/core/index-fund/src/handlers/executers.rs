@@ -82,12 +82,15 @@ pub fn create_index_fund(
         return Err(ContractError::Unauthorized {});
     }
     // check that a fund does not already exists at the provided ID
-    let _old_fund = fund_read(deps.storage).load(&fund.id.to_be_bytes())?;
-
-    // Add the new Fund
-    fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
-
-    Ok(Response::default())
+    let exists = fund_read(deps.storage).may_load(&fund.id.to_be_bytes())?;
+    match exists {
+        Some(_) => return Err(ContractError::IndexFundAlreadyExists {}),
+        None => {
+            // Add the new Fund
+            fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
+            return Ok(Response::default());
+        }
+    };
 }
 
 pub fn remove_index_fund(
@@ -119,7 +122,7 @@ pub fn update_fund_members(
         return Err(ContractError::Unauthorized {});
     }
     // this will fail if fund ID passed is not found
-    let mut fund = fund_read(deps.storage).load(&msg.fund_id.to_be_bytes())?;
+    let mut fund = fund_store(deps.storage).load(&msg.fund_id.to_be_bytes())?;
 
     // add members to the fund, only if they do not already exist
     for add in msg.add.into_iter() {
@@ -131,7 +134,7 @@ pub fn update_fund_members(
         }
     }
 
-    // remove the members to the fund
+    // remove the members from the fund
     for remove in msg.remove.into_iter() {
         let remove_addr = deps.api.addr_validate(&remove)?;
         // ignore if no member is found
