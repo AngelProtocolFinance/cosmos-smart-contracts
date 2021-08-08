@@ -292,7 +292,7 @@ fn sc_owner_can_update_fund_members() {
     };
     let update_members_msg = ExecuteMsg::UpdateMembers(UpdateMembersMsg {
         fund_id: 13,
-        add: vec![charity_addr.clone()],
+        add: vec![charity_addr.clone(), String::from("CHARITYGSDRGSDRGSDRGFG")],
         remove: vec![pleb.clone()],
     });
 
@@ -320,6 +320,5 @@ fn sc_owner_can_update_fund_members() {
     .unwrap();
     let value: FundDetailsResponse = from_binary(&res).unwrap();
     let f = value.fund.unwrap();
-    assert_eq!(1, f.members.len());
-    assert_eq!(charity_addr.clone(), f.members[0]);
+    assert_eq!(2, f.members.len());
 }

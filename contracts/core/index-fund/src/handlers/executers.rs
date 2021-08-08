@@ -129,7 +129,7 @@ pub fn update_fund_members(
         let add_addr = deps.api.addr_validate(&add)?;
         let pos = fund.members.iter().position(|m| *m == add_addr);
         // ignore if that member was found in the list
-        if pos != None {
+        if pos == None {
             fund.members.push(add_addr);
         }
     }
