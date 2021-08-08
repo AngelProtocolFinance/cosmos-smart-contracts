@@ -2,7 +2,7 @@ use crate::handlers::{executers as ExecuteHandlers, queriers as QueryHandlers};
 use crate::state::{Config, State, CONFIG, STATE};
 use angel_core::error::ContractError;
 use angel_core::index_fund_msg::*;
-use angel_core::structs::SplitDetails;
+use angel_core::structs::{AcceptedTokens, SplitDetails};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
@@ -27,10 +27,7 @@ pub fn instantiate(
         fund_member_limit: msg.fund_member_limit.unwrap_or(10),
         funding_goal: msg.funding_goal.unwrap_or(Some(Balance::default())),
         split_to_liquid: msg.split_to_liquid.unwrap_or(SplitDetails::default()),
-        allowed_token: deps.api.addr_validate(
-            &msg.allowed_token
-                .unwrap_or("uusttokencontractaddress".to_string()),
-        )?,
+        accepted_tokens: msg.accepted_tokens.unwrap_or(AcceptedTokens::default()),
     };
     CONFIG.save(deps.storage, &configs)?;
 
@@ -61,6 +58,9 @@ pub fn execute(
         ExecuteMsg::RemoveFund(msg) => ExecuteHandlers::remove_index_fund(deps, info, msg.fund_id),
         ExecuteMsg::RemoveMember(msg) => ExecuteHandlers::remove_member(deps, info, msg.member),
         ExecuteMsg::UpdateMembers(msg) => ExecuteHandlers::update_fund_members(deps, info, msg),
+        ExecuteMsg::Deposit(msg) => {
+            ExecuteHandlers::deposit(deps, info.sender, info.funds[0].amount, msg)
+        }
         ExecuteMsg::Recieve(msg) => ExecuteHandlers::receive(deps, info, msg),
     }
 }

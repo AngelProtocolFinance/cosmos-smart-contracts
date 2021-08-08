@@ -3,7 +3,7 @@ use angel_core::error::ContractError;
 use angel_core::index_fund_msg::*;
 use angel_core::structs::{IndexFund, SplitDetails};
 use cosmwasm_std::{
-    attr, from_binary, to_binary, Addr, CosmosMsg, Decimal, DepsMut, MessageInfo, ReplyOn,
+    attr, from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, DepsMut, MessageInfo, ReplyOn,
     Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::Cw20ReceiveMsg;
@@ -184,8 +184,8 @@ pub fn receive(
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    // check that the signing token contract is from UST Address
-    if config.allowed_token != info.sender {
+    // check that the sending token contract is an Approved Token
+    if config.accepted_tokens.cw20_valid(info.sender.to_string()) != true {
         return Err(ContractError::Unauthorized {});
     }
     if cw20_msg.amount.is_zero() {
@@ -231,7 +231,7 @@ pub fn deposit(
         fund.split_to_liquid,
         msg.split,
     );
-    let msgs = build_donation_messages(fund.members, split, config.allowed_token, balance);
+    let msgs = build_donation_messages(fund.members, split, "uust".to_string(), balance);
 
     Ok(Response {
         messages: msgs,
@@ -276,7 +276,7 @@ pub fn calculate_split(
 pub fn build_donation_messages(
     members: Vec<Addr>,
     split: Decimal,
-    token_addr: Addr,
+    token_denom: String,
     balance: Uint128,
 ) -> Vec<SubMsg> {
     // set split percentages between locked & liquid accounts
@@ -289,7 +289,7 @@ pub fn build_donation_messages(
         messages.push(donation_submsg(
             member.to_string(),
             "locked".to_string(),
-            token_addr.clone(),
+            token_denom.clone(),
             member_portion * locked_percentage,
         ));
         // liquid msg needed if split is greater than zero
@@ -297,7 +297,7 @@ pub fn build_donation_messages(
             messages.push(donation_submsg(
                 member.to_string(),
                 "liquid".to_string(),
-                token_addr.clone(),
+                token_denom.clone(),
                 member_portion * liquid_percentage,
             ));
         }
@@ -308,21 +308,20 @@ pub fn build_donation_messages(
 pub fn donation_submsg(
     member_addr: String,
     acct_type: String,
-    send_contract: Addr,
+    send_denom: String,
     send_amount: Uint128,
 ) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: member_addr,
-        msg: to_binary(&cw20::Cw20ReceiveMsg {
-            sender: send_contract.to_string(),
-            amount: send_amount,
-            msg: to_binary(&angel_core::accounts_msg::DepositMsg {
-                account_type: acct_type,
-            })
-            .unwrap(),
+        msg: to_binary(&angel_core::accounts_msg::DepositMsg {
+            account_type: acct_type,
         })
         .unwrap(),
-        funds: vec![],
+
+        funds: vec![Coin {
+            amount: send_amount,
+            denom: send_denom,
+        }],
     });
 
     SubMsg {

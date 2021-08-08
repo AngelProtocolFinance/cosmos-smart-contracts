@@ -1,4 +1,4 @@
-use crate::structs::{IndexFund, SplitDetails};
+use crate::structs::{AcceptedTokens, IndexFund, SplitDetails};
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::{Balance, Cw20ReceiveMsg};
 use schemars::JsonSchema;
@@ -11,7 +11,7 @@ pub struct InstantiateMsg {
     pub fund_member_limit: Option<u32>,       // limit to number of members an IndexFund can have
     pub funding_goal: Option<Option<Balance>>, // donation funding limit to trigger early cycle of the Active IndexFund
     pub split_to_liquid: Option<SplitDetails>, // default %s to split off into liquid account, if donor provided split is not present
-    pub allowed_token: Option<String>,         // UST Token contract Address
+    pub accepted_tokens: Option<AcceptedTokens>, // list of approved native and CW20 coins can accept inward
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -31,6 +31,8 @@ pub enum ExecuteMsg {
     RemoveFund(RemoveFundMsg),
     // updates the members in a given index fund
     UpdateMembers(UpdateMembersMsg),
+    // directly receive native tokens
+    Deposit(DepositMsg),
     // This accepts a properly-encoded ReceiveMsg from a cw20 contract
     Recieve(Cw20ReceiveMsg),
 }

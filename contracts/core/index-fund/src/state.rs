@@ -1,4 +1,4 @@
-use angel_core::structs::{GenericBalance, IndexFund, SplitDetails};
+use angel_core::structs::{AcceptedTokens, GenericBalance, IndexFund, SplitDetails};
 use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
 use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
 use cw20::Balance;
@@ -15,13 +15,13 @@ static PREFIX_FUND: &[u8] = b"fund";
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub owner: Addr,                   // DANO Address
-    pub registrar_contract: Addr,      // Address of Registrar SC
+    pub owner: Addr,                     // DANO Address
+    pub registrar_contract: Addr,        // Address of Registrar SC
     pub fund_rotation_limit: Uint128, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: u32,       // limit to number of members an IndexFund can have
     pub funding_goal: Option<Balance>, // donation funding limit to trigger early cycle of the Active IndexFund
     pub split_to_liquid: SplitDetails, // default %s to split off into liquid account, if donor provided split is not present
-    pub allowed_token: Addr,           // UST Token contract Address
+    pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
