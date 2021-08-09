@@ -1,6 +1,6 @@
 use crate::structs::{IndexFund, SplitDetails};
 use cosmwasm_std::Uint128;
-use cw20::{Balance, Cw20Coin};
+use cw20::Cw20Coin;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -41,8 +41,8 @@ pub struct StateResponse {
 pub struct ConfigResponse {
     pub owner: String,
     pub registrar_contract: String,
-    pub fund_rotation_limit: Uint128, // blocks
+    pub fund_rotation: u64,
     pub fund_member_limit: u32,
-    pub funding_goal: Balance,
+    pub funding_goal: Uint128,
     pub split_to_liquid: SplitDetails,
 }

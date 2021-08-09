@@ -1,4 +1,4 @@
-use crate::state::{fund_read, read_funds, CONFIG, CURRENT_DONATIONS, STATE};
+use crate::state::{fund_read, read_funds, CONFIG, STATE, TCA_DONATIONS};
 use angel_core::index_fund_rsp::*;
 use cosmwasm_std::{Deps, StdResult};
 use cw20::Cw20Coin;
@@ -8,7 +8,7 @@ pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
-        fund_rotation_limit: config.fund_rotation_limit,
+        fund_rotation: config.fund_rotation,
         fund_member_limit: config.fund_member_limit,
         funding_goal: config.funding_goal.unwrap(),
         split_to_liquid: config.split_to_liquid,
@@ -56,7 +56,7 @@ pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
     let state = STATE.load(deps.storage)?;
     let mut donors = vec![];
     for tca in state.terra_alliance.into_iter() {
-        let donations = CURRENT_DONATIONS.may_load(deps.storage, tca.to_string())?;
+        let donations = TCA_DONATIONS.may_load(deps.storage, tca.to_string())?;
         if donations != None {
             let cw20_bal: StdResult<Vec<_>> = donations
                 .unwrap()
