@@ -4,7 +4,6 @@ use angel_core::index_fund_msg::*;
 use angel_core::index_fund_rsp::*;
 use angel_core::structs::IndexFund;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::Uint128;
 use cosmwasm_std::{coins, from_binary};
 
 #[test]
@@ -19,7 +18,7 @@ fn proper_initialization() {
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation_limit: Some(Uint128::from(1000000u128)),
+        fund_rotation: Some(1000000u64),
         fund_member_limit: Some(20),
         funding_goal: None,
         split_to_liquid: None,
@@ -44,7 +43,7 @@ fn only_sc_owner_can_change_owner() {
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation_limit: Some(Uint128::from(1000000u128)),
+        fund_rotation: Some(1000000u64),
         fund_member_limit: Some(20),
         funding_goal: None,
         split_to_liquid: None,
@@ -100,7 +99,7 @@ fn only_registrar_can_change_registrar_contract() {
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation_limit: Some(Uint128::from(1000000u128)),
+        fund_rotation: Some(1000000u64),
         fund_member_limit: Some(20),
         funding_goal: None,
         split_to_liquid: None,
@@ -168,7 +167,7 @@ fn sc_owner_can_update_list_of_tca_members() {
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation_limit: Some(Uint128::from(1000000u128)),
+        fund_rotation: Some(1000000u64),
         fund_member_limit: Some(20),
         funding_goal: None,
         split_to_liquid: None,
@@ -209,7 +208,7 @@ fn sc_owner_can_add_remove_funds() {
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation_limit: Some(Uint128::from(1000000u128)),
+        fund_rotation: Some(1000000u64),
         fund_member_limit: Some(20),
         funding_goal: None,
         split_to_liquid: None,
@@ -275,7 +274,7 @@ fn sc_owner_can_update_fund_members() {
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation_limit: Some(Uint128::from(1000000u128)),
+        fund_rotation: Some(1000000u64),
         fund_member_limit: Some(20),
         funding_goal: None,
         split_to_liquid: None,
