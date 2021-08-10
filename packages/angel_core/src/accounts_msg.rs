@@ -101,4 +101,6 @@ pub enum QueryMsg {
     // Get all Config details for the contract
     // Returns ConfigResponse
     Config {},
+    // Get all Endowment details
+    Endowment {},
 }
