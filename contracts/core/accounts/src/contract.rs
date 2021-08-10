@@ -4,8 +4,8 @@ use angel_core::accounts_rsp::*;
 use angel_core::error::ContractError;
 use angel_core::structs::{GenericBalance, Strategy};
 use cosmwasm_std::{
-    attr, entry_point, from_binary, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env,
-    MessageInfo, Response, StdResult, SubMsg, WasmMsg,
+    entry_point, from_binary, to_binary, Addr, BankMsg, Binary, Deps, DepsMut, Env, MessageInfo,
+    Response, StdResult, SubMsg, WasmMsg,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg, Cw20ReceiveMsg};
@@ -64,10 +64,10 @@ pub fn instantiate(
             },
         )?;
     }
-    Ok(Response {
-        attributes: vec![attr("name", msg.name), attr("description", msg.description)],
-        ..Response::default()
-    })
+
+    Ok(Response::new()
+        .add_attribute("name", msg.name)
+        .add_attribute("description", msg.description))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -265,13 +265,9 @@ pub fn execute_vault_receipt(
     // and save
     ACCOUNTS.save(deps.storage, account_type.clone(), &account)?;
 
-    let res = Response {
-        attributes: vec![
-            attr("action", "vault_receipt"),
-            attr("account_type", account_type),
-        ],
-        ..Response::default()
-    };
+    let res = Response::new()
+        .add_attribute("action", "vault_receipt")
+        .add_attribute("account_type", account_type);
     Ok(res)
 }
 
@@ -347,12 +343,9 @@ pub fn execute_liquidate(
         let _messages = send_tokens(&config.index_fund_contract, &account.balance)?;
     }
 
-    let attributes = vec![attr("action", "liquidate"), attr("to", beneficiary_addr)];
-    let res = Response {
-        attributes: attributes,
-        ..Response::default()
-    };
-    Ok(res)
+    Ok(Response::new()
+        .add_attribute("action", "liquidate")
+        .add_attribute("to", beneficiary_addr))
 }
 
 pub fn execute_terminate_to_address(
@@ -380,12 +373,11 @@ pub fn execute_terminate_to_address(
         messages.append(&mut send_tokens(&beneficiary_addr, &account.balance)?);
     }
 
-    let attributes = vec![attr("action", "terminate"), attr("to", beneficiary_addr)];
-    let res = Response {
-        messages: messages,
-        attributes: attributes,
-        ..Response::default()
-    };
+    let mut res = Response::new()
+        .add_attribute("action", "terminate")
+        .add_attribute("to", beneficiary_addr);
+    res.messages = messages;
+
     Ok(res)
 }
 
@@ -413,16 +405,11 @@ pub fn execute_terminate_to_fund(
         )?);
     }
 
-    let attributes = vec![
-        attr("action", "terminate"),
-        attr("fund_id", fund),
-        attr("to", config.index_fund_contract),
-    ];
-    let res = Response {
-        messages: messages,
-        attributes: attributes,
-        ..Response::default()
-    };
+    let mut res = Response::new()
+        .add_attribute("action", "terminate")
+        .add_attribute("fund_id", format!("{}", fund))
+        .add_attribute("to", config.index_fund_contract);
+    res.messages = messages;
     Ok(res)
 }
 

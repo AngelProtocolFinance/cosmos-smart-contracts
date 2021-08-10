@@ -7,8 +7,8 @@ use angel_core::registrar_msg::*;
 use angel_core::registrar_rsp::*;
 use angel_core::structs::{AssetVault, EndowmentEntry, EndowmentStatus, SplitDetails};
 use cosmwasm_std::{
-    attr, entry_point, to_binary, Binary, ContractResult, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Reply, ReplyOn, Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
+    entry_point, to_binary, Binary, ContractResult, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
+    Reply, ReplyOn, Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
 };
 use cw2::{get_contract_version, set_contract_version};
 
@@ -64,41 +64,38 @@ pub fn execute(
     }
 }
 
-fn build_account_status_change_msg(
-    account: String,
-    deposit: bool,
-    withdraw: bool,
-) -> StdResult<SubMsg> {
+fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account,
         msg: to_binary(&angel_core::accounts_msg::UpdateEndowmentStatusMsg {
             deposit_approved: deposit,
             withdraw_approved: withdraw,
-        })?,
+        })
+        .unwrap(),
         funds: vec![],
     });
 
-    Ok(SubMsg {
+    SubMsg {
         id: 0,
         msg: wasm_msg,
         gas_limit: None,
         reply_on: ReplyOn::Never,
-    })
+    }
 }
 
-fn build_index_fund_member_removal_msg(account: String) -> StdResult<SubMsg> {
+fn build_index_fund_member_removal_msg(account: String) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account.clone(),
-        msg: to_binary(&angel_core::index_fund_msg::RemoveMemberMsg { member: account })?,
+        msg: to_binary(&angel_core::index_fund_msg::RemoveMemberMsg { member: account }).unwrap(),
         funds: vec![],
     });
 
-    Ok(SubMsg {
+    SubMsg {
         id: 0,
         msg: wasm_msg,
         gas_limit: None,
         reply_on: ReplyOn::Never,
-    })
+    }
 }
 
 pub fn execute_update_endowment_status(
@@ -141,32 +138,31 @@ pub fn execute_update_endowment_status(
     let sub_messages: Vec<SubMsg> = match msg.status {
         // Allowed to receive donations and process withdrawals
         EndowmentStatus::Approved => {
-            vec![
-                build_account_status_change_msg(endowment_entry.address.to_string(), true, true)
-                    .unwrap(),
-            ]
+            vec![build_account_status_change_msg(
+                endowment_entry.address.to_string(),
+                true,
+                true,
+            )]
         }
         // Can accept inbound deposits, but cannot withdraw funds out
         EndowmentStatus::Frozen => {
-            vec![
-                build_account_status_change_msg(endowment_entry.address.to_string(), true, false)
-                    .unwrap(),
-            ]
+            vec![build_account_status_change_msg(
+                endowment_entry.address.to_string(),
+                true,
+                false,
+            )]
         }
         // Has been liquidated or terminated. Remove from Funds and lockdown money flows
         EndowmentStatus::Closed => vec![
-            build_account_status_change_msg(endowment_entry.address.to_string(), true, true)
-                .unwrap(),
-            build_index_fund_member_removal_msg(endowment_entry.address.to_string()).unwrap(),
+            build_account_status_change_msg(endowment_entry.address.to_string(), true, true),
+            build_index_fund_member_removal_msg(endowment_entry.address.to_string()),
         ],
         _ => vec![],
     };
 
-    let res = Response {
-        messages: sub_messages,
-        attributes: vec![attr("action", "update_endowment_status")],
-        ..Response::default()
-    };
+    let mut res = Response::new().add_attribute("action", "update_endowment_status");
+    res.messages = sub_messages;
+
     Ok(res)
 }
 
@@ -188,11 +184,7 @@ pub fn execute_update_owner(
         Ok(config)
     })?;
 
-    let res = Response {
-        attributes: vec![attr("action", "update_owner")],
-        ..Response::default()
-    };
-    Ok(res)
+    Ok(Response::new().add_attribute("action", "update_owner"))
 }
 
 pub fn execute_update_config(
@@ -217,11 +209,8 @@ pub fn execute_update_config(
         config.approved_coins = coins_addr_list;
         Ok(config)
     })?;
-    let res = Response {
-        attributes: vec![attr("action", "update_owner")],
-        ..Response::default()
-    };
-    Ok(res)
+
+    Ok(Response::new().add_attribute("action", "update_config"))
 }
 
 pub fn execute_create_endowment(
@@ -263,12 +252,9 @@ pub fn execute_create_endowment(
         reply_on: ReplyOn::Success,
     };
 
-    let res = Response {
-        messages: vec![sub_message],
-        attributes: vec![attr("action", "create_endowment")],
-        ..Response::default()
-    };
-    Ok(res)
+    Ok(Response::new()
+        .add_submessage(sub_message)
+        .add_attribute("action", "create_endowment"))
 }
 
 pub fn vault_add(

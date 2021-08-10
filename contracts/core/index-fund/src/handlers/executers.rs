@@ -3,8 +3,8 @@ use angel_core::error::ContractError;
 use angel_core::index_fund_msg::*;
 use angel_core::structs::{GenericBalance, IndexFund, SplitDetails};
 use cosmwasm_std::{
-    attr, from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
-    ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg,
+    from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn,
+    Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Balance, Cw20ReceiveMsg};
 
@@ -335,11 +335,9 @@ pub fn deposit(
         }
     };
 
-    Ok(Response {
-        messages: donation_messages,
-        attributes: vec![attr("action", "deposit")],
-        ..Response::default()
-    })
+    let mut res = Response::new().add_attribute("action", "deposit");
+    res.messages = donation_messages;
+    Ok(res)
 }
 
 pub fn calculate_split(
