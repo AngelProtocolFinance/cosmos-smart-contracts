@@ -11,10 +11,10 @@ pub struct InstantiateMsg {
     pub admin_addr: String,
     pub registrar_contract: String,
     pub index_fund_contract: String,
-    pub endowment_owner: String, // address that originally setup the endowment account
-    pub endowment_beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
-    pub name: String,                  // name of the Charity Endowment
-    pub description: String,           // description of the Charity Endowment
+    pub owner: String,       // address that originally setup the endowment account
+    pub beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
+    pub name: String,        // name of the Charity Endowment
+    pub description: String, // description of the Charity Endowment
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
