@@ -115,6 +115,35 @@ impl IndexFund {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct AcceptedTokens {
+    pub native: Vec<String>,
+    pub cw20: Vec<String>,
+}
+
+impl AcceptedTokens {
+    pub fn default() -> Self {
+        AcceptedTokens {
+            native: vec!["uust".to_string()],
+            cw20: vec![],
+        }
+    }
+    pub fn native_valid(&self, denom: String) -> bool {
+        if let Some(_i) = self.native.iter().position(|d| *d == denom) {
+            true
+        } else {
+            false
+        }
+    }
+    pub fn cw20_valid(&self, addr: String) -> bool {
+        if let Some(_i) = self.cw20.iter().position(|a| *a == addr) {
+            true
+        } else {
+            false
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
 pub struct GenericBalance {
     pub native: Vec<Coin>,

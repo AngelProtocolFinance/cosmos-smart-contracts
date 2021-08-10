@@ -2,11 +2,10 @@ use crate::handlers::{executers as ExecuteHandlers, queriers as QueryHandlers};
 use crate::state::{Config, State, CONFIG, STATE};
 use angel_core::error::ContractError;
 use angel_core::index_fund_msg::*;
-use angel_core::structs::SplitDetails;
+use angel_core::structs::{AcceptedTokens, SplitDetails};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
-use cw20::Balance;
 
 // Note, you can use StdResult in some functions where you do not
 // make use of the custom errors
@@ -21,12 +20,11 @@ pub fn instantiate(
     let configs = Config {
         owner: info.sender.clone(),
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-        fund_rotation_limit: msg
-            .fund_rotation_limit
-            .unwrap_or(Uint128::from(500000 as u128)), // blocks
+        fund_rotation: msg.fund_rotation.unwrap_or(500000 as u64), // blocks
         fund_member_limit: msg.fund_member_limit.unwrap_or(10),
-        funding_goal: msg.funding_goal.unwrap_or(Some(Balance::default())),
+        funding_goal: msg.funding_goal.unwrap_or(Some(Uint128::zero())),
         split_to_liquid: msg.split_to_liquid.unwrap_or(SplitDetails::default()),
+        accepted_tokens: msg.accepted_tokens.unwrap_or(AcceptedTokens::default()),
     };
     CONFIG.save(deps.storage, &configs)?;
 
@@ -39,7 +37,7 @@ pub fn instantiate(
 #[entry_point]
 pub fn execute(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
@@ -57,7 +55,10 @@ pub fn execute(
         ExecuteMsg::RemoveFund(msg) => ExecuteHandlers::remove_index_fund(deps, info, msg.fund_id),
         ExecuteMsg::RemoveMember(msg) => ExecuteHandlers::remove_member(deps, info, msg.member),
         ExecuteMsg::UpdateMembers(msg) => ExecuteHandlers::update_fund_members(deps, info, msg),
-        ExecuteMsg::Recieve(msg) => ExecuteHandlers::receive(deps, info, msg),
+        ExecuteMsg::Deposit(msg) => {
+            ExecuteHandlers::deposit(deps, env, info.sender, info.funds[0].amount, msg)
+        }
+        ExecuteMsg::Recieve(msg) => ExecuteHandlers::receive(deps, env, info, msg),
     }
 }
 
