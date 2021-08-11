@@ -1,4 +1,4 @@
-use crate::state::{Account, Config, RebalanceDetails, ACCOUNTS, CONFIG};
+use crate::state::{Account, Config, Endowment, RebalanceDetails, ACCOUNTS, CONFIG, ENDOWMENT};
 use angel_core::accounts_msg::*;
 use angel_core::accounts_rsp::*;
 use angel_core::error::ContractError;
@@ -30,12 +30,18 @@ pub fn instantiate(
             admin_addr: deps.api.addr_validate(&msg.admin_addr)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             index_fund_contract: deps.api.addr_validate(&msg.index_fund_contract)?,
-            endowment_owner: deps.api.addr_validate(&msg.endowment_owner)?, // Addr
-            endowment_beneficiary: deps.api.addr_validate(&msg.endowment_beneficiary)?, // Addr
+            deposit_approved: false,  // bool
+            withdraw_approved: false, // bool
+        },
+    )?;
+
+    ENDOWMENT.save(
+        deps.storage,
+        &Endowment {
+            owner: deps.api.addr_validate(&msg.owner)?, // Addr
+            beneficiary: deps.api.addr_validate(&msg.beneficiary)?, // Addr
             name: msg.name.clone(),
             description: msg.description.clone(),
-            deposit_approved: false,                                // bool
-            withdraw_approved: false,                               // bool
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
             maturity_time: msg.maturity_time,                       // Option<u64>
             maturity_height: msg.maturity_height,                   // Option<u64>
@@ -167,14 +173,14 @@ pub fn execute_update_endowment_settings(
     }
 
     // validate SC address strings passed
-    let endowment_beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
-    let endowment_owner = deps.api.addr_validate(&msg.owner)?;
+    let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
+    let owner = deps.api.addr_validate(&msg.owner)?;
 
-    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.endowment_owner = endowment_owner;
-        config.endowment_beneficiary = endowment_beneficiary;
-        config.split_to_liquid = msg.split_to_liquid;
-        Ok(config)
+    ENDOWMENT.update(deps.storage, |mut endowment| -> StdResult<_> {
+        endowment.owner = owner;
+        endowment.beneficiary = beneficiary;
+        endowment.split_to_liquid = msg.split_to_liquid;
+        Ok(endowment)
     })?;
 
     Ok(Response::default())
@@ -208,8 +214,8 @@ pub fn update_strategy(
     account_type: String,
     strategy: Strategy,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    if info.sender != config.endowment_owner {
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -448,6 +454,7 @@ fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<SubMsg>> {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::Endowment {} => to_binary(&query_endowment_details(deps)?),
         QueryMsg::Account { account_type } => {
             to_binary(&query_account_details(deps, account_type)?)
         }
@@ -461,6 +468,9 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let res = ConfigResponse {
         admin_addr: config.admin_addr.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
+        index_fund_contract: config.index_fund_contract.to_string(),
+        deposit_approved: config.deposit_approved,
+        withdraw_approved: config.withdraw_approved,
     };
     Ok(res)
 }
@@ -468,30 +478,37 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 fn query_account_details(deps: Deps, account_type: String) -> StdResult<AccountDetailsResponse> {
     // this fails if no account is found
     let account = ACCOUNTS.load(deps.storage, account_type.clone())?;
-
-    let balance: StdResult<Vec<_>> = account
-        .balance
-        .cw20
-        .into_iter()
-        .map(|token| {
-            Ok(Cw20Coin {
-                address: token.address.into(),
-                amount: token.amount,
-            })
-        })
-        .collect();
-
     let details = AccountDetailsResponse {
         account_type: account_type,
         strategy: account.strategy,
-        balance: balance?,
+        balance: account.balance,
     };
     Ok(details)
 }
 
-fn query_account_list(_deps: Deps) -> StdResult<AccountListResponse> {
-    let list = AccountListResponse { accounts: vec![] };
+fn query_account_list(deps: Deps) -> StdResult<AccountListResponse> {
+    let list = AccountListResponse {
+        locked_account: query_account_details(deps, "locked".to_string())?,
+        liquid_account: query_account_details(deps, "liquid".to_string())?,
+    };
     Ok(list)
+}
+
+fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse> {
+    // this fails if no account is found
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    Ok(EndowmentDetailsResponse {
+        owner: endowment.owner,
+        beneficiary: endowment.beneficiary,
+        name: endowment.name,
+        description: endowment.description,
+        withdraw_before_maturity: endowment.withdraw_before_maturity,
+        maturity_time: endowment.maturity_time,
+        maturity_height: endowment.maturity_height,
+        split_to_liquid: endowment.split_to_liquid,
+        // total_funds: Uint128 // locked total + liquid total
+        // total_donations: Uint128 // all donations received
+    })
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -526,8 +543,8 @@ mod tests {
             admin_addr: ap_team.clone(),
             registrar_contract: registrar_contract.clone(),
             index_fund_contract: index_fund_contract.clone(),
-            endowment_owner: charity_addr.clone(),
-            endowment_beneficiary: charity_addr.clone(),
+            owner: charity_addr.clone(),
+            beneficiary: charity_addr.clone(),
             name: "Test Endowment".to_string(),
             description: "Endowment to power an amazing charity".to_string(),
             withdraw_before_maturity: false,
@@ -554,8 +571,8 @@ mod tests {
             admin_addr: ap_team.clone(),
             registrar_contract: registrar_contract.clone(),
             index_fund_contract: index_fund_contract.clone(),
-            endowment_owner: charity_addr.clone(),
-            endowment_beneficiary: charity_addr.clone(),
+            owner: charity_addr.clone(),
+            beneficiary: charity_addr.clone(),
             name: "Test Endowment".to_string(),
             description: "Endowment to power an amazing charity".to_string(),
             withdraw_before_maturity: false,
@@ -583,8 +600,8 @@ mod tests {
             admin_addr: ap_team.clone(),
             registrar_contract: registrar_contract.clone(),
             index_fund_contract: index_fund_contract.clone(),
-            endowment_owner: charity_addr.clone(),
-            endowment_beneficiary: charity_addr.clone(),
+            owner: charity_addr.clone(),
+            beneficiary: charity_addr.clone(),
             name: "Test Endowment".to_string(),
             description: "Endowment to power an amazing charity".to_string(),
             withdraw_before_maturity: false,
@@ -647,8 +664,8 @@ mod tests {
             admin_addr: ap_team.clone(),
             registrar_contract: registrar_contract.clone(),
             index_fund_contract: index_fund_contract.clone(),
-            endowment_owner: charity_addr.clone(),
-            endowment_beneficiary: charity_addr.clone(),
+            owner: charity_addr.clone(),
+            beneficiary: charity_addr.clone(),
             name: "Test Endowment".to_string(),
             description: "Endowment to power an amazing charity".to_string(),
             withdraw_before_maturity: false,
@@ -704,8 +721,8 @@ mod tests {
             admin_addr: ap_team.clone(),
             registrar_contract: registrar_contract.clone(),
             index_fund_contract: index_fund_contract.clone(),
-            endowment_owner: charity_addr.clone(),
-            endowment_beneficiary: charity_addr.clone(),
+            owner: charity_addr.clone(),
+            beneficiary: charity_addr.clone(),
             name: "Test Endowment".to_string(),
             description: "Endowment to power an amazing charity".to_string(),
             withdraw_before_maturity: false,
