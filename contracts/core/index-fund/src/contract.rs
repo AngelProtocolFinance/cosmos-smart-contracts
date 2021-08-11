@@ -6,9 +6,12 @@ use angel_core::structs::{AcceptedTokens, SplitDetails};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
+use cw2::{get_contract_version, set_contract_version};
 
-// Note, you can use StdResult in some functions where you do not
-// make use of the custom errors
+// version info for future migration info
+const CONTRACT_NAME: &str = "index-fund";
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
@@ -16,7 +19,8 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    // Default placeholders used in config to check compiling. Should take from InistantiateMsg.
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     let configs = Config {
         owner: info.sender.clone(),
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
@@ -33,7 +37,6 @@ pub fn instantiate(
     Ok(Response::default())
 }
 
-// And declare a custom Error variant for the ones where you will want to make use of it
 #[entry_point]
 pub fn execute(
     deps: DepsMut,
@@ -77,7 +80,13 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-#[entry_point]
-pub fn migrate(_: DepsMut, _: Env, _: MigrateMsg) -> StdResult<Response> {
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let version = get_contract_version(deps.storage)?;
+    if version.contract != CONTRACT_NAME {
+        return Err(ContractError::CannotMigrate {
+            previous_contract: version.contract,
+        });
+    }
     Ok(Response::default())
 }
