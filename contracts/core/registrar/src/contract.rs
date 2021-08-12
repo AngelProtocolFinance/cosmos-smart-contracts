@@ -25,6 +25,7 @@ pub fn instantiate(
         index_fund_contract: info.sender,
         approved_coins: vec![],
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
+        approved_charities: vec![],
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -57,12 +58,18 @@ pub fn execute(
             vault_name,
             vault_description,
         } => ExecuteHandlers::vault_add(deps, env, info, vault_addr, vault_name, vault_description),
+        ExecuteMsg::VaultRemove { vault_addr } => {
+            ExecuteHandlers::vault_remove(deps, env, info, vault_addr)
+        }
         ExecuteMsg::VaultUpdateStatus {
             vault_addr,
             approved,
         } => ExecuteHandlers::vault_update_status(deps, env, info, vault_addr, approved),
-        ExecuteMsg::VaultRemove { vault_addr } => {
-            ExecuteHandlers::vault_remove(deps, env, info, vault_addr)
+        ExecuteMsg::CharityAdd { charity } => {
+            ExecuteHandlers::charity_add(deps, env, info, charity)
+        }
+        ExecuteMsg::CharityRemove { charity } => {
+            ExecuteHandlers::charity_remove(deps, env, info, charity)
         }
     }
 }

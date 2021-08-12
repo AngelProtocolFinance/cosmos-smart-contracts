@@ -143,13 +143,15 @@ pub fn execute_update_config(
     }
 
     let index_fund_contract_addr = deps.api.addr_validate(&msg.index_fund_contract)?;
-    let coins_addr_list = msg.addr_approved_list(deps.api)?;
+    let coins_addr_list = msg.coins_list(deps.api)?;
+    let charities_addr_list = msg.charities_list(deps.api)?;
 
     // update config attributes with newly passed configs
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
         config.index_fund_contract = index_fund_contract_addr;
         config.accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
         config.approved_coins = coins_addr_list;
+        config.approved_charities = charities_addr_list;
         Ok(config)
     })?;
 
@@ -159,10 +161,20 @@ pub fn execute_update_config(
 pub fn execute_create_endowment(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: CreateEndowmentMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+
+    // check that the sender is an approved charity address
+    let pos = config
+        .approved_charities
+        .iter()
+        .position(|a| *a == info.sender);
+    // ignore if that member was found in the list
+    if pos == None {
+        return Err(ContractError::Unauthorized {});
+    }
 
     if config.accounts_code_id == 0 {
         return Err(ContractError::ContractNotConfigured {});
@@ -198,6 +210,58 @@ pub fn execute_create_endowment(
     Ok(Response::new()
         .add_submessage(sub_message)
         .add_attribute("action", "create_endowment"))
+}
+
+pub fn charity_add(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    charity: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // save the new charity to the list if it does not already exist
+    let addr = deps.api.addr_validate(&charity)?;
+    let pos = config.approved_charities.iter().position(|a| *a == addr);
+    // ignore if that member was found in the list
+    if pos == None {
+        CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+            config.approved_charities.push(addr);
+            Ok(config)
+        })?;
+    }
+
+    Ok(Response::default())
+}
+
+pub fn charity_remove(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    charity: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // remove the charity from the list if it exists
+    let addr = deps.api.addr_validate(&charity)?;
+    let pos = config.approved_charities.iter().position(|a| *a == addr);
+    // ignore if that member was found in the list
+    if pos != None {
+        CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+            config.approved_charities.swap_remove(pos.unwrap());
+            Ok(config)
+        })?;
+    }
+
+    Ok(Response::default())
 }
 
 pub fn vault_add(
