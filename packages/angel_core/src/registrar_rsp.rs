@@ -1,4 +1,4 @@
-use crate::structs::{AssetVault, EndowmentEntry};
+use crate::structs::{AssetVault, EndowmentEntry, TaxParameters};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

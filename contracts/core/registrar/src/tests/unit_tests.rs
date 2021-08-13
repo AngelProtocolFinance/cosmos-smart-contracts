@@ -2,19 +2,27 @@ use crate::contract::{execute, instantiate, migrate, query};
 use angel_core::error::*;
 use angel_core::registrar_msg::*;
 use angel_core::registrar_rsp::*;
+use angel_core::structs::TaxParameters;
 
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{coins, from_binary};
+use cosmwasm_std::{coins, from_binary, Decimal};
 
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
 
 #[test]
 fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
-
+    let ap_team = "angelprotocolteamdano".to_string();
     let msg = InstantiateMsg {
         approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
+        treasury: ap_team.clone(),
+        taxes: TaxParameters {
+            exit_tax: Decimal::percent(50),
+            max_tax: Decimal::one(),
+            min_tax: Decimal::zero(),
+            step: Decimal::percent(5),
+        },
     };
     let info = mock_info("creator", &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -29,10 +37,17 @@ fn proper_initialization() {
 #[test]
 fn update_owner() {
     let mut deps = mock_dependencies(&[]);
-
+    let ap_team = "angelprotocolteamdano".to_string();
     let msg = InstantiateMsg {
         approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
+        treasury: ap_team.clone(),
+        taxes: TaxParameters {
+            exit_tax: Decimal::percent(50),
+            max_tax: Decimal::one(),
+            min_tax: Decimal::zero(),
+            step: Decimal::percent(5),
+        },
     };
     let info = mock_info("creator", &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -57,12 +72,16 @@ fn migrate_contract() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let _pleb = "plebAccount".to_string();
-
     let instantiate_msg = InstantiateMsg {
         approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
+        treasury: ap_team.clone(),
+        taxes: TaxParameters {
+            exit_tax: Decimal::percent(50),
+            max_tax: Decimal::one(),
+            min_tax: Decimal::zero(),
+            step: Decimal::percent(5),
+        },
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();

@@ -1,5 +1,5 @@
 use angel_core::structs::{AssetVault, EndowmentEntry, TaxParameters};
-use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
+use cosmwasm_std::{Addr, Order, StdResult, Storage};
 use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
