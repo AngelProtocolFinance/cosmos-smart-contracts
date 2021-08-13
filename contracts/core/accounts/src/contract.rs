@@ -228,7 +228,7 @@ pub fn update_strategy(
     addresses.dedup();
 
     if addresses.len() < strategy.invested.len() {
-        return Err(ContractError::StrategyComponentsUniq {});
+        return Err(ContractError::StrategyComponentsNotUnique {});
     };
 
     let mut invested_percentages_sum = Decimal::zero();
