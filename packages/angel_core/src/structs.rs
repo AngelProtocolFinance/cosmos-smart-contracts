@@ -14,7 +14,6 @@ pub struct StrategyComponent {
 #[serde(rename_all = "snake_case")]
 pub struct Strategy {
     pub invested: Vec<StrategyComponent>,
-    pub cash: Decimal, // possibly use impl function to calculate remainder from invested strategies instead?
 }
 
 // TO DO: Add impl function to check strategy percentages + cash remaining all sums to 100%
@@ -22,7 +21,6 @@ impl Strategy {
     pub fn default() -> Self {
         Strategy {
             invested: vec![],
-            cash: Decimal::one(),
         }
     }
 }

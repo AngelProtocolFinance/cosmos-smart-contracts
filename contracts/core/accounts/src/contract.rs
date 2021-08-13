@@ -4,11 +4,12 @@ use crate::state::{Account, Config, Endowment, RebalanceDetails, ACCOUNTS, CONFI
 use angel_core::accounts_msg::*;
 use angel_core::error::ContractError;
 use angel_core::structs::{GenericBalance, Strategy};
+use cosmwasm_std::Decimal;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
-use cw20::Balance;
+use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg, Cw20ReceiveMsg};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";
