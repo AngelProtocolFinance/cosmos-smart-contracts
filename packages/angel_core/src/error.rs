@@ -53,4 +53,10 @@ pub enum ContractError {
 
     #[error("Index Fund already exists with given ID")]
     IndexFundAlreadyExists {},
+
+    #[error("Invalid strategy allocation")]
+    InvalidStrategyAllocation {},
+
+    #[error("Strategy components should be unique")]
+    StrategyComponentsNotUnique {},
 }

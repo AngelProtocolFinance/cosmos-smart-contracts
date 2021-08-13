@@ -1,4 +1,4 @@
-use angel_core::structs::{AssetVault, EndowmentEntry};
+use angel_core::structs::{AssetVault, EndowmentEntry, TaxParameters};
 use cosmwasm_std::{Addr, Order, StdResult, Storage};
 use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
 use cw_storage_plus::Item;
@@ -25,6 +25,8 @@ pub struct Config {
     pub approved_coins: Vec<Addr>,
     pub accounts_code_id: u64,
     pub approved_charities: Vec<Addr>,
+    pub treasury: Addr,
+    pub taxes: TaxParameters,
 }
 
 impl Config {

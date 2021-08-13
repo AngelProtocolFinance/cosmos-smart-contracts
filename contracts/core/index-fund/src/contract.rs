@@ -1,4 +1,5 @@
-use crate::handlers::{executers as ExecuteHandlers, queriers as QueryHandlers};
+use crate::executers::executers as IndexFundExecuters;
+use crate::queriers::index_fund as IndexFundQueriers;
 use crate::state::{Config, State, CONFIG, STATE};
 use angel_core::error::ContractError;
 use angel_core::index_fund_msg::*;
@@ -46,37 +47,41 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::UpdateOwner { new_owner } => {
-            ExecuteHandlers::update_owner(deps, info, new_owner)
+            IndexFundExecuters::update_owner(deps, info, new_owner)
         }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
-            ExecuteHandlers::update_registrar(deps, info, new_registrar)
+            IndexFundExecuters::update_registrar(deps, info, new_registrar)
         }
         ExecuteMsg::UpdateTcaList { new_list } => {
-            ExecuteHandlers::update_tca_list(deps, info, new_list)
+            IndexFundExecuters::update_tca_list(deps, info, new_list)
         }
-        ExecuteMsg::CreateFund { fund } => ExecuteHandlers::create_index_fund(deps, info, fund),
-        ExecuteMsg::RemoveFund(msg) => ExecuteHandlers::remove_index_fund(deps, info, msg.fund_id),
-        ExecuteMsg::RemoveMember(msg) => ExecuteHandlers::remove_member(deps, info, msg.member),
-        ExecuteMsg::UpdateMembers(msg) => ExecuteHandlers::update_fund_members(deps, info, msg),
+        ExecuteMsg::CreateFund { fund } => IndexFundExecuters::create_index_fund(deps, info, fund),
+        ExecuteMsg::RemoveFund(msg) => {
+            IndexFundExecuters::remove_index_fund(deps, info, msg.fund_id)
+        }
+        ExecuteMsg::RemoveMember(msg) => IndexFundExecuters::remove_member(deps, info, msg.member),
+        ExecuteMsg::UpdateMembers(msg) => IndexFundExecuters::update_fund_members(deps, info, msg),
         ExecuteMsg::Deposit(msg) => {
-            ExecuteHandlers::deposit(deps, env, info.sender, info.funds[0].amount, msg)
+            IndexFundExecuters::deposit(deps, env, info.sender, info.funds[0].amount, msg)
         }
-        ExecuteMsg::Recieve(msg) => ExecuteHandlers::receive(deps, env, info, msg),
+        ExecuteMsg::Recieve(msg) => IndexFundExecuters::receive(deps, env, info, msg),
     }
 }
 
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Config {} => to_binary(&QueryHandlers::config(deps)?),
-        QueryMsg::State {} => to_binary(&QueryHandlers::state(deps)?),
-        QueryMsg::TcaList {} => to_binary(&QueryHandlers::tca_list(deps)?),
-        QueryMsg::FundsList {} => to_binary(&QueryHandlers::funds_list(deps)?),
+        QueryMsg::Config {} => to_binary(&IndexFundQueriers::config(deps)?),
+        QueryMsg::State {} => to_binary(&IndexFundQueriers::state(deps)?),
+        QueryMsg::TcaList {} => to_binary(&IndexFundQueriers::tca_list(deps)?),
+        QueryMsg::FundsList {} => to_binary(&IndexFundQueriers::funds_list(deps)?),
         QueryMsg::FundDetails { fund_id } => {
-            to_binary(&QueryHandlers::fund_details(deps, fund_id)?)
+            to_binary(&IndexFundQueriers::fund_details(deps, fund_id)?)
         }
-        QueryMsg::ActiveFundDetails {} => to_binary(&QueryHandlers::active_fund_details(deps)?),
-        QueryMsg::ActiveFundDonations {} => to_binary(&QueryHandlers::active_fund_donations(deps)?),
+        QueryMsg::ActiveFundDetails {} => to_binary(&IndexFundQueriers::active_fund_details(deps)?),
+        QueryMsg::ActiveFundDonations {} => {
+            to_binary(&IndexFundQueriers::active_fund_donations(deps)?)
+        }
     }
 }
 
