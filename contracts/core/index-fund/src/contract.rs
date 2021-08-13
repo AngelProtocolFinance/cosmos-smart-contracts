@@ -1,4 +1,5 @@
-use crate::handlers::{executers as ExecuteHandlers, queriers as QueryHandlers};
+use crate::executers::executers as IndexFundExecuters;
+use crate::queriers::index_fund as IndexFundQueriers;
 use crate::state::{Config, State, CONFIG, STATE};
 use angel_core::error::ContractError;
 use angel_core::index_fund_msg::*;
@@ -6,9 +7,12 @@ use angel_core::structs::{AcceptedTokens, SplitDetails};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
+use cw2::{get_contract_version, set_contract_version};
 
-// Note, you can use StdResult in some functions where you do not
-// make use of the custom errors
+// version info for future migration info
+const CONTRACT_NAME: &str = "index-fund";
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
@@ -16,7 +20,8 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    // Default placeholders used in config to check compiling. Should take from InistantiateMsg.
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     let configs = Config {
         owner: info.sender.clone(),
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
@@ -33,7 +38,6 @@ pub fn instantiate(
     Ok(Response::default())
 }
 
-// And declare a custom Error variant for the ones where you will want to make use of it
 #[entry_point]
 pub fn execute(
     deps: DepsMut,
@@ -43,41 +47,51 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::UpdateOwner { new_owner } => {
-            ExecuteHandlers::update_owner(deps, info, new_owner)
+            IndexFundExecuters::update_owner(deps, info, new_owner)
         }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
-            ExecuteHandlers::update_registrar(deps, info, new_registrar)
+            IndexFundExecuters::update_registrar(deps, info, new_registrar)
         }
         ExecuteMsg::UpdateTcaList { new_list } => {
-            ExecuteHandlers::update_tca_list(deps, info, new_list)
+            IndexFundExecuters::update_tca_list(deps, info, new_list)
         }
-        ExecuteMsg::CreateFund { fund } => ExecuteHandlers::create_index_fund(deps, info, fund),
-        ExecuteMsg::RemoveFund(msg) => ExecuteHandlers::remove_index_fund(deps, info, msg.fund_id),
-        ExecuteMsg::RemoveMember(msg) => ExecuteHandlers::remove_member(deps, info, msg.member),
-        ExecuteMsg::UpdateMembers(msg) => ExecuteHandlers::update_fund_members(deps, info, msg),
+        ExecuteMsg::CreateFund { fund } => IndexFundExecuters::create_index_fund(deps, info, fund),
+        ExecuteMsg::RemoveFund(msg) => {
+            IndexFundExecuters::remove_index_fund(deps, info, msg.fund_id)
+        }
+        ExecuteMsg::RemoveMember(msg) => IndexFundExecuters::remove_member(deps, info, msg.member),
+        ExecuteMsg::UpdateMembers(msg) => IndexFundExecuters::update_fund_members(deps, info, msg),
         ExecuteMsg::Deposit(msg) => {
-            ExecuteHandlers::deposit(deps, env, info.sender, info.funds[0].amount, msg)
+            IndexFundExecuters::deposit(deps, env, info.sender, info.funds[0].amount, msg)
         }
-        ExecuteMsg::Recieve(msg) => ExecuteHandlers::receive(deps, env, info, msg),
+        ExecuteMsg::Recieve(msg) => IndexFundExecuters::receive(deps, env, info, msg),
     }
 }
 
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Config {} => to_binary(&QueryHandlers::config(deps)?),
-        QueryMsg::State {} => to_binary(&QueryHandlers::state(deps)?),
-        QueryMsg::TcaList {} => to_binary(&QueryHandlers::tca_list(deps)?),
-        QueryMsg::FundsList {} => to_binary(&QueryHandlers::funds_list(deps)?),
+        QueryMsg::Config {} => to_binary(&IndexFundQueriers::config(deps)?),
+        QueryMsg::State {} => to_binary(&IndexFundQueriers::state(deps)?),
+        QueryMsg::TcaList {} => to_binary(&IndexFundQueriers::tca_list(deps)?),
+        QueryMsg::FundsList {} => to_binary(&IndexFundQueriers::funds_list(deps)?),
         QueryMsg::FundDetails { fund_id } => {
-            to_binary(&QueryHandlers::fund_details(deps, fund_id)?)
+            to_binary(&IndexFundQueriers::fund_details(deps, fund_id)?)
         }
-        QueryMsg::ActiveFundDetails {} => to_binary(&QueryHandlers::active_fund_details(deps)?),
-        QueryMsg::ActiveFundDonations {} => to_binary(&QueryHandlers::active_fund_donations(deps)?),
+        QueryMsg::ActiveFundDetails {} => to_binary(&IndexFundQueriers::active_fund_details(deps)?),
+        QueryMsg::ActiveFundDonations {} => {
+            to_binary(&IndexFundQueriers::active_fund_donations(deps)?)
+        }
     }
 }
 
-#[entry_point]
-pub fn migrate(_: DepsMut, _: Env, _: MigrateMsg) -> StdResult<Response> {
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let version = get_contract_version(deps.storage)?;
+    if version.contract != CONTRACT_NAME {
+        return Err(ContractError::CannotMigrate {
+            previous_contract: version.contract,
+        });
+    }
     Ok(Response::default())
 }
