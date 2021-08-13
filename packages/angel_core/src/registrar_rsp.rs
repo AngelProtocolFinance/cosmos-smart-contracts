@@ -1,4 +1,4 @@
-use crate::structs::{AssetVault, EndowmentEntry};
+use crate::structs::{AssetVault, EndowmentEntry, TaxParameters};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -27,4 +27,6 @@ pub struct ConfigResponse {
     pub owner: String,
     pub approved_coins: Vec<String>,
     pub accounts_code_id: u64,
+    pub treasury: String,
+    pub taxes: TaxParameters,
 }
