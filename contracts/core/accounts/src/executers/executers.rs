@@ -3,8 +3,8 @@ use angel_core::accounts_msg::*;
 use angel_core::error::ContractError;
 use angel_core::structs::{GenericBalance, Strategy};
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, BankMsg, DepsMut, Env, MessageInfo, Response, StdResult, SubMsg,
-    WasmMsg,
+    from_binary, to_binary, Addr, BankMsg, Decimal, DepsMut, Env, MessageInfo, Response, StdResult,
+    SubMsg, WasmMsg,
 };
 use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg, Cw20ReceiveMsg};
 
@@ -108,8 +108,30 @@ pub fn update_strategy(
     strategy: Strategy,
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENT.load(deps.storage)?;
+
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
+    }
+
+    let mut addresses: Vec<Addr> = strategy
+        .invested
+        .iter()
+        .map(|a| a.address.clone())
+        .collect();
+    addresses.sort();
+    addresses.dedup();
+
+    if addresses.len() < strategy.invested.len() {
+        return Err(ContractError::StrategyComponentsNotUnique {});
+    };
+
+    let mut invested_percentages_sum = Decimal::zero();
+    for strategy_component in strategy.invested.iter() {
+        invested_percentages_sum = invested_percentages_sum + strategy_component.percentage;
+    }
+
+    if invested_percentages_sum != Decimal::percent(100) {
+        return Err(ContractError::InvalidStrategyAllocation {});
     }
 
     // this fails if no account is there

@@ -4,6 +4,7 @@ use crate::state::{Account, Config, Endowment, RebalanceDetails, ACCOUNTS, CONFI
 use angel_core::accounts_msg::*;
 use angel_core::error::ContractError;
 use angel_core::structs::{GenericBalance, Strategy};
+use cosmwasm_std::Decimal;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
