@@ -1,4 +1,5 @@
-use crate::handlers::{executers as ExecuteHandlers, queriers as QueryHandlers};
+use crate::executers::executers as AccountExecuters;
+use crate::queriers::accounts as AccountQueriers;
 use crate::state::{Account, Config, Endowment, RebalanceDetails, ACCOUNTS, CONFIG, ENDOWMENT};
 use angel_core::accounts_msg::*;
 use angel_core::error::ContractError;
@@ -85,53 +86,53 @@ pub fn execute(
     let balance = Balance::from(info.funds.clone());
     match msg {
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
-            ExecuteHandlers::execute_update_endowment_settings(deps, env, info, msg)
+            AccountExecuters::execute_update_endowment_settings(deps, env, info, msg)
         }
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
-            ExecuteHandlers::execute_update_endowment_status(deps, env, info, msg)
+            AccountExecuters::execute_update_endowment_status(deps, env, info, msg)
         }
         ExecuteMsg::Deposit(msg) => {
-            ExecuteHandlers::execute_deposit(deps, info.sender, balance.clone(), msg.account_type)
+            AccountExecuters::execute_deposit(deps, info.sender, balance.clone(), msg.account_type)
         }
-        ExecuteMsg::VaultReceipt(msg) => ExecuteHandlers::execute_vault_receipt(
+        ExecuteMsg::VaultReceipt(msg) => AccountExecuters::execute_vault_receipt(
             deps,
             info.sender,
             balance.clone(),
             msg.account_type,
         ),
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
-            ExecuteHandlers::update_registrar(deps, env, info, new_registrar)
+            AccountExecuters::update_registrar(deps, env, info, new_registrar)
         }
         ExecuteMsg::UpdateAdmin { new_admin } => {
-            ExecuteHandlers::update_admin(deps, env, info, new_admin)
+            AccountExecuters::update_admin(deps, env, info, new_admin)
         }
 
         ExecuteMsg::UpdateStrategy {
             account_type,
             strategy,
-        } => ExecuteHandlers::update_strategy(deps, env, info, account_type, strategy),
+        } => AccountExecuters::update_strategy(deps, env, info, account_type, strategy),
         ExecuteMsg::Liquidate { beneficiary } => {
-            ExecuteHandlers::execute_liquidate(deps, env, info, beneficiary)
+            AccountExecuters::execute_liquidate(deps, env, info, beneficiary)
         }
         ExecuteMsg::TerminateToFund { fund } => {
-            ExecuteHandlers::execute_terminate_to_fund(deps, env, info, fund)
+            AccountExecuters::execute_terminate_to_fund(deps, env, info, fund)
         }
         ExecuteMsg::TerminateToAddress { beneficiary } => {
-            ExecuteHandlers::execute_terminate_to_address(deps, env, info, beneficiary)
+            AccountExecuters::execute_terminate_to_address(deps, env, info, beneficiary)
         }
-        ExecuteMsg::Receive(msg) => ExecuteHandlers::execute_receive(deps, info, msg),
+        ExecuteMsg::Receive(msg) => AccountExecuters::execute_receive(deps, info, msg),
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Config {} => to_binary(&QueryHandlers::query_config(deps)?),
-        QueryMsg::Endowment {} => to_binary(&QueryHandlers::query_endowment_details(deps)?),
+        QueryMsg::Config {} => to_binary(&AccountQueriers::query_config(deps)?),
+        QueryMsg::Endowment {} => to_binary(&AccountQueriers::query_endowment_details(deps)?),
         QueryMsg::Account { account_type } => {
-            to_binary(&QueryHandlers::query_account_details(deps, account_type)?)
+            to_binary(&AccountQueriers::query_account_details(deps, account_type)?)
         }
-        QueryMsg::AccountList {} => to_binary(&QueryHandlers::query_account_list(deps)?),
+        QueryMsg::AccountList {} => to_binary(&AccountQueriers::query_account_list(deps)?),
     }
 }
 
