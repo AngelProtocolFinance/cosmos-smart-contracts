@@ -9,6 +9,8 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         owner: config.owner.to_string(),
         approved_coins: config.human_approved_coins(),
         accounts_code_id: config.accounts_code_id,
+        treasury: config.treasury.to_string(),
+        taxes: config.taxes,
     };
     Ok(res)
 }

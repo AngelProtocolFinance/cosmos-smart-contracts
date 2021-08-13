@@ -21,11 +21,15 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    let treasury = deps.api.addr_validate(&msg.treasury)?;
+
     let configs = Config {
         owner: info.sender.clone(),
         index_fund_contract: info.sender,
         approved_coins: vec![],
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
+        treasury: treasury,
+        taxes: msg.taxes,
     };
 
     CONFIG.save(deps.storage, &configs)?;
