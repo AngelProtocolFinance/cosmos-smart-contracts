@@ -57,6 +57,6 @@ pub enum ContractError {
     #[error("Invalid strategy allocation")]
     InvalidStrategyAllocation {},
 
-    #[error("Strategy components should be uniq")]
+    #[error("Strategy components should be unique")]
     StrategyComponentsUniq {},
 }
