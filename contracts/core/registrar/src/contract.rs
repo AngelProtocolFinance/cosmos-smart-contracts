@@ -28,6 +28,7 @@ pub fn instantiate(
         index_fund_contract: info.sender,
         approved_coins: vec![],
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
+        approved_charities: vec![],
         treasury: treasury,
         taxes: msg.taxes,
     };
@@ -69,12 +70,18 @@ pub fn execute(
             vault_name,
             vault_description,
         ),
+        ExecuteMsg::VaultRemove { vault_addr } => {
+            RegistrarExecuters::vault_remove(deps, env, info, vault_addr)
+        }
         ExecuteMsg::VaultUpdateStatus {
             vault_addr,
             approved,
         } => RegistrarExecuters::vault_update_status(deps, env, info, vault_addr, approved),
-        ExecuteMsg::VaultRemove { vault_addr } => {
-            RegistrarExecuters::vault_remove(deps, env, info, vault_addr)
+        ExecuteMsg::CharityAdd { charity } => {
+            RegistrarExecuters::charity_add(deps, env, info, charity)
+        }
+        ExecuteMsg::CharityRemove { charity } => {
+            RegistrarExecuters::charity_remove(deps, env, info, charity)
         }
     }
 }

@@ -32,6 +32,12 @@ pub enum ExecuteMsg {
     VaultRemove {
         vault_addr: String,
     },
+    CharityAdd {
+        charity: String,
+    },
+    CharityRemove {
+        charity: String,
+    },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
     // Allows the DANO / AP Team to update the status of an Endowment
@@ -61,11 +67,19 @@ pub struct UpdateConfigMsg {
     pub accounts_code_id: Option<u64>,
     pub index_fund_contract: String,
     pub approved_coins: Option<Vec<String>>,
+    pub approved_charities: Option<Vec<String>>,
 }
 
 impl UpdateConfigMsg {
-    pub fn addr_approved_list(&self, api: &dyn Api) -> StdResult<Vec<Addr>> {
+    pub fn coins_list(&self, api: &dyn Api) -> StdResult<Vec<Addr>> {
         match self.approved_coins.as_ref() {
+            Some(v) => v.iter().map(|h| api.addr_validate(h)).collect(),
+            None => Ok(vec![]),
+        }
+    }
+
+    pub fn charities_list(&self, api: &dyn Api) -> StdResult<Vec<Addr>> {
+        match self.approved_charities.as_ref() {
             Some(v) => v.iter().map(|h| api.addr_validate(h)).collect(),
             None => Ok(vec![]),
         }
