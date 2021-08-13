@@ -906,7 +906,7 @@ mod tests {
         let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth"));
         let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
-        assert_eq!(err, ContractError::StrategyComponentsUniq {});
+        assert_eq!(err, ContractError::StrategyComponentsNotUnique {});
 
         let strategy = Strategy {
             invested: vec![
