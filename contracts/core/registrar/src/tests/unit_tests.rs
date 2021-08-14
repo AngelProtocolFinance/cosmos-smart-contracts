@@ -13,7 +13,6 @@ fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
     let ap_team = "angelprotocolteamdano".to_string();
     let instantiate_msg = InstantiateMsg {
-        approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         taxes: TaxParameters {
@@ -38,7 +37,6 @@ fn update_owner() {
     let mut deps = mock_dependencies(&[]);
     let ap_team = "angelprotocolteamdano".to_string();
     let instantiate_msg = InstantiateMsg {
-        approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         taxes: TaxParameters {
@@ -72,7 +70,6 @@ fn migrate_contract() {
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let instantiate_msg = InstantiateMsg {
-        approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         taxes: TaxParameters {
@@ -101,7 +98,6 @@ fn test_owner_can_add_remove_approved_charities() {
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
     let pleb = "plebAccount".to_string();
     let instantiate_msg = InstantiateMsg {
-        approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         taxes: TaxParameters {
@@ -179,7 +175,6 @@ fn only_approved_charities_can_create_endowment_accounts() {
     let good_charity_addr = "GOODQTWTETGSGSRHJTUIQADG".to_string();
     let bad_charity_addr = "BADQTWTETGSGSRHJTUIQADG".to_string();
     let instantiate_msg = InstantiateMsg {
-        approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         taxes: TaxParameters {

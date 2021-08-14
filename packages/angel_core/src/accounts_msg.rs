@@ -1,4 +1,4 @@
-use crate::structs::{SplitDetails, Strategy};
+use crate::structs::{SplitDetails, StrategyComponent};
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -56,7 +56,7 @@ pub enum ExecuteMsg {
     // Replace an Account's Strategy with that given.
     UpdateStrategy {
         account_type: String, // prefix ("locked" or "liquid")
-        strategy: Strategy,
+        strategy: Vec<StrategyComponent>,
     },
     // This accepts a properly-encoded ReceiveMsg from a cw20 contract
     Receive(Cw20ReceiveMsg),

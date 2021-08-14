@@ -1,5 +1,5 @@
 use angel_core::registrar_msg::{CreateEndowmentMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
-use angel_core::registrar_rsp::{VaultDetailResponse, VaultListResponse};
+use angel_core::registrar_rsp::PortalListResponse;
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use registrar::state::Config;
 use std::env::current_dir;
@@ -16,6 +16,5 @@ fn main() {
     export_schema(&schema_for!(ExecuteMsg), &out_dir);
     export_schema(&schema_for!(InstantiateMsg), &out_dir);
     export_schema(&schema_for!(QueryMsg), &out_dir);
-    export_schema(&schema_for!(VaultDetailResponse), &out_dir);
-    export_schema(&schema_for!(VaultListResponse), &out_dir);
+    export_schema(&schema_for!(PortalListResponse), &out_dir);
 }

@@ -1,15 +1,10 @@
-use crate::structs::{AssetVault, EndowmentEntry, TaxParameters};
+use crate::structs::{EndowmentEntry, TaxParameters};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct VaultDetailResponse {
-    pub vault: AssetVault,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct VaultListResponse {
-    pub vaults: Vec<AssetVault>,
+pub struct PortalListResponse {
+    pub portals: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -25,8 +20,8 @@ pub struct EndowmentListResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: String,
-    pub approved_coins: Vec<String>,
     pub accounts_code_id: u64,
     pub treasury: String,
     pub taxes: TaxParameters,
+    pub portals: Vec<String>,
 }

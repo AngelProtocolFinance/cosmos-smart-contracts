@@ -1,7 +1,7 @@
-use crate::state::{registry_read, registry_store, vault_read, vault_store, CONFIG};
+use crate::state::{registry_read, registry_store, CONFIG};
 use angel_core::error::ContractError;
 use angel_core::registrar_msg::*;
-use angel_core::structs::{AssetVault, EndowmentEntry, EndowmentStatus, SplitDetails};
+use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails};
 use cosmwasm_std::{
     to_binary, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
     SubMsg, SubMsgExecutionResponse, WasmMsg,
@@ -49,7 +49,7 @@ pub fn execute_update_endowment_status(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    if config.owner != info.sender {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -117,7 +117,7 @@ pub fn execute_update_owner(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    if config.owner != info.sender {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
     let new_owner_addr = deps.api.addr_validate(&new_owner)?;
@@ -138,19 +138,19 @@ pub fn execute_update_config(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    if config.owner != info.sender {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
     let index_fund_contract_addr = deps.api.addr_validate(&msg.index_fund_contract)?;
-    let coins_addr_list = msg.coins_list(deps.api)?;
+    let portal_list = msg.portals_list(deps.api)?;
     let charities_addr_list = msg.charities_list(deps.api)?;
 
     // update config attributes with newly passed configs
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
         config.index_fund_contract = index_fund_contract_addr;
         config.accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
-        config.approved_coins = coins_addr_list;
+        config.portals = portal_list;
         config.approved_charities = charities_addr_list;
         Ok(config)
     })?;
@@ -220,7 +220,7 @@ pub fn charity_add(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender != config.owner {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -246,7 +246,7 @@ pub fn charity_remove(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender != config.owner {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -264,73 +264,52 @@ pub fn charity_remove(
     Ok(Response::default())
 }
 
-pub fn vault_add(
+pub fn portal_add(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    vault_addr: String,
-    vault_name: String,
-    vault_description: String,
+    portal_addr: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender != config.owner {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
-    // save the new vault to storage (defaults to true)
-    let addr = deps.api.addr_validate(&vault_addr)?;
-    let new_vault = AssetVault {
-        address: addr.clone(),
-        name: vault_name,
-        description: vault_description,
-        approved: true,
-    };
-    vault_store(deps.storage).save(&addr.as_bytes(), &new_vault)?;
-    Ok(Response::default())
-}
-
-pub fn vault_update_status(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    vault_addr: String,
-    approved: bool,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+    // save the new vault to storage if it does not already exist
+    let addr = deps.api.addr_validate(&portal_addr)?;
+    let pos = config.portals.iter().position(|a| *a == addr);
+    if pos == None {
+        CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+            config.portals.push(addr);
+            Ok(config)
+        })?;
     }
-    // try to look up the given vault in Storage
-    let addr = deps.api.addr_validate(&vault_addr.clone())?;
-    let mut vault = vault_read(deps.storage).load(&addr.as_bytes())?;
-
-    // update new vault approval status attribute from passed arg
-    vault.approved = approved;
-    vault_store(deps.storage).save(&addr.as_bytes(), &vault)?;
 
     Ok(Response::default())
 }
 
-pub fn vault_remove(
+pub fn portal_remove(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    vault_addr: String,
+    portal_addr: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender != config.owner {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
-    // try to look up the given vault in Storage
-    let addr = deps.api.addr_validate(&vault_addr.clone())?;
-    let _vault = vault_read(deps.storage).load(&addr.as_bytes())?;
-
-    // delete the vault
-    vault_store(deps.storage).remove(&addr.as_bytes());
-
+    // try to look up the given portal
+    let addr = deps.api.addr_validate(&portal_addr.clone())?;
+    let pos = config.portals.iter().position(|a| *a == addr);
+    if pos != None {
+        // remove the portal
+        CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+            config.portals.swap_remove(pos.unwrap());
+            Ok(config)
+        })?;
+    }
     Ok(Response::default())
 }
 

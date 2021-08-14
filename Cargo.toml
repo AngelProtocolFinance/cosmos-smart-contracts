@@ -4,12 +4,10 @@ members = [
     "contracts/core/accounts",
     "contracts/core/index-fund",
     "contracts/core/registrar",
+    "contracts/portals/anchor",
 ]
 
-exclude = [
-    "packages/angel_portal",
-    "contracts/portal/portal-template",
-]
+exclude = []
 
 [profile.release]
 opt-level = 3

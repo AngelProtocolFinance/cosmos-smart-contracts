@@ -9,8 +9,7 @@ This assumes you understand the theory and just want to get coding.
 
 ## Creating a new repo from template
 
-Assuming you have a recent version of rust and cargo (v1.51.0+) installed
-(via [rustup](https://rustup.rs/)),
+Assuming you have a recent version of rust and cargo installed (via [rustup](https://rustup.rs/)),
 then the following should get you a new repo to start a contract:
 
 First, install
@@ -24,34 +23,10 @@ cargo install cargo-generate --features vendored-openssl
 Now, use it to create your new contract.
 Go to the folder in which you want to place it and run:
 
-
-**0.14 (latest)**
+**0.10 (latest)**
 
 ```sh
 cargo generate --git https://github.com/CosmWasm/cosmwasm-template.git --name PROJECT_NAME
-````
-
-**0.13**
-
-```sh
-cargo generate --git https://github.com/CosmWasm/cosmwasm-template.git --branch 0.13 --name PROJECT_NAME
-````
-
-**0.12**
-
-```sh
-cargo generate --git https://github.com/CosmWasm/cosmwasm-template.git --branch 0.12 --name PROJECT_NAME
-```
-
-**0.11**
-
-```sh
-cargo generate --git https://github.com/CosmWasm/cosmwasm-template.git --branch 0.11 --name PROJECT_NAME
-```
-**0.10**
-
-```sh
-cargo generate --git https://github.com/CosmWasm/cosmwasm-template.git --branch 0.10 --name PROJECT_NAME
 ```
 
 **0.9**
@@ -78,7 +53,7 @@ Then run the following:
 ```sh
 # this is needed to create a valid Cargo.lock file (see below)
 cargo check
-git branch -M main
+git checkout -b master # in case you generate from non-master
 git add .
 git commit -m 'Initial Commit'
 git remote add origin YOUR-GIT-URL
