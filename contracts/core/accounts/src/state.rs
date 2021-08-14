@@ -1,4 +1,4 @@
-use angel_core::structs::{GenericBalance, SplitDetails, Strategy};
+use angel_core::structs::{GenericBalance, SplitDetails, StrategyComponent};
 use cosmwasm_std::{Addr, Decimal, Env, Timestamp};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -47,7 +47,7 @@ impl Endowment {
 #[serde(rename_all = "snake_case")]
 pub struct Account {
     pub balance: GenericBalance,
-    pub strategy: Strategy,
+    pub strategy: Vec<StrategyComponent>,
     pub rebalance: RebalanceDetails,
 }
 

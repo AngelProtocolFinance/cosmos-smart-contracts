@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct StrategyComponent {
-    pub portal: Addr, // Vault SC Address
+    pub portal: Addr, // Portal SC Address
     pub percentage: Decimal,
 }
 

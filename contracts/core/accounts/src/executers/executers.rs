@@ -1,7 +1,7 @@
 use crate::state::{ACCOUNTS, CONFIG, ENDOWMENT};
 use angel_core::accounts_msg::*;
 use angel_core::error::ContractError;
-use angel_core::structs::{GenericBalance, Strategy};
+use angel_core::structs::{GenericBalance, StrategyComponent};
 use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Decimal, DepsMut, Env, MessageInfo, Response, StdResult,
     SubMsg, WasmMsg,
@@ -105,7 +105,7 @@ pub fn update_strategy(
     _env: Env,
     info: MessageInfo,
     account_type: String,
-    strategy: Strategy,
+    strategy: Vec<StrategyComponent>,
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENT.load(deps.storage)?;
 
@@ -113,20 +113,16 @@ pub fn update_strategy(
         return Err(ContractError::Unauthorized {});
     }
 
-    let mut addresses: Vec<Addr> = strategy
-        .invested
-        .iter()
-        .map(|a| a.address.clone())
-        .collect();
+    let mut addresses: Vec<Addr> = strategy.iter().map(|a| a.portal.clone()).collect();
     addresses.sort();
     addresses.dedup();
 
-    if addresses.len() < strategy.invested.len() {
+    if addresses.len() < strategy.len() {
         return Err(ContractError::StrategyComponentsNotUnique {});
     };
 
     let mut invested_percentages_sum = Decimal::zero();
-    for strategy_component in strategy.invested.iter() {
+    for strategy_component in strategy.iter() {
         invested_percentages_sum = invested_percentages_sum + strategy_component.percentage;
     }
 

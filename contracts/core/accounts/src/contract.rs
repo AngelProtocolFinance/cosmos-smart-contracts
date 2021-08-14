@@ -3,8 +3,7 @@ use crate::queriers::accounts as AccountQueriers;
 use crate::state::{Account, Config, Endowment, RebalanceDetails, ACCOUNTS, CONFIG, ENDOWMENT};
 use angel_core::accounts_msg::*;
 use angel_core::error::ContractError;
-use angel_core::structs::{GenericBalance, Strategy};
-use cosmwasm_std::Decimal;
+use angel_core::structs::GenericBalance;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
@@ -55,7 +54,7 @@ pub fn instantiate(
             native: vec![],
             cw20: vec![],
         },
-        strategy: Strategy::default(),
+        strategy: vec![],
         rebalance: RebalanceDetails::default(),
     };
 
