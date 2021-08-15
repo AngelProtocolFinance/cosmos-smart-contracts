@@ -41,7 +41,7 @@ fn build_index_fund_member_removal_msg(account: String) -> SubMsg {
     }
 }
 
-pub fn execute_update_endowment_status(
+pub fn update_endowment_status(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
@@ -109,7 +109,7 @@ pub fn execute_update_endowment_status(
     Ok(res)
 }
 
-pub fn execute_update_owner(
+pub fn update_owner(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
@@ -130,7 +130,7 @@ pub fn execute_update_owner(
     Ok(Response::new().add_attribute("action", "update_owner"))
 }
 
-pub fn execute_update_config(
+pub fn update_config(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
@@ -158,7 +158,7 @@ pub fn execute_update_config(
     Ok(Response::new().add_attribute("action", "update_config"))
 }
 
-pub fn execute_create_endowment(
+pub fn create_endowment(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,

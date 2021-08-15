@@ -1,8 +1,10 @@
-use angel_core::utils::deduct_tax;
+use crate::config;
+use angel_portals::error::ContractError;
+use angel_portals::utils::deduct_tax;
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Deps, DepsMut, QueryRequest, StdResult, Uint128, WasmMsg,
-    WasmQuery,
+    to_binary, Addr, Coin, ContractResult, CosmosMsg, Deps, DepsMut, Env, QueryRequest, Response,
+    StdResult, SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ExecuteMsg;
 use schemars::JsonSchema;
@@ -71,6 +73,7 @@ pub fn epoch_state(deps: Deps, market: &Addr) -> StdResult<EpochStateResponse> {
 #[serde(rename_all = "snake_case")]
 pub enum HandleMsg {
     DepositStable {},
+    RegisterDepositToken {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -79,6 +82,37 @@ pub enum Cw20HookMsg {
     /// Return stable coins to a user
     /// according to exchange rate
     RedeemStable {},
+}
+
+pub fn register_deposit_token(
+    deps: DepsMut,
+    _env: Env,
+    msg: ContractResult<SubMsgExecutionResponse>,
+) -> Result<Response, ContractError> {
+    match msg {
+        ContractResult::Ok(subcall) => {
+            let mut token_address = String::from("");
+            for event in subcall.events {
+                if event.ty == "instantiate_contract".to_string() {
+                    for attrb in event.attributes {
+                        if attrb.key == "contract_address" {
+                            token_address = attrb.value;
+                        }
+                    }
+                }
+            }
+            // Register the new Endowment on success Reply
+            let mut config = config::read(deps.storage)?;
+            if config.deposit_token != config.owner {
+                return Err(ContractError::Unauthorized {});
+            }
+            config.deposit_token = deps.api.addr_validate(&token_address)?;
+            config::store(deps.storage, &config)?;
+            Ok(Response::new()
+                .add_attribute("register_deposit_token", config.deposit_token.to_string()))
+        }
+        ContractResult::Err(_) => Err(ContractError::PortalNotCreated {}),
+    }
 }
 
 pub fn deposit_stable_msg(

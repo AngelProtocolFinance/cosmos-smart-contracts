@@ -46,17 +46,13 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateEndowment(msg) => {
-            ExecuteHandlers::execute_create_endowment(deps, env, info, msg)
-        }
-        ExecuteMsg::UpdateConfig(msg) => {
-            ExecuteHandlers::execute_update_config(deps, env, info, msg)
-        }
+        ExecuteMsg::CreateEndowment(msg) => ExecuteHandlers::create_endowment(deps, env, info, msg),
+        ExecuteMsg::UpdateConfig(msg) => ExecuteHandlers::update_config(deps, env, info, msg),
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
-            ExecuteHandlers::execute_update_endowment_status(deps, env, info, msg)
+            ExecuteHandlers::update_endowment_status(deps, env, info, msg)
         }
         ExecuteMsg::UpdateOwner { new_owner } => {
-            ExecuteHandlers::execute_update_owner(deps, env, info, new_owner)
+            ExecuteHandlers::update_owner(deps, env, info, new_owner)
         }
         ExecuteMsg::CharityAdd { charity } => {
             ExecuteHandlers::charity_add(deps, env, info, charity)

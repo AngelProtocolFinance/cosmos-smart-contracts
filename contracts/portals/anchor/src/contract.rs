@@ -1,14 +1,21 @@
 use crate::anchor;
-use crate::anchor::HandleMsg;
+use crate::anchor::register_deposit_token;
 use crate::config;
 use crate::msg::{InitMsg, MigrateMsg};
-use angel_core::error::ContractError;
-use angel_core::portals::{ConfigResponse, ExchangeRateResponse, QueryMsg};
-use cosmwasm_std::{to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult};
+use angel_portals::error::ContractError;
+use angel_portals::portal_msg::{ExecuteMsg, QueryMsg};
+use angel_portals::portal_rsp::{ConfigResponse, ExchangeRateResponse};
+use cosmwasm_std::{
+    to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response,
+    StdResult, SubMsg, WasmMsg,
+};
+use cw20::MinterResponse;
+// use terraswap::hook::InitHook as Cw20InitHook;
+use terraswap::token::InstantiateMsg as Cw20InitMsg;
 
 pub fn init(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InitMsg,
 ) -> Result<Response, ContractError> {
@@ -16,7 +23,8 @@ pub fn init(
     let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
 
     let config = config::Config {
-        owner: info.sender,
+        owner: info.sender.clone(),
+        deposit_token: info.sender,
         moneymarket,
         input_denom: anchor_config.stable_denom.clone(),
         yield_token: deps.api.addr_validate(&anchor_config.aterra_contract)?,
@@ -24,11 +32,42 @@ pub fn init(
 
     config::store(deps.storage, &config)?;
 
+    let wasm_msg = WasmMsg::Instantiate {
+        code_id: msg.deposit_token_code_id, // terraswap docs have wasm code for each network
+        admin: Some(env.contract.address.to_string()),
+        label: "new portal deposit token".to_string(),
+        funds: vec![],
+        msg: to_binary(&Cw20InitMsg {
+            name: "Angel Protocol - Portal Deposit Token - Anchor".to_string(),
+            symbol: "PDTv1".to_string(),
+            decimals: 6u8,
+            initial_balances: vec![],
+            mint: Some(MinterResponse {
+                minter: env.contract.address.to_string(),
+                cap: None,
+            }),
+        })?,
+    };
+
+    Ok(Response::new().add_submessage(SubMsg {
+        id: 0,
+        msg: CosmosMsg::Wasm(wasm_msg),
+        gas_limit: None,
+        reply_on: ReplyOn::Success,
+    }))
+}
+
+pub fn handle(_deps: DepsMut, _env: Env, _msg: ExecuteMsg) -> Result<Response, ContractError> {
     Ok(Response::default())
 }
 
-pub fn handle(_deps: Deps, _env: Env, _msg: HandleMsg) -> Result<Response, ContractError> {
-    Ok(Response::default())
+// Replies back to the CW20 Deposit Token Init calls to a portal SC should
+// be cuaght and handled to register the newly created Deposit Token Addr
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        0 => register_deposit_token(deps, env, msg.result),
+        _ => Err(ContractError::Unauthorized {}),
+    }
 }
 
 pub fn query(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {

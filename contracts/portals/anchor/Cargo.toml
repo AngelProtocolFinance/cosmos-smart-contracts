@@ -35,6 +35,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
 angel-core = { version = "0.1.0", path = "../../../packages/angel_core" }
+angel-portals = { version = "0.1.0", path = "../../../packages/angel_portals" }
 cw20 = "0.8.0-rc2"
 cw-controllers = "0.8.0-rc2"
 cw20-base = { version = "0.8.0-rc2", features = ["library"] }
