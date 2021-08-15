@@ -60,7 +60,7 @@ pub fn execute(
         ExecuteMsg::CharityRemove { charity } => {
             ExecuteHandlers::charity_remove(deps, env, info, charity)
         }
-        ExecuteMsg::PortalAdd { address } => ExecuteHandlers::portal_add(deps, env, info, address),
+        ExecuteMsg::PortalAdd(msg) => ExecuteHandlers::portal_add(deps, env, info, msg.address),
         ExecuteMsg::PortalRemove { portal_addr } => {
             ExecuteHandlers::portal_remove(deps, env, info, portal_addr)
         }

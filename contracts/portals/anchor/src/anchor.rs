@@ -73,7 +73,6 @@ pub fn epoch_state(deps: Deps, market: &Addr) -> StdResult<EpochStateResponse> {
 #[serde(rename_all = "snake_case")]
 pub enum HandleMsg {
     DepositStable {},
-    RegisterDepositToken {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

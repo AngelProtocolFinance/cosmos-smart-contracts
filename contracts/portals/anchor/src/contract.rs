@@ -10,7 +10,6 @@ use cosmwasm_std::{
     StdResult, SubMsg, WasmMsg,
 };
 use cw20::MinterResponse;
-// use terraswap::hook::InitHook as Cw20InitHook;
 use terraswap::token::InstantiateMsg as Cw20InitMsg;
 
 pub fn init(
@@ -24,6 +23,7 @@ pub fn init(
 
     let config = config::Config {
         owner: info.sender.clone(),
+        registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         deposit_token: info.sender,
         moneymarket,
         input_denom: anchor_config.stable_denom.clone(),
@@ -49,20 +49,34 @@ pub fn init(
         })?,
     };
 
-    Ok(Response::new().add_submessage(SubMsg {
-        id: 0,
-        msg: CosmosMsg::Wasm(wasm_msg),
-        gas_limit: None,
-        reply_on: ReplyOn::Success,
-    }))
+    Ok(Response::new()
+        .add_submessage(SubMsg {
+            id: 0,
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.registrar_contract.to_string(),
+                msg: to_binary(&angel_core::registrar_msg::PortalAddMsg {
+                    address: env.contract.address.to_string(),
+                })
+                .unwrap(),
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Never,
+        })
+        .add_submessage(SubMsg {
+            id: 0,
+            msg: CosmosMsg::Wasm(wasm_msg),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        }))
 }
 
 pub fn handle(_deps: DepsMut, _env: Env, _msg: ExecuteMsg) -> Result<Response, ContractError> {
     Ok(Response::default())
 }
 
-// Replies back to the CW20 Deposit Token Init calls to a portal SC should
-// be cuaght and handled to register the newly created Deposit Token Addr
+// Replies back from the CW20 Deposit Token Init calls to a portal SC should
+// be caught and handled to register the newly created Deposit Token Addr
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         0 => register_deposit_token(deps, env, msg.result),
@@ -77,6 +91,7 @@ pub fn query(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&ConfigResponse {
             input_denom: config.input_denom.clone(),
             yield_token: config.yield_token.clone().to_string(),
+            deposit_token: config.deposit_token.clone().to_string(),
         }),
         QueryMsg::ExchangeRate { input_denom: _ } => {
             let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;

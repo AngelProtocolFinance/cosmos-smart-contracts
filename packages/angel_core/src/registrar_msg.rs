@@ -17,7 +17,7 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     CreateEndowment(CreateEndowmentMsg),
-    PortalAdd { address: String },
+    PortalAdd(PortalAddMsg),
     PortalRemove { portal_addr: String },
     CharityAdd { charity: String },
     CharityRemove { charity: String },
@@ -70,6 +70,11 @@ impl UpdateConfigMsg {
 pub struct UpdateEndowmentStatusMsg {
     pub endowment_addr: String,
     pub status: EndowmentStatus,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct PortalAddMsg {
+    pub address: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

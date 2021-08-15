@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct InitMsg {
     pub moneymarket: String,
     pub deposit_token_code_id: u64,
+    pub registrar_contract: String,
 }
 
 /// We currently take no arguments for migrations
