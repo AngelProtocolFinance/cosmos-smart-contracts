@@ -3,7 +3,7 @@ use crate::queriers::accounts as AccountQueriers;
 use crate::state::{Account, Config, Endowment, RebalanceDetails, ACCOUNTS, CONFIG, ENDOWMENT};
 use angel_core::accounts_msg::*;
 use angel_core::error::ContractError;
-use angel_core::structs::GenericBalance;
+use angel_core::structs::{AcceptedTokens, GenericBalance};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
@@ -30,6 +30,7 @@ pub fn instantiate(
             admin_addr: deps.api.addr_validate(&msg.admin_addr)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             index_fund_contract: deps.api.addr_validate(&msg.index_fund_contract)?,
+            accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
         },
@@ -83,21 +84,22 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    let balance = Balance::from(info.funds.clone());
+    // let balance = Balance::from(info.funds.clone());
     match msg {
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
-            AccountExecuters::execute_update_endowment_settings(deps, env, info, msg)
+            AccountExecuters::update_endowment_settings(deps, env, info, msg)
         }
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
-            AccountExecuters::execute_update_endowment_status(deps, env, info, msg)
+            AccountExecuters::update_endowment_status(deps, env, info, msg)
         }
         ExecuteMsg::Deposit(msg) => {
-            AccountExecuters::execute_deposit(deps, info.sender, balance.clone(), msg.account_type)
+            AccountExecuters::deposit(deps, env, info.sender, info.funds[0].amount, msg)
         }
-        ExecuteMsg::VaultReceipt(msg) => AccountExecuters::execute_vault_receipt(
+        ExecuteMsg::VaultReceipt(msg) => AccountExecuters::vault_receipt(
             deps,
+            env,
             info.sender,
-            balance.clone(),
+            info.funds[0].amount,
             msg.account_type,
         ),
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
@@ -106,21 +108,20 @@ pub fn execute(
         ExecuteMsg::UpdateAdmin { new_admin } => {
             AccountExecuters::update_admin(deps, env, info, new_admin)
         }
-
         ExecuteMsg::UpdateStrategy {
             account_type,
             strategy,
         } => AccountExecuters::update_strategy(deps, env, info, account_type, strategy),
         ExecuteMsg::Liquidate { beneficiary } => {
-            AccountExecuters::execute_liquidate(deps, env, info, beneficiary)
+            AccountExecuters::liquidate(deps, env, info, beneficiary)
         }
         ExecuteMsg::TerminateToFund { fund } => {
-            AccountExecuters::execute_terminate_to_fund(deps, env, info, fund)
+            AccountExecuters::terminate_to_fund(deps, env, info, fund)
         }
         ExecuteMsg::TerminateToAddress { beneficiary } => {
-            AccountExecuters::execute_terminate_to_address(deps, env, info, beneficiary)
+            AccountExecuters::terminate_to_address(deps, env, info, beneficiary)
         }
-        ExecuteMsg::Receive(msg) => AccountExecuters::execute_receive(deps, info, msg),
+        ExecuteMsg::Receive(msg) => AccountExecuters::receive(deps, env, info, msg),
     }
 }
 

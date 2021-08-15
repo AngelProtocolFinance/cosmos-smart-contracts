@@ -1,4 +1,4 @@
-use angel_core::structs::{GenericBalance, SplitDetails, StrategyComponent};
+use angel_core::structs::{AcceptedTokens, GenericBalance, SplitDetails, StrategyComponent};
 use cosmwasm_std::{Addr, Decimal, Env, Timestamp};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -10,6 +10,7 @@ pub struct Config {
     pub admin_addr: Addr, // DANO/AP Team Address
     pub registrar_contract: Addr,
     pub index_fund_contract: Addr,
+    pub accepted_tokens: AcceptedTokens,
     pub deposit_approved: bool, // DANO has approved to receive donations & transact
     pub withdraw_approved: bool, // DANO has approved to withdraw funds
 }

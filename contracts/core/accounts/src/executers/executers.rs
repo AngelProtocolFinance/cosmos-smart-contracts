@@ -3,10 +3,10 @@ use angel_core::accounts_msg::*;
 use angel_core::error::ContractError;
 use angel_core::structs::{GenericBalance, StrategyComponent};
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, BankMsg, Decimal, DepsMut, Env, MessageInfo, Response, StdResult,
-    SubMsg, WasmMsg,
+    coin, from_binary, to_binary, Addr, BankMsg, Decimal, DepsMut, Env, MessageInfo, Response,
+    StdResult, SubMsg, Uint128, WasmMsg,
 };
-use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw20::{Balance, Cw20ExecuteMsg, Cw20ReceiveMsg};
 
 pub fn update_admin(
     deps: DepsMut,
@@ -52,7 +52,7 @@ pub fn update_registrar(
     Ok(Response::default())
 }
 
-pub fn execute_update_endowment_settings(
+pub fn update_endowment_settings(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
@@ -79,7 +79,7 @@ pub fn execute_update_endowment_settings(
     Ok(Response::default())
 }
 
-pub fn execute_update_endowment_status(
+pub fn update_endowment_status(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
@@ -142,42 +142,50 @@ pub fn update_strategy(
     Ok(Response::default())
 }
 
-pub fn execute_receive(
+pub fn receive(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
-    let balance = Balance::Cw20(Cw20CoinVerified {
-        address: info.sender.clone(),
-        amount: cw20_msg.amount,
-    });
+    let config = CONFIG.load(deps.storage)?;
+    // check that the sending token contract is an Approved Token
+    if config.accepted_tokens.cw20_valid(info.sender.to_string()) != true {
+        return Err(ContractError::Unauthorized {});
+    }
+    if cw20_msg.amount.is_zero() {
+        return Err(ContractError::EmptyBalance {});
+    }
     let sender_addr = deps.api.addr_validate(&cw20_msg.sender)?;
     let msg = from_binary(&cw20_msg.msg)?;
     match msg {
-        ReceiveMsg::Deposit(msg) => execute_deposit(deps, sender_addr, balance, msg.account_type),
+        ReceiveMsg::Deposit(msg) => deposit(deps, env, sender_addr, cw20_msg.amount, msg),
         ReceiveMsg::VaultReceipt(msg) => {
-            execute_vault_receipt(deps, sender_addr, balance, msg.account_type)
+            vault_receipt(deps, env, sender_addr, cw20_msg.amount, msg.account_type)
         }
     }
 }
 
-pub fn execute_vault_receipt(
+pub fn vault_receipt(
     deps: DepsMut,
+    _env: Env,
     _sender_addr: Addr,
-    balance: Balance,
+    balance: Uint128,
     account_type: String,
 ) -> Result<Response, ContractError> {
     // this fails if no account is there
     let mut account = ACCOUNTS.load(deps.storage, account_type.clone())?;
 
     // this lookup fails if the token deposit was not coming from an Asset Vault SC
-    // let _vaults = VAULTS.load(deps.storage, sender_addr.to_string())?;
+    // let portals = VAULTS.load(deps.storage, sender_addr.to_string())?;
 
-    if balance.is_empty() {
+    if balance.is_zero() {
         return Err(ContractError::EmptyBalance {});
     }
 
-    account.balance.add_tokens(balance);
+    account
+        .balance
+        .add_tokens(Balance::from(vec![coin(u128::from(balance), "uusd")]));
 
     // and save
     ACCOUNTS.save(deps.storage, account_type.clone(), &account)?;
@@ -188,11 +196,12 @@ pub fn execute_vault_receipt(
     Ok(res)
 }
 
-pub fn execute_deposit(
+pub fn deposit(
     deps: DepsMut,
+    _env: Env,
     sender_addr: Addr,
-    balance: Balance,
-    account_type: String,
+    balance: Uint128,
+    msg: DepositMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -202,7 +211,7 @@ pub fn execute_deposit(
     }
 
     // this fails if no account is there
-    let mut account = ACCOUNTS.load(deps.storage, account_type.clone())?;
+    let mut account = ACCOUNTS.load(deps.storage, msg.account_type.clone())?;
 
     // MVP LOGIC: Only index fund SC (aka TCA Member donations are accepted)
     // fails if the token deposit was not coming from the Index Fund SC
@@ -210,22 +219,17 @@ pub fn execute_deposit(
         return Err(ContractError::Unauthorized {});
     }
 
-    // if let Balance::Cw20(token) = &balance {
-    //     // ensure the token is on the approved_coins
-    //     if !config.approved_coins.iter().any(|t| t == &token.address) {
-    //         return Err(ContractError::NotInApprovedCoins {});
-    //     }
-    // };
-
-    account.balance.add_tokens(balance);
+    account
+        .balance
+        .add_tokens(Balance::from(vec![coin(u128::from(balance), "uusd")]));
 
     // and save
-    ACCOUNTS.save(deps.storage, account_type, &account)?;
+    ACCOUNTS.save(deps.storage, msg.account_type, &account)?;
 
     Ok(Response::default())
 }
 
-pub fn execute_liquidate(
+pub fn liquidate(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
@@ -253,7 +257,7 @@ pub fn execute_liquidate(
         .add_attribute("to", beneficiary_addr))
 }
 
-pub fn execute_terminate_to_address(
+pub fn terminate_to_address(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
@@ -286,7 +290,7 @@ pub fn execute_terminate_to_address(
     Ok(res)
 }
 
-pub fn execute_terminate_to_fund(
+pub fn terminate_to_fund(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
