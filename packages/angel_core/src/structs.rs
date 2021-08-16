@@ -50,8 +50,6 @@ impl SplitDetails {
 #[serde(rename_all = "snake_case")]
 pub struct EndowmentEntry {
     pub address: Addr,
-    pub name: String,
-    pub description: String,
     pub status: EndowmentStatus,
 }
 
