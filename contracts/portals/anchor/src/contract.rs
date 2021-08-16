@@ -49,29 +49,12 @@ pub fn init(
         })?,
     };
 
-    Ok(Response::new()
-        .add_submessage(SubMsg {
-            id: 0,
-            msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.registrar_contract.to_string(),
-                msg: to_binary(&angel_core::registrar_msg::PortalAddMsg {
-                    portal_addr: env.contract.address.to_string(),
-                    input_denom: config.input_denom,
-                    deposit_token: config.deposit_token.to_string(),
-                    yield_token: config.yield_token.to_string(),
-                })
-                .unwrap(),
-                funds: vec![],
-            }),
-            gas_limit: None,
-            reply_on: ReplyOn::Never,
-        })
-        .add_submessage(SubMsg {
-            id: 0,
-            msg: CosmosMsg::Wasm(wasm_msg),
-            gas_limit: None,
-            reply_on: ReplyOn::Success,
-        }))
+    Ok(Response::new().add_submessage(SubMsg {
+        id: 0,
+        msg: CosmosMsg::Wasm(wasm_msg),
+        gas_limit: None,
+        reply_on: ReplyOn::Success,
+    }))
 }
 
 pub fn handle(_deps: DepsMut, _env: Env, _msg: ExecuteMsg) -> Result<Response, ContractError> {
