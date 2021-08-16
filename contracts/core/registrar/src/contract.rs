@@ -26,7 +26,6 @@ pub fn instantiate(
     let configs = Config {
         owner: info.sender.clone(),
         index_fund_contract: info.sender,
-        portals: vec![],
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
         approved_charities: vec![],
         treasury: treasury,
@@ -60,7 +59,12 @@ pub fn execute(
         ExecuteMsg::CharityRemove { charity } => {
             ExecuteHandlers::charity_remove(deps, env, info, charity)
         }
-        ExecuteMsg::PortalAdd(msg) => ExecuteHandlers::portal_add(deps, env, info, msg.address),
+        ExecuteMsg::PortalAdd(msg) => ExecuteHandlers::portal_add(deps, env, info, msg),
+        ExecuteMsg::PortalUpdateStatus {
+            portal_addr,
+            approved,
+        } => ExecuteHandlers::portal_update_status(deps, env, info, portal_addr, approved),
+
         ExecuteMsg::PortalRemove { portal_addr } => {
             ExecuteHandlers::portal_remove(deps, env, info, portal_addr)
         }
@@ -84,6 +88,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&QueryHandlers::query_config(deps)?),
         QueryMsg::EndowmentList {} => to_binary(&QueryHandlers::query_endowment_list(deps)?),
         QueryMsg::PortalList {} => to_binary(&QueryHandlers::query_portal_list(deps)?),
+        QueryMsg::Portal { portal_addr } => {
+            to_binary(&QueryHandlers::query_portal_details(deps, portal_addr)?)
+        }
     }
 }
 

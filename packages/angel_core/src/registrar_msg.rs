@@ -18,6 +18,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     CreateEndowment(CreateEndowmentMsg),
     PortalAdd(PortalAddMsg),
+    PortalUpdateStatus { portal_addr: String, approved: bool },
     PortalRemove { portal_addr: String },
     CharityAdd { charity: String },
     CharityRemove { charity: String },
@@ -74,15 +75,20 @@ pub struct UpdateEndowmentStatusMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PortalAddMsg {
-    pub address: String,
+    pub portal_addr: String,
+    pub input_denom: String,
+    pub deposit_token: String,
+    pub yield_token: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    // Gets list of all Portals.
+    // Get details on single portal
+    Portal { portal_addr: String },
+    // Gets list of all Portals
     PortalList {},
-    // Gets list of all registered Endowments.
+    // Gets list of all registered Endowments
     EndowmentList {},
     // Get all Config details for the contract
     Config {},

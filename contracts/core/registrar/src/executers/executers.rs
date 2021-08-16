@@ -1,7 +1,7 @@
-use crate::state::{registry_read, registry_store, CONFIG};
+use crate::state::{portal_read, portal_store, registry_read, registry_store, CONFIG};
 use angel_core::error::ContractError;
 use angel_core::registrar_msg::*;
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails};
+use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails, YieldPortal};
 use cosmwasm_std::{
     to_binary, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
     SubMsg, SubMsgExecutionResponse, WasmMsg,
@@ -143,14 +143,12 @@ pub fn update_config(
     }
 
     let index_fund_contract_addr = deps.api.addr_validate(&msg.index_fund_contract)?;
-    let portal_list = msg.portals_list(deps.api)?;
     let charities_addr_list = msg.charities_list(deps.api)?;
 
     // update config attributes with newly passed configs
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
         config.index_fund_contract = index_fund_contract_addr;
         config.accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
-        config.portals = portal_list;
         config.approved_charities = charities_addr_list;
         Ok(config)
     })?;
@@ -268,23 +266,40 @@ pub fn portal_add(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
+    msg: PortalAddMsg,
+) -> Result<Response, ContractError> {
+    // save the new portal to storage (defaults to false)
+    let addr = deps.api.addr_validate(&msg.portal_addr)?;
+    let new_portal = YieldPortal {
+        address: addr.clone(),
+        input_denom: msg.input_denom,
+        yield_token: deps.api.addr_validate(&msg.yield_token)?,
+        deposit_token: deps.api.addr_validate(&msg.deposit_token)?,
+        approved: false,
+    };
+    portal_store(deps.storage).save(&addr.as_bytes(), &new_portal)?;
+    Ok(Response::default())
+}
+
+pub fn portal_update_status(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
     portal_addr: String,
+    approved: bool,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender.ne(&config.owner) {
+    if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
+    // try to look up the given portal in Storage
+    let addr = deps.api.addr_validate(&portal_addr.clone())?;
+    let mut portal = portal_read(deps.storage).load(&addr.as_bytes())?;
 
-    // save the new vault to storage if it does not already exist
-    let addr = deps.api.addr_validate(&portal_addr)?;
-    let pos = config.portals.iter().position(|a| *a == addr);
-    if pos == None {
-        CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-            config.portals.push(addr);
-            Ok(config)
-        })?;
-    }
+    // update new portal approval status attribute from passed arg
+    portal.approved = approved;
+    portal_store(deps.storage).save(&addr.as_bytes(), &portal)?;
 
     Ok(Response::default())
 }
@@ -302,14 +317,7 @@ pub fn portal_remove(
     }
     // try to look up the given portal
     let addr = deps.api.addr_validate(&portal_addr.clone())?;
-    let pos = config.portals.iter().position(|a| *a == addr);
-    if pos != None {
-        // remove the portal
-        CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-            config.portals.swap_remove(pos.unwrap());
-            Ok(config)
-        })?;
-    }
+    // remove the portal
     Ok(Response::default())
 }
 

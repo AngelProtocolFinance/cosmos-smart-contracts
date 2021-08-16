@@ -5,6 +5,16 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub struct YieldPortal {
+    pub address: Addr,
+    pub input_denom: String,
+    pub yield_token: Addr,
+    pub deposit_token: Addr,
+    pub approved: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub struct StrategyComponent {
     pub portal: Addr, // Portal SC Address
     pub percentage: Decimal,
