@@ -342,18 +342,8 @@ pub fn new_accounts_reply(
     match msg {
         ContractResult::Ok(subcall) => {
             let mut endowment_addr = String::from("");
-            let mut endowment_name = String::from("");
-            let mut endowment_desc = String::from("");
             for event in subcall.events {
-                if event.ty == "message".to_string() {
-                    for attrb in event.attributes {
-                        if attrb.key == "name" {
-                            endowment_name = attrb.value;
-                        } else if attrb.key == "name" {
-                            endowment_desc = attrb.value;
-                        }
-                    }
-                } else if event.ty == "instantiate_contract".to_string() {
+                if event.ty == "instantiate_contract".to_string() {
                     for attrb in event.attributes {
                         if attrb.key == "contract_address" {
                             endowment_addr = attrb.value;
@@ -367,8 +357,6 @@ pub fn new_accounts_reply(
                 &addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,
-                    name: endowment_name,
-                    description: endowment_desc,
                     status: EndowmentStatus::Inactive,
                 },
             )?;
