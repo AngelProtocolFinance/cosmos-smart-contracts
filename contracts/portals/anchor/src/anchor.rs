@@ -3,8 +3,8 @@ use angel_portals::error::ContractError;
 use angel_portals::utils::deduct_tax;
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
-    to_binary, Addr, Coin, ContractResult, CosmosMsg, Deps, DepsMut, Env, QueryRequest, Response,
-    StdResult, SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, Coin, ContractResult, CosmosMsg, Deps, DepsMut, Env, QueryRequest, ReplyOn,
+    Response, StdResult, SubMsg, SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ExecuteMsg;
 use schemars::JsonSchema;
@@ -85,7 +85,7 @@ pub enum Cw20HookMsg {
 
 pub fn register_deposit_token(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     msg: ContractResult<SubMsgExecutionResponse>,
 ) -> Result<Response, ContractError> {
     match msg {
