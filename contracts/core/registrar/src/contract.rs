@@ -25,11 +25,12 @@ pub fn instantiate(
 
     let configs = Config {
         owner: info.sender.clone(),
-        index_fund_contract: info.sender,
+        index_fund_contract: info.sender.clone(),
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
         approved_charities: vec![],
         treasury: treasury,
         taxes: msg.taxes,
+        default_portal: msg.default_portal.unwrap_or(info.sender),
     };
 
     CONFIG.save(deps.storage, &configs)?;

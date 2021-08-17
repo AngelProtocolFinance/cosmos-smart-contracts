@@ -23,6 +23,7 @@ pub struct Config {
     pub approved_charities: Vec<Addr>,
     pub treasury: Addr,
     pub taxes: TaxParameters,
+    pub default_portal: Addr,
 }
 
 // REGISTRY Read/Write

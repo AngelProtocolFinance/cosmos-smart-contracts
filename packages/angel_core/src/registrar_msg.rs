@@ -11,6 +11,7 @@ pub struct InstantiateMsg {
     pub accounts_code_id: Option<u64>,
     pub treasury: String,
     pub taxes: TaxParameters,
+    pub default_portal: Option<Addr>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -49,6 +50,7 @@ pub struct UpdateConfigMsg {
     pub index_fund_contract: String,
     pub portals: Option<Vec<String>>,
     pub approved_charities: Option<Vec<String>>,
+    pub default_portal: Option<String>,
 }
 
 impl UpdateConfigMsg {
