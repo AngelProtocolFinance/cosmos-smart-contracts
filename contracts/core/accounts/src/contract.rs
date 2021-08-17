@@ -3,12 +3,14 @@ use crate::queriers::accounts as AccountQueriers;
 use crate::state::{Account, Config, Endowment, RebalanceDetails, ACCOUNTS, CONFIG, ENDOWMENT};
 use angel_core::accounts_msg::*;
 use angel_core::error::ContractError;
-use angel_core::structs::{AcceptedTokens, GenericBalance};
+use angel_core::registrar_msg::QueryMsg::Config as RegistrarConfig;
+use angel_core::registrar_rsp::ConfigResponse;
+use angel_core::structs::{AcceptedTokens, GenericBalance, StrategyComponent};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
+    Response, StdResult, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
-use cw20::Balance;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";
@@ -50,12 +52,20 @@ pub fn instantiate(
         },
     )?;
 
+    let registrar_config: ConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: msg.registrar_contract,
+            msg: to_binary(&RegistrarConfig {})?,
+        }))?;
     let account = Account {
         balance: GenericBalance {
             native: vec![],
             cw20: vec![],
         },
-        strategy: vec![],
+        strategy: vec![StrategyComponent {
+            portal: deps.api.addr_validate(&registrar_config.default_portal)?,
+            percentage: Decimal::one(),
+        }],
         rebalance: RebalanceDetails::default(),
     };
 

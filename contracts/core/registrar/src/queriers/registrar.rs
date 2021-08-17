@@ -9,6 +9,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         accounts_code_id: config.accounts_code_id,
         treasury: config.treasury.to_string(),
         taxes: config.taxes.clone(),
+        default_portal: config.default_portal.to_string(),
     };
     Ok(res)
 }

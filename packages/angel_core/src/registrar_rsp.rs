@@ -28,4 +28,5 @@ pub struct ConfigResponse {
     pub accounts_code_id: u64,
     pub treasury: String,
     pub taxes: TaxParameters,
+    pub default_portal: String,
 }
