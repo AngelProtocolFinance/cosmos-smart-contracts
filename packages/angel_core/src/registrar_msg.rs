@@ -88,6 +88,8 @@ pub enum QueryMsg {
     Portal { portal_addr: String },
     // Gets list of all Portals
     PortalList {},
+    // Get a list of all approved Portals
+    ApprovedPortalList {},
     // Gets list of all registered Endowments
     EndowmentList {},
     // Get all Config details for the contract

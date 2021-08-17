@@ -14,8 +14,18 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 }
 
 pub fn query_portal_list(deps: Deps) -> StdResult<PortalListResponse> {
+    // returns a list of approved Portals
     let portals = read_portals(deps.storage)?;
     let list = PortalListResponse { portals: portals };
+    Ok(list)
+}
+
+pub fn query_approved_portal_list(deps: Deps) -> StdResult<PortalListResponse> {
+    // returns a list of approved Portals
+    let portals = read_portals(deps.storage)?;
+    let list = PortalListResponse {
+        portals: portals.into_iter().filter(|p| p.approved == true).collect(),
+    };
     Ok(list)
 }
 

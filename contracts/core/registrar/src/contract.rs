@@ -87,6 +87,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&QueryHandlers::query_config(deps)?),
         QueryMsg::EndowmentList {} => to_binary(&QueryHandlers::query_endowment_list(deps)?),
+        QueryMsg::ApprovedPortalList {} => {
+            to_binary(&QueryHandlers::query_approved_portal_list(deps)?)
+        }
         QueryMsg::PortalList {} => to_binary(&QueryHandlers::query_portal_list(deps)?),
         QueryMsg::Portal { portal_addr } => {
             to_binary(&QueryHandlers::query_portal_details(deps, portal_addr)?)
