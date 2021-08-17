@@ -59,4 +59,10 @@ pub enum ContractError {
 
     #[error("Strategy components should be unique")]
     StrategyComponentsNotUnique {},
+
+    #[error("Invalid deposit split provided")]
+    InvalidSplit {},
+
+    #[error("Only accept one coin type per deposit")]
+    InvalidCoinsDeposited {},
 }

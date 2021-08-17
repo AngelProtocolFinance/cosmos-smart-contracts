@@ -1,7 +1,7 @@
 use crate::state::{ACCOUNTS, CONFIG, ENDOWMENT};
 use angel_core::accounts_msg::*;
 use angel_core::error::ContractError;
-use angel_core::structs::{GenericBalance, StrategyComponent};
+use angel_core::structs::{GenericBalance, SplitDetails, StrategyComponent};
 use cosmwasm_std::{
     coin, from_binary, to_binary, Addr, BankMsg, Decimal, DepsMut, Env, MessageInfo, Response,
     StdResult, SubMsg, Uint128, WasmMsg,
@@ -160,9 +160,7 @@ pub fn receive(
     let msg = from_binary(&cw20_msg.msg)?;
     match msg {
         ReceiveMsg::Deposit(msg) => deposit(deps, env, sender_addr, cw20_msg.amount, msg),
-        ReceiveMsg::VaultReceipt(msg) => {
-            vault_receipt(deps, env, sender_addr, cw20_msg.amount, msg.account_type)
-        }
+        _ => vault_receipt(deps, env, sender_addr, cw20_msg.amount),
     }
 }
 
@@ -171,10 +169,9 @@ pub fn vault_receipt(
     _env: Env,
     _sender_addr: Addr,
     balance: Uint128,
-    account_type: String,
 ) -> Result<Response, ContractError> {
     // this fails if no account is there
-    let mut account = ACCOUNTS.load(deps.storage, account_type.clone())?;
+    let mut account = ACCOUNTS.load(deps.storage, "locked".to_string())?;
 
     // this lookup fails if the token deposit was not coming from an Asset Vault SC
     // let portals = VAULTS.load(deps.storage, sender_addr.to_string())?;
@@ -188,11 +185,11 @@ pub fn vault_receipt(
         .add_tokens(Balance::from(vec![coin(u128::from(balance), "uusd")]));
 
     // and save
-    ACCOUNTS.save(deps.storage, account_type.clone(), &account)?;
+    ACCOUNTS.save(deps.storage, "locked".to_string(), &account)?;
 
     let res = Response::new()
         .add_attribute("action", "vault_receipt")
-        .add_attribute("account_type", account_type);
+        .add_attribute("account_type", "locked");
     Ok(res)
 }
 
@@ -210,23 +207,58 @@ pub fn deposit(
         return Err(ContractError::Unauthorized {});
     }
 
-    // this fails if no account is there
-    let mut account = ACCOUNTS.load(deps.storage, msg.account_type.clone())?;
+    // check that the split %s sum to 1
+    if msg.locked_percentage + msg.liquid_percentage != Decimal::one() {
+        return Err(ContractError::InvalidSplit {});
+    }
+
+    let locked_percentage = msg.locked_percentage;
+    let liquid_percentage = msg.liquid_percentage;
 
     // MVP LOGIC: Only index fund SC (aka TCA Member donations are accepted)
     // fails if the token deposit was not coming from the Index Fund SC
     if sender_addr != config.index_fund_contract {
+        // let splits = ENDOWMENT.load(deps.storage)?.split_to_liquid;
+        // let new_splits = check_splits(splits, locked_percentage, liquid_percentage);
+        // locked_percentage = new_splits.0;
+        // liquid_percentage = new_splits.1;
         return Err(ContractError::Unauthorized {});
     }
 
-    account
-        .balance
-        .add_tokens(Balance::from(vec![coin(u128::from(balance), "uusd")]));
+    // update locked account balance
+    let mut locked_account = ACCOUNTS.load(deps.storage, "locked".to_string())?;
+    locked_account.balance.add_tokens(Balance::from(vec![coin(
+        u128::from(balance * locked_percentage),
+        "uusd",
+    )]));
+    ACCOUNTS.save(deps.storage, "locked".to_string(), &locked_account)?;
 
-    // and save
-    ACCOUNTS.save(deps.storage, msg.account_type, &account)?;
+    // update liquid account balance
+    let mut liquid_account = ACCOUNTS.load(deps.storage, "liquid".to_string())?;
+    liquid_account.balance.add_tokens(Balance::from(vec![coin(
+        u128::from(balance * liquid_percentage),
+        "uusd",
+    )]));
+    ACCOUNTS.save(deps.storage, "liquid".to_string(), &liquid_account)?;
 
     Ok(Response::default())
+}
+
+pub fn check_splits(
+    endowment_splits: SplitDetails,
+    user_locked: Decimal,
+    user_liquid: Decimal,
+) -> (Decimal, Decimal) {
+    // check that the split provided by a non-TCA address meets the default
+    // split requirements set by the Endowment Account
+    if user_liquid > endowment_splits.max || user_liquid < endowment_splits.min {
+        return (
+            Decimal::one() - endowment_splits.default,
+            endowment_splits.default,
+        );
+    } else {
+        return (user_locked, user_liquid);
+    }
 }
 
 pub fn liquidate(

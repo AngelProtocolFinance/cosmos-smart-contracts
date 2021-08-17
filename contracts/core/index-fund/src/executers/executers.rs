@@ -262,7 +262,7 @@ pub fn deposit(
 
     // check if active fund donation or if there a provided fund ID
     match msg.fund_id {
-        // And ID was provided, simple donation of all to one fund
+        // A Fund ID was provided, simple donation of all to one fund
         Some(fund_id) => {
             let fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
             let split = calculate_split(
@@ -384,39 +384,31 @@ pub fn build_donation_messages(
     let member_portion = balance.multiply_ratio(1 as u128, members.len() as u128);
     let mut messages = vec![];
     for member in members.iter() {
-        // locked msg
         messages.push(donation_submsg(
             member.to_string(),
-            "locked".to_string(),
+            locked_percentage,
+            liquid_percentage,
             token_denom.clone(),
-            member_portion * locked_percentage,
+            member_portion,
         ));
-        // liquid msg needed if split is greater than zero
-        if split > Decimal::zero() {
-            messages.push(donation_submsg(
-                member.to_string(),
-                "liquid".to_string(),
-                token_denom.clone(),
-                member_portion * liquid_percentage,
-            ));
-        }
     }
     return messages;
 }
 
 pub fn donation_submsg(
     member_addr: String,
-    acct_type: String,
+    locked_percentage: Decimal,
+    liquid_percentage: Decimal,
     send_denom: String,
     send_amount: Uint128,
 ) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: member_addr,
         msg: to_binary(&angel_core::accounts_msg::DepositMsg {
-            account_type: acct_type,
+            locked_percentage: locked_percentage,
+            liquid_percentage: liquid_percentage,
         })
         .unwrap(),
-
         funds: vec![Coin {
             amount: send_amount,
             denom: send_denom,

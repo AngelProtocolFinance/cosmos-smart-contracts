@@ -1,4 +1,5 @@
 use crate::structs::{SplitDetails, StrategyComponent};
+use cosmwasm_std::Decimal;
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -86,7 +87,8 @@ pub enum ReceiveMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct DepositMsg {
-    pub account_type: String, // prefix ("locked" or "liquid")
+    pub locked_percentage: Decimal,
+    pub liquid_percentage: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -85,6 +85,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     // let balance = Balance::from(info.funds.clone());
+    if info.funds.len() > 1 {
+        return Err(ContractError::InvalidCoinsDeposited {});
+    }
     match msg {
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
             AccountExecuters::update_endowment_settings(deps, env, info, msg)
@@ -95,13 +98,9 @@ pub fn execute(
         ExecuteMsg::Deposit(msg) => {
             AccountExecuters::deposit(deps, env, info.sender, info.funds[0].amount, msg)
         }
-        ExecuteMsg::VaultReceipt(msg) => AccountExecuters::vault_receipt(
-            deps,
-            env,
-            info.sender,
-            info.funds[0].amount,
-            msg.account_type,
-        ),
+        ExecuteMsg::VaultReceipt(msg) => {
+            AccountExecuters::vault_receipt(deps, env, info.sender, info.funds[0].amount)
+        }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             AccountExecuters::update_registrar(deps, env, info, new_registrar)
         }
