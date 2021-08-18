@@ -136,7 +136,10 @@ pub fn deposit_stable(
                 locked: Uint256::from(after_tax_locked),
                 liquid: Uint256::from(after_tax_liquid),
             })?,
-            funds: vec![after_taxes],
+            funds: vec![Coin {
+                denom: "PDTv1".to_string(),
+                amount: after_taxes.amount.clone(),
+            }],
         }),
     ]);
 
