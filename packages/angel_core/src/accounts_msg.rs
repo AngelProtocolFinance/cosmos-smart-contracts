@@ -1,4 +1,5 @@
 use crate::structs::{SplitDetails, StrategyComponent};
+use angel_portals::portal_msg::AccountTransferMsg;
 use cosmwasm_std::Decimal;
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
@@ -28,7 +29,7 @@ pub enum ExecuteMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     // Tokens are sent back to an Account from an Asset Vault
-    VaultReceipt(DepositMsg),
+    PortalReceipt(AccountTransferMsg),
     // Winding up of an endowment in good standing. Returns all funds to the Beneficiary.
     Liquidate {
         beneficiary: String, // Addr of the Beneficiary to receive funds
@@ -56,8 +57,7 @@ pub enum ExecuteMsg {
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Replace an Account's Strategy with that given.
     UpdateStrategy {
-        account_type: String, // prefix ("locked" or "liquid")
-        strategy: Vec<StrategyComponent>,
+        strategies: Vec<StrategyComponent>,
     },
     // This accepts a properly-encoded ReceiveMsg from a cw20 contract
     Receive(Cw20ReceiveMsg),
@@ -81,8 +81,8 @@ pub struct UpdateEndowmentStatusMsg {
 pub enum ReceiveMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
-    // Tokens are sent back to an Account from an Asset Vault
-    VaultReceipt(DepositMsg),
+    // Tokens are sent back to an Account from a Portal
+    PortalReceipt(AccountTransferMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

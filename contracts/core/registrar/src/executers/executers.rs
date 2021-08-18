@@ -138,21 +138,24 @@ pub fn update_config(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    if info.sender.ne(&config.owner) {
+    if info.sender.ne(&config.owner.clone()) {
         return Err(ContractError::Unauthorized {});
     }
 
     let index_fund_contract_addr = deps.api.addr_validate(&msg.index_fund_contract)?;
     let charities_addr_list = msg.charities_list(deps.api)?;
+    let accounts_code_id = msg
+        .accounts_code_id
+        .unwrap_or(config.accounts_code_id.clone());
     let default_portal = deps.api.addr_validate(
         &msg.default_portal
-            .unwrap_or(config.default_portal.to_string()),
+            .unwrap_or(config.default_portal.clone().to_string()),
     )?;
 
     // update config attributes with newly passed configs
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
         config.index_fund_contract = index_fund_contract_addr;
-        config.accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
+        config.accounts_code_id = accounts_code_id;
         config.approved_charities = charities_addr_list;
         config.default_portal = default_portal;
         Ok(config)

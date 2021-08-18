@@ -92,6 +92,8 @@ pub enum QueryMsg {
     PortalList {},
     // Get a list of all approved Portals
     ApprovedPortalList {},
+    // Get a list of all approved Endowments
+    ApprovedEndowmentList {},
     // Gets list of all registered Endowments
     EndowmentList {},
     // Get all Config details for the contract

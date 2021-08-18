@@ -16,8 +16,9 @@ pub struct YieldPortal {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct StrategyComponent {
-    pub portal: Addr, // Portal SC Address
-    pub percentage: Decimal,
+    pub portal: Addr,               // Portal SC Address
+    pub locked_percentage: Decimal, // percentage of funds to invest
+    pub liquid_percentage: Decimal, // percentage of funds to invest
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]

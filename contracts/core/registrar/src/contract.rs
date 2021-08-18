@@ -87,6 +87,9 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&QueryHandlers::query_config(deps)?),
+        QueryMsg::ApprovedEndowmentList {} => {
+            to_binary(&QueryHandlers::query_approved_endowment_list(deps)?)
+        }
         QueryMsg::EndowmentList {} => to_binary(&QueryHandlers::query_endowment_list(deps)?),
         QueryMsg::ApprovedPortalList {} => {
             to_binary(&QueryHandlers::query_approved_portal_list(deps)?)

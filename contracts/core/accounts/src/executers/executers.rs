@@ -1,12 +1,16 @@
 use crate::state::{ACCOUNTS, CONFIG, ENDOWMENT};
 use angel_core::accounts_msg::*;
 use angel_core::error::ContractError;
-use angel_core::structs::{GenericBalance, SplitDetails, StrategyComponent};
+use angel_core::registrar_msg::QueryMsg as PortalQuerier;
+use angel_core::registrar_rsp::{PortalDetailResponse, PortalListResponse};
+use angel_core::structs::{GenericBalance, SplitDetails, StrategyComponent, YieldPortal};
+use angel_portals::portal_msg::AccountTransferMsg;
+use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{
-    coin, from_binary, to_binary, Addr, BankMsg, Decimal, DepsMut, Env, MessageInfo, Response,
-    StdResult, SubMsg, Uint128, WasmMsg,
+    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
+    QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 
 pub fn update_admin(
     deps: DepsMut,
@@ -104,40 +108,41 @@ pub fn update_strategy(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    account_type: String,
-    strategy: Vec<StrategyComponent>,
+    strategies: Vec<StrategyComponent>,
 ) -> Result<Response, ContractError> {
-    let endowment = ENDOWMENT.load(deps.storage)?;
+    let mut endowment = ENDOWMENT.load(deps.storage)?;
 
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
     }
 
-    let mut addresses: Vec<Addr> = strategy.iter().map(|a| a.portal.clone()).collect();
+    let mut addresses: Vec<Addr> = strategies.iter().map(|a| a.portal.clone()).collect();
     addresses.sort();
     addresses.dedup();
 
-    if addresses.len() < strategy.len() {
+    if addresses.len() < strategies.len() {
         return Err(ContractError::StrategyComponentsNotUnique {});
     };
 
-    let mut invested_percentages_sum = Decimal::zero();
-    for strategy_component in strategy.iter() {
-        invested_percentages_sum = invested_percentages_sum + strategy_component.percentage;
+    let mut locked_percentages_sum = Decimal::zero();
+    let mut liquid_percentages_sum = Decimal::zero();
+
+    for strategy_component in strategies.iter() {
+        locked_percentages_sum = locked_percentages_sum + strategy_component.locked_percentage;
+        liquid_percentages_sum = liquid_percentages_sum + strategy_component.liquid_percentage;
     }
 
-    if invested_percentages_sum != Decimal::percent(100) {
+    if locked_percentages_sum != Decimal::one() {
         return Err(ContractError::InvalidStrategyAllocation {});
     }
 
-    // this fails if no account is there
-    let mut account = ACCOUNTS.load(deps.storage, account_type.clone())?;
+    if liquid_percentages_sum > Decimal::one() {
+        return Err(ContractError::InvalidStrategyAllocation {});
+    }
 
-    // update account strategy attribute with the newly passed strategy
-    account.strategy = strategy;
-
-    // and save
-    ACCOUNTS.save(deps.storage, account_type, &account)?;
+    // update endowment strategies attribute with the newly passed strategies list
+    endowment.strategies = strategies;
+    ENDOWMENT.save(deps.storage, &endowment)?;
 
     Ok(Response::default())
 }
@@ -159,43 +164,58 @@ pub fn receive(
     let sender_addr = deps.api.addr_validate(&cw20_msg.sender)?;
     let msg = from_binary(&cw20_msg.msg)?;
     match msg {
-        ReceiveMsg::Deposit(msg) => deposit(deps, env, sender_addr, cw20_msg.amount, msg),
-        _ => vault_receipt(deps, env, sender_addr, cw20_msg.amount),
+        ReceiveMsg::Deposit(msg) => deposit(deps, env, info, sender_addr, cw20_msg.amount, msg),
+        ReceiveMsg::PortalReceipt(msg) => {
+            portal_receipt(deps, info, sender_addr, cw20_msg.amount, msg)
+        }
     }
 }
 
-pub fn vault_receipt(
+pub fn portal_receipt(
     deps: DepsMut,
-    _env: Env,
+    info: MessageInfo,
     _sender_addr: Addr,
     balance: Uint128,
+    _msg: AccountTransferMsg,
 ) -> Result<Response, ContractError> {
-    // this fails if no account is there
-    let mut account = ACCOUNTS.load(deps.storage, "locked".to_string())?;
+    let config = CONFIG.load(deps.storage)?;
 
-    // this lookup fails if the token deposit was not coming from an Asset Vault SC
-    // let portals = VAULTS.load(deps.storage, sender_addr.to_string())?;
+    // check that the deposit token came from an approved Portal SC
+    let portals_rsp: PortalListResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&PortalQuerier::ApprovedPortalList {})?,
+        }))?;
+    let portals: Vec<YieldPortal> = portals_rsp.portals;
+    let pos = portals
+        .iter()
+        .position(|p| p.address.to_string() == info.sender.to_string());
+    // reject if the sender was found in the list of portals
+    if pos == None {
+        return Err(ContractError::Unauthorized {});
+    }
 
     if balance.is_zero() {
         return Err(ContractError::EmptyBalance {});
     }
 
-    account
-        .balance
-        .add_tokens(Balance::from(vec![coin(u128::from(balance), "uusd")]));
-
-    // and save
-    ACCOUNTS.save(deps.storage, "locked".to_string(), &account)?;
+    // TO DO: update locked and liquid accounts with Deposit Tokens / UST recieved
+    // let mut account = ACCOUNTS.load(deps.storage, "locked".to_string())?;
+    // account
+    //     .balance
+    //     .add_tokens(Balance::from(vec![coin(u128::from(balance), "uusd")]));
+    // ACCOUNTS.save(deps.storage, "locked".to_string(), &account)?;
 
     let res = Response::new()
-        .add_attribute("action", "vault_receipt")
+        .add_attribute("action", "portal_receipt")
         .add_attribute("account_type", "locked");
     Ok(res)
 }
 
 pub fn deposit(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
+    info: MessageInfo,
     sender_addr: Addr,
     balance: Uint128,
     msg: DepositMsg,
@@ -212,36 +232,60 @@ pub fn deposit(
         return Err(ContractError::InvalidSplit {});
     }
 
-    let locked_percentage = msg.locked_percentage;
-    let liquid_percentage = msg.liquid_percentage;
+    let locked_split = msg.locked_percentage;
+    let liquid_split = msg.liquid_percentage;
 
     // MVP LOGIC: Only index fund SC (aka TCA Member donations are accepted)
     // fails if the token deposit was not coming from the Index Fund SC
     if sender_addr != config.index_fund_contract {
         // let splits = ENDOWMENT.load(deps.storage)?.split_to_liquid;
         // let new_splits = check_splits(splits, locked_percentage, liquid_percentage);
-        // locked_percentage = new_splits.0;
-        // liquid_percentage = new_splits.1;
+        // locked_split = new_splits.0;
+        // liquid_split = new_splits.1;
         return Err(ContractError::Unauthorized {});
     }
 
-    // update locked account balance
-    let mut locked_account = ACCOUNTS.load(deps.storage, "locked".to_string())?;
-    locked_account.balance.add_tokens(Balance::from(vec![coin(
-        u128::from(balance * locked_percentage),
-        "uusd",
-    )]));
-    ACCOUNTS.save(deps.storage, "locked".to_string(), &locked_account)?;
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    let mut messages: Vec<SubMsg> = vec![];
 
-    // update liquid account balance
-    let mut liquid_account = ACCOUNTS.load(deps.storage, "liquid".to_string())?;
-    liquid_account.balance.add_tokens(Balance::from(vec![coin(
-        u128::from(balance * liquid_percentage),
-        "uusd",
-    )]));
-    ACCOUNTS.save(deps.storage, "liquid".to_string(), &liquid_account)?;
+    // Invest the funds according to the Strategy
+    for strategy in endowment.strategies.iter() {
+        let portal_config: PortalDetailResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: config.registrar_contract.to_string(),
+                msg: to_binary(&PortalQuerier::Portal {
+                    portal_addr: strategy.portal.to_string(),
+                })?,
+            }))?;
+        let yield_portal: YieldPortal = portal_config.portal;
 
-    Ok(Response::default())
+        let transfer_msg = AccountTransferMsg {
+            locked: Uint256::from(balance * locked_split * strategy.locked_percentage),
+            liquid: Uint256::from(balance * liquid_split * strategy.liquid_percentage),
+        };
+
+        // create a deposit message for X Portal, noting amounts for Locked / Liquid
+        // funds payload contains both amounts for locked and liquid accounts
+        messages.push(SubMsg {
+            id: 42,
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: yield_portal.address.to_string(),
+                msg: to_binary(&transfer_msg).unwrap(),
+                funds: vec![Coin {
+                    amount: balance,
+                    denom: "uusd".to_string(),
+                }],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Never,
+        })
+    }
+
+    Ok(Response::new()
+        .add_submessages(messages)
+        .add_attribute("action", "portal_deposit")
+        .add_attribute("sender", env.contract.address)
+        .add_attribute("deposit_amount", balance))
 }
 
 pub fn check_splits(
@@ -383,4 +427,58 @@ fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<SubMsg>> {
         .collect();
     msgs.append(&mut cw20_msgs?);
     Ok(msgs)
+}
+
+pub fn redeem(
+    deps: DepsMut,
+    _env: Env,
+    sender: String,
+    _amount: Uint128,
+    _denom: String,
+) -> Result<Response, ContractError> {
+    let _config = CONFIG.load(deps.storage)?;
+
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    // check that sender is the owner
+    if sender != endowment.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    //     let exchange_rate = adapter::exchange_rate(deps, &config.yield_adapter, &config.input_denom)?;
+    //     let return_amount = deduct_tax(
+    //         deps,
+    //         Coin {
+    //             denom: config.input_denom.clone(),
+    //             amount: amount.into(),
+    //         },
+    //     )?;
+
+    //     Ok(HandleResponse {
+    //         messages: [
+    //             vec![CosmosMsg::Wasm(WasmMsg::Execute {
+    //                 contract_addr: deps.api.human_address(&config.dp_token)?,
+    //                 msg: to_binary(&Cw20HandleMsg::Burn { amount })?,
+    //                 send: vec![],
+    //             })],
+    //             adapter::redeem(
+    //                 deps,
+    //                 &config.yield_adapter,
+    //                 Uint256::from(amount).div(exchange_rate).into(),
+    //             )?,
+    //             vec![CosmosMsg::Bank(BankMsg::Send {
+    //                 from_address: env.contract.address,
+    //                 to_address: sender,
+    //                 amount: vec![return_amount.clone()],
+    //             })],
+    //         ]
+    //         .concat(),
+    //         log: vec![
+    //             log("action", "redeem"),
+    //             log("sender", env.message.sender),
+    //             log("burn_amount", amount),
+    //             log("redeem_amount", return_amount.amount),
+    //         ],
+    //         data: None,
+    //     })
+    Ok(Response::default())
 }

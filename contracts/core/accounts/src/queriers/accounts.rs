@@ -23,7 +23,6 @@ pub fn query_account_details(
     let account = ACCOUNTS.load(deps.storage, account_type.clone())?;
     let details = AccountDetailsResponse {
         account_type: account_type,
-        strategy: account.strategy,
         balance: account.balance,
     };
     Ok(details)
@@ -49,6 +48,7 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
         maturity_time: endowment.maturity_time,
         maturity_height: endowment.maturity_height,
         split_to_liquid: endowment.split_to_liquid,
+        strategies: endowment.strategies,
         // total_funds: Uint128 // locked total + liquid total
         // total_donations: Uint128 // all donations received
     })

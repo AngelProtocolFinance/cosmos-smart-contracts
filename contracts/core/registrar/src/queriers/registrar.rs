@@ -38,6 +38,17 @@ pub fn query_endowment_list(deps: Deps) -> StdResult<EndowmentListResponse> {
     Ok(list)
 }
 
+pub fn query_approved_endowment_list(deps: Deps) -> StdResult<EndowmentListResponse> {
+    let endowments = read_registry_entries(deps.storage)?;
+    let list = EndowmentListResponse {
+        endowments: endowments
+            .into_iter()
+            .filter(|p| p.status.to_string() == "1") // approved == 1
+            .collect(),
+    };
+    Ok(list)
+}
+
 pub fn query_portal_details(deps: Deps, portal_addr: String) -> StdResult<PortalDetailResponse> {
     // this fails if no portal is found
     let addr = deps.api.addr_validate(&portal_addr)?;

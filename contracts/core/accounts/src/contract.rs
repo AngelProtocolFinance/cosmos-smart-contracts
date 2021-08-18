@@ -38,6 +38,12 @@ pub fn instantiate(
         },
     )?;
 
+    let registrar_config: ConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: msg.registrar_contract,
+            msg: to_binary(&RegistrarConfig {})?,
+        }))?;
+
     ENDOWMENT.save(
         deps.storage,
         &Endowment {
@@ -49,23 +55,19 @@ pub fn instantiate(
             maturity_time: msg.maturity_time,                       // Option<u64>
             maturity_height: msg.maturity_height,                   // Option<u64>
             split_to_liquid: msg.split_to_liquid,                   // SplitDetails
+            strategies: vec![StrategyComponent {
+                portal: deps.api.addr_validate(&registrar_config.default_portal)?,
+                locked_percentage: Decimal::one(),
+                liquid_percentage: Decimal::one(),
+            }],
         },
     )?;
 
-    let registrar_config: ConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: msg.registrar_contract,
-            msg: to_binary(&RegistrarConfig {})?,
-        }))?;
     let account = Account {
         balance: GenericBalance {
             native: vec![],
             cw20: vec![],
         },
-        strategy: vec![StrategyComponent {
-            portal: deps.api.addr_validate(&registrar_config.default_portal)?,
-            percentage: Decimal::one(),
-        }],
         rebalance: RebalanceDetails::default(),
     };
 
@@ -105,22 +107,30 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
             AccountExecuters::update_endowment_status(deps, env, info, msg)
         }
-        ExecuteMsg::Deposit(msg) => {
-            AccountExecuters::deposit(deps, env, info.sender, info.funds[0].amount, msg)
-        }
-        ExecuteMsg::VaultReceipt(msg) => {
-            AccountExecuters::vault_receipt(deps, env, info.sender, info.funds[0].amount)
-        }
+        ExecuteMsg::Deposit(msg) => AccountExecuters::deposit(
+            deps,
+            env,
+            info.clone(),
+            info.sender,
+            info.funds[0].amount,
+            msg,
+        ),
+        ExecuteMsg::PortalReceipt(msg) => AccountExecuters::portal_receipt(
+            deps,
+            info.clone(),
+            info.sender,
+            info.funds[0].amount,
+            msg,
+        ),
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             AccountExecuters::update_registrar(deps, env, info, new_registrar)
         }
         ExecuteMsg::UpdateAdmin { new_admin } => {
             AccountExecuters::update_admin(deps, env, info, new_admin)
         }
-        ExecuteMsg::UpdateStrategy {
-            account_type,
-            strategy,
-        } => AccountExecuters::update_strategy(deps, env, info, account_type, strategy),
+        ExecuteMsg::UpdateStrategy { strategies } => {
+            AccountExecuters::update_strategy(deps, env, info, strategies)
+        }
         ExecuteMsg::Liquidate { beneficiary } => {
             AccountExecuters::liquidate(deps, env, info, beneficiary)
         }

@@ -13,7 +13,6 @@ pub struct AccountListResponse {
 pub struct AccountDetailsResponse {
     pub account_type: String, // prefix ("locked" or "liquid")
     pub balance: GenericBalance,
-    pub strategy: Vec<StrategyComponent>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -35,4 +34,5 @@ pub struct EndowmentDetailsResponse {
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
     pub split_to_liquid: SplitDetails,
+    pub strategies: Vec<StrategyComponent>,
 }
