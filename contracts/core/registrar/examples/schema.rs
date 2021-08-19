@@ -1,5 +1,5 @@
 use angel_core::messages::registrar::{CreateEndowmentMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
-use angel_core::responces::registrar::PortalListResponse;
+use angel_core::responses::registrar::PortalListResponse;
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use registrar::state::Config;
 use std::env::current_dir;
