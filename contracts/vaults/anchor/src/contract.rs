@@ -1,21 +1,16 @@
 use crate::anchor;
 use crate::anchor::register_deposit_token;
-use crate::anchor::HandleMsg;
 use crate::config;
+use crate::executers;
 use crate::msg::{InitMsg, MigrateMsg};
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
-use angel_core::messages::vault::{AccountTransferMsg, ExecuteMsg, QueryMsg};
-use angel_core::responses::registrar::EndowmentListResponse;
+use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
-use angel_core::structs::EndowmentEntry;
-use angel_core::utils::deduct_tax;
-use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{
-    to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply,
-    ReplyOn, Response, StdResult, SubMsg, WasmMsg, WasmQuery,
+    to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response,
+    StdResult, SubMsg, WasmMsg,
 };
-use cw20::{Cw20ExecuteMsg, MinterResponse};
+use cw20::MinterResponse;
 use terraswap::token::InstantiateMsg as Cw20InitMsg;
 
 pub fn init(
@@ -70,89 +65,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Deposit(msg) => deposit_stable(deps, env, info, msg), // UST -> DP (Account)
-        ExecuteMsg::Redeem(msg) => redeem_stable(deps, env, info, msg),   // DP -> UST (Account)
+        ExecuteMsg::Deposit(msg) => executers::deposit_stable(deps, env, info, msg), // UST -> DP (Account)
+        ExecuteMsg::Redeem(msg) => executers::redeem_stable(deps, env, info, msg), // DP -> UST (Account)
     }
-}
-
-pub fn deposit_stable(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    msg: AccountTransferMsg,
-) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
-
-    // check that the depositor is an approved Accounts SC
-    let endowments_rsp: EndowmentListResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::ApprovedEndowmentList {})?,
-        }))?;
-    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments
-        .iter()
-        .position(|p| p.address.to_string() == info.sender.to_string());
-    // reject if the sender was found in the list of endowments
-    if pos == None {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let config = config::read(deps.storage)?;
-    let after_taxes = deduct_tax(
-        deps.as_ref(),
-        Coin {
-            denom: config.input_denom,
-            amount: info.funds[0].amount,
-        },
-    )?;
-
-    let after_tax_locked = after_taxes
-        .amount
-        .clone()
-        .multiply_ratio(msg.locked, info.funds[0].amount);
-    let after_tax_liquid = after_taxes
-        .amount
-        .clone()
-        .multiply_ratio(msg.liquid, info.funds[0].amount);
-
-    let res = Response::new().add_messages(vec![
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.moneymarket.to_string(),
-            msg: to_binary(&HandleMsg::DepositStable {})?,
-            funds: vec![after_taxes.clone()],
-        }),
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.deposit_token.to_string(),
-            msg: to_binary(&Cw20ExecuteMsg::Mint {
-                recipient: env.contract.address.to_string(),
-                amount: after_taxes.amount.clone(),
-            })?,
-            funds: vec![],
-        }),
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: info.sender.to_string(),
-            msg: to_binary(&AccountTransferMsg {
-                locked: Uint256::from(after_tax_locked),
-                liquid: Uint256::from(after_tax_liquid),
-            })?,
-            funds: vec![Coin {
-                denom: "PDTv1".to_string(),
-                amount: after_taxes.amount.clone(),
-            }],
-        }),
-    ]);
-
-    Ok(res)
-}
-
-pub fn redeem_stable(
-    _deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-    _msg: AccountTransferMsg,
-) -> Result<Response, ContractError> {
-    Ok(Response::default())
 }
 
 // Replies back from the CW20 Deposit Token Init calls to a vault SC should
