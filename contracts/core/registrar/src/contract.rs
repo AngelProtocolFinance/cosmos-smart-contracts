@@ -1,5 +1,5 @@
-use crate::executers as ExecuteHandlers;
-use crate::queriers as QueryHandlers;
+use crate::executers;
+use crate::queriers;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
@@ -46,28 +46,26 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateEndowment(msg) => ExecuteHandlers::create_endowment(deps, env, info, msg),
-        ExecuteMsg::UpdateConfig(msg) => ExecuteHandlers::update_config(deps, env, info, msg),
+        ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
+        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
-            ExecuteHandlers::update_endowment_status(deps, env, info, msg)
+            executers::update_endowment_status(deps, env, info, msg)
         }
         ExecuteMsg::UpdateOwner { new_owner } => {
-            ExecuteHandlers::update_owner(deps, env, info, new_owner)
+            executers::update_owner(deps, env, info, new_owner)
         }
-        ExecuteMsg::CharityAdd { charity } => {
-            ExecuteHandlers::charity_add(deps, env, info, charity)
-        }
+        ExecuteMsg::CharityAdd { charity } => executers::charity_add(deps, env, info, charity),
         ExecuteMsg::CharityRemove { charity } => {
-            ExecuteHandlers::charity_remove(deps, env, info, charity)
+            executers::charity_remove(deps, env, info, charity)
         }
-        ExecuteMsg::VaultAdd(msg) => ExecuteHandlers::vault_add(deps, env, info, msg),
+        ExecuteMsg::VaultAdd(msg) => executers::vault_add(deps, env, info, msg),
         ExecuteMsg::VaultUpdateStatus {
             vault_addr,
             approved,
-        } => ExecuteHandlers::vault_update_status(deps, env, info, vault_addr, approved),
+        } => executers::vault_update_status(deps, env, info, vault_addr, approved),
 
         ExecuteMsg::VaultRemove { vault_addr } => {
-            ExecuteHandlers::vault_remove(deps, env, info, vault_addr)
+            executers::vault_remove(deps, env, info, vault_addr)
         }
     }
 }
@@ -78,7 +76,7 @@ pub fn execute(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        0 => ExecuteHandlers::new_accounts_reply(deps, env, msg.result),
+        0 => executers::new_accounts_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }
@@ -86,17 +84,15 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Config {} => to_binary(&QueryHandlers::query_config(deps)?),
+        QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::ApprovedEndowmentList {} => {
-            to_binary(&QueryHandlers::query_approved_endowment_list(deps)?)
+            to_binary(&queriers::query_approved_endowment_list(deps)?)
         }
-        QueryMsg::EndowmentList {} => to_binary(&QueryHandlers::query_endowment_list(deps)?),
-        QueryMsg::ApprovedVaultList {} => {
-            to_binary(&QueryHandlers::query_approved_vault_list(deps)?)
-        }
-        QueryMsg::VaultList {} => to_binary(&QueryHandlers::query_vault_list(deps)?),
+        QueryMsg::EndowmentList {} => to_binary(&queriers::query_endowment_list(deps)?),
+        QueryMsg::ApprovedVaultList {} => to_binary(&queriers::query_approved_vault_list(deps)?),
+        QueryMsg::VaultList {} => to_binary(&queriers::query_vault_list(deps)?),
         QueryMsg::Vault { vault_addr } => {
-            to_binary(&QueryHandlers::query_vault_details(deps, vault_addr)?)
+            to_binary(&queriers::query_vault_details(deps, vault_addr)?)
         }
     }
 }

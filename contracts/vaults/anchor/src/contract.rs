@@ -4,7 +4,7 @@ use crate::anchor::HandleMsg;
 use crate::config;
 use crate::msg::{InitMsg, MigrateMsg};
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
+use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{AccountTransferMsg, ExecuteMsg, QueryMsg};
 use angel_core::responses::registrar::EndowmentListResponse;
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
@@ -87,7 +87,7 @@ pub fn deposit_stable(
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::ApprovedEndowmentList {})?,
+            msg: to_binary(&RegistrarQueryMsg::ApprovedEndowmentList {})?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments
