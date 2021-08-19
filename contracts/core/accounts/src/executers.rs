@@ -229,13 +229,16 @@ pub fn vault_receipt(
         INVESTMENTS.save(deps.storage, sender_addr.to_string(), &investment)?;
     }
 
-    Ok(Response::new().add_attribute("action", "vault_receipt"))
+    Ok(Response::new()
+        .add_attribute("action", "vault_receipt")
+        .add_attribute("sender", info.sender.to_string())
+        .add_attribute("amount_received", info.funds[0].amount))
 }
 
 pub fn deposit(
     deps: DepsMut,
-    env: Env,
-    _info: MessageInfo,
+    _env: Env,
+    info: MessageInfo,
     sender_addr: Addr,
     balance: Uint128,
     msg: DepositMsg,
@@ -303,8 +306,8 @@ pub fn deposit(
 
     Ok(Response::new()
         .add_submessages(messages)
-        .add_attribute("action", "vault_deposit")
-        .add_attribute("sender", env.contract.address)
+        .add_attribute("action", "account_deposit")
+        .add_attribute("sender", info.sender.to_string())
         .add_attribute("deposit_amount", balance))
 }
 
