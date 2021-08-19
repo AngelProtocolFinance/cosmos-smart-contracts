@@ -1,4 +1,4 @@
-use angel_core::structs::{EndowmentEntry, TaxParameters, YieldPortal};
+use angel_core::structs::{EndowmentEntry, TaxParameters, YieldVault};
 use cosmwasm_std::{Addr, Order, StdResult, Storage};
 use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
 use cw_storage_plus::Item;
@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 // const DEFAULT_LIMIT: u32 = 10;
 
 static PREFIX_REGISTRY: &[u8] = b"registry";
-static PREFIX_PORTAL: &[u8] = b"portal";
+static PREFIX_PORTAL: &[u8] = b"vault";
 
 pub const CONFIG: Item<Config> = Item::new("config");
 
@@ -23,7 +23,7 @@ pub struct Config {
     pub approved_charities: Vec<Addr>,
     pub treasury: Addr,
     pub taxes: TaxParameters,
-    pub default_portal: Addr,
+    pub default_vault: Addr,
 }
 
 // REGISTRY Read/Write
@@ -47,16 +47,16 @@ pub fn read_registry_entries<'a>(storage: &'a dyn Storage) -> StdResult<Vec<Endo
 }
 
 // PORTAL Read/Write
-pub fn portal_store(storage: &mut dyn Storage) -> Bucket<YieldPortal> {
+pub fn vault_store(storage: &mut dyn Storage) -> Bucket<YieldVault> {
     bucket(storage, PREFIX_PORTAL)
 }
 
-pub fn portal_read(storage: &dyn Storage) -> ReadonlyBucket<YieldPortal> {
+pub fn vault_read(storage: &dyn Storage) -> ReadonlyBucket<YieldVault> {
     bucket_read(storage, PREFIX_PORTAL)
 }
 
-pub fn read_portals<'a>(storage: &'a dyn Storage) -> StdResult<Vec<YieldPortal>> {
-    let entries: ReadonlyBucket<'a, YieldPortal> = ReadonlyBucket::new(storage, PREFIX_PORTAL);
+pub fn read_vaults<'a>(storage: &'a dyn Storage) -> StdResult<Vec<YieldVault>> {
+    let entries: ReadonlyBucket<'a, YieldVault> = ReadonlyBucket::new(storage, PREFIX_PORTAL);
     entries
         .range(None, None, Order::Ascending)
         .map(|item| {

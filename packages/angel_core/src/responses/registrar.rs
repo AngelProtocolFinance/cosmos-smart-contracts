@@ -1,15 +1,15 @@
-use crate::structs::{EndowmentEntry, TaxParameters, YieldPortal};
+use crate::structs::{EndowmentEntry, TaxParameters, YieldVault};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct PortalDetailResponse {
-    pub portal: YieldPortal,
+pub struct VaultDetailResponse {
+    pub vault: YieldVault,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct PortalListResponse {
-    pub portals: Vec<YieldPortal>,
+pub struct VaultListResponse {
+    pub vaults: Vec<YieldVault>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -28,5 +28,5 @@ pub struct ConfigResponse {
     pub accounts_code_id: u64,
     pub treasury: String,
     pub taxes: TaxParameters,
-    pub default_portal: String,
+    pub default_vault: String,
 }

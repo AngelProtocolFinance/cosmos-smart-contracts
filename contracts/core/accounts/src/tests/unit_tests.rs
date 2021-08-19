@@ -353,12 +353,12 @@ fn test_update_strategy() {
     let msg = ExecuteMsg::UpdateStrategy {
         strategies: vec![
             StrategyComponent {
-                portal: Addr::unchecked("cash_strategy_component_addr"),
+                vault: Addr::unchecked("cash_strategy_component_addr"),
                 locked_percentage: Decimal::percent(20),
                 liquid_percentage: Decimal::percent(20),
             },
             StrategyComponent {
-                portal: Addr::unchecked("tech_strategy_component_addr"),
+                vault: Addr::unchecked("tech_strategy_component_addr"),
                 locked_percentage: Decimal::percent(60),
                 liquid_percentage: Decimal::percent(60),
             },
@@ -372,17 +372,17 @@ fn test_update_strategy() {
     let msg = ExecuteMsg::UpdateStrategy {
         strategies: vec![
             StrategyComponent {
-                portal: Addr::unchecked("cash_strategy_component_addr"),
+                vault: Addr::unchecked("cash_strategy_component_addr"),
                 locked_percentage: Decimal::percent(40),
                 liquid_percentage: Decimal::percent(40),
             },
             StrategyComponent {
-                portal: Addr::unchecked("tech_strategy_component_addr"),
+                vault: Addr::unchecked("tech_strategy_component_addr"),
                 locked_percentage: Decimal::percent(20),
                 liquid_percentage: Decimal::percent(20),
             },
             StrategyComponent {
-                portal: Addr::unchecked("cash_strategy_component_addr"),
+                vault: Addr::unchecked("cash_strategy_component_addr"),
                 locked_percentage: Decimal::percent(40),
                 liquid_percentage: Decimal::percent(40),
             },
@@ -396,12 +396,12 @@ fn test_update_strategy() {
     let msg = ExecuteMsg::UpdateStrategy {
         strategies: vec![
             StrategyComponent {
-                portal: Addr::unchecked("cash_strategy_component_addr"),
+                vault: Addr::unchecked("cash_strategy_component_addr"),
                 locked_percentage: Decimal::percent(40),
                 liquid_percentage: Decimal::percent(40),
             },
             StrategyComponent {
-                portal: Addr::unchecked("tech_strategy_component_addr"),
+                vault: Addr::unchecked("tech_strategy_component_addr"),
                 locked_percentage: Decimal::percent(60),
                 liquid_percentage: Decimal::percent(60),
             },
@@ -414,12 +414,12 @@ fn test_update_strategy() {
     let msg = ExecuteMsg::UpdateStrategy {
         strategies: vec![
             StrategyComponent {
-                portal: Addr::unchecked("cash_strategy_component_addr"),
+                vault: Addr::unchecked("cash_strategy_component_addr"),
                 locked_percentage: Decimal::percent(40),
                 liquid_percentage: Decimal::percent(40),
             },
             StrategyComponent {
-                portal: Addr::unchecked("tech_strategy_component_addr"),
+                vault: Addr::unchecked("tech_strategy_component_addr"),
                 locked_percentage: Decimal::percent(60),
                 liquid_percentage: Decimal::percent(60),
             },

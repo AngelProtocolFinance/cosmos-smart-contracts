@@ -1,10 +1,10 @@
 use crate::state::{ACCOUNTS, CONFIG, ENDOWMENT};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::portal::AccountTransferMsg;
-use angel_core::messages::registrar::QueryMsg as PortalQuerier;
-use angel_core::responses::registrar::{PortalDetailResponse, PortalListResponse};
-use angel_core::structs::{GenericBalance, SplitDetails, StrategyComponent, YieldPortal};
+use angel_core::messages::registrar::QueryMsg as VaultQuerier;
+use angel_core::messages::vault::AccountTransferMsg;
+use angel_core::responses::registrar::{VaultDetailResponse, VaultListResponse};
+use angel_core::structs::{GenericBalance, SplitDetails, StrategyComponent, YieldVault};
 use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
@@ -116,7 +116,7 @@ pub fn update_strategy(
         return Err(ContractError::Unauthorized {});
     }
 
-    let mut addresses: Vec<Addr> = strategies.iter().map(|a| a.portal.clone()).collect();
+    let mut addresses: Vec<Addr> = strategies.iter().map(|a| a.vault.clone()).collect();
     addresses.sort();
     addresses.dedup();
 
@@ -165,13 +165,13 @@ pub fn receive(
     let msg = from_binary(&cw20_msg.msg)?;
     match msg {
         ReceiveMsg::Deposit(msg) => deposit(deps, env, info, sender_addr, cw20_msg.amount, msg),
-        ReceiveMsg::PortalReceipt(msg) => {
-            portal_receipt(deps, info, sender_addr, cw20_msg.amount, msg)
+        ReceiveMsg::VaultReceipt(msg) => {
+            vault_receipt(deps, info, sender_addr, cw20_msg.amount, msg)
         }
     }
 }
 
-pub fn portal_receipt(
+pub fn vault_receipt(
     deps: DepsMut,
     info: MessageInfo,
     _sender_addr: Addr,
@@ -180,17 +180,17 @@ pub fn portal_receipt(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // check that the deposit token came from an approved Portal SC
-    let portals_rsp: PortalListResponse =
+    // check that the deposit token came from an approved Vault SC
+    let vaults_rsp: VaultListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&PortalQuerier::ApprovedPortalList {})?,
+            msg: to_binary(&VaultQuerier::ApprovedVaultList {})?,
         }))?;
-    let portals: Vec<YieldPortal> = portals_rsp.portals;
-    let pos = portals
+    let vaults: Vec<YieldVault> = vaults_rsp.vaults;
+    let pos = vaults
         .iter()
         .position(|p| p.address.to_string() == info.sender.to_string());
-    // reject if the sender was found in the list of portals
+    // reject if the sender was found in the list of vaults
     if pos == None {
         return Err(ContractError::Unauthorized {});
     }
@@ -207,7 +207,7 @@ pub fn portal_receipt(
     // ACCOUNTS.save(deps.storage, "locked".to_string(), &account)?;
 
     let res = Response::new()
-        .add_attribute("action", "portal_receipt")
+        .add_attribute("action", "vault_receipt")
         .add_attribute("account_type", "locked");
     Ok(res)
 }
@@ -250,26 +250,26 @@ pub fn deposit(
 
     // Invest the funds according to the Strategy
     for strategy in endowment.strategies.iter() {
-        let portal_config: PortalDetailResponse =
+        let vault_config: VaultDetailResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: config.registrar_contract.to_string(),
-                msg: to_binary(&PortalQuerier::Portal {
-                    portal_addr: strategy.portal.to_string(),
+                msg: to_binary(&VaultQuerier::Vault {
+                    vault_addr: strategy.vault.to_string(),
                 })?,
             }))?;
-        let yield_portal: YieldPortal = portal_config.portal;
+        let yield_vault: YieldVault = vault_config.vault;
 
         let transfer_msg = AccountTransferMsg {
             locked: Uint256::from(balance * locked_split * strategy.locked_percentage),
             liquid: Uint256::from(balance * liquid_split * strategy.liquid_percentage),
         };
 
-        // create a deposit message for X Portal, noting amounts for Locked / Liquid
+        // create a deposit message for X Vault, noting amounts for Locked / Liquid
         // funds payload contains both amounts for locked and liquid accounts
         messages.push(SubMsg {
             id: 42,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: yield_portal.address.to_string(),
+                contract_addr: yield_vault.address.to_string(),
                 msg: to_binary(&transfer_msg).unwrap(),
                 funds: vec![Coin {
                     amount: balance,
@@ -283,7 +283,7 @@ pub fn deposit(
 
     Ok(Response::new()
         .add_submessages(messages)
-        .add_attribute("action", "portal_deposit")
+        .add_attribute("action", "vault_deposit")
         .add_attribute("sender", env.contract.address)
         .add_attribute("deposit_amount", balance))
 }

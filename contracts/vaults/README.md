@@ -1,6 +1,6 @@
-# Angel Protocol Portal Contracts
+# Angel Protocol Vault Contracts
 
-This folder contains the source code for the Portal smart contracts. These contracts are responsible for acting as portals to various DeFi/TeFi yield opportunities that charity endowment accounts can paticipate in.
+This folder contains the source code for the Vault smart contracts. These contracts are responsible for acting as vaults to various DeFi/TeFi yield opportunities that charity endowment accounts can paticipate in.
 
 ## Contracts
 

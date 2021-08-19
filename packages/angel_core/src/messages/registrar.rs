@@ -11,16 +11,16 @@ pub struct InstantiateMsg {
     pub accounts_code_id: Option<u64>,
     pub treasury: String,
     pub taxes: TaxParameters,
-    pub default_portal: Option<Addr>,
+    pub default_vault: Option<Addr>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     CreateEndowment(CreateEndowmentMsg),
-    PortalAdd(PortalAddMsg),
-    PortalUpdateStatus { portal_addr: String, approved: bool },
-    PortalRemove { portal_addr: String },
+    VaultAdd(VaultAddMsg),
+    VaultUpdateStatus { vault_addr: String, approved: bool },
+    VaultRemove { vault_addr: String },
     CharityAdd { charity: String },
     CharityRemove { charity: String },
     // Allows the contract parameter to be updated (only by the owner...for now)
@@ -48,14 +48,14 @@ pub struct CreateEndowmentMsg {
 pub struct UpdateConfigMsg {
     pub accounts_code_id: Option<u64>,
     pub index_fund_contract: String,
-    pub portals: Option<Vec<String>>,
+    pub vaults: Option<Vec<String>>,
     pub approved_charities: Option<Vec<String>>,
-    pub default_portal: Option<String>,
+    pub default_vault: Option<String>,
 }
 
 impl UpdateConfigMsg {
-    pub fn portals_list(&self, api: &dyn Api) -> StdResult<Vec<Addr>> {
-        match self.portals.as_ref() {
+    pub fn vaults_list(&self, api: &dyn Api) -> StdResult<Vec<Addr>> {
+        match self.vaults.as_ref() {
             Some(v) => v.iter().map(|h| api.addr_validate(h)).collect(),
             None => Ok(vec![]),
         }
@@ -76,8 +76,8 @@ pub struct UpdateEndowmentStatusMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct PortalAddMsg {
-    pub portal_addr: String,
+pub struct VaultAddMsg {
+    pub vault_addr: String,
     pub input_denom: String,
     pub deposit_token: String,
     pub yield_token: String,
@@ -86,12 +86,12 @@ pub struct PortalAddMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    // Get details on single portal
-    Portal { portal_addr: String },
-    // Gets list of all Portals
-    PortalList {},
-    // Get a list of all approved Portals
-    ApprovedPortalList {},
+    // Get details on single vault
+    Vault { vault_addr: String },
+    // Gets list of all Vaults
+    VaultList {},
+    // Get a list of all approved Vaults
+    ApprovedVaultList {},
     // Get a list of all approved Endowments
     ApprovedEndowmentList {},
     // Gets list of all registered Endowments

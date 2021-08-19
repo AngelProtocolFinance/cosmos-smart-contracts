@@ -56,7 +56,7 @@ pub fn instantiate(
             maturity_height: msg.maturity_height,                   // Option<u64>
             split_to_liquid: msg.split_to_liquid,                   // SplitDetails
             strategies: vec![StrategyComponent {
-                portal: deps.api.addr_validate(&registrar_config.default_portal)?,
+                vault: deps.api.addr_validate(&registrar_config.default_vault)?,
                 locked_percentage: Decimal::one(),
                 liquid_percentage: Decimal::one(),
             }],
@@ -115,7 +115,7 @@ pub fn execute(
             info.funds[0].amount,
             msg,
         ),
-        ExecuteMsg::PortalReceipt(msg) => AccountExecuters::portal_receipt(
+        ExecuteMsg::VaultReceipt(msg) => AccountExecuters::vault_receipt(
             deps,
             info.clone(),
             info.sender,

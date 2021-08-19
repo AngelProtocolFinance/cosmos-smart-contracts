@@ -1,5 +1,5 @@
 use crate::config;
-use angel_core::errors::portal::ContractError;
+use angel_core::errors::vault::ContractError;
 use angel_core::utils::deduct_tax;
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
@@ -112,8 +112,8 @@ pub fn register_deposit_token(
                     id: 0,
                     msg: CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: config.registrar_contract.to_string(),
-                        msg: to_binary(&angel_core::messages::registrar::PortalAddMsg {
-                            portal_addr: env.contract.address.to_string(),
+                        msg: to_binary(&angel_core::messages::registrar::VaultAddMsg {
+                            vault_addr: env.contract.address.to_string(),
                             input_denom: config.input_denom,
                             deposit_token: config.deposit_token.to_string(),
                             yield_token: config.yield_token.to_string(),
@@ -126,7 +126,7 @@ pub fn register_deposit_token(
                 })
                 .add_attribute("register_deposit_token", config.deposit_token.to_string()))
         }
-        ContractResult::Err(_) => Err(ContractError::PortalNotCreated {}),
+        ContractResult::Err(_) => Err(ContractError::VaultNotCreated {}),
     }
 }
 

@@ -9,6 +9,6 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
-    #[error("Portal not created")]
-    PortalNotCreated {},
+    #[error("Vault not created")]
+    VaultNotCreated {},
 }

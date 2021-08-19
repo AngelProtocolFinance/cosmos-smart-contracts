@@ -1,4 +1,4 @@
-use crate::messages::portal::AccountTransferMsg;
+use crate::messages::vault::AccountTransferMsg;
 use crate::structs::{SplitDetails, StrategyComponent};
 use cosmwasm_std::Decimal;
 use cw20::Cw20ReceiveMsg;
@@ -29,7 +29,7 @@ pub enum ExecuteMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     // Tokens are sent back to an Account from an Asset Vault
-    PortalReceipt(AccountTransferMsg),
+    VaultReceipt(AccountTransferMsg),
     // Winding up of an endowment in good standing. Returns all funds to the Beneficiary.
     Liquidate {
         beneficiary: String, // Addr of the Beneficiary to receive funds
@@ -81,8 +81,8 @@ pub struct UpdateEndowmentStatusMsg {
 pub enum ReceiveMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
-    // Tokens are sent back to an Account from a Portal
-    PortalReceipt(AccountTransferMsg),
+    // Tokens are sent back to an Account from a Vault
+    VaultReceipt(AccountTransferMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

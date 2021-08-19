@@ -1,7 +1,7 @@
-use crate::state::{portal_read, portal_store, registry_read, registry_store, CONFIG};
+use crate::state::{registry_read, registry_store, vault_read, vault_store, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails, YieldPortal};
+use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails, YieldVault};
 use cosmwasm_std::{
     to_binary, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
     SubMsg, SubMsgExecutionResponse, WasmMsg,
@@ -148,9 +148,9 @@ pub fn update_config(
     let accounts_code_id = msg
         .accounts_code_id
         .unwrap_or(config.accounts_code_id.clone());
-    let default_portal = deps.api.addr_validate(
-        &msg.default_portal
-            .unwrap_or(config.default_portal.clone().to_string()),
+    let default_vault = deps.api.addr_validate(
+        &msg.default_vault
+            .unwrap_or(config.default_vault.clone().to_string()),
     )?;
 
     // update config attributes with newly passed configs
@@ -158,7 +158,7 @@ pub fn update_config(
         config.index_fund_contract = index_fund_contract_addr;
         config.accounts_code_id = accounts_code_id;
         config.approved_charities = charities_addr_list;
-        config.default_portal = default_portal;
+        config.default_vault = default_vault;
         Ok(config)
     })?;
 
@@ -271,30 +271,30 @@ pub fn charity_remove(
     Ok(Response::default())
 }
 
-pub fn portal_add(
+pub fn vault_add(
     deps: DepsMut,
     _env: Env,
     _info: MessageInfo,
-    msg: PortalAddMsg,
+    msg: VaultAddMsg,
 ) -> Result<Response, ContractError> {
-    // save the new portal to storage (defaults to false)
-    let addr = deps.api.addr_validate(&msg.portal_addr)?;
-    let new_portal = YieldPortal {
+    // save the new vault to storage (defaults to false)
+    let addr = deps.api.addr_validate(&msg.vault_addr)?;
+    let new_vault = YieldVault {
         address: addr.clone(),
         input_denom: msg.input_denom,
         yield_token: deps.api.addr_validate(&msg.yield_token)?,
         deposit_token: deps.api.addr_validate(&msg.deposit_token)?,
         approved: false,
     };
-    portal_store(deps.storage).save(&addr.as_bytes(), &new_portal)?;
+    vault_store(deps.storage).save(&addr.as_bytes(), &new_vault)?;
     Ok(Response::default())
 }
 
-pub fn portal_update_status(
+pub fn vault_update_status(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    portal_addr: String,
+    vault_addr: String,
     approved: bool,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -302,31 +302,31 @@ pub fn portal_update_status(
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
-    // try to look up the given portal in Storage
-    let addr = deps.api.addr_validate(&portal_addr.clone())?;
-    let mut portal = portal_read(deps.storage).load(&addr.as_bytes())?;
+    // try to look up the given vault in Storage
+    let addr = deps.api.addr_validate(&vault_addr.clone())?;
+    let mut vault = vault_read(deps.storage).load(&addr.as_bytes())?;
 
-    // update new portal approval status attribute from passed arg
-    portal.approved = approved;
-    portal_store(deps.storage).save(&addr.as_bytes(), &portal)?;
+    // update new vault approval status attribute from passed arg
+    vault.approved = approved;
+    vault_store(deps.storage).save(&addr.as_bytes(), &vault)?;
 
     Ok(Response::default())
 }
 
-pub fn portal_remove(
+pub fn vault_remove(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    portal_addr: String,
+    vault_addr: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
-    // try to look up the given portal
-    let _addr = deps.api.addr_validate(&portal_addr.clone())?;
-    // TO DO: remove the portal
+    // try to look up the given vault
+    let _addr = deps.api.addr_validate(&vault_addr.clone())?;
+    // TO DO: remove the vault
     Ok(Response::default())
 }
 

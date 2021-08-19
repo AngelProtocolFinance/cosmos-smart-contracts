@@ -30,7 +30,7 @@ pub fn instantiate(
         approved_charities: vec![],
         treasury: treasury,
         taxes: msg.taxes,
-        default_portal: msg.default_portal.unwrap_or(info.sender),
+        default_vault: msg.default_vault.unwrap_or(info.sender),
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -60,14 +60,14 @@ pub fn execute(
         ExecuteMsg::CharityRemove { charity } => {
             ExecuteHandlers::charity_remove(deps, env, info, charity)
         }
-        ExecuteMsg::PortalAdd(msg) => ExecuteHandlers::portal_add(deps, env, info, msg),
-        ExecuteMsg::PortalUpdateStatus {
-            portal_addr,
+        ExecuteMsg::VaultAdd(msg) => ExecuteHandlers::vault_add(deps, env, info, msg),
+        ExecuteMsg::VaultUpdateStatus {
+            vault_addr,
             approved,
-        } => ExecuteHandlers::portal_update_status(deps, env, info, portal_addr, approved),
+        } => ExecuteHandlers::vault_update_status(deps, env, info, vault_addr, approved),
 
-        ExecuteMsg::PortalRemove { portal_addr } => {
-            ExecuteHandlers::portal_remove(deps, env, info, portal_addr)
+        ExecuteMsg::VaultRemove { vault_addr } => {
+            ExecuteHandlers::vault_remove(deps, env, info, vault_addr)
         }
     }
 }
@@ -91,12 +91,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&QueryHandlers::query_approved_endowment_list(deps)?)
         }
         QueryMsg::EndowmentList {} => to_binary(&QueryHandlers::query_endowment_list(deps)?),
-        QueryMsg::ApprovedPortalList {} => {
-            to_binary(&QueryHandlers::query_approved_portal_list(deps)?)
+        QueryMsg::ApprovedVaultList {} => {
+            to_binary(&QueryHandlers::query_approved_vault_list(deps)?)
         }
-        QueryMsg::PortalList {} => to_binary(&QueryHandlers::query_portal_list(deps)?),
-        QueryMsg::Portal { portal_addr } => {
-            to_binary(&QueryHandlers::query_portal_details(deps, portal_addr)?)
+        QueryMsg::VaultList {} => to_binary(&QueryHandlers::query_vault_list(deps)?),
+        QueryMsg::Vault { vault_addr } => {
+            to_binary(&QueryHandlers::query_vault_details(deps, vault_addr)?)
         }
     }
 }

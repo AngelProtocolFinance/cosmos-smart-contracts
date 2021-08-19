@@ -15,7 +15,7 @@ fn proper_initialization() {
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_portal: None,
+        default_vault: None,
         taxes: TaxParameters {
             exit_tax: Decimal::percent(50),
             max_tax: Decimal::one(),
@@ -40,7 +40,7 @@ fn update_owner() {
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_portal: None,
+        default_vault: None,
         taxes: TaxParameters {
             exit_tax: Decimal::percent(50),
             max_tax: Decimal::one(),
@@ -74,7 +74,7 @@ fn migrate_contract() {
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_portal: None,
+        default_vault: None,
         taxes: TaxParameters {
             exit_tax: Decimal::percent(50),
             max_tax: Decimal::one(),
@@ -103,7 +103,7 @@ fn test_owner_can_add_remove_approved_charities() {
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_portal: None,
+        default_vault: None,
         taxes: TaxParameters {
             exit_tax: Decimal::percent(50),
             max_tax: Decimal::one(),
@@ -181,7 +181,7 @@ fn only_approved_charities_can_create_endowment_accounts() {
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_portal: None,
+        default_vault: None,
         taxes: TaxParameters {
             exit_tax: Decimal::percent(50),
             max_tax: Decimal::one(),

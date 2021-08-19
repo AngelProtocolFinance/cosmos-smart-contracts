@@ -3,11 +3,11 @@ use crate::anchor::register_deposit_token;
 use crate::anchor::HandleMsg;
 use crate::config;
 use crate::msg::{InitMsg, MigrateMsg};
-use angel_core::errors::portal::ContractError;
-use angel_core::messages::portal::{AccountTransferMsg, ExecuteMsg, QueryMsg};
+use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
-use angel_core::responses::portal::{ConfigResponse, ExchangeRateResponse};
+use angel_core::messages::vault::{AccountTransferMsg, ExecuteMsg, QueryMsg};
 use angel_core::responses::registrar::EndowmentListResponse;
+use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
 use angel_core::structs::EndowmentEntry;
 use angel_core::utils::deduct_tax;
 use cosmwasm_bignumber::Uint256;
@@ -41,10 +41,10 @@ pub fn init(
     let wasm_msg = WasmMsg::Instantiate {
         code_id: msg.deposit_token_code_id, // terraswap docs have wasm code for each network
         admin: Some(env.contract.address.to_string()),
-        label: "portal deposit token".to_string(),
+        label: "vault deposit token".to_string(),
         funds: vec![],
         msg: to_binary(&Cw20InitMsg {
-            name: "Angel Protocol - Portal Deposit Token - Anchor".to_string(),
+            name: "Angel Protocol - Vault Deposit Token - Anchor".to_string(),
             symbol: "PDTv1".to_string(),
             decimals: 6u8,
             initial_balances: vec![],
@@ -155,7 +155,7 @@ pub fn redeem_stable(
     Ok(Response::default())
 }
 
-// Replies back from the CW20 Deposit Token Init calls to a portal SC should
+// Replies back from the CW20 Deposit Token Init calls to a vault SC should
 // be caught and handled to register the newly created Deposit Token Addr
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
