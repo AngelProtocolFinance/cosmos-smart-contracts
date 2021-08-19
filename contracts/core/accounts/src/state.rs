@@ -1,6 +1,6 @@
 use angel_core::structs::{AcceptedTokens, SplitDetails, StrategyComponent};
 use cosmwasm_bignumber::Uint256;
-use cosmwasm_std::{Addr, Coin, Decimal, Env, Timestamp};
+use cosmwasm_std::{Addr, Decimal, Env, Timestamp};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

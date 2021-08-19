@@ -371,10 +371,10 @@ pub fn terminate_to_address(
     // validate the beneficiary address passed
     let beneficiary_addr = deps.api.addr_validate(&beneficiary)?;
 
-    let mut messages = vec![];
+    let messages = vec![];
     for prefix in ["locked", "liquid"].iter() {
         // this fails if no account is found
-        let account = ACCOUNTS.load(deps.storage, prefix.to_string())?;
+        let _account = ACCOUNTS.load(deps.storage, prefix.to_string())?;
         // we delete the account
         ACCOUNTS.remove(deps.storage, prefix.to_string());
         // TO DO: send all tokens out to the index fund sc
@@ -400,10 +400,10 @@ pub fn terminate_to_fund(
     if info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
-    let mut messages = vec![];
+    let messages = vec![];
     for prefix in ["locked", "liquid"].iter() {
         // this fails if no account is found
-        let account = ACCOUNTS.load(deps.storage, prefix.to_string())?;
+        let _account = ACCOUNTS.load(deps.storage, prefix.to_string())?;
         // we delete the account
         ACCOUNTS.remove(deps.storage, prefix.to_string());
         // TO DO: send all tokens out to the index fund sc
