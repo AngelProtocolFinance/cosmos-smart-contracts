@@ -23,7 +23,7 @@ pub fn query_account_details(
     let account = ACCOUNTS.load(deps.storage, account_type.clone())?;
     let details = AccountDetailsResponse {
         account_type: account_type,
-        balance: account.balance,
+        ust_balance: account.ust_balance,
     };
     Ok(details)
 }

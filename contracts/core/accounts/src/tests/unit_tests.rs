@@ -244,49 +244,6 @@ fn test_change_admin() {
 }
 
 #[test]
-fn test_balance_add_tokens_proper() {
-    let mut tokens = GenericBalance::default();
-    tokens.add_tokens(Balance::from(vec![coin(123, "atom"), coin(789, "eth")]));
-    tokens.add_tokens(Balance::from(vec![coin(456, "atom"), coin(12, "btc")]));
-    assert_eq!(
-        tokens.native,
-        vec![coin(579, "atom"), coin(789, "eth"), coin(12, "btc")]
-    );
-}
-
-#[test]
-fn test_balance_add_cw_tokens_proper() {
-    let mut tokens = GenericBalance::default();
-    let bar_token = Addr::unchecked("bar_token");
-    let foo_token = Addr::unchecked("foo_token");
-    tokens.add_tokens(Balance::Cw20(Cw20CoinVerified {
-        address: foo_token.clone(),
-        amount: Uint128::from(12345 as u128),
-    }));
-    tokens.add_tokens(Balance::Cw20(Cw20CoinVerified {
-        address: bar_token.clone(),
-        amount: Uint128::from(777 as u128),
-    }));
-    tokens.add_tokens(Balance::Cw20(Cw20CoinVerified {
-        address: foo_token.clone(),
-        amount: Uint128::from(23400 as u128),
-    }));
-    assert_eq!(
-        tokens.cw20,
-        vec![
-            Cw20CoinVerified {
-                address: foo_token,
-                amount: Uint128::from(35745 as u128)
-            },
-            Cw20CoinVerified {
-                address: bar_token,
-                amount: Uint128::from(777 as u128)
-            }
-        ]
-    );
-}
-
-#[test]
 fn migrate_contract() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters

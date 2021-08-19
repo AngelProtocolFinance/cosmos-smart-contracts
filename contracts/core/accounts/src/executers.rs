@@ -1,4 +1,4 @@
-use crate::state::{ACCOUNTS, CONFIG, ENDOWMENT};
+use crate::state::{InvestmentHolding, ACCOUNTS, CONFIG, ENDOWMENT, INVESTMENTS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg as VaultQuerier;
@@ -174,9 +174,9 @@ pub fn receive(
 pub fn vault_receipt(
     deps: DepsMut,
     info: MessageInfo,
-    _sender_addr: Addr,
+    sender_addr: Addr,
     balance: Uint128,
-    _msg: AccountTransferMsg,
+    msg: AccountTransferMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -189,7 +189,7 @@ pub fn vault_receipt(
     let vaults: Vec<YieldVault> = vaults_rsp.vaults;
     let pos = vaults
         .iter()
-        .position(|p| p.address.to_string() == info.sender.to_string());
+        .position(|p| p.address.to_string() == sender_addr.to_string());
     // reject if the sender was found in the list of vaults
     if pos == None {
         return Err(ContractError::Unauthorized {});
@@ -199,17 +199,37 @@ pub fn vault_receipt(
         return Err(ContractError::EmptyBalance {});
     }
 
-    // TO DO: update locked and liquid accounts with Deposit Tokens / UST recieved
-    // let mut account = ACCOUNTS.load(deps.storage, "locked".to_string())?;
-    // account
-    //     .balance
-    //     .add_tokens(Balance::from(vec![coin(u128::from(balance), "uusd")]));
-    // ACCOUNTS.save(deps.storage, "locked".to_string(), &account)?;
+    if info.funds.len() > 1 {
+        return Err(ContractError::TokenTypes {});
+    }
 
-    let res = Response::new()
-        .add_attribute("action", "vault_receipt")
-        .add_attribute("account_type", "locked");
-    Ok(res)
+    if info.funds[0].denom == "uusd" {
+        // funds go into general Account balance
+        if msg.locked > Uint256::zero() {
+            let mut account = ACCOUNTS.load(deps.storage, "locked".to_string())?;
+            account.ust_balance += msg.locked;
+            ACCOUNTS.save(deps.storage, "locked".to_string(), &account)?;
+        }
+        if msg.liquid > Uint256::zero() {
+            let mut account = ACCOUNTS.load(deps.storage, "liquid".to_string())?;
+            account.ust_balance += msg.liquid;
+            ACCOUNTS.save(deps.storage, "liquid".to_string(), &account)?;
+        }
+    } else {
+        // funds go into invested coin balances (per vault)
+        let mut investment = INVESTMENTS
+            .load(deps.storage, sender_addr.to_string())
+            .unwrap_or(InvestmentHolding {
+                denom: info.funds[0].clone().denom,
+                locked: Uint256::zero(),
+                liquid: Uint256::zero(),
+            });
+        investment.locked += msg.locked;
+        investment.liquid += msg.liquid;
+        INVESTMENTS.save(deps.storage, sender_addr.to_string(), &investment)?;
+    }
+
+    Ok(Response::new().add_attribute("action", "vault_receipt"))
 }
 
 pub fn deposit(
@@ -324,8 +344,8 @@ pub fn liquidate(
         let account = ACCOUNTS.load(deps.storage, prefix.to_string())?;
         // we delete the account
         ACCOUNTS.remove(deps.storage, prefix.to_string());
-        // send all tokens out to the index fund sc
-        let _messages = send_tokens(&config.index_fund_contract, &account.balance)?;
+        // TO DO: send all tokens out to the index fund sc
+        // let _messages = send_tokens(&config.index_fund_contract, &account.ust_balance)?;
     }
 
     Ok(Response::new()
@@ -354,8 +374,8 @@ pub fn terminate_to_address(
         let account = ACCOUNTS.load(deps.storage, prefix.to_string())?;
         // we delete the account
         ACCOUNTS.remove(deps.storage, prefix.to_string());
-        // send all tokens out to the index fund sc
-        messages.append(&mut send_tokens(&beneficiary_addr, &account.balance)?);
+        // TO DO: send all tokens out to the index fund sc
+        // messages.append(&mut send_tokens(&beneficiary_addr, &account.ust_balance)?);
     }
 
     let mut res = Response::new()
@@ -383,11 +403,11 @@ pub fn terminate_to_fund(
         let account = ACCOUNTS.load(deps.storage, prefix.to_string())?;
         // we delete the account
         ACCOUNTS.remove(deps.storage, prefix.to_string());
-        // send all tokens out to the index fund sc
-        messages.append(&mut send_tokens(
-            &config.index_fund_contract,
-            &account.balance,
-        )?);
+        // TO DO: send all tokens out to the index fund sc
+        // messages.append(&mut send_tokens(
+        //     &config.index_fund_contract,
+        //     &account.ust_balance,
+        // )?);
     }
 
     let mut res = Response::new()
@@ -453,7 +473,7 @@ pub fn redeem(
     //         },
     //     )?;
 
-    //     Ok(HandleResponse {
+    //     Ok(Response::new()
     //         messages: [
     //             vec![CosmosMsg::Wasm(WasmMsg::Execute {
     //                 contract_addr: deps.api.human_address(&config.dp_token)?,
@@ -479,6 +499,6 @@ pub fn redeem(
     //             log("redeem_amount", return_amount.amount),
     //         ],
     //         data: None,
-    //     })
+    //     )
     Ok(Response::default())
 }

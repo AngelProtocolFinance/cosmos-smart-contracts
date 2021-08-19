@@ -1,4 +1,5 @@
-use crate::structs::{GenericBalance, SplitDetails, StrategyComponent};
+use crate::structs::{SplitDetails, StrategyComponent};
+use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::Addr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -12,7 +13,7 @@ pub struct AccountListResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct AccountDetailsResponse {
     pub account_type: String, // prefix ("locked" or "liquid")
-    pub balance: GenericBalance,
+    pub ust_balance: Uint256,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

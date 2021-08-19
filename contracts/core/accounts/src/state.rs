@@ -1,5 +1,6 @@
-use angel_core::structs::{AcceptedTokens, GenericBalance, SplitDetails, StrategyComponent};
-use cosmwasm_std::{Addr, Decimal, Env, Timestamp};
+use angel_core::structs::{AcceptedTokens, SplitDetails, StrategyComponent};
+use cosmwasm_bignumber::Uint256;
+use cosmwasm_std::{Addr, Coin, Decimal, Env, Timestamp};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -48,8 +49,16 @@ impl Endowment {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Account {
-    pub balance: GenericBalance,
+    pub ust_balance: Uint256,
     pub rebalance: RebalanceDetails,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct InvestmentHolding {
+    pub denom: String,
+    pub locked: Uint256,
+    pub liquid: Uint256,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -77,3 +86,4 @@ impl RebalanceDetails {
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");
 pub const ACCOUNTS: Map<String, Account> = Map::new("account");
+pub const INVESTMENTS: Map<String, InvestmentHolding> = Map::new("investment");

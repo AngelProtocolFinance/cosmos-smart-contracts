@@ -65,4 +65,7 @@ pub enum ContractError {
 
     #[error("Only accept one coin type per deposit")]
     InvalidCoinsDeposited {},
+
+    #[error("Too many token types returned")]
+    TokenTypes {},
 }

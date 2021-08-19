@@ -5,7 +5,8 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
-use angel_core::structs::{AcceptedTokens, GenericBalance, StrategyComponent};
+use angel_core::structs::{AcceptedTokens, StrategyComponent};
+use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
     Response, StdResult, WasmQuery,
@@ -64,10 +65,7 @@ pub fn instantiate(
     )?;
 
     let account = Account {
-        balance: GenericBalance {
-            native: vec![],
-            cw20: vec![],
-        },
+        ust_balance: Uint256::zero(),
         rebalance: RebalanceDetails::default(),
     };
 
