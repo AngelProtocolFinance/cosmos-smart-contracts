@@ -1,9 +1,5 @@
-pub mod accounts_msg;
-pub mod accounts_rsp;
-pub mod error;
-pub mod index_fund_msg;
-pub mod index_fund_rsp;
-pub mod portal;
-pub mod registrar_msg;
-pub mod registrar_rsp;
+pub mod errors;
+pub mod messages;
+pub mod responses;
 pub mod structs;
+pub mod utils;

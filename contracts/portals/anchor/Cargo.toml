@@ -21,7 +21,6 @@ backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
 angel-core = { version = "0.1.0", path = "../../../packages/angel_core" }
-angel-portals = { version = "0.1.0", path = "../../../packages/angel_portals" }
 cosmwasm-bignumber = "2.2.0"
 cosmwasm-std = { version = "0.16.0", features = ["staking"] }
 cosmwasm-storage = { version = "0.16.0", features = ["iterator"] }

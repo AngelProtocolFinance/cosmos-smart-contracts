@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "packages/angel_core",
-    "packages/angel_portals",
     "contracts/core/accounts",
     "contracts/core/index-fund",
     "contracts/core/registrar",

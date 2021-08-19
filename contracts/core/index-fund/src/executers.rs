@@ -1,6 +1,6 @@
 use crate::state::{fund_read, fund_store, read_funds, CONFIG, STATE, TCA_DONATIONS};
-use angel_core::error::ContractError;
-use angel_core::index_fund_msg::*;
+use angel_core::errors::core::ContractError;
+use angel_core::messages::index_fund::*;
 use angel_core::structs::{GenericBalance, IndexFund, SplitDetails};
 use cosmwasm_std::{
     from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn,
@@ -404,7 +404,7 @@ pub fn donation_submsg(
 ) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: member_addr,
-        msg: to_binary(&angel_core::accounts_msg::DepositMsg {
+        msg: to_binary(&angel_core::messages::accounts::DepositMsg {
             locked_percentage: locked_percentage,
             liquid_percentage: liquid_percentage,
         })

@@ -1,5 +1,5 @@
 use crate::state::{ACCOUNTS, CONFIG, ENDOWMENT};
-use angel_core::accounts_rsp::*;
+use angel_core::responses::accounts::*;
 use cosmwasm_std::{Deps, StdResult};
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {

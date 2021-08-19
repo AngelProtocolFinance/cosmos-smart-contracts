@@ -1,5 +1,5 @@
 use crate::state::{portal_read, read_portals, read_registry_entries, CONFIG};
-use angel_core::registrar_rsp::*;
+use angel_core::responses::registrar::*;
 use cosmwasm_std::{Deps, StdResult};
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {

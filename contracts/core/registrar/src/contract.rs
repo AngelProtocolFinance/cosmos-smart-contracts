@@ -1,8 +1,8 @@
-use crate::executers::executers as ExecuteHandlers;
-use crate::queriers::registrar as QueryHandlers;
+use crate::executers as ExecuteHandlers;
+use crate::queriers as QueryHandlers;
 use crate::state::{Config, CONFIG};
-use angel_core::error::ContractError;
-use angel_core::registrar_msg::*;
+use angel_core::errors::core::ContractError;
+use angel_core::messages::registrar::*;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };

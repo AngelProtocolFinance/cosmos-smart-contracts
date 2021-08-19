@@ -1,5 +1,5 @@
+use crate::messages::portal::AccountTransferMsg;
 use crate::structs::{SplitDetails, StrategyComponent};
-use angel_portals::portal_msg::AccountTransferMsg;
 use cosmwasm_std::Decimal;
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;

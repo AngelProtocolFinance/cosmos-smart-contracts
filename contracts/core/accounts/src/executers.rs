@@ -1,10 +1,10 @@
 use crate::state::{ACCOUNTS, CONFIG, ENDOWMENT};
-use angel_core::accounts_msg::*;
-use angel_core::error::ContractError;
-use angel_core::registrar_msg::QueryMsg as PortalQuerier;
-use angel_core::registrar_rsp::{PortalDetailResponse, PortalListResponse};
+use angel_core::errors::core::ContractError;
+use angel_core::messages::accounts::*;
+use angel_core::messages::portal::AccountTransferMsg;
+use angel_core::messages::registrar::QueryMsg as PortalQuerier;
+use angel_core::responses::registrar::{PortalDetailResponse, PortalListResponse};
 use angel_core::structs::{GenericBalance, SplitDetails, StrategyComponent, YieldPortal};
-use angel_portals::portal_msg::AccountTransferMsg;
 use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
@@ -215,7 +215,7 @@ pub fn portal_receipt(
 pub fn deposit(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     sender_addr: Addr,
     balance: Uint128,
     msg: DepositMsg,

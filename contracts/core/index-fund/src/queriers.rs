@@ -1,5 +1,5 @@
 use crate::state::{fund_read, read_funds, CONFIG, STATE, TCA_DONATIONS};
-use angel_core::index_fund_rsp::*;
+use angel_core::responses::index_fund::*;
 use cosmwasm_std::{Deps, StdResult};
 use cw20::Cw20Coin;
 

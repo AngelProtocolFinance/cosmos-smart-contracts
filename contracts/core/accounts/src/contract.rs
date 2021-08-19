@@ -1,10 +1,10 @@
-use crate::executers::executers as AccountExecuters;
-use crate::queriers::accounts as AccountQueriers;
+use crate::executers as AccountExecuters;
+use crate::queriers as AccountQueriers;
 use crate::state::{Account, Config, Endowment, RebalanceDetails, ACCOUNTS, CONFIG, ENDOWMENT};
-use angel_core::accounts_msg::*;
-use angel_core::error::ContractError;
-use angel_core::registrar_msg::QueryMsg::Config as RegistrarConfig;
-use angel_core::registrar_rsp::ConfigResponse;
+use angel_core::errors::core::ContractError;
+use angel_core::messages::accounts::*;
+use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
+use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::{AcceptedTokens, GenericBalance, StrategyComponent};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,

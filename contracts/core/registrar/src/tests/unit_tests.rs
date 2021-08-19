@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, migrate, query};
 use angel_core::error::*;
-use angel_core::registrar_msg::*;
-use angel_core::registrar_rsp::*;
+use angel_core::messages::registrar::*;
+use angel_core::responces::registrar::*;
 use angel_core::structs::TaxParameters;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coins, from_binary, Decimal};

@@ -3,13 +3,13 @@ use crate::anchor::register_deposit_token;
 use crate::anchor::HandleMsg;
 use crate::config;
 use crate::msg::{InitMsg, MigrateMsg};
-use angel_core::registrar_msg::QueryMsg as RegistrarQuerier;
-use angel_core::registrar_rsp::EndowmentListResponse;
+use angel_core::errors::portal::ContractError;
+use angel_core::messages::portal::{AccountTransferMsg, ExecuteMsg, QueryMsg};
+use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
+use angel_core::responses::portal::{ConfigResponse, ExchangeRateResponse};
+use angel_core::responses::registrar::EndowmentListResponse;
 use angel_core::structs::EndowmentEntry;
-use angel_portals::error::ContractError;
-use angel_portals::portal_msg::{AccountTransferMsg, ExecuteMsg, QueryMsg};
-use angel_portals::portal_rsp::{ConfigResponse, ExchangeRateResponse};
-use angel_portals::utils::deduct_tax;
+use angel_core::utils::deduct_tax;
 use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{
     to_binary, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply,

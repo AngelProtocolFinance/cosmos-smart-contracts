@@ -1,6 +1,6 @@
 use crate::state::{portal_read, portal_store, registry_read, registry_store, CONFIG};
-use angel_core::error::ContractError;
-use angel_core::registrar_msg::*;
+use angel_core::errors::core::ContractError;
+use angel_core::messages::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails, YieldPortal};
 use cosmwasm_std::{
     to_binary, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
@@ -10,7 +10,7 @@ use cosmwasm_std::{
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account,
-        msg: to_binary(&angel_core::accounts_msg::UpdateEndowmentStatusMsg {
+        msg: to_binary(&angel_core::messages::accounts::UpdateEndowmentStatusMsg {
             deposit_approved: deposit,
             withdraw_approved: withdraw,
         })
@@ -29,7 +29,8 @@ fn build_account_status_change_msg(account: String, deposit: bool, withdraw: boo
 fn build_index_fund_member_removal_msg(account: String) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account.clone(),
-        msg: to_binary(&angel_core::index_fund_msg::RemoveMemberMsg { member: account }).unwrap(),
+        msg: to_binary(&angel_core::messages::index_fund::RemoveMemberMsg { member: account })
+            .unwrap(),
         funds: vec![],
     });
 
@@ -190,7 +191,7 @@ pub fn create_endowment(
         code_id: config.accounts_code_id,
         admin: Some(env.contract.address.to_string()),
         label: "new endowment accounts".to_string(),
-        msg: to_binary(&angel_core::accounts_msg::InstantiateMsg {
+        msg: to_binary(&angel_core::messages::accounts::InstantiateMsg {
             admin_addr: config.owner.to_string(),
             registrar_contract: env.contract.address.to_string(),
             index_fund_contract: config.index_fund_contract.to_string(),
@@ -273,7 +274,7 @@ pub fn charity_remove(
 pub fn portal_add(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: PortalAddMsg,
 ) -> Result<Response, ContractError> {
     // save the new portal to storage (defaults to false)
@@ -324,8 +325,8 @@ pub fn portal_remove(
         return Err(ContractError::Unauthorized {});
     }
     // try to look up the given portal
-    let addr = deps.api.addr_validate(&portal_addr.clone())?;
-    // remove the portal
+    let _addr = deps.api.addr_validate(&portal_addr.clone())?;
+    // TO DO: remove the portal
     Ok(Response::default())
 }
 

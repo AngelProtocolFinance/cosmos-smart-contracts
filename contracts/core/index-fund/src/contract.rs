@@ -1,8 +1,8 @@
-use crate::executers::executers as IndexFundExecuters;
-use crate::queriers::index_fund as IndexFundQueriers;
+use crate::executers as IndexFundExecuters;
+use crate::queriers as IndexFundQueriers;
 use crate::state::{Config, State, CONFIG, STATE};
-use angel_core::error::ContractError;
-use angel_core::index_fund_msg::*;
+use angel_core::errors::core::ContractError;
+use angel_core::messages::index_fund::*;
 use angel_core::structs::{AcceptedTokens, SplitDetails};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,

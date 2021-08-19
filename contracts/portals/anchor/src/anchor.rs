@@ -1,6 +1,6 @@
 use crate::config;
-use angel_portals::error::ContractError;
-use angel_portals::utils::deduct_tax;
+use angel_core::errors::portal::ContractError;
+use angel_core::utils::deduct_tax;
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
     to_binary, Addr, Coin, ContractResult, CosmosMsg, Deps, DepsMut, Env, QueryRequest, ReplyOn,
@@ -112,7 +112,7 @@ pub fn register_deposit_token(
                     id: 0,
                     msg: CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: config.registrar_contract.to_string(),
-                        msg: to_binary(&angel_core::registrar_msg::PortalAddMsg {
+                        msg: to_binary(&angel_core::messages::registrar::PortalAddMsg {
                             portal_addr: env.contract.address.to_string(),
                             input_denom: config.input_denom,
                             deposit_token: config.deposit_token.to_string(),
