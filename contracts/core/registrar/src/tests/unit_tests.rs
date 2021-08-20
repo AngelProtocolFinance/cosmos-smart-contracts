@@ -62,7 +62,6 @@ fn update_config() {
     let ap_team = "angelprotocolteamdano".to_string();
     let index_fund_contract = String::from("index_fund_contract");
     let instantiate_msg = InstantiateMsg {
-        approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         taxes: TaxParameters {
@@ -71,6 +70,7 @@ fn update_config() {
             min_tax: Decimal::zero(),
             step: Decimal::percent(5),
         },
+        default_vault: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -80,7 +80,8 @@ fn update_config() {
         accounts_code_id: None,
         index_fund_contract: index_fund_contract.clone(),
         approved_charities: None,
-        approved_coins: None,
+        vaults: None,
+        default_vault: None,
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
