@@ -70,7 +70,7 @@ pub fn execute(
 }
 
 /// Replies back to the registrar from instantiate calls to Accounts SC (@ some code_id)
-/// should be cuaght and handled to register the Endowment's newly created Accounts SC
+/// should be caught and handled to register the Endowment's newly created Accounts SC
 /// in the REGISTRY storage
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {

@@ -30,4 +30,5 @@ pub struct ConfigResponse {
     pub treasury: String,
     pub tax_rate: Decimal,
     pub default_vault: String,
+    pub index_fund_contract: Addr,
 }

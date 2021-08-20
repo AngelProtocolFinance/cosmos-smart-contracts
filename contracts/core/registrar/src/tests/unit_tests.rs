@@ -31,6 +31,7 @@ fn proper_initialization() {
 fn update_owner() {
     let mut deps = mock_dependencies(&[]);
     let ap_team = "angelprotocolteamdano".to_string();
+    let pleb = "plebAccount".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
@@ -40,12 +41,12 @@ fn update_owner() {
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
 
-    let info = mock_info("ill-wisher", &coins(1000, "earth"));
+    let info = mock_info(pleb.as_ref(), &coins(1000, "earth"));
     let msg = ExecuteMsg::UpdateOwner {
         new_owner: String::from("alice"),
     };
-    let _res = execute(deps.as_mut(), mock_env(), info, msg);
-    assert_eq!(ContractError::Unauthorized {}, _res.unwrap_err());
+    let res = execute(deps.as_mut(), mock_env(), info, msg);
+    assert_eq!(ContractError::Unauthorized {}, res.unwrap_err());
 
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let msg = ExecuteMsg::UpdateOwner {
@@ -53,6 +54,42 @@ fn update_owner() {
     };
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_eq!(0, res.messages.len());
+}
+
+#[test]
+fn update_config() {
+    let mut deps = mock_dependencies(&[]);
+    let ap_team = "angelprotocolteamdano".to_string();
+    let index_fund_contract = String::from("index_fund_contract");
+    let instantiate_msg = InstantiateMsg {
+        approved_coins: Some(vec![]),
+        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
+        treasury: ap_team.clone(),
+        taxes: TaxParameters {
+            exit_tax: Decimal::percent(50),
+            max_tax: Decimal::one(),
+            min_tax: Decimal::zero(),
+            step: Decimal::percent(5),
+        },
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let update_config_message = UpdateConfigMsg {
+        accounts_code_id: None,
+        index_fund_contract: index_fund_contract.clone(),
+        approved_charities: None,
+        approved_coins: None,
+    };
+    let msg = ExecuteMsg::UpdateConfig(update_config_message);
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config_response: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(index_fund_contract.clone(), config_response.index_fund_contract);
+    assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
 }
 
 #[test]
