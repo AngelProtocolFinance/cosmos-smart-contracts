@@ -10,8 +10,13 @@ use cosmwasm_std::{
     to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response,
     StdResult, SubMsg, WasmMsg,
 };
+use cw2::{get_contract_version, set_contract_version};
 use cw20::MinterResponse;
 use terraswap::token::InstantiateMsg as Cw20InitMsg;
+
+// version info for future migration info
+const CONTRACT_NAME: &str = "anchor";
+const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub fn init(
     deps: DepsMut,
@@ -19,6 +24,8 @@ pub fn init(
     info: MessageInfo,
     msg: InitMsg,
 ) -> Result<Response, ContractError> {
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     let moneymarket = deps.api.addr_validate(&msg.moneymarket)?;
     let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
 
@@ -79,7 +86,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
     }
 }
 
-pub fn query(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     let config = config::read(deps.storage)?;
 
     match msg {
@@ -113,6 +120,12 @@ pub fn query(deps: Deps, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let version = get_contract_version(deps.storage)?;
+    if version.contract != CONTRACT_NAME {
+        return Err(ContractError::CannotMigrate {
+            previous_contract: version.contract,
+        });
+    }
     Ok(Response::default())
 }
