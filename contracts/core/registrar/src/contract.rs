@@ -1,8 +1,8 @@
-use crate::executers::executers as RegistrarExecuters;
-use crate::queriers::registrar as RegistrarQueriers;
+use crate::executers;
+use crate::queriers;
 use crate::state::{Config, CONFIG};
-use angel_core::error::ContractError;
-use angel_core::registrar_msg::*;
+use angel_core::errors::core::ContractError;
+use angel_core::messages::registrar::*;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
@@ -25,12 +25,12 @@ pub fn instantiate(
 
     let configs = Config {
         owner: info.sender.clone(),
-        index_fund_contract: info.sender,
-        approved_coins: vec![],
+        index_fund_contract: info.sender.clone(),
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
         approved_charities: vec![],
         treasury: treasury,
         taxes: msg.taxes,
+        default_vault: msg.default_vault.unwrap_or(info.sender),
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -46,42 +46,26 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateEndowment(msg) => {
-            RegistrarExecuters::execute_create_endowment(deps, env, info, msg)
-        }
-        ExecuteMsg::UpdateConfig(msg) => {
-            RegistrarExecuters::execute_update_config(deps, env, info, msg)
-        }
+        ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
+        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
-            RegistrarExecuters::execute_update_endowment_status(deps, env, info, msg)
+            executers::update_endowment_status(deps, env, info, msg)
         }
         ExecuteMsg::UpdateOwner { new_owner } => {
-            RegistrarExecuters::execute_update_owner(deps, env, info, new_owner)
+            executers::update_owner(deps, env, info, new_owner)
         }
-        ExecuteMsg::VaultAdd {
-            vault_addr,
-            vault_name,
-            vault_description,
-        } => RegistrarExecuters::vault_add(
-            deps,
-            env,
-            info,
-            vault_addr,
-            vault_name,
-            vault_description,
-        ),
-        ExecuteMsg::VaultRemove { vault_addr } => {
-            RegistrarExecuters::vault_remove(deps, env, info, vault_addr)
+        ExecuteMsg::CharityAdd { charity } => executers::charity_add(deps, env, info, charity),
+        ExecuteMsg::CharityRemove { charity } => {
+            executers::charity_remove(deps, env, info, charity)
         }
+        ExecuteMsg::VaultAdd(msg) => executers::vault_add(deps, env, info, msg),
         ExecuteMsg::VaultUpdateStatus {
             vault_addr,
             approved,
-        } => RegistrarExecuters::vault_update_status(deps, env, info, vault_addr, approved),
-        ExecuteMsg::CharityAdd { charity } => {
-            RegistrarExecuters::charity_add(deps, env, info, charity)
-        }
-        ExecuteMsg::CharityRemove { charity } => {
-            RegistrarExecuters::charity_remove(deps, env, info, charity)
+        } => executers::vault_update_status(deps, env, info, vault_addr, approved),
+
+        ExecuteMsg::VaultRemove { vault_addr } => {
+            executers::vault_remove(deps, env, info, vault_addr)
         }
     }
 }
@@ -92,7 +76,7 @@ pub fn execute(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        0 => RegistrarExecuters::new_accounts_reply(deps, env, msg.result),
+        0 => executers::new_accounts_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }
@@ -100,12 +84,16 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::Config {} => to_binary(&RegistrarQueriers::query_config(deps)?),
-        QueryMsg::EndowmentList {} => to_binary(&RegistrarQueriers::query_endowment_list(deps)?),
-        QueryMsg::Vault { vault_addr } => {
-            to_binary(&RegistrarQueriers::query_vault_details(deps, vault_addr)?)
+        QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
+        QueryMsg::ApprovedEndowmentList {} => {
+            to_binary(&queriers::query_approved_endowment_list(deps)?)
         }
-        QueryMsg::VaultList {} => to_binary(&RegistrarQueriers::query_vault_list(deps)?),
+        QueryMsg::EndowmentList {} => to_binary(&queriers::query_endowment_list(deps)?),
+        QueryMsg::ApprovedVaultList {} => to_binary(&queriers::query_approved_vault_list(deps)?),
+        QueryMsg::VaultList {} => to_binary(&queriers::query_vault_list(deps)?),
+        QueryMsg::Vault { vault_addr } => {
+            to_binary(&queriers::query_vault_details(deps, vault_addr)?)
+        }
     }
 }
 

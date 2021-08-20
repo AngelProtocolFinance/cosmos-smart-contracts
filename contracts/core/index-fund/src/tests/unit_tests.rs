@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, migrate, query};
-use angel_core::error::*;
-use angel_core::index_fund_msg::*;
-use angel_core::index_fund_rsp::*;
+use angel_core::errors::core::*;
+use angel_core::messages::index_fund::*;
+use angel_core::responses::index_fund::*;
 use angel_core::structs::IndexFund;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coins, from_binary};

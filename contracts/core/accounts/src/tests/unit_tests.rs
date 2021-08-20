@@ -1,8 +1,8 @@
 use crate::contract::{execute, instantiate, migrate, query};
-use angel_core::accounts_msg::*;
-use angel_core::accounts_rsp::*;
-use angel_core::error::*;
-use angel_core::structs::{GenericBalance, SplitDetails, Strategy, StrategyComponent};
+use angel_core::errors::core::*;
+use angel_core::messages::accounts::*;
+use angel_core::responses::accounts::*;
+use angel_core::structs::{GenericBalance, SplitDetails, StrategyComponent};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coin, coins, from_binary, Addr, Decimal, Uint128};
 use cw20::{Balance, Cw20CoinVerified};
@@ -244,49 +244,6 @@ fn test_change_admin() {
 }
 
 #[test]
-fn test_balance_add_tokens_proper() {
-    let mut tokens = GenericBalance::default();
-    tokens.add_tokens(Balance::from(vec![coin(123, "atom"), coin(789, "eth")]));
-    tokens.add_tokens(Balance::from(vec![coin(456, "atom"), coin(12, "btc")]));
-    assert_eq!(
-        tokens.native,
-        vec![coin(579, "atom"), coin(789, "eth"), coin(12, "btc")]
-    );
-}
-
-#[test]
-fn test_balance_add_cw_tokens_proper() {
-    let mut tokens = GenericBalance::default();
-    let bar_token = Addr::unchecked("bar_token");
-    let foo_token = Addr::unchecked("foo_token");
-    tokens.add_tokens(Balance::Cw20(Cw20CoinVerified {
-        address: foo_token.clone(),
-        amount: Uint128::from(12345 as u128),
-    }));
-    tokens.add_tokens(Balance::Cw20(Cw20CoinVerified {
-        address: bar_token.clone(),
-        amount: Uint128::from(777 as u128),
-    }));
-    tokens.add_tokens(Balance::Cw20(Cw20CoinVerified {
-        address: foo_token.clone(),
-        amount: Uint128::from(23400 as u128),
-    }));
-    assert_eq!(
-        tokens.cw20,
-        vec![
-            Cw20CoinVerified {
-                address: foo_token,
-                amount: Uint128::from(35745 as u128)
-            },
-            Cw20CoinVerified {
-                address: bar_token,
-                amount: Uint128::from(777 as u128)
-            }
-        ]
-    );
-}
-
-#[test]
 fn migrate_contract() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
@@ -350,99 +307,82 @@ fn test_update_strategy() {
     assert_eq!(0, res.messages.len());
 
     // sum of the invested strategy components percentages is not equal 100%
-    let strategy = Strategy {
-        invested: vec![
+    let msg = ExecuteMsg::UpdateStrategy {
+        strategies: vec![
             StrategyComponent {
-                address: Addr::unchecked("cash_strategy_component_addr"),
-                percentage: Decimal::percent(20),
+                vault: Addr::unchecked("cash_strategy_component_addr"),
+                locked_percentage: Decimal::percent(20),
+                liquid_percentage: Decimal::percent(20),
             },
             StrategyComponent {
-                address: Addr::unchecked("tech_strategy_component_addr"),
-                percentage: Decimal::percent(60),
+                vault: Addr::unchecked("tech_strategy_component_addr"),
+                locked_percentage: Decimal::percent(60),
+                liquid_percentage: Decimal::percent(60),
             },
         ],
-    };
-
-    let msg = ExecuteMsg::UpdateStrategy {
-        account_type: String::from("liquid"),
-        strategy: strategy,
     };
 
     let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth"));
     let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
     assert_eq!(err, ContractError::InvalidStrategyAllocation {});
-
-    let strategy = Strategy {
-        invested: vec![
+    let msg = ExecuteMsg::UpdateStrategy {
+        strategies: vec![
             StrategyComponent {
-                address: Addr::unchecked("cash_strategy_component_addr"),
-                percentage: Decimal::percent(40),
+                vault: Addr::unchecked("cash_strategy_component_addr"),
+                locked_percentage: Decimal::percent(40),
+                liquid_percentage: Decimal::percent(40),
             },
             StrategyComponent {
-                address: Addr::unchecked("tech_strategy_component_addr"),
-                percentage: Decimal::percent(20),
+                vault: Addr::unchecked("tech_strategy_component_addr"),
+                locked_percentage: Decimal::percent(20),
+                liquid_percentage: Decimal::percent(20),
             },
             StrategyComponent {
-                address: Addr::unchecked("cash_strategy_component_addr"),
-                percentage: Decimal::percent(40),
+                vault: Addr::unchecked("cash_strategy_component_addr"),
+                locked_percentage: Decimal::percent(40),
+                liquid_percentage: Decimal::percent(40),
             },
         ],
-    };
-
-    let msg = ExecuteMsg::UpdateStrategy {
-        account_type: String::from("liquid"),
-        strategy: strategy,
     };
 
     let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth"));
     let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
     assert_eq!(err, ContractError::StrategyComponentsNotUnique {});
-
-    let strategy = Strategy {
-        invested: vec![
+    let msg = ExecuteMsg::UpdateStrategy {
+        strategies: vec![
             StrategyComponent {
-                address: Addr::unchecked("cash_strategy_component_addr"),
-                percentage: Decimal::percent(40),
+                vault: Addr::unchecked("cash_strategy_component_addr"),
+                locked_percentage: Decimal::percent(40),
+                liquid_percentage: Decimal::percent(40),
             },
             StrategyComponent {
-                address: Addr::unchecked("tech_strategy_component_addr"),
-                percentage: Decimal::percent(60),
+                vault: Addr::unchecked("tech_strategy_component_addr"),
+                locked_percentage: Decimal::percent(60),
+                liquid_percentage: Decimal::percent(60),
             },
         ],
     };
-
-    let msg = ExecuteMsg::UpdateStrategy {
-        account_type: String::from("liquid"),
-        strategy: strategy,
-    };
-
     let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth"));
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
     assert_eq!(0, res.messages.len());
 
-    let strategy = Strategy {
-        invested: vec![
+    let msg = ExecuteMsg::UpdateStrategy {
+        strategies: vec![
             StrategyComponent {
-                address: Addr::unchecked("cash_strategy_component_addr"),
-                percentage: Decimal::percent(40),
+                vault: Addr::unchecked("cash_strategy_component_addr"),
+                locked_percentage: Decimal::percent(40),
+                liquid_percentage: Decimal::percent(40),
             },
             StrategyComponent {
-                address: Addr::unchecked("tech_strategy_component_addr"),
-                percentage: Decimal::percent(60),
+                vault: Addr::unchecked("tech_strategy_component_addr"),
+                locked_percentage: Decimal::percent(60),
+                liquid_percentage: Decimal::percent(60),
             },
         ],
     };
-
-    let msg = ExecuteMsg::UpdateStrategy {
-        account_type: String::from("liquid"),
-        strategy: strategy,
-    };
-
     let info = mock_info(pleb.as_ref(), &coins(100000, "earth"));
     let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
     assert_eq!(err, ContractError::Unauthorized {});
 }

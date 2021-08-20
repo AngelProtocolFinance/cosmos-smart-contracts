@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, migrate, query};
-use angel_core::error::*;
-use angel_core::registrar_msg::*;
-use angel_core::registrar_rsp::*;
+use angel_core::errors::core::*;
+use angel_core::messages::registrar::*;
+use angel_core::responses::registrar::*;
 use angel_core::structs::TaxParameters;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coins, from_binary, Decimal};
@@ -13,9 +13,9 @@ fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
     let ap_team = "angelprotocolteamdano".to_string();
     let instantiate_msg = InstantiateMsg {
-        approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
+        default_vault: None,
         taxes: TaxParameters {
             exit_tax: Decimal::percent(50),
             max_tax: Decimal::one(),
@@ -38,9 +38,9 @@ fn update_owner() {
     let mut deps = mock_dependencies(&[]);
     let ap_team = "angelprotocolteamdano".to_string();
     let instantiate_msg = InstantiateMsg {
-        approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
+        default_vault: None,
         taxes: TaxParameters {
             exit_tax: Decimal::percent(50),
             max_tax: Decimal::one(),
@@ -72,9 +72,9 @@ fn migrate_contract() {
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let instantiate_msg = InstantiateMsg {
-        approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
+        default_vault: None,
         taxes: TaxParameters {
             exit_tax: Decimal::percent(50),
             max_tax: Decimal::one(),
@@ -101,9 +101,9 @@ fn test_owner_can_add_remove_approved_charities() {
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
     let pleb = "plebAccount".to_string();
     let instantiate_msg = InstantiateMsg {
-        approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
+        default_vault: None,
         taxes: TaxParameters {
             exit_tax: Decimal::percent(50),
             max_tax: Decimal::one(),
@@ -179,9 +179,9 @@ fn only_approved_charities_can_create_endowment_accounts() {
     let good_charity_addr = "GOODQTWTETGSGSRHJTUIQADG".to_string();
     let bad_charity_addr = "BADQTWTETGSGSRHJTUIQADG".to_string();
     let instantiate_msg = InstantiateMsg {
-        approved_coins: Some(vec![]),
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
+        default_vault: None,
         taxes: TaxParameters {
             exit_tax: Decimal::percent(50),
             max_tax: Decimal::one(),

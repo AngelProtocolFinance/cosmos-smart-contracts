@@ -4,10 +4,12 @@ use std::fs::create_dir_all;
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
 use accounts::state::Config;
-use angel_core::accounts_msg::{
+use angel_core::messages::accounts::{
     ExecuteMsg, InstantiateMsg, QueryMsg, ReceiveMsg, UpdateEndowmentSettingsMsg,
 };
-use angel_core::accounts_rsp::{AccountDetailsResponse, AccountListResponse, ConfigResponse};
+use angel_core::responses::accounts::{
+    AccountDetailsResponse, AccountListResponse, ConfigResponse,
+};
 
 fn main() {
     let mut out_dir = current_dir().unwrap();

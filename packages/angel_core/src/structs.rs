@@ -5,24 +5,20 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct StrategyComponent {
-    pub address: Addr, // Vault SC Address
-    pub percentage: Decimal,
+pub struct YieldVault {
+    pub address: Addr,
+    pub input_denom: String,
+    pub yield_token: Addr,
+    pub deposit_token: Addr,
+    pub approved: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct Strategy {
-    pub invested: Vec<StrategyComponent>,
-}
-
-// TO DO: Add impl function to check strategy percentages + cash remaining all sums to 100%
-impl Strategy {
-    pub fn default() -> Self {
-        Strategy {
-            invested: vec![],
-        }
-    }
+pub struct StrategyComponent {
+    pub vault: Addr,                // Vault SC Address
+    pub locked_percentage: Decimal, // percentage of funds to invest
+    pub liquid_percentage: Decimal, // percentage of funds to invest
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
@@ -49,15 +45,6 @@ impl SplitDetails {
             default: Decimal::percent(50),
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct AssetVault {
-    pub address: Addr,
-    pub name: String,
-    pub description: String,
-    pub approved: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

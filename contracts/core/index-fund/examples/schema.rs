@@ -1,4 +1,4 @@
-use angel_core::index_fund_msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use angel_core::messages::index_fund::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use angel_core::structs::IndexFund;
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use index_fund::state::Config;

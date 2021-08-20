@@ -8,8 +8,8 @@
 core platform of smart contracts that support multiple verticals of specialized smart contracts. 
 - [Index Fund](./contracts/core/index-fund) - Contract that acts as a gateway for donors and Terra Charity Alliance members to donate to a groups of charitites as a single Index Fund (grouped by UN SDGs).
 
-### Portal Contracts:
-- [Portal](./contracts/portal) - Portal contracts at as bridges, allowing charity endowment accounts to invest their funds into various TeFi/DeFi protocols in order to earn yield, based on their Strategy allocations.
+### Vault Contracts:
+- [Vault](./contracts/vault) - Vault contracts at as bridges, allowing charity endowment accounts to invest their funds into various TeFi/DeFi protocols in order to earn yield, based on their Strategy allocations.
 
 ## Getting setup for development
 
