@@ -1,24 +1,22 @@
 use crate::anchor;
-use crate::anchor::register_deposit_token;
 use crate::config;
 use crate::executers;
 use crate::msg::{InitMsg, MigrateMsg};
+use crate::queriers;
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn,
-    Response, StdResult, SubMsg, WasmMsg,
+    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, ReplyOn, Response,
+    StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw2::{get_contract_version, set_contract_version};
-use cw20::MinterResponse;
-use terraswap::token::InstantiateMsg as Cw20InitMsg;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "anchor";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
@@ -41,32 +39,40 @@ pub fn instantiate(
 
     config::store(deps.storage, &config)?;
 
-    let wasm_msg = WasmMsg::Instantiate {
-        code_id: msg.deposit_token_code_id, // terraswap docs have wasm code for each network
-        admin: Some(env.contract.address.to_string()),
-        label: "vault deposit token".to_string(),
-        funds: vec![],
-        msg: to_binary(&Cw20InitMsg {
-            name: "Angel Protocol - Vault Deposit Token - Anchor".to_string(),
-            symbol: "PDTv1".to_string(),
-            decimals: 6u8,
-            initial_balances: vec![],
-            mint: Some(MinterResponse {
-                minter: env.contract.address.to_string(),
-                cap: None,
-            }),
-        })?,
-    };
+    // create initial accounts
+    let total_supply = Uint128::zero();
 
-    Ok(Response::new().add_submessage(SubMsg {
-        id: 0,
-        msg: CosmosMsg::Wasm(wasm_msg),
-        gas_limit: None,
-        reply_on: ReplyOn::Success,
-    }))
+    // store token info
+    let token_info = config::TokenInfo {
+        name: msg.name,
+        symbol: msg.symbol,
+        decimals: msg.decimals,
+        mint: None,
+        total_supply,
+    };
+    config::TOKEN_INFO.save(deps.storage, &token_info)?;
+
+    Ok(Response::new()
+        .add_submessage(SubMsg {
+            id: 0,
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.registrar_contract.to_string(),
+                msg: to_binary(&angel_core::messages::registrar::VaultAddMsg {
+                    vault_addr: env.contract.address.to_string(),
+                    input_denom: config.input_denom,
+                    deposit_token: token_info.symbol.clone(),
+                    yield_token: config.yield_token.to_string(),
+                })
+                .unwrap(),
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Never,
+        })
+        .add_attribute("register_vault", token_info.symbol))
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -79,35 +85,26 @@ pub fn execute(
     }
 }
 
-// Replies back from the CW20 Deposit Token Init calls to a vault SC should
-// be caught and handled to register the newly created Deposit Token Addr
-pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
-    match msg.id {
-        0 => register_deposit_token(deps, env, msg.result),
-        _ => Err(ContractError::Unauthorized {}),
-    }
-}
-
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     let config = config::read(deps.storage)?;
 
     match msg {
         QueryMsg::Config {} => to_binary(&ConfigResponse {
             input_denom: config.input_denom.clone(),
-            yield_token: config.yield_token.clone().to_string(),
-            deposit_token: config.deposit_token.clone().to_string(),
+            yield_token: config.yield_token.to_string(),
+            deposit_token: config.deposit_token.to_string(),
         }),
+        QueryMsg::Balance { address } => to_binary(&queriers::query_balance(deps, address)),
+        QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
         QueryMsg::ExchangeRate { input_denom: _ } => {
             let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;
 
             to_binary(&ExchangeRateResponse {
-                exchange_rate: epoch_state.exchange_rate.clone(),
-                yield_token_supply: epoch_state.aterra_supply.clone(),
+                exchange_rate: epoch_state.exchange_rate,
+                yield_token_supply: epoch_state.aterra_supply,
             })
         }
-        // DepositAmountOf { account } => ,
-        // TotalDepositAmount {} => ,
         QueryMsg::Deposit { amount } => to_binary(&anchor::deposit_stable_msg(
             deps,
             &config.moneymarket,
@@ -123,7 +120,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     let version = get_contract_version(deps.storage)?;
     if version.contract != CONTRACT_NAME {

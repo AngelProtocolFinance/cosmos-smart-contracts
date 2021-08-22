@@ -9,6 +9,15 @@ pub enum ContractError {
     #[error("Unauthorized")]
     Unauthorized {},
 
+    #[error("Cannot set to own account")]
+    CannotSetOwnAccount {},
+
+    #[error("Invalid zero amount")]
+    InvalidZeroAmount {},
+
+    #[error("Minting cannot exceed the cap")]
+    CannotExceedCap {},
+
     #[error("Cannot migrate from different contract type: {previous_contract}")]
     CannotMigrate { previous_contract: String },
 

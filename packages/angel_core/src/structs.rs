@@ -2,6 +2,7 @@ use cosmwasm_std::{Addr, Coin, Decimal, Env, Timestamp};
 use cw20::{Balance, Cw20CoinVerified};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -63,15 +64,18 @@ pub enum EndowmentStatus {
     Closed = 3,   // Status for final Liquidations(good-standing) or Terminations(poor-standing)
 }
 
-impl EndowmentStatus {
-    pub fn to_string(&self) -> String {
-        let val = match self {
-            EndowmentStatus::Inactive => "0",
-            EndowmentStatus::Approved => "1",
-            EndowmentStatus::Frozen => "2",
-            EndowmentStatus::Closed => "3",
-        };
-        return val.to_string();
+impl fmt::Display for EndowmentStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                EndowmentStatus::Inactive => "0",
+                EndowmentStatus::Approved => "1",
+                EndowmentStatus::Frozen => "2",
+                EndowmentStatus::Closed => "3",
+            }
+        )
     }
 }
 
@@ -120,18 +124,10 @@ impl AcceptedTokens {
         }
     }
     pub fn native_valid(&self, denom: String) -> bool {
-        if let Some(_i) = self.native.iter().position(|d| *d == denom) {
-            true
-        } else {
-            false
-        }
+        matches!(self.native.iter().position(|d| *d == denom), Some(_i))
     }
     pub fn cw20_valid(&self, addr: String) -> bool {
-        if let Some(_i) = self.cw20.iter().position(|a| *a == addr) {
-            true
-        } else {
-            false
-        }
+        matches!(self.cw20.iter().position(|a| *a == addr), Some(_i))
     }
 }
 

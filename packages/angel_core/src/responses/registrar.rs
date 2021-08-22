@@ -1,4 +1,5 @@
-use crate::structs::{EndowmentEntry, TaxParameters, YieldVault};
+use crate::structs::{EndowmentEntry, YieldVault};
+use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -27,6 +28,6 @@ pub struct ConfigResponse {
     pub owner: String,
     pub accounts_code_id: u64,
     pub treasury: String,
-    pub taxes: TaxParameters,
+    pub tax_rate: Decimal,
     pub default_vault: String,
 }

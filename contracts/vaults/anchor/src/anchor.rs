@@ -1,10 +1,7 @@
-use crate::config;
-use angel_core::errors::vault::ContractError;
-use angel_core::utils::deduct_tax;
+use crate::utils::deduct_tax;
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
-    to_binary, Addr, Coin, ContractResult, CosmosMsg, Deps, DepsMut, Env, QueryRequest, ReplyOn,
-    Response, StdResult, SubMsg, SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, Coin, CosmosMsg, Deps, QueryRequest, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ExecuteMsg;
 use schemars::JsonSchema;
@@ -81,53 +78,6 @@ pub enum Cw20HookMsg {
     /// Return stable coins to a user
     /// according to exchange rate
     RedeemStable {},
-}
-
-pub fn register_deposit_token(
-    deps: DepsMut,
-    env: Env,
-    msg: ContractResult<SubMsgExecutionResponse>,
-) -> Result<Response, ContractError> {
-    match msg {
-        ContractResult::Ok(subcall) => {
-            let mut token_address = String::from("");
-            for event in subcall.events {
-                if event.ty == "instantiate_contract".to_string() {
-                    for attrb in event.attributes {
-                        if attrb.key == "contract_address" {
-                            token_address = attrb.value;
-                        }
-                    }
-                }
-            }
-            // Register the new Endowment on success Reply
-            let mut config = config::read(deps.storage)?;
-            if config.deposit_token != config.owner {
-                return Err(ContractError::Unauthorized {});
-            }
-            config.deposit_token = deps.api.addr_validate(&token_address)?;
-            config::store(deps.storage, &config)?;
-            Ok(Response::new()
-                .add_submessage(SubMsg {
-                    id: 0,
-                    msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: config.registrar_contract.to_string(),
-                        msg: to_binary(&angel_core::messages::registrar::VaultAddMsg {
-                            vault_addr: env.contract.address.to_string(),
-                            input_denom: config.input_denom,
-                            deposit_token: config.deposit_token.to_string(),
-                            yield_token: config.yield_token.to_string(),
-                        })
-                        .unwrap(),
-                        funds: vec![],
-                    }),
-                    gas_limit: None,
-                    reply_on: ReplyOn::Never,
-                })
-                .add_attribute("register_deposit_token", config.deposit_token.to_string()))
-        }
-        ContractResult::Err(_) => Err(ContractError::VaultNotCreated {}),
-    }
 }
 
 pub fn deposit_stable_msg(

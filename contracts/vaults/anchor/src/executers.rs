@@ -1,21 +1,22 @@
 use crate::anchor::{epoch_state, Cw20HookMsg, HandleMsg};
 use crate::config;
+use crate::config::{BALANCES, TOKEN_INFO};
+use crate::utils::deduct_tax;
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::AccountTransferMsg;
 use angel_core::responses::registrar::EndowmentListResponse;
 use angel_core::structs::EndowmentEntry;
-use angel_core::utils::deduct_tax;
 use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{
     to_binary, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest, Response,
-    WasmMsg, WasmQuery,
+    StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ExecuteMsg;
 
 pub fn deposit_stable(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: AccountTransferMsg,
 ) -> Result<Response, ContractError> {
@@ -28,9 +29,7 @@ pub fn deposit_stable(
             msg: to_binary(&RegistrarQueryMsg::ApprovedEndowmentList {})?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments
-        .iter()
-        .position(|p| p.address.to_string() == info.sender.to_string());
+    let pos = endowments.iter().position(|p| p.address == info.sender);
     // reject if the sender was found in the list of endowments
     if pos == None {
         return Err(ContractError::Unauthorized {});
@@ -43,7 +42,6 @@ pub fn deposit_stable(
             amount: info.funds[0].amount,
         },
     )?;
-
     let after_tax_locked = after_taxes
         .amount
         .clone()
@@ -52,6 +50,20 @@ pub fn deposit_stable(
         .amount
         .clone()
         .multiply_ratio(msg.liquid, info.funds[0].amount);
+
+    // update supply
+    let mut token_info = TOKEN_INFO.load(deps.storage)?;
+    token_info.total_supply += after_taxes.amount;
+    TOKEN_INFO.save(deps.storage, &token_info)?;
+
+    // add minted amount to recipient balance
+    BALANCES.update(
+        deps.storage,
+        &info.sender,
+        |balance: Option<Uint128>| -> StdResult<_> {
+            Ok(balance.unwrap_or_default() + after_taxes.amount)
+        },
+    )?;
 
     let res = Response::new()
         .add_attribute("action", "deposit")
@@ -65,14 +77,6 @@ pub fn deposit_stable(
                 funds: vec![after_taxes.clone()],
             }),
             CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.deposit_token.to_string(),
-                msg: to_binary(&Cw20ExecuteMsg::Mint {
-                    recipient: env.contract.address.to_string(),
-                    amount: after_taxes.amount.clone(),
-                })?,
-                funds: vec![],
-            }),
-            CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: info.sender.to_string(),
                 msg: to_binary(&AccountTransferMsg {
                     locked: Uint256::from(after_tax_locked),
@@ -80,7 +84,7 @@ pub fn deposit_stable(
                 })?,
                 funds: vec![Coin {
                     denom: "PDTv1".to_string(),
-                    amount: after_taxes.amount.clone(),
+                    amount: after_taxes.amount,
                 }],
             }),
         ]);
@@ -103,9 +107,7 @@ pub fn redeem_stable(
             msg: to_binary(&RegistrarQueryMsg::ApprovedEndowmentList {})?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments
-        .iter()
-        .position(|p| p.address.to_string() == info.sender.to_string());
+    let pos = endowments.iter().position(|p| p.address == info.sender);
     // reject if the sender was found in the list of endowments
     if pos == None {
         return Err(ContractError::Unauthorized {});
@@ -121,7 +123,6 @@ pub fn redeem_stable(
             amount: info.funds[0].amount,
         },
     )?;
-
     let after_tax_locked = after_taxes
         .amount
         .clone()
@@ -130,6 +131,23 @@ pub fn redeem_stable(
         .amount
         .clone()
         .multiply_ratio(msg.liquid, info.funds[0].amount);
+
+    // lower balance
+    BALANCES.update(
+        deps.storage,
+        &info.sender,
+        |balance: Option<Uint128>| -> StdResult<_> {
+            Ok(balance
+                .unwrap_or_default()
+                .checked_sub(after_taxes.amount)?)
+        },
+    )?;
+
+    // reduce total_supply
+    TOKEN_INFO.update(deps.storage, |mut info| -> StdResult<_> {
+        info.total_supply = info.total_supply.checked_sub(after_taxes.amount)?;
+        Ok(info)
+    })?;
 
     let res = Response::new()
         .add_attribute("action", "redeem")
@@ -147,13 +165,6 @@ pub fn redeem_stable(
                 funds: vec![],
             }),
             CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.deposit_token.to_string(),
-                msg: to_binary(&Cw20ExecuteMsg::Burn {
-                    amount: after_taxes.amount.clone(),
-                })?,
-                funds: vec![],
-            }),
-            CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: info.sender.to_string(),
                 msg: to_binary(&AccountTransferMsg {
                     locked: Uint256::from(after_tax_locked),
@@ -161,7 +172,7 @@ pub fn redeem_stable(
                 })?,
                 funds: vec![Coin {
                     denom: "uusd".to_string(),
-                    amount: after_taxes.amount.clone(),
+                    amount: after_taxes.amount,
                 }],
             }),
         ]);

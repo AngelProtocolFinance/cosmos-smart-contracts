@@ -1,4 +1,4 @@
-use crate::structs::{EndowmentStatus, SplitDetails, TaxParameters};
+use crate::structs::EndowmentStatus;
 use cosmwasm_std::{Addr, Api, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -10,7 +10,7 @@ pub struct MigrateMsg {}
 pub struct InstantiateMsg {
     pub accounts_code_id: Option<u64>,
     pub treasury: String,
-    pub taxes: TaxParameters,
+    pub tax_rate: u64,
     pub default_vault: Option<Addr>,
 }
 
@@ -41,7 +41,6 @@ pub struct CreateEndowmentMsg {
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
-    pub split_to_liquid: Option<SplitDetails>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
