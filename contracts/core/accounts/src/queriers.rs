@@ -22,7 +22,7 @@ pub fn query_account_details(
     // this fails if no account is found
     let account = ACCOUNTS.load(deps.storage, account_type.clone())?;
     let details = AccountDetailsResponse {
-        account_type: account_type,
+        account_type,
         ust_balance: account.ust_balance,
     };
     Ok(details)

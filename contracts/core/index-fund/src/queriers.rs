@@ -36,7 +36,7 @@ pub fn tca_list(deps: Deps) -> StdResult<TcaListResponse> {
 pub fn funds_list(deps: Deps) -> StdResult<FundListResponse> {
     // Return a list of Index Funds
     let funds = read_funds(deps.storage)?;
-    Ok(FundListResponse { funds: funds })
+    Ok(FundListResponse { funds })
 }
 
 pub fn fund_details(deps: Deps, fund_id: u64) -> StdResult<FundDetailsResponse> {
@@ -76,5 +76,5 @@ pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
             });
         }
     }
-    Ok(DonationListResponse { donors: donors })
+    Ok(DonationListResponse { donors })
 }

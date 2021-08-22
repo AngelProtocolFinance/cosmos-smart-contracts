@@ -139,18 +139,16 @@ pub fn update_config(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    if info.sender.ne(&config.owner.clone()) {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
     let index_fund_contract_addr = deps.api.addr_validate(&msg.index_fund_contract)?;
     let charities_addr_list = msg.charities_list(deps.api)?;
-    let accounts_code_id = msg
-        .accounts_code_id
-        .unwrap_or(config.accounts_code_id.clone());
+    let accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
     let default_vault = deps.api.addr_validate(
         &msg.default_vault
-            .unwrap_or(config.default_vault.clone().to_string()),
+            .unwrap_or_else(|| config.default_vault.to_string()),
     )?;
 
     // update config attributes with newly passed configs
@@ -202,7 +200,7 @@ pub fn create_endowment(
             withdraw_before_maturity: msg.withdraw_before_maturity,
             maturity_time: msg.maturity_time,
             maturity_height: msg.maturity_height,
-            split_to_liquid: msg.split_to_liquid.unwrap_or(SplitDetails::default()),
+            split_to_liquid: SplitDetails::default(),
         })?,
         funds: vec![],
     };
@@ -286,7 +284,7 @@ pub fn vault_add(
         deposit_token: deps.api.addr_validate(&msg.deposit_token)?,
         approved: false,
     };
-    vault_store(deps.storage).save(&addr.as_bytes(), &new_vault)?;
+    vault_store(deps.storage).save(addr.as_bytes(), &new_vault)?;
     Ok(Response::default())
 }
 
@@ -303,12 +301,12 @@ pub fn vault_update_status(
         return Err(ContractError::Unauthorized {});
     }
     // try to look up the given vault in Storage
-    let addr = deps.api.addr_validate(&vault_addr.clone())?;
-    let mut vault = vault_read(deps.storage).load(&addr.as_bytes())?;
+    let addr = deps.api.addr_validate(&vault_addr)?;
+    let mut vault = vault_read(deps.storage).load(addr.as_bytes())?;
 
     // update new vault approval status attribute from passed arg
     vault.approved = approved;
-    vault_store(deps.storage).save(&addr.as_bytes(), &vault)?;
+    vault_store(deps.storage).save(addr.as_bytes(), &vault)?;
 
     Ok(Response::default())
 }
@@ -325,7 +323,7 @@ pub fn vault_remove(
         return Err(ContractError::Unauthorized {});
     }
     // try to look up the given vault
-    let _addr = deps.api.addr_validate(&vault_addr.clone())?;
+    let _addr = deps.api.addr_validate(&vault_addr)?;
     // TO DO: remove the vault
     Ok(Response::default())
 }
@@ -339,7 +337,7 @@ pub fn new_accounts_reply(
         ContractResult::Ok(subcall) => {
             let mut endowment_addr = String::from("");
             for event in subcall.events {
-                if event.ty == "instantiate_contract".to_string() {
+                if event.ty == *"instantiate_contract" {
                     for attrb in event.attributes {
                         if attrb.key == "contract_address" {
                             endowment_addr = attrb.value;
@@ -350,7 +348,7 @@ pub fn new_accounts_reply(
             // Register the new Endowment on success Reply
             let addr = deps.api.addr_validate(&endowment_addr)?;
             registry_store(deps.storage).save(
-                &addr.clone().as_bytes(),
+                addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,
                     status: EndowmentStatus::Inactive,

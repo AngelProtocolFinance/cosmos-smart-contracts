@@ -1,5 +1,5 @@
-use angel_core::structs::{EndowmentEntry, TaxParameters, YieldVault};
-use cosmwasm_std::{Addr, Order, StdResult, Storage};
+use angel_core::structs::{EndowmentEntry, YieldVault};
+use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
@@ -22,7 +22,7 @@ pub struct Config {
     pub accounts_code_id: u64,
     pub approved_charities: Vec<Addr>,
     pub treasury: Addr,
-    pub taxes: TaxParameters,
+    pub tax_rate: Decimal,
     pub default_vault: Addr,
 }
 

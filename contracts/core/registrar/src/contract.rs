@@ -4,7 +4,8 @@ use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+    entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Reply, Response,
+    StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
 
@@ -21,15 +22,13 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let treasury = deps.api.addr_validate(&msg.treasury)?;
-
     let configs = Config {
         owner: info.sender.clone(),
         index_fund_contract: info.sender.clone(),
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
         approved_charities: vec![],
-        treasury: treasury,
-        taxes: msg.taxes,
+        treasury: deps.api.addr_validate(&msg.treasury)?,
+        tax_rate: Decimal::percent(msg.tax_rate),
         default_vault: msg.default_vault.unwrap_or(info.sender),
     };
 

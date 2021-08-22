@@ -8,7 +8,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         owner: config.owner.to_string(),
         accounts_code_id: config.accounts_code_id,
         treasury: config.treasury.to_string(),
-        taxes: config.taxes.clone(),
+        tax_rate: config.tax_rate,
         default_vault: config.default_vault.to_string(),
     };
     Ok(res)
@@ -17,7 +17,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 pub fn query_vault_list(deps: Deps) -> StdResult<VaultListResponse> {
     // returns a list of approved Vaults
     let vaults = read_vaults(deps.storage)?;
-    let list = VaultListResponse { vaults: vaults };
+    let list = VaultListResponse { vaults };
     Ok(list)
 }
 
@@ -25,16 +25,14 @@ pub fn query_approved_vault_list(deps: Deps) -> StdResult<VaultListResponse> {
     // returns a list of approved Vaults
     let vaults = read_vaults(deps.storage)?;
     let list = VaultListResponse {
-        vaults: vaults.into_iter().filter(|p| p.approved == true).collect(),
+        vaults: vaults.into_iter().filter(|p| p.approved).collect(),
     };
     Ok(list)
 }
 
 pub fn query_endowment_list(deps: Deps) -> StdResult<EndowmentListResponse> {
     let endowments = read_registry_entries(deps.storage)?;
-    let list = EndowmentListResponse {
-        endowments: endowments,
-    };
+    let list = EndowmentListResponse { endowments };
     Ok(list)
 }
 
@@ -52,7 +50,7 @@ pub fn query_approved_endowment_list(deps: Deps) -> StdResult<EndowmentListRespo
 pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDetailResponse> {
     // this fails if no vault is found
     let addr = deps.api.addr_validate(&vault_addr)?;
-    let vault = vault_read(deps.storage).load(&addr.as_bytes())?;
-    let details = VaultDetailResponse { vault: vault };
+    let vault = vault_read(deps.storage).load(addr.as_bytes())?;
+    let details = VaultDetailResponse { vault };
     Ok(details)
 }

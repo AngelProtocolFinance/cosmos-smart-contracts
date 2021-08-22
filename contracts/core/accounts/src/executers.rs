@@ -155,7 +155,7 @@ pub fn receive(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // check that the sending token contract is an Approved Token
-    if config.accepted_tokens.cw20_valid(info.sender.to_string()) != true {
+    if !config.accepted_tokens.cw20_valid(info.sender.to_string()) {
         return Err(ContractError::Unauthorized {});
     }
     if cw20_msg.amount.is_zero() {
@@ -187,9 +187,7 @@ pub fn vault_receipt(
             msg: to_binary(&VaultQuerier::ApprovedVaultList {})?,
         }))?;
     let vaults: Vec<YieldVault> = vaults_rsp.vaults;
-    let pos = vaults
-        .iter()
-        .position(|p| p.address.to_string() == sender_addr.to_string());
+    let pos = vaults.iter().position(|p| p.address == sender_addr);
     // reject if the sender was found in the list of vaults
     if pos == None {
         return Err(ContractError::Unauthorized {});
@@ -246,7 +244,7 @@ pub fn deposit(
     let config = CONFIG.load(deps.storage)?;
 
     // check that the Endowment has been approved to receive deposits
-    if config.deposit_approved == false {
+    if !config.deposit_approved {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -319,12 +317,12 @@ pub fn check_splits(
     // check that the split provided by a non-TCA address meets the default
     // split requirements set by the Endowment Account
     if user_liquid > endowment_splits.max || user_liquid < endowment_splits.min {
-        return (
+        (
             Decimal::one() - endowment_splits.default,
             endowment_splits.default,
-        );
+        )
     } else {
-        return (user_locked, user_liquid);
+        (user_locked, user_liquid)
     }
 }
 
@@ -344,7 +342,7 @@ pub fn liquidate(
 
     for prefix in ["locked", "liquid"].iter() {
         // this fails if no account is found
-        let account = ACCOUNTS.load(deps.storage, prefix.to_string())?;
+        let _account = ACCOUNTS.load(deps.storage, prefix.to_string())?;
         // we delete the account
         ACCOUNTS.remove(deps.storage, prefix.to_string());
         // TO DO: send all tokens out to the index fund sc

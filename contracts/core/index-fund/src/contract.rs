@@ -23,13 +23,13 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let configs = Config {
-        owner: info.sender.clone(),
+        owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-        fund_rotation: msg.fund_rotation.unwrap_or(500000 as u64), // blocks
+        fund_rotation: msg.fund_rotation.unwrap_or(500000_u64), // blocks
         fund_member_limit: msg.fund_member_limit.unwrap_or(10),
-        funding_goal: msg.funding_goal.unwrap_or(Some(Uint128::zero())),
-        split_to_liquid: msg.split_to_liquid.unwrap_or(SplitDetails::default()),
-        accepted_tokens: msg.accepted_tokens.unwrap_or(AcceptedTokens::default()),
+        funding_goal: msg.funding_goal.unwrap_or_else(|| Some(Uint128::zero())),
+        split_to_liquid: msg.split_to_liquid.unwrap_or_else(SplitDetails::default),
+        accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
     };
     CONFIG.save(deps.storage, &configs)?;
 
@@ -75,7 +75,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     let version = get_contract_version(deps.storage)?;
     if version.contract != CONTRACT_NAME {

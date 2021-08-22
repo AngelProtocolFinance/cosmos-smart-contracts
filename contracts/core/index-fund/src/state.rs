@@ -39,7 +39,7 @@ impl State {
             total_funds: 0,
             active_fund: None,
             round_donations: Uint128::zero(),
-            next_rotation_block: 0 as u64,
+            next_rotation_block: 0_u64,
             terra_alliance: vec![],
         }
     }
