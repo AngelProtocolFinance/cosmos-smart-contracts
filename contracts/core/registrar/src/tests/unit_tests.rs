@@ -64,13 +64,8 @@ fn update_config() {
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        taxes: TaxParameters {
-            exit_tax: Decimal::percent(50),
-            max_tax: Decimal::one(),
-            min_tax: Decimal::zero(),
-            step: Decimal::percent(5),
-        },
         default_vault: None,
+        tax_rate: 0,
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();

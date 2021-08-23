@@ -1,4 +1,4 @@
-use crate::structs::{EndowmentEntry, TaxParameters, YieldVault};
+use crate::structs::{EndowmentEntry, YieldVault};
 use cosmwasm_std::{Addr, Decimal};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
