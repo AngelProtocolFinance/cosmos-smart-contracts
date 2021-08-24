@@ -4,8 +4,9 @@ use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::vault::AccountTransferMsg;
 use angel_core::responses::registrar::{VaultDetailResponse, VaultListResponse};
-use angel_core::responses::vault::ExchangeRateResponse;
-use angel_core::structs::{StrategyComponent, YieldVault};
+use angel_core::structs::{FundingSource, StrategyComponent, YieldVault};
+use angel_core::utils::redeem_from_vaults;
+use angel_core::utils::{vault_account_balance, vault_fx_rate};
 use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
@@ -107,10 +108,11 @@ pub fn update_endowment_status(
 
 pub fn update_strategy(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     strategies: Vec<StrategyComponent>,
 ) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENT.load(deps.storage)?;
 
     if info.sender != endowment.owner {
@@ -141,11 +143,34 @@ pub fn update_strategy(
         return Err(ContractError::InvalidStrategyAllocation {});
     }
 
+    // redeem all existing strategies from the old vault source
+    // before updating endowment with new sources
+    let mut sources: Vec<FundingSource> = vec![];
+    for strategy in endowment.strategies.iter() {
+        let fx_rate = vault_fx_rate(deps.as_ref(), strategy.vault.to_string());
+        let account_balance = vault_account_balance(
+            deps.as_ref(),
+            strategy.vault.to_string(),
+            env.contract.address.to_string(),
+        );
+        sources.push(FundingSource {
+            vault: strategy.vault.to_string(),
+            locked: account_balance * Decimal::from(fx_rate) * strategy.locked_percentage,
+            liquid: account_balance * Decimal::from(fx_rate) * strategy.liquid_percentage,
+        });
+    }
+
+    let redeem = redeem_from_vaults(
+        deps.as_ref(),
+        config.registrar_contract.to_string(),
+        sources,
+    )?;
+
     // update endowment strategies attribute with the newly passed strategies list
     endowment.strategies = strategies;
     ENDOWMENT.save(deps.storage, &endowment)?;
 
-    Ok(Response::default())
+    Ok(Response::new().add_submessages(redeem.messages))
 }
 
 pub fn receive(
@@ -323,56 +348,19 @@ pub fn withdraw(
     if info.sender != endowment.owner || info.sender != endowment.beneficiary {
         return Err(ContractError::Unauthorized {});
     }
-    let mut total_amount: Uint128 = Uint128::zero();
-    let mut messages: Vec<SubMsg> = vec![];
-
-    // redeed amounts from sources listed
-    for source in msg.sources.iter() {
-        // check source vault is in registrar vaults list and is approved
-        let vault_config: VaultDetailResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: config.registrar_contract.to_string(),
-                msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: source.vault.to_string(),
-                })?,
-            }))?;
-        let yield_vault: YieldVault = vault_config.vault;
-
-        // get the vault exchange rate
-        let exchange_rate: ExchangeRateResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: yield_vault.address.to_string(),
-                msg: to_binary(&angel_core::messages::vault::QueryMsg::ExchangeRate {
-                    input_denom: "uusd".to_string(),
-                })?,
-            }))?;
-
-        total_amount += source.locked + source.liquid;
-        let transfer_msg = AccountTransferMsg {
-            locked: Uint256::from(source.locked * Decimal::from(exchange_rate.exchange_rate)),
-            liquid: Uint256::from(source.liquid * Decimal::from(exchange_rate.exchange_rate)),
-        };
-
-        // create a withdraw message for X Vault, noting amounts for Locked / Liquid
-        messages.push(SubMsg {
-            id: 42,
-            msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: yield_vault.address.to_string(),
-                msg: to_binary(&transfer_msg).unwrap(),
-                funds: vec![],
-            }),
-            gas_limit: None,
-            reply_on: ReplyOn::Never,
-        });
-    }
+    let redeem = redeem_from_vaults(
+        deps.as_ref(),
+        config.registrar_contract.to_string(),
+        msg.sources,
+    )?;
 
     Ok(
         Response::new()
-            .add_submessages(messages)
+            .add_submessages(redeem.messages)
             .add_submessage(SubMsg::new(BankMsg::Send {
                 to_address: endowment.beneficiary.into(),
                 amount: vec![Coin {
-                    amount: Uint128::from(total_amount),
+                    amount: Uint128::from(redeem.total),
                     denom: "uusd".to_string(),
                 }],
             }))
