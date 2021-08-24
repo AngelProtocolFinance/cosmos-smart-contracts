@@ -1,0 +1,14 @@
+code_id*.json
+**/code_id*.json
+
+/node_modules/
+**/node_modules/
+
+local.config.ts
+**/local.config.ts
+
+.DS_Store
+
+# IDEs
+*.iml
+.idea
