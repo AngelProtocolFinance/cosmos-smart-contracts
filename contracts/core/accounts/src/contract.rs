@@ -113,6 +113,7 @@ pub fn execute(
             info.funds[0].amount,
             msg,
         ),
+        ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
         ExecuteMsg::VaultReceipt(msg) => {
             executers::vault_receipt(deps, info.clone(), info.sender, info.funds[0].amount, msg)
         }

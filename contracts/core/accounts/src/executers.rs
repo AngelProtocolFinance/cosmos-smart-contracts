@@ -1,16 +1,17 @@
 use crate::state::{InvestmentHolding, ACCOUNTS, CONFIG, ENDOWMENT, INVESTMENTS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::registrar::QueryMsg as VaultQuerier;
+use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::vault::AccountTransferMsg;
 use angel_core::responses::registrar::{VaultDetailResponse, VaultListResponse};
-use angel_core::structs::{GenericBalance, SplitDetails, StrategyComponent, YieldVault};
+use angel_core::responses::vault::ExchangeRateResponse;
+use angel_core::structs::{StrategyComponent, YieldVault};
 use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
     QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw20::Cw20ReceiveMsg;
 
 pub fn update_admin(
     deps: DepsMut,
@@ -184,7 +185,7 @@ pub fn vault_receipt(
     let vaults_rsp: VaultListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&VaultQuerier::ApprovedVaultList {})?,
+            msg: to_binary(&RegistrarQuerier::ApprovedVaultList {})?,
         }))?;
     let vaults: Vec<YieldVault> = vaults_rsp.vaults;
     let pos = vaults.iter().position(|p| p.address == sender_addr);
@@ -274,7 +275,7 @@ pub fn deposit(
         let vault_config: VaultDetailResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: config.registrar_contract.to_string(),
-                msg: to_binary(&VaultQuerier::Vault {
+                msg: to_binary(&RegistrarQuerier::Vault {
                     vault_addr: strategy.vault.to_string(),
                 })?,
             }))?;
@@ -309,21 +310,75 @@ pub fn deposit(
         .add_attribute("deposit_amount", balance))
 }
 
-pub fn check_splits(
-    endowment_splits: SplitDetails,
-    user_locked: Decimal,
-    user_liquid: Decimal,
-) -> (Decimal, Decimal) {
-    // check that the split provided by a non-TCA address meets the default
-    // split requirements set by the Endowment Account
-    if user_liquid > endowment_splits.max || user_liquid < endowment_splits.min {
-        (
-            Decimal::one() - endowment_splits.default,
-            endowment_splits.default,
-        )
-    } else {
-        (user_locked, user_liquid)
+pub fn withdraw(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: WithdrawMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    // check that sender is the owner
+    if info.sender != endowment.owner || info.sender != endowment.beneficiary {
+        return Err(ContractError::Unauthorized {});
     }
+    let mut total_amount: Uint128 = Uint128::zero();
+    let mut messages: Vec<SubMsg> = vec![];
+
+    // redeed amounts from sources listed
+    for source in msg.sources.iter() {
+        // check source vault is in registrar vaults list and is approved
+        let vault_config: VaultDetailResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: config.registrar_contract.to_string(),
+                msg: to_binary(&RegistrarQuerier::Vault {
+                    vault_addr: source.vault.to_string(),
+                })?,
+            }))?;
+        let yield_vault: YieldVault = vault_config.vault;
+
+        // get the vault exchange rate
+        let exchange_rate: ExchangeRateResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: yield_vault.address.to_string(),
+                msg: to_binary(&angel_core::messages::vault::QueryMsg::ExchangeRate {
+                    input_denom: "uusd".to_string(),
+                })?,
+            }))?;
+
+        total_amount += source.locked + source.liquid;
+        let transfer_msg = AccountTransferMsg {
+            locked: Uint256::from(source.locked * Decimal::from(exchange_rate.exchange_rate)),
+            liquid: Uint256::from(source.liquid * Decimal::from(exchange_rate.exchange_rate)),
+        };
+
+        // create a withdraw message for X Vault, noting amounts for Locked / Liquid
+        messages.push(SubMsg {
+            id: 42,
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: yield_vault.address.to_string(),
+                msg: to_binary(&transfer_msg).unwrap(),
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Never,
+        });
+    }
+
+    Ok(
+        Response::new()
+            .add_submessages(messages)
+            .add_submessage(SubMsg::new(BankMsg::Send {
+                to_address: endowment.beneficiary.into(),
+                amount: vec![Coin {
+                    amount: Uint128::from(total_amount),
+                    denom: "uusd".to_string(),
+                }],
+            }))
+            .add_attribute("action", "withdrawal")
+            .add_attribute("sender", env.contract.address), // .add_attribute("withdraw_amount", amount)
+    )
 }
 
 pub fn liquidate(
@@ -417,89 +472,4 @@ pub fn terminate_to_fund(
         .add_attribute("to", config.index_fund_contract);
     res.messages = messages;
     Ok(res)
-}
-
-fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<SubMsg>> {
-    let native_balance = &balance.native;
-    let mut msgs: Vec<SubMsg> = if native_balance.is_empty() {
-        vec![]
-    } else {
-        vec![SubMsg::new(BankMsg::Send {
-            to_address: to.into(),
-            amount: native_balance.to_vec(),
-        })]
-    };
-
-    let cw20_balance = &balance.cw20;
-    let cw20_msgs: StdResult<Vec<_>> = cw20_balance
-        .iter()
-        .map(|c| {
-            let msg = Cw20ExecuteMsg::Transfer {
-                recipient: to.into(),
-                amount: c.amount,
-            };
-            let exec = SubMsg::new(WasmMsg::Execute {
-                contract_addr: c.address.to_string(),
-                msg: to_binary(&msg)?,
-                funds: vec![],
-            });
-            Ok(exec)
-        })
-        .collect();
-    msgs.append(&mut cw20_msgs?);
-    Ok(msgs)
-}
-
-pub fn redeem(
-    deps: DepsMut,
-    _env: Env,
-    sender: String,
-    _amount: Uint128,
-    _denom: String,
-) -> Result<Response, ContractError> {
-    let _config = CONFIG.load(deps.storage)?;
-
-    let endowment = ENDOWMENT.load(deps.storage)?;
-    // check that sender is the owner
-    if sender != endowment.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    //     let exchange_rate = adapter::exchange_rate(deps, &config.yield_adapter, &config.input_denom)?;
-    //     let return_amount = deduct_tax(
-    //         deps,
-    //         Coin {
-    //             denom: config.input_denom.clone(),
-    //             amount: amount.into(),
-    //         },
-    //     )?;
-
-    //     Ok(Response::new()
-    //         messages: [
-    //             vec![CosmosMsg::Wasm(WasmMsg::Execute {
-    //                 contract_addr: deps.api.human_address(&config.dp_token)?,
-    //                 msg: to_binary(&Cw20HandleMsg::Burn { amount })?,
-    //                 send: vec![],
-    //             })],
-    //             adapter::redeem(
-    //                 deps,
-    //                 &config.yield_adapter,
-    //                 Uint256::from(amount).div(exchange_rate).into(),
-    //             )?,
-    //             vec![CosmosMsg::Bank(BankMsg::Send {
-    //                 from_address: env.contract.address,
-    //                 to_address: sender,
-    //                 amount: vec![return_amount.clone()],
-    //             })],
-    //         ]
-    //         .concat(),
-    //         log: vec![
-    //             log("action", "redeem"),
-    //             log("sender", env.message.sender),
-    //             log("burn_amount", amount),
-    //             log("redeem_amount", return_amount.amount),
-    //         ],
-    //         data: None,
-    //     )
-    Ok(Response::default())
 }
