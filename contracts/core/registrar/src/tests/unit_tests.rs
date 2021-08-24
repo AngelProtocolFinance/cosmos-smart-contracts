@@ -1,9 +1,10 @@
-use crate::contract::{execute, instantiate, migrate, query};
+use crate::contract::{execute, instantiate, migrate, query, reply};
 use angel_core::errors::core::*;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
+use angel_core::structs::SplitDetails;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{coins, from_binary};
+use cosmwasm_std::{Addr, ContractResult, CosmosMsg, Event, Reply, ReplyOn, SubMsg, SubMsgExecutionResponse, WasmMsg, coins, from_binary, to_binary};
 
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
 
@@ -247,4 +248,53 @@ fn only_approved_charities_can_create_endowment_accounts() {
     )
     .unwrap();
     assert_eq!(1, res.messages.len());
+
+    assert_eq!(1, res.attributes.len());
+    assert_eq!("action", res.attributes[0].key);
+    assert_eq!("create_endowment", res.attributes[0].value);
+
+    let events = vec![
+        Event::new("instantiate_contract").add_attribute("contract_address", "endowment_address"),
+    ];
+    let result = ContractResult::Ok(SubMsgExecutionResponse {
+        events,
+        data: None,
+    });
+    let subcall = Reply {
+        id: 0,
+        result
+    };
+    let res = reply(deps.as_mut(), mock_env(), subcall).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::EndowmentList {})
+        .unwrap();
+    let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
+    assert_eq!(endowment_list_response.endowments[0].address, Addr::unchecked("endowment_address"));
+
+    // TODO: check fields, make instantiation of the account
+    // assert_eq!(SubMsg {
+    //     id: 0,
+    //     msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+    //         code_id: MOCK_ACCOUNTS_CODE_ID,
+    //         admin: Some(env.contract.address.to_string()),
+    //         label: "new endowment accounts".to_string(),
+    //         msg: to_binary(&angel_core::messages::accounts::InstantiateMsg {
+    //             admin_addr: good_charity_addr.clone(),
+    //             registrar_contract: env.contract.address.to_string(),
+    //             index_fund_contract: good_charity_addr.clone(),
+    //             owner: good_charity_addr.clone(),
+    //             beneficiary: good_charity_addr.clone(),
+    //             name: "Test Endowment".to_string(),
+    //             description: "Endowment to power an amazing charity".to_string(),
+    //             withdraw_before_maturity: false,
+    //             maturity_time: None,
+    //             maturity_height: None,
+    //             split_to_liquid: SplitDetails::default(),
+    //         }).unwrap(),
+    //         funds: vec![],
+    //     }),
+    //     gas_limit: None,
+    //     reply_on: ReplyOn::Success,
+    // }, res.messages[0]);
 }
