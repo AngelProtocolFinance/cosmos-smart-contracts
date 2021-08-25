@@ -243,5 +243,5 @@ async function testDonorSendsToIndexFund() {
   await setupContracts();
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
-  await testDonorSendsToIndexFund();
+  // await testDonorSendsToIndexFund();
 })();
