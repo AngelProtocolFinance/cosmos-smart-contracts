@@ -78,10 +78,12 @@ pub fn deposit_stable(
             // }),
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: info.sender.to_string(),
-                msg: to_binary(&AccountTransferMsg {
-                    locked: Uint256::from(after_tax_locked),
-                    liquid: Uint256::from(after_tax_liquid),
-                })?,
+                msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
+                    AccountTransferMsg {
+                        locked: Uint256::from(after_tax_locked),
+                        liquid: Uint256::from(after_tax_liquid),
+                    },
+                ))?,
                 funds: vec![Coin {
                     denom: "PDTv1".to_string(),
                     amount: after_taxes.amount,
@@ -166,10 +168,12 @@ pub fn redeem_stable(
             // }),
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: info.sender.to_string(),
-                msg: to_binary(&AccountTransferMsg {
-                    locked: Uint256::from(after_tax_locked),
-                    liquid: Uint256::from(after_tax_liquid),
-                })?,
+                msg: to_binary(&&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
+                    AccountTransferMsg {
+                        locked: Uint256::from(after_tax_locked),
+                        liquid: Uint256::from(after_tax_liquid),
+                    },
+                ))?,
                 funds: vec![Coin {
                     denom: "uusd".to_string(),
                     amount: after_taxes.amount,
