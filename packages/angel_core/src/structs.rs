@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Coin, Decimal, Env, Timestamp};
+use cosmwasm_std::{Addr, Coin, Decimal, Env, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20CoinVerified};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -20,6 +20,19 @@ pub struct StrategyComponent {
     pub vault: Addr,                // Vault SC Address
     pub locked_percentage: Decimal, // percentage of funds to invest
     pub liquid_percentage: Decimal, // percentage of funds to invest
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct FundingSource {
+    pub vault: String,
+    pub locked: Uint128,
+    pub liquid: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
+pub struct RedeemResults {
+    pub messages: Vec<SubMsg>,
+    pub total: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
