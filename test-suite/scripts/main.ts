@@ -213,14 +213,20 @@ async function testDonorSendsToIndexFund() {
 
   await expect(
     sendTransaction(terra, pleb, [
-      new MsgExecuteContract(pleb.key.accAddress, indexFund, {
-        deposit: {
-          fund_id: 42,
-          split: undefined,
+      new MsgExecuteContract(
+        pleb.key.accAddress,
+        indexFund,
+        {
+          deposit: {
+            fund_id: 42,
+            split: undefined,
+          },
         },
-        funds: { uusd: "420000000" },
-      })
-    ])
+        {
+          uusd: "420000000",
+        }
+    ),
+  ])
   ).to.be.rejectedWith("Unauthorized"); // for MVP normal users cannot donate
 
   const fundTotal = await queryNativeTokenBalance(terra, indexFund, "uusd");
@@ -243,5 +249,5 @@ async function testDonorSendsToIndexFund() {
   await setupContracts();
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
-  // await testDonorSendsToIndexFund();
+  await testDonorSendsToIndexFund();
 })();
