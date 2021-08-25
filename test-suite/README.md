@@ -99,7 +99,7 @@ workspace-optimizer
 ### Run tests
 
 ```bash
-cd integration-testing-suite/scripts
+cd test-suite/scripts
 npm install
 ts-node main.ts
 ```
