@@ -2,7 +2,7 @@ use crate::contract::{execute, instantiate, migrate, query, reply};
 use angel_core::errors::core::*;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
-use angel_core::structs::SplitDetails;
+use angel_core::structs::{EndowmentStatus, SplitDetails};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{Addr, ContractResult, CosmosMsg, Event, Reply, ReplyOn, SubMsg, SubMsgExecutionResponse, WasmMsg, coins, from_binary, to_binary};
 
@@ -185,12 +185,13 @@ fn test_owner_can_add_remove_approved_charities() {
 }
 
 #[test]
-fn only_approved_charities_can_create_endowment_accounts() {
+fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let good_charity_addr = "GOODQTWTETGSGSRHJTUIQADG".to_string();
     let bad_charity_addr = "BADQTWTETGSGSRHJTUIQADG".to_string();
+    let good_endowment_addr = "ENDOWMENTADRESS".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
@@ -211,8 +212,7 @@ fn only_approved_charities_can_create_endowment_accounts() {
         ExecuteMsg::CharityAdd {
             charity: good_charity_addr.clone(),
         },
-    )
-    .unwrap();
+    ).unwrap();
     assert_eq!(0, res.messages.len());
 
     let create_endowment_msg = CreateEndowmentMsg {
@@ -233,8 +233,7 @@ fn only_approved_charities_can_create_endowment_accounts() {
         env.clone(),
         info.clone(),
         ExecuteMsg::CreateEndowment(create_endowment_msg.clone()),
-    )
-    .unwrap_err();
+    ).unwrap_err();
     assert_eq!(ContractError::Unauthorized {}, err);
 
     // approved charity can create Accounts
@@ -245,16 +244,62 @@ fn only_approved_charities_can_create_endowment_accounts() {
         env.clone(),
         info.clone(),
         ExecuteMsg::CreateEndowment(create_endowment_msg.clone()),
-    )
-    .unwrap();
+    ).unwrap();
     assert_eq!(1, res.messages.len());
+
+    // test that with the submessage we can instantiate account sc
+    let msg: &CosmosMsg = &res.messages[0].msg;
+    match msg {
+        CosmosMsg::Wasm(wasm_msg) => {
+            match wasm_msg {
+                WasmMsg::Instantiate { admin, code_id: _, msg, funds: _, label: _ } => {
+                    assert_eq!(admin.clone(), Some("cosmos2contract".to_string()));
+                    let accounts_instantiate_msg: angel_core::messages::accounts::InstantiateMsg = from_binary(msg).unwrap();
+                    assert_eq!(accounts_instantiate_msg.admin_addr, ap_team.clone());
+
+                    // let's instantiate account sc with our sub_message
+                    let mut deps = mock_dependencies(&[]);
+                    let info = mock_info("creator", &coins(100000, "earth"));
+                    let env = mock_env();
+
+                    // for now we have instantiation error due to another submsg call
+                    // from the accounts sc instantiate method
+                    // but the instantiation message should work well
+                    //
+                    // TODO: fix test when accounts sc instantiate test will be ready
+                    // by removing let err = ... and changing to:
+                    // assert_eq!(0, res.messages.len());
+                    let err = accounts::contract::instantiate(deps.as_mut(), env, info, accounts_instantiate_msg).unwrap_err();
+                    match err {
+                        ContractError::Std(err) => {
+                            match err {
+                                cosmwasm_std::StdError::GenericErr { msg } => {
+                                    assert_eq!(msg, "Querier system error: No such contract: cosmos2contract");
+                                    ()
+                                },
+                                _ => (),
+                            }
+                        },
+                        _ => ()
+                    }
+                    ()
+                },
+                _ => {
+                    panic!("Not the Wasm instaniation message");
+                },
+            }
+        },
+        _ => {
+            panic!("Not the Cosmos message");
+        },
+    }
 
     assert_eq!(1, res.attributes.len());
     assert_eq!("action", res.attributes[0].key);
     assert_eq!("create_endowment", res.attributes[0].value);
 
     let events = vec![
-        Event::new("instantiate_contract").add_attribute("contract_address", "endowment_address"),
+        Event::new("instantiate_contract").add_attribute("contract_address", good_endowment_addr.clone()),
     ];
     let result = ContractResult::Ok(SubMsgExecutionResponse {
         events,
@@ -264,37 +309,35 @@ fn only_approved_charities_can_create_endowment_accounts() {
         id: 0,
         result
     };
+
+    // test the reply method
     let res = reply(deps.as_mut(), mock_env(), subcall).unwrap();
     assert_eq!(0, res.messages.len());
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::EndowmentList {})
-        .unwrap();
+    // test that the reply worked properly by querying
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::EndowmentList {}).unwrap();
     let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
-    assert_eq!(endowment_list_response.endowments[0].address, Addr::unchecked("endowment_address"));
+    assert_eq!(endowment_list_response.endowments[0].address, Addr::unchecked(good_endowment_addr.clone()));
+    assert_eq!(endowment_list_response.endowments[0].status, EndowmentStatus::Inactive);
 
-    // TODO: check fields, make instantiation of the account
-    // assert_eq!(SubMsg {
-    //     id: 0,
-    //     msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-    //         code_id: MOCK_ACCOUNTS_CODE_ID,
-    //         admin: Some(env.contract.address.to_string()),
-    //         label: "new endowment accounts".to_string(),
-    //         msg: to_binary(&angel_core::messages::accounts::InstantiateMsg {
-    //             admin_addr: good_charity_addr.clone(),
-    //             registrar_contract: env.contract.address.to_string(),
-    //             index_fund_contract: good_charity_addr.clone(),
-    //             owner: good_charity_addr.clone(),
-    //             beneficiary: good_charity_addr.clone(),
-    //             name: "Test Endowment".to_string(),
-    //             description: "Endowment to power an amazing charity".to_string(),
-    //             withdraw_before_maturity: false,
-    //             maturity_time: None,
-    //             maturity_height: None,
-    //             split_to_liquid: SplitDetails::default(),
-    //         }).unwrap(),
-    //         funds: vec![],
-    //     }),
-    //     gas_limit: None,
-    //     reply_on: ReplyOn::Success,
-    // }, res.messages[0]);
+    // let's test update endowment method by admin
+    let update_endowment_status_msg = UpdateEndowmentStatusMsg {
+        endowment_addr: good_endowment_addr.clone(),
+        status: EndowmentStatus::Approved,
+    };
+
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let res = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::UpdateEndowmentStatus(update_endowment_status_msg.clone()),
+    ).unwrap();
+    assert_eq!(1, res.messages.len());
+
+    // test that the updating worked properly by querying
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::EndowmentList {}).unwrap();
+    let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
+    assert_eq!(endowment_list_response.endowments[0].address, Addr::unchecked(good_endowment_addr.clone()));
+    assert_eq!(endowment_list_response.endowments[0].status, EndowmentStatus::Approved);
 }
