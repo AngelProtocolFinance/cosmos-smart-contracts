@@ -291,7 +291,10 @@ pub fn deposit(
             id: 42,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: yield_vault.address.to_string(),
-                msg: to_binary(&transfer_msg).unwrap(),
+                msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Deposit(
+                    transfer_msg,
+                ))
+                .unwrap(),
                 funds: vec![Coin {
                     amount: balance,
                     denom: "uusd".to_string(),
