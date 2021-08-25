@@ -71,7 +71,7 @@ impl UpdateConfigMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentStatusMsg {
     pub endowment_addr: String,
-    pub status: EndowmentStatus,
+    pub status: u8,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
