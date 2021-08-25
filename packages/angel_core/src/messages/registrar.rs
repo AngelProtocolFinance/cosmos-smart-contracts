@@ -1,4 +1,3 @@
-use crate::structs::EndowmentStatus;
 use cosmwasm_std::{Addr, Api, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

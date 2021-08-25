@@ -10,10 +10,14 @@ use cosmwasm_std::{
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account,
-        msg: to_binary(&angel_core::messages::accounts::UpdateEndowmentStatusMsg {
-            deposit_approved: deposit,
-            withdraw_approved: withdraw,
-        })
+        msg: to_binary(
+            &angel_core::messages::accounts::ExecuteMsg::UpdateEndowmentStatus(
+                angel_core::messages::accounts::UpdateEndowmentStatusMsg {
+                    deposit_approved: deposit,
+                    withdraw_approved: withdraw,
+                },
+            ),
+        )
         .unwrap(),
         funds: vec![],
     });
@@ -29,8 +33,10 @@ fn build_account_status_change_msg(account: String, deposit: bool, withdraw: boo
 fn build_index_fund_member_removal_msg(account: String) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account.clone(),
-        msg: to_binary(&angel_core::messages::index_fund::RemoveMemberMsg { member: account })
-            .unwrap(),
+        msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
+            angel_core::messages::index_fund::RemoveMemberMsg { member: account },
+        ))
+        .unwrap(),
         funds: vec![],
     });
 
