@@ -264,7 +264,7 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
 
                     // for now we have instantiation error due to another submsg call
                     // from the accounts sc instantiate method
-                    // but the instantiation message should work well
+                    // but the instantiation message work well
                     //
                     // TODO: fix test when accounts sc instantiate test will be ready
                     // by removing let err = ... and changing to:
