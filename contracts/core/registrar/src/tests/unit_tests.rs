@@ -323,7 +323,7 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
     // let's test update endowment method by admin
     let update_endowment_status_msg = UpdateEndowmentStatusMsg {
         endowment_addr: good_endowment_addr.clone(),
-        status: EndowmentStatus::Approved,
+        status: 1,
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
