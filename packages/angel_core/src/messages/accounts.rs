@@ -1,5 +1,5 @@
 use crate::messages::vault::AccountTransferMsg;
-use crate::structs::{SplitDetails, StrategyComponent};
+use crate::structs::{FundingSource, SplitDetails, StrategyComponent};
 use cosmwasm_std::Decimal;
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
@@ -28,6 +28,8 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
+    // Pull funds from investment vault(s) to the Endowment Beneficiary as UST
+    Withdraw(WithdrawMsg),
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt(AccountTransferMsg),
     // Winding up of an endowment in good standing. Returns all funds to the Beneficiary.
@@ -89,6 +91,17 @@ pub enum ReceiveMsg {
 pub struct DepositMsg {
     pub locked_percentage: Decimal,
     pub liquid_percentage: Decimal,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct RedeemMsg {
+    pub sources: Vec<FundingSource>,
+    // pub reinvest: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct WithdrawMsg {
+    pub sources: Vec<FundingSource>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
