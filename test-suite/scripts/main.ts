@@ -35,10 +35,10 @@ let endowmentContract1: string;
 let endowmentContract2: string;
 
 //----------------------------------------------------------------------------------------
-// Setup
+// Setup all contracts
 //----------------------------------------------------------------------------------------
 
-async function setupTest() {
+async function setupContracts() {
   // Step 1. Upload all local wasm files and capture the codes for each.... 
   process.stdout.write("Uploading Registrar Wasm");
   const registrarCodeId = await storeCode(
@@ -150,25 +150,23 @@ async function setupTest() {
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${endowmentContract2}`);
 
-
-`  // // AP Team approves both newly created endowments
-  // process.stdout.write("AP Team approves both endowments");
-  // await sendTransaction(terra, apTeam, [
-  //   new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-  //     update_endowment_status: {
-  //       endowment_addr: endowmentContract1,
-  //       status: 1,
-  //     }
-  //   }),
-  //   new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-  //     update_endowment_status: {
-  //       endowment_addr: endowmentContract2,
-  //       status: 1,
-  //     }
-  //   }),
-  // ]);
-  // console.log(chalk.green(" Done!"));`
-  
+  // AP Team approves both newly created endowments
+  process.stdout.write("AP Team approves both endowments");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_endowment_status: {
+        endowment_addr: endowmentContract1,
+        status: 1,
+      }
+    }),
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_endowment_status: {
+        endowment_addr: endowmentContract2,
+        status: 1,
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
 
   // Step 4: Index Fund finals setup 
   // Update Index Fund Addr in the Registrar contract
@@ -239,11 +237,11 @@ async function testDonorSendsToIndexFund() {
   console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as angel team`);
   console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as charity #1`);
   console.log(`Use ${chalk.cyan(charity2.key.accAddress)} as charity #2`);
-  console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as evil pleb`);
+  console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as pleb`);
 
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupTest();
+  await setupContracts();
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
-  // await testDonorSendsToIndexFund();
+  await testDonorSendsToIndexFund();
 })();
