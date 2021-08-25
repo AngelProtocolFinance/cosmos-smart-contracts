@@ -10,10 +10,14 @@ use cosmwasm_std::{
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account,
-        msg: to_binary(&angel_core::messages::accounts::UpdateEndowmentStatusMsg {
-            deposit_approved: deposit,
-            withdraw_approved: withdraw,
-        })
+        msg: to_binary(
+            &angel_core::messages::accounts::ExecuteMsg::UpdateEndowmentStatus(
+                angel_core::messages::accounts::UpdateEndowmentStatusMsg {
+                    deposit_approved: deposit,
+                    withdraw_approved: withdraw,
+                },
+            ),
+        )
         .unwrap(),
         funds: vec![],
     });
@@ -29,8 +33,10 @@ fn build_account_status_change_msg(account: String, deposit: bool, withdraw: boo
 fn build_index_fund_member_removal_msg(account: String) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account.clone(),
-        msg: to_binary(&angel_core::messages::index_fund::RemoveMemberMsg { member: account })
-            .unwrap(),
+        msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
+            angel_core::messages::index_fund::RemoveMemberMsg { member: account },
+        ))
+        .unwrap(),
         funds: vec![],
     });
 
@@ -50,7 +56,7 @@ pub fn update_endowment_status(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    if info.sender.ne(&config.owner) {
+    if info.sender.ne(&config.owner) || msg.status > 3 {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -60,8 +66,16 @@ pub fn update_endowment_status(
         .may_load(endowment_addr)?
         .unwrap();
 
+    let msg_endowment_status = match msg.status {
+        0 => EndowmentStatus::Inactive,
+        1 => EndowmentStatus::Approved,
+        2 => EndowmentStatus::Frozen,
+        3 => EndowmentStatus::Closed,
+        _ => EndowmentStatus::Inactive, // should never be reached due to status check earlier
+    };
+
     // check first that the current status is different from the new status sent
-    if endowment_entry.status == msg.status {
+    if endowment_entry.status.to_string() == msg_endowment_status.to_string() {
         return Ok(Response::default());
     }
 
@@ -71,7 +85,7 @@ pub fn update_endowment_status(
     }
 
     // update entry status & save to the Registry
-    endowment_entry.status = msg.status.clone();
+    endowment_entry.status = msg_endowment_status.clone();
     registry_store(deps.storage).save(endowment_addr, &endowment_entry)?;
 
     // Take different actions on the affected Accounts SC, based on the status passed
@@ -79,7 +93,7 @@ pub fn update_endowment_status(
     // 1. INDEX FUND - Update fund members list removing a member if the member can no longer accept deposits
     // 2. ACCOUNTS - Update the Endowment deposit/withdraw approval config settings based on the new status
 
-    let sub_messages: Vec<SubMsg> = match msg.status {
+    let sub_messages: Vec<SubMsg> = match msg_endowment_status {
         // Allowed to receive donations and process withdrawals
         EndowmentStatus::Approved => {
             vec![build_account_status_change_msg(
@@ -104,10 +118,9 @@ pub fn update_endowment_status(
         _ => vec![],
     };
 
-    let mut res = Response::new().add_attribute("action", "update_endowment_status");
-    res.messages = sub_messages;
-
-    Ok(res)
+    Ok(Response::new()
+        .add_submessages(sub_messages)
+        .add_attribute("action", "update_endowment_status"))
 }
 
 pub fn update_owner(
@@ -177,7 +190,7 @@ pub fn create_endowment(
         .iter()
         .position(|a| *a == info.sender);
     // ignore if that member was found in the list
-    if pos == None {
+    if pos == None && info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -281,7 +294,6 @@ pub fn vault_add(
         address: addr.clone(),
         input_denom: msg.input_denom,
         yield_token: deps.api.addr_validate(&msg.yield_token)?,
-        deposit_token: deps.api.addr_validate(&msg.deposit_token)?,
         approved: false,
     };
     vault_store(deps.storage).save(addr.as_bytes(), &new_vault)?;

@@ -10,7 +10,6 @@ pub static CONFIG_KEY: &[u8] = b"config";
 pub struct Config {
     pub owner: Addr,
     pub registrar_contract: Addr,
-    pub deposit_token: Addr,
     pub moneymarket: Addr,
     pub input_denom: String,
     pub yield_token: Addr,

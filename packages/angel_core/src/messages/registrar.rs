@@ -1,4 +1,3 @@
-use crate::structs::EndowmentStatus;
 use cosmwasm_std::{Addr, Api, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -71,14 +70,13 @@ impl UpdateConfigMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentStatusMsg {
     pub endowment_addr: String,
-    pub status: EndowmentStatus,
+    pub status: u8,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct VaultAddMsg {
     pub vault_addr: String,
     pub input_denom: String,
-    pub deposit_token: String,
     pub yield_token: String,
 }
 

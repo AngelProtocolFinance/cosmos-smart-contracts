@@ -400,10 +400,12 @@ pub fn donation_submsg(
 ) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: member_addr,
-        msg: to_binary(&angel_core::messages::accounts::DepositMsg {
-            locked_percentage,
-            liquid_percentage,
-        })
+        msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
+            angel_core::messages::accounts::DepositMsg {
+                locked_percentage,
+                liquid_percentage,
+            },
+        ))
         .unwrap(),
         funds: vec![Coin {
             amount: send_amount,

@@ -6,6 +6,7 @@ use crate::queriers;
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
+use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, ReplyOn, Response,
     StdResult, SubMsg, Uint128, WasmMsg,
@@ -26,15 +27,14 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let moneymarket = deps.api.addr_validate(&msg.moneymarket)?;
-    let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
+    // let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
 
     let config = config::Config {
         owner: info.sender.clone(),
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-        deposit_token: info.sender,
         moneymarket,
-        input_denom: anchor_config.stable_denom.clone(),
-        yield_token: deps.api.addr_validate(&anchor_config.aterra_contract)?,
+        input_denom: "uusd".to_string(), // anchor_config.stable_denom.clone(),
+        yield_token: deps.api.addr_validate(&msg.registrar_contract)?, // deps.api.addr_validate(&anchor_config.aterra_contract)?,
     };
 
     config::store(deps.storage, &config)?;
@@ -57,12 +57,13 @@ pub fn instantiate(
             id: 0,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: config.registrar_contract.to_string(),
-                msg: to_binary(&angel_core::messages::registrar::VaultAddMsg {
-                    vault_addr: env.contract.address.to_string(),
-                    input_denom: config.input_denom,
-                    deposit_token: token_info.symbol.clone(),
-                    yield_token: config.yield_token.to_string(),
-                })
+                msg: to_binary(&angel_core::messages::registrar::ExecuteMsg::VaultAdd(
+                    angel_core::messages::registrar::VaultAddMsg {
+                        vault_addr: env.contract.address.to_string(),
+                        input_denom: config.input_denom,
+                        yield_token: config.yield_token.to_string(),
+                    },
+                ))
                 .unwrap(),
                 funds: vec![],
             }),
@@ -93,16 +94,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&ConfigResponse {
             input_denom: config.input_denom.clone(),
             yield_token: config.yield_token.to_string(),
-            deposit_token: config.deposit_token.to_string(),
         }),
         QueryMsg::Balance { address } => to_binary(&queriers::query_balance(deps, address)),
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
         QueryMsg::ExchangeRate { input_denom: _ } => {
-            let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;
+            // let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;
 
             to_binary(&ExchangeRateResponse {
-                exchange_rate: epoch_state.exchange_rate,
-                yield_token_supply: epoch_state.aterra_supply,
+                exchange_rate: Decimal256::percent(95), // epoch_state.exchange_rate,
+                yield_token_supply: Uint256::from(42069u64), // epoch_state.aterra_supply,
             })
         }
         QueryMsg::Deposit { amount } => to_binary(&anchor::deposit_stable_msg(
