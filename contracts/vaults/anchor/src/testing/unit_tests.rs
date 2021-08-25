@@ -19,7 +19,7 @@ fn _do_instantiate(mut deps: DepsMut, addr: &str, amount: Uint128) -> TokenInfoR
     let instantiate_msg = InitMsg {
         name: "Auto Gen".to_string(),
         symbol: "AUTO".to_string(),
-        decimals: 3,
+        decimals: 6,
         moneymarket: "anchorprotocolmoneymrk".to_string(),
         registrar_contract: "angelprotocolteamdano".to_string(),
     };
@@ -45,30 +45,26 @@ fn _do_instantiate(mut deps: DepsMut, addr: &str, amount: Uint128) -> TokenInfoR
 #[test]
 fn proper_instantiation() {
     let mut deps = mock_dependencies(&[]);
-    let amount = Uint128::from(11223344u128);
     let instantiate_msg = InitMsg {
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
-        decimals: 9,
+        decimals: 6,
         moneymarket: "anchorprotocolmoneymrk".to_string(),
         registrar_contract: "angelprotocolteamdano".to_string(),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
+    assert_eq!(1, res.messages.len());
 
     assert_eq!(
         queriers::query_token_info(deps.as_ref()),
         TokenInfoResponse {
             name: "Cash Token".to_string(),
             symbol: "CASH".to_string(),
-            decimals: 9,
-            total_supply: amount,
+            decimals: 6,
+            total_supply: Uint128::zero(),
         }
     );
-    assert_eq!(
-        get_balance(deps.as_ref(), "addr0000"),
-        Uint128::new(11223344)
-    );
+    assert_eq!(get_balance(deps.as_ref(), "addr0000"), Uint128::zero());
 }

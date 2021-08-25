@@ -189,7 +189,6 @@ fn only_approved_charities_can_create_endowment_accounts() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
-        split_to_liquid: None,
     };
 
     // non-Approved charity cannot create Accounts

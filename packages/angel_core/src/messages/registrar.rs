@@ -78,7 +78,6 @@ pub struct UpdateEndowmentStatusMsg {
 pub struct VaultAddMsg {
     pub vault_addr: String,
     pub input_denom: String,
-    pub deposit_token: String,
     pub yield_token: String,
 }
 

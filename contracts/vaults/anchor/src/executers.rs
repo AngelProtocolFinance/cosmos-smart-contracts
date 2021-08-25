@@ -1,4 +1,4 @@
-use crate::anchor::{epoch_state, Cw20HookMsg, HandleMsg};
+// use crate::anchor::{epoch_state, Cw20HookMsg, HandleMsg};
 use crate::config;
 use crate::config::{BALANCES, TOKEN_INFO};
 use crate::utils::deduct_tax;
@@ -12,7 +12,7 @@ use cosmwasm_std::{
     to_binary, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest, Response,
     StdResult, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::Cw20ExecuteMsg;
+// use cw20::Cw20ExecuteMsg;
 
 pub fn deposit_stable(
     deps: DepsMut,
@@ -71,11 +71,11 @@ pub fn deposit_stable(
         .add_attribute("deposit_amount", info.funds[0].amount)
         .add_attribute("mint_amount", after_taxes.amount)
         .add_messages(vec![
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.moneymarket.to_string(),
-                msg: to_binary(&HandleMsg::DepositStable {})?,
-                funds: vec![after_taxes.clone()],
-            }),
+            // CosmosMsg::Wasm(WasmMsg::Execute {
+            //     contract_addr: config.moneymarket.to_string(),
+            //     msg: to_binary(&HandleMsg::DepositStable {})?,
+            //     funds: vec![after_taxes.clone()],
+            // }),
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: info.sender.to_string(),
                 msg: to_binary(&AccountTransferMsg {
@@ -113,8 +113,8 @@ pub fn redeem_stable(
         return Err(ContractError::Unauthorized {});
     }
 
-    let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
-    let exchange_rate = epoch_state.exchange_rate;
+    // let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
+    let _exchange_rate = Decimal::percent(95); // epoch_state.exchange_rate;
 
     let after_taxes = deduct_tax(
         deps.as_ref(),
@@ -155,15 +155,15 @@ pub fn redeem_stable(
         .add_attribute("deposit_amount", info.funds[0].amount)
         .add_attribute("mint_amount", after_taxes.amount)
         .add_messages(vec![
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.yield_token.to_string(),
-                msg: to_binary(&Cw20ExecuteMsg::Send {
-                    contract: config.moneymarket.to_string(),
-                    amount: info.funds[0].amount * Decimal::from(exchange_rate),
-                    msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
-                })?,
-                funds: vec![],
-            }),
+            // CosmosMsg::Wasm(WasmMsg::Execute {
+            //     contract_addr: config.yield_token.to_string(),
+            //     msg: to_binary(&Cw20ExecuteMsg::Send {
+            //         contract: config.moneymarket.to_string(),
+            //         amount: info.funds[0].amount * Decimal::from(exchange_rate),
+            //         msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
+            //     })?,
+            //     funds: vec![],
+            // }),
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: info.sender.to_string(),
                 msg: to_binary(&AccountTransferMsg {

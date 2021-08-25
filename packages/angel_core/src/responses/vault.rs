@@ -6,7 +6,6 @@ use serde::{Deserialize, Serialize};
 pub struct ConfigResponse {
     pub input_denom: String,
     pub yield_token: String,
-    pub deposit_token: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

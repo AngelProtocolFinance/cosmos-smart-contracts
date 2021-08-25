@@ -177,7 +177,7 @@ pub fn create_endowment(
         .iter()
         .position(|a| *a == info.sender);
     // ignore if that member was found in the list
-    if pos == None {
+    if pos == None && info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -281,7 +281,6 @@ pub fn vault_add(
         address: addr.clone(),
         input_denom: msg.input_denom,
         yield_token: deps.api.addr_validate(&msg.yield_token)?,
-        deposit_token: deps.api.addr_validate(&msg.deposit_token)?,
         approved: false,
     };
     vault_store(deps.storage).save(addr.as_bytes(), &new_vault)?;

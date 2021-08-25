@@ -10,7 +10,6 @@ pub struct YieldVault {
     pub address: Addr,
     pub input_denom: String,
     pub yield_token: Addr,
-    pub deposit_token: Addr,
     pub approved: bool,
 }
 
