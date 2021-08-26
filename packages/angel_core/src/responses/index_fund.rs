@@ -33,7 +33,7 @@ pub struct DonationListResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct StateResponse {
     pub total_funds: u64,
-    pub active_fund: Option<u64>,
+    pub active_fund: u64,
     pub terra_alliance: Vec<String>,
 }
 

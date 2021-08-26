@@ -10,7 +10,7 @@ pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
-    pub admin_addr: String,
+    pub owner_sc: String,
     pub registrar_contract: String,
     pub index_fund_contract: String,
     pub owner: String,       // address that originally setup the endowment account

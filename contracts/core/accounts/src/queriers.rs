@@ -6,9 +6,8 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
 
     let res = ConfigResponse {
-        admin_addr: config.admin_addr.to_string(),
+        owner: config.owner.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
-        index_fund_contract: config.index_fund_contract.to_string(),
         deposit_approved: config.deposit_approved,
         withdraw_approved: config.withdraw_approved,
     };

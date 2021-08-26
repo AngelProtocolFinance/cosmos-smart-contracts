@@ -203,7 +203,7 @@ pub fn create_endowment(
         admin: Some(env.contract.address.to_string()),
         label: "new endowment accounts".to_string(),
         msg: to_binary(&angel_core::messages::accounts::InstantiateMsg {
-            admin_addr: config.owner.to_string(),
+            owner_sc: config.owner.to_string(),
             registrar_contract: env.contract.address.to_string(),
             index_fund_contract: config.index_fund_contract.to_string(),
             owner: msg.owner,
