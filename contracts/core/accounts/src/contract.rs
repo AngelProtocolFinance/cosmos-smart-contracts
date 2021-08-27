@@ -126,8 +126,9 @@ pub fn execute(
 }
 
 #[entry_point]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
+        QueryMsg::Balance {} => to_binary(&queriers::query_account_balance(deps, env)?),
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::Endowment {} => to_binary(&queriers::query_endowment_details(deps)?),
         QueryMsg::Account { account_type } => {

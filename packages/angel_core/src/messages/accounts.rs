@@ -107,6 +107,8 @@ pub struct WithdrawMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
+    // Get the balance of available UST and the invested portion balances
+    Balance {},
     // Get details for a single Account, given an Account ID argument
     // Returns AccountDetailsResponse
     Account { account_type: String },
