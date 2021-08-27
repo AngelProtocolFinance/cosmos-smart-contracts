@@ -9,8 +9,8 @@ use angel_core::structs::EndowmentEntry;
 use angel_core::utils::deduct_tax;
 use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest, ReplyOn,
-    Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Order, QueryRequest,
+    ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ExecuteMsg;
 
@@ -192,4 +192,55 @@ pub fn redeem_stable(
                 amount: after_taxes.amount,
             }],
         })))
+}
+
+pub fn harvest(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    let config = config::read(deps.storage)?;
+
+    if config.owner != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+    let taxes_collected = Uint128::zero();
+
+    let locked_accounts: Result<Vec<_>, _> = LOCKED_BALANCES
+        .keys(deps.storage, None, None, Order::Ascending)
+        .map(String::from_utf8)
+        .collect();
+
+    for account in locked_accounts.unwrap().iter() {
+        let account_address = deps.api.addr_validate(account)?;
+        let transfer_amt =
+            LOCKED_BALANCES.load(deps.storage, &account_address)? * Decimal::percent(1);
+        let taxes_owed = transfer_amt * Decimal::percent(2);
+
+        // lower locked balance
+        LOCKED_BALANCES.update(
+            deps.storage,
+            &account_address,
+            |balance: Option<Uint128>| -> StdResult<_> {
+                Ok(balance.unwrap_or_default().checked_sub(transfer_amt)?)
+            },
+        )?;
+        // add to liquid balance (less taxes owed to AP Treasury)
+        LIQUID_BALANCES.update(
+            deps.storage,
+            &account_address,
+            |balance: Option<Uint128>| -> StdResult<_> {
+                Ok(balance.unwrap_or_default() + transfer_amt - taxes_owed)
+            },
+        )?;
+
+        taxes_collected += taxes_owed;
+    }
+
+    // add taxes collected to the liquid balance of the AP Treasury
+    LIQUID_BALANCES.update(
+        deps.storage,
+        &config.owner,
+        |balance: Option<Uint128>| -> StdResult<_> {
+            Ok(balance.unwrap_or_default() + taxes_collected)
+        },
+    )?;
+
+    Ok(Response::new().add_attribute("action", "transfer"))
 }

@@ -48,6 +48,7 @@ pub enum QueryMsg {
 pub enum ExecuteMsg {
     Deposit(AccountTransferMsg),
     Redeem(AccountTransferMsg),
+    Harvest {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

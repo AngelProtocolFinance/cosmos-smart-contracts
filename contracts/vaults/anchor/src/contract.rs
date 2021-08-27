@@ -83,6 +83,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::Deposit(msg) => executers::deposit_stable(deps, env, info, msg), // UST -> DP (Account)
         ExecuteMsg::Redeem(msg) => executers::redeem_stable(deps, env, info, msg), // DP -> UST (Account)
+        ExecuteMsg::Harvest {} => executers::harvest(deps, env, info), // DP -> DP shuffle (taxes collected)
     }
 }
 
