@@ -2,9 +2,12 @@ use crate::contract::{execute, instantiate, migrate, query, reply};
 use angel_core::errors::core::*;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentStatus};
+use angel_core::structs::EndowmentStatus;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{Addr, ContractResult, CosmosMsg, Event, Reply, SubMsgExecutionResponse, WasmMsg, coins, from_binary};
+use cosmwasm_std::{
+    coins, from_binary, Addr, ContractResult, CosmosMsg, Event, Reply, SubMsgExecutionResponse,
+    WasmMsg,
+};
 
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
 
@@ -85,7 +88,10 @@ fn update_config() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_response: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(index_fund_contract.clone(), config_response.index_fund_contract);
+    assert_eq!(
+        index_fund_contract.clone(),
+        config_response.index_fund_contract
+    );
     assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
 }
 
@@ -212,7 +218,8 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
         ExecuteMsg::CharityAdd {
             charity: good_charity_addr.clone(),
         },
-    ).unwrap();
+    )
+    .unwrap();
     assert_eq!(0, res.messages.len());
 
     let create_endowment_msg = CreateEndowmentMsg {
@@ -233,7 +240,8 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
         env.clone(),
         info.clone(),
         ExecuteMsg::CreateEndowment(create_endowment_msg.clone()),
-    ).unwrap_err();
+    )
+    .unwrap_err();
     assert_eq!(ContractError::Unauthorized {}, err);
 
     // approved charity can create Accounts
@@ -244,7 +252,8 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
         env.clone(),
         info.clone(),
         ExecuteMsg::CreateEndowment(create_endowment_msg.clone()),
-    ).unwrap();
+    )
+    .unwrap();
     assert_eq!(1, res.messages.len());
 
     // test that with the submessage we can instantiate account sc
@@ -252,9 +261,16 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
     match msg {
         CosmosMsg::Wasm(wasm_msg) => {
             match wasm_msg {
-                WasmMsg::Instantiate { admin, code_id: _, msg, funds: _, label: _ } => {
+                WasmMsg::Instantiate {
+                    admin,
+                    code_id: _,
+                    msg,
+                    funds: _,
+                    label: _,
+                } => {
                     assert_eq!(admin.clone(), Some("cosmos2contract".to_string()));
-                    let accounts_instantiate_msg: angel_core::messages::accounts::InstantiateMsg = from_binary(msg).unwrap();
+                    let accounts_instantiate_msg: angel_core::messages::accounts::InstantiateMsg =
+                        from_binary(msg).unwrap();
                     assert_eq!(accounts_instantiate_msg.admin_addr, ap_team.clone());
 
                     // let's instantiate account sc with our sub_message
@@ -269,46 +285,46 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
                     // TODO: fix test when accounts sc instantiate test will be ready
                     // by removing let err = ... and changing to:
                     // assert_eq!(0, res.messages.len());
-                    let err = accounts::contract::instantiate(deps.as_mut(), env, info, accounts_instantiate_msg).unwrap_err();
+                    let err = accounts::contract::instantiate(
+                        deps.as_mut(),
+                        env,
+                        info,
+                        accounts_instantiate_msg,
+                    )
+                    .unwrap_err();
                     match err {
-                        ContractError::Std(err) => {
-                            match err {
-                                cosmwasm_std::StdError::GenericErr { msg } => {
-                                    assert_eq!(msg, "Querier system error: No such contract: cosmos2contract");
-                                    ()
-                                },
-                                _ => (),
+                        ContractError::Std(err) => match err {
+                            cosmwasm_std::StdError::GenericErr { msg } => {
+                                assert_eq!(
+                                    msg,
+                                    "Querier system error: No such contract: cosmos2contract"
+                                );
+                                ()
                             }
+                            _ => (),
                         },
-                        _ => ()
+                        _ => (),
                     }
                     ()
-                },
+                }
                 _ => {
                     panic!("Not the Wasm instaniation message");
-                },
+                }
             }
-        },
+        }
         _ => {
             panic!("Not the Cosmos message");
-        },
+        }
     }
 
     assert_eq!(1, res.attributes.len());
     assert_eq!("action", res.attributes[0].key);
     assert_eq!("create_endowment", res.attributes[0].value);
 
-    let events = vec![
-        Event::new("instantiate_contract").add_attribute("contract_address", good_endowment_addr.clone()),
-    ];
-    let result = ContractResult::Ok(SubMsgExecutionResponse {
-        events,
-        data: None,
-    });
-    let subcall = Reply {
-        id: 0,
-        result
-    };
+    let events = vec![Event::new("instantiate_contract")
+        .add_attribute("contract_address", good_endowment_addr.clone())];
+    let result = ContractResult::Ok(SubMsgExecutionResponse { events, data: None });
+    let subcall = Reply { id: 0, result };
 
     // test the reply method
     let res = reply(deps.as_mut(), mock_env(), subcall).unwrap();
@@ -317,8 +333,14 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
     // test that the reply worked properly by querying
     let res = query(deps.as_ref(), mock_env(), QueryMsg::EndowmentList {}).unwrap();
     let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
-    assert_eq!(endowment_list_response.endowments[0].address, Addr::unchecked(good_endowment_addr.clone()));
-    assert_eq!(endowment_list_response.endowments[0].status, EndowmentStatus::Inactive);
+    assert_eq!(
+        endowment_list_response.endowments[0].address,
+        Addr::unchecked(good_endowment_addr.clone())
+    );
+    assert_eq!(
+        endowment_list_response.endowments[0].status,
+        EndowmentStatus::Inactive
+    );
 
     // let's test update endowment method by admin
     let update_endowment_status_msg = UpdateEndowmentStatusMsg {
@@ -332,14 +354,21 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
         env.clone(),
         info.clone(),
         ExecuteMsg::UpdateEndowmentStatus(update_endowment_status_msg.clone()),
-    ).unwrap();
+    )
+    .unwrap();
     assert_eq!(1, res.messages.len());
 
     // test that the updating worked properly by querying
     let res = query(deps.as_ref(), mock_env(), QueryMsg::EndowmentList {}).unwrap();
     let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
-    assert_eq!(endowment_list_response.endowments[0].address, Addr::unchecked(good_endowment_addr.clone()));
-    assert_eq!(endowment_list_response.endowments[0].status, EndowmentStatus::Approved);
+    assert_eq!(
+        endowment_list_response.endowments[0].address,
+        Addr::unchecked(good_endowment_addr.clone())
+    );
+    assert_eq!(
+        endowment_list_response.endowments[0].status,
+        EndowmentStatus::Approved
+    );
 }
 
 #[test]
@@ -371,8 +400,11 @@ fn test_add_update_and_remove_vault() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::Vault { vault_addr: vault_addr.clone() }
-    ).unwrap();
+        QueryMsg::Vault {
+            vault_addr: vault_addr.clone(),
+        },
+    )
+    .unwrap();
     let vault_detail_response: VaultDetailResponse = from_binary(&res).unwrap();
     assert_eq!(vault_addr.clone(), vault_detail_response.vault.address);
     assert_eq!(false, vault_detail_response.vault.approved);
@@ -389,8 +421,11 @@ fn test_add_update_and_remove_vault() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::Vault { vault_addr: vault_addr.clone() }
-    ).unwrap();
+        QueryMsg::Vault {
+            vault_addr: vault_addr.clone(),
+        },
+    )
+    .unwrap();
     let vault_detail_response: VaultDetailResponse = from_binary(&res).unwrap();
     assert_eq!(vault_addr.clone(), vault_detail_response.vault.address);
     assert_eq!(true, vault_detail_response.vault.approved);
@@ -406,12 +441,15 @@ fn test_add_update_and_remove_vault() {
     let err = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::Vault { vault_addr: vault_addr.clone() }
-    ).unwrap_err();
+        QueryMsg::Vault {
+            vault_addr: vault_addr.clone(),
+        },
+    )
+    .unwrap_err();
     match err {
         cosmwasm_std::StdError::NotFound { kind } => {
             assert_eq!(kind, "angel_core::structs::YieldVault");
-        },
+        }
         _ => {
             panic!("Should be Not found");
         }

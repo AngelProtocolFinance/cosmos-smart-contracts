@@ -1,19 +1,16 @@
 use std::collections::HashSet;
 
 use angel_core::messages::registrar::InstantiateMsg;
-use cosmwasm_std::{Addr, Decimal, Response, coins};
+use cosmwasm_std::{coins, Addr, Decimal, Response};
 
 use cosmwasm_vm::{
     from_slice,
-    testing::{
-        instantiate, mock_env, mock_info, mock_instance,
-    },
+    testing::{instantiate, mock_env, mock_info, mock_instance},
     Storage,
 };
 
 const DESERIALIZATION_LIMIT: usize = 20_000;
-use crate::state::{CONFIG_KEY, Config};
-
+use crate::state::{Config, CONFIG_KEY};
 
 static WASM: &[u8] = include_bytes!("../../../../../artifacts/registrar.wasm");
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
@@ -37,14 +34,16 @@ fn proper_initialization() {
     let res: Response = instantiate(&mut deps, mock_env(), info, instantiate_msg).unwrap();
     assert_eq!(res.messages.len(), 0);
 
-    let state: Config = deps.with_storage(|store| {
-        let data = store
-            .get(CONFIG_KEY.as_bytes())
-            .0
-            .expect("error reading db")
-            .expect("no data stored");
-        from_slice(&data, DESERIALIZATION_LIMIT)
-    }).unwrap();
+    let state: Config = deps
+        .with_storage(|store| {
+            let data = store
+                .get(CONFIG_KEY.as_bytes())
+                .0
+                .expect("error reading db")
+                .expect("no data stored");
+            from_slice(&data, DESERIALIZATION_LIMIT)
+        })
+        .unwrap();
 
     let expected_state: Config = Config {
         owner: Addr::unchecked("angelprotocolteamdano"),
