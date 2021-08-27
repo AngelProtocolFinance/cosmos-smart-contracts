@@ -4,6 +4,7 @@ use cosmwasm_std::Deps;
 use cw20::TokenInfoResponse;
 
 pub fn query_balance(deps: Deps, address: String) -> VaultBalanceResponse {
+    let info = TOKEN_INFO.load(deps.storage).unwrap();
     let address = deps.api.addr_validate(&address).unwrap();
     let locked_balance = LOCKED_BALANCES
         .may_load(deps.storage, &address)
@@ -16,6 +17,7 @@ pub fn query_balance(deps: Deps, address: String) -> VaultBalanceResponse {
     VaultBalanceResponse {
         locked: locked_balance,
         liquid: liquid_balance,
+        denom: info.symbol,
     }
 }
 

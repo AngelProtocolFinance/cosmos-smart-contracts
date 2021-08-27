@@ -19,4 +19,5 @@ pub struct ExchangeRateResponse {
 pub struct VaultBalanceResponse {
     pub locked: Uint128,
     pub liquid: Uint128,
+    pub denom: String,
 }

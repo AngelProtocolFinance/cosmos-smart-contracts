@@ -107,7 +107,7 @@ async function setupContracts() {
     registrar_contract: registrar,
     moneymarket: registrar, // placeholder addr for now
     name: "AP DP Token - Anchor",
-    symbol: "apANCHOR",
+    symbol: "apANC",
     decimals: 6,
   });
   let anchorVault = vaultResult.logs[0].events.find((event) => {
