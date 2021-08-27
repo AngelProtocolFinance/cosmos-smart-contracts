@@ -1,5 +1,5 @@
 use crate::structs::{EndowmentEntry, YieldVault};
-use cosmwasm_std::Decimal;
+use cosmwasm_std::{Addr, Decimal};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -30,4 +30,5 @@ pub struct ConfigResponse {
     pub treasury: String,
     pub tax_rate: Decimal,
     pub default_vault: String,
+    pub index_fund_contract: Addr,  
 }

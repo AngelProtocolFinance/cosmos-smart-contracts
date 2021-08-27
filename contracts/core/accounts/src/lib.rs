@@ -1,4 +1,4 @@
-mod contract;
+pub mod contract;
 mod executers;
 mod queriers;
 pub mod state;

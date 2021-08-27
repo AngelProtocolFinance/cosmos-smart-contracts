@@ -335,8 +335,10 @@ pub fn vault_remove(
         return Err(ContractError::Unauthorized {});
     }
     // try to look up the given vault
-    let _addr = deps.api.addr_validate(&vault_addr)?;
-    // TO DO: remove the vault
+    let addr = deps.api.addr_validate(&vault_addr)?;
+    vault_store(deps.storage).remove(addr.as_bytes());
+
+    // TODO: remove the vault
     Ok(Response::default())
 }
 
