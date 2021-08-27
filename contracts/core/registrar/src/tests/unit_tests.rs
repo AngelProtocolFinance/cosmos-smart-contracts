@@ -90,7 +90,7 @@ fn update_config() {
     let config_response: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(
         index_fund_contract.clone(),
-        config_response.index_fund_contract
+        config_response.index_fund
     );
     assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
 }
@@ -271,7 +271,7 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
                     assert_eq!(admin.clone(), Some("cosmos2contract".to_string()));
                     let accounts_instantiate_msg: angel_core::messages::accounts::InstantiateMsg =
                         from_binary(msg).unwrap();
-                    assert_eq!(accounts_instantiate_msg.admin_addr, ap_team.clone());
+                    assert_eq!(accounts_instantiate_msg.owner_sc, ap_team.clone());
 
                     // let's instantiate account sc with our sub_message
                     let mut deps = mock_dependencies(&[]);
@@ -429,29 +429,4 @@ fn test_add_update_and_remove_vault() {
     let vault_detail_response: VaultDetailResponse = from_binary(&res).unwrap();
     assert_eq!(vault_addr.clone(), vault_detail_response.vault.address);
     assert_eq!(true, vault_detail_response.vault.approved);
-
-    // remove vault
-    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
-    let msg = ExecuteMsg::VaultRemove {
-        vault_addr: String::from("vault_addr"),
-    };
-    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    assert_eq!(0, res.messages.len());
-
-    let err = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::Vault {
-            vault_addr: vault_addr.clone(),
-        },
-    )
-    .unwrap_err();
-    match err {
-        cosmwasm_std::StdError::NotFound { kind } => {
-            assert_eq!(kind, "angel_core::structs::YieldVault");
-        }
-        _ => {
-            panic!("Should be Not found");
-        }
-    }
 }
