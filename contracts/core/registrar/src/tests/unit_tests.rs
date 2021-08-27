@@ -2,9 +2,9 @@ use crate::contract::{execute, instantiate, migrate, query, reply};
 use angel_core::errors::core::*;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentStatus, SplitDetails};
+use angel_core::structs::{EndowmentStatus};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{Addr, ContractResult, CosmosMsg, Event, Reply, ReplyOn, SubMsg, SubMsgExecutionResponse, WasmMsg, coins, from_binary, to_binary};
+use cosmwasm_std::{Addr, ContractResult, CosmosMsg, Event, Reply, SubMsgExecutionResponse, WasmMsg, coins, from_binary};
 
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
 
@@ -340,4 +340,80 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
     let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
     assert_eq!(endowment_list_response.endowments[0].address, Addr::unchecked(good_endowment_addr.clone()));
     assert_eq!(endowment_list_response.endowments[0].status, EndowmentStatus::Approved);
+}
+
+#[test]
+fn test_add_update_and_remove_vault() {
+    let mut deps = mock_dependencies(&[]);
+    let ap_team = "angelprotocolteamdano".to_string();
+    let vault_addr = "vault_addr".to_string();
+    let instantiate_msg = InstantiateMsg {
+        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
+        treasury: ap_team.clone(),
+        default_vault: None,
+        tax_rate: 20,
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // add vault
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let add_vault_message = VaultAddMsg {
+        vault_addr: vault_addr.clone(),
+        input_denom: String::from("input_denom"),
+        yield_token: String::from("yield_token"),
+    };
+    let msg = ExecuteMsg::VaultAdd(add_vault_message);
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Vault { vault_addr: vault_addr.clone() }
+    ).unwrap();
+    let vault_detail_response: VaultDetailResponse = from_binary(&res).unwrap();
+    assert_eq!(vault_addr.clone(), vault_detail_response.vault.address);
+    assert_eq!(false, vault_detail_response.vault.approved);
+
+    // update vault status
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let msg = ExecuteMsg::VaultUpdateStatus {
+        vault_addr: String::from("vault_addr"),
+        approved: true,
+    };
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Vault { vault_addr: vault_addr.clone() }
+    ).unwrap();
+    let vault_detail_response: VaultDetailResponse = from_binary(&res).unwrap();
+    assert_eq!(vault_addr.clone(), vault_detail_response.vault.address);
+    assert_eq!(true, vault_detail_response.vault.approved);
+
+    // remove vault
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let msg = ExecuteMsg::VaultRemove {
+        vault_addr: String::from("vault_addr"),
+    };
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    let err = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Vault { vault_addr: vault_addr.clone() }
+    ).unwrap_err();
+    match err {
+        cosmwasm_std::StdError::NotFound { kind } => {
+            assert_eq!(kind, "angel_core::structs::YieldVault");
+        },
+        _ => {
+            panic!("Should be Not found");
+        }
+    }
 }

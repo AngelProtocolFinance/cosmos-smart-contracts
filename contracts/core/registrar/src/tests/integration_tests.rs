@@ -1,15 +1,14 @@
 use std::collections::HashSet;
 
 use angel_core::messages::registrar::InstantiateMsg;
-use cosmwasm_std::{Addr, AllBalanceResponse, BankMsg, Binary, ContractResult, Decimal, Empty, Response, SubMsg, coins, from_binary, to_vec};
+use cosmwasm_std::{Addr, Decimal, Response, coins};
 
 use cosmwasm_vm::{
-    call_execute, from_slice,
+    from_slice,
     testing::{
-        execute, instantiate, migrate, mock_env, mock_info, mock_instance,
-        mock_instance_with_balances, query, sudo, test_io, MOCK_CONTRACT_ADDR,
+        instantiate, mock_env, mock_info, mock_instance,
     },
-    Storage, VmError,
+    Storage,
 };
 
 const DESERIALIZATION_LIMIT: usize = 20_000;
