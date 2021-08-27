@@ -203,7 +203,7 @@ pub fn create_endowment(
         admin: Some(env.contract.address.to_string()),
         label: "new endowment accounts".to_string(),
         msg: to_binary(&angel_core::messages::accounts::InstantiateMsg {
-            admin_addr: config.owner.to_string(),
+            owner_sc: config.owner.to_string(),
             registrar_contract: env.contract.address.to_string(),
             index_fund_contract: config.index_fund_contract.to_string(),
             owner: msg.owner,
@@ -320,25 +320,6 @@ pub fn vault_update_status(
     vault.approved = approved;
     vault_store(deps.storage).save(addr.as_bytes(), &vault)?;
 
-    Ok(Response::default())
-}
-
-pub fn vault_remove(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    vault_addr: String,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-    // try to look up the given vault
-    let addr = deps.api.addr_validate(&vault_addr)?;
-    vault_store(deps.storage).remove(addr.as_bytes());
-
-    // TODO: remove the vault
     Ok(Response::default())
 }
 

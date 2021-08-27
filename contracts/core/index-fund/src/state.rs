@@ -27,7 +27,7 @@ pub struct Config {
 #[serde(rename_all = "snake_case")]
 pub struct State {
     pub total_funds: u64,
-    pub active_fund: Option<u64>,  // index ID of the Active IndexFund
+    pub active_fund: u64,          // index ID of the Active IndexFund
     pub round_donations: Uint128,  // total donations given to active charity this round
     pub next_rotation_block: u64,  // block height to perform next rotation on
     pub terra_alliance: Vec<Addr>, // Terra Charity Alliance addresses
@@ -37,7 +37,7 @@ impl State {
     pub fn default() -> Self {
         State {
             total_funds: 0,
-            active_fund: None,
+            active_fund: 0,
             round_donations: Uint128::zero(),
             next_rotation_block: 0_u64,
             terra_alliance: vec![],

@@ -10,7 +10,7 @@ pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
-    pub admin_addr: String,
+    pub owner_sc: String,
     pub registrar_contract: String,
     pub index_fund_contract: String,
     pub owner: String,       // address that originally setup the endowment account
@@ -107,6 +107,8 @@ pub struct WithdrawMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
+    // Get the balance of available UST and the invested portion balances
+    Balance {},
     // Get details for a single Account, given an Account ID argument
     // Returns AccountDetailsResponse
     Account { account_type: String },

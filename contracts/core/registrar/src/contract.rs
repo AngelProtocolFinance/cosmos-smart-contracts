@@ -62,10 +62,6 @@ pub fn execute(
             vault_addr,
             approved,
         } => executers::vault_update_status(deps, env, info, vault_addr, approved),
-
-        ExecuteMsg::VaultRemove { vault_addr } => {
-            executers::vault_remove(deps, env, info, vault_addr)
-        }
     }
 }
 

@@ -2,9 +2,10 @@ use crate::state::{fund_read, fund_store, read_funds, CONFIG, STATE, TCA_DONATIO
 use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::structs::{IndexFund, SplitDetails};
+use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn,
-    Response, StdResult, SubMsg, Uint128, WasmMsg,
+    from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
+    ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Balance, Cw20ReceiveMsg};
 
@@ -89,13 +90,24 @@ pub fn create_index_fund(
     match exists {
         Some(_) => Err(ContractError::IndexFundAlreadyExists {}),
         None => {
-            // Add the new Fund
+            // check if this is the first fund being added in...
+            if read_funds(deps.storage)?.len() == 0 {
+                // increment state funds totals AND set the active fund ID
+                STATE.update(deps.storage, |mut state| -> StdResult<_> {
+                    state.total_funds += 1;
+                    state.active_fund = fund.id;
+                    Ok(state)
+                })?;
+            } else {
+                // increment state funds totals
+                STATE.update(deps.storage, |mut state| -> StdResult<_> {
+                    state.total_funds += 1;
+                    Ok(state)
+                })?;
+            }
+            // Add the new Fund to storage
             fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
-            // increment state funds totals
-            STATE.update(deps.storage, |mut state| -> StdResult<_> {
-                state.total_funds += 1;
-                Ok(state)
-            })?;
+
             Ok(Response::default())
         }
     }
@@ -204,20 +216,31 @@ pub fn receive(
     let sender_addr = deps.api.addr_validate(&cw20_msg.sender)?;
     let msg = from_binary(&cw20_msg.msg)?;
     match msg {
-        ReceiveMsg::Deposit(msg) => deposit(deps, env, sender_addr, cw20_msg.amount, msg),
+        ReceiveMsg::Deposit(msg) => deposit(deps, env, info, sender_addr, msg),
     }
 }
 
 pub fn deposit(
     deps: DepsMut,
     env: Env,
+    info: MessageInfo,
     sender_addr: Addr,
-    balance: Uint128,
     msg: DepositMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let state = STATE.load(deps.storage)?;
-    let mut balance = balance;
+
+    let mut deposit_amount: Uint128 = info
+        .funds
+        .iter()
+        .find(|c| c.denom == "uusd".to_string())
+        .map(|c| Uint128::from(c.amount))
+        .unwrap_or_else(Uint128::zero);
+
+    // Cannot deposit zero amount
+    if deposit_amount.is_zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
 
     // check each of the currenly allowed TCA member addr
     let mut tca_member = false;
@@ -230,7 +253,7 @@ pub fn deposit(
                 .unwrap_or_default();
             tca_donor.add_tokens(Balance::from(vec![Coin {
                 denom: "uusd".to_string(),
-                amount: balance,
+                amount: deposit_amount,
             }]));
             TCA_DONATIONS.save(deps.storage, sender_addr.to_string(), &tca_donor)?;
         }
@@ -244,17 +267,14 @@ pub fn deposit(
     // check if block height limit is exceeded
     let curr_active_fund = match env.block.height >= state.next_rotation_block {
         true => {
-            let new_fund_id = rotate_fund(
-                read_funds(deps.storage).unwrap(),
-                state.active_fund.unwrap(),
-            );
+            let new_fund_id = rotate_fund(read_funds(deps.storage).unwrap(), state.active_fund);
             STATE.update(deps.storage, |mut state| -> StdResult<_> {
-                state.active_fund = Some(new_fund_id);
+                state.active_fund = new_fund_id;
                 Ok(state)
             })?;
             new_fund_id
         }
-        false => state.active_fund.unwrap(),
+        false => state.active_fund,
     };
 
     let mut donation_messages = vec![];
@@ -271,24 +291,23 @@ pub fn deposit(
                 msg.split,
             );
             donation_messages.append(&mut build_donation_messages(
+                deps.as_ref(),
                 fund.members,
                 split,
                 "uusd".to_string(),
-                balance,
+                deposit_amount,
             ));
         }
         // Active Fund donation, check donation limits
         None => {
             // check if donations limit would be exceeded by current donation amt
             let new_active_fund =
-                match state.round_donations + balance > config.funding_goal.unwrap() {
+                match state.round_donations + deposit_amount > config.funding_goal.unwrap() {
                     true => {
-                        let new_fund_id = rotate_fund(
-                            read_funds(deps.storage).unwrap(),
-                            state.active_fund.unwrap(),
-                        );
+                        let new_fund_id =
+                            rotate_fund(read_funds(deps.storage).unwrap(), state.active_fund);
                         STATE.update(deps.storage, |mut state| -> StdResult<_> {
-                            state.active_fund = Some(new_fund_id);
+                            state.active_fund = new_fund_id;
                             Ok(state)
                         })?;
                         new_fund_id
@@ -299,7 +318,7 @@ pub fn deposit(
             if new_active_fund != curr_active_fund {
                 // donate up to the donation limit on old active fund
                 let goal_leftover = config.funding_goal.unwrap() - state.round_donations;
-                balance -= goal_leftover;
+                deposit_amount -= goal_leftover;
                 let fund = fund_read(deps.storage).load(&curr_active_fund.to_be_bytes())?;
                 let split = calculate_split(
                     tca_member,
@@ -308,13 +327,14 @@ pub fn deposit(
                     msg.split,
                 );
                 donation_messages.append(&mut build_donation_messages(
+                    deps.as_ref(),
                     fund.members,
                     split,
                     "uusd".to_string(),
                     goal_leftover,
                 ));
             }
-            // donate the left over balance to the new active fund
+            // donate the left over deposit_amount to the new active fund
             let fund = fund_read(deps.storage).load(&new_active_fund.to_be_bytes())?;
             let split = calculate_split(
                 tca_member,
@@ -323,17 +343,18 @@ pub fn deposit(
                 msg.split,
             );
             donation_messages.append(&mut build_donation_messages(
+                deps.as_ref(),
                 fund.members,
                 split,
                 "uusd".to_string(),
-                balance,
+                deposit_amount,
             ));
         }
     };
 
-    let mut res = Response::new().add_attribute("action", "deposit");
-    res.messages = donation_messages;
-    Ok(res)
+    Ok(Response::new()
+        .add_submessages(donation_messages)
+        .add_attribute("action", "deposit"))
 }
 
 pub fn calculate_split(
@@ -369,6 +390,7 @@ pub fn calculate_split(
 }
 
 pub fn build_donation_messages(
+    deps: Deps,
     members: Vec<Addr>,
     split: Decimal,
     token_denom: String,
@@ -378,6 +400,14 @@ pub fn build_donation_messages(
     let locked_percentage = Decimal::one() - split;
     let liquid_percentage = split;
     let member_portion = balance.multiply_ratio(1_u128, members.len() as u128);
+    let after_tax_amount: Coin = deduct_tax(
+        deps,
+        Coin {
+            denom: token_denom.clone(),
+            amount: member_portion - Uint128::from(1_u128),
+        },
+    )
+    .unwrap();
     let mut messages = vec![];
     for member in members.iter() {
         messages.push(donation_submsg(
@@ -385,7 +415,7 @@ pub fn build_donation_messages(
             locked_percentage,
             liquid_percentage,
             token_denom.clone(),
-            member_portion,
+            after_tax_amount.amount,
         ));
     }
     messages
@@ -424,7 +454,6 @@ pub fn donation_submsg(
 pub fn rotate_fund(funds: Vec<IndexFund>, curr_fund: u64) -> u64 {
     let new_fund;
     let curr_fund_index = funds.iter().position(|fund| fund.id == curr_fund).unwrap();
-
     if funds.len() < curr_fund_index + 1usize {
         // get the next fund in the index
         new_fund = funds[curr_fund_index + 1usize].id;

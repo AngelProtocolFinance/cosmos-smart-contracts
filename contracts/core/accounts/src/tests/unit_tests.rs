@@ -17,7 +17,7 @@ fn test_proper_initialization() {
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
 
     let instantiate_msg = InstantiateMsg {
-        admin_addr: ap_team.clone(),
+        owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
         index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),
@@ -45,7 +45,7 @@ fn test_get_config() {
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
 
     let instantiate_msg = InstantiateMsg {
-        admin_addr: ap_team.clone(),
+        owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
         index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),
@@ -74,7 +74,7 @@ fn test_update_endowment_settings() {
     let pleb = "plebAccount".to_string();
 
     let instantiate_msg = InstantiateMsg {
-        admin_addr: ap_team.clone(),
+        owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
         index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),
@@ -138,7 +138,7 @@ fn test_change_registrar_contract() {
     let pleb = "plebAccount".to_string();
 
     let instantiate_msg = InstantiateMsg {
-        admin_addr: ap_team.clone(),
+        owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
         index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),
@@ -196,7 +196,7 @@ fn test_change_admin() {
     let pleb = "plebAccount".to_string();
 
     let instantiate_msg = InstantiateMsg {
-        admin_addr: ap_team.clone(),
+        owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
         index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),
@@ -230,7 +230,7 @@ fn test_change_admin() {
     // check changes saved and can be recalled
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let value: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(pleb.clone(), value.admin_addr);
+    assert_eq!(pleb.clone(), value.owner);
 
     // Original owner should not be able to update the configs now
     let msg = ExecuteMsg::UpdateAdmin {
@@ -254,7 +254,7 @@ fn migrate_contract() {
     let _pleb = "plebAccount".to_string();
 
     let instantiate_msg = InstantiateMsg {
-        admin_addr: ap_team.clone(),
+        owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
         index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),
@@ -288,7 +288,7 @@ fn test_update_strategy() {
     let pleb = "plebAccount".to_string();
 
     let instantiate_msg = InstantiateMsg {
-        admin_addr: ap_team.clone(),
+        owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
         index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),

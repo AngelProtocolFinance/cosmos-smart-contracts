@@ -30,9 +30,8 @@ pub fn instantiate(
     CONFIG.save(
         deps.storage,
         &Config {
-            admin_addr: deps.api.addr_validate(&msg.admin_addr)?,
+            owner: deps.api.addr_validate(&msg.owner_sc)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-            index_fund_contract: deps.api.addr_validate(&msg.index_fund_contract)?,
             accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
@@ -82,9 +81,7 @@ pub fn instantiate(
         )?;
     }
 
-    Ok(Response::new()
-        .add_attribute("name", msg.name)
-        .add_attribute("description", msg.description))
+    Ok(Response::default())
 }
 
 #[entry_point]
@@ -105,17 +102,10 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
             executers::update_endowment_status(deps, env, info, msg)
         }
-        ExecuteMsg::Deposit(msg) => executers::deposit(
-            deps,
-            env,
-            info.clone(),
-            info.sender,
-            info.funds[0].amount,
-            msg,
-        ),
+        ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
         ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
         ExecuteMsg::VaultReceipt(msg) => {
-            executers::vault_receipt(deps, info.clone(), info.sender, info.funds[0].amount, msg)
+            executers::vault_receipt(deps, info.clone(), info.sender, msg)
         }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
@@ -136,8 +126,9 @@ pub fn execute(
 }
 
 #[entry_point]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
+        QueryMsg::Balance {} => to_binary(&queriers::query_account_balance(deps, env)?),
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::Endowment {} => to_binary(&queriers::query_endowment_details(deps)?),
         QueryMsg::Account { account_type } => {

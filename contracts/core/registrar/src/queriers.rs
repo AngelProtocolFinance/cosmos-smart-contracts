@@ -10,7 +10,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         treasury: config.treasury.to_string(),
         tax_rate: config.tax_rate,
         default_vault: config.default_vault.to_string(),
-        index_fund_contract: config.index_fund_contract,
+        index_fund: config.index_fund_contract.to_string(),
     };
     Ok(res)
 }

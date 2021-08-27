@@ -24,7 +24,9 @@ const terra = new LocalTerra();
 const apTeam = terra.wallets.test1;
 const charity1 = terra.wallets.test2;
 const charity2 = terra.wallets.test3;
-const pleb = terra.wallets.test4;
+const charity3 = terra.wallets.test4;
+const pleb = terra.wallets.test5;
+const tca = terra.wallets.test6;
 
 let accountsCodeId: number;
 let registrar: string;
@@ -33,6 +35,7 @@ let anchorVault: string;
 // let anchorMoneyMarket: string;
 let endowmentContract1: string;
 let endowmentContract2: string;
+let endowmentContract3: string;
 
 //----------------------------------------------------------------------------------------
 // Setup all contracts
@@ -78,7 +81,11 @@ async function setupContracts() {
     tax_rate: 2,
     default_vault: undefined,
   });
-  registrar = registrarResult.logs[0].events[0].attributes[3].value;
+  registrar = registrarResult.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => { 
+    return attribute.key == "contract_address"; 
+  })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${registrar}`);
 
   // Index Fund
@@ -86,7 +93,11 @@ async function setupContracts() {
   const fundResult = await instantiateContract(terra, apTeam, apTeam, fundCodeId, {
     registrar_contract: registrar,
   });
-  indexFund = fundResult.logs[0].events[0].attributes[3].value;
+  indexFund = fundResult.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => { 
+    return attribute.key == "contract_address"; 
+  })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
 
 
@@ -96,16 +107,40 @@ async function setupContracts() {
     registrar_contract: registrar,
     moneymarket: registrar, // placeholder addr for now
     name: "AP DP Token - Anchor",
-    symbol: "apANCHOR",
+    symbol: "apANC",
     decimals: 6,
   });
-  let event = vaultResult.logs[0].events.find((event) => {
+  let anchorVault = vaultResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
-  });
-  anchorVault = event?.attributes[3].value as string;
+  })?.attributes.find((attribute) => { 
+    return attribute.key == "contract_address"; 
+  })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault}`);
 
-  // Step 3: Create two Endowments via the Registrar contract
+  // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
+  process.stdout.write("Approving Anchor Vault in Registrar");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      vault_update_status: { 
+        vault_addr: anchorVault,
+        approved: true,
+      },
+    })
+  ]);
+  console.log(chalk.green(" Done!"));
+
+  process.stdout.write("Set the default vault in Registrar for newly created Endowments");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_config: {
+        index_fund_contract: indexFund,
+        default_vault: anchorVault,
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
+  
+  // Step 4: Create two Endowments via the Registrar contract
   // endowment #1
   process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
   const charityResult1 = await sendTransaction(terra, apTeam, [
@@ -150,8 +185,30 @@ async function setupContracts() {
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${endowmentContract2}`);
 
-  // AP Team approves both newly created endowments
-  process.stdout.write("AP Team approves both endowments");
+  // endowment #3
+  process.stdout.write("Charity Endowment #3 created from the Registrar by the AP Team");
+  const charityResult3 = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      create_endowment: {
+        owner: charity3.key.accAddress,
+        beneficiary: charity3.key.accAddress,
+        name: "Test Endowment #3",
+        description: "Shady endowment that will never be approved",
+        withdraw_before_maturity: false,
+        maturity_time: undefined,
+        maturity_height: undefined,
+      }
+    }),
+  ]);
+  endowmentContract3 = charityResult3.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => { 
+    return attribute.key == "contract_address"; 
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${endowmentContract3}`);
+
+  // AP Team approves 2 of 3 newly created endowments
+  process.stdout.write("AP Team approves 2 of 3 endowments");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_endowment_status: {
@@ -168,7 +225,7 @@ async function setupContracts() {
   ]);
   console.log(chalk.green(" Done!"));
 
-  // Step 4: Index Fund finals setup 
+  // Step 5: Index Fund finals setup 
   // Update Index Fund Addr in the Registrar contract
   process.stdout.write("Update Registrar with the Address of the Index Fund contract");
   await sendTransaction(terra, apTeam, [
@@ -186,7 +243,7 @@ async function setupContracts() {
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       create_fund: {
         fund: {
-          id: 42,
+          id: 1,
           name: "Test Fund",
           description: "My first test fund",
           members: [endowmentContract1, endowmentContract2],
@@ -196,11 +253,19 @@ async function setupContracts() {
   ]);
   console.log(chalk.green(" Done!"));
 
+  // Add confirmed TCA Members to the index fund approved list
+  process.stdout.write("Add confirmed TCA Member to allowed list");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+      update_tca_list: { new_list: [tca.key.accAddress] },
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
 }
 
 
 //----------------------------------------------------------------------------------------
-// Test 1. Normal Donor can send funds to the Index Fund 
+// Test 1. Normal Donor cannot send funds to the Index Fund 
 //
 // SCENARIO:
 // Normal user sends UST funds to an Index Fund SC fund to have it split 
@@ -209,7 +274,7 @@ async function setupContracts() {
 //----------------------------------------------------------------------------------------
 
 async function testDonorSendsToIndexFund() {
-  process.stdout.write("\nTest - Donor (normal pleb) can send a UST donation to an Index Fund fund");
+  process.stdout.write("Test - Donor (normal pleb) cannot send a UST donation to an Index Fund fund");
 
   await expect(
     sendTransaction(terra, pleb, [
@@ -218,21 +283,105 @@ async function testDonorSendsToIndexFund() {
         indexFund,
         {
           deposit: {
-            fund_id: 42,
+            fund_id: 1,
             split: undefined,
           },
         },
         {
           uusd: "420000000",
         }
-    ),
-  ])
+      ),
+    ])
   ).to.be.rejectedWith("Unauthorized"); // for MVP normal users cannot donate
-
-  const fundTotal = await queryNativeTokenBalance(terra, indexFund, "uusd");
-  expect(fundTotal).to.equal("0");
   console.log(chalk.green("Passed!"));
 }
+
+
+//----------------------------------------------------------------------------------------
+// Test 2. Cannot send funds to an Endowment that is not approved for deposits 
+//
+// SCENARIO:
+// If an Endowment has not been approved by the AP Team, all deposits should be rejected
+//
+//----------------------------------------------------------------------------------------
+
+async function testRejectUnapprovedDonations() {
+  process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
+
+  await expect(
+    sendTransaction(terra, pleb, [
+      new MsgExecuteContract(
+        pleb.key.accAddress,
+        endowmentContract3,
+        {
+          deposit: {
+            locked_percentage: "0.5",
+            liquid_percentage: "0.5",
+          },
+        },
+        {
+          uusd: "420000000",
+        }
+      ),
+    ])
+  ).to.be.rejectedWith("Unauthorized"); // for MVP normal users cannot donate
+  console.log(chalk.green("Passed!"));
+}
+
+
+//----------------------------------------------------------------------------------------
+// Test 3. TCA Member can send donations to the Index Fund 
+//
+// SCENARIO:
+// TCA Member sends UST funds to an Index Fund SC fund to have it split 
+// up amonst the active fund's charity members. 
+//
+//----------------------------------------------------------------------------------------
+
+async function testTcaMemberSendsToIndexFund() {
+  process.stdout.write("Test - TCA Member can send a UST donation to an Index Fund");
+
+  await expect(
+    sendTransaction(terra, tca, [
+      new MsgExecuteContract(
+        tca.key.accAddress,
+        indexFund,
+        {
+          deposit: {
+            // fund_id: 1,
+            // split: undefined,
+          },
+        },
+        {
+          uusd: "4200000000",
+        }
+      ),
+    ])
+  );
+  console.log(chalk.green("Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// Test XX. Charity Owner can rebalance their portfolio/update the Accounts' strategy
+//
+// SCENARIO:
+// Charity Owner can trigger a rebalance of their Accounts, which should: 
+// 1) redeem all invested funds from Vaults to the Accounts
+// 2) reinvest all redeemed funds, according the accounts' strategy
+//
+//----------------------------------------------------------------------------------------
+
+
+//----------------------------------------------------------------------------------------
+// Test XX. Charity Beneficiary can withdraw from available balance in their Accounts
+//
+// SCENARIO:
+// Charity beneficiary can draw down on the available Liquid Account balance and should
+// not be able to touch the Locked Account's balance.
+//
+//----------------------------------------------------------------------------------------
+
+
 
 //----------------------------------------------------------------------------------------
 // Main
@@ -240,14 +389,18 @@ async function testDonorSendsToIndexFund() {
 
 (async () => {
   console.log(chalk.yellow("\nStep 1. Environment Info"));
-  console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as angel team`);
-  console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as charity #1`);
-  console.log(`Use ${chalk.cyan(charity2.key.accAddress)} as charity #2`);
-  console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as pleb`);
+  console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
+  console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as Charity #1`);
+  console.log(`Use ${chalk.cyan(charity2.key.accAddress)} as Charity #2`);
+  console.log(`Use ${chalk.cyan(charity3.key.accAddress)} as Charity #3`);
+  console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
+  console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   await setupContracts();
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  await testRejectUnapprovedDonations();
   await testDonorSendsToIndexFund();
+  await testTcaMemberSendsToIndexFund();
 })();

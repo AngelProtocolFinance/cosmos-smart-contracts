@@ -5,10 +5,30 @@ use crate::responses::vault::ExchangeRateResponse;
 use crate::structs::{FundingSource, GenericBalance, RedeemResults, SplitDetails, YieldVault};
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, CosmosMsg, Decimal, Deps, QueryRequest, ReplyOn, StdResult, SubMsg,
-    Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, QueryRequest, ReplyOn, StdResult,
+    SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
+use terra_cosmwasm::TerraQuerier;
+
+pub fn compute_tax(deps: Deps, coin: &Coin) -> StdResult<Uint256> {
+    let terra_querier = TerraQuerier::new(&deps.querier);
+    let tax_rate = Decimal256::from((terra_querier.query_tax_rate()?).rate);
+    let tax_cap = Uint256::from((terra_querier.query_tax_cap(coin.denom.to_string())?).cap);
+    let amount = Uint256::from(coin.amount);
+    Ok(std::cmp::min(
+        amount * (Decimal256::one() - Decimal256::one() / (Decimal256::one() + tax_rate)),
+        tax_cap,
+    ))
+}
+
+pub fn deduct_tax(deps: Deps, coin: Coin) -> StdResult<Coin> {
+    let tax_amount = compute_tax(deps, &coin)?;
+    Ok(Coin {
+        denom: coin.denom,
+        amount: (Uint256::from(coin.amount) - tax_amount).into(),
+    })
+}
 
 pub fn check_splits(
     endowment_splits: SplitDetails,
@@ -127,7 +147,7 @@ pub fn redeem_from_vaults(
             id: 42,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: yield_vault.address.to_string(),
-                msg: to_binary(&transfer_msg).unwrap(),
+                msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem(transfer_msg)).unwrap(),
                 funds: vec![],
             }),
             gas_limit: None,

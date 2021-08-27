@@ -1,14 +1,24 @@
-use crate::config::{BALANCES, TOKEN_INFO};
+use crate::config::{LIQUID_BALANCES, LOCKED_BALANCES, TOKEN_INFO};
+use angel_core::responses::vault::VaultBalanceResponse;
 use cosmwasm_std::Deps;
-use cw20::{BalanceResponse, MinterResponse, TokenInfoResponse};
+use cw20::TokenInfoResponse;
 
-pub fn query_balance(deps: Deps, address: String) -> BalanceResponse {
+pub fn query_balance(deps: Deps, address: String) -> VaultBalanceResponse {
+    let info = TOKEN_INFO.load(deps.storage).unwrap();
     let address = deps.api.addr_validate(&address).unwrap();
-    let balance = BALANCES
+    let locked_balance = LOCKED_BALANCES
         .may_load(deps.storage, &address)
         .unwrap()
         .unwrap_or_default();
-    BalanceResponse { balance }
+    let liquid_balance = LIQUID_BALANCES
+        .may_load(deps.storage, &address)
+        .unwrap()
+        .unwrap_or_default();
+    VaultBalanceResponse {
+        locked: locked_balance,
+        liquid: liquid_balance,
+        denom: info.symbol,
+    }
 }
 
 pub fn query_token_info(deps: Deps) -> TokenInfoResponse {
@@ -18,16 +28,5 @@ pub fn query_token_info(deps: Deps) -> TokenInfoResponse {
         symbol: info.symbol,
         decimals: info.decimals,
         total_supply: info.total_supply,
-    }
-}
-
-pub fn query_minter(deps: Deps) -> Option<MinterResponse> {
-    let meta = TOKEN_INFO.load(deps.storage).unwrap();
-    match meta.mint {
-        Some(m) => Some(MinterResponse {
-            minter: m.minter.into(),
-            cap: m.cap,
-        }),
-        None => None,
     }
 }

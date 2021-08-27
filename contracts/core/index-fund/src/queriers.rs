@@ -48,7 +48,7 @@ pub fn fund_details(deps: Deps, fund_id: u64) -> StdResult<FundDetailsResponse> 
 pub fn active_fund_details(deps: Deps) -> StdResult<FundDetailsResponse> {
     let state = STATE.load(deps.storage)?;
     Ok(FundDetailsResponse {
-        fund: fund_read(deps.storage).may_load(&state.active_fund.unwrap().to_be_bytes())?,
+        fund: fund_read(deps.storage).may_load(&state.active_fund.to_be_bytes())?,
     })
 }
 

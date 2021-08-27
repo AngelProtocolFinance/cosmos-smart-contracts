@@ -47,4 +47,5 @@ impl TokenInfo {
 }
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
-pub const BALANCES: Map<&Addr, Uint128> = Map::new("balance");
+pub const LOCKED_BALANCES: Map<&Addr, Uint128> = Map::new("locked_balance");
+pub const LIQUID_BALANCES: Map<&Addr, Uint128> = Map::new("liquid_balance");

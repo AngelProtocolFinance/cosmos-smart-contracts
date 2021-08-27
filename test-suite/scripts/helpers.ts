@@ -31,7 +31,7 @@ export async function sendTransaction(
 ) {
   const tx = await sender.createAndSignTx({
     msgs,
-    fee: new StdFee(30000000, [new Coin("uluna", 4500000), new Coin("uusd", 4500000)]),
+    fee: new StdFee(5000000, [new Coin("uusd", 2000000)]),
   });
 
   const result = await terra.tx.broadcast(tx);

@@ -1,12 +1,11 @@
-use crate::state::{InvestmentHolding, ACCOUNTS, CONFIG, ENDOWMENT, INVESTMENTS};
+use crate::state::{ACCOUNTS, CONFIG, ENDOWMENT};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::vault::AccountTransferMsg;
-use angel_core::responses::registrar::{VaultDetailResponse, VaultListResponse};
+use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse, VaultListResponse};
 use angel_core::structs::{FundingSource, StrategyComponent, YieldVault};
-use angel_core::utils::redeem_from_vaults;
-use angel_core::utils::{vault_account_balance, vault_fx_rate};
+use angel_core::utils::{deduct_tax, redeem_from_vaults, vault_account_balance, vault_fx_rate};
 use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
@@ -22,13 +21,13 @@ pub fn update_admin(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // only the owner/admin of the contract can update their address in the configs
-    if info.sender != config.admin_addr {
+    if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
     let new_admin = deps.api.addr_validate(&new_admin)?;
     // update config attributes with newly passed args
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.admin_addr = new_admin;
+        config.owner = new_admin;
         Ok(config)
     })?;
 
@@ -67,7 +66,7 @@ pub fn update_endowment_settings(
     let config = CONFIG.load(deps.storage)?;
 
     // only the SC admin can update these configs...for now
-    if info.sender != config.admin_addr {
+    if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -190,10 +189,8 @@ pub fn receive(
     let sender_addr = deps.api.addr_validate(&cw20_msg.sender)?;
     let msg = from_binary(&cw20_msg.msg)?;
     match msg {
-        ReceiveMsg::Deposit(msg) => deposit(deps, env, info, sender_addr, cw20_msg.amount, msg),
-        ReceiveMsg::VaultReceipt(msg) => {
-            vault_receipt(deps, info, sender_addr, cw20_msg.amount, msg)
-        }
+        ReceiveMsg::Deposit(msg) => deposit(deps, env, info, sender_addr, msg),
+        ReceiveMsg::VaultReceipt(msg) => vault_receipt(deps, info, sender_addr, msg),
     }
 }
 
@@ -201,7 +198,6 @@ pub fn vault_receipt(
     deps: DepsMut,
     info: MessageInfo,
     sender_addr: Addr,
-    balance: Uint128,
     msg: AccountTransferMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -219,14 +215,6 @@ pub fn vault_receipt(
         return Err(ContractError::Unauthorized {});
     }
 
-    if balance.is_zero() {
-        return Err(ContractError::EmptyBalance {});
-    }
-
-    if info.funds.len() > 1 {
-        return Err(ContractError::TokenTypes {});
-    }
-
     if info.funds[0].denom == "uusd" {
         // funds go into general Account balance
         if msg.locked > Uint256::zero() {
@@ -239,24 +227,11 @@ pub fn vault_receipt(
             account.ust_balance += msg.liquid;
             ACCOUNTS.save(deps.storage, "liquid".to_string(), &account)?;
         }
-    } else {
-        // funds go into invested coin balances (per vault)
-        let mut investment = INVESTMENTS
-            .load(deps.storage, sender_addr.to_string())
-            .unwrap_or(InvestmentHolding {
-                denom: info.funds[0].clone().denom,
-                locked: Uint256::zero(),
-                liquid: Uint256::zero(),
-            });
-        investment.locked += msg.locked;
-        investment.liquid += msg.liquid;
-        INVESTMENTS.save(deps.storage, sender_addr.to_string(), &investment)?;
     }
 
     Ok(Response::new()
         .add_attribute("action", "vault_receipt")
-        .add_attribute("sender", info.sender.to_string())
-        .add_attribute("amount_received", info.funds[0].amount))
+        .add_attribute("sender", info.sender.to_string()))
 }
 
 pub fn deposit(
@@ -264,7 +239,6 @@ pub fn deposit(
     _env: Env,
     info: MessageInfo,
     sender_addr: Addr,
-    balance: Uint128,
     msg: DepositMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -279,14 +253,34 @@ pub fn deposit(
         return Err(ContractError::InvalidSplit {});
     }
 
+    let deposit_amount: Uint128 = info
+        .funds
+        .iter()
+        .find(|c| c.denom == "uusd".to_string())
+        .map(|c| Uint128::from(c.amount))
+        .unwrap_or_else(Uint128::zero);
+
+    // Cannot deposit zero amount
+    if deposit_amount.is_zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
+
     let locked_split = msg.locked_percentage;
     let liquid_split = msg.liquid_percentage;
 
+    // Get the Index Fund SC address from the Registrar SC
+    let registrar_config: ConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+    let index_fund: String = registrar_config.index_fund;
+
     // MVP LOGIC: Only index fund SC (aka TCA Member donations are accepted)
     // fails if the token deposit was not coming from the Index Fund SC
-    if sender_addr != config.index_fund_contract {
+    if sender_addr != index_fund {
         // let splits = ENDOWMENT.load(deps.storage)?.split_to_liquid;
-        // let new_splits = check_splits(splits, locked_percentage, liquid_percentage);
+        // let new_splits = check_splits(splits, locked_split, liquid_split);
         // locked_split = new_splits.0;
         // liquid_split = new_splits.1;
         return Err(ContractError::Unauthorized {});
@@ -305,10 +299,17 @@ pub fn deposit(
                 })?,
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
-
+        let after_tax: Coin = deduct_tax(
+            deps.as_ref(),
+            Coin {
+                denom: "uusd".to_string(),
+                amount: deposit_amount - Uint128::from(1_u128),
+            },
+        )
+        .unwrap();
         let transfer_msg = AccountTransferMsg {
-            locked: Uint256::from(balance * locked_split * strategy.locked_percentage),
-            liquid: Uint256::from(balance * liquid_split * strategy.liquid_percentage),
+            locked: Uint256::from(after_tax.amount * locked_split * strategy.locked_percentage),
+            liquid: Uint256::from(after_tax.amount * liquid_split * strategy.liquid_percentage),
         };
 
         // create a deposit message for X Vault, noting amounts for Locked / Liquid
@@ -322,7 +323,7 @@ pub fn deposit(
                 ))
                 .unwrap(),
                 funds: vec![Coin {
-                    amount: balance,
+                    amount: after_tax.amount,
                     denom: "uusd".to_string(),
                 }],
             }),
@@ -335,7 +336,7 @@ pub fn deposit(
         .add_submessages(messages)
         .add_attribute("action", "account_deposit")
         .add_attribute("sender", info.sender.to_string())
-        .add_attribute("deposit_amount", balance))
+        .add_attribute("deposit_amount", deposit_amount))
 }
 
 pub fn withdraw(
@@ -383,6 +384,15 @@ pub fn liquidate(
     if info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
+
+    // Get the Index Fund SC address from the Registrar SC
+    let registrar_config: ConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+    let _index_fund: String = registrar_config.index_fund;
+
     // validate the beneficiary address passed
     let beneficiary_addr = deps.api.addr_validate(&beneficiary)?;
 
@@ -392,7 +402,7 @@ pub fn liquidate(
         // we delete the account
         ACCOUNTS.remove(deps.storage, prefix.to_string());
         // TO DO: send all tokens out to the index fund sc
-        // let _messages = send_tokens(&config.index_fund_contract, &account.ust_balance)?;
+        // let _messages = send_tokens(&config.index_fund, &account.ust_balance)?;
     }
 
     Ok(Response::new()
@@ -444,6 +454,15 @@ pub fn terminate_to_fund(
     if info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
+
+    // Get the Index Fund SC address from the Registrar SC
+    let registrar_config: ConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+    let index_fund: String = registrar_config.index_fund;
+
     let messages = vec![];
     for prefix in ["locked", "liquid"].iter() {
         // this fails if no account is found
@@ -452,7 +471,7 @@ pub fn terminate_to_fund(
         ACCOUNTS.remove(deps.storage, prefix.to_string());
         // TO DO: send all tokens out to the index fund sc
         // messages.append(&mut send_tokens(
-        //     &config.index_fund_contract,
+        //     &index_fund,
         //     &account.ust_balance,
         // )?);
     }
@@ -460,7 +479,7 @@ pub fn terminate_to_fund(
     let mut res = Response::new()
         .add_attribute("action", "terminate")
         .add_attribute("fund_id", format!("{}", fund))
-        .add_attribute("to", config.index_fund_contract);
+        .add_attribute("to", index_fund);
     res.messages = messages;
     Ok(res)
 }
