@@ -12,7 +12,8 @@ use serde::{Deserialize, Serialize};
 static PREFIX_REGISTRY: &[u8] = b"registry";
 static PREFIX_PORTAL: &[u8] = b"vault";
 
-pub const CONFIG: Item<Config> = Item::new("config");
+pub const CONFIG_KEY: &str = "config";
+pub const CONFIG: Item<Config> = Item::new(CONFIG_KEY);
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

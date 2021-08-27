@@ -1,5 +1,5 @@
 use crate::structs::{EndowmentEntry, YieldVault};
-use cosmwasm_std::Decimal;
+use cosmwasm_std::{Addr, Decimal};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
