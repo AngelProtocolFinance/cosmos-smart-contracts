@@ -323,23 +323,6 @@ pub fn vault_update_status(
     Ok(Response::default())
 }
 
-pub fn vault_remove(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    vault_addr: String,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-    // try to look up the given vault
-    let _addr = deps.api.addr_validate(&vault_addr)?;
-    // TO DO: remove the vault
-    Ok(Response::default())
-}
-
 pub fn new_accounts_reply(
     deps: DepsMut,
     _env: Env,

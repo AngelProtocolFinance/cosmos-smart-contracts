@@ -19,7 +19,6 @@ pub enum ExecuteMsg {
     CreateEndowment(CreateEndowmentMsg),
     VaultAdd(VaultAddMsg),
     VaultUpdateStatus { vault_addr: String, approved: bool },
-    VaultRemove { vault_addr: String },
     CharityAdd { charity: String },
     CharityRemove { charity: String },
     // Allows the contract parameter to be updated (only by the owner...for now)
