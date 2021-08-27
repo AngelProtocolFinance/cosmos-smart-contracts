@@ -1,4 +1,5 @@
 use cosmwasm_bignumber::{Decimal256, Uint256};
+use cosmwasm_std::Uint128;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -12,4 +13,10 @@ pub struct ConfigResponse {
 pub struct ExchangeRateResponse {
     pub exchange_rate: Decimal256,
     pub yield_token_supply: Uint256,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct VaultBalanceResponse {
+    pub locked: Uint128,
+    pub liquid: Uint128,
 }
