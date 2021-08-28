@@ -26,7 +26,8 @@ pub struct Endowment {
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
     pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
-    pub strategies: Vec<StrategyComponent>,
+    pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
+    pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
 }
 
 impl Endowment {
@@ -49,16 +50,8 @@ impl Endowment {
 #[serde(rename_all = "snake_case")]
 pub struct Account {
     pub ust_balance: Uint256,
-    pub rebalance: RebalanceDetails,
+    pub donations_received: Uint256,
 }
-
-// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-// #[serde(rename_all = "snake_case")]
-// pub struct InvestmentHolding {
-//     pub denom: String,
-//     pub locked: Uint256,
-//     pub liquid: Uint256,
-// }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

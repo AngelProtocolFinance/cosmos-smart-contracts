@@ -60,12 +60,13 @@ pub fn instantiate(
                 locked_percentage: Decimal::one(),
                 liquid_percentage: Decimal::one(),
             }],
+            rebalance: RebalanceDetails::default(),
         },
     )?;
 
     let account = Account {
         ust_balance: Uint256::zero(),
-        rebalance: RebalanceDetails::default(),
+        donations_received: Uint256::zero(),
     };
 
     // try to create both prefixed accounts
