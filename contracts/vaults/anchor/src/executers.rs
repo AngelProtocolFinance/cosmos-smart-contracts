@@ -4,15 +4,36 @@ use crate::config::{LIQUID_BALANCES, LOCKED_BALANCES, TOKEN_INFO};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::AccountTransferMsg;
-use angel_core::responses::registrar::EndowmentListResponse;
+use angel_core::responses::registrar::{
+    ConfigResponse as RegistrarConfigResponse, EndowmentListResponse,
+};
 use angel_core::structs::EndowmentEntry;
 use angel_core::utils::deduct_tax;
 use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{
-    to_binary, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Order, QueryRequest,
-    ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Order,
+    QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ExecuteMsg;
+
+pub fn update_registrar(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    new_registrar: Addr,
+) -> Result<Response, ContractError> {
+    let mut config = config::read(deps.storage)?;
+
+    // only the registrar contract can update it's address in the config
+    if info.sender != config.registrar_contract {
+        return Err(ContractError::Unauthorized {});
+    }
+    // update config attributes with newly passed args
+    config.registrar_contract = new_registrar;
+    config::store(deps.storage, &config)?;
+
+    Ok(Response::default())
+}
 
 pub fn deposit_stable(
     deps: DepsMut,

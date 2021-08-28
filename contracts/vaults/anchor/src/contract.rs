@@ -81,6 +81,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::UpdateRegistrar { new_registrar } => {
+            executers::update_registrar(deps, env, info, new_registrar)
+        }
         ExecuteMsg::Deposit(msg) => executers::deposit_stable(deps, env, info, msg), // UST -> DP (Account)
         ExecuteMsg::Redeem(msg) => executers::redeem_stable(deps, env, info, msg), // DP -> UST (Account)
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info), // DP -> DP shuffle (taxes collected)
