@@ -45,19 +45,12 @@ pub struct CreateEndowmentMsg {
 pub struct UpdateConfigMsg {
     pub accounts_code_id: Option<u64>,
     pub index_fund_contract: String,
-    pub vaults: Option<Vec<String>>,
+    pub treasury: String,
     pub approved_charities: Option<Vec<String>>,
     pub default_vault: Option<String>,
 }
 
 impl UpdateConfigMsg {
-    pub fn vaults_list(&self, api: &dyn Api) -> StdResult<Vec<Addr>> {
-        match self.vaults.as_ref() {
-            Some(v) => v.iter().map(|h| api.addr_validate(h)).collect(),
-            None => Ok(vec![]),
-        }
-    }
-
     pub fn charities_list(&self, api: &dyn Api) -> StdResult<Vec<Addr>> {
         match self.approved_charities.as_ref() {
             Some(v) => v.iter().map(|h| api.addr_validate(h)).collect(),
