@@ -221,7 +221,15 @@ pub fn harvest(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, 
     if config.owner != info.sender {
         return Err(ContractError::Unauthorized {});
     }
-    let taxes_collected = Uint128::zero();
+
+    // pull registrar SC config to fetch the 1) Tax Rate and 2) Treasury Addr
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQueryMsg::Config {})?,
+        }))?;
+
+    let mut taxes_collected = Uint128::zero();
 
     let locked_accounts: Result<Vec<_>, _> = LOCKED_BALANCES
         .keys(deps.storage, None, None, Order::Ascending)
@@ -232,7 +240,7 @@ pub fn harvest(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, 
         let account_address = deps.api.addr_validate(account)?;
         let transfer_amt =
             LOCKED_BALANCES.load(deps.storage, &account_address)? * Decimal::percent(1);
-        let taxes_owed = transfer_amt * Decimal::percent(2);
+        let taxes_owed = transfer_amt * registrar_config.tax_rate;
 
         // lower locked balance
         LOCKED_BALANCES.update(
@@ -257,7 +265,7 @@ pub fn harvest(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, 
     // add taxes collected to the liquid balance of the AP Treasury
     LIQUID_BALANCES.update(
         deps.storage,
-        &config.owner,
+        &deps.api.addr_validate(&registrar_config.treasury)?,
         |balance: Option<Uint128>| -> StdResult<_> {
             Ok(balance.unwrap_or_default() + taxes_collected)
         },
