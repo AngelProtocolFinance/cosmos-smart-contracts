@@ -137,7 +137,7 @@ pub fn redeem_stable(
     }
 
     // let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
-    let exchange_rate = Decimal::percent(100); // epoch_state.exchange_rate;
+    let exchange_rate = Decimal::percent(91); // epoch_state.exchange_rate;
 
     let after_taxes = deduct_tax(
         deps.as_ref(),

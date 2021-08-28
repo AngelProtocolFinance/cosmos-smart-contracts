@@ -156,17 +156,24 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    let index_fund_contract_addr = deps.api.addr_validate(&msg.index_fund_contract)?;
     let charities_addr_list = msg.charities_list(deps.api)?;
     let accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
     let default_vault = deps.api.addr_validate(
         &msg.default_vault
             .unwrap_or_else(|| config.default_vault.to_string()),
     )?;
+    let index_fund_contract = deps.api.addr_validate(
+        &msg.index_fund_contract
+            .unwrap_or_else(|| config.index_fund_contract.to_string()),
+    )?;
+    let treasury = deps
+        .api
+        .addr_validate(&msg.treasury.unwrap_or_else(|| config.treasury.to_string()))?;
 
     // update config attributes with newly passed configs
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.index_fund_contract = index_fund_contract_addr;
+        config.index_fund_contract = index_fund_contract;
+        config.treasury = treasury;
         config.accounts_code_id = accounts_code_id;
         config.approved_charities = charities_addr_list;
         config.default_vault = default_vault;

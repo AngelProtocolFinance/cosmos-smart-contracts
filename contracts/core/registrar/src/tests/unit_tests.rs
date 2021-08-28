@@ -77,9 +77,9 @@ fn update_config() {
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let update_config_message = UpdateConfigMsg {
         accounts_code_id: None,
-        index_fund_contract: index_fund_contract.clone(),
+        index_fund_contract: Some(index_fund_contract.clone()),
         approved_charities: None,
-        vaults: None,
+        treasury: Some(ap_team.clone()),
         default_vault: None,
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
@@ -88,10 +88,7 @@ fn update_config() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_response: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        index_fund_contract.clone(),
-        config_response.index_fund
-    );
+    assert_eq!(index_fund_contract.clone(), config_response.index_fund);
     assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
 }
 

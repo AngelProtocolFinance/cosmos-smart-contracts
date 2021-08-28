@@ -34,14 +34,6 @@ pub struct RedeemResults {
     pub total: Uint128,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
-pub struct TaxParameters {
-    pub exit_tax: Decimal,
-    pub max_tax: Decimal,
-    pub min_tax: Decimal,
-    pub step: Decimal,
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct SplitDetails {

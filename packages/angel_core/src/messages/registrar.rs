@@ -44,8 +44,8 @@ pub struct CreateEndowmentMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
     pub accounts_code_id: Option<u64>,
-    pub index_fund_contract: String,
-    pub treasury: String,
+    pub index_fund_contract: Option<String>,
+    pub treasury: Option<String>,
     pub approved_charities: Option<Vec<String>>,
     pub default_vault: Option<String>,
 }
