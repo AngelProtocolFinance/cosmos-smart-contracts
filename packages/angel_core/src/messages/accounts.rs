@@ -58,11 +58,21 @@ pub enum ExecuteMsg {
     // Update an Endowment ability to receive/send funds
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Replace an Account's Strategy with that given.
-    UpdateStrategy {
-        strategies: Vec<StrategyComponent>,
-    },
+    UpdateStrategies(UpdateStrategiesMsg),
     // This accepts a properly-encoded ReceiveMsg from a cw20 contract
     Receive(Cw20ReceiveMsg),
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateStrategiesMsg {
+    pub strategies: Vec<StrategyComponentMsg>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct StrategyComponentMsg {
+    pub vault: String,              // Vault SC Address
+    pub locked_percentage: Decimal, // percentage of funds to invest
+    pub liquid_percentage: Decimal, // percentage of funds to invest
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

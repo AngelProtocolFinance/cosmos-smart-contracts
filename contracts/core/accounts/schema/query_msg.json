@@ -5,6 +5,18 @@
     {
       "type": "object",
       "required": [
+        "balance"
+      ],
+      "properties": {
+        "balance": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "account"
       ],
       "properties": {
@@ -41,6 +53,18 @@
       ],
       "properties": {
         "config": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "endowment"
+      ],
+      "properties": {
+        "endowment": {
           "type": "object"
         }
       },

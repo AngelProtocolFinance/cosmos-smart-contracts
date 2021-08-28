@@ -41,7 +41,7 @@ let endowmentContract3: string;
 // Setup all contracts
 //----------------------------------------------------------------------------------------
 
-async function setupContracts() {
+export async function setupContracts() {
   // Step 1. Upload all local wasm files and capture the codes for each.... 
   process.stdout.write("Uploading Registrar Wasm");
   const registrarCodeId = await storeCode(
@@ -110,7 +110,7 @@ async function setupContracts() {
     symbol: "apANC",
     decimals: 6,
   });
-  let anchorVault = vaultResult.logs[0].events.find((event) => {
+  anchorVault = vaultResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
   })?.attributes.find((attribute) => { 
     return attribute.key == "contract_address"; 
@@ -273,7 +273,7 @@ async function setupContracts() {
 //
 //----------------------------------------------------------------------------------------
 
-async function testDonorSendsToIndexFund() {
+export async function testDonorSendsToIndexFund() {
   process.stdout.write("Test - Donor (normal pleb) cannot send a UST donation to an Index Fund fund");
 
   await expect(
@@ -305,7 +305,7 @@ async function testDonorSendsToIndexFund() {
 //
 //----------------------------------------------------------------------------------------
 
-async function testRejectUnapprovedDonations() {
+export async function testRejectUnapprovedDonations() {
   process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
 
   await expect(
@@ -338,7 +338,7 @@ async function testRejectUnapprovedDonations() {
 //
 //----------------------------------------------------------------------------------------
 
-async function testTcaMemberSendsToIndexFund() {
+export async function testTcaMemberSendsToIndexFund() {
   process.stdout.write("Test - TCA Member can send a UST donation to an Index Fund");
 
   await expect(
@@ -362,7 +362,7 @@ async function testTcaMemberSendsToIndexFund() {
 }
 
 //----------------------------------------------------------------------------------------
-// Test XX. Charity Owner can rebalance their portfolio/update the Accounts' strategy
+// Test 4. Charity Owner can rebalance their portfolio/update the Accounts' strategy
 //
 // SCENARIO:
 // Charity Owner can trigger a rebalance of their Accounts, which should: 
@@ -370,6 +370,31 @@ async function testTcaMemberSendsToIndexFund() {
 // 2) reinvest all redeemed funds, according the accounts' strategy
 //
 //----------------------------------------------------------------------------------------
+
+export async function testCharityUpdatesStrategies() {
+  process.stdout.write("Test - Charity can update their Endowment's strategies");
+
+  await expect(
+    sendTransaction(terra, charity1, [
+      new MsgExecuteContract(
+        charity1.key.accAddress,
+        endowmentContract1,
+        {
+          update_strategies: {
+            strategies: [
+              {
+                vault: anchorVault,
+                locked_percentage: "1.0",
+                liquid_percentage: "1.0",
+              },
+            ],
+          },
+        },
+      ),
+    ])
+  );
+  console.log(chalk.green("Passed!"));
+}
 
 
 //----------------------------------------------------------------------------------------
@@ -403,4 +428,5 @@ async function testTcaMemberSendsToIndexFund() {
   await testRejectUnapprovedDonations();
   await testDonorSendsToIndexFund();
   await testTcaMemberSendsToIndexFund();
+  await testCharityUpdatesStrategies();
 })();

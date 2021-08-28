@@ -105,11 +105,11 @@ pub fn update_endowment_status(
     Ok(Response::default())
 }
 
-pub fn update_strategy(
+pub fn update_strategies(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    strategies: Vec<StrategyComponent>,
+    strategies: Vec<StrategyComponentMsg>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENT.load(deps.storage)?;
@@ -118,7 +118,10 @@ pub fn update_strategy(
         return Err(ContractError::Unauthorized {});
     }
 
-    let mut addresses: Vec<Addr> = strategies.iter().map(|a| a.vault.clone()).collect();
+    let mut addresses: Vec<Addr> = strategies
+        .iter()
+        .map(|strategy| deps.api.addr_validate(&strategy.vault).unwrap())
+        .collect();
     addresses.sort();
     addresses.dedup();
 
@@ -142,9 +145,9 @@ pub fn update_strategy(
         return Err(ContractError::InvalidStrategyAllocation {});
     }
 
-    // redeem all existing strategies from the old vault source
+    // redeem all existing strategies from the Endowment's old sources
     // before updating endowment with new sources
-    let mut sources: Vec<FundingSource> = vec![];
+    let mut old_sources: Vec<FundingSource> = vec![];
     for strategy in endowment.strategies.iter() {
         let fx_rate = vault_fx_rate(deps.as_ref(), strategy.vault.to_string());
         let account_balance = vault_account_balance(
@@ -152,7 +155,7 @@ pub fn update_strategy(
             strategy.vault.to_string(),
             env.contract.address.to_string(),
         );
-        sources.push(FundingSource {
+        old_sources.push(FundingSource {
             vault: strategy.vault.to_string(),
             locked: account_balance * Decimal::from(fx_rate) * strategy.locked_percentage,
             liquid: account_balance * Decimal::from(fx_rate) * strategy.liquid_percentage,
@@ -162,11 +165,18 @@ pub fn update_strategy(
     let redeem = redeem_from_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
-        sources,
+        old_sources,
     )?;
 
-    // update endowment strategies attribute with the newly passed strategies list
-    endowment.strategies = strategies;
+    // update endowment strategies attribute with all newly passed strategies
+    endowment.strategies = vec![];
+    for strategy in strategies {
+        endowment.strategies.push(StrategyComponent {
+            vault: deps.api.addr_validate(&strategy.vault.clone()).unwrap(),
+            locked_percentage: strategy.locked_percentage,
+            liquid_percentage: strategy.liquid_percentage,
+        })
+    }
     ENDOWMENT.save(deps.storage, &endowment)?;
 
     Ok(Response::new().add_submessages(redeem.messages))
@@ -265,20 +275,27 @@ pub fn deposit(
         return Err(ContractError::InvalidZeroAmount {});
     }
 
+    let after_tax: Coin = deduct_tax(
+        deps.as_ref(),
+        Coin {
+            denom: "uusd".to_string(),
+            amount: deposit_amount - Uint128::from(1_u128),
+        },
+    )
+    .unwrap();
+
     let locked_split = msg.locked_percentage;
     let liquid_split = msg.liquid_percentage;
 
+    // MVP LOGIC: Only index fund SC (aka TCA Member donations are accepted)
     // Get the Index Fund SC address from the Registrar SC
     let registrar_config: ConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
-    let index_fund: String = registrar_config.index_fund;
-
-    // MVP LOGIC: Only index fund SC (aka TCA Member donations are accepted)
     // fails if the token deposit was not coming from the Index Fund SC
-    if sender_addr != index_fund {
+    if sender_addr != registrar_config.index_fund {
         // let splits = ENDOWMENT.load(deps.storage)?.split_to_liquid;
         // let new_splits = check_splits(splits, locked_split, liquid_split);
         // locked_split = new_splits.0;
@@ -299,14 +316,7 @@ pub fn deposit(
                 })?,
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
-        let after_tax: Coin = deduct_tax(
-            deps.as_ref(),
-            Coin {
-                denom: "uusd".to_string(),
-                amount: deposit_amount - Uint128::from(1_u128),
-            },
-        )
-        .unwrap();
+
         let transfer_msg = AccountTransferMsg {
             locked: Uint256::from(after_tax.amount * locked_split * strategy.locked_percentage),
             liquid: Uint256::from(after_tax.amount * liquid_split * strategy.liquid_percentage),

@@ -3,14 +3,35 @@
   "title": "AccountListResponse",
   "type": "object",
   "required": [
-    "accounts"
+    "liquid_account",
+    "locked_account"
   ],
   "properties": {
-    "accounts": {
-      "type": "array",
-      "items": {
-        "type": "string"
+    "liquid_account": {
+      "$ref": "#/definitions/AccountDetailsResponse"
+    },
+    "locked_account": {
+      "$ref": "#/definitions/AccountDetailsResponse"
+    }
+  },
+  "definitions": {
+    "AccountDetailsResponse": {
+      "type": "object",
+      "required": [
+        "account_type",
+        "ust_balance"
+      ],
+      "properties": {
+        "account_type": {
+          "type": "string"
+        },
+        "ust_balance": {
+          "$ref": "#/definitions/Uint256"
+        }
       }
+    },
+    "Uint256": {
+      "type": "string"
     }
   }
 }

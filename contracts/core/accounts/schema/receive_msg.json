@@ -21,23 +21,49 @@
       ],
       "properties": {
         "vault_receipt": {
-          "$ref": "#/definitions/DepositMsg"
+          "$ref": "#/definitions/AccountTransferMsg"
         }
       },
       "additionalProperties": false
     }
   ],
   "definitions": {
+    "AccountTransferMsg": {
+      "type": "object",
+      "required": [
+        "liquid",
+        "locked"
+      ],
+      "properties": {
+        "liquid": {
+          "$ref": "#/definitions/Uint256"
+        },
+        "locked": {
+          "$ref": "#/definitions/Uint256"
+        }
+      }
+    },
+    "Decimal": {
+      "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+      "type": "string"
+    },
     "DepositMsg": {
       "type": "object",
       "required": [
-        "account_type"
+        "liquid_percentage",
+        "locked_percentage"
       ],
       "properties": {
-        "account_type": {
-          "type": "string"
+        "liquid_percentage": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "locked_percentage": {
+          "$ref": "#/definitions/Decimal"
         }
       }
+    },
+    "Uint256": {
+      "type": "string"
     }
   }
 }

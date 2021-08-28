@@ -114,8 +114,8 @@ pub fn execute(
         ExecuteMsg::UpdateAdmin { new_admin } => {
             executers::update_admin(deps, env, info, new_admin)
         }
-        ExecuteMsg::UpdateStrategy { strategies } => {
-            executers::update_strategy(deps, env, info, strategies)
+        ExecuteMsg::UpdateStrategies(msg) => {
+            executers::update_strategies(deps, env, info, msg.strategies)
         }
         ExecuteMsg::Liquidate { beneficiary } => executers::liquidate(deps, env, info, beneficiary),
         ExecuteMsg::TerminateToFund { fund } => executers::terminate_to_fund(deps, env, info, fund),

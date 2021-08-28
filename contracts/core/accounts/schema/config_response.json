@@ -3,15 +3,23 @@
   "title": "ConfigResponse",
   "type": "object",
   "required": [
-    "admin_addr",
-    "registrar_contract"
+    "deposit_approved",
+    "owner",
+    "registrar_contract",
+    "withdraw_approved"
   ],
   "properties": {
-    "admin_addr": {
+    "deposit_approved": {
+      "type": "boolean"
+    },
+    "owner": {
       "type": "string"
     },
     "registrar_contract": {
       "type": "string"
+    },
+    "withdraw_approved": {
+      "type": "boolean"
     }
   }
 }

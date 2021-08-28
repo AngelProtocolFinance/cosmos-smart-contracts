@@ -63,10 +63,34 @@
     {
       "type": "object",
       "required": [
-        "config_details"
+        "state"
       ],
       "properties": {
-        "config_details": {
+        "state": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "config"
+      ],
+      "properties": {
+        "config": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "tca_list"
+      ],
+      "properties": {
+        "tca_list": {
           "type": "object"
         }
       },

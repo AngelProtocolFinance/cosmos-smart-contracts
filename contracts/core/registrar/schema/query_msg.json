@@ -37,6 +37,30 @@
     {
       "type": "object",
       "required": [
+        "approved_vault_list"
+      ],
+      "properties": {
+        "approved_vault_list": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "approved_endowment_list"
+      ],
+      "properties": {
+        "approved_endowment_list": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "endowment_list"
       ],
       "properties": {

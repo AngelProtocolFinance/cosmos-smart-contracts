@@ -2,6 +2,10 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "InstantiateMsg",
   "type": "object",
+  "required": [
+    "tax_rate",
+    "treasury"
+  ],
   "properties": {
     "accounts_code_id": {
       "type": [
@@ -11,20 +15,23 @@
       "format": "uint64",
       "minimum": 0.0
     },
-    "approved_coins": {
-      "type": [
-        "array",
-        "null"
-      ],
-      "items": {
-        "$ref": "#/definitions/Addr"
-      }
-    },
-    "index_fund_contract": {
-      "type": [
-        "string",
-        "null"
+    "default_vault": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Addr"
+        },
+        {
+          "type": "null"
+        }
       ]
+    },
+    "tax_rate": {
+      "type": "integer",
+      "format": "uint64",
+      "minimum": 0.0
+    },
+    "treasury": {
+      "type": "string"
     }
   },
   "definitions": {

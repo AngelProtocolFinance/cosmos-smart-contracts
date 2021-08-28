@@ -25,6 +25,26 @@
     {
       "type": "object",
       "required": [
+        "update_registrar"
+      ],
+      "properties": {
+        "update_registrar": {
+          "type": "object",
+          "required": [
+            "new_registrar"
+          ],
+          "properties": {
+            "new_registrar": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "update_tca_list"
       ],
       "properties": {
@@ -104,6 +124,18 @@
     {
       "type": "object",
       "required": [
+        "deposit"
+      ],
+      "properties": {
+        "deposit": {
+          "$ref": "#/definitions/DepositMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "recieve"
       ],
       "properties": {
@@ -146,6 +178,29 @@
     "Decimal": {
       "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
       "type": "string"
+    },
+    "DepositMsg": {
+      "type": "object",
+      "properties": {
+        "fund_id": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "split": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
     },
     "IndexFund": {
       "type": "object",

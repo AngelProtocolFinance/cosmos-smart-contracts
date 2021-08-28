@@ -3,27 +3,21 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
-    "admin_addr",
+    "beneficiary",
     "description",
-    "endowment_beneficiary",
-    "endowment_owner",
     "index_fund_contract",
     "name",
+    "owner",
+    "owner_sc",
     "registrar_contract",
     "split_to_liquid",
     "withdraw_before_maturity"
   ],
   "properties": {
-    "admin_addr": {
+    "beneficiary": {
       "type": "string"
     },
     "description": {
-      "type": "string"
-    },
-    "endowment_beneficiary": {
-      "type": "string"
-    },
-    "endowment_owner": {
       "type": "string"
     },
     "index_fund_contract": {
@@ -46,6 +40,12 @@
       "minimum": 0.0
     },
     "name": {
+      "type": "string"
+    },
+    "owner": {
+      "type": "string"
+    },
+    "owner_sc": {
       "type": "string"
     },
     "registrar_contract": {

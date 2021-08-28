@@ -3,20 +3,17 @@
   "title": "CreateEndowmentMsg",
   "type": "object",
   "required": [
+    "beneficiary",
     "description",
-    "endowment_beneficiary",
-    "endowment_owner",
     "name",
+    "owner",
     "withdraw_before_maturity"
   ],
   "properties": {
+    "beneficiary": {
+      "type": "string"
+    },
     "description": {
-      "type": "string"
-    },
-    "endowment_beneficiary": {
-      "type": "string"
-    },
-    "endowment_owner": {
       "type": "string"
     },
     "maturity_height": {
@@ -38,43 +35,11 @@
     "name": {
       "type": "string"
     },
-    "split_to_liquid": {
-      "anyOf": [
-        {
-          "$ref": "#/definitions/SplitDetails"
-        },
-        {
-          "type": "null"
-        }
-      ]
+    "owner": {
+      "type": "string"
     },
     "withdraw_before_maturity": {
       "type": "boolean"
-    }
-  },
-  "definitions": {
-    "Decimal": {
-      "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
-      "type": "string"
-    },
-    "SplitDetails": {
-      "type": "object",
-      "required": [
-        "default",
-        "max",
-        "min"
-      ],
-      "properties": {
-        "default": {
-          "$ref": "#/definitions/Decimal"
-        },
-        "max": {
-          "$ref": "#/definitions/Decimal"
-        },
-        "min": {
-          "$ref": "#/definitions/Decimal"
-        }
-      }
     }
   }
 }
