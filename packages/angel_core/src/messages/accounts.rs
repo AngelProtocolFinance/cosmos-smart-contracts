@@ -1,5 +1,5 @@
 use crate::messages::vault::AccountTransferMsg;
-use crate::structs::{FundingSource, SplitDetails, StrategyComponent};
+use crate::structs::{FundingSource, SplitDetails};
 use cosmwasm_std::Decimal;
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
@@ -29,7 +29,9 @@ pub enum ExecuteMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     // Pull funds from investment vault(s) to the Endowment Beneficiary as UST
-    Withdraw(WithdrawMsg),
+    Withdraw {
+        sources: Vec<FundingSource>,
+    },
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt(AccountTransferMsg),
     // Winding up of an endowment in good standing. Returns all funds to the Beneficiary.
@@ -58,18 +60,15 @@ pub enum ExecuteMsg {
     // Update an Endowment ability to receive/send funds
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Replace an Account's Strategy with that given.
-    UpdateStrategies(UpdateStrategiesMsg),
+    UpdateStrategies {
+        strategies: Vec<Strategy>,
+    },
     // This accepts a properly-encoded ReceiveMsg from a cw20 contract
     Receive(Cw20ReceiveMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateStrategiesMsg {
-    pub strategies: Vec<StrategyComponentMsg>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct StrategyComponentMsg {
+pub struct Strategy {
     pub vault: String,              // Vault SC Address
     pub locked_percentage: Decimal, // percentage of funds to invest
     pub liquid_percentage: Decimal, // percentage of funds to invest

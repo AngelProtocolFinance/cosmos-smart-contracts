@@ -1,12 +1,13 @@
+use crate::errors::core::ContractError;
 use crate::messages::registrar::QueryMsg as RegistrarQuerier;
-use crate::messages::vault::AccountTransferMsg;
+use crate::messages::vault::{AccountTransferMsg, QueryMsg as VaultQuerier};
 use crate::responses::registrar::VaultDetailResponse;
-use crate::responses::vault::ExchangeRateResponse;
+use crate::responses::vault::{ExchangeRateResponse, VaultBalanceResponse};
 use crate::structs::{FundingSource, GenericBalance, RedeemResults, SplitDetails, YieldVault};
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, QueryRequest, ReplyOn, StdResult,
-    SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, QueryRequest, ReplyOn, StdError,
+    StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use terra_cosmwasm::TerraQuerier;
@@ -114,13 +115,12 @@ pub fn vault_account_balance(
 
 pub fn redeem_from_vaults(
     deps: Deps,
+    transfer_id: Uint256,
+    _accounts_contract: String,
     registrar_contract: String,
     sources: Vec<FundingSource>,
-) -> StdResult<RedeemResults> {
-    let mut redeem = RedeemResults {
-        messages: vec![],
-        total: Uint128::zero(),
-    };
+) -> Result<Vec<SubMsg>, ContractError> {
+    let mut redeem_messages = vec![];
 
     // redeem amounts from sources listed
     for source in sources.iter() {
@@ -134,25 +134,36 @@ pub fn redeem_from_vaults(
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
 
-        // get the vault exchange rate
-        let exchange_rate: Decimal256 = vault_fx_rate(deps, yield_vault.address.to_string());
-        redeem.total += source.locked + source.liquid;
+        // check that account balance of Deposit Tokens are sufficient to cover withdraw request
+        // let vault_balance: VaultBalanceResponse =
+        //     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        //         contract_addr: source.vault.to_string(),
+        //         msg: to_binary(&VaultQuerier::Balance {
+        //             address: accounts_contract.clone(),
+        //         })?,
+        //     }))?;
+        // if source.locked > vault_balance.locked || source.liquid > vault_balance.liquid {
+        //     let err = format!(
+        //         "lock_req:{},lock_bal:{},liq_req:{},liq_bal:{}",
+        //         source.locked, vault_balance.locked, source.liquid, vault_balance.liquid
+        //     );
+        //     return Err(ContractError::Std {
+        //         0: StdError::GenericErr { msg: err },
+        //     });
+        // }
+
         let transfer_msg = AccountTransferMsg {
-            locked: Uint256::from(source.locked * Decimal::from(exchange_rate)),
-            liquid: Uint256::from(source.liquid * Decimal::from(exchange_rate)),
+            transfer_id: transfer_id,
+            locked: Uint256::from(source.locked),
+            liquid: Uint256::from(source.liquid),
         };
 
         // create a withdraw message for X Vault, noting amounts for Locked / Liquid
-        redeem.messages.push(SubMsg {
-            id: 42,
-            msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: yield_vault.address.to_string(),
-                msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem(transfer_msg)).unwrap(),
-                funds: vec![],
-            }),
-            gas_limit: None,
-            reply_on: ReplyOn::Never,
-        });
+        redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: yield_vault.address.to_string(),
+            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem(transfer_msg)).unwrap(),
+            funds: vec![],
+        })));
     }
-    Ok(redeem)
+    Ok(redeem_messages)
 }

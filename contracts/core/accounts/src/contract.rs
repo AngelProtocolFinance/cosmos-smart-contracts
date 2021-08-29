@@ -1,11 +1,11 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Account, Config, Endowment, RebalanceDetails, ACCOUNTS, CONFIG, ENDOWMENT};
+use crate::state::{Account, Config, Endowment, ACCOUNTS, CONFIG, ENDOWMENT};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
-use angel_core::structs::{AcceptedTokens, StrategyComponent};
+use angel_core::structs::{AcceptedTokens, RebalanceDetails, StrategyComponent};
 use cosmwasm_bignumber::Uint256;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
@@ -35,6 +35,7 @@ pub fn instantiate(
             accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
+            next_transfer_id: Uint256::one(),
         },
     )?;
 
@@ -104,7 +105,7 @@ pub fn execute(
             executers::update_endowment_status(deps, env, info, msg)
         }
         ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
-        ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
+        ExecuteMsg::Withdraw { sources } => executers::withdraw(deps, env, info, sources),
         ExecuteMsg::VaultReceipt(msg) => {
             executers::vault_receipt(deps, info.clone(), info.sender, msg)
         }
@@ -114,8 +115,8 @@ pub fn execute(
         ExecuteMsg::UpdateAdmin { new_admin } => {
             executers::update_admin(deps, env, info, new_admin)
         }
-        ExecuteMsg::UpdateStrategies(msg) => {
-            executers::update_strategies(deps, env, info, msg.strategies)
+        ExecuteMsg::UpdateStrategies { strategies } => {
+            executers::update_strategies(deps, env, info, strategies)
         }
         ExecuteMsg::Liquidate { beneficiary } => executers::liquidate(deps, env, info, beneficiary),
         ExecuteMsg::TerminateToFund { fund } => executers::terminate_to_fund(deps, env, info, fund),

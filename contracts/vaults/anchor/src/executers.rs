@@ -9,10 +9,10 @@ use angel_core::responses::registrar::{
 };
 use angel_core::structs::EndowmentEntry;
 use angel_core::utils::deduct_tax;
-use cosmwasm_bignumber::Uint256;
+use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, Order,
-    QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ExecuteMsg;
 
@@ -108,7 +108,7 @@ pub fn deposit_stable(
             CosmosMsg::Bank(BankMsg::Send {
                 to_address: config.owner.to_string(),
                 amount: vec![Coin {
-                    amount: after_taxes.amount.clone(),
+                    amount: after_taxes.amount,
                     denom: "uusd".to_string(),
                 }],
             }),
@@ -122,6 +122,7 @@ pub fn redeem_stable(
     msg: AccountTransferMsg,
 ) -> Result<Response, ContractError> {
     let config = config::read(deps.storage)?;
+    let token_info = TOKEN_INFO.load(deps.storage)?;
 
     // check that the depositor is an approved Accounts SC
     let endowments_rsp: EndowmentListResponse =
@@ -136,33 +137,14 @@ pub fn redeem_stable(
         return Err(ContractError::Unauthorized {});
     }
 
-    // let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
-    let exchange_rate = Decimal::percent(91); // epoch_state.exchange_rate;
-
-    let after_taxes = deduct_tax(
-        deps.as_ref(),
-        Coin {
-            denom: config.input_denom,
-            amount: info.funds[0].amount,
-        },
-    )?;
-    let after_taxes_locked = after_taxes
-        .amount
-        .clone()
-        .multiply_ratio(msg.locked, info.funds[0].amount);
-    let after_taxes_liquid = after_taxes
-        .amount
-        .clone()
-        .multiply_ratio(msg.liquid, info.funds[0].amount);
-
-    // lower balance
+    // Reduce the Endowment's Locked/Liquid balances accordingly
     LOCKED_BALANCES.update(
         deps.storage,
         &info.sender,
         |balance: Option<Uint128>| -> StdResult<_> {
             Ok(balance
                 .unwrap_or_default()
-                .checked_sub(after_taxes_locked)?)
+                .checked_sub(Uint128::from(msg.locked))?)
         },
     )?;
     LIQUID_BALANCES.update(
@@ -171,28 +153,37 @@ pub fn redeem_stable(
         |balance: Option<Uint128>| -> StdResult<_> {
             Ok(balance
                 .unwrap_or_default()
-                .checked_sub(after_taxes_liquid)?)
+                .checked_sub(Uint128::from(msg.liquid))?)
         },
     )?;
 
-    // reduce total_supply
-    TOKEN_INFO.update(deps.storage, |mut info| -> StdResult<_> {
-        info.total_supply = info.total_supply.checked_sub(after_taxes.amount)?;
-        Ok(info)
-    })?;
+    // let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
+    let exchange_rate = Decimal256::percent(100); // epoch_state.exchange_rate;
+
+    let redeem_locked = msg.locked * exchange_rate;
+    let redeem_liquid = msg.liquid * exchange_rate;
+
+    if token_info.total_supply < Uint128::from(redeem_liquid + redeem_locked) {
+        let err = format!(
+            "lock_req:{},liq_req:{},vault_bal:{}",
+            redeem_locked, redeem_liquid, token_info.total_supply
+        );
+        return Err(ContractError::Std {
+            0: StdError::GenericErr { msg: err },
+        });
+    }
 
     Ok(Response::new()
         .add_attribute("action", "redeem")
         .add_attribute("sender", info.sender.clone())
-        .add_attribute("deposit_amount", info.funds[0].amount)
-        .add_attribute("mint_amount", after_taxes.amount)
+        .add_attribute("redeem_amount", redeem_locked + redeem_liquid)
         // .add_submessage(SubMsg {
-        //     id: 0,
+        //     id: 42,
         //     msg: CosmosMsg::Wasm(WasmMsg::Execute {
         //         contract_addr: config.yield_token.to_string(),
         //         msg: to_binary(&Cw20ExecuteMsg::Send {
         //             contract: config.moneymarket.to_string(),
-        //             amount: after_taxes.amount * Decimal::from(exchange_rate),
+        //             amount: redeem.amount * Decimal::from(exchange_rate),
         //             msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
         //         })?,
         //         funds: vec![],
@@ -200,19 +191,30 @@ pub fn redeem_stable(
         //     gas_limit: None,
         //     reply_on: ReplyOn::Success,
         // })
-        .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: info.sender.to_string(),
-            msg: to_binary(&&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
-                AccountTransferMsg {
-                    locked: Uint256::from(after_taxes_locked),
-                    liquid: Uint256::from(after_taxes_liquid),
-                },
-            ))?,
-            funds: vec![Coin {
+        // TO DO: Reply from Vault with UST redeemed should trigger the two submessages below ??
+        .add_submessage(SubMsg::new(BankMsg::Send {
+            to_address: info.sender.to_string(),
+            amount: vec![Coin {
+                amount: Uint128::from(redeem_locked) + Uint128::from(redeem_liquid),
                 denom: "uusd".to_string(),
-                amount: after_taxes.amount,
             }],
-        })))
+        }))
+        .add_submessage(SubMsg {
+            id: 200,
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: info.sender.to_string(),
+                msg: to_binary(&&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
+                    AccountTransferMsg {
+                        transfer_id: msg.transfer_id,
+                        locked: Uint256::from(redeem_locked),
+                        liquid: Uint256::from(redeem_liquid),
+                    },
+                ))?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        }))
 }
 
 pub fn harvest(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
@@ -239,7 +241,7 @@ pub fn harvest(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, 
     for account in locked_accounts.unwrap().iter() {
         let account_address = deps.api.addr_validate(account)?;
         let transfer_amt =
-            LOCKED_BALANCES.load(deps.storage, &account_address)? * Decimal::percent(1);
+            LOCKED_BALANCES.load(deps.storage, &account_address)? * Decimal::percent(10);
         let taxes_owed = transfer_amt * registrar_config.tax_rate;
 
         // lower locked balance

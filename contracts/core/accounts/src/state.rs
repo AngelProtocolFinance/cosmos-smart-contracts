@@ -1,6 +1,6 @@
-use angel_core::structs::{AcceptedTokens, SplitDetails, StrategyComponent};
+use angel_core::structs::{AcceptedTokens, RebalanceDetails, SplitDetails, StrategyComponent};
 use cosmwasm_bignumber::Uint256;
-use cosmwasm_std::{Addr, Decimal, Env, Timestamp};
+use cosmwasm_std::{Addr, Env, Timestamp};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -13,6 +13,7 @@ pub struct Config {
     pub accepted_tokens: AcceptedTokens,
     pub deposit_approved: bool, // DANO has approved to receive donations & transact
     pub withdraw_approved: bool, // DANO has approved to withdraw funds
+    pub next_transfer_id: Uint256,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -53,29 +54,7 @@ pub struct Account {
     pub donations_received: Uint256,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct RebalanceDetails {
-    pub rebalance_liquid_invested_profits: bool, // should invested portions of the liquid account be rebalanced?
-    pub locked_interests_to_liquid: bool, // should Locked acct interest earned be distributed to the Liquid Acct?
-    pub interest_distribution: Decimal, // % of Locked acct interest earned to be distributed to the Liquid Acct
-    pub locked_principle_to_liquid: bool, // should Locked acct principle be distributed to the Liquid Acct?
-    pub principle_distribution: Decimal, // % of Locked acct principle to be distributed to the Liquid Acct
-}
-
-impl RebalanceDetails {
-    pub fn default() -> Self {
-        RebalanceDetails {
-            rebalance_liquid_invested_profits: false,
-            locked_interests_to_liquid: false,
-            interest_distribution: Decimal::percent(20),
-            locked_principle_to_liquid: false,
-            principle_distribution: Decimal::zero(),
-        }
-    }
-}
-
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");
 pub const ACCOUNTS: Map<String, Account> = Map::new("account");
-// pub const INVESTMENTS: Map<String, InvestmentHolding> = Map::new("investment");
+pub const PENDING_REDEMPTIONS: Map<String, u64> = Map::new("redemptions");

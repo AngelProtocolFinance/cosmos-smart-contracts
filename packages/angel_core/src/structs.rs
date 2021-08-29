@@ -54,6 +54,28 @@ impl SplitDetails {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub struct RebalanceDetails {
+    pub rebalance_liquid_invested_profits: bool, // should invested portions of the liquid account be rebalanced?
+    pub locked_interests_to_liquid: bool, // should Locked acct interest earned be distributed to the Liquid Acct?
+    pub interest_distribution: Decimal, // % of Locked acct interest earned to be distributed to the Liquid Acct
+    pub locked_principle_to_liquid: bool, // should Locked acct principle be distributed to the Liquid Acct?
+    pub principle_distribution: Decimal, // % of Locked acct principle to be distributed to the Liquid Acct
+}
+
+impl RebalanceDetails {
+    pub fn default() -> Self {
+        RebalanceDetails {
+            rebalance_liquid_invested_profits: false,
+            locked_interests_to_liquid: false,
+            interest_distribution: Decimal::percent(20),
+            locked_principle_to_liquid: false,
+            principle_distribution: Decimal::zero(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub struct EndowmentEntry {
     pub address: Addr,
     pub status: EndowmentStatus,

@@ -25,6 +25,7 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct AccountTransferMsg {
+    pub transfer_id: Uint256,
     pub locked: Uint256,
     pub liquid: Uint256,
 }

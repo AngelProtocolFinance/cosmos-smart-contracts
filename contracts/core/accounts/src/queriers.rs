@@ -2,6 +2,7 @@ use crate::state::{ACCOUNTS, CONFIG, ENDOWMENT};
 use angel_core::messages::vault::QueryMsg as VaultQuerier;
 use angel_core::responses::accounts::*;
 use angel_core::responses::vault::VaultBalanceResponse;
+use angel_core::structs::RebalanceDetails;
 use cosmwasm_std::{to_binary, Deps, Env, QueryRequest, StdResult, Uint128, WasmQuery};
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -77,6 +78,7 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
         maturity_height: endowment.maturity_height,
         split_to_liquid: endowment.split_to_liquid,
         strategies: endowment.strategies,
+        rebalance: endowment.rebalance,
         // total_funds: Uint128 // locked total + liquid total
         // total_donations: Uint128 // all donations received
     })

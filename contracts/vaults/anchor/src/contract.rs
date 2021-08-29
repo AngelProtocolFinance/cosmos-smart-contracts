@@ -30,7 +30,7 @@ pub fn instantiate(
     // let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
 
     let config = config::Config {
-        owner: info.sender.clone(),
+        owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         moneymarket,
         input_denom: "uusd".to_string(), // anchor_config.stable_denom.clone(),
