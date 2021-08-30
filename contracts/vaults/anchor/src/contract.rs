@@ -39,16 +39,13 @@ pub fn instantiate(
 
     config::store(deps.storage, &config)?;
 
-    // create initial accounts
-    let total_supply = Uint128::zero();
-
     // store token info
     let token_info = config::TokenInfo {
         name: msg.name,
         symbol: msg.symbol,
         decimals: msg.decimals,
         mint: None,
-        total_supply,
+        total_supply: Uint128::zero(),
     };
     config::TOKEN_INFO.save(deps.storage, &token_info)?;
 

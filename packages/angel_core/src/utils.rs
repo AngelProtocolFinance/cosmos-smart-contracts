@@ -1,13 +1,13 @@
 use crate::errors::core::ContractError;
 use crate::messages::registrar::QueryMsg as RegistrarQuerier;
-use crate::messages::vault::{AccountTransferMsg, QueryMsg as VaultQuerier};
+use crate::messages::vault::AccountTransferMsg;
 use crate::responses::registrar::VaultDetailResponse;
-use crate::responses::vault::{ExchangeRateResponse, VaultBalanceResponse};
-use crate::structs::{FundingSource, GenericBalance, RedeemResults, SplitDetails, YieldVault};
+use crate::responses::vault::ExchangeRateResponse;
+use crate::structs::{FundingSource, GenericBalance, SplitDetails, YieldVault};
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, QueryRequest, ReplyOn, StdError,
-    StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, QueryRequest, StdResult, SubMsg,
+    Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{BalanceResponse, Cw20ExecuteMsg};
 use terra_cosmwasm::TerraQuerier;
@@ -115,7 +115,6 @@ pub fn vault_account_balance(
 
 pub fn redeem_from_vaults(
     deps: Deps,
-    transfer_id: Uint256,
     _accounts_contract: String,
     registrar_contract: String,
     sources: Vec<FundingSource>,
@@ -134,28 +133,9 @@ pub fn redeem_from_vaults(
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
 
-        // check that account balance of Deposit Tokens are sufficient to cover withdraw request
-        // let vault_balance: VaultBalanceResponse =
-        //     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-        //         contract_addr: source.vault.to_string(),
-        //         msg: to_binary(&VaultQuerier::Balance {
-        //             address: accounts_contract.clone(),
-        //         })?,
-        //     }))?;
-        // if source.locked > vault_balance.locked || source.liquid > vault_balance.liquid {
-        //     let err = format!(
-        //         "lock_req:{},lock_bal:{},liq_req:{},liq_bal:{}",
-        //         source.locked, vault_balance.locked, source.liquid, vault_balance.liquid
-        //     );
-        //     return Err(ContractError::Std {
-        //         0: StdError::GenericErr { msg: err },
-        //     });
-        // }
-
         let transfer_msg = AccountTransferMsg {
-            transfer_id: transfer_id,
-            locked: Uint256::from(source.locked),
-            liquid: Uint256::from(source.liquid),
+            locked: source.locked,
+            liquid: source.liquid,
         };
 
         // create a withdraw message for X Vault, noting amounts for Locked / Liquid

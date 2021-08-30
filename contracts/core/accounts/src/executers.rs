@@ -1,18 +1,16 @@
-use crate::state::{ACCOUNTS, CONFIG, ENDOWMENT, PENDING_REDEMPTIONS};
+use crate::state::{CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::vault::{AccountTransferMsg, QueryMsg as VaultQuerier};
 use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse, VaultListResponse};
-use angel_core::responses::vault::VaultBalanceResponse;
-use angel_core::structs::{FundingSource, StrategyComponent, YieldVault};
-use angel_core::utils::{deduct_tax, redeem_from_vaults, vault_account_balance, vault_fx_rate};
-use cosmwasm_bignumber::{Decimal256, Uint256};
+use angel_core::structs::{BalanceResponse, FundingSource, StrategyComponent, YieldVault};
+use angel_core::utils::{deduct_tax, redeem_from_vaults};
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
-    QueryRequest, ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
+    QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::Cw20ReceiveMsg;
+use cw20::{Balance, Cw20Coin, Cw20ReceiveMsg};
 
 pub fn update_admin(
     deps: DepsMut,
@@ -147,40 +145,45 @@ pub fn update_strategies(
 
     // redeem all existing strategies from the Endowment's old sources
     // before updating endowment with new sources
-    let mut retrieved_funds = VaultBalanceResponse {
-        denom: "uusd".to_string(),
-        locked: Uint128::zero(),
-        liquid: Uint128::zero(),
-    };
+    let mut retrieved_funds = BalanceResponse::default();
 
     let mut old_sources: Vec<FundingSource> = vec![];
     for strategy in endowment.strategies.iter() {
-        let fx_rate = Decimal256::percent(91); // vault_fx_rate(deps.as_ref(), strategy.vault.to_string());
-        let vault_balances: VaultBalanceResponse =
+        let fx_rate = Decimal::percent(100); // vault_fx_rate(deps.as_ref(), strategy.vault.to_string());
+        let vault_balances: BalanceResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: strategy.vault.to_string(),
                 msg: to_binary(&VaultQuerier::Balance {
                     address: env.contract.address.to_string(),
                 })?,
             }))?;
-        // calculate the amount of UST to redeem from locked/liquid and add to a growing retrieved total
-        let redeem_locked =
-            vault_balances.locked * Decimal::from(fx_rate) * strategy.locked_percentage;
-        let redeem_liquid =
-            vault_balances.liquid * Decimal::from(fx_rate) * strategy.liquid_percentage;
-        retrieved_funds.locked += redeem_locked;
-        retrieved_funds.liquid += redeem_liquid;
+        let empty_coin = Cw20Coin {
+            address: strategy.vault.to_string(),
+            amount: Uint128::zero(),
+        };
+        let dp_token_locked = vault_balances
+            .locked_cw20
+            .iter()
+            .find(|token| token.address.to_string() == strategy.vault)
+            .unwrap_or(&empty_coin);
+        let dp_token_liquid = vault_balances
+            .liquid_cw20
+            .iter()
+            .find(|token| token.address.to_string() == strategy.vault)
+            .unwrap_or(&empty_coin);
+
+        retrieved_funds.locked_cw20.push(dp_token_locked.clone());
+        retrieved_funds.liquid_cw20.push(dp_token_liquid.clone());
         // add new submessage to vector
         old_sources.push(FundingSource {
             vault: strategy.vault.to_string(),
-            locked: vault_balances.locked * Decimal::from(fx_rate) * strategy.locked_percentage,
-            liquid: vault_balances.liquid * Decimal::from(fx_rate) * strategy.liquid_percentage,
+            locked: dp_token_locked.amount * fx_rate * strategy.locked_percentage,
+            liquid: dp_token_liquid.amount * fx_rate * strategy.liquid_percentage,
         });
     }
 
     let redeem_messages = redeem_from_vaults(
         deps.as_ref(),
-        config.next_transfer_id,
         env.contract.address.to_string(),
         config.registrar_contract.to_string(),
         old_sources,
@@ -221,8 +224,8 @@ pub fn update_strategies(
     // let mut deposit_messages: Vec<SubMsg> = vec![];
     // for strategy in endowment.strategies.iter() {
     //     let transfer_msg = AccountTransferMsg {
-    //         locked: Uint256::from(after_taxes_locked.amount * strategy.locked_percentage),
-    //         liquid: Uint256::from(after_taxes_liquid.amount * strategy.liquid_percentage),
+    //         locked: after_taxes_locked.amount * strategy.locked_percentage,
+    //         liquid: after_taxes_liquid.amount * strategy.liquid_percentage,
     //     };
 
     //     // create a deposit message for X Vault, noting amounts for Locked / Liquid
@@ -274,6 +277,7 @@ pub fn vault_receipt(
     msg: AccountTransferMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+    let mut state = STATE.load(deps.storage)?;
 
     // check that the deposit token came from an approved Vault SC
     let vaults_rsp: VaultListResponse =
@@ -288,25 +292,26 @@ pub fn vault_receipt(
         return Err(ContractError::Unauthorized {});
     }
 
-    // funds go into general Account balance
-    if msg.locked > Uint256::zero() {
-        let mut account = ACCOUNTS.load(deps.storage, "locked".to_string())?;
-        account.ust_balance += msg.locked;
-        ACCOUNTS.save(deps.storage, "locked".to_string(), &account)?;
+    // funds go into state balances (locked/liquid)
+    if msg.locked > Uint128::zero() {
+        state
+            .balances
+            .locked_balance
+            .add_tokens(Balance::from(vec![Coin {
+                amount: msg.locked,
+                denom: "uusd".to_string(),
+            }]));
     }
-    if msg.liquid > Uint256::zero() {
-        let mut account = ACCOUNTS.load(deps.storage, "liquid".to_string())?;
-        account.ust_balance += msg.liquid;
-        ACCOUNTS.save(deps.storage, "liquid".to_string(), &account)?;
+    if msg.liquid > Uint128::zero() {
+        state
+            .balances
+            .liquid_balance
+            .add_tokens(Balance::from(vec![Coin {
+                amount: msg.liquid,
+                denom: "uusd".to_string(),
+            }]));
     }
-
-    // update the pending redemptions storage value
-    let pending = PENDING_REDEMPTIONS.load(deps.storage, msg.transfer_id.to_string())? - 1;
-    if pending == 0 {
-        PENDING_REDEMPTIONS.remove(deps.storage, msg.transfer_id.to_string())
-    } else {
-        PENDING_REDEMPTIONS.save(deps.storage, msg.transfer_id.to_string(), &pending)?;
-    }
+    STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
         .add_attribute("action", "vault_receipt")
@@ -320,7 +325,7 @@ pub fn deposit(
     sender_addr: Addr,
     msg: DepositMsg,
 ) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
 
     // check that the Endowment has been approved to receive deposits
     if !config.deposit_approved {
@@ -348,7 +353,7 @@ pub fn deposit(
         deps.as_ref(),
         Coin {
             denom: "uusd".to_string(),
-            amount: deposit_amount - Uint128::from(1_u128),
+            amount: deposit_amount,
         },
     )
     .unwrap();
@@ -372,6 +377,11 @@ pub fn deposit(
         return Err(ContractError::Unauthorized {});
     }
 
+    // update total donations recieved for a charity
+    let mut state = STATE.load(deps.storage)?;
+    state.donations_received += deposit_amount;
+    STATE.save(deps.storage, &state)?;
+
     let endowment = ENDOWMENT.load(deps.storage)?;
     let mut messages: Vec<SubMsg> = vec![];
 
@@ -386,10 +396,11 @@ pub fn deposit(
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
 
+        let locked_strategy_amount = after_tax.amount * locked_split * strategy.locked_percentage;
+        let liquid_strategy_amount = after_tax.amount * liquid_split * strategy.liquid_percentage;
         let transfer_msg = AccountTransferMsg {
-            transfer_id: config.next_transfer_id,
-            locked: Uint256::from(after_tax.amount * locked_split * strategy.locked_percentage),
-            liquid: Uint256::from(after_tax.amount * liquid_split * strategy.liquid_percentage),
+            locked: locked_strategy_amount,
+            liquid: liquid_strategy_amount,
         };
 
         // create a deposit message for X Vault, noting amounts for Locked / Liquid
@@ -401,13 +412,11 @@ pub fn deposit(
             ))
             .unwrap(),
             funds: vec![Coin {
-                amount: after_tax.amount,
+                amount: locked_strategy_amount + liquid_strategy_amount,
                 denom: "uusd".to_string(),
             }],
         })))
     }
-    config.next_transfer_id += Uint256::one();
-    CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new()
         .add_submessages(messages)
@@ -422,7 +431,7 @@ pub fn withdraw(
     info: MessageInfo,
     sources: Vec<FundingSource>,
 ) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
 
     let endowment = ENDOWMENT.load(deps.storage)?;
     // check that sender is the owner or the beneficiary
@@ -441,18 +450,10 @@ pub fn withdraw(
     // build redeem messages for each of the sources/amounts
     let redeem_messages = redeem_from_vaults(
         deps.as_ref(),
-        config.next_transfer_id,
         env.contract.address.to_string(),
         config.registrar_contract.to_string(),
         sources,
     )?;
-    PENDING_REDEMPTIONS.save(
-        deps.storage,
-        config.next_transfer_id.to_string(),
-        &(redeem_messages.len() as u64),
-    )?;
-    config.next_transfer_id += Uint256::one();
-    CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new()
         .add_submessages(redeem_messages)
@@ -460,7 +461,7 @@ pub fn withdraw(
         // .add_submessage(SubMsg::new(BankMsg::Send {
         //     to_address: endowment.beneficiary.into(),
         //     amount: vec![Coin {
-        //         amount: Uint128::from(redeem.total),
+        //         amount: redeem.total,
         //         denom: "uusd".to_string(),
         //     }],
         // }))
@@ -491,14 +492,8 @@ pub fn liquidate(
     // validate the beneficiary address passed
     let beneficiary_addr = deps.api.addr_validate(&beneficiary)?;
 
-    for prefix in ["locked", "liquid"].iter() {
-        // this fails if no account is found
-        let _account = ACCOUNTS.load(deps.storage, prefix.to_string())?;
-        // we delete the account
-        ACCOUNTS.remove(deps.storage, prefix.to_string());
-        // TO DO: send all tokens out to the index fund sc
-        // let _messages = send_tokens(&config.index_fund, &account.ust_balance)?;
-    }
+    // TO DO: send all tokens out to the index fund sc
+    // let _messages = send_tokens(&config.index_fund, &account.ust_balance)?;
 
     Ok(Response::new()
         .add_attribute("action", "liquidate")
@@ -521,21 +516,14 @@ pub fn terminate_to_address(
     let beneficiary_addr = deps.api.addr_validate(&beneficiary)?;
 
     let messages = vec![];
-    for prefix in ["locked", "liquid"].iter() {
-        // this fails if no account is found
-        let _account = ACCOUNTS.load(deps.storage, prefix.to_string())?;
-        // we delete the account
-        ACCOUNTS.remove(deps.storage, prefix.to_string());
-        // TO DO: send all tokens out to the index fund sc
-        // messages.append(&mut send_tokens(&beneficiary_addr, &account.ust_balance)?);
-    }
 
-    let mut res = Response::new()
+    // TO DO: send all tokens out to the index fund sc
+    // messages.append(&mut send_tokens(&beneficiary_addr, &account.ust_balance)?);
+
+    Ok(Response::new()
+        .add_submessages(messages)
         .add_attribute("action", "terminate")
-        .add_attribute("to", beneficiary_addr);
-    res.messages = messages;
-
-    Ok(res)
+        .add_attribute("to", beneficiary_addr))
 }
 
 pub fn terminate_to_fund(
@@ -559,22 +547,15 @@ pub fn terminate_to_fund(
     let index_fund: String = registrar_config.index_fund;
 
     let messages = vec![];
-    for prefix in ["locked", "liquid"].iter() {
-        // this fails if no account is found
-        let _account = ACCOUNTS.load(deps.storage, prefix.to_string())?;
-        // we delete the account
-        ACCOUNTS.remove(deps.storage, prefix.to_string());
-        // TO DO: send all tokens out to the index fund sc
-        // messages.append(&mut send_tokens(
-        //     &index_fund,
-        //     &account.ust_balance,
-        // )?);
-    }
+    // TO DO: send all tokens out to the index fund sc
+    // messages.append(&mut send_tokens(
+    //     &index_fund,
+    //     &account.ust_balance,
+    // )?);
 
-    let mut res = Response::new()
+    Ok(Response::new()
         .add_attribute("action", "terminate")
         .add_attribute("fund_id", format!("{}", fund))
-        .add_attribute("to", index_fund);
-    res.messages = messages;
-    Ok(res)
+        .add_attribute("to", index_fund)
+        .add_submessages(messages))
 }

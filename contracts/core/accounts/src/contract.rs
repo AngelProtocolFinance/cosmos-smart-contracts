@@ -1,15 +1,14 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Account, Config, Endowment, ACCOUNTS, CONFIG, ENDOWMENT};
+use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
-use angel_core::structs::{AcceptedTokens, RebalanceDetails, StrategyComponent};
-use cosmwasm_bignumber::Uint256;
+use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
-    Response, StdResult, WasmQuery,
+    Response, StdResult, Uint128, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 
@@ -35,7 +34,6 @@ pub fn instantiate(
             accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
-            next_transfer_id: Uint256::one(),
         },
     )?;
 
@@ -65,23 +63,13 @@ pub fn instantiate(
         },
     )?;
 
-    let account = Account {
-        ust_balance: Uint256::zero(),
-        donations_received: Uint256::zero(),
-    };
-
-    // try to create both prefixed accounts
-    for prefix in ["locked", "liquid"].iter() {
-        // try to store it, fail if the account ID was already in use
-        ACCOUNTS.update(
-            deps.storage,
-            prefix.to_string(),
-            |existing| match existing {
-                None => Ok(account.clone()),
-                Some(_) => Err(ContractError::AlreadyInUse {}),
-            },
-        )?;
-    }
+    STATE.save(
+        deps.storage,
+        &State {
+            donations_received: Uint128::zero(),
+            balances: BalanceInfo::default(),
+        },
+    )?;
 
     Ok(Response::default())
 }
@@ -132,11 +120,8 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Balance {} => to_binary(&queriers::query_account_balance(deps, env)?),
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
+        QueryMsg::State {} => to_binary(&queriers::query_state(deps)?),
         QueryMsg::Endowment {} => to_binary(&queriers::query_endowment_details(deps)?),
-        QueryMsg::Account { account_type } => {
-            to_binary(&queriers::query_account_details(deps, account_type)?)
-        }
-        QueryMsg::AccountList {} => to_binary(&queriers::query_account_list(deps)?),
     }
 }
 

@@ -1,5 +1,4 @@
-use cosmwasm_bignumber::Uint256;
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -25,9 +24,8 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct AccountTransferMsg {
-    pub transfer_id: Uint256,
-    pub locked: Uint256,
-    pub liquid: Uint256,
+    pub locked: Uint128,
+    pub liquid: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -38,10 +36,10 @@ pub enum QueryMsg {
         input_denom: String,
     },
     Deposit {
-        amount: Uint256,
+        amount: Uint128,
     }, // some qty of "input_denom"
     Redeem {
-        amount: Uint256,
+        amount: Uint128,
     }, // some qty of "yield_token"
     /// Returns the current balance of the given address, 0 if unset.
     /// Return type: BalanceResponse.

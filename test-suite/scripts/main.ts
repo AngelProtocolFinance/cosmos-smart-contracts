@@ -336,8 +336,8 @@ export async function testRejectUnapprovedDonations() {
         endowmentContract3,
         {
           deposit: {
-            locked_percentage: "0.5",
-            liquid_percentage: "0.5",
+            locked_percentage: "0.8",
+            liquid_percentage: "0.2",
           },
         },
         {
@@ -374,7 +374,20 @@ export async function testTcaMemberSendsToIndexFund() {
           },
         },
         {
-          uusd: "42000000000",
+          uusd: "4200000000",
+        }
+      ),
+      new MsgExecuteContract(
+        tca.key.accAddress,
+        indexFund,
+        {
+          deposit: {
+            fund_id: 1,
+            split: undefined,
+          },
+        },
+        {
+          uusd: "4200000000",
         }
       ),
     ])
@@ -466,7 +479,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid() {
 //
 //----------------------------------------------------------------------------------------
 
-export async function testCharityUpdatesStrategies() {
+export async function testCharityCanUpdateStrategies() {
   process.stdout.write("Test - Charity can update their Endowment's strategies");
 
   await expect(
@@ -506,6 +519,6 @@ export async function testCharityUpdatesStrategies() {
   await testDonorSendsToIndexFund();
   await testTcaMemberSendsToIndexFund();
   await testAngelTeamCanTriggerVaultHarvest();
-  await testBeneficiaryCanWithdrawFromLiquid();
-  // await testCharityUpdatesStrategies();
+  // await testCharityCanUpdateStrategies();
+  // await testBeneficiaryCanWithdrawFromLiquid();
 })();

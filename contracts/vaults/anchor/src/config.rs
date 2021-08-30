@@ -1,3 +1,4 @@
+use angel_core::structs::BalanceInfo;
 use cosmwasm_std::{Addr, StdResult, Storage, Uint128};
 use cosmwasm_storage::{ReadonlySingleton, Singleton};
 use cw_storage_plus::{Item, Map};
@@ -47,5 +48,4 @@ impl TokenInfo {
 }
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
-pub const LOCKED_BALANCES: Map<&Addr, Uint128> = Map::new("locked_balance");
-pub const LIQUID_BALANCES: Map<&Addr, Uint128> = Map::new("liquid_balance");
+pub const BALANCES: Map<&Addr, BalanceInfo> = Map::new("balance");

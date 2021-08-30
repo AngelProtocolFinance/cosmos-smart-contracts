@@ -118,12 +118,8 @@ pub struct WithdrawMsg {
 pub enum QueryMsg {
     // Get the balance of available UST and the invested portion balances
     Balance {},
-    // Get details for a single Account, given an Account ID argument
-    // Returns AccountDetailsResponse
-    Account { account_type: String },
-    // Get details on all Accounts. If passed, restrict to a given EID argument
-    // Returns AccountListResponse
-    AccountList {},
+    // Get state details (like total donations received so far)
+    State {},
     // Get all Config details for the contract
     // Returns ConfigResponse
     Config {},

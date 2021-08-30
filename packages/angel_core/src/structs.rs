@@ -1,8 +1,27 @@
 use cosmwasm_std::{Addr, Coin, Decimal, Env, SubMsg, Timestamp, Uint128};
-use cw20::{Balance, Cw20CoinVerified};
+use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct BalanceResponse {
+    pub locked_native: Vec<Coin>,
+    pub locked_cw20: Vec<Cw20Coin>,
+    pub liquid_native: Vec<Coin>,
+    pub liquid_cw20: Vec<Cw20Coin>,
+}
+
+impl BalanceResponse {
+    pub fn default() -> Self {
+        BalanceResponse {
+            locked_native: vec![],
+            locked_cw20: vec![],
+            liquid_native: vec![],
+            liquid_cw20: vec![],
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -157,6 +176,22 @@ impl AcceptedTokens {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[serde(rename_all = "snake_case")]
+pub struct BalanceInfo {
+    pub locked_balance: GenericBalance,
+    pub liquid_balance: GenericBalance,
+}
+
+impl BalanceInfo {
+    pub fn default() -> Self {
+        BalanceInfo {
+            locked_balance: GenericBalance::default(),
+            liquid_balance: GenericBalance::default(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
 pub struct GenericBalance {
     pub native: Vec<Coin>,
@@ -164,6 +199,22 @@ pub struct GenericBalance {
 }
 
 impl GenericBalance {
+    pub fn default() -> Self {
+        GenericBalance {
+            cw20: vec![],
+            native: vec![],
+        }
+    }
+    pub fn cw20_list(&self) -> Vec<Cw20Coin> {
+        self.cw20
+            .clone()
+            .into_iter()
+            .map(|token| Cw20Coin {
+                address: token.address.into(),
+                amount: token.amount,
+            })
+            .collect()
+    }
     pub fn add_tokens(&mut self, add: Balance) {
         match add {
             Balance::Native(balance) => {
@@ -192,6 +243,38 @@ impl GenericBalance {
                 match index {
                     Some(idx) => self.cw20[idx].amount += token.amount,
                     None => self.cw20.push(token),
+                }
+            }
+        };
+    }
+    pub fn deduct_tokens(&mut self, deduct: Balance) {
+        match deduct {
+            Balance::Native(balance) => {
+                for token in balance.0 {
+                    let index = self.native.iter().enumerate().find_map(|(i, exist)| {
+                        if exist.denom == token.denom {
+                            Some(i)
+                        } else {
+                            None
+                        }
+                    });
+                    match index {
+                        Some(idx) => self.native[idx].amount -= token.amount,
+                        None => (),
+                    }
+                }
+            }
+            Balance::Cw20(token) => {
+                let index = self.cw20.iter().enumerate().find_map(|(i, exist)| {
+                    if exist.address == token.address {
+                        Some(i)
+                    } else {
+                        None
+                    }
+                });
+                match index {
+                    Some(idx) => self.cw20[idx].amount -= token.amount,
+                    None => (),
                 }
             }
         };
