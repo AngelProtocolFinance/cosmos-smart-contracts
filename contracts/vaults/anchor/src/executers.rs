@@ -83,8 +83,8 @@ pub fn deposit_stable(
     investment
         .locked_balance
         .add_tokens(Balance::from(vec![Coin {
-            denom: config.input_denom.clone(),
             amount: after_taxes_locked,
+            denom: config.input_denom.clone(),
         }]));
     investment
         .locked_balance
@@ -93,13 +93,13 @@ pub fn deposit_stable(
             address: env.contract.address.clone(),
         }));
     investment
-        .locked_balance
+        .liquid_balance
         .add_tokens(Balance::from(vec![Coin {
             denom: config.input_denom,
             amount: after_taxes_liquid,
         }]));
     investment
-        .locked_balance
+        .liquid_balance
         .add_tokens(Balance::Cw20(Cw20CoinVerified {
             amount: after_taxes_liquid,
             address: env.contract.address,
