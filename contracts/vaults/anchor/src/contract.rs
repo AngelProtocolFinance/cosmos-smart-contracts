@@ -12,6 +12,7 @@ use cosmwasm_std::{
     StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw2::{get_contract_version, set_contract_version};
+use cw20::Balance;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "anchor";
@@ -81,8 +82,20 @@ pub fn execute(
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
-        ExecuteMsg::Deposit(msg) => executers::deposit_stable(deps, env, info, msg), // UST -> DP (Account)
-        ExecuteMsg::Redeem(msg) => executers::redeem_stable(deps, env, info, msg), // DP -> UST (Account)
+        // -UST (Account) --> +Deposit Token/Yield Token (Vault)
+        ExecuteMsg::Deposit(msg) => {
+            executers::deposit_stable(deps, env, info.clone(), msg, Balance::from(info.funds))
+        }
+        // Redeem is only called by the SC when setting up new strategies.
+        // Pulls all existing strategy amounts back to Account in UST.
+        // Then re-Deposits according to the Strategies set.
+        // -Deposit Token/Yield Token (Vault) --> +UST (Account) --> -UST (Account) --> +Deposit Token/Yield Token (Vault)
+        ExecuteMsg::Redeem(msg) => {
+            executers::redeem_stable(deps, env, info.clone(), msg, Balance::from(info.funds))
+        } // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
+        ExecuteMsg::Withdraw(msg) => {
+            executers::withdraw_stable(deps, env, info.clone(), msg, Balance::from(info.funds))
+        } // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info), // DP -> DP shuffle (taxes collected)
     }
 }
@@ -98,6 +111,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }),
         QueryMsg::Balance { address } => to_binary(&queriers::query_balance(deps, address)),
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
+        // ANCHOR-SPECIFIC QUERIES BELOW THIS POINT!
         QueryMsg::ExchangeRate { input_denom: _ } => {
             // let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;
 

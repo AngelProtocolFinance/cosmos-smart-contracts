@@ -11,6 +11,7 @@ use cosmwasm_std::{
     Response, StdResult, Uint128, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
+use cw20::Balance;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";
@@ -34,6 +35,7 @@ pub fn instantiate(
             accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
+            pending_redemptions: None,
         },
     )?;
 
@@ -81,10 +83,6 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    // let balance = Balance::from(info.funds.clone());
-    if info.funds.len() > 1 {
-        return Err(ContractError::InvalidCoinsDeposited {});
-    }
     match msg {
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
             executers::update_endowment_settings(deps, env, info, msg)
@@ -92,11 +90,22 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
             executers::update_endowment_status(deps, env, info, msg)
         }
-        ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
+        ExecuteMsg::Deposit(msg) => executers::deposit(
+            deps,
+            env,
+            info.clone(),
+            info.sender,
+            msg,
+            Balance::from(info.funds),
+        ),
         ExecuteMsg::Withdraw { sources } => executers::withdraw(deps, env, info, sources),
-        ExecuteMsg::VaultReceipt(msg) => {
-            executers::vault_receipt(deps, info.clone(), info.sender, msg)
-        }
+        ExecuteMsg::VaultReceipt(msg) => executers::vault_receipt(
+            deps,
+            info.clone(),
+            info.sender,
+            msg,
+            Balance::from(info.funds),
+        ),
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
@@ -111,7 +120,6 @@ pub fn execute(
         ExecuteMsg::TerminateToAddress { beneficiary } => {
             executers::terminate_to_address(deps, env, info, beneficiary)
         }
-        ExecuteMsg::Receive(msg) => executers::receive(deps, env, info, msg),
     }
 }
 

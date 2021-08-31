@@ -1,7 +1,6 @@
 use crate::messages::vault::AccountTransferMsg;
 use crate::structs::{FundingSource, SplitDetails};
 use cosmwasm_std::Decimal;
-use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -63,8 +62,6 @@ pub enum ExecuteMsg {
     UpdateStrategies {
         strategies: Vec<Strategy>,
     },
-    // This accepts a properly-encoded ReceiveMsg from a cw20 contract
-    Receive(Cw20ReceiveMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

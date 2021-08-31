@@ -19,11 +19,19 @@ pub enum ExecuteMsg {
     UpdateRegistrar { new_registrar: Addr },
     Deposit(AccountTransferMsg),
     Redeem(AccountTransferMsg),
+    Withdraw(AccountWithdrawMsg),
     Harvest {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct AccountTransferMsg {
+    pub locked: Uint128,
+    pub liquid: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct AccountWithdrawMsg {
+    pub beneficiary: Addr,
     pub locked: Uint128,
     pub liquid: Uint128,
 }

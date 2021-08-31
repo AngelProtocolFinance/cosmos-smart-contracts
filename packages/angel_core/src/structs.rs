@@ -205,6 +205,47 @@ impl GenericBalance {
             native: vec![],
         }
     }
+    pub fn set_token_balances(&mut self, tokens: Balance) {
+        match tokens {
+            Balance::Native(balance) => {
+                for token in balance.0 {
+                    let index = self.native.iter().enumerate().find_map(|(i, exist)| {
+                        if exist.denom == token.denom {
+                            Some(i)
+                        } else {
+                            None
+                        }
+                    });
+                    match index {
+                        Some(idx) => self.native[idx].amount = token.amount,
+                        None => self.native.push(token),
+                    }
+                }
+            }
+            Balance::Cw20(token) => {
+                let index = self.cw20.iter().enumerate().find_map(|(i, exist)| {
+                    if exist.address == token.address {
+                        Some(i)
+                    } else {
+                        None
+                    }
+                });
+                match index {
+                    Some(idx) => self.cw20[idx].amount = token.amount,
+                    None => self.cw20.push(token),
+                }
+            }
+        };
+    }
+    pub fn get_ust(&self) -> Coin {
+        match self.native.iter().find(|t| t.denom == "uusd".to_string()) {
+            Some(coin) => coin.clone(),
+            None => Coin {
+                amount: Uint128::zero(),
+                denom: "uusd".to_string(),
+            },
+        }
+    }
     pub fn cw20_list(&self) -> Vec<Cw20Coin> {
         self.cw20
             .clone()
