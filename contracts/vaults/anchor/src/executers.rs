@@ -1,6 +1,9 @@
 // use crate::anchor::{epoch_state, Cw20HookMsg, HandleMsg};
 use crate::config;
-use crate::config::{BALANCES, TOKEN_INFO};
+use crate::config::{
+    PendingDepositInfo, PendingRedemptionInfo, PendingWithdrawInfo, BALANCES, PENDING_DEPOSITS,
+    PENDING_REDEMPTIONS, PENDING_WITHDRAWS, TOKEN_INFO,
+};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{AccountTransferMsg, AccountWithdrawMsg};
@@ -77,7 +80,8 @@ pub fn deposit_stable(
     token_info.total_supply += after_taxes.amount;
     TOKEN_INFO.save(deps.storage, &token_info)?;
 
-    // update investment holdings balances
+    // FAKE UST TOKEN INCREASES HERE:
+    // Should not store UST in Vault, but send onward via SubMsg to Anchor
     let mut investment = BALANCES
         .load(deps.storage, &info.sender)
         .unwrap_or(BalanceInfo::default());
@@ -91,7 +95,31 @@ pub fn deposit_stable(
         after_taxes_liquid,
         after_taxes.amount,
     ));
+    // FAKE DEPOSIT TOKEN INCREASES HERE:
+    // Should only be done after a Successful Reply from Anchor SubMsg
+    investment
+        .locked_balance
+        .add_tokens(Balance::Cw20(Cw20CoinVerified {
+            amount: after_taxes_locked,
+            address: env.contract.address.clone(),
+        }));
+    investment
+        .liquid_balance
+        .add_tokens(Balance::Cw20(Cw20CoinVerified {
+            amount: after_taxes_liquid,
+            address: env.contract.address,
+        }));
     BALANCES.save(deps.storage, &info.sender, &investment)?;
+
+    let mut pending_deposits = PENDING_DEPOSITS
+        .load(deps.storage, &info.sender)
+        .unwrap_or(vec![]);
+    pending_deposits.push(PendingDepositInfo {
+        id: Uint128::zero(),
+        locked: after_taxes_locked,
+        liquid: after_taxes_liquid,
+    });
+    PENDING_DEPOSITS.save(deps.storage, &info.sender, &pending_deposits)?;
 
     Ok(
         Response::new()
@@ -127,7 +155,9 @@ pub fn redeem_stable(
             msg: to_binary(&RegistrarQueryMsg::ApprovedEndowmentList {})?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments.iter().position(|p| p.address == info.sender);
+    let pos = endowments
+        .iter()
+        .position(|p| p.address == info.sender.clone());
     // reject if the sender was found in the list of endowments
     if pos == None {
         return Err(ContractError::Unauthorized {});
@@ -169,6 +199,17 @@ pub fn redeem_stable(
     } else {
         token_info.total_supply -= msg.liquid + msg.locked;
     }
+
+    let mut pending_redemptions = PENDING_REDEMPTIONS
+        .load(deps.storage, &info.sender)
+        .unwrap_or(vec![]);
+    pending_redemptions.push(PendingRedemptionInfo {
+        id: Uint128::zero(),
+        account_address: info.sender.clone(),
+        locked: redeem_locked,
+        liquid: redeem_liquid,
+    });
+    PENDING_REDEMPTIONS.save(deps.storage, &info.sender, &pending_redemptions)?;
 
     Ok(Response::new()
         .add_attribute("action", "redeem")

@@ -153,47 +153,11 @@ pub fn update_strategies(
 
     // redeem all existing strategies from the Endowment's old sources
     // before updating endowment with new sources
-    let mut retrieved_funds = BalanceResponse::default();
-
-    let mut old_sources: Vec<FundingSource> = vec![];
-    for strategy in endowment.strategies.iter() {
-        let fx_rate = Decimal::percent(100); // vault_fx_rate(deps.as_ref(), strategy.vault.to_string());
-        let vault_balances: BalanceResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: strategy.vault.to_string(),
-                msg: to_binary(&VaultQuerier::Balance {
-                    address: env.contract.address.to_string(),
-                })?,
-            }))?;
-        let empty_coin = Cw20Coin {
-            address: strategy.vault.to_string(),
-            amount: Uint128::zero(),
-        };
-        let dp_token_locked = vault_balances
-            .locked_cw20
-            .iter()
-            .find(|token| token.address.to_string() == strategy.vault)
-            .unwrap_or(&empty_coin);
-        let dp_token_liquid = vault_balances
-            .liquid_cw20
-            .iter()
-            .find(|token| token.address.to_string() == strategy.vault)
-            .unwrap_or(&empty_coin);
-
-        retrieved_funds.locked_cw20.push(dp_token_locked.clone());
-        retrieved_funds.liquid_cw20.push(dp_token_liquid.clone());
-        // add new submessage to vector
-        old_sources.push(FundingSource {
-            vault: strategy.vault.to_string(),
-            locked: dp_token_locked.amount * fx_rate * strategy.locked_percentage,
-            liquid: dp_token_liquid.amount * fx_rate * strategy.liquid_percentage,
-        });
-    }
-
     let redeem_messages = redeem_from_vaults(
         deps.as_ref(),
+        env.contract.address.to_string(),
         config.registrar_contract.to_string(),
-        old_sources,
+        endowment.strategies,
     )?;
 
     config.pending_redemptions = Some(redeem_messages.len() as u64);
@@ -218,6 +182,7 @@ pub fn update_strategies(
 
 pub fn vault_receipt(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     sender_addr: Addr,
     msg: AccountTransferMsg,
@@ -262,14 +227,13 @@ pub fn vault_receipt(
         Some(1) => {
             config.pending_redemptions = None;
             let mut state = STATE.load(deps.storage)?;
-            let ust_locked = state.balances.locked_balance.get_ust();
-            let ust_liquid = state.balances.liquid_balance.get_ust();
-            deposit_submessages = deposit_to_vaults(
+            // let ust_locked = state.balances.locked_balance.get_ust();
+            // let ust_liquid = state.balances.liquid_balance.get_ust();
+            deposit_submessages = redeem_from_vaults(
                 deps.as_ref(),
+                env.contract.address.to_string(),
                 config.registrar_contract.to_string(),
-                ust_locked.clone(),
-                ust_liquid.clone(),
-                &endowment.strategies,
+                endowment.strategies,
             )?;
             // set UST balances available to zero
             state
@@ -301,11 +265,10 @@ pub fn vault_receipt(
 
 pub fn deposit(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     sender_addr: Addr,
     msg: DepositMsg,
-    balance: Balance,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 

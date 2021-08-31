@@ -90,17 +90,11 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
             executers::update_endowment_status(deps, env, info, msg)
         }
-        ExecuteMsg::Deposit(msg) => executers::deposit(
-            deps,
-            env,
-            info.clone(),
-            info.sender,
-            msg,
-            Balance::from(info.funds),
-        ),
+        ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
         ExecuteMsg::Withdraw { sources } => executers::withdraw(deps, env, info, sources),
         ExecuteMsg::VaultReceipt(msg) => executers::vault_receipt(
             deps,
+            env,
             info.clone(),
             info.sender,
             msg,
