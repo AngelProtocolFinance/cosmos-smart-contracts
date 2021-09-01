@@ -79,7 +79,7 @@ export async function setupContracts() {
   const registrarResult = await instantiateContract(terra, apTeam, apTeam, registrarCodeId, {
     accounts_code_id: accountsCodeId,
     treasury: apTeam.key.accAddress,
-    tax_rate: 2,
+    tax_rate: 20,
     default_vault: undefined,
   });
   registrar = registrarResult.logs[0].events.find((event) => {
@@ -374,20 +374,7 @@ export async function testTcaMemberSendsToIndexFund() {
           },
         },
         {
-          uusd: "4200000000",
-        }
-      ),
-      new MsgExecuteContract(
-        tca.key.accAddress,
-        indexFund,
-        {
-          deposit: {
-            fund_id: 1,
-            split: undefined,
-          },
-        },
-        {
-          uusd: "4200000000",
+          uusd: "4000000000",
         }
       ),
     ])
@@ -445,8 +432,8 @@ export async function testBeneficiaryCanWithdrawFromLiquid() {
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         withdraw: {
           sources: [
-            {vault: anchorVault1, locked: "500", liquid: "1000"},
-            {vault: anchorVault2, locked: "500", liquid: "1000"}
+            {vault: anchorVault1, locked: "50000000", liquid: "100000000"},
+            {vault: anchorVault2, locked: "50000000", liquid: "100000000"}
           ]
         }
       })
@@ -458,8 +445,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid() {
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         withdraw: {
           sources: [
-            {vault: anchorVault1, locked: "0", liquid: "100"},
-            {vault: anchorVault2, locked: "0", liquid: "100"},
+            {vault: anchorVault1, locked: "0", liquid: "200000000"},
           ]
         }
       })

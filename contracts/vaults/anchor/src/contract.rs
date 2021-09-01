@@ -90,12 +90,8 @@ pub fn execute(
         // Pulls all existing strategy amounts back to Account in UST.
         // Then re-Deposits according to the Strategies set.
         // -Deposit Token/Yield Token (Vault) --> +UST (Account) --> -UST (Account) --> +Deposit Token/Yield Token (Vault)
-        ExecuteMsg::Redeem(msg) => {
-            executers::redeem_stable(deps, env, info.clone(), msg, Balance::from(info.funds))
-        } // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
-        ExecuteMsg::Withdraw(msg) => {
-            executers::withdraw_stable(deps, env, info.clone(), msg, Balance::from(info.funds))
-        } // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
+        ExecuteMsg::Redeem(msg) => executers::redeem_stable(deps, env, info.clone(), msg), // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
+        ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info.clone(), msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info), // DP -> DP shuffle (taxes collected)
     }
 }

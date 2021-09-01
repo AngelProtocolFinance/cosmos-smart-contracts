@@ -221,31 +221,33 @@ pub fn withdraw_from_vaults(
 
     // redeem amounts from sources listed
     for source in sources.iter() {
-        // check source vault is in registrar vaults list and is approved
-        let vault_config: VaultDetailResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: registrar_contract.to_string(),
-                msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: source.vault.to_string(),
-                })?,
-            }))?;
-        let yield_vault: YieldVault = vault_config.vault;
+        if source.locked > Uint128::zero() || source.liquid > Uint128::zero() {
+            // check source vault is in registrar vaults list and is approved
+            let vault_config: VaultDetailResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: registrar_contract.to_string(),
+                    msg: to_binary(&RegistrarQuerier::Vault {
+                        vault_addr: source.vault.to_string(),
+                    })?,
+                }))?;
+            let yield_vault: YieldVault = vault_config.vault;
 
-        let withdraw_msg = AccountWithdrawMsg {
-            beneficiary: beneficiary.clone(),
-            locked: source.locked,
-            liquid: source.liquid,
-        };
+            let withdraw_msg = AccountWithdrawMsg {
+                beneficiary: beneficiary.clone(),
+                locked: source.locked,
+                liquid: source.liquid,
+            };
 
-        // create a withdraw message for X Vault, noting amounts for Locked / Liquid
-        withdraw_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: yield_vault.address.to_string(),
-            msg: to_binary(&crate::messages::vault::ExecuteMsg::Withdraw(
-                withdraw_msg.clone(),
-            ))
-            .unwrap(),
-            funds: vec![],
-        })));
+            // create a withdraw message for X Vault, noting amounts for Locked / Liquid
+            withdraw_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: yield_vault.address.to_string(),
+                msg: to_binary(&crate::messages::vault::ExecuteMsg::Withdraw(
+                    withdraw_msg.clone(),
+                ))
+                .unwrap(),
+                funds: vec![],
+            })));
+        }
     }
     Ok(withdraw_messages)
 }
