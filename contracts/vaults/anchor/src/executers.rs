@@ -220,7 +220,7 @@ pub fn redeem_stable(
 pub fn harvest(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let config = config::read(deps.storage)?;
 
-    if config.owner != info.sender {
+    if info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
 

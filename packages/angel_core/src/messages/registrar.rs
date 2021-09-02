@@ -28,6 +28,8 @@ pub enum ExecuteMsg {
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Allows the SC owner to change ownership
     UpdateOwner { new_owner: String },
+    // Allows the DANO/AP Team to harvest all active vaults
+    Harvest {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
