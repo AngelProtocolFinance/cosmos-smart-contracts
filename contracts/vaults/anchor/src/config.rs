@@ -1,3 +1,4 @@
+use angel_core::structs::BalanceInfo;
 use cosmwasm_std::{Addr, StdResult, Storage, Uint128};
 use cosmwasm_storage::{ReadonlySingleton, Singleton};
 use cw_storage_plus::{Item, Map};
@@ -46,6 +47,34 @@ impl TokenInfo {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[serde(rename_all = "snake_case")]
+pub struct PendingDepositInfo {
+    pub id: Uint128,
+    pub locked: Uint128,
+    pub liquid: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[serde(rename_all = "snake_case")]
+pub struct PendingRedemptionInfo {
+    pub id: Uint128,
+    pub account_address: Addr,
+    pub locked: Uint128,
+    pub liquid: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[serde(rename_all = "snake_case")]
+pub struct PendingWithdrawInfo {
+    pub id: Uint128,
+    pub beneficiary: Addr,
+    pub locked: Uint128,
+    pub liquid: Uint128,
+}
+
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
-pub const LOCKED_BALANCES: Map<&Addr, Uint128> = Map::new("locked_balance");
-pub const LIQUID_BALANCES: Map<&Addr, Uint128> = Map::new("liquid_balance");
+pub const BALANCES: Map<&Addr, BalanceInfo> = Map::new("balance");
+pub const PENDING_DEPOSITS: Map<&Addr, Vec<PendingDepositInfo>> = Map::new("deposit");
+pub const PENDING_REDEMPTIONS: Map<&Addr, Vec<PendingRedemptionInfo>> = Map::new("redemption");
+pub const PENDING_WITHDRAWS: Map<&Addr, Vec<PendingWithdrawInfo>> = Map::new("withdraw");

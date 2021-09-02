@@ -1,16 +1,40 @@
 use crate::errors::core::ContractError;
 use crate::messages::registrar::QueryMsg as RegistrarQuerier;
-use crate::messages::vault::{AccountTransferMsg, QueryMsg as VaultQuerier};
+use crate::messages::vault::{AccountTransferMsg, AccountWithdrawMsg, QueryMsg as VaultQuerier};
 use crate::responses::registrar::VaultDetailResponse;
-use crate::responses::vault::{ExchangeRateResponse, VaultBalanceResponse};
-use crate::structs::{FundingSource, GenericBalance, RedeemResults, SplitDetails, YieldVault};
+use crate::responses::vault::ExchangeRateResponse;
+use crate::structs::{
+    BalanceResponse as CustomBalanceResponse, FundingSource, GenericBalance, SplitDetails,
+    StrategyComponent, YieldVault,
+};
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, QueryRequest, ReplyOn, StdError,
-    StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, QueryRequest, StdResult, SubMsg,
+    Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{BalanceResponse, Cw20ExecuteMsg};
+use cw20::{Balance, BalanceResponse, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use terra_cosmwasm::TerraQuerier;
+
+pub fn ratio_adjusted_balance(balance: Balance, portion: Uint128, total: Uint128) -> Balance {
+    let adjusted_balance: Balance = match balance {
+        Balance::Native(coins) => {
+            let coins: Vec<Coin> = coins
+                .0
+                .into_iter()
+                .map(|mut c: Coin| {
+                    c.amount = c.amount.multiply_ratio(portion, total);
+                    c
+                })
+                .collect();
+            Balance::from(coins)
+        }
+        Balance::Cw20(coin) => Balance::Cw20(Cw20CoinVerified {
+            address: coin.address.into(),
+            amount: coin.amount.multiply_ratio(portion, total),
+        }),
+    };
+    adjusted_balance
+}
 
 pub fn compute_tax(deps: Deps, coin: &Coin) -> StdResult<Uint256> {
     let terra_querier = TerraQuerier::new(&deps.querier);
@@ -115,12 +139,47 @@ pub fn vault_account_balance(
 
 pub fn redeem_from_vaults(
     deps: Deps,
-    transfer_id: Uint256,
-    _accounts_contract: String,
+    account_contract: String,
     registrar_contract: String,
-    sources: Vec<FundingSource>,
+    strategies: Vec<StrategyComponent>,
 ) -> Result<Vec<SubMsg>, ContractError> {
+    let mut retrieved_funds = CustomBalanceResponse::default();
+    let mut sources: Vec<FundingSource> = vec![];
     let mut redeem_messages = vec![];
+
+    for strategy in strategies.iter() {
+        let fx_rate = Decimal::percent(100); // vault_fx_rate(deps.as_ref(), strategy.vault.to_string());
+        let vault_balances: CustomBalanceResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: strategy.vault.to_string(),
+                msg: to_binary(&VaultQuerier::Balance {
+                    address: account_contract.clone(),
+                })?,
+            }))?;
+        let empty_coin = Cw20Coin {
+            address: strategy.vault.to_string(),
+            amount: Uint128::zero(),
+        };
+        let dp_token_locked = vault_balances
+            .locked_cw20
+            .iter()
+            .find(|token| token.address.to_string() == strategy.vault)
+            .unwrap_or(&empty_coin);
+        let dp_token_liquid = vault_balances
+            .liquid_cw20
+            .iter()
+            .find(|token| token.address.to_string() == strategy.vault)
+            .unwrap_or(&empty_coin);
+
+        retrieved_funds.locked_cw20.push(dp_token_locked.clone());
+        retrieved_funds.liquid_cw20.push(dp_token_liquid.clone());
+        // add new submessage to vector
+        sources.push(FundingSource {
+            vault: strategy.vault.to_string(),
+            locked: dp_token_locked.amount * fx_rate * strategy.locked_percentage,
+            liquid: dp_token_liquid.amount * fx_rate * strategy.liquid_percentage,
+        });
+    }
 
     // redeem amounts from sources listed
     for source in sources.iter() {
@@ -134,36 +193,100 @@ pub fn redeem_from_vaults(
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
 
-        // check that account balance of Deposit Tokens are sufficient to cover withdraw request
-        // let vault_balance: VaultBalanceResponse =
-        //     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-        //         contract_addr: source.vault.to_string(),
-        //         msg: to_binary(&VaultQuerier::Balance {
-        //             address: accounts_contract.clone(),
-        //         })?,
-        //     }))?;
-        // if source.locked > vault_balance.locked || source.liquid > vault_balance.liquid {
-        //     let err = format!(
-        //         "lock_req:{},lock_bal:{},liq_req:{},liq_bal:{}",
-        //         source.locked, vault_balance.locked, source.liquid, vault_balance.liquid
-        //     );
-        //     return Err(ContractError::Std {
-        //         0: StdError::GenericErr { msg: err },
-        //     });
-        // }
-
-        let transfer_msg = AccountTransferMsg {
-            transfer_id: transfer_id,
-            locked: Uint256::from(source.locked),
-            liquid: Uint256::from(source.liquid),
+        let redeem_msg = AccountTransferMsg {
+            locked: source.locked,
+            liquid: source.liquid,
         };
 
         // create a withdraw message for X Vault, noting amounts for Locked / Liquid
         redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: yield_vault.address.to_string(),
-            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem(transfer_msg)).unwrap(),
+            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem(
+                redeem_msg.clone(),
+            ))
+            .unwrap(),
             funds: vec![],
         })));
     }
     Ok(redeem_messages)
+}
+
+pub fn withdraw_from_vaults(
+    deps: Deps,
+    registrar_contract: String,
+    beneficiary: &Addr,
+    sources: Vec<FundingSource>,
+) -> Result<Vec<SubMsg>, ContractError> {
+    let mut withdraw_messages = vec![];
+
+    // redeem amounts from sources listed
+    for source in sources.iter() {
+        // check source vault is in registrar vaults list and is approved
+        let vault_config: VaultDetailResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: registrar_contract.to_string(),
+                msg: to_binary(&RegistrarQuerier::Vault {
+                    vault_addr: source.vault.to_string(),
+                })?,
+            }))?;
+        let yield_vault: YieldVault = vault_config.vault;
+
+        let withdraw_msg = AccountWithdrawMsg {
+            beneficiary: beneficiary.clone(),
+            locked: source.locked,
+            liquid: source.liquid,
+        };
+
+        // create a withdraw message for X Vault, noting amounts for Locked / Liquid
+        withdraw_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: yield_vault.address.to_string(),
+            msg: to_binary(&crate::messages::vault::ExecuteMsg::Withdraw(
+                withdraw_msg.clone(),
+            ))
+            .unwrap(),
+            funds: vec![],
+        })));
+    }
+    Ok(withdraw_messages)
+}
+
+pub fn deposit_to_vaults(
+    deps: Deps,
+    registrar_contract: String,
+    locked_ust: Coin,
+    liquid_ust: Coin,
+    strategies: &Vec<StrategyComponent>,
+) -> Result<Vec<SubMsg>, ContractError> {
+    let mut deposit_messages = vec![];
+    // deposit to the strategies set
+    for strategy in strategies.iter() {
+        let vault_config: VaultDetailResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: registrar_contract.clone(),
+                msg: to_binary(&RegistrarQuerier::Vault {
+                    vault_addr: strategy.vault.to_string(),
+                })?,
+            }))?;
+        let yield_vault: YieldVault = vault_config.vault;
+
+        let transfer_msg = AccountTransferMsg {
+            locked: locked_ust.amount * strategy.locked_percentage,
+            liquid: liquid_ust.amount * strategy.liquid_percentage,
+        };
+
+        // create a deposit message for X Vault, noting amounts for Locked / Liquid
+        // funds payload contains both amounts for locked and liquid accounts
+        deposit_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: yield_vault.address.to_string(),
+            msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit(
+                transfer_msg.clone(),
+            ))
+            .unwrap(),
+            funds: vec![Coin {
+                amount: transfer_msg.locked.clone() + transfer_msg.liquid,
+                denom: "uusd".to_string(),
+            }],
+        })));
+    }
+    Ok(deposit_messages)
 }

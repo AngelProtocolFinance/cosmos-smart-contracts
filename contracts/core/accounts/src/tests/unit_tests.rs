@@ -309,12 +309,12 @@ fn test_update_strategy() {
     // sum of the invested strategy components percentages is not equal 100%
     let msg = ExecuteMsg::UpdateStrategies {
         strategies: vec![
-            StrategyComponentMsg {
+            Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(20),
                 liquid_percentage: Decimal::percent(20),
             },
-            StrategyComponentMsg {
+            Strategy {
                 vault: "tech_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(60),
                 liquid_percentage: Decimal::percent(60),
@@ -328,17 +328,17 @@ fn test_update_strategy() {
     assert_eq!(err, ContractError::InvalidStrategyAllocation {});
     let msg = ExecuteMsg::UpdateStrategies {
         strategies: vec![
-            StrategyComponentMsg {
+            Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(40),
                 liquid_percentage: Decimal::percent(40),
             },
-            StrategyComponentMsg {
+            Strategy {
                 vault: "tech_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(20),
                 liquid_percentage: Decimal::percent(20),
             },
-            StrategyComponentMsg {
+            Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(40),
                 liquid_percentage: Decimal::percent(40),
@@ -352,12 +352,12 @@ fn test_update_strategy() {
     assert_eq!(err, ContractError::StrategyComponentsNotUnique {});
     let msg = ExecuteMsg::UpdateStrategies {
         strategies: vec![
-            StrategyComponentMsg {
+            Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(40),
                 liquid_percentage: Decimal::percent(40),
             },
-            StrategyComponentMsg {
+            Strategy {
                 vault: "tech_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(60),
                 liquid_percentage: Decimal::percent(60),
@@ -370,12 +370,12 @@ fn test_update_strategy() {
 
     let msg = ExecuteMsg::UpdateStrategies {
         strategies: vec![
-            StrategyComponentMsg {
+            Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(40),
                 liquid_percentage: Decimal::percent(40),
             },
-            StrategyComponentMsg {
+            Strategy {
                 vault: "tech_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(60),
                 liquid_percentage: Decimal::percent(60),

@@ -71,4 +71,7 @@ pub enum ContractError {
 
     #[error("Cannot withdraw from Locked balances")]
     InaccessableLockedBalance {},
+
+    #[error("Vault redemptions already in progress.")]
+    RedemptionInProgress {},
 }
