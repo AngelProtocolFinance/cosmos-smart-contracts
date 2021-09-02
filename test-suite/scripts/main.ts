@@ -505,6 +505,6 @@ export async function testCharityCanUpdateStrategies() {
   await testDonorSendsToIndexFund();
   await testTcaMemberSendsToIndexFund();
   await testAngelTeamCanTriggerVaultHarvest();
-  // await testCharityCanUpdateStrategies();
+  await testCharityCanUpdateStrategies();
   // await testBeneficiaryCanWithdrawFromLiquid();
 })();

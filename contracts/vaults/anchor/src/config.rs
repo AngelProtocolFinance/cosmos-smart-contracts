@@ -14,6 +14,7 @@ pub struct Config {
     pub moneymarket: Addr,
     pub input_denom: String,
     pub yield_token: Addr,
+    pub next_pending_id: u64,
 }
 
 pub fn store(storage: &mut dyn Storage, data: &Config) -> StdResult<()> {
@@ -49,32 +50,15 @@ impl TokenInfo {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
-pub struct PendingDepositInfo {
-    pub id: Uint128,
-    pub locked: Uint128,
-    pub liquid: Uint128,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
-pub struct PendingRedemptionInfo {
-    pub id: Uint128,
-    pub account_address: Addr,
-    pub locked: Uint128,
-    pub liquid: Uint128,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
-pub struct PendingWithdrawInfo {
-    pub id: Uint128,
-    pub beneficiary: Addr,
+pub struct PendingInfo {
+    pub typ: String, // type of pending transaction ('typ', because 'type' is protected keyword in Rust...)
+    pub accounts_address: Option<Addr>, // return to an Accounts SC
+    pub beneficiary: Option<Addr>, // return to the beneficiary
+    pub fund: bool,  // return to the active fund
     pub locked: Uint128,
     pub liquid: Uint128,
 }
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
 pub const BALANCES: Map<&Addr, BalanceInfo> = Map::new("balance");
-pub const PENDING_DEPOSITS: Map<&Addr, Vec<PendingDepositInfo>> = Map::new("deposit");
-pub const PENDING_REDEMPTIONS: Map<&Addr, Vec<PendingRedemptionInfo>> = Map::new("redemption");
-pub const PENDING_WITHDRAWS: Map<&Addr, Vec<PendingWithdrawInfo>> = Map::new("withdraw");
+pub const PENDING: Map<&[u8], PendingInfo> = Map::new("pending");

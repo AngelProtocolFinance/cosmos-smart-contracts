@@ -256,6 +256,18 @@ impl GenericBalance {
             })
             .collect()
     }
+    pub fn get_token_amount(&self, token_address: Addr) -> Uint128 {
+        self.cw20_list()
+            .iter()
+            .filter(|token| token.address == token_address)
+            .next()
+            .unwrap_or(&Cw20Coin {
+                amount: Uint128::zero(),
+                address: token_address.to_string(),
+            })
+            .clone()
+            .amount
+    }
     pub fn add_tokens(&mut self, add: Balance) {
         match add {
             Balance::Native(balance) => {

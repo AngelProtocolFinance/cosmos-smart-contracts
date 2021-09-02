@@ -1,9 +1,6 @@
 // use crate::anchor::{epoch_state, Cw20HookMsg, HandleMsg};
 use crate::config;
-use crate::config::{
-    PendingDepositInfo, PendingRedemptionInfo, PendingWithdrawInfo, BALANCES, PENDING_DEPOSITS,
-    PENDING_REDEMPTIONS, PENDING_WITHDRAWS, TOKEN_INFO,
-};
+use crate::config::{PendingInfo, BALANCES, PENDING, TOKEN_INFO};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{AccountTransferMsg, AccountWithdrawMsg};
@@ -11,12 +8,12 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, EndowmentListResponse,
 };
 use angel_core::structs::{BalanceInfo, EndowmentEntry};
-use angel_core::utils::{deduct_tax, ratio_adjusted_balance};
+use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Order, QueryRequest,
     Response, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
+use cw20::{Balance, Cw20CoinVerified};
 
 pub fn update_registrar(
     deps: DepsMut,
@@ -44,7 +41,7 @@ pub fn deposit_stable(
     msg: AccountTransferMsg,
     balance: Balance,
 ) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
+    let mut config = config::read(deps.storage)?;
 
     // check that the depositor is an approved Accounts SC
     let endowments_rsp: EndowmentListResponse =
@@ -80,15 +77,20 @@ pub fn deposit_stable(
     token_info.total_supply += after_taxes.amount;
     TOKEN_INFO.save(deps.storage, &token_info)?;
 
-    let mut pending_deposits = PENDING_DEPOSITS
-        .load(deps.storage, &info.sender)
-        .unwrap_or(vec![]);
-    pending_deposits.push(PendingDepositInfo {
-        id: Uint128::zero(),
-        locked: after_taxes_locked,
-        liquid: after_taxes_liquid,
-    });
-    PENDING_DEPOSITS.save(deps.storage, &info.sender, &pending_deposits)?;
+    PENDING.save(
+        deps.storage,
+        &config.next_pending_id.to_be_bytes(),
+        &PendingInfo {
+            typ: "deposit".to_string(),
+            accounts_address: Some(info.sender.clone()),
+            beneficiary: None,
+            fund: false,
+            locked: after_taxes_locked,
+            liquid: after_taxes_liquid,
+        },
+    )?;
+    config.next_pending_id += 1;
+    config::store(deps.storage, &config)?;
 
     // FAKE DEPOSIT TOKEN INCREASES HERE:
     // Should only be done after a Successful Reply from Anchor SubMsg
@@ -130,9 +132,8 @@ pub fn redeem_stable(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    msg: AccountTransferMsg,
 ) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
+    let mut config = config::read(deps.storage)?;
 
     // check that the depositor is an approved Accounts SC
     let endowments_rsp: EndowmentListResponse =
@@ -152,47 +153,57 @@ pub fn redeem_stable(
     // let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
     // let exchange_rate = Decimal::percent(100); // epoch_state.exchange_rate;
 
-    // update investment holdings balances
     let mut investment = BALANCES
         .load(deps.storage, &info.sender)
         .unwrap_or(BalanceInfo::default());
 
+    // grab total tokens for locked and liquid balances
+    let locked_deposit_tokens = investment
+        .locked_balance
+        .get_token_amount(env.contract.address.clone());
+    let liquid_deposit_tokens = investment
+        .liquid_balance
+        .get_token_amount(env.contract.address.clone());
+    let total_redemption = locked_deposit_tokens + liquid_deposit_tokens;
+
+    // update investment holdings balances to zero
+    let zero_tokens = Cw20CoinVerified {
+        amount: Uint128::zero(),
+        address: env.contract.address.clone(),
+    };
     investment
         .locked_balance
-        .deduct_tokens(Balance::Cw20(Cw20CoinVerified {
-            amount: msg.locked,
-            address: env.contract.address.clone(),
-        }));
-
+        .set_token_balances(Balance::Cw20(zero_tokens.clone()));
     investment
         .liquid_balance
-        .deduct_tokens(Balance::Cw20(Cw20CoinVerified {
-            amount: msg.liquid,
-            address: env.contract.address,
-        }));
+        .set_token_balances(Balance::Cw20(zero_tokens.clone()));
 
-    let mut pending_redemptions = PENDING_REDEMPTIONS
-        .load(deps.storage, &info.sender)
-        .unwrap_or(vec![]);
-    pending_redemptions.push(PendingRedemptionInfo {
-        id: Uint128::zero(),
-        account_address: info.sender.clone(),
-        locked: msg.locked,
-        liquid: msg.locked,
-    });
-    PENDING_REDEMPTIONS.save(deps.storage, &info.sender, &pending_redemptions)?;
+    PENDING.save(
+        deps.storage,
+        &config.next_pending_id.to_be_bytes(),
+        &PendingInfo {
+            typ: "redeem".to_string(),
+            accounts_address: Some(info.sender.clone()),
+            beneficiary: None,
+            fund: false,
+            locked: locked_deposit_tokens,
+            liquid: liquid_deposit_tokens,
+        },
+    )?;
+    config.next_pending_id += 1;
+    config::store(deps.storage, &config)?;
 
     Ok(Response::new()
         .add_attribute("action", "redeem")
         .add_attribute("sender", info.sender.clone())
-        .add_attribute("redeem_amount", msg.locked + msg.locked)
+        .add_attribute("redeem_amount", total_redemption)
         // .add_submessage(SubMsg {
         //     id: 42,
         //     msg: CosmosMsg::Wasm(WasmMsg::Execute {
         //         contract_addr: config.yield_token.to_string(),
         //         msg: to_binary(&Cw20ExecuteMsg::Send {
         //             contract: config.moneymarket.to_string(),
-        //             amount: redeem.amount * Decimal::from(exchange_rate),
+        //             amount: total_redemption * Decimal::from(exchange_rate),
         //             msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
         //         })?,
         //         funds: vec![],
@@ -205,16 +216,19 @@ pub fn redeem_stable(
             contract_addr: info.sender.to_string(),
             msg: to_binary(&&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
                 AccountTransferMsg {
-                    locked: msg.locked,
-                    liquid: msg.locked,
+                    locked: locked_deposit_tokens,
+                    liquid: liquid_deposit_tokens,
                 },
             ))?,
             funds: vec![deduct_tax(
                 deps.as_ref(),
-                Coin {
-                    denom: "uusd".to_string(),
-                    amount: msg.locked + msg.locked,
-                },
+                deduct_tax(
+                    deps.as_ref(),
+                    Coin {
+                        denom: "uusd".to_string(),
+                        amount: total_redemption,
+                    },
+                )?,
             )?],
         }))))
 }
@@ -227,7 +241,7 @@ pub fn withdraw_stable(
     info: MessageInfo,
     msg: AccountWithdrawMsg,
 ) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
+    let mut config = config::read(deps.storage)?;
 
     // check that the depositor is an approved Accounts SC
     let endowments_rsp: EndowmentListResponse =
@@ -266,16 +280,20 @@ pub fn withdraw_stable(
             address: env.contract.address,
         }));
 
-    let mut pending_withdraws = PENDING_WITHDRAWS
-        .load(deps.storage, &info.sender)
-        .unwrap_or(vec![]);
-    pending_withdraws.push(PendingWithdrawInfo {
-        id: Uint128::zero(),
-        beneficiary: msg.beneficiary.clone(),
-        locked: msg.locked,
-        liquid: msg.locked,
-    });
-    PENDING_WITHDRAWS.save(deps.storage, &info.sender, &pending_withdraws)?;
+    PENDING.save(
+        deps.storage,
+        &config.next_pending_id.to_be_bytes(),
+        &PendingInfo {
+            typ: "withdraw".to_string(),
+            accounts_address: None,
+            beneficiary: Some(msg.beneficiary.clone()),
+            fund: false,
+            locked: msg.locked,
+            liquid: msg.locked,
+        },
+    )?;
+    config.next_pending_id += 1;
+    config::store(deps.storage, &config)?;
 
     Ok(Response::new()
         .add_attribute("action", "redeem")
@@ -340,16 +358,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         let mut balances = BALANCES.load(deps.storage, &account_address)?;
         let locked_deposit_amount: Uint128 = balances
             .locked_balance
-            .cw20_list()
-            .iter()
-            .filter(|token| token.address == env.contract.address.clone())
-            .next()
-            .unwrap_or(&Cw20Coin {
-                amount: Uint128::zero(),
-                address: env.contract.address.to_string(),
-            })
-            .clone()
-            .amount;
+            .get_token_amount(env.contract.address.clone());
 
         // proceed to shuffle balances if we have a non-zero amount
         if locked_deposit_amount > Uint128::zero() {
