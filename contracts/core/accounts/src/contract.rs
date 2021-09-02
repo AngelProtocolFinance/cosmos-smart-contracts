@@ -11,7 +11,6 @@ use cosmwasm_std::{
     Response, StdResult, Uint128, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
-use cw20::Balance;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";

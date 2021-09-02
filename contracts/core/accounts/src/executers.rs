@@ -2,19 +2,17 @@ use crate::state::{CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
-use angel_core::messages::vault::{AccountTransferMsg, QueryMsg as VaultQuerier};
-use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse, VaultListResponse};
-use angel_core::structs::{
-    BalanceResponse, FundingSource, GenericBalance, StrategyComponent, YieldVault,
-};
+use angel_core::messages::vault::AccountTransferMsg;
+use angel_core::responses::registrar::{ConfigResponse, VaultListResponse};
+use angel_core::structs::{FundingSource, StrategyComponent, YieldVault};
 use angel_core::utils::{
     deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults, withdraw_from_vaults,
 };
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest, Response,
-    StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, Coin, Decimal, DepsMut, Env, MessageInfo, QueryRequest, Response, StdResult,
+    SubMsg, Uint128, WasmQuery,
 };
-use cw20::{Balance, Cw20Coin};
+use cw20::Balance;
 
 pub fn update_admin(
     deps: DepsMut,

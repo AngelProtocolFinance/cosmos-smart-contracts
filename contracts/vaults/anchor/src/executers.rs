@@ -39,7 +39,7 @@ pub fn deposit_stable(
     env: Env,
     info: MessageInfo,
     msg: AccountTransferMsg,
-    balance: Balance,
+    _balance: Balance,
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
