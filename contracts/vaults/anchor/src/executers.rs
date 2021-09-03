@@ -1,4 +1,4 @@
-// use crate::anchor::{epoch_state, Cw20HookMsg, HandleMsg};
+use crate::anchor::{epoch_state, Cw20HookMsg, HandleMsg};
 use crate::config;
 use crate::config::{PendingInfo, BALANCES, PENDING, TOKEN_INFO};
 use angel_core::errors::vault::ContractError;
@@ -11,9 +11,10 @@ use angel_core::structs::{BalanceInfo, EndowmentEntry};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, Order,
-    QueryRequest, Response, StdError, SubMsg, SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
+    QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse, Uint128, WasmMsg,
+    WasmQuery,
 };
-use cw20::{Balance, Cw20CoinVerified};
+use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg};
 
 pub fn update_registrar(
     deps: DepsMut,
@@ -94,22 +95,21 @@ pub fn deposit_stable(
     config.next_pending_id += 1;
     config::store(deps.storage, &config)?;
 
-    Ok(
-        Response::new()
-            .add_attribute("action", "deposit")
-            .add_attribute("sender", info.sender.clone())
-            .add_attribute("deposit_amount", info.funds[0].amount)
-            .add_attribute("mint_amount", after_taxes.amount), // .add_submessage(SubMsg {
-                                                               //     id: submessage_id,
-                                                               //     msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                                                               //         contract_addr: config.moneymarket.to_string(),
-                                                               //         msg: to_binary(&HandleMsg::DepositStable {})?,
-                                                               //         funds: vec![after_taxes.clone()],
-                                                               //     }),
-                                                               //     reply_on: ReplyOn::Always,
-                                                               //     gas_limit: None,
-                                                               // })
-    )
+    Ok(Response::new()
+        .add_attribute("action", "deposit")
+        .add_attribute("sender", info.sender.clone())
+        .add_attribute("deposit_amount", info.funds[0].amount)
+        .add_attribute("mint_amount", after_taxes.amount)
+        .add_submessage(SubMsg {
+            id: submessage_id,
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.moneymarket.to_string(),
+                msg: to_binary(&HandleMsg::DepositStable {})?,
+                funds: vec![after_taxes.clone()],
+            }),
+            reply_on: ReplyOn::Always,
+            gas_limit: None,
+        }))
 }
 
 /// Redeem Stable: Take in an amount of locked/liquid deposit tokens
@@ -181,25 +181,24 @@ pub fn redeem_stable(
     config.next_pending_id += 1;
     config::store(deps.storage, &config)?;
 
-    Ok(
-        Response::new()
-            .add_attribute("action", "redeem")
-            .add_attribute("sender", info.sender.clone())
-            .add_attribute("redeem_amount", total_redemption), // .add_submessage(SubMsg {
-                                                               //     id: submessage_id,
-                                                               //     msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                                                               //         contract_addr: config.yield_token.to_string(),
-                                                               //         msg: to_binary(&Cw20ExecuteMsg::Send {
-                                                               //             contract: config.moneymarket.to_string(),
-                                                               //             amount: total_redemption,
-                                                               //             msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
-                                                               //         })?,
-                                                               //         funds: vec![],
-                                                               //     }),
-                                                               //     gas_limit: None,
-                                                               //     reply_on: ReplyOn::Always,
-                                                               // })
-    )
+    Ok(Response::new()
+        .add_attribute("action", "redeem")
+        .add_attribute("sender", info.sender.clone())
+        .add_attribute("redeem_amount", total_redemption)
+        .add_submessage(SubMsg {
+            id: submessage_id,
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.yield_token.to_string(),
+                msg: to_binary(&Cw20ExecuteMsg::Send {
+                    contract: config.moneymarket.to_string(),
+                    amount: total_redemption,
+                    msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
+                })?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Always,
+        }))
 }
 
 /// Withdraw Stable: Takes in an amount of locked/liquid deposit tokens
@@ -266,25 +265,24 @@ pub fn withdraw_stable(
     config.next_pending_id += 1;
     config::store(deps.storage, &config)?;
 
-    Ok(
-        Response::new()
-            .add_attribute("action", "redeem")
-            .add_attribute("sender", info.sender.clone())
-            .add_attribute("withdraw_amount", msg.locked + msg.locked), // .add_submessage(SubMsg {
-                                                                        //     id: submessage_id,
-                                                                        //     msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                                                                        //         contract_addr: config.yield_token.to_string(),
-                                                                        //         msg: to_binary(&Cw20ExecuteMsg::Send {
-                                                                        //             contract: config.moneymarket.to_string(),
-                                                                        //             amount: redeem.amount,
-                                                                        //             msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
-                                                                        //         })?,
-                                                                        //         funds: vec![],
-                                                                        //     }),
-                                                                        //     gas_limit: None,
-                                                                        //     reply_on: ReplyOn::Always,
-                                                                        // })
-    )
+    Ok(Response::new()
+        .add_attribute("action", "redeem")
+        .add_attribute("sender", info.sender.clone())
+        .add_attribute("withdraw_amount", msg.locked + msg.locked)
+        .add_submessage(SubMsg {
+            id: submessage_id,
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.yield_token.to_string(),
+                msg: to_binary(&Cw20ExecuteMsg::Send {
+                    contract: config.moneymarket.to_string(),
+                    amount: msg.locked + msg.liquid,
+                    msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
+                })?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Always,
+        }))
 }
 
 pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
