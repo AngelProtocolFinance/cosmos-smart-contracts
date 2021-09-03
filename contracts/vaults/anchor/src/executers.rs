@@ -165,6 +165,13 @@ pub fn redeem_stable(
         .liquid_balance
         .get_token_amount(env.contract.address.clone());
     let total_redemption = locked_deposit_tokens + liquid_deposit_tokens;
+    let tax_redemption = deduct_tax(
+        deps.as_ref(),
+        Coin {
+            denom: "uusd".to_string(),
+            amount: total_redemption,
+        },
+    )?;
 
     // update investment holdings balances to zero
     let zero_tokens = Cw20CoinVerified {
@@ -186,7 +193,7 @@ pub fn redeem_stable(
             accounts_address: Some(info.sender.clone()),
             beneficiary: None,
             fund: false,
-            locked: locked_deposit_tokens,
+            locked: locked_deposit_tokens - tax_redemption.amount,
             liquid: liquid_deposit_tokens,
         },
     )?;
@@ -196,7 +203,7 @@ pub fn redeem_stable(
     Ok(Response::new()
         .add_attribute("action", "redeem")
         .add_attribute("sender", info.sender.clone())
-        .add_attribute("redeem_amount", total_redemption)
+        .add_attribute("redeem_amount", total_redemption - tax_redemption.amount)
         // .add_submessage(SubMsg {
         //     id: 42,
         //     msg: CosmosMsg::Wasm(WasmMsg::Execute {
@@ -216,20 +223,11 @@ pub fn redeem_stable(
             contract_addr: info.sender.to_string(),
             msg: to_binary(&&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
                 AccountTransferMsg {
-                    locked: locked_deposit_tokens,
+                    locked: locked_deposit_tokens - tax_redemption.amount,
                     liquid: liquid_deposit_tokens,
                 },
             ))?,
-            funds: vec![deduct_tax(
-                deps.as_ref(),
-                deduct_tax(
-                    deps.as_ref(),
-                    Coin {
-                        denom: "uusd".to_string(),
-                        amount: total_redemption,
-                    },
-                )?,
-            )?],
+            funds: vec![tax_redemption],
         }))))
 }
 
