@@ -23,4 +23,7 @@ pub enum ContractError {
 
     #[error("Vault not created")]
     VaultNotCreated {},
+
+    #[error("Oh dear, how'd we get here? Something went wrong.")]
+    HowDidWeGetHere {},
 }

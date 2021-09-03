@@ -8,8 +8,8 @@ use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, ReplyOn, Response,
-    StdResult, SubMsg, Uint128, WasmMsg,
+    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn,
+    Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Balance;
@@ -94,6 +94,16 @@ pub fn execute(
         ExecuteMsg::Redeem {} => executers::redeem_stable(deps, env, info.clone()), // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
         ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info.clone(), msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info), // DP -> DP shuffle (taxes collected)
+    }
+}
+
+/// Replies back to the Vault from the Anchor MoneyMarket contract:
+/// SubMsg IDs are matched back with the PENDING storage to match the
+/// incoming and outgoing funds and any further processing steps performed
+#[entry_point]
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        _ => executers::process_anchor_reply(deps, env, msg.id, msg.result),
     }
 }
 
