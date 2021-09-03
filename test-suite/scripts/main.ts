@@ -390,8 +390,8 @@ export async function testTcaMemberSendsToIndexFund() {
 // moving money from their Locked to Liquid & taking a small tax of DP Tokens as well.
 //
 //----------------------------------------------------------------------------------------
-export async function testAngelTeamCanTriggerVaultHarvest() {
-  process.stdout.write("Test - AP Team can trigger Vault to harvest from Locked to Liquid Account");
+export async function testAngelTeamCanTriggerVaultsHarvest() {
+  process.stdout.write("Test - AP Team can trigger harvest of all Vaults (Locked to Liquid Account)");
 
   await expect(
     sendTransaction(terra, charity1, [
@@ -403,10 +403,7 @@ export async function testAngelTeamCanTriggerVaultHarvest() {
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, anchorVault1, {
-        harvest: {}
-      }),
-      new MsgExecuteContract(apTeam.key.accAddress, anchorVault2, {
+      new MsgExecuteContract(apTeam.key.accAddress, registrar, {
         harvest: {}
       })
     ])
@@ -504,7 +501,7 @@ export async function testCharityCanUpdateStrategies() {
   await testRejectUnapprovedDonations();
   await testDonorSendsToIndexFund();
   await testTcaMemberSendsToIndexFund();
-  await testAngelTeamCanTriggerVaultHarvest();
-  // await testCharityCanUpdateStrategies();
+  await testAngelTeamCanTriggerVaultsHarvest();
+  await testCharityCanUpdateStrategies();
   // await testBeneficiaryCanWithdrawFromLiquid();
 })();

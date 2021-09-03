@@ -2,19 +2,17 @@ use crate::state::{CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
-use angel_core::messages::vault::{AccountTransferMsg, QueryMsg as VaultQuerier};
-use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse, VaultListResponse};
-use angel_core::structs::{
-    BalanceResponse, FundingSource, GenericBalance, StrategyComponent, YieldVault,
-};
+use angel_core::messages::vault::AccountTransferMsg;
+use angel_core::responses::registrar::{ConfigResponse, VaultListResponse};
+use angel_core::structs::{FundingSource, StrategyComponent, YieldVault};
 use angel_core::utils::{
     deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults, withdraw_from_vaults,
 };
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest, Response,
-    StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, Coin, Decimal, DepsMut, Env, MessageInfo, QueryRequest, Response, StdResult,
+    SubMsg, Uint128, WasmQuery,
 };
-use cw20::{Balance, Cw20Coin};
+use cw20::Balance;
 
 pub fn update_admin(
     deps: DepsMut,
@@ -110,7 +108,7 @@ pub fn update_endowment_status(
 
 pub fn update_strategies(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     strategies: Vec<Strategy>,
 ) -> Result<Response, ContractError> {
@@ -155,7 +153,6 @@ pub fn update_strategies(
     // before updating endowment with new sources
     let redeem_messages = redeem_from_vaults(
         deps.as_ref(),
-        env.contract.address.to_string(),
         config.registrar_contract.to_string(),
         endowment.strategies,
     )?;
@@ -182,7 +179,7 @@ pub fn update_strategies(
 
 pub fn vault_receipt(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     sender_addr: Addr,
     msg: AccountTransferMsg,
@@ -239,41 +236,41 @@ pub fn vault_receipt(
     STATE.save(deps.storage, &state)?;
 
     let mut deposit_submessages: Vec<SubMsg> = vec![];
-    // match config.pending_redemptions {
-    //     // last redemption, remove pending u64, and build deposit submsgs
-    //     Some(1) => {
-    //         config.pending_redemptions = None;
-    //         let mut state = STATE.load(deps.storage)?;
-    //         let ust_locked = deduct_tax(deps.as_ref(), state.balances.locked_balance.get_ust())?;
-    //         let ust_liquid = deduct_tax(deps.as_ref(), state.balances.liquid_balance.get_ust())?;
-    //         deposit_submessages = deposit_to_vaults(
-    //             deps.as_ref(),
-    //             config.registrar_contract.to_string(),
-    //             ust_locked,
-    //             ust_liquid,
-    //             &endowment.strategies,
-    //         )?;
-    //         // set UST balances available to zero
-    //         state
-    //             .balances
-    //             .locked_balance
-    //             .set_token_balances(Balance::from(vec![Coin {
-    //                 amount: Uint128::zero(),
-    //                 denom: "uusd".to_string(),
-    //             }]));
-    //         state
-    //             .balances
-    //             .liquid_balance
-    //             .set_token_balances(Balance::from(vec![Coin {
-    //                 amount: Uint128::zero(),
-    //                 denom: "uusd".to_string(),
-    //             }]));
-    //         STATE.save(deps.storage, &state)?;
-    //     }
-    //     // subtract one redemption and hold off on doing deposits
-    //     Some(_) => config.pending_redemptions = Some(config.pending_redemptions.unwrap() - 1),
-    //     None => (),
-    // };
+    match config.pending_redemptions {
+        // last redemption, remove pending u64, and build deposit submsgs
+        Some(1) => {
+            config.pending_redemptions = None;
+            let mut state = STATE.load(deps.storage)?;
+            let ust_locked = deduct_tax(deps.as_ref(), state.balances.locked_balance.get_ust())?;
+            let ust_liquid = deduct_tax(deps.as_ref(), state.balances.liquid_balance.get_ust())?;
+            deposit_submessages = deposit_to_vaults(
+                deps.as_ref(),
+                config.registrar_contract.to_string(),
+                ust_locked,
+                ust_liquid,
+                &endowment.strategies,
+            )?;
+            // set UST balances available to zero
+            state
+                .balances
+                .locked_balance
+                .set_token_balances(Balance::from(vec![Coin {
+                    amount: Uint128::zero(),
+                    denom: "uusd".to_string(),
+                }]));
+            state
+                .balances
+                .liquid_balance
+                .set_token_balances(Balance::from(vec![Coin {
+                    amount: Uint128::zero(),
+                    denom: "uusd".to_string(),
+                }]));
+            STATE.save(deps.storage, &state)?;
+        }
+        // subtract one redemption and hold off on doing deposits
+        Some(_) => config.pending_redemptions = Some(config.pending_redemptions.unwrap() - 1),
+        None => (),
+    };
 
     Ok(Response::new()
         .add_submessages(deposit_submessages)
