@@ -171,7 +171,7 @@ pub fn redeem_stable(
             denom: "uusd".to_string(),
             amount: total_redemption,
         },
-    )?;
+    ).unwrap();
 
     // update investment holdings balances to zero
     let zero_tokens = Cw20CoinVerified {
