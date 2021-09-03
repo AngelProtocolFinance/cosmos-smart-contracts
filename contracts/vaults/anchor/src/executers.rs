@@ -391,5 +391,5 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         &treasury_account,
     )?;
 
-    Ok(Response::new().add_attribute("action", "transfer"))
+    Ok(Response::new().add_attribute("action", "harvest"))
 }
