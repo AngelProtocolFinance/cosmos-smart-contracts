@@ -166,6 +166,23 @@ pub fn redeem_stable(
         .get_token_amount(env.contract.address.clone());
     let total_redemption = locked_deposit_tokens + liquid_deposit_tokens;
 
+    let after_taxes = deduct_tax(
+        deps.as_ref(),
+        Coin {
+            denom: "uusd".to_string(),
+            amount: total_redemption,
+        },
+    )?;
+
+    let after_taxes_locked = after_taxes
+        .amount
+        .clone()
+        .multiply_ratio(locked_deposit_tokens, total_redemption);
+    let after_taxes_liquid = after_taxes
+        .amount
+        .clone()
+        .multiply_ratio(liquid_deposit_tokens, total_redemption);
+
     // update investment holdings balances to zero
     let zero_tokens = Cw20CoinVerified {
         amount: Uint128::zero(),
@@ -186,8 +203,8 @@ pub fn redeem_stable(
             accounts_address: Some(info.sender.clone()),
             beneficiary: None,
             fund: false,
-            locked: locked_deposit_tokens,
-            liquid: liquid_deposit_tokens,
+            locked: after_taxes_locked,
+            liquid: after_taxes_liquid,
         },
     )?;
     config.next_pending_id += 1;
@@ -196,7 +213,7 @@ pub fn redeem_stable(
     Ok(Response::new()
         .add_attribute("action", "redeem")
         .add_attribute("sender", info.sender.clone())
-        .add_attribute("redeem_amount", total_redemption)
+        .add_attribute("redeem_amount", after_taxes.amount)
         // .add_submessage(SubMsg {
         //     id: 42,
         //     msg: CosmosMsg::Wasm(WasmMsg::Execute {
@@ -216,20 +233,11 @@ pub fn redeem_stable(
             contract_addr: info.sender.to_string(),
             msg: to_binary(&&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
                 AccountTransferMsg {
-                    locked: locked_deposit_tokens,
-                    liquid: liquid_deposit_tokens,
+                    locked: after_taxes_locked,
+                    liquid: after_taxes_liquid,
                 },
             ))?,
-            funds: vec![deduct_tax(
-                deps.as_ref(),
-                deduct_tax(
-                    deps.as_ref(),
-                    Coin {
-                        denom: "uusd".to_string(),
-                        amount: total_redemption,
-                    },
-                )?,
-            )?],
+            funds: vec![after_taxes],
         }))))
 }
 
