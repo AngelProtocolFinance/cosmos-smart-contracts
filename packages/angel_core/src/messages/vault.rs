@@ -18,7 +18,7 @@ pub struct MigrateMsg {}
 pub enum ExecuteMsg {
     UpdateRegistrar { new_registrar: Addr },
     Deposit(AccountTransferMsg),
-    Redeem(AccountTransferMsg),
+    Redeem {},
     Withdraw(AccountWithdrawMsg),
     Harvest {},
 }

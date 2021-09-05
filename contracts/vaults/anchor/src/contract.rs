@@ -36,6 +36,7 @@ pub fn instantiate(
         moneymarket,
         input_denom: "uusd".to_string(), // anchor_config.stable_denom.clone(),
         yield_token: deps.api.addr_validate(&msg.registrar_contract)?, // deps.api.addr_validate(&anchor_config.aterra_contract)?,
+        next_pending_id: 0,
     };
 
     config::store(deps.storage, &config)?;
@@ -90,12 +91,8 @@ pub fn execute(
         // Pulls all existing strategy amounts back to Account in UST.
         // Then re-Deposits according to the Strategies set.
         // -Deposit Token/Yield Token (Vault) --> +UST (Account) --> -UST (Account) --> +Deposit Token/Yield Token (Vault)
-        ExecuteMsg::Redeem(msg) => {
-            executers::redeem_stable(deps, env, info.clone(), msg, Balance::from(info.funds))
-        } // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
-        ExecuteMsg::Withdraw(msg) => {
-            executers::withdraw_stable(deps, env, info.clone(), msg, Balance::from(info.funds))
-        } // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
+        ExecuteMsg::Redeem {} => executers::redeem_stable(deps, env, info.clone()), // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
+        ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info.clone(), msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info), // DP -> DP shuffle (taxes collected)
     }
 }

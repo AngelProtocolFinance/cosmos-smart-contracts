@@ -79,7 +79,7 @@ export async function setupContracts() {
   const registrarResult = await instantiateContract(terra, apTeam, apTeam, registrarCodeId, {
     accounts_code_id: accountsCodeId,
     treasury: apTeam.key.accAddress,
-    tax_rate: 2,
+    tax_rate: 20,
     default_vault: undefined,
   });
   registrar = registrarResult.logs[0].events.find((event) => {
@@ -374,20 +374,7 @@ export async function testTcaMemberSendsToIndexFund() {
           },
         },
         {
-          uusd: "4200000000",
-        }
-      ),
-      new MsgExecuteContract(
-        tca.key.accAddress,
-        indexFund,
-        {
-          deposit: {
-            fund_id: 1,
-            split: undefined,
-          },
-        },
-        {
-          uusd: "4200000000",
+          uusd: "4000000000",
         }
       ),
     ])
@@ -403,8 +390,8 @@ export async function testTcaMemberSendsToIndexFund() {
 // moving money from their Locked to Liquid & taking a small tax of DP Tokens as well.
 //
 //----------------------------------------------------------------------------------------
-export async function testAngelTeamCanTriggerVaultHarvest() {
-  process.stdout.write("Test - AP Team can trigger Vault to harvest from Locked to Liquid Account");
+export async function testAngelTeamCanTriggerVaultsHarvest() {
+  process.stdout.write("Test - AP Team can trigger harvest of all Vaults (Locked to Liquid Account)");
 
   await expect(
     sendTransaction(terra, charity1, [
@@ -416,10 +403,7 @@ export async function testAngelTeamCanTriggerVaultHarvest() {
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, anchorVault1, {
-        harvest: {}
-      }),
-      new MsgExecuteContract(apTeam.key.accAddress, anchorVault2, {
+      new MsgExecuteContract(apTeam.key.accAddress, registrar, {
         harvest: {}
       })
     ])
@@ -445,8 +429,8 @@ export async function testBeneficiaryCanWithdrawFromLiquid() {
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         withdraw: {
           sources: [
-            {vault: anchorVault1, locked: "500", liquid: "1000"},
-            {vault: anchorVault2, locked: "500", liquid: "1000"}
+            {vault: anchorVault1, locked: "50000000", liquid: "100000000"},
+            {vault: anchorVault2, locked: "50000000", liquid: "100000000"}
           ]
         }
       })
@@ -458,8 +442,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid() {
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         withdraw: {
           sources: [
-            {vault: anchorVault1, locked: "0", liquid: "100"},
-            {vault: anchorVault2, locked: "0", liquid: "100"},
+            {vault: anchorVault1, locked: "0", liquid: "200000000"},
           ]
         }
       })
@@ -518,7 +501,7 @@ export async function testCharityCanUpdateStrategies() {
   await testRejectUnapprovedDonations();
   await testDonorSendsToIndexFund();
   await testTcaMemberSendsToIndexFund();
-  await testAngelTeamCanTriggerVaultHarvest();
-  // await testCharityCanUpdateStrategies();
+  await testAngelTeamCanTriggerVaultsHarvest();
+  await testCharityCanUpdateStrategies();
   // await testBeneficiaryCanWithdrawFromLiquid();
 })();

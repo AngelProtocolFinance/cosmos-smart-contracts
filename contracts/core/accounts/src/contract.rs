@@ -11,7 +11,6 @@ use cosmwasm_std::{
     Response, StdResult, Uint128, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
-use cw20::Balance;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";
@@ -92,14 +91,9 @@ pub fn execute(
         }
         ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
         ExecuteMsg::Withdraw { sources } => executers::withdraw(deps, env, info, sources),
-        ExecuteMsg::VaultReceipt(msg) => executers::vault_receipt(
-            deps,
-            env,
-            info.clone(),
-            info.sender,
-            msg,
-            Balance::from(info.funds),
-        ),
+        ExecuteMsg::VaultReceipt(msg) => {
+            executers::vault_receipt(deps, env, info.clone(), info.sender, msg)
+        }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }

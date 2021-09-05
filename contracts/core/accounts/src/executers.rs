@@ -2,19 +2,17 @@ use crate::state::{CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
-use angel_core::messages::vault::{AccountTransferMsg, QueryMsg as VaultQuerier};
-use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse, VaultListResponse};
-use angel_core::structs::{
-    BalanceResponse, FundingSource, GenericBalance, StrategyComponent, YieldVault,
-};
+use angel_core::messages::vault::AccountTransferMsg;
+use angel_core::responses::registrar::{ConfigResponse, VaultListResponse};
+use angel_core::structs::{FundingSource, StrategyComponent, YieldVault};
 use angel_core::utils::{
     deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults, withdraw_from_vaults,
 };
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest, Response,
-    StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, Coin, Decimal, DepsMut, Env, MessageInfo, QueryRequest, Response, StdResult,
+    SubMsg, Uint128, WasmQuery,
 };
-use cw20::{Balance, Cw20Coin};
+use cw20::Balance;
 
 pub fn update_admin(
     deps: DepsMut,
@@ -110,7 +108,7 @@ pub fn update_endowment_status(
 
 pub fn update_strategies(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     strategies: Vec<Strategy>,
 ) -> Result<Response, ContractError> {
@@ -155,7 +153,6 @@ pub fn update_strategies(
     // before updating endowment with new sources
     let redeem_messages = redeem_from_vaults(
         deps.as_ref(),
-        env.contract.address.to_string(),
         config.registrar_contract.to_string(),
         endowment.strategies,
     )?;
@@ -182,17 +179,26 @@ pub fn update_strategies(
 
 pub fn vault_receipt(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     sender_addr: Addr,
     msg: AccountTransferMsg,
-    balance: Balance,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
     let mut state = STATE.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
 
-    if balance.is_empty() {
+    let returned_amount: Coin = Coin {
+        denom: "uusd".to_string(),
+        amount: info
+            .funds
+            .iter()
+            .find(|c| c.denom == *"uusd")
+            .map(|c| c.amount)
+            .unwrap_or(Uint128::zero()),
+    };
+
+    if returned_amount.amount.is_zero() {
         return Err(ContractError::EmptyBalance {});
     }
 
@@ -214,11 +220,19 @@ pub fn vault_receipt(
     state
         .balances
         .locked_balance
-        .add_tokens(ratio_adjusted_balance(balance.clone(), msg.locked, total));
+        .add_tokens(ratio_adjusted_balance(
+            Balance::from(vec![returned_amount.clone()]),
+            msg.locked,
+            total,
+        ));
     state
         .balances
         .liquid_balance
-        .add_tokens(ratio_adjusted_balance(balance, msg.liquid, total));
+        .add_tokens(ratio_adjusted_balance(
+            Balance::from(vec![returned_amount.clone()]),
+            msg.liquid,
+            total,
+        ));
     STATE.save(deps.storage, &state)?;
 
     let mut deposit_submessages: Vec<SubMsg> = vec![];
@@ -227,13 +241,14 @@ pub fn vault_receipt(
         Some(1) => {
             config.pending_redemptions = None;
             let mut state = STATE.load(deps.storage)?;
-            // let ust_locked = state.balances.locked_balance.get_ust();
-            // let ust_liquid = state.balances.liquid_balance.get_ust();
-            deposit_submessages = redeem_from_vaults(
+            let ust_locked = deduct_tax(deps.as_ref(), state.balances.locked_balance.get_ust())?;
+            let ust_liquid = deduct_tax(deps.as_ref(), state.balances.liquid_balance.get_ust())?;
+            deposit_submessages = deposit_to_vaults(
                 deps.as_ref(),
-                env.contract.address.to_string(),
                 config.registrar_contract.to_string(),
-                endowment.strategies,
+                ust_locked,
+                ust_liquid,
+                &endowment.strategies,
             )?;
             // set UST balances available to zero
             state
