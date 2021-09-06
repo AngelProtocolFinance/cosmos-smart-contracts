@@ -173,7 +173,9 @@ pub fn update_strategies(
     ENDOWMENT.save(deps.storage, &endowment)?;
 
     Ok(
-        Response::new().add_submessages(redeem_messages), // .add_submessages(deposit_messages)
+        Response::new()
+            .add_attribute("action", "update_strategies")
+            .add_submessages(redeem_messages), // .add_submessages(deposit_messages)
     )
 }
 
@@ -217,22 +219,26 @@ pub fn vault_receipt(
 
     // funds go into state balances (locked/liquid)
     let total = msg.locked.clone() + msg.liquid.clone();
-    state
-        .balances
-        .locked_balance
-        .add_tokens(ratio_adjusted_balance(
-            Balance::from(vec![returned_amount.clone()]),
-            msg.locked,
-            total,
-        ));
-    state
-        .balances
-        .liquid_balance
-        .add_tokens(ratio_adjusted_balance(
-            Balance::from(vec![returned_amount.clone()]),
-            msg.liquid,
-            total,
-        ));
+    if !msg.locked.is_zero() {
+        state
+            .balances
+            .locked_balance
+            .add_tokens(ratio_adjusted_balance(
+                Balance::from(vec![returned_amount.clone()]),
+                msg.locked,
+                total,
+            ));
+    }
+    if !msg.liquid.is_zero() {
+        state
+            .balances
+            .liquid_balance
+            .add_tokens(ratio_adjusted_balance(
+                Balance::from(vec![returned_amount.clone()]),
+                msg.liquid,
+                total,
+            ));
+    }
     STATE.save(deps.storage, &state)?;
     
     let mut deposit_submessages: Vec<SubMsg> = vec![];
