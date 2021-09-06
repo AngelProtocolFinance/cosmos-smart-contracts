@@ -107,7 +107,7 @@ pub fn deposit_stable(
         .liquid_balance
         .add_tokens(Balance::Cw20(Cw20CoinVerified {
             amount: after_taxes_liquid,
-            address: env.contract.address,
+            address: env.contract.address.clone(),
         }));
     BALANCES.save(deps.storage, &info.sender, &investment)?;
 

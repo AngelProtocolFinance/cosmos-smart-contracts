@@ -216,7 +216,7 @@ pub fn vault_receipt(
     }
 
     // funds go into state balances (locked/liquid)
-    let total = msg.locked + msg.liquid;
+    let total = msg.locked.clone() + msg.liquid.clone();
     state
         .balances
         .locked_balance
@@ -234,13 +234,12 @@ pub fn vault_receipt(
             total,
         ));
     STATE.save(deps.storage, &state)?;
-
+    
     let mut deposit_submessages: Vec<SubMsg> = vec![];
     match config.pending_redemptions {
         // last redemption, remove pending u64, and build deposit submsgs
         Some(1) => {
             config.pending_redemptions = None;
-            let mut state = STATE.load(deps.storage)?;
             let ust_locked = deduct_tax(deps.as_ref(), state.balances.locked_balance.get_ust())?;
             let ust_liquid = deduct_tax(deps.as_ref(), state.balances.liquid_balance.get_ust())?;
             deposit_submessages = deposit_to_vaults(

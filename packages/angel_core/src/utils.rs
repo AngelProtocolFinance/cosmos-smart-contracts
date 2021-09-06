@@ -236,7 +236,7 @@ pub fn deposit_to_vaults(
             ))
             .unwrap(),
             funds: vec![Coin {
-                amount: transfer_msg.locked.clone() + transfer_msg.liquid,
+                amount: transfer_msg.locked.clone() + transfer_msg.liquid.clone(),
                 denom: "uusd".to_string(),
             }],
         })));
