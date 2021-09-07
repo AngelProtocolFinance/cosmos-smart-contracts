@@ -4,7 +4,7 @@ use crate::messages::vault::{AccountTransferMsg, AccountWithdrawMsg};
 use crate::responses::registrar::VaultDetailResponse;
 use crate::responses::vault::ExchangeRateResponse;
 use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
-use cosmwasm_bignumber::{Decimal256, Uint256};
+use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, QueryRequest, StdResult, SubMsg,
     Uint128, WasmMsg, WasmQuery,
@@ -33,13 +33,16 @@ pub fn ratio_adjusted_balance(balance: Balance, portion: Uint128, total: Uint128
     adjusted_balance
 }
 
-pub fn compute_tax(deps: Deps, coin: &Coin) -> StdResult<Uint256> {
+pub fn compute_tax(deps: Deps, coin: &Coin) -> StdResult<Uint128> {
     let terra_querier = TerraQuerier::new(&deps.querier);
-    let tax_rate = Decimal256::from((terra_querier.query_tax_rate()?).rate);
-    let tax_cap = Uint256::from((terra_querier.query_tax_cap(coin.denom.to_string())?).cap);
-    let amount = Uint256::from(coin.amount);
-    Ok(std::cmp::max(
-        amount * (Decimal256::one() - Decimal256::one() / (Decimal256::one() + tax_rate)),
+    let tax_rate: Decimal = (terra_querier.query_tax_rate()?).rate;
+    let tax_cap: Uint128 = (terra_querier.query_tax_cap(coin.denom.to_string())?).cap;
+    Ok(std::cmp::min(
+        (coin.amount.checked_sub(coin.amount.multiply_ratio(
+            Uint128::from(1_000_000_000_000_000_000 as u128),
+            Uint128::from(1_000_000_000_000_000_000 as u128) * tax_rate
+                + Uint128::from(1_000_000_000_000_000_000 as u128),
+        )))?,
         tax_cap,
     ))
 }
@@ -48,7 +51,7 @@ pub fn deduct_tax(deps: Deps, coin: Coin) -> StdResult<Coin> {
     let tax_amount = compute_tax(deps, &coin)?;
     Ok(Coin {
         denom: coin.denom,
-        amount: (Uint256::from(coin.amount) - tax_amount).into(),
+        amount: (coin.amount.checked_sub(tax_amount))?,
     })
 }
 
@@ -223,8 +226,24 @@ pub fn deposit_to_vaults(
         let yield_vault: YieldVault = vault_config.vault;
 
         let transfer_msg = AccountTransferMsg {
-            locked: locked_ust.amount * strategy.locked_percentage,
-            liquid: liquid_ust.amount * strategy.liquid_percentage,
+            locked: deduct_tax(
+                deps,
+                Coin {
+                    denom: "uusd".to_string(),
+                    amount: locked_ust.amount * strategy.locked_percentage,
+                },
+            )
+            .unwrap()
+            .amount,
+            liquid: deduct_tax(
+                deps,
+                Coin {
+                    denom: "uusd".to_string(),
+                    amount: liquid_ust.amount * strategy.liquid_percentage,
+                },
+            )
+            .unwrap()
+            .amount,
         };
 
         // create a deposit message for X Vault, noting amounts for Locked / Liquid

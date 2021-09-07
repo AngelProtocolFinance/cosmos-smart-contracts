@@ -240,19 +240,17 @@ pub fn vault_receipt(
             ));
     }
     STATE.save(deps.storage, &state)?;
-    
+
     let mut deposit_submessages: Vec<SubMsg> = vec![];
     match config.pending_redemptions {
         // last redemption, remove pending u64, and build deposit submsgs
         Some(1) => {
             config.pending_redemptions = None;
-            let ust_locked = deduct_tax(deps.as_ref(), state.balances.locked_balance.get_ust())?;
-            let ust_liquid = deduct_tax(deps.as_ref(), state.balances.liquid_balance.get_ust())?;
             deposit_submessages = deposit_to_vaults(
                 deps.as_ref(),
                 config.registrar_contract.to_string(),
-                ust_locked,
-                ust_liquid,
+                state.balances.locked_balance.get_ust(),
+                state.balances.liquid_balance.get_ust(),
                 &endowment.strategies,
             )?;
             // set UST balances available to zero

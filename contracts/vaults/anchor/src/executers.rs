@@ -195,7 +195,7 @@ pub fn redeem_stable(
             .amount
             .clone()
             .multiply_ratio(liquid_deposit_tokens, total_redemption);
-    } 
+    }
     // update investment holdings balances to zero
     let zero_tokens = Cw20CoinVerified {
         amount: Uint128::zero(),
