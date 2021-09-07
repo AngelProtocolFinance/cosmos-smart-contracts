@@ -38,7 +38,7 @@ pub fn compute_tax(deps: Deps, coin: &Coin) -> StdResult<Uint256> {
     let tax_rate = Decimal256::from((terra_querier.query_tax_rate()?).rate);
     let tax_cap = Uint256::from((terra_querier.query_tax_cap(coin.denom.to_string())?).cap);
     let amount = Uint256::from(coin.amount);
-    Ok(std::cmp::min(
+    Ok(std::cmp::max(
         amount * (Decimal256::one() - Decimal256::one() / (Decimal256::one() + tax_rate)),
         tax_cap,
     ))

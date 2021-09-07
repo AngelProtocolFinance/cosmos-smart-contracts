@@ -369,8 +369,8 @@ export async function testTcaMemberSendsToIndexFund() {
         indexFund,
         {
           deposit: {
-            // fund_id: 1,
-            // split: undefined,
+            fund_id: 1,
+            split: undefined,
           },
         },
         {

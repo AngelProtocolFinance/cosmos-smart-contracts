@@ -70,13 +70,14 @@ pub fn deposit_stable(
             .clone()
             .multiply_ratio(msg.locked, info.funds[0].amount);
     }
+
     let mut after_taxes_liquid = Uint128::zero();
     if !msg.liquid.is_zero() {
         after_taxes_liquid = after_taxes
             .amount
             .clone()
             .multiply_ratio(msg.liquid, info.funds[0].amount);
-    } 
+    }
 
     // update supply
     let mut token_info = TOKEN_INFO.load(deps.storage)?;
