@@ -6,7 +6,7 @@ use angel_core::messages::vault::AccountTransferMsg;
 use angel_core::responses::registrar::{ConfigResponse, VaultListResponse};
 use angel_core::structs::{FundingSource, StrategyComponent, YieldVault};
 use angel_core::utils::{
-    deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults, withdraw_from_vaults,
+    deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults, withdraw_from_vaults,
 };
 use cosmwasm_std::{
     to_binary, Addr, Coin, Decimal, DepsMut, Env, MessageInfo, QueryRequest, Response, StdResult,
@@ -314,8 +314,6 @@ pub fn deposit(
         return Err(ContractError::EmptyBalance {});
     }
 
-    let after_tax: Coin = deduct_tax(deps.as_ref(), deposit_amount.clone()).unwrap();
-
     let locked_split = msg.locked_percentage;
     let liquid_split = msg.liquid_percentage;
 
@@ -336,11 +334,11 @@ pub fn deposit(
     }
 
     let ust_locked = Coin {
-        amount: after_tax.amount * locked_split,
+        amount: deposit_amount.amount * locked_split,
         denom: "uusd".to_string(),
     };
     let ust_liquid = Coin {
-        amount: after_tax.amount * liquid_split,
+        amount: deposit_amount.amount * liquid_split,
         denom: "uusd".to_string(),
     };
 
