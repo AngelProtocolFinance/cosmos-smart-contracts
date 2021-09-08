@@ -16,16 +16,16 @@ import {
 export async function startTest(terra: LocalTerra) {
   console.log(chalk.blue("\nLocalTerra"));
   console.log(chalk.yellow("\nStep 1. Environment Info"));
-  // initializeLocalTerra(terra);
+  initializeLocalTerra(terra);
 
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  // await setupContracts();
+  await setupContracts();
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
-  // await testRejectUnapprovedDonations();
-  // await testDonorSendsToIndexFund();
-  // await testTcaMemberSendsToIndexFund();
-  // await testAngelTeamCanTriggerVaultsHarvest();
-  // await testCharityCanUpdateStrategies();
+  await testRejectUnapprovedDonations();
+  await testDonorSendsToIndexFund();
+  await testTcaMemberSendsToIndexFund();
+  await testAngelTeamCanTriggerVaultsHarvest();
+  await testCharityCanUpdateStrategies();
   // await testBeneficiaryCanWithdrawFromLiquid();
 }

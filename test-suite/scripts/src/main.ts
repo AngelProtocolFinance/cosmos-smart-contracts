@@ -42,13 +42,13 @@ let endowmentContract3: string;
 // Initialize variables
 //----------------------------------------------------------------------------------------
 export function initializeLocalTerra(localTerra: LocalTerra) {
-  this.terra = localTerra;
-  this.apTeam = localTerra.wallets.test1;
-  this.charity1 = localTerra.wallets.test2;
-  this.charity2 = localTerra.wallets.test3;
-  this.charity3 = localTerra.wallets.test4;
-  this.pleb = localTerra.wallets.test5;
-  this.tca = localTerra.wallets.test6;
+  terra = localTerra;
+  apTeam = localTerra.wallets.test1;
+  charity1 = localTerra.wallets.test2;
+  charity2 = localTerra.wallets.test3;
+  charity3 = localTerra.wallets.test4;
+  pleb = localTerra.wallets.test5;
+  tca = localTerra.wallets.test6;
 
   console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
   console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as Charity #1`);
@@ -68,13 +68,13 @@ export function initializeLCDClient(
     pleb: Wallet,
     tca: Wallet
   }) {
-  this.terra = terra;
-  this.apTeam = wallets.apTeam;
-  this.charity1 = wallets.charity1;
-  this.charity2 = wallets.charity2;
-  this.charity3 = wallets.charity3;
-  this.pleb = wallets.pleb;
-  this.tca = wallets.tca;
+  terra = terra;
+  apTeam = wallets.apTeam;
+  charity1 = wallets.charity1;
+  charity2 = wallets.charity2;
+  charity3 = wallets.charity3;
+  pleb = wallets.pleb;
+  tca = wallets.tca;
 
   console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
   console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as Charity #1`);
