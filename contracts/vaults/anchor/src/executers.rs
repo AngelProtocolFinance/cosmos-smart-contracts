@@ -63,18 +63,25 @@ pub fn deposit_stable(
             amount: info.funds[0].amount,
         },
     )?;
-    let after_taxes_locked = after_taxes
-        .amount
-        .clone()
-        .multiply_ratio(msg.locked, info.funds[0].amount);
-    let after_taxes_liquid = after_taxes
-        .amount
-        .clone()
-        .multiply_ratio(msg.liquid, info.funds[0].amount);
+    let mut after_taxes_locked = Uint128::zero();
+    if !msg.locked.is_zero() {
+        after_taxes_locked = after_taxes
+            .amount
+            .clone()
+            .multiply_ratio(msg.locked, info.funds[0].amount);
+    }
+
+    let mut after_taxes_liquid = Uint128::zero();
+    if !msg.liquid.is_zero() {
+        after_taxes_liquid = after_taxes
+            .amount
+            .clone()
+            .multiply_ratio(msg.liquid, info.funds[0].amount);
+    }
 
     // update supply
     let mut token_info = TOKEN_INFO.load(deps.storage)?;
-    token_info.total_supply += after_taxes.amount;
+    token_info.total_supply = token_info.total_supply + after_taxes.amount;
     TOKEN_INFO.save(deps.storage, &token_info)?;
 
     PENDING.save(
@@ -107,7 +114,7 @@ pub fn deposit_stable(
         .liquid_balance
         .add_tokens(Balance::Cw20(Cw20CoinVerified {
             amount: after_taxes_liquid,
-            address: env.contract.address,
+            address: env.contract.address.clone(),
         }));
     BALANCES.save(deps.storage, &info.sender, &investment)?;
 
@@ -174,15 +181,21 @@ pub fn redeem_stable(
         },
     )?;
 
-    let after_taxes_locked = after_taxes
-        .amount
-        .clone()
-        .multiply_ratio(locked_deposit_tokens, total_redemption);
-    let after_taxes_liquid = after_taxes
-        .amount
-        .clone()
-        .multiply_ratio(liquid_deposit_tokens, total_redemption);
+    let mut after_taxes_locked = Uint128::zero();
+    if !locked_deposit_tokens.is_zero() {
+        after_taxes_locked = after_taxes
+            .amount
+            .clone()
+            .multiply_ratio(locked_deposit_tokens, total_redemption);
+    }
 
+    let mut after_taxes_liquid = Uint128::zero();
+    if !liquid_deposit_tokens.is_zero() {
+        after_taxes_liquid = after_taxes
+            .amount
+            .clone()
+            .multiply_ratio(liquid_deposit_tokens, total_redemption);
+    }
     // update investment holdings balances to zero
     let zero_tokens = Cw20CoinVerified {
         amount: Uint128::zero(),
