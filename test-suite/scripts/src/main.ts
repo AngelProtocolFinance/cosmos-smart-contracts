@@ -3,7 +3,7 @@ import BN from "bn.js";
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LocalTerra, MsgExecuteContract } from "@terra-money/terra.js";
+import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import {
   toEncodedBinary,
   sendTransaction,
@@ -20,13 +20,13 @@ const { expect } = chai;
 // Variables
 //----------------------------------------------------------------------------------------
 
-const terra = new LocalTerra();
-const apTeam = terra.wallets.test1;
-const charity1 = terra.wallets.test2;
-const charity2 = terra.wallets.test3;
-const charity3 = terra.wallets.test4;
-const pleb = terra.wallets.test5;
-const tca = terra.wallets.test6;
+let terra: LCDClient;
+let apTeam: Wallet;
+let charity1: Wallet;
+let charity2: Wallet;
+let charity3: Wallet;
+let pleb: Wallet;
+let tca: Wallet;
 
 let accountsCodeId: number;
 let registrar: string;
@@ -39,6 +39,52 @@ let endowmentContract2: string;
 let endowmentContract3: string;
 
 //----------------------------------------------------------------------------------------
+// Initialize variables
+//----------------------------------------------------------------------------------------
+export function initializeLocalTerra(localTerra: LocalTerra) {
+  this.terra = localTerra;
+  this.apTeam = localTerra.wallets.test1;
+  this.charity1 = localTerra.wallets.test2;
+  this.charity2 = localTerra.wallets.test3;
+  this.charity3 = localTerra.wallets.test4;
+  this.pleb = localTerra.wallets.test5;
+  this.tca = localTerra.wallets.test6;
+
+  console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
+  console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as Charity #1`);
+  console.log(`Use ${chalk.cyan(charity2.key.accAddress)} as Charity #2`);
+  console.log(`Use ${chalk.cyan(charity3.key.accAddress)} as Charity #3`);
+  console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
+  console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
+}
+
+export function initializeLCDClient(
+  terra: LCDClient,
+  wallets: {
+    apTeam: Wallet,
+    charity1: Wallet,
+    charity2: Wallet,
+    charity3: Wallet,
+    pleb: Wallet,
+    tca: Wallet
+  }) {
+  this.terra = terra;
+  this.apTeam = wallets.apTeam;
+  this.charity1 = wallets.charity1;
+  this.charity2 = wallets.charity2;
+  this.charity3 = wallets.charity3;
+  this.pleb = wallets.pleb;
+  this.tca = wallets.tca;
+
+  console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
+  console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as Charity #1`);
+  console.log(`Use ${chalk.cyan(charity2.key.accAddress)} as Charity #2`);
+  console.log(`Use ${chalk.cyan(charity3.key.accAddress)} as Charity #3`);
+  console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
+  console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
+}
+
+//----------------------------------------------------------------------------------------
 // Setup all contracts
 //----------------------------------------------------------------------------------------
 
@@ -48,28 +94,28 @@ export async function setupContracts() {
   const registrarCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../artifacts/registrar.wasm"));
+    path.resolve(__dirname, "../../../artifacts/registrar.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${registrarCodeId}`);
   
   process.stdout.write("Uploading Anchor Vault Wasm");
   const vaultCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../artifacts/anchor.wasm"));
+    path.resolve(__dirname, "../../../artifacts/anchor.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
   
   process.stdout.write("Uploading Index Fund Wasm");
   const fundCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../artifacts/index_fund.wasm"));
+    path.resolve(__dirname, "../../../artifacts/index_fund.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${fundCodeId}`);
   
   process.stdout.write("Uploading Accounts Wasm");
   accountsCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../artifacts/accounts.wasm"));
+    path.resolve(__dirname, "../../../artifacts/accounts.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${accountsCodeId}`);
 
 
@@ -479,29 +525,3 @@ export async function testCharityCanUpdateStrategies() {
   );
   console.log(chalk.green("Passed!"));
 }
-
-
-//----------------------------------------------------------------------------------------
-// Main
-//----------------------------------------------------------------------------------------
-
-(async () => {
-  console.log(chalk.yellow("\nStep 1. Environment Info"));
-  console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
-  console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as Charity #1`);
-  console.log(`Use ${chalk.cyan(charity2.key.accAddress)} as Charity #2`);
-  console.log(`Use ${chalk.cyan(charity3.key.accAddress)} as Charity #3`);
-  console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
-  console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
-
-  console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupContracts();
-
-  console.log(chalk.yellow("\nStep 3. Running Tests"));
-  await testRejectUnapprovedDonations();
-  await testDonorSendsToIndexFund();
-  await testTcaMemberSendsToIndexFund();
-  await testAngelTeamCanTriggerVaultsHarvest();
-  await testCharityCanUpdateStrategies();
-  // await testBeneficiaryCanWithdrawFromLiquid();
-})();

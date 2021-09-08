@@ -1,10 +1,18 @@
 {
+  "scripts": {
+    "install": "npm install",
+    "test": "ts-node ./src/index.ts",
+    "test:localterra": "npm run test --mode=LocalTerra",
+    "test:testnet": "npm run test --mode=TestNet",
+    "test:mainnet": "npm run test --mode=MainNet"
+  },
   "dependencies": {
     "@terra-money/terra.js": "^2.0.1",
     "bn.js": "^5.2.0",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
-    "chalk": "^4.1.2"
+    "chalk": "^4.1.2",
+    "dotenv": "^10.0.0"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
