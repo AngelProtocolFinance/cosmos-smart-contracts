@@ -16,7 +16,7 @@ dotenv.config();
 //----------------------------------------------------------------------------------------
 // Main
 //----------------------------------------------------------------------------------------
-export async function startTest(terra: LCDClient) {
+export async function startTest(terra: LCDClient): Promise<void> {
   console.log(chalk.blue("\nBombay-10 TestNet"));
 
   // get the current swap rate from 1 TerraUSD to TerraKRW

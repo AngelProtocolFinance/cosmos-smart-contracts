@@ -13,7 +13,7 @@ import {
 //----------------------------------------------------------------------------------------
 // Main
 //----------------------------------------------------------------------------------------
-export async function startTest(terra: LocalTerra) {
+export async function startTest(terra: LocalTerra): Promise<void> {
   console.log(chalk.blue("\nLocalTerra"));
   console.log(chalk.yellow("\nStep 1. Environment Info"));
   initializeLocalTerra(terra);

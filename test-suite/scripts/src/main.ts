@@ -41,7 +41,7 @@ let endowmentContract3: string;
 //----------------------------------------------------------------------------------------
 // Initialize variables
 //----------------------------------------------------------------------------------------
-export function initializeLocalTerra(localTerra: LocalTerra) {
+export function initializeLocalTerra(localTerra: LocalTerra): void {
   terra = localTerra;
   apTeam = localTerra.wallets.test1;
   charity1 = localTerra.wallets.test2;
@@ -59,7 +59,7 @@ export function initializeLocalTerra(localTerra: LocalTerra) {
 }
 
 export function initializeLCDClient(
-  terra: LCDClient,
+  lcdClient: LCDClient,
   wallets: {
     apTeam: Wallet,
     charity1: Wallet,
@@ -68,8 +68,8 @@ export function initializeLCDClient(
     pleb: Wallet,
     tca: Wallet
   },
-  anchorMoneyMarketAddr: string) {
-  terra = terra;
+  anchorMoneyMarketAddr: string): void {
+  terra = lcdClient;
   apTeam = wallets.apTeam;
   charity1 = wallets.charity1;
   charity2 = wallets.charity2;
@@ -90,7 +90,7 @@ export function initializeLCDClient(
 // Setup all contracts
 //----------------------------------------------------------------------------------------
 
-export async function setupContracts() {
+export async function setupContracts(): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each.... 
   process.stdout.write("Uploading Registrar Wasm");
   const registrarCodeId = await storeCode(
@@ -344,7 +344,7 @@ export async function setupContracts() {
 //
 //----------------------------------------------------------------------------------------
 
-export async function testDonorSendsToIndexFund() {
+export async function testDonorSendsToIndexFund(): Promise<void> {
   process.stdout.write("Test - Donor (normal pleb) cannot send a UST donation to an Index Fund fund");
 
   await expect(
@@ -374,7 +374,7 @@ export async function testDonorSendsToIndexFund() {
 //
 //----------------------------------------------------------------------------------------
 
-export async function testRejectUnapprovedDonations() {
+export async function testRejectUnapprovedDonations(): Promise<void> {
   process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
 
   await expect(
@@ -407,7 +407,7 @@ export async function testRejectUnapprovedDonations() {
 //
 //----------------------------------------------------------------------------------------
 
-export async function testTcaMemberSendsToIndexFund() {
+export async function testTcaMemberSendsToIndexFund(): Promise<void> {
   process.stdout.write("Test - TCA Member can send a UST donation to an Index Fund");
 
   await expect(
@@ -438,7 +438,7 @@ export async function testTcaMemberSendsToIndexFund() {
 // moving money from their Locked to Liquid & taking a small tax of DP Tokens as well.
 //
 //----------------------------------------------------------------------------------------
-export async function testAngelTeamCanTriggerVaultsHarvest() {
+export async function testAngelTeamCanTriggerVaultsHarvest(): Promise<void> {
   process.stdout.write("Test - AP Team can trigger harvest of all Vaults (Locked to Liquid Account)");
 
   await expect(
@@ -469,7 +469,7 @@ export async function testAngelTeamCanTriggerVaultsHarvest() {
 // not be able to touch the Locked Account's balance.
 //
 //----------------------------------------------------------------------------------------
-export async function testBeneficiaryCanWithdrawFromLiquid() {
+export async function testBeneficiaryCanWithdrawFromLiquid(): Promise<void> {
   process.stdout.write("Test - Beneficiary can withdraw from the Endowment availalble amount (liquid)");
 
   await expect(
@@ -510,7 +510,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid() {
 //
 //----------------------------------------------------------------------------------------
 
-export async function testCharityCanUpdateStrategies() {
+export async function testCharityCanUpdateStrategies(): Promise<void> {
   process.stdout.write("Test - Charity can update their Endowment's strategies");
 
   await expect(

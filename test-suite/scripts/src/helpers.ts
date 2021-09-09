@@ -16,7 +16,7 @@ import {
 /**
  * @notice Encode a JSON object to base64 binary
  */
-export function toEncodedBinary(obj: any) {
+export function toEncodedBinary(obj: any): string {
   return Buffer.from(JSON.stringify(obj)).toString("base64");
 }
 
@@ -68,7 +68,7 @@ export async function storeCode(
   terra: LocalTerra | LCDClient,
   deployer: Wallet,
   filepath: string
-) {
+): Promise<number> {
   const code = fs.readFileSync(filepath).toString("base64");
   const result = await sendTransaction(terra, deployer, [
     new MsgStoreCode(deployer.key.accAddress, code),
@@ -84,7 +84,7 @@ export async function instantiateContract(
   deployer: Wallet,
   admin: Wallet, // leave this emtpy then contract is not migratable
   codeId: number,
-  instantiateMsg: object
+  instantiateMsg: Record<string, unknown>
 ) {
   const result = await sendTransaction(terra, deployer, [
     new MsgInstantiateContract(
@@ -103,8 +103,8 @@ export async function instantiateContract(
 export async function queryNativeTokenBalance(
   terra: LocalTerra | LCDClient,
   account: string,
-  denom: string = "uusd"
-) {
+  denom = "uusd"
+): Promise<string> {
   const balance = (await terra.bank.balance(account)).get(denom)?.amount.toString();
   if (balance) {
     return balance;
@@ -120,7 +120,7 @@ export async function queryTokenBalance(
   terra: LocalTerra | LCDClient,
   account: string,
   contract: string
-) {
+): Promise<string> {
   const balanceResponse = await terra.wasm.contractQuery<{ balance: string }>(contract, {
     balance: { address: account },
   });
@@ -134,7 +134,7 @@ export async function queryTokenBalance(
  * @dev Assumes a tax rate of 0.001 and cap of 1000000 uusd.
  * @dev Assumes transferring UST. Transferring LUNA does not incur tax.
  */
-export function deductTax(amount: number) {
+export function deductTax(amount: number): number {
   const DECIMAL_FRACTION = new BN("1000000000000000000");
   const tax = Math.min(
     amount -
@@ -154,7 +154,7 @@ export function deductTax(amount: number) {
  * @dev Assumes a tax rate of 0.001 and cap of 1000000 uusd.
  * @dev Assumes transferring UST. Transferring LUNA does not incur tax.
  */
-export function addTax(amount: number) {
+export function addTax(amount: number): number {
   const tax = Math.min(new BN(amount).div(new BN(1000)).toNumber(), 1000000);
   return amount + tax;
 }
