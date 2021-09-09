@@ -27,5 +27,5 @@ export async function startTest(terra: LocalTerra) {
   await testTcaMemberSendsToIndexFund();
   await testAngelTeamCanTriggerVaultsHarvest();
   await testCharityCanUpdateStrategies();
-  // await testBeneficiaryCanWithdrawFromLiquid();
+  await testBeneficiaryCanWithdrawFromLiquid();
 }

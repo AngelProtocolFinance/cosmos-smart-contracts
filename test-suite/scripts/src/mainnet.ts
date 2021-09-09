@@ -10,6 +10,9 @@ import {
   testCharityCanUpdateStrategies,
   testBeneficiaryCanWithdrawFromLiquid,
 } from "./main";
+import dotenv from 'dotenv';
+
+dotenv.config();
 //----------------------------------------------------------------------------------------
 // Main
 //----------------------------------------------------------------------------------------
@@ -31,7 +34,8 @@ export async function startTest(terra: LCDClient) {
   //     charity3: wallet,
   //     pleb: wallet,
   //     tca: wallet
-  //   }
+  //   },
+  //   process.env.MONEYMARKET_CONTRACT_MAINNET
   // );
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));

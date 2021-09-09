@@ -33,7 +33,7 @@ let registrar: string;
 let indexFund: string;
 let anchorVault1: string;
 let anchorVault2: string;
-// let anchorMoneyMarket: string;
+let anchorMoneyMarket: string;
 let endowmentContract1: string;
 let endowmentContract2: string;
 let endowmentContract3: string;
@@ -67,7 +67,8 @@ export function initializeLCDClient(
     charity3: Wallet,
     pleb: Wallet,
     tca: Wallet
-  }) {
+  },
+  anchorMoneyMarketAddr: string) {
   terra = terra;
   apTeam = wallets.apTeam;
   charity1 = wallets.charity1;
@@ -75,6 +76,7 @@ export function initializeLCDClient(
   charity3 = wallets.charity3;
   pleb = wallets.pleb;
   tca = wallets.tca;
+  anchorMoneyMarket = anchorMoneyMarketAddr;
 
   console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
   console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as Charity #1`);
@@ -134,7 +136,7 @@ export async function setupContracts() {
     return attribute.key == "contract_address"; 
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${registrar}`);
-
+  
   // Index Fund
   process.stdout.write("Instantiating Index Fund contract");
   const fundResult = await instantiateContract(terra, apTeam, apTeam, fundCodeId, {
@@ -152,7 +154,7 @@ export async function setupContracts() {
   process.stdout.write("Instantiating Anchor Vault (#1) contract");
   const vaultResult1 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
     registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
+    moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
     name: "AP DP Token - Anchor #1",
     symbol: "apANC1",
     decimals: 6,
@@ -168,7 +170,7 @@ export async function setupContracts() {
   process.stdout.write("Instantiating Anchor Vault (#2) contract");
   const vaultResult2 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
     registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
+    moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
     name: "AP DP Token - Anchor #2",
     symbol: "apANC",
     decimals: 6,
