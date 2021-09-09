@@ -22,17 +22,17 @@ function isValidMode(mode: string) {
 				// Start test on LocalTerra
 				await LocalTest.startTest(new LocalTerra());
 			} else if (mode === "TestNet") {
-				const lcdClient: LCDClient = new LCDClient({
+				const terra: LCDClient = new LCDClient({
 					URL: info.URL,
 					chainID: info.chainID,
 				});
-				await TestNet.startTest(lcdClient);
+				await TestNet.startTest(terra);
 			} else if (mode === "MainNet") {
-				const lcdClient: LCDClient = new LCDClient({
+				const terra: LCDClient = new LCDClient({
 					URL: info.URL,
 					chainID: info.chainID,
 				});
-				await MainNet.startTest(lcdClient);
+				await MainNet.startTest(terra);
 			}
 		} else {
 			console.error("Invalid network");
