@@ -1,7 +1,6 @@
 use crate::messages::vault::AccountTransferMsg;
-use crate::structs::{FundingSource, SplitDetails, StrategyComponent};
+use crate::structs::{FundingSource, SplitDetails};
 use cosmwasm_std::Decimal;
-use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -29,7 +28,9 @@ pub enum ExecuteMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     // Pull funds from investment vault(s) to the Endowment Beneficiary as UST
-    Withdraw(WithdrawMsg),
+    Withdraw {
+        sources: Vec<FundingSource>,
+    },
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt(AccountTransferMsg),
     // Winding up of an endowment in good standing. Returns all funds to the Beneficiary.
@@ -58,18 +59,13 @@ pub enum ExecuteMsg {
     // Update an Endowment ability to receive/send funds
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Replace an Account's Strategy with that given.
-    UpdateStrategies(UpdateStrategiesMsg),
-    // This accepts a properly-encoded ReceiveMsg from a cw20 contract
-    Receive(Cw20ReceiveMsg),
+    UpdateStrategies {
+        strategies: Vec<Strategy>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateStrategiesMsg {
-    pub strategies: Vec<StrategyComponentMsg>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct StrategyComponentMsg {
+pub struct Strategy {
     pub vault: String,              // Vault SC Address
     pub locked_percentage: Decimal, // percentage of funds to invest
     pub liquid_percentage: Decimal, // percentage of funds to invest
@@ -119,12 +115,8 @@ pub struct WithdrawMsg {
 pub enum QueryMsg {
     // Get the balance of available UST and the invested portion balances
     Balance {},
-    // Get details for a single Account, given an Account ID argument
-    // Returns AccountDetailsResponse
-    Account { account_type: String },
-    // Get details on all Accounts. If passed, restrict to a given EID argument
-    // Returns AccountListResponse
-    AccountList {},
+    // Get state details (like total donations received so far)
+    State {},
     // Get all Config details for the contract
     // Returns ConfigResponse
     Config {},

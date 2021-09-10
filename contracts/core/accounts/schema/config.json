@@ -19,6 +19,14 @@
     "owner": {
       "$ref": "#/definitions/Addr"
     },
+    "pending_redemptions": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
     "registrar_contract": {
       "$ref": "#/definitions/Addr"
     },

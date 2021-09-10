@@ -91,7 +91,7 @@ pub fn create_index_fund(
         Some(_) => Err(ContractError::IndexFundAlreadyExists {}),
         None => {
             // check if this is the first fund being added in...
-            if read_funds(deps.storage)?.len() == 0 {
+            if read_funds(deps.storage)?.is_empty() {
                 // increment state funds totals AND set the active fund ID
                 STATE.update(deps.storage, |mut state| -> StdResult<_> {
                     state.total_funds += 1;
@@ -233,8 +233,8 @@ pub fn deposit(
     let mut deposit_amount: Uint128 = info
         .funds
         .iter()
-        .find(|c| c.denom == "uusd".to_string())
-        .map(|c| Uint128::from(c.amount))
+        .find(|c| c.denom == *"uusd")
+        .map(|c| c.amount)
         .unwrap_or_else(Uint128::zero);
 
     // Cannot deposit zero amount

@@ -1,64 +1,53 @@
-use crate::state::{ACCOUNTS, CONFIG, ENDOWMENT};
+use crate::state::{CONFIG, ENDOWMENT, STATE};
 use angel_core::messages::vault::QueryMsg as VaultQuerier;
 use angel_core::responses::accounts::*;
-use angel_core::responses::vault::VaultBalanceResponse;
-use cosmwasm_std::{to_binary, Deps, Env, QueryRequest, StdResult, Uint128, WasmQuery};
+use angel_core::structs::BalanceResponse;
+use cosmwasm_std::{to_binary, Deps, Env, QueryRequest, StdResult, WasmQuery};
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
 
-    let res = ConfigResponse {
+    Ok(ConfigResponse {
         owner: config.owner.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
         deposit_approved: config.deposit_approved,
         withdraw_approved: config.withdraw_approved,
-    };
-    Ok(res)
+    })
 }
 
-pub fn query_account_details(
-    deps: Deps,
-    account_type: String,
-) -> StdResult<AccountDetailsResponse> {
-    // this fails if no account is found
-    let account = ACCOUNTS.load(deps.storage, account_type.clone())?;
-    let details = AccountDetailsResponse {
-        account_type,
-        ust_balance: account.ust_balance,
-    };
-    Ok(details)
+pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
+    let state = STATE.load(deps.storage)?;
+
+    Ok(StateResponse {
+        donations_received: state.donations_received,
+    })
 }
 
-pub fn query_account_list(deps: Deps) -> StdResult<AccountListResponse> {
-    let list = AccountListResponse {
-        locked_account: query_account_details(deps, "locked".to_string())?,
-        liquid_account: query_account_details(deps, "liquid".to_string())?,
-    };
-    Ok(list)
-}
-
-pub fn query_account_balance(deps: Deps, env: Env) -> StdResult<AccountBalanceResponse> {
+pub fn query_account_balance(deps: Deps, env: Env) -> StdResult<BalanceResponse> {
     let endowment = ENDOWMENT.load(deps.storage)?;
-    let locked_account = ACCOUNTS.load(deps.storage, "locked".to_string())?;
-    let liquid_account = ACCOUNTS.load(deps.storage, "liquid".to_string())?;
-    // setup the basic response object w/ accounts' UST balances
-    let mut balances = AccountBalanceResponse {
-        balances: vec![VaultBalanceResponse {
-            locked: Uint128::from(locked_account.ust_balance),
-            liquid: Uint128::from(liquid_account.ust_balance),
-            denom: "uust".to_string(),
-        }],
-    };
+    // setup the basic response object w/ accounts' balances
+    let mut balances = BalanceResponse::default();
     // add stategies' balances to the object
     for strategy in endowment.strategies {
-        let strategy_balance: VaultBalanceResponse =
+        let mut strategy_balance: BalanceResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: strategy.vault.to_string(),
                 msg: to_binary(&VaultQuerier::Balance {
                     address: env.contract.address.to_string(),
                 })?,
             }))?;
-        balances.balances.push(strategy_balance);
+        balances
+            .locked_cw20
+            .append(&mut strategy_balance.locked_cw20);
+        balances
+            .liquid_cw20
+            .append(&mut strategy_balance.liquid_cw20);
+        balances
+            .locked_native
+            .append(&mut strategy_balance.locked_native);
+        balances
+            .liquid_native
+            .append(&mut strategy_balance.liquid_native);
     }
 
     Ok(balances)
@@ -77,7 +66,6 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
         maturity_height: endowment.maturity_height,
         split_to_liquid: endowment.split_to_liquid,
         strategies: endowment.strategies,
-        // total_funds: Uint128 // locked total + liquid total
-        // total_donations: Uint128 // all donations received
+        rebalance: endowment.rebalance,
     })
 }

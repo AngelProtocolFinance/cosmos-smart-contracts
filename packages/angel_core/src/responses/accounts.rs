@@ -1,20 +1,11 @@
-use crate::responses::vault::VaultBalanceResponse;
-use crate::structs::{SplitDetails, StrategyComponent};
-use cosmwasm_bignumber::Uint256;
-use cosmwasm_std::Addr;
+use crate::structs::{RebalanceDetails, SplitDetails, StrategyComponent};
+use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct AccountListResponse {
-    pub locked_account: AccountDetailsResponse,
-    pub liquid_account: AccountDetailsResponse,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct AccountDetailsResponse {
-    pub account_type: String, // prefix ("locked" or "liquid")
-    pub ust_balance: Uint256,
+pub struct StateResponse {
+    pub donations_received: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -36,9 +27,5 @@ pub struct EndowmentDetailsResponse {
     pub maturity_height: Option<u64>,
     pub split_to_liquid: SplitDetails,
     pub strategies: Vec<StrategyComponent>,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct AccountBalanceResponse {
-    pub balances: Vec<VaultBalanceResponse>,
+    pub rebalance: RebalanceDetails,
 }

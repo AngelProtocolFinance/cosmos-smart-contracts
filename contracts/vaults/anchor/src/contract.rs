@@ -8,10 +8,11 @@ use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, ReplyOn, Response,
-    StdResult, SubMsg, Uint128, WasmMsg,
+    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn,
+    Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw2::{get_contract_version, set_contract_version};
+use cw20::Balance;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "anchor";
@@ -30,17 +31,15 @@ pub fn instantiate(
     // let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
 
     let config = config::Config {
-        owner: info.sender.clone(),
+        owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         moneymarket,
         input_denom: "uusd".to_string(), // anchor_config.stable_denom.clone(),
         yield_token: deps.api.addr_validate(&msg.registrar_contract)?, // deps.api.addr_validate(&anchor_config.aterra_contract)?,
+        next_pending_id: 0,
     };
 
     config::store(deps.storage, &config)?;
-
-    // create initial accounts
-    let total_supply = Uint128::zero();
 
     // store token info
     let token_info = config::TokenInfo {
@@ -48,7 +47,7 @@ pub fn instantiate(
         symbol: msg.symbol,
         decimals: msg.decimals,
         mint: None,
-        total_supply,
+        total_supply: Uint128::zero(),
     };
     config::TOKEN_INFO.save(deps.storage, &token_info)?;
 
@@ -84,9 +83,27 @@ pub fn execute(
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
-        ExecuteMsg::Deposit(msg) => executers::deposit_stable(deps, env, info, msg), // UST -> DP (Account)
-        ExecuteMsg::Redeem(msg) => executers::redeem_stable(deps, env, info, msg), // DP -> UST (Account)
+        // -UST (Account) --> +Deposit Token/Yield Token (Vault)
+        ExecuteMsg::Deposit(msg) => {
+            executers::deposit_stable(deps, env, info.clone(), msg, Balance::from(info.funds))
+        }
+        // Redeem is only called by the SC when setting up new strategies.
+        // Pulls all existing strategy amounts back to Account in UST.
+        // Then re-Deposits according to the Strategies set.
+        // -Deposit Token/Yield Token (Vault) --> +UST (Account) --> -UST (Account) --> +Deposit Token/Yield Token (Vault)
+        ExecuteMsg::Redeem {} => executers::redeem_stable(deps, env, info.clone()), // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
+        ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info.clone(), msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info), // DP -> DP shuffle (taxes collected)
+    }
+}
+
+/// Replies back to the Vault from the Anchor MoneyMarket contract:
+/// SubMsg IDs are matched back with the PENDING storage to match the
+/// incoming and outgoing funds and any further processing steps performed
+#[entry_point]
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        _ => executers::process_anchor_reply(deps, env, msg.id, msg.result),
     }
 }
 
@@ -101,6 +118,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }),
         QueryMsg::Balance { address } => to_binary(&queriers::query_balance(deps, address)),
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
+        // ANCHOR-SPECIFIC QUERIES BELOW THIS POINT!
         QueryMsg::ExchangeRate { input_denom: _ } => {
             // let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;
 

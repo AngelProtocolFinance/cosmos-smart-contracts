@@ -68,4 +68,10 @@ pub enum ContractError {
 
     #[error("Too many token types returned")]
     TokenTypes {},
+
+    #[error("Cannot withdraw from Locked balances")]
+    InaccessableLockedBalance {},
+
+    #[error("Vault redemptions already in progress.")]
+    RedemptionInProgress {},
 }

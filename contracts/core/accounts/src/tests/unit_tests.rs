@@ -307,15 +307,15 @@ fn test_update_strategy() {
     assert_eq!(0, res.messages.len());
 
     // sum of the invested strategy components percentages is not equal 100%
-    let msg = ExecuteMsg::UpdateStrategy {
+    let msg = ExecuteMsg::UpdateStrategies {
         strategies: vec![
-            StrategyComponent {
-                vault: Addr::unchecked("cash_strategy_component_addr"),
+            Strategy {
+                vault: "cash_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(20),
                 liquid_percentage: Decimal::percent(20),
             },
-            StrategyComponent {
-                vault: Addr::unchecked("tech_strategy_component_addr"),
+            Strategy {
+                vault: "tech_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(60),
                 liquid_percentage: Decimal::percent(60),
             },
@@ -326,20 +326,20 @@ fn test_update_strategy() {
     let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
     assert_eq!(err, ContractError::InvalidStrategyAllocation {});
-    let msg = ExecuteMsg::UpdateStrategy {
+    let msg = ExecuteMsg::UpdateStrategies {
         strategies: vec![
-            StrategyComponent {
-                vault: Addr::unchecked("cash_strategy_component_addr"),
+            Strategy {
+                vault: "cash_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(40),
                 liquid_percentage: Decimal::percent(40),
             },
-            StrategyComponent {
-                vault: Addr::unchecked("tech_strategy_component_addr"),
+            Strategy {
+                vault: "tech_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(20),
                 liquid_percentage: Decimal::percent(20),
             },
-            StrategyComponent {
-                vault: Addr::unchecked("cash_strategy_component_addr"),
+            Strategy {
+                vault: "cash_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(40),
                 liquid_percentage: Decimal::percent(40),
             },
@@ -350,15 +350,15 @@ fn test_update_strategy() {
     let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
 
     assert_eq!(err, ContractError::StrategyComponentsNotUnique {});
-    let msg = ExecuteMsg::UpdateStrategy {
+    let msg = ExecuteMsg::UpdateStrategies {
         strategies: vec![
-            StrategyComponent {
-                vault: Addr::unchecked("cash_strategy_component_addr"),
+            Strategy {
+                vault: "cash_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(40),
                 liquid_percentage: Decimal::percent(40),
             },
-            StrategyComponent {
-                vault: Addr::unchecked("tech_strategy_component_addr"),
+            Strategy {
+                vault: "tech_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(60),
                 liquid_percentage: Decimal::percent(60),
             },
@@ -368,15 +368,15 @@ fn test_update_strategy() {
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_eq!(0, res.messages.len());
 
-    let msg = ExecuteMsg::UpdateStrategy {
+    let msg = ExecuteMsg::UpdateStrategies {
         strategies: vec![
-            StrategyComponent {
-                vault: Addr::unchecked("cash_strategy_component_addr"),
+            Strategy {
+                vault: "cash_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(40),
                 liquid_percentage: Decimal::percent(40),
             },
-            StrategyComponent {
-                vault: Addr::unchecked("tech_strategy_component_addr"),
+            Strategy {
+                vault: "tech_strategy_component_addr".to_string(),
                 locked_percentage: Decimal::percent(60),
                 liquid_percentage: Decimal::percent(60),
             },
