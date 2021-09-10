@@ -92,28 +92,28 @@ export async function setupContracts(): Promise<void> {
   const registrarCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../artifacts/registrar.wasm"));
+    path.resolve(__dirname, "../../artifacts/registrar.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${registrarCodeId}`);
   
   process.stdout.write("Uploading Anchor Vault Wasm");
   const vaultCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../artifacts/anchor.wasm"));
+    path.resolve(__dirname, "../../artifacts/anchor.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
   
   process.stdout.write("Uploading Index Fund Wasm");
   const fundCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../artifacts/index_fund.wasm"));
+    path.resolve(__dirname, "../../artifacts/index_fund.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${fundCodeId}`);
   
   process.stdout.write("Uploading Accounts Wasm");
   accountsCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../artifacts/accounts.wasm"));
+    path.resolve(__dirname, "../../artifacts/accounts.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${accountsCodeId}`);
 
 
