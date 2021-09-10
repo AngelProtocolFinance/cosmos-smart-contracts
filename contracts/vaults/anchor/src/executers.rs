@@ -10,9 +10,9 @@ use angel_core::responses::registrar::{
 use angel_core::structs::{BalanceInfo, EndowmentEntry};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, Order,
-    QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse, Uint128, WasmMsg,
-    WasmQuery,
+    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
+    Order, QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse, Uint128,
+    WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg};
 
@@ -64,18 +64,25 @@ pub fn deposit_stable(
             amount: info.funds[0].amount,
         },
     )?;
-    let after_taxes_locked = after_taxes
-        .amount
-        .clone()
-        .multiply_ratio(msg.locked, info.funds[0].amount);
-    let after_taxes_liquid = after_taxes
-        .amount
-        .clone()
-        .multiply_ratio(msg.liquid, info.funds[0].amount);
+    let mut after_taxes_locked = Uint128::zero();
+    if !msg.locked.is_zero() {
+        after_taxes_locked = after_taxes
+            .amount
+            .clone()
+            .multiply_ratio(msg.locked, info.funds[0].amount);
+    }
+
+    let mut after_taxes_liquid = Uint128::zero();
+    if !msg.liquid.is_zero() {
+        after_taxes_liquid = after_taxes
+            .amount
+            .clone()
+            .multiply_ratio(msg.liquid, info.funds[0].amount);
+    }
 
     // update supply
     let mut token_info = TOKEN_INFO.load(deps.storage)?;
-    token_info.total_supply += after_taxes.amount;
+    token_info.total_supply = token_info.total_supply + after_taxes.amount;
     TOKEN_INFO.save(deps.storage, &token_info)?;
 
     let submessage_id = config.next_pending_id;
@@ -136,8 +143,8 @@ pub fn redeem_stable(
         return Err(ContractError::Unauthorized {});
     }
 
-    // let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
-    // let exchange_rate = Decimal::percent(100); // epoch_state.exchange_rate;
+    let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
+    let exchange_rate = epoch_state.exchange_rate;
 
     let mut investment = BALANCES
         .load(deps.storage, &info.sender)
@@ -152,6 +159,29 @@ pub fn redeem_stable(
         .get_token_amount(env.contract.address.clone());
     let total_redemption = locked_deposit_tokens + liquid_deposit_tokens;
 
+    let after_taxes = deduct_tax(
+        deps.as_ref(),
+        Coin {
+            denom: "uusd".to_string(),
+            amount: total_redemption * Decimal::from(exchange_rate),
+        },
+    )?;
+
+    let mut after_taxes_locked = Uint128::zero();
+    if !locked_deposit_tokens.is_zero() {
+        after_taxes_locked = after_taxes
+            .amount
+            .clone()
+            .multiply_ratio(locked_deposit_tokens, total_redemption);
+    }
+
+    let mut after_taxes_liquid = Uint128::zero();
+    if !liquid_deposit_tokens.is_zero() {
+        after_taxes_liquid = after_taxes
+            .amount
+            .clone()
+            .multiply_ratio(liquid_deposit_tokens, total_redemption);
+    }
     // update investment holdings balances to zero
     let zero_tokens = Cw20CoinVerified {
         amount: Uint128::zero(),
@@ -174,8 +204,8 @@ pub fn redeem_stable(
             accounts_address: Some(info.sender.clone()),
             beneficiary: None,
             fund: false,
-            locked: locked_deposit_tokens,
-            liquid: liquid_deposit_tokens,
+            locked: after_taxes_locked,
+            liquid: after_taxes_liquid,
         },
     )?;
     config.next_pending_id += 1;
@@ -259,11 +289,14 @@ pub fn withdraw_stable(
             beneficiary: Some(msg.beneficiary.clone()),
             fund: false,
             locked: msg.locked,
-            liquid: msg.locked,
+            liquid: msg.liquid,
         },
     )?;
     config.next_pending_id += 1;
     config::store(deps.storage, &config)?;
+
+    let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
+    let exchange_rate = epoch_state.exchange_rate;
 
     Ok(Response::new()
         .add_attribute("action", "redeem")
@@ -275,7 +308,7 @@ pub fn withdraw_stable(
                 contract_addr: config.yield_token.to_string(),
                 msg: to_binary(&Cw20ExecuteMsg::Send {
                     contract: config.moneymarket.to_string(),
-                    amount: msg.locked + msg.liquid,
+                    amount: (msg.locked + msg.liquid) * Decimal::from(exchange_rate),
                     msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
                 })?,
                 funds: vec![],
@@ -355,7 +388,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         &treasury_account,
     )?;
 
-    Ok(Response::new().add_attribute("action", "transfer"))
+    Ok(Response::new().add_attribute("action", "harvest"))
 }
 
 pub fn process_anchor_reply(
