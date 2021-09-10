@@ -47,5 +47,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await testTcaMemberSendsToIndexFund();
   // await testAngelTeamCanTriggerVaultsHarvest();
   // await testCharityCanUpdateStrategies();
-  // await testBeneficiaryCanWithdrawFromLiquid();
+  // setTimeout(async () => {
+  //   await testBeneficiaryCanWithdrawFromLiquid();
+  // }, 7000);
 }
