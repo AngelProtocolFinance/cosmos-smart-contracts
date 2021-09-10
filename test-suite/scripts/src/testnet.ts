@@ -20,46 +20,37 @@ export async function startTest(terra: LCDClient): Promise<void> {
   console.log(chalk.blue("\nBombay-10 TestNet"));
 
   // get the current swap rate from 1 TerraUSD to TerraKRW
-  console.log(chalk.yellow("\nStep1. Swap rate between uusd and uluna"));
-  const offerCoin: Coin = new Coin("uusd", "1000000");
-  const c: Coin = await terra.market.swapRate(offerCoin, "uluna");
-  console.log(`${offerCoin.toString()} can be swapped for ${c.toString()}`);
+  // console.log(chalk.yellow("\nStep1. Swap rate between uusd and uluna"));
+  // const offerCoin: Coin = new Coin("uusd", "1000000");
+  // const c: Coin = await terra.market.swapRate(offerCoin, "uluna");
+  // console.log(`${offerCoin.toString()} can be swapped for ${c.toString()}`);
 
-  // broadcasting transactions
-  console.log(chalk.yellow("\nStep2. Broadcasting transactions"));
-  // create a key out of a mnemonic
-  const mk: MnemonicKey = new MnemonicKey({
-    mnemonic: "notice oak worry limit wrap speak medal online prefer cluster roof addict wrist behave treat actual wasp year salad speed social layer crew genius",
-  });
+  // get wallets
+  // console.log(chalk.yellow("\nStep2. Broadcasting transactions"));
+  const apTeam: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.APTEAM}));
+  const charity1: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.CHARITY1}));
+  const charity2: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.CHARITY2}));
+  const charity3: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.CHARITY3}));
+  const pleb: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.PLEB}));
+  const tca: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.TCA}));
 
-  // a wallet can be created out of any key wallets abstract transaction building
-  const wallet: Wallet = terra.wallet(mk);
+  // const tx: StdTx = await wallet.createAndSignTx({ msgs: [send], memo: "test from terra.js!" });
+  // const result: BlockTxBroadcastResult = await terra.tx.broadcast(tx);
+  // console.log(`TX hash: ${result.txhash}`);
 
-  // create a simple message that moves coin balances
-  const send: MsgSend = new MsgSend(
-    "terra1x46rqay4d3cssq8gxxvqz8xt6nwlz4td20k38v",
-    "terra17lmam6zguazs5q5u6z5mmx76uj63gldnse2pdp",
-    { uluna: 1000000, ukrw: 1230201, uusd: 1312029 }
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initializeLCDClient(
+    terra,
+    {
+      apTeam,
+      charity1,
+      charity2,
+      charity3,
+      pleb,
+      tca
+    },
+    process.env.MONEYMARKET_CONTRACT_TESTNET!
   );
-
-  const tx: StdTx = await wallet.createAndSignTx({ msgs: [send], memo: "test from terra.js!" });
-  const result: BlockTxBroadcastResult = await terra.tx.broadcast(tx);
-  console.log(`TX hash: ${result.txhash}`);
-
-
-  // console.log(chalk.yellow("\nStep 1. Environment Info"));
-  // initializeLCDClient(
-  //   terra,
-  //   {
-  //     apTeam: wallet,
-  //     charity1: wallet,
-  //     charity2: wallet,
-  //     charity3: wallet,
-  //     pleb: wallet,
-  //     tca: wallet
-  //   },
-  //   process.env.MONEYMARKET_CONTRACT_TESTNET
-  // );
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   // await setupContracts();
