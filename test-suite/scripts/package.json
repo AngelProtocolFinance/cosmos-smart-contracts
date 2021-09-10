@@ -1,6 +1,5 @@
 {
   "scripts": {
-    "install": "npm install",
     "test": "ts-node ./src/index.ts",
     "test:localterra": "npm run test --mode=LocalTerra",
     "test:testnet": "npm run test --mode=TestNet",
