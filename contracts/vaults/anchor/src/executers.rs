@@ -442,13 +442,10 @@ pub fn process_anchor_reply(
                         )?,
                         funds: vec![deduct_tax(
                             deps.as_ref(),
-                            deduct_tax(
-                                deps.as_ref(),
-                                Coin {
-                                    denom: "uusd".to_string(),
-                                    amount: transaction.locked + transaction.liquid,
-                                },
-                            )?,
+                            Coin {
+                                denom: "uusd".to_string(),
+                                amount: transaction.locked + transaction.liquid,
+                            },
                         )?],
                     })))
                 }
