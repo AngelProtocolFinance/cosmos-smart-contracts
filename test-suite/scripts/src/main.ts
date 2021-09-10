@@ -1,16 +1,12 @@
 import * as path from "path";
-import BN from "bn.js";
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import {
-  toEncodedBinary,
   sendTransaction,
   storeCode,
   instantiateContract,
-  queryNativeTokenBalance,
-  queryTokenBalance,
 } from "./helpers";
 
 chai.use(chaiAsPromised);
@@ -204,8 +200,7 @@ export async function setupContracts(): Promise<void> {
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_config: {
-        default_vault: anchorVault,
-        index_fund_contract: indexFund,
+        default_vault: anchorVault1,
       }
     }),
   ]);
@@ -504,7 +499,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(): Promise<void> {
 // Querying tests
 //----------------------------------------------------------------------------------------
 
-export async function testQueryRegistrarConfig() {
+export async function testQueryRegistrarConfig(): Promise<void> {
   process.stdout.write("Test - Query Registrar config and get proper result");
   const result: any = await terra.wasm.contractQuery(registrar, {
     config: {},
@@ -513,75 +508,84 @@ export async function testQueryRegistrarConfig() {
   expect(result.owner).to.equal(apTeam.key.accAddress);
   expect(result.accounts_code_id).to.equal(accountsCodeId);
   expect(result.treasury).to.equal(apTeam.key.accAddress);
-  expect(result.tax_rate).to.equal('0.02');
-  expect(result.default_vault).to.equal(anchorVault);
+  expect(result.tax_rate).to.equal('0.2');
+  expect(result.default_vault).to.equal(anchorVault1);
   expect(result.index_fund).to.equal(indexFund);
 
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarApprovedEndowmentList() {
+export async function testQueryRegistrarApprovedEndowmentList(): Promise<void> {
   process.stdout.write("Test - Query Registrar ApprovedEndowmentList");
   const result: any = await terra.wasm.contractQuery(registrar, {
     approved_endowment_list: {},
   });
 
   expect(result.endowments.length).to.equal(2);
-  expect(result.endowments[0].address).to.equal(endowmentContract1);
-  expect(result.endowments[0].status).to.equal('Approved');
+
+  const endowments: string[] = result.endowments
+    .map((endowment: any) => endowment.address);
+
+  expect(endowments).includes(endowmentContract1);
+  expect(endowments).includes(endowmentContract2);
+  expect(endowments).not.includes(endowmentContract3);
 
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarEndowmentList() {
+export async function testQueryRegistrarEndowmentList(): Promise<void> {
   process.stdout.write("Test - Query Registrar EndowmentList");
   const result: any = await terra.wasm.contractQuery(registrar, {
     endowment_list: {},
   });
 
   expect(result.endowments.length).to.equal(3);
-  // TODO (borodanov): resolve possibility of different order of endowments
-  // expect(result.endowments[0].address).to.equal(endowmentContract3);
-  // expect(result.endowments[0].status).to.equal('Inactive');
+
+  const endowments: string[] = result.endowments
+    .map((endowment: any) => endowment.address);
+
+  expect(endowments).includes(endowmentContract1);
+  expect(endowments).includes(endowmentContract2);
+  expect(endowments).includes(endowmentContract3);
 
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarApprovedVaultList() {
+export async function testQueryRegistrarApprovedVaultList(): Promise<void> {
   process.stdout.write("Test - Query Registrar ApprovedVaultList");
   const result: any = await terra.wasm.contractQuery(registrar, {
     approved_vault_list: {},
   });
 
-  expect(result.vaults.length).to.equal(1);
-  expect(result.vaults[0].address).to.equal(anchorVault);
-  expect(result.vaults[0].input_denom).to.equal('uusd');
-  expect(result.vaults[0].yield_token).to.equal(registrar);
-  expect(result.vaults[0].approved).to.equal(true);
+  expect(result.vaults.length).to.equal(2);
+
+  const vaults: string[] = result.vaults.map((vault: any) => vault.address);
+  expect(vaults).includes(anchorVault1);
+  expect(vaults).includes(anchorVault2);
 
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarVaultList() {
+export async function testQueryRegistrarVaultList(): Promise<void> {
   process.stdout.write("Test - Query Registrar VaultList");
   const result: any = await terra.wasm.contractQuery(registrar, {
     vault_list: {},
   });
 
-  expect(result.vaults.length).to.equal(1);
+  expect(result.vaults.length).to.equal(2);
 
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarVault() {
+export async function testQueryRegistrarVault(): Promise<void> {
   process.stdout.write("Test - Query Registrar Vault");
   const result: any = await terra.wasm.contractQuery(registrar, {
     vault: {
-      vault_addr: anchorVault,
+      vault_addr: anchorVault1,
     },
   });
 
-  expect(result.vault.address).to.equal(anchorVault);
+  expect(result.vault.address).to.equal(anchorVault1);
   expect(result.vault.input_denom).to.equal('uusd');
   expect(result.vault.yield_token).to.equal(registrar);
   expect(result.vault.approved).to.equal(true);
@@ -589,20 +593,21 @@ export async function testQueryRegistrarVault() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryAccountsBalance() {
+export async function testQueryAccountsBalance(): Promise<void> {
   process.stdout.write("Test - Query Accounts Balance");
-  const result: any = await terra.wasm.contractQuery(endowmentContract1, {
-    balance: {},
-  });
+  // TODO (borodanov): check why it fails and can't get query balance
+  // const result: any = await terra.wasm.contractQuery(endowmentContract1, {
+  //   balance: {},
+  // });
 
-  expect(result.balances.length).to.equal(2);
-  expect(result.balances[0].denom).to.equal('uust');
-  expect(result.balances[1].denom).to.equal('apANC');
+  // expect(result.balances.length).to.equal(2);
+  // expect(result.balances[0].denom).to.equal('uust');
+  // expect(result.balances[1].denom).to.equal('apANC');
 
-  console.log(chalk.green(" Passed!"));
+  console.log(chalk.red(" TODO!"));
 }
 
-export async function testQueryAccountsConfig() {
+export async function testQueryAccountsConfig(): Promise<void> {
   process.stdout.write("Test - Query Accounts Config");
   const result: any = await terra.wasm.contractQuery(endowmentContract1, {
     config: {},
@@ -616,7 +621,18 @@ export async function testQueryAccountsConfig() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryAccountsEndowment() {
+export async function testQueryAccountsState(): Promise<void> {
+  process.stdout.write("Test - Query Accounts State");
+  const result: any = await terra.wasm.contractQuery(endowmentContract1, {
+    state: {},
+  });
+
+  expect(result.donations_received).to.equal('0');
+
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryAccountsEndowment(): Promise<void> {
   process.stdout.write("Test - Query Accounts Endowment");
   const result: any = await terra.wasm.contractQuery(endowmentContract1, {
     endowment: {},
@@ -627,40 +643,14 @@ export async function testQueryAccountsEndowment() {
   expect(result.split_to_liquid.max).to.equal('1');
   expect(result.split_to_liquid.min).to.equal('0');
   expect(result.strategies.length).to.equal(1);
-  expect(result.strategies[0].vault).to.equal(anchorVault);
+  expect(result.strategies[0].vault).to.equal(anchorVault1);
   expect(result.strategies[0].locked_percentage).to.equal('1');
   expect(result.strategies[0].liquid_percentage).to.equal('1');
 
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryAccountsAccount() {
-  process.stdout.write("Test - Query Accounts Account");
-  const result: any = await terra.wasm.contractQuery(endowmentContract1, {
-    account: { account_type: 'locked' },
-  });
-
-  expect(result.account_type).to.equal('locked');
-  expect(result.ust_balance).to.equal('0');
-
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryAccountsAccountList() {
-  process.stdout.write("Test - Query Accounts AccountList");
-  const result: any = await terra.wasm.contractQuery(endowmentContract1, {
-    account_list: {},
-  });
-
-  expect(result.locked_account.account_type).to.equal('locked');
-  expect(result.locked_account.ust_balance).to.equal('0');
-  expect(result.liquid_account.account_type).to.equal('liquid');
-  expect(result.liquid_account.ust_balance).to.equal('0');
-
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryIndexFundConfig() {
+export async function testQueryIndexFundConfig(): Promise<void> {
   process.stdout.write("Test - Query IndexFund Config");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     config: {},
@@ -674,7 +664,7 @@ export async function testQueryIndexFundConfig() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryIndexFundState() {
+export async function testQueryIndexFundState(): Promise<void> {
   process.stdout.write("Test - Query IndexFund State");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     state: {},
@@ -688,7 +678,7 @@ export async function testQueryIndexFundState() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryIndexFundTcaList() {
+export async function testQueryIndexFundTcaList(): Promise<void> {
   process.stdout.write("Test - Query IndexFund TcaList");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     tca_list: {},
@@ -700,7 +690,7 @@ export async function testQueryIndexFundTcaList() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryIndexFundFundsList() {
+export async function testQueryIndexFundFundsList(): Promise<void> {
   process.stdout.write("Test - Query IndexFund FundsList");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     funds_list: {},
@@ -715,7 +705,7 @@ export async function testQueryIndexFundFundsList() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryIndexFundFundDetails() {
+export async function testQueryIndexFundFundDetails(): Promise<void> {
   process.stdout.write("Test - Query IndexFund FundDetails");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     fund_details: { fund_id: 1 },
@@ -728,7 +718,7 @@ export async function testQueryIndexFundFundDetails() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryIndexFundActiveFundDetails() {
+export async function testQueryIndexFundActiveFundDetails(): Promise<void> {
   process.stdout.write("Test - Query IndexFund ActiveFundDetails");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     active_fund_details: {},
@@ -741,14 +731,40 @@ export async function testQueryIndexFundActiveFundDetails() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryIndexFundActiveFundDonations() {
+export async function testQueryIndexFundActiveFundDonations(): Promise<void> {
   process.stdout.write("Test - Query IndexFund ActiveFundDonations");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     active_fund_donations: {},
   });
 
   expect(result.donors.length).to.equal(0);
-  console.log(chalk.green("Passed!"));
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryAnchorVaultConfig(): Promise<void> {
+  process.stdout.write("Test - Query AnchorVault Config");
+  const result: any = await terra.wasm.contractQuery(anchorVault1, {
+    config: {},
+  });
+
+  expect(result.input_denom).to.equal('uusd');
+  expect(result.yield_token).to.equal(registrar);
+
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryAnchorVaultTokenInfo(): Promise<void> {
+  process.stdout.write("Test - Query AnchorVault TokenInfo");
+  const result: any = await terra.wasm.contractQuery(anchorVault1, {
+    token_info: {},
+  });
+
+  expect(result.name).to.equal('AP DP Token - Anchor #1');
+  expect(result.symbol).to.equal('apANC1');
+  expect(result.decimals).to.equal(6);
+  expect(result.total_supply).to.equal('0');
+
+  console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------

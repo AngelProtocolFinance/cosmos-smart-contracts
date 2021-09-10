@@ -9,6 +9,25 @@ import {
   testAngelTeamCanTriggerVaultsHarvest,
   testCharityCanUpdateStrategies,
   testBeneficiaryCanWithdrawFromLiquid,
+  testQueryAccountsBalance,
+  testQueryAccountsConfig,
+  testQueryAccountsEndowment,
+  testQueryIndexFundActiveFundDetails,
+  testQueryIndexFundActiveFundDonations,
+  testQueryIndexFundConfig,
+  testQueryIndexFundFundDetails,
+  testQueryIndexFundFundsList,
+  testQueryIndexFundState,
+  testQueryIndexFundTcaList,
+  testQueryRegistrarApprovedEndowmentList,
+  testQueryRegistrarApprovedVaultList,
+  testQueryRegistrarConfig,
+  testQueryRegistrarEndowmentList,
+  testQueryRegistrarVault,
+  testQueryRegistrarVaultList,
+  testQueryAccountsState,
+  testQueryAnchorVaultConfig,
+  testQueryAnchorVaultTokenInfo,
 } from "./main";
 //----------------------------------------------------------------------------------------
 // Main
@@ -38,9 +57,8 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   await testQueryRegistrarVault();
   await testQueryAccountsBalance();
   await testQueryAccountsConfig();
+  await testQueryAccountsState();
   await testQueryAccountsEndowment();
-  await testQueryAccountsAccount();
-  await testQueryAccountsAccountList();
   await testQueryIndexFundConfig();
   await testQueryIndexFundState();
   await testQueryIndexFundTcaList();
@@ -48,5 +66,6 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   await testQueryIndexFundFundDetails();
   await testQueryIndexFundActiveFundDetails();
   await testQueryIndexFundActiveFundDonations();
-  
+  await testQueryAnchorVaultConfig();
+  await testQueryAnchorVaultTokenInfo();
 }
