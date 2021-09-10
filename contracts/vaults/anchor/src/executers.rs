@@ -1,4 +1,4 @@
-// use crate::anchor::{epoch_state, Cw20HookMsg, HandleMsg};
+use crate::anchor::{epoch_state, Cw20HookMsg, HandleMsg};
 use crate::config;
 use crate::config::{PendingInfo, BALANCES, PENDING, TOKEN_INFO};
 use angel_core::errors::vault::ContractError;
@@ -10,10 +10,11 @@ use angel_core::responses::registrar::{
 use angel_core::structs::{BalanceInfo, EndowmentEntry};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo, Order, QueryRequest,
-    Response, SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
+    Order, QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse, Uint128,
+    WasmMsg, WasmQuery,
 };
-use cw20::{Balance, Cw20CoinVerified};
+use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg};
 
 pub fn update_registrar(
     deps: DepsMut,
@@ -84,11 +85,13 @@ pub fn deposit_stable(
     token_info.total_supply = token_info.total_supply + after_taxes.amount;
     TOKEN_INFO.save(deps.storage, &token_info)?;
 
+    let submessage_id = config.next_pending_id;
     PENDING.save(
         deps.storage,
-        &config.next_pending_id.to_be_bytes(),
+        &submessage_id.to_be_bytes(),
         &PendingInfo {
             typ: "deposit".to_string(),
+            block: env.block.height,
             accounts_address: Some(info.sender.clone()),
             beneficiary: None,
             fund: false,
@@ -99,38 +102,21 @@ pub fn deposit_stable(
     config.next_pending_id += 1;
     config::store(deps.storage, &config)?;
 
-    // FAKE DEPOSIT TOKEN INCREASES HERE:
-    // Should only be done after a Successful Reply from Anchor SubMsg
-    let mut investment = BALANCES
-        .load(deps.storage, &info.sender)
-        .unwrap_or(BalanceInfo::default());
-    investment
-        .locked_balance
-        .add_tokens(Balance::Cw20(Cw20CoinVerified {
-            amount: after_taxes_locked,
-            address: env.contract.address.clone(),
-        }));
-    investment
-        .liquid_balance
-        .add_tokens(Balance::Cw20(Cw20CoinVerified {
-            amount: after_taxes_liquid,
-            address: env.contract.address.clone(),
-        }));
-    BALANCES.save(deps.storage, &info.sender, &investment)?;
-
-    Ok(
-        Response::new()
-            .add_attribute("action", "deposit")
-            .add_attribute("sender", info.sender.clone())
-            .add_attribute("deposit_amount", info.funds[0].amount)
-            .add_attribute("mint_amount", after_taxes.amount), // .add_message(
-                                                               // CosmosMsg::Wasm(WasmMsg::Execute {
-                                                               //     contract_addr: config.moneymarket.to_string(),
-                                                               //     msg: to_binary(&HandleMsg::DepositStable {})?,
-                                                               //     funds: vec![after_taxes.clone()],
-                                                               // }),
-                                                               // ])
-    )
+    Ok(Response::new()
+        .add_attribute("action", "deposit")
+        .add_attribute("sender", info.sender.clone())
+        .add_attribute("deposit_amount", info.funds[0].amount)
+        .add_attribute("mint_amount", after_taxes.amount)
+        .add_submessage(SubMsg {
+            id: submessage_id,
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.moneymarket.to_string(),
+                msg: to_binary(&HandleMsg::DepositStable {})?,
+                funds: vec![after_taxes.clone()],
+            }),
+            reply_on: ReplyOn::Always,
+            gas_limit: None,
+        }))
 }
 
 /// Redeem Stable: Take in an amount of locked/liquid deposit tokens
@@ -157,8 +143,8 @@ pub fn redeem_stable(
         return Err(ContractError::Unauthorized {});
     }
 
-    // let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
-    // let exchange_rate = Decimal::percent(100); // epoch_state.exchange_rate;
+    let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
+    let exchange_rate = epoch_state.exchange_rate;
 
     let mut investment = BALANCES
         .load(deps.storage, &info.sender)
@@ -177,7 +163,7 @@ pub fn redeem_stable(
         deps.as_ref(),
         Coin {
             denom: "uusd".to_string(),
-            amount: total_redemption,
+            amount: total_redemption * Decimal::from(exchange_rate),
         },
     )?;
 
@@ -208,11 +194,13 @@ pub fn redeem_stable(
         .liquid_balance
         .set_token_balances(Balance::Cw20(zero_tokens.clone()));
 
+    let submessage_id = config.next_pending_id;
     PENDING.save(
         deps.storage,
-        &config.next_pending_id.to_be_bytes(),
+        &submessage_id.to_be_bytes(),
         &PendingInfo {
             typ: "redeem".to_string(),
+            block: env.block.height,
             accounts_address: Some(info.sender.clone()),
             beneficiary: None,
             fund: false,
@@ -226,32 +214,21 @@ pub fn redeem_stable(
     Ok(Response::new()
         .add_attribute("action", "redeem")
         .add_attribute("sender", info.sender.clone())
-        .add_attribute("redeem_amount", after_taxes.amount)
-        // .add_submessage(SubMsg {
-        //     id: 42,
-        //     msg: CosmosMsg::Wasm(WasmMsg::Execute {
-        //         contract_addr: config.yield_token.to_string(),
-        //         msg: to_binary(&Cw20ExecuteMsg::Send {
-        //             contract: config.moneymarket.to_string(),
-        //             amount: total_redemption * Decimal::from(exchange_rate),
-        //             msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
-        //         })?,
-        //         funds: vec![],
-        //     }),
-        //     gas_limit: None,
-        //     reply_on: ReplyOn::Success,
-        // })
-        // TO DO: Move this VaultReceipt msg to be send after a success reply from Anchor!
-        .add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: info.sender.to_string(),
-            msg: to_binary(&&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
-                AccountTransferMsg {
-                    locked: after_taxes_locked,
-                    liquid: after_taxes_liquid,
-                },
-            ))?,
-            funds: vec![after_taxes],
-        }))))
+        .add_attribute("redeem_amount", total_redemption)
+        .add_submessage(SubMsg {
+            id: submessage_id,
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.yield_token.to_string(),
+                msg: to_binary(&Cw20ExecuteMsg::Send {
+                    contract: config.moneymarket.to_string(),
+                    amount: total_redemption,
+                    msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
+                })?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Always,
+        }))
 }
 
 /// Withdraw Stable: Takes in an amount of locked/liquid deposit tokens
@@ -301,47 +278,44 @@ pub fn withdraw_stable(
             address: env.contract.address,
         }));
 
+    let submessage_id = config.next_pending_id;
     PENDING.save(
         deps.storage,
-        &config.next_pending_id.to_be_bytes(),
+        &submessage_id.to_be_bytes(),
         &PendingInfo {
             typ: "withdraw".to_string(),
+            block: env.block.height,
             accounts_address: None,
             beneficiary: Some(msg.beneficiary.clone()),
             fund: false,
             locked: msg.locked,
-            liquid: msg.locked,
+            liquid: msg.liquid,
         },
     )?;
     config.next_pending_id += 1;
     config::store(deps.storage, &config)?;
 
+    let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
+    let exchange_rate = epoch_state.exchange_rate;
+
     Ok(Response::new()
         .add_attribute("action", "redeem")
         .add_attribute("sender", info.sender.clone())
         .add_attribute("withdraw_amount", msg.locked + msg.locked)
-        // .add_submessage(SubMsg {
-        //     id: 42,
-        //     msg: CosmosMsg::Wasm(WasmMsg::Execute {
-        //         contract_addr: config.yield_token.to_string(),
-        //         msg: to_binary(&Cw20ExecuteMsg::Send {
-        //             contract: config.moneymarket.to_string(),
-        //             amount: redeem.amount * Decimal::from(exchange_rate),
-        //             msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
-        //         })?,
-        //         funds: vec![],
-        //     }),
-        //     gas_limit: None,
-        //     reply_on: ReplyOn::Success,
-        // })
-        // TO DO: Reply from Anchor with UST redeemed should trigger sending back to beneficiary
-        .add_submessage(SubMsg::new(BankMsg::Send {
-            to_address: msg.beneficiary.to_string(),
-            amount: vec![Coin {
-                amount: msg.locked + msg.liquid,
-                denom: "uusd".to_string(),
-            }],
-        })))
+        .add_submessage(SubMsg {
+            id: submessage_id,
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.yield_token.to_string(),
+                msg: to_binary(&Cw20ExecuteMsg::Send {
+                    contract: config.moneymarket.to_string(),
+                    amount: (msg.locked + msg.liquid) * Decimal::from(exchange_rate),
+                    msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
+                })?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Always,
+        }))
 }
 
 pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
@@ -415,4 +389,93 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
     )?;
 
     Ok(Response::new().add_attribute("action", "harvest"))
+}
+
+pub fn process_anchor_reply(
+    deps: DepsMut,
+    env: Env,
+    id: u64,
+    result: ContractResult<SubMsgExecutionResponse>,
+) -> Result<Response, ContractError> {
+    let mut followup: Vec<SubMsg> = vec![];
+
+    // pull up the pending transaction details from storage
+    let transaction = PENDING.load(deps.storage, &id.to_be_bytes())?;
+
+    match result {
+        ContractResult::Ok(_subcall) => {
+            match transaction.typ.as_str() {
+                "deposit" => {
+                    // Increase the Account's Deposit token balances by the correct amounts of aUST
+                    let mut investment = BALANCES
+                        .load(deps.storage, &transaction.accounts_address.clone().unwrap())
+                        .unwrap_or(BalanceInfo::default());
+                    investment
+                        .locked_balance
+                        .add_tokens(Balance::Cw20(Cw20CoinVerified {
+                            amount: transaction.locked,
+                            address: env.contract.address.clone(),
+                        }));
+                    investment
+                        .liquid_balance
+                        .add_tokens(Balance::Cw20(Cw20CoinVerified {
+                            amount: transaction.liquid,
+                            address: env.contract.address,
+                        }));
+                    BALANCES.save(
+                        deps.storage,
+                        &transaction.accounts_address.unwrap(),
+                        &investment,
+                    )?;
+                }
+                "redeem" => {
+                    // Send UST back to the Account SC via VaultReciept msg
+                    followup.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: transaction.accounts_address.unwrap().to_string(),
+                        msg: to_binary(
+                            &&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
+                                AccountTransferMsg {
+                                    locked: transaction.locked,
+                                    liquid: transaction.liquid,
+                                },
+                            ),
+                        )?,
+                        funds: vec![deduct_tax(
+                            deps.as_ref(),
+                            Coin {
+                                denom: "uusd".to_string(),
+                                amount: transaction.locked + transaction.liquid,
+                            },
+                        )?],
+                    })))
+                }
+                "withdraw" => {
+                    // Send UST to the Beneficiary via BankMsg::Send
+                    followup.push(SubMsg::new(BankMsg::Send {
+                        to_address: transaction.beneficiary.unwrap().to_string(),
+                        amount: vec![Coin {
+                            amount: transaction.locked + transaction.liquid,
+                            denom: "uusd".to_string(),
+                        }],
+                    }))
+                }
+                &_ => (),
+            }
+
+            // remove this pending transaction
+            PENDING.remove(deps.storage, &id.to_be_bytes());
+
+            // return the response with follow up submessages to beneficiary/Accounts/etc attached
+            Ok(Response::new()
+                .add_attribute("action", "anchor_reply_processing")
+                .add_submessages(followup))
+        }
+        ContractResult::Err(_) => {
+            return Err(ContractError::Std {
+                0: StdError::GenericErr {
+                    msg: "An error occured during the Anchor interaction".to_string(),
+                },
+            });
+        }
+    }
 }

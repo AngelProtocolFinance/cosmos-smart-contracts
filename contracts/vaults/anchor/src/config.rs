@@ -51,6 +51,7 @@ impl TokenInfo {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct PendingInfo {
+    pub block: u64,
     pub typ: String, // type of pending transaction ('typ', because 'type' is protected keyword in Rust...)
     pub accounts_address: Option<Addr>, // return to an Accounts SC
     pub beneficiary: Option<Addr>, // return to the beneficiary
