@@ -66,13 +66,13 @@ Edit `LocalTerra/config/genesis.json` as follows. This fixes the stability fee (
 Once done, start LocalTerra by
 
 ```bash
-docker compose up  # Ctrl + C to quit
+docker-compose up  # Ctrl + C to quit
 ```
 
 From time to time, you may need to revert LocalTerra to its initial state. Do this by
 
 ```bash
-docker compose rm
+docker-compose rm
 ```
 
 How to know if LocalTerra is working properly:
@@ -98,10 +98,25 @@ workspace-optimizer
 
 ### Run full setup of contracts & all tests
 
+Test on LocalTerra
 ```bash
 cd test-suite/scripts
 npm install
-ts-node main.ts
+npm run test:localterra
+```
+
+Test on TestNet Bombay-10
+```bash
+cd test-suite/scripts
+npm install
+npm run test:testnet
+```
+
+Test on MainNet Columbus-4
+```bash
+cd test-suite/scripts
+npm install
+npm run test:mainnet
 ```
 
 We are building off the excellent work done by 0xLarry (from whom we lovingly :heart: ~~stole~~ borrowed).

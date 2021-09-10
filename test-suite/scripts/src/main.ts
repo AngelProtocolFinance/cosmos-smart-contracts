@@ -3,7 +3,7 @@ import BN from "bn.js";
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LocalTerra, MsgExecuteContract } from "@terra-money/terra.js";
+import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import {
   toEncodedBinary,
   sendTransaction,
@@ -20,56 +20,104 @@ const { expect } = chai;
 // Variables
 //----------------------------------------------------------------------------------------
 
-const terra = new LocalTerra();
-const apTeam = terra.wallets.test1;
-const charity1 = terra.wallets.test2;
-const charity2 = terra.wallets.test3;
-const charity3 = terra.wallets.test4;
-const pleb = terra.wallets.test5;
-const tca = terra.wallets.test6;
+let terra: LCDClient;
+let apTeam: Wallet;
+let charity1: Wallet;
+let charity2: Wallet;
+let charity3: Wallet;
+let pleb: Wallet;
+let tca: Wallet;
 
 let accountsCodeId: number;
 let registrar: string;
 let indexFund: string;
 let anchorVault1: string;
 let anchorVault2: string;
-// let anchorMoneyMarket: string;
+let anchorMoneyMarket: string;
 let endowmentContract1: string;
 let endowmentContract2: string;
 let endowmentContract3: string;
 
 //----------------------------------------------------------------------------------------
+// Initialize variables
+//----------------------------------------------------------------------------------------
+export function initializeLocalTerra(localTerra: LocalTerra): void {
+  terra = localTerra;
+  apTeam = localTerra.wallets.test1;
+  charity1 = localTerra.wallets.test2;
+  charity2 = localTerra.wallets.test3;
+  charity3 = localTerra.wallets.test4;
+  pleb = localTerra.wallets.test5;
+  tca = localTerra.wallets.test6;
+
+  console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
+  console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as Charity #1`);
+  console.log(`Use ${chalk.cyan(charity2.key.accAddress)} as Charity #2`);
+  console.log(`Use ${chalk.cyan(charity3.key.accAddress)} as Charity #3`);
+  console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
+  console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
+}
+
+export function initializeLCDClient(
+  lcdClient: LCDClient,
+  wallets: {
+    apTeam: Wallet,
+    charity1: Wallet,
+    charity2: Wallet,
+    charity3: Wallet,
+    pleb: Wallet,
+    tca: Wallet
+  },
+  anchorMoneyMarketAddr: string): void {
+  terra = lcdClient;
+  apTeam = wallets.apTeam;
+  charity1 = wallets.charity1;
+  charity2 = wallets.charity2;
+  charity3 = wallets.charity3;
+  pleb = wallets.pleb;
+  tca = wallets.tca;
+  anchorMoneyMarket = anchorMoneyMarketAddr;
+
+  console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
+  console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as Charity #1`);
+  console.log(`Use ${chalk.cyan(charity2.key.accAddress)} as Charity #2`);
+  console.log(`Use ${chalk.cyan(charity3.key.accAddress)} as Charity #3`);
+  console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
+  console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
+}
+
+//----------------------------------------------------------------------------------------
 // Setup all contracts
 //----------------------------------------------------------------------------------------
 
-export async function setupContracts() {
+export async function setupContracts(): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each.... 
   process.stdout.write("Uploading Registrar Wasm");
   const registrarCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../artifacts/registrar.wasm"));
+    path.resolve(__dirname, "../../../artifacts/registrar.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${registrarCodeId}`);
   
   process.stdout.write("Uploading Anchor Vault Wasm");
   const vaultCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../artifacts/anchor.wasm"));
+    path.resolve(__dirname, "../../../artifacts/anchor.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
   
   process.stdout.write("Uploading Index Fund Wasm");
   const fundCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../artifacts/index_fund.wasm"));
+    path.resolve(__dirname, "../../../artifacts/index_fund.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${fundCodeId}`);
   
   process.stdout.write("Uploading Accounts Wasm");
   accountsCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../artifacts/accounts.wasm"));
+    path.resolve(__dirname, "../../../artifacts/accounts.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${accountsCodeId}`);
 
 
@@ -88,7 +136,7 @@ export async function setupContracts() {
     return attribute.key == "contract_address"; 
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${registrar}`);
-
+  
   // Index Fund
   process.stdout.write("Instantiating Index Fund contract");
   const fundResult = await instantiateContract(terra, apTeam, apTeam, fundCodeId, {
@@ -106,7 +154,7 @@ export async function setupContracts() {
   process.stdout.write("Instantiating Anchor Vault (#1) contract");
   const vaultResult1 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
     registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
+    moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
     name: "AP DP Token - Anchor #1",
     symbol: "apANC1",
     decimals: 6,
@@ -122,7 +170,7 @@ export async function setupContracts() {
   process.stdout.write("Instantiating Anchor Vault (#2) contract");
   const vaultResult2 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
     registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
+    moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
     name: "AP DP Token - Anchor #2",
     symbol: "apANC",
     decimals: 6,
@@ -296,7 +344,7 @@ export async function setupContracts() {
 //
 //----------------------------------------------------------------------------------------
 
-export async function testDonorSendsToIndexFund() {
+export async function testDonorSendsToIndexFund(): Promise<void> {
   process.stdout.write("Test - Donor (normal pleb) cannot send a UST donation to an Index Fund fund");
 
   await expect(
@@ -326,7 +374,7 @@ export async function testDonorSendsToIndexFund() {
 //
 //----------------------------------------------------------------------------------------
 
-export async function testRejectUnapprovedDonations() {
+export async function testRejectUnapprovedDonations(): Promise<void> {
   process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
 
   await expect(
@@ -359,7 +407,7 @@ export async function testRejectUnapprovedDonations() {
 //
 //----------------------------------------------------------------------------------------
 
-export async function testTcaMemberSendsToIndexFund() {
+export async function testTcaMemberSendsToIndexFund(): Promise<void> {
   process.stdout.write("Test - TCA Member can send a UST donation to an Index Fund");
 
   await expect(
@@ -390,7 +438,7 @@ export async function testTcaMemberSendsToIndexFund() {
 // moving money from their Locked to Liquid & taking a small tax of DP Tokens as well.
 //
 //----------------------------------------------------------------------------------------
-export async function testAngelTeamCanTriggerVaultsHarvest() {
+export async function testAngelTeamCanTriggerVaultsHarvest(): Promise<void> {
   process.stdout.write("Test - AP Team can trigger harvest of all Vaults (Locked to Liquid Account)");
 
   await expect(
@@ -421,7 +469,7 @@ export async function testAngelTeamCanTriggerVaultsHarvest() {
 // not be able to touch the Locked Account's balance.
 //
 //----------------------------------------------------------------------------------------
-export async function testBeneficiaryCanWithdrawFromLiquid() {
+export async function testBeneficiaryCanWithdrawFromLiquid(): Promise<void> {
   process.stdout.write("Test - Beneficiary can withdraw from the Endowment availalble amount (liquid)");
 
   await expect(
@@ -462,7 +510,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid() {
 //
 //----------------------------------------------------------------------------------------
 
-export async function testCharityCanUpdateStrategies() {
+export async function testCharityCanUpdateStrategies(): Promise<void> {
   process.stdout.write("Test - Charity can update their Endowment's strategies");
 
   await expect(
@@ -479,31 +527,3 @@ export async function testCharityCanUpdateStrategies() {
   );
   console.log(chalk.green("Passed!"));
 }
-
-
-//----------------------------------------------------------------------------------------
-// Main
-//----------------------------------------------------------------------------------------
-
-(async () => {
-  console.log(chalk.yellow("\nStep 1. Environment Info"));
-  console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
-  console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as Charity #1`);
-  console.log(`Use ${chalk.cyan(charity2.key.accAddress)} as Charity #2`);
-  console.log(`Use ${chalk.cyan(charity3.key.accAddress)} as Charity #3`);
-  console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
-  console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
-
-  console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupContracts();
-
-  console.log(chalk.yellow("\nStep 3. Running Tests"));
-  await testRejectUnapprovedDonations();
-  await testDonorSendsToIndexFund();
-  await testTcaMemberSendsToIndexFund();
-  await testAngelTeamCanTriggerVaultsHarvest();
-  await testCharityCanUpdateStrategies();
-  setTimeout(async () => {
-    await testBeneficiaryCanWithdrawFromLiquid();
-  }, 500);
-})();
