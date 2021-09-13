@@ -9,6 +9,8 @@ import {
   testAngelTeamCanTriggerVaultsHarvest,
   testCharityCanUpdateStrategies,
   testBeneficiaryCanWithdrawFromLiquid,
+  testQueryAccountsAccount,
+  testQueryAccountsAccountList,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
@@ -25,9 +27,6 @@ import {
   testQueryRegistrarEndowmentList,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
-  testQueryAccountsState,
-  testQueryAnchorVaultConfig,
-  testQueryAnchorVaultTokenInfo,
 } from "./main";
 import dotenv from 'dotenv';
 

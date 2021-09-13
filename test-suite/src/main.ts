@@ -537,7 +537,7 @@ export async function testQueryRegistrarConfig() {
   expect(result.accounts_code_id).to.equal(accountsCodeId);
   expect(result.treasury).to.equal(apTeam.key.accAddress);
   expect(result.tax_rate).to.equal('0.02');
-  expect(result.default_vault).to.equal(anchorVault);
+  expect(result.default_vault).to.equal(anchorVault1);
   expect(result.index_fund).to.equal(indexFund);
 
   console.log(chalk.green(" Passed!"));
@@ -577,7 +577,7 @@ export async function testQueryRegistrarApprovedVaultList() {
   });
 
   expect(result.vaults.length).to.equal(1);
-  expect(result.vaults[0].address).to.equal(anchorVault);
+  expect(result.vaults[0].address).to.equal(anchorVault1);
   expect(result.vaults[0].input_denom).to.equal('uusd');
   expect(result.vaults[0].yield_token).to.equal(registrar);
   expect(result.vaults[0].approved).to.equal(true);
@@ -600,11 +600,11 @@ export async function testQueryRegistrarVault() {
   process.stdout.write("Test - Query Registrar Vault");
   const result: any = await terra.wasm.contractQuery(registrar, {
     vault: {
-      vault_addr: anchorVault,
+      vault_addr: anchorVault1,
     },
   });
 
-  expect(result.vault.address).to.equal(anchorVault);
+  expect(result.vault.address).to.equal(anchorVault1);
   expect(result.vault.input_denom).to.equal('uusd');
   expect(result.vault.yield_token).to.equal(registrar);
   expect(result.vault.approved).to.equal(true);
@@ -650,7 +650,7 @@ export async function testQueryAccountsEndowment() {
   expect(result.split_to_liquid.max).to.equal('1');
   expect(result.split_to_liquid.min).to.equal('0');
   expect(result.strategies.length).to.equal(1);
-  expect(result.strategies[0].vault).to.equal(anchorVault);
+  expect(result.strategies[0].vault).to.equal(anchorVault1);
   expect(result.strategies[0].locked_percentage).to.equal('1');
   expect(result.strategies[0].liquid_percentage).to.equal('1');
 
