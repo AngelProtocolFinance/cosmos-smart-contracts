@@ -64,4 +64,22 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // setTimeout(async () => {
   //   await testBeneficiaryCanWithdrawFromLiquid();
   // }, 7000);
+  // await testQueryRegistrarConfig();
+  // await testQueryRegistrarApprovedEndowmentList();
+  // await testQueryRegistrarEndowmentList();
+  // await testQueryRegistrarApprovedVaultList();
+  // await testQueryRegistrarVaultList();
+  // await testQueryRegistrarVault();
+  // await testQueryAccountsBalance();
+  // await testQueryAccountsConfig();
+  // await testQueryAccountsEndowment();
+  // await testQueryAccountsAccount();
+  // await testQueryAccountsAccountList();
+  // await testQueryIndexFundConfig();
+  // await testQueryIndexFundState();
+  // await testQueryIndexFundTcaList();
+  // await testQueryIndexFundFundsList();
+  // await testQueryIndexFundFundDetails();
+  // await testQueryIndexFundActiveFundDetails();
+  // await testQueryIndexFundActiveFundDonations();
 }
