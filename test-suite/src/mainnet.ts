@@ -9,6 +9,24 @@ import {
   testAngelTeamCanTriggerVaultsHarvest,
   testCharityCanUpdateStrategies,
   testBeneficiaryCanWithdrawFromLiquid,
+  testQueryAccountsAccount,
+  testQueryAccountsAccountList,
+  testQueryAccountsBalance,
+  testQueryAccountsConfig,
+  testQueryAccountsEndowment,
+  testQueryIndexFundActiveFundDetails,
+  testQueryIndexFundActiveFundDonations,
+  testQueryIndexFundConfig,
+  testQueryIndexFundFundDetails,
+  testQueryIndexFundFundsList,
+  testQueryIndexFundState,
+  testQueryIndexFundTcaList,
+  testQueryRegistrarApprovedEndowmentList,
+  testQueryRegistrarApprovedVaultList,
+  testQueryRegistrarConfig,
+  testQueryRegistrarEndowmentList,
+  testQueryRegistrarVault,
+  testQueryRegistrarVaultList,
 } from "./main";
 import dotenv from 'dotenv';
 
@@ -18,6 +36,7 @@ dotenv.config();
 //----------------------------------------------------------------------------------------
 export async function startTest(terra: LCDClient): Promise<void> {
   console.log(chalk.blue("\nColumbus-4 MainNet"));
+  
   // get the current swap rate from 1 TerraUSD to TerraKRW
   console.log(chalk.yellow("\nStep1. Swap rate between uusd and uluna"));
   const offerCoin: Coin = new Coin("uusd", "1000000");
