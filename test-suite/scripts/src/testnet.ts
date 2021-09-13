@@ -52,16 +52,34 @@ export async function startTest(terra: LCDClient): Promise<void> {
     process.env.MONEYMARKET_CONTRACT_TESTNET!
   );
 
-  // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  // await setupContracts();
+  console.log(chalk.yellow("\nStep 2. Contracts Setup"));
+  await setupContracts();
 
-  // console.log(chalk.yellow("\nStep 3. Running Tests"));
-  // await testRejectUnapprovedDonations();
-  // await testDonorSendsToIndexFund();
-  // await testTcaMemberSendsToIndexFund();
-  // await testAngelTeamCanTriggerVaultsHarvest();
-  // await testCharityCanUpdateStrategies();
-  // setTimeout(async () => {
-  //   await testBeneficiaryCanWithdrawFromLiquid();
-  // }, 7000);
+  console.log(chalk.yellow("\nStep 3. Running Tests"));
+  await testRejectUnapprovedDonations();
+  await testDonorSendsToIndexFund();
+  await testTcaMemberSendsToIndexFund();
+  await testAngelTeamCanTriggerVaultsHarvest();
+  await testCharityCanUpdateStrategies();
+  setTimeout(async () => {
+    await testBeneficiaryCanWithdrawFromLiquid();
+  }, 7000);
+  await testQueryRegistrarConfig();
+  await testQueryRegistrarApprovedEndowmentList();
+  await testQueryRegistrarEndowmentList();
+  await testQueryRegistrarApprovedVaultList();
+  await testQueryRegistrarVaultList();
+  await testQueryRegistrarVault();
+  await testQueryAccountsBalance();
+  await testQueryAccountsConfig();
+  await testQueryAccountsEndowment();
+  await testQueryAccountsAccount();
+  await testQueryAccountsAccountList();
+  await testQueryIndexFundConfig();
+  await testQueryIndexFundState();
+  await testQueryIndexFundTcaList();
+  await testQueryIndexFundFundsList();
+  await testQueryIndexFundFundDetails();
+  await testQueryIndexFundActiveFundDetails();
+  await testQueryIndexFundActiveFundDonations();
 }
