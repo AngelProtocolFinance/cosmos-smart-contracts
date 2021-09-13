@@ -2,6 +2,7 @@ use angel_core::structs::{
     AcceptedTokens, BalanceInfo, RebalanceDetails, SplitDetails, StrategyComponent,
 };
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
+use cw_controllers::Admin;
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -55,6 +56,7 @@ pub struct State {
     pub balances: BalanceInfo,
 }
 
+pub const ADMIN: Admin = Admin::new("admin");
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");

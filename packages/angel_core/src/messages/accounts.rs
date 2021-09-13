@@ -9,6 +9,7 @@ pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
+    pub admin: Option<String>,
     pub owner_sc: String,
     pub registrar_contract: String,
     pub index_fund_contract: String,
@@ -48,7 +49,7 @@ pub enum ExecuteMsg {
     },
     // update admin addr
     UpdateAdmin {
-        new_admin: String,
+        new_admin: Option<String>,
     },
     // Allows the SC owner (only!) to change ownership
     UpdateRegistrar {

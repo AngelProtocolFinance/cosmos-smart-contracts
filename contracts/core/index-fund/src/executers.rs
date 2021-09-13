@@ -9,26 +9,6 @@ use cosmwasm_std::{
 };
 use cw20::{Balance, Cw20ReceiveMsg};
 
-pub fn update_owner(
-    deps: DepsMut,
-    info: MessageInfo,
-    new_owner: String,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // only the owner/admin of the contract can update their address in the configs
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-    let new_owner = deps.api.addr_validate(&new_owner)?;
-    // update config attributes with newly passed args
-    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.owner = new_owner;
-        Ok(config)
-    })?;
-
-    Ok(Response::default())
-}
-
 pub fn update_registrar(
     deps: DepsMut,
     info: MessageInfo,

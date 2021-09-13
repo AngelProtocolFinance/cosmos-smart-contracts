@@ -7,6 +7,7 @@ pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
+    pub admin: Option<String>,
     pub accounts_code_id: Option<u64>,
     pub treasury: String,
     pub tax_rate: u64,
@@ -27,7 +28,7 @@ pub enum ExecuteMsg {
     // Approved, Frozen, (Liquidated, Terminated)
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Allows the SC owner to change ownership
-    UpdateOwner { new_owner: String },
+    UpdateAdmin { new_admin: Option<String> },
     // Allows the DANO/AP Team to harvest all active vaults
     Harvest {},
     // Allows SC owner to migrate all Accounts SC

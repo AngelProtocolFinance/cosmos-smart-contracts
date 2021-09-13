@@ -1,10 +1,12 @@
 use angel_core::structs::{AcceptedTokens, GenericBalance, IndexFund, SplitDetails};
 use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
 use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
+use cw_controllers::Admin;
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+pub const ADMIN: Admin = Admin::new("admin");
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 pub const TCA_DONATIONS: Map<String, GenericBalance> = Map::new("tca_donation");

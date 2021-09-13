@@ -1,6 +1,6 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
+use crate::state::{Config, Endowment, State, ADMIN, CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
@@ -24,6 +24,13 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // Set up Admin
+    let admin_addr = msg
+        .admin
+        .map(|admin| deps.api.addr_validate(&admin))
+        .transpose()?;
+    ADMIN.set(deps.branch(), admin_addr)?;
 
     // apply the initial configs passed
     CONFIG.save(
@@ -97,9 +104,13 @@ pub fn execute(
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
-        ExecuteMsg::UpdateAdmin { new_admin } => {
-            executers::update_admin(deps, env, info, new_admin)
-        }
+        ExecuteMsg::UpdateAdmin { new_admin } => Ok(ADMIN.execute_update_admin(
+            deps,
+            info,
+            new_admin
+                .map(|admin| deps.api.addr_validate(&admin))
+                .transpose()?,
+        )?),
         ExecuteMsg::UpdateStrategies { strategies } => {
             executers::update_strategies(deps, env, info, strategies)
         }

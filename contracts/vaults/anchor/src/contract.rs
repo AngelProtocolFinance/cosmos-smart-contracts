@@ -1,5 +1,6 @@
 use crate::anchor;
 use crate::config;
+use crate::config::ADMIN;
 use crate::executers;
 use crate::msg::{InitMsg, MigrateMsg};
 use crate::queriers;
@@ -27,15 +28,22 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    // Set up Admin
+    let admin_addr = msg
+        .admin
+        .map(|admin| deps.api.addr_validate(&admin))
+        .transpose()?;
+    ADMIN.set(deps.branch(), admin_addr)?;
+
     let moneymarket = deps.api.addr_validate(&msg.moneymarket)?;
-    // let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
+    let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
 
     let config = config::Config {
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         moneymarket,
-        input_denom: "uusd".to_string(), // anchor_config.stable_denom.clone(),
-        yield_token: deps.api.addr_validate(&msg.registrar_contract)?, // deps.api.addr_validate(&anchor_config.aterra_contract)?,
+        input_denom: anchor_config.stable_denom.clone(),
+        yield_token: deps.api.addr_validate(&anchor_config.aterra_contract)?,
         next_pending_id: 0,
     };
 
@@ -80,6 +88,13 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::UpdateAdmin { new_admin } => Ok(ADMIN.execute_update_admin(
+            deps,
+            info,
+            new_admin
+                .map(|admin| deps.api.addr_validate(&admin))
+                .transpose()?,
+        )?),
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }

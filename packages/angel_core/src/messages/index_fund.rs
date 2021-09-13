@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
+    pub admin: Option<String>,
     pub registrar_contract: String,
     pub fund_rotation: Option<u64>, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: Option<u32>, // limit to number of members an IndexFund can have
@@ -18,7 +19,7 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     // updates the owner of the contract
-    UpdateOwner { new_owner: String },
+    UpdateAdmin { new_admin: Option<String> },
     // registrar SC can update its addr
     UpdateRegistrar { new_registrar: String },
     // replace TCA Member list with a new one

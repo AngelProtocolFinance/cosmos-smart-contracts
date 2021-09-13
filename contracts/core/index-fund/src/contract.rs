@@ -1,6 +1,6 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, State, CONFIG, STATE};
+use crate::state::{Config, State, ADMIN, CONFIG, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::structs::{AcceptedTokens, SplitDetails};
@@ -21,6 +21,13 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // Set up Admin
+    let admin_addr = msg
+        .admin
+        .map(|admin| deps.api.addr_validate(&admin))
+        .transpose()?;
+    ADMIN.set(deps.branch(), admin_addr)?;
 
     let configs = Config {
         owner: info.sender,
@@ -46,7 +53,13 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::UpdateOwner { new_owner } => executers::update_owner(deps, info, new_owner),
+        ExecuteMsg::UpdateAdmin { new_admin } => Ok(ADMIN.execute_update_admin(
+            deps,
+            info,
+            new_admin
+                .map(|admin| deps.api.addr_validate(&admin))
+                .transpose()?,
+        )?),
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, info, new_registrar)
         }

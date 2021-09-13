@@ -1,10 +1,12 @@
 use angel_core::structs::BalanceInfo;
 use cosmwasm_std::{Addr, StdResult, Storage, Uint128};
 use cosmwasm_storage::{ReadonlySingleton, Singleton};
+use cw_controllers::Admin;
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+pub const ADMIN: Admin = Admin::new("admin");
 pub static CONFIG_KEY: &[u8] = b"config";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

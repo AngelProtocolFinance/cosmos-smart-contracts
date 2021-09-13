@@ -1,6 +1,7 @@
 use angel_core::structs::{EndowmentEntry, YieldVault};
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
+use cw_controllers::Admin;
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -12,6 +13,7 @@ use serde::{Deserialize, Serialize};
 static PREFIX_REGISTRY: &[u8] = b"registry";
 static PREFIX_PORTAL: &[u8] = b"vault";
 
+pub const ADMIN: Admin = Admin::new("admin");
 pub const CONFIG_KEY: &str = "config";
 pub const CONFIG: Item<Config> = Item::new(CONFIG_KEY);
 

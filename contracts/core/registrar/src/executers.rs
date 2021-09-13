@@ -124,27 +124,6 @@ pub fn update_endowment_status(
         .add_attribute("action", "update_endowment_status"))
 }
 
-pub fn update_owner(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    new_owner: String,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-    let new_owner_addr = deps.api.addr_validate(&new_owner)?;
-    // update config attributes with newly passed owner
-    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.owner = new_owner_addr;
-        Ok(config)
-    })?;
-
-    Ok(Response::new().add_attribute("action", "update_owner"))
-}
-
 pub fn update_config(
     deps: DepsMut,
     _env: Env,

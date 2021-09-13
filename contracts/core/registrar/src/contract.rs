@@ -22,6 +22,13 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    // Set up Admin
+    let admin_addr = msg
+        .admin
+        .map(|admin| deps.api.addr_validate(&admin))
+        .transpose()?;
+    ADMIN.set(deps.branch(), admin_addr)?;
+
     let configs = Config {
         owner: info.sender.clone(),
         index_fund_contract: info.sender.clone(),
@@ -50,9 +57,13 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
             executers::update_endowment_status(deps, env, info, msg)
         }
-        ExecuteMsg::UpdateOwner { new_owner } => {
-            executers::update_owner(deps, env, info, new_owner)
-        }
+        ExecuteMsg::UpdateAdmin { new_admin } => Ok(ADMIN.execute_update_admin(
+            deps,
+            info,
+            new_admin
+                .map(|admin| deps.api.addr_validate(&admin))
+                .transpose()?,
+        )?),
         ExecuteMsg::CharityAdd { charity } => executers::charity_add(deps, env, info, charity),
         ExecuteMsg::CharityRemove { charity } => {
             executers::charity_remove(deps, env, info, charity)
