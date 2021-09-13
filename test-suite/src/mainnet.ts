@@ -44,19 +44,19 @@ export async function startTest(terra: LCDClient): Promise<void> {
   const c: Coin = await terra.market.swapRate(offerCoin, "uluna");
   console.log(`${offerCoin.toString()} can be swapped for ${c.toString()}`);
 
-  console.log(chalk.yellow("\nStep 1. Environment Info"));
-  initializeLCDClient(
-    terra,
-    {
-      apTeam: wallet,
-      charity1: wallet,
-      charity2: wallet,
-      charity3: wallet,
-      pleb: wallet,
-      tca: wallet
-    },
-    process.env.MONEYMARKET_CONTRACT_MAINNET
-  );
+  // console.log(chalk.yellow("\nStep 1. Environment Info"));
+  // initializeLCDClient(
+  //   terra,
+  //   {
+  //     apTeam: wallet,
+  //     charity1: wallet,
+  //     charity2: wallet,
+  //     charity3: wallet,
+  //     pleb: wallet,
+  //     tca: wallet
+  //   },
+  //   process.env.MONEYMARKET_CONTRACT_MAINNET
+  // );
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   // await setupContracts();
