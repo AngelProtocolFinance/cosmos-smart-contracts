@@ -238,6 +238,38 @@ pub fn create_endowment(
         .add_attribute("action", "create_endowment"))
 }
 
+pub fn migrate_accounts(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender.ne(&config.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let mut sub_messages = vec![];
+
+    for endowment in config.approved_charities.iter() {
+        let wasm_msg = WasmMsg::Migrate {
+            contract_addr: endowment.to_string(),
+            new_code_id: config.accounts_code_id,
+            msg: to_binary(&{})?,
+        };
+
+        sub_messages.push(SubMsg {
+            id: 42,
+            msg: CosmosMsg::Wasm(wasm_msg),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        });
+    }
+    Ok(Response::new()
+        .add_submessages(sub_messages)
+        .add_attribute("action", "migrate_accounts"))
+}
+
 pub fn charity_add(
     deps: DepsMut,
     _env: Env,

@@ -30,6 +30,8 @@ pub enum ExecuteMsg {
     UpdateOwner { new_owner: String },
     // Allows the DANO/AP Team to harvest all active vaults
     Harvest {},
+    // Allows SC owner to migrate all Accounts SC
+    MigrateAccounts {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
