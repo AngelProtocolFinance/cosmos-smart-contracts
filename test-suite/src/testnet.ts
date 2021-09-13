@@ -38,12 +38,6 @@ dotenv.config();
 export async function startTest(terra: LCDClient): Promise<void> {
   console.log(chalk.blue("\nBombay-10 TestNet"));
 
-  // get the current swap rate from 1 TerraUSD to TerraKRW
-  // console.log(chalk.yellow("\nStep1. Swap rate between uusd and uluna"));
-  // const offerCoin: Coin = new Coin("uusd", "1000000");
-  // const c: Coin = await terra.market.swapRate(offerCoin, "uluna");
-  // console.log(`${offerCoin.toString()} can be swapped for ${c.toString()}`);
-
   // get wallets
   const apTeam: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.APTEAM}));
   const charity1: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.CHARITY1}));
@@ -51,10 +45,6 @@ export async function startTest(terra: LCDClient): Promise<void> {
   const charity3: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.CHARITY3}));
   const pleb: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.PLEB}));
   const tca: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.TCA}));
-
-  // const tx: StdTx = await wallet.createAndSignTx({ msgs: [send], memo: "test from terra.js!" });
-  // const result: BlockTxBroadcastResult = await terra.tx.broadcast(tx);
-  // console.log(`TX hash: ${result.txhash}`);
 
   console.log(chalk.yellow("\nStep 1. Environment Info"));
   initializeLCDClient(
