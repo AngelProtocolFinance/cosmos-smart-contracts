@@ -7,6 +7,7 @@ import {
   LocalTerra,
   Msg,
   MsgInstantiateContract,
+  MsgMigrateContract,
   MsgStoreCode,
   StdFee,
   Wallet,
@@ -92,6 +93,28 @@ export async function instantiateContract(
       admin.key.accAddress,
       codeId,
       instantiateMsg
+    ),
+  ]);
+  return result;
+}
+
+/**
+ * @notice Instantiate a contract from an existing code ID. Return contract address.
+ */
+export async function migrateContract(
+  terra: LocalTerra | LCDClient,
+  sender: Wallet,
+  admin: Wallet,
+  contract: string,
+  new_code_Id: number,
+  migrateMsg: Record<string, unknown>
+) {
+  const result = await sendTransaction(terra, sender, [
+    new MsgMigrateContract(
+      admin.key.accAddress,
+      contract
+      new_code_id,
+      migrateMsg
     ),
   ]);
   return result;
