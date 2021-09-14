@@ -406,18 +406,18 @@ pub fn process_anchor_reply(
     match result {
         ContractResult::Ok(subcall) => {
             // Grab the Amount returned from Anchor (UST/aUST)
-            let mut anchor_amount;
+            let mut anchor_amount = Uint128::zero();
             for event in subcall.events {
                 if event.ty == *"deposit_stable" {
                     for attrb in event.attributes {
                         if attrb.key == "mint_amount" {
-                            anchor_amount = attrb.value;
+                            anchor_amount = Uint128::from(attrb.value.parse::<u128>().unwrap());
                         }
                     }
                 } else if event.ty == *"redeem_stable" {
                     for attrb in event.attributes {
                         if attrb.key == "redeem_amount" {
-                            anchor_amount = attrb.value;
+                            anchor_amount = Uint128::from(attrb.value.parse::<u128>().unwrap());
                         }
                     }
                 }
