@@ -28,14 +28,14 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let moneymarket = deps.api.addr_validate(&msg.moneymarket)?;
-    // let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
+    let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
 
     let config = config::Config {
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         moneymarket,
-        input_denom: "uusd".to_string(), // anchor_config.stable_denom.clone(),
-        yield_token: deps.api.addr_validate(&msg.registrar_contract)?, // deps.api.addr_validate(&anchor_config.aterra_contract)?,
+        input_denom: anchor_config.stable_denom.clone(),
+        yield_token: deps.api.addr_validate(&anchor_config.aterra_contract)?,
         next_pending_id: 0,
     };
 
