@@ -401,9 +401,35 @@ pub fn process_anchor_reply(
 
     // pull up the pending transaction details from storage
     let transaction = PENDING.load(deps.storage, &id.to_be_bytes())?;
+    let transaction_total = transaction.locked + transaction.liquid;
 
     match result {
-        ContractResult::Ok(_subcall) => {
+        ContractResult::Ok(subcall) => {
+            // Grab the Amount returned from Anchor (UST/aUST)
+            let mut anchor_amount;
+            for event in subcall.events {
+                if event.ty == *"deposit_stable" {
+                    for attrb in event.attributes {
+                        if attrb.key == "mint_amount" {
+                            anchor_amount = attrb.value;
+                        }
+                    }
+                } else if event.ty == *"redeem_stable" {
+                    for attrb in event.attributes {
+                        if attrb.key == "redeem_amount" {
+                            anchor_amount = attrb.value;
+                        }
+                    }
+                }
+            }
+            // Get the correct Anchor returned amount split by Locked/Liquid ratio in the transaction
+            let anchor_locked = anchor_amount
+                .clone()
+                .multiply_ratio(transaction.locked, transaction_total);
+            let anchor_liquid = anchor_amount
+                .clone()
+                .multiply_ratio(transaction.liquid, transaction_total);
+
             match transaction.typ.as_str() {
                 "deposit" => {
                     // Increase the Account's Deposit token balances by the correct amounts of aUST
@@ -413,13 +439,13 @@ pub fn process_anchor_reply(
                     investment
                         .locked_balance
                         .add_tokens(Balance::Cw20(Cw20CoinVerified {
-                            amount: transaction.locked,
+                            amount: anchor_locked,
                             address: env.contract.address.clone(),
                         }));
                     investment
                         .liquid_balance
                         .add_tokens(Balance::Cw20(Cw20CoinVerified {
-                            amount: transaction.liquid,
+                            amount: anchor_liquid,
                             address: env.contract.address,
                         }));
                     BALANCES.save(
@@ -435,16 +461,16 @@ pub fn process_anchor_reply(
                         msg: to_binary(
                             &&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
                                 AccountTransferMsg {
-                                    locked: transaction.locked,
-                                    liquid: transaction.liquid,
+                                    locked: anchor_locked,
+                                    liquid: anchor_liquid,
                                 },
                             ),
                         )?,
                         funds: vec![deduct_tax(
                             deps.as_ref(),
                             Coin {
+                                amount: anchor_amount,
                                 denom: "uusd".to_string(),
-                                amount: transaction.locked + transaction.liquid,
                             },
                         )?],
                     })))
@@ -453,10 +479,13 @@ pub fn process_anchor_reply(
                     // Send UST to the Beneficiary via BankMsg::Send
                     followup.push(SubMsg::new(BankMsg::Send {
                         to_address: transaction.beneficiary.unwrap().to_string(),
-                        amount: vec![Coin {
-                            amount: transaction.locked + transaction.liquid,
-                            denom: "uusd".to_string(),
-                        }],
+                        amount: vec![deduct_tax(
+                            deps.as_ref(),
+                            Coin {
+                                amount: anchor_amount,
+                                denom: "uusd".to_string(),
+                            },
+                        )?],
                     }))
                 }
                 &_ => (),
