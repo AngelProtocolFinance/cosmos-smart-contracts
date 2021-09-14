@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as path from "path";
 import chalk from "chalk";
 import * as chai from "chai";
@@ -560,7 +561,7 @@ export async function testCharityCanUpdateStrategies(): Promise<void> {
 // Querying tests
 //----------------------------------------------------------------------------------------
 
-export async function testQueryRegistrarConfig() {
+export async function testQueryRegistrarConfig(): Promise<void> {
   process.stdout.write("Test - Query Registrar config and get proper result");
   const result: any = await terra.wasm.contractQuery(registrar, {
     config: {},
@@ -576,7 +577,7 @@ export async function testQueryRegistrarConfig() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarApprovedEndowmentList() {
+export async function testQueryRegistrarApprovedEndowmentList(): Promise<void> {
   process.stdout.write("Test - Query Registrar ApprovedEndowmentList");
   const result: any = await terra.wasm.contractQuery(registrar, {
     approved_endowment_list: {},
@@ -589,7 +590,7 @@ export async function testQueryRegistrarApprovedEndowmentList() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarEndowmentList() {
+export async function testQueryRegistrarEndowmentList(): Promise<void> {
   process.stdout.write("Test - Query Registrar EndowmentList");
   const result: any = await terra.wasm.contractQuery(registrar, {
     endowment_list: {},
@@ -603,7 +604,7 @@ export async function testQueryRegistrarEndowmentList() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarApprovedVaultList() {
+export async function testQueryRegistrarApprovedVaultList(): Promise<void> {
   process.stdout.write("Test - Query Registrar ApprovedVaultList");
   const result: any = await terra.wasm.contractQuery(registrar, {
     approved_vault_list: {},
@@ -618,7 +619,7 @@ export async function testQueryRegistrarApprovedVaultList() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarVaultList() {
+export async function testQueryRegistrarVaultList(): Promise<void> {
   process.stdout.write("Test - Query Registrar VaultList");
   const result: any = await terra.wasm.contractQuery(registrar, {
     vault_list: {},
@@ -629,7 +630,7 @@ export async function testQueryRegistrarVaultList() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarVault() {
+export async function testQueryRegistrarVault(): Promise<void> {
   process.stdout.write("Test - Query Registrar Vault");
   const result: any = await terra.wasm.contractQuery(registrar, {
     vault: {
@@ -645,7 +646,7 @@ export async function testQueryRegistrarVault() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryAccountsBalance() {
+export async function testQueryAccountsBalance(): Promise<void> {
   process.stdout.write("Test - Query Accounts Balance");
   const result: any = await terra.wasm.contractQuery(endowmentContract1, {
     balance: {},
@@ -658,7 +659,7 @@ export async function testQueryAccountsBalance() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryAccountsConfig() {
+export async function testQueryAccountsConfig(): Promise<void> {
   process.stdout.write("Test - Query Accounts Config");
   const result: any = await terra.wasm.contractQuery(endowmentContract1, {
     config: {},
@@ -672,7 +673,7 @@ export async function testQueryAccountsConfig() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryAccountsEndowment() {
+export async function testQueryAccountsEndowment(): Promise<void> {
   process.stdout.write("Test - Query Accounts Endowment");
   const result: any = await terra.wasm.contractQuery(endowmentContract1, {
     endowment: {},
@@ -690,7 +691,7 @@ export async function testQueryAccountsEndowment() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryAccountsAccount() {
+export async function testQueryAccountsAccount(): Promise<void> {
   process.stdout.write("Test - Query Accounts Account");
   const result: any = await terra.wasm.contractQuery(endowmentContract1, {
     account: { account_type: 'locked' },
@@ -702,7 +703,7 @@ export async function testQueryAccountsAccount() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryAccountsAccountList() {
+export async function testQueryAccountsAccountList(): Promise<void> {
   process.stdout.write("Test - Query Accounts AccountList");
   const result: any = await terra.wasm.contractQuery(endowmentContract1, {
     account_list: {},
@@ -716,7 +717,7 @@ export async function testQueryAccountsAccountList() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryIndexFundConfig() {
+export async function testQueryIndexFundConfig(): Promise<void> {
   process.stdout.write("Test - Query IndexFund Config");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     config: {},
@@ -730,7 +731,7 @@ export async function testQueryIndexFundConfig() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryIndexFundState() {
+export async function testQueryIndexFundState(): Promise<void> {
   process.stdout.write("Test - Query IndexFund State");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     state: {},
@@ -744,7 +745,7 @@ export async function testQueryIndexFundState() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryIndexFundTcaList() {
+export async function testQueryIndexFundTcaList(): Promise<void> {
   process.stdout.write("Test - Query IndexFund TcaList");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     tca_list: {},
@@ -756,7 +757,7 @@ export async function testQueryIndexFundTcaList() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryIndexFundFundsList() {
+export async function testQueryIndexFundFundsList(): Promise<void> {
   process.stdout.write("Test - Query IndexFund FundsList");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     funds_list: {},
@@ -771,7 +772,7 @@ export async function testQueryIndexFundFundsList() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryIndexFundFundDetails() {
+export async function testQueryIndexFundFundDetails(): Promise<void> {
   process.stdout.write("Test - Query IndexFund FundDetails");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     fund_details: { fund_id: 1 },
@@ -784,7 +785,7 @@ export async function testQueryIndexFundFundDetails() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryIndexFundActiveFundDetails() {
+export async function testQueryIndexFundActiveFundDetails(): Promise<void> {
   process.stdout.write("Test - Query IndexFund ActiveFundDetails");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     active_fund_details: {},
@@ -797,7 +798,7 @@ export async function testQueryIndexFundActiveFundDetails() {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryIndexFundActiveFundDonations() {
+export async function testQueryIndexFundActiveFundDonations(): Promise<void> {
   process.stdout.write("Test - Query IndexFund ActiveFundDonations");
   const result: any = await terra.wasm.contractQuery(indexFund, {
     active_fund_donations: {},

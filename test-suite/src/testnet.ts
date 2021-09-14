@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {LCDClient, Coin, MnemonicKey, Wallet, MsgSend, StdTx, BlockTxBroadcastResult} from "@terra-money/terra.js";
 import chalk from "chalk";
 import {
@@ -57,6 +58,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
       pleb,
       tca
     },
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     process.env.MONEYMARKET_CONTRACT_TESTNET!
   );
 

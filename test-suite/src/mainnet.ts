@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {LCDClient, Coin, Wallet} from "@terra-money/terra.js";
 import chalk from "chalk";
 import {
