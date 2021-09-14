@@ -106,7 +106,7 @@ export async function migrateContract(
   sender: Wallet,
   admin: Wallet,
   contract: string,
-  new_code_Id: number,
+  new_code_id: number,
   migrateMsg: Record<string, unknown>
 ) {
   const result = await sendTransaction(terra, sender, [

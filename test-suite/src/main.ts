@@ -7,6 +7,7 @@ import {
   sendTransaction,
   storeCode,
   instantiateContract,
+  migrateContract,
 } from "./helpers";
 
 chai.use(chaiAsPromised);
@@ -80,6 +81,38 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(charity3.key.accAddress)} as Charity #3`);
   console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
+}
+
+// -----------------------------
+// Migrate Vault contracts
+// -----------------------------
+  export async function migrateContracts(): Promise<void> {
+    process.stdout.write("Uploading Anchor Vault Wasm");
+    const vaultCodeId = await storeCode(
+      terra,
+      apTeam,
+      path.resolve(__dirname, "../../artifacts/anchor.wasm"));
+    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
+    
+    // Anchor Vault - #1
+    process.stdout.write("Migrate Anchor Vault (#1) contract");
+    const vaultResult1 = await migrateContract(terra, apTeam, apTeam, anchorVault1, vaultCodeId, {});
+    anchorVault1 = vaultResult1.logs[0].events.find((event) => {
+      return event.type == "migrate_contract";
+    })?.attributes.find((attribute) => { 
+      return attribute.key == "contract_address"; 
+    })?.value as string;
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault1}`);
+
+    // Anchor Vault - #2
+    process.stdout.write("Migrate Anchor Vault (#2) contract");
+    const vaultResult2 = await migrateContract(terra, apTeam, apTeam, anchorVault2, vaultCodeId, {});
+    anchorVault2 = vaultResult2.logs[0].events.find((event) => {
+      return event.type == "migrate_contract";
+    })?.attributes.find((attribute) => { 
+      return attribute.key == "contract_address"; 
+    })?.value as string;
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault2}`);
 }
 
 //----------------------------------------------------------------------------------------

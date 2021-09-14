@@ -3,6 +3,7 @@ import chalk from "chalk";
 import {
   initializeLCDClient,
   setupContracts,
+  migrateContracts,
   testRejectUnapprovedDonations,
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
@@ -59,18 +60,21 @@ export async function startTest(terra: LCDClient): Promise<void> {
     process.env.MONEYMARKET_CONTRACT_TESTNET!
   );
 
-  console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupContracts();
+  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  migrateContracts();
 
-  console.log(chalk.yellow("\nStep 3. Running Tests"));
-  await testRejectUnapprovedDonations();
-  await testDonorSendsToIndexFund();
-  await testTcaMemberSendsToIndexFund();
-  await testAngelTeamCanTriggerVaultsHarvest();
-  await testCharityCanUpdateStrategies();
-  setTimeout(async () => {
-    await testBeneficiaryCanWithdrawFromLiquid();
-  }, 7000);
+  //console.log(chalk.yellow("\nStep 2. Contracts Setup"));
+  // await setupContracts();
+
+  // console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // await testRejectUnapprovedDonations();
+  // await testDonorSendsToIndexFund();
+  // await testTcaMemberSendsToIndexFund();
+  // await testAngelTeamCanTriggerVaultsHarvest();
+  // await testCharityCanUpdateStrategies();
+  // setTimeout(async () => {
+  //   await testBeneficiaryCanWithdrawFromLiquid();
+  // }, 7000);
   // await testQueryRegistrarConfig();
   // await testQueryRegistrarApprovedEndowmentList();
   // await testQueryRegistrarEndowmentList();
