@@ -386,7 +386,7 @@ export async function testDonorSendsToIndexFund(): Promise<void> {
           },
         },
         {
-          uusd: "420000000",
+          uusd: "42000000",
         }
       ),
     ])
@@ -418,7 +418,7 @@ export async function testRejectUnapprovedDonations(): Promise<void> {
           },
         },
         {
-          uusd: "420000000",
+          uusd: "42000000",
         }
       ),
     ])
@@ -451,7 +451,7 @@ export async function testTcaMemberSendsToIndexFund(): Promise<void> {
           },
         },
         {
-          uusd: "4000000000",
+          uusd: "400000000",
         }
       ),
     ])
@@ -472,7 +472,7 @@ export async function testAngelTeamCanTriggerVaultsHarvest(): Promise<void> {
 
   await expect(
     sendTransaction(terra, charity1, [
-      new MsgExecuteContract(charity1.key.accAddress, anchorVault1, {
+      new MsgExecuteContract(charity1.key.accAddress, registrar, {
         harvest: {}
       })
     ])
@@ -506,8 +506,8 @@ export async function testBeneficiaryCanWithdrawFromLiquid(): Promise<void> {
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         withdraw: {
           sources: [
-            {vault: anchorVault1, locked: "50000000", liquid: "100000000"},
-            {vault: anchorVault2, locked: "50000000", liquid: "100000000"}
+            {vault: anchorVault1, locked: "5000000", liquid: "10000000"},
+            {vault: anchorVault2, locked: "5000000", liquid: "10000000"}
           ]
         }
       })
@@ -519,7 +519,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(): Promise<void> {
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         withdraw: {
           sources: [
-            {vault: anchorVault1, locked: "0", liquid: "200000000"},
+            {vault: anchorVault1, locked: "0", liquid: "20000000"},
           ]
         }
       })

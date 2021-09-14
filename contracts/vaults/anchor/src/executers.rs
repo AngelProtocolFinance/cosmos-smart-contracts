@@ -143,9 +143,6 @@ pub fn redeem_stable(
         return Err(ContractError::Unauthorized {});
     }
 
-    let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
-    let exchange_rate = epoch_state.exchange_rate;
-
     let mut investment = BALANCES
         .load(deps.storage, &info.sender)
         .unwrap_or(BalanceInfo::default());
@@ -159,29 +156,6 @@ pub fn redeem_stable(
         .get_token_amount(env.contract.address.clone());
     let total_redemption = locked_deposit_tokens + liquid_deposit_tokens;
 
-    let after_taxes = deduct_tax(
-        deps.as_ref(),
-        Coin {
-            denom: "uusd".to_string(),
-            amount: total_redemption * Decimal::from(exchange_rate),
-        },
-    )?;
-
-    let mut after_taxes_locked = Uint128::zero();
-    if !locked_deposit_tokens.is_zero() {
-        after_taxes_locked = after_taxes
-            .amount
-            .clone()
-            .multiply_ratio(locked_deposit_tokens, total_redemption);
-    }
-
-    let mut after_taxes_liquid = Uint128::zero();
-    if !liquid_deposit_tokens.is_zero() {
-        after_taxes_liquid = after_taxes
-            .amount
-            .clone()
-            .multiply_ratio(liquid_deposit_tokens, total_redemption);
-    }
     // update investment holdings balances to zero
     let zero_tokens = Cw20CoinVerified {
         amount: Uint128::zero(),
@@ -204,15 +178,15 @@ pub fn redeem_stable(
             accounts_address: Some(info.sender.clone()),
             beneficiary: None,
             fund: false,
-            locked: after_taxes_locked,
-            liquid: after_taxes_liquid,
+            locked: locked_deposit_tokens,
+            liquid: liquid_deposit_tokens,
         },
     )?;
     config.next_pending_id += 1;
     config::store(deps.storage, &config)?;
 
     Ok(Response::new()
-        .add_attribute("action", "redeem")
+        .add_attribute("action", "redeem_from_anchor")
         .add_attribute("sender", info.sender.clone())
         .add_attribute("redeem_amount", total_redemption)
         .add_submessage(SubMsg {
@@ -255,8 +229,9 @@ pub fn withdraw_stable(
     }
 
     // reduce the total supply of CW20 deposit tokens
+    let withdrawal_total = msg.locked + msg.liquid;
     let mut token_info = TOKEN_INFO.load(deps.storage)?;
-    token_info.total_supply -= msg.locked + msg.liquid;
+    token_info.total_supply -= withdrawal_total;
     TOKEN_INFO.save(deps.storage, &token_info)?;
 
     // update investment holdings balances
@@ -295,20 +270,17 @@ pub fn withdraw_stable(
     config.next_pending_id += 1;
     config::store(deps.storage, &config)?;
 
-    let epoch_state = epoch_state(deps.as_ref(), &config.moneymarket)?;
-    let exchange_rate = epoch_state.exchange_rate;
-
     Ok(Response::new()
-        .add_attribute("action", "redeem")
+        .add_attribute("action", "redeem_from_anchor")
         .add_attribute("sender", info.sender.clone())
-        .add_attribute("withdraw_amount", msg.locked + msg.locked)
+        .add_attribute("withdraw_amount", withdrawal_total)
         .add_submessage(SubMsg {
             id: submessage_id,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: config.yield_token.to_string(),
                 msg: to_binary(&Cw20ExecuteMsg::Send {
                     contract: config.moneymarket.to_string(),
-                    amount: (msg.locked + msg.liquid) * Decimal::from(exchange_rate),
+                    amount: withdrawal_total,
                     msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
                 })?,
                 funds: vec![],
@@ -424,16 +396,17 @@ pub fn process_anchor_reply(
                     }
                 }
             }
-            // Get the correct Anchor returned amount split by Locked/Liquid ratio in the transaction
-            let anchor_locked = anchor_amount
-                .clone()
-                .multiply_ratio(transaction.locked, transaction_total);
-            let anchor_liquid = anchor_amount
-                .clone()
-                .multiply_ratio(transaction.liquid, transaction_total);
 
             match transaction.typ.as_str() {
                 "deposit" => {
+                    // Get the correct Anchor returned amount split by Locked/Liquid ratio in the transaction
+                    let anchor_locked = anchor_amount
+                        .clone()
+                        .multiply_ratio(transaction.locked, transaction_total);
+                    let anchor_liquid = anchor_amount
+                        .clone()
+                        .multiply_ratio(transaction.liquid, transaction_total);
+
                     // Increase the Account's Deposit token balances by the correct amounts of aUST
                     let mut investment = BALANCES
                         .load(deps.storage, &transaction.accounts_address.clone().unwrap())
@@ -457,24 +430,41 @@ pub fn process_anchor_reply(
                     )?;
                 }
                 "redeem" => {
+                    let after_taxes = deduct_tax(
+                        deps.as_ref(),
+                        Coin {
+                            amount: anchor_amount,
+                            denom: "uusd".to_string(),
+                        },
+                    )?;
+                    let mut after_taxes_locked = Uint128::zero();
+                    if !transaction.locked.is_zero() {
+                        after_taxes_locked = after_taxes
+                            .amount
+                            .clone()
+                            .multiply_ratio(transaction.locked, transaction_total);
+                    }
+
+                    let mut after_taxes_liquid = Uint128::zero();
+                    if !transaction.liquid.is_zero() {
+                        after_taxes_liquid = after_taxes
+                            .amount
+                            .clone()
+                            .multiply_ratio(transaction.liquid, transaction_total);
+                    }
+
                     // Send UST back to the Account SC via VaultReciept msg
                     followup.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                         contract_addr: transaction.accounts_address.unwrap().to_string(),
                         msg: to_binary(
                             &&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
                                 AccountTransferMsg {
-                                    locked: anchor_locked,
-                                    liquid: anchor_liquid,
+                                    locked: after_taxes_locked,
+                                    liquid: after_taxes_liquid,
                                 },
                             ),
                         )?,
-                        funds: vec![deduct_tax(
-                            deps.as_ref(),
-                            Coin {
-                                amount: anchor_amount,
-                                denom: "uusd".to_string(),
-                            },
-                        )?],
+                        funds: vec![after_taxes],
                     })))
                 }
                 "withdraw" => {
