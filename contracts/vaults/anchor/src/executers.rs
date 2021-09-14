@@ -412,12 +412,14 @@ pub fn process_anchor_reply(
                     for attrb in event.attributes {
                         if attrb.key == "mint_amount" {
                             anchor_amount = Uint128::from(attrb.value.parse::<u128>().unwrap());
+                            break;
                         }
                     }
                 } else if event.ty == *"redeem_stable" {
                     for attrb in event.attributes {
                         if attrb.key == "redeem_amount" {
                             anchor_amount = Uint128::from(attrb.value.parse::<u128>().unwrap());
+                            break;
                         }
                     }
                 }
