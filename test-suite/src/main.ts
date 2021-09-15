@@ -82,6 +82,22 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(charity3.key.accAddress)} as Charity #3`);
   console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
+
+  registrar = "terra1hwvfzrsa8f4vg9pak3wrlplwy8l4rh6gyjj6cv";
+  indexFund = "terra1gd8w7ryyq8lvdus9s7uzz4n830dxj29andyvve";
+  anchorVault1 = "terra1u5m9xjmqvznlp45ly6yj57dqk6ukkp7zk8rku2"; 
+  anchorVault2 = "terra19wfux3gh2hheyc3lnj37jgslvvvg6q8g9qsayw";
+  endowmentContract1 = "terra17r49agjrm5e7339fsqaq2f90nzafw3w8u9q2ge";
+  endowmentContract2 ="terra1xxnkcwjm3dumyv7r29x3g9j5epm9wxeu8m4dkx";
+  endowmentContract3 = "terra1yl2wpen6ls4z742upgjq43f2ju8kas94mdm8zt";
+
+  console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
+  console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
+  console.log(`Use ${chalk.cyan(anchorVault1)} as Anchor Vault #1`);
+  console.log(`Use ${chalk.cyan(anchorVault2)} as Anchor Vault #2`);
+  console.log(`Use ${chalk.cyan(endowmentContract1)} as Endowment Contract #1`);
+  console.log(`Use ${chalk.cyan(endowmentContract2)} as Endowment Contract #2`);
+  console.log(`Use ${chalk.cyan(endowmentContract3)} as Endowment Contract #3`);
 }
 
 // -----------------------------
@@ -232,7 +248,7 @@ export async function setupContracts(): Promise<void> {
   const registrarResult = await instantiateContract(terra, apTeam, apTeam, registrarCodeId, {
     accounts_code_id: accountsCodeId,
     treasury: apTeam.key.accAddress,
-    tax_rate: 20,
+    tax_rate: 2,
     default_vault: undefined,
   });
   registrar = registrarResult.logs[0].events.find((event) => {

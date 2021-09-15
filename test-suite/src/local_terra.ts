@@ -38,7 +38,7 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   initializeLocalTerra(terra);
 
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  migrateContracts();  
+  await migrateContracts();
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   // await setupContracts();
