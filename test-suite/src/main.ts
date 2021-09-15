@@ -87,33 +87,112 @@ export function initializeLCDClient(
 // -----------------------------
 // Migrate Vault contracts
 // -----------------------------
-  export async function migrateContracts(): Promise<void> {
-    process.stdout.write("Uploading Anchor Vault Wasm");
-    const vaultCodeId = await storeCode(
-      terra,
-      apTeam,
-      path.resolve(__dirname, "../../artifacts/anchor.wasm"));
-    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
-    
-    // Anchor Vault - #1
-    process.stdout.write("Migrate Anchor Vault (#1) contract");
-    const vaultResult1 = await migrateContract(terra, apTeam, apTeam, anchorVault1, vaultCodeId, {});
-    anchorVault1 = vaultResult1.logs[0].events.find((event) => {
-      return event.type == "migrate_contract";
-    })?.attributes.find((attribute) => { 
-      return attribute.key == "contract_address"; 
-    })?.value as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault1}`);
+export async function migrateContracts(): Promise<void> {
+    // temp place to put contract addresses
+    const registrar = "terra1hwvfzrsa8f4vg9pak3wrlplwy8l4rh6gyjj6cv";
+    const indexFund = "terra1gd8w7ryyq8lvdus9s7uzz4n830dxj29andyvve";
+    const anchorVault1 = "terra1u5m9xjmqvznlp45ly6yj57dqk6ukkp7zk8rku2";
+    const anchorVault2 = "terra19wfux3gh2hheyc3lnj37jgslvvvg6q8g9qsayw";
+    const endowmentContract1 = "terra17r49agjrm5e7339fsqaq2f90nzafw3w8u9q2ge";
+    const endowmentContract2 = "terra1xxnkcwjm3dumyv7r29x3g9j5epm9wxeu8m4dkx";
+    const endowmentContract3 = "terra1yl2wpen6ls4z742upgjq43f2ju8kas94mdm8zt";
+    // run the migrations desired
+    await migrateRegistrar();
+    await migrateIndexFund();
+    await migrateAccounts();
+    await migrateVaults();
+}
 
-    // Anchor Vault - #2
-    process.stdout.write("Migrate Anchor Vault (#2) contract");
-    const vaultResult2 = await migrateContract(terra, apTeam, apTeam, anchorVault2, vaultCodeId, {});
-    anchorVault2 = vaultResult2.logs[0].events.find((event) => {
-      return event.type == "migrate_contract";
-    })?.attributes.find((attribute) => { 
-      return attribute.key == "contract_address"; 
-    })?.value as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault2}`);
+// -------------------------------------------------
+//  Base functions to migrate contracts with 
+//--------------------------------------------------
+async function migrateIndexFund() {
+  process.stdout.write("Uploading Index Fund Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/index_fund.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+  
+  process.stdout.write("Migrate Index Fund contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, indexFund, codeId, {});
+  console.log(chalk.green(" Done!"));
+}
+
+async function migrateRegistrar() {
+  process.stdout.write("Uploading Registrar Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/registrar.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+  
+  process.stdout.write("Migrate Registrar contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, registrar, codeId, {});
+  console.log(chalk.green(" Done!"));
+}
+
+async function migrateVaults() {
+  process.stdout.write("Uploading Anchor Vault Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/anchor.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+  
+  // Anchor Vault - #1
+  process.stdout.write("Migrate Anchor Vault (#1) contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, anchorVault1, codeId, {});
+  console.log(chalk.green(" Done!"));
+
+  // Anchor Vault - #2
+  process.stdout.write("Migrate Anchor Vault (#2) contract");
+  const result2 = await migrateContract(terra, apTeam, apTeam, anchorVault2, codeId, {});
+  console.log(chalk.green(" Done!"));
+}
+
+async function migrateAccounts() {
+  process.stdout.write("Uploading Accounts Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/accounts.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+  
+  // Update registrar accounts code ID and migrate all accounts contracts
+  process.stdout.write("Update Registrar's Account Code ID stored in configs");
+  const result0 = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_config: {
+        charities_list: [endowmentContract1, endowmentContract2],
+        accounts_code_id: codeId,
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
+  
+  // Endowment Account - #1
+  process.stdout.write("Migrate Endowment Account (#1) contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, endowmentContract1, codeId, {});
+  console.log(chalk.green(" Done!"));
+
+  // Endowment Account - #2
+  process.stdout.write("Migrate Endowment Account (#2) contract");
+  const result2 = await migrateContract(terra, apTeam, apTeam, endowmentContract2, codeId, {});
+  console.log(chalk.green(" Done!"));
+
+  // Endowment Account - #3
+  process.stdout.write("Migrate Endowment Account (#3) contract");
+  const result3 = await migrateContract(terra, apTeam, apTeam, endowmentContract3, codeId, {});
+  console.log(chalk.green(" Done!"));
+
+  // process.stdout.write("Migrate all Accounts contract via Registrar endpoint");
+  // const charityResult1 = await sendTransaction(terra, apTeam, [
+  //   new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+  //     migrate_accounts: {}
+  //   }),
+  // ]);
+  // console.log(chalk.green(" Done!"));
 }
 
 //----------------------------------------------------------------------------------------

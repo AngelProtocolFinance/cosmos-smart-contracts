@@ -7,7 +7,7 @@ use cosmwasm_std::{
     entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Reply, Response,
     StdResult,
 };
-use cw2::{get_contract_version, set_contract_version};
+use cw2::set_contract_version;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -62,9 +62,7 @@ pub fn execute(
             vault_addr,
             approved,
         } => executers::vault_update_status(deps, env, info, vault_addr, approved),
-        ExecuteMsg::Harvest {} => {
-            executers::harvest(deps, env, info)
-        },
+        ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
     }
 }
 
@@ -96,12 +94,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    let version = get_contract_version(deps.storage)?;
-    if version.contract != CONTRACT_NAME {
-        return Err(ContractError::CannotMigrate {
-            previous_contract: version.contract,
-        });
-    }
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::default())
 }
