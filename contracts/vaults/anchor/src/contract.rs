@@ -120,11 +120,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
         // ANCHOR-SPECIFIC QUERIES BELOW THIS POINT!
         QueryMsg::ExchangeRate { input_denom: _ } => {
-            // let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;
+            let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;
 
             to_binary(&ExchangeRateResponse {
-                exchange_rate: Decimal256::percent(95), // epoch_state.exchange_rate,
-                yield_token_supply: Uint256::from(42069u64), // epoch_state.aterra_supply,
+                exchange_rate: epoch_state.exchange_rate,
+                yield_token_supply: epoch_state.aterra_supply,
             })
         }
         QueryMsg::Deposit { amount } => to_binary(&anchor::deposit_stable_msg(
