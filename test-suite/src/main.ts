@@ -339,7 +339,7 @@ export async function setupContracts(): Promise<void> {
   // endowment #1
   process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
   const charityResult1 = await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, apTeam, {
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       create_endowment: {
         owner: charity1.key.accAddress,
         beneficiary: charity1.key.accAddress,
@@ -361,7 +361,7 @@ export async function setupContracts(): Promise<void> {
   // endowment #2
   process.stdout.write("Charity Endowment #2 created from the Registrar by the AP Team");
   const charityResult2 = await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, apTeam, {
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       create_endowment: {
         owner: charity2.key.accAddress,
         beneficiary: charity2.key.accAddress,
@@ -383,7 +383,7 @@ export async function setupContracts(): Promise<void> {
   // endowment #3
   process.stdout.write("Charity Endowment #3 created from the Registrar by the AP Team");
   const charityResult3 = await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, apTeam, {
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       create_endowment: {
         owner: charity3.key.accAddress,
         beneficiary: charity3.key.accAddress,
