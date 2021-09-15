@@ -185,7 +185,7 @@ async function migrateAccounts(registrar: string, accounts: string[]) {
   const result0 = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_config: {
-        charities_list: ["terra17r49agjrm5e7339fsqaq2f90nzafw3w8u9q2ge", "terra1xxnkcwjm3dumyv7r29x3g9j5epm9wxeu8m4dkx"],
+        charities_list: [], // not needed for now, but good charity wallets go here 
         accounts_code_id: codeId,
       }
     }),
