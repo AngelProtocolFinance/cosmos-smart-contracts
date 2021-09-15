@@ -119,7 +119,7 @@ export async function migrateContracts(): Promise<void> {
     // run the migrations desired
     await migrateRegistrar(registrar);
     await migrateIndexFund(indexFund);
-    await migrateAccounts(endowments);
+    await migrateAccounts(registrar, endowments);
     await migrateVaults(vaults);
 }
 
@@ -164,13 +164,15 @@ async function migrateVaults(vaults: string[]) {
   process.stdout.write("Migrate Vault contracts");
   let counter = 1;
   vaults.forEach(async function(vault) {
-    await migrateContract(terra, apTeam, apTeam, vault, codeId, {});
-    console.log(chalk.green(`#${counter} - Done!`));
-    counter += 1;
+    setTimeout(async () => {
+      await migrateContract(terra, apTeam, apTeam, vault, codeId, {});
+      console.log(chalk.green(`#${counter} - Done!`));
+      counter += 1;
+    }, 7000);
   });
 }
 
-async function migrateAccounts(accounts: string[]) {
+async function migrateAccounts(registrar: string, accounts: string[]) {
   process.stdout.write("Uploading Accounts Wasm");
   const codeId = await storeCode(
     terra,
@@ -183,7 +185,7 @@ async function migrateAccounts(accounts: string[]) {
   const result0 = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_config: {
-        charities_list: [endowmentContract1, endowmentContract2],
+        charities_list: ["terra17r49agjrm5e7339fsqaq2f90nzafw3w8u9q2ge", "terra1xxnkcwjm3dumyv7r29x3g9j5epm9wxeu8m4dkx"],
         accounts_code_id: codeId,
       }
     }),
@@ -193,9 +195,11 @@ async function migrateAccounts(accounts: string[]) {
   process.stdout.write("Migrate Accounts contracts");
   let counter = 1;
   accounts.forEach(async function(account) {
-    await migrateContract(terra, apTeam, apTeam, account, codeId, {});
-    console.log(chalk.green(`#${counter} - Done!`));
-    counter += 1;
+    setTimeout(async () => {
+      await migrateContract(terra, apTeam, apTeam, account, codeId, {});
+      console.log(chalk.green(`#${counter} - Done!`));
+      counter += 1;
+    }, 7000);
   });
 
   // process.stdout.write("Migrate all Accounts contract via Registrar endpoint");
