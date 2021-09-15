@@ -91,22 +91,26 @@ export async function migrateContracts(): Promise<void> {
     // temp place to put contract addresses
     const registrar = "terra1hwvfzrsa8f4vg9pak3wrlplwy8l4rh6gyjj6cv";
     const indexFund = "terra1gd8w7ryyq8lvdus9s7uzz4n830dxj29andyvve";
-    const anchorVault1 = "terra1u5m9xjmqvznlp45ly6yj57dqk6ukkp7zk8rku2";
-    const anchorVault2 = "terra19wfux3gh2hheyc3lnj37jgslvvvg6q8g9qsayw";
-    const endowmentContract1 = "terra17r49agjrm5e7339fsqaq2f90nzafw3w8u9q2ge";
-    const endowmentContract2 = "terra1xxnkcwjm3dumyv7r29x3g9j5epm9wxeu8m4dkx";
-    const endowmentContract3 = "terra1yl2wpen6ls4z742upgjq43f2ju8kas94mdm8zt";
+    const vaults = [
+      "terra1u5m9xjmqvznlp45ly6yj57dqk6ukkp7zk8rku2", 
+      "terra19wfux3gh2hheyc3lnj37jgslvvvg6q8g9qsayw"
+    ];
+    const endowments = [
+      "terra17r49agjrm5e7339fsqaq2f90nzafw3w8u9q2ge",
+      "terra1xxnkcwjm3dumyv7r29x3g9j5epm9wxeu8m4dkx",
+      "terra1yl2wpen6ls4z742upgjq43f2ju8kas94mdm8zt"
+    ];
     // run the migrations desired
-    await migrateRegistrar();
-    await migrateIndexFund();
-    await migrateAccounts();
-    await migrateVaults();
+    await migrateRegistrar(registrar);
+    await migrateIndexFund(indexFund);
+    await migrateAccounts(endowments);
+    await migrateVaults(vaults);
 }
 
 // -------------------------------------------------
 //  Base functions to migrate contracts with 
 //--------------------------------------------------
-async function migrateIndexFund() {
+async function migrateIndexFund(indexFund: string) {
   process.stdout.write("Uploading Index Fund Wasm");
   const codeId = await storeCode(
     terra,
@@ -119,7 +123,7 @@ async function migrateIndexFund() {
   console.log(chalk.green(" Done!"));
 }
 
-async function migrateRegistrar() {
+async function migrateRegistrar(registrar: string) {
   process.stdout.write("Uploading Registrar Wasm");
   const codeId = await storeCode(
     terra,
@@ -132,7 +136,7 @@ async function migrateRegistrar() {
   console.log(chalk.green(" Done!"));
 }
 
-async function migrateVaults() {
+async function migrateVaults(vaults: string[]) {
   process.stdout.write("Uploading Anchor Vault Wasm");
   const codeId = await storeCode(
     terra,
@@ -140,18 +144,17 @@ async function migrateVaults() {
     path.resolve(__dirname, "../../artifacts/anchor.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
   
-  // Anchor Vault - #1
-  process.stdout.write("Migrate Anchor Vault (#1) contract");
-  const result1 = await migrateContract(terra, apTeam, apTeam, anchorVault1, codeId, {});
-  console.log(chalk.green(" Done!"));
 
-  // Anchor Vault - #2
-  process.stdout.write("Migrate Anchor Vault (#2) contract");
-  const result2 = await migrateContract(terra, apTeam, apTeam, anchorVault2, codeId, {});
-  console.log(chalk.green(" Done!"));
+  process.stdout.write("Migrate Vault contracts");
+  let counter = 1;
+  vaults.forEach(async function(vault) {
+    await migrateContract(terra, apTeam, apTeam, vault, codeId, {});
+    console.log(chalk.green(`#${counter} - Done!`));
+    counter += 1;
+  });
 }
 
-async function migrateAccounts() {
+async function migrateAccounts(accounts: string[]) {
   process.stdout.write("Uploading Accounts Wasm");
   const codeId = await storeCode(
     terra,
@@ -171,20 +174,13 @@ async function migrateAccounts() {
   ]);
   console.log(chalk.green(" Done!"));
   
-  // Endowment Account - #1
-  process.stdout.write("Migrate Endowment Account (#1) contract");
-  const result1 = await migrateContract(terra, apTeam, apTeam, endowmentContract1, codeId, {});
-  console.log(chalk.green(" Done!"));
-
-  // Endowment Account - #2
-  process.stdout.write("Migrate Endowment Account (#2) contract");
-  const result2 = await migrateContract(terra, apTeam, apTeam, endowmentContract2, codeId, {});
-  console.log(chalk.green(" Done!"));
-
-  // Endowment Account - #3
-  process.stdout.write("Migrate Endowment Account (#3) contract");
-  const result3 = await migrateContract(terra, apTeam, apTeam, endowmentContract3, codeId, {});
-  console.log(chalk.green(" Done!"));
+  process.stdout.write("Migrate Accounts contracts");
+  let counter = 1;
+  accounts.forEach(async function(account) {
+    await migrateContract(terra, apTeam, apTeam, account, codeId, {});
+    console.log(chalk.green(`#${counter} - Done!`));
+    counter += 1;
+  });
 
   // process.stdout.write("Migrate all Accounts contract via Registrar endpoint");
   // const charityResult1 = await sendTransaction(terra, apTeam, [
