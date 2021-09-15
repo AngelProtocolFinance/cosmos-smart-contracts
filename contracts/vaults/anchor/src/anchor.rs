@@ -80,32 +80,19 @@ pub enum Cw20HookMsg {
     RedeemStable {},
 }
 
-pub fn deposit_stable_msg(
-    deps: Deps,
-    market: &Addr,
-    denom: &str,
-    amount: Uint128,
-) -> StdResult<Vec<CosmosMsg>> {
-    Ok(vec![CosmosMsg::Wasm(WasmMsg::Execute {
+pub fn deposit_stable_msg(market: &Addr, denom: &str, amount: Uint128) -> StdResult<CosmosMsg> {
+    Ok(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: market.to_string(),
         msg: to_binary(&HandleMsg::DepositStable {})?,
-        funds: vec![deduct_tax(
-            deps,
-            Coin {
-                denom: denom.to_string(),
-                amount,
-            },
-        )?],
-    })])
+        funds: vec![Coin {
+            denom: denom.to_string(),
+            amount,
+        }],
+    }))
 }
 
-pub fn redeem_stable_msg(
-    _deps: Deps,
-    market: &Addr,
-    token: &Addr,
-    amount: Uint128,
-) -> StdResult<Vec<CosmosMsg>> {
-    Ok(vec![CosmosMsg::Wasm(WasmMsg::Execute {
+pub fn redeem_stable_msg(market: &Addr, token: &Addr, amount: Uint128) -> StdResult<CosmosMsg> {
+    Ok(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: token.to_string(),
         msg: to_binary(&Cw20ExecuteMsg::Send {
             contract: market.to_string(),
@@ -113,5 +100,5 @@ pub fn redeem_stable_msg(
             msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
         })?,
         funds: vec![],
-    })])
+    }))
 }

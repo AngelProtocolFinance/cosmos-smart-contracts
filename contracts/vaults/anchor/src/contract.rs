@@ -128,13 +128,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             })
         }
         QueryMsg::Deposit { amount } => to_binary(&anchor::deposit_stable_msg(
-            deps,
             &config.moneymarket,
             &config.input_denom,
             amount.into(),
         )?),
         QueryMsg::Redeem { amount } => to_binary(&anchor::redeem_stable_msg(
-            deps,
             &config.moneymarket,
             &config.yield_token,
             amount.into(),

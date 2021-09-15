@@ -1,4 +1,4 @@
-use crate::anchor::{epoch_state, Cw20HookMsg, HandleMsg};
+use crate::anchor::{deposit_stable_msg, redeem_stable_msg};
 use crate::config;
 use crate::config::{PendingInfo, BALANCES, PENDING, TOKEN_INFO};
 use angel_core::errors::vault::ContractError;
@@ -109,11 +109,7 @@ pub fn deposit_stable(
         .add_attribute("mint_amount", after_taxes.amount)
         .add_submessage(SubMsg {
             id: submessage_id,
-            msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.moneymarket.to_string(),
-                msg: to_binary(&HandleMsg::DepositStable {})?,
-                funds: vec![after_taxes.clone()],
-            }),
+            msg: deposit_stable_msg(&config.moneymarket, "uusd", after_taxes.amount)?,
             reply_on: ReplyOn::Always,
             gas_limit: None,
         }))
@@ -191,15 +187,7 @@ pub fn redeem_stable(
         .add_attribute("redeem_amount", total_redemption)
         .add_submessage(SubMsg {
             id: submessage_id,
-            msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.yield_token.to_string(),
-                msg: to_binary(&Cw20ExecuteMsg::Send {
-                    contract: config.moneymarket.to_string(),
-                    amount: total_redemption,
-                    msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
-                })?,
-                funds: vec![],
-            }),
+            msg: redeem_stable_msg(&config.moneymarket, &config.yield_token, total_redemption)?,
             gas_limit: None,
             reply_on: ReplyOn::Always,
         }))
@@ -229,9 +217,9 @@ pub fn withdraw_stable(
     }
 
     // reduce the total supply of CW20 deposit tokens
-    let withdrawal_total = msg.locked + msg.liquid;
+    let withdraw_total = msg.locked + msg.liquid;
     let mut token_info = TOKEN_INFO.load(deps.storage)?;
-    token_info.total_supply -= withdrawal_total;
+    token_info.total_supply -= withdraw_total;
     TOKEN_INFO.save(deps.storage, &token_info)?;
 
     // update investment holdings balances
@@ -273,18 +261,10 @@ pub fn withdraw_stable(
     Ok(Response::new()
         .add_attribute("action", "redeem_from_anchor")
         .add_attribute("sender", info.sender.clone())
-        .add_attribute("withdraw_amount", withdrawal_total)
+        .add_attribute("withdraw_amount", withdraw_total)
         .add_submessage(SubMsg {
             id: submessage_id,
-            msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.yield_token.to_string(),
-                msg: to_binary(&Cw20ExecuteMsg::Send {
-                    contract: config.moneymarket.to_string(),
-                    amount: withdrawal_total,
-                    msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
-                })?,
-                funds: vec![],
-            }),
+            msg: redeem_stable_msg(&config.moneymarket, &config.yield_token, withdraw_total)?,
             gas_limit: None,
             reply_on: ReplyOn::Always,
         }))
