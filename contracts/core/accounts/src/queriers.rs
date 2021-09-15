@@ -3,12 +3,14 @@ use angel_core::messages::vault::QueryMsg as VaultQuerier;
 use angel_core::responses::accounts::*;
 use angel_core::structs::BalanceResponse;
 use cosmwasm_std::{to_binary, Deps, Env, QueryRequest, StdResult, WasmQuery};
+use cw2::get_contract_version;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
 
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
+        version: get_contract_version(deps.storage)?.contract,
         registrar_contract: config.registrar_contract.to_string(),
         deposit_approved: config.deposit_approved,
         withdraw_approved: config.withdraw_approved,

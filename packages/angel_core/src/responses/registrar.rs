@@ -1,5 +1,5 @@
 use crate::structs::{EndowmentEntry, YieldVault};
-use cosmwasm_std::{Decimal};
+use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -26,6 +26,7 @@ pub struct EndowmentListResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: String,
+    pub version: String,
     pub accounts_code_id: u64,
     pub treasury: String,
     pub tax_rate: Decimal,

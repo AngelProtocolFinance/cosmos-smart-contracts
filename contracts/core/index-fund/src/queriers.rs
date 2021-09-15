@@ -1,12 +1,14 @@
 use crate::state::{fund_read, read_funds, CONFIG, STATE, TCA_DONATIONS};
 use angel_core::responses::index_fund::*;
 use cosmwasm_std::{Deps, StdResult};
+use cw2::get_contract_version;
 use cw20::Cw20Coin;
 
 pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
+        version: get_contract_version(deps.storage)?.contract,
         registrar_contract: config.registrar_contract.to_string(),
         fund_rotation: config.fund_rotation,
         fund_member_limit: config.fund_member_limit,
