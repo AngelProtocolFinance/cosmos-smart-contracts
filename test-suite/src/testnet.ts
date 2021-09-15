@@ -63,7 +63,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
   );
 
   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
-  migrateContracts();
+  // await migrateContracts();
 
   //console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   // await setupContracts();
@@ -77,22 +77,22 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // setTimeout(async () => {
   //   await testBeneficiaryCanWithdrawFromLiquid();
   // }, 7000);
-  // await testQueryRegistrarConfig();
-  // await testQueryRegistrarApprovedEndowmentList();
-  // await testQueryRegistrarEndowmentList();
-  // await testQueryRegistrarApprovedVaultList();
-  // await testQueryRegistrarVaultList();
-  // await testQueryRegistrarVault();
-  // await testQueryAccountsBalance();
-  // await testQueryAccountsConfig();
-  // await testQueryAccountsEndowment();
-  // await testQueryAccountsAccount();
-  // await testQueryAccountsAccountList();
-  // await testQueryIndexFundConfig();
-  // await testQueryIndexFundState();
-  // await testQueryIndexFundTcaList();
-  // await testQueryIndexFundFundsList();
-  // await testQueryIndexFundFundDetails();
-  // await testQueryIndexFundActiveFundDetails();
-  // await testQueryIndexFundActiveFundDonations();
+  await testQueryRegistrarConfig();
+  await testQueryRegistrarApprovedEndowmentList();
+  await testQueryRegistrarEndowmentList();
+  await testQueryRegistrarApprovedVaultList();
+  await testQueryRegistrarVaultList();
+  await testQueryRegistrarVault();
+  await testQueryAccountsBalance();
+  await testQueryAccountsConfig();
+  await testQueryAccountsEndowment();
+  // await testQueryAccountsAccount(); // -- error: check to Sergey
+  // await testQueryAccountsAccountList(); // -- error: check to Sergey
+  await testQueryIndexFundConfig();
+  await testQueryIndexFundState();
+  await testQueryIndexFundTcaList();
+  await testQueryIndexFundFundsList();
+  await testQueryIndexFundFundDetails();
+  await testQueryIndexFundActiveFundDetails();
+  await testQueryIndexFundActiveFundDonations();
 }
