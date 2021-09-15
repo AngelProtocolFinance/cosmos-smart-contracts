@@ -484,7 +484,7 @@ export async function testDonorSendsToIndexFund(): Promise<void> {
           },
         },
         {
-          uusd: "42000000",
+          uusd: "4200000",
         }
       ),
     ])
@@ -516,7 +516,7 @@ export async function testRejectUnapprovedDonations(): Promise<void> {
           },
         },
         {
-          uusd: "42000000",
+          uusd: "4200000",
         }
       ),
     ])
@@ -549,7 +549,7 @@ export async function testTcaMemberSendsToIndexFund(): Promise<void> {
           },
         },
         {
-          uusd: "400000000",
+          uusd: "4000000",
         }
       ),
     ])
@@ -604,8 +604,8 @@ export async function testBeneficiaryCanWithdrawFromLiquid(): Promise<void> {
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         withdraw: {
           sources: [
-            {vault: anchorVault1, locked: "5000000", liquid: "10000000"},
-            {vault: anchorVault2, locked: "5000000", liquid: "10000000"}
+            {vault: anchorVault1, locked: "500000", liquid: "1000000"},
+            {vault: anchorVault2, locked: "500000", liquid: "1000000"}
           ]
         }
       })
@@ -617,7 +617,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(): Promise<void> {
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         withdraw: {
           sources: [
-            {vault: anchorVault1, locked: "0", liquid: "20000000"},
+            {vault: anchorVault1, locked: "0", liquid: "2000000"},
           ]
         }
       })
@@ -824,7 +824,7 @@ export async function testQueryIndexFundConfig(): Promise<void> {
   });
 
   expect(result.owner).to.equal(apTeam.key.accAddress);
-  expect(result.fund_rotation).to.equal(500000);
+  expect(result.fund_rotation).to.equal(5000000);
   expect(result.fund_member_limit).to.equal(10);
   expect(result.funding_goal).to.equal('0');
 

@@ -69,30 +69,36 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await setupContracts();
 
   // console.log(chalk.yellow("\nStep 3. Running Tests"));
-  // await testRejectUnapprovedDonations();
-  // await testDonorSendsToIndexFund();
-  // await testTcaMemberSendsToIndexFund();
-  // await testAngelTeamCanTriggerVaultsHarvest();
-  // await testCharityCanUpdateStrategies();
+  await testRejectUnapprovedDonations();
+  await testDonorSendsToIndexFund();
+  setTimeout(async () => {
+    await testTcaMemberSendsToIndexFund();
+  }, 8000);
   // setTimeout(async () => {
-  //   await testBeneficiaryCanWithdrawFromLiquid();
-  // }, 7000);
-  await testQueryRegistrarConfig();
-  await testQueryRegistrarApprovedEndowmentList();
-  await testQueryRegistrarEndowmentList();
-  await testQueryRegistrarApprovedVaultList();
-  await testQueryRegistrarVaultList();
-  await testQueryRegistrarVault();
-  await testQueryAccountsBalance();
-  await testQueryAccountsConfig();
-  await testQueryAccountsEndowment();
+  //   await testAngelTeamCanTriggerVaultsHarvest();
+  // }, 8000);
+  // setTimeout(async () => {
+  //   await testCharityCanUpdateStrategies();
+  // }, 8000);
+  setTimeout(async () => {
+    await testBeneficiaryCanWithdrawFromLiquid();
+  }, 7000);
+  // await testQueryRegistrarConfig();
+  // await testQueryRegistrarApprovedEndowmentList();
+  // await testQueryRegistrarEndowmentList();
+  // await testQueryRegistrarApprovedVaultList();
+  // await testQueryRegistrarVaultList();
+  // await testQueryRegistrarVault();
+  // await testQueryAccountsBalance();
+  // await testQueryAccountsConfig();
+  // await testQueryAccountsEndowment();
   // await testQueryAccountsAccount(); // -- error: check to Sergey
   // await testQueryAccountsAccountList(); // -- error: check to Sergey
-  await testQueryIndexFundConfig();
-  await testQueryIndexFundState();
-  await testQueryIndexFundTcaList();
-  await testQueryIndexFundFundsList();
-  await testQueryIndexFundFundDetails();
-  await testQueryIndexFundActiveFundDetails();
-  await testQueryIndexFundActiveFundDonations();
+  // await testQueryIndexFundConfig();
+  // await testQueryIndexFundState();
+  // await testQueryIndexFundTcaList();
+  // await testQueryIndexFundFundsList();
+  // await testQueryIndexFundFundDetails();
+  // await testQueryIndexFundActiveFundDetails();
+  // await testQueryIndexFundActiveFundDonations();
 }
