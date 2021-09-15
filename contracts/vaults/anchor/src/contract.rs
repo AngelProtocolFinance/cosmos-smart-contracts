@@ -6,7 +6,6 @@ use crate::queriers;
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
-use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn,
     Response, StdResult, SubMsg, Uint128, WasmMsg,
@@ -120,21 +119,19 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
         // ANCHOR-SPECIFIC QUERIES BELOW THIS POINT!
         QueryMsg::ExchangeRate { input_denom: _ } => {
-            // let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;
+            let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;
 
             to_binary(&ExchangeRateResponse {
-                exchange_rate: Decimal256::percent(95), // epoch_state.exchange_rate,
-                yield_token_supply: Uint256::from(42069u64), // epoch_state.aterra_supply,
+                exchange_rate: epoch_state.exchange_rate,
+                yield_token_supply: epoch_state.aterra_supply,
             })
         }
         QueryMsg::Deposit { amount } => to_binary(&anchor::deposit_stable_msg(
-            deps,
             &config.moneymarket,
             &config.input_denom,
             amount.into(),
         )?),
         QueryMsg::Redeem { amount } => to_binary(&anchor::redeem_stable_msg(
-            deps,
             &config.moneymarket,
             &config.yield_token,
             amount.into(),
