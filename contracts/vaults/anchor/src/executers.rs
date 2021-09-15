@@ -471,10 +471,11 @@ pub fn process_anchor_reply(
                 .add_attribute("action", "anchor_reply_processing")
                 .add_submessages(followup))
         }
-        ContractResult::Err(_) => {
+        ContractResult::Err(err) => {
             return Err(ContractError::Std {
                 0: StdError::GenericErr {
-                    msg: "An error occured during the Anchor interaction".to_string(),
+                    msg: err
+                    // msg: "An error occured during the Anchor interaction".to_string(),
                 },
             });
         }
