@@ -10,11 +10,11 @@ use angel_core::responses::registrar::{
 use angel_core::structs::{BalanceInfo, EndowmentEntry};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
-    Order, QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse, Uint128,
-    WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, Order,
+    QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse, Uint128, WasmMsg,
+    WasmQuery,
 };
-use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg};
+use cw20::{Balance, Cw20CoinVerified};
 
 pub fn update_registrar(
     deps: DepsMut,
