@@ -1,4 +1,7 @@
-use crate::state::{registry_read, registry_store, vault_read, vault_store, read_vaults, CONFIG};
+use crate::state::{
+    read_registry_entries, read_vaults, registry_read, registry_store, vault_read, vault_store,
+    CONFIG,
+};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
@@ -238,6 +241,37 @@ pub fn create_endowment(
         .add_attribute("action", "create_endowment"))
 }
 
+pub fn migrate_accounts(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender.ne(&config.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let mut sub_messages = vec![];
+    for endowment in read_registry_entries(deps.storage)?.into_iter() {
+        let wasm_msg = WasmMsg::Migrate {
+            contract_addr: endowment.address.to_string(),
+            new_code_id: config.accounts_code_id,
+            msg: to_binary(&MigrateMsg {})?,
+        };
+
+        sub_messages.push(SubMsg {
+            id: 42,
+            msg: CosmosMsg::Wasm(wasm_msg),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        });
+    }
+    Ok(Response::new()
+        .add_submessages(sub_messages)
+        .add_attribute("action", "migrate_accounts"))
+}
+
 pub fn charity_add(
     deps: DepsMut,
     _env: Env,
@@ -363,11 +397,7 @@ pub fn new_accounts_reply(
     }
 }
 
-pub fn harvest(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-) -> Result<Response, ContractError> {
+pub fn harvest(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // harvest can only be valid if it comes from the  (AP Team/DANO) SC Owner
     if info.sender != config.owner {
@@ -383,7 +413,7 @@ pub fn harvest(
     for vault in list.vaults.iter() {
         sub_messages.push(harvest_msg(vault.address.to_string()));
     }
-    
+
     Ok(Response::new()
         .add_submessages(sub_messages)
         .add_attribute("action", "harvest"))
@@ -392,10 +422,7 @@ pub fn harvest(
 fn harvest_msg(account: String) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account,
-        msg: to_binary(
-            &angel_core::messages::vault::ExecuteMsg::Harvest {},
-        )
-        .unwrap(),
+        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {}).unwrap(),
         funds: vec![],
     });
 

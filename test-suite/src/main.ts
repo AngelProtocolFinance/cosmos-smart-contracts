@@ -656,6 +656,22 @@ export async function testCharityCanUpdateStrategies(): Promise<void> {
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: AP Team can trigger migration of all Account SC Endowments from Registrar
+//----------------------------------------------------------------------------------------
+
+export async function testMigrateAllAccounts(): Promise<void> {
+  process.stdout.write("Test - AP Team can trigger migration of all Account SC Endowments from Registrar");
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+        migrate_accounts: {},
+      }),
+    ])
+  );
+  console.log(chalk.green("Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
 
