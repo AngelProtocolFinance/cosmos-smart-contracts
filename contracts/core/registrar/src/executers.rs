@@ -1,4 +1,7 @@
-use crate::state::{read_vaults, registry_read, registry_store, vault_read, vault_store, CONFIG};
+use crate::state::{
+    read_registry_entries, read_vaults, registry_read, registry_store, vault_read, vault_store,
+    CONFIG,
+};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
@@ -250,10 +253,9 @@ pub fn migrate_accounts(
     }
 
     let mut sub_messages = vec![];
-
-    for endowment in config.approved_charities.iter() {
+    for endowment in read_registry_entries(deps.storage)?.into_iter() {
         let wasm_msg = WasmMsg::Migrate {
-            contract_addr: endowment.to_string(),
+            contract_addr: endowment.address.to_string(),
             new_code_id: config.accounts_code_id,
             msg: to_binary(&{})?,
         };
