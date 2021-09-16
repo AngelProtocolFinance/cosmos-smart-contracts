@@ -10,6 +10,8 @@ import {
   testCharityCanUpdateStrategies,
   testBeneficiaryCanWithdrawFromLiquid,
   testMigrateAllAccounts,
+  testQueryAccountsAccount,
+  testQueryAccountsAccountList,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
@@ -26,9 +28,6 @@ import {
   testQueryRegistrarEndowmentList,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
-  testQueryAccountsState,
-  testQueryAnchorVaultConfig,
-  testQueryAnchorVaultTokenInfo,
 } from "./main";
 //----------------------------------------------------------------------------------------
 // Main
@@ -56,9 +55,10 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   await testQueryRegistrarApprovedVaultList();
   await testQueryRegistrarVaultList();
   await testQueryRegistrarVault();
+  await testQueryAccountsAccount();
+  await testQueryAccountsAccountList();
   await testQueryAccountsBalance();
   await testQueryAccountsConfig();
-  await testQueryAccountsState();
   await testQueryAccountsEndowment();
   await testQueryIndexFundConfig();
   await testQueryIndexFundState();
@@ -67,6 +67,4 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   await testQueryIndexFundFundDetails();
   await testQueryIndexFundActiveFundDetails();
   await testQueryIndexFundActiveFundDonations();
-  await testQueryAnchorVaultConfig();
-  await testQueryAnchorVaultTokenInfo();
 }
