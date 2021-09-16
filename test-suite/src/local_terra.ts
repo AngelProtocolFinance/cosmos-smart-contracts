@@ -9,6 +9,7 @@ import {
   testAngelTeamCanTriggerVaultsHarvest,
   testCharityCanUpdateStrategies,
   testBeneficiaryCanWithdrawFromLiquid,
+  testMigrateAllAccounts,
   testQueryAccountsAccount,
   testQueryAccountsAccountList,
   testQueryAccountsBalance,

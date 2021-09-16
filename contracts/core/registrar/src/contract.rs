@@ -62,9 +62,8 @@ pub fn execute(
             vault_addr,
             approved,
         } => executers::vault_update_status(deps, env, info, vault_addr, approved),
-        ExecuteMsg::Harvest {} => {
-            executers::harvest(deps, env, info)
-        },
+        ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
+        ExecuteMsg::MigrateAccounts {} => executers::migrate_accounts(deps, env, info),
     }
 }
 
