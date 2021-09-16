@@ -257,7 +257,7 @@ pub fn migrate_accounts(
         let wasm_msg = WasmMsg::Migrate {
             contract_addr: endowment.address.to_string(),
             new_code_id: config.accounts_code_id,
-            msg: to_binary(&{})?,
+            msg: to_binary(&MigrateMsg {})?,
         };
 
         sub_messages.push(SubMsg {
