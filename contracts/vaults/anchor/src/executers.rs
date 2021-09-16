@@ -10,7 +10,7 @@ use angel_core::responses::registrar::{
 use angel_core::structs::{BalanceInfo, EndowmentEntry};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, Order,
+    to_binary, Addr, Attribute, BankMsg, Coin, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, Order,
     QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse, Uint128, WasmMsg,
     WasmQuery,
 };
@@ -358,18 +358,22 @@ pub fn process_anchor_reply(
             // Grab the Amount returned from Anchor (UST/aUST)
             let mut anchor_amount = Uint128::zero();
             for event in subcall.events {
-                if event.ty == *"deposit_stable" {
-                    for attrb in event.attributes {
-                        if attrb.key == "mint_amount" {
-                            anchor_amount = Uint128::from(attrb.value.parse::<u128>().unwrap());
-                            break;
+                if event.ty == "wasm" {
+                    let deposit_attr : Attribute = Attribute::new("action", "deposit_stable");
+                    if event.attributes.clone().contains(&deposit_attr) {
+                        for attr in event.attributes.clone() {
+                            if attr.key == "mint_amount" {
+                                anchor_amount = Uint128::from(attr.value.parse::<u128>().unwrap());
+                            }
                         }
                     }
-                } else if event.ty == *"redeem_stable" {
-                    for attrb in event.attributes {
-                        if attrb.key == "redeem_amount" {
-                            anchor_amount = Uint128::from(attrb.value.parse::<u128>().unwrap());
-                            break;
+
+                    let redeem_attr : Attribute = Attribute::new("action", "redeem_stable");
+                    if event.attributes.contains(&redeem_attr) {
+                        for attr in event.attributes {
+                            if attr.key == "redeem_amount" {
+                                anchor_amount = Uint128::from(attr.value.parse::<u128>().unwrap());
+                            }
                         }
                     }
                 }
