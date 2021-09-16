@@ -37,7 +37,7 @@ pub fn update_registrar(
 
 pub fn deposit_stable(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: AccountTransferMsg,
     _balance: Balance,
@@ -91,10 +91,9 @@ pub fn deposit_stable(
         &submessage_id.to_be_bytes(),
         &PendingInfo {
             typ: "deposit".to_string(),
-            block: env.block.height,
-            accounts_address: Some(info.sender.clone()),
+            accounts_address: info.sender.clone(),
             beneficiary: None,
-            fund: false,
+            fund: None,
             locked: after_taxes_locked,
             liquid: after_taxes_liquid,
         },
@@ -170,10 +169,9 @@ pub fn redeem_stable(
         &submessage_id.to_be_bytes(),
         &PendingInfo {
             typ: "redeem".to_string(),
-            block: env.block.height,
-            accounts_address: Some(info.sender.clone()),
+            accounts_address: info.sender.clone(),
             beneficiary: None,
-            fund: false,
+            fund: None,
             locked: locked_deposit_tokens,
             liquid: liquid_deposit_tokens,
         },
@@ -247,10 +245,9 @@ pub fn withdraw_stable(
         &submessage_id.to_be_bytes(),
         &PendingInfo {
             typ: "withdraw".to_string(),
-            block: env.block.height,
-            accounts_address: None,
+            accounts_address: info.sender.clone(),
             beneficiary: Some(msg.beneficiary.clone()),
-            fund: false,
+            fund: None,
             locked: msg.locked,
             liquid: msg.liquid,
         },
@@ -260,7 +257,7 @@ pub fn withdraw_stable(
 
     Ok(Response::new()
         .add_attribute("action", "redeem_from_anchor")
-        .add_attribute("sender", info.sender.clone())
+        .add_attribute("sender", info.sender)
         .add_attribute("withdraw_amount", withdraw_total)
         .add_submessage(SubMsg {
             id: submessage_id,
@@ -377,19 +374,19 @@ pub fn process_anchor_reply(
                 }
             }
 
+            // Get the correct Anchor returned amount split by Locked/Liquid ratio in the transaction
+            let anchor_locked = anchor_amount
+                .clone()
+                .multiply_ratio(transaction.locked, transaction_total);
+            let anchor_liquid = anchor_amount
+                .clone()
+                .multiply_ratio(transaction.liquid, transaction_total);
+
             match transaction.typ.as_str() {
                 "deposit" => {
-                    // Get the correct Anchor returned amount split by Locked/Liquid ratio in the transaction
-                    let anchor_locked = anchor_amount
-                        .clone()
-                        .multiply_ratio(transaction.locked, transaction_total);
-                    let anchor_liquid = anchor_amount
-                        .clone()
-                        .multiply_ratio(transaction.liquid, transaction_total);
-
                     // Increase the Account's Deposit token balances by the correct amounts of aUST
                     let mut investment = BALANCES
-                        .load(deps.storage, &transaction.accounts_address.clone().unwrap())
+                        .load(deps.storage, &transaction.accounts_address.clone())
                         .unwrap_or(BalanceInfo::default());
                     investment
                         .locked_balance
@@ -403,48 +400,36 @@ pub fn process_anchor_reply(
                             amount: anchor_liquid,
                             address: env.contract.address,
                         }));
-                    BALANCES.save(
-                        deps.storage,
-                        &transaction.accounts_address.unwrap(),
-                        &investment,
-                    )?;
+                    BALANCES.save(deps.storage, &transaction.accounts_address, &investment)?;
                 }
                 "redeem" => {
-                    let after_taxes = deduct_tax(
+                    let anchor_locked = deduct_tax(
                         deps.as_ref(),
                         Coin {
-                            amount: anchor_amount,
+                            amount: anchor_locked,
                             denom: "uusd".to_string(),
                         },
                     )?;
-                    let mut after_taxes_locked = Uint128::zero();
-                    if !transaction.locked.is_zero() {
-                        after_taxes_locked = after_taxes
-                            .amount
-                            .clone()
-                            .multiply_ratio(transaction.locked, transaction_total);
-                    }
-
-                    let mut after_taxes_liquid = Uint128::zero();
-                    if !transaction.liquid.is_zero() {
-                        after_taxes_liquid = after_taxes
-                            .amount
-                            .clone()
-                            .multiply_ratio(transaction.liquid, transaction_total);
-                    }
+                    let anchor_liquid = deduct_tax(
+                        deps.as_ref(),
+                        Coin {
+                            amount: anchor_liquid,
+                            denom: "uusd".to_string(),
+                        },
+                    )?;
 
                     // Send UST back to the Account SC via VaultReciept msg
                     followup.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: transaction.accounts_address.unwrap().to_string(),
+                        contract_addr: transaction.accounts_address.to_string(),
                         msg: to_binary(
                             &&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
                                 AccountTransferMsg {
-                                    locked: after_taxes_locked,
-                                    liquid: after_taxes_liquid,
+                                    locked: anchor_locked.amount,
+                                    liquid: anchor_liquid.amount,
                                 },
                             ),
                         )?,
-                        funds: vec![after_taxes],
+                        funds: vec![anchor_locked, anchor_liquid],
                     })))
                 }
                 "withdraw" => {
@@ -473,10 +458,7 @@ pub fn process_anchor_reply(
         }
         ContractResult::Err(err) => {
             return Err(ContractError::Std {
-                0: StdError::GenericErr {
-                    msg: err
-                    // msg: "An error occured during the Anchor interaction".to_string(),
-                },
+                0: StdError::GenericErr { msg: err },
             });
         }
     }
