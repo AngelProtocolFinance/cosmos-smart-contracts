@@ -346,11 +346,12 @@ pub fn process_anchor_reply(
     id: u64,
     result: ContractResult<SubMsgExecutionResponse>,
 ) -> Result<Response, ContractError> {
-    let mut followup: Vec<SubMsg> = vec![];
-
     // pull up the pending transaction details from storage
     let transaction = PENDING.load(deps.storage, &id.to_be_bytes())?;
     let transaction_total = transaction.locked + transaction.liquid;
+
+    // remove this pending transaction
+    PENDING.remove(deps.storage, &id.to_be_bytes());
 
     match result {
         ContractResult::Ok(subcall) => {
@@ -382,7 +383,7 @@ pub fn process_anchor_reply(
                 .clone()
                 .multiply_ratio(transaction.liquid, transaction_total);
 
-            match transaction.typ.as_str() {
+            let res = match transaction.typ.as_str() {
                 "deposit" => {
                     // Increase the Account's Deposit token balances by the correct amounts of aUST
                     let mut investment = BALANCES
@@ -401,6 +402,8 @@ pub fn process_anchor_reply(
                             address: env.contract.address,
                         }));
                     BALANCES.save(deps.storage, &transaction.accounts_address, &investment)?;
+
+                    Response::new().add_attribute("action", "anchor_reply_processing")
                 }
                 "redeem" => {
                     let anchor_locked = deduct_tax(
@@ -418,43 +421,43 @@ pub fn process_anchor_reply(
                         },
                     )?;
 
-                    // Send UST back to the Account SC via VaultReciept msg
-                    followup.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: transaction.accounts_address.to_string(),
-                        msg: to_binary(
-                            &&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
-                                AccountTransferMsg {
-                                    locked: anchor_locked.amount,
-                                    liquid: anchor_liquid.amount,
-                                },
-                            ),
-                        )?,
-                        funds: vec![anchor_locked, anchor_liquid],
-                    })))
+                    Response::new()
+                        .add_attribute("action", "anchor_reply_processing")
+                        // Send UST back to the Account SC via VaultReciept msg
+                        .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: transaction.accounts_address.to_string(),
+                            msg: to_binary(
+                                &&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
+                                    AccountTransferMsg {
+                                        locked: anchor_locked.amount,
+                                        liquid: anchor_liquid.amount,
+                                    },
+                                ),
+                            )?,
+                            funds: vec![anchor_locked, anchor_liquid],
+                        }))
                 }
                 "withdraw" => {
-                    // Send UST to the Beneficiary via BankMsg::Send
-                    followup.push(SubMsg::new(BankMsg::Send {
-                        to_address: transaction.beneficiary.unwrap().to_string(),
-                        amount: vec![deduct_tax(
-                            deps.as_ref(),
-                            Coin {
-                                amount: anchor_amount,
-                                denom: "uusd".to_string(),
-                            },
-                        )?],
-                    }))
+                    Response::new()
+                        .add_attribute("action", "anchor_reply_processing")
+                        // Send UST to the Beneficiary via BankMsg::Send
+                        .add_message(BankMsg::Send {
+                            to_address: transaction.beneficiary.unwrap().to_string(),
+                            amount: vec![deduct_tax(
+                                deps.as_ref(),
+                                Coin {
+                                    amount: anchor_amount,
+                                    denom: "uusd".to_string(),
+                                },
+                            )?],
+                        })
                 }
-                &_ => (),
-            }
+                &_ => Response::new().add_attribute("action", "anchor_reply_processing"),
+            };
 
-            // remove this pending transaction
-            PENDING.remove(deps.storage, &id.to_be_bytes());
-
-            // return the response with follow up submessages to beneficiary/Accounts/etc attached
-            Ok(Response::new()
-                .add_attribute("action", "anchor_reply_processing")
-                .add_submessages(followup))
+            // return the response with follow up
+            // messages to beneficiary/Accounts/etc
+            Ok(res)
         }
         ContractResult::Err(err) => {
             return Err(ContractError::Std {
