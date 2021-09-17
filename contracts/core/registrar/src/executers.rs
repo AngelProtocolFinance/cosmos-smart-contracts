@@ -252,23 +252,17 @@ pub fn migrate_accounts(
         return Err(ContractError::Unauthorized {});
     }
 
-    let mut sub_messages = vec![];
+    let mut messages = vec![];
     for endowment in read_registry_entries(deps.storage)?.into_iter() {
         let wasm_msg = WasmMsg::Migrate {
             contract_addr: endowment.address.to_string(),
             new_code_id: config.accounts_code_id,
-            msg: to_binary(&MigrateMsg {})?,
+            msg: to_binary(&angel_core::messages::accounts::MigrateMsg {})?,
         };
-
-        sub_messages.push(SubMsg {
-            id: 42,
-            msg: CosmosMsg::Wasm(wasm_msg),
-            gas_limit: None,
-            reply_on: ReplyOn::Success,
-        });
+        messages.push(CosmosMsg::Wasm(wasm_msg));
     }
     Ok(Response::new()
-        .add_submessages(sub_messages)
+        .add_messages(messages)
         .add_attribute("action", "migrate_accounts"))
 }
 
