@@ -326,26 +326,17 @@ export async function setupContracts(): Promise<void> {
   console.log(chalk.green(" Done!"));
 
   process.stdout.write("Set default vault in Registrar (for newly created Endowments) as Anchor Vault #1");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_config: {
-        default_vault: anchorVault1,
-      }
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
-
-  // Update Index Fund Addr in the Registrar contract
   process.stdout.write("Update Registrar with the Address of the Index Fund contract");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_config: {
+        default_vault: anchorVault1,
         index_fund_contract: indexFund,
       }
     }),
   ]);
   console.log(chalk.green(" Done!"));
-  
+
   // Step 4: Create two Endowments via the Registrar contract
   // endowment #1
   process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
@@ -432,8 +423,8 @@ export async function setupContracts(): Promise<void> {
   console.log(chalk.green(" Done!"));
 
   // Step 5: Index Fund finals setup 
-  // Create an initial Index Fund with the two charities created above
-  process.stdout.write("Create an Index Fund with two charities in it");
+  // Create an initial "Fund" with the two charities created above
+  process.stdout.write("Create a Fund with two charities in it");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       create_fund: {
@@ -448,7 +439,7 @@ export async function setupContracts(): Promise<void> {
   ]);
   console.log(chalk.green(" Done!"));
 
-  // Add confirmed TCA Members to the index fund approved list
+  // Add confirmed TCA Members to the Index Fund SCs approved list
   process.stdout.write("Add confirmed TCA Member to allowed list");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
