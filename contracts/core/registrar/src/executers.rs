@@ -211,7 +211,7 @@ pub fn create_endowment(
 
     let wasm_msg = WasmMsg::Instantiate {
         code_id: config.accounts_code_id,
-        admin: Some(env.contract.address.to_string()),
+        admin: Some(config.owner.to_string()),
         label: "new endowment accounts".to_string(),
         msg: to_binary(&angel_core::messages::accounts::InstantiateMsg {
             owner_sc: config.owner.to_string(),
