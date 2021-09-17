@@ -546,7 +546,7 @@ export async function testTcaMemberSendsToIndexFund(): Promise<void> {
           },
         },
         {
-          uusd: "4000000",
+          uusd: "400000000",
         }
       ),
     ])
@@ -811,7 +811,7 @@ export async function testQueryIndexFundConfig(): Promise<void> {
   });
 
   expect(result.owner).to.equal(apTeam.key.accAddress);
-  expect(result.fund_rotation).to.equal(5000000);
+  expect(result.fund_rotation).to.equal(500000);
   expect(result.fund_member_limit).to.equal(10);
   expect(result.funding_goal).to.equal('0');
 
