@@ -216,7 +216,6 @@ pub fn create_endowment(
         msg: to_binary(&angel_core::messages::accounts::InstantiateMsg {
             owner_sc: config.owner.to_string(),
             registrar_contract: env.contract.address.to_string(),
-            index_fund_contract: config.index_fund_contract.to_string(),
             owner: msg.owner,
             beneficiary: msg.beneficiary,
             name: msg.name,
