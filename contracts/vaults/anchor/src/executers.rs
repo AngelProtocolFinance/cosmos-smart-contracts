@@ -410,14 +410,14 @@ pub fn process_anchor_reply(
                     Response::new().add_attribute("action", "anchor_reply_processing")
                 }
                 "redeem" => {
-                    let anchor_locked = deduct_tax(
+                    let after_tax_locked = deduct_tax(
                         deps.as_ref(),
                         Coin {
                             amount: anchor_locked,
                             denom: "uusd".to_string(),
                         },
                     )?;
-                    let anchor_liquid = deduct_tax(
+                    let after_tax_liquid = deduct_tax(
                         deps.as_ref(),
                         Coin {
                             amount: anchor_liquid,
@@ -431,14 +431,14 @@ pub fn process_anchor_reply(
                         .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                             contract_addr: transaction.accounts_address.to_string(),
                             msg: to_binary(
-                                &&angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
+                                &angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
                                     AccountTransferMsg {
-                                        locked: anchor_locked.amount,
-                                        liquid: anchor_liquid.amount,
+                                        locked: after_tax_locked.amount,
+                                        liquid: after_tax_liquid.amount,
                                     },
                                 ),
                             )?,
-                            funds: vec![anchor_locked, anchor_liquid],
+                            funds: vec![after_tax_locked, after_tax_liquid],
                         }))
                 }
                 "withdraw" => {
