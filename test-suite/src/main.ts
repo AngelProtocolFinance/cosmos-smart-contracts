@@ -187,31 +187,28 @@ async function migrateAccounts(registrar: string, accounts: string[]) {
   process.stdout.write("Update Registrar's Account Code ID stored in configs");
   const result0 = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_config: {
-        charities_list: [], // not needed for now, but good charity wallets go here 
-        accounts_code_id: codeId,
-      }
+      update_config: { accounts_code_id: codeId }
     }),
   ]);
   console.log(chalk.green(" Done!"));
   
   process.stdout.write("Migrate Accounts contracts");
-  let counter = 1;
-  accounts.forEach(async function(account) {
-    setTimeout(async () => {
-      await migrateContract(terra, apTeam, apTeam, account, codeId, {});
-      console.log(chalk.green(`#${counter} - Done!`));
-      counter += 1;
-    }, 7000);
-  });
+  // let counter = 1;
+  // accounts.forEach(async function(account) {
+  //   setTimeout(async () => {
+  //     await migrateContract(terra, apTeam, apTeam, account, codeId, {});
+  //     console.log(chalk.green(`#${counter} - Done!`));
+  //     counter += 1;
+  //   }, 7000);
+  // });
 
-  // process.stdout.write("Migrate all Accounts contract via Registrar endpoint");
-  // const charityResult1 = await sendTransaction(terra, apTeam, [
-  //   new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-  //     migrate_accounts: {}
-  //   }),
-  // ]);
-  // console.log(chalk.green(" Done!"));
+  process.stdout.write("Migrate all Accounts contract via Registrar endpoint");
+  const charityResult1 = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      migrate_accounts: {}
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
 }
 
 //----------------------------------------------------------------------------------------
@@ -803,32 +800,6 @@ export async function testQueryAccountsEndowment(): Promise<void> {
   expect(result.strategies[0].vault).to.equal(anchorVault1);
   expect(result.strategies[0].locked_percentage).to.equal('1');
   expect(result.strategies[0].liquid_percentage).to.equal('1');
-
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryAccountsAccount(): Promise<void> {
-  process.stdout.write("Test - Query Accounts Account");
-  const result: any = await terra.wasm.contractQuery(endowmentContract1, {
-    account: { account_type: 'locked' },
-  });
-
-  expect(result.account_type).to.equal('locked');
-  expect(result.ust_balance).to.equal('0');
-
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryAccountsAccountList(): Promise<void> {
-  process.stdout.write("Test - Query Accounts AccountList");
-  const result: any = await terra.wasm.contractQuery(endowmentContract1, {
-    account_list: {},
-  });
-
-  expect(result.locked_account.account_type).to.equal('locked');
-  expect(result.locked_account.ust_balance).to.equal('0');
-  expect(result.liquid_account.account_type).to.equal('liquid');
-  expect(result.liquid_account.ust_balance).to.equal('0');
 
   console.log(chalk.green(" Passed!"));
 }

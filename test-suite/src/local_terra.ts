@@ -11,8 +11,6 @@ import {
   testCharityCanUpdateStrategies,
   testBeneficiaryCanWithdrawFromLiquid,
   testMigrateAllAccounts,
-  testQueryAccountsAccount,
-  testQueryAccountsAccountList,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
@@ -59,8 +57,6 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   // await testQueryRegistrarApprovedVaultList();
   // await testQueryRegistrarVaultList();
   // await testQueryRegistrarVault();
-  // await testQueryAccountsAccount();
-  // await testQueryAccountsAccountList();
   // await testQueryAccountsBalance();
   // await testQueryAccountsConfig();
   // await testQueryAccountsEndowment();

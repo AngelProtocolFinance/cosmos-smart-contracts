@@ -11,8 +11,6 @@ import {
   testAngelTeamCanTriggerVaultsHarvest,
   testCharityCanUpdateStrategies,
   testBeneficiaryCanWithdrawFromLiquid,
-  testQueryAccountsAccount,
-  testQueryAccountsAccountList,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
@@ -62,27 +60,27 @@ export async function startTest(terra: LCDClient): Promise<void> {
     process.env.MONEYMARKET_CONTRACT_TESTNET!
   );
 
-  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  // console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
   // await migrateContracts();
 
   //console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   // await setupContracts();
 
   // console.log(chalk.yellow("\nStep 3. Running Tests"));
-  await testRejectUnapprovedDonations();
-  await testDonorSendsToIndexFund();
-  setTimeout(async () => {
-    await testTcaMemberSendsToIndexFund();
-  }, 8000);
+  // await testRejectUnapprovedDonations();
+  // await testDonorSendsToIndexFund();
+  // setTimeout(async () => {
+  //   await testTcaMemberSendsToIndexFund();
+  // }, 8000);
   // setTimeout(async () => {
   //   await testAngelTeamCanTriggerVaultsHarvest();
   // }, 8000);
   // setTimeout(async () => {
   //   await testCharityCanUpdateStrategies();
   // }, 8000);
-  setTimeout(async () => {
-    await testBeneficiaryCanWithdrawFromLiquid();
-  }, 7000);
+  // setTimeout(async () => {
+  //   await testBeneficiaryCanWithdrawFromLiquid();
+  // }, 7000);
   // await testQueryRegistrarConfig();
   // await testQueryRegistrarApprovedEndowmentList();
   // await testQueryRegistrarEndowmentList();
@@ -92,8 +90,6 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await testQueryAccountsBalance();
   // await testQueryAccountsConfig();
   // await testQueryAccountsEndowment();
-  // await testQueryAccountsAccount(); // -- error: check to Sergey
-  // await testQueryAccountsAccountList(); // -- error: check to Sergey
   // await testQueryIndexFundConfig();
   // await testQueryIndexFundState();
   // await testQueryIndexFundTcaList();
