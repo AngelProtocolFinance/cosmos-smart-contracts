@@ -334,6 +334,17 @@ export async function setupContracts(): Promise<void> {
     }),
   ]);
   console.log(chalk.green(" Done!"));
+
+  // Update Index Fund Addr in the Registrar contract
+  process.stdout.write("Update Registrar with the Address of the Index Fund contract");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_config: {
+        index_fund_contract: indexFund,
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
   
   // Step 4: Create two Endowments via the Registrar contract
   // endowment #1
@@ -421,17 +432,6 @@ export async function setupContracts(): Promise<void> {
   console.log(chalk.green(" Done!"));
 
   // Step 5: Index Fund finals setup 
-  // Update Index Fund Addr in the Registrar contract
-  process.stdout.write("Update Registrar with the Address of the Index Fund contract");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_config: {
-        index_fund_contract: indexFund,
-      }
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
-
   // Create an initial Index Fund with the two charities created above
   process.stdout.write("Create an Index Fund with two charities in it");
   await sendTransaction(terra, apTeam, [
