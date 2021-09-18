@@ -66,17 +66,13 @@ export async function startTest(terra: LCDClient): Promise<void> {
   //console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   // await setupContracts();
 
-  // console.log(chalk.yellow("\nStep 3. Running Tests"));
+  console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testRejectUnapprovedDonations();
   // await testDonorSendsToIndexFund();
+  // await testTcaMemberSendsToIndexFund();
+  // await testAngelTeamCanTriggerVaultsHarvest();
   // setTimeout(async () => {
-  //   await testTcaMemberSendsToIndexFund();
-  // }, 8000);
-  // setTimeout(async () => {
-  //   await testAngelTeamCanTriggerVaultsHarvest();
-  // }, 8000);
-  // setTimeout(async () => {
-  //   await testCharityCanUpdateStrategies();
+    // await testCharityCanUpdateStrategies();
   // }, 8000);
   // setTimeout(async () => {
   //   await testBeneficiaryCanWithdrawFromLiquid();

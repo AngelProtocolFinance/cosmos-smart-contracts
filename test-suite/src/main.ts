@@ -86,13 +86,13 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
-  registrar = "terra1hwvfzrsa8f4vg9pak3wrlplwy8l4rh6gyjj6cv";
-  indexFund = "terra1gd8w7ryyq8lvdus9s7uzz4n830dxj29andyvve";
-  anchorVault1 = "terra1u5m9xjmqvznlp45ly6yj57dqk6ukkp7zk8rku2"; 
-  anchorVault2 = "terra19wfux3gh2hheyc3lnj37jgslvvvg6q8g9qsayw";
-  endowmentContract1 = "terra17r49agjrm5e7339fsqaq2f90nzafw3w8u9q2ge";
-  endowmentContract2 ="terra1xxnkcwjm3dumyv7r29x3g9j5epm9wxeu8m4dkx";
-  endowmentContract3 = "terra1yl2wpen6ls4z742upgjq43f2ju8kas94mdm8zt";
+  registrar = "terra1mpw506zdwc2pzu6spvss8uu0j9l0efjghkjeqk";
+  indexFund = "terra18tat3wzxy8xfd4962p5xeuyz0w76ndw5h0yu32";
+  anchorVault1 = "terra1f7rk7rdg2d0f2wxsjggmycgw9dnqxz2q2ant55"; 
+  anchorVault2 = "terra16tqu2m83njq35x5wz57uds83454fgpnpvyh2jv";
+  endowmentContract1 = "terra1xk4utvkeqsytmtpn7nctkdlscsgfg7z06zgf6w";
+  endowmentContract2 ="terra1knplla6st825wxjrayt6a8xn90supn40fsss0e";
+  endowmentContract3 = "terra1vpml044fr86yl3jt0hspfkrdsg8ckr3djv8q76";
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
@@ -686,7 +686,7 @@ export async function testQueryRegistrarApprovedEndowmentList(): Promise<void> {
   });
 
   expect(result.endowments.length).to.equal(2);
-  expect(result.endowments[0].address).to.equal(endowmentContract1);
+  expect(result.endowments[0].address).to.equal(endowmentContract2);
   expect(result.endowments[0].status).to.equal('Approved');
 
   console.log(chalk.green(" Passed!"));
