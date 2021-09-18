@@ -108,16 +108,16 @@ export function initializeLCDClient(
 // -----------------------------
 export async function migrateContracts(): Promise<void> {
     // temp place to put contract addresses
-    const registrar = "terra1hwvfzrsa8f4vg9pak3wrlplwy8l4rh6gyjj6cv";
-    const indexFund = "terra1gd8w7ryyq8lvdus9s7uzz4n830dxj29andyvve";
+    const registrar = "terra1mpw506zdwc2pzu6spvss8uu0j9l0efjghkjeqk";
+    const indexFund = "terra18tat3wzxy8xfd4962p5xeuyz0w76ndw5h0yu32";
     const vaults = [
-      "terra1u5m9xjmqvznlp45ly6yj57dqk6ukkp7zk8rku2", 
-      "terra19wfux3gh2hheyc3lnj37jgslvvvg6q8g9qsayw"
+      "terra1f7rk7rdg2d0f2wxsjggmycgw9dnqxz2q2ant55", 
+      "terra16tqu2m83njq35x5wz57uds83454fgpnpvyh2jv"
     ];
     const endowments = [
-      "terra17r49agjrm5e7339fsqaq2f90nzafw3w8u9q2ge",
-      "terra1xxnkcwjm3dumyv7r29x3g9j5epm9wxeu8m4dkx",
-      "terra1yl2wpen6ls4z742upgjq43f2ju8kas94mdm8zt"
+      "terra1xk4utvkeqsytmtpn7nctkdlscsgfg7z06zgf6w",
+      "terra1knplla6st825wxjrayt6a8xn90supn40fsss0e",
+      "terra1vpml044fr86yl3jt0hspfkrdsg8ckr3djv8q76"
     ];
     // run the migrations desired
     await migrateRegistrar(registrar);
