@@ -364,6 +364,7 @@ pub fn process_anchor_reply(
                         for attr in event.attributes.clone() {
                             if attr.key == "mint_amount" {
                                 anchor_amount = Uint128::from(attr.value.parse::<u128>().unwrap());
+                                break;
                             }
                         }
                     }
@@ -371,8 +372,9 @@ pub fn process_anchor_reply(
                     let redeem_attr : Attribute = Attribute::new("action", "redeem_stable");
                     if event.attributes.contains(&redeem_attr) {
                         for attr in event.attributes {
-                            if attr.key == "redeem_amount" {
+                            if attr.key == "burn_amount" { // burn_amount
                                 anchor_amount = Uint128::from(attr.value.parse::<u128>().unwrap());
+                                break;
                             }
                         }
                     }
