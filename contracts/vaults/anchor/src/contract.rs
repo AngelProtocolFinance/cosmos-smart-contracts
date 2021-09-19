@@ -90,8 +90,8 @@ pub fn execute(
         // Pulls all existing strategy amounts back to Account in UST.
         // Then re-Deposits according to the Strategies set.
         // -Deposit Token/Yield Token (Vault) --> +UST (Account) --> -UST (Account) --> +Deposit Token/Yield Token (Vault)
-        ExecuteMsg::Redeem {} => executers::redeem_stable(deps, env, info.clone()), // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
-        ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info.clone(), msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
+        ExecuteMsg::Redeem {} => executers::redeem_stable(deps, env, info), // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
+        ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info, msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info), // DP -> DP shuffle (taxes collected)
     }
 }
@@ -101,9 +101,7 @@ pub fn execute(
 /// incoming and outgoing funds and any further processing steps performed
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
-    match msg.id {
-        _ => executers::process_anchor_reply(deps, env, msg.id, msg.result),
-    }
+    executers::process_anchor_reply(deps, env, msg.id, msg.result)
 }
 
 #[entry_point]
@@ -129,12 +127,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Deposit { amount } => to_binary(&anchor::deposit_stable_msg(
             &config.moneymarket,
             &config.input_denom,
-            amount.into(),
+            amount,
         )?),
         QueryMsg::Redeem { amount } => to_binary(&anchor::redeem_stable_msg(
             &config.moneymarket,
             &config.yield_token,
-            amount.into(),
+            amount,
         )?),
     }
 }

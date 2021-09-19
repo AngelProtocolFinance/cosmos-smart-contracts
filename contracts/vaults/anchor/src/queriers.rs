@@ -9,7 +9,7 @@ pub fn query_balance(deps: Deps, address: String) -> BalanceResponse {
     BalanceResponse {
         locked_native: balances.clone().locked_balance.native,
         liquid_native: balances.clone().liquid_balance.native,
-        locked_cw20: balances.clone().locked_balance.cw20_list(),
+        locked_cw20: balances.locked_balance.cw20_list(),
         liquid_cw20: balances.liquid_balance.cw20_list(),
     }
 }

@@ -10,9 +10,9 @@ use angel_core::responses::registrar::{
 use angel_core::structs::{BalanceInfo, EndowmentEntry};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
-    to_binary, Addr, Attribute, BankMsg, Coin, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, Order,
-    QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse, Uint128, WasmMsg,
-    WasmQuery,
+    to_binary, Addr, Attribute, BankMsg, Coin, ContractResult, CosmosMsg, DepsMut, Env,
+    MessageInfo, Order, QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse,
+    Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20CoinVerified};
 
@@ -82,7 +82,7 @@ pub fn deposit_stable(
 
     // update supply
     let mut token_info = TOKEN_INFO.load(deps.storage)?;
-    token_info.total_supply = token_info.total_supply + after_taxes.amount;
+    token_info.total_supply += after_taxes.amount;
     TOKEN_INFO.save(deps.storage, &token_info)?;
 
     let submessage_id = config.next_pending_id;
@@ -140,7 +140,7 @@ pub fn redeem_stable(
 
     let mut investment = BALANCES
         .load(deps.storage, &info.sender)
-        .unwrap_or(BalanceInfo::default());
+        .unwrap_or_else(|_| BalanceInfo::default());
 
     // grab total tokens for locked and liquid balances
     let locked_deposit_tokens = investment
@@ -154,14 +154,14 @@ pub fn redeem_stable(
     // update investment holdings balances to zero
     let zero_tokens = Cw20CoinVerified {
         amount: Uint128::zero(),
-        address: env.contract.address.clone(),
+        address: env.contract.address,
     };
     investment
         .locked_balance
         .set_token_balances(Balance::Cw20(zero_tokens.clone()));
     investment
         .liquid_balance
-        .set_token_balances(Balance::Cw20(zero_tokens.clone()));
+        .set_token_balances(Balance::Cw20(zero_tokens));
 
     let submessage_id = config.next_pending_id;
     PENDING.save(
@@ -181,7 +181,7 @@ pub fn redeem_stable(
 
     Ok(Response::new()
         .add_attribute("action", "redeem_from_anchor")
-        .add_attribute("sender", info.sender.clone())
+        .add_attribute("sender", info.sender)
         .add_attribute("redeem_amount", total_redemption)
         .add_submessage(SubMsg {
             id: submessage_id,
@@ -286,7 +286,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             deps.storage,
             &deps.api.addr_validate(&registrar_config.treasury)?,
         )
-        .unwrap_or(BalanceInfo::default());
+        .unwrap_or_else(|_| BalanceInfo::default());
     let accounts: Result<Vec<_>, _> = BALANCES
         .keys(deps.storage, None, None, Order::Ascending)
         .map(String::from_utf8)
@@ -310,7 +310,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             let taxes_owed = transfer_amt * registrar_config.tax_rate;
 
             // lower locked balance
-            deposit_token.amount = transfer_amt.clone();
+            deposit_token.amount = transfer_amt;
             balances
                 .locked_balance
                 .deduct_tokens(Balance::Cw20(deposit_token.clone()));
@@ -323,7 +323,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             taxes_collected += taxes_owed;
 
             // add taxes collected to the liquid balance of the AP Treasury
-            deposit_token.amount = taxes_owed.clone();
+            deposit_token.amount = taxes_owed;
             treasury_account
                 .liquid_balance
                 .add_tokens(Balance::Cw20(deposit_token.clone()));
@@ -359,7 +359,7 @@ pub fn process_anchor_reply(
             let mut anchor_amount = Uint128::zero();
             for event in subcall.events {
                 if event.ty == "wasm" {
-                    let deposit_attr : Attribute = Attribute::new("action", "deposit_stable");
+                    let deposit_attr: Attribute = Attribute::new("action", "deposit_stable");
                     if event.attributes.clone().contains(&deposit_attr) {
                         for attr in event.attributes.clone() {
                             if attr.key == "mint_amount" {
@@ -368,7 +368,7 @@ pub fn process_anchor_reply(
                         }
                     }
 
-                    let redeem_attr : Attribute = Attribute::new("action", "redeem_stable");
+                    let redeem_attr: Attribute = Attribute::new("action", "redeem_stable");
                     if event.attributes.contains(&redeem_attr) {
                         for attr in event.attributes {
                             if attr.key == "redeem_amount" {
@@ -392,7 +392,7 @@ pub fn process_anchor_reply(
                     // Increase the Account's Deposit token balances by the correct amounts of aUST
                     let mut investment = BALANCES
                         .load(deps.storage, &transaction.accounts_address.clone())
-                        .unwrap_or(BalanceInfo::default());
+                        .unwrap_or_else(|_| BalanceInfo::default());
                     investment
                         .locked_balance
                         .add_tokens(Balance::Cw20(Cw20CoinVerified {
@@ -463,10 +463,8 @@ pub fn process_anchor_reply(
             // messages to beneficiary/Accounts/etc
             Ok(res)
         }
-        ContractResult::Err(err) => {
-            return Err(ContractError::Std {
-                0: StdError::GenericErr { msg: err },
-            });
-        }
+        ContractResult::Err(err) => Err(ContractError::Std {
+            0: StdError::GenericErr { msg: err },
+        }),
     }
 }
