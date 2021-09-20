@@ -25,6 +25,7 @@ pub struct Config {
     pub treasury: Addr,
     pub tax_rate: Decimal,
     pub default_vault: Addr,
+    pub endowment_owners_group_addr: Option<String>,
 }
 
 // REGISTRY Read/Write

@@ -3,13 +3,16 @@ use crate::state::{
     CONFIG,
 };
 use angel_core::errors::core::ContractError;
+use angel_core::messages::accounts::QueryMsg as AccountsQueryMsg;
 use angel_core::messages::registrar::*;
+use angel_core::responses::accounts::ConfigResponse as AccountsConfigResponse;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails, YieldVault};
 use cosmwasm_std::{
-    to_binary, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
-    SubMsg, SubMsgExecutionResponse, WasmMsg,
+    to_binary, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, QueryRequest, ReplyOn,
+    Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg, WasmQuery,
 };
+use cw4::Member;
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
@@ -70,6 +73,13 @@ pub fn update_endowment_status(
         .may_load(endowment_addr)?
         .unwrap();
 
+    // get config details about the Endowment of interest
+    let accounts_config: AccountsConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: endowment_entry.address.to_string(),
+            msg: to_binary(&AccountsQueryMsg::Config {})?,
+        }))?;
+
     let msg_endowment_status = match msg.status {
         0 => EndowmentStatus::Inactive,
         1 => EndowmentStatus::Approved,
@@ -100,11 +110,22 @@ pub fn update_endowment_status(
     let sub_messages: Vec<SubMsg> = match msg_endowment_status {
         // Allowed to receive donations and process withdrawals
         EndowmentStatus::Approved => {
-            vec![build_account_status_change_msg(
-                endowment_entry.address.to_string(),
-                true,
-                true,
-            )]
+            vec![
+                build_account_status_change_msg(endowment_entry.address.to_string(), true, true),
+                // send msg to C4 Endowment Owners group SC to add new member
+                SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: config.endowment_owners_group_addr.unwrap(),
+                    msg: to_binary(&UpdateMembers {
+                        add: vec![Member {
+                            addr: accounts_config.owner.clone(),
+                            weight: 0,
+                        }],
+                        remove: vec![],
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                })),
+            ]
         }
         // Can accept inbound deposits, but cannot withdraw funds out
         EndowmentStatus::Frozen => {
@@ -118,6 +139,16 @@ pub fn update_endowment_status(
         EndowmentStatus::Closed => vec![
             build_account_status_change_msg(endowment_entry.address.to_string(), true, true),
             build_index_fund_member_removal_msg(endowment_entry.address.to_string()),
+            // send msg to C4 Endowment Owners group SC to remove a member
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.endowment_owners_group_addr.unwrap(),
+                msg: to_binary(&UpdateMembers {
+                    add: vec![],
+                    remove: vec![accounts_config.owner.clone().to_string()],
+                })
+                .unwrap(),
+                funds: vec![],
+            })),
         ],
         _ => vec![],
     };
@@ -162,6 +193,10 @@ pub fn update_config(
 
     let charities_addr_list = msg.charities_list(deps.api)?;
     let accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
+    let endowment_owners_group_addr: Option<String> = match msg.endowment_owners_group_addr {
+        Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
+        None => None,
+    };
     let default_vault = deps.api.addr_validate(
         &msg.default_vault
             .unwrap_or_else(|| config.default_vault.to_string()),
@@ -181,6 +216,7 @@ pub fn update_config(
         config.accounts_code_id = accounts_code_id;
         config.approved_charities = charities_addr_list;
         config.default_vault = default_vault;
+        config.endowment_owners_group_addr = endowment_owners_group_addr;
         Ok(config)
     })?;
 

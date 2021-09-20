@@ -28,6 +28,9 @@ let tca: Wallet;
 
 let accountsCodeId: number;
 let registrar: string;
+let cw4GrpOwners: string;
+let cw4GrpApTeam: string;
+let cw3GuardianAngels: string;
 let indexFund: string;
 let anchorVault1: string;
 let anchorVault2: string;
@@ -256,6 +259,19 @@ export async function setupContracts(): Promise<void> {
     path.resolve(__dirname, "../../artifacts/accounts.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${accountsCodeId}`);
 
+  process.stdout.write("Uploading CW4 Group Wasm");
+  const cw4Group = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/cw4_group.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw4Group}`);
+
+  process.stdout.write("Uploading C3 Guardian Angel MultiSig Wasm");
+  const guardianAngelMultiSig = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/ap_team_multisig.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${guardianAngelMultiSig}`);
 
   // Step 2. Instantiate the key contracts
   // Registrar
@@ -273,6 +289,49 @@ export async function setupContracts(): Promise<void> {
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${registrar}`);
   
+  // CW4 Charity Owners Group
+  // Registrar SC is the Admin & no members in the group to start
+  process.stdout.write("Instantiating CW4 Charity Owners Group contract");
+  const cw4GrpOwnersResult = await instantiateContract(terra, apTeam, apTeam, cw4Group, {
+    admin: registrar,
+    members: [],
+  });
+  cw4GrpOwners = cw4GrpOwnersResult.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => {
+    return attribute.key == "contract_address";
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpOwners}`);
+
+  // CW4 AP Team Group
+  // Minimum of 1 member in the group to approve proposals
+  process.stdout.write("Instantiating CW4 AP Team Group contract");
+  const cw4GrpApTeamResult = await instantiateContract(terra, apTeam, apTeam, cw4Group, {
+    admin: apTeam,
+    members: [apTeam],
+  });
+  cw4GrpApTeam = cw4GrpApTeamResult.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => {
+    return attribute.key == "contract_address";
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpApTeam}`);
+
+  // CW3 Guardian Angels MultiSig
+  process.stdout.write("Instantiating CW3 Guardian Angels MultiSig contract");
+  const cw3Result = await instantiateContract(terra, apTeam, apTeam, guardianAngelMultiSig, {
+    group_addr: cw4GrpApTeam,
+    // charity_owners: cw4GrpOwners,
+    threshold: { percentage: "0.25" },
+    max_voting_period: 100000,
+  });
+  cw3GuardianAngels = cw3Result.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => {
+    return attribute.key == "contract_address";
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw3GuardianAngels}`);
+
   // Index Fund
   process.stdout.write("Instantiating Index Fund contract");
   const fundResult = await instantiateContract(terra, apTeam, apTeam, fundCodeId, {

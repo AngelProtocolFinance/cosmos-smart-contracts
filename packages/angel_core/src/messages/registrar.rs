@@ -1,4 +1,5 @@
 use cosmwasm_std::{Addr, Api, StdResult};
+use cw4::Member;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -52,6 +53,7 @@ pub struct UpdateConfigMsg {
     pub treasury: Option<String>,
     pub approved_charities: Option<Vec<String>>,
     pub default_vault: Option<String>,
+    pub endowment_owners_group_addr: Option<String>,
 }
 
 impl UpdateConfigMsg {
@@ -67,6 +69,12 @@ impl UpdateConfigMsg {
 pub struct UpdateEndowmentStatusMsg {
     pub endowment_addr: String,
     pub status: u8,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateMembers {
+    pub remove: Vec<String>,
+    pub add: Vec<Member>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

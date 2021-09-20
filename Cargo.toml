@@ -5,6 +5,8 @@ members = [
     "contracts/core/index-fund",
     "contracts/core/registrar",
     "contracts/vaults/anchor",
+    "contracts/guardian-angels/cw4-group",
+    "contracts/guardian-angels/guardian-angels-cw3",
 ]
 
 exclude = []
