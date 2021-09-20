@@ -389,7 +389,7 @@ pub fn withdraw(
     let withdraw_messages = withdraw_from_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
-        &env.contract.address,
+        &endowment.beneficiary,
         sources,
     )?;
 
