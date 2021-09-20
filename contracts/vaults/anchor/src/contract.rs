@@ -6,12 +6,11 @@ use crate::queriers;
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
-use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn,
     Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
-use cw2::{get_contract_version, set_contract_version};
+use cw2::set_contract_version;
 use cw20::Balance;
 
 // version info for future migration info
@@ -28,14 +27,14 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let moneymarket = deps.api.addr_validate(&msg.moneymarket)?;
-    // let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
+    let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
 
     let config = config::Config {
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         moneymarket,
-        input_denom: "uusd".to_string(), // anchor_config.stable_denom.clone(),
-        yield_token: deps.api.addr_validate(&msg.registrar_contract)?, // deps.api.addr_validate(&anchor_config.aterra_contract)?,
+        input_denom: anchor_config.stable_denom.clone(),
+        yield_token: deps.api.addr_validate(&anchor_config.aterra_contract)?,
         next_pending_id: 0,
     };
 
@@ -91,8 +90,8 @@ pub fn execute(
         // Pulls all existing strategy amounts back to Account in UST.
         // Then re-Deposits according to the Strategies set.
         // -Deposit Token/Yield Token (Vault) --> +UST (Account) --> -UST (Account) --> +Deposit Token/Yield Token (Vault)
-        ExecuteMsg::Redeem {} => executers::redeem_stable(deps, env, info.clone()), // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
-        ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info.clone(), msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
+        ExecuteMsg::Redeem {} => executers::redeem_stable(deps, env, info), // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
+        ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info, msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info), // DP -> DP shuffle (taxes collected)
     }
 }
@@ -102,9 +101,7 @@ pub fn execute(
 /// incoming and outgoing funds and any further processing steps performed
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
-    match msg.id {
-        _ => executers::process_anchor_reply(deps, env, msg.id, msg.result),
-    }
+    executers::process_anchor_reply(deps, env, msg.id, msg.result)
 }
 
 #[entry_point]
@@ -120,35 +117,27 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
         // ANCHOR-SPECIFIC QUERIES BELOW THIS POINT!
         QueryMsg::ExchangeRate { input_denom: _ } => {
-            // let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;
+            let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;
 
             to_binary(&ExchangeRateResponse {
-                exchange_rate: Decimal256::percent(95), // epoch_state.exchange_rate,
-                yield_token_supply: Uint256::from(42069u64), // epoch_state.aterra_supply,
+                exchange_rate: epoch_state.exchange_rate,
+                yield_token_supply: epoch_state.aterra_supply,
             })
         }
         QueryMsg::Deposit { amount } => to_binary(&anchor::deposit_stable_msg(
-            deps,
             &config.moneymarket,
             &config.input_denom,
-            amount.into(),
+            amount,
         )?),
         QueryMsg::Redeem { amount } => to_binary(&anchor::redeem_stable_msg(
-            deps,
             &config.moneymarket,
             &config.yield_token,
-            amount.into(),
+            amount,
         )?),
     }
 }
 
 #[entry_point]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    let version = get_contract_version(deps.storage)?;
-    if version.contract != CONTRACT_NAME {
-        return Err(ContractError::CannotMigrate {
-            previous_contract: version.contract,
-        });
-    }
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::default())
 }

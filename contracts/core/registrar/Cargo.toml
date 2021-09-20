@@ -1,6 +1,6 @@
 [package]
 name = "registrar"
-version = "0.1.0"
+version = "0.1.2"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 
@@ -20,7 +20,7 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces", "cosmwasm-vm/backtraces"]
 
 [dependencies]
-angel-core = { version = "0.1.0", path = "../../../packages/angel_core" }
+angel-core = { path = "../../../packages/angel_core" }
 accounts = { path = "../../../contracts/core/accounts" }
 cosmwasm-bignumber = "2.2.0"
 cosmwasm-std = { version = "0.16.0", features = ["staking"] }

@@ -211,12 +211,11 @@ pub fn create_endowment(
 
     let wasm_msg = WasmMsg::Instantiate {
         code_id: config.accounts_code_id,
-        admin: Some(env.contract.address.to_string()),
+        admin: Some(config.owner.to_string()),
         label: "new endowment accounts".to_string(),
         msg: to_binary(&angel_core::messages::accounts::InstantiateMsg {
             owner_sc: config.owner.to_string(),
             registrar_contract: env.contract.address.to_string(),
-            index_fund_contract: config.index_fund_contract.to_string(),
             owner: msg.owner,
             beneficiary: msg.beneficiary,
             name: msg.name,
@@ -252,23 +251,17 @@ pub fn migrate_accounts(
         return Err(ContractError::Unauthorized {});
     }
 
-    let mut sub_messages = vec![];
+    let mut messages = vec![];
     for endowment in read_registry_entries(deps.storage)?.into_iter() {
         let wasm_msg = WasmMsg::Migrate {
             contract_addr: endowment.address.to_string(),
             new_code_id: config.accounts_code_id,
-            msg: to_binary(&MigrateMsg {})?,
+            msg: to_binary(&angel_core::messages::accounts::MigrateMsg {})?,
         };
-
-        sub_messages.push(SubMsg {
-            id: 42,
-            msg: CosmosMsg::Wasm(wasm_msg),
-            gas_limit: None,
-            reply_on: ReplyOn::Success,
-        });
+        messages.push(CosmosMsg::Wasm(wasm_msg));
     }
     Ok(Response::new()
-        .add_submessages(sub_messages)
+        .add_messages(messages)
         .add_attribute("action", "migrate_accounts"))
 }
 

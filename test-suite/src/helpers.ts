@@ -7,6 +7,7 @@ import {
   LocalTerra,
   Msg,
   MsgInstantiateContract,
+  MsgMigrateContract,
   MsgStoreCode,
   StdFee,
   Wallet,
@@ -16,13 +17,14 @@ import {
 /**
  * @notice Encode a JSON object to base64 binary
  */
-export function toEncodedBinary(obj: any): string {
+export function toEncodedBinary(obj: JSON): string {
   return Buffer.from(JSON.stringify(obj)).toString("base64");
 }
 
 /**
  * @notice Send a transaction. Return result if successful, throw error if failed.
  */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function sendTransaction(
   terra: LocalTerra | LCDClient,
   sender: Wallet,
@@ -79,6 +81,7 @@ export async function storeCode(
 /**
  * @notice Instantiate a contract from an existing code ID. Return contract address.
  */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function instantiateContract(
   terra: LocalTerra | LCDClient,
   deployer: Wallet,
@@ -92,6 +95,29 @@ export async function instantiateContract(
       admin.key.accAddress,
       codeId,
       instantiateMsg
+    ),
+  ]);
+  return result;
+}
+
+/**
+ * @notice Instantiate a contract from an existing code ID. Return contract address.
+ */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export async function migrateContract(
+  terra: LocalTerra | LCDClient,
+  sender: Wallet,
+  admin: Wallet,
+  contract: string,
+  new_code_id: number,
+  migrateMsg: Record<string, unknown>
+) {
+  const result = await sendTransaction(terra, sender, [
+    new MsgMigrateContract(
+      admin.key.accAddress,
+      contract,
+      new_code_id,
+      migrateMsg
     ),
   ]);
   return result;

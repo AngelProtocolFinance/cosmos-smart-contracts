@@ -1,16 +1,16 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {LCDClient, Coin, MnemonicKey, Wallet, MsgSend, StdTx, BlockTxBroadcastResult} from "@terra-money/terra.js";
 import chalk from "chalk";
 import {
   initializeLCDClient,
   setupContracts,
+  migrateContracts,
   testRejectUnapprovedDonations,
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
   testAngelTeamCanTriggerVaultsHarvest,
   testCharityCanUpdateStrategies,
   testBeneficiaryCanWithdrawFromLiquid,
-  testQueryAccountsAccount,
-  testQueryAccountsAccountList,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
@@ -56,21 +56,27 @@ export async function startTest(terra: LCDClient): Promise<void> {
       pleb,
       tca
     },
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     process.env.MONEYMARKET_CONTRACT_TESTNET!
   );
 
-  console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupContracts();
+  // console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  // await migrateContracts();
+
+  //console.log(chalk.yellow("\nStep 2. Contracts Setup"));
+  // await setupContracts();
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
-  await testRejectUnapprovedDonations();
-  await testDonorSendsToIndexFund();
-  await testTcaMemberSendsToIndexFund();
-  await testAngelTeamCanTriggerVaultsHarvest();
-  await testCharityCanUpdateStrategies();
-  setTimeout(async () => {
-    await testBeneficiaryCanWithdrawFromLiquid();
-  }, 7000);
+  // await testRejectUnapprovedDonations();
+  // await testDonorSendsToIndexFund();
+  // await testTcaMemberSendsToIndexFund();
+  // await testAngelTeamCanTriggerVaultsHarvest();
+  // setTimeout(async () => {
+    // await testCharityCanUpdateStrategies();
+  // }, 8000);
+  // setTimeout(async () => {
+  //   await testBeneficiaryCanWithdrawFromLiquid();
+  // }, 7000);
   // await testQueryRegistrarConfig();
   // await testQueryRegistrarApprovedEndowmentList();
   // await testQueryRegistrarEndowmentList();
@@ -80,8 +86,6 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await testQueryAccountsBalance();
   // await testQueryAccountsConfig();
   // await testQueryAccountsEndowment();
-  // await testQueryAccountsAccount();
-  // await testQueryAccountsAccountList();
   // await testQueryIndexFundConfig();
   // await testQueryIndexFundState();
   // await testQueryIndexFundTcaList();

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {LCDClient, Coin, Wallet} from "@terra-money/terra.js";
 import chalk from "chalk";
 import {
@@ -9,8 +10,6 @@ import {
   testAngelTeamCanTriggerVaultsHarvest,
   testCharityCanUpdateStrategies,
   testBeneficiaryCanWithdrawFromLiquid,
-  testQueryAccountsAccount,
-  testQueryAccountsAccountList,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
@@ -78,8 +77,6 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await testQueryAccountsBalance();
   // await testQueryAccountsConfig();
   // await testQueryAccountsEndowment();
-  // await testQueryAccountsAccount();
-  // await testQueryAccountsAccountList();
   // await testQueryIndexFundConfig();
   // await testQueryIndexFundState();
   // await testQueryIndexFundTcaList();

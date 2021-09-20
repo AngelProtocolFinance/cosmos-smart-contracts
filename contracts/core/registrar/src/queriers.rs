@@ -1,11 +1,13 @@
 use crate::state::{read_registry_entries, read_vaults, vault_read, CONFIG};
 use angel_core::responses::registrar::*;
 use cosmwasm_std::{Deps, StdResult};
+use cw2::get_contract_version;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
     let res = ConfigResponse {
         owner: config.owner.to_string(),
+        version: get_contract_version(deps.storage)?.contract,
         accounts_code_id: config.accounts_code_id,
         treasury: config.treasury.to_string(),
         tax_rate: config.tax_rate,

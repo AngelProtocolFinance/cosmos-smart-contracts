@@ -1,6 +1,6 @@
 [package]
 name = "index-fund"
-version = "0.1.0"
+version = "0.1.2"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 
@@ -20,7 +20,7 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-angel-core = { version = "0.1.0", path = "../../../packages/angel_core" }
+angel-core = { version = "0.1.2", path = "../../../packages/angel_core" }
 cw2 = "0.8.0"
 cw20 = "0.8.0"
 cw-controllers = "0.8.0"

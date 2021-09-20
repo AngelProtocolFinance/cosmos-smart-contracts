@@ -11,7 +11,6 @@ pub struct MigrateMsg {}
 pub struct InstantiateMsg {
     pub owner_sc: String,
     pub registrar_contract: String,
-    pub index_fund_contract: String,
     pub owner: String,       // address that originally setup the endowment account
     pub beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
     pub name: String,        // name of the Charity Endowment

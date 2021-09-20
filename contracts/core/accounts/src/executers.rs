@@ -172,11 +172,9 @@ pub fn update_strategies(
     endowment.strategies = new_strategies;
     ENDOWMENT.save(deps.storage, &endowment)?;
 
-    Ok(
-        Response::new()
-            .add_attribute("action", "update_strategies")
-            .add_submessages(redeem_messages), // .add_submessages(deposit_messages)
-    )
+    Ok(Response::new()
+        .add_attribute("action", "update_strategies")
+        .add_submessages(redeem_messages))
 }
 
 pub fn vault_receipt(
@@ -239,7 +237,6 @@ pub fn vault_receipt(
                 total,
             ));
     }
-    STATE.save(deps.storage, &state)?;
 
     let mut deposit_submessages: Vec<SubMsg> = vec![];
     match config.pending_redemptions {
@@ -268,12 +265,14 @@ pub fn vault_receipt(
                     amount: Uint128::zero(),
                     denom: "uusd".to_string(),
                 }]));
-            STATE.save(deps.storage, &state)?;
         }
         // subtract one redemption and hold off on doing deposits
         Some(_) => config.pending_redemptions = Some(config.pending_redemptions.unwrap() - 1),
         None => (),
     };
+
+    STATE.save(deps.storage, &state)?;
+    CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new()
         .add_submessages(deposit_submessages)
@@ -390,7 +389,7 @@ pub fn withdraw(
     let withdraw_messages = withdraw_from_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
-        &env.contract.address,
+        &endowment.beneficiary,
         sources,
     )?;
 

@@ -1,4 +1,3 @@
-use angel_core::utils::deduct_tax;
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
     to_binary, Addr, Coin, CosmosMsg, Deps, QueryRequest, StdResult, Uint128, WasmMsg, WasmQuery,
@@ -80,38 +79,25 @@ pub enum Cw20HookMsg {
     RedeemStable {},
 }
 
-pub fn deposit_stable_msg(
-    deps: Deps,
-    market: &Addr,
-    denom: &str,
-    amount: Uint128,
-) -> StdResult<Vec<CosmosMsg>> {
-    Ok(vec![CosmosMsg::Wasm(WasmMsg::Execute {
+pub fn deposit_stable_msg(market: &Addr, denom: &str, amount: Uint128) -> StdResult<CosmosMsg> {
+    Ok(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: market.to_string(),
         msg: to_binary(&HandleMsg::DepositStable {})?,
-        funds: vec![deduct_tax(
-            deps,
-            Coin {
-                denom: denom.to_string(),
-                amount,
-            },
-        )?],
-    })])
+        funds: vec![Coin {
+            denom: denom.to_string(),
+            amount,
+        }],
+    }))
 }
 
-pub fn redeem_stable_msg(
-    _deps: Deps,
-    market: &Addr,
-    token: &Addr,
-    amount: Uint128,
-) -> StdResult<Vec<CosmosMsg>> {
-    Ok(vec![CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: token.to_string(),
+pub fn redeem_stable_msg(market: &Addr, token: &Addr, amount: Uint128) -> StdResult<CosmosMsg> {
+    Ok(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: token.into(),
         msg: to_binary(&Cw20ExecuteMsg::Send {
-            contract: market.to_string(),
+            contract: market.into(),
             amount,
             msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
         })?,
         funds: vec![],
-    })])
+    }))
 }

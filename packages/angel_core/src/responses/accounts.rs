@@ -11,6 +11,7 @@ pub struct StateResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: String,
+    pub version: String,
     pub registrar_contract: String,
     pub deposit_approved: bool,
     pub withdraw_approved: bool,
