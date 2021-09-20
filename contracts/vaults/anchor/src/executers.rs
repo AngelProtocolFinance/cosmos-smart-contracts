@@ -372,7 +372,7 @@ pub fn process_anchor_reply(
                     let redeem_attr: Attribute = Attribute::new("action", "redeem_stable");
                     if event.attributes.contains(&redeem_attr) {
                         for attr in event.attributes {
-                            if attr.key == "burn_amount" { // burn_amount
+                            if attr.key == "redeem_amount" {
                                 anchor_amount = Uint128::from(attr.value.parse::<u128>().unwrap());
                                 break;
                             }
@@ -440,7 +440,10 @@ pub fn process_anchor_reply(
                                     },
                                 ),
                             )?,
-                            funds: vec![after_tax_locked, after_tax_liquid],
+                            funds: vec![Coin {
+                                amount: after_tax_locked.amount + after_tax_liquid.amount,
+                                denom: "uusd".to_string(),
+                            }],
                         }))
                 }
                 "withdraw" => {
