@@ -19,7 +19,6 @@ fn test_proper_initialization() {
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
-        index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),
         beneficiary: charity_addr.clone(),
         name: "Test Endowment".to_string(),
@@ -47,7 +46,6 @@ fn test_get_config() {
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
-        index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),
         beneficiary: charity_addr.clone(),
         name: "Test Endowment".to_string(),
@@ -76,7 +74,6 @@ fn test_update_endowment_settings() {
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
-        index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),
         beneficiary: charity_addr.clone(),
         name: "Test Endowment".to_string(),
@@ -140,7 +137,6 @@ fn test_change_registrar_contract() {
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
-        index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),
         beneficiary: charity_addr.clone(),
         name: "Test Endowment".to_string(),
@@ -198,7 +194,6 @@ fn test_change_admin() {
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
-        index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),
         beneficiary: charity_addr.clone(),
         name: "Test Endowment".to_string(),
@@ -256,7 +251,6 @@ fn migrate_contract() {
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
-        index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),
         beneficiary: charity_addr.clone(),
         name: "Test Endowment".to_string(),
@@ -290,7 +284,6 @@ fn test_update_strategy() {
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
-        index_fund_contract: index_fund_contract.clone(),
         owner: charity_addr.clone(),
         beneficiary: charity_addr.clone(),
         name: "Test Endowment".to_string(),
