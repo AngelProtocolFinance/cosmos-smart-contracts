@@ -81,6 +81,7 @@ fn update_config() {
         approved_charities: None,
         treasury: Some(ap_team.clone()),
         default_vault: None,
+        endowment_owners_group_addr: None,
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
