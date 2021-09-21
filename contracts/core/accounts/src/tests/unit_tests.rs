@@ -2,10 +2,9 @@ use crate::contract::{execute, instantiate, migrate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
-use angel_core::structs::{GenericBalance, SplitDetails, StrategyComponent};
+use angel_core::structs::SplitDetails;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{coin, coins, from_binary, Addr, Decimal, Uint128};
-use cw20::{Balance, Cw20CoinVerified};
+use cosmwasm_std::{coins, from_binary, Decimal};
 
 #[test]
 fn test_proper_initialization() {
@@ -13,7 +12,6 @@ fn test_proper_initialization() {
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
 
     let instantiate_msg = InstantiateMsg {
@@ -40,7 +38,6 @@ fn test_get_config() {
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
 
     let instantiate_msg = InstantiateMsg {
@@ -67,7 +64,6 @@ fn test_update_endowment_settings() {
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
@@ -130,7 +126,6 @@ fn test_change_registrar_contract() {
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
@@ -187,7 +182,6 @@ fn test_change_admin() {
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
@@ -244,7 +238,6 @@ fn migrate_contract() {
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let _pleb = "plebAccount".to_string();
 
@@ -277,7 +270,6 @@ fn test_update_strategy() {
 
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 

@@ -11,8 +11,6 @@ fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
-    let _charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let _index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let _pleb = "plebAccount".to_string();
 
@@ -36,8 +34,6 @@ fn only_sc_owner_can_change_owner() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
-    let _charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let _index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
@@ -92,8 +88,6 @@ fn only_registrar_can_change_registrar_contract() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
-    let _charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let _index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
@@ -179,7 +173,6 @@ fn sc_owner_can_update_list_of_tca_members() {
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let _index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
@@ -219,8 +212,6 @@ fn sc_owner_can_add_remove_funds() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
-    let _charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let _index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
@@ -286,7 +277,6 @@ fn sc_owner_can_update_fund_members() {
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let _index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
