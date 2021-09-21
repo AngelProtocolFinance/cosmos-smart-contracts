@@ -17,7 +17,7 @@ import {
 /**
  * @notice Encode a JSON object to base64 binary
  */
-export function toEncodedBinary(obj: JSON): string {
+export function toEncodedBinary(obj: any): string {
   return Buffer.from(JSON.stringify(obj)).toString("base64");
 }
 

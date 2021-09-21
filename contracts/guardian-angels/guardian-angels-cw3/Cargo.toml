@@ -1,5 +1,5 @@
 [package]
-name = "guardian-angel-multisig"
+name = "guardian-angels-multisig"
 version = "0.1.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"

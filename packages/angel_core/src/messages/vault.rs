@@ -16,6 +16,7 @@ pub struct MigrateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    UpdateOwner { new_owner: String },
     UpdateRegistrar { new_registrar: Addr },
     Deposit(AccountTransferMsg),
     Redeem {},

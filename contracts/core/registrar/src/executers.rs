@@ -13,6 +13,7 @@ use cosmwasm_std::{
     Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg, WasmQuery,
 };
 use cw4::Member;
+use cw4_group::msg::ExecuteMsg::UpdateMembers;
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
@@ -25,24 +26,6 @@ fn build_account_status_change_msg(account: String, deposit: bool, withdraw: boo
                 },
             ),
         )
-        .unwrap(),
-        funds: vec![],
-    });
-
-    SubMsg {
-        id: 0,
-        msg: wasm_msg,
-        gas_limit: None,
-        reply_on: ReplyOn::Never,
-    }
-}
-
-fn build_index_fund_member_removal_msg(account: String) -> SubMsg {
-    let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: account.clone(),
-        msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
-            angel_core::messages::index_fund::RemoveMemberMsg { member: account },
-        ))
         .unwrap(),
         funds: vec![],
     });
@@ -121,8 +104,7 @@ pub fn update_endowment_status(
                             weight: 0,
                         }],
                         remove: vec![],
-                    })
-                    .unwrap(),
+                    })?,
                     funds: vec![],
                 })),
             ]
@@ -138,15 +120,24 @@ pub fn update_endowment_status(
         // Has been liquidated or terminated. Remove from Funds and lockdown money flows
         EndowmentStatus::Closed => vec![
             build_account_status_change_msg(endowment_entry.address.to_string(), true, true),
-            build_index_fund_member_removal_msg(endowment_entry.address.to_string()),
+            // trigger the removal of this endowment from all Index Funds
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: endowment_entry.address.to_string().clone(),
+                msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
+                    angel_core::messages::index_fund::RemoveMemberMsg {
+                        member: endowment_entry.address.to_string(),
+                    },
+                ))
+                .unwrap(),
+                funds: vec![],
+            })),
             // send msg to C4 Endowment Owners group SC to remove a member
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: config.endowment_owners_group_addr.unwrap(),
                 msg: to_binary(&UpdateMembers {
                     add: vec![],
                     remove: vec![accounts_config.owner.clone().to_string()],
-                })
-                .unwrap(),
+                })?,
                 funds: vec![],
             })),
         ],
