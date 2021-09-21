@@ -413,7 +413,6 @@ export async function setupContracts(): Promise<void> {
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
 
-
   // Anchor Vault - #1
   process.stdout.write("Instantiating Anchor Vault (#1) contract");
   const vaultResult1 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
@@ -620,13 +619,12 @@ export async function setupContracts(): Promise<void> {
 //
 // SCENARIO:
 // New AP Team Wallet needs to be added to the C4 Group. Done via a new proposal
-// by an existing group member, approved with YES votes by other members,
-// and then executed by any wallet.
+// by an existing group member, approved with YES votes, and executed by any wallet.
 //
 //----------------------------------------------------------------------------------------
 
 export async function testAddApTeamMemberToC4Group(): Promise<void> {
-  process.stdout.write("Test - Propose, Vote on, and Execute adding a new member to AP Team C4 Group");
+  process.stdout.write("Test - Propose and Execute adding a new member to AP Team C4 Group");
 
   // proposal to add new member
   const proposal = await expect(
@@ -651,18 +649,6 @@ export async function testAddApTeamMemberToC4Group(): Promise<void> {
           }]
         }
       })
-    ])
-  );
-
-  // other existing members vote YES to pass threshold
-  await expect(
-    sendTransaction(terra, apTeam2, [
-      new MsgExecuteContract(apTeam2.key.accAddress, cw3ApTeam, {
-        vote: {
-          proposal_id: 1, // Need to get actual new proposal ID from CW3 returned values..
-          vote: "yes",
-        }
-      }),
     ])
   );
 
