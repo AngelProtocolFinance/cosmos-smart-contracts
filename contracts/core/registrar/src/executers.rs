@@ -195,10 +195,10 @@ pub fn update_config(
 
     let charities_addr_list = msg.charities_list(deps.api)?;
     let accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
-    let guardian_angels = match msg.guardian_angels {
-        Some(v) => deps.api.addr_validate(&v)?,
-        None => config.guardian_angels,
-    };
+    let guardian_angels = deps.api.addr_validate(
+        &msg.guardian_angels
+            .unwrap_or(config.guardian_angels.to_string()),
+    )?;
     let endowment_owners_group_addr: Option<String> = match msg.endowment_owners_group_addr {
         Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
         None => None,
