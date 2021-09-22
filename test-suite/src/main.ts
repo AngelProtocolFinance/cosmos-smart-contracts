@@ -375,17 +375,6 @@ export async function setupContracts(): Promise<void> {
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpOwners}`);
 
-  // Update the Registrar with newly created CW4 Endowment Owners Group address
-  process.stdout.write("Update Registrar with the Address of the CW4 Endowment Owners Group contract");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_config: {
-        endowment_owners_group_addr: cw4GrpOwners,
-      }
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
-
   // CW3 Guardian Angels MultiSig
   process.stdout.write("Instantiating CW3 Guardian Angels MultiSig contract");
   const cw3Result = await instantiateContract(terra, apTeam, apTeam, guardianAngelMultiSig, {
@@ -400,6 +389,18 @@ export async function setupContracts(): Promise<void> {
     return attribute.key == "contract_address";
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw3GuardianAngels}`);
+
+  // Update the Registrar with newly created CW4 Endowment Owners Group address & CW3 Guardian Angels MultiSig
+  process.stdout.write("Update Registrar with the Address of the CW4 Endowment Owners Group contract");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_config: {
+        endowment_owners_group_addr: cw4GrpOwners,
+        guardian_angels: cw3GuardianAngels,
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
 
   // Index Fund
   process.stdout.write("Instantiating Index Fund contract");
@@ -549,12 +550,21 @@ export async function setupContracts(): Promise<void> {
       update_endowment_status: {
         endowment_addr: endowmentContract1,
         status: 1,
+        beneficiary: undefined,
       }
     }),
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_endowment_status: {
         endowment_addr: endowmentContract2,
         status: 1,
+        beneficiary: undefined,
+      }
+    }),
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_endowment_status: {
+        endowment_addr: endowmentContract3,
+        status: 3,
+        beneficiary: apTeam,
       }
     }),
   ]);
