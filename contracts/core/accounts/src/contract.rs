@@ -69,6 +69,8 @@ pub fn instantiate(
         &State {
             donations_received: Uint128::zero(),
             balances: BalanceInfo::default(),
+            closing_endowment: false,
+            closing_beneficiary: None,
         },
     )?;
 
@@ -103,10 +105,8 @@ pub fn execute(
         ExecuteMsg::UpdateStrategies { strategies } => {
             executers::update_strategies(deps, env, info, strategies)
         }
-        ExecuteMsg::Liquidate { beneficiary } => executers::liquidate(deps, env, info, beneficiary),
-        ExecuteMsg::TerminateToFund { fund } => executers::terminate_to_fund(deps, env, info, fund),
-        ExecuteMsg::TerminateToAddress { beneficiary } => {
-            executers::terminate_to_address(deps, env, info, beneficiary)
+        ExecuteMsg::CloseEndowment { beneficiary } => {
+            executers::close_endowment(deps, env, info, beneficiary)
         }
     }
 }

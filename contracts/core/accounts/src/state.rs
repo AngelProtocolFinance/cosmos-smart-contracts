@@ -53,6 +53,8 @@ impl Endowment {
 pub struct State {
     pub donations_received: Uint128,
     pub balances: BalanceInfo,
+    pub closing_endowment: bool,
+    pub closing_beneficiary: Option<String>,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
