@@ -119,7 +119,7 @@ pub fn update_endowment_status(
         }
         // Has been liquidated or terminated. Remove from Funds and lockdown money flows
         EndowmentStatus::Closed => vec![
-            build_account_status_change_msg(endowment_entry.address.to_string(), true, true),
+            build_account_status_change_msg(endowment_entry.address.to_string(), false, false),
             // trigger the removal of this endowment from all Index Funds
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: endowment_entry.address.to_string().clone(),
@@ -138,6 +138,17 @@ pub fn update_endowment_status(
                     add: vec![],
                     remove: vec![accounts_config.owner.clone().to_string()],
                 })?,
+                funds: vec![],
+            })),
+            // start redemption of Account SC's Vault holdings to final beneficiary/index fund
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: endowment_entry.address.to_string().clone(),
+                msg: to_binary(
+                    &angel_core::messages::accounts::ExecuteMsg::CloseEndowment {
+                        beneficiary: msg.beneficiary,
+                    },
+                )
+                .unwrap(),
                 funds: vec![],
             })),
         ],
