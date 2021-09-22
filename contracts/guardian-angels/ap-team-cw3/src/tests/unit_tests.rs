@@ -14,7 +14,7 @@ use cw4::{Cw4ExecuteMsg, Member, MemberChangedHookMsg, MemberDiff};
 use cw4_group::helpers::Cw4GroupContract;
 use cw_multi_test::{next_block, App, AppBuilder, Contract, ContractWrapper, Executor};
 
-const CONTRACT_NAME: &str = "guardian-angel-multisig";
+const CONTRACT_NAME: &str = "ap-team-multisig";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const OWNER: &str = "admin0001";

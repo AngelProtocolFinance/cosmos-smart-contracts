@@ -20,7 +20,7 @@ use cw4_group::helpers::Cw4GroupContract;
 use cw_controllers::{AdminError, HookError};
 use cw_multi_test::{next_block, App, BankKeeper, Contract, ContractWrapper, Executor};
 
-const CONTRACT_NAME: &str = "guardian-angel-multisig";
+const CONTRACT_NAME: &str = "cw4-group";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const INIT_ADMIN: &str = "juan";
