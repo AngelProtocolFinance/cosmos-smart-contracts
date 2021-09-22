@@ -18,7 +18,8 @@ pub const CONFIG: Item<Config> = Item::new(CONFIG_KEY);
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub owner: Addr, // AP TEAM / DANO Address
+    pub owner: Addr,           // AP TEAM MULTISIG
+    pub guardian_angels: Addr, // GUARDIAN ANGELS MULTISIG
     pub index_fund_contract: Addr,
     pub accounts_code_id: u64,
     pub approved_charities: Vec<Addr>,

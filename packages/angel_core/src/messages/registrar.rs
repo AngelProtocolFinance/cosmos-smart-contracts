@@ -53,6 +53,7 @@ pub struct UpdateConfigMsg {
     pub approved_charities: Option<Vec<String>>,
     pub default_vault: Option<String>,
     pub endowment_owners_group_addr: Option<String>,
+    pub guardian_angels: Option<String>,
 }
 
 impl UpdateConfigMsg {

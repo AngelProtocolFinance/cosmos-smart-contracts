@@ -46,7 +46,7 @@ pub fn update_endowment_status(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    if info.sender.ne(&config.owner) || msg.status > 3 {
+    if info.sender.ne(&config.owner) || info.sender.ne(&config.guardian_angels) || msg.status > 3 {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -195,6 +195,10 @@ pub fn update_config(
 
     let charities_addr_list = msg.charities_list(deps.api)?;
     let accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
+    let guardian_angels = match msg.guardian_angels {
+        Some(v) => deps.api.addr_validate(&v)?,
+        None => config.guardian_angels,
+    };
     let endowment_owners_group_addr: Option<String> = match msg.endowment_owners_group_addr {
         Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
         None => None,
@@ -219,6 +223,7 @@ pub fn update_config(
         config.approved_charities = charities_addr_list;
         config.default_vault = default_vault;
         config.endowment_owners_group_addr = endowment_owners_group_addr;
+        config.guardian_angels = guardian_angels;
         Ok(config)
     })?;
 
