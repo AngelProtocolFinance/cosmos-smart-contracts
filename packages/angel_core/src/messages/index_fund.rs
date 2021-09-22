@@ -74,6 +74,8 @@ pub enum QueryMsg {
     FundsList {},
     // returns a single fund if the ID is valid
     FundDetails { fund_id: u64 },
+    // get all funds a given Accounts SC address is involved with
+    InvolvedFunds { address: String },
     // return details on the currently active fund
     ActiveFundDetails {},
     // get total donations given to Active Fund for a round

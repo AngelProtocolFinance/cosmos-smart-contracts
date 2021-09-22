@@ -68,6 +68,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::TcaList {} => to_binary(&queriers::tca_list(deps)?),
         QueryMsg::FundsList {} => to_binary(&queriers::funds_list(deps)?),
         QueryMsg::FundDetails { fund_id } => to_binary(&queriers::fund_details(deps, fund_id)?),
+        QueryMsg::InvolvedFunds { address } => to_binary(&queriers::involved_funds(deps, address)?),
         QueryMsg::ActiveFundDetails {} => to_binary(&queriers::active_fund_details(deps)?),
         QueryMsg::ActiveFundDonations {} => to_binary(&queriers::active_fund_donations(deps)?),
     }

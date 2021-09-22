@@ -80,3 +80,18 @@ pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
     }
     Ok(DonationListResponse { donors })
 }
+
+pub fn involved_funds(deps: Deps, address: String) -> StdResult<FundListResponse> {
+    let query_addr = deps.api.addr_validate(&address)?;
+    let all_funds = read_funds(deps.storage)?;
+    let involved_funds = vec![];
+    for fund in all_funds.iter() {
+        let pos = fund.members.iter().position(|m| *m == query_addr);
+        if pos != None {
+            involved_funds.push(*fund);
+        }
+    }
+    Ok(FundListResponse {
+        funds: involved_funds,
+    })
+}
