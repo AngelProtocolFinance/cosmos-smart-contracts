@@ -1,7 +1,6 @@
+use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, schema_for};
 use std::env::current_dir;
 use std::fs::create_dir_all;
-
-use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, schema_for};
 
 pub use cw4::{AdminResponse, MemberListResponse, MemberResponse, TotalWeightResponse};
 pub use cw4_group::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};

@@ -3,12 +3,16 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
-    "group_addr",
+    "endowment_owners_group",
+    "guardian_group",
     "max_voting_period",
     "threshold"
   ],
   "properties": {
-    "group_addr": {
+    "endowment_owners_group": {
+      "type": "string"
+    },
+    "guardian_group": {
       "type": "string"
     },
     "max_voting_period": {
