@@ -8,7 +8,7 @@
     "lint:fix": "npm run lint --fix"
   },
   "dependencies": {
-    "@terra-money/terra.js": "^2.1.1",
+    "@terra-money/terra.js": "^2.0.0",
     "bn.js": "^5.2.0",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
