@@ -82,6 +82,7 @@ fn update_config() {
         treasury: Some(ap_team.clone()),
         default_vault: None,
         endowment_owners_group_addr: None,
+        guardian_angels: None,
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -344,6 +345,7 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
     let update_endowment_status_msg = UpdateEndowmentStatusMsg {
         endowment_addr: good_endowment_addr.clone(),
         status: 1,
+        beneficiary: None,
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
