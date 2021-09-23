@@ -103,17 +103,17 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
-  registrar = "terra1mpw506zdwc2pzu6spvss8uu0j9l0efjghkjeqk";
-  indexFund = "terra18tat3wzxy8xfd4962p5xeuyz0w76ndw5h0yu32";
-  anchorVault1 = "terra1f7rk7rdg2d0f2wxsjggmycgw9dnqxz2q2ant55"; 
-  anchorVault2 = "terra16tqu2m83njq35x5wz57uds83454fgpnpvyh2jv";
-  endowmentContract1 = "terra1xk4utvkeqsytmtpn7nctkdlscsgfg7z06zgf6w";
-  endowmentContract2 ="terra1knplla6st825wxjrayt6a8xn90supn40fsss0e";
-  endowmentContract3 = "terra1vpml044fr86yl3jt0hspfkrdsg8ckr3djv8q76";
-  cw4GrpApTeam = "";
-  cw3ApTeam = "";
-  cw4GrpOwners = "";
-  cw3GuardianAngels = "";
+  registrar = "terra1x69eld68nwufxfpx9fukjtd3nkh6eunl3wfcys";
+  indexFund = "terra1hlm7gec5rk3j9w8r70hhp7p3l6n77sdda4pcwu";
+  anchorVault1 = "terra1dqkeugq73755gxm6xzafe2xnzzp02xqt4gw2ka"; 
+  anchorVault2 = "terra1p7y5juxdf9acl0azvwwvqf2mdndg6hzhvegqd0";
+  endowmentContract1 = "terra17pvm2m63eqs0pah4777cen8aa8fe6g2uutp0xt";
+  endowmentContract2 ="terra1g4rdk2xhakk36gx73mew8u4ngggavylghxaxrx";
+  endowmentContract3 = "terra1eenmklayyjaks060k02q39aqg4h495mj4cw80y";
+  cw4GrpApTeam = "terra140nuc7w5mdlwsaet39pw0p8hnc98u4erxvkd6r";
+  cw3ApTeam = "terra12v7lxmeeh4srveqjsmtc6k4zchts5tjcqzhl8m";
+  cw4GrpOwners = "terra1sdu3lh0we0fq6t89d7aqgw2rkgch4qx3f74h4s";
+  cw3GuardianAngels = "terra1wlfp7rn4v0tugl3vy73ruqfk46e20qesyz5jv3";
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
@@ -257,6 +257,7 @@ async function migrateAccounts(registrar: string, accounts: string[]) {
 //----------------------------------------------------------------------------------------
 
 export async function setupContracts(): Promise<void> {
+  /*
   // Step 1. Upload all local wasm files and capture the codes for each.... 
   process.stdout.write("Uploading Registrar Wasm");
   const registrarCodeId = await storeCode(
@@ -546,7 +547,7 @@ export async function setupContracts(): Promise<void> {
     return attribute.key == "contract_address"; 
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${endowmentContract3}`);
-
+*/
   // AP Team approves 2 of 3 newly created endowments
   process.stdout.write("AP Team approves 2 of 3 endowments");
   await sendTransaction(terra, apTeam, [
@@ -601,31 +602,31 @@ export async function setupContracts(): Promise<void> {
   console.log(chalk.green(" Done!"));
 
   // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
-  process.stdout.write("Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_owner: { new_owner: cw3ApTeam },
-    }),
-    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      update_owner: { new_owner: cw3ApTeam },
-    }),
-    new MsgExecuteContract(apTeam.key.accAddress, endowmentContract1, {
-      update_admin: { new_admin: cw3ApTeam },
-    }),
-    new MsgExecuteContract(apTeam.key.accAddress, endowmentContract2, {
-      update_admin: { new_admin: cw3ApTeam },
-    }),
-    new MsgExecuteContract(apTeam.key.accAddress, endowmentContract3, {
-      update_admin: { new_admin: cw3ApTeam },
-    }),
-    // new MsgExecuteContract(apTeam.key.accAddress, anchorVault1, {
-    //   update_owner: { new_owner: cw3ApTeam },
-    // }),
-    // new MsgExecuteContract(apTeam.key.accAddress, anchorVault2, {
-    //   update_owner: { new_owner: cw3ApTeam },
-    // }),
-  ]);
-  console.log(chalk.green(" Done!"));
+  // process.stdout.write("Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract");
+  // await sendTransaction(terra, apTeam, [
+  //   new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+  //     update_owner: { new_owner: cw3ApTeam },
+  //   }),
+  //   new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+  //     update_owner: { new_owner: cw3ApTeam },
+  //   }),
+  //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract1, {
+  //     update_admin: { new_admin: cw3ApTeam },
+  //   }),
+  //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract2, {
+  //     update_admin: { new_admin: cw3ApTeam },
+  //   }),
+  //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract3, {
+  //     update_admin: { new_admin: cw3ApTeam },
+  //   }),
+  //   // new MsgExecuteContract(apTeam.key.accAddress, anchorVault1, {
+  //   //   update_owner: { new_owner: cw3ApTeam },
+  //   // }),
+  //   // new MsgExecuteContract(apTeam.key.accAddress, anchorVault2, {
+  //   //   update_owner: { new_owner: cw3ApTeam },
+  //   // }),
+  // ]);
+  // console.log(chalk.green(" Done!"));
 }
 
 //----------------------------------------------------------------------------------------
