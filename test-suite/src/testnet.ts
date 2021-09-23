@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {LCDClient, Coin, MnemonicKey, Wallet, MsgSend, StdTx, BlockTxBroadcastResult} from "@terra-money/terra.js";
+import {LCDClient, Coin, MnemonicKey, Wallet, MsgSend, BlockTxBroadcastResult} from "@terra-money/terra.js";
 import chalk from "chalk";
 import {
   initializeLCDClient,
@@ -39,6 +39,8 @@ export async function startTest(terra: LCDClient): Promise<void> {
 
   // get wallets
   const apTeam: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.APTEAM}));
+  const apTeam2: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.APTEAM2}));
+  const apTeam3: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.APTEAM3}));
   const charity1: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.CHARITY1}));
   const charity2: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.CHARITY2}));
   const charity3: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.CHARITY3}));
@@ -50,6 +52,8 @@ export async function startTest(terra: LCDClient): Promise<void> {
     terra,
     {
       apTeam,
+      apTeam2,
+      apTeam3,
       charity1,
       charity2,
       charity3,
@@ -64,7 +68,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await migrateContracts();
 
   //console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  // await setupContracts();
+  await setupContracts();
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testRejectUnapprovedDonations();

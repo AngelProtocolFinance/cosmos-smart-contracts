@@ -74,6 +74,8 @@ export function initializeLCDClient(
   lcdClient: LCDClient,
   wallets: {
     apTeam: Wallet,
+    apTeam2: Wallet,
+    apTeam3: Wallet,
     charity1: Wallet,
     charity2: Wallet,
     charity3: Wallet,
@@ -83,6 +85,8 @@ export function initializeLCDClient(
   anchorMoneyMarketAddr: string): void {
   terra = lcdClient;
   apTeam = wallets.apTeam;
+  apTeam2 = wallets.apTeam2;
+  apTeam3 = wallets.apTeam3;
   charity1 = wallets.charity1;
   charity2 = wallets.charity2;
   charity3 = wallets.charity3;
