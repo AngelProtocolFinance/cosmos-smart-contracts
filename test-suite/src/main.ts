@@ -569,7 +569,7 @@ export async function setupContracts(): Promise<void> {
       update_endowment_status: {
         endowment_addr: endowmentContract3,
         status: 3,
-        beneficiary: apTeam,
+        beneficiary: apTeam.key.accAddress,
       }
     }),
   ]);
