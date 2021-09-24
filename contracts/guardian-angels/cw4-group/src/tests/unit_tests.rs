@@ -1,27 +1,18 @@
-use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, Threshold};
+use crate::msg::{ExecuteMsg, InstantiateMsg};
+use crate::contract::{
+    execute, instantiate, list_members, query_total_weight, 
+    query_member, update_members,
+};
+use crate::state::{ADMIN, HOOKS};
 use cosmwasm_std::testing::{
-    mock_dependencies, mock_env, mock_env, mock_info, MockApi, MockStorage,
+    mock_dependencies, mock_env, mock_info,
 };
 use cosmwasm_std::{
-    coin, coins, from_slice, Addr, Api, BankMsg, BlockInfo, Coin, CosmosMsg, Decimal, Empty,
-    OwnedDeps, Querier, Storage, Timestamp,
+    from_slice, Addr, Api, DepsMut,
+    OwnedDeps, Querier, Storage, SubMsg,
 };
-use cw0::Duration;
-use cw0::Expiration;
-
-use cw2::{query_contract_info, ContractVersion};
-use cw3::{
-    ProposalListResponse, ProposalResponse, Status, ThresholdResponse, Vote, VoteInfo,
-    VoteListResponse, VoteResponse, VoterDetail, VoterListResponse, VoterResponse,
-};
-use cw4::{member_key, Cw4ExecuteMsg, Member, MemberChangedHookMsg, MemberDiff, TOTAL_KEY};
-use cw4_group::helpers::Cw4GroupContract;
+use cw4::{member_key, Member, MemberChangedHookMsg, MemberDiff, TOTAL_KEY};
 use cw_controllers::{AdminError, HookError};
-use cw_multi_test::{next_block, App, BankKeeper, Contract, ContractWrapper, Executor};
-
-const CONTRACT_NAME: &str = "guardian-angel-multisig";
-const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const INIT_ADMIN: &str = "juan";
 const USER1: &str = "somebody";
