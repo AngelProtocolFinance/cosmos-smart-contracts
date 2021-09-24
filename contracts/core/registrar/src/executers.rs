@@ -46,7 +46,7 @@ pub fn update_endowment_status(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    if info.sender.ne(&config.owner) || info.sender.ne(&config.guardian_angels) || msg.status > 3 {
+    if info.sender.ne(&config.owner) || msg.status > 3 {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -96,17 +96,17 @@ pub fn update_endowment_status(
             vec![
                 build_account_status_change_msg(endowment_entry.address.to_string(), true, true),
                 // send msg to C4 Endowment Owners group SC to add new member
-                SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: config.endowment_owners_group_addr.unwrap(),
-                    msg: to_binary(&UpdateMembers {
-                        add: vec![Member {
-                            addr: accounts_config.owner.clone(),
-                            weight: 0,
-                        }],
-                        remove: vec![],
-                    })?,
-                    funds: vec![],
-                })),
+                // SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                //     contract_addr: config.endowment_owners_group_addr.unwrap(),
+                //     msg: to_binary(&UpdateMembers {
+                //         add: vec![Member {
+                //             addr: accounts_config.owner.clone(),
+                //             weight: 0,
+                //         }],
+                //         remove: vec![],
+                //     })?,
+                //     funds: vec![],
+                // })),
             ]
         }
         // Can accept inbound deposits, but cannot withdraw funds out
@@ -122,7 +122,7 @@ pub fn update_endowment_status(
             build_account_status_change_msg(endowment_entry.address.to_string(), false, false),
             // trigger the removal of this endowment from all Index Funds
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: endowment_entry.address.to_string().clone(),
+                contract_addr: config.index_fund_contract.to_string(),
                 msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
                     angel_core::messages::index_fund::RemoveMemberMsg {
                         member: endowment_entry.address.to_string(),
@@ -132,14 +132,14 @@ pub fn update_endowment_status(
                 funds: vec![],
             })),
             // send msg to C4 Endowment Owners group SC to remove a member
-            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.endowment_owners_group_addr.unwrap(),
-                msg: to_binary(&UpdateMembers {
-                    add: vec![],
-                    remove: vec![accounts_config.owner.clone().to_string()],
-                })?,
-                funds: vec![],
-            })),
+            // SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            //     contract_addr: config.endowment_owners_group_addr.unwrap(),
+            //     msg: to_binary(&UpdateMembers {
+            //         add: vec![],
+            //         remove: vec![accounts_config.owner.clone().to_string()],
+            //     })?,
+            //     funds: vec![],
+            // })),
             // start redemption of Account SC's Vault holdings to final beneficiary/index fund
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: endowment_entry.address.to_string().clone(),
