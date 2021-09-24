@@ -103,17 +103,17 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
-  registrar = "terra1x69eld68nwufxfpx9fukjtd3nkh6eunl3wfcys";
-  indexFund = "terra1hlm7gec5rk3j9w8r70hhp7p3l6n77sdda4pcwu";
-  anchorVault1 = "terra1dqkeugq73755gxm6xzafe2xnzzp02xqt4gw2ka"; 
-  anchorVault2 = "terra1p7y5juxdf9acl0azvwwvqf2mdndg6hzhvegqd0";
-  endowmentContract1 = "terra17pvm2m63eqs0pah4777cen8aa8fe6g2uutp0xt";
-  endowmentContract2 ="terra1g4rdk2xhakk36gx73mew8u4ngggavylghxaxrx";
-  endowmentContract3 = "terra1eenmklayyjaks060k02q39aqg4h495mj4cw80y";
-  cw4GrpApTeam = "terra140nuc7w5mdlwsaet39pw0p8hnc98u4erxvkd6r";
-  cw3ApTeam = "terra12v7lxmeeh4srveqjsmtc6k4zchts5tjcqzhl8m";
-  cw4GrpOwners = "terra1sdu3lh0we0fq6t89d7aqgw2rkgch4qx3f74h4s";
-  cw3GuardianAngels = "terra1wlfp7rn4v0tugl3vy73ruqfk46e20qesyz5jv3";
+  registrar = "terra1wtxuxwhn8v58hp2f459x7dmcfzxu5ua89q5y8l";
+  indexFund = "terra1ywlx0jjrjh9hkshztvpsxeu46tv2a94vtnhn6e";
+  anchorVault1 = "terra1mw4dcy7gzpc3whthp0agy52afl95l29gxwm3v7"; 
+  anchorVault2 = "terra12wnk29hu38qqlpgjdmp2awk8yh2n86zlsqxk4g";
+  endowmentContract1 = "terra1k8afa5xjs5g7zax6mtz09wh098gqawaqc5wz85";
+  endowmentContract2 ="terra106c2a9yke95e6nuzlayu8yxn2qzar2ds27yg3z";
+  endowmentContract3 = "terra1x4svcx37vvup5lcpd54lxr22uwtnnr6rt4du2x";
+  cw4GrpApTeam = "terra1sc60z89meu6t48dhax2r6epxfqzzvrhxyx9kwl";
+  cw3ApTeam = "terra1fp2f6hc8zutrxd3duylyamcsnqsl7ze90x0qmt";
+  cw4GrpOwners = "terra1u9cfrr9sa465g3k4f4t0jgxltuzgsccrh28x27";
+  cw3GuardianAngels = "terra17u0kexvj3923n8zlpph4k5xyfys0cd57jss6kh";
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
@@ -132,28 +132,12 @@ export function initializeLCDClient(
 // Migrate Vault contracts
 // -----------------------------
 export async function migrateContracts(): Promise<void> {
-    // temp place to put contract addresses
-    const registrar = "terra1mpw506zdwc2pzu6spvss8uu0j9l0efjghkjeqk";
-    const indexFund = "terra18tat3wzxy8xfd4962p5xeuyz0w76ndw5h0yu32";
-    const vaults = [
-      "terra1f7rk7rdg2d0f2wxsjggmycgw9dnqxz2q2ant55", 
-      "terra16tqu2m83njq35x5wz57uds83454fgpnpvyh2jv"
-    ];
-    const endowments = [
-      "terra1xk4utvkeqsytmtpn7nctkdlscsgfg7z06zgf6w",
-      "terra1knplla6st825wxjrayt6a8xn90supn40fsss0e",
-      "terra1vpml044fr86yl3jt0hspfkrdsg8ckr3djv8q76"
-    ];
-    const cw4GrpApTeam = "";
-    const cw3ApTeam = "";
-    const cw4GrpOwners = "";
-    const cw3GuardianAngels = "";
 
     // run the migrations desired
-    // await migrateRegistrar(registrar);
-    // await migrateIndexFund(indexFund);
-    // await migrateAccounts(registrar, endowments);
-    await migrateVaults(vaults);
+    await migrateRegistrar();
+    await migrateIndexFund(indexFund);
+    await migrateAccounts();
+    await migrateVaults();
 }
 
 // -------------------------------------------------
@@ -172,7 +156,7 @@ async function migrateIndexFund(indexFund: string) {
   console.log(chalk.green(" Done!"));
 }
 
-async function migrateRegistrar(registrar: string) {
+async function migrateRegistrar() {
   process.stdout.write("Uploading Registrar Wasm");
   const codeId = await storeCode(
     terra,
@@ -185,7 +169,7 @@ async function migrateRegistrar(registrar: string) {
   console.log(chalk.green(" Done!"));
 }
 
-async function migrateVaults(vaults: string[]) {
+async function migrateVaults() {
   process.stdout.write("Uploading Anchor Vault Wasm");
   const codeId = await storeCode(
     terra,
@@ -209,7 +193,7 @@ async function migrateVaults(vaults: string[]) {
   // });
 }
 
-async function migrateAccounts(registrar: string, accounts: string[]) {
+async function migrateAccounts() {
   process.stdout.write("Uploading Accounts Wasm");
   const codeId = await storeCode(
     terra,
@@ -257,7 +241,7 @@ async function migrateAccounts(registrar: string, accounts: string[]) {
 //----------------------------------------------------------------------------------------
 
 export async function setupContracts(): Promise<void> {
-  /*
+
   // Step 1. Upload all local wasm files and capture the codes for each.... 
   process.stdout.write("Uploading Registrar Wasm");
   const registrarCodeId = await storeCode(
@@ -547,7 +531,7 @@ export async function setupContracts(): Promise<void> {
     return attribute.key == "contract_address"; 
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${endowmentContract3}`);
-*/
+
   // AP Team approves 2 of 3 newly created endowments
   process.stdout.write("AP Team approves 2 of 3 endowments");
   await sendTransaction(terra, apTeam, [
@@ -563,13 +547,6 @@ export async function setupContracts(): Promise<void> {
         endowment_addr: endowmentContract2,
         status: 1,
         beneficiary: undefined,
-      }
-    }),
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_endowment_status: {
-        endowment_addr: endowmentContract3,
-        status: 3,
-        beneficiary: apTeam.key.accAddress,
       }
     }),
   ]);
@@ -627,6 +604,29 @@ export async function setupContracts(): Promise<void> {
   //   // }),
   // ]);
   // console.log(chalk.green(" Done!"));
+}
+
+
+//----------------------------------------------------------------------------------------
+// TEST: Add a new AP Team Member to the C4 AP Team Group
+//
+// SCENARIO:
+// New AP Team Wallet needs to be added to the C4 Group. Done via a new proposal
+// by an existing group member, approved with YES votes, and executed by any wallet.
+//
+//----------------------------------------------------------------------------------------
+export async function testClosingEndpoint(): Promise<void> {
+  process.stdout.write("AP Team approves 2 of 3 endowments");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_endowment_status: {
+        endowment_addr: endowmentContract1,
+        status: 3,
+        beneficiary: apTeam.key.accAddress,
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
 }
 
 //----------------------------------------------------------------------------------------

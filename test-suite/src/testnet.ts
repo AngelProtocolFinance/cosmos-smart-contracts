@@ -27,6 +27,7 @@ import {
   testQueryRegistrarEndowmentList,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
+  testClosingEndpoint,
 } from "./main";
 import dotenv from 'dotenv';
 
@@ -66,9 +67,10 @@ export async function startTest(terra: LCDClient): Promise<void> {
 
   // console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
   // await migrateContracts();
+  // await testClosingEndpoint();
 
   //console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupContracts();
+  // await setupContracts();
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testRejectUnapprovedDonations();
