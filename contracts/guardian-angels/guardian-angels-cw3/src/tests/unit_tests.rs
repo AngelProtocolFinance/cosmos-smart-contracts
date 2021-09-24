@@ -76,7 +76,7 @@ fn instantiate_flex(
 ) -> Addr {
     let flex_id = app.store_code(contract_flex());
     let msg = crate::msg::InstantiateMsg {
-        guardian_group: ap_group.to_string(),
+        ap_team_group: ap_group.to_string(),
         endowment_owners_group: endowment_group.to_string(),
         threshold,
         max_voting_period,
@@ -178,6 +178,7 @@ fn proposal_info() -> (Vec<CosmosMsg<Empty>>, String, String) {
 fn pay_somebody_proposal() -> ExecuteMsg {
     let (msgs, title, description) = proposal_info();
     ExecuteMsg::Propose {
+        endowment_addr: ENDOWMENTOWNER1.to_string(),
         title,
         description,
         msgs,
@@ -198,7 +199,7 @@ fn test_instantiate_works() {
 
     // Zero required weight fails
     let instantiate_msg = InstantiateMsg {
-        guardian_group: guardian_group.to_string(),
+        ap_team_group: guardian_group.to_string(),
         endowment_owners_group: endowment_group.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 0 },
         max_voting_period,
@@ -217,7 +218,7 @@ fn test_instantiate_works() {
 
     // Total weight less than required weight not allowed
     let instantiate_msg = InstantiateMsg {
-        guardian_group: guardian_group.to_string(),
+        ap_team_group: guardian_group.to_string(),
         endowment_owners_group: endowment_group.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 100 },
         max_voting_period,
@@ -239,7 +240,7 @@ fn test_instantiate_works() {
 
     // All valid
     let instantiate_msg = InstantiateMsg {
-        guardian_group: guardian_group.to_string(),
+        ap_team_group: guardian_group.to_string(),
         endowment_owners_group: endowment_group.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 1 },
         max_voting_period,
@@ -312,6 +313,7 @@ fn test_propose_works() {
         _ => panic!("Wrong variant"),
     };
     let proposal_wrong_exp = ExecuteMsg::Propose {
+        endowment_addr: ENDOWMENTOWNER1.to_string(),
         title: "Rewarding somebody".to_string(),
         description: "Do we reward her?".to_string(),
         msgs,
@@ -922,6 +924,7 @@ fn execute_group_changes_from_proposal() {
         .update_members(vec![APTEAM3.into()], vec![])
         .unwrap();
     let update_proposal = ExecuteMsg::Propose {
+        endowment_addr: ENDOWMENTOWNER1.to_string(),
         title: "Kick out APTEAM3".to_string(),
         description: "He's trying to steal our money".to_string(),
         msgs: vec![update_msg],
