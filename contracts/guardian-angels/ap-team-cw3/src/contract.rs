@@ -23,7 +23,7 @@ use crate::state::{
 };
 
 // version info for migration info
-const CONTRACT_NAME: &str = "guardian-angel-multisig";
+const CONTRACT_NAME: &str = "ap-team-multisig";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
