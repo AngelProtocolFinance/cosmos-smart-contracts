@@ -133,6 +133,30 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "harvest"
+      ],
+      "properties": {
+        "harvest": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "migrate_accounts"
+      ],
+      "properties": {
+        "migrate_accounts": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
     }
   ],
   "definitions": {
@@ -151,6 +175,12 @@
         },
         "description": {
           "type": "string"
+        },
+        "guardians_multisig_addr": {
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "maturity_height": {
           "type": [
@@ -200,6 +230,18 @@
           }
         },
         "default_vault": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "endowment_owners_group_addr": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardians_multisig_addr": {
           "type": [
             "string",
             "null"

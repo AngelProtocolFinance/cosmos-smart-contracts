@@ -375,24 +375,13 @@ export async function setupContracts(): Promise<void> {
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpOwners}`);
 
-  // Update the Registrar with newly created CW4 Endowment Owners Group address
-  process.stdout.write("Update Registrar with the Address of the CW4 Endowment Owners Group contract");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_config: {
-        endowment_owners_group_addr: cw4GrpOwners,
-      }
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
-
   // CW3 Guardian Angels MultiSig
   process.stdout.write("Instantiating CW3 Guardian Angels MultiSig contract");
   const cw3Result = await instantiateContract(terra, apTeam, apTeam, guardianAngelMultiSig, {
-    guardian_group: cw4GrpApTeam,
+    ap_team_group: cw4GrpApTeam,
     endowment_owners_group: cw4GrpOwners,
-    threshold: { absolute_percentage: { percentage: "0.25" }},
-    max_voting_period: { height: 100000 },
+    threshold: { absolute_percentage: { percentage: "0.50" }},
+    max_voting_period: { height: 1000 },
   });
   cw3GuardianAngels = cw3Result.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
@@ -400,6 +389,18 @@ export async function setupContracts(): Promise<void> {
     return attribute.key == "contract_address";
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw3GuardianAngels}`);
+
+  // Update the Registrar with newly created Endowment Owners Group & Guardians Multisig address
+  process.stdout.write("Update Registrar with the Address of the CW4 Endowment Owners Group contract");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_config: {
+        endowment_owners_group_addr: cw4GrpOwners,
+        guardians_multisig_addr: cw3GuardianAngels,
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
 
   // Index Fund
   process.stdout.write("Instantiating Index Fund contract");
@@ -562,7 +563,7 @@ export async function setupContracts(): Promise<void> {
 
   // Step 5: Index Fund finals setup 
   // Create an initial "Fund" with the two charities created above
-  process.stdout.write("Create a Fund with two charities in it");
+  process.stdout.write("Create two Funds: #1 with two charities & #2 with one");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       create_fund: {
@@ -571,6 +572,16 @@ export async function setupContracts(): Promise<void> {
           name: "Test Fund",
           description: "My first test fund",
           members: [endowmentContract1, endowmentContract2],
+        }
+      }
+    }),
+    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+      create_fund: {
+        fund: {
+          id: 2,
+          name: "Test Fund #2",
+          description: "My another fund to test rotations",
+          members: [endowmentContract1],
         }
       }
     }),
@@ -596,13 +607,13 @@ export async function setupContracts(): Promise<void> {
       update_owner: { new_owner: cw3ApTeam },
     }),
     new MsgExecuteContract(apTeam.key.accAddress, endowmentContract1, {
-      update_admin: { new_admin: cw3ApTeam },
+      update_owner: { new_owner: cw3ApTeam },
     }),
     new MsgExecuteContract(apTeam.key.accAddress, endowmentContract2, {
-      update_admin: { new_admin: cw3ApTeam },
+      update_owner: { new_owner: cw3ApTeam },
     }),
     new MsgExecuteContract(apTeam.key.accAddress, endowmentContract3, {
-      update_admin: { new_admin: cw3ApTeam },
+      update_owner: { new_owner: cw3ApTeam },
     }),
     // new MsgExecuteContract(apTeam.key.accAddress, anchorVault1, {
     //   update_owner: { new_owner: cw3ApTeam },
@@ -627,42 +638,111 @@ export async function testAddApTeamMemberToC4Group(): Promise<void> {
   process.stdout.write("Test - Propose and Execute adding a new member to AP Team C4 Group");
 
   // proposal to add new member
-  const proposal = await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, cw3ApTeam, {
-        propose: {
-          title: "New CW4 member",
-          description: "New member for the CW4 AP Team Group. They are legit, I swear!",
-          msgs: [
-            { wasm: {
-              execute: {
-                contract_addr: cw4GrpApTeam,
-                funds: [],
-                msg: toEncodedBinary({
-                  update_members: {
-                    add: [{ addr:apTeam3.key.accAddress, weight:1 }],
-                    remove: [],
-                  }
-                })
-              }
+  const proposal = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, cw3ApTeam, {
+      propose: {
+        title: "New CW4 member",
+        description: "New member for the CW4 AP Team Group. They are legit, I swear!",
+        msgs: [
+          { wasm: {
+            execute: {
+              contract_addr: cw4GrpApTeam,
+              funds: [],
+              msg: toEncodedBinary({
+                update_members: {
+                  add: [{ addr:apTeam3.key.accAddress, weight:1 }],
+                  remove: [],
+                }
+              })
             }
-          }]
-        }
-      })
-    ])
-  );
-
+          }
+        }]
+      }
+    })
+  ]);
+  let proposal_id = proposal.logs[0].events.find((event) => {
+      return event.type == "wasm";
+    })?.attributes.find((attribute) => { 
+      return attribute.key == "proposal_id"; 
+    })?.value as string;
   // execute the proposal (anyone can do this for passed proposals)
   await expect(
     sendTransaction(terra, apTeam3, [
       new MsgExecuteContract(apTeam3.key.accAddress, cw3ApTeam, {
-        execute: { proposal_id: 1 } // Need to get actual new proposal ID from CW3 returned values..
+        execute: { proposal_id: parseInt(proposal_id) }
       })
     ])
   );
   
   console.log(chalk.green("Passed!"));
 }
+
+export async function testAddGuardiansToEndowment(): Promise<void> {
+  process.stdout.write("Test - Endowment Owner Proposes and Executes adding 3 Guardians to their Endowment");
+
+  // proposal to add new Guardians
+  const proposal = await sendTransaction(terra, charity1, [
+    new MsgExecuteContract(charity1.key.accAddress, cw3GuardianAngels, {
+      propose_guardian_change: {
+        endowment_addr: endowmentContract1,
+        add: [charity3.key.accAddress, apTeam3.key.accAddress, charity2.key.accAddress],
+        remove: [],
+      }
+    })
+  ]);
+
+  let proposal_id = parseInt(proposal.logs[0].events.find((event) => {
+      return event.type == "wasm";
+    })?.attributes.find((attribute) => { 
+      return attribute.key == "proposal_id"; 
+    })?.value as string);
+
+  // execute the proposal (anyone can do this for passed proposals)
+  await sendTransaction(terra, pleb, [
+    new MsgExecuteContract(pleb.key.accAddress, cw3GuardianAngels, {
+      execute: { proposal_id: proposal_id }
+    })
+  ]);
+  
+  console.log(chalk.green("Passed!"));
+}
+
+export async function testGuardiansChangeEndowmentOwner(): Promise<void> {
+  process.stdout.write("Test - Endowment Owner loses wallet! :( Guardians Propose, vote and execute a change to new wallet");
+
+  // proposal to add new Guardians
+  const proposal = await sendTransaction(terra, charity2, [
+    new MsgExecuteContract(charity2.key.accAddress, cw3GuardianAngels, {
+      propose_owner_change: {
+        endowment_addr: endowmentContract1,
+        new_owner_addr: pleb.key.accAddress,
+      }
+    })
+  ]);
+
+  let proposal_id = parseInt(proposal.logs[0].events.find((event) => {
+      return event.type == "wasm";
+    })?.attributes.find((attribute) => { 
+      return attribute.key == "proposal_id"; 
+    })?.value as string);
+
+  // Guardians vote on the open proposal until threshold reached
+  await sendTransaction(terra, charity3, [
+    new MsgExecuteContract(charity3.key.accAddress, cw3GuardianAngels, {
+      vote_guardian: {
+        proposal_id: proposal_id,
+        vote: "yes"  
+      }
+    }),
+    // execute the proposal (anyone can do this for passed proposals)
+    new MsgExecuteContract(charity3.key.accAddress, cw3GuardianAngels, {
+      execute: { proposal_id: proposal_id }
+    }),
+  ]);
+
+  console.log(chalk.green("Passed!"));
+}
+
 
 //----------------------------------------------------------------------------------------
 // TEST: Normal Donor cannot send funds to the Index Fund 

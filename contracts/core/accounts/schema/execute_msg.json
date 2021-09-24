@@ -114,16 +114,16 @@
     {
       "type": "object",
       "required": [
-        "update_admin"
+        "update_owner"
       ],
       "properties": {
-        "update_admin": {
+        "update_owner": {
           "type": "object",
           "required": [
-            "new_admin"
+            "new_owner"
           ],
           "properties": {
-            "new_admin": {
+            "new_owner": {
               "type": "string"
             }
           }
@@ -191,6 +191,36 @@
               "type": "array",
               "items": {
                 "$ref": "#/definitions/Strategy"
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_guardians"
+      ],
+      "properties": {
+        "update_guardians": {
+          "type": "object",
+          "required": [
+            "add",
+            "remove"
+          ],
+          "properties": {
+            "add": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "remove": {
+              "type": "array",
+              "items": {
+                "type": "string"
               }
             }
           }

@@ -45,9 +45,9 @@ pub enum ExecuteMsg {
     TerminateToAddress {
         beneficiary: String, // Addr of the Beneficiary to receive funds
     },
-    // update admin addr
-    UpdateAdmin {
-        new_admin: String,
+    // update owner addr
+    UpdateOwner {
+        new_owner: String,
     },
     // Allows the SC owner (only!) to change ownership
     UpdateRegistrar {
@@ -60,6 +60,10 @@ pub enum ExecuteMsg {
     // Replace an Account's Strategy with that given.
     UpdateStrategies {
         strategies: Vec<Strategy>,
+    },
+    UpdateGuardians {
+        add: Vec<String>,
+        remove: Vec<String>,
     },
 }
 

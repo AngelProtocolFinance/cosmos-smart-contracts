@@ -16,6 +16,12 @@
     "description": {
       "type": "string"
     },
+    "guardians_multisig_addr": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "maturity_height": {
       "type": [
         "integer",

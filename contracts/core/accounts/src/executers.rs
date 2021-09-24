@@ -3,7 +3,9 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::vault::AccountTransferMsg;
-use angel_core::responses::registrar::{ConfigResponse, VaultListResponse};
+use angel_core::responses::registrar::{
+    ConfigResponse as RegistrarConfigResponse, VaultListResponse,
+};
 use angel_core::structs::{FundingSource, StrategyComponent, YieldVault};
 use angel_core::utils::{
     deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults, withdraw_from_vaults,
@@ -14,23 +16,78 @@ use cosmwasm_std::{
 };
 use cw20::Balance;
 
-pub fn update_admin(
+pub fn update_owner(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    new_admin: String,
+    new_owner: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    // only the owner/admin of the contract can update their address in the configs
-    if info.sender != config.owner {
+
+    // get the guardian multisig addr from the registrar config (if exists)
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+    let multisig_addr = registrar_config.guardians_multisig_addr;
+
+    // only the owner/admin of the contract or the Guardian Angels multisig
+    // can update this OWNER address in the configs
+    if info.sender != config.owner && info.sender.to_string() != multisig_addr.unwrap() {
         return Err(ContractError::Unauthorized {});
     }
-    let new_admin = deps.api.addr_validate(&new_admin)?;
+
+    let new_owner = deps.api.addr_validate(&new_owner)?;
     // update config attributes with newly passed args
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.owner = new_admin;
+        config.owner = new_owner;
         Ok(config)
     })?;
+
+    Ok(Response::default())
+}
+
+pub fn update_guardians(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    add: Vec<String>,
+    remove: Vec<String>,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let mut endowment = ENDOWMENT.load(deps.storage)?;
+
+    // get the guardian multisig addr from the registrar config (if exists)
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+    let multisig_addr = registrar_config.guardians_multisig_addr;
+
+    // only the guardians multisig contract can update the guardians
+    if multisig_addr == None || info.sender.to_string() != multisig_addr.unwrap() {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // add all passed guardians that are not already in the set
+    for guardian in add {
+        let pos = endowment.guardian_set.iter().position(|g| *g == guardian);
+        if pos == None {
+            endowment.guardian_set.push(guardian);
+        }
+    }
+
+    // remove all passed guardians that exist in the set
+    for guardian in remove {
+        let pos = endowment.guardian_set.iter().position(|g| *g == guardian);
+        if pos != None {
+            endowment.guardian_set.swap_remove(pos.unwrap());
+        }
+    }
+
+    ENDOWMENT.save(deps.storage, &endowment)?;
 
     Ok(Response::default())
 }
@@ -318,7 +375,7 @@ pub fn deposit(
 
     // MVP LOGIC: Only index fund SC (aka TCA Member donations are accepted)
     // Get the Index Fund SC address from the Registrar SC
-    let registrar_config: ConfigResponse =
+    let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQuerier::Config {})?,
@@ -413,7 +470,7 @@ pub fn liquidate(
     }
 
     // Get the Index Fund SC address from the Registrar SC
-    let registrar_config: ConfigResponse =
+    let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQuerier::Config {})?,
@@ -470,7 +527,7 @@ pub fn terminate_to_fund(
     }
 
     // Get the Index Fund SC address from the Registrar SC
-    let registrar_config: ConfigResponse =
+    let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQuerier::Config {})?,

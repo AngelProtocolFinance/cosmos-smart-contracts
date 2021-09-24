@@ -5,6 +5,8 @@ import {
   setupContracts,
   migrateContracts,
   testAddApTeamMemberToC4Group,
+  testAddGuardiansToEndowment,
+  testGuardiansChangeEndowmentOwner,
   testRejectUnapprovedDonations,
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
@@ -45,6 +47,8 @@ export async function startTest(terra: LocalTerra): Promise<void> {
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   await testAddApTeamMemberToC4Group();
+  await testAddGuardiansToEndowment();
+  await testGuardiansChangeEndowmentOwner();
   // await testRejectUnapprovedDonations();
   // await testDonorSendsToIndexFund();
   // await testTcaMemberSendsToIndexFund();

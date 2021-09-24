@@ -12,11 +12,15 @@
           "type": "object",
           "required": [
             "description",
+            "endowment_addr",
             "msgs",
             "title"
           ],
           "properties": {
             "description": {
+              "type": "string"
+            },
+            "endowment_addr": {
               "type": "string"
             },
             "latest": {
@@ -46,10 +50,94 @@
     {
       "type": "object",
       "required": [
+        "propose_owner_change"
+      ],
+      "properties": {
+        "propose_owner_change": {
+          "type": "object",
+          "required": [
+            "endowment_addr",
+            "new_owner_addr"
+          ],
+          "properties": {
+            "endowment_addr": {
+              "type": "string"
+            },
+            "new_owner_addr": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "propose_guardian_change"
+      ],
+      "properties": {
+        "propose_guardian_change": {
+          "type": "object",
+          "required": [
+            "add",
+            "endowment_addr",
+            "remove"
+          ],
+          "properties": {
+            "add": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "endowment_addr": {
+              "type": "string"
+            },
+            "remove": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "vote"
       ],
       "properties": {
         "vote": {
+          "type": "object",
+          "required": [
+            "proposal_id",
+            "vote"
+          ],
+          "properties": {
+            "proposal_id": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            },
+            "vote": {
+              "$ref": "#/definitions/Vote"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "vote_guardian"
+      ],
+      "properties": {
+        "vote_guardian": {
           "type": "object",
           "required": [
             "proposal_id",

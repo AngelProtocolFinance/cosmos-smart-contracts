@@ -43,6 +43,7 @@ pub struct CreateEndowmentMsg {
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
+    pub guardians_multisig_addr: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -52,6 +53,7 @@ pub struct UpdateConfigMsg {
     pub treasury: Option<String>,
     pub approved_charities: Option<Vec<String>>,
     pub default_vault: Option<String>,
+    pub guardians_multisig_addr: Option<String>,
     pub endowment_owners_group_addr: Option<String>,
 }
 

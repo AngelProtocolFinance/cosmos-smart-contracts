@@ -5,6 +5,7 @@
   "required": [
     "beneficiary",
     "description",
+    "guardians",
     "name",
     "owner",
     "rebalance",
@@ -18,6 +19,12 @@
     },
     "description": {
       "type": "string"
+    },
+    "guardians": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
     },
     "maturity_height": {
       "type": [

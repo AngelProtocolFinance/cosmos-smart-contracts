@@ -30,6 +30,7 @@ pub fn instantiate(
         treasury: deps.api.addr_validate(&msg.treasury)?,
         tax_rate: Decimal::percent(msg.tax_rate),
         default_vault: msg.default_vault.unwrap_or(info.sender),
+        guardians_multisig_addr: None,
         endowment_owners_group_addr: None,
     };
 

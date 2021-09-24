@@ -69,5 +69,6 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
         split_to_liquid: endowment.split_to_liquid,
         strategies: endowment.strategies,
         rebalance: endowment.rebalance,
+        guardians: endowment.guardian_set,
     })
 }
