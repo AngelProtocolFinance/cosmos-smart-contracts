@@ -142,11 +142,11 @@ pub fn redeem_stable(
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
-    // check that the depositor is an approved Accounts SC
+    // check that the depositor is a Registered Accounts SC
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::ApprovedEndowmentList {})?,
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {})?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments
