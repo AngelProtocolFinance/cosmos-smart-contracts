@@ -6,6 +6,7 @@
     "accounts_code_id",
     "approved_charities",
     "default_vault",
+    "guardian_angels",
     "index_fund_contract",
     "owner",
     "tax_rate",
@@ -31,6 +32,9 @@
         "string",
         "null"
       ]
+    },
+    "guardian_angels": {
+      "$ref": "#/definitions/Addr"
     },
     "guardians_multisig_addr": {
       "type": [

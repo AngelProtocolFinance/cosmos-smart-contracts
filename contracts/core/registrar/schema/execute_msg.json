@@ -268,6 +268,12 @@
         "status"
       ],
       "properties": {
+        "beneficiary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "endowment_addr": {
           "type": "string"
         },
