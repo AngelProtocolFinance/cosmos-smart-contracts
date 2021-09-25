@@ -331,16 +331,18 @@ pub fn vault_receipt(
             } else {
                 // this is a vault receipt triggered by closing an Endowment
                 // need to handle beneficiary vs index fund submsg actions taken
+                let balance_after_tax = deduct_tax(
+                    deps.as_ref(),
+                    Coin {
+                        amount: state.balances.locked_balance.get_ust().amount
+                            + state.balances.liquid_balance.get_ust().amount,
+                        denom: "uusd".to_string(),
+                    },
+                )?;
                 match state.closing_beneficiary {
                     Some(ref addr) => submessages.push(SubMsg::new(BankMsg::Send {
-                        to_address: deps.api.addr_validate(&addr)?.to_string(),
-                        amount: vec![deduct_tax(
-                            deps.as_ref(),
-                            Coin {
-                                amount: Uint128::from(100 as u128),
-                                denom: "uusd".to_string(),
-                            },
-                        )?],
+                        to_address: deps.api.addr_validate(addr)?.to_string(),
+                        amount: vec![balance_after_tax],
                     })),
                     None => {
                         // Get the Index Fund SC address from the Registrar SC
@@ -366,13 +368,7 @@ pub fn vault_receipt(
                                 fund_id: Some(parent_index_fund),
                                 split: None,
                             }))?,
-                            funds: vec![deduct_tax(
-                                deps.as_ref(),
-                                Coin {
-                                    amount: Uint128::from(100 as u128),
-                                    denom: "uusd".to_string(),
-                                },
-                            )?],
+                            funds: vec![balance_after_tax],
                         })))
                     }
                 }
