@@ -427,10 +427,15 @@ pub fn withdraw(
     sources: Vec<FundingSource>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-
     let endowment = ENDOWMENT.load(deps.storage)?;
+
     // check that sender is the owner or the beneficiary
     if info.sender != endowment.owner || info.sender != endowment.beneficiary {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // check that the Endowment has been approved to withdraw deposits
+    if !config.withdraw_approved {
         return Err(ContractError::Unauthorized {});
     }
 
