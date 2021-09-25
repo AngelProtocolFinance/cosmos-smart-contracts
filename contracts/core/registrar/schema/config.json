@@ -26,6 +26,18 @@
     "default_vault": {
       "$ref": "#/definitions/Addr"
     },
+    "endowment_owners_group_addr": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "guardians_multisig_addr": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "index_fund_contract": {
       "$ref": "#/definitions/Addr"
     },

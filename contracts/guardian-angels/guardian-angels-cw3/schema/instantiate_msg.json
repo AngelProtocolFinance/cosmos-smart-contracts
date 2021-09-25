@@ -3,16 +3,16 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
+    "ap_team_group",
     "endowment_owners_group",
-    "guardian_group",
     "max_voting_period",
     "threshold"
   ],
   "properties": {
-    "endowment_owners_group": {
+    "ap_team_group": {
       "type": "string"
     },
-    "guardian_group": {
+    "endowment_owners_group": {
       "type": "string"
     },
     "max_voting_period": {

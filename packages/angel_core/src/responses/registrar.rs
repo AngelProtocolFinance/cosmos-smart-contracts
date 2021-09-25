@@ -26,6 +26,8 @@ pub struct EndowmentListResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: String,
+    pub guardians_multisig_addr: Option<String>,
+    pub endowment_owners_group_addr: Option<String>,
     pub version: String,
     pub accounts_code_id: u64,
     pub treasury: String,

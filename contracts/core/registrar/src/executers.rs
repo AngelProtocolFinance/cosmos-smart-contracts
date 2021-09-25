@@ -5,7 +5,7 @@ use crate::state::{
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::QueryMsg as AccountsQueryMsg;
 use angel_core::messages::registrar::*;
-use angel_core::responses::accounts::ConfigResponse as AccountsConfigResponse;
+use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails, YieldVault};
 use cosmwasm_std::{
@@ -57,10 +57,10 @@ pub fn update_endowment_status(
         .unwrap();
 
     // get config details about the Endowment of interest
-    let accounts_config: AccountsConfigResponse =
+    let endowment_info: EndowmentDetailsResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: endowment_entry.address.to_string(),
-            msg: to_binary(&AccountsQueryMsg::Config {})?,
+            msg: to_binary(&AccountsQueryMsg::Endowment {})?,
         }))?;
 
     let msg_endowment_status = match msg.status {
@@ -96,17 +96,17 @@ pub fn update_endowment_status(
             vec![
                 build_account_status_change_msg(endowment_entry.address.to_string(), true, true),
                 // send msg to C4 Endowment Owners group SC to add new member
-                // SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                //     contract_addr: config.endowment_owners_group_addr.unwrap(),
-                //     msg: to_binary(&UpdateMembers {
-                //         add: vec![Member {
-                //             addr: accounts_config.owner.clone(),
-                //             weight: 0,
-                //         }],
-                //         remove: vec![],
-                //     })?,
-                //     funds: vec![],
-                // })),
+                SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: config.endowment_owners_group_addr.unwrap(),
+                    msg: to_binary(&UpdateMembers {
+                        add: vec![Member {
+                            addr: endowment_info.owner.to_string(),
+                            weight: 1,
+                        }],
+                        remove: vec![],
+                    })?,
+                    funds: vec![],
+                })),
             ]
         }
         // Can accept inbound deposits, but cannot withdraw funds out
@@ -132,14 +132,14 @@ pub fn update_endowment_status(
                 funds: vec![],
             })),
             // send msg to C4 Endowment Owners group SC to remove a member
-            // SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            //     contract_addr: config.endowment_owners_group_addr.unwrap(),
-            //     msg: to_binary(&UpdateMembers {
-            //         add: vec![],
-            //         remove: vec![accounts_config.owner.clone().to_string()],
-            //     })?,
-            //     funds: vec![],
-            // })),
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.endowment_owners_group_addr.unwrap(),
+                msg: to_binary(&UpdateMembers {
+                    add: vec![],
+                    remove: vec![endowment_info.owner.clone().to_string()],
+                })?,
+                funds: vec![],
+            })),
             // start redemption of Account SC's Vault holdings to final beneficiary/index fund
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: endowment_entry.address.to_string().clone(),
@@ -195,10 +195,11 @@ pub fn update_config(
 
     let charities_addr_list = msg.charities_list(deps.api)?;
     let accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
-    let guardian_angels = deps.api.addr_validate(
-        &msg.guardian_angels
-            .unwrap_or(config.guardian_angels.to_string()),
-    )?;
+
+    let guardians_multisig_addr: Option<String> = match msg.guardians_multisig_addr {
+        Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
+        None => None,
+    };
     let endowment_owners_group_addr: Option<String> = match msg.endowment_owners_group_addr {
         Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
         None => None,
@@ -223,7 +224,7 @@ pub fn update_config(
         config.approved_charities = charities_addr_list;
         config.default_vault = default_vault;
         config.endowment_owners_group_addr = endowment_owners_group_addr;
-        config.guardian_angels = guardian_angels;
+        config.guardians_multisig_addr = guardians_multisig_addr;
         Ok(config)
     })?;
 

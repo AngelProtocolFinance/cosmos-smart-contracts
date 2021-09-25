@@ -6,6 +6,7 @@
     "deposit_approved",
     "owner",
     "registrar_contract",
+    "version",
     "withdraw_approved"
   ],
   "properties": {
@@ -16,6 +17,9 @@
       "type": "string"
     },
     "registrar_contract": {
+      "type": "string"
+    },
+    "version": {
       "type": "string"
     },
     "withdraw_approved": {

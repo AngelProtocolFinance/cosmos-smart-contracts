@@ -209,8 +209,8 @@ fn test_change_admin() {
         deps.as_mut(),
         env.clone(),
         info.clone(),
-        ExecuteMsg::UpdateAdmin {
-            new_admin: pleb.clone(),
+        ExecuteMsg::UpdateOwner {
+            new_owner: pleb.clone(),
         },
     )
     .unwrap();
@@ -222,8 +222,8 @@ fn test_change_admin() {
     assert_eq!(pleb.clone(), value.owner);
 
     // Original owner should not be able to update the configs now
-    let msg = ExecuteMsg::UpdateAdmin {
-        new_admin: charity_addr.clone(),
+    let msg = ExecuteMsg::UpdateOwner {
+        new_owner: charity_addr.clone(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth "));
     let env = mock_env();

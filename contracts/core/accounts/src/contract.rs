@@ -61,6 +61,7 @@ pub fn instantiate(
                 liquid_percentage: Decimal::one(),
             }],
             rebalance: RebalanceDetails::default(),
+            guardian_set: vec![],
         },
     )?;
 
@@ -99,14 +100,17 @@ pub fn execute(
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
-        ExecuteMsg::UpdateAdmin { new_admin } => {
-            executers::update_admin(deps, env, info, new_admin)
+        ExecuteMsg::UpdateOwner { new_owner } => {
+            executers::update_owner(deps, env, info, new_owner)
         }
         ExecuteMsg::UpdateStrategies { strategies } => {
             executers::update_strategies(deps, env, info, strategies)
         }
         ExecuteMsg::CloseEndowment { beneficiary } => {
             executers::close_endowment(deps, env, info, beneficiary)
+        }
+        ExecuteMsg::UpdateGuardians { add, remove } => {
+            executers::update_guardians(deps, env, info, add, remove)
         }
     }
 }

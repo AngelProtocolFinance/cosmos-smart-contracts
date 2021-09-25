@@ -26,6 +26,7 @@ pub struct Config {
     pub treasury: Addr,
     pub tax_rate: Decimal,
     pub default_vault: Addr,
+    pub guardians_multisig_addr: Option<String>,
     pub endowment_owners_group_addr: Option<String>,
 }
 
