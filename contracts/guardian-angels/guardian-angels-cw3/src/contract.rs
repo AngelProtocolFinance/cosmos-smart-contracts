@@ -53,8 +53,8 @@ pub fn instantiate(
     let cfg = Config {
         threshold: msg.threshold,
         max_voting_period: msg.max_voting_period,
-        ap_team_group: ap_team_group,
-        endowment_owners_group: endowment_owners_group,
+        ap_team_group,
+        endowment_owners_group,
     };
     CONFIG.save(deps.storage, &cfg)?;
 
@@ -156,10 +156,7 @@ pub fn execute_propose_guardian_change(
         vec![CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: endowment_addr.clone(),
             msg: to_binary(
-                &angel_core::messages::accounts::ExecuteMsg::UpdateGuardians {
-                    add: add,
-                    remove: remove,
-                },
+                &angel_core::messages::accounts::ExecuteMsg::UpdateGuardians { add, remove },
             )
             .unwrap(),
             funds: vec![],
@@ -259,8 +256,8 @@ pub fn execute_propose(
         msgs,
         status: Status::Open,
         votes: Votes::new(vote_power),
-        threshold: threshold,
-        total_weight: total_weight,
+        threshold,
+        total_weight,
     };
     prop.update_status(&env.block);
     let id = next_id(deps.storage)?;
@@ -549,7 +546,7 @@ fn list_proposals(
     let start = start_after.map(Bound::exclusive_int);
     let props: StdResult<Vec<_>> = PROPOSALS
         .range(deps.storage, start.clone(), None, Order::Ascending)
-        .take(limit.clone())
+        .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();
     let special_props: StdResult<Vec<_>> = GUARDIAN_PROPOSALS
@@ -557,7 +554,7 @@ fn list_proposals(
         .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();
-    let mut all_props = props.unwrap().clone();
+    let mut all_props = props.unwrap();
     all_props.extend(special_props.unwrap());
     Ok(ProposalListResponse {
         proposals: all_props,
@@ -574,7 +571,7 @@ fn reverse_proposals(
     let end = start_before.map(Bound::exclusive_int);
     let props: StdResult<Vec<_>> = PROPOSALS
         .range(deps.storage, None, end.clone(), Order::Ascending)
-        .take(limit.clone())
+        .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();
     let special_props: StdResult<Vec<_>> = GUARDIAN_PROPOSALS
@@ -582,7 +579,7 @@ fn reverse_proposals(
         .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();
-    let mut all_props = props.unwrap().clone();
+    let mut all_props = props.unwrap();
     all_props.extend(special_props.unwrap());
 
     Ok(ProposalListResponse {

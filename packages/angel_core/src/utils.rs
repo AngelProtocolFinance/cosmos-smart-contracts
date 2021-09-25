@@ -26,7 +26,7 @@ pub fn ratio_adjusted_balance(balance: Balance, portion: Uint128, total: Uint128
             Balance::from(coins)
         }
         Balance::Cw20(coin) => Balance::Cw20(Cw20CoinVerified {
-            address: coin.address.into(),
+            address: coin.address,
             amount: coin.amount.multiply_ratio(portion, total),
         }),
     };
@@ -39,9 +39,9 @@ pub fn compute_tax(deps: Deps, coin: &Coin) -> StdResult<Uint128> {
     let tax_cap: Uint128 = (terra_querier.query_tax_cap(coin.denom.to_string())?).cap;
     Ok(std::cmp::min(
         (coin.amount.checked_sub(coin.amount.multiply_ratio(
-            Uint128::from(1_000_000_000_000_000_000 as u128),
-            Uint128::from(1_000_000_000_000_000_000 as u128) * tax_rate
-                + Uint128::from(1_000_000_000_000_000_000 as u128),
+            Uint128::from(1_000_000_000_000_000_000_u128),
+            Uint128::from(1_000_000_000_000_000_000_u128) * tax_rate
+                + Uint128::from(1_000_000_000_000_000_000_u128),
         )))?,
         tax_cap,
     ))
@@ -211,7 +211,7 @@ pub fn deposit_to_vaults(
     registrar_contract: String,
     locked_ust: Coin,
     liquid_ust: Coin,
-    strategies: &Vec<StrategyComponent>,
+    strategies: &[StrategyComponent],
 ) -> Result<Vec<SubMsg>, ContractError> {
     let mut deposit_messages = vec![];
     // deposit to the strategies set
@@ -255,7 +255,7 @@ pub fn deposit_to_vaults(
             ))
             .unwrap(),
             funds: vec![Coin {
-                amount: transfer_msg.locked.clone() + transfer_msg.liquid.clone(),
+                amount: transfer_msg.locked + transfer_msg.liquid,
                 denom: "uusd".to_string(),
             }],
         })));

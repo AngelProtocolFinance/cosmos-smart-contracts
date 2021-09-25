@@ -136,13 +136,13 @@ pub fn update_endowment_status(
                 contract_addr: config.endowment_owners_group_addr.unwrap(),
                 msg: to_binary(&UpdateMembers {
                     add: vec![],
-                    remove: vec![endowment_info.owner.clone().to_string()],
+                    remove: vec![endowment_info.owner.to_string()],
                 })?,
                 funds: vec![],
             })),
             // start redemption of Account SC's Vault holdings to final beneficiary/index fund
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: endowment_entry.address.to_string().clone(),
+                contract_addr: endowment_entry.address.to_string(),
                 msg: to_binary(
                     &angel_core::messages::accounts::ExecuteMsg::CloseEndowment {
                         beneficiary: msg.beneficiary,

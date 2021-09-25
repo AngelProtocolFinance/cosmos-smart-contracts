@@ -256,7 +256,7 @@ pub fn vault_receipt(
             .iter()
             .find(|c| c.denom == *"uusd")
             .map(|c| c.amount)
-            .unwrap_or(Uint128::zero()),
+            .unwrap_or_else(Uint128::zero),
     };
 
     if returned_amount.amount.is_zero() {
@@ -277,7 +277,7 @@ pub fn vault_receipt(
     }
 
     // funds go into state balances (locked/liquid)
-    let total = msg.locked.clone() + msg.liquid.clone();
+    let total = msg.locked + msg.liquid;
     if !msg.locked.is_zero() {
         state
             .balances
@@ -293,7 +293,7 @@ pub fn vault_receipt(
             .balances
             .liquid_balance
             .add_tokens(ratio_adjusted_balance(
-                Balance::from(vec![returned_amount.clone()]),
+                Balance::from(vec![returned_amount]),
                 msg.liquid,
                 total,
             ));
@@ -305,7 +305,7 @@ pub fn vault_receipt(
         Some(1) => {
             config.pending_redemptions = None;
             // normal vault receipt if closing_endowment has not been set to TRUE
-            if state.closing_endowment == false {
+            if !state.closing_endowment {
                 submessages = deposit_to_vaults(
                     deps.as_ref(),
                     config.registrar_contract.to_string(),
@@ -418,7 +418,7 @@ pub fn deposit(
             .iter()
             .find(|c| c.denom == *"uusd")
             .map(|c| c.amount)
-            .unwrap_or(Uint128::zero()),
+            .unwrap_or_else(Uint128::zero),
     };
 
     if deposit_amount.amount.is_zero() {
@@ -456,7 +456,7 @@ pub fn deposit(
     // update total donations recieved for a charity
     let mut state = STATE.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
-    state.donations_received += deposit_amount.amount.clone();
+    state.donations_received += deposit_amount.amount;
     STATE.save(deps.storage, &state)?;
 
     // build deposit messages for each of the sources/amounts
