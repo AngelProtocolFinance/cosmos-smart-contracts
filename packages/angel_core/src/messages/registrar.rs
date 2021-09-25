@@ -55,7 +55,6 @@ pub struct UpdateConfigMsg {
     pub default_vault: Option<String>,
     pub guardians_multisig_addr: Option<String>,
     pub endowment_owners_group_addr: Option<String>,
-    pub guardian_angels: Option<String>,
 }
 
 impl UpdateConfigMsg {
