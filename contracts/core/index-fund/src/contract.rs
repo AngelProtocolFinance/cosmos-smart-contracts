@@ -50,6 +50,7 @@ pub fn execute(
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, info, new_registrar)
         }
+        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, info, msg),
         ExecuteMsg::UpdateTcaList { new_list } => executers::update_tca_list(deps, info, new_list),
         ExecuteMsg::CreateFund { fund } => executers::create_index_fund(deps, info, fund),
         ExecuteMsg::RemoveFund(msg) => executers::remove_index_fund(deps, info, msg.fund_id),
