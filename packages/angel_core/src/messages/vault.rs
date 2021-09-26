@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, Decimal, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -18,10 +18,19 @@ pub struct MigrateMsg {}
 pub enum ExecuteMsg {
     UpdateOwner { new_owner: String },
     UpdateRegistrar { new_registrar: Addr },
+    UpdateConfig(UpdateConfigMsg),
     Deposit(AccountTransferMsg),
     Redeem {},
     Withdraw(AccountWithdrawMsg),
     Harvest {},
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateConfigMsg {
+    pub moneymarket: String,
+    pub input_denom: String,
+    pub yield_token: String,
+    pub tax_per_block: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

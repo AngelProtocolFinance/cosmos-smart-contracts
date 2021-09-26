@@ -85,6 +85,7 @@ pub fn execute(
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
+        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         // -UST (Account) --> +Deposit Token/Yield Token (Vault)
         ExecuteMsg::Deposit(msg) => {
             executers::deposit_stable(deps, env, info.clone(), msg, Balance::from(info.funds))

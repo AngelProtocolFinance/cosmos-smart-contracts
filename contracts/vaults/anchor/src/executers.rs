@@ -3,7 +3,7 @@ use crate::config;
 use crate::config::{PendingInfo, BALANCES, PENDING, TOKEN_INFO};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
-use angel_core::messages::vault::{AccountTransferMsg, AccountWithdrawMsg};
+use angel_core::messages::vault::{AccountTransferMsg, AccountWithdrawMsg, UpdateConfigMsg};
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, EndowmentListResponse,
 };
@@ -49,6 +49,28 @@ pub fn update_registrar(
     }
     // update config attributes with newly passed args
     config.registrar_contract = new_registrar;
+    config::store(deps.storage, &config)?;
+
+    Ok(Response::default())
+}
+
+pub fn update_config(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateConfigMsg,
+) -> Result<Response, ContractError> {
+    let mut config = config::read(deps.storage)?;
+
+    // only the SC admin can update these configs...for now
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    config.moneymarket = deps.api.addr_validate(&msg.moneymarket)?;
+    config.input_denom = msg.input_denom;
+    config.yield_token = deps.api.addr_validate(&msg.yield_token)?;
+    config.tax_per_block = msg.tax_per_block;
     config::store(deps.storage, &config)?;
 
     Ok(Response::default())
@@ -287,7 +309,12 @@ pub fn withdraw_stable(
 }
 
 pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
+    let mut config = config::read(deps.storage)?;
+
+    let harvest_percent = Uint128::from((env.block.height - config.last_harvest) as u128);
+    config.last_harvest = env.block.height;
+    config::store(deps.storage, &config)?;
+
     let this_addr = env.contract.address.clone();
 
     if info.sender != config.registrar_contract {
@@ -325,9 +352,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
 
         // proceed to shuffle balances if we have a non-zero amount
         if locked_deposit_amount > Uint128::zero() {
-            let transfer_amt = locked_deposit_amount
-                * config.tax_per_block
-                * Uint128::from((env.block.height - config.last_harvest) as u128);
+            let transfer_amt = locked_deposit_amount * config.tax_per_block * harvest_percent;
             let taxes_owed = transfer_amt * registrar_config.tax_rate;
 
             // lower locked balance
