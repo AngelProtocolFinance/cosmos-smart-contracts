@@ -103,17 +103,17 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
-  registrar = "terra1wtxuxwhn8v58hp2f459x7dmcfzxu5ua89q5y8l";
-  indexFund = "terra1ywlx0jjrjh9hkshztvpsxeu46tv2a94vtnhn6e";
-  anchorVault1 = "terra1mw4dcy7gzpc3whthp0agy52afl95l29gxwm3v7"; 
-  anchorVault2 = "terra12wnk29hu38qqlpgjdmp2awk8yh2n86zlsqxk4g";
-  endowmentContract1 = "terra1k8afa5xjs5g7zax6mtz09wh098gqawaqc5wz85";
-  endowmentContract2 ="terra106c2a9yke95e6nuzlayu8yxn2qzar2ds27yg3z";
-  endowmentContract3 = "terra1x4svcx37vvup5lcpd54lxr22uwtnnr6rt4du2x";
-  cw4GrpApTeam = "terra1sc60z89meu6t48dhax2r6epxfqzzvrhxyx9kwl";
-  cw3ApTeam = "terra1fp2f6hc8zutrxd3duylyamcsnqsl7ze90x0qmt";
-  cw4GrpOwners = "terra1u9cfrr9sa465g3k4f4t0jgxltuzgsccrh28x27";
-  cw3GuardianAngels = "terra17u0kexvj3923n8zlpph4k5xyfys0cd57jss6kh";
+  registrar = "terra1gcwdhjrngahphrfvtkewtxrqd9hs2qn75xfe0h";
+  indexFund = "terra1rc6fw4jrfujxeyjmp5rhde49znw6ca69hk7zvs";
+  anchorVault1 = "terra13c53gadfx4g9at607nh9d2qkpma70kzxw9kv88"; 
+  anchorVault2 = "terra1mkd53kejvfx3lzc89eqypj94ey5njwv3kn05x9";
+  endowmentContract1 = "terra1n9z7j3l5s9e6tuy4g03m8ddf877259x8pglwcc";
+  endowmentContract2 ="terra1jh4vnwr9fnydwrfddalyl5wlm9vv6edyvzhf02";
+  endowmentContract3 = "terra1f7yn5cr6ndg36x3rex7873yht9h8htg4l397dg";
+  cw4GrpApTeam = "terra14fg2xg9wgdddyzz5cv9ez6xxk6c2puws5qn4qw";
+  cw3ApTeam = "terra1j85mrzg0kqe8wxk95j98clfz56guyyckyp3gdx";
+  cw4GrpOwners = "terra1c94tpc0rjp0u5qryxls4vz2m3fprzwprnxtw93";
+  cw3GuardianAngels = "terra10lgqww98z87l5qnuzuyj2j4mfe53zty4fv68vr";
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
@@ -679,7 +679,7 @@ export async function testAddApTeamMemberToC4Group(): Promise<void> {
       }
     })
   ]);
-  let proposal_id = proposal.logs[0].events.find((event) => {
+  const proposal_id = proposal.logs[0].events.find((event) => {
       return event.type == "wasm";
     })?.attributes.find((attribute) => { 
       return attribute.key == "proposal_id"; 
@@ -710,7 +710,7 @@ export async function testAddGuardiansToEndowment(): Promise<void> {
     })
   ]);
 
-  let proposal_id = parseInt(proposal.logs[0].events.find((event) => {
+  const proposal_id = parseInt(proposal.logs[0].events.find((event) => {
       return event.type == "wasm";
     })?.attributes.find((attribute) => { 
       return attribute.key == "proposal_id"; 
@@ -739,7 +739,7 @@ export async function testGuardiansChangeEndowmentOwner(): Promise<void> {
     })
   ]);
 
-  let proposal_id = parseInt(proposal.logs[0].events.find((event) => {
+  const proposal_id = parseInt(proposal.logs[0].events.find((event) => {
       return event.type == "wasm";
     })?.attributes.find((attribute) => { 
       return attribute.key == "proposal_id"; 
