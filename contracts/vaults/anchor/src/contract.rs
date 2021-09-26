@@ -36,6 +36,8 @@ pub fn instantiate(
         input_denom: anchor_config.stable_denom.clone(),
         yield_token: deps.api.addr_validate(&anchor_config.aterra_contract)?,
         next_pending_id: 0,
+        tax_per_block: msg.tax_per_block,
+        last_harvest: env.block.height,
     };
 
     config::store(deps.storage, &config)?;

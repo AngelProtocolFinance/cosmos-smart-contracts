@@ -1,5 +1,5 @@
 use angel_core::structs::BalanceInfo;
-use cosmwasm_std::{Addr, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
 use cosmwasm_storage::{ReadonlySingleton, Singleton};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -15,6 +15,8 @@ pub struct Config {
     pub input_denom: String,
     pub yield_token: Addr,
     pub next_pending_id: u64,
+    pub tax_per_block: Decimal,
+    pub last_harvest: u64,
 }
 
 pub fn store(storage: &mut dyn Storage, data: &Config) -> StdResult<()> {
