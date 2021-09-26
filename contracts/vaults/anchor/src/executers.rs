@@ -352,7 +352,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
 
         // proceed to shuffle balances if we have a non-zero amount
         if locked_deposit_amount > Uint128::zero() {
-            let transfer_amt = locked_deposit_amount * config.tax_per_block * harvest_percent;
+            let transfer_amt = locked_deposit_amount.checked_mul(harvest_percent * config.tax_per_block).unwrap();
             let taxes_owed = transfer_amt * registrar_config.tax_rate;
 
             // lower locked balance
