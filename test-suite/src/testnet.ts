@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {LCDClient, Coin, MnemonicKey, Wallet, MsgSend, StdTx, BlockTxBroadcastResult} from "@terra-money/terra.js";
+import {LCDClient, MnemonicKey, Wallet} from "@terra-money/terra.js";
 import chalk from "chalk";
 import {
   initializeLCDClient,

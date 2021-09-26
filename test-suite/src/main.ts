@@ -660,7 +660,7 @@ export async function testAddApTeamMemberToC4Group(): Promise<void> {
       }
     })
   ]);
-  let proposal_id = proposal.logs[0].events.find((event) => {
+  const proposal_id = proposal.logs[0].events.find((event) => {
       return event.type == "wasm";
     })?.attributes.find((attribute) => { 
       return attribute.key == "proposal_id"; 
@@ -691,7 +691,7 @@ export async function testAddGuardiansToEndowment(): Promise<void> {
     })
   ]);
 
-  let proposal_id = parseInt(proposal.logs[0].events.find((event) => {
+  const proposal_id = parseInt(proposal.logs[0].events.find((event) => {
       return event.type == "wasm";
     })?.attributes.find((attribute) => { 
       return attribute.key == "proposal_id"; 
@@ -720,7 +720,7 @@ export async function testGuardiansChangeEndowmentOwner(): Promise<void> {
     })
   ]);
 
-  let proposal_id = parseInt(proposal.logs[0].events.find((event) => {
+  const proposal_id = parseInt(proposal.logs[0].events.find((event) => {
       return event.type == "wasm";
     })?.attributes.find((attribute) => { 
       return attribute.key == "proposal_id"; 
