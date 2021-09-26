@@ -11,8 +11,10 @@ use cw4::MemberChangedHookMsg;
 pub struct InstantiateMsg {
     pub ap_team_group: String,
     pub endowment_owners_group: String,
+    pub registrar_contract: String,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
+    pub max_voting_period_guardians: Duration,
 }
 
 /// This defines the different ways tallies can happen.
@@ -131,6 +133,7 @@ pub enum ExecuteMsg {
         proposal_id: u64,
         vote: Vote,
     },
+    UpdateConfig(UpdateConfigMsg),
     Execute {
         proposal_id: u64,
     },
@@ -139,6 +142,13 @@ pub enum ExecuteMsg {
     },
     /// Handles update hook messages from the group contract
     MemberChangedHook(MemberChangedHookMsg),
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateConfigMsg {
+    pub threshold: Threshold,
+    pub max_voting_period: Duration,
+    pub max_voting_period_guardians: Duration,
 }
 
 // We can also add this as a cw3 extension

@@ -369,8 +369,10 @@ export async function setupContracts(): Promise<void> {
   const cw3Result = await instantiateContract(terra, apTeam, apTeam, guardianAngelMultiSig, {
     ap_team_group: cw4GrpApTeam,
     endowment_owners_group: cw4GrpOwners,
+    registrar_contract: registrar,
     threshold: { absolute_percentage: { percentage: "0.50" }},
     max_voting_period: { height: 1000 },
+    max_voting_period_guardians: { height: 100 },
   });
   cw3GuardianAngels = cw3Result.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
@@ -409,7 +411,7 @@ export async function setupContracts(): Promise<void> {
   const vaultResult1 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
     registrar_contract: registrar,
     moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
-    tax_per_block: "0.0000000259703196" // 70% of Anchor's 19.5% earnings collected per block
+    tax_per_block: "0.0000000259703196", // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - Anchor #1",
     symbol: "apANC1",
     decimals: 6,
@@ -426,7 +428,7 @@ export async function setupContracts(): Promise<void> {
   const vaultResult2 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
     registrar_contract: registrar,
     moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
-    tax_per_block: "0.0000000259703196" // 70% of Anchor's 19.5% earnings collected per block
+    tax_per_block: "0.0000000259703196", // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - Anchor #2",
     symbol: "apANC",
     decimals: 6,
