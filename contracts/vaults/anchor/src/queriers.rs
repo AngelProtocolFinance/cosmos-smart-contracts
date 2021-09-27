@@ -36,6 +36,5 @@ pub fn query_vault_config(deps: Deps) -> VaultConfigResponse {
         yield_token: config.yield_token.to_string(),
         tax_per_block: config.tax_per_block,
         last_harvest: config.last_harvest,
-        treasury_withdraw_threshold: config.treasury_withdraw_threshold,
     }
 }

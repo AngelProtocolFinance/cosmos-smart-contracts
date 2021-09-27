@@ -77,9 +77,6 @@ pub fn update_config(
     };
     config.input_denom = msg.input_denom.unwrap_or(config.input_denom);
     config.tax_per_block = msg.tax_per_block.unwrap_or(config.tax_per_block);
-    config.treasury_withdraw_threshold = msg
-        .treasury_withdraw_threshold
-        .unwrap_or(config.treasury_withdraw_threshold);
     config::store(deps.storage, &config)?;
 
     Ok(Response::default())
@@ -400,7 +397,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
     if treasury_account
         .liquid_balance
         .get_token_amount(this_addr.clone())
-        > config.treasury_withdraw_threshold
+        > Uint128::zero()
     {
         // Withdraw all DP Tokens from Treasury and send to AP Treasury Wallet
         withdraw_stable(

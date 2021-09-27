@@ -1,5 +1,5 @@
 use cosmwasm_bignumber::{Decimal256, Uint256};
-use cosmwasm_std::{Decimal, Uint128};
+use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -24,5 +24,4 @@ pub struct VaultConfigResponse {
     pub yield_token: String,
     pub tax_per_block: Decimal,
     pub last_harvest: u64,
-    pub treasury_withdraw_threshold: Uint128,
 }

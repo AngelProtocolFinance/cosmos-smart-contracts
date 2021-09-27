@@ -235,22 +235,6 @@ async function migrateVaults() {
   //     counter += 1;
   //   }, 7000);
   // });
-
-  process.stdout.write("Updating configs of Anchor Vault #1 & #2");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, anchorVault1, {
-      update_config: { 
-        tax_per_block: "0.0000000259703196", // 70% of Anchor's 19.5% earnings collected per block
-        treasury_withdraw_threshold: 1, // threshold limit of DP tokens to do a withdraw
-      }
-    }),
-    new MsgExecuteContract(apTeam.key.accAddress, anchorVault2, {
-      update_config: { 
-        tax_per_block: "0.0000000259703196", // 70% of Anchor's 19.5% earnings collected per block
-        treasury_withdraw_threshold: 1, // threshold limit of DP tokens to do a withdraw
-      }
-    }),
-  ]);
 }
 
 async function migrateAccounts() {
@@ -471,7 +455,6 @@ export async function setupContracts(): Promise<void> {
     registrar_contract: registrar,
     moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
     tax_per_block: "0.0000000259703196", // 70% of Anchor's 19.5% earnings collected per block
-    treasury_withdraw_threshold: 1, // threshold limit of DP tokens to do a withdraw
     name: "AP DP Token - Anchor #1",
     symbol: "apANC1",
     decimals: 6,
@@ -489,7 +472,6 @@ export async function setupContracts(): Promise<void> {
     registrar_contract: registrar,
     moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
     tax_per_block: "0.0000000259703196", // 70% of Anchor's 19.5% earnings collected per block
-    treasury_withdraw_threshold: 1, // threshold limit of DP tokens to do a withdraw
     name: "AP DP Token - Anchor #2",
     symbol: "apANC",
     decimals: 6,
