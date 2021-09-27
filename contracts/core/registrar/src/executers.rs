@@ -198,11 +198,23 @@ pub fn update_config(
 
     let guardians_multisig_addr: Option<String> = match msg.guardians_multisig_addr {
         Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
-        None => None,
+        None => {
+            if config.guardians_multisig_addr != None {
+                config.guardians_multisig_addr.clone()
+            } else {
+                None
+            }
+        }
     };
     let endowment_owners_group_addr: Option<String> = match msg.endowment_owners_group_addr {
         Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
-        None => None,
+        None => {
+            if config.endowment_owners_group_addr != None {
+                config.endowment_owners_group_addr.clone()
+            } else {
+                None
+            }
+        }
     };
     let default_vault = deps.api.addr_validate(
         &msg.default_vault
