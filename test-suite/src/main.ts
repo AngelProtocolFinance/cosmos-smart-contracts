@@ -241,7 +241,6 @@ async function migrateAccounts() {
 //----------------------------------------------------------------------------------------
 
 export async function setupContracts(): Promise<void> {
-/*
   // Step 1. Upload all local wasm files and capture the codes for each.... 
   process.stdout.write("Uploading Registrar Wasm");
   const registrarCodeId = await storeCode(
@@ -536,7 +535,7 @@ export async function setupContracts(): Promise<void> {
     return attribute.key == "contract_address"; 
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${endowmentContract3}`);
-*/
+
   // AP Team approves 2 of 3 newly created endowments
   process.stdout.write("AP Team approves 2 of 3 endowments");
   await sendTransaction(terra, apTeam, [
@@ -556,7 +555,7 @@ export async function setupContracts(): Promise<void> {
     }),
   ]);
   console.log(chalk.green(" Done!"));
-/*
+
   // Step 5: Index Fund finals setup 
   // Create an initial "Fund" with the two charities created above
   process.stdout.write("Create two Funds: #1 with two charities & #2 with one");
@@ -592,8 +591,8 @@ export async function setupContracts(): Promise<void> {
     }),
   ]);
   console.log(chalk.green(" Done!"));
-*/
-  // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
+
+  // // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
   // process.stdout.write("Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract");
   // await sendTransaction(terra, apTeam, [
   //   new MsgExecuteContract(apTeam.key.accAddress, registrar, {
@@ -603,13 +602,13 @@ export async function setupContracts(): Promise<void> {
   //     update_owner: { new_owner: cw3ApTeam },
   //   }),
   //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract1, {
-  //     update_admin: { new_admin: cw3ApTeam },
+  //     update_owner: { new_owner: cw3ApTeam },
   //   }),
   //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract2, {
-  //     update_admin: { new_admin: cw3ApTeam },
+  //     update_owner: { new_owner: cw3ApTeam },
   //   }),
   //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract3, {
-  //     update_admin: { new_admin: cw3ApTeam },
+  //     update_owner: { new_owner: cw3ApTeam },
   //   }),
   //   // new MsgExecuteContract(apTeam.key.accAddress, anchorVault1, {
   //   //   update_owner: { new_owner: cw3ApTeam },
