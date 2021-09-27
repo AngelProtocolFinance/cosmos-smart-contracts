@@ -132,12 +132,16 @@ export function initializeLCDClient(
 // Migrate Vault contracts
 // -----------------------------
 export async function migrateContracts(): Promise<void> {
-
-    // run the migrations desired
-    await migrateRegistrar();
-    await migrateIndexFund(indexFund);
-    await migrateAccounts();
-    await migrateVaults();
+  // run the migrations desired
+  await migrateRegistrar();
+  await migrateCw4Group();
+  await migrateApTeamMultisig();
+  await migrateGuardianAngelsMultisig();
+  await migrateIndexFund(indexFund);
+  await migrateAccounts();
+  await migrateVaults();
+  await migrateApTeamMultisig();
+  await migrateGuardianAngelsMultisig();
 }
 
 // -------------------------------------------------
@@ -169,6 +173,49 @@ async function migrateRegistrar() {
   console.log(chalk.green(" Done!"));
 }
 
+async function migrateCw4Group() {
+  process.stdout.write("Uploading CW4 Group Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/cw4_group.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+
+  process.stdout.write("Migrate CW4 AP Team Group contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, cw4GrpApTeam, codeId, {});
+  console.log(chalk.green(" Done!"));
+
+  process.stdout.write("Migrate CW4 Endowment Owners Group contract");
+  const result2 = await migrateContract(terra, apTeam, apTeam, cw4GrpOwners, codeId, {});
+  console.log(chalk.green(" Done!"));
+}
+
+async function migrateApTeamMultisig() {
+  process.stdout.write("Uploading AP Team MultiSig Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/ap_team_multisig.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+
+  process.stdout.write("Migrate AP Team MultiSig contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, cw3ApTeam, codeId, {});
+  console.log(chalk.green(" Done!"));
+}
+
+async function migrateGuardianAngelsMultisig() {
+  process.stdout.write("Uploading Guardian Angels MultiSig Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/guardian_angels_multisig.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+
+  process.stdout.write("Migrate Guardian Angels MultiSig contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, cw3GuardianAngels, codeId, {});
+  console.log(chalk.green(" Done!"));
+}
+
 async function migrateVaults() {
   process.stdout.write("Uploading Anchor Vault Wasm");
   const codeId = await storeCode(
@@ -178,7 +225,7 @@ async function migrateVaults() {
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
   
 
-  process.stdout.write("Migrate Vault contracts");
+  process.stdout.write("Migrate Vault contracts\n");
   await migrateContract(terra, apTeam, apTeam, anchorVault1, codeId, {});
   console.log(chalk.green(`anchorVault #1 - Done!`));
   await migrateContract(terra, apTeam, apTeam, anchorVault2, codeId, {});
@@ -210,7 +257,7 @@ async function migrateAccounts() {
   ]);
   console.log(chalk.green(" Done!"));
   
-  process.stdout.write("Migrate Accounts contracts");
+  process.stdout.write("Migrate Accounts contracts\n");
   await migrateContract(terra, apTeam, apTeam, endowmentContract1, codeId, {});
   console.log(chalk.green(`#1 - Done!`));
   await migrateContract(terra, apTeam, apTeam, endowmentContract2, codeId, {});

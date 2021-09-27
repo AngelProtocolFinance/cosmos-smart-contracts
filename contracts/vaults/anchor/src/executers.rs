@@ -393,12 +393,8 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         info,
         AccountWithdrawMsg {
             beneficiary: treasury_addr.clone(),
-            locked: treasury_account
-                .liquid_balance
-                .get_token_amount(this_addr.clone()),
-            liquid: treasury_account
-                .liquid_balance
-                .get_token_amount(this_addr.clone()),
+            locked: Uint128::zero(),
+            liquid: taxes_collected,
         },
     )
 }

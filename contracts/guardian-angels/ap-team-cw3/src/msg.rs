@@ -1,11 +1,14 @@
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
 use crate::error::ContractError;
 use cosmwasm_std::{CosmosMsg, Decimal, Empty};
 use cw0::{Duration, Expiration};
 use cw3::{ThresholdResponse, Vote};
 use cw4::MemberChangedHookMsg;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+
+/// We currently take no arguments for migrations
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct InstantiateMsg {

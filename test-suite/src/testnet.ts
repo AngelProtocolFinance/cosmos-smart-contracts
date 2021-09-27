@@ -39,7 +39,7 @@ dotenv.config();
 // Main
 //----------------------------------------------------------------------------------------
 export async function startTest(terra: LCDClient): Promise<void> {
-  console.log(chalk.blue("\nBombay-10 TestNet"));
+  console.log(chalk.blue("\nBombay-11 TestNet"));
 
   // get wallets
   const apTeam: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.APTEAM}));
@@ -72,7 +72,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await migrateContracts();
   // await testClosingEndpoint();
 
-  console.log(chalk.yellow("\nStep 2. Contracts Setup"));
+  // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   // await setupContracts();
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
@@ -84,7 +84,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await testTcaMemberSendsToIndexFund();
   // await testAngelTeamCanTriggerVaultsHarvest();
   // setTimeout(async () => {
-    // await testCharityCanUpdateStrategies();
+  //   await testCharityCanUpdateStrategies();
   // }, 8000);
   // setTimeout(async () => {
   //   await testBeneficiaryCanWithdrawFromLiquid();
