@@ -103,17 +103,17 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
-  registrar = "terra1gcwdhjrngahphrfvtkewtxrqd9hs2qn75xfe0h";
-  indexFund = "terra1rc6fw4jrfujxeyjmp5rhde49znw6ca69hk7zvs";
-  anchorVault1 = "terra13c53gadfx4g9at607nh9d2qkpma70kzxw9kv88"; 
-  anchorVault2 = "terra1mkd53kejvfx3lzc89eqypj94ey5njwv3kn05x9";
-  endowmentContract1 = "terra1n9z7j3l5s9e6tuy4g03m8ddf877259x8pglwcc";
-  endowmentContract2 ="terra1jh4vnwr9fnydwrfddalyl5wlm9vv6edyvzhf02";
-  endowmentContract3 = "terra1f7yn5cr6ndg36x3rex7873yht9h8htg4l397dg";
-  cw4GrpApTeam = "terra14fg2xg9wgdddyzz5cv9ez6xxk6c2puws5qn4qw";
-  cw3ApTeam = "terra1j85mrzg0kqe8wxk95j98clfz56guyyckyp3gdx";
-  cw4GrpOwners = "terra1c94tpc0rjp0u5qryxls4vz2m3fprzwprnxtw93";
-  cw3GuardianAngels = "terra10lgqww98z87l5qnuzuyj2j4mfe53zty4fv68vr";
+  registrar = "terra1ydt74d5tzlz98ec5h9fs2z2yjg7vg9d0cceapk";
+  indexFund = "terra1u927p7t897yvx0n0wmfu3xlp6pyg8f5d7kgx4q";
+  anchorVault1 = "terra1nnle4cezlh9fs2essa24nuh5yw6aejl8cjxxwx"; 
+  anchorVault2 = "terra1w9f9y23tkdal0st22y6fgh8ys8ffyncx0rxqqt";
+  endowmentContract1 = "terra1vgda0ad7glargah8jf2u9u0ekagu8ktzsqv9lm";
+  endowmentContract2 ="terra1a526h7mpt37jsczjwzm942v9upgc8f7kfnz0tx";
+  endowmentContract3 = "terra1nfmy7uphq3wfuar0raln7ayk6fwfd7w0zsq9ls";
+  cw4GrpApTeam = "terra135vnjejkkfpq4gq7w4pyh3uzlrljsx5ezz8cx4";
+  cw3ApTeam = "terra1d2xzyr3khqa225y5pkzu6ds7vqraspqr2206s7";
+  cw4GrpOwners = "terra1deex3hray999cw09mxx99emxy3alr273lhe640";
+  cw3GuardianAngels = "terra1rcykuda9kdy666ssvt5k9paz3wf9grhh59nfpm";
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
@@ -241,7 +241,7 @@ async function migrateAccounts() {
 //----------------------------------------------------------------------------------------
 
 export async function setupContracts(): Promise<void> {
-
+/*
   // Step 1. Upload all local wasm files and capture the codes for each.... 
   process.stdout.write("Uploading Registrar Wasm");
   const registrarCodeId = await storeCode(
@@ -536,7 +536,7 @@ export async function setupContracts(): Promise<void> {
     return attribute.key == "contract_address"; 
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${endowmentContract3}`);
-
+*/
   // AP Team approves 2 of 3 newly created endowments
   process.stdout.write("AP Team approves 2 of 3 endowments");
   await sendTransaction(terra, apTeam, [
@@ -556,7 +556,7 @@ export async function setupContracts(): Promise<void> {
     }),
   ]);
   console.log(chalk.green(" Done!"));
-
+/*
   // Step 5: Index Fund finals setup 
   // Create an initial "Fund" with the two charities created above
   process.stdout.write("Create two Funds: #1 with two charities & #2 with one");
@@ -592,7 +592,7 @@ export async function setupContracts(): Promise<void> {
     }),
   ]);
   console.log(chalk.green(" Done!"));
-
+*/
   // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
   // process.stdout.write("Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract");
   // await sendTransaction(terra, apTeam, [
