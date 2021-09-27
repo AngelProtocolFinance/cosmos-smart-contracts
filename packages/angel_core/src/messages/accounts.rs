@@ -45,6 +45,7 @@ pub enum ExecuteMsg {
     UpdateRegistrar {
         new_registrar: String,
     },
+    UpdateConfig(UpdateConfigMsg),
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
     // Update an Endowment ability to receive/send funds
@@ -57,6 +58,12 @@ pub enum ExecuteMsg {
         add: Vec<String>,
         remove: Vec<String>,
     },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateConfigMsg {
+    pub accepted_tokens_native: Vec<String>,
+    pub accepted_tokens_cw20: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

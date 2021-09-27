@@ -221,7 +221,6 @@ async function migrateVaults() {
     apTeam,
     path.resolve(__dirname, "../../artifacts/anchor.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
-  
 
   process.stdout.write("Migrate Vault contracts\n");
   await migrateContract(terra, apTeam, apTeam, anchorVault1, codeId, {});
@@ -243,18 +242,12 @@ async function migrateVaults() {
       update_config: { 
         tax_per_block: "0.0000000259703196", // 70% of Anchor's 19.5% earnings collected per block
         treasury_withdraw_threshold: 1, // threshold limit of DP tokens to do a withdraw
-        moneymarket: undefined,
-        input_denom: undefined,
-        yield_token: undefined,
       }
     }),
     new MsgExecuteContract(apTeam.key.accAddress, anchorVault2, {
       update_config: { 
         tax_per_block: "0.0000000259703196", // 70% of Anchor's 19.5% earnings collected per block
         treasury_withdraw_threshold: 1, // threshold limit of DP tokens to do a withdraw
-        moneymarket: undefined,
-        input_denom: undefined,
-        yield_token: undefined,
       }
     }),
   ]);

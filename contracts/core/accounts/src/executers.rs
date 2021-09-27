@@ -10,7 +10,7 @@ use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultListResponse,
 };
-use angel_core::structs::{FundingSource, StrategyComponent, YieldVault};
+use angel_core::structs::{AcceptedTokens, FundingSource, StrategyComponent, YieldVault};
 use angel_core::utils::{
     deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults, withdraw_from_vaults,
 };
@@ -26,29 +26,36 @@ pub fn update_owner(
     info: MessageInfo,
     new_owner: String,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let mut config = CONFIG.load(deps.storage)?;
 
-    // get the guardian multisig addr from the registrar config (if exists)
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
-        }))?;
-    let multisig_addr = registrar_config.guardians_multisig_addr;
-
-    // only the owner/admin of the contract or the Guardian Angels multisig
-    // can update this OWNER address in the configs
-    if info.sender != config.owner && info.sender.to_string() != multisig_addr.unwrap() {
+    if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
-    let new_owner = deps.api.addr_validate(&new_owner)?;
-    // update config attributes with newly passed args
-    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.owner = new_owner;
-        Ok(config)
-    })?;
+    config.owner = deps.api.addr_validate(&new_owner)?;
+    CONFIG.save(deps.storage, &config)?;
 
+    Ok(Response::default())
+}
+
+pub fn update_config(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateConfigMsg,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+
+    // only the SC admin can update these configs...for now
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    config.accepted_tokens = AcceptedTokens {
+        native: msg.accepted_tokens_native,
+        cw20: msg.accepted_tokens_cw20,
+    };
+    CONFIG.save(deps.storage, &config)?;
     Ok(Response::default())
 }
 

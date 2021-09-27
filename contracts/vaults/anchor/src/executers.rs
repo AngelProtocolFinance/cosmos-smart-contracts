@@ -67,15 +67,15 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    config.moneymarket = deps
-        .api
-        .addr_validate(&msg.moneymarket.unwrap())
-        .unwrap_or(config.moneymarket);
+    config.moneymarket = match msg.moneymarket {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.moneymarket,
+    };
+    config.yield_token = match msg.yield_token {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.yield_token,
+    };
     config.input_denom = msg.input_denom.unwrap_or(config.input_denom);
-    config.yield_token = deps
-        .api
-        .addr_validate(&msg.yield_token.unwrap())
-        .unwrap_or(config.yield_token);
     config.tax_per_block = msg.tax_per_block.unwrap_or(config.tax_per_block);
     config.treasury_withdraw_threshold = msg
         .treasury_withdraw_threshold

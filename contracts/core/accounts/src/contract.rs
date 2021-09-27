@@ -109,6 +109,7 @@ pub fn execute(
         ExecuteMsg::CloseEndowment { beneficiary } => {
             executers::close_endowment(deps, env, info, beneficiary)
         }
+        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         ExecuteMsg::UpdateGuardians { add, remove } => {
             executers::update_guardians(deps, env, info, add, remove)
         }

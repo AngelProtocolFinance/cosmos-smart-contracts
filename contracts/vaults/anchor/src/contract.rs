@@ -114,6 +114,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     let config = config::read(deps.storage)?;
 
     match msg {
+        QueryMsg::VaultConfig {} => to_binary(&queriers::query_vault_config(deps)),
         QueryMsg::Config {} => to_binary(&ConfigResponse {
             input_denom: config.input_denom.clone(),
             yield_token: config.yield_token.to_string(),
