@@ -27,11 +27,11 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub moneymarket: String,
-    pub input_denom: String,
-    pub yield_token: String,
-    pub tax_per_block: Decimal,
-    pub treasury_withdraw_threshold: Uint128,
+    pub moneymarket: Option<String>,
+    pub input_denom: Option<String>,
+    pub yield_token: Option<String>,
+    pub tax_per_block: Option<Decimal>,
+    pub treasury_withdraw_threshold: Option<Uint128>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -67,11 +67,19 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    config.moneymarket = deps.api.addr_validate(&msg.moneymarket)?;
-    config.input_denom = msg.input_denom;
-    config.yield_token = deps.api.addr_validate(&msg.yield_token)?;
-    config.tax_per_block = msg.tax_per_block;
-    config.treasury_withdraw_threshold = msg.treasury_withdraw_threshold;
+    config.moneymarket = deps
+        .api
+        .addr_validate(&msg.moneymarket.unwrap())
+        .unwrap_or(config.moneymarket);
+    config.input_denom = msg.input_denom.unwrap_or(config.input_denom);
+    config.yield_token = deps
+        .api
+        .addr_validate(&msg.yield_token.unwrap())
+        .unwrap_or(config.yield_token);
+    config.tax_per_block = msg.tax_per_block.unwrap_or(config.tax_per_block);
+    config.treasury_withdraw_threshold = msg
+        .treasury_withdraw_threshold
+        .unwrap_or(config.treasury_withdraw_threshold);
     config::store(deps.storage, &config)?;
 
     Ok(Response::default())
@@ -354,9 +362,11 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
     for account in accounts.unwrap().iter() {
         let account_address = deps.api.addr_validate(account)?;
         let mut balances = BALANCES.load(deps.storage, &account_address)?;
-        let transfer_amt = balances.locked_balance.get_token_amount(this_addr.clone())
-            * harvest_percent
-            * config.tax_per_block;
+        let transfer_amt = balances
+            .locked_balance
+            .get_token_amount(this_addr.clone())
+            .checked_mul(harvest_percent * config.tax_per_block)
+            .unwrap();
 
         // proceed to shuffle balances if we have a non-zero amount
         if transfer_amt > Uint128::zero() {
