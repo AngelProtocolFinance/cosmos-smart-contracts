@@ -38,6 +38,7 @@ pub fn instantiate(
         next_pending_id: 0,
         tax_per_block: msg.tax_per_block,
         last_harvest: env.block.height,
+        treasury_withdraw_threshold: msg.treasury_withdraw_threshold,
     };
 
     config::store(deps.storage, &config)?;

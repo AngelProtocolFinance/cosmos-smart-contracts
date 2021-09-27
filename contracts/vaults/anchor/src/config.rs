@@ -17,6 +17,7 @@ pub struct Config {
     pub next_pending_id: u64,
     pub tax_per_block: Decimal,
     pub last_harvest: u64,
+    pub treasury_withdraw_threshold: Uint128,
 }
 
 pub fn store(storage: &mut dyn Storage, data: &Config) -> StdResult<()> {

@@ -71,6 +71,7 @@ pub fn update_config(
     config.input_denom = msg.input_denom;
     config.yield_token = deps.api.addr_validate(&msg.yield_token)?;
     config.tax_per_block = msg.tax_per_block;
+    config.treasury_withdraw_threshold = msg.treasury_withdraw_threshold;
     config::store(deps.storage, &config)?;
 
     Ok(Response::default())
@@ -325,7 +326,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         return Err(ContractError::Unauthorized {});
     }
 
-    // pull registrar SC config to fetch: 1) Tax Rate and 2) Treasury Addr
+    // pull registrar SC config to fetch: 1) Treasury Tax Rate and 2) Treasury Addr
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
@@ -338,31 +339,31 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             &deps.api.addr_validate(&registrar_config.treasury)?,
         )
         .unwrap_or_else(|_| BalanceInfo::default());
+
+    // iterate over all accounts and shuffle DP tokens from Locked to Liquid
+    // set aside a small amount for treasury
     let accounts: Result<Vec<_>, _> = BALANCES
         .keys(deps.storage, None, None, Order::Ascending)
         .map(String::from_utf8)
         .collect();
-
     let mut taxes_collected = Uint128::zero();
+    let mut deposit_token = Cw20CoinVerified {
+        address: env.contract.address.clone(),
+        amount: Uint128::zero(),
+    };
     for account in accounts.unwrap().iter() {
-        let mut deposit_token = Cw20CoinVerified {
-            address: env.contract.address.clone(),
-            amount: Uint128::zero(),
-        };
         let account_address = deps.api.addr_validate(account)?;
         let mut balances = BALANCES.load(deps.storage, &account_address)?;
-        let locked_deposit_amount: Uint128 =
-            balances.locked_balance.get_token_amount(this_addr.clone());
+        let transfer_amt = balances.locked_balance.get_token_amount(this_addr.clone())
+            * harvest_percent
+            * config.tax_per_block;
 
         // proceed to shuffle balances if we have a non-zero amount
-        if locked_deposit_amount > Uint128::zero() {
-            let transfer_amt = locked_deposit_amount
-                .checked_mul(harvest_percent * config.tax_per_block)
-                .unwrap();
+        if transfer_amt > Uint128::zero() {
             let taxes_owed = transfer_amt * registrar_config.tax_rate;
+            deposit_token.amount = transfer_amt;
 
             // lower locked balance
-            deposit_token.amount = transfer_amt;
             balances
                 .locked_balance
                 .deduct_tokens(Balance::Cw20(deposit_token.clone()));
@@ -386,17 +387,29 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
     // save new treasury balance to storage
     BALANCES.save(deps.storage, &treasury_addr.clone(), &treasury_account)?;
 
-    // Withdraw all DP Tokens from Treasury and send to AP Treasury Wallet
-    withdraw_stable(
-        deps,
-        env,
-        info,
-        AccountWithdrawMsg {
-            beneficiary: treasury_addr.clone(),
-            locked: Uint128::zero(),
-            liquid: taxes_collected,
-        },
-    )
+    if treasury_account
+        .liquid_balance
+        .get_token_amount(this_addr.clone())
+        > config.treasury_withdraw_threshold
+    {
+        // Withdraw all DP Tokens from Treasury and send to AP Treasury Wallet
+        withdraw_stable(
+            deps,
+            env,
+            info,
+            AccountWithdrawMsg {
+                beneficiary: treasury_addr.clone(),
+                locked: Uint128::zero(),
+                liquid: treasury_account
+                    .liquid_balance
+                    .get_token_amount(this_addr.clone()),
+            },
+        )
+    } else {
+        Ok(Response::new()
+            .add_attribute("action", "harvest_vault")
+            .add_attribute("sender", info.sender))
+    }
 }
 
 pub fn process_anchor_reply(
