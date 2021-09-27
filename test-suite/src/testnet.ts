@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {LCDClient, MnemonicKey, Wallet} from "@terra-money/terra.js";
+import {LCDClient, Coin, MnemonicKey, Wallet, MsgSend, BlockTxBroadcastResult} from "@terra-money/terra.js";
 import chalk from "chalk";
 import {
   initializeLCDClient,
@@ -27,6 +27,7 @@ import {
   testQueryRegistrarEndowmentList,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
+  testClosingEndpoint,
 } from "./main";
 import dotenv from 'dotenv';
 
@@ -66,6 +67,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
 
   // console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
   // await migrateContracts();
+  // await testClosingEndpoint();
 
   //console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   await setupContracts();

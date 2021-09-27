@@ -3,7 +3,7 @@ use crate::config;
 use crate::config::{PendingInfo, BALANCES, PENDING, TOKEN_INFO};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
-use angel_core::messages::vault::{AccountTransferMsg, AccountWithdrawMsg};
+use angel_core::messages::vault::{AccountTransferMsg, AccountWithdrawMsg, UpdateConfigMsg};
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, EndowmentListResponse,
 };
@@ -49,6 +49,28 @@ pub fn update_registrar(
     }
     // update config attributes with newly passed args
     config.registrar_contract = new_registrar;
+    config::store(deps.storage, &config)?;
+
+    Ok(Response::default())
+}
+
+pub fn update_config(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateConfigMsg,
+) -> Result<Response, ContractError> {
+    let mut config = config::read(deps.storage)?;
+
+    // only the SC admin can update these configs...for now
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    config.moneymarket = deps.api.addr_validate(&msg.moneymarket)?;
+    config.input_denom = msg.input_denom;
+    config.yield_token = deps.api.addr_validate(&msg.yield_token)?;
+    config.tax_per_block = msg.tax_per_block;
     config::store(deps.storage, &config)?;
 
     Ok(Response::default())
@@ -152,8 +174,10 @@ pub fn redeem_stable(
     let pos = endowments
         .iter()
         .position(|p| p.address == info.sender.clone());
-    // reject if the sender was found in the list of endowments
-    if pos == None {
+
+    // reject if the sender was found not in the list of endowments
+    // OR if the sender is not the Registrar SC (ie. we're harvesting)
+    if pos == None && info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -287,7 +311,13 @@ pub fn withdraw_stable(
 }
 
 pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
+    let mut config = config::read(deps.storage)?;
+
+    let harvest_percent = Uint128::from((env.block.height - config.last_harvest) as u128);
+    config.last_harvest = env.block.height;
+    config::store(deps.storage, &config)?;
+
+    let this_addr = env.contract.address.clone();
 
     if info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
@@ -299,7 +329,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQueryMsg::Config {})?,
         }))?;
-
+    let treasury_addr = &deps.api.addr_validate(&registrar_config.treasury)?;
     let mut treasury_account = BALANCES
         .load(
             deps.storage,
@@ -311,21 +341,22 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         .map(String::from_utf8)
         .collect();
 
-    let mut deposit_token = Cw20CoinVerified {
-        address: env.contract.address.clone(),
-        amount: Uint128::zero(),
-    };
     let mut taxes_collected = Uint128::zero();
     for account in accounts.unwrap().iter() {
+        let mut deposit_token = Cw20CoinVerified {
+            address: env.contract.address.clone(),
+            amount: Uint128::zero(),
+        };
         let account_address = deps.api.addr_validate(account)?;
         let mut balances = BALANCES.load(deps.storage, &account_address)?;
-        let locked_deposit_amount: Uint128 = balances
-            .locked_balance
-            .get_token_amount(env.contract.address.clone());
+        let locked_deposit_amount: Uint128 =
+            balances.locked_balance.get_token_amount(this_addr.clone());
 
         // proceed to shuffle balances if we have a non-zero amount
         if locked_deposit_amount > Uint128::zero() {
-            let transfer_amt = locked_deposit_amount * registrar_config.tax_rate;
+            let transfer_amt = locked_deposit_amount
+                .checked_mul(harvest_percent * config.tax_per_block)
+                .unwrap();
             let taxes_owed = transfer_amt * registrar_config.tax_rate;
 
             // lower locked balance
@@ -350,13 +381,24 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             BALANCES.save(deps.storage, &account_address, &balances)?;
         }
     }
-    BALANCES.save(
-        deps.storage,
-        &deps.api.addr_validate(&registrar_config.treasury)?,
-        &treasury_account,
-    )?;
+    // save new treasury balance to storage
+    BALANCES.save(deps.storage, &treasury_addr.clone(), &treasury_account)?;
 
-    Ok(Response::new().add_attribute("action", "harvest"))
+    // Withdraw all DP Tokens from Treasury and send to AP Treasury Wallet
+    withdraw_stable(
+        deps,
+        env,
+        info,
+        AccountWithdrawMsg {
+            beneficiary: treasury_addr.clone(),
+            locked: treasury_account
+                .liquid_balance
+                .get_token_amount(this_addr.clone()),
+            liquid: treasury_account
+                .liquid_balance
+                .get_token_amount(this_addr.clone()),
+        },
+    )
 }
 
 pub fn process_anchor_reply(

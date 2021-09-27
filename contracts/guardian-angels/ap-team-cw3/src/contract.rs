@@ -1,12 +1,13 @@
-use std::cmp::Ordering;
-
-#[cfg(not(feature = "library"))]
+use crate::error::ContractError;
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::state::{
+    next_id, parse_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS,
+};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, Order,
     Response, StdResult,
 };
-
 use cw0::{maybe_addr, Expiration};
 use cw2::set_contract_version;
 use cw3::{
@@ -15,12 +16,7 @@ use cw3::{
 };
 use cw4::{Cw4Contract, MemberChangedHookMsg, MemberDiff};
 use cw_storage_plus::Bound;
-
-use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg};
-use crate::state::{
-    next_id, parse_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS,
-};
+use std::cmp::Ordering;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "ap-team-multisig";

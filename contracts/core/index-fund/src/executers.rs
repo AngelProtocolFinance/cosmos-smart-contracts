@@ -1,7 +1,7 @@
 use crate::state::{fund_read, fund_store, read_funds, CONFIG, STATE, TCA_DONATIONS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
-use angel_core::structs::{IndexFund, SplitDetails};
+use angel_core::structs::{AcceptedTokens, IndexFund, SplitDetails};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
@@ -71,6 +71,36 @@ pub fn update_tca_list(
         state.terra_alliance = tca_list;
         Ok(state)
     })?;
+
+    Ok(Response::default())
+}
+
+pub fn update_config(
+    deps: DepsMut,
+    info: MessageInfo,
+    msg: UpdateConfigMsg,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+
+    // only the SC admin can update these configs...for now
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    config.fund_rotation = msg.fund_rotation;
+    config.fund_member_limit = msg.fund_member_limit;
+    config.funding_goal = msg.funding_goal;
+    config.split_to_liquid = SplitDetails {
+        max: msg.split_max,
+        min: msg.split_min,
+        default: msg.split_default,
+    };
+    config.accepted_tokens = AcceptedTokens {
+        native: msg.accepted_tokens_native,
+        cw20: msg.accepted_tokens_cw20,
+    };
+
+    CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::default())
 }

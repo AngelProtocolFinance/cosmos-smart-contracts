@@ -32,18 +32,10 @@ pub enum ExecuteMsg {
     },
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt(AccountTransferMsg),
-    // Winding up of an endowment in good standing. Returns all funds to the Beneficiary.
-    Liquidate {
-        beneficiary: String, // Addr of the Beneficiary to receive funds
-    },
-    // Destroys the endowment and returns all Balance funds to an index fund and to the
-    // Index Fund ID provided
-    TerminateToFund {
-        fund: u64, // Index Fund ID to receive funds
-    },
-    // Destroys the endowment and returns all Balance funds to the beneficiary addr (DANO treasury)
-    TerminateToAddress {
-        beneficiary: String, // Addr of the Beneficiary to receive funds
+    // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.
+    // If not provided, looks up the Index Fund an Endowment is tied to to donates the funds to it.
+    CloseEndowment {
+        beneficiary: Option<String>, // Optional Addr of the Beneficiary to receive funds
     },
     // update owner addr
     UpdateOwner {

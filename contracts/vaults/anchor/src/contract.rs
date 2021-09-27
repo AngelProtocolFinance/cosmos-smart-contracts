@@ -36,6 +36,8 @@ pub fn instantiate(
         input_denom: anchor_config.stable_denom.clone(),
         yield_token: deps.api.addr_validate(&anchor_config.aterra_contract)?,
         next_pending_id: 0,
+        tax_per_block: msg.tax_per_block,
+        last_harvest: env.block.height,
     };
 
     config::store(deps.storage, &config)?;
@@ -83,6 +85,7 @@ pub fn execute(
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
+        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         // -UST (Account) --> +Deposit Token/Yield Token (Vault)
         ExecuteMsg::Deposit(msg) => {
             executers::deposit_stable(deps, env, info.clone(), msg, Balance::from(info.funds))

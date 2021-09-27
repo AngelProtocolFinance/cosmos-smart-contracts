@@ -9,7 +9,7 @@ import {
   MsgInstantiateContract,
   MsgMigrateContract,
   MsgStoreCode,
-  StdFee,
+  Fee,
   Wallet,
   LCDClient,
 } from "@terra-money/terra.js";
@@ -33,7 +33,7 @@ export async function sendTransaction(
 ) {
   const tx = await sender.createAndSignTx({
     msgs,
-    fee: new StdFee(6000000, [new Coin("uusd", 3000000)]),
+    fee: new Fee(6000000, [new Coin("uusd", 3000000)]),
   });
 
   const result = await terra.tx.broadcast(tx);
@@ -126,18 +126,18 @@ export async function migrateContract(
 /**
  * @notice Return the native token balance of the specified account
  */
-export async function queryNativeTokenBalance(
-  terra: LocalTerra | LCDClient,
-  account: string,
-  denom = "uusd"
-): Promise<string> {
-  const balance = (await terra.bank.balance(account)).get(denom)?.amount.toString();
-  if (balance) {
-    return balance;
-  } else {
-    return "0";
-  }
-}
+// export async function queryNativeTokenBalance(
+//   terra: LocalTerra | LCDClient,
+//   account: string,
+//   denom = "uusd"
+// ): Promise<string> {
+//   const balance = (await terra.bank.balance(account)).get(denom)?.amount.toString();
+//   if (balance) {
+//     return balance;
+//   } else {
+//     return "0";
+//   }
+// }
 
 /**
  * @notice Return CW20 token balance of the specified account

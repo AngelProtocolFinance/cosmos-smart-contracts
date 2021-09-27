@@ -23,6 +23,7 @@ pub enum ExecuteMsg {
     UpdateRegistrar { new_registrar: String },
     // replace TCA Member list with a new one
     UpdateTcaList { new_list: Vec<String> },
+    UpdateConfig(UpdateConfigMsg),
     // endpoint to remove a single member from all index funds that they may in
     RemoveMember(RemoveMemberMsg),
     // create a new index fund
@@ -55,6 +56,18 @@ pub struct UpdateMembersMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateConfigMsg {
+    pub fund_rotation: u64,
+    pub fund_member_limit: u32,
+    pub funding_goal: Option<Uint128>,
+    pub split_max: Decimal,
+    pub split_min: Decimal,
+    pub split_default: Decimal,
+    pub accepted_tokens_native: Vec<String>,
+    pub accepted_tokens_cw20: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ReceiveMsg {
     // Donor deposits tokens sent for an Index Fund
@@ -74,6 +87,8 @@ pub enum QueryMsg {
     FundsList {},
     // returns a single fund if the ID is valid
     FundDetails { fund_id: u64 },
+    // get all funds a given Accounts SC address is involved with
+    InvolvedFunds { address: String },
     // return details on the currently active fund
     ActiveFundDetails {},
     // get total donations given to Active Fund for a round

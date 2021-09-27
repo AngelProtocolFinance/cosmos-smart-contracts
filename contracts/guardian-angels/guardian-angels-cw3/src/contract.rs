@@ -1,11 +1,13 @@
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, Threshold};
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, Threshold, UpdateConfigMsg};
 use crate::state::{
     next_id, parse_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, GUARDIAN_PROPOSALS,
     PROPOSALS,
 };
 use angel_core::messages::accounts::QueryMsg as EndowmentQueryMsg;
+use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::accounts::EndowmentDetailsResponse;
+use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, BlockInfo, CosmosMsg, Decimal, Deps, DepsMut, Empty, Env, MessageInfo,
@@ -47,14 +49,17 @@ pub fn instantiate(
                 addr: msg.endowment_owners_group.clone(),
             })?,
     );
+    let registrar_contract = deps.api.addr_validate(&msg.registrar_contract)?;
 
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let cfg = Config {
         threshold: msg.threshold,
         max_voting_period: msg.max_voting_period,
-        ap_team_group: ap_team_group,
-        endowment_owners_group: endowment_owners_group,
+        max_voting_period_guardians: msg.max_voting_period_guardians,
+        ap_team_group,
+        endowment_owners_group,
+        registrar_contract,
     };
     CONFIG.save(deps.storage, &cfg)?;
 
@@ -99,12 +104,41 @@ pub fn execute(
         ExecuteMsg::VoteGuardian { proposal_id, vote } => {
             execute_vote_guardian(deps, env, info, proposal_id, vote)
         }
+        ExecuteMsg::UpdateConfig(msg) => execute_update_config(deps, env, info, msg),
         ExecuteMsg::Execute { proposal_id } => execute_execute(deps, env, info, proposal_id),
         ExecuteMsg::Close { proposal_id } => execute_close(deps, env, info, proposal_id),
         ExecuteMsg::MemberChangedHook(MemberChangedHookMsg { diffs }) => {
             execute_membership_hook(deps, env, info, diffs)
         }
     }
+}
+
+pub fn execute_update_config(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateConfigMsg,
+) -> Result<Response<Empty>, ContractError> {
+    let mut cfg = CONFIG.load(deps.storage)?;
+
+    // get the owner of the Registrar config
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: cfg.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+
+    // only the owner/admin of the Registrar contract can update the configs
+    if info.sender != registrar_config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    cfg.threshold = msg.threshold;
+    cfg.max_voting_period = msg.max_voting_period;
+    cfg.max_voting_period_guardians = msg.max_voting_period_guardians;
+
+    CONFIG.save(deps.storage, &cfg)?;
+    Ok(Response::default())
 }
 
 pub fn execute_propose_owner_change(
@@ -156,10 +190,7 @@ pub fn execute_propose_guardian_change(
         vec![CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: endowment_addr.clone(),
             msg: to_binary(
-                &angel_core::messages::accounts::ExecuteMsg::UpdateGuardians {
-                    add: add,
-                    remove: remove,
-                },
+                &angel_core::messages::accounts::ExecuteMsg::UpdateGuardians { add, remove },
             )
             .unwrap(),
             funds: vec![],
@@ -192,6 +223,7 @@ pub fn execute_propose(
     let vote_power;
     let total_weight;
     let threshold;
+    let max_expires;
 
     if special_proposal == None {
         // Only Endowment Owner members can create generic proposals (non-special proposals).
@@ -203,7 +235,9 @@ pub fn execute_propose(
             .ok_or(ContractError::Unauthorized {})?;
         total_weight = cfg.ap_team_group.total_weight(&deps.querier)?;
         threshold = cfg.threshold;
+        max_expires = cfg.max_voting_period.after(&env.block);
     } else {
+        max_expires = cfg.max_voting_period_guardians.after(&env.block);
         let proposal_type = special_proposal.as_ref().unwrap();
         if proposal_type == "guardian_change" && info.sender == endowment_info.owner {
             vote_power = cfg
@@ -239,8 +273,6 @@ pub fn execute_propose(
             return Err(ContractError::Unauthorized {});
         }
     }
-    // max expires also used as default
-    let max_expires = cfg.max_voting_period.after(&env.block);
     let mut expires = latest.unwrap_or(max_expires);
     let comp = expires.partial_cmp(&max_expires);
     if let Some(Ordering::Greater) = comp {
@@ -259,8 +291,8 @@ pub fn execute_propose(
         msgs,
         status: Status::Open,
         votes: Votes::new(vote_power),
-        threshold: threshold,
-        total_weight: total_weight,
+        threshold,
+        total_weight,
     };
     prop.update_status(&env.block);
     let id = next_id(deps.storage)?;
@@ -549,7 +581,7 @@ fn list_proposals(
     let start = start_after.map(Bound::exclusive_int);
     let props: StdResult<Vec<_>> = PROPOSALS
         .range(deps.storage, start.clone(), None, Order::Ascending)
-        .take(limit.clone())
+        .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();
     let special_props: StdResult<Vec<_>> = GUARDIAN_PROPOSALS
@@ -557,7 +589,7 @@ fn list_proposals(
         .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();
-    let mut all_props = props.unwrap().clone();
+    let mut all_props = props.unwrap();
     all_props.extend(special_props.unwrap());
     Ok(ProposalListResponse {
         proposals: all_props,
@@ -574,7 +606,7 @@ fn reverse_proposals(
     let end = start_before.map(Bound::exclusive_int);
     let props: StdResult<Vec<_>> = PROPOSALS
         .range(deps.storage, None, end.clone(), Order::Ascending)
-        .take(limit.clone())
+        .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();
     let special_props: StdResult<Vec<_>> = GUARDIAN_PROPOSALS
@@ -582,7 +614,7 @@ fn reverse_proposals(
         .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();
-    let mut all_props = props.unwrap().clone();
+    let mut all_props = props.unwrap();
     all_props.extend(special_props.unwrap());
 
     Ok(ProposalListResponse {

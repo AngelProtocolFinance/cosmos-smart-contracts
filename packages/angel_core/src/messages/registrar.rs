@@ -70,6 +70,7 @@ impl UpdateConfigMsg {
 pub struct UpdateEndowmentStatusMsg {
     pub endowment_addr: String,
     pub status: u8,
+    pub beneficiary: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

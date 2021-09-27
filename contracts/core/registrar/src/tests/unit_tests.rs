@@ -346,6 +346,7 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
     let update_endowment_status_msg = UpdateEndowmentStatusMsg {
         endowment_addr: good_endowment_addr.clone(),
         status: 1,
+        beneficiary: None,
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));

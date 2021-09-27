@@ -140,6 +140,17 @@ pub fn update_endowment_status(
                 })?,
                 funds: vec![],
             })),
+            // start redemption of Account SC's Vault holdings to final beneficiary/index fund
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: endowment_entry.address.to_string(),
+                msg: to_binary(
+                    &angel_core::messages::accounts::ExecuteMsg::CloseEndowment {
+                        beneficiary: msg.beneficiary,
+                    },
+                )
+                .unwrap(),
+                funds: vec![],
+            })),
         ],
         _ => vec![],
     };
@@ -184,6 +195,7 @@ pub fn update_config(
 
     let charities_addr_list = msg.charities_list(deps.api)?;
     let accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
+
     let guardians_multisig_addr: Option<String> = match msg.guardians_multisig_addr {
         Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
         None => None,

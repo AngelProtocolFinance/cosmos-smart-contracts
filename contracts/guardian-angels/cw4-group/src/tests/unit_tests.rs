@@ -1,16 +1,10 @@
-use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::contract::{
-    execute, instantiate, list_members, query_total_weight, 
-    query_member, update_members,
+    execute, instantiate, list_members, query_member, query_total_weight, update_members,
 };
+use crate::msg::{ExecuteMsg, InstantiateMsg};
 use crate::state::{ADMIN, HOOKS};
-use cosmwasm_std::testing::{
-    mock_dependencies, mock_env, mock_info,
-};
-use cosmwasm_std::{
-    from_slice, Addr, Api, DepsMut,
-    OwnedDeps, Querier, Storage, SubMsg,
-};
+use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+use cosmwasm_std::{from_slice, Addr, Api, DepsMut, OwnedDeps, Querier, Storage, SubMsg};
 use cw4::{member_key, Member, MemberChangedHookMsg, MemberDiff, TOTAL_KEY};
 use cw_controllers::{AdminError, HookError};
 

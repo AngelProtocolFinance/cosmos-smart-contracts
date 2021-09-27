@@ -24,6 +24,7 @@ pub fn instantiate(
 
     let configs = Config {
         owner: info.sender.clone(),
+        guardian_angels: info.sender.clone(),
         index_fund_contract: info.sender.clone(),
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
         approved_charities: vec![],

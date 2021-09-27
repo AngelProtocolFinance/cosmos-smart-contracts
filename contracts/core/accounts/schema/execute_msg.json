@@ -52,59 +52,17 @@
     {
       "type": "object",
       "required": [
-        "liquidate"
+        "close_endowment"
       ],
       "properties": {
-        "liquidate": {
+        "close_endowment": {
           "type": "object",
-          "required": [
-            "beneficiary"
-          ],
           "properties": {
             "beneficiary": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "terminate_to_fund"
-      ],
-      "properties": {
-        "terminate_to_fund": {
-          "type": "object",
-          "required": [
-            "fund"
-          ],
-          "properties": {
-            "fund": {
-              "type": "integer",
-              "format": "uint64",
-              "minimum": 0.0
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "terminate_to_address"
-      ],
-      "properties": {
-        "terminate_to_address": {
-          "type": "object",
-          "required": [
-            "beneficiary"
-          ],
-          "properties": {
-            "beneficiary": {
-              "type": "string"
+              "type": [
+                "string",
+                "null"
+              ]
             }
           }
         }

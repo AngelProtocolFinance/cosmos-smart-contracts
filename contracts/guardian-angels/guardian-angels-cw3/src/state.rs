@@ -18,8 +18,10 @@ const PRECISION_FACTOR: u128 = 1_000_000_000;
 pub struct Config {
     pub threshold: Threshold,
     pub max_voting_period: Duration,
+    pub max_voting_period_guardians: Duration,
     pub ap_team_group: Cw4Contract,
     pub endowment_owners_group: Cw4Contract,
+    pub registrar_contract: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
