@@ -174,8 +174,10 @@ pub fn redeem_stable(
     let pos = endowments
         .iter()
         .position(|p| p.address == info.sender.clone());
-    // reject if the sender was found in the list of endowments
-    if pos == None {
+
+    // reject if the sender was found not in the list of endowments
+    // OR if the sender is not the Registrar SC (ie. we're harvesting)
+    if pos == None && info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
 
