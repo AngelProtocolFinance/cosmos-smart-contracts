@@ -272,9 +272,18 @@ pub fn withdraw_stable(
     TOKEN_INFO.save(deps.storage, &token_info)?;
 
     // update investment holdings balances
-    let mut investment = BALANCES
-        .load(deps.storage, &info.sender)
-        .unwrap_or(BalanceInfo::default());
+    let mut investment;
+    if info.sender != config.registrar_contract {
+        // use Account SC sender
+        investment = BALANCES
+            .load(deps.storage, &info.sender)
+            .unwrap_or(BalanceInfo::default());
+    } else {
+        // use Treasury Addr in msg beneficiary to lookup Balances
+        investment = BALANCES
+            .load(deps.storage, &msg.beneficiary)
+            .unwrap_or(BalanceInfo::default());
+    }
 
     investment
         .locked_balance
@@ -362,7 +371,9 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         let transfer_amt = balances
             .locked_balance
             .get_token_amount(this_addr.clone())
-            .checked_mul(harvest_blocks).unwrap() * config.tax_per_block;
+            .checked_mul(harvest_blocks)
+            .unwrap()
+            * config.tax_per_block;
         // proceed to shuffle balances if we have a non-zero amount
         if transfer_amt > Uint128::zero() {
             let taxes_owed = transfer_amt * registrar_config.tax_rate;
