@@ -103,17 +103,17 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
-  registrar = "terra1ler48zywkcycfxwn0xsgqc0d43y222n0tfa2lp";
-  indexFund = "terra1tttm9vv84gylek4daqnprdde5v2nue7t7e2jmy";
-  anchorVault1 = "terra1atkerfazqdkzpru8x4empknv45zn9tku7ql6vs"; 
-  anchorVault2 = "terra12jnyjq64xfyee6e7yn3hh58ye5p2l9m9m3hc7k";
-  endowmentContract1 = "terra1q2ffe8syyp0ykeclemek2qaswf4detyerpqjc5";
-  endowmentContract2 ="terra1xsnw8ycqvrhh8t2wrgrxlpr5lphs0t3du9ww7l";
-  endowmentContract3 = "terra1kncursz8shda7pafl06j7623cv84dt25scyv9h";
-  cw4GrpApTeam = "terra1fwm5h0tn7n2wx2u3kddf8yjuqznjsp7srq9f35";
-  cw3ApTeam = "terra15h5ey27wwruzwylegfsle6qgddy3u25p75zyvj";
-  cw4GrpOwners = "terra1gmexh2cxahk35y93utcjx9w73qcepfhcmk92l5";
-  cw3GuardianAngels = "terra1huq0az6fpduu4mqrek0acw5aqxtp8y98epyne2";
+  registrar = "terra1kwkpz40uwaxasn93wgm6v55059422xr4k0v0tk";
+  indexFund = "terra1q9g59ns8mpn9ucaqcjg36wrlx5gs8e3ea02ll3";
+  anchorVault1 = "terra14xst65dwdsyxsmy55ep4e8qcafsxmuqpkndfve"; 
+  anchorVault2 = "terra1c3a75djgensha3khks3wt3lgejjukcxd7jz0u3";
+  endowmentContract1 = "terra12yncgz9s0eu5l07rphktr0rpq343t00fka474l";
+  endowmentContract2 ="terra1n7407kzlmngqqdecvlt4s2j4ah5j9wpqhylg8q";
+  endowmentContract3 = "terra1dh7wsd7ka78dsx6z65pkfatzjhqp5vqd9dkhmw";
+  cw4GrpApTeam = "terra1tw3wsxnhes8zj36570vcgjhllxp6nzdxpxjttt";
+  cw3ApTeam = "terra1c3l7980k0wh7r529z3f76j528ky8gct8yqcm8a";
+  cw4GrpOwners = "terra1hj2hfrw99sfr9kf92dmp9q54276hhnq4928xk7";
+  cw3GuardianAngels = "terra1ce3s4vppu7ypkg79c93j9z9wfchgvwjz5ra780";
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
@@ -133,12 +133,12 @@ export function initializeLCDClient(
 // -----------------------------
 export async function migrateContracts(): Promise<void> {
   // run the migrations desired
-  await migrateRegistrar();
-  await migrateCw4Group();
-  await migrateApTeamMultisig();
-  await migrateGuardianAngelsMultisig();
-  await migrateIndexFund(indexFund);
-  await migrateAccounts();
+  // await migrateRegistrar();
+  // await migrateCw4Group();
+  // await migrateApTeamMultisig();
+  // await migrateGuardianAngelsMultisig();
+  // await migrateIndexFund(indexFund);
+  // await migrateAccounts();
   await migrateVaults();
 }
 
@@ -961,7 +961,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(): Promise<void> {
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         withdraw: {
           sources: [
-            {vault: anchorVault1, locked: "0", liquid: "20000"},
+            {vault: anchorVault1, locked: "0", liquid: "500"},
           ]
         }
       })
