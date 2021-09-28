@@ -961,7 +961,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(): Promise<void> {
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         withdraw: {
           sources: [
-            {vault: anchorVault1, locked: "0", liquid: "2000000"},
+            {vault: anchorVault1, locked: "0", liquid: "20000"},
           ]
         }
       })
