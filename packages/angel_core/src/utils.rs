@@ -37,11 +37,11 @@ pub fn compute_tax(deps: Deps, coin: &Coin) -> StdResult<Uint128> {
     let terra_querier = TerraQuerier::new(&deps.querier);
     let tax_rate: Decimal = (terra_querier.query_tax_rate()?).rate;
     let tax_cap: Uint128 = (terra_querier.query_tax_cap(coin.denom.to_string())?).cap;
+    const DECIMAL_FRACTION: Uint128 = Uint128::new(1_000_000_000_000_000_000u128);
     Ok(std::cmp::min(
         (coin.amount.checked_sub(coin.amount.multiply_ratio(
-            Uint128::from(1_000_000_000_000_000_000_u128),
-            Uint128::from(1_000_000_000_000_000_000_u128) * tax_rate
-                + Uint128::from(1_000_000_000_000_000_000_u128),
+            DECIMAL_FRACTION,
+            DECIMAL_FRACTION * tax_rate + DECIMAL_FRACTION,
         )))?,
         tax_cap,
     ))
