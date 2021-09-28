@@ -103,17 +103,17 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
-  registrar = "terra1ydt74d5tzlz98ec5h9fs2z2yjg7vg9d0cceapk";
-  indexFund = "terra1u927p7t897yvx0n0wmfu3xlp6pyg8f5d7kgx4q";
-  anchorVault1 = "terra1nnle4cezlh9fs2essa24nuh5yw6aejl8cjxxwx"; 
-  anchorVault2 = "terra1w9f9y23tkdal0st22y6fgh8ys8ffyncx0rxqqt";
-  endowmentContract1 = "terra1vgda0ad7glargah8jf2u9u0ekagu8ktzsqv9lm";
-  endowmentContract2 ="terra1a526h7mpt37jsczjwzm942v9upgc8f7kfnz0tx";
-  endowmentContract3 = "terra1nfmy7uphq3wfuar0raln7ayk6fwfd7w0zsq9ls";
-  cw4GrpApTeam = "terra135vnjejkkfpq4gq7w4pyh3uzlrljsx5ezz8cx4";
-  cw3ApTeam = "terra1d2xzyr3khqa225y5pkzu6ds7vqraspqr2206s7";
-  cw4GrpOwners = "terra1deex3hray999cw09mxx99emxy3alr273lhe640";
-  cw3GuardianAngels = "terra1rcykuda9kdy666ssvt5k9paz3wf9grhh59nfpm";
+  registrar = "terra1ler48zywkcycfxwn0xsgqc0d43y222n0tfa2lp";
+  indexFund = "terra1tttm9vv84gylek4daqnprdde5v2nue7t7e2jmy";
+  anchorVault1 = "terra1atkerfazqdkzpru8x4empknv45zn9tku7ql6vs"; 
+  anchorVault2 = "terra12jnyjq64xfyee6e7yn3hh58ye5p2l9m9m3hc7k";
+  endowmentContract1 = "terra1q2ffe8syyp0ykeclemek2qaswf4detyerpqjc5";
+  endowmentContract2 ="terra1xsnw8ycqvrhh8t2wrgrxlpr5lphs0t3du9ww7l";
+  endowmentContract3 = "terra1kncursz8shda7pafl06j7623cv84dt25scyv9h";
+  cw4GrpApTeam = "terra1fwm5h0tn7n2wx2u3kddf8yjuqznjsp7srq9f35";
+  cw3ApTeam = "terra15h5ey27wwruzwylegfsle6qgddy3u25p75zyvj";
+  cw4GrpOwners = "terra1gmexh2cxahk35y93utcjx9w73qcepfhcmk92l5";
+  cw3GuardianAngels = "terra1huq0az6fpduu4mqrek0acw5aqxtp8y98epyne2";
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
