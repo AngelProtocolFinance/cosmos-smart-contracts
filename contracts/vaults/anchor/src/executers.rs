@@ -321,7 +321,7 @@ pub fn withdraw_stable(
 pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
-    let harvest_percent = Uint128::from((env.block.height - config.last_harvest) as u128);
+    let harvest_blocks = Uint128::from((env.block.height - config.last_harvest) as u128);
     config.last_harvest = env.block.height;
     config::store(deps.storage, &config)?;
 
@@ -362,9 +362,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         let transfer_amt = balances
             .locked_balance
             .get_token_amount(this_addr.clone())
-            .checked_mul(harvest_percent * config.tax_per_block)
-            .unwrap();
-
+            .checked_mul(harvest_blocks).unwrap() * config.tax_per_block;
         // proceed to shuffle balances if we have a non-zero amount
         if transfer_amt > Uint128::zero() {
             let taxes_owed = transfer_amt * registrar_config.tax_rate;
