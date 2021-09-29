@@ -143,7 +143,7 @@ pub fn deposit_stable(
             fund: None,
             locked: after_taxes_locked,
             liquid: after_taxes_liquid,
-            transaction_counts: 1usize,
+            transaction_counts: 1u8,
         },
     )?;
     config.next_pending_id += 1;
@@ -168,7 +168,7 @@ pub fn redeem_stable(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    transaction_counts: usize,
+    transaction_counts: u8,
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
@@ -313,7 +313,7 @@ pub fn withdraw_stable(
             fund: None,
             locked: msg.locked,
             liquid: msg.liquid,
-            transaction_counts: 1usize,
+            transaction_counts: 1u8,
         },
     )?;
     config.next_pending_id += 1;
