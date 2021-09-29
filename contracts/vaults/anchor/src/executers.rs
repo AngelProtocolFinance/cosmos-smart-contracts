@@ -515,6 +515,7 @@ pub fn process_anchor_reply(
                     };
                     // update_strategies performs the transaction for every strategies
                     // So deduct_tax should be called for strategies count.
+                    // If not it returns tax error.
                     for _i in 1..counts {
                         after_tax_locked = deduct_tax(deps.as_ref(), after_tax_locked)?;
                         after_tax_liquid = deduct_tax(deps.as_ref(), after_tax_liquid)?;
