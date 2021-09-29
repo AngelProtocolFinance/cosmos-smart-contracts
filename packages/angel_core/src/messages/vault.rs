@@ -20,7 +20,7 @@ pub enum ExecuteMsg {
     UpdateRegistrar { new_registrar: Addr },
     UpdateConfig(UpdateConfigMsg),
     Deposit(AccountTransferMsg),
-    Redeem { transaction_counts: u8 },
+    Redeem {},
     Withdraw(AccountWithdrawMsg),
     Harvest {},
 }

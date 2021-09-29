@@ -133,12 +133,12 @@ export function initializeLCDClient(
 // -----------------------------
 export async function migrateContracts(): Promise<void> {
   // run the migrations desired
-  // await migrateRegistrar();
+  await migrateRegistrar();
   // await migrateCw4Group();
   // await migrateApTeamMultisig();
   // await migrateGuardianAngelsMultisig();
-  // await migrateIndexFund(indexFund);
-  // await migrateAccounts();
+  await migrateIndexFund(indexFund);
+  await migrateAccounts();
   await migrateVaults();
 }
 

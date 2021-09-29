@@ -223,7 +223,6 @@ pub fn update_strategies(
         deps.as_ref(),
         config.registrar_contract.to_string(),
         endowment.strategies,
-        strategies.len() as u8,
     )?;
 
     config.pending_redemptions = Some(redeem_messages.len() as u64);
@@ -549,7 +548,6 @@ pub fn close_endowment(
         deps.as_ref(),
         config.registrar_contract.to_string(),
         endowment.strategies,
-        1u8
     )?;
 
     config.pending_redemptions = Some(redeem_messages.len() as u64);

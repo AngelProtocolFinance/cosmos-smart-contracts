@@ -141,7 +141,6 @@ pub fn redeem_from_vaults(
     deps: Deps,
     registrar_contract: String,
     strategies: Vec<StrategyComponent>,
-    transaction_counts: u8,
 ) -> Result<Vec<SubMsg>, ContractError> {
     // redeem all amounts from existing strategies
     let mut redeem_messages = vec![];
@@ -159,9 +158,7 @@ pub fn redeem_from_vaults(
         // create a withdraw message for X Vault, noting amounts for Locked / Liquid
         redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: yield_vault.address.to_string(),
-            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem {
-                transaction_counts: transaction_counts,
-            }).unwrap(),
+            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem {}).unwrap(),
             funds: vec![],
         })));
     }

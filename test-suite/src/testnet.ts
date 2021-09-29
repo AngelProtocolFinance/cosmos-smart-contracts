@@ -69,7 +69,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
   );
 
   // console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
-  // await migrateContracts();
+  await migrateContracts();
   // await testClosingEndpoint();
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
