@@ -228,13 +228,10 @@ pub fn update_config(
         .api
         .addr_validate(&msg.treasury.unwrap_or_else(|| config.treasury.to_string()))?;
 
-    let tax_rate = msg.tax_rate.unwrap_or(config.tax_rate);
-
     // update config attributes with newly passed configs
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
         config.index_fund_contract = index_fund_contract;
         config.treasury = treasury;
-        config.tax_rate = tax_rate;
         config.accounts_code_id = accounts_code_id;
         config.approved_charities = charities_addr_list;
         config.default_vault = default_vault;
