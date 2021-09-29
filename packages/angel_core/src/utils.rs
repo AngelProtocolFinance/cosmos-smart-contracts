@@ -141,7 +141,7 @@ pub fn redeem_from_vaults(
     deps: Deps,
     registrar_contract: String,
     strategies: Vec<StrategyComponent>,
-    transaction_counts: usize,
+    transaction_counts: u8,
 ) -> Result<Vec<SubMsg>, ContractError> {
     // redeem all amounts from existing strategies
     let mut redeem_messages = vec![];
