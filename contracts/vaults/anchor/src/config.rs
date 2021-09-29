@@ -59,6 +59,7 @@ pub struct PendingInfo {
     pub fund: Option<u64>, // return to the active fund
     pub locked: Uint128,
     pub liquid: Uint128,
+    pub transaction_counts: usize,
 }
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");

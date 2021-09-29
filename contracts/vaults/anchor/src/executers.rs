@@ -143,6 +143,7 @@ pub fn deposit_stable(
             fund: None,
             locked: after_taxes_locked,
             liquid: after_taxes_liquid,
+            transaction_counts: 1usize,
         },
     )?;
     config.next_pending_id += 1;
@@ -167,6 +168,7 @@ pub fn redeem_stable(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    transaction_counts: usize,
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
@@ -223,6 +225,7 @@ pub fn redeem_stable(
             fund: None,
             locked: locked_deposit_tokens,
             liquid: liquid_deposit_tokens,
+            transaction_counts: transaction_counts,
         },
     )?;
     config.next_pending_id += 1;
@@ -310,6 +313,7 @@ pub fn withdraw_stable(
             fund: None,
             locked: msg.locked,
             liquid: msg.liquid,
+            transaction_counts: 1usize,
         },
     )?;
     config.next_pending_id += 1;
@@ -500,26 +504,19 @@ pub fn process_anchor_reply(
                     Response::new().add_attribute("action", "anchor_reply_processing")
                 }
                 "redeem" => {
-                    let after_tax_locked = deduct_tax(
-                        deps.as_ref(), 
-                        deduct_tax(
-                            deps.as_ref(),
-                            Coin {
-                                amount: anchor_locked,
-                                denom: "uusd".to_string(),
-                            },
-                        )?
-                    )?;
-                    let after_tax_liquid = deduct_tax(
-                        deps.as_ref(), 
-                        deduct_tax(
-                            deps.as_ref(),
-                            Coin {
-                                amount: anchor_liquid,
-                                denom: "uusd".to_string(),
-                            },
-                        )?
-                    )?;
+                    let counts = transaction.transaction_counts;
+                    let mut after_tax_locked = Coin {
+                        amount: anchor_locked,
+                        denom: "uusd".to_string(),
+                    };
+                    let mut after_tax_liquid = Coin {
+                        amount: anchor_liquid,
+                        denom: "uusd".to_string(),
+                    };
+                    for _i in (1..counts).rev().step_by(1) {
+                        after_tax_locked = deduct_tax(deps.as_ref(), after_tax_locked)?;
+                        after_tax_liquid = deduct_tax(deps.as_ref(), after_tax_liquid)?;
+                    }
 
                     Response::new()
                         .add_attribute("action", "anchor_reply_processing")
