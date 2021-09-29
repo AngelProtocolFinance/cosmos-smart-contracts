@@ -513,7 +513,9 @@ pub fn process_anchor_reply(
                         amount: anchor_liquid,
                         denom: "uusd".to_string(),
                     };
-                    for _i in (1..counts).rev().step_by(1) {
+                    // update_strategies performs the transaction for every strategies
+                    // So deduct_tax should be called for strategies count.
+                    for _i in 1..counts {
                         after_tax_locked = deduct_tax(deps.as_ref(), after_tax_locked)?;
                         after_tax_liquid = deduct_tax(deps.as_ref(), after_tax_liquid)?;
                     }
