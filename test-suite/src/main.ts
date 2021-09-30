@@ -103,17 +103,17 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
-  registrar = "terra1kwkpz40uwaxasn93wgm6v55059422xr4k0v0tk";
-  indexFund = "terra1q9g59ns8mpn9ucaqcjg36wrlx5gs8e3ea02ll3";
-  anchorVault1 = "terra14xst65dwdsyxsmy55ep4e8qcafsxmuqpkndfve"; 
-  anchorVault2 = "terra1c3a75djgensha3khks3wt3lgejjukcxd7jz0u3";
-  endowmentContract1 = "terra12yncgz9s0eu5l07rphktr0rpq343t00fka474l";
-  endowmentContract2 ="terra1n7407kzlmngqqdecvlt4s2j4ah5j9wpqhylg8q";
-  endowmentContract3 = "terra1dh7wsd7ka78dsx6z65pkfatzjhqp5vqd9dkhmw";
-  cw4GrpApTeam = "terra1tw3wsxnhes8zj36570vcgjhllxp6nzdxpxjttt";
-  cw3ApTeam = "terra1c3l7980k0wh7r529z3f76j528ky8gct8yqcm8a";
-  cw4GrpOwners = "terra1hj2hfrw99sfr9kf92dmp9q54276hhnq4928xk7";
-  cw3GuardianAngels = "terra1ce3s4vppu7ypkg79c93j9z9wfchgvwjz5ra780";
+  registrar = "terra13c0ktm0zh3efxdfdd9kqcqpz6np30dc9h9ju89";
+  indexFund = "terra14l80lle76uul348dx8lgc50u8hc73yjf9c7986";
+  anchorVault1 = "terra1n0xnzgjacju9rk3ess968tf86umyfw3qq58jam"; 
+  anchorVault2 = "terra1g9etyynhxfpv3hjzk5h36k089za6jht5g6qhj5";
+  endowmentContract1 = "terra1lq93rwvmyzg35r04eh0my7ee8kq3zx7yarphxw";
+  endowmentContract2 ="terra1rp8cyc3gztmws9pkewwn7wzak9ygfr32crpyua";
+  endowmentContract3 = "terra1skrf3uz7gcjj3rytg3yxym3x8l7evhunu837rl";
+  cw4GrpApTeam = "terra1pggd2nttxpgl2xa4s0r4229epkj2rder9hdcll";
+  cw3ApTeam = "terra1smvdja6f78aau0ws6vefzwev64dz5slx6acqpj";
+  cw4GrpOwners = "terra15069njvhyd5hezwguqht72nun5alqr7cg5ce8k";
+  cw3GuardianAngels = "terra19nnmfl6svvxyvcr8vf95vjmhr5cut0zsnlr9zr";
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
@@ -383,7 +383,7 @@ export async function setupContracts(): Promise<void> {
   const registrarResult = await instantiateContract(terra, apTeam, apTeam, registrarCodeId, {
     accounts_code_id: accountsCodeId,
     treasury: apTeam.key.accAddress,
-    tax_rate: 2,
+    tax_rate: "2",
     default_vault: undefined,
   });
   registrar = registrarResult.logs[0].events.find((event) => {
