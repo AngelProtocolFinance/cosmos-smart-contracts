@@ -25,7 +25,6 @@ import {
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
   testQueryIndexFundTcaList,
-  testQueryRegistrarApprovedEndowmentList,
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarConfig,
   testQueryRegistrarEndowmentList,

@@ -91,11 +91,11 @@ pub fn deposit_stable(
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
-    // check that the depositor is an approved Accounts SC
+    // check that the depositor is an Accounts SC
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::ApprovedEndowmentList {})?,
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {})?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments.iter().position(|p| p.address == info.sender);
@@ -254,17 +254,16 @@ pub fn withdraw_stable(
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
-    // check that the depositor is an approved Accounts SC
+    // check that the tx sender is an Accounts SC
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::ApprovedEndowmentList {})?,
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {})?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments.iter().position(|p| p.address == info.sender);
 
     // reject if the sender was found not in the list of endowments
-    // OR if the sender is not the Registrar SC (ie. we're harvesting back to the treasury)
     if pos == None {
         return Err(ContractError::Unauthorized {});
     }

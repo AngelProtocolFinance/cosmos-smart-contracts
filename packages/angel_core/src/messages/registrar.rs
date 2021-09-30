@@ -90,8 +90,6 @@ pub enum QueryMsg {
     VaultList {},
     // Get a list of all approved Vaults
     ApprovedVaultList {},
-    // Get a list of all approved Endowments
-    ApprovedEndowmentList {},
     // Gets list of all registered Endowments
     EndowmentList {},
     // Get all Config details for the contract

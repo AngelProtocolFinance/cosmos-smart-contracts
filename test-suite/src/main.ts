@@ -1047,15 +1047,6 @@ export async function testQueryRegistrarConfig(): Promise<void> {
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarApprovedEndowmentList(): Promise<void> {
-  process.stdout.write("Test - Query Registrar ApprovedEndowmentList");
-  const result: any = await terra.wasm.contractQuery(registrar, {
-    approved_endowment_list: {},
-  });
-  expect(result.endowments.length).to.equal(2);
-  console.log(chalk.green(" Passed!"));
-}
-
 export async function testQueryRegistrarEndowmentList(): Promise<void> {
   process.stdout.write("Test - Query Registrar EndowmentList");
   const result: any = await terra.wasm.contractQuery(registrar, {
@@ -1063,6 +1054,7 @@ export async function testQueryRegistrarEndowmentList(): Promise<void> {
   });
 
   expect(result.endowments.length).to.equal(3);
+  console.log(result);
   console.log(chalk.green(" Passed!"));
 }
 
