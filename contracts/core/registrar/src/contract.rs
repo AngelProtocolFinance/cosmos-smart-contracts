@@ -28,7 +28,7 @@ pub fn instantiate(
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
         approved_charities: vec![],
         treasury: deps.api.addr_validate(&msg.treasury)?,
-        tax_rate,
+        tax_rate: msg.tax_rate,
         default_vault: msg.default_vault.unwrap_or(info.sender),
         guardians_multisig_addr: None,
         endowment_owners_group_addr: None,

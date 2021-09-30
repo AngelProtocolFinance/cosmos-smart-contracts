@@ -9,8 +9,8 @@ use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails, YieldVault};
 use cosmwasm_std::{
-    to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
-    ReplyOn, Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg, WasmQuery,
+    to_binary, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, QueryRequest, ReplyOn,
+    Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg, WasmQuery,
 };
 use cw4::Member;
 use cw4_group::msg::ExecuteMsg::UpdateMembers;
