@@ -214,7 +214,7 @@ pub fn redeem_stable(
         .liquid_balance
         .set_token_balances(Balance::Cw20(zero_tokens));
 
-    BALANCES.save(deps.storage, &account_addr, &investment)?;
+    BALANCES.save(deps.storage, &account_addr.clone(), &investment)?;
 
     let submessage_id = config.next_pending_id;
     PENDING.save(
@@ -222,7 +222,7 @@ pub fn redeem_stable(
         &submessage_id.to_be_bytes(),
         &PendingInfo {
             typ: "redeem".to_string(),
-            accounts_address: info.sender.clone(),
+            accounts_address: account_addr,
             beneficiary: None,
             fund: None,
             locked: locked_deposit_tokens,
@@ -275,20 +275,19 @@ pub fn withdraw_stable(
     token_info.total_supply -= withdraw_total;
     TOKEN_INFO.save(deps.storage, &token_info)?;
 
-    // update investment holdings balances
-    let mut investment;
+    let account_addr;
     if info.sender != config.registrar_contract {
         // use Account SC sender
-        investment = BALANCES
-            .load(deps.storage, &info.sender)
-            .unwrap_or(BalanceInfo::default());
+        account_addr = info.sender.clone();
     } else {
         // use Treasury Addr in msg beneficiary to lookup Balances
-        investment = BALANCES
-            .load(deps.storage, &msg.beneficiary)
-            .unwrap_or(BalanceInfo::default());
+        account_addr = msg.beneficiary.clone();
     }
+    let mut investment = BALANCES
+        .load(deps.storage, &account_addr.clone())
+        .unwrap_or(BalanceInfo::default());
 
+    // update investment holdings balances
     investment
         .locked_balance
         .deduct_tokens(Balance::Cw20(Cw20CoinVerified {
@@ -302,13 +301,7 @@ pub fn withdraw_stable(
             address: env.contract.address,
         }));
 
-    if info.sender != config.registrar_contract {
-        // use Account SC sender
-        BALANCES.save(deps.storage, &info.sender, &investment)?;
-    } else {
-        // use Treasury Addr in msg beneficiary
-        BALANCES.save(deps.storage, &msg.beneficiary, &investment)?;
-    }
+    BALANCES.save(deps.storage, &account_addr.clone(), &investment)?;
 
     let submessage_id = config.next_pending_id;
     PENDING.save(
@@ -316,7 +309,7 @@ pub fn withdraw_stable(
         &submessage_id.to_be_bytes(),
         &PendingInfo {
             typ: "withdraw".to_string(),
-            accounts_address: info.sender.clone(),
+            accounts_address: account_addr.clone(),
             beneficiary: Some(msg.beneficiary.clone()),
             fund: None,
             locked: msg.locked,
@@ -329,6 +322,7 @@ pub fn withdraw_stable(
     Ok(Response::new()
         .add_attribute("action", "redeem_from_anchor")
         .add_attribute("sender", info.sender)
+        .add_attribute("account_addr", account_addr)
         .add_attribute("withdraw_amount", withdraw_total)
         .add_submessage(SubMsg {
             id: submessage_id,
