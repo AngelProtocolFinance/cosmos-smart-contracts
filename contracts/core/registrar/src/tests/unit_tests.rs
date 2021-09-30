@@ -5,7 +5,7 @@ use angel_core::responses::registrar::*;
 use angel_core::structs::EndowmentStatus;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
-    coins, from_binary, Addr, ContractResult, CosmosMsg, Event, Reply, SubMsgExecutionResponse,
+    coins, from_binary, Addr, ContractResult, CosmosMsg, Decimal, Event, Reply, SubMsgExecutionResponse,
     WasmMsg,
 };
 
@@ -19,7 +19,7 @@ fn proper_initialization() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 20,
+        tax_rate: Decimal::percent(20),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -40,7 +40,7 @@ fn update_owner() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 20,
+        tax_rate: Decimal::percent(20),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -69,7 +69,7 @@ fn update_config() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 0,
+        tax_rate: Decimal::percent(0),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -80,6 +80,7 @@ fn update_config() {
         index_fund_contract: Some(index_fund_contract.clone()),
         approved_charities: None,
         treasury: Some(ap_team.clone()),
+        tax_rate: None,
         default_vault: None,
         endowment_owners_group_addr: None,
         guardians_multisig_addr: None,
@@ -103,7 +104,7 @@ fn migrate_contract() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 20,
+        tax_rate: Decimal::percent(20),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -127,7 +128,7 @@ fn test_owner_can_add_remove_approved_charities() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 20,
+        tax_rate: Decimal::percent(20),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -201,7 +202,7 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 20,
+        tax_rate: Decimal::percent(20),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -381,7 +382,7 @@ fn test_add_update_and_remove_vault() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 20,
+        tax_rate: Decimal::percent(20),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
