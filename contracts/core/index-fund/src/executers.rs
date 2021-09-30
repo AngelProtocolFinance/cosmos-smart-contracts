@@ -429,12 +429,14 @@ pub fn build_donation_messages(
     // set split percentages between locked & liquid accounts
     let locked_percentage = Decimal::one() - split;
     let liquid_percentage = split;
-    let member_portion = balance.multiply_ratio(1_u128, members.len() as u128);
+    let member_portion = balance
+        .checked_div(Uint128::from(members.len() as u128))
+        .unwrap();
     let after_tax_amount: Coin = deduct_tax(
         deps,
         Coin {
             denom: token_denom.clone(),
-            amount: member_portion - Uint128::from(1_u128),
+            amount: member_portion,
         },
     )
     .unwrap();

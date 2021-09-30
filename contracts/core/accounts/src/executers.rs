@@ -509,7 +509,6 @@ pub fn withdraw(
     // build redeem messages for each of the sources/amounts
     let withdraw_messages = withdraw_from_vaults(
         deps.as_ref(),
-        env.contract.address.clone(),
         config.registrar_contract.to_string(),
         &endowment.beneficiary,
         sources,
@@ -529,8 +528,6 @@ pub fn close_endowment(
     beneficiary: Option<String>,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
-    let mut state = STATE.load(deps.storage)?;
-    let endowment = ENDOWMENT.load(deps.storage)?;
 
     if info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
@@ -541,11 +538,13 @@ pub fn close_endowment(
     }
 
     // set the STATE with relevent status and closing beneficiary
+    let mut state = STATE.load(deps.storage)?;
     state.closing_endowment = true;
     state.closing_beneficiary = beneficiary;
     STATE.save(deps.storage, &state)?;
 
     // Redeem all UST back from strategies invested in
+    let endowment = ENDOWMENT.load(deps.storage)?;
     let redeem_messages = redeem_from_vaults(
         deps.as_ref(),
         env.contract.address.clone(),

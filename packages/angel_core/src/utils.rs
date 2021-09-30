@@ -4,7 +4,7 @@ use crate::messages::vault::{AccountTransferMsg, AccountWithdrawMsg};
 use crate::responses::registrar::VaultDetailResponse;
 use crate::responses::vault::ExchangeRateResponse;
 use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
-use cosmwasm_bignumber::Decimal256;
+use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, QueryRequest, StdResult, SubMsg,
     Uint128, WasmMsg, WasmQuery,
@@ -33,16 +33,13 @@ pub fn ratio_adjusted_balance(balance: Balance, portion: Uint128, total: Uint128
     adjusted_balance
 }
 
-pub fn compute_tax(deps: Deps, coin: &Coin) -> StdResult<Uint128> {
+pub fn compute_tax(deps: Deps, coin: &Coin) -> StdResult<Uint256> {
     let terra_querier = TerraQuerier::new(&deps.querier);
-    let tax_rate: Decimal = (terra_querier.query_tax_rate()?).rate;
-    let tax_cap: Uint128 = (terra_querier.query_tax_cap(coin.denom.to_string())?).cap;
-    const DECIMAL_FRACTION: Uint128 = Uint128::new(1_000_000_000_000_000_000u128);
+    let tax_rate = Decimal256::from((terra_querier.query_tax_rate()?).rate);
+    let tax_cap = Uint256::from((terra_querier.query_tax_cap(coin.denom.to_string())?).cap);
+    let amount = Uint256::from(coin.amount);
     Ok(std::cmp::min(
-        (coin.amount.checked_sub(coin.amount.multiply_ratio(
-            DECIMAL_FRACTION,
-            DECIMAL_FRACTION * tax_rate + DECIMAL_FRACTION,
-        )))?,
+        amount * (Decimal256::one() - Decimal256::one() / (Decimal256::one() + tax_rate)),
         tax_cap,
     ))
 }
@@ -51,7 +48,7 @@ pub fn deduct_tax(deps: Deps, coin: Coin) -> StdResult<Coin> {
     let tax_amount = compute_tax(deps, &coin)?;
     Ok(Coin {
         denom: coin.denom,
-        amount: (coin.amount.checked_sub(tax_amount))?,
+        amount: (Uint256::from(coin.amount) - tax_amount).into(),
     })
 }
 
@@ -171,7 +168,6 @@ pub fn redeem_from_vaults(
 
 pub fn withdraw_from_vaults(
     deps: Deps,
-    account_addr: Addr,
     registrar_contract: String,
     beneficiary: &Addr,
     sources: Vec<FundingSource>,
@@ -192,7 +188,6 @@ pub fn withdraw_from_vaults(
             let yield_vault: YieldVault = vault_config.vault;
 
             let withdraw_msg = AccountWithdrawMsg {
-                account_addr: account_addr.clone(),
                 beneficiary: beneficiary.clone(),
                 locked: source.locked,
                 liquid: source.liquid,
