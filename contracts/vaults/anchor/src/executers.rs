@@ -167,6 +167,7 @@ pub fn redeem_stable(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    account_addr: Addr,
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
@@ -182,14 +183,15 @@ pub fn redeem_stable(
         .position(|p| p.address == info.sender.clone());
 
     // reject if the sender was found not in the list of endowments
-    // OR if the sender is not the Registrar SC (ie. we're harvesting)
+    // OR if the sender is not the Registrar SC (ie. we're closing the endowment)
     if pos == None && info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
 
+    // use arg account_addr to lookup Balances
     let mut investment = BALANCES
-        .load(deps.storage, &info.sender)
-        .unwrap_or_else(|_| BalanceInfo::default());
+        .load(deps.storage, &account_addr.clone())
+        .unwrap_or(BalanceInfo::default());
 
     // grab total tokens for locked and liquid balances
     let locked_deposit_tokens = investment
@@ -211,6 +213,8 @@ pub fn redeem_stable(
     investment
         .liquid_balance
         .set_token_balances(Balance::Cw20(zero_tokens));
+
+    BALANCES.save(deps.storage, &account_addr, &investment)?;
 
     let submessage_id = config.next_pending_id;
     PENDING.save(
@@ -291,13 +295,20 @@ pub fn withdraw_stable(
             amount: msg.locked,
             address: env.contract.address.clone(),
         }));
-
     investment
         .liquid_balance
         .deduct_tokens(Balance::Cw20(Cw20CoinVerified {
             amount: msg.liquid,
             address: env.contract.address,
         }));
+
+    if info.sender != config.registrar_contract {
+        // use Account SC sender
+        BALANCES.save(deps.storage, &info.sender, &investment)?;
+    } else {
+        // use Treasury Addr in msg beneficiary
+        BALANCES.save(deps.storage, &msg.beneficiary, &investment)?;
+    }
 
     let submessage_id = config.next_pending_id;
     PENDING.save(
@@ -501,24 +512,18 @@ pub fn process_anchor_reply(
                 }
                 "redeem" => {
                     let after_tax_locked = deduct_tax(
-                        deps.as_ref(), 
-                        deduct_tax(
-                            deps.as_ref(),
-                            Coin {
-                                amount: anchor_locked,
-                                denom: "uusd".to_string(),
-                            },
-                        )?
+                        deps.as_ref(),
+                        Coin {
+                            amount: anchor_locked,
+                            denom: "uusd".to_string(),
+                        },
                     )?;
                     let after_tax_liquid = deduct_tax(
-                        deps.as_ref(), 
-                        deduct_tax(
-                            deps.as_ref(),
-                            Coin {
-                                amount: anchor_liquid,
-                                denom: "uusd".to_string(),
-                            },
-                        )?
+                        deps.as_ref(),
+                        Coin {
+                            amount: anchor_liquid,
+                            denom: "uusd".to_string(),
+                        },
                     )?;
 
                     Response::new()
