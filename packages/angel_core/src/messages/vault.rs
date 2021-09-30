@@ -42,6 +42,7 @@ pub struct AccountTransferMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct AccountWithdrawMsg {
+    pub account_addr: Addr,
     pub beneficiary: Addr,
     pub locked: Uint128,
     pub liquid: Uint128,

@@ -264,7 +264,7 @@ pub fn withdraw_stable(
     let pos = endowments.iter().position(|p| p.address == info.sender);
 
     // reject if the sender was found not in the list of endowments
-    // OR if the sender is not the Registrar SC (ie. we're harvesting)
+    // OR if the sender is not the Registrar SC (ie. we're harvesting back to the treasury)
     if pos == None && info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
@@ -275,18 +275,9 @@ pub fn withdraw_stable(
     token_info.total_supply -= withdraw_total;
     TOKEN_INFO.save(deps.storage, &token_info)?;
 
-    let account_addr;
-    if info.sender != config.registrar_contract {
-        // use Account SC sender
-        account_addr = info.sender.clone();
-    } else {
-        // use Treasury Addr in msg beneficiary to lookup Balances
-        account_addr = msg.beneficiary.clone();
-    }
     let mut investment = BALANCES
-        .load(deps.storage, &account_addr.clone())
+        .load(deps.storage, &msg.account_addr.clone())
         .unwrap_or(BalanceInfo::default());
-
     // update investment holdings balances
     investment
         .locked_balance
@@ -300,8 +291,7 @@ pub fn withdraw_stable(
             amount: msg.liquid,
             address: env.contract.address,
         }));
-
-    BALANCES.save(deps.storage, &account_addr.clone(), &investment)?;
+    BALANCES.save(deps.storage, &msg.account_addr.clone(), &investment)?;
 
     let submessage_id = config.next_pending_id;
     PENDING.save(
@@ -309,7 +299,7 @@ pub fn withdraw_stable(
         &submessage_id.to_be_bytes(),
         &PendingInfo {
             typ: "withdraw".to_string(),
-            accounts_address: account_addr.clone(),
+            accounts_address: msg.account_addr.clone(),
             beneficiary: Some(msg.beneficiary.clone()),
             fund: None,
             locked: msg.locked,
@@ -322,7 +312,7 @@ pub fn withdraw_stable(
     Ok(Response::new()
         .add_attribute("action", "redeem_from_anchor")
         .add_attribute("sender", info.sender)
-        .add_attribute("account_addr", account_addr)
+        .add_attribute("account_addr", msg.account_addr)
         .add_attribute("withdraw_amount", withdraw_total)
         .add_submessage(SubMsg {
             id: submessage_id,
@@ -366,13 +356,11 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         .map(String::from_utf8)
         .collect();
     let mut taxes_collected = Uint128::zero();
-    let mut deposit_token = Cw20CoinVerified {
-        address: env.contract.address.clone(),
-        amount: Uint128::zero(),
-    };
     for account in accounts.unwrap().iter() {
         let account_address = deps.api.addr_validate(account)?;
-        let mut balances = BALANCES.load(deps.storage, &account_address)?;
+        let mut balances = BALANCES
+            .load(deps.storage, &account_address)
+            .unwrap_or_else(|_| BalanceInfo::default());
         let transfer_amt = balances
             .locked_balance
             .get_token_amount(this_addr.clone())
@@ -381,8 +369,11 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             * config.tax_per_block;
         // proceed to shuffle balances if we have a non-zero amount
         if transfer_amt > Uint128::zero() {
+            let mut deposit_token = Cw20CoinVerified {
+                address: env.contract.address.clone(),
+                amount: transfer_amt,
+            };
             let taxes_owed = transfer_amt * registrar_config.tax_rate;
-            deposit_token.amount = transfer_amt;
 
             // lower locked balance
             balances
@@ -419,6 +410,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             env,
             info,
             AccountWithdrawMsg {
+                account_addr: treasury_addr.clone(),
                 beneficiary: treasury_addr.clone(),
                 locked: Uint128::zero(),
                 liquid: treasury_account

@@ -171,6 +171,7 @@ pub fn redeem_from_vaults(
 
 pub fn withdraw_from_vaults(
     deps: Deps,
+    account_addr: Addr,
     registrar_contract: String,
     beneficiary: &Addr,
     sources: Vec<FundingSource>,
@@ -191,6 +192,7 @@ pub fn withdraw_from_vaults(
             let yield_vault: YieldVault = vault_config.vault;
 
             let withdraw_msg = AccountWithdrawMsg {
+                account_addr: account_addr.clone(),
                 beneficiary: beneficiary.clone(),
                 locked: source.locked,
                 liquid: source.liquid,

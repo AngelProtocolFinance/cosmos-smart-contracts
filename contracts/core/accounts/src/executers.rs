@@ -509,6 +509,7 @@ pub fn withdraw(
     // build redeem messages for each of the sources/amounts
     let withdraw_messages = withdraw_from_vaults(
         deps.as_ref(),
+        env.contract.address.clone(),
         config.registrar_contract.to_string(),
         &endowment.beneficiary,
         sources,
