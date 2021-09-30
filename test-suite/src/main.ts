@@ -103,17 +103,17 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
-  registrar = "terra13c0ktm0zh3efxdfdd9kqcqpz6np30dc9h9ju89";
-  indexFund = "terra14l80lle76uul348dx8lgc50u8hc73yjf9c7986";
-  anchorVault1 = "terra1n0xnzgjacju9rk3ess968tf86umyfw3qq58jam"; 
-  anchorVault2 = "terra1g9etyynhxfpv3hjzk5h36k089za6jht5g6qhj5";
-  endowmentContract1 = "terra1lq93rwvmyzg35r04eh0my7ee8kq3zx7yarphxw";
-  endowmentContract2 ="terra1rp8cyc3gztmws9pkewwn7wzak9ygfr32crpyua";
-  endowmentContract3 = "terra1skrf3uz7gcjj3rytg3yxym3x8l7evhunu837rl";
-  cw4GrpApTeam = "terra1pggd2nttxpgl2xa4s0r4229epkj2rder9hdcll";
-  cw3ApTeam = "terra1smvdja6f78aau0ws6vefzwev64dz5slx6acqpj";
-  cw4GrpOwners = "terra15069njvhyd5hezwguqht72nun5alqr7cg5ce8k";
-  cw3GuardianAngels = "terra19nnmfl6svvxyvcr8vf95vjmhr5cut0zsnlr9zr";
+  registrar = "terra1eq6wrtz3arzpynap5cwf82r0ttxdh8xwe5af9w";
+  indexFund = "terra1gnsvg4663jukep64ce4qlxx6rxgayzz3e8487d";
+  anchorVault1 = "terra15pa4v2kyr825tyyscygs8fygsctwv5qc7dqwcp";
+  anchorVault2 = "terra1rtj2eg6cfm6fv6ldx0rasru26cck8dmwsyd4xa";
+  endowmentContract1 = "terra1atuv3kzavg4q4nr4qt47zjquzjk84vl8lvl4tk";
+  endowmentContract2 ="terra1yy9xmnvyssf6dfgh7xze8zl0cc5c37jxt53qf4";
+  endowmentContract3 = "terra1upue8neh7qrsx7x9skkcqnz387vttz70sz2e9t";
+  cw4GrpApTeam = "terra1ez4eqlc3hdxgtknldg925mlt6y0zvds2aae2ln";
+  cw3ApTeam = "terra1jma3fspgwg9qhz7pxzfv2atk8czqg946ns5llm";
+  cw4GrpOwners = "terra16x4ca6js73yd0rwpg435zv5py794ycy4x3q6v0";
+  cw3GuardianAngels = "terra14y2aynwjms3g5uwq6u6nmz4wrxpkj2d5cyr03f";
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
@@ -134,9 +134,9 @@ export function initializeLCDClient(
 export async function migrateContracts(): Promise<void> {
   // run the migrations desired
   await migrateRegistrar();
-  // await migrateCw4Group();
-  // await migrateApTeamMultisig();
-  // await migrateGuardianAngelsMultisig();
+  await migrateCw4Group();
+  await migrateApTeamMultisig();
+  await migrateGuardianAngelsMultisig();
   await migrateIndexFund(indexFund);
   await migrateAccounts();
   await migrateVaults();
