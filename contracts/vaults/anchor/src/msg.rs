@@ -1,3 +1,4 @@
+use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -5,6 +6,7 @@ use serde::{Deserialize, Serialize};
 pub struct InitMsg {
     pub moneymarket: String,
     pub registrar_contract: String,
+    pub tax_per_block: Decimal,
     pub name: String,
     pub symbol: String,
     pub decimals: u8,

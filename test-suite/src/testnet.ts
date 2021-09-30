@@ -1,10 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {LCDClient, Coin, MnemonicKey, Wallet, MsgSend, StdTx, BlockTxBroadcastResult} from "@terra-money/terra.js";
+import {LCDClient, Coin, MnemonicKey, Wallet, MsgSend, BlockTxBroadcastResult} from "@terra-money/terra.js";
 import chalk from "chalk";
 import {
   initializeLCDClient,
   setupContracts,
   migrateContracts,
+  testAddApTeamMemberToC4Group,
+  testAddGuardiansToEndowment,
+  testGuardiansChangeEndowmentOwner,
   testRejectUnapprovedDonations,
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
@@ -14,6 +17,7 @@ import {
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
+  testQueryVaultConfig,
   testQueryIndexFundActiveFundDetails,
   testQueryIndexFundActiveFundDonations,
   testQueryIndexFundConfig,
@@ -21,12 +25,13 @@ import {
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
   testQueryIndexFundTcaList,
-  testQueryRegistrarApprovedEndowmentList,
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarConfig,
   testQueryRegistrarEndowmentList,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
+  testClosingEndpoint,
+  testUpdatingRegistrarConfigs,
 } from "./main";
 import dotenv from 'dotenv';
 
@@ -35,10 +40,12 @@ dotenv.config();
 // Main
 //----------------------------------------------------------------------------------------
 export async function startTest(terra: LCDClient): Promise<void> {
-  console.log(chalk.blue("\nBombay-10 TestNet"));
+  console.log(chalk.blue("\nBombay-11 TestNet"));
 
   // get wallets
   const apTeam: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.APTEAM}));
+  const apTeam2: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.APTEAM2}));
+  const apTeam3: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.APTEAM3}));
   const charity1: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.CHARITY1}));
   const charity2: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.CHARITY2}));
   const charity3: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.CHARITY3}));
@@ -50,6 +57,8 @@ export async function startTest(terra: LCDClient): Promise<void> {
     terra,
     {
       apTeam,
+      apTeam2,
+      apTeam3,
       charity1,
       charity2,
       charity3,
@@ -62,28 +71,36 @@ export async function startTest(terra: LCDClient): Promise<void> {
 
   // console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
   // await migrateContracts();
+  // await testClosingEndpoint();
 
-  //console.log(chalk.yellow("\nStep 2. Contracts Setup"));
+  // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   // await setupContracts();
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // await testAddApTeamMemberToC4Group();
+  // await testAddGuardiansToEndowment();
+  // await testGuardiansChangeEndowmentOwner();
   // await testRejectUnapprovedDonations();
   // await testDonorSendsToIndexFund();
   // await testTcaMemberSendsToIndexFund();
   // await testAngelTeamCanTriggerVaultsHarvest();
   // setTimeout(async () => {
-    // await testCharityCanUpdateStrategies();
+  //   await testCharityCanUpdateStrategies();
   // }, 8000);
   // setTimeout(async () => {
   //   await testBeneficiaryCanWithdrawFromLiquid();
   // }, 7000);
   // await testQueryRegistrarConfig();
+  // await testUpdatingRegistrarConfigs();
   // await testQueryRegistrarApprovedEndowmentList();
   // await testQueryRegistrarEndowmentList();
   // await testQueryRegistrarApprovedVaultList();
   // await testQueryRegistrarVaultList();
   // await testQueryRegistrarVault();
-  // await testQueryAccountsBalance();
+  // await testQueryAccountsBalance("terra1atuv3kzavg4q4nr4qt47zjquzjk84vl8lvl4tk");
+  // await testQueryAccountsBalance("terra1yy9xmnvyssf6dfgh7xze8zl0cc5c37jxt53qf4");
+  // await testQueryVaultConfig("terra15pa4v2kyr825tyyscygs8fygsctwv5qc7dqwcp");
+  // await testQueryVaultConfig("terra1rtj2eg6cfm6fv6ldx0rasru26cck8dmwsyd4xa");
   // await testQueryAccountsConfig();
   // await testQueryAccountsEndowment();
   // await testQueryIndexFundConfig();

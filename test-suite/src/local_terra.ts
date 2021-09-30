@@ -4,6 +4,9 @@ import {
   initializeLocalTerra,
   setupContracts,
   migrateContracts,
+  testAddApTeamMemberToC4Group,
+  testAddGuardiansToEndowment,
+  testGuardiansChangeEndowmentOwner,
   testRejectUnapprovedDonations,
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
@@ -21,7 +24,6 @@ import {
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
   testQueryIndexFundTcaList,
-  testQueryRegistrarApprovedEndowmentList,
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarConfig,
   testQueryRegistrarEndowmentList,
@@ -37,12 +39,15 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   initializeLocalTerra(terra);
 
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await migrateContracts();
+  await setupContracts();
 
-  // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  // await setupContracts();
+  // console.log(chalk.yellow("\nStep 2b. Migrate Contracts"));
+  // await migrateContracts();
 
-  // console.log(chalk.yellow("\nStep 3. Running Tests"));
+  console.log(chalk.yellow("\nStep 3. Running Tests"));
+  await testAddApTeamMemberToC4Group();
+  await testAddGuardiansToEndowment();
+  await testGuardiansChangeEndowmentOwner();
   // await testRejectUnapprovedDonations();
   // await testDonorSendsToIndexFund();
   // await testTcaMemberSendsToIndexFund();
@@ -52,7 +57,6 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   //   await testBeneficiaryCanWithdrawFromLiquid();
   // }, 500);
   // await testQueryRegistrarConfig();
-  // await testQueryRegistrarApprovedEndowmentList();
   // await testQueryRegistrarEndowmentList();
   // await testQueryRegistrarApprovedVaultList();
   // await testQueryRegistrarVaultList();

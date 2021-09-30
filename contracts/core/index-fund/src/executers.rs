@@ -1,7 +1,7 @@
 use crate::state::{fund_read, fund_store, read_funds, CONFIG, STATE, TCA_DONATIONS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
-use angel_core::structs::{IndexFund, SplitDetails};
+use angel_core::structs::{AcceptedTokens, IndexFund, SplitDetails};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
@@ -71,6 +71,36 @@ pub fn update_tca_list(
         state.terra_alliance = tca_list;
         Ok(state)
     })?;
+
+    Ok(Response::default())
+}
+
+pub fn update_config(
+    deps: DepsMut,
+    info: MessageInfo,
+    msg: UpdateConfigMsg,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+
+    // only the SC admin can update these configs...for now
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    config.fund_rotation = msg.fund_rotation;
+    config.fund_member_limit = msg.fund_member_limit;
+    config.funding_goal = msg.funding_goal;
+    config.split_to_liquid = SplitDetails {
+        max: msg.split_max,
+        min: msg.split_min,
+        default: msg.split_default,
+    };
+    config.accepted_tokens = AcceptedTokens {
+        native: msg.accepted_tokens_native,
+        cw20: msg.accepted_tokens_cw20,
+    };
+
+    CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::default())
 }
@@ -399,12 +429,14 @@ pub fn build_donation_messages(
     // set split percentages between locked & liquid accounts
     let locked_percentage = Decimal::one() - split;
     let liquid_percentage = split;
-    let member_portion = balance.multiply_ratio(1_u128, members.len() as u128);
+    let member_portion = balance
+        .checked_div(Uint128::from(members.len() as u128))
+        .unwrap();
     let after_tax_amount: Coin = deduct_tax(
         deps,
         Coin {
             denom: token_denom.clone(),
-            amount: member_portion - Uint128::from(1_u128),
+            amount: member_portion,
         },
     )
     .unwrap();

@@ -32,27 +32,20 @@ pub enum ExecuteMsg {
     },
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt(AccountTransferMsg),
-    // Winding up of an endowment in good standing. Returns all funds to the Beneficiary.
-    Liquidate {
-        beneficiary: String, // Addr of the Beneficiary to receive funds
+    // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.
+    // If not provided, looks up the Index Fund an Endowment is tied to to donates the funds to it.
+    CloseEndowment {
+        beneficiary: Option<String>, // Optional Addr of the Beneficiary to receive funds
     },
-    // Destroys the endowment and returns all Balance funds to an index fund and to the
-    // Index Fund ID provided
-    TerminateToFund {
-        fund: u64, // Index Fund ID to receive funds
-    },
-    // Destroys the endowment and returns all Balance funds to the beneficiary addr (DANO treasury)
-    TerminateToAddress {
-        beneficiary: String, // Addr of the Beneficiary to receive funds
-    },
-    // update admin addr
-    UpdateAdmin {
-        new_admin: String,
+    // update owner addr
+    UpdateOwner {
+        new_owner: String,
     },
     // Allows the SC owner (only!) to change ownership
     UpdateRegistrar {
         new_registrar: String,
     },
+    UpdateConfig(UpdateConfigMsg),
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
     // Update an Endowment ability to receive/send funds
@@ -61,6 +54,16 @@ pub enum ExecuteMsg {
     UpdateStrategies {
         strategies: Vec<Strategy>,
     },
+    UpdateGuardians {
+        add: Vec<String>,
+        remove: Vec<String>,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateConfigMsg {
+    pub accepted_tokens_native: Vec<String>,
+    pub accepted_tokens_cw20: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

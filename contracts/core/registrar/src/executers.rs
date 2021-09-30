@@ -3,13 +3,17 @@ use crate::state::{
     CONFIG,
 };
 use angel_core::errors::core::ContractError;
+use angel_core::messages::accounts::QueryMsg as AccountsQueryMsg;
 use angel_core::messages::registrar::*;
+use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails, YieldVault};
 use cosmwasm_std::{
-    to_binary, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
-    SubMsg, SubMsgExecutionResponse, WasmMsg,
+    to_binary, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, QueryRequest, ReplyOn,
+    Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg, WasmQuery,
 };
+use cw4::Member;
+use cw4_group::msg::ExecuteMsg::UpdateMembers;
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
@@ -22,24 +26,6 @@ fn build_account_status_change_msg(account: String, deposit: bool, withdraw: boo
                 },
             ),
         )
-        .unwrap(),
-        funds: vec![],
-    });
-
-    SubMsg {
-        id: 0,
-        msg: wasm_msg,
-        gas_limit: None,
-        reply_on: ReplyOn::Never,
-    }
-}
-
-fn build_index_fund_member_removal_msg(account: String) -> SubMsg {
-    let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: account.clone(),
-        msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
-            angel_core::messages::index_fund::RemoveMemberMsg { member: account },
-        ))
         .unwrap(),
         funds: vec![],
     });
@@ -69,6 +55,13 @@ pub fn update_endowment_status(
     let mut endowment_entry = registry_read(deps.storage)
         .may_load(endowment_addr)?
         .unwrap();
+
+    // get config details about the Endowment of interest
+    let endowment_info: EndowmentDetailsResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: endowment_entry.address.to_string(),
+            msg: to_binary(&AccountsQueryMsg::Endowment {})?,
+        }))?;
 
     let msg_endowment_status = match msg.status {
         0 => EndowmentStatus::Inactive,
@@ -100,11 +93,21 @@ pub fn update_endowment_status(
     let sub_messages: Vec<SubMsg> = match msg_endowment_status {
         // Allowed to receive donations and process withdrawals
         EndowmentStatus::Approved => {
-            vec![build_account_status_change_msg(
-                endowment_entry.address.to_string(),
-                true,
-                true,
-            )]
+            vec![
+                build_account_status_change_msg(endowment_entry.address.to_string(), true, true),
+                // send msg to C4 Endowment Owners group SC to add new member
+                SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: config.endowment_owners_group_addr.unwrap(),
+                    msg: to_binary(&UpdateMembers {
+                        add: vec![Member {
+                            addr: endowment_info.owner.to_string(),
+                            weight: 1,
+                        }],
+                        remove: vec![],
+                    })?,
+                    funds: vec![],
+                })),
+            ]
         }
         // Can accept inbound deposits, but cannot withdraw funds out
         EndowmentStatus::Frozen => {
@@ -116,8 +119,38 @@ pub fn update_endowment_status(
         }
         // Has been liquidated or terminated. Remove from Funds and lockdown money flows
         EndowmentStatus::Closed => vec![
-            build_account_status_change_msg(endowment_entry.address.to_string(), true, true),
-            build_index_fund_member_removal_msg(endowment_entry.address.to_string()),
+            build_account_status_change_msg(endowment_entry.address.to_string(), false, false),
+            // trigger the removal of this endowment from all Index Funds
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.index_fund_contract.to_string(),
+                msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
+                    angel_core::messages::index_fund::RemoveMemberMsg {
+                        member: endowment_entry.address.to_string(),
+                    },
+                ))
+                .unwrap(),
+                funds: vec![],
+            })),
+            // send msg to C4 Endowment Owners group SC to remove a member
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.endowment_owners_group_addr.unwrap(),
+                msg: to_binary(&UpdateMembers {
+                    add: vec![],
+                    remove: vec![endowment_info.owner.to_string()],
+                })?,
+                funds: vec![],
+            })),
+            // start redemption of Account SC's Vault holdings to final beneficiary/index fund
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: endowment_entry.address.to_string(),
+                msg: to_binary(
+                    &angel_core::messages::accounts::ExecuteMsg::CloseEndowment {
+                        beneficiary: msg.beneficiary,
+                    },
+                )
+                .unwrap(),
+                funds: vec![],
+            })),
         ],
         _ => vec![],
     };
@@ -154,35 +187,48 @@ pub fn update_config(
     info: MessageInfo,
     msg: UpdateConfigMsg,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let mut config = CONFIG.load(deps.storage)?;
 
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
-    let charities_addr_list = msg.charities_list(deps.api)?;
-    let accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
-    let default_vault = deps.api.addr_validate(
+    // update config attributes with newly passed configs
+    config.approved_charities = msg.charities_list(deps.api)?;
+    config.accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
+    config.guardians_multisig_addr = match msg.guardians_multisig_addr {
+        Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
+        None => {
+            if config.guardians_multisig_addr != None {
+                config.guardians_multisig_addr.clone()
+            } else {
+                None
+            }
+        }
+    };
+    config.endowment_owners_group_addr = match msg.endowment_owners_group_addr {
+        Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
+        None => {
+            if config.endowment_owners_group_addr != None {
+                config.endowment_owners_group_addr.clone()
+            } else {
+                None
+            }
+        }
+    };
+    config.default_vault = deps.api.addr_validate(
         &msg.default_vault
             .unwrap_or_else(|| config.default_vault.to_string()),
     )?;
-    let index_fund_contract = deps.api.addr_validate(
+    config.index_fund_contract = deps.api.addr_validate(
         &msg.index_fund_contract
             .unwrap_or_else(|| config.index_fund_contract.to_string()),
     )?;
-    let treasury = deps
+    config.treasury = deps
         .api
         .addr_validate(&msg.treasury.unwrap_or_else(|| config.treasury.to_string()))?;
-
-    // update config attributes with newly passed configs
-    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.index_fund_contract = index_fund_contract;
-        config.treasury = treasury;
-        config.accounts_code_id = accounts_code_id;
-        config.approved_charities = charities_addr_list;
-        config.default_vault = default_vault;
-        Ok(config)
-    })?;
+    config.tax_rate = msg.tax_rate.unwrap_or(config.tax_rate);
+    CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))
 }

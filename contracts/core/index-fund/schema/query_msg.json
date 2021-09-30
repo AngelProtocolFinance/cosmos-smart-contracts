@@ -39,6 +39,26 @@
     {
       "type": "object",
       "required": [
+        "involved_funds"
+      ],
+      "properties": {
+        "involved_funds": {
+          "type": "object",
+          "required": [
+            "address"
+          ],
+          "properties": {
+            "address": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
         "active_fund_details"
       ],
       "properties": {

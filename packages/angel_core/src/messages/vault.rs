@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, Decimal, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -16,11 +16,22 @@ pub struct MigrateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    UpdateOwner { new_owner: String },
     UpdateRegistrar { new_registrar: Addr },
+    UpdateConfig(UpdateConfigMsg),
     Deposit(AccountTransferMsg),
-    Redeem {},
+    Redeem { account_addr: Addr },
     Withdraw(AccountWithdrawMsg),
     Harvest {},
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateConfigMsg {
+    pub moneymarket: Option<String>,
+    pub input_denom: Option<String>,
+    pub yield_token: Option<String>,
+    pub tax_per_block: Option<Decimal>,
+    pub treasury_withdraw_threshold: Option<Uint128>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -39,6 +50,7 @@ pub struct AccountWithdrawMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
+    VaultConfig {},
     Config {},
     ExchangeRate {
         input_denom: String,

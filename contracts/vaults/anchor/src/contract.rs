@@ -36,6 +36,8 @@ pub fn instantiate(
         input_denom: anchor_config.stable_denom.clone(),
         yield_token: deps.api.addr_validate(&anchor_config.aterra_contract)?,
         next_pending_id: 0,
+        tax_per_block: msg.tax_per_block,
+        last_harvest: env.block.height,
     };
 
     config::store(deps.storage, &config)?;
@@ -79,9 +81,11 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::UpdateOwner { new_owner } => executers::update_owner(deps, info, new_owner),
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
+        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         // -UST (Account) --> +Deposit Token/Yield Token (Vault)
         ExecuteMsg::Deposit(msg) => {
             executers::deposit_stable(deps, env, info.clone(), msg, Balance::from(info.funds))
@@ -90,7 +94,9 @@ pub fn execute(
         // Pulls all existing strategy amounts back to Account in UST.
         // Then re-Deposits according to the Strategies set.
         // -Deposit Token/Yield Token (Vault) --> +UST (Account) --> -UST (Account) --> +Deposit Token/Yield Token (Vault)
-        ExecuteMsg::Redeem {} => executers::redeem_stable(deps, env, info), // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
+        ExecuteMsg::Redeem { account_addr } => {
+            executers::redeem_stable(deps, env, info, account_addr)
+        } // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
         ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info, msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info), // DP -> DP shuffle (taxes collected)
     }
@@ -109,6 +115,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     let config = config::read(deps.storage)?;
 
     match msg {
+        QueryMsg::VaultConfig {} => to_binary(&queriers::query_vault_config(deps)),
         QueryMsg::Config {} => to_binary(&ConfigResponse {
             input_denom: config.input_denom.clone(),
             yield_token: config.yield_token.to_string(),

@@ -20,7 +20,6 @@ import {
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
   testQueryIndexFundTcaList,
-  testQueryRegistrarApprovedEndowmentList,
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarConfig,
   testQueryRegistrarEndowmentList,
@@ -69,7 +68,6 @@ export async function startTest(terra: LCDClient): Promise<void> {
   //   await testBeneficiaryCanWithdrawFromLiquid();
   // }, 7000);
   // await testQueryRegistrarConfig();
-  // await testQueryRegistrarApprovedEndowmentList();
   // await testQueryRegistrarEndowmentList();
   // await testQueryRegistrarApprovedVaultList();
   // await testQueryRegistrarVaultList();

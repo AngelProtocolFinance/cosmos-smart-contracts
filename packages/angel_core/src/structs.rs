@@ -311,9 +311,8 @@ impl GenericBalance {
                             None
                         }
                     });
-                    match index {
-                        Some(idx) => self.native[idx].amount -= token.amount,
-                        None => (),
+                    if let Some(idx) = index {
+                        self.native[idx].amount -= token.amount
                     }
                 }
             }
@@ -325,9 +324,8 @@ impl GenericBalance {
                         None
                     }
                 });
-                match index {
-                    Some(idx) => self.cw20[idx].amount -= token.amount,
-                    None => (),
+                if let Some(idx) = index {
+                    self.cw20[idx].amount -= token.amount
                 }
             }
         };

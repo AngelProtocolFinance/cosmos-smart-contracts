@@ -29,4 +29,14 @@ pub struct EndowmentDetailsResponse {
     pub split_to_liquid: SplitDetails,
     pub strategies: Vec<StrategyComponent>,
     pub rebalance: RebalanceDetails,
+    pub guardians: Vec<String>,
+}
+
+impl EndowmentDetailsResponse {
+    pub fn is_guardian(&self, addr: String) -> bool {
+        match self.guardians.iter().position(|g| *g == addr) {
+            Some(_guardian) => true,
+            None => false,
+        }
+    }
 }

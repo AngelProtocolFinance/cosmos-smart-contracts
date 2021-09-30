@@ -3,7 +3,7 @@ use crate::config;
 use crate::config::{PendingInfo, BALANCES, PENDING, TOKEN_INFO};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
-use angel_core::messages::vault::{AccountTransferMsg, AccountWithdrawMsg};
+use angel_core::messages::vault::{AccountTransferMsg, AccountWithdrawMsg, UpdateConfigMsg};
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, EndowmentListResponse,
 };
@@ -15,6 +15,25 @@ use cosmwasm_std::{
     Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20CoinVerified};
+
+pub fn update_owner(
+    deps: DepsMut,
+    info: MessageInfo,
+    new_owner: String,
+) -> Result<Response, ContractError> {
+    let mut config = config::read(deps.storage)?;
+
+    // only the owner/admin of the contract can update their address in the configs
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+    let new_owner = deps.api.addr_validate(&new_owner)?;
+    // update config attributes with newly passed args
+    config.owner = new_owner;
+    config::store(deps.storage, &config)?;
+
+    Ok(Response::default())
+}
 
 pub fn update_registrar(
     deps: DepsMut,
@@ -35,6 +54,34 @@ pub fn update_registrar(
     Ok(Response::default())
 }
 
+pub fn update_config(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateConfigMsg,
+) -> Result<Response, ContractError> {
+    let mut config = config::read(deps.storage)?;
+
+    // only the SC admin can update these configs...for now
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    config.moneymarket = match msg.moneymarket {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.moneymarket,
+    };
+    config.yield_token = match msg.yield_token {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.yield_token,
+    };
+    config.input_denom = msg.input_denom.unwrap_or(config.input_denom);
+    config.tax_per_block = msg.tax_per_block.unwrap_or(config.tax_per_block);
+    config::store(deps.storage, &config)?;
+
+    Ok(Response::default())
+}
+
 pub fn deposit_stable(
     deps: DepsMut,
     _env: Env,
@@ -44,11 +91,11 @@ pub fn deposit_stable(
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
-    // check that the depositor is an approved Accounts SC
+    // check that the depositor is an Accounts SC
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::ApprovedEndowmentList {})?,
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {})?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments.iter().position(|p| p.address == info.sender);
@@ -120,27 +167,31 @@ pub fn redeem_stable(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    account_addr: Addr,
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
-    // check that the depositor is an approved Accounts SC
+    // check that the depositor is a Registered Accounts SC
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::ApprovedEndowmentList {})?,
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {})?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments
         .iter()
         .position(|p| p.address == info.sender.clone());
-    // reject if the sender was found in the list of endowments
-    if pos == None {
+
+    // reject if the sender was found not in the list of endowments
+    // OR if the sender is not the Registrar SC (ie. we're closing the endowment)
+    if pos == None && info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
 
+    // use arg account_addr to lookup Balances
     let mut investment = BALANCES
-        .load(deps.storage, &info.sender)
-        .unwrap_or_else(|_| BalanceInfo::default());
+        .load(deps.storage, &account_addr.clone())
+        .unwrap_or(BalanceInfo::default());
 
     // grab total tokens for locked and liquid balances
     let locked_deposit_tokens = investment
@@ -163,13 +214,15 @@ pub fn redeem_stable(
         .liquid_balance
         .set_token_balances(Balance::Cw20(zero_tokens));
 
+    BALANCES.save(deps.storage, &account_addr.clone(), &investment)?;
+
     let submessage_id = config.next_pending_id;
     PENDING.save(
         deps.storage,
         &submessage_id.to_be_bytes(),
         &PendingInfo {
             typ: "redeem".to_string(),
-            accounts_address: info.sender.clone(),
+            accounts_address: account_addr,
             beneficiary: None,
             fund: None,
             locked: locked_deposit_tokens,
@@ -180,7 +233,7 @@ pub fn redeem_stable(
     config::store(deps.storage, &config)?;
 
     Ok(Response::new()
-        .add_attribute("action", "redeem_from_anchor")
+        .add_attribute("action", "redeem_from_vault")
         .add_attribute("sender", info.sender)
         .add_attribute("redeem_amount", total_redemption)
         .add_submessage(SubMsg {
@@ -201,15 +254,16 @@ pub fn withdraw_stable(
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
-    // check that the depositor is an approved Accounts SC
+    // check that the tx sender is an Accounts SC
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::ApprovedEndowmentList {})?,
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {})?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments.iter().position(|p| p.address == info.sender);
-    // reject if the sender was found in the list of endowments
+
+    // reject if the sender was found not in the list of endowments
     if pos == None {
         return Err(ContractError::Unauthorized {});
     }
@@ -220,24 +274,23 @@ pub fn withdraw_stable(
     token_info.total_supply -= withdraw_total;
     TOKEN_INFO.save(deps.storage, &token_info)?;
 
-    // update investment holdings balances
     let mut investment = BALANCES
-        .load(deps.storage, &info.sender)
+        .load(deps.storage, &info.sender.clone())
         .unwrap_or(BalanceInfo::default());
-
+    // update investment holdings balances
     investment
         .locked_balance
         .deduct_tokens(Balance::Cw20(Cw20CoinVerified {
             amount: msg.locked,
             address: env.contract.address.clone(),
         }));
-
     investment
         .liquid_balance
         .deduct_tokens(Balance::Cw20(Cw20CoinVerified {
             amount: msg.liquid,
             address: env.contract.address,
         }));
+    BALANCES.save(deps.storage, &info.sender.clone(), &investment)?;
 
     let submessage_id = config.next_pending_id;
     PENDING.save(
@@ -256,7 +309,7 @@ pub fn withdraw_stable(
     config::store(deps.storage, &config)?;
 
     Ok(Response::new()
-        .add_attribute("action", "redeem_from_anchor")
+        .add_attribute("action", "withdraw_from_vault")
         .add_attribute("sender", info.sender)
         .add_attribute("withdraw_amount", withdraw_total)
         .add_submessage(SubMsg {
@@ -268,49 +321,52 @@ pub fn withdraw_stable(
 }
 
 pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
+    let mut config = config::read(deps.storage)?;
+
+    let harvest_blocks = Uint128::from((env.block.height - config.last_harvest) as u128);
+    config.last_harvest = env.block.height;
+    config::store(deps.storage, &config)?;
 
     if info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
 
-    // pull registrar SC config to fetch: 1) Tax Rate and 2) Treasury Addr
+    // pull registrar SC config to fetch: 1) Treasury Tax Rate and 2) Treasury Addr
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQueryMsg::Config {})?,
         }))?;
+    let treasury_addr = deps.api.addr_validate(&registrar_config.treasury)?;
+    let mut treasury_account = BalanceInfo::default();
+    let mut taxes_collected = Uint128::zero();
 
-    let mut treasury_account = BALANCES
-        .load(
-            deps.storage,
-            &deps.api.addr_validate(&registrar_config.treasury)?,
-        )
-        .unwrap_or_else(|_| BalanceInfo::default());
+    // iterate over all accounts and shuffle DP tokens from Locked to Liquid
+    // set aside a small amount for treasury
     let accounts: Result<Vec<_>, _> = BALANCES
         .keys(deps.storage, None, None, Order::Ascending)
         .map(String::from_utf8)
         .collect();
-
-    let mut deposit_token = Cw20CoinVerified {
-        address: env.contract.address.clone(),
-        amount: Uint128::zero(),
-    };
-    let mut taxes_collected = Uint128::zero();
     for account in accounts.unwrap().iter() {
         let account_address = deps.api.addr_validate(account)?;
-        let mut balances = BALANCES.load(deps.storage, &account_address)?;
-        let locked_deposit_amount: Uint128 = balances
+        let mut balances = BALANCES
+            .load(deps.storage, &account_address)
+            .unwrap_or_else(|_| BalanceInfo::default());
+        let transfer_amt = balances
             .locked_balance
-            .get_token_amount(env.contract.address.clone());
-
+            .get_token_amount(env.contract.address.clone())
+            .checked_mul(harvest_blocks)
+            .unwrap()
+            * config.tax_per_block;
         // proceed to shuffle balances if we have a non-zero amount
-        if locked_deposit_amount > Uint128::zero() {
-            let transfer_amt = locked_deposit_amount * registrar_config.tax_rate;
+        if transfer_amt > Uint128::zero() {
+            let mut deposit_token = Cw20CoinVerified {
+                address: env.contract.address.clone(),
+                amount: transfer_amt,
+            };
             let taxes_owed = transfer_amt * registrar_config.tax_rate;
 
             // lower locked balance
-            deposit_token.amount = transfer_amt;
             balances
                 .locked_balance
                 .deduct_tokens(Balance::Cw20(deposit_token.clone()));
@@ -331,13 +387,48 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             BALANCES.save(deps.storage, &account_address, &balances)?;
         }
     }
-    BALANCES.save(
-        deps.storage,
-        &deps.api.addr_validate(&registrar_config.treasury)?,
-        &treasury_account,
-    )?;
 
-    Ok(Response::new().add_attribute("action", "harvest"))
+    if treasury_account
+        .liquid_balance
+        .get_token_amount(env.contract.address.clone())
+        > Uint128::zero()
+    {
+        // Withdraw all DP Tokens from Treasury and send to AP Treasury Wallet
+        let withdraw_total = treasury_account
+            .liquid_balance
+            .get_token_amount(env.contract.address.clone());
+        let submessage_id = config.next_pending_id;
+        PENDING.save(
+            deps.storage,
+            &submessage_id.to_be_bytes(),
+            &PendingInfo {
+                typ: "withdraw".to_string(),
+                accounts_address: treasury_addr.clone(),
+                beneficiary: Some(treasury_addr.clone()),
+                fund: None,
+                locked: Uint128::zero(),
+                liquid: withdraw_total.clone(),
+            },
+        )?;
+        config.next_pending_id += 1;
+        config::store(deps.storage, &config)?;
+
+        Ok(Response::new()
+            .add_attribute("action", "harvest_redeem_from_vault")
+            .add_attribute("sender", info.sender)
+            .add_attribute("account_addr", treasury_addr.clone())
+            .add_attribute("withdraw_amount", withdraw_total.clone())
+            .add_submessage(SubMsg {
+                id: submessage_id,
+                msg: redeem_stable_msg(&config.moneymarket, &config.yield_token, withdraw_total)?,
+                gas_limit: None,
+                reply_on: ReplyOn::Always,
+            }))
+    } else {
+        Ok(Response::new()
+            .add_attribute("action", "harvest_redeem_from_vault")
+            .add_attribute("sender", info.sender))
+    }
 }
 
 pub fn process_anchor_reply(
@@ -414,17 +505,23 @@ pub fn process_anchor_reply(
                 "redeem" => {
                     let after_tax_locked = deduct_tax(
                         deps.as_ref(),
-                        Coin {
-                            amount: anchor_locked,
-                            denom: "uusd".to_string(),
-                        },
+                        deduct_tax(
+                            deps.as_ref(),
+                            Coin {
+                                amount: anchor_locked,
+                                denom: "uusd".to_string(),
+                            },
+                        )?,
                     )?;
                     let after_tax_liquid = deduct_tax(
                         deps.as_ref(),
-                        Coin {
-                            amount: anchor_liquid,
-                            denom: "uusd".to_string(),
-                        },
+                        deduct_tax(
+                            deps.as_ref(),
+                            Coin {
+                                amount: anchor_liquid,
+                                denom: "uusd".to_string(),
+                            },
+                        )?,
                     )?;
 
                     Response::new()
@@ -454,10 +551,13 @@ pub fn process_anchor_reply(
                             to_address: transaction.beneficiary.unwrap().to_string(),
                             amount: vec![deduct_tax(
                                 deps.as_ref(),
-                                Coin {
-                                    amount: anchor_amount,
-                                    denom: "uusd".to_string(),
-                                },
+                                deduct_tax(
+                                    deps.as_ref(),
+                                    Coin {
+                                        amount: anchor_amount,
+                                        denom: "uusd".to_string(),
+                                    },
+                                )?,
                             )?],
                         })
                 }

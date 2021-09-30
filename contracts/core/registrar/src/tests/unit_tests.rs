@@ -81,6 +81,8 @@ fn update_config() {
         approved_charities: None,
         treasury: Some(ap_team.clone()),
         default_vault: None,
+        endowment_owners_group_addr: None,
+        guardians_multisig_addr: None,
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -227,6 +229,7 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
+        guardians_multisig_addr: None,
     };
 
     // non-Approved charity cannot create Accounts
@@ -343,6 +346,7 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
     let update_endowment_status_msg = UpdateEndowmentStatusMsg {
         endowment_addr: good_endowment_addr.clone(),
         status: 1,
+        beneficiary: None,
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));

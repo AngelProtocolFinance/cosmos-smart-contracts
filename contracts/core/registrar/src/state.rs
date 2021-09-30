@@ -18,13 +18,16 @@ pub const CONFIG: Item<Config> = Item::new(CONFIG_KEY);
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub owner: Addr, // AP TEAM / DANO Address
+    pub owner: Addr,           // AP TEAM MULTISIG
+    pub guardian_angels: Addr, // GUARDIAN ANGELS MULTISIG
     pub index_fund_contract: Addr,
     pub accounts_code_id: u64,
     pub approved_charities: Vec<Addr>,
     pub treasury: Addr,
     pub tax_rate: Decimal,
     pub default_vault: Addr,
+    pub guardians_multisig_addr: Option<String>,
+    pub endowment_owners_group_addr: Option<String>,
 }
 
 // REGISTRY Read/Write
