@@ -33,7 +33,7 @@ dotenv.config();
 // Main
 //----------------------------------------------------------------------------------------
 export async function startTest(terra: LCDClient): Promise<void> {
-  console.log(chalk.blue("\nColumbus-4 MainNet"));
+  console.log(chalk.blue("\nColumbus-5 MainNet"));
   
   // get the current swap rate from 1 TerraUSD to TerraKRW
   console.log(chalk.yellow("\nStep1. Swap rate between uusd and uluna"));
