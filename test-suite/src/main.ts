@@ -679,7 +679,7 @@ export async function testClosingEndpoint(): Promise<void> {
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_endowment_status: {
-        endowment_addr: endowmentContract1,
+        endowment_addr: endowmentContract3,
         status: 3,
         beneficiary: apTeam.key.accAddress,
       }
