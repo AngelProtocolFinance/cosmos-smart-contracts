@@ -187,16 +187,16 @@ pub fn update_config(
     info: MessageInfo,
     msg: UpdateConfigMsg,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let mut config = CONFIG.load(deps.storage)?;
 
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
-    let charities_addr_list = msg.charities_list(deps.api)?;
-    let accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
-
-    let guardians_multisig_addr: Option<String> = match msg.guardians_multisig_addr {
+    // update config attributes with newly passed configs
+    config.approved_charities = msg.charities_list(deps.api)?;
+    config.accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
+    config.guardians_multisig_addr = match msg.guardians_multisig_addr {
         Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
         None => {
             if config.guardians_multisig_addr != None {
@@ -206,7 +206,7 @@ pub fn update_config(
             }
         }
     };
-    let endowment_owners_group_addr: Option<String> = match msg.endowment_owners_group_addr {
+    config.endowment_owners_group_addr = match msg.endowment_owners_group_addr {
         Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
         None => {
             if config.endowment_owners_group_addr != None {
@@ -216,29 +216,19 @@ pub fn update_config(
             }
         }
     };
-    let default_vault = deps.api.addr_validate(
+    config.default_vault = deps.api.addr_validate(
         &msg.default_vault
             .unwrap_or_else(|| config.default_vault.to_string()),
     )?;
-    let index_fund_contract = deps.api.addr_validate(
+    config.index_fund_contract = deps.api.addr_validate(
         &msg.index_fund_contract
             .unwrap_or_else(|| config.index_fund_contract.to_string()),
     )?;
-    let treasury = deps
+    config.treasury = deps
         .api
         .addr_validate(&msg.treasury.unwrap_or_else(|| config.treasury.to_string()))?;
-
-    // update config attributes with newly passed configs
-    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.index_fund_contract = index_fund_contract;
-        config.treasury = treasury;
-        config.accounts_code_id = accounts_code_id;
-        config.approved_charities = charities_addr_list;
-        config.default_vault = default_vault;
-        config.endowment_owners_group_addr = endowment_owners_group_addr;
-        config.guardians_multisig_addr = guardians_multisig_addr;
-        Ok(config)
-    })?;
+    config.tax_rate = msg.tax_rate.unwrap_or(config.tax_rate);
+    CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))
 }
