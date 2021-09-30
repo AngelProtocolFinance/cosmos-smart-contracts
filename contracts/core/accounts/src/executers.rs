@@ -176,7 +176,7 @@ pub fn update_endowment_status(
 
 pub fn update_strategies(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     strategies: Vec<Strategy>,
 ) -> Result<Response, ContractError> {
@@ -221,6 +221,7 @@ pub fn update_strategies(
     // before updating endowment with new sources
     let redeem_messages = redeem_from_vaults(
         deps.as_ref(),
+        env.contract.address.clone(),
         config.registrar_contract.to_string(),
         endowment.strategies,
     )?;
@@ -522,7 +523,7 @@ pub fn withdraw(
 
 pub fn close_endowment(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     beneficiary: Option<String>,
 ) -> Result<Response, ContractError> {
@@ -546,6 +547,7 @@ pub fn close_endowment(
     // Redeem all UST back from strategies invested in
     let redeem_messages = redeem_from_vaults(
         deps.as_ref(),
+        env.contract.address.clone(),
         config.registrar_contract.to_string(),
         endowment.strategies,
     )?;

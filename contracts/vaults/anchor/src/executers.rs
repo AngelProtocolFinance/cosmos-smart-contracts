@@ -167,7 +167,7 @@ pub fn redeem_stable(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    account_addr: Option<Addr>,
+    account_addr: Addr,
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
@@ -188,18 +188,10 @@ pub fn redeem_stable(
         return Err(ContractError::Unauthorized {});
     }
 
-    let mut investment;
-    if info.sender != config.registrar_contract {
-        // use Account SC sender
-        investment = BALANCES
-            .load(deps.storage, &info.sender)
-            .unwrap_or(BalanceInfo::default());
-    } else {
-        // use arg account_addr to lookup Balances
-        investment = BALANCES
-            .load(deps.storage, &account_addr.clone().unwrap())
-            .unwrap_or(BalanceInfo::default());
-    }
+    // use arg account_addr to lookup Balances
+    let mut investment = BALANCES
+        .load(deps.storage, &account_addr.clone())
+        .unwrap_or(BalanceInfo::default());
 
     // grab total tokens for locked and liquid balances
     let locked_deposit_tokens = investment
@@ -222,13 +214,7 @@ pub fn redeem_stable(
         .liquid_balance
         .set_token_balances(Balance::Cw20(zero_tokens));
 
-    if info.sender != config.registrar_contract {
-        // use Account SC sender
-        BALANCES.save(deps.storage, &info.sender, &investment)?;
-    } else {
-        // use account_addr passed in input args
-        BALANCES.save(deps.storage, &account_addr.unwrap(), &investment)?;
-    }
+    BALANCES.save(deps.storage, &account_addr, &investment)?;
 
     let submessage_id = config.next_pending_id;
     PENDING.save(
