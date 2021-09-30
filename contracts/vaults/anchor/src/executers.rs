@@ -499,17 +499,23 @@ pub fn process_anchor_reply(
                 "redeem" => {
                     let after_tax_locked = deduct_tax(
                         deps.as_ref(),
-                        Coin {
-                            amount: anchor_locked,
-                            denom: "uusd".to_string(),
-                        },
+                        deduct_tax(
+                            deps.as_ref(),
+                            Coin {
+                                amount: anchor_locked,
+                                denom: "uusd".to_string(),
+                            },
+                        )?,
                     )?;
                     let after_tax_liquid = deduct_tax(
                         deps.as_ref(),
-                        Coin {
-                            amount: anchor_liquid,
-                            denom: "uusd".to_string(),
-                        },
+                        deduct_tax(
+                            deps.as_ref(),
+                            Coin {
+                                amount: anchor_liquid,
+                                denom: "uusd".to_string(),
+                            },
+                        )?,
                     )?;
 
                     Response::new()
