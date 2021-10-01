@@ -446,7 +446,7 @@ export async function setupContracts(): Promise<void> {
   process.stdout.write("Instantiating Index Fund contract");
   const fundResult = await instantiateContract(terra, apTeam, apTeam, fundCodeId, {
     registrar_contract: registrar,
-    fund_rotation: 10, // one minute fund rotation
+    fund_rotation: 1, // one block fund rotation
   });
   indexFund = fundResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
@@ -960,6 +960,53 @@ export async function testTcaMemberSendsToIndexFund(): Promise<void> {
   );
   console.log(chalk.green("Passed!"));
 }
+
+
+//----------------------------------------------------------------------------------------
+// TEST: Index Fund SC should rotate the index fund when 
+// limit is exceeded OR time has passed
+//
+//----------------------------------------------------------------------------------------
+
+export async function testIndexFundRotaion(): Promise<void> {
+  process.stdout.write("Test - Index Fund rotations handled correctly");
+
+  await expect(
+    sendTransaction(terra, tca, [
+      new MsgExecuteContract(
+        tca.key.accAddress,
+        indexFund, { deposit: { fund_id: undefined, split: undefined }, },
+        { uusd: "4000000", }
+      ),
+    ])
+  );
+  const result: any = await terra.wasm.contractQuery(indexFund, {
+    state: {},
+  });
+  const active_fund = result.active_fund;
+  console.log(`Active fund @ start: ${active_fund}`);
+
+  // repeat steps to rotate to a new fund on next donation 
+  await expect(
+    sendTransaction(terra, tca, [
+      new MsgExecuteContract(
+        tca.key.accAddress,
+        indexFund, { deposit: { fund_id: undefined, split: undefined }, },
+        { uusd: "4000000", }
+      ),
+    ])
+  );
+  const result2: any = await terra.wasm.contractQuery(indexFund, {
+    state: {},
+  });
+  const active_fund2 = result2.active_fund;
+  console.log(`Active fund @ end: ${active_fund2}`);
+
+  // should NOT be the same as active fund from the first query
+  expect(active_fund).to.not.equal(active_fund2);
+  console.log(chalk.green("Passed!"));
+}
+
 
 //----------------------------------------------------------------------------------------
 // TEST: AP Team and trigger harvesting of Accounts for a Vault(s)
