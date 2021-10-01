@@ -19,18 +19,23 @@ type Charity = {
 let terra: LCDClient;
 let apTeam: Wallet;
 let registrar: string;
+let indexFund: string;
 let charities: Charity[];
+let endowments: string[];
 
 export function initializeCharities(
   lcdClient: LCDClient,
   ap_team: Wallet,
-  registrarAddr: string
+  registrarAddr: string,
+  index_fund: string
 ): void {
   terra = lcdClient;
   apTeam = ap_team;
   registrar = registrarAddr;
+  indexFund = index_fund;
 
   charities = [];
+  endowments = [];
   jsonData.data.forEach(el => {
     const item: Charity = {
       address: el.address,
@@ -41,8 +46,8 @@ export function initializeCharities(
   })
 }
 
-// Create Endowments base on charities and registrar
-export async function setupCharities(): Promise<void> {
+// setup charity endowments
+export async function setupEndowments(): Promise<void> {
   let prom = Promise.resolve();
   charities.forEach(item => {
     // eslint-disable-next-line no-async-promise-executor
@@ -59,6 +64,7 @@ export async function setupCharities(): Promise<void> {
   await prom;
 }
 
+// Create Endowment base on charity and registrar
 async function createEndowment(charity: Charity): Promise<void> {
   process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
   const charityResult = await sendTransaction(terra, apTeam, [
@@ -80,4 +86,24 @@ async function createEndowment(charity: Charity): Promise<void> {
     return attribute.key == "contract_address"; 
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${endowmentContract}`);
+  endowments.push(endowmentContract);
+}
+
+// Create an initial "Fund" with the charities created above
+export async function createIndexFunds(): Promise<void> {
+  // Create an initial "Fund" with the two charities created above
+  process.stdout.write("Create two Funds with two endowments each");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+      create_fund: {
+        fund: {
+          id: 1,
+          name: "First Fund",
+          description: "My first test fund",
+          members: endowments,
+        }
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
 }

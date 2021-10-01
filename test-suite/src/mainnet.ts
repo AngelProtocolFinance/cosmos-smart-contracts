@@ -26,7 +26,7 @@ import {
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
 } from "./main";
-import {initializeCharities, setupCharities} from "./charities";
+import {initializeCharities, setupEndowments, createIndexFunds} from "./charities";
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -44,8 +44,9 @@ export async function startTest(terra: LCDClient): Promise<void> {
 
   const apTeam: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.APTEAM}));
   console.log(chalk.yellow("\nStep2: Create Charities Endowment"))
-  initializeCharities(terra, apTeam, "registrarAddress");
-  await setupCharities();
+  initializeCharities(terra, apTeam, "registrarAddress", "indexFundAddress");
+  await setupEndowments();
+  await createIndexFunds();
 
   // console.log(chalk.yellow("\nStep 1. Environment Info"));
   // initializeLCDClient(
