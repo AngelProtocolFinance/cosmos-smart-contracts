@@ -40,7 +40,7 @@ dotenv.config();
 // Main
 //----------------------------------------------------------------------------------------
 export async function startTest(terra: LCDClient): Promise<void> {
-  console.log(chalk.blue("\nBombay-11 TestNet"));
+  console.log(chalk.blue("\nBombay-12 TestNet"));
 
   // get wallets
   const apTeam: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.APTEAM}));
