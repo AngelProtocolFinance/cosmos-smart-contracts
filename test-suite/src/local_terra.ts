@@ -47,7 +47,7 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   await testAddApTeamMemberToC4Group();
   await testAddGuardiansToEndowment();
-  await testGuardiansChangeEndowmentOwner();
+  // await testGuardiansChangeEndowmentOwner();
   // await testRejectUnapprovedDonations();
   // await testDonorSendsToIndexFund();
   // await testTcaMemberSendsToIndexFund();

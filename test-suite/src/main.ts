@@ -42,6 +42,7 @@ let anchorMoneyMarket: string;
 let endowmentContract1: string;
 let endowmentContract2: string;
 let endowmentContract3: string;
+let endowmentContract4: string;
 
 // Anchor aUST Token
 const yieldToken = "terra1ajt556dpzvjwl0kl5tzku3fc3p3knkg9mkv8jl";
@@ -110,6 +111,7 @@ export function initializeLCDClient(
   endowmentContract1 = "terra1d95p5p85wx4wrfjy07pd2c9c6vu0tf0skhh7g3";
   endowmentContract2 ="terra1ga6a6zwvttrgay9yplg25f4qd3kxcsxvstap0y";
   endowmentContract3 = "terra1e38h7cv08z03mpj8cfwcc98dqfdmdrjmxj8cj4";
+  endowmentContract4 = "";
   cw4GrpApTeam = "terra19ptlhr5f6kkj3tyw0akwrakxfnktvnqrx5fuek";
   cw3ApTeam = "terra1mzaapq5xcnj06r0cvtggnsdqprevk97r465f4j";
   cw4GrpOwners = "terra1mzh0grd9z5tx4vr6d8q67axsx9c9tusy3v0np4";
@@ -122,6 +124,7 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(endowmentContract1)} as Endowment Contract #1`);
   console.log(`Use ${chalk.cyan(endowmentContract2)} as Endowment Contract #2`);
   console.log(`Use ${chalk.cyan(endowmentContract3)} as Endowment Contract #3`);
+  console.log(`Use ${chalk.cyan(endowmentContract4)} as Endowment Contract #4`);
   console.log(`Use ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Use ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
   console.log(`Use ${chalk.cyan(cw4GrpOwners)} as CW4 Endowment Owners Group`);
@@ -261,6 +264,8 @@ async function migrateAccounts() {
   console.log(chalk.green(`#2 - Done!`));
   await migrateContract(terra, apTeam, apTeam, endowmentContract3, codeId, {});
   console.log(chalk.green(`#3 - Done!`));
+  await migrateContract(terra, apTeam, apTeam, endowmentContract4, codeId, {});
+  console.log(chalk.green(`#4 - Done!`));
 
   // let counter = 1;
   // accounts.forEach(async function(account) {
@@ -514,7 +519,7 @@ export async function setupContracts(): Promise<void> {
   ]);
   console.log(chalk.green(" Done!"));
 
-  // Step 4: Create two Endowments via the Registrar contract
+  // Step 4: Create Endowments via the Registrar contract
   // endowment #1
   process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
   const charityResult1 = await sendTransaction(terra, apTeam, [
@@ -581,8 +586,30 @@ export async function setupContracts(): Promise<void> {
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${endowmentContract3}`);
 
-  // AP Team approves 2 of 3 newly created endowments
-  process.stdout.write("AP Team approves 2 of 3 endowments");
+  // endowment #4
+  process.stdout.write("Charity Endowment #4 created from the Registrar by the AP Team");
+  const charityResult4 = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      create_endowment: {
+        owner: charity3.key.accAddress,
+        beneficiary: charity3.key.accAddress,
+        name: "Vibin' Endowment #4",
+        description: "Global endowment that spreads good vibes",
+        withdraw_before_maturity: false,
+        maturity_time: undefined,
+        maturity_height: undefined,
+      }
+    }),
+  ]);
+  endowmentContract4 = charityResult4.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => { 
+    return attribute.key == "contract_address"; 
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${endowmentContract4}`);
+
+  // AP Team approves 3 of 4 newly created endowments
+  process.stdout.write("AP Team approves 3 of 4 endowments");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_endowment_status: {
@@ -598,12 +625,19 @@ export async function setupContracts(): Promise<void> {
         beneficiary: undefined,
       }
     }),
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_endowment_status: {
+        endowment_addr: endowmentContract4,
+        status: 1,
+        beneficiary: undefined,
+      }
+    }),
   ]);
   console.log(chalk.green(" Done!"));
 
   // Step 5: Index Fund finals setup 
   // Create an initial "Fund" with the two charities created above
-  process.stdout.write("Create two Funds: #1 with two charities & #2 with one");
+  process.stdout.write("Create two Funds with two endowments each");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       create_fund: {
@@ -620,8 +654,8 @@ export async function setupContracts(): Promise<void> {
         fund: {
           id: 2,
           name: "Test Fund #2",
-          description: "My another fund to test rotations",
-          members: [endowmentContract1],
+          description: "Another fund to test rotations",
+          members: [endowmentContract1, endowmentContract4],
         }
       }
     }),
@@ -675,13 +709,25 @@ export async function setupContracts(): Promise<void> {
 //
 //----------------------------------------------------------------------------------------
 export async function testClosingEndpoint(): Promise<void> {
-  process.stdout.write("AP Team closes down endowment #3");
+  process.stdout.write("AP Team closes down endowment #3 - Sends to beneficiary");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_endowment_status: {
         endowment_addr: endowmentContract3,
         status: 3,
         beneficiary: apTeam.key.accAddress,
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
+
+  process.stdout.write("AP Team closes down endowment #4 - Sends to parent Index Fund");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_endowment_status: {
+        endowment_addr: endowmentContract4,
+        status: 3,
+        beneficiary: undefined,
       }
     }),
   ]);

@@ -369,15 +369,24 @@ pub fn vault_receipt(
                                     address: env.contract.address.to_string(),
                                 })?,
                             }))?;
-                        let parent_index_fund: u64 = fund_list.funds[0].id;
-                        submessages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                            contract_addr: index_fund,
-                            msg: to_binary(&IndexFundExecuter::Deposit(IndexFundDepositMsg {
-                                fund_id: Some(parent_index_fund),
-                                split: None,
-                            }))?,
-                            funds: vec![balance_after_tax],
-                        })))
+                        if fund_list.funds.len() > 0 {
+                            // send funds to the first index fund in list
+                            submessages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                                contract_addr: index_fund,
+                                msg: to_binary(&IndexFundExecuter::Deposit(IndexFundDepositMsg {
+                                    fund_id: Some(fund_list.funds[0].id),
+                                    split: None,
+                                }))?,
+                                funds: vec![balance_after_tax],
+                            })))
+                        } else {
+                            // Orphaned Endowment (ie. no parent index fund)
+                            // send funds to the DANO treasury
+                            submessages.push(SubMsg::new(BankMsg::Send {
+                                to_address: registrar_config.treasury.to_string(),
+                                amount: vec![balance_after_tax],
+                            }))
+                        }
                     }
                 }
             }
