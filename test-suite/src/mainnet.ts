@@ -3,7 +3,7 @@ import {Coin, LCDClient, MnemonicKey, Wallet} from "@terra-money/terra.js";
 import chalk from "chalk";
 import {
   initializeLCDClient,
-  setupContracts,
+  setupContractsForMainNet,
   testRejectUnapprovedDonations,
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
@@ -42,12 +42,6 @@ export async function startTest(terra: LCDClient): Promise<void> {
   const c: Coin = await terra.market.swapRate(offerCoin, "uluna");
   console.log(`${offerCoin.toString()} can be swapped for ${c.toString()}`);
 
-  const apTeam: Wallet = terra.wallet(new MnemonicKey({mnemonic: process.env.APTEAM}));
-  console.log(chalk.yellow("\nStep2: Create Charities Endowment"))
-  initializeCharities(terra, apTeam, "registrarAddress", "indexFundAddress");
-  await setupEndowments();
-  await createIndexFunds();
-
   // console.log(chalk.yellow("\nStep 1. Environment Info"));
   // initializeLCDClient(
   //   terra,
@@ -63,7 +57,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // );
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  // await setupContracts();
+  // await setupContractsForMainNet();
 
   // console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testRejectUnapprovedDonations();

@@ -7,6 +7,7 @@ import {
   sendTransaction,
 } from "./helpers";
 import jsonData from "./charity_list.json";
+import fs from "fs";
 
 chai.use(chaiAsPromised);
 
@@ -62,6 +63,7 @@ export async function setupEndowments(): Promise<void> {
   });
 
   await prom;
+  saveEndowments();
 }
 
 // Create Endowment base on charity and registrar
@@ -122,4 +124,24 @@ export async function createIndexFunds(): Promise<void> {
     }),
   ]);
   console.log(chalk.green(" Done!"));
+}
+
+const file = "endowment_list.txt";
+function saveEndowments(): void {
+  const data = endowmentContracts.join(",\n");
+  fs.writeFile(file, data, (err) => {
+    if (err) {
+      return console.error(err);
+    }
+    console.log("File created!");
+  });
+}
+
+function readEndowments(): void {
+  fs.readFile(file, (err, data) => {
+    if (err) {
+      return console.error(err);
+    }
+    console.log(data.toString());
+  });
 }
