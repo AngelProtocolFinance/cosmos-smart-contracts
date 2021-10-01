@@ -1,18 +1,43 @@
 {
   "data": [
     {
-      "address": "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
-      "name": "Charity1 Endowment",
+      "address": "terra1ncpfe4vgdcl9898k2mk04kxcc30geey79aw6m9",
+      "name": "Solar Electric Light Fund",
       "description": "A wonderful charity endowment that aims to test all the things"
     },
     {
-      "address": "terra1m0exj9cz0vmde479a28l4devc34fk53mjf4j2g",
-      "name": "Charity2 Endowment",
+      "address": "terra1r8vk5fwyx99yuykzlgccha7n8dz2hhcph8cfl7",
+      "name": "Npili Geral",
       "description": "A wonderful charity endowment that aims to test all the things"
     },
     {
-      "address": "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
-      "name": "Charity3 Endowment",
+      "address": "terra1n8fp5ghcmg8xe8ws0trshsa4eghu0d7qve8hlm",
+      "name": "ROLDA",
+      "description": "A wonderful charity endowment that aims to test all the things"
+    },
+    {
+      "address": "terra14qsv7t0vwuv2fjxa73ylv0thda5f6kytq8p47u",
+      "name": "New Life Church",
+      "description": "A wonderful charity endowment that aims to test all the things"
+    },
+    {
+      "address": "terra1ke8uzpjz5tndqyz0hdm8satujxslm9cwpnukd5",
+      "name": "Animal Ethics",
+      "description": "A wonderful charity endowment that aims to test all the things"
+    },
+    {
+      "address": "terra17s36ehcedl8jnszuqfthzn6m6lwnd4j9qmj4dt",
+      "name": "Pro2Tect",
+      "description": "A wonderful charity endowment that aims to test all the things"
+    },
+    {
+      "address": "terra15ze7g39qq70crsmj4uzqycqurf3ceuvr4r4fyv",
+      "name": "Blue Jay Animal Sancutary",
+      "description": "A wonderful charity endowment that aims to test all the things"
+    },
+    {
+      "address": "terra1suxqzxtzztxvakvucc6u4s9833n4u0cyk9pmv8",
+      "name": "Lion's Club Manitowish Waters, WI",
       "description": "A wonderful charity endowment that aims to test all the things"
     }
   ]
