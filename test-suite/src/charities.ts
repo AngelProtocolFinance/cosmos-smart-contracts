@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { LCDClient, Msg, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import {
   sendTransaction,
 } from "./helpers";
@@ -21,7 +21,7 @@ let apTeam: Wallet;
 let registrar: string;
 let indexFund: string;
 let charities: Charity[];
-let endowments: string[];
+let endowmentContracts: string[];
 
 export function initializeCharities(
   lcdClient: LCDClient,
@@ -35,7 +35,7 @@ export function initializeCharities(
   indexFund = index_fund;
 
   charities = [];
-  endowments = [];
+  endowmentContracts = [];
   jsonData.data.forEach(el => {
     const item: Charity = {
       address: el.address,
@@ -86,7 +86,23 @@ async function createEndowment(charity: Charity): Promise<void> {
     return attribute.key == "contract_address"; 
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${endowmentContract}`);
-  endowments.push(endowmentContract);
+  endowmentContracts.push(endowmentContract);
+}
+
+export async function approveEndowments(): Promise<void> {
+  // AP Team approves 3 of 4 newly created endowments
+  process.stdout.write("AP Team approves 3 of 4 endowments");
+  const msgs: Msg[] = endowmentContracts.map(endowment => {
+    return new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_endowment_status: {
+        endowment_addr: endowment,
+        status: 1,
+        beneficiary: undefined,
+      }
+    });
+  })
+  await sendTransaction(terra, apTeam, msgs);
+  console.log(chalk.green(" Done!"));
 }
 
 // Create an initial "Fund" with the charities created above
@@ -100,7 +116,7 @@ export async function createIndexFunds(): Promise<void> {
           id: 1,
           name: "First Fund",
           description: "My first test fund",
-          members: endowments,
+          members: endowmentContracts,
         }
       }
     }),
