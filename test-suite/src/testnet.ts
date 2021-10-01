@@ -74,7 +74,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await testClosingEndpoint();
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupContracts();
+  // await setupContracts();
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testAddApTeamMemberToC4Group();
