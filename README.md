@@ -14,8 +14,8 @@ core platform of smart contracts that support multiple verticals of specialized 
 ### Guardian Angels Platform (MultiSig) Contracts:
 - [AP Team](./contracts/guardian-angels/ap-team-cw3) - MultiSig contract for enabling Angel Protocol Team's stewardship over all Core and Vault contracts.
 - [Guardian Angels](./contracts/guardian-angels/guardian-angels-cw3) - Creates a flexible base platform to:
-    1. Execute Restricted Actions: Allows an Endowment's Owner(in the [Endowment Owners Group](./contracts/guardian-angels/cw4-group)) the ability to create a proposal requesting for the liquidation of their Endowment or other special actions that requires approval from members of the [AP Team Group](./contracts/guardian-angels/cw4-group).
-    2. Social Recovery: The ability for Endowment Owners to propose updating a optional list of wallet addresses to their Endowment contract, known as "Guardians". If populated, this list Guardians can be invoked should the Owner lose access to their signing key or has it compromised. Guardians may propose to change the owner of the Endowment to an address under the Owner's control (only after approval by N/2+1 majority).
+    1. **Execute Restricted Actions:** Allows an Endowment's Owner(in the [Endowment Owners Group](./contracts/guardian-angels/cw4-group)) the ability to create a proposal requesting for the liquidation of their Endowment or other special actions that requires approval from members of the [AP Team Group](./contracts/guardian-angels/cw4-group).
+    2. **Social Recovery:** The ability for Endowment Owners to propose updating a optional list of wallet addresses to their Endowment contract, known as "Guardians". If populated, this list Guardians can be invoked should the Owner lose access to their signing key or has it compromised. Guardians may propose to change the owner of the Endowment to an address under the Owner's control (only after approval by N/2+1 majority).
 
 ## Getting setup for development
 
@@ -53,9 +53,7 @@ After making sure tests pass, you can compile each contract with the following:
 
 ```sh
 RUSTFLAGS='-C link-arg=-s' cargo wasm
-cp ../../target/wasm32-unknown-unknown/release/cw1_subkeys.wasm .
-ls -l cw1_subkeys.wasm
-sha256sum cw1_subkeys.wasm
+cargo build
 ```
 
 #### Production
@@ -66,7 +64,7 @@ For production builds, run the following from the root folder:
 docker run --rm -v "$(pwd)":/code \
   --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/rust-optimizer:0.11.3
+  cosmwasm/workspace-optimizer:0.12.1
 ```
 
 This performs several optimizations which can significantly reduce the final size of the contract binaries, which will be available inside the `artifacts/` directory.
