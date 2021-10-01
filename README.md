@@ -11,6 +11,12 @@ core platform of smart contracts that support multiple verticals of specialized 
 ### Vault Contracts:
 - [Vault](./contracts/vault) - Vault contracts at as bridges, allowing charity endowment accounts to invest their funds into various TeFi/DeFi protocols in order to earn yield, based on their Strategy allocations.
 
+### Guardian Angels Platform (MultiSig) Contracts:
+- [AP Team](./contracts/guardian-angels/ap-team-cw3) - MultiSig contract for enabling Angel Protocol Team's stewardship over all Core and Vault contracts.
+- [Guardian Angels](./contracts/guardian-angels/guardian-angels-cw3) - Creates a flexible base platform to:
+    1. Execute Restricted Actions: Allows an Endowment's Owner(in the [Endowment Owners Group](./contracts/guardian-angels/cw4-group)) the ability to create a proposal requesting for the liquidation of their Endowment or other special actions that requires approval from members of the [AP Team Group](./contracts/guardian-angels/cw4-group).
+    2. Social Recovery: The ability for Endowment Owners to propose updating a optional list of wallet addresses to their Endowment contract, known as "Guardians". If populated, this list Guardians can be invoked should the Owner lose access to their signing key or has it compromised. Guardians may propose to change the owner of the Endowment to an address under the Owner's control (only after approval by N/2+1 majority).
+
 ## Getting setup for development
 
 ### Environment Setup
