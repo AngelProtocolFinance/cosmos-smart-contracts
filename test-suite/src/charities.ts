@@ -1,0 +1,83 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import chalk from "chalk";
+import * as chai from "chai";
+import chaiAsPromised from "chai-as-promised";
+import { LCDClient, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import {
+  sendTransaction,
+} from "./helpers";
+import jsonData from "./charity_list.json";
+
+chai.use(chaiAsPromised);
+
+type Charity = {
+  address: string,
+  name: string,
+  description: string,
+}
+
+let terra: LCDClient;
+let apTeam: Wallet;
+let registrar: string;
+let charities: Charity[];
+
+export function initializeCharities(
+  lcdClient: LCDClient,
+  ap_team: Wallet,
+  registrarAddr: string
+): void {
+  terra = lcdClient;
+  apTeam = ap_team;
+  registrar = registrarAddr;
+
+  charities = [];
+  jsonData.data.forEach(el => {
+    const item: Charity = {
+      address: el.address,
+      name: el.name,
+      description: el.description
+    };
+    charities.push(item);
+  })
+}
+
+// Create Endowments base on charities and registrar
+export async function setupCharities(): Promise<void> {
+  let prom = Promise.resolve();
+  charities.forEach(item => {
+    // eslint-disable-next-line no-async-promise-executor
+    prom = prom.then(() => new Promise(async (resolve, reject) => {
+      try {
+        await createEndowment(item);
+        resolve();
+      } catch(e) {
+        reject(e);
+      }
+    }));
+  });
+
+  await prom;
+}
+
+async function createEndowment(charity: Charity): Promise<void> {
+  process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
+  const charityResult = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      create_endowment: {
+        owner: charity.address,
+        beneficiary: charity.address,
+        name: charity.name,
+        description: charity.description,
+        withdraw_before_maturity: false,
+        maturity_time: undefined,
+        maturity_height: undefined,
+      }
+    }),
+  ]);
+  const endowmentContract = charityResult.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => { 
+    return attribute.key == "contract_address"; 
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${endowmentContract}`);
+}

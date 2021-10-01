@@ -1,0 +1,19 @@
+{
+  "data": [
+    {
+      "address": "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+      "name": "Charity1 Endowment",
+      "description": "A wonderful charity endowment that aims to test all the things"
+    },
+    {
+      "address": "terra1m0exj9cz0vmde479a28l4devc34fk53mjf4j2g",
+      "name": "Charity2 Endowment",
+      "description": "A wonderful charity endowment that aims to test all the things"
+    },
+    {
+      "address": "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
+      "name": "Charity3 Endowment",
+      "description": "A wonderful charity endowment that aims to test all the things"
+    }
+  ]
+}
