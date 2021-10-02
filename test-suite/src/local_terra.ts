@@ -29,6 +29,7 @@ import {
   testQueryRegistrarEndowmentList,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
+  testIndexFundRotaionByValue,
 } from "./main";
 //----------------------------------------------------------------------------------------
 // Main
@@ -47,6 +48,7 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   await testAddApTeamMemberToC4Group();
   await testAddGuardiansToEndowment();
+  await testIndexFundRotaionByValue();
   // await testGuardiansChangeEndowmentOwner();
   // await testRejectUnapprovedDonations();
   // await testDonorSendsToIndexFund();
