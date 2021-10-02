@@ -264,7 +264,7 @@ pub fn deposit(
     let config = CONFIG.load(deps.storage)?;
     let mut state = STATE.load(deps.storage)?;
 
-    let mut deposit_amount: Uint128 = info
+    let deposit_amount: Uint128 = info
         .funds
         .iter()
         .find(|c| c.denom == *"uusd")
@@ -331,7 +331,6 @@ pub fn deposit(
                 deps.as_ref(),
                 fund.members,
                 split,
-                "uusd".to_string(),
                 deposit_amount,
             ));
         }
@@ -353,10 +352,10 @@ pub fn deposit(
                 None => curr_active_fund,
             };
 
-            if new_active_fund != curr_active_fund && config.funding_goal != None {
-                // donate up to the donation limit on old active fund
-                let goal_leftover = config.funding_goal.unwrap() - state.round_donations;
-                deposit_amount -= goal_leftover;
+            let mut goal_leftover = Uint128::zero();
+            if new_active_fund != curr_active_fund {
+                // donate up to the donation limit on original active fund
+                goal_leftover = config.funding_goal.unwrap() - state.round_donations;
                 let fund = fund_read(deps.storage).load(&curr_active_fund.to_be_bytes())?;
                 let split = calculate_split(
                     tca_member,
@@ -368,11 +367,10 @@ pub fn deposit(
                     deps.as_ref(),
                     fund.members,
                     split,
-                    "uusd".to_string(),
                     goal_leftover,
                 ));
             }
-            // donate the left over deposit_amount to the new active fund
+            // donate the remaining deposit_amount to the newly active fund
             let fund = fund_read(deps.storage).load(&new_active_fund.to_be_bytes())?;
             let split = calculate_split(
                 tca_member,
@@ -384,8 +382,7 @@ pub fn deposit(
                 deps.as_ref(),
                 fund.members,
                 split,
-                "uusd".to_string(),
-                deposit_amount,
+                deposit_amount - goal_leftover,
             ));
         }
     };
@@ -432,7 +429,6 @@ pub fn build_donation_messages(
     deps: Deps,
     members: Vec<Addr>,
     split: Decimal,
-    token_denom: String,
     balance: Uint128,
 ) -> Vec<SubMsg> {
     // set split percentages between locked & liquid accounts
@@ -453,7 +449,7 @@ pub fn build_donation_messages(
             funds: vec![deduct_tax(
                 deps,
                 Coin {
-                    denom: token_denom.clone(),
+                    denom: "uusd".to_string(),
                     amount: member_portion.clone(),
                 },
             )

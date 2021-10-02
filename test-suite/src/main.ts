@@ -887,9 +887,7 @@ export async function testDonorSendsToIndexFund(): Promise<void> {
             split: undefined,
           },
         },
-        {
-          uusd: "4200000",
-        }
+        { uusd: "4200000", }
       ),
     ])
   ).to.be.rejectedWith("Unauthorized"); // for MVP normal users cannot donate
@@ -919,9 +917,7 @@ export async function testRejectUnapprovedDonations(): Promise<void> {
             liquid_percentage: "0.2",
           },
         },
-        {
-          uusd: "4200000",
-        }
+        { uusd: "4200000", }
       ),
     ])
   ).to.be.rejectedWith("Unauthorized"); // for MVP normal users cannot donate
@@ -940,6 +936,23 @@ export async function testRejectUnapprovedDonations(): Promise<void> {
 
 export async function testTcaMemberSendsToIndexFund(): Promise<void> {
   process.stdout.write("Test - TCA Member can send a UST donation to an Index Fund");
+  // Should be rejected if we try to send LUNA instead of UST
+  await expect(
+    sendTransaction(terra, tca, [
+      new MsgExecuteContract(
+        tca.key.accAddress,
+        indexFund,
+        {
+          deposit: {
+            fund_id: 1,
+            split: undefined,
+          },
+        },
+        { uluna: "4000000", }
+      ),
+    ])
+  ).to.be.rejectedWith("Invalid zero amount");
+  console.log(chalk.green("Passed!"));
 
   await expect(
     sendTransaction(terra, tca, [
@@ -952,9 +965,18 @@ export async function testTcaMemberSendsToIndexFund(): Promise<void> {
             split: undefined,
           },
         },
+        { uusd: "400000000", }
+      ),
+      new MsgExecuteContract(
+        tca.key.accAddress,
+        indexFund,
         {
-          uusd: "400000000",
-        }
+          deposit: {
+            fund_id: undefined,
+            split: undefined,
+          },
+        },
+        { uusd: "30000000", }
       ),
     ])
   );

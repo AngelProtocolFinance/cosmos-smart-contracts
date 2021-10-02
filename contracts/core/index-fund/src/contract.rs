@@ -5,7 +5,7 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::structs::{AcceptedTokens, SplitDetails};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
 };
 use cw2::set_contract_version;
 
@@ -27,7 +27,7 @@ pub fn instantiate(
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         fund_rotation: msg.fund_rotation.unwrap_or(500000_u64), // blocks
         fund_member_limit: msg.fund_member_limit.unwrap_or(10),
-        funding_goal: msg.funding_goal.unwrap_or_else(|| Some(Uint128::zero())),
+        funding_goal: msg.funding_goal.unwrap(),
         split_to_liquid: msg.split_to_liquid.unwrap_or_else(SplitDetails::default),
         accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
     };
