@@ -1067,6 +1067,7 @@ export async function testIndexFundRotaionByValue(): Promise<void> {
   console.log(`Active fund @ start: ${active_fund}`);
 
   // repeat steps to rotate to a new fund on next donation
+  // Limit: 50 UST => 10 UST to OLD & 40 UST to NEW
   await expect(
     sendTransaction(terra, tca, [
       new MsgExecuteContract(

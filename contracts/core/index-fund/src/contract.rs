@@ -27,7 +27,7 @@ pub fn instantiate(
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         fund_rotation: msg.fund_rotation.unwrap_or(500000_u64), // blocks
         fund_member_limit: msg.fund_member_limit.unwrap_or(10),
-        funding_goal: msg.funding_goal.unwrap(),
+        funding_goal: msg.funding_goal.unwrap_or(None),
         split_to_liquid: msg.split_to_liquid.unwrap_or_else(SplitDetails::default),
         accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
     };
