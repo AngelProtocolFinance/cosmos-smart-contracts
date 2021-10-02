@@ -1,6 +1,5 @@
 use crate::state::{read_registry_entries, read_vaults, vault_read, CONFIG};
 use angel_core::responses::registrar::*;
-use angel_core::structs::EndowmentStatus;
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
 

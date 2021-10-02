@@ -57,14 +57,14 @@ pub struct UpdateMembersMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub fund_rotation: u64,
-    pub fund_member_limit: u32,
+    pub fund_rotation: Option<u64>,
+    pub fund_member_limit: Option<u32>,
     pub funding_goal: Option<Uint128>,
-    pub split_max: Decimal,
-    pub split_min: Decimal,
-    pub split_default: Decimal,
-    pub accepted_tokens_native: Vec<String>,
-    pub accepted_tokens_cw20: Vec<String>,
+    pub split_max: Option<Decimal>,
+    pub split_min: Option<Decimal>,
+    pub split_default: Option<Decimal>,
+    pub accepted_tokens_native: Option<Vec<String>>,
+    pub accepted_tokens_cw20: Option<Vec<String>>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

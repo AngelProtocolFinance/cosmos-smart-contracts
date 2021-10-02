@@ -5,7 +5,7 @@ use angel_core::structs::{AcceptedTokens, IndexFund, SplitDetails};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
-    ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg,
+    Response, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Balance, Cw20ReceiveMsg};
 
@@ -82,22 +82,26 @@ pub fn update_config(
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
 
-    // only the SC admin can update these configs...for now
+    // only the SC owner can update these configs
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
-    config.fund_rotation = msg.fund_rotation;
-    config.fund_member_limit = msg.fund_member_limit;
-    config.funding_goal = msg.funding_goal;
+    config.fund_rotation = msg.fund_rotation.unwrap_or(config.fund_rotation);
+    config.fund_member_limit = msg.fund_member_limit.unwrap_or(config.fund_member_limit);
+    config.funding_goal = msg.funding_goal; // only config set as optional, don't unwrap
     config.split_to_liquid = SplitDetails {
-        max: msg.split_max,
-        min: msg.split_min,
-        default: msg.split_default,
+        max: msg.split_max.unwrap_or(config.split_to_liquid.max),
+        min: msg.split_min.unwrap_or(config.split_to_liquid.min),
+        default: msg.split_default.unwrap_or(config.split_to_liquid.default),
     };
     config.accepted_tokens = AcceptedTokens {
-        native: msg.accepted_tokens_native,
-        cw20: msg.accepted_tokens_cw20,
+        native: msg
+            .accepted_tokens_native
+            .unwrap_or(config.accepted_tokens.native),
+        cw20: msg
+            .accepted_tokens_cw20
+            .unwrap_or(config.accepted_tokens.cw20),
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -258,7 +262,7 @@ pub fn deposit(
     msg: DepositMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let state = STATE.load(deps.storage)?;
+    let mut state = STATE.load(deps.storage)?;
 
     let mut deposit_amount: Uint128 = info
         .funds
@@ -297,11 +301,14 @@ pub fn deposit(
     // check if block height limit is exceeded
     let curr_active_fund = match env.block.height >= state.next_rotation_block {
         true => {
+            // update STATE with new active fund & reset round donations
             let new_fund_id = rotate_fund(read_funds(deps.storage).unwrap(), state.active_fund);
-            STATE.update(deps.storage, |mut state| -> StdResult<_> {
-                state.active_fund = new_fund_id;
-                Ok(state)
-            })?;
+            state.active_fund = new_fund_id;
+            state.round_donations = Uint128::zero();
+            // increment next block rotation point until it exceeds the current block height
+            while env.block.height >= state.next_rotation_block {
+                state.next_rotation_block += config.fund_rotation;
+            }
             new_fund_id
         }
         false => state.active_fund,
@@ -330,22 +337,23 @@ pub fn deposit(
         }
         // Active Fund donation, check donation limits
         None => {
-            // check if donations limit would be exceeded by current donation amt
-            let new_active_fund =
-                match state.round_donations + deposit_amount > config.funding_goal.unwrap() {
-                    true => {
-                        let new_fund_id =
-                            rotate_fund(read_funds(deps.storage).unwrap(), state.active_fund);
-                        STATE.update(deps.storage, |mut state| -> StdResult<_> {
+            let new_active_fund = match config.funding_goal {
+                Some(goal) => {
+                    // check if donations limit would be exceeded by current donation amt
+                    match state.round_donations + deposit_amount > goal {
+                        true => {
+                            let new_fund_id =
+                                rotate_fund(read_funds(deps.storage).unwrap(), state.active_fund);
                             state.active_fund = new_fund_id;
-                            Ok(state)
-                        })?;
-                        new_fund_id
+                            new_fund_id
+                        }
+                        false => curr_active_fund,
                     }
-                    false => curr_active_fund,
-                };
+                }
+                None => curr_active_fund,
+            };
 
-            if new_active_fund != curr_active_fund {
+            if new_active_fund != curr_active_fund && config.funding_goal != None {
                 // donate up to the donation limit on old active fund
                 let goal_leftover = config.funding_goal.unwrap() - state.round_donations;
                 deposit_amount -= goal_leftover;
@@ -381,6 +389,7 @@ pub fn deposit(
             ));
         }
     };
+    STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
         .add_submessages(donation_messages)
@@ -427,60 +436,31 @@ pub fn build_donation_messages(
     balance: Uint128,
 ) -> Vec<SubMsg> {
     // set split percentages between locked & liquid accounts
-    let locked_percentage = Decimal::one() - split;
-    let liquid_percentage = split;
     let member_portion = balance
         .checked_div(Uint128::from(members.len() as u128))
         .unwrap();
-    let after_tax_amount: Coin = deduct_tax(
-        deps,
-        Coin {
-            denom: token_denom.clone(),
-            amount: member_portion,
-        },
-    )
-    .unwrap();
     let mut messages = vec![];
     for member in members.iter() {
-        messages.push(donation_submsg(
-            member.to_string(),
-            locked_percentage,
-            liquid_percentage,
-            token_denom.clone(),
-            after_tax_amount.amount,
-        ));
+        messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: member.to_string(),
+            msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
+                angel_core::messages::accounts::DepositMsg {
+                    locked_percentage: Decimal::one() - split.clone(),
+                    liquid_percentage: split,
+                },
+            ))
+            .unwrap(),
+            funds: vec![deduct_tax(
+                deps,
+                Coin {
+                    denom: token_denom.clone(),
+                    amount: member_portion.clone(),
+                },
+            )
+            .unwrap()],
+        })));
     }
     messages
-}
-
-pub fn donation_submsg(
-    member_addr: String,
-    locked_percentage: Decimal,
-    liquid_percentage: Decimal,
-    send_denom: String,
-    send_amount: Uint128,
-) -> SubMsg {
-    let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: member_addr,
-        msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
-            angel_core::messages::accounts::DepositMsg {
-                locked_percentage,
-                liquid_percentage,
-            },
-        ))
-        .unwrap(),
-        funds: vec![Coin {
-            amount: send_amount,
-            denom: send_denom,
-        }],
-    });
-
-    SubMsg {
-        id: 0,
-        msg: wasm_msg,
-        gas_limit: None,
-        reply_on: ReplyOn::Never,
-    }
 }
 
 pub fn rotate_fund(funds: Vec<IndexFund>, curr_fund: u64) -> u64 {
