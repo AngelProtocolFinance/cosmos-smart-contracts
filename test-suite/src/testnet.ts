@@ -32,6 +32,7 @@ import {
   testQueryRegistrarVaultList,
   testClosingEndpoint,
   testUpdatingRegistrarConfigs,
+  testIndexFundRotaionByValue,
 } from "./main";
 import dotenv from 'dotenv';
 
