@@ -448,7 +448,8 @@ pub fn deposit(
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
-    // fails if the token deposit was not coming from the Index Fund SC
+    // if the token deposit was not coming from the Index Fund SC,
+    // check split passed by the donor against the Account SC split params
     if sender_addr != registrar_config.index_fund {
         // let splits = ENDOWMENT.load(deps.storage)?.split_to_liquid;
         // let new_splits = check_splits(splits, locked_split, liquid_split);

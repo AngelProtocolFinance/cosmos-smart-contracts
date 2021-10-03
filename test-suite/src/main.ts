@@ -942,149 +942,34 @@ export async function testTcaMemberSendsToIndexFund(): Promise<void> {
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
-        {
-          deposit: {
-            fund_id: 1,
-            split: undefined,
-          },
-        },
+        { deposit: { fund_id: 1, split: undefined, }, },
         { uluna: "4000000", }
       ),
     ])
   ).to.be.rejectedWith("Invalid zero amount");
-  console.log(chalk.green("Passed!"));
 
   await expect(
     sendTransaction(terra, tca, [
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
-        {
-          deposit: {
-            fund_id: 1,
-            split: undefined,
-          },
-        },
-        { uusd: "400000000", }
+        { deposit: { fund_id: 1, split: 1, }, },
+        { uusd: "4000000", }
       ),
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
-        {
-          deposit: {
-            fund_id: undefined,
-            split: undefined,
-          },
-        },
-        { uusd: "30000000", }
+        { deposit: { fund_id: 1, split: undefined, }, },
+        { uusd: "40000000", }
       ),
-    ])
-  );
-  console.log(chalk.green("Passed!"));
-}
-
-
-//----------------------------------------------------------------------------------------
-// TEST: Index Fund SC should rotate the index fund when
-// block time has passed
-//
-//----------------------------------------------------------------------------------------
-
-export async function testIndexFundRotaionByBlocks(): Promise<void> {
-  process.stdout.write("Test - Index Fund rotations by block count handled correctly");
-
-  await expect(
-    sendTransaction(terra, tca, [
       new MsgExecuteContract(
         tca.key.accAddress,
-        indexFund, { deposit: { fund_id: undefined, split: undefined }, },
-        { uusd: "4000000", }
+        indexFund,
+        { deposit: { fund_id: undefined, split: undefined, }, },
+        { uusd: "300000000", }
       ),
     ])
   );
-  const result: any = await terra.wasm.contractQuery(indexFund, {
-    state: {},
-  });
-  const active_fund = result.active_fund;
-  console.log(`Active fund @ start: ${active_fund}`);
-
-  // repeat steps to rotate to a new fund on next donation 
-  await expect(
-    sendTransaction(terra, tca, [
-      new MsgExecuteContract(
-        tca.key.accAddress,
-        indexFund, { deposit: { fund_id: undefined, split: undefined }, },
-        { uusd: "4000000", }
-      ),
-    ])
-  );
-  const result2: any = await terra.wasm.contractQuery(indexFund, {
-    state: {},
-  });
-  const active_fund2 = result2.active_fund;
-  console.log(`Active fund @ end: ${active_fund2}`);
-
-  // should NOT be the same as active fund from the first query
-  expect(active_fund).to.not.equal(active_fund2);
-  console.log(chalk.green("Passed!"));
-}
-
-
-//----------------------------------------------------------------------------------------
-// TEST: Index Fund SC should rotate the index fund when 
-// funding limit has been exceeded
-//
-//----------------------------------------------------------------------------------------
-
-export async function testIndexFundRotaionByValue(): Promise<void> {
-  process.stdout.write("Test - Index Fund rotations by donation value handled correctly");
-
-  await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        indexFund, { update_config: {
-          funding_goal: "50000000",
-          fund_rotation: 100,
-        },
-      }),
-    ])
-  );
-
-  await expect(
-    sendTransaction(terra, tca, [
-      new MsgExecuteContract(
-        tca.key.accAddress,
-        indexFund, { deposit: { fund_id: undefined, split: undefined }, },
-        { uusd: "4000000", }
-      ),
-    ])
-  );
-  const result: any = await terra.wasm.contractQuery(indexFund, {
-    state: {},
-  });
-  const active_fund = result.active_fund;
-  console.log(`Active fund @ start: ${active_fund}`);
-
-  // repeat steps to rotate to a new fund on next donation
-  // Limit: 50 UST => 10 UST to OLD & 40 UST to NEW
-  await expect(
-    sendTransaction(terra, tca, [
-      new MsgExecuteContract(
-        tca.key.accAddress,
-        indexFund, { deposit: { fund_id: undefined, split: undefined }, },
-        { uusd: "4000000", }
-      ),
-    ])
-  );
-  const result2: any = await terra.wasm.contractQuery(indexFund, {
-    state: {},
-  });
-  const active_fund2 = result2.active_fund;
-  console.log(`Active fund @ end: ${active_fund2}`);
-
-  // should NOT be the same as active fund from the first query
-  expect(active_fund).to.not.equal(active_fund2);
   console.log(chalk.green("Passed!"));
 }
 
