@@ -32,7 +32,6 @@ import {
   testQueryRegistrarVaultList,
   testClosingEndpoint,
   testUpdatingRegistrarConfigs,
-  testIndexFundRotaionByBlocks,
 } from "./main";
 import dotenv from 'dotenv';
 
@@ -73,7 +72,6 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
   // await migrateContracts();
   // await testClosingEndpoint();
-  await testIndexFundRotaionByBlocks();
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   // await setupContracts();
