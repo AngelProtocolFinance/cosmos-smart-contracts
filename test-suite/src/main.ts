@@ -104,18 +104,18 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
-  registrar = "terra1yl35ytk8xc2rmdnwsa4af7q33shz22dkzn0ayu";
-  indexFund = "terra10tnq0fujewt5x038zc0a86y0t59fw7ymfuu96y";
-  anchorVault1 = "terra1tnls2a5fdwdqku9sqzn5k5x9eppq579h9jv4sq";
-  anchorVault2 = "terra15udfrrqkztdfxqkrttlemqhn2hg07jc6yrvtfh";
-  endowmentContract1 = "terra1d95p5p85wx4wrfjy07pd2c9c6vu0tf0skhh7g3";
-  endowmentContract2 ="terra1ga6a6zwvttrgay9yplg25f4qd3kxcsxvstap0y";
-  endowmentContract3 = "terra1e38h7cv08z03mpj8cfwcc98dqfdmdrjmxj8cj4";
-  endowmentContract4 = "";
-  cw4GrpApTeam = "terra19ptlhr5f6kkj3tyw0akwrakxfnktvnqrx5fuek";
-  cw3ApTeam = "terra1mzaapq5xcnj06r0cvtggnsdqprevk97r465f4j";
-  cw4GrpOwners = "terra1mzh0grd9z5tx4vr6d8q67axsx9c9tusy3v0np4";
-  cw3GuardianAngels = "terra1fmx09c7nc7rvlfp29vsjvkx3kz8ze5hx6ec9qx";
+  registrar = "terra1dcsdm9uy9z87ejfxfqgf95gwatgee6ay664ds6";
+  indexFund = "terra1ac2nzq0yregq0xr4c500dp83vxe20uu4puy054";
+  anchorVault1 = "terra1yyxz89c4as4d0csmkpwj07pgnqxdvupktaz8qy";
+  anchorVault2 = "terra1ns42xxv4elu4lvrwhymam7p8svqn4q24vyeljv";
+  endowmentContract1 = "terra15lsfmas83kdfsukre8mxl8zqac97s3laumz4u7";
+  endowmentContract2 ="terra18de7lmpacgvj00053932mme40nsnsfm7mgsvrf";
+  endowmentContract3 = "terra13rc82p548274v92ayjuznu29rym4vmzldtruve";
+  endowmentContract4 = "terra1ravwm3v3jee8uj5ulxlt9vlgmjlr2featpujzh";
+  cw4GrpApTeam = "terra1tmwnwzvk8z43uuck9uefnsqrch03kdu90tsl8l";
+  cw3ApTeam = "terra1dqmkqse89cc98al4tc47wfv6qzcr53fzzctvzm";
+  cw4GrpOwners = "terra1pjrw69qv90zk72jps9hgl8uk30f32xdxerm3j4";
+  cw3GuardianAngels = "terra1ktuutypsxvzfm82hpu8y95wwv0jtl6fm7szrcs";
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
@@ -136,19 +136,19 @@ export function initializeLCDClient(
 // -----------------------------
 export async function migrateContracts(): Promise<void> {
   // run the migrations desired
-  await migrateRegistrar();
-  await migrateCw4Group();
-  await migrateApTeamMultisig();
-  await migrateGuardianAngelsMultisig();
-  await migrateIndexFund(indexFund);
-  await migrateAccounts();
-  await migrateVaults();
+  // await migrateRegistrar();
+  // await migrateCw4Group();
+  // await migrateApTeamMultisig();
+  // await migrateGuardianAngelsMultisig();
+  await migrateIndexFund();
+  // await migrateAccounts();
+  // await migrateVaults();
 }
 
 // -------------------------------------------------
 //  Base functions to migrate contracts with 
 //--------------------------------------------------
-async function migrateIndexFund(indexFund: string) {
+async function migrateIndexFund() {
   process.stdout.write("Uploading Index Fund Wasm");
   const codeId = await storeCode(
     terra,
