@@ -1,4 +1,4 @@
-use angel_core::structs::{AcceptedTokens, GenericBalance, IndexFund, SplitDetails};
+use angel_core::structs::{AcceptedTokens, GenericBalance, IndexFund};
 use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
 use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
 use cw_storage_plus::{Item, Map};
@@ -19,7 +19,6 @@ pub struct Config {
     pub fund_rotation: u64, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: u32, // limit to number of members an IndexFund can have
     pub funding_goal: Option<Uint128>, // donation funding limit (in UUST) to trigger early cycle of the Active IndexFund
-    pub split_to_liquid: SplitDetails, // default %s to split off into liquid account, if donor provided split is not present
     pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
@@ -34,16 +33,6 @@ pub struct State {
 }
 
 impl State {
-    pub fn default() -> Self {
-        State {
-            total_funds: 0,
-            active_fund: 0,
-            round_donations: Uint128::zero(),
-            next_rotation_block: 0_u64,
-            terra_alliance: vec![],
-        }
-    }
-
     pub fn tca_human_addresses(self) -> Vec<String> {
         self.terra_alliance
             .iter()

@@ -1,4 +1,4 @@
-use crate::structs::{EndowmentEntry, YieldVault};
+use crate::structs::{EndowmentEntry, SplitDetails, YieldVault};
 use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -34,4 +34,5 @@ pub struct ConfigResponse {
     pub tax_rate: Decimal,
     pub default_vault: String,
     pub index_fund: String,
+    pub split_to_liquid: SplitDetails,
 }

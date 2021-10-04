@@ -15,6 +15,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         index_fund: config.index_fund_contract.to_string(),
         endowment_owners_group_addr: config.endowment_owners_group_addr,
         guardians_multisig_addr: config.guardians_multisig_addr,
+        split_to_liquid: config.split_to_liquid,
     })
 }
 

@@ -45,11 +45,12 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   // await migrateContracts();
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
-  await testAddApTeamMemberToC4Group();
-  await testAddGuardiansToEndowment();
+  // await testAddApTeamMemberToC4Group();
+  // await testAddGuardiansToEndowment();
   // await testGuardiansChangeEndowmentOwner();
-  // await testRejectUnapprovedDonations();
-  // await testDonorSendsToIndexFund();
+  await testRejectUnapprovedDonations();
+  await testDonorSendsToIndexFund();
+  await testTcaMemberSendsToIndexFund();
   // await testTcaMemberSendsToIndexFund();
   // await testAngelTeamCanTriggerVaultsHarvest();
   // await testCharityCanUpdateStrategies();

@@ -1,4 +1,4 @@
-use angel_core::structs::{EndowmentEntry, YieldVault};
+use angel_core::structs::{EndowmentEntry, SplitDetails, YieldVault};
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
 use cw_storage_plus::Item;
@@ -28,6 +28,7 @@ pub struct Config {
     pub default_vault: Addr,
     pub guardians_multisig_addr: Option<String>,
     pub endowment_owners_group_addr: Option<String>,
+    pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
 }
 
 // REGISTRY Read/Write

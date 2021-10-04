@@ -66,7 +66,6 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
         withdraw_before_maturity: endowment.withdraw_before_maturity,
         maturity_time: endowment.maturity_time,
         maturity_height: endowment.maturity_height,
-        split_to_liquid: endowment.split_to_liquid,
         strategies: endowment.strategies,
         rebalance: endowment.rebalance,
         guardians: endowment.guardian_set,

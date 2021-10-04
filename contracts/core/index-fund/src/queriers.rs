@@ -1,19 +1,17 @@
 use crate::state::{fund_read, read_funds, CONFIG, STATE, TCA_DONATIONS};
 use angel_core::responses::index_fund::*;
+use angel_core::structs::GenericBalance;
 use cosmwasm_std::{Deps, StdResult};
-use cw2::get_contract_version;
-use cw20::Cw20Coin;
 
 pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
-        version: get_contract_version(deps.storage)?.contract,
         registrar_contract: config.registrar_contract.to_string(),
         fund_rotation: config.fund_rotation,
         fund_member_limit: config.fund_member_limit,
-        funding_goal: config.funding_goal.unwrap(),
-        split_to_liquid: config.split_to_liquid,
+        funding_goal: config.funding_goal,
+        accepted_tokens: config.accepted_tokens,
     })
 }
 
@@ -23,6 +21,8 @@ pub fn state(deps: Deps) -> StdResult<StateResponse> {
     Ok(StateResponse {
         total_funds: state.total_funds,
         active_fund: state.active_fund,
+        round_donations: state.round_donations,
+        next_rotation_block: state.next_rotation_block,
         terra_alliance: state.tca_human_addresses(),
     })
 }
@@ -58,25 +58,16 @@ pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
     let state = STATE.load(deps.storage)?;
     let mut donors = vec![];
     for tca in state.terra_alliance.into_iter() {
-        let donations = TCA_DONATIONS.may_load(deps.storage, tca.to_string())?;
-        if donations != None {
-            let cw20_bal: StdResult<Vec<_>> = donations
+        // add to response vector
+        donors.push(DonationDetailResponse {
+            address: tca.to_string(),
+            total_ust: TCA_DONATIONS
+                .may_load(deps.storage, tca.to_string())
                 .unwrap()
-                .cw20
-                .into_iter()
-                .map(|token| {
-                    Ok(Cw20Coin {
-                        address: token.address.into(),
-                        amount: token.amount,
-                    })
-                })
-                .collect();
-            // add to response vector
-            donors.push(DonationDetailResponse {
-                address: tca.to_string(),
-                tokens: cw20_bal?,
-            });
-        }
+                .unwrap_or(GenericBalance::default())
+                .get_ust()
+                .amount,
+        });
     }
     Ok(DonationListResponse { donors })
 }

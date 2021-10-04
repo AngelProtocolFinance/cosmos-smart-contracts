@@ -446,7 +446,8 @@ export async function setupContracts(): Promise<void> {
   process.stdout.write("Instantiating Index Fund contract");
   const fundResult = await instantiateContract(terra, apTeam, apTeam, fundCodeId, {
     registrar_contract: registrar,
-    fund_rotation: 1, // one block fund rotation
+    fund_rotation: 10,
+    // funding_goal: "50000000",
   });
   indexFund = fundResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
@@ -936,25 +937,13 @@ export async function testRejectUnapprovedDonations(): Promise<void> {
 
 export async function testTcaMemberSendsToIndexFund(): Promise<void> {
   process.stdout.write("Test - TCA Member can send a UST donation to an Index Fund");
-  // Should be rejected if we try to send LUNA instead of UST
   await expect(
     sendTransaction(terra, tca, [
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
-        { deposit: { fund_id: 1, split: undefined, }, },
-        { uluna: "4000000", }
-      ),
-    ])
-  ).to.be.rejectedWith("Invalid zero amount");
-
-  await expect(
-    sendTransaction(terra, tca, [
-      new MsgExecuteContract(
-        tca.key.accAddress,
-        indexFund,
-        { deposit: { fund_id: 1, split: 1, }, },
-        { uusd: "4000000", }
+        { deposit: { fund_id: undefined, split: undefined, }, },
+        { uusd: "30000000", }
       ),
       new MsgExecuteContract(
         tca.key.accAddress,
@@ -965,11 +954,11 @@ export async function testTcaMemberSendsToIndexFund(): Promise<void> {
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
-        { deposit: { fund_id: undefined, split: undefined, }, },
-        { uusd: "300000000", }
+        { deposit: { fund_id: 1, split: "0.76", }, },
+        { uusd: "40000000", }
       ),
     ])
-  );
+  )
   console.log(chalk.green("Passed!"));
 }
 
@@ -1002,7 +991,6 @@ export async function testAngelTeamCanTriggerVaultsHarvest(): Promise<void> {
 
   console.log(chalk.green("Passed!"));
 }
-
 
 //----------------------------------------------------------------------------------------
 // TEST: Charity Beneficiary can withdraw from available balance in their Accounts

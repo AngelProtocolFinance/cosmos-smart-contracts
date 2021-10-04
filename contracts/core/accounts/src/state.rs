@@ -1,6 +1,4 @@
-use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, RebalanceDetails, SplitDetails, StrategyComponent,
-};
+use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
@@ -27,7 +25,6 @@ pub struct Endowment {
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
-    pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
     pub guardian_set: Vec<String>, // set of Guardian Addr that can help owner recover Endowment if they lose their wallet

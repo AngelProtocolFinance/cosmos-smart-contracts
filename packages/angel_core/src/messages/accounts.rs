@@ -1,5 +1,5 @@
 use crate::messages::vault::AccountTransferMsg;
-use crate::structs::{FundingSource, SplitDetails};
+use crate::structs::FundingSource;
 use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -18,7 +18,6 @@ pub struct InstantiateMsg {
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
-    pub split_to_liquid: SplitDetails,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -77,7 +76,6 @@ pub struct Strategy {
 pub struct UpdateEndowmentSettingsMsg {
     pub beneficiary: String,
     pub owner: String,
-    pub split_to_liquid: SplitDetails,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

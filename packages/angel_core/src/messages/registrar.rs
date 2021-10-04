@@ -1,3 +1,4 @@
+use crate::structs::SplitDetails;
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -11,6 +12,7 @@ pub struct InstantiateMsg {
     pub treasury: String,
     pub tax_rate: Decimal,
     pub default_vault: Option<Addr>,
+    pub split_to_liquid: Option<SplitDetails>, // default %s to split off into liquid account, if donor provided split is not present
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -56,6 +58,9 @@ pub struct UpdateConfigMsg {
     pub default_vault: Option<String>,
     pub guardians_multisig_addr: Option<String>,
     pub endowment_owners_group_addr: Option<String>,
+    pub split_max: Option<Decimal>,
+    pub split_min: Option<Decimal>,
+    pub split_default: Option<Decimal>,
 }
 
 impl UpdateConfigMsg {
