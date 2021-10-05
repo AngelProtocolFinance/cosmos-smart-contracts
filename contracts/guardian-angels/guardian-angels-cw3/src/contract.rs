@@ -4,7 +4,7 @@ use crate::state::{
     next_id, parse_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, GUARDIAN_PROPOSALS,
     PROPOSALS,
 };
-use angel_core::messages::accounts::QueryMsg as EndowmentQueryMsg;
+use angel_core::messages::accounts::{QueryMsg as EndowmentQueryMsg, UpdateEndowmentSettingsMsg};
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
@@ -159,9 +159,14 @@ pub fn execute_propose_owner_change(
         ),
         vec![CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: endowment_addr.clone(),
-            msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::UpdateOwner {
-                new_owner: new_owner_addr,
-            })
+            msg: to_binary(
+                &angel_core::messages::accounts::ExecuteMsg::UpdateEndowmentSettings(
+                    UpdateEndowmentSettingsMsg {
+                        beneficiary: new_owner_addr.clone(),
+                        owner: new_owner_addr,
+                    },
+                ),
+            )
             .unwrap(),
             funds: vec![],
         })],
