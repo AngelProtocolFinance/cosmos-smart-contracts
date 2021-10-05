@@ -135,21 +135,32 @@ pub fn update_endowment_settings(
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+    let mut endowment = ENDOWMENT.load(deps.storage)?;
 
-    // only the SC admin can update these configs...for now
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+    if endowment.guardian_set.len() > 0 {
+        // get the guardian multisig addr from the registrar config (if exists)
+        let registrar_config: RegistrarConfigResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: config.registrar_contract.to_string(),
+                msg: to_binary(&RegistrarQuerier::Config {})?,
+            }))?;
+        let multisig_addr = registrar_config.guardians_multisig_addr;
+
+        // only the guardians multisig contract can update the guardians
+        if multisig_addr == None || info.sender.to_string() != multisig_addr.unwrap() {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        // only the contract owner can update these configs...for now
+        if info.sender != config.owner {
+            return Err(ContractError::Unauthorized {});
+        }
     }
 
-    // validate SC address strings passed
-    let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
-    let owner = deps.api.addr_validate(&msg.owner)?;
-
-    ENDOWMENT.update(deps.storage, |mut endowment| -> StdResult<_> {
-        endowment.owner = owner;
-        endowment.beneficiary = beneficiary;
-        Ok(endowment)
-    })?;
+    // validate address strings passed
+    endowment.owner = deps.api.addr_validate(&msg.beneficiary)?;
+    endowment.beneficiary = deps.api.addr_validate(&msg.owner)?;
+    ENDOWMENT.save(deps.storage, &endowment)?;
 
     Ok(Response::default())
 }

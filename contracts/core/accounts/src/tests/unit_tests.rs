@@ -24,7 +24,6 @@ fn test_proper_initialization() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
-        split_to_liquid: SplitDetails::default(),
     };
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();
@@ -50,7 +49,6 @@ fn test_get_config() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
-        split_to_liquid: SplitDetails::default(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -77,7 +75,6 @@ fn test_update_endowment_settings() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
-        split_to_liquid: SplitDetails::default(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -88,7 +85,6 @@ fn test_update_endowment_settings() {
     let msg = UpdateEndowmentSettingsMsg {
         owner: charity_addr.clone(),
         beneficiary: pleb.clone(),
-        split_to_liquid: SplitDetails::default(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth "));
     let env = mock_env();
@@ -105,7 +101,6 @@ fn test_update_endowment_settings() {
     let msg = UpdateEndowmentSettingsMsg {
         owner: charity_addr.clone(),
         beneficiary: pleb.clone(),
-        split_to_liquid: SplitDetails::default(),
     };
     let info = mock_info(pleb.as_ref(), &coins(100000, "earth "));
     let env = mock_env();
@@ -139,7 +134,6 @@ fn test_change_registrar_contract() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
-        split_to_liquid: SplitDetails::default(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -195,7 +189,6 @@ fn test_change_admin() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
-        split_to_liquid: SplitDetails::default(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -251,7 +244,6 @@ fn migrate_contract() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
-        split_to_liquid: SplitDetails::default(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -283,7 +275,6 @@ fn test_update_strategy() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
-        split_to_liquid: SplitDetails::default(),
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
