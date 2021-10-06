@@ -384,6 +384,7 @@ pub fn deposit(
             ));
         }
     };
+    state.round_donations += deposit_amount;
     STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
