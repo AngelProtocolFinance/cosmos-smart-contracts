@@ -282,11 +282,6 @@ pub fn deposit(
             TCA_DONATIONS.save(deps.storage, sender_addr.to_string(), &tca_donor)?;
         }
     }
-    // FOR MVP ONLY:
-    // if the sender address is not among them raise err
-    if !tca_member {
-        return Err(ContractError::Unauthorized {});
-    }
 
     // check if block height limit is exceeded
     let curr_active_fund = match env.block.height >= state.next_rotation_block {
