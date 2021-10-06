@@ -3,7 +3,7 @@ import {LCDClient, Coin, MnemonicKey, Wallet, MsgSend, BlockTxBroadcastResult} f
 import chalk from "chalk";
 import {
   initializeLCDClient,
-  setupContracts,
+  setupContractsForTestNet,
   migrateContracts,
   testAddApTeamMemberToC4Group,
   testAddGuardiansToEndowment,
@@ -75,7 +75,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await testClosingEndpoint();
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  // await setupContracts();
+  // await setupContractsForTestNet();
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testAddApTeamMemberToC4Group();

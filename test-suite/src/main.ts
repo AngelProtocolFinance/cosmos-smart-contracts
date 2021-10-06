@@ -11,6 +11,7 @@ import {
   migrateContract,
   toEncodedBinary,
 } from "./helpers";
+import * as mainNet from "./charities";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -289,7 +290,22 @@ async function migrateAccounts() {
 // Setup all contracts
 //----------------------------------------------------------------------------------------
 
-export async function setupContracts(): Promise<void> {
+export async function setupContractsForTestNet(): Promise<void> {
+  await setupContracts();
+  await createEndowments();
+  await approveEndowments();
+  await createIndexFunds();
+}
+
+export async function setupContractsForMainNet(): Promise<void> {
+  await setupContracts();
+  await mainNet.initializeCharities(terra, apTeam, registrar, indexFund);
+  await mainNet.setupEndowments();
+  await mainNet.approveEndowments();
+  await mainNet.createIndexFunds();
+}
+
+async function setupContracts(): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each.... 
   process.stdout.write("Uploading Registrar Wasm");
   const registrarCodeId = await storeCode(
@@ -520,7 +536,45 @@ export async function setupContracts(): Promise<void> {
   ]);
   console.log(chalk.green(" Done!"));
 
-  // Step 4: Create Endowments via the Registrar contract
+  // Add confirmed TCA Members to the Index Fund SCs approved list
+  process.stdout.write("Add confirmed TCA Member to allowed list");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+      update_tca_list: { new_list: [tca.key.accAddress] },
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
+
+  // // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
+  // process.stdout.write("Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract");
+  // await sendTransaction(terra, apTeam, [
+  //   new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+  //     update_owner: { new_owner: cw3ApTeam },
+  //   }),
+  //   new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+  //     update_owner: { new_owner: cw3ApTeam },
+  //   }),
+  //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract1, {
+  //     update_owner: { new_owner: cw3ApTeam },
+  //   }),
+  //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract2, {
+  //     update_owner: { new_owner: cw3ApTeam },
+  //   }),
+  //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract3, {
+  //     update_owner: { new_owner: cw3ApTeam },
+  //   }),
+  //   // new MsgExecuteContract(apTeam.key.accAddress, anchorVault1, {
+  //   //   update_owner: { new_owner: cw3ApTeam },
+  //   // }),
+  //   // new MsgExecuteContract(apTeam.key.accAddress, anchorVault2, {
+  //   //   update_owner: { new_owner: cw3ApTeam },
+  //   // }),
+  // ]);
+  // console.log(chalk.green(" Done!"));
+}
+
+// Step 4: Create Endowments via the Registrar contract
+async function createEndowments(): Promise<void> {
   // endowment #1
   process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
   const charityResult1 = await sendTransaction(terra, apTeam, [
@@ -608,7 +662,9 @@ export async function setupContracts(): Promise<void> {
     return attribute.key == "contract_address"; 
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${endowmentContract4}`);
+}
 
+async function approveEndowments(): Promise<void> {
   // AP Team approves 3 of 4 newly created endowments
   process.stdout.write("AP Team approves 3 of 4 endowments");
   await sendTransaction(terra, apTeam, [
@@ -635,8 +691,10 @@ export async function setupContracts(): Promise<void> {
     }),
   ]);
   console.log(chalk.green(" Done!"));
+}
 
-  // Step 5: Index Fund finals setup 
+// Step 5: Index Fund finals setup 
+async function createIndexFunds(): Promise<void> {
   // Create an initial "Fund" with the two charities created above
   process.stdout.write("Create two Funds with two endowments each");
   await sendTransaction(terra, apTeam, [
@@ -662,44 +720,7 @@ export async function setupContracts(): Promise<void> {
     }),
   ]);
   console.log(chalk.green(" Done!"));
-
-  // Add confirmed TCA Members to the Index Fund SCs approved list
-  process.stdout.write("Add confirmed TCA Member to allowed list");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      update_tca_list: { new_list: [tca.key.accAddress] },
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
-
-  // // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
-  // process.stdout.write("Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract");
-  // await sendTransaction(terra, apTeam, [
-  //   new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-  //     update_owner: { new_owner: cw3ApTeam },
-  //   }),
-  //   new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-  //     update_owner: { new_owner: cw3ApTeam },
-  //   }),
-  //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract1, {
-  //     update_owner: { new_owner: cw3ApTeam },
-  //   }),
-  //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract2, {
-  //     update_owner: { new_owner: cw3ApTeam },
-  //   }),
-  //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract3, {
-  //     update_owner: { new_owner: cw3ApTeam },
-  //   }),
-  //   // new MsgExecuteContract(apTeam.key.accAddress, anchorVault1, {
-  //   //   update_owner: { new_owner: cw3ApTeam },
-  //   // }),
-  //   // new MsgExecuteContract(apTeam.key.accAddress, anchorVault2, {
-  //   //   update_owner: { new_owner: cw3ApTeam },
-  //   // }),
-  // ]);
-  // console.log(chalk.green(" Done!"));
 }
-
 
 //----------------------------------------------------------------------------------------
 // TEST: AP Team Closes Endowment
