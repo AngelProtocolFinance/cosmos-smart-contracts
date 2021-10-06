@@ -3,6 +3,7 @@ use crate::queriers;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
+use angel_core::structs::SplitDetails;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
@@ -32,6 +33,7 @@ pub fn instantiate(
         default_vault: msg.default_vault.unwrap_or(info.sender),
         guardians_multisig_addr: None,
         endowment_owners_group_addr: None,
+        split_to_liquid: msg.split_to_liquid.unwrap_or_else(SplitDetails::default),
     };
 
     CONFIG.save(deps.storage, &configs)?;

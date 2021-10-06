@@ -10,7 +10,9 @@ use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultListResponse,
 };
-use angel_core::structs::{AcceptedTokens, FundingSource, StrategyComponent, YieldVault};
+use angel_core::structs::{
+    AcceptedTokens, FundingSource, SplitDetails, StrategyComponent, YieldVault,
+};
 use angel_core::utils::{
     deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults, withdraw_from_vaults,
 };
@@ -133,22 +135,32 @@ pub fn update_endowment_settings(
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+    let mut endowment = ENDOWMENT.load(deps.storage)?;
 
-    // only the SC admin can update these configs...for now
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+    if endowment.guardian_set.len() > 0 {
+        // get the guardian multisig addr from the registrar config (if exists)
+        let registrar_config: RegistrarConfigResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: config.registrar_contract.to_string(),
+                msg: to_binary(&RegistrarQuerier::Config {})?,
+            }))?;
+        let multisig_addr = registrar_config.guardians_multisig_addr;
+
+        // only the guardians multisig contract can update the guardians
+        if multisig_addr == None || info.sender.to_string() != multisig_addr.unwrap() {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        // only the contract owner can update these configs...for now
+        if info.sender != config.owner {
+            return Err(ContractError::Unauthorized {});
+        }
     }
 
-    // validate SC address strings passed
-    let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
-    let owner = deps.api.addr_validate(&msg.owner)?;
-
-    ENDOWMENT.update(deps.storage, |mut endowment| -> StdResult<_> {
-        endowment.owner = owner;
-        endowment.beneficiary = beneficiary;
-        endowment.split_to_liquid = msg.split_to_liquid;
-        Ok(endowment)
-    })?;
+    // validate address strings passed
+    endowment.owner = deps.api.addr_validate(&msg.beneficiary)?;
+    endowment.beneficiary = deps.api.addr_validate(&msg.owner)?;
+    ENDOWMENT.save(deps.storage, &endowment)?;
 
     Ok(Response::default())
 }
@@ -448,10 +460,11 @@ pub fn deposit(
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
-    // fails if the token deposit was not coming from the Index Fund SC
+    let _registrar_split_configs: SplitDetails = registrar_config.split_to_liquid;
+
+    // check split passed by the donor against the Registrar SC split params
     if sender_addr != registrar_config.index_fund {
-        // let splits = ENDOWMENT.load(deps.storage)?.split_to_liquid;
-        // let new_splits = check_splits(splits, locked_split, liquid_split);
+        // let new_splits = check_splits(registrar_split_configs, locked_split, liquid_split);
         // locked_split = new_splits.0;
         // liquid_split = new_splits.1;
         return Err(ContractError::Unauthorized {});

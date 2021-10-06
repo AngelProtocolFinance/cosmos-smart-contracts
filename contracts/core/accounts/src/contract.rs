@@ -54,7 +54,6 @@ pub fn instantiate(
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
             maturity_time: msg.maturity_time,                       // Option<u64>
             maturity_height: msg.maturity_height,                   // Option<u64>
-            split_to_liquid: msg.split_to_liquid,                   // SplitDetails
             strategies: vec![StrategyComponent {
                 vault: deps.api.addr_validate(&registrar_config.default_vault)?,
                 locked_percentage: Decimal::one(),

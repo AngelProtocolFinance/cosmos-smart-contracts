@@ -1,4 +1,4 @@
-use crate::structs::{RebalanceDetails, SplitDetails, StrategyComponent};
+use crate::structs::{RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -26,7 +26,6 @@ pub struct EndowmentDetailsResponse {
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
-    pub split_to_liquid: SplitDetails,
     pub strategies: Vec<StrategyComponent>,
     pub rebalance: RebalanceDetails,
     pub guardians: Vec<String>,

@@ -56,16 +56,16 @@ pub fn deduct_tax(deps: Deps, coin: Coin) -> StdResult<Coin> {
 }
 
 pub fn check_splits(
-    endowment_splits: SplitDetails,
+    registrar_splits: SplitDetails,
     user_locked: Decimal,
     user_liquid: Decimal,
 ) -> (Decimal, Decimal) {
     // check that the split provided by a non-TCA address meets the default
-    // split requirements set by the Endowment Account
-    if user_liquid > endowment_splits.max || user_liquid < endowment_splits.min {
+    // requirements for splits that is set in the Registrar contract
+    if user_liquid > registrar_splits.max || user_liquid < registrar_splits.min {
         (
-            Decimal::one() - endowment_splits.default,
-            endowment_splits.default,
+            Decimal::one() - registrar_splits.default,
+            registrar_splits.default,
         )
     } else {
         (user_locked, user_liquid)

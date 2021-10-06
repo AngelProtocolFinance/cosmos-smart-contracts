@@ -19,7 +19,6 @@ fn proper_initialization() {
         fund_rotation: Some(1000000u64),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
@@ -42,7 +41,6 @@ fn only_sc_owner_can_change_owner() {
         fund_rotation: Some(1000000u64),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
@@ -96,7 +94,6 @@ fn only_registrar_can_change_registrar_contract() {
         fund_rotation: Some(1000000u64),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
@@ -153,7 +150,6 @@ fn migrate_contract() {
         fund_rotation: Some(1000000u64),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -181,7 +177,6 @@ fn sc_owner_can_update_list_of_tca_members() {
         fund_rotation: Some(1000000u64),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
@@ -220,7 +215,6 @@ fn sc_owner_can_add_remove_funds() {
         fund_rotation: Some(1000000u64),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
@@ -285,7 +279,6 @@ fn sc_owner_can_update_fund_members() {
         fund_rotation: Some(1000000u64),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));

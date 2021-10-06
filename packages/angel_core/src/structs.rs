@@ -164,7 +164,7 @@ pub struct AcceptedTokens {
 impl AcceptedTokens {
     pub fn default() -> Self {
         AcceptedTokens {
-            native: vec!["uust".to_string()],
+            native: vec!["uusd".to_string()],
             cw20: vec![],
         }
     }

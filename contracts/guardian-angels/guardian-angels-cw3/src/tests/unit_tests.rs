@@ -76,10 +76,12 @@ fn instantiate_flex(
 ) -> Addr {
     let flex_id = app.store_code(contract_flex());
     let msg = crate::msg::InstantiateMsg {
+        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
         ap_team_group: ap_group.to_string(),
         endowment_owners_group: endowment_group.to_string(),
         threshold,
         max_voting_period,
+        max_voting_period_guardians: Duration::Time(1234),
     };
     app.instantiate_contract(flex_id, Addr::unchecked(OWNER), &msg, &[], "flex", None)
         .unwrap()
@@ -199,10 +201,12 @@ fn test_instantiate_works() {
 
     // Zero required weight fails
     let instantiate_msg = InstantiateMsg {
+        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
         ap_team_group: guardian_group.to_string(),
         endowment_owners_group: endowment_group.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 0 },
         max_voting_period,
+        max_voting_period_guardians: Duration::Time(1234),
     };
     let err = app
         .instantiate_contract(
@@ -218,10 +222,12 @@ fn test_instantiate_works() {
 
     // Total weight less than required weight not allowed
     let instantiate_msg = InstantiateMsg {
+        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
         ap_team_group: guardian_group.to_string(),
         endowment_owners_group: endowment_group.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 100 },
         max_voting_period,
+        max_voting_period_guardians: Duration::Time(1234),
     };
     let err = app
         .instantiate_contract(
@@ -240,10 +246,12 @@ fn test_instantiate_works() {
 
     // All valid
     let instantiate_msg = InstantiateMsg {
+        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
         ap_team_group: guardian_group.to_string(),
         endowment_owners_group: endowment_group.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 1 },
         max_voting_period,
+        max_voting_period_guardians: Duration::Time(1234),
     };
     let flex_addr = app
         .instantiate_contract(

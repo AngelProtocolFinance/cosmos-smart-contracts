@@ -228,6 +228,11 @@ pub fn update_config(
         .api
         .addr_validate(&msg.treasury.unwrap_or_else(|| config.treasury.to_string()))?;
     config.tax_rate = msg.tax_rate.unwrap_or(config.tax_rate);
+    config.split_to_liquid = SplitDetails {
+        max: msg.split_max.unwrap_or(config.split_to_liquid.max),
+        min: msg.split_min.unwrap_or(config.split_to_liquid.min),
+        default: msg.split_default.unwrap_or(config.split_to_liquid.default),
+    };
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))
@@ -269,7 +274,6 @@ pub fn create_endowment(
             withdraw_before_maturity: msg.withdraw_before_maturity,
             maturity_time: msg.maturity_time,
             maturity_height: msg.maturity_height,
-            split_to_liquid: SplitDetails::default(),
         })?,
         funds: vec![],
     };

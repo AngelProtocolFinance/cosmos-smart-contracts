@@ -3,7 +3,7 @@ use crate::queriers;
 use crate::state::{Config, State, CONFIG, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
-use angel_core::structs::{AcceptedTokens, SplitDetails};
+use angel_core::structs::AcceptedTokens;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
 };
@@ -16,7 +16,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -27,14 +27,22 @@ pub fn instantiate(
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         fund_rotation: msg.fund_rotation.unwrap_or(500000_u64), // blocks
         fund_member_limit: msg.fund_member_limit.unwrap_or(10),
-        funding_goal: msg.funding_goal.unwrap_or_else(|| Some(Uint128::zero())),
-        split_to_liquid: msg.split_to_liquid.unwrap_or_else(SplitDetails::default),
+        funding_goal: msg.funding_goal.unwrap_or(None),
         accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
     };
     CONFIG.save(deps.storage, &configs)?;
 
     // setup default state values
-    STATE.save(deps.storage, &State::default())?;
+    STATE.save(
+        deps.storage,
+        &State {
+            total_funds: 0,
+            active_fund: 0,
+            round_donations: Uint128::zero(),
+            next_rotation_block: env.block.height + configs.fund_rotation,
+            terra_alliance: vec![],
+        },
+    )?;
     Ok(Response::default())
 }
 

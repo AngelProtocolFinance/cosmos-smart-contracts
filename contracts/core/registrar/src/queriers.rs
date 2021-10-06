@@ -1,6 +1,5 @@
 use crate::state::{read_registry_entries, read_vaults, vault_read, CONFIG};
 use angel_core::responses::registrar::*;
-use angel_core::structs::EndowmentStatus;
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
 
@@ -16,6 +15,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         index_fund: config.index_fund_contract.to_string(),
         endowment_owners_group_addr: config.endowment_owners_group_addr,
         guardians_multisig_addr: config.guardians_multisig_addr,
+        split_to_liquid: config.split_to_liquid,
     })
 }
 
