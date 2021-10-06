@@ -29,6 +29,7 @@ import {
   testQueryRegistrarEndowmentList,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
+  testQueryIndexFundDeposit,
 } from "./main";
 //----------------------------------------------------------------------------------------
 // Main
@@ -48,9 +49,9 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   // await testAddApTeamMemberToC4Group();
   // await testAddGuardiansToEndowment();
   // await testGuardiansChangeEndowmentOwner();
-  await testRejectUnapprovedDonations();
-  await testDonorSendsToIndexFund();
-  await testTcaMemberSendsToIndexFund();
+  // await testRejectUnapprovedDonations();
+  // await testDonorSendsToIndexFund();
+  // await testTcaMemberSendsToIndexFund();
   // await testTcaMemberSendsToIndexFund();
   // await testAngelTeamCanTriggerVaultsHarvest();
   // await testCharityCanUpdateStrategies();
@@ -72,4 +73,5 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   // await testQueryIndexFundFundDetails();
   // await testQueryIndexFundActiveFundDetails();
   // await testQueryIndexFundActiveFundDonations();
+  // await testQueryIndexFundDeposit();
 }

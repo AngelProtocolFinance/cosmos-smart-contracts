@@ -79,12 +79,21 @@ pub struct DepositMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
+    // builds and returns a Deposit CosmosMsg based on query inputs
+    Deposit {
+        amount: Uint128,
+        fund_id: Option<u64>,
+    },
     // returns a list of all funds
     FundsList {},
     // returns a single fund if the ID is valid
-    FundDetails { fund_id: u64 },
+    FundDetails {
+        fund_id: u64,
+    },
     // get all funds a given Accounts SC address is involved with
-    InvolvedFunds { address: String },
+    InvolvedFunds {
+        address: String,
+    },
     // return details on the currently active fund
     ActiveFundDetails {},
     // get total donations given to Active Fund for a round

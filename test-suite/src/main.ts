@@ -1256,3 +1256,16 @@ export async function testQueryIndexFundActiveFundDonations(): Promise<void> {
   console.log(result);
   console.log(chalk.green("Passed!"));
 }
+
+export async function testQueryIndexFundDeposit(): Promise<void> {
+  process.stdout.write("Test - Query IndexFund Deposit msg builder");
+  const result: any = await terra.wasm.contractQuery(indexFund, {
+    deposit: {
+      amount: "100000000",
+      fund_id: undefined
+    },
+  });
+
+  console.log(result);
+  console.log(chalk.green("Passed!"));
+}
