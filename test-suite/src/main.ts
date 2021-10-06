@@ -1140,6 +1140,16 @@ export async function testQueryRegistrarApprovedVaultList(): Promise<void> {
   console.log(chalk.green(" Passed!"));
 }
 
+export async function testQueryRegistrarApprovedVaultRateList(): Promise<void> {
+  process.stdout.write("Test - Query Registrar Approved Vault Exchange Rate List");
+  const result: any = await terra.wasm.contractQuery(registrar, {
+    approved_vault_rate_list: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
 export async function testQueryRegistrarVaultList(): Promise<void> {
   process.stdout.write("Test - Query Registrar VaultList");
   const result: any = await terra.wasm.contractQuery(registrar, {

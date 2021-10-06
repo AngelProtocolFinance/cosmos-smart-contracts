@@ -33,6 +33,7 @@ import {
   testClosingEndpoint,
   testUpdatingRegistrarConfigs,
   testQueryIndexFundDeposit,
+  testQueryRegistrarApprovedVaultRateList,
 } from "./main";
 import dotenv from 'dotenv';
 
@@ -96,6 +97,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await testQueryRegistrarApprovedEndowmentList();
   // await testQueryRegistrarEndowmentList();
   // await testQueryRegistrarApprovedVaultList();
+  // await testQueryRegistrarApprovedVaultRateList();
   // await testQueryRegistrarVaultList();
   // await testQueryRegistrarVault();
   // await testQueryAccountsBalance("terra1atuv3kzavg4q4nr4qt47zjquzjk84vl8lvl4tk");

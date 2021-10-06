@@ -1,5 +1,7 @@
 use crate::state::{read_registry_entries, read_vaults, vault_read, CONFIG};
 use angel_core::responses::registrar::*;
+use angel_core::structs::{VaultRate, YieldVault};
+use angel_core::utils::vault_fx_rate;
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
 
@@ -43,4 +45,21 @@ pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDet
     let addr = deps.api.addr_validate(&vault_addr)?;
     let vault = vault_read(deps.storage).load(addr.as_bytes())?;
     Ok(VaultDetailResponse { vault })
+}
+
+pub fn query_approved_vaults_fx_rate(deps: Deps) -> StdResult<VaultRateResponse> {
+    // returns a list of approved Vaults exchange rate
+    let vaults = read_vaults(deps.storage)?;
+    let approved_vaults: Vec<YieldVault> = vaults.into_iter().filter(|p| p.approved).collect();
+    let mut vaults_rate: Vec<VaultRate> = vec![];
+    for vault in approved_vaults.into_iter() {
+        let fx_rate = vault_fx_rate(deps, vault.address.to_string());
+        vaults_rate.push(VaultRate {
+            vault_addr: vault.address,
+            fx_rate: fx_rate,
+        });
+    }
+    Ok(VaultRateResponse {
+        vaults_rate: vaults_rate,
+    })
 }

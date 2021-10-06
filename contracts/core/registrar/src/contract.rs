@@ -89,9 +89,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::EndowmentList {} => to_binary(&queriers::query_endowment_list(deps)?),
         QueryMsg::ApprovedVaultList {} => to_binary(&queriers::query_approved_vault_list(deps)?),
         QueryMsg::VaultList {} => to_binary(&queriers::query_vault_list(deps)?),
-        QueryMsg::Vault { vault_addr } => {
-            to_binary(&queriers::query_vault_details(deps, vault_addr)?)
-        }
+        QueryMsg::Vault { vault_addr } => {to_binary(&queriers::query_vault_details(deps, vault_addr)?)}
+        QueryMsg::ApprovedVaultRateList {} => {to_binary(&queriers::query_approved_vault_list(deps)?)}
     }
 }
 

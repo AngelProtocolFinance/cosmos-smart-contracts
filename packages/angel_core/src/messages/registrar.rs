@@ -99,4 +99,6 @@ pub enum QueryMsg {
     EndowmentList {},
     // Get all Config details for the contract
     Config {},
+    // Get a list of all approved Vaults exchange rates
+    ApprovedVaultRateList {},
 }
