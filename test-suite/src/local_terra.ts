@@ -30,6 +30,7 @@ import {
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
   testQueryIndexFundDeposit,
+  testQueryRegistrarApprovedVaultRateList,
 } from "./main";
 //----------------------------------------------------------------------------------------
 // Main
@@ -61,6 +62,7 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   // await testQueryRegistrarConfig();
   // await testQueryRegistrarEndowmentList();
   // await testQueryRegistrarApprovedVaultList();
+  // await testQueryRegistrarApprovedVaultRateList();
   // await testQueryRegistrarVaultList();
   // await testQueryRegistrarVault();
   // await testQueryAccountsBalance();
