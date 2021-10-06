@@ -109,16 +109,37 @@ export async function approveEndowments(): Promise<void> {
 
 // Create an initial "Fund" with the charities created above
 export async function createIndexFunds(): Promise<void> {
-  // Create an initial "Fund" with the two charities created above
+  const fund_member_limit = 10;
+  let prom = Promise.resolve();
+  let id = 1;
+  // Split the endowments list into N funds of fund_number_limit
+  for (let i = 0; i < endowmentContracts.length; i += fund_member_limit) {
+    const members = endowmentContracts.slice(i, i + fund_member_limit);
+    // eslint-disable-next-line no-async-promise-executor
+    prom = prom.then(() => new Promise(async (resolve, reject) => {
+      try {
+        await createIndexFundWithMembers(id ++, members);
+        resolve();
+      } catch(e) {
+        reject(e);
+      }
+    }));
+  }
+  await prom;
+}
+
+
+async function createIndexFundWithMembers(id: number, members: string[]): Promise<void> {
+  // Create an initial "Fund" with the charities
   process.stdout.write("Create two Funds with two endowments each");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       create_fund: {
         fund: {
-          id: 1,
-          name: "First Fund",
-          description: "My first test fund",
-          members: endowmentContracts,
+          id: id,
+          name: `Index Fund #${id}`,
+          description: "",
+          members: members,
         }
       }
     }),
