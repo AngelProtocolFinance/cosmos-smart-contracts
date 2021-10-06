@@ -1,4 +1,5 @@
 use cosmwasm_std::{Addr, Coin, Decimal, Env, SubMsg, Timestamp, Uint128};
+use cosmwasm_bignumber::Decimal256;
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -30,6 +31,13 @@ pub struct YieldVault {
     pub input_denom: String,
     pub yield_token: Addr,
     pub approved: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct VaultRate {
+    pub vault_addr: Addr,
+    pub fx_rate: Decimal256,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
