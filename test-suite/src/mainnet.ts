@@ -51,7 +51,14 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // );
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  // await setupContractsForMainNet();
+  await setupContractsForMainNet(
+    "0.2",  // tax rate
+    "0.50", // threshold absolute percentage
+    1000,   // max voting period height
+    100,    // max voting period guardians height
+    10,     // index fund rotation
+    false   // turn over to AP Team multisig
+  );
 
   // console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testRejectUnapprovedDonations();

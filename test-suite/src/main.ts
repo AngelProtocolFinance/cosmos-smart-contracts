@@ -290,22 +290,57 @@ async function migrateAccounts() {
 // Setup all contracts
 //----------------------------------------------------------------------------------------
 
-export async function setupContractsForTestNet(): Promise<void> {
-  await setupContracts();
+export async function setupContractsForTestNet(
+  tax_rate: string,
+  threshold_absolute_percentage: string,
+  max_voting_period_height: number,
+  max_voting_period_guardians_height: number,
+  fund_rotation: number,
+  turnover_to_multisig: boolean,
+  is_localterra: boolean,
+): Promise<void> {
+  await setupContracts(
+    tax_rate,
+    threshold_absolute_percentage,
+    max_voting_period_height,
+    max_voting_period_guardians_height,
+    fund_rotation
+  );
   await createEndowments();
   await approveEndowments();
   await createIndexFunds();
+  await turnOverApTeamMultisig(turnover_to_multisig, is_localterra);
 }
 
-export async function setupContractsForMainNet(): Promise<void> {
-  await setupContracts();
+export async function setupContractsForMainNet(
+  tax_rate: string,
+  threshold_absolute_percentage: string,
+  max_voting_period_height: number,
+  max_voting_period_guardians_height: number,
+  fund_rotation: number,
+  turnover_to_multisig: boolean,
+): Promise<void> {
+  await setupContracts(
+    tax_rate,
+    threshold_absolute_percentage,
+    max_voting_period_height,
+    max_voting_period_guardians_height,
+    fund_rotation
+  );
   await mainNet.initializeCharities(terra, apTeam, registrar, indexFund);
   await mainNet.setupEndowments();
   await mainNet.approveEndowments();
   await mainNet.createIndexFunds();
+  await turnOverApTeamMultisig(turnover_to_multisig, false);
 }
 
-async function setupContracts(): Promise<void> {
+async function setupContracts(
+  tax_rate: string,
+  threshold_absolute_percentage: string,
+  max_voting_period_height: number,
+  max_voting_period_guardians_height: number,
+  fund_rotation: number
+): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each.... 
   process.stdout.write("Uploading Registrar Wasm");
   const registrarCodeId = await storeCode(
@@ -377,8 +412,8 @@ async function setupContracts(): Promise<void> {
   process.stdout.write("Instantiating CW3 AP Team MultiSig contract");
   const cw3ApTeamResult = await instantiateContract(terra, apTeam, apTeam, apTeamMultiSig, {
     group_addr: cw4GrpApTeam,
-    threshold: { absolute_percentage: { percentage: "0.25" }},
-    max_voting_period: { height: 100000 },
+    threshold: { absolute_percentage: { percentage: threshold_absolute_percentage }},
+    max_voting_period: { height: max_voting_period_height },
   });
   cw3ApTeam = cw3ApTeamResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
@@ -404,7 +439,7 @@ async function setupContracts(): Promise<void> {
   const registrarResult = await instantiateContract(terra, apTeam, apTeam, registrarCodeId, {
     accounts_code_id: accountsCodeId,
     treasury: apTeam.key.accAddress,
-    tax_rate: "0.2",
+    tax_rate: tax_rate,
     default_vault: undefined,
   });
   registrar = registrarResult.logs[0].events.find((event) => {
@@ -435,8 +470,8 @@ async function setupContracts(): Promise<void> {
     endowment_owners_group: cw4GrpOwners,
     registrar_contract: registrar,
     threshold: { absolute_percentage: { percentage: "0.50" }},
-    max_voting_period: { height: 1000 },
-    max_voting_period_guardians: { height: 100 },
+    max_voting_period: { height: max_voting_period_height },
+    max_voting_period_guardians: { height: max_voting_period_guardians_height },
   });
   cw3GuardianAngels = cw3Result.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
@@ -462,7 +497,7 @@ async function setupContracts(): Promise<void> {
   process.stdout.write("Instantiating Index Fund contract");
   const fundResult = await instantiateContract(terra, apTeam, apTeam, fundCodeId, {
     registrar_contract: registrar,
-    fund_rotation: 10,
+    fund_rotation: fund_rotation,
     // funding_goal: "50000000",
   });
   indexFund = fundResult.logs[0].events.find((event) => {
@@ -544,33 +579,6 @@ async function setupContracts(): Promise<void> {
     }),
   ]);
   console.log(chalk.green(" Done!"));
-
-  // // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
-  // process.stdout.write("Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract");
-  // await sendTransaction(terra, apTeam, [
-  //   new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-  //     update_owner: { new_owner: cw3ApTeam },
-  //   }),
-  //   new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-  //     update_owner: { new_owner: cw3ApTeam },
-  //   }),
-  //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract1, {
-  //     update_owner: { new_owner: cw3ApTeam },
-  //   }),
-  //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract2, {
-  //     update_owner: { new_owner: cw3ApTeam },
-  //   }),
-  //   new MsgExecuteContract(apTeam.key.accAddress, endowmentContract3, {
-  //     update_owner: { new_owner: cw3ApTeam },
-  //   }),
-  //   // new MsgExecuteContract(apTeam.key.accAddress, anchorVault1, {
-  //   //   update_owner: { new_owner: cw3ApTeam },
-  //   // }),
-  //   // new MsgExecuteContract(apTeam.key.accAddress, anchorVault2, {
-  //   //   update_owner: { new_owner: cw3ApTeam },
-  //   // }),
-  // ]);
-  // console.log(chalk.green(" Done!"));
 }
 
 // Step 4: Create Endowments via the Registrar contract
@@ -720,6 +728,44 @@ async function createIndexFunds(): Promise<void> {
     }),
   ]);
   console.log(chalk.green(" Done!"));
+}
+
+// Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
+async function turnOverApTeamMultisig(turnover_to_multisig: boolean, is_localterra: boolean): Promise<void> {
+  if (turnover_to_multisig) {
+    process.stdout.write("Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract");
+    const msgs = [
+      new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+        update_owner: { new_owner: cw3ApTeam },
+      }),
+      new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+        update_owner: { new_owner: cw3ApTeam },
+      }),
+      new MsgExecuteContract(apTeam.key.accAddress, endowmentContract1, {
+        update_owner: { new_owner: cw3ApTeam },
+      }),
+      new MsgExecuteContract(apTeam.key.accAddress, endowmentContract2, {
+        update_owner: { new_owner: cw3ApTeam },
+      }),
+      new MsgExecuteContract(apTeam.key.accAddress, endowmentContract3, {
+        update_owner: { new_owner: cw3ApTeam },
+      })
+    ];
+    if (!is_localterra) {
+      msgs.push(
+        new MsgExecuteContract(apTeam.key.accAddress, anchorVault1, {
+          update_owner: { new_owner: cw3ApTeam },
+        })
+      );
+      msgs.push(
+        new MsgExecuteContract(apTeam.key.accAddress, anchorVault2, {
+          update_owner: { new_owner: cw3ApTeam },
+        })
+      );
+    }
+    await sendTransaction(terra, apTeam, msgs);
+    console.log(chalk.green(" Done!"));
+  }
 }
 
 //----------------------------------------------------------------------------------------

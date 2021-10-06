@@ -41,7 +41,15 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   initializeLocalTerra(terra);
 
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupContractsForTestNet();
+  await setupContractsForTestNet(
+    "0.2",  // tax rate
+    "0.50", // threshold absolute percentage
+    1000,   // max voting period height
+    100,    // max voting period guardians height
+    10,     // index fund rotation
+    true,   // turn over to AP Team multisig
+    true,   // is LocalTerra
+  );
 
   // console.log(chalk.yellow("\nStep 2b. Migrate Contracts"));
   // await migrateContracts();
