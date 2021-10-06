@@ -70,7 +70,7 @@ pub fn execute(
 }
 
 #[entry_point]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::config(deps)?),
         QueryMsg::State {} => to_binary(&queriers::state(deps)?),
@@ -80,6 +80,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::InvolvedFunds { address } => to_binary(&queriers::involved_funds(deps, address)?),
         QueryMsg::ActiveFundDetails {} => to_binary(&queriers::active_fund_details(deps)?),
         QueryMsg::ActiveFundDonations {} => to_binary(&queriers::active_fund_donations(deps)?),
+        QueryMsg::Deposit { amount, fund_id } => {
+            to_binary(&queriers::deposit_msg_builder(deps, env, amount, fund_id)?)
+        }
     }
 }
 
