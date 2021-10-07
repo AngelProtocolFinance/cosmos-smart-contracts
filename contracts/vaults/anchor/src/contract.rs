@@ -38,6 +38,7 @@ pub fn instantiate(
         next_pending_id: 0,
         tax_per_block: msg.tax_per_block,
         last_harvest: env.block.height,
+        harvest_to_liquid: msg.harvest_to_liquid,
     };
 
     config::store(deps.storage, &config)?;
@@ -98,7 +99,7 @@ pub fn execute(
             executers::redeem_stable(deps, env, info, account_addr)
         } // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
         ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info, msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
-        ExecuteMsg::Harvest { harvest_to_liquid } => executers::harvest(deps, env, info, harvest_to_liquid), // DP -> DP shuffle (taxes collected)
+        ExecuteMsg::Harvest {} => executers::harvest(deps, env, info), // DP -> DP shuffle (taxes collected)
     }
 }
 

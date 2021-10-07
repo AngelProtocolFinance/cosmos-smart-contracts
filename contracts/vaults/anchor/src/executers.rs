@@ -10,7 +10,7 @@ use angel_core::responses::registrar::{
 use angel_core::structs::{BalanceInfo, EndowmentEntry};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
-    to_binary, Addr, Attribute, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env,
+    to_binary, Addr, Attribute, BankMsg, Coin, ContractResult, CosmosMsg, DepsMut, Env,
     MessageInfo, Order, QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse,
     Uint128, WasmMsg, WasmQuery,
 };
@@ -77,6 +77,7 @@ pub fn update_config(
     };
     config.input_denom = msg.input_denom.unwrap_or(config.input_denom);
     config.tax_per_block = msg.tax_per_block.unwrap_or(config.tax_per_block);
+    config.harvest_to_liquid = msg.harvest_to_liquid.unwrap_or(config.harvest_to_liquid);
     config::store(deps.storage, &config)?;
 
     Ok(Response::default())
@@ -320,11 +321,10 @@ pub fn withdraw_stable(
         }))
 }
 
-pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo, harvest_to_liquid: Option<Decimal>) -> Result<Response, ContractError> {
+pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
     let harvest_blocks = Uint128::from((env.block.height - config.last_harvest) as u128);
-    let harvest_to_liquid_percent = harvest_to_liquid.unwrap_or(Decimal::percent(75));
     config.last_harvest = env.block.height;
     config::store(deps.storage, &config)?;
 
@@ -359,7 +359,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo, harvest_to_liquid: Op
             .checked_mul(harvest_blocks)
             .unwrap()
             * config.tax_per_block
-            * harvest_to_liquid_percent;
+            * config.harvest_to_liquid;
         // proceed to shuffle balances if we have a non-zero amount
         if transfer_amt > Uint128::zero() {
             let mut deposit_token = Cw20CoinVerified {

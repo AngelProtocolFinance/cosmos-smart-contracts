@@ -13,6 +13,7 @@ fn proper_instantiation() {
         moneymarket: "anchorprotocolmoneymrk".to_string(),
         registrar_contract: "angelprotocolteamdano".to_string(),
         tax_per_block: Decimal::from_ratio(000_000_025_970_319_600u128, 1_000_000_000_000_000_000u128),
+        harvest_to_liquid: Decimal::percent(75),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();

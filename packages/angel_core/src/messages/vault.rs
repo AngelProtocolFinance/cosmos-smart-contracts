@@ -22,7 +22,7 @@ pub enum ExecuteMsg {
     Deposit(AccountTransferMsg),
     Redeem { account_addr: Addr },
     Withdraw(AccountWithdrawMsg),
-    Harvest { harvest_to_liquid: Option<Decimal> },
+    Harvest {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -32,6 +32,7 @@ pub struct UpdateConfigMsg {
     pub yield_token: Option<String>,
     pub tax_per_block: Option<Decimal>,
     pub treasury_withdraw_threshold: Option<Uint128>,
+    pub harvest_to_liquid: Option<Decimal>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

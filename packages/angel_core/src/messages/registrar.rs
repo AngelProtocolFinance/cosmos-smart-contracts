@@ -31,7 +31,7 @@ pub enum ExecuteMsg {
     // Allows the SC owner to change ownership
     UpdateOwner { new_owner: String },
     // Allows the DANO/AP Team to harvest all active vaults
-    Harvest { harvest_to_liquid: Option<Decimal> },
+    Harvest {},
     // Allows SC owner to migrate all Accounts SC
     MigrateAccounts {},
 }
