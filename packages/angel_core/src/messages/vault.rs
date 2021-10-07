@@ -22,7 +22,7 @@ pub enum ExecuteMsg {
     Deposit(AccountTransferMsg),
     Redeem { account_addr: Addr },
     Withdraw(AccountWithdrawMsg),
-    Harvest {},
+    Harvest { harvest_to_liquid: Option<Decimal> },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
