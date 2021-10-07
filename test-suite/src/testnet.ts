@@ -34,6 +34,7 @@ import {
   testUpdatingRegistrarConfigs,
   testQueryIndexFundDeposit,
   testQueryRegistrarApprovedVaultRateList,
+  testUpdateVaultConfigs,
 } from "./main";
 import dotenv from 'dotenv';
 
@@ -76,15 +77,17 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await testClosingEndpoint();
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupContractsForTestNet(
-    "0.2",  // tax rate
-    "0.50", // threshold absolute percentage
-    1000,   // max voting period height
-    100,    // max voting period guardians height
-    10,     // index fund rotation
-    true,   // turn over to AP Team multisig
-    false   // is LocalTerra
-  );
+  // await setupContractsForTestNet(
+  //   "0.2",  // tax rate
+  //   "0.50", // threshold absolute percentage
+  //   1000,   // max voting period height
+  //   100,    // max voting period guardians height
+  //   10,     // index fund rotation
+  //   false,   // turn over to AP Team multisig
+  //   false,  // is LocalTerra
+  //   "0.75", // harvest to liquid percentage
+  //   "0.0000000259703196" // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
+  // );
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testAddApTeamMemberToC4Group();
@@ -100,6 +103,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // setTimeout(async () => {
   //   await testBeneficiaryCanWithdrawFromLiquid();
   // }, 7000);
+  // await testUpdateVaultConfigs();
   // await testQueryRegistrarConfig();
   // await testUpdatingRegistrarConfigs();
   // await testQueryRegistrarApprovedEndowmentList();

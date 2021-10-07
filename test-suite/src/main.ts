@@ -105,18 +105,18 @@ export function initializeLCDClient(
   console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
-  registrar = "terra1swwyv5xz5kvjgy3pgykdp9t8jj94kt8y3yepn6";
-  indexFund = "terra1agxu6rvnmxwvxkgfmdfg4rpdwtg6zftmnwf9uk";
-  anchorVault1 = "terra1zgg4kx0f9surr7djwfedh7ecl6ky8dtwauamyl";
-  anchorVault2 = "terra1qa8t7e0e7u6arv6vmjs8psc88gdektsj88g3vt";
-  endowmentContract1 = "terra190pq8mrz44d4dmn45evhg30yf0k8lgkvj3pgvl";
-  endowmentContract2 ="terra1mxf7nua6exs7r3cghyt7mrezw5teamchv0c5x2";
-  endowmentContract3 = "terra1n39q6pxx43wqer89fk27j376prj3fjc5jw3veh";
-  endowmentContract4 = "terra1ruapk3aythhfr56268wvu8a8lr8l7hztlwrdep";
-  cw4GrpApTeam = "terra1yhsu3mkep8rj7dlseyqme56u89jg42saysa37r";
-  cw3ApTeam = "terra1tyf0q9wsy2xu89466pdkuy5cjnkslej4x65hg4";
-  cw4GrpOwners = "terra19u9cncja73k7rmyprny766q72q3luuew52mt8y";
-  cw3GuardianAngels = "terra12ng433wdnq4psyx7xt9f9lkys26phxrjttep6a";
+  registrar = "terra15upcsqpg57earvp7mc49kl5e7cppptu2ndmpak";
+  indexFund = "terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d";
+  anchorVault1 = "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg";
+  anchorVault2 = "terra16y7du2keuersslsevvqx32z04wy6juyfwjs3ru";
+  endowmentContract1 = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v";
+  endowmentContract2 ="terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9";
+  endowmentContract3 = "terra1vyw5r7n02epkpk2tm2lzt67fyv28qzalwzgzuu";
+  endowmentContract4 = "terra1jvtf3ccpkr3vymv98vk9nz7wvwmykgv8yk9l3w";
+  cw4GrpApTeam = "terra1jngs5xj00e9fq0hfmpr2pqyq96x3aj8la8kr3p";
+  cw3ApTeam = "terra1yp5we2meetcfxql522q9ve3dsl29epye86528j";
+  cw4GrpOwners = "terra1ldrkpnysrasq4sg4zu9mgh74wt9nxvk9qgvxtd";
+  cw3GuardianAngels = "terra1ydp9qd9xgdq63ua6axfvauye3l7a3476lm6l28";
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
@@ -138,11 +138,11 @@ export function initializeLCDClient(
 export async function migrateContracts(): Promise<void> {
   // run the migrations desired
   await migrateRegistrar();
-  await migrateCw4Group();
-  await migrateApTeamMultisig();
-  await migrateGuardianAngelsMultisig();
-  await migrateIndexFund();
-  await migrateAccounts();
+  // await migrateCw4Group();
+  // await migrateApTeamMultisig();
+  // await migrateGuardianAngelsMultisig();
+  // await migrateIndexFund();
+  // await migrateAccounts();
   await migrateVaults();
 }
 
@@ -298,13 +298,17 @@ export async function setupContractsForTestNet(
   fund_rotation: number,
   turnover_to_multisig: boolean,
   is_localterra: boolean,
+  harvest_to_liquid: string,
+  tax_per_block: string
 ): Promise<void> {
   await setupContracts(
     tax_rate,
     threshold_absolute_percentage,
     max_voting_period_height,
     max_voting_period_guardians_height,
-    fund_rotation
+    fund_rotation,
+    harvest_to_liquid,
+    tax_per_block
   );
   await createEndowments();
   await approveEndowments();
@@ -319,13 +323,17 @@ export async function setupContractsForMainNet(
   max_voting_period_guardians_height: number,
   fund_rotation: number,
   turnover_to_multisig: boolean,
+  harvest_to_liquid: string,
+  tax_per_block: string
 ): Promise<void> {
   await setupContracts(
     tax_rate,
     threshold_absolute_percentage,
     max_voting_period_height,
     max_voting_period_guardians_height,
-    fund_rotation
+    fund_rotation,
+    harvest_to_liquid,
+    tax_per_block
   );
   await mainNet.initializeCharities(terra, apTeam, registrar, indexFund);
   await mainNet.setupEndowments();
@@ -339,7 +347,9 @@ async function setupContracts(
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
   max_voting_period_guardians_height: number,
-  fund_rotation: number
+  fund_rotation: number,
+  harvest_to_liquid: string,
+  tax_per_block: string
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each.... 
   process.stdout.write("Uploading Registrar Wasm");
@@ -512,10 +522,11 @@ async function setupContracts(
   const vaultResult1 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
     registrar_contract: registrar,
     moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
-    tax_per_block: "0.0000000259703196", // 70% of Anchor's 19.5% earnings collected per block
+    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - Anchor #1",
     symbol: "apANC1",
     decimals: 6,
+    harvest_to_liquid: harvest_to_liquid
   });
   anchorVault1 = vaultResult1.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
@@ -529,10 +540,11 @@ async function setupContracts(
   const vaultResult2 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
     registrar_contract: registrar,
     moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
-    tax_per_block: "0.0000000259703196", // 70% of Anchor's 19.5% earnings collected per block
+    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - Anchor #2",
     symbol: "apANC",
     decimals: 6,
+    harvest_to_liquid: harvest_to_liquid
   });
   anchorVault2 = vaultResult2.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
@@ -802,6 +814,27 @@ export async function testClosingEndpoint(): Promise<void> {
   console.log(chalk.green(" Done!"));
 }
 
+export async function testUpdateVaultConfigs(): Promise<void> {
+  process.stdout.write("Vault #1 - Update config");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, anchorVault1, {
+      update_config: {
+        harvest_to_liquid: "0.75"
+      }
+    })
+  ]);
+  console.log(chalk.green(" Done!"));
+
+  process.stdout.write("Vault #2 - Update config");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, anchorVault2, {
+      update_config: {
+        harvest_to_liquid: "0.75"
+      }
+    })
+  ]);
+  console.log(chalk.green(" Done!"));
+}
 
 export async function testUpdatingRegistrarConfigs(): Promise<void> {
   process.stdout.write("AP Team updates Registrar Tax Rate");

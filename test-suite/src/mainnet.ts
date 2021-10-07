@@ -51,14 +51,16 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // );
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupContractsForMainNet(
-    "0.2",  // tax rate
-    "0.50", // threshold absolute percentage
-    1000,   // max voting period height
-    100,    // max voting period guardians height
-    10,     // index fund rotation
-    false   // turn over to AP Team multisig
-  );
+  // await setupContractsForMainNet(
+  //   "0.2",  // tax rate
+  //   "0.50", // threshold absolute percentage
+  //   1000,   // max voting period height
+  //   100,    // max voting period guardians height
+  //   10,     // index fund rotation
+  //   false,  // turn over to AP Team multisig
+  //   "0.75",  // harvest to liquid percentage
+  //   "0.0000000259703196" // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
+  // );
 
   // console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testRejectUnapprovedDonations();
