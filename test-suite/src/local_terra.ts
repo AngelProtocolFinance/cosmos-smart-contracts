@@ -49,6 +49,8 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   //   10,     // index fund rotation
   //   true,   // turn over to AP Team multisig
   //   true,   // is LocalTerra
+  //   "0.75", // harvest to liquid percentage
+  //   "0.0000000259703196" // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
   // );
 
   // console.log(chalk.yellow("\nStep 2b. Migrate Contracts"));
@@ -62,7 +64,7 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   // await testDonorSendsToIndexFund();
   // await testTcaMemberSendsToIndexFund();
   // await testTcaMemberSendsToIndexFund();
-  // await testAngelTeamCanTriggerVaultsHarvest("0.75");
+  // await testAngelTeamCanTriggerVaultsHarvest();
   // await testCharityCanUpdateStrategies();
   // setTimeout(async () => {
   //   await testBeneficiaryCanWithdrawFromLiquid();
