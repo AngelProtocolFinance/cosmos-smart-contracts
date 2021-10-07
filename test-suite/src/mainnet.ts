@@ -51,20 +51,20 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // );
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupContractsForMainNet(
-    "0.2",  // tax rate
-    "0.50", // threshold absolute percentage
-    1000,   // max voting period height
-    100,    // max voting period guardians height
-    10,     // index fund rotation
-    false   // turn over to AP Team multisig
-  );
+  // await setupContractsForMainNet(
+  //   "0.2",  // tax rate
+  //   "0.50", // threshold absolute percentage
+  //   1000,   // max voting period height
+  //   100,    // max voting period guardians height
+  //   10,     // index fund rotation
+  //   false   // turn over to AP Team multisig
+  // );
 
   // console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testRejectUnapprovedDonations();
   // await testDonorSendsToIndexFund();
   // await testTcaMemberSendsToIndexFund();
-  // await testAngelTeamCanTriggerVaultsHarvest();
+  // await testAngelTeamCanTriggerVaultsHarvest("0.75");
   // await testCharityCanUpdateStrategies();
   // setTimeout(async () => {
   //   await testBeneficiaryCanWithdrawFromLiquid();

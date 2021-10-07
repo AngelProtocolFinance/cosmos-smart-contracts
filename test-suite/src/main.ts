@@ -1037,13 +1037,15 @@ export async function testTcaMemberSendsToIndexFund(): Promise<void> {
 // moving money from their Locked to Liquid & taking a small tax of DP Tokens as well.
 //
 //----------------------------------------------------------------------------------------
-export async function testAngelTeamCanTriggerVaultsHarvest(): Promise<void> {
+export async function testAngelTeamCanTriggerVaultsHarvest(harvest_to_liquid: string): Promise<void> {
   process.stdout.write("Test - AP Team can trigger harvest of all Vaults (Locked to Liquid Account)");
 
   await expect(
     sendTransaction(terra, charity1, [
       new MsgExecuteContract(charity1.key.accAddress, registrar, {
-        harvest: {}
+        harvest: {
+          harvest_to_liquid: harvest_to_liquid
+        }
       })
     ])
   ).to.be.rejectedWith("Unauthorized");
@@ -1051,7 +1053,9 @@ export async function testAngelTeamCanTriggerVaultsHarvest(): Promise<void> {
   await expect(
     sendTransaction(terra, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-        harvest: {}
+        harvest: {
+          harvest_to_liquid: harvest_to_liquid
+        }
       })
     ])
   );

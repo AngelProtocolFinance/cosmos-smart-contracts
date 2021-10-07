@@ -76,15 +76,15 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await testClosingEndpoint();
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupContractsForTestNet(
-    "0.2",  // tax rate
-    "0.50", // threshold absolute percentage
-    1000,   // max voting period height
-    100,    // max voting period guardians height
-    10,     // index fund rotation
-    true,   // turn over to AP Team multisig
-    false   // is LocalTerra
-  );
+  // await setupContractsForTestNet(
+  //   "0.2",  // tax rate
+  //   "0.50", // threshold absolute percentage
+  //   1000,   // max voting period height
+  //   100,    // max voting period guardians height
+  //   10,     // index fund rotation
+  //   true,   // turn over to AP Team multisig
+  //   false   // is LocalTerra
+  // );
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testAddApTeamMemberToC4Group();
@@ -93,7 +93,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await testRejectUnapprovedDonations();
   // await testDonorSendsToIndexFund();
   // await testTcaMemberSendsToIndexFund();
-  // await testAngelTeamCanTriggerVaultsHarvest();
+  // await testAngelTeamCanTriggerVaultsHarvest("0.75");
   // setTimeout(async () => {
   //   await testCharityCanUpdateStrategies();
   // }, 8000);
