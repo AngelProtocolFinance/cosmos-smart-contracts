@@ -11,7 +11,7 @@ fn proper_initialization() {
 
     let msg = InstantiateMsg {
         gov_contract: "gov".to_string(),
-        halo_token: "anchor".to_string(),
+        halo_token: "halo".to_string(),
         whitelist: vec![
             "addr1".to_string(),
             "addr2".to_string(),
@@ -29,7 +29,7 @@ fn proper_initialization() {
     let config: ConfigResponse =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap()).unwrap();
     assert_eq!("gov", config.gov_contract.as_str());
-    assert_eq!("anchor", config.halo_token.as_str());
+    assert_eq!("halo", config.halo_token.as_str());
     assert_eq!(
         vec![
             "addr1".to_string(),
@@ -47,7 +47,7 @@ fn update_config() {
 
     let msg = InstantiateMsg {
         gov_contract: "gov".to_string(),
-        halo_token: "anchor".to_string(),
+        halo_token: "halo".to_string(),
         whitelist: vec![
             "addr1".to_string(),
             "addr2".to_string(),
@@ -65,7 +65,7 @@ fn update_config() {
     let config: ConfigResponse =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap()).unwrap();
     assert_eq!("gov", config.gov_contract.as_str());
-    assert_eq!("anchor", config.halo_token.as_str());
+    assert_eq!("halo", config.halo_token.as_str());
     assert_eq!(
         vec![
             "addr1".to_string(),
@@ -95,7 +95,7 @@ fn update_config() {
         config,
         ConfigResponse {
             gov_contract: "gov".to_string(),
-            halo_token: "anchor".to_string(),
+            halo_token: "halo".to_string(),
             whitelist: vec![
                 "addr1".to_string(),
                 "addr2".to_string(),
@@ -112,7 +112,7 @@ fn test_add_remove_distributor() {
 
     let msg = InstantiateMsg {
         gov_contract: "gov".to_string(),
-        halo_token: "anchor".to_string(),
+        halo_token: "halo".to_string(),
         whitelist: vec![
             "addr1".to_string(),
             "addr2".to_string(),
@@ -163,7 +163,7 @@ fn test_add_remove_distributor() {
         config,
         ConfigResponse {
             gov_contract: "gov".to_string(),
-            halo_token: "anchor".to_string(),
+            halo_token: "halo".to_string(),
             whitelist: vec![
                 "addr1".to_string(),
                 "addr2".to_string(),
@@ -187,7 +187,7 @@ fn test_add_remove_distributor() {
         config,
         ConfigResponse {
             gov_contract: "gov".to_string(),
-            halo_token: "anchor".to_string(),
+            halo_token: "halo".to_string(),
             whitelist: vec![
                 "addr2".to_string(),
                 "addr3".to_string(),
@@ -204,7 +204,7 @@ fn test_spend() {
 
     let msg = InstantiateMsg {
         gov_contract: "gov".to_string(),
-        halo_token: "anchor".to_string(),
+        halo_token: "halo".to_string(),
         whitelist: vec![
             "addr1".to_string(),
             "addr2".to_string(),
@@ -256,7 +256,7 @@ fn test_spend() {
     assert_eq!(
         res.messages,
         vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: "anchor".to_string(),
+            contract_addr: "halo".to_string(),
             funds: vec![],
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
                 recipient: "addr0000".to_string(),

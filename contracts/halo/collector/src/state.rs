@@ -10,7 +10,7 @@ static KEY_CONFIG: &[u8] = b"config";
 pub struct Config {
     pub gov_contract: CanonicalAddr,         // collected rewards receiver
     pub terraswap_factory: CanonicalAddr,    // terraswap factory contract
-    pub halo_token: CanonicalAddr,           // anchor token address
+    pub halo_token: CanonicalAddr,           // HALO token address
     pub distributor_contract: CanonicalAddr, // distributor contract to sent back rewards
     pub reward_factor: Decimal, // reward distribution rate to gov contract, left rewards sent back to distributor contract
 }

@@ -8,9 +8,9 @@ static KEY_CONFIG: &[u8] = b"config";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
-    pub gov_contract: CanonicalAddr,   // anchor gov address
-    pub halo_token: CanonicalAddr,     // anchor token address
-    pub whitelist: Vec<CanonicalAddr>, // whitelist addresses are allowed to spend contract anchor token balance
+    pub gov_contract: CanonicalAddr,   // HALO gov address
+    pub halo_token: CanonicalAddr,     // HALO token address
+    pub whitelist: Vec<CanonicalAddr>, // whitelist addresses are allowed to spend contract HALO token balance
     pub spend_limit: Uint128,          // spend limit per each `spend` request
 }
 

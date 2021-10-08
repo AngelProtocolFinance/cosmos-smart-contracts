@@ -11,7 +11,7 @@ fn proper_initialization() {
 
     let msg = InstantiateMsg {
         gov_contract: "gov".to_string(),
-        halo_token: "anchor".to_string(),
+        halo_token: "halo".to_string(),
         spend_limit: Uint128::from(1000000u128),
     };
 
@@ -24,7 +24,7 @@ fn proper_initialization() {
     let config: ConfigResponse =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap()).unwrap();
     assert_eq!("gov", config.gov_contract.as_str());
-    assert_eq!("anchor", config.halo_token.as_str());
+    assert_eq!("halo", config.halo_token.as_str());
     assert_eq!(Uint128::from(1000000u128), config.spend_limit);
 }
 
@@ -34,7 +34,7 @@ fn update_config() {
 
     let msg = InstantiateMsg {
         gov_contract: "gov".to_string(),
-        halo_token: "anchor".to_string(),
+        halo_token: "halo".to_string(),
         spend_limit: Uint128::from(1000000u128),
     };
 
@@ -47,7 +47,7 @@ fn update_config() {
     let config: ConfigResponse =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap()).unwrap();
     assert_eq!("gov", config.gov_contract.as_str());
-    assert_eq!("anchor", config.halo_token.as_str());
+    assert_eq!("halo", config.halo_token.as_str());
     assert_eq!(Uint128::from(1000000u128), config.spend_limit);
 
     let msg = ExecuteMsg::UpdateConfig {
@@ -69,7 +69,7 @@ fn update_config() {
         config,
         ConfigResponse {
             gov_contract: "gov".to_string(),
-            halo_token: "anchor".to_string(),
+            halo_token: "halo".to_string(),
             spend_limit: Uint128::from(500000u128),
         }
     );
@@ -81,7 +81,7 @@ fn test_spend() {
 
     let msg = InstantiateMsg {
         gov_contract: "gov".to_string(),
-        halo_token: "anchor".to_string(),
+        halo_token: "halo".to_string(),
         spend_limit: Uint128::from(1000000u128),
     };
 
@@ -128,7 +128,7 @@ fn test_spend() {
     assert_eq!(
         res.messages,
         vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: "anchor".to_string(),
+            contract_addr: "halo".to_string(),
             funds: vec![],
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
                 recipient: "addr0000".to_string(),

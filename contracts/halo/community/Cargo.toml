@@ -3,8 +3,7 @@ name = "halo-community"
 version = "0.0.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
-description = "A Community contract for Angel Protocol - Keeps premined ANC token which can be used through Gov proposal"
-license = "Apache-2.0"
+description = "A Community contract for Angel Protocol - Keeps premined HALO token which can be used through Gov proposal"
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -14,17 +13,6 @@ exclude = [
 
 [lib]
 crate-type = ["cdylib", "rlib"]
-
-[profile.release]
-opt-level = 3
-debug = false
-rpath = false
-lto = true
-debug-assertions = false
-codegen-units = 1
-panic = 'abort'
-incremental = false
-overflow-checks = true
 
 [features]
 # for quicker tests, cargo test --lib
