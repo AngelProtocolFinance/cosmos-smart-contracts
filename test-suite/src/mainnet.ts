@@ -2,15 +2,9 @@
 import {Coin, LCDClient, MnemonicKey, Wallet} from "@terra-money/terra.js";
 import chalk from "chalk";
 import {
-  testRejectUnapprovedDonations,
-  testDonorSendsToIndexFund,
-  testTcaMemberSendsToIndexFund,
-  testAngelTeamCanTriggerVaultsHarvest,
-  testCharityCanUpdateStrategies,
-  testBeneficiaryCanWithdrawFromLiquid,
+  initializeLCDClient,
+  setupContractsForMainNet,
   testQueryAccountsBalance,
-  testQueryAccountsConfig,
-  testQueryAccountsEndowment,
   testQueryIndexFundActiveFundDetails,
   testQueryIndexFundActiveFundDonations,
   testQueryIndexFundConfig,
@@ -23,8 +17,7 @@ import {
   testQueryRegistrarEndowmentList,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
-} from "./main";
-import {initializeLCDClient, setupContractsForMainNet} from "./setup_mainnet";
+} from "./setup_mainnet";
 import {initializeCharities, setupEndowments, createIndexFunds} from "./charities";
 import dotenv from 'dotenv';
 
@@ -77,8 +70,6 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await testQueryRegistrarVaultList();
   // await testQueryRegistrarVault();
   // await testQueryAccountsBalance();
-  // await testQueryAccountsConfig();
-  // await testQueryAccountsEndowment();
   // await testQueryIndexFundConfig();
   // await testQueryIndexFundState();
   // await testQueryIndexFundTcaList();
