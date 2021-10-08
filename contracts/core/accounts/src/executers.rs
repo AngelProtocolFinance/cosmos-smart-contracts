@@ -160,6 +160,10 @@ pub fn update_endowment_settings(
     // validate address strings passed
     endowment.owner = deps.api.addr_validate(&msg.beneficiary)?;
     endowment.beneficiary = deps.api.addr_validate(&msg.owner)?;
+    endowment.charity_shares_token = match msg.charity_shares_token {
+        Some(contract_addr) => Some(deps.api.addr_validate(&contract_addr)?),
+        None => endowment.charity_shares_token,
+    };
     ENDOWMENT.save(deps.storage, &endowment)?;
 
     Ok(Response::default())

@@ -35,6 +35,8 @@ pub struct ConfigResponse {
     pub default_vault: String,
     pub index_fund: String,
     pub split_to_liquid: SplitDetails,
+    pub halo_token: Option<String>,
+    pub gov_contract: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

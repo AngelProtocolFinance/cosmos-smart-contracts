@@ -28,6 +28,7 @@ pub struct Endowment {
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
     pub guardian_set: Vec<String>, // set of Guardian Addr that can help owner recover Endowment if they lose their wallet
+    pub charity_shares_token: Option<Addr>, // address of terraswap token contract
 }
 
 impl Endowment {

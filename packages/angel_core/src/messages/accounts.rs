@@ -76,6 +76,7 @@ pub struct Strategy {
 pub struct UpdateEndowmentSettingsMsg {
     pub beneficiary: String,
     pub owner: String,
+    pub charity_shares_token: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -15,6 +15,7 @@ pub struct InstantiateMsg {
     pub group_addr: String,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
+    pub registrar_contract: String,
 }
 
 /// This defines the different ways tallies can happen.
@@ -125,8 +126,16 @@ pub enum ExecuteMsg {
     Close {
         proposal_id: u64,
     },
+    UpdateConfig(UpdateConfigMsg),
     /// Handles update hook messages from the group contract
     MemberChangedHook(MemberChangedHookMsg),
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateConfigMsg {
+    pub threshold: Threshold,
+    pub max_voting_period: Duration,
+    pub max_voting_period_guardians: Duration,
 }
 
 // We can also add this as a cw3 extension

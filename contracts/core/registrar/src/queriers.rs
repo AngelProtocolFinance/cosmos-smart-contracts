@@ -18,6 +18,14 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         endowment_owners_group_addr: config.endowment_owners_group_addr,
         guardians_multisig_addr: config.guardians_multisig_addr,
         split_to_liquid: config.split_to_liquid,
+        halo_token: match config.halo_token {
+            Some(addr) => Some(addr.to_string()),
+            None => None,
+        },
+        gov_contract: match config.gov_contract {
+            Some(addr) => Some(addr.to_string()),
+            None => None,
+        },
     })
 }
 

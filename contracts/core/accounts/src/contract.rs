@@ -61,6 +61,7 @@ pub fn instantiate(
             }],
             rebalance: RebalanceDetails::default(),
             guardian_set: vec![],
+            charity_shares_token: None,
         },
     )?;
 
