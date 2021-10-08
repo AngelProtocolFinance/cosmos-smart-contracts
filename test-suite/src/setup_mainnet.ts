@@ -22,8 +22,6 @@ const { expect } = chai;
 
 let terra: LCDClient;
 let apTeam: Wallet;
-let apTeam2: Wallet;
-let apTeam3: Wallet;
 let charity1: Wallet;
 let charity2: Wallet;
 let charity3: Wallet;
@@ -44,8 +42,6 @@ export function initializeLCDClient(
   lcdClient: LCDClient,
   wallets: {
     apTeam: Wallet,
-    apTeam2: Wallet,
-    apTeam3: Wallet,
     charity1: Wallet,
     charity2: Wallet,
     charity3: Wallet,
@@ -55,8 +51,6 @@ export function initializeLCDClient(
   anchorMoneyMarketAddr: string): void {
   terra = lcdClient;
   apTeam = wallets.apTeam;
-  apTeam2 = wallets.apTeam2;
-  apTeam3 = wallets.apTeam3;
   charity1 = wallets.charity1;
   charity2 = wallets.charity2;
   charity3 = wallets.charity3;
@@ -65,8 +59,6 @@ export function initializeLCDClient(
   anchorMoneyMarket = anchorMoneyMarketAddr;
 
   console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
-  console.log(`Use ${chalk.cyan(apTeam2.key.accAddress)} as Angel Team #2`);
-  console.log(`Use ${chalk.cyan(apTeam3.key.accAddress)} as Angel Team #3`);
   console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as Charity #1`);
   console.log(`Use ${chalk.cyan(charity2.key.accAddress)} as Charity #2`);
   console.log(`Use ${chalk.cyan(charity3.key.accAddress)} as Charity #3`);
@@ -164,7 +156,6 @@ async function setupContracts(
     admin: apTeam.key.accAddress,
     members: [
       { addr: apTeam.key.accAddress, weight: 1 },
-      { addr: apTeam2.key.accAddress, weight: 1 },
     ],
   });
   cw4GrpApTeam = cw4GrpApTeamResult.logs[0].events.find((event) => {

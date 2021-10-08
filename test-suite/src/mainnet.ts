@@ -33,8 +33,6 @@ export async function startTest(terra: LCDClient): Promise<void> {
   //   terra,
   //   {
   //     apTeam: wallet,
-  //     apTeam2: wallet,
-  //     apTeam3: wallet,
   //     charity1: wallet,
   //     charity2: wallet,
   //     charity3: wallet,
