@@ -42,9 +42,16 @@ export async function startTest(terra: LCDClient): Promise<void> {
   //   process.env.MONEYMARKET_CONTRACT_MAINNET
   // );
 
+  // CW4 AP Team Group Members
+  const members = [
+    {addr: "address", weight: 1}
+  ];
+  
+
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   // await setupContractsForMainNet(
   //   "treasuryAddress" // treasury address
+  //   members // CW4 AP Team Group Members
   //   "0.2",  // tax rate
   //   "0.50", // threshold absolute percentage
   //   1000,   // max voting period height

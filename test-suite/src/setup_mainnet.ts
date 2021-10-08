@@ -16,6 +16,11 @@ import * as mainNet from "./charities";
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
+type Member = {
+  addr: string,
+  weight: number
+};
+
 //----------------------------------------------------------------------------------------
 // Variables
 //----------------------------------------------------------------------------------------
@@ -68,6 +73,7 @@ export function initializeLCDClient(
 
 export async function setupContractsForMainNet(
   treasury_address: string,
+  members: Member[],
   tax_rate: string,
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
@@ -78,6 +84,7 @@ export async function setupContractsForMainNet(
 ): Promise<void> {
   await setupContracts(
     treasury_address,
+    members,
     tax_rate,
     threshold_absolute_percentage,
     max_voting_period_height,
@@ -94,6 +101,7 @@ export async function setupContractsForMainNet(
 
 async function setupContracts(
   treasury_address: string,
+  members: Member[],
   tax_rate: string,
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
@@ -157,9 +165,7 @@ async function setupContracts(
   process.stdout.write("Instantiating CW4 AP Team Group contract");
   const cw4GrpApTeamResult = await instantiateContract(terra, apTeam, apTeam, cw4Group, {
     admin: apTeam.key.accAddress,
-    members: [
-      { addr: apTeam.key.accAddress, weight: 1 },
-    ],
+    members: members,
   });
   cw4GrpApTeam = cw4GrpApTeamResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
