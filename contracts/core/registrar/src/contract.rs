@@ -36,6 +36,7 @@ pub fn instantiate(
         split_to_liquid: msg.split_to_liquid.unwrap_or_else(SplitDetails::default),
         halo_token: None,
         gov_contract: None,
+        charity_shares_contract: None,
     };
 
     CONFIG.save(deps.storage, &configs)?;

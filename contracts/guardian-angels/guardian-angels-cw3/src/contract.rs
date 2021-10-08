@@ -164,7 +164,6 @@ pub fn execute_propose_owner_change(
                     UpdateEndowmentSettingsMsg {
                         beneficiary: new_owner_addr.clone(),
                         owner: new_owner_addr,
-                        charity_shares_token: None, // cannot be changed by Guardians
                     },
                 ),
             )
