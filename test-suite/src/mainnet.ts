@@ -2,8 +2,6 @@
 import {Coin, LCDClient, MnemonicKey, Wallet} from "@terra-money/terra.js";
 import chalk from "chalk";
 import {
-  initializeLCDClient,
-  setupContractsForMainNet,
   testRejectUnapprovedDonations,
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
@@ -26,6 +24,7 @@ import {
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
 } from "./main";
+import {initializeLCDClient, setupContractsForMainNet} from "./setup_mainnet";
 import {initializeCharities, setupEndowments, createIndexFunds} from "./charities";
 import dotenv from 'dotenv';
 
@@ -41,6 +40,8 @@ export async function startTest(terra: LCDClient): Promise<void> {
   //   terra,
   //   {
   //     apTeam: wallet,
+  //     apTeam2: wallet,
+  //     apTeam3: wallet,
   //     charity1: wallet,
   //     charity2: wallet,
   //     charity3: wallet,
@@ -57,7 +58,6 @@ export async function startTest(terra: LCDClient): Promise<void> {
   //   1000,   // max voting period height
   //   100,    // max voting period guardians height
   //   10,     // index fund rotation
-  //   false,  // turn over to AP Team multisig
   //   "0.75",  // harvest to liquid percentage
   //   "0.0000000259703196" // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
   // );
