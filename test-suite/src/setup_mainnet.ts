@@ -67,6 +67,7 @@ export function initializeLCDClient(
 }
 
 export async function setupContractsForMainNet(
+  treasury_address: string,
   tax_rate: string,
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
@@ -76,6 +77,7 @@ export async function setupContractsForMainNet(
   tax_per_block: string
 ): Promise<void> {
   await setupContracts(
+    treasury_address,
     tax_rate,
     threshold_absolute_percentage,
     max_voting_period_height,
@@ -91,6 +93,7 @@ export async function setupContractsForMainNet(
 }
 
 async function setupContracts(
+  treasury_address: string,
   tax_rate: string,
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
@@ -195,7 +198,7 @@ async function setupContracts(
   process.stdout.write("Instantiating Registrar contract");
   const registrarResult = await instantiateContract(terra, apTeam, apTeam, registrarCodeId, {
     accounts_code_id: accountsCodeId,
-    treasury: apTeam.key.accAddress,
+    treasury: treasury_address,
     tax_rate: tax_rate,
     default_vault: undefined,
   });

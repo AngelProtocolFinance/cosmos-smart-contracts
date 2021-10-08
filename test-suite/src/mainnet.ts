@@ -44,6 +44,7 @@ export async function startTest(terra: LCDClient): Promise<void> {
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   // await setupContractsForMainNet(
+  //   "treasuryAddress" // treasury address
   //   "0.2",  // tax rate
   //   "0.50", // threshold absolute percentage
   //   1000,   // max voting period height
