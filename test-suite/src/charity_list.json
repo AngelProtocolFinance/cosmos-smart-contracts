@@ -46,6 +46,11 @@
       "description": "Lions serve. It’s that simple, and it has been since we first began in 1917. Our clubs are places where individuals join together to give their valuable time and effort to improving their communities, and the world."
     },
     {
+      "address": "terra1hcx7x57czej7y3vw9r7ktk69rnz8a6ft7dkpn5",
+      "name": "Yellow Boat of Hope Foundation",
+      "description": "Improves education for children in the Philippines by partnering with schools, providing transportation to and from school in their signature yellow boats, and increasing local capacity to provide high impact education."
+    },
+    {
       "address": "terra1zdwqfff3q0j0v26c9wt7cmvl3hg83fm0dv076r",
       "name": "Refugee Girls Need You",
       "description": "“REFUGEE GIRLS NEED YOU” is an initiative that create connections between teen refugee girls with local Rwandan girls helping refugee to dare having dreams"
@@ -54,6 +59,21 @@
       "address": "terra14e3mxh5r754p2cs4ggavz26yl7pr4uwtejuepm",
       "name": "Tenchnovation Rwanda",
       "description": "Technovation Rwanda has been inspiring and educating girls and women to solve real-world problems through technology(Building mobile apps)"
+    },
+    {
+      "address": "terra1dpjgg28d79992tw8yhnynj5kgdkhagjze8yt3q",
+      "name": "Better Me",
+      "description": "Better Me is a German not-for-profit, empowering children & youth in Kenya with Good Ideas, Knowledge and Tools to bring about positive change for themselves and their communities."
+    },
+    {
+      "address": "terra1e2azcrsv4gcmzr4fpuwymhm7ys86k3vrd3lnz9",
+      "name": "Boston Scores",
+      "description": "Boston Scores helps urban youth build essential life skills and character through soccer and team-based enrichment programs."
+    },
+    {
+      "address": "terra19qm7mhuhhuf6g45a9wh8dwuqwat4nh7enextp8",
+      "name": "DeFi Ripple Effects (DRE)",
+      "description": "Raises funds to assist Families of Epileptic children gain access to Ketogenic therapies"
     }
   ]
 }
