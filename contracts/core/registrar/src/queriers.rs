@@ -26,6 +26,10 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
             Some(addr) => Some(addr.to_string()),
             None => None,
         },
+        charity_shares_contract: match config.charity_shares_contract {
+            Some(addr) => Some(addr.to_string()),
+            None => None,
+        },
     })
 }
 
