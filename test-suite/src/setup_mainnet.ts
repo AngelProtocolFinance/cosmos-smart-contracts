@@ -3,18 +3,15 @@ import * as path from "path";
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { LCDClient, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import {
   sendTransaction,
   storeCode,
   instantiateContract,
-  migrateContract,
-  toEncodedBinary,
 } from "./helpers";
 import * as mainNet from "./charities";
 
 chai.use(chaiAsPromised);
-const { expect } = chai;
 
 type Member = {
   addr: string,
@@ -27,11 +24,6 @@ type Member = {
 
 let terra: LCDClient;
 let apTeam: Wallet;
-let charity1: Wallet;
-let charity2: Wallet;
-let charity3: Wallet;
-let pleb: Wallet;
-let tca: Wallet;
 
 let accountsCodeId: number;
 let registrar: string;
@@ -45,35 +37,20 @@ let anchorMoneyMarket: string;
 
 export function initializeLCDClient(
   lcdClient: LCDClient,
-  wallets: {
-    apTeam: Wallet,
-    charity1: Wallet,
-    charity2: Wallet,
-    charity3: Wallet,
-    pleb: Wallet,
-    tca: Wallet
-  },
+  ap_team: Wallet,
   anchorMoneyMarketAddr: string): void {
+
   terra = lcdClient;
-  apTeam = wallets.apTeam;
-  charity1 = wallets.charity1;
-  charity2 = wallets.charity2;
-  charity3 = wallets.charity3;
-  pleb = wallets.pleb;
-  tca = wallets.tca;
+  apTeam = ap_team;
   anchorMoneyMarket = anchorMoneyMarketAddr;
 
   console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
-  console.log(`Use ${chalk.cyan(charity1.key.accAddress)} as Charity #1`);
-  console.log(`Use ${chalk.cyan(charity2.key.accAddress)} as Charity #2`);
-  console.log(`Use ${chalk.cyan(charity3.key.accAddress)} as Charity #3`);
-  console.log(`Use ${chalk.cyan(pleb.key.accAddress)} as Pleb`);
-  console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 }
 
 export async function setupContractsForMainNet(
   treasury_address: string,
   members: Member[],
+  tca_members: string[],
   tax_rate: string,
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
@@ -85,6 +62,7 @@ export async function setupContractsForMainNet(
   await setupContracts(
     treasury_address,
     members,
+    tca_members,
     tax_rate,
     threshold_absolute_percentage,
     max_voting_period_height,
@@ -102,6 +80,7 @@ export async function setupContractsForMainNet(
 async function setupContracts(
   treasury_address: string,
   members: Member[],
+  tca_members: string[],
   tax_rate: string,
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
@@ -319,7 +298,7 @@ async function setupContracts(
   process.stdout.write("Add confirmed TCA Member to allowed list");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      update_tca_list: { new_list: [tca.key.accAddress] },
+      update_tca_list: { new_list: tca_members },
     }),
   ]);
   console.log(chalk.green(" Done!"));

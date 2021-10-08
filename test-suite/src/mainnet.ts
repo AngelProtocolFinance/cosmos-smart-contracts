@@ -30,28 +30,27 @@ export async function startTest(terra: LCDClient): Promise<void> {
 
   // console.log(chalk.yellow("\nStep 1. Environment Info"));
   // initializeLCDClient(
-  //   terra,
-  //   {
-  //     apTeam: wallet,
-  //     charity1: wallet,
-  //     charity2: wallet,
-  //     charity3: wallet,
-  //     pleb: wallet,
-  //     tca: wallet
-  //   },
-  //   process.env.MONEYMARKET_CONTRACT_MAINNET
+  //   terra,  // LCDClient
+  //   apTeam, // AP Team wallet
+  //   process.env.MONEYMARKET_CONTRACT_MAINNET // MoneyMarket Contract for MainNet
   // );
 
   // CW4 AP Team Group Members
   const members = [
     {addr: "address", weight: 1}
   ];
+
+  // Add confirmed TCA Members to the Index Fund SCs approved list
+  const tca_members = [
+    "tca member 1"
+  ];
   
 
   // console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   // await setupContractsForMainNet(
   //   "treasuryAddress" // treasury address
-  //   members // CW4 AP Team Group Members
+  //   members, // CW4 AP Team Group Members
+  //   tca_members, // confirmed TCA members
   //   "0.2",  // tax rate
   //   "0.50", // threshold absolute percentage
   //   1000,   // max voting period height
