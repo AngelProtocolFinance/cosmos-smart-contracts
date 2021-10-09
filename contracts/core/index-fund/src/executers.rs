@@ -449,7 +449,7 @@ pub fn build_donation_messages(
                 deps,
                 Coin {
                     denom: "uusd".to_string(),
-                    amount: member_portion.clone(),
+                    amount: member_portion,
                 },
             )
             .unwrap()],
