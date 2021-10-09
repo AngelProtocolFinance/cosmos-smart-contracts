@@ -216,6 +216,10 @@ pub fn update_config(
             }
         }
     };
+    config.charity_shares_contract = match msg.charity_shares_contract {
+        Some(contract_addr) => Some(deps.api.addr_validate(&contract_addr)?),
+        None => config.charity_shares_contract,
+    };
     config.default_vault = deps.api.addr_validate(
         &msg.default_vault
             .unwrap_or_else(|| config.default_vault.to_string()),

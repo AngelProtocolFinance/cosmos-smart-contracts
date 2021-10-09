@@ -20,6 +20,7 @@ pub struct Config {
     pub max_voting_period: Duration,
     // Total weight and voters are queried from this contract
     pub group_addr: Cw4Contract,
+    pub registrar_contract: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]

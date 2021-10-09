@@ -29,6 +29,9 @@ pub struct Config {
     pub guardians_multisig_addr: Option<String>,
     pub endowment_owners_group_addr: Option<String>,
     pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
+    pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
+    pub gov_contract: Option<Addr>,    // AP governance contract
+    pub charity_shares_contract: Option<Addr>, // Charity Shares staking contract
 }
 
 // REGISTRY Read/Write

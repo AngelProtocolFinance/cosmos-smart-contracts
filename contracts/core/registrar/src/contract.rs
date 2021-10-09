@@ -34,6 +34,9 @@ pub fn instantiate(
         guardians_multisig_addr: None,
         endowment_owners_group_addr: None,
         split_to_liquid: msg.split_to_liquid.unwrap_or_else(SplitDetails::default),
+        halo_token: None,
+        gov_contract: None,
+        charity_shares_contract: None,
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -93,7 +96,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&queriers::query_vault_details(deps, vault_addr)?)
         }
         QueryMsg::ApprovedVaultRateList {} => {
-            to_binary(&queriers::query_approved_vault_list(deps)?)
+            to_binary(&queriers::query_approved_vaults_fx_rate(deps)?)
         }
     }
 }

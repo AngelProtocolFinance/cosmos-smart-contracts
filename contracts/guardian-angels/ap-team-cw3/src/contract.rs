@@ -1,12 +1,14 @@
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, UpdateConfigMsg};
 use crate::state::{
     next_id, parse_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS,
 };
+use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
+use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, Order,
-    Response, StdResult,
+    QueryRequest, Response, StdResult, WasmQuery,
 };
 use cw0::{maybe_addr, Expiration};
 use cw2::set_contract_version;
@@ -49,6 +51,7 @@ pub fn instantiate(
         threshold: msg.threshold,
         max_voting_period: msg.max_voting_period,
         group_addr,
+        registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
     };
     CONFIG.save(deps.storage, &cfg)?;
 
@@ -72,10 +75,38 @@ pub fn execute(
         ExecuteMsg::Vote { proposal_id, vote } => execute_vote(deps, env, info, proposal_id, vote),
         ExecuteMsg::Execute { proposal_id } => execute_execute(deps, env, info, proposal_id),
         ExecuteMsg::Close { proposal_id } => execute_close(deps, env, info, proposal_id),
+        ExecuteMsg::UpdateConfig(msg) => execute_update_config(deps, env, info, msg),
         ExecuteMsg::MemberChangedHook(MemberChangedHookMsg { diffs }) => {
             execute_membership_hook(deps, env, info, diffs)
         }
     }
+}
+
+pub fn execute_update_config(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateConfigMsg,
+) -> Result<Response<Empty>, ContractError> {
+    let mut cfg = CONFIG.load(deps.storage)?;
+
+    // get the owner of the Registrar config
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: cfg.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+
+    // only the owner/admin of the Registrar contract can update the configs
+    if info.sender != registrar_config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    cfg.threshold = msg.threshold;
+    cfg.max_voting_period = msg.max_voting_period;
+
+    CONFIG.save(deps.storage, &cfg)?;
+    Ok(Response::default())
 }
 
 pub fn execute_propose(
