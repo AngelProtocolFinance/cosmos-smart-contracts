@@ -61,6 +61,9 @@ pub struct UpdateConfigMsg {
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
+    pub halo_token: Option<String>,
+    pub gov_contract: Option<String>,
+    pub charity_shares_contract: Option<String>,
 }
 
 impl UpdateConfigMsg {

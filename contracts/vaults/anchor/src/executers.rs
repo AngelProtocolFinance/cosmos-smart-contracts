@@ -77,6 +77,7 @@ pub fn update_config(
     };
     config.input_denom = msg.input_denom.unwrap_or(config.input_denom);
     config.tax_per_block = msg.tax_per_block.unwrap_or(config.tax_per_block);
+    config.harvest_to_liquid = msg.harvest_to_liquid.unwrap_or(config.harvest_to_liquid);
     config::store(deps.storage, &config)?;
 
     Ok(Response::default())
@@ -357,7 +358,8 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             .get_token_amount(env.contract.address.clone())
             .checked_mul(harvest_blocks)
             .unwrap()
-            * config.tax_per_block;
+            * config.tax_per_block
+            * config.harvest_to_liquid;
         // proceed to shuffle balances if we have a non-zero amount
         if transfer_amt > Uint128::zero() {
             let mut deposit_token = Cw20CoinVerified {
