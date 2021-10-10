@@ -2,7 +2,6 @@ use crate::state::{fund_read, read_funds, CONFIG, STATE, TCA_DONATIONS};
 use angel_core::messages::index_fund::DepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg::Deposit;
 use angel_core::responses::index_fund::*;
-use angel_core::structs::GenericBalance;
 use cosmwasm_std::{to_binary, Coin, CosmosMsg, Deps, Env, StdResult, Uint128, WasmMsg};
 
 pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -66,7 +65,7 @@ pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
             total_ust: TCA_DONATIONS
                 .may_load(deps.storage, tca.to_string())
                 .unwrap()
-                .unwrap_or(GenericBalance::default())
+                .unwrap_or_default()
                 .get_ust()
                 .amount,
         });
@@ -98,12 +97,12 @@ pub fn deposit_msg_builder(
     Ok(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&Deposit(DepositMsg {
-            fund_id: fund_id,
+            fund_id,
             split: None,
         }))?,
         funds: vec![Coin {
             denom: "uusd".to_string(),
-            amount: amount,
+            amount,
         }],
     }))
 }

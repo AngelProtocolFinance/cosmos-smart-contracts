@@ -1,6 +1,6 @@
 use crate::state::{read_registry_entries, read_vaults, vault_read, CONFIG};
 use angel_core::responses::registrar::*;
-use angel_core::structs::{VaultRate, YieldVault};
+use angel_core::structs::VaultRate;
 use angel_core::utils::vault_fx_rate;
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
@@ -18,18 +18,9 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         endowment_owners_group_addr: config.endowment_owners_group_addr,
         guardians_multisig_addr: config.guardians_multisig_addr,
         split_to_liquid: config.split_to_liquid,
-        halo_token: match config.halo_token {
-            Some(addr) => Some(addr.to_string()),
-            None => None,
-        },
-        gov_contract: match config.gov_contract {
-            Some(addr) => Some(addr.to_string()),
-            None => None,
-        },
-        charity_shares_contract: match config.charity_shares_contract {
-            Some(addr) => Some(addr.to_string()),
-            None => None,
-        },
+        halo_token: config.halo_token.map(|addr| addr.to_string()),
+        gov_contract: config.gov_contract.map(|addr| addr.to_string()),
+        charity_shares_contract: config.charity_shares_contract.map(|addr| addr.to_string()),
     })
 }
 
@@ -62,16 +53,13 @@ pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDet
 pub fn query_approved_vaults_fx_rate(deps: Deps) -> StdResult<VaultRateResponse> {
     // returns a list of approved Vaults exchange rate
     let vaults = read_vaults(deps.storage)?;
-    let approved_vaults: Vec<YieldVault> = vaults.into_iter().filter(|p| p.approved).collect();
     let mut vaults_rate: Vec<VaultRate> = vec![];
-    for vault in approved_vaults.into_iter() {
+    for vault in vaults.iter().filter(|p| p.approved).into_iter() {
         let fx_rate = vault_fx_rate(deps, vault.address.to_string());
         vaults_rate.push(VaultRate {
-            vault_addr: vault.address,
-            fx_rate: fx_rate,
+            vault_addr: vault.address.clone(),
+            fx_rate,
         });
     }
-    Ok(VaultRateResponse {
-        vaults_rate: vaults_rate,
-    })
+    Ok(VaultRateResponse { vaults_rate })
 }
