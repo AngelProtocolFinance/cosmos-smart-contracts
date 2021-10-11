@@ -42,7 +42,7 @@ pub struct StateResponse {
 pub struct ConfigResponse {
     pub owner: String,
     pub registrar_contract: String,
-    pub fund_rotation: u64,
+    pub fund_rotation: Option<u64>,
     pub fund_member_limit: u32,
     pub funding_goal: Option<Uint128>,
     pub accepted_tokens: AcceptedTokens,

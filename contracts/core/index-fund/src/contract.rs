@@ -25,7 +25,7 @@ pub fn instantiate(
     let configs = Config {
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-        fund_rotation: msg.fund_rotation.unwrap_or(500000_u64), // blocks
+        fund_rotation: msg.fund_rotation.unwrap_or(None), // blocks
         fund_member_limit: msg.fund_member_limit.unwrap_or(10),
         funding_goal: msg.funding_goal.unwrap_or(None),
         accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
@@ -39,7 +39,7 @@ pub fn instantiate(
             total_funds: 0,
             active_fund: 0,
             round_donations: Uint128::zero(),
-            next_rotation_block: env.block.height + configs.fund_rotation,
+            next_rotation_block: env.block.height + configs.fund_rotation.unwrap_or(0u64),
             terra_alliance: vec![],
         },
     )?;
@@ -61,9 +61,9 @@ pub fn execute(
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, info, msg),
         ExecuteMsg::UpdateTcaList { new_list } => executers::update_tca_list(deps, info, new_list),
         ExecuteMsg::CreateFund { fund } => executers::create_index_fund(deps, info, fund),
-        ExecuteMsg::RemoveFund(msg) => executers::remove_index_fund(deps, info, msg.fund_id),
+        ExecuteMsg::RemoveFund(msg) => executers::remove_index_fund(deps, env, info, msg.fund_id),
         ExecuteMsg::RemoveMember(msg) => executers::remove_member(deps, info, msg.member),
-        ExecuteMsg::UpdateMembers(msg) => executers::update_fund_members(deps, info, msg),
+        ExecuteMsg::UpdateMembers(msg) => executers::update_fund_members(deps, env, info, msg),
         ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
         ExecuteMsg::Recieve(msg) => executers::receive(deps, env, info, msg),
     }

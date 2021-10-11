@@ -7,8 +7,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub registrar_contract: String,
-    pub fund_rotation: Option<u64>, // how many blocks are in a rotation cycle for the active IndexFund
-    pub fund_member_limit: Option<u32>, // limit to number of members an IndexFund can have
+    pub fund_rotation: Option<Option<u64>>, // how many blocks are in a rotation cycle for the active IndexFund
+    pub fund_member_limit: Option<u32>,     // limit to number of members an IndexFund can have
     pub funding_goal: Option<Option<Uint128>>, // donation funding limit to trigger early cycle of the Active IndexFund
     pub accepted_tokens: Option<AcceptedTokens>, // list of approved native and CW20 coins can accept inward
 }
