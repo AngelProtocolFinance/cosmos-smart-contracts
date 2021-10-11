@@ -131,7 +131,7 @@ export async function createIndexFunds(): Promise<void> {
 
 async function createIndexFundWithMembers(id: number, members: string[]): Promise<void> {
   // Create an initial "Fund" with the charities
-  process.stdout.write(`Create Funds #${id} with endowments each`);
+  process.stdout.write(`Create Fund ID#${id} with ${members.length} endowments`);
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       create_fund: {
