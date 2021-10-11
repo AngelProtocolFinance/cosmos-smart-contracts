@@ -21,18 +21,18 @@ function isValidMode(mode: string) {
 			if (mode === "LocalTerra") {
 				// Start test on LocalTerra
 				await LocalTest.startTest(new LocalTerra());
-			} else if (mode === "TestNet") {
+			} else {
 				const terra: LCDClient = new LCDClient({
 					URL: info.URL,
 					chainID: info.chainID,
+					gasPrices: { uusd: 0.4 },
+					gasAdjustment: 1.2,
 				});
-				await TestNet.startTest(terra);
-			} else if (mode === "MainNet") {
-				const terra: LCDClient = new LCDClient({
-					URL: info.URL,
-					chainID: info.chainID,
-				});
-				await MainNet.startTest(terra);
+				if (mode === "TestNet") {
+					await TestNet.startTest(terra);
+				} else if (mode === "MainNet") {
+					await MainNet.startTest(terra);
+				}
 			}
 		} else {
 			console.error("Invalid network");

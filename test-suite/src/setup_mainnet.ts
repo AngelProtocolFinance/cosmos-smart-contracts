@@ -48,30 +48,30 @@ export function initializeLCDClient(
 
   console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
 
-  registrar = "terra10dw3u9can2gwtg57wdazedtqa5ua93fxhy39jr";
-  indexFund = "terra1aeyu80927kaa0a57zawnv7hza73pd7jm0u6c79";
-  anchorVault = "terra16qdyngrfh3ssh80ylsspu4pax9gkygu3hddre2";
-  cw4GrpApTeam = "terra18merrvpm9l0hl86yfhz3lyzzysv3fp4xspy7h2";
-  cw3ApTeam = "terra1nx4p4nkrxq5q4yuryl5mpumhxulveyrywg7yx3";
-  cw4GrpOwners = "terra1erd5uhnqurlvuvgeve2apd99c6l2h653lv28cj";
-  cw3GuardianAngels = "terra19e8sr3hgakqngd996phy457lf4k69v895e5yqf";
+  registrar = "terra1nwk2y5nfa5sxx6gtxr84lre3zpnn7cad2f266h";
+  indexFund = "terra19cevhng6nunl7gmc90sph0syuqyvtqn7mlhwz0";
+  anchorVault = "terra172ue5d0zm7jlsj2d9af4vdff6wua7mnv6dq5vp";
+  cw4GrpApTeam = "terra1qzdgs73h3rnh9j7f4t6tyuw9lmrp5esn6yunyl";
+  cw3ApTeam = "terra1m6rqwmxlpztjf3zfhza906d44c9rpf2t6vn37n";
+  cw4GrpOwners = "terra1lycc2zyhd676294c604euh8hxw7h6jrjd68x83";
+  cw3GuardianAngels = "terra1jd2n0ze7er80x9h8k3x006aypaxs7mvrggdmn9";
   endowmentContracts = [
-    "terra1v2tqeeag8gvn4mgglhre9z28g8vuz53llewxxs",
-    "terra1j4layl9zf6uyeea443d4jqgj92scm7gfxnxtqg",
-    "terra154e4fj5nhgtd4y7e39fkgkfjs4z68dwdnjfv83",
-    "terra1nvk7w5mnzer9qktkvj0pm4k3qr0lvwq6q3ymcy",
-    "terra12gycny6knqvmceahqtulfknfwuldff2fqsg6ec",
-    "terra1ceqavxry7w6v65wup8t3jlwfzqqph240gcv9dl",
-    "terra1cl7m9slyll8v2jjg3ehjtgn0hvpnvd33daf49q",
-    "terra1ydx8250f785u28ms9ukzsknhu0jnfvhf3jg3j6",
-    "terra120ek7dtx53xyny3p9klsvymgsnzsdx7l37ca3j",
-    "terra15w7tunh0tgv3ve8fyyu4hhykdu62c44uc34vza",
-    "terra1hzv0k35dk95qx0gculh2t0rrkdsaqd3fhlrh96",
-    "terra1rj30h0dvvx9aqa5hsjux5ts4gg09zuwx7jnszj",
-    "terra1drldgctf4pkgx7efdzrfuewxejmygfwnysgkrw",
-    "terra1y2r7xwwfmkxqcvxh5r5jhpgh2qqp7gus49f42n",
-    "terra15nzpmd5pr7u6xr0rrp80p4vs0ga62aywm2yh00"
-  ]
+    "terra12crxq8nxml96e9h38fe67c4p76pc24l54zjzzh",
+    "terra1uwtk2hs65332emnjn8n9s8d3l692pgyqnew4dq",
+    "terra1qagm9wdnp6f76xy52llcjxmr4z8j4nhd9ethw8",
+    "terra13nm3vyj6zfg2tdzsgq97ky6d6gtuty9mu025z3",
+    "terra1d5phnyr7e7l44yaathtwrh4f4mv5agajcy508f",
+    "terra1tkadaa8phaqnne20rzluhv8p57h23ku4n337ye",
+    "terra18y4lflmg0wnlkw4hvamp4l2hjv2cafy7dtcyn6",
+    "terra1c5luclcnzwhlf59c5w63yn034z6k9jrefx0swx",
+    "terra1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2",
+    "terra1k6v33x6sc9chztxgyh859npz740gmn9d4rnfkz",
+    "terra1xmkprc4p2wxjh9eh58rjf3ndllepnl7xezmuk4",
+    "terra1xmeept4tj37qqsajws8r6tl7f5hskvvfg2fmd5",
+    "terra1zn8aqw3ypzvs8pzuadpqw5jw5rptxp4y08z7sr",
+    "terra1cmp87658s0c475dkyee2p8r9zsdjd628py4zav",
+    "terra1kdd6f099dv4kr5xqp7sxcc7epledxmvyq8xnu3",
+  ];
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
@@ -316,17 +316,7 @@ async function setupContracts(
 
   // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
   process.stdout.write("Approving Anchor Vault in Registrar");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      vault_update_status: { 
-        vault_addr: anchorVault,
-        approved: true,
-      },
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
-
-  process.stdout.write("Set default vault in Registrar (for newly created Endowments) as Anchor Vault #1");
+  process.stdout.write("Set default vault in Registrar (for newly created Endowments) as Anchor Vault");
   process.stdout.write("Update Registrar with the Address of the Index Fund contract");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
@@ -334,6 +324,12 @@ async function setupContracts(
         default_vault: anchorVault,
         index_fund_contract: indexFund,
       }
+    }),
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      vault_update_status: {
+        vault_addr: anchorVault,
+        approved: true,
+      },
     }),
   ]);
   console.log(chalk.green(" Done!"));
