@@ -5,6 +5,7 @@ import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { LCDClient, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import {
+  migrateContract,
   sendTransaction,
   storeCode,
   instantiateContract,
@@ -34,6 +35,7 @@ let cw3ApTeam: string;
 let indexFund: string;
 let anchorVault: string;
 let anchorMoneyMarket: string;
+let endowmentContracts: string[];
 
 export function initializeLCDClient(
   lcdClient: LCDClient,
@@ -45,7 +47,44 @@ export function initializeLCDClient(
   anchorMoneyMarket = anchorMoneyMarketAddr;
 
   console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
+
+  registrar = "terra10dw3u9can2gwtg57wdazedtqa5ua93fxhy39jr";
+  indexFund = "terra1aeyu80927kaa0a57zawnv7hza73pd7jm0u6c79";
+  anchorVault = "terra16qdyngrfh3ssh80ylsspu4pax9gkygu3hddre2";
+  cw4GrpApTeam = "terra18merrvpm9l0hl86yfhz3lyzzysv3fp4xspy7h2";
+  cw3ApTeam = "terra1nx4p4nkrxq5q4yuryl5mpumhxulveyrywg7yx3";
+  cw4GrpOwners = "terra1erd5uhnqurlvuvgeve2apd99c6l2h653lv28cj";
+  cw3GuardianAngels = "terra19e8sr3hgakqngd996phy457lf4k69v895e5yqf";
+  endowmentContracts = [
+    "terra1v2tqeeag8gvn4mgglhre9z28g8vuz53llewxxs",
+    "terra1j4layl9zf6uyeea443d4jqgj92scm7gfxnxtqg",
+    "terra154e4fj5nhgtd4y7e39fkgkfjs4z68dwdnjfv83",
+    "terra1nvk7w5mnzer9qktkvj0pm4k3qr0lvwq6q3ymcy",
+    "terra12gycny6knqvmceahqtulfknfwuldff2fqsg6ec",
+    "terra1ceqavxry7w6v65wup8t3jlwfzqqph240gcv9dl",
+    "terra1cl7m9slyll8v2jjg3ehjtgn0hvpnvd33daf49q",
+    "terra1ydx8250f785u28ms9ukzsknhu0jnfvhf3jg3j6",
+    "terra120ek7dtx53xyny3p9klsvymgsnzsdx7l37ca3j",
+    "terra15w7tunh0tgv3ve8fyyu4hhykdu62c44uc34vza",
+    "terra1hzv0k35dk95qx0gculh2t0rrkdsaqd3fhlrh96",
+    "terra1rj30h0dvvx9aqa5hsjux5ts4gg09zuwx7jnszj",
+    "terra1drldgctf4pkgx7efdzrfuewxejmygfwnysgkrw",
+    "terra1y2r7xwwfmkxqcvxh5r5jhpgh2qqp7gus49f42n",
+    "terra15nzpmd5pr7u6xr0rrp80p4vs0ga62aywm2yh00"
+  ]
+
+  console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
+  console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
+  console.log(`Use ${chalk.cyan(anchorVault)} as Anchor Vault`);
+  console.log(`Use ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
+  console.log(`Use ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
+  console.log(`Use ${chalk.cyan(cw4GrpOwners)} as CW4 Endowment Owners Group`);
+  console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
 }
+
+//----------------------------------------------------------------------------------------
+// Setup Contracts for MainNet
+//----------------------------------------------------------------------------------------
 
 export async function setupContractsForMainNet(
   treasury_address: string,
@@ -258,7 +297,7 @@ async function setupContracts(
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
 
   // Anchor Vault
-  process.stdout.write("Instantiating Anchor Vault (#1) contract");
+  process.stdout.write("Instantiating Anchor Vault contract");
   const vaultResult1 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
     registrar_contract: registrar,
     moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
@@ -306,6 +345,142 @@ async function setupContracts(
       update_tca_list: { new_list: tca_members },
     }),
   ]);
+  console.log(chalk.green(" Done!"));
+}
+
+//----------------------------------------------------------------------------------------
+// Migration contracts
+//----------------------------------------------------------------------------------------
+export async function migrateContracts(): Promise<void> {
+  // run the migrations desired
+  // await migrateRegistrar();
+  // await migrateCw4Group();
+  // await migrateApTeamMultisig();
+  // await migrateGuardianAngelsMultisig();
+  // await migrateIndexFund();
+  await migrateAccounts();
+  // await migrateVaults();
+}
+
+// -------------------------------------------------
+//  Base functions to migrate contracts with 
+//--------------------------------------------------
+async function migrateRegistrar() {
+  process.stdout.write("Uploading Registrar Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/registrar.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+  
+  process.stdout.write("Migrate Registrar contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, registrar, codeId, {});
+  console.log(chalk.green(" Done!"));
+}
+
+async function migrateCw4Group() {
+  process.stdout.write("Uploading CW4 Group Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/cw4_group.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+
+  process.stdout.write("Migrate CW4 AP Team Group contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, cw4GrpApTeam, codeId, {});
+  console.log(chalk.green(" Done!"));
+
+  process.stdout.write("Migrate CW4 Endowment Owners Group contract");
+  const result2 = await migrateContract(terra, apTeam, apTeam, cw4GrpOwners, codeId, {});
+  console.log(chalk.green(" Done!"));
+}
+
+async function migrateApTeamMultisig() {
+  process.stdout.write("Uploading AP Team MultiSig Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/ap_team_multisig.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+
+  process.stdout.write("Migrate AP Team MultiSig contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, cw3ApTeam, codeId, {});
+  console.log(chalk.green(" Done!"));
+}
+
+async function migrateGuardianAngelsMultisig() {
+  process.stdout.write("Uploading Guardian Angels MultiSig Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/guardian_angels_multisig.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+
+  process.stdout.write("Migrate Guardian Angels MultiSig contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, cw3GuardianAngels, codeId, {});
+  console.log(chalk.green(" Done!"));
+}
+
+async function migrateIndexFund() {
+  process.stdout.write("Uploading Index Fund Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/index_fund.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+  
+  process.stdout.write("Migrate Index Fund contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, indexFund, codeId, {});
+  console.log(chalk.green(" Done!"));
+}
+
+async function migrateVaults() {
+  process.stdout.write("Uploading Anchor Vault Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/anchor.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+
+  process.stdout.write("Migrate Vault contracts\n");
+  await migrateContract(terra, apTeam, apTeam, anchorVault, codeId, {});
+  console.log(chalk.green(`anchorVault - Done!`));
+}
+
+async function migrateAccounts() {
+  process.stdout.write("Uploading Accounts Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../artifacts/accounts.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+  
+  // Update registrar accounts code ID and migrate all accounts contracts
+  process.stdout.write("Update Registrar's Account Code ID stored in configs");
+  const result0 = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_config: { accounts_code_id: codeId }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
+
+  process.stdout.write("Migrate Accounts contracts\n");
+  let prom = Promise.resolve();
+  let id = 1;
+  endowmentContracts.forEach(endowment => {
+    // eslint-disable-next-line no-async-promise-executor
+    prom = prom.then(() => new Promise(async (resolve, reject) => {
+      try {
+        await migrateContract(terra, apTeam, apTeam, endowment, codeId, {});
+        console.log(chalk.green(`#${id ++} - Done!`));
+        resolve();
+      } catch(e) {
+        reject(e);
+      }
+    }));
+  });
+
+  await prom;
   console.log(chalk.green(" Done!"));
 }
 
@@ -369,26 +544,6 @@ export async function testQueryRegistrarVault(): Promise<void> {
     vault: {
       vault_addr: anchorVault,
     },
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryAccountsBalance(addr: string): Promise<void> {
-  process.stdout.write("Test - Query Accounts Balance");
-  const result: any = await terra.wasm.contractQuery(addr, {
-    balance: {},
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryVaultConfig(addr: string): Promise<void> {
-  process.stdout.write("Test - Query Vault Config");
-  const result: any = await terra.wasm.contractQuery(addr, {
-    vault_config: {},
   });
 
   console.log(result);
