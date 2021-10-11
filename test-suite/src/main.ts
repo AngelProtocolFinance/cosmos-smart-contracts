@@ -137,13 +137,13 @@ export function initializeLCDClient(
 // -----------------------------
 export async function migrateContracts(): Promise<void> {
   // run the migrations desired
-  // await migrateRegistrar();
-  // await migrateCw4Group();
-  // await migrateApTeamMultisig();
-  // await migrateGuardianAngelsMultisig();
-  // await migrateIndexFund();
-  // await migrateAccounts();
-  // await migrateVaults();
+  await migrateRegistrar();
+  await migrateCw4Group();
+  await migrateApTeamMultisig();
+  await migrateGuardianAngelsMultisig();
+  await migrateIndexFund();
+  await migrateAccounts();
+  await migrateVaults();
 }
 
 // -------------------------------------------------
@@ -1122,7 +1122,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(): Promise<void> {
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         withdraw: {
           sources: [
-            {vault: anchorVault1, locked: "0", liquid: "5000000"},
+            {vault: anchorVault1, locked: "0", liquid: "30000"},
           ]
         }
       })
@@ -1264,7 +1264,7 @@ export async function testQueryAccountsConfig(): Promise<void> {
 
 export async function testQueryVaultConfig(): Promise<void> {
   process.stdout.write("Test - Query Vault Config");
-  const result: any = await terra.wasm.contractQuery(endowmentContract1, {
+  const result: any = await terra.wasm.contractQuery(anchorVault1, {
     vault_config: {},
   });
 
