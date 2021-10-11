@@ -50,7 +50,8 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   //   true,   // turn over to AP Team multisig
   //   true,   // is LocalTerra
   //   "0.75", // harvest to liquid percentage
-  //   "0.0000000259703196" // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
+  //   "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
+  //   "50000000" // funding goal
   // );
 
   // console.log(chalk.yellow("\nStep 2b. Migrate Contracts"));
@@ -68,21 +69,21 @@ export async function startTest(terra: LocalTerra): Promise<void> {
   // setTimeout(async () => {
   //   await testBeneficiaryCanWithdrawFromLiquid();
   // }, 500);
-  await testQueryRegistrarConfig();
-  await testQueryRegistrarEndowmentList();
-  await testQueryRegistrarApprovedVaultList();
-  await testQueryRegistrarApprovedVaultRateList();
-  await testQueryRegistrarVaultList();
+  // await testQueryRegistrarConfig();
+  // await testQueryRegistrarEndowmentList();
+  // await testQueryRegistrarApprovedVaultList();
+  // await testQueryRegistrarApprovedVaultRateList();
+  // await testQueryRegistrarVaultList();
   // await testQueryRegistrarVault();
   // await testQueryAccountsBalance();
-  await testQueryAccountsConfig();
-  await testQueryAccountsEndowment();
-  await testQueryIndexFundConfig();
-  await testQueryIndexFundState();
-  await testQueryIndexFundTcaList();
-  await testQueryIndexFundFundsList();
-  await testQueryIndexFundFundDetails();
-  await testQueryIndexFundActiveFundDetails();
-  await testQueryIndexFundActiveFundDonations();
-  await testQueryIndexFundDeposit();
+  // await testQueryAccountsConfig();
+  // await testQueryAccountsEndowment();
+  // await testQueryIndexFundConfig();
+  // await testQueryIndexFundState();
+  // await testQueryIndexFundTcaList();
+  // await testQueryIndexFundFundsList();
+  // await testQueryIndexFundFundDetails();
+  // await testQueryIndexFundActiveFundDetails();
+  // await testQueryIndexFundActiveFundDonations();
+  // await testQueryIndexFundDeposit();
 }
