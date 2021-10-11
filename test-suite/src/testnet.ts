@@ -106,16 +106,13 @@ export async function startTest(terra: LCDClient): Promise<void> {
   // await testUpdateVaultConfigs();
   // await testQueryRegistrarConfig();
   // await testUpdatingRegistrarConfigs();
-  // await testQueryRegistrarApprovedEndowmentList();
   // await testQueryRegistrarEndowmentList();
   // await testQueryRegistrarApprovedVaultList();
   // await testQueryRegistrarApprovedVaultRateList();
   // await testQueryRegistrarVaultList();
   // await testQueryRegistrarVault();
-  // await testQueryAccountsBalance("terra1atuv3kzavg4q4nr4qt47zjquzjk84vl8lvl4tk");
-  // await testQueryAccountsBalance("terra1yy9xmnvyssf6dfgh7xze8zl0cc5c37jxt53qf4");
-  // await testQueryVaultConfig("terra15pa4v2kyr825tyyscygs8fygsctwv5qc7dqwcp");
-  // await testQueryVaultConfig("terra1rtj2eg6cfm6fv6ldx0rasru26cck8dmwsyd4xa");
+  // await testQueryAccountsBalance();
+  // await testQueryVaultConfig();
   // await testQueryAccountsConfig();
   // await testQueryAccountsEndowment();
   // await testQueryIndexFundConfig();
