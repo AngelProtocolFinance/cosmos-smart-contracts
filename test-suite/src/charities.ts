@@ -68,7 +68,7 @@ export async function setupEndowments(): Promise<void> {
 
 // Create Endowment base on charity and registrar
 async function createEndowment(charity: Charity): Promise<void> {
-  process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
+  process.stdout.write(`Charity Endowment ##${charity.name}## created from the Registrar by the AP Team`);
   const charityResult = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       create_endowment: {
@@ -131,7 +131,7 @@ export async function createIndexFunds(): Promise<void> {
 
 async function createIndexFundWithMembers(id: number, members: string[]): Promise<void> {
   // Create an initial "Fund" with the charities
-  process.stdout.write("Create two Funds with two endowments each");
+  process.stdout.write(`Create Funds #${id} with endowments each`);
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       create_fund: {

@@ -144,6 +144,21 @@ async function setupContracts(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${apTeamMultiSig}`);
 
   // Step 2. Instantiate the key contracts
+  // Registrar
+  process.stdout.write("Instantiating Registrar contract");
+  const registrarResult = await instantiateContract(terra, apTeam, apTeam, registrarCodeId, {
+    accounts_code_id: accountsCodeId,
+    treasury: treasury_address,
+    tax_rate: tax_rate,
+    default_vault: undefined,
+  });
+  registrar = registrarResult.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => { 
+    return attribute.key == "contract_address"; 
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${registrar}`);
+
   // CW4 AP Team Group
   process.stdout.write("Instantiating CW4 AP Team Group contract");
   const cw4GrpApTeamResult = await instantiateContract(terra, apTeam, apTeam, cw4Group, {
@@ -163,6 +178,7 @@ async function setupContracts(
     group_addr: cw4GrpApTeam,
     threshold: { absolute_percentage: { percentage: threshold_absolute_percentage }},
     max_voting_period: { height: max_voting_period_height },
+    registrar_contract: registrar,
   });
   cw3ApTeam = cw3ApTeamResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
@@ -182,21 +198,6 @@ async function setupContracts(
     }),
   ]);
   console.log(chalk.green(" Done!")); 
-
-  // Registrar
-  process.stdout.write("Instantiating Registrar contract");
-  const registrarResult = await instantiateContract(terra, apTeam, apTeam, registrarCodeId, {
-    accounts_code_id: accountsCodeId,
-    treasury: treasury_address,
-    tax_rate: tax_rate,
-    default_vault: undefined,
-  });
-  registrar = registrarResult.logs[0].events.find((event) => {
-    return event.type == "instantiate_contract";
-  })?.attributes.find((attribute) => { 
-    return attribute.key == "contract_address"; 
-  })?.value as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${registrar}`);
 
   // CW4 Endowment Owners Group
   // Registrar SC is the Admin & no members in the group to start
