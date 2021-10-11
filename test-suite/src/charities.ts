@@ -93,7 +93,7 @@ async function createEndowment(charity: Charity): Promise<void> {
 
 export async function approveEndowments(): Promise<void> {
   // AP Team approves 3 of 4 newly created endowments
-  process.stdout.write("AP Team approves 3 of 4 endowments");
+  process.stdout.write("AP Team approves all verified endowments");
   const msgs: Msg[] = endowmentContracts.map(endowment => {
     return new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_endowment_status: {

@@ -56,6 +56,7 @@ export async function setupContractsForMainNet(
   max_voting_period_height: number,
   max_voting_period_guardians_height: number,
   fund_rotation: number | undefined,
+  turnover_to_multisig: boolean,
   harvest_to_liquid: string,
   tax_per_block: string,
   funding_goal: string | undefined,
