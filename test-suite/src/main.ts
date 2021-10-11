@@ -295,11 +295,12 @@ export async function setupContractsForTestNet(
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
   max_voting_period_guardians_height: number,
-  fund_rotation: number,
+  fund_rotation: number | undefined,
   turnover_to_multisig: boolean,
   is_localterra: boolean,
   harvest_to_liquid: string,
-  tax_per_block: string
+  tax_per_block: string,
+  funding_goal: string | undefined
 ): Promise<void> {
   await setupContracts(
     tax_rate,
@@ -308,7 +309,8 @@ export async function setupContractsForTestNet(
     max_voting_period_guardians_height,
     fund_rotation,
     harvest_to_liquid,
-    tax_per_block
+    tax_per_block,
+    funding_goal
   );
   await createEndowments();
   await approveEndowments();
@@ -321,10 +323,11 @@ export async function setupContractsForMainNet(
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
   max_voting_period_guardians_height: number,
-  fund_rotation: number,
+  fund_rotation: number | undefined,
   turnover_to_multisig: boolean,
   harvest_to_liquid: string,
-  tax_per_block: string
+  tax_per_block: string,
+  funding_goal: string | undefined
 ): Promise<void> {
   await setupContracts(
     tax_rate,
@@ -333,7 +336,8 @@ export async function setupContractsForMainNet(
     max_voting_period_guardians_height,
     fund_rotation,
     harvest_to_liquid,
-    tax_per_block
+    tax_per_block,
+    funding_goal
   );
   await mainNet.initializeCharities(terra, apTeam, registrar, indexFund);
   await mainNet.setupEndowments();
@@ -347,9 +351,10 @@ async function setupContracts(
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
   max_voting_period_guardians_height: number,
-  fund_rotation: number,
+  fund_rotation: number | undefined,
   harvest_to_liquid: string,
-  tax_per_block: string
+  tax_per_block: string,
+  funding_goal: string | undefined
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each.... 
   process.stdout.write("Uploading Registrar Wasm");
@@ -509,7 +514,7 @@ async function setupContracts(
   const fundResult = await instantiateContract(terra, apTeam, apTeam, fundCodeId, {
     registrar_contract: registrar,
     fund_rotation: fund_rotation,
-    // funding_goal: "50000000",
+    funding_goal: funding_goal,
   });
   indexFund = fundResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";

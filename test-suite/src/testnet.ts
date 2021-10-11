@@ -86,7 +86,8 @@ export async function startTest(terra: LCDClient): Promise<void> {
   //   false,   // turn over to AP Team multisig
   //   false,  // is LocalTerra
   //   "0.75", // harvest to liquid percentage
-  //   "0.0000000259703196" // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
+  //   "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
+  //   "50000000" // funding goal
   // );
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
