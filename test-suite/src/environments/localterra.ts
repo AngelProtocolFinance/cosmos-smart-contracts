@@ -4,7 +4,7 @@
 import { LocalTerra, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
 import { localterra as config } from "../config/constants";
-import { migrateContracts } from "../processes/migrationContracts/migration";
+import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts } from "../processes/setupContracts/testnet";
 import { testExecute } from "../processes/tests/testnet";
 
@@ -85,9 +85,9 @@ function initialize() {
 }
 
 // -------------------------------------------------------------------------------------
-// start test
+// start setup contracts
 // -------------------------------------------------------------------------------------
-export async function start(): Promise<void> {
+export async function startSetupContracts(): Promise<void> {
   console.log(chalk.blue("\nLocalTerra"));
 
   // Initialize environment information
@@ -123,6 +123,17 @@ export async function start(): Promise<void> {
       funding_goal: "50000000", // funding goal
     },
   );
+}
+
+// -------------------------------------------------------------------------------------
+// start setup contracts
+// -------------------------------------------------------------------------------------
+export async function startMigrateContracts(): Promise<void> {
+  console.log(chalk.blue("\nLocalTerra"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
 
   // Migrate Contracts
   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
@@ -143,7 +154,15 @@ export async function start(): Promise<void> {
       endowmentContract4,
     ]
   );
+}
 
+export async function startTest(): Promise<void> {
+  console.log(chalk.blue("\nLocalTerra"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+  
   // Test queries
   await testExecute(
     terra,
