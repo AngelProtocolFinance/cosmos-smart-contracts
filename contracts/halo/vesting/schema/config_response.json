@@ -3,18 +3,18 @@
   "title": "ConfigResponse",
   "type": "object",
   "required": [
-    "halo_token",
     "genesis_time",
+    "halo_token",
     "owner"
   ],
   "properties": {
-    "halo_token": {
-      "type": "string"
-    },
     "genesis_time": {
       "type": "integer",
       "format": "uint64",
       "minimum": 0.0
+    },
+    "halo_token": {
+      "type": "string"
     },
     "owner": {
       "type": "string"

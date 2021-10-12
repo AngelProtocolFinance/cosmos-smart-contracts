@@ -3,16 +3,16 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
-    "halo_token",
     "gov_contract",
+    "halo_token",
     "spend_limit",
     "whitelist"
   ],
   "properties": {
-    "halo_token": {
+    "gov_contract": {
       "type": "string"
     },
-    "gov_contract": {
+    "halo_token": {
       "type": "string"
     },
     "spend_limit": {

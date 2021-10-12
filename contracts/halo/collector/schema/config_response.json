@@ -3,20 +3,20 @@
   "title": "ConfigResponse",
   "type": "object",
   "required": [
-    "halo_token",
     "distributor_contract",
     "gov_contract",
+    "halo_token",
     "reward_factor",
     "terraswap_factory"
   ],
   "properties": {
-    "halo_token": {
-      "type": "string"
-    },
     "distributor_contract": {
       "type": "string"
     },
     "gov_contract": {
+      "type": "string"
+    },
+    "halo_token": {
       "type": "string"
     },
     "reward_factor": {

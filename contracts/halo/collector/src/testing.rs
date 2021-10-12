@@ -17,7 +17,7 @@ fn proper_initialization() {
     let msg = InstantiateMsg {
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
-        halo_token: "tokenANC".to_string(),
+        halo_token: "tokenHALO".to_string(),
         distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
@@ -39,7 +39,7 @@ fn update_config() {
     let msg = InstantiateMsg {
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
-        halo_token: "tokenANC".to_string(),
+        halo_token: "tokenHALO".to_string(),
         distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
@@ -86,12 +86,12 @@ fn test_sweep() {
     );
 
     deps.querier
-        .with_terraswap_pairs(&[(&"uusdtokenANC".to_string(), &"pairANC".to_string())]);
+        .with_terraswap_pairs(&[(&"uusdtokenHALO".to_string(), &"pairANC".to_string())]);
 
     let msg = InstantiateMsg {
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
-        halo_token: "tokenANC".to_string(),
+        halo_token: "tokenHALO".to_string(),
         distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
@@ -141,14 +141,14 @@ fn test_distribute() {
     let mut deps = mock_dependencies(&[]);
 
     deps.querier.with_token_balances(&[(
-        &"tokenANC".to_string(),
+        &"tokenHALO".to_string(),
         &[(&MOCK_CONTRACT_ADDR.to_string(), &Uint128::from(100u128))],
     )]);
 
     let msg = InstantiateMsg {
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
-        halo_token: "tokenANC".to_string(),
+        halo_token: "tokenHALO".to_string(),
         distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
@@ -169,7 +169,7 @@ fn test_distribute() {
         res.messages,
         vec![
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: "tokenANC".to_string(),
+                contract_addr: "tokenHALO".to_string(),
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: "gov".to_string(),
                     amount: Uint128::from(90u128),
@@ -178,7 +178,7 @@ fn test_distribute() {
                 funds: vec![],
             })),
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: "tokenANC".to_string(),
+                contract_addr: "tokenHALO".to_string(),
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: "distributor".to_string(),
                     amount: Uint128::from(10u128),

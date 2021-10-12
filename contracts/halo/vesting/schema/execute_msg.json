@@ -11,12 +11,6 @@
         "update_config": {
           "type": "object",
           "properties": {
-            "halo_token": {
-              "type": [
-                "string",
-                "null"
-              ]
-            },
             "genesis_time": {
               "type": [
                 "integer",
@@ -24,6 +18,12 @@
               ],
               "format": "uint64",
               "minimum": 0.0
+            },
+            "halo_token": {
+              "type": [
+                "string",
+                "null"
+              ]
             },
             "owner": {
               "type": [

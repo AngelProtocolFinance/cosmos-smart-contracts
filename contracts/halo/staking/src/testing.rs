@@ -452,7 +452,7 @@ fn test_migrate_staking() {
     // execute migration after 50 blocks
     env.block.height += 50;
 
-    deps.querier.with_anc_minter("gov0000".to_string());
+    deps.querier.with_halo_minter("gov0000".to_string());
 
     let msg = ExecuteMsg::MigrateStaking {
         new_staking_contract: "newstaking0000".to_string(),

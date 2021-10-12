@@ -65,7 +65,7 @@ pub fn update_config(
 
 /// Spend
 /// Owner can execute spend operation to send
-/// `amount` of ANC token to `recipient` for community purpose
+/// `amount` of HALO token to `recipient` for community purpose
 pub fn spend(
     deps: DepsMut,
     info: MessageInfo,

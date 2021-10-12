@@ -91,7 +91,7 @@ impl WasmMockQuerier {
         }
     }
 
-    pub fn with_anc_minter(&mut self, minter: String) {
+    pub fn with_halo_minter(&mut self, minter: String) {
         self.minter_querier = MinterQuerier::new(minter);
     }
 }
