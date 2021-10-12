@@ -191,8 +191,8 @@ pub fn redeem_stable(
 
     // use arg account_addr to lookup Balances
     let mut investment = BALANCES
-        .load(deps.storage, &account_addr.clone())
-        .unwrap_or(BalanceInfo::default());
+        .load(deps.storage, &account_addr)
+        .unwrap_or_else(|_| BalanceInfo::default());
 
     // grab total tokens for locked and liquid balances
     let locked_deposit_tokens = investment
@@ -215,7 +215,7 @@ pub fn redeem_stable(
         .liquid_balance
         .set_token_balances(Balance::Cw20(zero_tokens));
 
-    BALANCES.save(deps.storage, &account_addr.clone(), &investment)?;
+    BALANCES.save(deps.storage, &account_addr, &investment)?;
 
     let submessage_id = config.next_pending_id;
     PENDING.save(
@@ -276,8 +276,8 @@ pub fn withdraw_stable(
     TOKEN_INFO.save(deps.storage, &token_info)?;
 
     let mut investment = BALANCES
-        .load(deps.storage, &info.sender.clone())
-        .unwrap_or(BalanceInfo::default());
+        .load(deps.storage, &info.sender)
+        .unwrap_or_else(|_| BalanceInfo::default());
     // update investment holdings balances
     investment
         .locked_balance
@@ -291,7 +291,7 @@ pub fn withdraw_stable(
             amount: msg.liquid,
             address: env.contract.address,
         }));
-    BALANCES.save(deps.storage, &info.sender.clone(), &investment)?;
+    BALANCES.save(deps.storage, &info.sender, &investment)?;
 
     let submessage_id = config.next_pending_id;
     PENDING.save(
@@ -398,7 +398,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         // Withdraw all DP Tokens from Treasury and send to AP Treasury Wallet
         let withdraw_total = treasury_account
             .liquid_balance
-            .get_token_amount(env.contract.address.clone());
+            .get_token_amount(env.contract.address);
         let submessage_id = config.next_pending_id;
         PENDING.save(
             deps.storage,
@@ -409,7 +409,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
                 beneficiary: Some(treasury_addr.clone()),
                 fund: None,
                 locked: Uint128::zero(),
-                liquid: withdraw_total.clone(),
+                liquid: withdraw_total,
             },
         )?;
         config.next_pending_id += 1;
@@ -418,8 +418,8 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         Ok(Response::new()
             .add_attribute("action", "harvest_redeem_from_vault")
             .add_attribute("sender", info.sender)
-            .add_attribute("account_addr", treasury_addr.clone())
-            .add_attribute("withdraw_amount", withdraw_total.clone())
+            .add_attribute("account_addr", treasury_addr)
+            .add_attribute("withdraw_amount", withdraw_total)
             .add_submessage(SubMsg {
                 id: submessage_id,
                 msg: redeem_stable_msg(&config.moneymarket, &config.yield_token, withdraw_total)?,

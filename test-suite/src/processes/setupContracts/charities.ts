@@ -5,7 +5,7 @@ import chaiAsPromised from "chai-as-promised";
 import { LCDClient, Msg, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import {
   sendTransaction,
-} from "./helpers";
+} from "../../utils/helpers";
 import jsonData from "./charity_list.json";
 import fs from "fs";
 
@@ -68,7 +68,7 @@ export async function setupEndowments(): Promise<void> {
 
 // Create Endowment base on charity and registrar
 async function createEndowment(charity: Charity): Promise<void> {
-  process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
+  process.stdout.write(`Charity Endowment ##${charity.name}## created from the Registrar by the AP Team`);
   const charityResult = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       create_endowment: {
@@ -93,7 +93,7 @@ async function createEndowment(charity: Charity): Promise<void> {
 
 export async function approveEndowments(): Promise<void> {
   // AP Team approves 3 of 4 newly created endowments
-  process.stdout.write("AP Team approves 3 of 4 endowments");
+  process.stdout.write("AP Team approves all verified endowments");
   const msgs: Msg[] = endowmentContracts.map(endowment => {
     return new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_endowment_status: {
@@ -131,7 +131,7 @@ export async function createIndexFunds(): Promise<void> {
 
 async function createIndexFundWithMembers(id: number, members: string[]): Promise<void> {
   // Create an initial "Fund" with the charities
-  process.stdout.write("Create two Funds with two endowments each");
+  process.stdout.write(`Create Fund ID#${id} with ${members.length} endowments`);
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       create_fund: {

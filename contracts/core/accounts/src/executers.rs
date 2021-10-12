@@ -81,7 +81,7 @@ pub fn update_guardians(
     let multisig_addr = registrar_config.guardians_multisig_addr;
 
     // only the guardians multisig contract can update the guardians
-    if multisig_addr == None || info.sender.to_string() != multisig_addr.unwrap() {
+    if multisig_addr == None || info.sender != multisig_addr.unwrap() {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -138,7 +138,7 @@ pub fn update_endowment_settings(
     let config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENT.load(deps.storage)?;
 
-    if endowment.guardian_set.len() > 0 {
+    if !endowment.guardian_set.is_empty() {
         // get the guardian multisig addr from the registrar config (if exists)
         let registrar_config: RegistrarConfigResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
@@ -148,7 +148,7 @@ pub fn update_endowment_settings(
         let multisig_addr = registrar_config.guardians_multisig_addr;
 
         // only the guardians multisig contract can update the guardians
-        if multisig_addr == None || info.sender.to_string() != multisig_addr.unwrap() {
+        if multisig_addr == None || info.sender != multisig_addr.unwrap() {
             return Err(ContractError::Unauthorized {});
         }
     } else {
@@ -234,7 +234,7 @@ pub fn update_strategies(
     // before updating endowment with new sources
     let redeem_messages = redeem_from_vaults(
         deps.as_ref(),
-        env.contract.address.clone(),
+        env.contract.address,
         config.registrar_contract.to_string(),
         endowment.strategies,
     )?;
@@ -382,7 +382,7 @@ pub fn vault_receipt(
                                     address: env.contract.address.to_string(),
                                 })?,
                             }))?;
-                        if fund_list.funds.len() > 0 {
+                        if !fund_list.funds.is_empty() {
                             // send funds to the first index fund in list
                             submessages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                                 contract_addr: index_fund,
@@ -396,7 +396,7 @@ pub fn vault_receipt(
                             // Orphaned Endowment (ie. no parent index fund)
                             // send funds to the DANO treasury
                             submessages.push(SubMsg::new(BankMsg::Send {
-                                to_address: registrar_config.treasury.to_string(),
+                                to_address: registrar_config.treasury,
                                 amount: vec![balance_after_tax],
                             }))
                         }
@@ -568,7 +568,7 @@ pub fn close_endowment(
     let endowment = ENDOWMENT.load(deps.storage)?;
     let redeem_messages = redeem_from_vaults(
         deps.as_ref(),
-        env.contract.address.clone(),
+        env.contract.address,
         config.registrar_contract.to_string(),
         endowment.strategies,
     )?;
