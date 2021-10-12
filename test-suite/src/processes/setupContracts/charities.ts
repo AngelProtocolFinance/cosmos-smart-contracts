@@ -5,7 +5,7 @@ import chaiAsPromised from "chai-as-promised";
 import { LCDClient, Msg, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import {
   sendTransaction,
-} from "./helpers";
+} from "../../utils/helpers";
 import jsonData from "./charity_list.json";
 import fs from "fs";
 

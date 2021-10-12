@@ -1,43 +1,42 @@
-import { LCDClient, LocalTerra } from "@terra-money/terra.js";
-import * as LocalTest from "./local_terra";
-import * as TestNet from "./testnet";
-import * as MainNet from "./mainnet";
+import * as LocalNet from "./environments/localterra";
+import * as TestNet from "./environments/testnet";
+import * as MainNet from "./environments/mainnet";
 
-import {getNetworkInfo} from "../config";
 //----------------------------------------------------------------------------------------
-// Main
+// Test-suite for LocalTerra, TestNet, and MainNet
 //----------------------------------------------------------------------------------------
-function isValidMode(mode: string) {
-  return mode === "LocalTerra" ||
-    mode === "TestNet" ||
-    mode === "MainNet";
-}
-
 (async () => {
 	const mode = process.env.npm_config_mode || "";
-	if (isValidMode(mode)) {
-		const info = getNetworkInfo(mode);
-		if (info) {
-			if (mode === "LocalTerra") {
-				// Start test on LocalTerra
-				await LocalTest.startTest(new LocalTerra());
-			} else {
-				const terra: LCDClient = new LCDClient({
-					URL: info.URL,
-					chainID: info.chainID,
-					gasPrices: { uusd: 0.4 },
-					gasAdjustment: 1.2,
-				});
-				if (mode === "TestNet") {
-					await TestNet.startTest(terra);
-				} else if (mode === "MainNet") {
-					await MainNet.startTest(terra);
-				}
-			}
-		} else {
-			console.error("Invalid network");
-		}
-	} else {
-		console.error("Invalid network");
+	switch (mode) {
+		case "localterra":
+			await LocalNet.startTest();
+			break;
+		case "localterra_setup":
+			await LocalNet.startSetupContracts();
+			break;
+		case "localterra_migrate":
+			await LocalNet.startMigrateContracts();
+			break;
+		case "testnet":
+			await TestNet.startTest();
+			break;
+		case "testnet_setup":
+			await TestNet.startSetupContracts();
+			break;
+		case "testnet_migrate":
+			await TestNet.startMigrateContracts();
+			break;
+		case "mainnet":
+			await MainNet.startTest();
+			break;
+		case "mainnet_setup":
+			await MainNet.startSetupContracts();
+			break;
+		case "mainnet_migrate":
+			await MainNet.startMigrateContracts();
+			break;
+		default:
+			console.log("Invalid command");
+			break;
 	}
 })();
