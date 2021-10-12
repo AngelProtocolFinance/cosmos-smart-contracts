@@ -1,12 +1,11 @@
-import { LCDClient, LocalTerra } from "@terra-money/terra.js";
-import * as LocalTest from "./local_terra";
-import * as TestNet from "./testnet";
-import * as MainNet from "./mainnet";
+import * as LocalNet from "./environments/localterra";
+import * as TestNet from "./environments/testnet";
+import * as MainNet from "./environments/mainnet";
 
-import {getNetworkInfo} from "../config";
 //----------------------------------------------------------------------------------------
-// Main
+// Test-suite for LocalTerra, TestNet, and MainNet
 //----------------------------------------------------------------------------------------
+
 function isValidMode(mode: string) {
   return mode === "LocalTerra" ||
     mode === "TestNet" ||
@@ -16,26 +15,12 @@ function isValidMode(mode: string) {
 (async () => {
 	const mode = process.env.npm_config_mode || "";
 	if (isValidMode(mode)) {
-		const info = getNetworkInfo(mode);
-		if (info) {
-			if (mode === "LocalTerra") {
-				// Start test on LocalTerra
-				await LocalTest.startTest(new LocalTerra());
-			} else {
-				const terra: LCDClient = new LCDClient({
-					URL: info.URL,
-					chainID: info.chainID,
-					gasPrices: { uusd: 0.4 },
-					gasAdjustment: 1.2,
-				});
-				if (mode === "TestNet") {
-					await TestNet.startTest(terra);
-				} else if (mode === "MainNet") {
-					await MainNet.startTest(terra);
-				}
-			}
-		} else {
-			console.error("Invalid network");
+		if (mode === "LocalTerra") {
+			await LocalNet.start();
+		} else if (mode === "TestNet") {
+				await TestNet.start();
+		} else if (mode === "MainNet") {
+			await MainNet.start();
 		}
 	} else {
 		console.error("Invalid network");
