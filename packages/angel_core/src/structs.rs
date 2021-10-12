@@ -1,5 +1,5 @@
-use cosmwasm_std::{Addr, Coin, Decimal, Env, SubMsg, Timestamp, Uint128};
 use cosmwasm_bignumber::Decimal256;
+use cosmwasm_std::{Addr, Coin, Decimal, Env, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -246,7 +246,7 @@ impl GenericBalance {
         };
     }
     pub fn get_ust(&self) -> Coin {
-        match self.native.iter().find(|t| t.denom == "uusd".to_string()) {
+        match self.native.iter().find(|t| t.denom == *"uusd") {
             Some(coin) => coin.clone(),
             None => Coin {
                 amount: Uint128::zero(),
@@ -267,8 +267,7 @@ impl GenericBalance {
     pub fn get_token_amount(&self, token_address: Addr) -> Uint128 {
         self.cw20_list()
             .iter()
-            .filter(|token| token.address == token_address)
-            .next()
+            .find(|token| token.address == token_address)
             .unwrap_or(&Cw20Coin {
                 amount: Uint128::zero(),
                 address: token_address.to_string(),

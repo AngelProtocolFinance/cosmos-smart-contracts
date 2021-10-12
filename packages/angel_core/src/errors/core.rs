@@ -74,4 +74,7 @@ pub enum ContractError {
 
     #[error("Vault redemptions already in progress.")]
     RedemptionInProgress {},
+
+    #[error("Index Fund has expired")]
+    IndexFundExpired {},
 }

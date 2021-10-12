@@ -89,9 +89,9 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    config.fund_rotation = msg.fund_rotation.unwrap_or(config.fund_rotation);
+    config.funding_goal = msg.funding_goal; // config set as optional, don't unwrap
+    config.fund_rotation = msg.fund_rotation; // config set as optional, don't unwrap
     config.fund_member_limit = msg.fund_member_limit.unwrap_or(config.fund_member_limit);
-    config.funding_goal = msg.funding_goal; // only config set as optional, don't unwrap
     config.accepted_tokens = AcceptedTokens {
         native: msg
             .accepted_tokens_native
@@ -138,6 +138,7 @@ pub fn create_index_fund(
 
 pub fn remove_index_fund(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     fund_id: u64,
 ) -> Result<Response, ContractError> {
@@ -147,9 +148,15 @@ pub fn remove_index_fund(
         return Err(ContractError::Unauthorized {});
     }
     // this will fail if fund ID passed is not found
-    let _fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
-    // remove the fund from FUNDS
-    fund_store(deps.storage).remove(&fund_id.to_be_bytes());
+    let mut fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
+
+    if fund.is_expired(&env) {
+        return Err(ContractError::IndexFundExpired {});
+    }
+
+    // set the fund to be expired on the current block
+    fund.expiry_height = Some(env.block.height);
+    fund_store(deps.storage).save(&fund_id.to_be_bytes(), &fund)?;
 
     // decrement state funds totals
     let mut state = STATE.load(deps.storage)?;
@@ -161,6 +168,7 @@ pub fn remove_index_fund(
 
 pub fn update_fund_members(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     msg: UpdateMembersMsg,
 ) -> Result<Response, ContractError> {
@@ -171,6 +179,10 @@ pub fn update_fund_members(
     }
     // this will fail if fund ID passed is not found
     let mut fund = fund_store(deps.storage).load(&msg.fund_id.to_be_bytes())?;
+
+    if fund.is_expired(&env) {
+        return Err(ContractError::IndexFundExpired {});
+    }
 
     // add members to the fund, only if they do not already exist
     for add in msg.add.into_iter() {
@@ -284,19 +296,25 @@ pub fn deposit(
     }
 
     // check if block height limit is exceeded
-    let curr_active_fund = match env.block.height >= state.next_rotation_block {
-        true => {
-            // update STATE with new active fund & reset round donations
-            let new_fund_id = rotate_fund(read_funds(deps.storage).unwrap(), state.active_fund);
-            state.active_fund = new_fund_id;
-            state.round_donations = Uint128::zero();
-            // increment next block rotation point until it exceeds the current block height
-            while env.block.height >= state.next_rotation_block {
-                state.next_rotation_block += config.fund_rotation;
+    let curr_active_fund = match config.fund_rotation {
+        Some(blocks) => {
+            match env.block.height >= state.next_rotation_block {
+                true => {
+                    // update STATE with new active fund & reset round donations
+                    let new_fund_id =
+                        rotate_fund(read_funds(deps.storage).unwrap(), state.active_fund);
+                    state.active_fund = new_fund_id;
+                    state.round_donations = Uint128::zero();
+                    // increment next block rotation point until it exceeds the current block height
+                    while env.block.height >= state.next_rotation_block {
+                        state.next_rotation_block += blocks;
+                    }
+                    new_fund_id
+                }
+                false => state.active_fund,
             }
-            new_fund_id
         }
-        false => state.active_fund,
+        None => state.active_fund,
     };
 
     // Get the Registrar SC Split to liquid parameters
@@ -314,6 +332,10 @@ pub fn deposit(
         // A Fund ID was provided, simple donation of all to one fund
         Some(fund_id) => {
             let fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
+            // double check the given fund is not expired
+            if fund.is_expired(&env) {
+                return Err(ContractError::IndexFundExpired {});
+            }
             let split = calculate_split(
                 tca_member,
                 registrar_split_configs,
@@ -350,6 +372,10 @@ pub fn deposit(
                 // donate up to the donation limit on original active fund
                 goal_leftover = config.funding_goal.unwrap() - state.round_donations;
                 let fund = fund_read(deps.storage).load(&curr_active_fund.to_be_bytes())?;
+                // double check the given fund is not expired
+                if fund.is_expired(&env) {
+                    return Err(ContractError::IndexFundExpired {});
+                }
                 let split = calculate_split(
                     tca_member,
                     registrar_split_configs.clone(),
@@ -365,6 +391,10 @@ pub fn deposit(
             }
             // donate the remaining deposit_amount to the newly active fund
             let fund = fund_read(deps.storage).load(&new_active_fund.to_be_bytes())?;
+            // double check the given fund is not expired
+            if fund.is_expired(&env) {
+                return Err(ContractError::IndexFundExpired {});
+            }
             let split = calculate_split(
                 tca_member,
                 registrar_split_configs,
@@ -379,6 +409,7 @@ pub fn deposit(
             ));
         }
     };
+
     state.round_donations += deposit_amount;
     STATE.save(deps.storage, &state)?;
 
@@ -444,7 +475,7 @@ pub fn build_donation_messages(
                 deps,
                 Coin {
                     denom: "uusd".to_string(),
-                    amount: member_portion.clone(),
+                    amount: member_portion,
                 },
             )
             .unwrap()],
