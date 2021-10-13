@@ -527,3 +527,100 @@ async function turnOverApTeamMultisig(turnover_to_multisig: boolean, is_localter
     console.log(chalk.green(" Done!"));
   }
 }
+
+// Deploy Halo CW20 TerraSwap contracts
+export async function setupTerraSwap(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  accAddress: string,
+  is_localterra: boolean
+  ): Promise<void> {
+  let tokenCodeId: number;
+  let pairCodeId: number;
+  let factoryCodeId: number;
+  let routerCodeId: number;
+  let factoryContractAddr: string;
+  if (is_localterra) {
+    process.stdout.write("Uploading TerraSwap factory Wasm");
+    factoryCodeId = await storeCode(
+      terra,
+      apTeam,
+      path.resolve(__dirname, "../../../../artifacts/terraswap_factory.wasm"));
+    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${factoryCodeId}`);
+  
+    process.stdout.write("Uploading TerraSwap factory Wasm");
+    pairCodeId = await storeCode(
+      terra,
+      apTeam,
+      path.resolve(__dirname, "../../../../artifacts/terraswap_pair.wasm"));
+    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${pairCodeId}`);
+  
+    process.stdout.write("Uploading TerraSwap factory Wasm");
+    tokenCodeId = await storeCode(
+      terra,
+      apTeam,
+      path.resolve(__dirname, "../../../../artifacts/terraswap_factory.wasm"));
+    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${tokenCodeId}`);
+  
+    process.stdout.write("Uploading TerraSwap factory Wasm");
+    routerCodeId = await storeCode(
+      terra,
+      apTeam,
+      path.resolve(__dirname, "../../../../artifacts/terraswap_factory.wasm"));
+    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${routerCodeId}`);
+
+    // Factory contract
+    process.stdout.write("Instantiating Factory contract");
+    const factoryResult = await instantiateContract(terra, apTeam, apTeam, factoryCodeId, {
+      pair_code_id: pairCodeId,
+      token_code_id: tokenCodeId
+    });
+    factoryContractAddr = factoryResult.logs[0].events.find((event) => {
+      return event.type == "instantiate_contract";
+    })?.attributes.find((attribute) => {
+      return attribute.key == "contract_address";
+    })?.value as string;
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${factoryContractAddr}`);
+  } else {
+    tokenCodeId = 148;
+    pairCodeId = 155;
+    factoryCodeId = 154;
+    factoryContractAddr = "terra18qpjm4zkvqnpjpw0zn0tdr8gdzvt8au35v45xf";
+  }
+
+  // HALO token contract
+  process.stdout.write("Instantiating HALO Token contract");
+  const tokenResult = await instantiateContract(terra, apTeam, apTeam, tokenCodeId, {
+    name: "Angel Protocol",
+    symbol: "HALO",
+    decimals: 6,
+    initial_balances: [
+      {
+        address: accAddress,
+        amount: "1000000000000"
+      }
+    ]
+  });
+  const tokenContract = tokenResult.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => {
+    return attribute.key == "contract_address";
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${tokenContract}`);
+ 
+  // Pair contract
+  process.stdout.write("Instantiating Pair contract");
+  const pairResult = await instantiateContract(terra, apTeam, apTeam, pairCodeId, {
+    token_code_id: tokenCodeId,
+    asset_infos: [
+      { token: { contract_addr: factoryContractAddr }},
+      { native_token: { denom: "uusd" }}
+    ]
+  });
+  const pairContract = pairResult.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => {
+    return attribute.key == "contract_address";
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${pairContract}`);
+}
