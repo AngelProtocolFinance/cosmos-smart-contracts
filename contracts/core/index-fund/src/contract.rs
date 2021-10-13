@@ -63,7 +63,11 @@ pub fn execute(
         ExecuteMsg::CreateFund { fund } => executers::create_index_fund(deps, info, fund),
         ExecuteMsg::RemoveFund(msg) => executers::remove_index_fund(deps, env, info, msg.fund_id),
         ExecuteMsg::RemoveMember(msg) => executers::remove_member(deps, info, msg.member),
-        ExecuteMsg::UpdateMembers(msg) => executers::update_fund_members(deps, env, info, msg),
+        ExecuteMsg::UpdateMembers {
+            fund_id,
+            add,
+            remove,
+        } => executers::update_fund_members(deps, env, info, fund_id, add, remove),
         ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
         ExecuteMsg::Recieve(msg) => executers::receive(deps, env, info, msg),
     }
