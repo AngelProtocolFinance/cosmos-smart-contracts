@@ -23,7 +23,9 @@ export const localterra = {
     cw3GuardianAngels: "",
   },
   // TerraSwap balances account
-  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8"
+  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8",
+  haloTokenContract: "",
+  pairContract: ""
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -63,7 +65,9 @@ export const testnet = {
     cw3GuardianAngels: "terra1ydp9qd9xgdq63ua6axfvauye3l7a3476lm6l28",
   },
   // TerraSwap balances account
-  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8"
+  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8",
+  haloTokenContract: "terra1cae8vx5qxcdq6exw62vqhpzm6nhdnqxhplegsc",
+  pairContract: "terra14xec5keg8gs35cragy7gsn5hrewxlv2wqdmken"
 } as const;
 
 // ---------------------------------------------------------------------------------------------------
@@ -116,5 +120,7 @@ export const mainnet = {
     {addr: "terra1p3kcfzflagjl7lxfexwyaz43e4mprhyml0sqju", weight: 1},
   ],
   // TerraSwap balances account
-  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8"
+  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8",
+  haloTokenContract: "",
+  pairContract: ""
 } as const;
