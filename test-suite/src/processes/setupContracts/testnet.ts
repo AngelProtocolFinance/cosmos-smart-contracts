@@ -68,7 +68,7 @@ export async function setupContracts(
   apTeam2 = wallets.apTeam2;
   charity1 = wallets.charity1;
   charity2 = wallets.charity2;
-  charity2 = wallets.charity3;
+  charity3 = wallets.charity3;
   tca = wallets.tca;
 
   anchorMoneyMarket = _anchorMoneyMarket;
