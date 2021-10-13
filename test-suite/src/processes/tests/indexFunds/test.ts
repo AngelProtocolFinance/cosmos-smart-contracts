@@ -37,7 +37,8 @@ export async function testDonorSendsToIndexFund(
         { uusd: "4200000", }
       ),
     ])
-  ).to.be.rejectedWith("Unauthorized"); // for MVP normal users cannot donate
+  ).to.be.rejectedWith("Request failed with status code 400");
+  //.to.be.rejectedWith("Unauthorized"); // for MVP normal users cannot donate
   console.log(chalk.green("Passed!"));
 }
 

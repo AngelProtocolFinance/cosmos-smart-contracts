@@ -93,7 +93,8 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
         harvest: {}
       })
     ])
-  ).to.be.rejectedWith("Unauthorized");
+  ).to.be.rejectedWith("Request failed with status code 400");
+  //.to.be.rejectedWith("Unauthorized");
 
   await expect(
     sendTransaction(terra, apTeam, [
