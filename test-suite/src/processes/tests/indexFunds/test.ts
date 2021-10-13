@@ -81,6 +81,39 @@ export async function testTcaMemberSendsToIndexFund(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: SC owner can update the fund members to an Index Fund 
+//
+// SCENARIO:
+// Only SC owner can update fund members
+//
+//----------------------------------------------------------------------------------------
+export async function testUpdateFundMembers(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  indexFund: string,
+  endowmentContract2: string,
+  endowmentContract4: string,
+): Promise<void> {
+  process.stdout.write("Test - SC owner can update fund members");
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(
+        apTeam.key.accAddress, 
+        indexFund,
+        {
+          update_members: {
+            fund_id: 2,
+            add: [endowmentContract2],
+            remove: [endowmentContract4],
+          }
+        }
+      )
+    ])
+  );
+  console.log(chalk.green("Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
 
