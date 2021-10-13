@@ -5,7 +5,7 @@ import { LCDClient, MnemonicKey, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
 import { mainnet as config } from "../config/constants";
 import { migrateContracts } from "../processes/migrateContracts/migration";
-import { setupContracts, Member } from "../processes/setupContracts/mainnet";
+import { setupContracts, Member, setupTerraSwap } from "../processes/setupContracts/mainnet";
 import { testExecute } from "../processes/tests/mainnet";
 
 // -------------------------------------------------------------------------------------
@@ -26,6 +26,8 @@ let anchorMoneyMarket: string;
 let apTreasury: string;
 let members: Member[];
 let tcaMembers: string[];
+
+let accAddress: string;
 
 // -------------------------------------------------------------------------------------
 // initialize variables
@@ -62,6 +64,8 @@ function initialize() {
   console.log(`Use ${chalk.cyan(cw4GrpOwners)} as CW4 Endowment Owners Group`);
   console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
   console.log(`Use ${chalk.cyan(endowmentContracts)} as Endowment Contracts`);
+
+  accAddress = config.accAddress;
 }
 
 // -------------------------------------------------------------------------------------
@@ -96,6 +100,21 @@ export async function startSetupContracts(): Promise<void> {
       funding_goal: "50000000", // funding goal
     },
   );
+}
+
+// -------------------------------------------------------------------------------------
+// start setup TerraSwap contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupTerraSwapContracts(): Promise<void> {
+  console.log(chalk.blue("\nMainNet Columbus-5"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Setup contracts
+  console.log(chalk.yellow("\nStep 2. Contracts Setup"));
+  await setupTerraSwap(terra, apTeam, accAddress);
 }
 
 // -------------------------------------------------------------------------------------

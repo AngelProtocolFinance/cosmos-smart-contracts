@@ -305,3 +305,51 @@ async function setup(
   ]);
   console.log(chalk.green(" Done!"));
 }
+
+// Deploy Halo CW20 TerraSwap contracts
+export async function setupTerraSwap(
+  terra: LCDClient,
+  apTeam: Wallet,
+  accAddress: string
+  ): Promise<void> {
+  const tokenCodeId = 3;
+  const pairCodeId = 4;
+  const factoryCodeId = 5;
+  const factoryContractAddr = "terra1ulgw0td86nvs4wtpsc80thv6xelk76ut7a7apj";
+
+  // HALO token contract
+  process.stdout.write("Instantiating HALO Token contract");
+  const tokenResult = await instantiateContract(terra, apTeam, apTeam, tokenCodeId, {
+    name: "Angel Protocol",
+    symbol: "HALO",
+    decimals: 6,
+    initial_balances: [
+      {
+        address: accAddress,
+        amount: "1000000000000"
+      }
+    ]
+  });
+  const tokenContract = tokenResult.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => {
+    return attribute.key == "contract_address";
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${tokenContract}`);
+ 
+  // Pair contract
+  process.stdout.write("Instantiating Pair contract");
+  const pairResult = await instantiateContract(terra, apTeam, apTeam, pairCodeId, {
+    token_code_id: tokenCodeId,
+    asset_infos: [
+      { token: { contract_addr: factoryContractAddr }},
+      { native_token: { denom: "uusd" }}
+    ]
+  });
+  const pairContract = pairResult.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => {
+    return attribute.key == "contract_address";
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${pairContract}`);
+}

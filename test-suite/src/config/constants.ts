@@ -22,6 +22,8 @@ export const localterra = {
     cw4GrpOwners: "",
     cw3GuardianAngels: "",
   },
+  // TerraSwap balances account
+  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8"
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -60,6 +62,8 @@ export const testnet = {
     cw4GrpOwners: "terra1ldrkpnysrasq4sg4zu9mgh74wt9nxvk9qgvxtd",
     cw3GuardianAngels: "terra1ydp9qd9xgdq63ua6axfvauye3l7a3476lm6l28",
   },
+  // TerraSwap balances account
+  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8"
 } as const;
 
 // ---------------------------------------------------------------------------------------------------
@@ -111,4 +115,6 @@ export const mainnet = {
     {addr: "terra1numzqm5mgr56ftd4y8mfen7705nfs4vpz5jf0s", weight: 1},
     {addr: "terra1p3kcfzflagjl7lxfexwyaz43e4mprhyml0sqju", weight: 1},
   ],
+  // TerraSwap balances account
+  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8"
 } as const;
