@@ -21,7 +21,7 @@ export async function migrateContracts(
   cw4GrpOwners: string,
   cw3ApTeam: string,
   cw3GuardianAngels: string,
-  anchorVaults: string[],
+  vaultContracts: string[],
   endowmentContracts: string[]
 ): Promise<void> {
   // run the migrations desired
@@ -31,7 +31,7 @@ export async function migrateContracts(
   await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
   await migrateIndexFund(terra, apTeam, indexFund);
   await migrateAccounts(terra, apTeam, registrar, endowmentContracts);
-  await migrateVaults(terra, apTeam, anchorVaults);
+  await migrateVaults(terra, apTeam, vaultContracts);
 }
 
 // -------------------------------------------------
@@ -201,13 +201,12 @@ async function migrateAccounts(
   
   process.stdout.write("Migrate Accounts contracts\n");
   let prom = Promise.resolve();
-  let id = 1;
   endowmentContracts.forEach(endowment => {
     // eslint-disable-next-line no-async-promise-executor
     prom = prom.then(() => new Promise(async (resolve, reject) => {
       try {
         await migrateContract(terra, apTeam, apTeam, endowment, codeId, {});
-        console.log(chalk.green(`#${id ++} - Done!`));
+        console.log(chalk.green(`${endowment} - Completed`));
         resolve();
       } catch(e) {
         reject(e);
