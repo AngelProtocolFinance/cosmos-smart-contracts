@@ -68,29 +68,29 @@ export async function testExecute(
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // Guardian angels multisig test
-  await testAddApTeamMemberToC4Group(terra, apTeam, apTeam3, cw3ApTeam, cw4GrpApTeam);
-  await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);
-  await testGuardiansChangeEndowmentOwner(terra, charity2, charity3, pleb, endowmentContract1, cw3GuardianAngels);
+  // await testAddApTeamMemberToC4Group(terra, apTeam, apTeam3, cw3ApTeam, cw4GrpApTeam);
+  // await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);
+  // await testGuardiansChangeEndowmentOwner(terra, charity2, charity3, pleb, endowmentContract1, cw3GuardianAngels);
   // Test execute
-  await testRejectUnapprovedDonations(terra, pleb, endowmentContract3);
-  await testDonorSendsToIndexFund(terra, pleb, indexFund);
-  await testTcaMemberSendsToIndexFund(terra, tca, indexFund);
-  await testAngelTeamCanTriggerVaultsHarvest(terra, apTeam, charity1, registrar);
-  await testCharityCanUpdateStrategies(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
-  await testBeneficiaryCanWithdrawFromLiquid(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
-  await testUpdatingRegistrarConfigs(terra, apTeam, registrar);
-  await testClosingEndpoint(terra, apTeam, registrar, endowmentContract3, endowmentContract4);
-  await testMigrateAllAccounts(terra, apTeam, registrar);
-  await testUpdateFundMembers(terra, apTeam, indexFund, endowmentContract2, endowmentContract4);
+  // await testRejectUnapprovedDonations(terra, pleb, endowmentContract3);
+  // await testDonorSendsToIndexFund(terra, pleb, indexFund);
+  // await testTcaMemberSendsToIndexFund(terra, tca, indexFund);
+  // await testAngelTeamCanTriggerVaultsHarvest(terra, apTeam, charity1, registrar);
+  // await testCharityCanUpdateStrategies(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
+  // await testBeneficiaryCanWithdrawFromLiquid(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
+  // await testUpdatingRegistrarConfigs(terra, apTeam, registrar);
+  // await testClosingEndpoint(terra, apTeam, registrar, endowmentContract3, endowmentContract4);
+  // await testMigrateAllAccounts(terra, apTeam, registrar);
+  // await testUpdateFundMembers(terra, apTeam, indexFund, 2, [endowmentContract2], [endowmentContract4]);
   // Test query
   await testQueryRegistrarConfig(terra, registrar);
   await testQueryRegistrarEndowmentList(terra, registrar);
   await testQueryRegistrarApprovedVaultList(terra, registrar);
   await testQueryRegistrarApprovedVaultRateList(terra, registrar);
   await testQueryRegistrarVaultList(terra, registrar);
-  await testQueryRegistrarVault(terra, registrar, anchorVault1);
-  await testQueryAccountsBalance(terra, endowmentContract1);
-  await testQueryVaultConfig(terra, anchorVault1);
+  // await testQueryRegistrarVault(terra, registrar, anchorVault1);
+  // await testQueryAccountsBalance(terra, endowmentContract1);
+  // await testQueryVaultConfig(terra, anchorVault1);
   await testQueryAccountsConfig(terra, endowmentContract1);
   await testQueryAccountsEndowment(terra, endowmentContract1);
   await testQueryIndexFundConfig(terra, indexFund);

@@ -135,7 +135,9 @@ export async function startTest(): Promise<void> {
   initialize();
 
   // Test query
-  await testExecute(terra,
+  await testExecute(
+    terra,
+    apTeam,
     registrar,
     indexFund,
     anchorVault,
