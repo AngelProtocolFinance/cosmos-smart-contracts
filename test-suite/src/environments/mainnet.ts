@@ -5,7 +5,8 @@ import { LCDClient, MnemonicKey, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
 import { mainnet as config } from "../config/constants";
 import { migrateContracts } from "../processes/migrateContracts/migration";
-import { setupContracts, Member, setupTerraSwap } from "../processes/setupContracts/mainnet";
+import { setupContracts, Member } from "../processes/setupContracts/mainnet";
+import { setupTerraSwap } from "../processes/setupTerraSwap/realnet";
 import { testExecute } from "../processes/tests/mainnet";
 
 // -------------------------------------------------------------------------------------
@@ -28,6 +29,12 @@ let members: Member[];
 let tcaMembers: string[];
 
 let accAddress: string;
+let tokenCodeId: number;
+let pairCodeId: number;
+let factoryCodeId: number;
+let factoryContract: string;
+let tokenContract: string;
+let pairContract: string;
 
 // -------------------------------------------------------------------------------------
 // initialize variables
@@ -66,6 +73,12 @@ function initialize() {
   console.log(`Use ${chalk.cyan(endowmentContracts)} as Endowment Contracts`);
 
   accAddress = config.accAddress;
+  tokenCodeId = config.token_code_id;
+  pairCodeId = config.pair_code_id;
+  factoryCodeId = config.factory_code_id;
+  factoryContract = config.factory_contract;
+  tokenContract = config.token_contract;
+  pairContract = config.pair_contract;
 }
 
 // -------------------------------------------------------------------------------------
@@ -114,7 +127,15 @@ export async function startSetupTerraSwapContracts(): Promise<void> {
 
   // Setup contracts
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupTerraSwap(terra, apTeam, accAddress);
+  await setupTerraSwap(
+    terra,
+    apTeam,
+    accAddress,
+    tokenCodeId,
+    pairCodeId,
+    factoryCodeId,
+    factoryContract
+  );
 }
 
 // -------------------------------------------------------------------------------------

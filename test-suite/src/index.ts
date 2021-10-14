@@ -17,7 +17,7 @@ import * as MainNet from "./environments/mainnet";
 		case "localterra_migrate":
 			await LocalNet.startMigrateContracts();
 			break;
-		case "localterra_setupswap":
+		case "localterra_terraswap":
 			await LocalNet.startSetupTerraSwapContracts();
 			break;
 		case "testnet":
@@ -29,7 +29,7 @@ import * as MainNet from "./environments/mainnet";
 		case "testnet_migrate":
 			await TestNet.startMigrateContracts();
 			break;
-		case "testnet_setupswap":
+		case "testnet_terraswap":
 			await TestNet.startSetupTerraSwapContracts();
 			break;
 		case "mainnet":
@@ -41,7 +41,7 @@ import * as MainNet from "./environments/mainnet";
 		case "mainnet_migrate":
 			await MainNet.startMigrateContracts();
 			break;
-		case "mainnet_setupswap":
+		case "mainnet_terraswap":
 			await MainNet.startSetupTerraSwapContracts();
 			break;
 		default:

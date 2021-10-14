@@ -5,7 +5,8 @@ import { LCDClient, MnemonicKey, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
 import { testnet as config } from "../config/constants";
 import { migrateContracts } from "../processes/migrateContracts/migration";
-import { setupContracts, setupTerraSwap } from "../processes/setupContracts/testnet";
+import { setupContracts } from "../processes/setupContracts/testnet";
+import { setupTerraSwap } from "../processes/setupTerraSwap/realnet";
 import { testExecute } from "../processes/tests/testnet";
 
 // -------------------------------------------------------------------------------------
@@ -35,6 +36,12 @@ let endowmentContract3: string;
 let endowmentContract4: string;
 let anchorMoneyMarket: string;
 let accAddress: string;
+let tokenCodeId: number;
+let pairCodeId: number;
+let factoryCodeId: number;
+let factoryContract: string;
+let tokenContract: string;
+let pairContract: string;
 
 // -------------------------------------------------------------------------------------
 // initialize variables
@@ -93,6 +100,12 @@ function initialize() {
   console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
 
   accAddress = config.accAddress;
+  tokenCodeId = config.token_code_id;
+  pairCodeId = config.pair_code_id;
+  factoryCodeId = config.factory_code_id;
+  factoryContract = config.factory_contract;
+  tokenContract = config.token_contract;
+  pairContract = config.pair_contract;
 }
 
 // -------------------------------------------------------------------------------------
@@ -148,7 +161,15 @@ export async function startSetupTerraSwapContracts(): Promise<void> {
 
   // Setup TerraSwap contracts
   console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
-  await setupTerraSwap(terra, apTeam, accAddress, false);
+  await setupTerraSwap(
+    terra,
+    apTeam,
+    accAddress,
+    tokenCodeId,
+    pairCodeId,
+    factoryCodeId,
+    factoryContract
+  );
 }
 
 // -------------------------------------------------------------------------------------
