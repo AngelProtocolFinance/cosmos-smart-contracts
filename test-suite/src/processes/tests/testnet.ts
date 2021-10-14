@@ -83,22 +83,22 @@ export async function testExecute(
   // await testMigrateAllAccounts(terra, apTeam, registrar);
   // await testUpdateFundMembers(terra, apTeam, indexFund, 2, [endowmentContract2], [endowmentContract4]);
   // Test query
-  await testQueryRegistrarConfig(terra, registrar);
-  await testQueryRegistrarEndowmentList(terra, registrar);
-  await testQueryRegistrarApprovedVaultList(terra, registrar);
-  await testQueryRegistrarApprovedVaultRateList(terra, registrar);
-  await testQueryRegistrarVaultList(terra, registrar);
+  // await testQueryRegistrarConfig(terra, registrar);
+  // await testQueryRegistrarEndowmentList(terra, registrar);
+  // await testQueryRegistrarApprovedVaultList(terra, registrar);
+  // await testQueryRegistrarApprovedVaultRateList(terra, registrar);
+  // await testQueryRegistrarVaultList(terra, registrar);
   // await testQueryRegistrarVault(terra, registrar, anchorVault1);
   // await testQueryAccountsBalance(terra, endowmentContract1);
   // await testQueryVaultConfig(terra, anchorVault1);
-  await testQueryAccountsConfig(terra, endowmentContract1);
-  await testQueryAccountsEndowment(terra, endowmentContract1);
-  await testQueryIndexFundConfig(terra, indexFund);
-  await testQueryIndexFundState(terra, indexFund);
-  await testQueryIndexFundTcaList(terra, indexFund);
-  await testQueryIndexFundFundsList(terra, indexFund);
-  await testQueryIndexFundFundDetails(terra, indexFund);
-  await testQueryIndexFundActiveFundDetails(terra, indexFund);
-  await testQueryIndexFundActiveFundDonations(terra, indexFund);
-  await testQueryIndexFundDeposit(terra, indexFund);
+  // await testQueryAccountsConfig(terra, endowmentContract1);
+  // await testQueryAccountsEndowment(terra, endowmentContract1);
+  // await testQueryIndexFundConfig(terra, indexFund);
+  // await testQueryIndexFundState(terra, indexFund);
+  // await testQueryIndexFundTcaList(terra, indexFund);
+  // await testQueryIndexFundFundsList(terra, indexFund);
+  // await testQueryIndexFundFundDetails(terra, indexFund);
+  // await testQueryIndexFundActiveFundDetails(terra, indexFund);
+  // await testQueryIndexFundActiveFundDonations(terra, indexFund);
+  // await testQueryIndexFundDeposit(terra, indexFund);
 }
