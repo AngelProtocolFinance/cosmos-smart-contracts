@@ -303,7 +303,7 @@ pub fn deposit(
     }
 
     // check if block height limit is exceeded
-    let mut curr_active_fund = match config.fund_rotation {
+    match config.fund_rotation {
         Some(blocks) => {
             match env.block.height >= state.next_rotation_block {
                 true => {
@@ -316,12 +316,11 @@ pub fn deposit(
                     while env.block.height >= state.next_rotation_block {
                         state.next_rotation_block += blocks;
                     }
-                    new_fund_id
                 }
-                false => state.active_fund,
+                false => (),
             }
         }
-        None => state.active_fund,
+        None => (),
     };
 
     // Get the Registrar SC Split to liquid parameters
@@ -362,46 +361,45 @@ pub fn deposit(
                 Some(_goal) => {
                     // loop active fund until the donation amount has been fully distributed
                     while deposit_amount > Uint128::zero() {
-                        // donate up to the donation limit on original active fund
-                        let goal_leftover = config.funding_goal.unwrap() - state.round_donations;
-                        let round_donation = match deposit_amount >= goal_leftover {
-                            true => {
-                                state.round_donations = Uint128::zero();
-                                state.active_fund = rotate_fund(
-                                    read_funds(deps.storage).unwrap(),
-                                    state.active_fund,
-                                );
-                                goal_leftover
-                            }
-                            false => {
-                                state.round_donations += deposit_amount;
-                                deposit_amount
-                            }
-                        };
-                        let fund = fund_read(deps.storage).load(&curr_active_fund.to_be_bytes())?;
+                        let loop_donation;
+                        let fund =
+                            fund_read(deps.storage).load(&state.active_fund.to_be_bytes())?;
                         // double check the given fund is not expired
                         if fund.is_expired(&env) {
                             return Err(ContractError::IndexFundExpired {});
                         }
+                        // donate up to the donation goal limit to this round's active fund
+                        let goal_leftover = config.funding_goal.unwrap() - state.round_donations;
+                        if deposit_amount >= goal_leftover {
+                            state.round_donations = Uint128::zero();
+                            // set state active fund to next fund for next loop iteration
+                            state.active_fund =
+                                rotate_fund(read_funds(deps.storage).unwrap(), state.active_fund);
+                            loop_donation = goal_leftover;
+                        } else {
+                            state.round_donations += deposit_amount;
+                            loop_donation = deposit_amount;
+                        };
                         let split = calculate_split(
                             tca_member,
                             registrar_split_configs.clone(),
                             fund.split_to_liquid,
                             msg.split,
                         );
+
                         donation_messages.append(&mut build_donation_messages(
                             deps.as_ref(),
                             fund.members,
                             split,
-                            round_donation,
+                            loop_donation,
                         ));
                         // deduct donated amount in this round from total donation amt
-                        deposit_amount -= round_donation;
+                        deposit_amount -= loop_donation;
                     }
                 }
                 None => {
                     // no funding goal, dump all donated funds into current active fund
-                    let fund = fund_read(deps.storage).load(&curr_active_fund.to_be_bytes())?;
+                    let fund = fund_read(deps.storage).load(&state.active_fund.to_be_bytes())?;
                     // double check the given fund is not expired
                     if fund.is_expired(&env) {
                         return Err(ContractError::IndexFundExpired {});
@@ -423,7 +421,6 @@ pub fn deposit(
         }
     };
 
-    state.round_donations += deposit_amount;
     STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
