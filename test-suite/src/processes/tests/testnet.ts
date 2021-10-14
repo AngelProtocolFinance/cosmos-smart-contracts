@@ -81,7 +81,7 @@ export async function testExecute(
   // await testUpdatingRegistrarConfigs(terra, apTeam, registrar);
   // await testClosingEndpoint(terra, apTeam, registrar, endowmentContract3, endowmentContract4);
   // await testMigrateAllAccounts(terra, apTeam, registrar);
-  // await testUpdateFundMembers(terra, apTeam, indexFund, endowmentContract2, endowmentContract4);
+  // await testUpdateFundMembers(terra, apTeam, indexFund, 2, [endowmentContract2], [endowmentContract4]);
   // Test query
   await testQueryRegistrarConfig(terra, registrar);
   await testQueryRegistrarEndowmentList(terra, registrar);

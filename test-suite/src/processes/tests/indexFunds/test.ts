@@ -80,6 +80,23 @@ export async function testTcaMemberSendsToIndexFund(
   console.log(chalk.green("Passed!"));
 }
 
+export async function testUpdatingIndexFundConfigs(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  indexFund: string
+): Promise<void> {
+  process.stdout.write("AP Team updates Index Fund configs - funding goal");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+      update_config: {
+        funding_goal: "10000000000",
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
+}
+
+
 //----------------------------------------------------------------------------------------
 // TEST: SC owner can update the fund members to an Index Fund 
 //
@@ -91,8 +108,9 @@ export async function testUpdateFundMembers(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   indexFund: string,
-  endowmentContract2: string,
-  endowmentContract4: string,
+  fundId: number,
+  add: string[],
+  remove: string[],
 ): Promise<void> {
   process.stdout.write("Test - SC owner can update fund members");
   await expect(
@@ -102,9 +120,9 @@ export async function testUpdateFundMembers(
         indexFund,
         {
           update_members: {
-            fund_id: 2,
-            add: [endowmentContract2],
-            remove: [endowmentContract4],
+            fund_id: fundId,
+            add: add,
+            remove: remove,
           }
         }
       )
