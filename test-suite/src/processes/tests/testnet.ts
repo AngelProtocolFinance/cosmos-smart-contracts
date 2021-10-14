@@ -70,17 +70,17 @@ export async function testExecute(
   // Guardian angels multisig test
   await testAddApTeamMemberToC4Group(terra, apTeam, apTeam3, cw3ApTeam, cw4GrpApTeam);
   await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);
-  await testGuardiansChangeEndowmentOwner(terra, charity2, charity3, pleb, endowmentContract1, cw3GuardianAngels);
+  // await testGuardiansChangeEndowmentOwner(terra, charity2, charity3, pleb, endowmentContract1, cw3GuardianAngels);
   // Test execute
-  await testRejectUnapprovedDonations(terra, pleb, endowmentContract3);
-  await testDonorSendsToIndexFund(terra, pleb, indexFund);
-  await testTcaMemberSendsToIndexFund(terra, tca, indexFund);
-  await testAngelTeamCanTriggerVaultsHarvest(terra, apTeam, charity1, registrar);
-  await testCharityCanUpdateStrategies(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
-  await testBeneficiaryCanWithdrawFromLiquid(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
-  await testUpdatingRegistrarConfigs(terra, apTeam, registrar);
-  await testClosingEndpoint(terra, apTeam, registrar, endowmentContract3, endowmentContract4);
-  await testMigrateAllAccounts(terra, apTeam, registrar);
+  // await testRejectUnapprovedDonations(terra, pleb, endowmentContract3);
+  // await testDonorSendsToIndexFund(terra, pleb, indexFund);
+  // await testTcaMemberSendsToIndexFund(terra, tca, indexFund);
+  // await testAngelTeamCanTriggerVaultsHarvest(terra, apTeam, charity1, registrar);
+  // await testCharityCanUpdateStrategies(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
+  // await testBeneficiaryCanWithdrawFromLiquid(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
+  // await testUpdatingRegistrarConfigs(terra, apTeam, registrar);
+  // await testClosingEndpoint(terra, apTeam, registrar, endowmentContract3, endowmentContract4);
+  // await testMigrateAllAccounts(terra, apTeam, registrar);
   await testUpdateFundMembers(terra, apTeam, indexFund, endowmentContract2, endowmentContract4);
   // Test query
   await testQueryRegistrarConfig(terra, registrar);
