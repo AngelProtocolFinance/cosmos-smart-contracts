@@ -31,7 +31,15 @@ export async function sendTransaction(
   msgs: Msg[],
   verbose = false
 ) {
-  const tx = await sender.createAndSignTx({msgs});
+  let tx;
+  if (LocalTerra.prototype.isPrototypeOf(terra)) {
+    tx = await sender.createAndSignTx({
+      msgs,
+      fee: new Fee(6000000, [new Coin("uusd", 3000000)]),
+    });
+  } else {
+    tx = await sender.createAndSignTx({msgs});
+  }
   const result = await terra.tx.broadcast(tx);
 
   // Print the log info
