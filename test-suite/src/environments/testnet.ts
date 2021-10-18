@@ -42,7 +42,7 @@ function initialize() {
   terra = new LCDClient({
     URL: config.networkInfo.url,
     chainID: config.networkInfo.chainId,
-    gasPrices: { uusd: 0.4 },
+    gasPrices: { uusd: 0.5 },
     gasAdjustment: 1.2,
   });
   apTeam = terra.wallet(new MnemonicKey({mnemonic: config.mnemonicKeys.apTeam}));
