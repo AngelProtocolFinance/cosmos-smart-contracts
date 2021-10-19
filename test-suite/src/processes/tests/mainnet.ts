@@ -40,8 +40,8 @@ export async function testExecute(
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
-  // await testUpdateFundMembers(terra, apTeam, indexFund, 1, [], ["",""]);
-  // await testUpdateFundMembers(terra, apTeam, indexFund, 2, ["",""], []);
+  // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 1, [], ["",""]);
+  // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, ["",""], []);
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);
@@ -53,8 +53,8 @@ export async function testExecute(
   // await testQueryVaultConfig(terra, anchorVault);
   // await testQueryAccountsConfig(terra, endowmentContract);
   // await testQueryAccountsEndowment(terra, endowmentContract);
-  await testQueryIndexFundConfig(terra, indexFund);
-  await testQueryIndexFundState(terra, indexFund);
+  // await testQueryIndexFundConfig(terra, indexFund);
+  // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
   // await testQueryIndexFundFundsList(terra, indexFund);
   // await testQueryIndexFundFundDetails(terra, indexFund);

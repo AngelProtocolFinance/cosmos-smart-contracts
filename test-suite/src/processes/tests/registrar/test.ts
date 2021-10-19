@@ -85,16 +85,17 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
   charity1: Wallet,
   registrar: string
 ): Promise<void> {
-  process.stdout.write("Test - AP Team can trigger harvest of all Vaults (Locked to Liquid Account)");
-
+  process.stdout.write("Test - Charity1 cannot trigger harvest of all Vaults (Locked to Liquid Account)");
   await expect(
     sendTransaction(terra, charity1, [
       new MsgExecuteContract(charity1.key.accAddress, registrar, {
         harvest: {}
       })
     ])
-  ).to.be.rejectedWith("Unauthorized");
+  );
+  console.log(chalk.green(" Failed!"));
 
+  process.stdout.write("Test - AP Team can trigger harvest of all Vaults (Locked to Liquid Account)");
   await expect(
     sendTransaction(terra, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, registrar, {
@@ -102,8 +103,7 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
       })
     ])
   );
-
-  console.log(chalk.green("Passed!"));
+  console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
@@ -123,7 +123,7 @@ export async function testMigrateAllAccounts(
       }),
     ])
   );
-  console.log(chalk.green("Passed!"));
+  console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
