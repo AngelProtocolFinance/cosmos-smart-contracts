@@ -9,7 +9,7 @@ import {
   MsgInstantiateContract,
   MsgMigrateContract,
   MsgStoreCode,
-  Fee,
+  StdFee,
   Wallet,
   LCDClient,
 } from "@terra-money/terra.js";
@@ -32,10 +32,11 @@ export async function sendTransaction(
   verbose = false
 ) {
   let tx;
+  // eslint-disable-next-line no-prototype-builtins
   if (LocalTerra.prototype.isPrototypeOf(terra)) {
     tx = await sender.createAndSignTx({
       msgs,
-      fee: new Fee(6000000, [new Coin("uusd", 3000000)]),
+      fee: new StdFee(6000000, [new Coin("uusd", 3000000)]),
     });
   } else {
     tx = await sender.createAndSignTx({msgs});
