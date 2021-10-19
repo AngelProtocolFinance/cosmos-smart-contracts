@@ -9,9 +9,9 @@ import {
   MsgInstantiateContract,
   MsgMigrateContract,
   MsgStoreCode,
-  Fee,
   Wallet,
   LCDClient,
+  StdFee,
 } from "@terra-money/terra.js";
 
 /**
@@ -29,16 +29,24 @@ export async function sendTransaction(
   terra: LocalTerra | LCDClient,
   sender: Wallet,
   msgs: Msg[],
-  verbose = false
+  verbose = true
 ) {
+  const fee = await terra.tx.estimateFee(sender.key.accAddress, msgs);
+  if (!fee) {
+    throw new Error(
+      chalk.red("Transaction failed!") +
+        `\n${chalk.yellow("estimateFee: ")}: ${fee}`
+    )
+  }
   let tx;
+  // eslint-disable-next-line no-prototype-builtins
   if (LocalTerra.prototype.isPrototypeOf(terra)) {
     tx = await sender.createAndSignTx({
       msgs,
-      fee: new Fee(6000000, [new Coin("uusd", 3000000)]),
+      fee: new StdFee(6000000, [new Coin("uusd", 3000000)]),
     });
   } else {
-    tx = await sender.createAndSignTx({msgs});
+    tx = await sender.createAndSignTx({msgs, fee});
   }
   const result = await terra.tx.broadcast(tx);
 
