@@ -28,7 +28,7 @@ export async function sendTransaction(
   terra: LocalTerra | LCDClient,
   sender: Wallet,
   msgs: Msg[],
-  verbose = true
+  verbose = false
 ) {
   let fee;
   try {
