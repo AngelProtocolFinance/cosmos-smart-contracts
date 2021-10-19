@@ -92,7 +92,7 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
         harvest: {}
       })
     ])
-  );
+  ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Failed!"));
 
   process.stdout.write("Test - AP Team can trigger harvest of all Vaults (Locked to Liquid Account)");

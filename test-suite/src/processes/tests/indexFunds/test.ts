@@ -37,7 +37,7 @@ export async function testDonorSendsToIndexFund(
         { uusd: "4200000", }
       ),
     ])
-  );
+  ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Failed!"));
 }
 
@@ -128,7 +128,7 @@ export async function testUpdateFundMembers(
         }
       )
     ])
-  );
+  ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Failed!"));
 
   process.stdout.write("Test - SC owner can update fund members");

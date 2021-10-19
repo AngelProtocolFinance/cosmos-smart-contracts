@@ -37,7 +37,7 @@ export async function testRejectUnapprovedDonations(
         { uusd: "4200000", }
       ),
     ])
-  );
+  ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Failed!"));
 }
 
@@ -68,7 +68,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
         }
       })
     ])
-  );
+  ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Failed!"));
 
   process.stdout.write("Test - Beneficiary can withdraw from the Endowment availalble amount (liquid)");

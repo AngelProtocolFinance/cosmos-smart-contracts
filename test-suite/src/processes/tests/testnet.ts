@@ -72,7 +72,7 @@ export async function testExecute(
   // await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);
   // await testGuardiansChangeEndowmentOwner(terra, charity2, charity3, pleb, endowmentContract1, cw3GuardianAngels);
   // Test execute
-  // await testRejectUnapprovedDonations(terra, pleb, endowmentContract3);
+  await testRejectUnapprovedDonations(terra, pleb, endowmentContract3);
   // await testDonorSendsToIndexFund(terra, pleb, indexFund);
   // await testTcaMemberSendsToIndexFund(terra, tca, indexFund);
   // await testAngelTeamCanTriggerVaultsHarvest(terra, apTeam, charity1, registrar);
