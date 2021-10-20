@@ -8,10 +8,6 @@ import {
   MsgInstantiateContract,
   MsgMigrateContract,
   MsgStoreCode,
-<<<<<<< HEAD
-  StdFee,
-=======
->>>>>>> RC-MVP
   Wallet,
   LCDClient,
 } from "@terra-money/terra.js";
