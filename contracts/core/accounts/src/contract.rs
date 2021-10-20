@@ -1,17 +1,16 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Account, Config, Endowment, RebalanceDetails, ACCOUNTS, CONFIG, ENDOWMENT};
+use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
-use angel_core::structs::{AcceptedTokens, StrategyComponent};
-use cosmwasm_bignumber::Uint256;
+use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
-    Response, StdResult, WasmQuery,
+    Response, StdResult, Uint128, WasmQuery,
 };
-use cw2::{get_contract_version, set_contract_version};
+use cw2::set_contract_version;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";
@@ -35,6 +34,7 @@ pub fn instantiate(
             accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
+            pending_redemptions: None,
         },
     )?;
 
@@ -54,33 +54,25 @@ pub fn instantiate(
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
             maturity_time: msg.maturity_time,                       // Option<u64>
             maturity_height: msg.maturity_height,                   // Option<u64>
-            split_to_liquid: msg.split_to_liquid,                   // SplitDetails
             strategies: vec![StrategyComponent {
                 vault: deps.api.addr_validate(&registrar_config.default_vault)?,
                 locked_percentage: Decimal::one(),
                 liquid_percentage: Decimal::one(),
             }],
             rebalance: RebalanceDetails::default(),
+            guardian_set: vec![],
         },
     )?;
 
-    let account = Account {
-        ust_balance: Uint256::zero(),
-        donations_received: Uint256::zero(),
-    };
-
-    // try to create both prefixed accounts
-    for prefix in ["locked", "liquid"].iter() {
-        // try to store it, fail if the account ID was already in use
-        ACCOUNTS.update(
-            deps.storage,
-            prefix.to_string(),
-            |existing| match existing {
-                None => Ok(account.clone()),
-                Some(_) => Err(ContractError::AlreadyInUse {}),
-            },
-        )?;
-    }
+    STATE.save(
+        deps.storage,
+        &State {
+            donations_received: Uint128::zero(),
+            balances: BalanceInfo::default(),
+            closing_endowment: false,
+            closing_beneficiary: None,
+        },
+    )?;
 
     Ok(Response::default())
 }
@@ -92,10 +84,6 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    // let balance = Balance::from(info.funds.clone());
-    if info.funds.len() > 1 {
-        return Err(ContractError::InvalidCoinsDeposited {});
-    }
     match msg {
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
             executers::update_endowment_settings(deps, env, info, msg)
@@ -104,25 +92,26 @@ pub fn execute(
             executers::update_endowment_status(deps, env, info, msg)
         }
         ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
-        ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
+        ExecuteMsg::Withdraw { sources } => executers::withdraw(deps, env, info, sources),
         ExecuteMsg::VaultReceipt(msg) => {
-            executers::vault_receipt(deps, info.clone(), info.sender, msg)
+            executers::vault_receipt(deps, env, info.clone(), info.sender, msg)
         }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
-        ExecuteMsg::UpdateAdmin { new_admin } => {
-            executers::update_admin(deps, env, info, new_admin)
+        ExecuteMsg::UpdateOwner { new_owner } => {
+            executers::update_owner(deps, env, info, new_owner)
         }
-        ExecuteMsg::UpdateStrategies(msg) => {
-            executers::update_strategies(deps, env, info, msg.strategies)
+        ExecuteMsg::UpdateStrategies { strategies } => {
+            executers::update_strategies(deps, env, info, strategies)
         }
-        ExecuteMsg::Liquidate { beneficiary } => executers::liquidate(deps, env, info, beneficiary),
-        ExecuteMsg::TerminateToFund { fund } => executers::terminate_to_fund(deps, env, info, fund),
-        ExecuteMsg::TerminateToAddress { beneficiary } => {
-            executers::terminate_to_address(deps, env, info, beneficiary)
+        ExecuteMsg::CloseEndowment { beneficiary } => {
+            executers::close_endowment(deps, env, info, beneficiary)
         }
-        ExecuteMsg::Receive(msg) => executers::receive(deps, env, info, msg),
+        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
+        ExecuteMsg::UpdateGuardians { add, remove } => {
+            executers::update_guardians(deps, env, info, add, remove)
+        }
     }
 }
 
@@ -131,21 +120,12 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Balance {} => to_binary(&queriers::query_account_balance(deps, env)?),
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
+        QueryMsg::State {} => to_binary(&queriers::query_state(deps)?),
         QueryMsg::Endowment {} => to_binary(&queriers::query_endowment_details(deps)?),
-        QueryMsg::Account { account_type } => {
-            to_binary(&queriers::query_account_details(deps, account_type)?)
-        }
-        QueryMsg::AccountList {} => to_binary(&queriers::query_account_list(deps)?),
     }
 }
 
 #[entry_point]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    let version = get_contract_version(deps.storage)?;
-    if version.contract != CONTRACT_NAME {
-        return Err(ContractError::CannotMigrate {
-            previous_contract: version.contract,
-        });
-    }
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::default())
 }

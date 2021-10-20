@@ -1,5 +1,4 @@
-use cosmwasm_bignumber::Uint256;
-use cosmwasm_std::Addr;
+use cosmwasm_std::{Addr, Decimal, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -17,30 +16,51 @@ pub struct MigrateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    UpdateOwner { new_owner: String },
     UpdateRegistrar { new_registrar: Addr },
+    UpdateConfig(UpdateConfigMsg),
     Deposit(AccountTransferMsg),
-    Redeem(AccountTransferMsg),
+    Redeem { account_addr: Addr },
+    Withdraw(AccountWithdrawMsg),
     Harvest {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateConfigMsg {
+    pub moneymarket: Option<String>,
+    pub input_denom: Option<String>,
+    pub yield_token: Option<String>,
+    pub tax_per_block: Option<Decimal>,
+    pub treasury_withdraw_threshold: Option<Uint128>,
+    pub harvest_to_liquid: Option<Decimal>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct AccountTransferMsg {
-    pub locked: Uint256,
-    pub liquid: Uint256,
+    pub locked: Uint128,
+    pub liquid: Uint128,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct AccountWithdrawMsg {
+    pub beneficiary: Addr,
+    pub locked: Uint128,
+    pub liquid: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
+    VaultConfig {},
     Config {},
     ExchangeRate {
         input_denom: String,
     },
     Deposit {
-        amount: Uint256,
+        amount: Uint128,
     }, // some qty of "input_denom"
     Redeem {
-        amount: Uint256,
+        amount: Uint128,
     }, // some qty of "yield_token"
     /// Returns the current balance of the given address, 0 if unset.
     /// Return type: BalanceResponse.

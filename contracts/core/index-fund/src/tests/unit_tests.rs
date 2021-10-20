@@ -11,17 +11,14 @@ fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
-    let _charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let _index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let _pleb = "plebAccount".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
@@ -36,17 +33,14 @@ fn only_sc_owner_can_change_owner() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
-    let _charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let _index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
@@ -92,17 +86,14 @@ fn only_registrar_can_change_registrar_contract() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
-    let _charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let _index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
@@ -156,10 +147,9 @@ fn migrate_contract() {
 
     let instantiate_msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -179,16 +169,14 @@ fn sc_owner_can_update_list_of_tca_members() {
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let _index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
@@ -219,17 +207,14 @@ fn sc_owner_can_add_remove_funds() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
-    let _charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let _index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
@@ -286,16 +271,14 @@ fn sc_owner_can_update_fund_members() {
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let _index_fund_contract = "INDEXTHADFARHSRTHADGG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
-        split_to_liquid: None,
         accepted_tokens: None,
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
@@ -313,11 +296,11 @@ fn sc_owner_can_update_fund_members() {
             expiry_height: None,
         },
     };
-    let update_members_msg = ExecuteMsg::UpdateMembers(UpdateMembersMsg {
+    let update_members_msg = ExecuteMsg::UpdateMembers {
         fund_id: 13,
         add: vec![charity_addr.clone(), String::from("CHARITYGSDRGSDRGSDRGFG")],
         remove: vec![pleb.clone()],
-    });
+    };
 
     // real SC owner adds a fund
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));

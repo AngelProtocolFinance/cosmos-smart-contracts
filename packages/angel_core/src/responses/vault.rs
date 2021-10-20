@@ -1,5 +1,5 @@
 use cosmwasm_bignumber::{Decimal256, Uint256};
-use cosmwasm_std::Uint128;
+use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -16,8 +16,13 @@ pub struct ExchangeRateResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct VaultBalanceResponse {
-    pub locked: Uint128,
-    pub liquid: Uint128,
-    pub denom: String,
+pub struct VaultConfigResponse {
+    pub owner: String,
+    pub registrar_contract: String,
+    pub moneymarket: String,
+    pub input_denom: String,
+    pub yield_token: String,
+    pub tax_per_block: Decimal,
+    pub last_harvest: u64,
+    pub harvest_to_liquid: Decimal,
 }

@@ -1,4 +1,5 @@
-use cosmwasm_std::{Addr, StdResult, Storage, Uint128};
+use angel_core::structs::BalanceInfo;
+use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
 use cosmwasm_storage::{ReadonlySingleton, Singleton};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -13,6 +14,10 @@ pub struct Config {
     pub moneymarket: Addr,
     pub input_denom: String,
     pub yield_token: Addr,
+    pub next_pending_id: u64,
+    pub tax_per_block: Decimal,
+    pub last_harvest: u64,
+    pub harvest_to_liquid: Decimal
 }
 
 pub fn store(storage: &mut dyn Storage, data: &Config) -> StdResult<()> {
@@ -46,6 +51,17 @@ impl TokenInfo {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[serde(rename_all = "snake_case")]
+pub struct PendingInfo {
+    pub typ: String, // type of pending transaction ('typ', because 'type' is protected keyword in Rust...)
+    pub accounts_address: Addr, // Addr of org. sending Accounts SC
+    pub beneficiary: Option<Addr>, // return to the beneficiary
+    pub fund: Option<u64>, // return to the active fund
+    pub locked: Uint128,
+    pub liquid: Uint128,
+}
+
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
-pub const LOCKED_BALANCES: Map<&Addr, Uint128> = Map::new("locked_balance");
-pub const LIQUID_BALANCES: Map<&Addr, Uint128> = Map::new("liquid_balance");
+pub const BALANCES: Map<&Addr, BalanceInfo> = Map::new("balance");
+pub const PENDING: Map<&[u8], PendingInfo> = Map::new("pending");

@@ -1,7 +1,6 @@
-use angel_core::structs::{AcceptedTokens, SplitDetails, StrategyComponent};
-use cosmwasm_bignumber::Uint256;
-use cosmwasm_std::{Addr, Decimal, Env, Timestamp};
-use cw_storage_plus::{Item, Map};
+use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
+use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
+use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -13,6 +12,7 @@ pub struct Config {
     pub accepted_tokens: AcceptedTokens,
     pub deposit_approved: bool, // DANO has approved to receive donations & transact
     pub withdraw_approved: bool, // DANO has approved to withdraw funds
+    pub pending_redemptions: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -25,9 +25,9 @@ pub struct Endowment {
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
-    pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
+    pub guardian_set: Vec<String>, // set of Guardian Addr that can help owner recover Endowment if they lose their wallet
 }
 
 impl Endowment {
@@ -48,34 +48,13 @@ impl Endowment {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub struct Account {
-    pub ust_balance: Uint256,
-    pub donations_received: Uint256,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct RebalanceDetails {
-    pub rebalance_liquid_invested_profits: bool, // should invested portions of the liquid account be rebalanced?
-    pub locked_interests_to_liquid: bool, // should Locked acct interest earned be distributed to the Liquid Acct?
-    pub interest_distribution: Decimal, // % of Locked acct interest earned to be distributed to the Liquid Acct
-    pub locked_principle_to_liquid: bool, // should Locked acct principle be distributed to the Liquid Acct?
-    pub principle_distribution: Decimal, // % of Locked acct principle to be distributed to the Liquid Acct
-}
-
-impl RebalanceDetails {
-    pub fn default() -> Self {
-        RebalanceDetails {
-            rebalance_liquid_invested_profits: false,
-            locked_interests_to_liquid: false,
-            interest_distribution: Decimal::percent(20),
-            locked_principle_to_liquid: false,
-            principle_distribution: Decimal::zero(),
-        }
-    }
+pub struct State {
+    pub donations_received: Uint128,
+    pub balances: BalanceInfo,
+    pub closing_endowment: bool,
+    pub closing_beneficiary: Option<String>,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
+pub const STATE: Item<State> = Item::new("state");
 pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");
-pub const ACCOUNTS: Map<String, Account> = Map::new("account");
-// pub const INVESTMENTS: Map<String, InvestmentHolding> = Map::new("investment");

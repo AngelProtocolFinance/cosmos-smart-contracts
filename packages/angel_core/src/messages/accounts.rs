@@ -1,7 +1,6 @@
 use crate::messages::vault::AccountTransferMsg;
-use crate::structs::{FundingSource, SplitDetails, StrategyComponent};
+use crate::structs::FundingSource;
 use cosmwasm_std::Decimal;
-use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -12,7 +11,6 @@ pub struct MigrateMsg {}
 pub struct InstantiateMsg {
     pub owner_sc: String,
     pub registrar_contract: String,
-    pub index_fund_contract: String,
     pub owner: String,       // address that originally setup the endowment account
     pub beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
     pub name: String,        // name of the Charity Endowment
@@ -20,7 +18,6 @@ pub struct InstantiateMsg {
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
-    pub split_to_liquid: SplitDetails,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -29,47 +26,47 @@ pub enum ExecuteMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     // Pull funds from investment vault(s) to the Endowment Beneficiary as UST
-    Withdraw(WithdrawMsg),
+    Withdraw {
+        sources: Vec<FundingSource>,
+    },
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt(AccountTransferMsg),
-    // Winding up of an endowment in good standing. Returns all funds to the Beneficiary.
-    Liquidate {
-        beneficiary: String, // Addr of the Beneficiary to receive funds
+    // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.
+    // If not provided, looks up the Index Fund an Endowment is tied to to donates the funds to it.
+    CloseEndowment {
+        beneficiary: Option<String>, // Optional Addr of the Beneficiary to receive funds
     },
-    // Destroys the endowment and returns all Balance funds to an index fund and to the
-    // Index Fund ID provided
-    TerminateToFund {
-        fund: u64, // Index Fund ID to receive funds
-    },
-    // Destroys the endowment and returns all Balance funds to the beneficiary addr (DANO treasury)
-    TerminateToAddress {
-        beneficiary: String, // Addr of the Beneficiary to receive funds
-    },
-    // update admin addr
-    UpdateAdmin {
-        new_admin: String,
+    // update owner addr
+    UpdateOwner {
+        new_owner: String,
     },
     // Allows the SC owner (only!) to change ownership
     UpdateRegistrar {
         new_registrar: String,
     },
+    UpdateConfig(UpdateConfigMsg),
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
     // Update an Endowment ability to receive/send funds
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Replace an Account's Strategy with that given.
-    UpdateStrategies(UpdateStrategiesMsg),
-    // This accepts a properly-encoded ReceiveMsg from a cw20 contract
-    Receive(Cw20ReceiveMsg),
+    UpdateStrategies {
+        strategies: Vec<Strategy>,
+    },
+    UpdateGuardians {
+        add: Vec<String>,
+        remove: Vec<String>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateStrategiesMsg {
-    pub strategies: Vec<StrategyComponentMsg>,
+pub struct UpdateConfigMsg {
+    pub accepted_tokens_native: Vec<String>,
+    pub accepted_tokens_cw20: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct StrategyComponentMsg {
+pub struct Strategy {
     pub vault: String,              // Vault SC Address
     pub locked_percentage: Decimal, // percentage of funds to invest
     pub liquid_percentage: Decimal, // percentage of funds to invest
@@ -79,7 +76,6 @@ pub struct StrategyComponentMsg {
 pub struct UpdateEndowmentSettingsMsg {
     pub beneficiary: String,
     pub owner: String,
-    pub split_to_liquid: SplitDetails,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -119,12 +115,8 @@ pub struct WithdrawMsg {
 pub enum QueryMsg {
     // Get the balance of available UST and the invested portion balances
     Balance {},
-    // Get details for a single Account, given an Account ID argument
-    // Returns AccountDetailsResponse
-    Account { account_type: String },
-    // Get details on all Accounts. If passed, restrict to a given EID argument
-    // Returns AccountListResponse
-    AccountList {},
+    // Get state details (like total donations received so far)
+    State {},
     // Get all Config details for the contract
     // Returns ConfigResponse
     Config {},

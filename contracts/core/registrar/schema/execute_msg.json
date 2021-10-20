@@ -133,6 +133,30 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "harvest"
+      ],
+      "properties": {
+        "harvest": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "migrate_accounts"
+      ],
+      "properties": {
+        "migrate_accounts": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
     }
   ],
   "definitions": {
@@ -151,6 +175,12 @@
         },
         "description": {
           "type": "string"
+        },
+        "guardians_multisig_addr": {
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "maturity_height": {
           "type": [
@@ -179,6 +209,10 @@
         }
       }
     },
+    "Decimal": {
+      "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+      "type": "string"
+    },
     "UpdateConfigMsg": {
       "type": "object",
       "properties": {
@@ -205,10 +239,32 @@
             "null"
           ]
         },
+        "endowment_owners_group_addr": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "guardians_multisig_addr": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "index_fund_contract": {
           "type": [
             "string",
             "null"
+          ]
+        },
+        "tax_rate": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Decimal"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
         "treasury": {
@@ -226,6 +282,12 @@
         "status"
       ],
       "properties": {
+        "beneficiary": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "endowment_addr": {
           "type": "string"
         },

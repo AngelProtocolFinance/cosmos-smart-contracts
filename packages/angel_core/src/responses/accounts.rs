@@ -1,25 +1,17 @@
-use crate::responses::vault::VaultBalanceResponse;
-use crate::structs::{SplitDetails, StrategyComponent};
-use cosmwasm_bignumber::Uint256;
-use cosmwasm_std::Addr;
+use crate::structs::{RebalanceDetails, StrategyComponent};
+use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct AccountListResponse {
-    pub locked_account: AccountDetailsResponse,
-    pub liquid_account: AccountDetailsResponse,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct AccountDetailsResponse {
-    pub account_type: String, // prefix ("locked" or "liquid")
-    pub ust_balance: Uint256,
+pub struct StateResponse {
+    pub donations_received: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: String,
+    pub version: String,
     pub registrar_contract: String,
     pub deposit_approved: bool,
     pub withdraw_approved: bool,
@@ -34,11 +26,16 @@ pub struct EndowmentDetailsResponse {
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
-    pub split_to_liquid: SplitDetails,
     pub strategies: Vec<StrategyComponent>,
+    pub rebalance: RebalanceDetails,
+    pub guardians: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct AccountBalanceResponse {
-    pub balances: Vec<VaultBalanceResponse>,
+impl EndowmentDetailsResponse {
+    pub fn is_guardian(&self, addr: String) -> bool {
+        match self.guardians.iter().position(|g| *g == addr) {
+            Some(_guardian) => true,
+            None => false,
+        }
+    }
 }

@@ -1,4 +1,4 @@
-use angel_core::structs::{EndowmentEntry, YieldVault};
+use angel_core::structs::{EndowmentEntry, SplitDetails, YieldVault};
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
 use cw_storage_plus::Item;
@@ -18,13 +18,20 @@ pub const CONFIG: Item<Config> = Item::new(CONFIG_KEY);
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub owner: Addr, // AP TEAM / DANO Address
+    pub owner: Addr,           // AP TEAM MULTISIG
+    pub guardian_angels: Addr, // GUARDIAN ANGELS MULTISIG
     pub index_fund_contract: Addr,
     pub accounts_code_id: u64,
     pub approved_charities: Vec<Addr>,
     pub treasury: Addr,
     pub tax_rate: Decimal,
     pub default_vault: Addr,
+    pub guardians_multisig_addr: Option<String>,
+    pub endowment_owners_group_addr: Option<String>,
+    pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
+    pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
+    pub gov_contract: Option<Addr>,    // AP governance contract
+    pub charity_shares_contract: Option<Addr>, // Charity Shares staking contract
 }
 
 // REGISTRY Read/Write

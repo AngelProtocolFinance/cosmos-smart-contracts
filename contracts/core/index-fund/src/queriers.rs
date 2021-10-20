@@ -1,7 +1,8 @@
 use crate::state::{fund_read, read_funds, CONFIG, STATE, TCA_DONATIONS};
+use angel_core::messages::index_fund::DepositMsg;
+use angel_core::messages::index_fund::ExecuteMsg::Deposit;
 use angel_core::responses::index_fund::*;
-use cosmwasm_std::{Deps, StdResult};
-use cw20::Cw20Coin;
+use cosmwasm_std::{to_binary, Coin, CosmosMsg, Deps, Env, StdResult, Uint128, WasmMsg};
 
 pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
@@ -10,8 +11,8 @@ pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
         registrar_contract: config.registrar_contract.to_string(),
         fund_rotation: config.fund_rotation,
         fund_member_limit: config.fund_member_limit,
-        funding_goal: config.funding_goal.unwrap(),
-        split_to_liquid: config.split_to_liquid,
+        funding_goal: config.funding_goal,
+        accepted_tokens: config.accepted_tokens,
     })
 }
 
@@ -21,6 +22,8 @@ pub fn state(deps: Deps) -> StdResult<StateResponse> {
     Ok(StateResponse {
         total_funds: state.total_funds,
         active_fund: state.active_fund,
+        round_donations: state.round_donations,
+        next_rotation_block: state.next_rotation_block,
         terra_alliance: state.tca_human_addresses(),
     })
 }
@@ -56,25 +59,50 @@ pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
     let state = STATE.load(deps.storage)?;
     let mut donors = vec![];
     for tca in state.terra_alliance.into_iter() {
-        let donations = TCA_DONATIONS.may_load(deps.storage, tca.to_string())?;
-        if donations != None {
-            let cw20_bal: StdResult<Vec<_>> = donations
+        // add to response vector
+        donors.push(DonationDetailResponse {
+            address: tca.to_string(),
+            total_ust: TCA_DONATIONS
+                .may_load(deps.storage, tca.to_string())
                 .unwrap()
-                .cw20
-                .into_iter()
-                .map(|token| {
-                    Ok(Cw20Coin {
-                        address: token.address.into(),
-                        amount: token.amount,
-                    })
-                })
-                .collect();
-            // add to response vector
-            donors.push(DonationDetailResponse {
-                address: tca.to_string(),
-                tokens: cw20_bal?,
-            });
-        }
+                .unwrap_or_default()
+                .get_ust()
+                .amount,
+        });
     }
     Ok(DonationListResponse { donors })
+}
+
+pub fn involved_funds(deps: Deps, address: String) -> StdResult<FundListResponse> {
+    let query_addr = deps.api.addr_validate(&address)?;
+    let all_funds = read_funds(deps.storage)?;
+    let mut involved_funds = vec![];
+    for fund in all_funds.iter() {
+        let pos = fund.members.iter().position(|m| *m == query_addr);
+        if pos != None {
+            involved_funds.push(fund.clone());
+        }
+    }
+    Ok(FundListResponse {
+        funds: involved_funds,
+    })
+}
+
+pub fn deposit_msg_builder(
+    _deps: Deps,
+    env: Env,
+    amount: Uint128,
+    fund_id: Option<u64>,
+) -> StdResult<CosmosMsg> {
+    Ok(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&Deposit(DepositMsg {
+            fund_id,
+            split: None,
+        }))?,
+        funds: vec![Coin {
+            denom: "uusd".to_string(),
+            amount,
+        }],
+    }))
 }

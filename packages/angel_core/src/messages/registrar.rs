@@ -1,4 +1,5 @@
-use cosmwasm_std::{Addr, Api, StdResult};
+use crate::structs::SplitDetails;
+use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -9,8 +10,9 @@ pub struct MigrateMsg {}
 pub struct InstantiateMsg {
     pub accounts_code_id: Option<u64>,
     pub treasury: String,
-    pub tax_rate: u64,
+    pub tax_rate: Decimal,
     pub default_vault: Option<Addr>,
+    pub split_to_liquid: Option<SplitDetails>, // default %s to split off into liquid account, if donor provided split is not present
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -28,6 +30,10 @@ pub enum ExecuteMsg {
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Allows the SC owner to change ownership
     UpdateOwner { new_owner: String },
+    // Allows the DANO/AP Team to harvest all active vaults
+    Harvest {},
+    // Allows SC owner to migrate all Accounts SC
+    MigrateAccounts {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -39,6 +45,7 @@ pub struct CreateEndowmentMsg {
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
+    pub guardians_multisig_addr: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -46,8 +53,17 @@ pub struct UpdateConfigMsg {
     pub accounts_code_id: Option<u64>,
     pub index_fund_contract: Option<String>,
     pub treasury: Option<String>,
+    pub tax_rate: Option<Decimal>,
     pub approved_charities: Option<Vec<String>>,
     pub default_vault: Option<String>,
+    pub guardians_multisig_addr: Option<String>,
+    pub endowment_owners_group_addr: Option<String>,
+    pub split_max: Option<Decimal>,
+    pub split_min: Option<Decimal>,
+    pub split_default: Option<Decimal>,
+    pub halo_token: Option<String>,
+    pub gov_contract: Option<String>,
+    pub charity_shares_contract: Option<String>,
 }
 
 impl UpdateConfigMsg {
@@ -63,6 +79,7 @@ impl UpdateConfigMsg {
 pub struct UpdateEndowmentStatusMsg {
     pub endowment_addr: String,
     pub status: u8,
+    pub beneficiary: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -81,10 +98,10 @@ pub enum QueryMsg {
     VaultList {},
     // Get a list of all approved Vaults
     ApprovedVaultList {},
-    // Get a list of all approved Endowments
-    ApprovedEndowmentList {},
     // Gets list of all registered Endowments
     EndowmentList {},
     // Get all Config details for the contract
     Config {},
+    // Get a list of all approved Vaults exchange rates
+    ApprovedVaultRateList {},
 }

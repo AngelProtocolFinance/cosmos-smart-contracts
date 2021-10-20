@@ -3,37 +3,49 @@ import chalk from "chalk";
 import BN from "bn.js";
 import {
   isTxError,
-  Coin,
   LocalTerra,
   Msg,
   MsgInstantiateContract,
+  MsgMigrateContract,
   MsgStoreCode,
-  StdFee,
   Wallet,
   LCDClient,
 } from "@terra-money/terra.js";
+import axios from "axios";
 
 /**
  * @notice Encode a JSON object to base64 binary
  */
-export function toEncodedBinary(obj: any) {
+export function toEncodedBinary(obj: any): string {
   return Buffer.from(JSON.stringify(obj)).toString("base64");
 }
 
 /**
  * @notice Send a transaction. Return result if successful, throw error if failed.
  */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function sendTransaction(
   terra: LocalTerra | LCDClient,
   sender: Wallet,
   msgs: Msg[],
   verbose = false
 ) {
-  const tx = await sender.createAndSignTx({
-    msgs,
-    fee: new StdFee(5000000, [new Coin("uusd", 2000000)]),
-  });
-
+  let fee;
+  try {
+    fee = await terra.tx.estimateFee(sender.key.accAddress, msgs);
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(
+        chalk.red("Transaction failed!") +
+          `\n${chalk.yellow("code")}: ${error.code}` +
+          `\n${chalk.yellow("message")}: ${error.message}` +
+          `\n${chalk.yellow("error")}: ${error.response?.data["error"]}`
+      );
+    } else {
+      throw error;
+    }
+  }
+  const tx = await sender.createAndSignTx({msgs, fee});
   const result = await terra.tx.broadcast(tx);
 
   // Print the log info
@@ -68,7 +80,7 @@ export async function storeCode(
   terra: LocalTerra | LCDClient,
   deployer: Wallet,
   filepath: string
-) {
+): Promise<number> {
   const code = fs.readFileSync(filepath).toString("base64");
   const result = await sendTransaction(terra, deployer, [
     new MsgStoreCode(deployer.key.accAddress, code),
@@ -79,12 +91,13 @@ export async function storeCode(
 /**
  * @notice Instantiate a contract from an existing code ID. Return contract address.
  */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function instantiateContract(
   terra: LocalTerra | LCDClient,
   deployer: Wallet,
   admin: Wallet, // leave this emtpy then contract is not migratable
   codeId: number,
-  instantiateMsg: object
+  instantiateMsg: Record<string, unknown>
 ) {
   const result = await sendTransaction(terra, deployer, [
     new MsgInstantiateContract(
@@ -98,20 +111,43 @@ export async function instantiateContract(
 }
 
 /**
+ * @notice Instantiate a contract from an existing code ID. Return contract address.
+ */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export async function migrateContract(
+  terra: LocalTerra | LCDClient,
+  sender: Wallet,
+  admin: Wallet,
+  contract: string,
+  new_code_id: number,
+  migrateMsg: Record<string, unknown>
+) {
+  const result = await sendTransaction(terra, sender, [
+    new MsgMigrateContract(
+      admin.key.accAddress,
+      contract,
+      new_code_id,
+      migrateMsg
+    ),
+  ]);
+  return result;
+}
+
+/**
  * @notice Return the native token balance of the specified account
  */
-export async function queryNativeTokenBalance(
-  terra: LocalTerra | LCDClient,
-  account: string,
-  denom: string = "uusd"
-) {
-  const balance = (await terra.bank.balance(account)).get(denom)?.amount.toString();
-  if (balance) {
-    return balance;
-  } else {
-    return "0";
-  }
-}
+// export async function queryNativeTokenBalance(
+//   terra: LocalTerra | LCDClient,
+//   account: string,
+//   denom = "uusd"
+// ): Promise<string> {
+//   const balance = (await terra.bank.balance(account)).get(denom)?.amount.toString();
+//   if (balance) {
+//     return balance;
+//   } else {
+//     return "0";
+//   }
+// }
 
 /**
  * @notice Return CW20 token balance of the specified account
@@ -120,7 +156,7 @@ export async function queryTokenBalance(
   terra: LocalTerra | LCDClient,
   account: string,
   contract: string
-) {
+): Promise<string> {
   const balanceResponse = await terra.wasm.contractQuery<{ balance: string }>(contract, {
     balance: { address: account },
   });
@@ -134,7 +170,7 @@ export async function queryTokenBalance(
  * @dev Assumes a tax rate of 0.001 and cap of 1000000 uusd.
  * @dev Assumes transferring UST. Transferring LUNA does not incur tax.
  */
-export function deductTax(amount: number) {
+export function deductTax(amount: number): number {
   const DECIMAL_FRACTION = new BN("1000000000000000000");
   const tax = Math.min(
     amount -
@@ -154,7 +190,7 @@ export function deductTax(amount: number) {
  * @dev Assumes a tax rate of 0.001 and cap of 1000000 uusd.
  * @dev Assumes transferring UST. Transferring LUNA does not incur tax.
  */
-export function addTax(amount: number) {
+export function addTax(amount: number): number {
   const tax = Math.min(new BN(amount).div(new BN(1000)).toNumber(), 1000000);
   return amount + tax;
 }

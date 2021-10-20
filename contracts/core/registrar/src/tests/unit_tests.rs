@@ -3,10 +3,11 @@ use angel_core::errors::core::*;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
 use angel_core::structs::EndowmentStatus;
+use angel_core::structs::SplitDetails;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
-    coins, from_binary, Addr, ContractResult, CosmosMsg, Event, Reply, SubMsgExecutionResponse,
-    WasmMsg,
+    coins, from_binary, Addr, ContractResult, CosmosMsg, Decimal, Event, Reply,
+    SubMsgExecutionResponse, WasmMsg,
 };
 
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
@@ -19,7 +20,8 @@ fn proper_initialization() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 20,
+        tax_rate: Decimal::percent(20),
+        split_to_liquid: Some(SplitDetails::default()),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -40,7 +42,8 @@ fn update_owner() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 20,
+        tax_rate: Decimal::percent(20),
+        split_to_liquid: Some(SplitDetails::default()),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -69,7 +72,8 @@ fn update_config() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 0,
+        tax_rate: Decimal::percent(0),
+        split_to_liquid: Some(SplitDetails::default()),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -80,7 +84,13 @@ fn update_config() {
         index_fund_contract: Some(index_fund_contract.clone()),
         approved_charities: None,
         treasury: Some(ap_team.clone()),
+        tax_rate: None,
         default_vault: None,
+        endowment_owners_group_addr: None,
+        guardians_multisig_addr: None,
+        split_max: Some(Decimal::one()),
+        split_min: Some(Decimal::zero()),
+        split_default: Some(Decimal::percent(30)),
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -101,7 +111,8 @@ fn migrate_contract() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 20,
+        tax_rate: Decimal::percent(20),
+        split_to_liquid: Some(SplitDetails::default()),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -125,7 +136,8 @@ fn test_owner_can_add_remove_approved_charities() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 20,
+        tax_rate: Decimal::percent(20),
+        split_to_liquid: Some(SplitDetails::default()),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -199,7 +211,8 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 20,
+        tax_rate: Decimal::percent(20),
+        split_to_liquid: Some(SplitDetails::default()),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -227,6 +240,7 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
+        guardians_multisig_addr: None,
     };
 
     // non-Approved charity cannot create Accounts
@@ -343,6 +357,7 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
     let update_endowment_status_msg = UpdateEndowmentStatusMsg {
         endowment_addr: good_endowment_addr.clone(),
         status: 1,
+        beneficiary: None,
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -377,7 +392,8 @@ fn test_add_update_and_remove_vault() {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
-        tax_rate: 20,
+        tax_rate: Decimal::percent(20),
+        split_to_liquid: Some(SplitDetails::default()),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();

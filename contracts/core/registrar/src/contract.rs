@@ -3,11 +3,11 @@ use crate::queriers;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
+use angel_core::structs::SplitDetails;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Reply, Response,
-    StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
-use cw2::{get_contract_version, set_contract_version};
+use cw2::set_contract_version;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -24,12 +24,19 @@ pub fn instantiate(
 
     let configs = Config {
         owner: info.sender.clone(),
+        guardian_angels: info.sender.clone(),
         index_fund_contract: info.sender.clone(),
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
         approved_charities: vec![],
         treasury: deps.api.addr_validate(&msg.treasury)?,
-        tax_rate: Decimal::percent(msg.tax_rate),
+        tax_rate: msg.tax_rate,
         default_vault: msg.default_vault.unwrap_or(info.sender),
+        guardians_multisig_addr: None,
+        endowment_owners_group_addr: None,
+        split_to_liquid: msg.split_to_liquid.unwrap_or_else(SplitDetails::default),
+        halo_token: None,
+        gov_contract: None,
+        charity_shares_contract: None,
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -62,6 +69,8 @@ pub fn execute(
             vault_addr,
             approved,
         } => executers::vault_update_status(deps, env, info, vault_addr, approved),
+        ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
+        ExecuteMsg::MigrateAccounts {} => executers::migrate_accounts(deps, env, info),
     }
 }
 
@@ -80,25 +89,19 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
-        QueryMsg::ApprovedEndowmentList {} => {
-            to_binary(&queriers::query_approved_endowment_list(deps)?)
-        }
         QueryMsg::EndowmentList {} => to_binary(&queriers::query_endowment_list(deps)?),
         QueryMsg::ApprovedVaultList {} => to_binary(&queriers::query_approved_vault_list(deps)?),
         QueryMsg::VaultList {} => to_binary(&queriers::query_vault_list(deps)?),
         QueryMsg::Vault { vault_addr } => {
             to_binary(&queriers::query_vault_details(deps, vault_addr)?)
         }
+        QueryMsg::ApprovedVaultRateList {} => {
+            to_binary(&queriers::query_approved_vaults_fx_rate(deps)?)
+        }
     }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    let version = get_contract_version(deps.storage)?;
-    if version.contract != CONTRACT_NAME {
-        return Err(ContractError::CannotMigrate {
-            previous_contract: version.contract,
-        });
-    }
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::default())
 }
