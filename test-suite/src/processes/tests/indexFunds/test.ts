@@ -119,11 +119,7 @@ export async function testUpdateFundMembers(
         apTeam.key.accAddress, 
         indexFund,
         {
-          update_members: {
-            fund_id: fundId,
-            add: add,
-            remove: remove,
-          }
+          update_members: { fund_id: fundId, add: add, remove: remove }
         }
       )
     ])
