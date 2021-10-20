@@ -6,6 +6,7 @@ import chalk from "chalk";
 import { localterra as config } from "../config/constants";
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts } from "../processes/setupContracts/testnet";
+import { setupTerraSwap } from "../processes/setupTerraSwap/localterra";
 import { testExecute } from "../processes/tests/testnet";
 
 // -------------------------------------------------------------------------------------
@@ -33,6 +34,14 @@ let endowmentContract1: string;
 let endowmentContract2: string;
 let endowmentContract3: string;
 let endowmentContract4: string;
+
+let accAddress: string;
+let tokenCodeId: number;
+let pairCodeId: number;
+let factoryCodeId: number;
+let factoryContract: string;
+let tokenContract: string;
+let pairContract: string;
 
 // -------------------------------------------------------------------------------------
 // initialize variables
@@ -82,6 +91,14 @@ function initialize() {
   console.log(`Use ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
   console.log(`Use ${chalk.cyan(cw4GrpOwners)} as CW4 Endowment Owners Group`);
   console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
+
+  accAddress = config.accAddress;
+  tokenCodeId = config.token_code_id;
+  pairCodeId = config.pair_code_id;
+  factoryCodeId = config.factory_code_id;
+  factoryContract = config.factory_contract;
+  tokenContract = config.token_contract;
+  pairContract = config.pair_contract;
 }
 
 // -------------------------------------------------------------------------------------
@@ -123,6 +140,21 @@ export async function startSetupContracts(): Promise<void> {
       funding_goal: "50000000", // funding goal
     },
   );
+}
+
+// -------------------------------------------------------------------------------------
+// start setup contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupTerraSwapContracts(): Promise<void> {
+  console.log(chalk.blue("\nTestNet"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Setup TerraSwap contracts
+  console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
+  await setupTerraSwap(terra, apTeam, accAddress);
 }
 
 // -------------------------------------------------------------------------------------
