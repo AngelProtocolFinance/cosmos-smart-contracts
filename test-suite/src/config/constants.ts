@@ -84,7 +84,7 @@ export const testnet = {
 export const mainnet = {
   // MainNet columbus-5
   networkInfo: {
-    url: "https://lcd.terra.dev",
+    url: "https://apis.ankr.com/c29102fa57024dc5a5096bb73e7e0919/aae7334102f8f52264b50ad44bf343d3/terra/full/columbus",
     chainId: "columbus-5",
   },
   // MainNet MoneyMarket Contract
@@ -119,6 +119,11 @@ export const mainnet = {
       "terra1zn8aqw3ypzvs8pzuadpqw5jw5rptxp4y08z7sr",
       "terra1cmp87658s0c475dkyee2p8r9zsdjd628py4zav",
       "terra1kdd6f099dv4kr5xqp7sxcc7epledxmvyq8xnu3",
+      "terra16qh68y6gydhz73ndxgkzwmfcfam6jt45g8jhml",
+      "terra1gm0x3m87e7wqzkac5eeacxkesy470yavpwqgdm",
+      "terra1lalzy8rvkg3j2qm4a2x74lm6lxfa3llz7kdkdp",
+      "terra1ngnqymglanujrhs09qakyz84k4v6cw9yyjwp0t",
+      "terra1u0dls462h33j3fgg4j98wpa5qculnq2u749qc5",
     ],
   },
   members: [

@@ -68,7 +68,7 @@ export async function setupContracts(
   apTeam2 = wallets.apTeam2;
   charity1 = wallets.charity1;
   charity2 = wallets.charity2;
-  charity2 = wallets.charity3;
+  charity3 = wallets.charity3;
   tca = wallets.tca;
 
   anchorMoneyMarket = _anchorMoneyMarket;
@@ -79,14 +79,17 @@ export async function setupContracts(
     config.max_voting_period_height,
     config.max_voting_period_guardians_height,
     config.fund_rotation,
-    config.harvest_to_liquid,
-    config.tax_per_block,
     config.funding_goal,
   );
   await createEndowments();
   await approveEndowments();
   await createIndexFunds();
-  await turnOverApTeamMultisig(config.turnover_to_multisig, config.is_localterra);
+  if (!config.is_localterra) {
+    await createVaults(config.harvest_to_liquid, config.tax_per_block);
+  }
+  if (config.turnover_to_multisig) {
+    await turnOverApTeamMultisig(config.turnover_to_multisig, config.is_localterra);
+  }
 }
 
 async function setup(
@@ -95,8 +98,6 @@ async function setup(
   max_voting_period_height: number,
   max_voting_period_guardians_height: number,
   fund_rotation: number | undefined,
-  harvest_to_liquid: string,
-  tax_per_block: string,
   funding_goal: string | undefined,
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each.... 
@@ -106,13 +107,6 @@ async function setup(
     apTeam,
     path.resolve(__dirname, "../../../../artifacts/registrar.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${registrarCodeId}`);
-  
-  process.stdout.write("Uploading Anchor Vault Wasm");
-  const vaultCodeId = await storeCode(
-    terra,
-    apTeam,
-    path.resolve(__dirname, "../../../../artifacts/anchor.wasm"));
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
   
   process.stdout.write("Uploading Index Fund Wasm");
   const fundCodeId = await storeCode(
@@ -264,72 +258,6 @@ async function setup(
     return attribute.key == "contract_address"; 
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
-
-  // Anchor Vault - #1
-  process.stdout.write("Instantiating Anchor Vault (#1) contract");
-  const vaultResult1 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
-    registrar_contract: registrar,
-    moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
-    name: "AP DP Token - Anchor #1",
-    symbol: "apANC1",
-    decimals: 6,
-    harvest_to_liquid: harvest_to_liquid
-  });
-  anchorVault1 = vaultResult1.logs[0].events.find((event) => {
-    return event.type == "instantiate_contract";
-  })?.attributes.find((attribute) => { 
-    return attribute.key == "contract_address"; 
-  })?.value as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault1}`);
-
-  // Anchor Vault - #2 (to better test multistrategy logic)
-  process.stdout.write("Instantiating Anchor Vault (#2) contract");
-  const vaultResult2 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
-    registrar_contract: registrar,
-    moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
-    name: "AP DP Token - Anchor #2",
-    symbol: "apANC",
-    decimals: 6,
-    harvest_to_liquid: harvest_to_liquid
-  });
-  anchorVault2 = vaultResult2.logs[0].events.find((event) => {
-    return event.type == "instantiate_contract";
-  })?.attributes.find((attribute) => { 
-    return attribute.key == "contract_address"; 
-  })?.value as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault2}`);
-
-  // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
-  process.stdout.write("Approving Anchor Vault #1 & #2 in Registrar");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      vault_update_status: { 
-        vault_addr: anchorVault1,
-        approved: true,
-      },
-    }),
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      vault_update_status: { 
-        vault_addr: anchorVault2,
-        approved: true,
-      },
-    })
-  ]);
-  console.log(chalk.green(" Done!"));
-
-  process.stdout.write("Set default vault in Registrar (for newly created Endowments) as Anchor Vault #1");
-  process.stdout.write("Update Registrar with the Address of the Index Fund contract");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_config: {
-        default_vault: anchorVault1,
-        index_fund_contract: indexFund,
-      }
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
 
   // Add confirmed TCA Members to the Index Fund SCs approved list
   process.stdout.write("Add confirmed TCA Member to allowed list");
@@ -484,6 +412,84 @@ async function createIndexFunds(): Promise<void> {
           description: "Another fund to test rotations",
           members: [endowmentContract1, endowmentContract4],
         }
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
+}
+
+async function createVaults(
+  harvest_to_liquid: string,
+  tax_per_block: string,
+): Promise<void> {
+  process.stdout.write("Uploading Anchor Vault Wasm");
+  const vaultCodeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../../../artifacts/anchor.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
+  
+  // Anchor Vault - #1
+  process.stdout.write("Instantiating Anchor Vault (#1) contract");
+  const vaultResult1 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
+    registrar_contract: registrar,
+    moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
+    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
+    name: "AP DP Token - Anchor #1",
+    symbol: "apANC1",
+    decimals: 6,
+    harvest_to_liquid: harvest_to_liquid
+  });
+  anchorVault1 = vaultResult1.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => { 
+    return attribute.key == "contract_address"; 
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault1}`);
+
+  // Anchor Vault - #2 (to better test multistrategy logic)
+  process.stdout.write("Instantiating Anchor Vault (#2) contract");
+  const vaultResult2 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
+    registrar_contract: registrar,
+    moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
+    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
+    name: "AP DP Token - Anchor #2",
+    symbol: "apANC",
+    decimals: 6,
+    harvest_to_liquid: harvest_to_liquid
+  });
+  anchorVault2 = vaultResult2.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => { 
+    return attribute.key == "contract_address"; 
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault2}`);
+
+  // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
+  process.stdout.write("Approving Anchor Vault #1 & #2 in Registrar");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      vault_update_status: { 
+        vault_addr: anchorVault1,
+        approved: true,
+      },
+    }),
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      vault_update_status: { 
+        vault_addr: anchorVault2,
+        approved: true,
+      },
+    })
+  ]);
+  console.log(chalk.green(" Done!"));
+
+  process.stdout.write("Set default vault in Registrar (for newly created Endowments) as Anchor Vault #1");
+  process.stdout.write("Update Registrar with the Address of the Index Fund contract");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_config: {
+        default_vault: anchorVault1,
+        index_fund_contract: indexFund,
       }
     }),
   ]);

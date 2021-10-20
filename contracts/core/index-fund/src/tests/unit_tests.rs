@@ -16,7 +16,7 @@ fn proper_initialization() {
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
         accepted_tokens: None,
@@ -38,7 +38,7 @@ fn only_sc_owner_can_change_owner() {
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
         accepted_tokens: None,
@@ -91,7 +91,7 @@ fn only_registrar_can_change_registrar_contract() {
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
         accepted_tokens: None,
@@ -147,7 +147,7 @@ fn migrate_contract() {
 
     let instantiate_msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
         accepted_tokens: None,
@@ -174,7 +174,7 @@ fn sc_owner_can_update_list_of_tca_members() {
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
         accepted_tokens: None,
@@ -212,7 +212,7 @@ fn sc_owner_can_add_remove_funds() {
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
         accepted_tokens: None,
@@ -276,7 +276,7 @@ fn sc_owner_can_update_fund_members() {
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(1000000u64),
+        fund_rotation: Some(Some(1000000u64)),
         fund_member_limit: Some(20),
         funding_goal: None,
         accepted_tokens: None,
@@ -296,11 +296,11 @@ fn sc_owner_can_update_fund_members() {
             expiry_height: None,
         },
     };
-    let update_members_msg = ExecuteMsg::UpdateMembers(UpdateMembersMsg {
+    let update_members_msg = ExecuteMsg::UpdateMembers {
         fund_id: 13,
         add: vec![charity_addr.clone(), String::from("CHARITYGSDRGSDRGSDRGFG")],
         remove: vec![pleb.clone()],
-    });
+    };
 
     // real SC owner adds a fund
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));

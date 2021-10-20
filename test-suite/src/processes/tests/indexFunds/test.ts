@@ -37,8 +37,8 @@ export async function testDonorSendsToIndexFund(
         { uusd: "4200000", }
       ),
     ])
-  ).to.be.rejectedWith("Unauthorized"); // for MVP normal users cannot donate
-  console.log(chalk.green("Passed!"));
+  ).to.be.rejectedWith("Request failed with status code 400");
+  console.log(chalk.green(" Failed!"));
 }
 
 //----------------------------------------------------------------------------------------
@@ -77,7 +77,73 @@ export async function testTcaMemberSendsToIndexFund(
       ),
     ])
   )
-  console.log(chalk.green("Passed!"));
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testUpdatingIndexFundConfigs(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  indexFund: string
+): Promise<void> {
+  process.stdout.write("AP Team updates Index Fund configs - funding goal");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+      update_config: {
+        funding_goal: "10000000000",
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
+}
+
+
+//----------------------------------------------------------------------------------------
+// TEST: SC owner can update the fund members to an Index Fund 
+//
+// SCENARIO:
+// pleb cannot update fund members, only SC owner can update fund members
+//
+//----------------------------------------------------------------------------------------
+export async function testUpdateFundMembers(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  pleb: Wallet,
+  indexFund: string,
+  fundId: number,
+  add: string[],
+  remove: string[],
+): Promise<void> {
+  process.stdout.write("Test - pleb cannot update fund members");
+  await expect(
+    sendTransaction(terra, pleb, [
+      new MsgExecuteContract(
+        pleb.key.accAddress, 
+        indexFund,
+        {
+          update_members: {
+            fund_id: fundId,
+            add: add,
+            remove: remove,
+          }
+        }
+      )
+    ])
+  ).to.be.rejectedWith("Request failed with status code 400");
+  console.log(chalk.green(" Failed!"));
+
+  process.stdout.write("Test - SC owner can update fund members");
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(
+        apTeam.key.accAddress, 
+        indexFund,
+        {
+          update_members: { fund_id: fundId, add: add, remove: remove }
+        }
+      )
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
@@ -171,7 +237,7 @@ export async function testQueryIndexFundActiveFundDonations(
   });
 
   console.log(result);
-  console.log(chalk.green("Passed!"));
+  console.log(chalk.green(" Passed!"));
 }
 
 export async function testQueryIndexFundDeposit(
@@ -187,5 +253,5 @@ export async function testQueryIndexFundDeposit(
   });
 
   console.log(result);
-  console.log(chalk.green("Passed!"));
+  console.log(chalk.green(" Passed!"));
 }

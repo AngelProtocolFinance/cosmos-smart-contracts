@@ -132,8 +132,8 @@ export async function startSetupContracts(): Promise<void> {
       threshold_absolute_percentage: "0.50", // threshold absolute percentage
       max_voting_period_height: 1000,   // max voting period height
       max_voting_period_guardians_height: 100,    // max voting period guardians height
-      fund_rotation: 10,     // index fund rotation
-      turnover_to_multisig: true,   // turn over to AP Team multisig
+      fund_rotation: undefined,     // index fund rotation
+      turnover_to_multisig: false,   // turn over to AP Team multisig
       is_localterra: true,   // is LocalTerra
       harvest_to_liquid: "0.75", // harvest to liquid percentage
       tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
