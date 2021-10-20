@@ -9,18 +9,18 @@ export const localterra = {
   },
   // Should be updated contract addresses after deploying wasms in the LocalTerra
   contracts: {
-    registrar: "terra1rncl7whw8gcj5shpg86c6tkg0ev3d89shne9xk",
-    indexFund: "terra1lzvzlp6k95evja8pysewk90adjt9rrmjf5lnla",
+    registrar: "",
+    indexFund: "",
     anchorVault1: "",
     anchorVault2: "",
-    endowmentContract1: "terra1jkeeazyekj2uhwume6h8kj33xmxrskg8qyej0t",
-    endowmentContract2: "terra12n0lnz3eeaf8mmp9zuxc39cshly80g6ulqj0xt",
-    endowmentContract3: "terra16mdzjcwgyual93vtc55sxhjzgwv6vnh3r0mk9m",
-    endowmentContract4: "terra14uwzxrcfj2fm4fz7c8fctrqq3nwyh6jehpdqdd",
-    cw4GrpApTeam: "terra1ljsmxd7xwgaaxar8vszlhpwj7m28gmdak9a6r2",
-    cw3ApTeam: "terra1s2lrpj5vmkasnw3q86dsnffgu52z2yjxqtpu3u",
-    cw4GrpOwners: "terra17p5spjusgyhgdrnvz3as3v9rrfwcw2wsj5y3mc",
-    cw3GuardianAngels: "terra1n8nrvqy9gp5e5vehfd9u52q6dddgv4chnmwayd",
+    endowmentContract1: "",
+    endowmentContract2: "",
+    endowmentContract3: "",
+    endowmentContract4: "",
+    cw4GrpApTeam: "",
+    cw3ApTeam: "",
+    cw4GrpOwners: "",
+    cw3GuardianAngels: "",
   },
 }
 
