@@ -6,6 +6,7 @@ import chalk from "chalk";
 import { localterra as config } from "../config/constants";
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts } from "../processes/setupContracts/testnet";
+import { setupTerraSwap } from "../processes/setupTerraSwap/localterra";
 import { testExecute } from "../processes/tests/testnet";
 
 // -------------------------------------------------------------------------------------
@@ -33,6 +34,14 @@ let endowmentContract1: string;
 let endowmentContract2: string;
 let endowmentContract3: string;
 let endowmentContract4: string;
+
+let accAddress: string;
+let tokenCodeId: number;
+let pairCodeId: number;
+let factoryCodeId: number;
+let factoryContract: string;
+let tokenContract: string;
+let pairContract: string;
 
 // -------------------------------------------------------------------------------------
 // initialize variables
@@ -82,6 +91,14 @@ function initialize() {
   console.log(`Use ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
   console.log(`Use ${chalk.cyan(cw4GrpOwners)} as CW4 Endowment Owners Group`);
   console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
+
+  accAddress = config.accAddress;
+  tokenCodeId = config.token_code_id;
+  pairCodeId = config.pair_code_id;
+  factoryCodeId = config.factory_code_id;
+  factoryContract = config.factory_contract;
+  tokenContract = config.token_contract;
+  pairContract = config.pair_contract;
 }
 
 // -------------------------------------------------------------------------------------
@@ -115,14 +132,29 @@ export async function startSetupContracts(): Promise<void> {
       threshold_absolute_percentage: "0.50", // threshold absolute percentage
       max_voting_period_height: 1000,   // max voting period height
       max_voting_period_guardians_height: 100,    // max voting period guardians height
-      fund_rotation: 10,     // index fund rotation
-      turnover_to_multisig: true,   // turn over to AP Team multisig
+      fund_rotation: undefined,     // index fund rotation
+      turnover_to_multisig: false,   // turn over to AP Team multisig
       is_localterra: true,   // is LocalTerra
       harvest_to_liquid: "0.75", // harvest to liquid percentage
       tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
       funding_goal: "50000000", // funding goal
     },
   );
+}
+
+// -------------------------------------------------------------------------------------
+// start setup contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupTerraSwapContracts(): Promise<void> {
+  console.log(chalk.blue("\nTestNet"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Setup TerraSwap contracts
+  console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
+  await setupTerraSwap(terra, apTeam, accAddress);
 }
 
 // -------------------------------------------------------------------------------------

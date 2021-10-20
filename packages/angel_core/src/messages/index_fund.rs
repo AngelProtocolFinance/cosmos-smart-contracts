@@ -17,20 +17,32 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     // updates the owner of the contract
-    UpdateOwner { new_owner: String },
+    UpdateOwner {
+        new_owner: String,
+    },
     // registrar SC can update its addr
-    UpdateRegistrar { new_registrar: String },
+    UpdateRegistrar {
+        new_registrar: String,
+    },
     // replace TCA Member list with a new one
-    UpdateTcaList { new_list: Vec<String> },
+    UpdateTcaList {
+        new_list: Vec<String>,
+    },
     UpdateConfig(UpdateConfigMsg),
     // endpoint to remove a single member from all index funds that they may in
     RemoveMember(RemoveMemberMsg),
     // create a new index fund
-    CreateFund { fund: IndexFund },
+    CreateFund {
+        fund: IndexFund,
+    },
     // remove a specific index fund
     RemoveFund(RemoveFundMsg),
     // updates the members in a given index fund
-    UpdateMembers(UpdateMembersMsg),
+    UpdateMembers {
+        fund_id: u64,
+        add: Vec<String>,
+        remove: Vec<String>,
+    },
     // directly receive native tokens
     Deposit(DepositMsg),
     // This accepts a properly-encoded ReceiveMsg from a cw20 contract

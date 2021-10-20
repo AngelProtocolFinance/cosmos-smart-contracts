@@ -1,13 +1,15 @@
 use crate::config;
 use crate::config::{BALANCES, TOKEN_INFO};
 use angel_core::responses::vault::VaultConfigResponse;
-use angel_core::structs::BalanceResponse;
+use angel_core::structs::{BalanceInfo, BalanceResponse};
 use cosmwasm_std::Deps;
 use cw20::TokenInfoResponse;
 
 pub fn query_balance(deps: Deps, address: String) -> BalanceResponse {
     let address = deps.api.addr_validate(&address).unwrap();
-    let balances = BALANCES.load(deps.storage, &address).unwrap();
+    let balances = BALANCES
+        .load(deps.storage, &address)
+        .unwrap_or(BalanceInfo::default());
     BalanceResponse {
         locked_native: balances.clone().locked_balance.native,
         liquid_native: balances.clone().liquid_balance.native,
@@ -36,6 +38,6 @@ pub fn query_vault_config(deps: Deps) -> VaultConfigResponse {
         yield_token: config.yield_token.to_string(),
         tax_per_block: config.tax_per_block,
         last_harvest: config.last_harvest,
-        harvest_to_liquid: config.harvest_to_liquid
+        harvest_to_liquid: config.harvest_to_liquid,
     }
 }

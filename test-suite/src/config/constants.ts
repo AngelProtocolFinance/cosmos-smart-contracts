@@ -22,6 +22,14 @@ export const localterra = {
     cw4GrpOwners: "",
     cw3GuardianAngels: "",
   },
+  // TerraSwap balances account
+  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8",
+  token_code_id: 0,
+  pair_code_id: 0,
+  factory_code_id: 0,
+  factory_contract: "terra1ddj2tg6833ezrqym3wasfqj4sw22rjjjtgtkay",
+  token_contract: "",
+  pair_contract: "",
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -60,6 +68,14 @@ export const testnet = {
     cw4GrpOwners: "terra1ldrkpnysrasq4sg4zu9mgh74wt9nxvk9qgvxtd",
     cw3GuardianAngels: "terra1ydp9qd9xgdq63ua6axfvauye3l7a3476lm6l28",
   },
+  // TerraSwap balances account
+  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8",
+  token_code_id: 148,
+  pair_code_id: 155,
+  factory_code_id: 154,
+  factory_contract: "terra18qpjm4zkvqnpjpw0zn0tdr8gdzvt8au35v45xf",
+  token_contract: "terra1tg9z99ter7su026zxpugapdx2a26phauu9duxa",
+  pair_contract: "terra1p3qzymg8fauxxwdmqrytd23ctn6eusfmkkv0wc",
 } as const;
 
 // ---------------------------------------------------------------------------------------------------
@@ -68,7 +84,7 @@ export const testnet = {
 export const mainnet = {
   // MainNet columbus-5
   networkInfo: {
-    url: "https://lcd.terra.dev",
+    url: "https://apis.ankr.com/c29102fa57024dc5a5096bb73e7e0919/aae7334102f8f52264b50ad44bf343d3/terra/full/columbus",
     chainId: "columbus-5",
   },
   // MainNet MoneyMarket Contract
@@ -103,6 +119,11 @@ export const mainnet = {
       "terra1zn8aqw3ypzvs8pzuadpqw5jw5rptxp4y08z7sr",
       "terra1cmp87658s0c475dkyee2p8r9zsdjd628py4zav",
       "terra1kdd6f099dv4kr5xqp7sxcc7epledxmvyq8xnu3",
+      "terra16qh68y6gydhz73ndxgkzwmfcfam6jt45g8jhml",
+      "terra1gm0x3m87e7wqzkac5eeacxkesy470yavpwqgdm",
+      "terra1lalzy8rvkg3j2qm4a2x74lm6lxfa3llz7kdkdp",
+      "terra1ngnqymglanujrhs09qakyz84k4v6cw9yyjwp0t",
+      "terra1u0dls462h33j3fgg4j98wpa5qculnq2u749qc5",
     ],
   },
   members: [
@@ -111,4 +132,12 @@ export const mainnet = {
     {addr: "terra1numzqm5mgr56ftd4y8mfen7705nfs4vpz5jf0s", weight: 1},
     {addr: "terra1p3kcfzflagjl7lxfexwyaz43e4mprhyml0sqju", weight: 1},
   ],
+  // TerraSwap balances account
+  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8",
+  token_code_id: 3,
+  pair_code_id: 4,
+  factory_code_id: 5,
+  factory_contract: "terra1ulgw0td86nvs4wtpsc80thv6xelk76ut7a7apj",
+  token_contract: "",
+  pair_contract: "",
 } as const;
