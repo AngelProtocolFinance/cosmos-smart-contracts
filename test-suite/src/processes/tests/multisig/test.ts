@@ -66,7 +66,7 @@ export async function testAddApTeamMemberToC4Group(
     ])
   );
   
-  console.log(chalk.green("Passed!"));
+  console.log(chalk.green(" Passed!"));
 }
 
 export async function testAddGuardiansToEndowment(
@@ -105,7 +105,7 @@ export async function testAddGuardiansToEndowment(
     })
   ]);
   
-  console.log(chalk.green("Passed!"));
+  console.log(chalk.green(" Passed!"));
 }
 
 export async function testGuardiansChangeEndowmentOwner(
@@ -148,5 +148,5 @@ export async function testGuardiansChangeEndowmentOwner(
     }),
   ]);
 
-  console.log(chalk.green("Passed!"));
+  console.log(chalk.green(" Passed!"));
 }

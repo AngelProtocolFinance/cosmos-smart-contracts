@@ -3,16 +3,15 @@ import chalk from "chalk";
 import BN from "bn.js";
 import {
   isTxError,
-  Coin,
   LocalTerra,
   Msg,
   MsgInstantiateContract,
   MsgMigrateContract,
   MsgStoreCode,
-  Fee,
   Wallet,
   LCDClient,
 } from "@terra-money/terra.js";
+import axios from "axios";
 
 /**
  * @notice Encode a JSON object to base64 binary
@@ -31,15 +30,22 @@ export async function sendTransaction(
   msgs: Msg[],
   verbose = false
 ) {
-  let tx;
-  if (LocalTerra.prototype.isPrototypeOf(terra)) {
-    tx = await sender.createAndSignTx({
-      msgs,
-      fee: new Fee(6000000, [new Coin("uusd", 3000000)]),
-    });
-  } else {
-    tx = await sender.createAndSignTx({msgs});
+  let fee;
+  try {
+    fee = await terra.tx.estimateFee(sender.key.accAddress, msgs);
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      throw new Error(
+        chalk.red("Transaction failed!") +
+          `\n${chalk.yellow("code")}: ${error.code}` +
+          `\n${chalk.yellow("message")}: ${error.message}` +
+          `\n${chalk.yellow("error")}: ${error.response?.data["error"]}`
+      );
+    } else {
+      throw error;
+    }
   }
+  const tx = await sender.createAndSignTx({msgs, fee});
   const result = await terra.tx.broadcast(tx);
 
   // Print the log info
