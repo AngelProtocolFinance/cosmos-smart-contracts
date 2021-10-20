@@ -38,7 +38,7 @@ export async function testDonorSendsToIndexFund(
       ),
     ])
   ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Failed!"));
+  console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
@@ -129,7 +129,7 @@ export async function testUpdateFundMembers(
       )
     ])
   ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Failed!"));
+  console.log(chalk.green(" Passed!"));
 
   process.stdout.write("Test - SC owner can update fund members");
   await expect(

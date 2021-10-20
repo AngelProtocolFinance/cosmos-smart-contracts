@@ -38,7 +38,7 @@ export async function testRejectUnapprovedDonations(
       ),
     ])
   ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Failed!"));
+  console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
@@ -69,7 +69,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
       })
     ])
   ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Failed!"));
+  console.log(chalk.green(" Passed!"));
 
   process.stdout.write("Test - Beneficiary can withdraw from the Endowment availalble amount (liquid)");
   await expect(
