@@ -7,7 +7,7 @@ use halo_token::vesting::{
 
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
-    attr, from_binary, to_binary, Api, CanonicalAddr, CosmosMsg, StdError, SubMsg, Timestamp,
+    attr, from_binary, to_binary, Api, CosmosMsg, StdError, SubMsg, Timestamp,
     Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
@@ -119,28 +119,19 @@ fn register_vesting_accounts() {
 
     let acct1 = deps
         .api
-        .addr_humanize(&CanonicalAddr::from(vec![
-            1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]))
+        .addr_validate("acct1")
         .unwrap()
         .to_string();
 
     let acct2 = deps
         .api
-        .addr_humanize(&CanonicalAddr::from(vec![
-            1, 1, 1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]))
+        .addr_validate("acct2")
         .unwrap()
         .to_string();
 
     let acct3 = deps
         .api
-        .addr_humanize(&CanonicalAddr::from(vec![
-            1, 1, 1, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        ]))
+        .addr_validate("acct3")
         .unwrap()
         .to_string();
 
