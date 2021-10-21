@@ -87,8 +87,8 @@ fn proper_initialization() {
     assert_eq!(
         config,
         Config {
-            halo_token: CanonicalAddr::from(vec![]),
-            owner: deps.api.addr_canonicalize(TEST_CREATOR).unwrap(),
+            halo_token: deps.api.addr_humanize(&CanonicalAddr::from(vec![])).unwrap(),
+            owner: deps.api.addr_validate(TEST_CREATOR).unwrap(),
             quorum: Decimal::percent(DEFAULT_QUORUM),
             threshold: Decimal::percent(DEFAULT_THRESHOLD),
             voting_period: DEFAULT_VOTING_PERIOD,
@@ -113,7 +113,7 @@ fn proper_initialization() {
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_canonicalize(MOCK_CONTRACT_ADDR).unwrap(),
+            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count: 0,
             total_share: Uint128::zero(),
             total_deposit: Uint128::zero(),
@@ -1729,7 +1729,7 @@ fn happy_days_withdraw_voting_tokens() {
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_canonicalize(MOCK_CONTRACT_ADDR).unwrap(),
+            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count: 0,
             total_share: Uint128::from(11u128),
             total_deposit: Uint128::zero(),
@@ -1767,7 +1767,7 @@ fn happy_days_withdraw_voting_tokens() {
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_canonicalize(MOCK_CONTRACT_ADDR).unwrap(),
+            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count: 0,
             total_share: Uint128::from(6u128),
             total_deposit: Uint128::zero(),
@@ -1800,7 +1800,7 @@ fn happy_days_withdraw_voting_tokens_all() {
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_canonicalize(MOCK_CONTRACT_ADDR).unwrap(),
+            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count: 0,
             total_share: Uint128::from(11u128),
             total_deposit: Uint128::zero(),
@@ -1836,7 +1836,7 @@ fn happy_days_withdraw_voting_tokens_all() {
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_canonicalize(MOCK_CONTRACT_ADDR).unwrap(),
+            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count: 0,
             total_share: Uint128::zero(),
             total_deposit: Uint128::zero(),
@@ -1871,7 +1871,7 @@ fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
             &1u64.to_be_bytes(),
             &Poll {
                 id: 1u64,
-                creator: CanonicalAddr::from(vec![]),
+                creator: deps.api.addr_humanize(&CanonicalAddr::from(vec![])).unwrap(),
                 status: PollStatus::InProgress,
                 yes_votes: Uint128::zero(),
                 no_votes: Uint128::zero(),
@@ -1892,7 +1892,7 @@ fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
             &2u64.to_be_bytes(),
             &Poll {
                 id: 1u64,
-                creator: CanonicalAddr::from(vec![]),
+                creator: deps.api.addr_humanize(&CanonicalAddr::from(vec![])).unwrap(),
                 status: PollStatus::Passed,
                 yes_votes: Uint128::zero(),
                 no_votes: Uint128::zero(),
@@ -2319,7 +2319,7 @@ fn assert_create_poll_result(
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_canonicalize(MOCK_CONTRACT_ADDR).unwrap(),
+            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count: 1,
             total_share: Uint128::zero(),
             total_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
@@ -2344,7 +2344,7 @@ fn assert_stake_tokens_result(
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_canonicalize(MOCK_CONTRACT_ADDR).unwrap(),
+            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count,
             total_share: Uint128::from(total_share),
             total_deposit: Uint128::from(total_deposit),

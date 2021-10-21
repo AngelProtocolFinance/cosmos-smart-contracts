@@ -5,7 +5,7 @@ use crate::state::{
 };
 
 use cosmwasm_std::{
-    to_binary, Addr, CanonicalAddr, CosmosMsg, Deps, DepsMut, MessageInfo, Response, StdResult,
+    to_binary, Addr, CosmosMsg, Deps, DepsMut, MessageInfo, Response, StdResult,
     Storage, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
@@ -20,9 +20,7 @@ pub fn stake_voting_tokens(
     if amount.is_zero() {
         return Err(ContractError::InsufficientFunds {});
     }
-
-    let sender_address_raw = deps.api.addr_canonicalize(sender.as_str())?;
-    let key = &sender_address_raw.as_slice();
+    let key = sender.as_bytes();
 
     let mut token_manager = bank_read(deps.storage).may_load(key)?.unwrap_or_default();
     let config: Config = config_store(deps.storage).load()?;
@@ -31,8 +29,8 @@ pub fn stake_voting_tokens(
     // balance already increased, so subtract deposit amount
     let total_balance = query_token_balance(
         &deps.querier,
-        deps.api.addr_humanize(&config.halo_token)?,
-        deps.api.addr_humanize(&state.contract_addr)?,
+        config.halo_token,
+        state.contract_addr.clone(),
     )?
     .checked_sub(state.total_deposit + amount)?;
 
@@ -62,8 +60,8 @@ pub fn withdraw_voting_tokens(
     info: MessageInfo,
     amount: Option<Uint128>,
 ) -> Result<Response, ContractError> {
-    let sender_address_raw = deps.api.addr_canonicalize(info.sender.as_str())?;
-    let key = sender_address_raw.as_slice();
+    let sender_address_raw = info.sender;
+    let key = sender_address_raw.as_bytes();
 
     if let Some(mut token_manager) = bank_read(deps.storage).may_load(key)? {
         let config: Config = config_store(deps.storage).load()?;
@@ -73,8 +71,8 @@ pub fn withdraw_voting_tokens(
         let total_share = state.total_share.u128();
         let total_balance = query_token_balance(
             &deps.querier,
-            deps.api.addr_humanize(&config.halo_token)?,
-            deps.api.addr_humanize(&state.contract_addr)?,
+            config.halo_token.clone(),
+            state.contract_addr.clone(),
         )?
         .checked_sub(state.total_deposit)?
         .u128();
@@ -120,14 +118,14 @@ pub fn withdraw_voting_tokens(
 fn compute_locked_balance(
     storage: &mut dyn Storage,
     token_manager: &mut TokenManager,
-    voter: &CanonicalAddr,
+    voter: &Addr,
 ) -> u128 {
     token_manager.locked_balance.retain(|(poll_id, _)| {
         let poll: Poll = poll_read(storage).load(&poll_id.to_be_bytes()).unwrap();
 
         if poll.status != PollStatus::InProgress {
             // remove voter info from the poll
-            poll_voter_store(storage, *poll_id).remove(voter.as_slice());
+            poll_voter_store(storage, *poll_id).remove(voter.as_bytes());
         }
 
         poll.status == PollStatus::InProgress
@@ -143,13 +141,13 @@ fn compute_locked_balance(
 
 fn send_tokens(
     deps: DepsMut,
-    asset_token: &CanonicalAddr,
-    recipient: &CanonicalAddr,
+    asset_token: &Addr,
+    recipient: &Addr,
     amount: u128,
     action: &str,
 ) -> Result<Response, ContractError> {
-    let contract_human = deps.api.addr_humanize(asset_token)?.to_string();
-    let recipient_human = deps.api.addr_humanize(recipient)?.to_string();
+    let contract_human = asset_token.to_string();
+    let recipient_human = recipient.to_string();
 
     Ok(Response::new()
         .add_messages(vec![CosmosMsg::Wasm(WasmMsg::Execute {
@@ -186,8 +184,8 @@ pub fn query_staker(deps: Deps, address: String) -> StdResult<StakerResponse> {
 
     let total_balance = query_token_balance(
         &deps.querier,
-        deps.api.addr_humanize(&config.halo_token)?,
-        deps.api.addr_humanize(&state.contract_addr)?,
+        config.halo_token,
+        state.contract_addr,
     )?
     .checked_sub(state.total_deposit)?;
 

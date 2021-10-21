@@ -42,8 +42,8 @@ pub fn instantiate(
     validate_threshold(msg.threshold)?;
 
     let config = Config {
-        halo_token: CanonicalAddr::from(vec![]),
-        owner: deps.api.addr_canonicalize(info.sender.as_str())?,
+        halo_token: deps.api.addr_humanize(&CanonicalAddr::from(vec![])).unwrap(),
+        owner: info.sender,
         quorum: msg.quorum,
         threshold: msg.threshold,
         voting_period: msg.voting_period,
@@ -54,7 +54,7 @@ pub fn instantiate(
     };
 
     let state = State {
-        contract_addr: deps.api.addr_canonicalize(env.contract.address.as_str())?,
+        contract_addr: env.contract.address,
         poll_count: 0,
         total_share: Uint128::zero(),
         total_deposit: Uint128::zero(),
@@ -121,11 +121,11 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 
 pub fn register_contracts(deps: DepsMut, halo_token: String) -> Result<Response, ContractError> {
     let mut config: Config = config_read(deps.storage).load()?;
-    if config.halo_token != CanonicalAddr::from(vec![]) {
+    if config.halo_token != deps.api.addr_humanize(&CanonicalAddr::from(vec![])).unwrap() {
         return Err(ContractError::Unauthorized {});
     }
 
-    config.halo_token = deps.api.addr_canonicalize(&halo_token)?;
+    config.halo_token = deps.api.addr_validate(&halo_token)?;
     config_store(deps.storage).save(&config)?;
 
     Ok(Response::default())
@@ -139,7 +139,7 @@ pub fn receive_cw20(
 ) -> Result<Response, ContractError> {
     // only asset contract can execute this message
     let config: Config = config_read(deps.storage).load()?;
-    if config.halo_token != deps.api.addr_canonicalize(info.sender.as_str())? {
+    if config.halo_token != info.sender {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -181,12 +181,12 @@ pub fn update_config(
 ) -> Result<Response, ContractError> {
     let api = deps.api;
     config_store(deps.storage).update(|mut config| {
-        if config.owner != api.addr_canonicalize(info.sender.as_str())? {
+        if config.owner != info.sender.as_str() {
             return Err(ContractError::Unauthorized {});
         }
 
         if let Some(owner) = owner {
-            config.owner = api.addr_canonicalize(&owner)?;
+            config.owner = api.addr_validate(&owner)?;
         }
 
         if let Some(quorum) = quorum {
@@ -311,7 +311,7 @@ pub fn create_poll(
         for msgs in exe_msgs {
             let execute_data = ExecuteData {
                 order: msgs.order,
-                contract: deps.api.addr_canonicalize(&msgs.contract)?,
+                contract: deps.api.addr_validate(&msgs.contract)?,
                 msg: msgs.msg,
             };
             data_list.push(execute_data)
@@ -321,7 +321,7 @@ pub fn create_poll(
         None
     };
 
-    let sender_address_raw = deps.api.addr_canonicalize(&proposer)?;
+    let sender_address_raw = deps.api.addr_validate(&proposer)?;
     let new_poll = Poll {
         id: poll_id,
         creator: sender_address_raw,
@@ -348,10 +348,7 @@ pub fn create_poll(
         ("action", "create_poll"),
         (
             "creator",
-            deps.api
-                .addr_humanize(&new_poll.creator)?
-                .to_string()
-                .as_str(),
+            new_poll.creator.as_str(),
         ),
         ("poll_id", &poll_id.to_string()),
         ("end_height", new_poll.end_height.to_string().as_str()),
@@ -395,8 +392,8 @@ pub fn end_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, Contr
     } else {
         let staked_weight = query_token_balance(
             &deps.querier,
-            deps.api.addr_humanize(&config.halo_token)?,
-            deps.api.addr_humanize(&state.contract_addr)?,
+            config.halo_token.clone(),
+            state.contract_addr.clone(),
         )?
         .checked_sub(state.total_deposit)?;
 
@@ -423,10 +420,10 @@ pub fn end_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, Contr
         // Refunds deposit only when quorum is reached
         if !a_poll.deposit_amount.is_zero() {
             messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: deps.api.addr_humanize(&config.halo_token)?.to_string(),
+                contract_addr: config.halo_token.to_string(),
                 funds: vec![],
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                    recipient: deps.api.addr_humanize(&a_poll.creator)?.to_string(),
+                    recipient: a_poll.creator.to_string(),
                     amount: a_poll.deposit_amount,
                 })?,
             }))
@@ -508,7 +505,7 @@ pub fn execute_poll_messages(
         msgs.sort();
         for msg in msgs {
             messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: deps.api.addr_humanize(&msg.contract)?.to_string(),
+                contract_addr: msg.contract.to_string(),
                 msg: msg.msg,
                 funds: vec![],
             }));
@@ -563,8 +560,8 @@ pub fn snapshot_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, 
 
     let staked_amount = query_token_balance(
         &deps.querier,
-        deps.api.addr_humanize(&config.halo_token)?,
-        deps.api.addr_humanize(&state.contract_addr)?,
+        config.halo_token,
+        state.contract_addr,
     )?
     .checked_sub(state.total_deposit)?;
 
@@ -614,8 +611,8 @@ pub fn cast_vote(
     let total_share = state.total_share;
     let total_balance = query_token_balance(
         &deps.querier,
-        deps.api.addr_humanize(&config.halo_token)?,
-        deps.api.addr_humanize(&state.contract_addr)?,
+        config.halo_token,
+        state.contract_addr,
     )?
     .checked_sub(state.total_deposit)?;
 
@@ -701,8 +698,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractErr
 fn query_config(deps: Deps) -> Result<ConfigResponse, ContractError> {
     let config: Config = config_read(deps.storage).load()?;
     Ok(ConfigResponse {
-        owner: deps.api.addr_humanize(&config.owner)?.to_string(),
-        halo_token: deps.api.addr_humanize(&config.halo_token)?.to_string(),
+        owner: config.owner.to_string(),
+        halo_token: config.halo_token.to_string(),
         quorum: config.quorum,
         threshold: config.threshold,
         voting_period: config.voting_period,
@@ -732,7 +729,7 @@ fn query_poll(deps: Deps, poll_id: u64) -> Result<PollResponse, ContractError> {
 
     Ok(PollResponse {
         id: poll.id,
-        creator: deps.api.addr_humanize(&poll.creator)?.to_string(),
+        creator: poll.creator.to_string(),
         status: poll.status,
         end_height: poll.end_height,
         title: poll.title,
@@ -743,7 +740,7 @@ fn query_poll(deps: Deps, poll_id: u64) -> Result<PollResponse, ContractError> {
             for msg in exe_msgs {
                 let execute_data = PollExecuteMsg {
                     order: msg.order,
-                    contract: deps.api.addr_humanize(&msg.contract)?.to_string(),
+                    contract: msg.contract.to_string(),
                     msg: msg.msg,
                 };
                 data_list.push(execute_data)
@@ -773,7 +770,7 @@ fn query_polls(
         .map(|poll| {
             Ok(PollResponse {
                 id: poll.id,
-                creator: deps.api.addr_humanize(&poll.creator)?.to_string(),
+                creator: poll.creator.to_string(),
                 status: poll.status.clone(),
                 end_height: poll.end_height,
                 title: poll.title.to_string(),
@@ -786,7 +783,7 @@ fn query_polls(
                     for msg in exe_msgs {
                         let execute_data = PollExecuteMsg {
                             order: msg.order,
-                            contract: deps.api.addr_humanize(&msg.contract)?.to_string(),
+                            contract: msg.contract.to_string(),
                             msg: msg.msg,
                         };
                         data_list.push(execute_data)
@@ -825,21 +822,22 @@ fn query_voters(
         vec![]
     } else if let Some(start_after) = start_after {
         read_poll_voters(
+            deps,
             deps.storage,
             poll_id,
-            Some(deps.api.addr_canonicalize(&start_after)?),
+            Some(deps.api.addr_validate(&start_after)?),
             limit,
             order_by,
         )?
     } else {
-        read_poll_voters(deps.storage, poll_id, None, limit, order_by)?
+        read_poll_voters(deps, deps.storage, poll_id, None, limit, order_by)?
     };
 
     let voters_response: StdResult<Vec<VotersResponseItem>> = voters
         .iter()
         .map(|voter_info| {
             Ok(VotersResponseItem {
-                voter: deps.api.addr_humanize(&voter_info.0)?.to_string(),
+                voter: voter_info.0.to_string(),
                 vote: voter_info.1.vote.clone(),
                 balance: voter_info.1.balance,
             })
