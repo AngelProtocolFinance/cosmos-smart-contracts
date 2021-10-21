@@ -26,8 +26,8 @@ pub fn instantiate(
     store_config(
         deps.storage,
         &Config {
-            owner: deps.api.addr_canonicalize(&msg.owner)?,
-            halo_token: deps.api.addr_canonicalize(&msg.halo_token)?,
+            owner: deps.api.addr_validate(&msg.owner)?,
+            halo_token: deps.api.addr_validate(&msg.halo_token)?,
             genesis_time: msg.genesis_time,
         },
     )?;
@@ -57,7 +57,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
 }
 
 fn assert_owner_privilege(storage: &dyn Storage, api: &dyn Api, sender: Addr) -> StdResult<()> {
-    if read_config(storage)?.owner != api.addr_canonicalize(sender.as_str())? {
+    if read_config(storage)?.owner != sender {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -72,11 +72,11 @@ pub fn update_config(
 ) -> StdResult<Response> {
     let mut config = read_config(deps.storage)?;
     if let Some(owner) = owner {
-        config.owner = deps.api.addr_canonicalize(&owner)?;
+        config.owner = deps.api.addr_validate(&owner)?;
     }
 
     if let Some(halo_token) = halo_token {
-        config.halo_token = deps.api.addr_canonicalize(&halo_token)?;
+        config.halo_token = deps.api.addr_validate(&halo_token)?;
     }
 
     if let Some(genesis_time) = genesis_time {
@@ -108,7 +108,7 @@ pub fn register_vesting_accounts(
     for vesting_account in vesting_accounts.iter() {
         assert_vesting_schedules(&vesting_account.schedules)?;
 
-        let vesting_address = deps.api.addr_canonicalize(&vesting_account.address)?;
+        let vesting_address = deps.api.addr_validate(&vesting_account.address)?;
         store_vesting_info(
             deps.storage,
             &vesting_address,
@@ -125,17 +125,16 @@ pub fn register_vesting_accounts(
 pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
     let current_time = env.block.time.nanos() / 1_000_000_000;
     let address = info.sender;
-    let address_raw = deps.api.addr_canonicalize(&address.to_string())?;
 
     let config: Config = read_config(deps.storage)?;
-    let mut vesting_info: VestingInfo = read_vesting_info(deps.storage, &address_raw)?;
+    let mut vesting_info: VestingInfo = read_vesting_info(deps.storage, &address)?;
 
     let claim_amount = compute_claim_amount(current_time, &vesting_info);
     let messages: Vec<CosmosMsg> = if claim_amount.is_zero() {
         vec![]
     } else {
         vec![CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: deps.api.addr_humanize(&config.halo_token)?.to_string(),
+            contract_addr: config.halo_token.to_string(),
             funds: vec![],
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
                 recipient: address.to_string(),
@@ -145,7 +144,7 @@ pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> 
     };
 
     vesting_info.last_claim_time = current_time;
-    store_vesting_info(deps.storage, &address_raw, &vesting_info)?;
+    store_vesting_info(deps.storage, &address, &vesting_info)?;
 
     Ok(Response::new().add_messages(messages).add_attributes(vec![
         ("action", "claim"),
@@ -199,8 +198,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let state = read_config(deps.storage)?;
     let resp = ConfigResponse {
-        owner: deps.api.addr_humanize(&state.owner)?.to_string(),
-        halo_token: deps.api.addr_humanize(&state.halo_token)?.to_string(),
+        owner: state.owner.to_string(),
+        halo_token: state.halo_token.to_string(),
         genesis_time: state.genesis_time,
     };
 
@@ -208,7 +207,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 }
 
 pub fn query_vesting_account(deps: Deps, address: String) -> StdResult<VestingAccountResponse> {
-    let info = read_vesting_info(deps.storage, &deps.api.addr_canonicalize(&address)?)?;
+    let info = read_vesting_info(deps.storage, &deps.api.addr_validate(&address)?)?;
     let resp = VestingAccountResponse { address, info };
 
     Ok(resp)
@@ -222,20 +221,21 @@ pub fn query_vesting_accounts(
 ) -> StdResult<VestingAccountsResponse> {
     let vesting_infos = if let Some(start_after) = start_after {
         read_vesting_infos(
+            deps,
             deps.storage,
-            Some(deps.api.addr_canonicalize(&start_after)?),
+            Some(deps.api.addr_validate(&start_after)?),
             limit,
             order_by,
         )?
     } else {
-        read_vesting_infos(deps.storage, None, limit, order_by)?
+        read_vesting_infos(deps, deps.storage, None, limit, order_by)?
     };
 
     let vesting_account_responses: StdResult<Vec<VestingAccountResponse>> = vesting_infos
         .iter()
         .map(|vesting_account| {
             Ok(VestingAccountResponse {
-                address: deps.api.addr_humanize(&vesting_account.0)?.to_string(),
+                address: vesting_account.0.to_string(),
                 info: vesting_account.1.clone(),
             })
         })

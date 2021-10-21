@@ -84,8 +84,6 @@ pub fn receive_cw20(
 }
 
 pub fn bond(deps: DepsMut, env: Env, sender_addr: Addr, amount: Uint128) -> StdResult<Response> {
-    // let sender_addr_raw: Addr = deps.api.addr_canonicalize(sender_addr.as_str())?;
-
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
     let mut staker_info: StakerInfo = read_staker_info(deps.storage, &sender_addr)?;
