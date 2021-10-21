@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{CanonicalAddr, Decimal, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
 use cosmwasm_storage::{singleton, singleton_read, Bucket, ReadonlyBucket};
 
 static KEY_CONFIG: &[u8] = b"config";
@@ -11,8 +11,8 @@ static PREFIX_REWARD: &[u8] = b"reward";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
-    pub halo_token: CanonicalAddr,
-    pub staking_token: CanonicalAddr,
+    pub halo_token: Addr,
+    pub staking_token: Addr,
     pub distribution_schedule: Vec<(u64, u64, Uint128)>,
 }
 
@@ -49,21 +49,21 @@ pub struct StakerInfo {
 /// returns return staker_info of the given owner
 pub fn store_staker_info(
     storage: &mut dyn Storage,
-    owner: &CanonicalAddr,
+    owner: &Addr,
     staker_info: &StakerInfo,
 ) -> StdResult<()> {
-    Bucket::new(storage, PREFIX_REWARD).save(owner.as_slice(), staker_info)
+    Bucket::new(storage, PREFIX_REWARD).save(owner.as_bytes(), staker_info)
 }
 
 /// remove staker_info of the given owner
-pub fn remove_staker_info(storage: &mut dyn Storage, owner: &CanonicalAddr) {
-    Bucket::<StakerInfo>::new(storage, PREFIX_REWARD).remove(owner.as_slice())
+pub fn remove_staker_info(storage: &mut dyn Storage, owner: &Addr) {
+    Bucket::<StakerInfo>::new(storage, PREFIX_REWARD).remove(owner.as_bytes())
 }
 
 /// returns rewards owned by this owner
 /// (read-only version for queries)
-pub fn read_staker_info(storage: &dyn Storage, owner: &CanonicalAddr) -> StdResult<StakerInfo> {
-    match ReadonlyBucket::new(storage, PREFIX_REWARD).may_load(owner.as_slice())? {
+pub fn read_staker_info(storage: &dyn Storage, owner: &Addr) -> StdResult<StakerInfo> {
+    match ReadonlyBucket::new(storage, PREFIX_REWARD).may_load(owner.as_bytes())? {
         Some(staker_info) => Ok(staker_info),
         None => Ok(StakerInfo {
             reward_index: Decimal::zero(),

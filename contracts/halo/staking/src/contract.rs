@@ -2,7 +2,7 @@
 use cosmwasm_std::entry_point;
 
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, Binary, CanonicalAddr, CosmosMsg, Decimal, Deps, DepsMut, Env,
+    from_binary, to_binary, Addr, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
     MessageInfo, Response, StdError, StdResult, Uint128, WasmMsg,
 };
 
@@ -31,8 +31,8 @@ pub fn instantiate(
     store_config(
         deps.storage,
         &Config {
-            halo_token: deps.api.addr_canonicalize(&msg.halo_token)?,
-            staking_token: deps.api.addr_canonicalize(&msg.staking_token)?,
+            halo_token: deps.api.addr_validate(&msg.halo_token)?,
+            staking_token: deps.api.addr_validate(&msg.staking_token)?,
             distribution_schedule: msg.distribution_schedule,
         },
     )?;
@@ -72,7 +72,7 @@ pub fn receive_cw20(
     match from_binary(&cw20_msg.msg) {
         Ok(Cw20HookMsg::Bond {}) => {
             // only staking token contract can execute this message
-            if config.staking_token != deps.api.addr_canonicalize(info.sender.as_str())? {
+            if config.staking_token != info.sender {
                 return Err(StdError::generic_err("unauthorized"));
             }
 
@@ -84,11 +84,11 @@ pub fn receive_cw20(
 }
 
 pub fn bond(deps: DepsMut, env: Env, sender_addr: Addr, amount: Uint128) -> StdResult<Response> {
-    let sender_addr_raw: CanonicalAddr = deps.api.addr_canonicalize(sender_addr.as_str())?;
+    // let sender_addr_raw: Addr = deps.api.addr_canonicalize(sender_addr.as_str())?;
 
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
-    let mut staker_info: StakerInfo = read_staker_info(deps.storage, &sender_addr_raw)?;
+    let mut staker_info: StakerInfo = read_staker_info(deps.storage, &sender_addr)?;
 
     // Compute global reward & staker reward
     compute_reward(&config, &mut state, env.block.height);
@@ -98,7 +98,7 @@ pub fn bond(deps: DepsMut, env: Env, sender_addr: Addr, amount: Uint128) -> StdR
     increase_bond_amount(&mut state, &mut staker_info, amount);
 
     // Store updated state with staker's staker_info
-    store_staker_info(deps.storage, &sender_addr_raw, &staker_info)?;
+    store_staker_info(deps.storage, &sender_addr, &staker_info)?;
     store_state(deps.storage, &state)?;
 
     Ok(Response::new().add_attributes(vec![
@@ -110,10 +110,9 @@ pub fn bond(deps: DepsMut, env: Env, sender_addr: Addr, amount: Uint128) -> StdR
 
 pub fn unbond(deps: DepsMut, env: Env, info: MessageInfo, amount: Uint128) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
-    let sender_addr_raw: CanonicalAddr = deps.api.addr_canonicalize(info.sender.as_str())?;
 
     let mut state: State = read_state(deps.storage)?;
-    let mut staker_info: StakerInfo = read_staker_info(deps.storage, &sender_addr_raw)?;
+    let mut staker_info: StakerInfo = read_staker_info(deps.storage, &info.sender)?;
 
     if staker_info.bond_amount < amount {
         return Err(StdError::generic_err("Cannot unbond more than bond amount"));
@@ -129,9 +128,9 @@ pub fn unbond(deps: DepsMut, env: Env, info: MessageInfo, amount: Uint128) -> St
     // Store or remove updated rewards info
     // depends on the left pending reward and bond amount
     if staker_info.pending_reward.is_zero() && staker_info.bond_amount.is_zero() {
-        remove_staker_info(deps.storage, &sender_addr_raw);
+        remove_staker_info(deps.storage, &info.sender);
     } else {
-        store_staker_info(deps.storage, &sender_addr_raw, &staker_info)?;
+        store_staker_info(deps.storage, &info.sender, &staker_info)?;
     }
 
     // Store updated state
@@ -139,7 +138,7 @@ pub fn unbond(deps: DepsMut, env: Env, info: MessageInfo, amount: Uint128) -> St
 
     Ok(Response::new()
         .add_messages(vec![CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: deps.api.addr_humanize(&config.staking_token)?.to_string(),
+            contract_addr: config.staking_token.to_string(),
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
                 recipient: info.sender.to_string(),
                 amount,
@@ -155,11 +154,9 @@ pub fn unbond(deps: DepsMut, env: Env, info: MessageInfo, amount: Uint128) -> St
 
 // withdraw rewards to executor
 pub fn withdraw(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
-    let sender_addr_raw = deps.api.addr_canonicalize(info.sender.as_str())?;
-
     let config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
-    let mut staker_info = read_staker_info(deps.storage, &sender_addr_raw)?;
+    let mut staker_info = read_staker_info(deps.storage, &info.sender)?;
 
     // Compute global reward & staker reward
     compute_reward(&config, &mut state, env.block.height);
@@ -171,9 +168,9 @@ pub fn withdraw(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Respons
     // Store or remove updated rewards info
     // depends on the left pending reward and bond amount
     if staker_info.bond_amount.is_zero() {
-        remove_staker_info(deps.storage, &sender_addr_raw);
+        remove_staker_info(deps.storage, &info.sender);
     } else {
-        store_staker_info(deps.storage, &sender_addr_raw, &staker_info)?;
+        store_staker_info(deps.storage, &info.sender, &staker_info)?;
     }
 
     // Store updated state
@@ -181,7 +178,7 @@ pub fn withdraw(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Respons
 
     Ok(Response::new()
         .add_messages(vec![CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: deps.api.addr_humanize(&config.halo_token)?.to_string(),
+            contract_addr: config.halo_token.to_string(),
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
                 recipient: info.sender.to_string(),
                 amount,
@@ -201,16 +198,15 @@ pub fn migrate_staking(
     info: MessageInfo,
     new_staking_contract: String,
 ) -> StdResult<Response> {
-    let sender_addr_raw: CanonicalAddr = deps.api.addr_canonicalize(info.sender.as_str())?;
     let mut config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
-    let anc_token: Addr = deps.api.addr_humanize(&config.halo_token)?;
+    let anc_token: Addr = config.halo_token.clone();
 
     // get gov address by querying anc token minter
-    let gov_addr_raw: CanonicalAddr = deps
+    let gov_addr_raw: Addr = deps
         .api
-        .addr_canonicalize(&query_anc_minter(&deps.querier, anc_token.clone())?)?;
-    if sender_addr_raw != gov_addr_raw {
+        .addr_validate(&query_anc_minter(&deps.querier, anc_token.clone())?)?;
+    if info.sender != gov_addr_raw {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -337,8 +333,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let state = read_config(deps.storage)?;
     let resp = ConfigResponse {
-        halo_token: deps.api.addr_humanize(&state.halo_token)?.to_string(),
-        staking_token: deps.api.addr_humanize(&state.staking_token)?.to_string(),
+        halo_token: state.halo_token.to_string(),
+        staking_token: state.staking_token.to_string(),
         distribution_schedule: state.distribution_schedule,
     };
 
@@ -364,7 +360,7 @@ pub fn query_staker_info(
     staker: String,
     block_height: Option<u64>,
 ) -> StdResult<StakerInfoResponse> {
-    let staker_raw = deps.api.addr_canonicalize(&staker)?;
+    let staker_raw = deps.api.addr_validate(&staker)?;
 
     let mut staker_info: StakerInfo = read_staker_info(deps.storage, &staker_raw)?;
     if let Some(block_height) = block_height {

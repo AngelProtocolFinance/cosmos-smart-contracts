@@ -140,7 +140,7 @@ fn compute_locked_balance(
 }
 
 fn send_tokens(
-    deps: DepsMut,
+    _deps: DepsMut,
     asset_token: &Addr,
     recipient: &Addr,
     amount: u128,
