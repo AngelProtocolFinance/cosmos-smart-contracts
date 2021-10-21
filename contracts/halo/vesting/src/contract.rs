@@ -56,7 +56,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     }
 }
 
-fn assert_owner_privilege(storage: &dyn Storage, api: &dyn Api, sender: Addr) -> StdResult<()> {
+fn assert_owner_privilege(storage: &dyn Storage, _api: &dyn Api, sender: Addr) -> StdResult<()> {
     if read_config(storage)?.owner != sender {
         return Err(StdError::generic_err("unauthorized"));
     }

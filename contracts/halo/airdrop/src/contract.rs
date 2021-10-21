@@ -29,8 +29,8 @@ pub fn instantiate(
     store_config(
         deps.storage,
         &Config {
-            owner: deps.api.addr_canonicalize(&msg.owner)?,
-            halo_token: deps.api.addr_canonicalize(&msg.halo_token)?,
+            owner: deps.api.addr_validate(&msg.owner)?,
+            halo_token: deps.api.addr_validate(&msg.halo_token)?,
         },
     )?;
 
@@ -66,12 +66,12 @@ pub fn update_config(
     owner: Option<String>,
 ) -> Result<Response, ContractError> {
     let mut config: Config = read_config(deps.storage)?;
-    if deps.api.addr_canonicalize(info.sender.as_str())? != config.owner {
+    if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
     if let Some(owner) = owner {
-        config.owner = deps.api.addr_canonicalize(&owner)?;
+        config.owner = deps.api.addr_validate(&owner)?;
     }
 
     store_config(deps.storage, &config)?;
@@ -84,7 +84,7 @@ pub fn register_merkle_root(
     merkle_root: String,
 ) -> Result<Response, ContractError> {
     let config: Config = read_config(deps.storage)?;
-    if deps.api.addr_canonicalize(info.sender.as_str())? != config.owner {
+    if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -117,10 +117,8 @@ pub fn claim(
     let config: Config = read_config(deps.storage)?;
     let merkle_root: String = read_merkle_root(deps.storage, stage)?;
 
-    let user_raw = deps.api.addr_canonicalize(info.sender.as_str())?;
-
     // If user claimed target stage, return err
-    if read_claimed(deps.storage, &user_raw, stage)? {
+    if read_claimed(deps.storage, &info.sender, stage)? {
         return Err(ContractError::AlreadyClaimed {});
     }
 
@@ -157,11 +155,11 @@ pub fn claim(
     }
 
     // Update claim index to the current stage
-    store_claimed(deps.storage, &user_raw, stage)?;
+    store_claimed(deps.storage, &info.sender, stage)?;
 
     Ok(Response::new()
         .add_messages(vec![CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: deps.api.addr_humanize(&config.halo_token)?.to_string(),
+            contract_addr: config.halo_token.to_string(),
             funds: vec![],
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
                 recipient: info.sender.to_string(),
@@ -204,8 +202,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let state = read_config(deps.storage)?;
     let resp = ConfigResponse {
-        owner: deps.api.addr_humanize(&state.owner)?.to_string(),
-        halo_token: deps.api.addr_humanize(&state.halo_token)?.to_string(),
+        owner: state.owner.to_string(),
+        halo_token: state.halo_token.to_string(),
     };
 
     Ok(resp)
@@ -226,7 +224,7 @@ pub fn query_latest_stage(deps: Deps) -> StdResult<LatestStageResponse> {
 }
 
 pub fn query_is_claimed(deps: Deps, stage: u8, address: String) -> StdResult<IsClaimedResponse> {
-    let user_raw = deps.api.addr_canonicalize(&address)?;
+    let user_raw = deps.api.addr_validate(&address)?;
     let resp = IsClaimedResponse {
         is_claimed: read_claimed(deps.storage, &user_raw, stage)?,
     };
