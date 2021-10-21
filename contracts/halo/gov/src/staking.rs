@@ -166,11 +166,11 @@ fn send_tokens(
 }
 
 pub fn query_staker(deps: Deps, address: String) -> StdResult<StakerResponse> {
-    let addr_raw = deps.api.addr_canonicalize(&address).unwrap();
+    let addr_raw = deps.api.addr_validate(&address)?;
     let config: Config = config_read(deps.storage).load()?;
     let state: State = state_read(deps.storage).load()?;
     let mut token_manager = bank_read(deps.storage)
-        .may_load(addr_raw.as_slice())?
+        .may_load(addr_raw.as_bytes())?
         .unwrap_or_default();
 
     // filter out not in-progress polls
