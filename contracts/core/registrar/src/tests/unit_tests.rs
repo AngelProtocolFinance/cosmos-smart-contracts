@@ -91,6 +91,9 @@ fn update_config() {
         split_max: Some(Decimal::one()),
         split_min: Some(Decimal::zero()),
         split_default: Some(Decimal::percent(30)),
+        charity_shares_contract: None,
+        gov_contract: None,
+        halo_token: None,
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
