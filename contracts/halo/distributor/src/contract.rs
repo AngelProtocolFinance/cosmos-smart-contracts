@@ -4,7 +4,7 @@ use cosmwasm_std::entry_point;
 use crate::state::{read_config, store_config, Config};
 
 use cosmwasm_std::{
-    to_binary, Binary, CanonicalAddr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
+    to_binary, Binary, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
     StdError, StdResult, Uint128, WasmMsg,
 };
 
@@ -22,14 +22,14 @@ pub fn instantiate(
     let whitelist = msg
         .whitelist
         .into_iter()
-        .map(|w| deps.api.addr_canonicalize(&w))
-        .collect::<StdResult<Vec<CanonicalAddr>>>()?;
+        .map(|w| deps.api.addr_validate(&w))
+        .collect::<StdResult<Vec<Addr>>>()?;
 
     store_config(
         deps.storage,
         &Config {
-            gov_contract: deps.api.addr_canonicalize(&msg.gov_contract)?,
-            halo_token: deps.api.addr_canonicalize(&msg.halo_token)?,
+            gov_contract: deps.api.addr_validate(&msg.gov_contract)?,
+            halo_token: deps.api.addr_validate(&msg.halo_token)?,
             whitelist,
             spend_limit: msg.spend_limit,
         },
@@ -61,7 +61,7 @@ pub fn update_config(
     spend_limit: Option<Uint128>,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
-    if config.gov_contract != deps.api.addr_canonicalize(info.sender.as_str())? {
+    if config.gov_contract != info.sender {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -80,11 +80,11 @@ pub fn add_distributor(
     distributor: String,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
-    if config.gov_contract != deps.api.addr_canonicalize(info.sender.as_str())? {
+    if config.gov_contract != info.sender {
         return Err(StdError::generic_err("unauthorized"));
     }
 
-    let distributor_raw = deps.api.addr_canonicalize(&distributor)?;
+    let distributor_raw = deps.api.addr_validate(&distributor)?;
     if config
         .whitelist
         .clone()
@@ -109,13 +109,13 @@ pub fn remove_distributor(
     distributor: String,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
-    if config.gov_contract != deps.api.addr_canonicalize(info.sender.as_str())? {
+    if config.gov_contract != info.sender {
         return Err(StdError::generic_err("unauthorized"));
     }
 
-    let distributor_raw = deps.api.addr_canonicalize(&distributor)?;
+    let distributor_raw = deps.api.addr_validate(&distributor)?;
     let whitelist_len = config.whitelist.len();
-    let whitelist: Vec<CanonicalAddr> = config
+    let whitelist: Vec<Addr> = config
         .whitelist
         .into_iter()
         .filter(|w| *w != distributor_raw)
@@ -144,9 +144,8 @@ pub fn spend(
     amount: Uint128,
 ) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
-    let sender_raw = deps.api.addr_canonicalize(info.sender.as_str())?;
 
-    if !config.whitelist.into_iter().any(|w| w == sender_raw) {
+    if !config.whitelist.into_iter().any(|w| w == info.sender) {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -154,7 +153,7 @@ pub fn spend(
         return Err(StdError::generic_err("Cannot spend more than spend_limit"));
     }
 
-    let halo_token = deps.api.addr_humanize(&config.halo_token)?.to_string();
+    let halo_token = config.halo_token.to_string();
     Ok(Response::new()
         .add_messages(vec![CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: halo_token,
@@ -181,16 +180,13 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let state = read_config(deps.storage)?;
     let resp = ConfigResponse {
-        gov_contract: deps.api.addr_humanize(&state.gov_contract)?.to_string(),
-        halo_token: deps.api.addr_humanize(&state.halo_token)?.to_string(),
+        gov_contract: state.gov_contract.to_string(),
+        halo_token: state.halo_token.to_string(),
         whitelist: state
             .whitelist
             .into_iter()
-            .map(|w| match deps.api.addr_humanize(&w) {
-                Ok(addr) => Ok(addr.to_string()),
-                Err(e) => Err(e),
-            })
-            .collect::<StdResult<Vec<String>>>()?,
+            .map(|w| w.to_string())
+            .collect::<Vec<String>>(),
         spend_limit: state.spend_limit,
     };
 
