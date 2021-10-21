@@ -20,6 +20,9 @@ import * as MainNet from "./environments/mainnet";
 		case "localterra_terraswap":
 			await LocalNet.startSetupTerraSwapContracts();
 			break;
+		case "localterra_halo":
+			await LocalNet.startSetupHalo();
+			break;
 		case "testnet":
 			await TestNet.startTest();
 			break;
@@ -32,6 +35,9 @@ import * as MainNet from "./environments/mainnet";
 		case "testnet_terraswap":
 			await TestNet.startSetupTerraSwapContracts();
 			break;
+		case "testnet_halo":
+			await TestNet.startSetupHalo();
+			break;
 		case "mainnet":
 			await MainNet.startTest();
 			break;
@@ -43,6 +49,9 @@ import * as MainNet from "./environments/mainnet";
 			break;
 		case "mainnet_terraswap":
 			await MainNet.startSetupTerraSwapContracts();
+			break;
+		case "mainnet_halo":
+			await MainNet.startSetupHalo();
 			break;
 		default:
 			console.log("Invalid command");

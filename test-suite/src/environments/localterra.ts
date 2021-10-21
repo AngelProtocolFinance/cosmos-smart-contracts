@@ -6,6 +6,7 @@ import chalk from "chalk";
 import { localterra as config } from "../config/constants";
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts } from "../processes/setupContracts/testnet";
+import { setupHalo } from "../processes/setupHalo/testnet";
 import { setupTerraSwap } from "../processes/setupTerraSwap/localterra";
 import { testExecute } from "../processes/tests/testnet";
 
@@ -102,7 +103,7 @@ function initialize() {
 }
 
 // -------------------------------------------------------------------------------------
-// start setup contracts
+// setup contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupContracts(): Promise<void> {
   console.log(chalk.blue("\nLocalTerra"));
@@ -143,10 +144,10 @@ export async function startSetupContracts(): Promise<void> {
 }
 
 // -------------------------------------------------------------------------------------
-// start setup contracts
+// setup TerraSwap contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupTerraSwapContracts(): Promise<void> {
-  console.log(chalk.blue("\nTestNet"));
+  console.log(chalk.blue("\nLocalTerra"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -157,8 +158,41 @@ export async function startSetupTerraSwapContracts(): Promise<void> {
   await setupTerraSwap(terra, apTeam, accAddress);
 }
 
+
 // -------------------------------------------------------------------------------------
-// start setup contracts
+// setup HALO contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupHalo(): Promise<void> {
+  console.log(chalk.blue("\nLocalTerra"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Setup HALO contracts
+  console.log(chalk.yellow("\nStep2. Halo Contracts"));
+  await setupHalo(
+    terra,
+    apTeam,
+    tokenContract,    // halo_token contract
+    factoryContract,  // terraswap_factory contract
+    pairContract,     // staking_token: lp token of ANC-UST pair contract
+    "0.3",            // quorum
+    "0.5",            // threshold,
+    2000,             // voting_period,
+    1000,             // timelock_period,
+    10000000000,      // proposal_deposit,
+    10,               // snapshot_period,
+    [],               // whitelist
+    1000,             // spend_limit
+    "0.2",            // reward_factor
+    [100, 200, 1000000],  // distribution_schedule
+    12345             // genesis_time
+  );
+}
+
+// -------------------------------------------------------------------------------------
+// migrate contracts
 // -------------------------------------------------------------------------------------
 export async function startMigrateContracts(): Promise<void> {
   console.log(chalk.blue("\nLocalTerra"));
@@ -188,6 +222,9 @@ export async function startMigrateContracts(): Promise<void> {
   );
 }
 
+// -------------------------------------------------------------------------------------
+// start test
+// -------------------------------------------------------------------------------------
 export async function startTest(): Promise<void> {
   console.log(chalk.blue("\nLocalTerra"));
 
