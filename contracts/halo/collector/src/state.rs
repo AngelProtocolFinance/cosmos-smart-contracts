@@ -1,17 +1,17 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{CanonicalAddr, Decimal, StdResult, Storage};
+use cosmwasm_std::{Addr, Decimal, StdResult, Storage};
 use cosmwasm_storage::{singleton, singleton_read};
 
 static KEY_CONFIG: &[u8] = b"config";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
-    pub gov_contract: CanonicalAddr,         // collected rewards receiver
-    pub terraswap_factory: CanonicalAddr,    // terraswap factory contract
-    pub halo_token: CanonicalAddr,           // HALO token address
-    pub distributor_contract: CanonicalAddr, // distributor contract to sent back rewards
+    pub gov_contract: Addr,         // collected rewards receiver
+    pub terraswap_factory: Addr,    // terraswap factory contract
+    pub halo_token: Addr,           // HALO token address
+    pub distributor_contract: Addr, // distributor contract to sent back rewards
     pub reward_factor: Decimal, // reward distribution rate to gov contract, left rewards sent back to distributor contract
 }
 

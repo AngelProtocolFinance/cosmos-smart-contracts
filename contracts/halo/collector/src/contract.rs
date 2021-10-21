@@ -24,10 +24,10 @@ pub fn instantiate(
     store_config(
         deps.storage,
         &Config {
-            gov_contract: deps.api.addr_canonicalize(&msg.gov_contract)?,
-            terraswap_factory: deps.api.addr_canonicalize(&msg.terraswap_factory)?,
-            halo_token: deps.api.addr_canonicalize(&msg.halo_token)?,
-            distributor_contract: deps.api.addr_canonicalize(&msg.distributor_contract)?,
+            gov_contract: deps.api.addr_validate(&msg.gov_contract)?,
+            terraswap_factory: deps.api.addr_validate(&msg.terraswap_factory)?,
+            halo_token: deps.api.addr_validate(&msg.halo_token)?,
+            distributor_contract: deps.api.addr_validate(&msg.distributor_contract)?,
             reward_factor: msg.reward_factor,
         },
     )?;
@@ -49,7 +49,7 @@ pub fn update_config(
     reward_factor: Option<Decimal>,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
-    if deps.api.addr_canonicalize(info.sender.as_str())? != config.gov_contract {
+    if info.sender != config.gov_contract {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -69,18 +69,16 @@ const SWEEP_REPLY_ID: u64 = 1;
 /// result ANC token to gov contract
 pub fn sweep(deps: DepsMut, env: Env, denom: String) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
-    let halo_token = deps.api.addr_humanize(&config.halo_token)?;
-    let terraswap_factory_addr = deps.api.addr_humanize(&config.terraswap_factory)?;
 
     let pair_info: PairInfo = query_pair_info(
         &deps.querier,
-        terraswap_factory_addr,
+        config.terraswap_factory,
         &[
             AssetInfo::NativeToken {
                 denom: denom.to_string(),
             },
             AssetInfo::Token {
-                contract_addr: halo_token.to_string(),
+                contract_addr: config.halo_token.to_string(),
             },
         ],
     )?;
@@ -140,7 +138,7 @@ pub fn distribute(deps: DepsMut, env: Env) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
     let amount = query_token_balance(
         &deps.querier,
-        deps.api.addr_humanize(&config.halo_token)?,
+        config.halo_token.clone(),
         env.contract.address,
     )?;
 
@@ -151,9 +149,9 @@ pub fn distribute(deps: DepsMut, env: Env) -> StdResult<Response> {
 
     if !distribute_amount.is_zero() {
         messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: deps.api.addr_humanize(&config.halo_token)?.to_string(),
+            contract_addr: config.halo_token.to_string(),
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                recipient: deps.api.addr_humanize(&config.gov_contract)?.to_string(),
+                recipient: config.gov_contract.to_string(),
                 amount: distribute_amount,
             })?,
             funds: vec![],
@@ -162,12 +160,9 @@ pub fn distribute(deps: DepsMut, env: Env) -> StdResult<Response> {
 
     if !left_amount.is_zero() {
         messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: deps.api.addr_humanize(&config.halo_token)?.to_string(),
+            contract_addr: config.halo_token.to_string(),
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                recipient: deps
-                    .api
-                    .addr_humanize(&config.distributor_contract)?
-                    .to_string(),
+                recipient: config.distributor_contract.to_string(),
                 amount: left_amount,
             })?,
             funds: vec![],
@@ -191,16 +186,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let state = read_config(deps.storage)?;
     let resp = ConfigResponse {
-        gov_contract: deps.api.addr_humanize(&state.gov_contract)?.to_string(),
-        terraswap_factory: deps
-            .api
-            .addr_humanize(&state.terraswap_factory)?
-            .to_string(),
-        halo_token: deps.api.addr_humanize(&state.halo_token)?.to_string(),
-        distributor_contract: deps
-            .api
-            .addr_humanize(&state.distributor_contract)?
-            .to_string(),
+        gov_contract: state.gov_contract.to_string(),
+        terraswap_factory: state.terraswap_factory.to_string(),
+        halo_token: state.halo_token.to_string(),
+        distributor_contract: state.distributor_contract.to_string(),
         reward_factor: state.reward_factor,
     };
 
