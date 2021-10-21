@@ -84,7 +84,7 @@ export const testnet = {
 export const mainnet = {
   // MainNet columbus-5
   networkInfo: {
-    url: "https://apis.ankr.com/c29102fa57024dc5a5096bb73e7e0919/aae7334102f8f52264b50ad44bf343d3/terra/full/columbus",
+    url: "https://lcd.terra.dev",
     chainId: "columbus-5",
   },
   // MainNet MoneyMarket Contract

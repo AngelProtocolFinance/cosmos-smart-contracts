@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as path from "path";
 import chalk from "chalk";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { LCDClient, LocalTerra, Msg, MsgExecuteContract, MsgMigrateContract, Wallet } from "@terra-money/terra.js";
 import {
   sendTransaction,
   storeCode,
@@ -201,18 +201,23 @@ async function migrateAccounts(
   
   process.stdout.write("Migrate Accounts contracts\n");
   let prom = Promise.resolve();
-  endowmentContracts.forEach(endowment => {
-    // eslint-disable-next-line no-async-promise-executor
-    prom = prom.then(() => new Promise(async (resolve, reject) => {
-      try {
-        await migrateContract(terra, apTeam, apTeam, endowment, codeId, {});
-        console.log(chalk.green(`${endowment} - Completed`));
-        resolve();
-      } catch(e) {
-        reject(e);
-      }
-    }));
-  });
+  // eslint-disable-next-line no-async-promise-executor
+  prom = prom.then(() => new Promise(async (resolve, reject) => {
+    try {
+      const msgs: Msg[] = endowmentContracts.map(endowment => {
+        return new MsgMigrateContract(
+          apTeam.key.accAddress,
+          endowment,
+          codeId,
+          {}
+        );
+      });
+      const result = await sendTransaction(terra, apTeam, msgs);
+      resolve();
+    } catch(e) {
+      reject(e);
+    }
+  }));
 
   await prom;
   console.log(chalk.green(" Done!"));
