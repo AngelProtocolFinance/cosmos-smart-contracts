@@ -4,6 +4,7 @@
 import { LCDClient, MnemonicKey, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
 import { mainnet as config } from "../config/constants";
+import { migrateHaloContracts } from "../processes/migrateContracts/migrateHalo";
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts, Member } from "../processes/setupContracts/mainnet";
 import { setupHalo } from "../processes/setupHalo/testnet";
@@ -202,7 +203,7 @@ export async function startSetupHalo(): Promise<void> {
 }
 
 // -------------------------------------------------------------------------------------
-// migrate contracts
+// migrate Angel Protocol core contracts
 // -------------------------------------------------------------------------------------
 export async function startMigrateContracts(): Promise<void> {
   console.log(chalk.blue("\nMainNet Columbus-5"));
@@ -224,6 +225,31 @@ export async function startMigrateContracts(): Promise<void> {
     cw3GuardianAngels,
     [anchorVault],
     endowmentContracts
+  );
+}
+
+// -------------------------------------------------------------------------------------
+// migrate HALO contracts
+// -------------------------------------------------------------------------------------
+export async function startMigrateHaloContracts(): Promise<void> {
+  console.log(chalk.blue("\nLocalTerra"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Migrate Contracts
+  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  await migrateHaloContracts(
+    terra,
+    apTeam,
+    haloAirdrop,
+    haloCollector,
+    haloCommunity,
+    haloDistributor,
+    haloGov,
+    haloStaking,
+    haloVesting
   );
 }
 
