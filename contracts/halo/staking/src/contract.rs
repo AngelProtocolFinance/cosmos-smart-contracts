@@ -2,8 +2,8 @@
 use cosmwasm_std::entry_point;
 
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
-    MessageInfo, Response, StdError, StdResult, Uint128, WasmMsg,
+    from_binary, to_binary, Addr, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
+    Response, StdError, StdResult, Uint128, WasmMsg,
 };
 
 use halo_token::staking::{
@@ -12,7 +12,7 @@ use halo_token::staking::{
 };
 
 use crate::{
-    querier::query_anc_minter,
+    querier::query_halo_minter,
     state::{
         read_config, read_staker_info, read_state, remove_staker_info, store_config,
         store_staker_info, store_state, Config, StakerInfo, State,
@@ -198,12 +198,12 @@ pub fn migrate_staking(
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
     let mut state: State = read_state(deps.storage)?;
-    let anc_token: Addr = config.halo_token.clone();
+    let halo_token: Addr = config.halo_token.clone();
 
-    // get gov address by querying anc token minter
+    // get gov address by querying halo token minter
     let gov_addr_raw: Addr = deps
         .api
-        .addr_validate(&query_anc_minter(&deps.querier, anc_token.clone())?)?;
+        .addr_validate(&query_halo_minter(&deps.querier, halo_token.clone())?)?;
     if info.sender != gov_addr_raw {
         return Err(StdError::generic_err("unauthorized"));
     }
@@ -246,21 +246,21 @@ pub fn migrate_staking(
     // update state
     store_state(deps.storage, &state)?;
 
-    let remaining_anc = total_distribution_amount.checked_sub(distributed_amount)?;
+    let remaining_halo = total_distribution_amount.checked_sub(distributed_amount)?;
 
     Ok(Response::new()
         .add_messages(vec![CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: anc_token.to_string(),
+            contract_addr: halo_token.to_string(),
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
                 recipient: new_staking_contract,
-                amount: remaining_anc,
+                amount: remaining_halo,
             })?,
             funds: vec![],
         })])
         .add_attributes(vec![
             ("action", "migrate_staking"),
             ("distributed_amount", &distributed_amount.to_string()),
-            ("remaining_amount", &remaining_anc.to_string()),
+            ("remaining_amount", &remaining_halo.to_string()),
         ]))
 }
 
