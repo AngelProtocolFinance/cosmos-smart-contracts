@@ -66,14 +66,20 @@ pub fn read_vesting_infos<'a>(
 
 // this will set the first key after the provided key, by appending a 1 byte
 fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    start_after.map(|addr| {
-        let mut v = addr.as_bytes().to_vec();
-        v.push(1);
-        v
-    })
+    match start_after {
+        Some(addr) => {
+            let mut v = addr.as_bytes().to_vec();
+            v.push(1);
+            Some(v)
+        },
+        _ => None
+    }
 }
 
 // this will set the first key after the provided key, by appending a 1 byte
 fn calc_range_end_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    start_after.map(|addr| addr.as_bytes().to_vec())
+    match start_after {
+        Some(addr) => Some(addr.as_bytes().to_vec()),
+        _ => None,
+    }
 }

@@ -240,7 +240,6 @@ fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
         },
         _ => None
     }
-    
 }
 
 // this will set the first key after the provided key, by appending a 1 byte
