@@ -4,6 +4,7 @@
 import { LCDClient, MnemonicKey, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
 import { mainnet as config } from "../config/constants";
+import { migrateHaloContracts } from "../processes/migrateContracts/migrateHalo";
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts, Member } from "../processes/setupContracts/mainnet";
 import { setupHalo } from "../processes/setupHalo/testnet";
@@ -36,6 +37,15 @@ let factoryCodeId: number;
 let factoryContract: string;
 let tokenContract: string;
 let pairContract: string;
+
+// Angel/HALO contracts
+let haloAirdrop: string;
+let haloCollector: string;
+let haloCommunity: string;
+let haloDistributor: string;
+let haloGov: string;
+let haloStaking: string;
+let haloVesting: string;
 
 // -------------------------------------------------------------------------------------
 // initialize variables
@@ -80,6 +90,26 @@ function initialize() {
   factoryContract = config.factory_contract;
   tokenContract = config.token_contract;
   pairContract = config.pair_contract;
+
+  console.log(`Use ${chalk.cyan(factoryContract)} as TerraSwap factory`);
+  console.log(`Use ${chalk.cyan(tokenContract)} as HALO token`);
+  console.log(`Use ${chalk.cyan(pairContract)} as HALO/UST pair`);
+
+  haloAirdrop = config.contracts.haloAirdrop;
+  haloCollector = config.contracts.haloCollector;
+  haloCommunity = config.contracts.haloCommunity;
+  haloDistributor = config.contracts.haloDistributor;
+  haloGov = config.contracts.haloGov;
+  haloStaking = config.contracts.haloStaking;
+  haloVesting = config.contracts.haloVesting;
+
+  console.log(`Use ${chalk.cyan(haloAirdrop)} as HALO airdrop`);
+  console.log(`Use ${chalk.cyan(haloCollector)} as HALO collector`);
+  console.log(`Use ${chalk.cyan(haloCommunity)} as HALO community`);
+  console.log(`Use ${chalk.cyan(haloDistributor)} as HALO distributor`);
+  console.log(`Use ${chalk.cyan(haloGov)} as HALO gov`);
+  console.log(`Use ${chalk.cyan(haloStaking)} as HALO staking`);
+  console.log(`Use ${chalk.cyan(haloVesting)} as HALO vesting`);
 }
 
 // -------------------------------------------------------------------------------------
@@ -173,7 +203,7 @@ export async function startSetupHalo(): Promise<void> {
 }
 
 // -------------------------------------------------------------------------------------
-// migrate contracts
+// migrate Angel Protocol core contracts
 // -------------------------------------------------------------------------------------
 export async function startMigrateContracts(): Promise<void> {
   console.log(chalk.blue("\nMainNet Columbus-5"));
@@ -195,6 +225,31 @@ export async function startMigrateContracts(): Promise<void> {
     cw3GuardianAngels,
     [anchorVault],
     endowmentContracts
+  );
+}
+
+// -------------------------------------------------------------------------------------
+// migrate HALO contracts
+// -------------------------------------------------------------------------------------
+export async function startMigrateHaloContracts(): Promise<void> {
+  console.log(chalk.blue("\nLocalTerra"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Migrate Contracts
+  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  await migrateHaloContracts(
+    terra,
+    apTeam,
+    haloAirdrop,
+    haloCollector,
+    haloCommunity,
+    haloDistributor,
+    haloGov,
+    haloStaking,
+    haloVesting
   );
 }
 
