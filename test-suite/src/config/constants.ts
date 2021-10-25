@@ -30,11 +30,11 @@ export const localterra = {
     haloVesting: "",
   },
   // TerraSwap balances account
-  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8",
+  accAddress: "",
   token_code_id: 0,
   pair_code_id: 0,
   factory_code_id: 0,
-  factory_contract: "terra1ddj2tg6833ezrqym3wasfqj4sw22rjjjtgtkay",
+  factory_contract: "",
   token_contract: "",
   pair_contract: "",
 }

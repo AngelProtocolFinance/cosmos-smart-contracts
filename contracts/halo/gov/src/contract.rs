@@ -9,7 +9,7 @@ use crate::state::{
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    attr, from_binary, to_binary, Binary, CanonicalAddr, CosmosMsg, Decimal, Deps, DepsMut, Env,
+    attr, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
     MessageInfo, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
@@ -42,7 +42,7 @@ pub fn instantiate(
     validate_threshold(msg.threshold)?;
 
     let config = Config {
-        halo_token: deps.api.addr_humanize(&CanonicalAddr::from(vec![])).unwrap(),
+        halo_token: deps.api.addr_validate("govcontract").unwrap(),
         owner: info.sender,
         quorum: msg.quorum,
         threshold: msg.threshold,
@@ -121,7 +121,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 
 pub fn register_contracts(deps: DepsMut, halo_token: String) -> Result<Response, ContractError> {
     let mut config: Config = config_read(deps.storage).load()?;
-    if config.halo_token != deps.api.addr_humanize(&CanonicalAddr::from(vec![])).unwrap() {
+    if config.halo_token != deps.api.addr_validate("govcontract").unwrap() {
         return Err(ContractError::Unauthorized {});
     }
 

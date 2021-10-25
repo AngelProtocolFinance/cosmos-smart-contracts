@@ -8,7 +8,7 @@ use crate::state::{
 
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    attr, coins, from_binary, to_binary, Addr, Api, CanonicalAddr, ContractResult, CosmosMsg,
+    attr, coins, from_binary, to_binary, Addr, Api, ContractResult, CosmosMsg,
     Decimal, Deps, DepsMut, Env, Reply, Response, StdError, SubMsg, Timestamp, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
@@ -87,7 +87,7 @@ fn proper_initialization() {
     assert_eq!(
         config,
         Config {
-            halo_token: deps.api.addr_humanize(&CanonicalAddr::from(vec![])).unwrap(),
+            halo_token: deps.api.addr_validate("govcontract").unwrap(),
             owner: deps.api.addr_validate(TEST_CREATOR).unwrap(),
             quorum: Decimal::percent(DEFAULT_QUORUM),
             threshold: Decimal::percent(DEFAULT_THRESHOLD),
@@ -1871,7 +1871,7 @@ fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
             &1u64.to_be_bytes(),
             &Poll {
                 id: 1u64,
-                creator: deps.api.addr_humanize(&CanonicalAddr::from(vec![])).unwrap(),
+                creator: deps.api.addr_validate("govcontract").unwrap(),
                 status: PollStatus::InProgress,
                 yes_votes: Uint128::zero(),
                 no_votes: Uint128::zero(),
@@ -1892,7 +1892,7 @@ fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
             &2u64.to_be_bytes(),
             &Poll {
                 id: 1u64,
-                creator: deps.api.addr_humanize(&CanonicalAddr::from(vec![])).unwrap(),
+                creator: deps.api.addr_validate("govcontract").unwrap(),
                 status: PollStatus::Passed,
                 yes_votes: Uint128::zero(),
                 no_votes: Uint128::zero(),
