@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Addr, CanonicalAddr, Deps, StdResult, Storage};
+use cosmwasm_std::{Addr, Deps, StdResult, Storage};
 use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read, ReadonlyBucket};
 use halo_token::common::OrderBy;
 use halo_token::vesting::VestingInfo;
@@ -71,8 +71,8 @@ fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
             let mut v = addr.as_bytes().to_vec();
             v.push(1);
             Some(v)
-        },
-        _ => None
+        }
+        _ => None,
     }
 }
 
