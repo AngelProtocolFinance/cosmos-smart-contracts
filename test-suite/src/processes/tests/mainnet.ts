@@ -8,6 +8,7 @@ import {
 import {
   testUpdatingIndexFundConfigs,
   testUpdateFundMembers,
+  testUpdateAllianceMembersList,
   testQueryIndexFundActiveFundDetails,
   testQueryIndexFundActiveFundDonations,
   testQueryIndexFundConfig,
@@ -39,6 +40,10 @@ export async function testExecute(
 ): Promise<void> {
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // await testUpdateAllianceMembersList(terra, apTeam, indexFund, [
+  //   "terra1zxtczmxtw8mk8xncvr8lcq2qmvk4dz88ek6f79", // AP Wallet - Community
+  //   "terra18n2pc9x6q9str9dz8sqpt7ulz5telutclkzaec", // LunApe
+  // ]);
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 1, [], ["",""]);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, ["",""], []);
