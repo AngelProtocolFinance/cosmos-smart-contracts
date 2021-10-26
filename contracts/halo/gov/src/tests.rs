@@ -8,8 +8,8 @@ use crate::state::{
 
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    attr, coins, from_binary, to_binary, Addr, Api, ContractResult, CosmosMsg,
-    Decimal, Deps, DepsMut, Env, Reply, Response, StdError, SubMsg, Timestamp, Uint128, WasmMsg,
+    attr, coins, from_binary, to_binary, Addr, Api, ContractResult, CosmosMsg, Decimal, Deps,
+    DepsMut, Env, Reply, Response, StdError, SubMsg, Timestamp, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use halo_token::common::OrderBy;
@@ -87,7 +87,7 @@ fn proper_initialization() {
     assert_eq!(
         config,
         Config {
-            halo_token: deps.api.addr_validate("govcontract").unwrap(),
+            halo_token: deps.api.addr_validate("GOVCONTRACTDRGSDRGSDRGFG").unwrap(),
             owner: deps.api.addr_validate(TEST_CREATOR).unwrap(),
             quorum: Decimal::percent(DEFAULT_QUORUM),
             threshold: Decimal::percent(DEFAULT_THRESHOLD),
@@ -154,7 +154,7 @@ fn fails_init_invalid_quorum() {
     match res {
         Ok(_) => panic!("Must return error"),
         Err(ContractError::Std(StdError::GenericErr { msg, .. })) => {
-            assert_eq!(msg, "quorum must be 0 to 1")
+            assert_eq!(msg, "decimal must be 0 to 1")
         }
         Err(e) => panic!("Unexpected error: {:?}", e),
     }
@@ -178,7 +178,7 @@ fn fails_init_invalid_threshold() {
     match res {
         Ok(_) => panic!("Must return error"),
         Err(ContractError::Std(StdError::GenericErr { msg, .. })) => {
-            assert_eq!(msg, "threshold must be 0 to 1")
+            assert_eq!(msg, "decimal must be 0 to 1")
         }
         Err(e) => panic!("Unexpected error: {:?}", e),
     }
