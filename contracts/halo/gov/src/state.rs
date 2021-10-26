@@ -1,4 +1,4 @@
-use cosmwasm_std::{Binary, Addr, CanonicalAddr, Decimal, Deps, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Binary, Decimal, Deps, StdResult, Storage, Uint128};
 use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, ReadonlySingleton,
     Singleton,
@@ -161,7 +161,7 @@ pub fn read_poll_voters<'a>(
         .take(limit)
         .map(|item| {
             let (k, v) = item?;
-            Ok((deps.api.addr_humanize(&CanonicalAddr::from(k))?, v))
+            Ok((deps.api.addr_validate(&String::from_utf8_lossy(&k))?, v))
         })
         .collect()
 }
@@ -237,8 +237,8 @@ fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
             let mut v = addr.as_bytes().to_vec();
             v.push(1);
             Some(v)
-        },
-        _ => None
+        }
+        _ => None,
     }
 }
 
