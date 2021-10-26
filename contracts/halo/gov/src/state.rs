@@ -3,11 +3,10 @@ use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, ReadonlySingleton,
     Singleton,
 };
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
 use halo_token::common::OrderBy;
 use halo_token::gov::{PollStatus, VoterInfo};
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
 static KEY_CONFIG: &[u8] = b"config";
@@ -27,14 +26,12 @@ pub struct Config {
     pub threshold: Decimal,
     pub voting_period: u64,
     pub timelock_period: u64,
-    pub expiration_period: u64,
     pub proposal_deposit: Uint128,
     pub snapshot_period: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct State {
-    pub contract_addr: Addr,
     pub poll_count: u64,
     pub total_share: Uint128,
     pub total_deposit: Uint128,
