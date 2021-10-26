@@ -59,7 +59,7 @@ pub fn read_vesting_infos<'a>(
         .take(limit)
         .map(|item| {
             let (k, v) = item?;
-            Ok((deps.api.addr_humanize(&CanonicalAddr::from(k))?, v))
+            Ok((deps.api.addr_validate(&String::from_utf8_lossy(&k))?, v))
         })
         .collect()
 }
