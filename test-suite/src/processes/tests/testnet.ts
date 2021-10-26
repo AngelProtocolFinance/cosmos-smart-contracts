@@ -12,6 +12,7 @@ import {
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
   testUpdateFundMembers,
+  testUpdateAllianceMembersList,
   testQueryIndexFundActiveFundDetails,
   testQueryIndexFundActiveFundDonations,
   testQueryIndexFundConfig,
@@ -67,6 +68,10 @@ export async function testExecute(
 ): Promise<void> {
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // await testUpdateAllianceMembersList(terra, apTeam, indexFund, [
+  //   "terra178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // AP Wallet - Community
+  //   "terra18n2pc9x6q9str9dz8sqpt7ulz5telutclkzaec", // LunApe
+  // ]);
   // Guardian angels multisig test
   // await testAddApTeamMemberToC4Group(terra, apTeam, apTeam3, cw3ApTeam, cw4GrpApTeam);
   // await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);
