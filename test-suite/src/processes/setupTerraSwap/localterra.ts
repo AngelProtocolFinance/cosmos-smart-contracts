@@ -20,25 +20,25 @@ export async function setupTerraSwap(
     path.resolve(__dirname, "../../../../artifacts/terraswap_factory.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${factoryCodeId}`);
 
-  process.stdout.write("Uploading TerraSwap factory Wasm");
+  process.stdout.write("Uploading TerraSwap pair Wasm");
   const pairCodeId = await storeCode(
     terra,
     apTeam,
     path.resolve(__dirname, "../../../../artifacts/terraswap_pair.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${pairCodeId}`);
 
-  process.stdout.write("Uploading TerraSwap factory Wasm");
+  process.stdout.write("Uploading TerraSwap token Wasm");
   const tokenCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/terraswap_factory.wasm"));
+    path.resolve(__dirname, "../../../../artifacts/terraswap_token.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${tokenCodeId}`);
 
-  process.stdout.write("Uploading TerraSwap factory Wasm");
+  process.stdout.write("Uploading TerraSwap router Wasm");
   const routerCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/terraswap_factory.wasm"));
+    path.resolve(__dirname, "../../../../artifacts/terraswap_router.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${routerCodeId}`);
 
   // Factory contract
@@ -63,7 +63,7 @@ export async function setupTerraSwap(
     initial_balances: [
       {
         address: accAddress,
-        amount: "1000000000000"
+        amount: "1000000000000000"
       }
     ]
   });

@@ -188,7 +188,7 @@ export async function startSetupTerraSwapContracts(): Promise<void> {
 
   // Setup TerraSwap contracts
   console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
-  await setupTerraSwap(terra, apTeam, accAddress);
+  await setupTerraSwap(terra, apTeam, apTeam.key.accAddress);
 }
 
 
