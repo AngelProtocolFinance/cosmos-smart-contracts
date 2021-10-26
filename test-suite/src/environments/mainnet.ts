@@ -188,11 +188,11 @@ export async function startSetupHalo(): Promise<void> {
     tokenContract,    // halo_token contract
     factoryContract,  // terraswap_factory contract
     pairContract,     // staking_token: lp token of ANC-UST pair contract
-    "0.3",            // quorum
-    "0.5",            // threshold,
+    30,            // quorum
+    50,            // threshold,
     2000,             // voting_period,
     1000,             // timelock_period,
-    10000000000,      // proposal_deposit,
+    "10000000000",      // proposal_deposit,
     10,               // snapshot_period,
     [],               // whitelist
     1000,             // spend_limit
