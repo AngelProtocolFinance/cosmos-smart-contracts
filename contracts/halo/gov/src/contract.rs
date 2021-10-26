@@ -9,8 +9,8 @@ use crate::state::{
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    attr, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
-    MessageInfo, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    attr, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
+    Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use terraswap::querier::query_token_balance;
@@ -38,11 +38,11 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    validate_quorum(msg.quorum)?;
-    validate_threshold(msg.threshold)?;
+    validate_decimal(msg.quorum)?;
+    validate_decimal(msg.threshold)?;
 
     let config = Config {
-        halo_token: deps.api.addr_validate("govcontract").unwrap(),
+        halo_token: deps.api.addr_validate("GOVCONTRACTDRGSDRGSDRGFG").unwrap(),
         owner: info.sender,
         quorum: msg.quorum,
         threshold: msg.threshold,
@@ -121,7 +121,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 
 pub fn register_contracts(deps: DepsMut, halo_token: String) -> Result<Response, ContractError> {
     let mut config: Config = config_read(deps.storage).load()?;
-    if config.halo_token != deps.api.addr_validate("govcontract").unwrap() {
+    if config.halo_token != deps.api.addr_validate("GOVCONTRACTDRGSDRGSDRGFG").unwrap() {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -256,21 +256,11 @@ fn validate_link(link: &Option<String>) -> StdResult<()> {
     }
 }
 
-/// validate_quorum returns an error if the quorum is invalid
+/// validate_decimal returns an error if it is invalid
 /// (we require 0-1)
-fn validate_quorum(quorum: Decimal) -> StdResult<()> {
-    if quorum > Decimal::one() {
-        Err(StdError::generic_err("quorum must be 0 to 1"))
-    } else {
-        Ok(())
-    }
-}
-
-/// validate_threshold returns an error if the threshold is invalid
-/// (we require 0-1)
-fn validate_threshold(threshold: Decimal) -> StdResult<()> {
-    if threshold > Decimal::one() {
-        Err(StdError::generic_err("threshold must be 0 to 1"))
+fn validate_decimal(d: Decimal) -> StdResult<()> {
+    if d > Decimal::one() {
+        Err(StdError::generic_err("decimal must be 0 to 1"))
     } else {
         Ok(())
     }
@@ -346,10 +336,7 @@ pub fn create_poll(
 
     Ok(Response::new().add_attributes(vec![
         ("action", "create_poll"),
-        (
-            "creator",
-            new_poll.creator.as_str(),
-        ),
+        ("creator", new_poll.creator.as_str()),
         ("poll_id", &poll_id.to_string()),
         ("end_height", new_poll.end_height.to_string().as_str()),
     ]))
@@ -558,12 +545,8 @@ pub fn snapshot_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, 
     // store the current staked amount for quorum calculation
     let state: State = state_store(deps.storage).load()?;
 
-    let staked_amount = query_token_balance(
-        &deps.querier,
-        config.halo_token,
-        state.contract_addr,
-    )?
-    .checked_sub(state.total_deposit)?;
+    let staked_amount = query_token_balance(&deps.querier, config.halo_token, state.contract_addr)?
+        .checked_sub(state.total_deposit)?;
 
     a_poll.staked_amount = Some(staked_amount);
 
@@ -608,12 +591,8 @@ pub fn cast_vote(
 
     // convert share to amount
     let total_share = state.total_share;
-    let total_balance = query_token_balance(
-        &deps.querier,
-        config.halo_token,
-        state.contract_addr,
-    )?
-    .checked_sub(state.total_deposit)?;
+    let total_balance = query_token_balance(&deps.querier, config.halo_token, state.contract_addr)?
+        .checked_sub(state.total_deposit)?;
 
     if token_manager
         .share
