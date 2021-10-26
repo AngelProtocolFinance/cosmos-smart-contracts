@@ -96,6 +96,22 @@ export async function testUpdatingIndexFundConfigs(
   console.log(chalk.green(" Done!"));
 }
 
+export async function testUpdateAllianceMembersList(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  indexFund: string,
+  new_members_list: string[]
+): Promise<void> {
+  process.stdout.write("AP Team updates the Index Fund's Angel Alliance Members List");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+      update_tca_list: {
+        new_list: new_members_list,
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
+}
 
 //----------------------------------------------------------------------------------------
 // TEST: SC owner can update the fund members to an Index Fund 
