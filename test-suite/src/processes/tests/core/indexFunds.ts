@@ -5,7 +5,7 @@ import chaiAsPromised from "chai-as-promised";
 import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import {
   sendTransaction,
-} from "../../../../utils/helpers";
+} from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;

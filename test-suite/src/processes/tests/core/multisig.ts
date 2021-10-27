@@ -6,7 +6,7 @@ import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/
 import {
   sendTransaction,
   toEncodedBinary
-} from "../../../../utils/helpers";
+} from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;

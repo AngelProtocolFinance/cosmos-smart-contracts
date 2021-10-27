@@ -7,7 +7,7 @@ import {
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment
-} from "./core/accounts/test";
+} from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
@@ -21,12 +21,12 @@ import {
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
   testQueryIndexFundTcaList
-} from "./core/indexFunds/test";
+} from "./core/indexFunds";
 import {
   testAddApTeamMemberToC4Group,
   testAddGuardiansToEndowment,
   testGuardiansChangeEndowmentOwner
-} from "./core/multisig/test";
+} from "./core/multisig";
 import {
   testAngelTeamCanTriggerVaultsHarvest,
   testClosingEndpoint,
@@ -38,10 +38,10 @@ import {
   testQueryRegistrarEndowmentList,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList
-} from "./core/registrar/test";
+} from "./core/registrar";
 import {
   testQueryVaultConfig
-} from "./core/vaults/test";
+} from "./core/vaults";
 
 export async function testExecute(
   terra: LocalTerra | LCDClient,
