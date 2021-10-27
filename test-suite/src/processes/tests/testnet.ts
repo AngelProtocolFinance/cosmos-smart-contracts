@@ -61,6 +61,13 @@ import {
   testCommunitySpend,
   testQueryCommunityConfig
 } from "./halo/community";
+import {
+  testDistributorUpdateConfig,
+  testDistributorAdd,
+  testDistributorRemove,
+  testDistributorSpend,
+  testQueryDistributorConfig
+} from "./halo/distributor";
 
 export async function testExecute(
   terra: LocalTerra | LCDClient,
@@ -151,4 +158,12 @@ export async function testExecute(
   // await testCommunityUpdateConfig(terra, apTeam, pleb, haloGov, haloCommunity, "1000000");
   // await testCommunitySpend(terra, apTeam, haloGov, haloCommunity, "addr000", "1000000");
   // await testQueryCommunityConfig(terra, haloCommunity);
+
+  // Test query for HALO distributor
+  // await testDistributorUpdateConfig(terra, apTeam, pleb, haloDistributor, "1000000");
+  // await testDistributorSpend(terra, apTeam, haloDistributor, "addr000", "1000000");
+  // await testDistributorAdd(terra, apTeam, haloGov, haloDistributor, apTeam2.key.accAddress);
+  // await testDistributorRemove(terra, apTeam, haloGov, haloDistributor, apTeam2.key.accAddress);
+  // await testQueryDistributorConfig(terra, haloDistributor);
+
 }

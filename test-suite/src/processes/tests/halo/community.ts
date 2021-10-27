@@ -55,7 +55,7 @@ export async function testCommunityUpdateConfig(
 }
 
 //----------------------------------------------------------------------------------------
-// TEST: Update community config
+// TEST: Spend
 //
 // SCENARIO:
 // Owner can execute spend operation to send

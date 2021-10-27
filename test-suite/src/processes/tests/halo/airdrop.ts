@@ -39,7 +39,7 @@ export async function testAirdropUpdateConfig(
   ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Failed!"));
 
-  process.stdout.write("Test - Only owner cannot update airdrop config");
+  process.stdout.write("Test - Only owner can update airdrop config");
 
   await expect(
     sendTransaction(terra, apTeam, [

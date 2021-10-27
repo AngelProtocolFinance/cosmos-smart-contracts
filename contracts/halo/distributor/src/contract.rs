@@ -136,7 +136,7 @@ pub fn remove_distributor(
 
 /// Spend
 /// Owner can execute spend operation to send
-/// `amount` of MIR token to `recipient` for community purpose
+/// `amount` of HALO token to `recipient` for community purpose
 pub fn spend(
     deps: DepsMut,
     info: MessageInfo,
