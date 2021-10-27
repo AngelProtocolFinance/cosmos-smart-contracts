@@ -34,8 +34,8 @@ const DEFAULT_PROPOSAL_DEPOSIT: u128 = 10000000000u128;
 
 fn mock_instantiate(deps: DepsMut) {
     let msg = InstantiateMsg {
-        quorum: Decimal::percent(DEFAULT_QUORUM),
-        threshold: Decimal::percent(DEFAULT_THRESHOLD),
+        quorum: DEFAULT_QUORUM,
+        threshold: DEFAULT_THRESHOLD,
         voting_period: DEFAULT_VOTING_PERIOD,
         timelock_period: DEFAULT_TIMELOCK_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
@@ -65,8 +65,8 @@ fn mock_env_height(height: u64, time: u64) -> Env {
 
 fn instantiate_msg() -> InstantiateMsg {
     InstantiateMsg {
-        quorum: Decimal::percent(DEFAULT_QUORUM),
-        threshold: Decimal::percent(DEFAULT_THRESHOLD),
+        quorum: DEFAULT_QUORUM,
+        threshold: DEFAULT_THRESHOLD,
         voting_period: DEFAULT_VOTING_PERIOD,
         timelock_period: DEFAULT_TIMELOCK_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
@@ -87,13 +87,12 @@ fn proper_initialization() {
     assert_eq!(
         config,
         Config {
-            halo_token: deps.api.addr_validate("GOVCONTRACTDRGSDRGSDRGFG").unwrap(),
+            halo_token: Addr::unchecked("GOVCONTRACTDRGSDRGSDRGFG"),
             owner: deps.api.addr_validate(TEST_CREATOR).unwrap(),
             quorum: Decimal::percent(DEFAULT_QUORUM),
             threshold: Decimal::percent(DEFAULT_THRESHOLD),
             voting_period: DEFAULT_VOTING_PERIOD,
             timelock_period: DEFAULT_TIMELOCK_PERIOD,
-            expiration_period: 0u64, // Deprecated
             proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
             snapshot_period: DEFAULT_FIX_PERIOD
         }
@@ -113,7 +112,6 @@ fn proper_initialization() {
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count: 0,
             total_share: Uint128::zero(),
             total_deposit: Uint128::zero(),
@@ -141,8 +139,8 @@ fn fails_init_invalid_quorum() {
     let mut deps = mock_dependencies(&[]);
     let info = mock_info("voter", &coins(11, VOTING_TOKEN));
     let msg = InstantiateMsg {
-        quorum: Decimal::percent(101),
-        threshold: Decimal::percent(DEFAULT_THRESHOLD),
+        quorum: 101,
+        threshold: DEFAULT_THRESHOLD,
         voting_period: DEFAULT_VOTING_PERIOD,
         timelock_period: DEFAULT_TIMELOCK_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
@@ -165,8 +163,8 @@ fn fails_init_invalid_threshold() {
     let mut deps = mock_dependencies(&[]);
     let info = mock_info("voter", &coins(11, VOTING_TOKEN));
     let msg = InstantiateMsg {
-        quorum: Decimal::percent(DEFAULT_QUORUM),
-        threshold: Decimal::percent(101),
+        quorum: DEFAULT_QUORUM,
+        threshold: 101,
         voting_period: DEFAULT_VOTING_PERIOD,
         timelock_period: DEFAULT_TIMELOCK_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
@@ -189,8 +187,8 @@ fn fails_contract_already_registered() {
     let mut deps = mock_dependencies(&[]);
     let info = mock_info("voter", &coins(11, VOTING_TOKEN));
     let msg = InstantiateMsg {
-        quorum: Decimal::percent(DEFAULT_QUORUM),
-        threshold: Decimal::percent(DEFAULT_THRESHOLD),
+        quorum: DEFAULT_QUORUM,
+        threshold: DEFAULT_THRESHOLD,
         voting_period: DEFAULT_VOTING_PERIOD,
         timelock_period: DEFAULT_TIMELOCK_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
@@ -1729,7 +1727,6 @@ fn happy_days_withdraw_voting_tokens() {
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count: 0,
             total_share: Uint128::from(11u128),
             total_deposit: Uint128::zero(),
@@ -1767,7 +1764,6 @@ fn happy_days_withdraw_voting_tokens() {
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count: 0,
             total_share: Uint128::from(6u128),
             total_deposit: Uint128::zero(),
@@ -1800,7 +1796,6 @@ fn happy_days_withdraw_voting_tokens_all() {
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count: 0,
             total_share: Uint128::from(11u128),
             total_deposit: Uint128::zero(),
@@ -1836,7 +1831,6 @@ fn happy_days_withdraw_voting_tokens_all() {
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count: 0,
             total_share: Uint128::zero(),
             total_deposit: Uint128::zero(),
@@ -2319,7 +2313,6 @@ fn assert_create_poll_result(
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count: 1,
             total_share: Uint128::zero(),
             total_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
@@ -2344,7 +2337,6 @@ fn assert_stake_tokens_result(
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_validate(MOCK_CONTRACT_ADDR).unwrap(),
             poll_count,
             total_share: Uint128::from(total_share),
             total_deposit: Uint128::from(total_deposit),
@@ -2406,8 +2398,8 @@ fn update_config() {
     let info = mock_info("addr0001", &[]);
     let msg = ExecuteMsg::UpdateConfig {
         owner: None,
-        quorum: Some(Decimal::percent(20)),
-        threshold: Some(Decimal::percent(75)),
+        quorum: Some(20),
+        threshold: Some(75),
         voting_period: Some(20000u64),
         timelock_period: Some(20000u64),
         proposal_deposit: Some(Uint128::from(123u128)),

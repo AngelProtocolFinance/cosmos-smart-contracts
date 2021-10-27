@@ -14,16 +14,16 @@ export async function setupHalo(
   halo_token: string,
   terraswap_factory: string,
   staking_token: string,
-  quorum: string,
-  threshold: string,
+  quorum: number,
+  threshold: number,
   voting_period: number,
   timelock_period: number,
-  proposal_deposit: number,
+  proposal_deposit: string,
   snapshot_period: number,
   whitelist: string[],
-  spend_limit: number,
+  spend_limit: string,
   reward_factor: string,
-  distribution_schedule: number[],
+  distribution_schedule: [number, number, string][],
   genesis_time: number,
   ): Promise<void> {
   process.stdout.write("Uploading airdrop contract Wasm");
@@ -153,7 +153,7 @@ export async function setupHalo(
   // staking contract
   process.stdout.write("Instantiating staking contract");
   const stakingResult = await instantiateContract(terra, apTeam, apTeam, stakingCodeId, {
-    gov_contract: govContractAddr,
+    halo_token,
     staking_token, // lp token of ANC-UST pair contract
     distribution_schedule
   });

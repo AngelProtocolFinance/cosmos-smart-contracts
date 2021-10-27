@@ -5,22 +5,18 @@ use crate::state::{
     poll_voter_read, poll_voter_store, read_poll_voters, read_polls, read_tmp_poll_id, state_read,
     state_store, store_tmp_poll_id, Config, ExecuteData, Poll, State,
 };
-
-#[cfg(not(feature = "library"))]
-use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    attr, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
-    Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    attr, entry_point, from_binary, to_binary, Addr, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
+    MessageInfo, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
-use terraswap::querier::query_token_balance;
-
 use halo_token::common::OrderBy;
 use halo_token::gov::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, PollExecuteMsg, PollResponse,
     PollStatus, PollsResponse, QueryMsg, StateResponse, VoteOption, VoterInfo, VotersResponse,
     VotersResponseItem,
 };
+use terraswap::querier::query_token_balance;
 
 const MIN_TITLE_LENGTH: usize = 4;
 const MAX_TITLE_LENGTH: usize = 64;
@@ -28,33 +24,37 @@ const MIN_DESC_LENGTH: usize = 4;
 const MAX_DESC_LENGTH: usize = 1024;
 const MIN_LINK_LENGTH: usize = 12;
 const MAX_LINK_LENGTH: usize = 128;
-
 const POLL_EXECUTE_REPLY_ID: u64 = 1;
 
-#[cfg_attr(not(feature = "library"), entry_point)]
+// version info for future migration info
+// const CONTRACT_NAME: &str = "halo-gov";
+// const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+#[entry_point]
 pub fn instantiate(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    validate_decimal(msg.quorum)?;
-    validate_decimal(msg.threshold)?;
+    let quorum = Decimal::percent(msg.quorum);
+    let threshold = Decimal::percent(msg.threshold);
+    validate_decimal(quorum)?;
+    validate_decimal(threshold)?;
 
+    let halo_placeholder = Addr::unchecked("GOVCONTRACTDRGSDRGSDRGFG");
     let config = Config {
-        halo_token: deps.api.addr_validate("GOVCONTRACTDRGSDRGSDRGFG").unwrap(),
+        halo_token: halo_placeholder.clone(),
         owner: info.sender,
-        quorum: msg.quorum,
-        threshold: msg.threshold,
+        quorum,
+        threshold,
         voting_period: msg.voting_period,
         timelock_period: msg.timelock_period,
-        expiration_period: 0u64, // Depricated
         proposal_deposit: msg.proposal_deposit,
         snapshot_period: msg.snapshot_period,
     };
 
     let state = State {
-        contract_addr: env.contract.address,
         poll_count: 0,
         total_share: Uint128::zero(),
         total_deposit: Uint128::zero(),
@@ -66,7 +66,7 @@ pub fn instantiate(
     Ok(Response::default())
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -96,7 +96,9 @@ pub fn execute(
             proposal_deposit,
             snapshot_period,
         ),
-        ExecuteMsg::WithdrawVotingTokens { amount } => withdraw_voting_tokens(deps, info, amount),
+        ExecuteMsg::WithdrawVotingTokens { amount } => {
+            withdraw_voting_tokens(deps, env, info, amount)
+        }
         ExecuteMsg::CastVote {
             poll_id,
             vote,
@@ -108,7 +110,7 @@ pub fn execute(
     }
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
+#[entry_point]
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         POLL_EXECUTE_REPLY_ID => {
@@ -121,7 +123,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 
 pub fn register_contracts(deps: DepsMut, halo_token: String) -> Result<Response, ContractError> {
     let mut config: Config = config_read(deps.storage).load()?;
-    if config.halo_token != deps.api.addr_validate("GOVCONTRACTDRGSDRGSDRGFG").unwrap() {
+    if config.halo_token != Addr::unchecked("GOVCONTRACTDRGSDRGSDRGFG") {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -146,7 +148,12 @@ pub fn receive_cw20(
     match from_binary(&cw20_msg.msg) {
         Ok(Cw20HookMsg::StakeVotingTokens {}) => {
             let api = deps.api;
-            stake_voting_tokens(deps, api.addr_validate(&cw20_msg.sender)?, cw20_msg.amount)
+            stake_voting_tokens(
+                deps,
+                env,
+                api.addr_validate(&cw20_msg.sender)?,
+                cw20_msg.amount,
+            )
         }
         Ok(Cw20HookMsg::CreatePoll {
             title,
@@ -172,8 +179,8 @@ pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
     owner: Option<String>,
-    quorum: Option<Decimal>,
-    threshold: Option<Decimal>,
+    quorum: Option<u64>,
+    threshold: Option<u64>,
     voting_period: Option<u64>,
     timelock_period: Option<u64>,
     proposal_deposit: Option<Uint128>,
@@ -190,11 +197,11 @@ pub fn update_config(
         }
 
         if let Some(quorum) = quorum {
-            config.quorum = quorum;
+            config.quorum = Decimal::percent(quorum);
         }
 
         if let Some(threshold) = threshold {
-            config.threshold = threshold;
+            config.threshold = Decimal::percent(threshold);
         }
 
         if let Some(voting_period) = voting_period {
@@ -380,7 +387,7 @@ pub fn end_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, Contr
         let staked_weight = query_token_balance(
             &deps.querier,
             config.halo_token.clone(),
-            state.contract_addr.clone(),
+            env.contract.address,
         )?
         .checked_sub(state.total_deposit)?;
 
@@ -545,8 +552,9 @@ pub fn snapshot_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, 
     // store the current staked amount for quorum calculation
     let state: State = state_store(deps.storage).load()?;
 
-    let staked_amount = query_token_balance(&deps.querier, config.halo_token, state.contract_addr)?
-        .checked_sub(state.total_deposit)?;
+    let staked_amount =
+        query_token_balance(&deps.querier, config.halo_token, env.contract.address)?
+            .checked_sub(state.total_deposit)?;
 
     a_poll.staked_amount = Some(staked_amount);
 
@@ -591,8 +599,9 @@ pub fn cast_vote(
 
     // convert share to amount
     let total_share = state.total_share;
-    let total_balance = query_token_balance(&deps.querier, config.halo_token, state.contract_addr)?
-        .checked_sub(state.total_deposit)?;
+    let total_balance =
+        query_token_balance(&deps.querier, config.halo_token, env.contract.address)?
+            .checked_sub(state.total_deposit)?;
 
     if token_manager
         .share
@@ -639,12 +648,12 @@ pub fn cast_vote(
     ]))
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
+#[entry_point]
+pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
     match msg {
         QueryMsg::Config {} => Ok(to_binary(&query_config(deps)?)?),
         QueryMsg::State {} => Ok(to_binary(&query_state(deps)?)?),
-        QueryMsg::Staker { address } => Ok(to_binary(&query_staker(deps, address)?)?),
+        QueryMsg::Staker { address } => Ok(to_binary(&query_staker(deps, env, address)?)?),
         QueryMsg::Poll { poll_id } => Ok(to_binary(&query_poll(deps, poll_id)?)?),
         QueryMsg::Polls {
             filter,
@@ -826,3 +835,8 @@ fn query_voters(
         voters: voters_response?,
     })
 }
+
+// #[entry_point]
+// pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+//     Ok(Response::default())
+// }

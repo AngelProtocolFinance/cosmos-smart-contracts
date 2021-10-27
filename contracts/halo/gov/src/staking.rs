@@ -3,10 +3,9 @@ use crate::state::{
     bank_read, bank_store, config_read, config_store, poll_read, poll_voter_store, state_read,
     state_store, Config, Poll, State, TokenManager,
 };
-
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, Deps, DepsMut, MessageInfo, Response, StdResult,
-    Storage, Uint128, WasmMsg,
+    to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage,
+    Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use halo_token::gov::{PollStatus, StakerResponse};
@@ -14,6 +13,7 @@ use terraswap::querier::query_token_balance;
 
 pub fn stake_voting_tokens(
     deps: DepsMut,
+    env: Env,
     sender: Addr,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
@@ -30,7 +30,7 @@ pub fn stake_voting_tokens(
     let total_balance = query_token_balance(
         &deps.querier,
         config.halo_token,
-        state.contract_addr.clone(),
+        env.contract.address.clone(),
     )?
     .checked_sub(state.total_deposit + amount)?;
 
@@ -57,6 +57,7 @@ pub fn stake_voting_tokens(
 // Withdraw amount if not staked. By default all funds will be withdrawn.
 pub fn withdraw_voting_tokens(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     amount: Option<Uint128>,
 ) -> Result<Response, ContractError> {
@@ -72,7 +73,7 @@ pub fn withdraw_voting_tokens(
         let total_balance = query_token_balance(
             &deps.querier,
             config.halo_token.clone(),
-            state.contract_addr.clone(),
+            env.contract.address.clone(),
         )?
         .checked_sub(state.total_deposit)?
         .u128();
@@ -165,7 +166,7 @@ fn send_tokens(
         ]))
 }
 
-pub fn query_staker(deps: Deps, address: String) -> StdResult<StakerResponse> {
+pub fn query_staker(deps: Deps, env: Env, address: String) -> StdResult<StakerResponse> {
     let addr_raw = deps.api.addr_validate(&address)?;
     let config: Config = config_read(deps.storage).load()?;
     let state: State = state_read(deps.storage).load()?;
@@ -182,12 +183,9 @@ pub fn query_staker(deps: Deps, address: String) -> StdResult<StakerResponse> {
         poll.status == PollStatus::InProgress
     });
 
-    let total_balance = query_token_balance(
-        &deps.querier,
-        config.halo_token,
-        state.contract_addr,
-    )?
-    .checked_sub(state.total_deposit)?;
+    let total_balance =
+        query_token_balance(&deps.querier, config.halo_token, env.contract.address)?
+            .checked_sub(state.total_deposit)?;
 
     Ok(StakerResponse {
         balance: if !state.total_share.is_zero() {
