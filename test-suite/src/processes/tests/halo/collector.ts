@@ -38,10 +38,10 @@ export async function testCollectorUpdateConfig(
   ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Failed!"));
 
-  process.stdout.write("Test - Only owner cannot update collector config");
+  process.stdout.write("Test - Only gov contract update collector config");
 
   await expect(
-    sendTransaction(terra, apTeam, [ // replace apTeam to gov contract (Wallet)
+    sendTransaction(terra, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
       new MsgExecuteContract(
         govContract,
         collectorContract,

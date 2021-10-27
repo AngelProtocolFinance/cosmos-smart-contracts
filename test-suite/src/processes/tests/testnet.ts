@@ -55,7 +55,12 @@ import {
   testCollectorUpdateConfig,
   testCollectorSweep,
   testQueryCollectorConfig
-} from "./halo/collector"
+} from "./halo/collector";
+import {
+  testCommunityUpdateConfig,
+  testCommunitySpend,
+  testQueryCommunityConfig
+} from "./halo/community";
 
 export async function testExecute(
   terra: LocalTerra | LCDClient,
@@ -142,4 +147,8 @@ export async function testExecute(
   // await testCollectorSweep(terra, apTeam, haloCollector);
   // await testQueryCollectorConfig(terra, haloCollector);
 
+  // Test query for HALO community
+  // await testCommunityUpdateConfig(terra, apTeam, pleb, haloGov, haloCommunity, "1000000");
+  // await testCommunitySpend(terra, apTeam, haloGov, haloCommunity, "addr000", "1000000");
+  // await testQueryCommunityConfig(terra, haloCommunity);
 }
