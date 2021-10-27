@@ -95,13 +95,13 @@ function initialize() {
   console.log(`Use ${chalk.cyan(tokenContract)} as HALO token`);
   console.log(`Use ${chalk.cyan(pairContract)} as HALO/UST pair`);
 
-  haloAirdrop = config.contracts.haloAirdrop;
-  haloCollector = config.contracts.haloCollector;
-  haloCommunity = config.contracts.haloCommunity;
-  haloDistributor = config.contracts.haloDistributor;
-  haloGov = config.contracts.haloGov;
-  haloStaking = config.contracts.haloStaking;
-  haloVesting = config.contracts.haloVesting;
+  haloAirdrop = config.halo.airdrop_contract;
+  haloCollector = config.halo.collector_contract;
+  haloCommunity = config.halo.community_contract;
+  haloDistributor = config.halo.distributor_contract;
+  haloGov = config.halo.gov_contract;
+  haloStaking = config.halo.staking_contract;
+  haloVesting = config.halo.vesting_contract;
 
   console.log(`Use ${chalk.cyan(haloAirdrop)} as HALO airdrop`);
   console.log(`Use ${chalk.cyan(haloCollector)} as HALO collector`);
@@ -270,6 +270,13 @@ export async function startTest(): Promise<void> {
     registrar,
     indexFund,
     anchorVault,
-    endowmentContracts[0]
+    endowmentContracts[0],
+    haloAirdrop,
+    haloCollector,
+    haloCommunity,
+    haloDistributor,
+    haloGov,
+    haloStaking,
+    haloVesting,
   );
 }

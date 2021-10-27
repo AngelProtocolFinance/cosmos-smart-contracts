@@ -42,6 +42,15 @@ import {
 import {
   testQueryVaultConfig
 } from "./core/vaults";
+import {
+  testAirdropClaim,
+  testAirdropRegisterNewMerkleRoot,
+  testAirdropUpdateConfig,
+  testQueryAirdropMerkleRoot,
+  testQueryAirdropConfig,
+  testQueryAirdropIsClaimed,
+  testQueryAirdropLatestStage
+} from "./halo/airdrop";
 
 export async function testExecute(
   terra: LocalTerra | LCDClient,
@@ -64,7 +73,14 @@ export async function testExecute(
   cw4GrpApTeam: string,
   cw4GrpOwners: string,
   cw3ApTeam: string,
-  cw3GuardianAngels: string
+  cw3GuardianAngels: string,
+  haloAirdrop: string,
+  haloCollector: string,
+  haloCommunity: string,
+  haloDistributor: string,
+  haloGov: string,
+  haloStaking: string,
+  haloVesting: string,
 ): Promise<void> {
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
@@ -106,4 +122,12 @@ export async function testExecute(
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);
+  // Test query for HALO airdrop
+  // await testAirdropUpdateConfig(terra, apTeam, apTeam2, pleb, haloAirdrop);
+  // await testAirdropRegisterNewMerkleRoot(terra, apTeam, haloAirdrop, "634de21cde1044f41d90373733b0f0fb1c1c71f9652b905cdf159e73c4cf0d37");
+  // await testAirdropClaim(terra, apTeam, haloAirdrop);
+  // await testQueryAirdropConfig(terra, haloAirdrop);
+  // await testQueryAirdropMerkleRoot(terra, haloAirdrop, 1);
+  // await testQueryAirdropIsClaimed(terra, haloAirdrop, 1, "terra1qfqa2eu9wp272ha93lj4yhcenrc6ymng079nu8");
+  // await testQueryAirdropLatestStage(terra, haloAirdrop);
 }

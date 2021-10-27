@@ -1,9 +1,9 @@
 {
   "data": [
-    // {
-    //   "address": "terra1jc5m0gg5g34enm384x6s4dtltmad66vcyapff0",
-    //   "name": "Global Brigades",
-    //   "description": "An international development organization alleivating poverty in geographically isolated, resource limted communities around the world"
-    // },
+    {
+      "address": "terra1jc5m0gg5g34enm384x6s4dtltmad66vcyapff0",
+      "name": "Global Brigades",
+      "description": "An international development organization alleivating poverty in geographically isolated, resource limted communities around the world"
+    }
   ]
 }

@@ -37,6 +37,13 @@ export async function testExecute(
   indexFund: string,
   anchorVault: string,
   endowmentContract: string,
+  haloAirdrop: string,
+  haloCollector: string,
+  haloCommunity: string,
+  haloDistributor: string,
+  haloGov: string,
+  haloStaking: string,
+  haloVesting: string,
 ): Promise<void> {
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
