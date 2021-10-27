@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
-import { sendTransaction } from "../../../utils/helpers";
+import { sendTransaction } from "../../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;

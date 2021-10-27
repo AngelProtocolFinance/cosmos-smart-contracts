@@ -4,7 +4,7 @@ import {
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment
-} from "./accounts/test";
+} from "./core/accounts/test";
 import {
   testUpdatingIndexFundConfigs,
   testUpdateFundMembers,
@@ -17,7 +17,7 @@ import {
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
   testQueryIndexFundTcaList
-} from "./indexFunds/test";
+} from "./core/indexFunds/test";
 import {
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarApprovedVaultRateList,
@@ -25,10 +25,10 @@ import {
   testQueryRegistrarEndowmentList,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList
-} from "./registrar/test";
+} from "./core/registrar/test";
 import {
   testQueryVaultConfig
-} from "./vaults/test";
+} from "./core/vaults/test";
 
 export async function testExecute(
   terra: LCDClient,
