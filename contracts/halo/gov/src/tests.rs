@@ -87,7 +87,7 @@ fn proper_initialization() {
     assert_eq!(
         config,
         Config {
-            halo_token: deps.api.addr_validate("GOVCONTRACTDRGSDRGSDRGFG").unwrap(),
+            halo_token: Addr::unchecked("GOVCONTRACTDRGSDRGSDRGFG"),
             owner: deps.api.addr_validate(TEST_CREATOR).unwrap(),
             quorum: Decimal::percent(DEFAULT_QUORUM),
             threshold: Decimal::percent(DEFAULT_THRESHOLD),

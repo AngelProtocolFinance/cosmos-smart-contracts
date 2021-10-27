@@ -6,7 +6,7 @@ use crate::state::{
     state_store, store_tmp_poll_id, Config, ExecuteData, Poll, State,
 };
 use cosmwasm_std::{
-    attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
+    attr, entry_point, from_binary, to_binary, Addr, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
     MessageInfo, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
@@ -42,7 +42,7 @@ pub fn instantiate(
     validate_decimal(quorum)?;
     validate_decimal(threshold)?;
 
-    let halo_placeholder = deps.api.addr_validate("GOVCONTRACTDRGSDRGSDRGFG")?;
+    let halo_placeholder = Addr::unchecked("GOVCONTRACTDRGSDRGSDRGFG");
     let config = Config {
         halo_token: halo_placeholder.clone(),
         owner: info.sender,
@@ -123,7 +123,7 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 
 pub fn register_contracts(deps: DepsMut, halo_token: String) -> Result<Response, ContractError> {
     let mut config: Config = config_read(deps.storage).load()?;
-    if config.halo_token != deps.api.addr_validate("GOVCONTRACTDRGSDRGSDRGFG").unwrap() {
+    if config.halo_token != Addr::unchecked("GOVCONTRACTDRGSDRGSDRGFG") {
         return Err(ContractError::Unauthorized {});
     }
 

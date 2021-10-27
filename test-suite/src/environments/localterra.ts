@@ -217,9 +217,9 @@ export async function startSetupHalo(): Promise<void> {
     "10000000000",      // proposal_deposit,
     10,               // snapshot_period,
     [],               // whitelist
-    1000,             // spend_limit
+    "1000",             // spend_limit
     "0.2",            // reward_factor
-    [100, 200, 1000000],  // distribution_schedule
+    [[100, 200, "1000000"]],  // distribution_schedule
     12345             // genesis_time
   );
 }
