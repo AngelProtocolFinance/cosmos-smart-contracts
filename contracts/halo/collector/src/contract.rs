@@ -65,8 +65,8 @@ const SWEEP_REPLY_ID: u64 = 1;
 
 /// Sweep
 /// Anyone can execute sweep function to swap
-/// asset token => ANC token and distribute
-/// result ANC token to gov contract
+/// asset token => HALO token and distribute
+/// result HALO token to gov contract
 pub fn sweep(deps: DepsMut, env: Env, denom: String) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
 

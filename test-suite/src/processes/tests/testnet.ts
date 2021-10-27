@@ -51,6 +51,11 @@ import {
   testQueryAirdropIsClaimed,
   testQueryAirdropLatestStage
 } from "./halo/airdrop";
+import {
+  testCollectorUpdateConfig,
+  testCollectorSweep,
+  testQueryCollectorConfig
+} from "./halo/collector"
 
 export async function testExecute(
   terra: LocalTerra | LCDClient,
@@ -122,6 +127,7 @@ export async function testExecute(
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);
+
   // Test query for HALO airdrop
   // await testAirdropUpdateConfig(terra, apTeam, apTeam2, pleb, haloAirdrop);
   // await testAirdropRegisterNewMerkleRoot(terra, apTeam, haloAirdrop, "634de21cde1044f41d90373733b0f0fb1c1c71f9652b905cdf159e73c4cf0d37");
@@ -130,4 +136,10 @@ export async function testExecute(
   // await testQueryAirdropMerkleRoot(terra, haloAirdrop, 1);
   // await testQueryAirdropIsClaimed(terra, haloAirdrop, 1, "terra1qfqa2eu9wp272ha93lj4yhcenrc6ymng079nu8");
   // await testQueryAirdropLatestStage(terra, haloAirdrop);
+
+  // Test query for HALO collector
+  // await testCollectorUpdateConfig(terra, apTeam, pleb, haloGov, haloCollector, "0.5");
+  // await testCollectorSweep(terra, apTeam, haloCollector);
+  // await testQueryCollectorConfig(terra, haloCollector);
+
 }
