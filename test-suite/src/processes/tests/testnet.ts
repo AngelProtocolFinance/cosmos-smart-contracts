@@ -68,6 +68,13 @@ import {
   testDistributorSpend,
   testQueryDistributorConfig
 } from "./halo/distributor";
+import {
+  testVestingUpdateConfig,
+  testVestingRegisterVestingAccounts,
+  testQueryVestingConfig,
+  testQueryVestingAccount,
+  testQueryVestingAccounts
+} from "./halo/vesting";
 
 export async function testExecute(
   terra: LocalTerra | LCDClient,
@@ -166,4 +173,19 @@ export async function testExecute(
   // await testDistributorRemove(terra, apTeam, haloGov, haloDistributor, apTeam2.key.accAddress);
   // await testQueryDistributorConfig(terra, haloDistributor);
 
+  // Test query for HALO vesting
+  // await testVestingUpdateConfig(terra, apTeam, haloVesting, apTeam2.key.accAddress, undefined, undefined);
+  // await testVestingRegisterVestingAccounts(
+  //   terra,
+  //   apTeam,
+  //   haloVesting,
+  //   [
+  //     {address: "addr0", schedules: [[100, 101, "100"], [100, 110, "100"], [100, 200, "100"]]},
+  //     {address: "addr1", schedules: [[100, 110, "100"]]},
+  //     {address: "addr2", schedules: [[100, 200, "100"]]},
+  //   ]
+  // );
+  // await testQueryVestingConfig(terra, haloVesting);
+  // await testQueryVestingAccount(terra, haloVesting, "addr0");
+  // await testQueryVestingAccounts(terra, haloVesting, undefined, undefined);
 }
