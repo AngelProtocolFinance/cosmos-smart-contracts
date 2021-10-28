@@ -4,7 +4,7 @@ import {
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment
-} from "./accounts/test";
+} from "./core/accounts";
 import {
   testUpdatingIndexFundConfigs,
   testUpdateFundMembers,
@@ -17,7 +17,7 @@ import {
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
   testQueryIndexFundTcaList
-} from "./indexFunds/test";
+} from "./core/indexFunds";
 import {
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarApprovedVaultRateList,
@@ -25,10 +25,10 @@ import {
   testQueryRegistrarEndowmentList,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList
-} from "./registrar/test";
+} from "./core/registrar";
 import {
   testQueryVaultConfig
-} from "./vaults/test";
+} from "./core/vaults";
 
 export async function testExecute(
   terra: LCDClient,
@@ -37,6 +37,13 @@ export async function testExecute(
   indexFund: string,
   anchorVault: string,
   endowmentContract: string,
+  haloAirdrop: string,
+  haloCollector: string,
+  haloCommunity: string,
+  haloDistributor: string,
+  haloGov: string,
+  haloStaking: string,
+  haloVesting: string,
 ): Promise<void> {
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));

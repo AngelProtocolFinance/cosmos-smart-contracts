@@ -188,7 +188,7 @@ pub fn update_config(
 ) -> Result<Response, ContractError> {
     let api = deps.api;
     config_store(deps.storage).update(|mut config| {
-        if config.owner != info.sender.as_str() {
+        if config.owner != info.sender {
             return Err(ContractError::Unauthorized {});
         }
 

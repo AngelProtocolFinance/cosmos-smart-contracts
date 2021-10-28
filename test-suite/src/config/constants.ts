@@ -21,13 +21,6 @@ export const localterra = {
     cw3ApTeam: "",
     cw4GrpOwners: "",
     cw3GuardianAngels: "",
-    haloAirdrop: "",
-    haloCollector: "",
-    haloCommunity: "",
-    haloDistributor: "",
-    haloGov: "",
-    haloStaking: "",
-    haloVesting: "",
   },
   // TerraSwap balances account
   accAddress: "",
@@ -37,6 +30,17 @@ export const localterra = {
   factory_contract: "",
   token_contract: "",
   pair_contract: "",
+  
+  // HALO contracts
+  halo: {
+    airdrop_contract: "",
+    collector_contract: "",
+    community_contract: "",
+    distributor_contract: "",
+    gov_contract: "",
+    staking_contract: "",
+    vesting_contract: "",
+  }
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -74,13 +78,6 @@ export const testnet = {
     cw3ApTeam: "terra1yp5we2meetcfxql522q9ve3dsl29epye86528j",
     cw4GrpOwners: "terra1ldrkpnysrasq4sg4zu9mgh74wt9nxvk9qgvxtd",
     cw3GuardianAngels: "terra1ydp9qd9xgdq63ua6axfvauye3l7a3476lm6l28",
-    haloAirdrop: "",
-    haloCollector: "",
-    haloCommunity: "",
-    haloDistributor: "",
-    haloGov: "",
-    haloStaking: "",
-    haloVesting: "",
   },
   // TerraSwap balances account
   accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8",
@@ -90,6 +87,17 @@ export const testnet = {
   factory_contract: "terra18qpjm4zkvqnpjpw0zn0tdr8gdzvt8au35v45xf",
   token_contract: "terra1tg9z99ter7su026zxpugapdx2a26phauu9duxa",
   pair_contract: "terra1p3qzymg8fauxxwdmqrytd23ctn6eusfmkkv0wc",
+
+  // HALO contracts
+  halo: {
+    airdrop_contract: "",
+    collector_contract: "",
+    community_contract: "",
+    distributor_contract: "",
+    gov_contract: "",
+    staking_contract: "",
+    vesting_contract: "",
+  }
 } as const;
 
 // ---------------------------------------------------------------------------------------------------
@@ -139,13 +147,6 @@ export const mainnet = {
       "terra1ngnqymglanujrhs09qakyz84k4v6cw9yyjwp0t",
       "terra1u0dls462h33j3fgg4j98wpa5qculnq2u749qc5",
     ],
-    haloAirdrop: "",
-    haloCollector: "",
-    haloCommunity: "",
-    haloDistributor: "",
-    haloGov: "",
-    haloStaking: "",
-    haloVesting: "",
   },
   members: [
     {addr: "terra1wvsugzhszkstexl0v6fv86c9ryjy8xm6u9t2fk", weight: 1},
@@ -161,4 +162,15 @@ export const mainnet = {
   factory_contract: "terra1ulgw0td86nvs4wtpsc80thv6xelk76ut7a7apj",
   token_contract: "",
   pair_contract: "",
+
+  // HALO contracts
+  halo: {
+    airdrop_contract: "",
+    collector_contract: "",
+    community_contract: "",
+    distributor_contract: "",
+    gov_contract: "",
+    staking_contract: "",
+    vesting_contract: "",
+  }
 } as const;
