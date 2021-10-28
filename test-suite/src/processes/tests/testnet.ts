@@ -69,6 +69,22 @@ import {
   testQueryDistributorConfig
 } from "./halo/distributor";
 import {
+  testGovCastVote,
+  testGovEndPoll,
+  testGovExecutePoll,
+  testGovRegisterContracts,
+  testGovSnapshotPoll,
+  testGovUpdateConfig,
+  testGovWithdrawVotingTokens,
+  testQueryGovConfig,
+  testQueryGovPoll,
+  testQueryGovPolls,
+  testQueryGovStaker,
+  testQueryGovState,
+  testQueryGovVoters,
+  VoteOption
+} from "./halo/gov";
+import {
   testVestingUpdateConfig,
   testVestingRegisterVestingAccounts,
   testQueryVestingConfig,
@@ -188,4 +204,19 @@ export async function testExecute(
   // await testQueryVestingConfig(terra, haloVesting);
   // await testQueryVestingAccount(terra, haloVesting, "addr0");
   // await testQueryVestingAccounts(terra, haloVesting, undefined, undefined);
+
+  // Test query for HALO gov
+  // await testGovUpdateConfig(terra, apTeam, pleb, haloGov, apTeam2.key.accAddress, undefined, undefined, undefined, undefined, undefined, undefined);
+  // await testGovExecutePoll(terra, apTeam, haloGov, 1);
+  // await testGovEndPoll(terra, apTeam, haloGov, 1);
+  // await testGovSnapshotPoll(terra, apTeam, haloGov, 1);
+  // await testGovWithdrawVotingTokens(terra, apTeam, haloGov, "11");
+  // await testGovCastVote(terra, apTeam, haloGov, 1, VoteOption.YES, "1");
+  // await testGovRegisterContracts(terra, apTeam, haloGov, "halo_token");
+  // await testQueryGovConfig(terra, haloGov);
+  // await testQueryGovState(terra, haloGov);
+  // await testQueryGovPoll(terra, haloGov, 1);
+  // await testQueryGovPolls(terra, haloGov, undefined, undefined, undefined);
+  // await testQueryGovStaker(terra, haloGov, "voter1");
+  // await testQueryGovVoters(terra, haloGov, 1, undefined, undefined);
 }
