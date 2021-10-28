@@ -27,19 +27,19 @@ export const localterra = {
   token_code_id: 0,
   pair_code_id: 0,
   factory_code_id: 0,
-  factory_contract: "terra18vd8fpwxzck93qlwghaj6arh4p7c5n896xzem5",
-  token_contract: "terra174kgn5rtw4kf6f938wm7kwh70h2v4vcfd26jlc",
-  pair_contract: "terra1sshdl5qajv0q0k6shlk8m9sd4lplpn6gggfr86",
+  factory_contract: "",
+  token_contract: "",
+  pair_contract: "",
   
   // HALO contracts
   halo: {
-    airdrop_contract: "terra1fsyr64h9czvnf4lc6lua8hx0qw3gxhmy8tnqek",
-    collector_contract: "terra1c45fp6t3x2lmm557tvj8md6w6ekynxutatzmvg",
-    community_contract: "terra1p27xt6fnz63hn50j5yqudc4jsyeqf3hk5hup70",
-    distributor_contract: "terra1wgnm7eyqsjwcvlfahuwtu3he8lanx8qx72f4fx",
-    gov_contract: "terra188403fxnmevxfck285txjfkq7r7kr0k4eqnk8x",
-    staking_contract: "terra10zrynry7t5v6z55l533ufcfrwu0nd8cam8qlh3",
-    vesting_contract: "terra14e2524xmt4jn6vauwenc2wjdutv0pt3qrdxpfx",
+    airdrop_contract: "",
+    collector_contract: "",
+    community_contract: "",
+    distributor_contract: "",
+    gov_contract: "",
+    staking_contract: "",
+    vesting_contract: "",
   }
 }
 
