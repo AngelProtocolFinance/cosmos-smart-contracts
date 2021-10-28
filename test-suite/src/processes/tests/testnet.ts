@@ -85,6 +85,13 @@ import {
   VoteOption
 } from "./halo/gov";
 import {
+  testStakingUnbond,
+  testStakingWithdraw,
+  testQueryStakingConfig,
+  testQueryStakingStakerInfo,
+  testQueryStakingState
+} from "./halo/staking";
+import {
   testVestingUpdateConfig,
   testVestingRegisterVestingAccounts,
   testQueryVestingConfig,
@@ -219,4 +226,11 @@ export async function testExecute(
   // await testQueryGovPolls(terra, haloGov, undefined, undefined, undefined);
   // await testQueryGovStaker(terra, haloGov, "voter1");
   // await testQueryGovVoters(terra, haloGov, 1, undefined, undefined);
+
+  // Test query for HALO staking
+  // await testStakingUnbond(terra, apTeam, haloStaking, "100");
+  // await testStakingWithdraw(terra, apTeam, haloStaking);
+  // await testQueryStakingConfig(terra, haloStaking);
+  // await testQueryStakingStakerInfo(terra, haloStaking, "addr000", undefined);
+  // await testQueryStakingState(terra, haloStaking);
 }
