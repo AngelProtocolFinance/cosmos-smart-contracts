@@ -63,7 +63,7 @@ pub enum Cw20HookMsg {
     CreatePoll {
         title: String,
         description: String,
-        link: Option<String>,
+        proposal_type: Option<String>,
         execute_msgs: Option<Vec<PollExecuteMsg>>,
     },
 }
@@ -74,6 +74,10 @@ pub struct PollExecuteMsg {
     pub order: u64,
     pub contract: String,
     pub msg: Binary,
+    pub funding_goal: Option<Uint128>,
+    pub fund_rotation: Option<u64>,
+    pub split_to_liquid: Option<Decimal>,
+    pub treasury_tax_rate: Option<Decimal>
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -128,7 +132,7 @@ pub struct PollResponse {
     pub end_height: u64,
     pub title: String,
     pub description: String,
-    pub link: Option<String>,
+    pub proposal_type: Option<String>,
     pub deposit_amount: Uint128,
     pub execute_data: Option<Vec<PollExecuteMsg>>,
     pub yes_votes: Uint128, // balance

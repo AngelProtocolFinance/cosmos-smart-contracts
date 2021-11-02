@@ -22,8 +22,6 @@ const MIN_TITLE_LENGTH: usize = 4;
 const MAX_TITLE_LENGTH: usize = 64;
 const MIN_DESC_LENGTH: usize = 4;
 const MAX_DESC_LENGTH: usize = 1024;
-const MIN_LINK_LENGTH: usize = 12;
-const MAX_LINK_LENGTH: usize = 128;
 const POLL_EXECUTE_REPLY_ID: u64 = 1;
 
 // version info for future migration info
@@ -158,7 +156,7 @@ pub fn receive_cw20(
         Ok(Cw20HookMsg::CreatePoll {
             title,
             description,
-            link,
+            proposal_type,
             execute_msgs,
         }) => create_poll(
             deps,
@@ -167,7 +165,7 @@ pub fn receive_cw20(
             cw20_msg.amount,
             title,
             description,
-            link,
+            proposal_type,
             execute_msgs,
         ),
         _ => Err(ContractError::DataShouldBeGiven {}),
@@ -248,21 +246,6 @@ fn validate_description(description: &str) -> StdResult<()> {
     }
 }
 
-/// validate_link returns an error if the link is invalid
-fn validate_link(link: &Option<String>) -> StdResult<()> {
-    if let Some(link) = link {
-        if link.len() < MIN_LINK_LENGTH {
-            Err(StdError::generic_err("Link too short"))
-        } else if link.len() > MAX_LINK_LENGTH {
-            Err(StdError::generic_err("Link too long"))
-        } else {
-            Ok(())
-        }
-    } else {
-        Ok(())
-    }
-}
-
 /// validate_decimal returns an error if it is invalid
 /// (we require 0-1)
 fn validate_decimal(d: Decimal) -> StdResult<()> {
@@ -282,12 +265,11 @@ pub fn create_poll(
     deposit_amount: Uint128,
     title: String,
     description: String,
-    link: Option<String>,
+    proposal_type: Option<String>,
     execute_msgs: Option<Vec<PollExecuteMsg>>,
 ) -> Result<Response, ContractError> {
     validate_title(&title)?;
     validate_description(&description)?;
-    validate_link(&link)?;
 
     let config: Config = config_store(deps.storage).load()?;
     if deposit_amount < config.proposal_deposit {
@@ -310,6 +292,10 @@ pub fn create_poll(
                 order: msgs.order,
                 contract: deps.api.addr_validate(&msgs.contract)?,
                 msg: msgs.msg,
+                funding_goal: msgs.funding_goal,
+                fund_rotation: msgs.fund_rotation,
+                split_to_liquid: msgs.split_to_liquid,
+                treasury_tax_rate: msgs.treasury_tax_rate
             };
             data_list.push(execute_data)
         }
@@ -328,7 +314,7 @@ pub fn create_poll(
         end_height: env.block.height + config.voting_period,
         title,
         description,
-        link,
+        proposal_type,
         execute_data: all_execute_data,
         deposit_amount,
         total_balance_at_end_poll: None,
@@ -721,7 +707,7 @@ fn query_poll(deps: Deps, poll_id: u64) -> Result<PollResponse, ContractError> {
         end_height: poll.end_height,
         title: poll.title,
         description: poll.description,
-        link: poll.link,
+        proposal_type: poll.proposal_type,
         deposit_amount: poll.deposit_amount,
         execute_data: if let Some(exe_msgs) = poll.execute_data.clone() {
             for msg in exe_msgs {
@@ -729,6 +715,10 @@ fn query_poll(deps: Deps, poll_id: u64) -> Result<PollResponse, ContractError> {
                     order: msg.order,
                     contract: msg.contract.to_string(),
                     msg: msg.msg,
+                    funding_goal: msg.funding_goal,
+                    fund_rotation: msg.fund_rotation,
+                    split_to_liquid: msg.split_to_liquid,
+                    treasury_tax_rate: msg.treasury_tax_rate
                 };
                 data_list.push(execute_data)
             }
@@ -762,7 +752,7 @@ fn query_polls(
                 end_height: poll.end_height,
                 title: poll.title.to_string(),
                 description: poll.description.to_string(),
-                link: poll.link.clone(),
+                proposal_type: poll.proposal_type.clone(),
                 deposit_amount: poll.deposit_amount,
                 execute_data: if let Some(exe_msgs) = poll.execute_data.clone() {
                     let mut data_list: Vec<PollExecuteMsg> = vec![];
@@ -772,6 +762,10 @@ fn query_polls(
                             order: msg.order,
                             contract: msg.contract.to_string(),
                             msg: msg.msg,
+                            funding_goal: msg.funding_goal,
+                            fund_rotation: msg.fund_rotation,
+                            split_to_liquid: msg.split_to_liquid,
+                            treasury_tax_rate: msg.treasury_tax_rate,
                         };
                         data_list.push(execute_data)
                     }

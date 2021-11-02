@@ -53,7 +53,7 @@ pub struct Poll {
     pub end_height: u64,
     pub title: String,
     pub description: String,
-    pub link: Option<String>,
+    pub proposal_type: Option<String>,
     pub execute_data: Option<Vec<ExecuteData>>,
     pub deposit_amount: Uint128,
     /// Total balance at the end poll
@@ -66,6 +66,10 @@ pub struct ExecuteData {
     pub order: u64,
     pub contract: Addr,
     pub msg: Binary,
+    pub funding_goal: Option<Uint128>,
+    pub fund_rotation: Option<u64>,
+    pub split_to_liquid: Option<Decimal>,
+    pub treasury_tax_rate: Option<Decimal>,
 }
 impl Eq for ExecuteData {}
 
