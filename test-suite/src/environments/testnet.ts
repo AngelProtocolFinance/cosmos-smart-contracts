@@ -44,6 +44,7 @@ let factoryCodeId: number;
 let factoryContract: string;
 let tokenContract: string;
 let pairContract: string;
+let apTreasury: string;
 
 // Angel/HALO contracts
 let haloAirdrop: string;
@@ -96,6 +97,7 @@ function initialize() {
   endowmentContract4 = config.contracts.endowmentContract4;
 
   anchorMoneyMarket = config.anchorMoneyMarket;
+  apTreasury = config.apTreasury;
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
@@ -154,6 +156,7 @@ export async function startSetupContracts(): Promise<void> {
   await setupContracts(
     terra,
     anchorMoneyMarket,
+    apTreasury,
     // wallets
     {
       apTeam,

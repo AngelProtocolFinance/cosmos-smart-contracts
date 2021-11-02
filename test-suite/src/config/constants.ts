@@ -7,6 +7,8 @@ export const localterra = {
     url: "http://localhost:1317",
     chainId: "localterra",
   },
+  // LocalTerra AP / DANO Treasury wallet (HALO collector contract)
+  apTreasury: "",
   // Should be updated contract addresses after deploying wasms in the LocalTerra
   contracts: {
     registrar: "",
@@ -54,6 +56,8 @@ export const testnet = {
   },
   // TestNet MoneyMarket Contract
   anchorMoneyMarket: "terra15dwd5mj8v59wpj0wvt233mf5efdff808c5tkal",
+  // TestNet AP / DANO Treasury wallet (HALO collector contract)
+  apTreasury: "",
   mnemonicKeys: {
     apTeam: "forward stone width wrist outer elder supply summer extra erosion spring unlock rhythm sail goose once city ivory eight diesel upper measure betray purchase",
     apTeam2: "custom review state crisp modify sell trick replace bone wolf ridge paper later collect topple income owner head turkey estate canyon tone copy inhale",
@@ -111,7 +115,7 @@ export const mainnet = {
   },
   // MainNet MoneyMarket Contract
   anchorMoneyMarket: "terra1sepfj7s0aeg5967uxnfk4thzlerrsktkpelm5s",
-  // MainNet AP / DANO Treasury wallet
+  // MainNet AP / DANO Treasury wallet (HALO collector contract)
   apTreasury: "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly",
   mnemonicKeys: {
     apTeam: "forward stone width wrist outer elder supply summer extra erosion spring unlock rhythm sail goose once city ivory eight diesel upper measure betray purchase",

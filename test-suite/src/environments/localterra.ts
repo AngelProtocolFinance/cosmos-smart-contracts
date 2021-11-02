@@ -37,6 +37,7 @@ let endowmentContract1: string;
 let endowmentContract2: string;
 let endowmentContract3: string;
 let endowmentContract4: string;
+let apTreasury: string;
 
 // TerraSwap/Pair contracts
 let accAddress: string;
@@ -91,6 +92,8 @@ function initialize() {
   endowmentContract2 = config.contracts.endowmentContract2;
   endowmentContract3 = config.contracts.endowmentContract3;
   endowmentContract4 = config.contracts.endowmentContract4;
+
+  apTreasury = config.apTreasury;
 
   console.log(`Use ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Use ${chalk.cyan(indexFund)} as IndexFund`);
@@ -150,6 +153,7 @@ export async function startSetupContracts(): Promise<void> {
   await setupContracts(
     terra,
     undefined,
+    apTreasury,
     // wallets
     {
       apTeam,
