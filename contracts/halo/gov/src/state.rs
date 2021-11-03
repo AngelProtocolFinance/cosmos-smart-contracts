@@ -28,7 +28,7 @@ pub struct Config {
     pub timelock_period: u64,
     pub proposal_deposit: Uint128,
     pub snapshot_period: u64,
-    pub registrar_contract: String,
+    pub registrar_contract: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -52,7 +52,7 @@ pub fn instantiate(
         timelock_period: msg.timelock_period,
         proposal_deposit: msg.proposal_deposit,
         snapshot_period: msg.snapshot_period,
-        registrar_contract: msg.registrar_contract,
+        registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
     };
 
     let state = State {
@@ -307,7 +307,7 @@ pub fn create_poll(
     state.poll_count += 1;
     state.total_deposit += deposit_amount;
     let contract = if proposal_type == Some("registrar".to_string()) {
-        deps.api.addr_validate(&config.registrar_contract)?
+        config.registrar_contract
     } else {
         env.contract.address
     };
