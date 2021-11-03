@@ -23,6 +23,8 @@ const MAX_TITLE_LENGTH: usize = 64;
 const MIN_DESC_LENGTH: usize = 4;
 const MAX_DESC_LENGTH: usize = 1024;
 const POLL_EXECUTE_REPLY_ID: u64 = 1;
+const MIN_LINK_LENGTH: usize = 12;
+const MAX_LINK_LENGTH: usize = 128;
 
 // version info for future migration info
 // const CONTRACT_NAME: &str = "halo-gov";
@@ -50,6 +52,7 @@ pub fn instantiate(
         timelock_period: msg.timelock_period,
         proposal_deposit: msg.proposal_deposit,
         snapshot_period: msg.snapshot_period,
+        registrar_contract: msg.registrar_contract,
     };
 
     let state = State {
@@ -156,8 +159,9 @@ pub fn receive_cw20(
         Ok(Cw20HookMsg::CreatePoll {
             title,
             description,
+            link,
             proposal_type,
-            execute_msgs,
+            options,
         }) => create_poll(
             deps,
             env,
@@ -165,8 +169,9 @@ pub fn receive_cw20(
             cw20_msg.amount,
             title,
             description,
+            link,
             proposal_type,
-            execute_msgs,
+            options,
         ),
         _ => Err(ContractError::DataShouldBeGiven {}),
     }
@@ -246,6 +251,21 @@ fn validate_description(description: &str) -> StdResult<()> {
     }
 }
 
+/// validate_link returns an error if the link is invalid
+fn validate_link(link: &Option<String>) -> StdResult<()> {
+    if let Some(link) = link {
+        if link.len() < MIN_LINK_LENGTH {
+            Err(StdError::generic_err("Link too short"))
+        } else if link.len() > MAX_LINK_LENGTH {
+            Err(StdError::generic_err("Link too long"))
+        } else {
+            Ok(())
+        }
+    } else {
+        Ok(())
+    }
+}
+
 /// validate_decimal returns an error if it is invalid
 /// (we require 0-1)
 fn validate_decimal(d: Decimal) -> StdResult<()> {
@@ -265,11 +285,13 @@ pub fn create_poll(
     deposit_amount: Uint128,
     title: String,
     description: String,
+    link: Option<String>,
     proposal_type: Option<String>,
-    execute_msgs: Option<Vec<PollExecuteMsg>>,
+    options: Option<Vec<PollExecuteMsg>>,
 ) -> Result<Response, ContractError> {
     validate_title(&title)?;
     validate_description(&description)?;
+    validate_link(&link)?;
 
     let config: Config = config_store(deps.storage).load()?;
     if deposit_amount < config.proposal_deposit {
@@ -284,13 +306,18 @@ pub fn create_poll(
     // Increase poll count & total deposit amount
     state.poll_count += 1;
     state.total_deposit += deposit_amount;
+    let contract = if proposal_type == Some("registrar".to_string()) {
+        deps.api.addr_validate(&config.registrar_contract)?
+    } else {
+        env.contract.address
+    };
 
     let mut data_list: Vec<ExecuteData> = vec![];
-    let all_execute_data = if let Some(exe_msgs) = execute_msgs {
+    let all_execute_data = if let Some(exe_msgs) = options {
         for msgs in exe_msgs {
             let execute_data = ExecuteData {
                 order: msgs.order,
-                contract: deps.api.addr_validate(&msgs.contract)?,
+                contract: contract.clone(),
                 msg: msgs.msg,
                 funding_goal: msgs.funding_goal,
                 fund_rotation: msgs.fund_rotation,
@@ -314,6 +341,7 @@ pub fn create_poll(
         end_height: env.block.height + config.voting_period,
         title,
         description,
+        link,
         proposal_type,
         execute_data: all_execute_data,
         deposit_amount,
@@ -707,13 +735,13 @@ fn query_poll(deps: Deps, poll_id: u64) -> Result<PollResponse, ContractError> {
         end_height: poll.end_height,
         title: poll.title,
         description: poll.description,
+        link: poll.link,
         proposal_type: poll.proposal_type,
         deposit_amount: poll.deposit_amount,
         execute_data: if let Some(exe_msgs) = poll.execute_data.clone() {
             for msg in exe_msgs {
                 let execute_data = PollExecuteMsg {
                     order: msg.order,
-                    contract: msg.contract.to_string(),
                     msg: msg.msg,
                     funding_goal: msg.funding_goal,
                     fund_rotation: msg.fund_rotation,
@@ -752,6 +780,7 @@ fn query_polls(
                 end_height: poll.end_height,
                 title: poll.title.to_string(),
                 description: poll.description.to_string(),
+                link: poll.link.clone(),
                 proposal_type: poll.proposal_type.clone(),
                 deposit_amount: poll.deposit_amount,
                 execute_data: if let Some(exe_msgs) = poll.execute_data.clone() {
@@ -760,7 +789,6 @@ fn query_polls(
                     for msg in exe_msgs {
                         let execute_data = PollExecuteMsg {
                             order: msg.order,
-                            contract: msg.contract.to_string(),
                             msg: msg.msg,
                             funding_goal: msg.funding_goal,
                             fund_rotation: msg.fund_rotation,

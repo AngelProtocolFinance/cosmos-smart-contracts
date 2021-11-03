@@ -28,6 +28,7 @@ pub struct Config {
     pub timelock_period: u64,
     pub proposal_deposit: Uint128,
     pub snapshot_period: u64,
+    pub registrar_contract: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -53,6 +54,7 @@ pub struct Poll {
     pub end_height: u64,
     pub title: String,
     pub description: String,
+    pub link: Option<String>,
     pub proposal_type: Option<String>,
     pub execute_data: Option<Vec<ExecuteData>>,
     pub deposit_amount: Uint128,
