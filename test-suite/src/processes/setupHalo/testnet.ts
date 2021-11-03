@@ -11,6 +11,7 @@ import {
 export async function setupHalo(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
+  registrar_contract: string,
   halo_token: string,
   terraswap_factory: string,
   staking_token: string,
@@ -97,6 +98,7 @@ export async function setupHalo(
     timelock_period,
     proposal_deposit,
     snapshot_period,
+    registrar_contract,
   });
   const govContractAddr = govResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";

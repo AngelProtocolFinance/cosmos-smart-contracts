@@ -218,6 +218,7 @@ export async function startSetupHalo(): Promise<void> {
   await setupHalo(
     terra,
     apTeam,
+    registrar,
     tokenContract,    // halo_token contract
     factoryContract,  // terraswap_factory contract
     pairContract,     // staking_token: lp token of ANC-UST pair contract
