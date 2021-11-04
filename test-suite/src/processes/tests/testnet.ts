@@ -222,7 +222,7 @@ export async function testExecute(
   // await testGovWithdrawVotingTokens(terra, apTeam, haloGov, "11");
   // await testGovCastVote(terra, apTeam, haloGov, 1, VoteOption.YES, "1");
   // await testGovRegisterContracts(terra, apTeam, haloGov, halo_token);
-  await testGovExecutePollForRegistrarSettings(terra, apTeam, haloGov, halo_token, "1000000", 100, "0.5", "0.1");
+  // await testGovExecutePollForRegistrarSettings(terra, apTeam, haloGov, halo_token, "1000000", 100, "0.5", "0.1");
   // await testQueryGovConfig(terra, haloGov);
   // await testQueryGovState(terra, haloGov);
   // await testQueryGovPoll(terra, haloGov, 1);
