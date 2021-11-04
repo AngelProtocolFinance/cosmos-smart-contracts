@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
-import { sendTransaction } from "../../../utils/helpers";
+import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -112,7 +112,8 @@ export async function testGovEndPoll(
 // TEST: Execute a poll
 //
 // SCENARIO:
-// Execute a msgs of passed poll as one submsg to catch failures
+// User can execute a poll that has passed vote
+// User cannot execute a poll that has not passed or expired vote
 //
 //----------------------------------------------------------------------------------------
 export async function testGovExecutePoll(
@@ -124,9 +125,9 @@ export async function testGovExecutePoll(
   process.stdout.write("Test - Execute a poll");
 
   await expect(
-    sendTransaction(terra, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
+    sendTransaction(terra, apTeam, [
       new MsgExecuteContract(
-        govContract,
+        apTeam.key.accAddress,
         govContract,
         {
           execute_poll: { poll_id },
@@ -228,7 +229,7 @@ export async function testGovWithdrawVotingTokens(
 // TEST: Cast vote
 //
 // SCENARIO:
-// Cast vote
+// AP Team/User can vote on the open poll
 //
 //----------------------------------------------------------------------------------------
 export async function testGovCastVote(
@@ -248,6 +249,60 @@ export async function testGovCastVote(
         govContract,
         {
           cast_vote: { poll_id, vote, amount },
+        },
+      ),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Execute a poll
+//
+// SCENARIO:
+// Submit a poll for changing registrar settings
+//
+//----------------------------------------------------------------------------------------
+export async function testGovExecutePollForRegistrarSettings(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  govContract: string,
+  halo_token: string,
+  funding_goal: string | undefined,
+  fund_rotation: number | undefined,
+  split_to_liquid: string | undefined,
+  treasury_tax_rate: string | undefined
+): Promise<void> {
+  process.stdout.write("Test - Execute a poll");
+
+  await expect(
+    sendTransaction(terra, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
+      new MsgExecuteContract(
+        govContract,
+        govContract,
+        {
+          receive: { 
+            sender: halo_token,
+            amount: "123",
+            msg: toEncodedBinary({
+              CreatePoll: {
+                title: "title",
+                description: "description",
+                link: undefined,
+                proposal_type: "registrar",
+                options: [
+                  {
+                    order: 1,
+                    funding_goal,
+                    fund_rotation,
+                    split_to_liquid,
+                    treasury_tax_rate,
+                    msg: toEncodedBinary({ Burn: { amount: "123" } })
+                  }
+                ]
+              }
+            })
+          },
         },
       ),
     ])

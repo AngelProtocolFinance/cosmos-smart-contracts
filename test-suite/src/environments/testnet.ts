@@ -332,5 +332,6 @@ export async function startTest(): Promise<void> {
     haloGov,
     haloStaking,
     haloVesting,
+    tokenContract,
   );
 }
