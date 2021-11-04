@@ -276,16 +276,15 @@ export async function testGovExecutePollForRegistrarSettings(
   process.stdout.write("Test - Execute a poll");
 
   await expect(
-    sendTransaction(terra, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
+    sendTransaction(terra, apTeam, [ // TODO: replace apTeam to HALO Token(Wallet)
       new MsgExecuteContract(
-        govContract,
+        apTeam.key.accAddress,
         govContract,
         {
-          receive: { 
-            sender: halo_token,
+          receive: {
+            sender: apTeam.key.accAddress,
             amount: "123",
             msg: toEncodedBinary({
-              CreatePoll: {
                 title: "title",
                 description: "description",
                 link: undefined,
@@ -297,10 +296,9 @@ export async function testGovExecutePollForRegistrarSettings(
                     fund_rotation,
                     split_to_liquid,
                     treasury_tax_rate,
-                    msg: toEncodedBinary({ Burn: { amount: "123" } })
+                    msg: toEncodedBinary({ amount: "123" })
                   }
                 ]
-              }
             })
           },
         },

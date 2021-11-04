@@ -21,7 +21,7 @@ use halo_token::gov::{
 use terraswap::querier::query_token_balance;
 
 const REGISTRAR_CONTRACT: &str = "registrar_contract";
-const VOTING_TOKEN: &str = "voting_token";
+const VOTING_TOKEN: &str = "cosmos2contract";
 const TEST_CREATOR: &str = "creator";
 const TEST_VOTER: &str = "voter1";
 const TEST_VOTER_2: &str = "voter2";
