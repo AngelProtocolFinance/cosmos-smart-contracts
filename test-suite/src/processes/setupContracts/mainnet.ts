@@ -61,24 +61,26 @@ export async function setupContracts(
   terra = _terra;
   apTeam = _apTeam;
   anchorMoneyMarket = _anchorMoneyMarket;
+  registrar = "terra1nwk2y5nfa5sxx6gtxr84lre3zpnn7cad2f266h";
+  indexFund = "terra19cevhng6nunl7gmc90sph0syuqyvtqn7mlhwz0";
 
-  await setup(
-    treasury_address,
-    members,
-    tca_members,
-    config.tax_rate,
-    config.threshold_absolute_percentage,
-    config.max_voting_period_height,
-    config.max_voting_period_guardians_height,
-    config.fund_rotation,
-    config.harvest_to_liquid,
-    config.tax_per_block,
-    config.funding_goal
-  );
+  // await setup(
+  //   treasury_address,
+  //   members,
+  //   tca_members,
+  //   config.tax_rate,
+  //   config.threshold_absolute_percentage,
+  //   config.max_voting_period_height,
+  //   config.max_voting_period_guardians_height,
+  //   config.fund_rotation,
+  //   config.harvest_to_liquid,
+  //   config.tax_per_block,
+  //   config.funding_goal
+  // );
   await mainNet.initializeCharities(terra, apTeam, registrar, indexFund);
   await mainNet.setupEndowments();
   await mainNet.approveEndowments();
-  await mainNet.createIndexFunds();
+  // await mainNet.createIndexFunds();
 }
 
 async function setup(

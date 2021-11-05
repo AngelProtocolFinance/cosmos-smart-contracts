@@ -89,13 +89,47 @@ export async function testUpdatingIndexFundConfigs(
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       update_config: {
-        funding_goal: "10000000000",
+        funding_goal: undefined,
+        fund_rotation: 1000000,
       }
     }),
   ]);
   console.log(chalk.green(" Done!"));
 }
 
+export async function testRemoveIndexFund(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  indexFund: string,
+  fund_id: number
+): Promise<void> {
+  process.stdout.write("AP Team removes an Index Fund");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+      remove_fund: {
+        fund_id: fund_id,
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
+}
+
+export async function testUpdateAngelAllianceMembers(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  indexFund: string,
+  new_list: string[]
+): Promise<void> {
+  process.stdout.write("AP Team updates Angel Alliance members list");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+      update_tca_list: {
+        new_list: new_list,
+      }
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
+}
 
 //----------------------------------------------------------------------------------------
 // TEST: SC owner can update the fund members to an Index Fund 
@@ -107,30 +141,11 @@ export async function testUpdatingIndexFundConfigs(
 export async function testUpdateFundMembers(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  pleb: Wallet,
   indexFund: string,
   fundId: number,
   add: string[],
   remove: string[],
 ): Promise<void> {
-  process.stdout.write("Test - pleb cannot update fund members");
-  await expect(
-    sendTransaction(terra, pleb, [
-      new MsgExecuteContract(
-        pleb.key.accAddress, 
-        indexFund,
-        {
-          update_members: {
-            fund_id: fundId,
-            add: add,
-            remove: remove,
-          }
-        }
-      )
-    ])
-  ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Failed!"));
-
   process.stdout.write("Test - SC owner can update fund members");
   await expect(
     sendTransaction(terra, apTeam, [

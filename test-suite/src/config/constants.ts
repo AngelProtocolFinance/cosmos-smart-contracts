@@ -108,6 +108,11 @@ export const mainnet = {
       "terra1lalzy8rvkg3j2qm4a2x74lm6lxfa3llz7kdkdp",
       "terra1ngnqymglanujrhs09qakyz84k4v6cw9yyjwp0t",
       "terra1u0dls462h33j3fgg4j98wpa5qculnq2u749qc5",
+      "terra17we0qdmf7gdnqrwtur52kn6898sf7tkxd8plq0",
+      "terra1ex254ats3kd3t6tm7dj72e90vstvz59su2mvnq",
+      "terra1fwkfncjwqnpw8snvtr20vjg3csqzeduznae628",
+      "terra1cndqxysafnuvd2m7kd60vfh65qa4jdnx4l9p2f",
+      "terra1c5kpr9pxnpfmznzhhz7cg7j5s0algnc8tk5kj6",
     ],
   },
   members: [
