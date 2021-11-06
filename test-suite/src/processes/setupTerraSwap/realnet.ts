@@ -22,8 +22,8 @@ export async function setupTerraSwap(
     decimals: 6,
     initial_balances: [
       {
-        address: accAddress,
-        amount: "1000000000000"
+        address: apTeam.key.accAddress,
+        amount: "1000000000000000"
       }
     ]
   });

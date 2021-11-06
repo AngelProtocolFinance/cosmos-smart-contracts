@@ -89,8 +89,8 @@ export const testnet = {
   pair_code_id: 155,
   factory_code_id: 154,
   factory_contract: "terra18qpjm4zkvqnpjpw0zn0tdr8gdzvt8au35v45xf",
-  token_contract: "terra1tg9z99ter7su026zxpugapdx2a26phauu9duxa",
-  pair_contract: "terra1p3qzymg8fauxxwdmqrytd23ctn6eusfmkkv0wc",
+  token_contract: "terra1lxlqekpkwjhacljgcfjm7vxul50wqas6yvuc27",
+  pair_contract: "terra157pj8ra7et8jemup8z60mcwfft5yuyw745vcjd",
 
   // HALO contracts
   halo: {
@@ -109,8 +109,8 @@ export const testnet = {
 // ---------------------------------------------------------------------------------------------------
 export const mainnet = {
   // MainNet columbus-5
-  networkInfo: {
-    url: "https://lcd.terra.dev",
+    networkInfo: {
+    url: "https://apis.ankr.com/c29102fa57024dc5a5096bb73e7e0919/aae7334102f8f52264b50ad44bf343d3/terra/full/columbus",
     chainId: "columbus-5",
   },
   // MainNet MoneyMarket Contract
@@ -164,8 +164,8 @@ export const mainnet = {
   pair_code_id: 4,
   factory_code_id: 5,
   factory_contract: "terra1ulgw0td86nvs4wtpsc80thv6xelk76ut7a7apj",
-  token_contract: "",
-  pair_contract: "",
+  token_contract: "terra1w8kvd6cqpsthupsk4l0clwnmek4l3zr7c84kwq",
+  pair_contract: "terra1s7kc5ua5936rfsqhd2rl0ngaphmegwcsze4txh",
 
   // HALO contracts
   halo: {
