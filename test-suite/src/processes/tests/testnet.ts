@@ -71,6 +71,7 @@ export async function testExecute(
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   await testUpdateAngelAllianceMembers(terra, apTeam, indexFund, [
+    "terra178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // testnet admin (testnet ONLY!)
     "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // charity#1 (testnet ONLY!) 
     "terra1zxtczmxtw8mk8xncvr8lcq2qmvk4dz88ek6f79", // community
     "terra18n2pc9x6q9str9dz8sqpt7ulz5telutclkzaec", // lunapes
@@ -81,6 +82,9 @@ export async function testExecute(
     "terra1etwq0q8wwnmq7322kz4v6ff2dcvwfm634vdkqn", // loop finance
     "terra1rzjxj4c6ykemk8csvtjchcqas7mul8s4w6rk8x", // tales of terra
     "terra1kf4k0l7hj5tlkuzf67ly43q8d2gcxay3hwa7fr", // hero
+    "terra1yvg94g6ydgme2kdhy5t4gasgvem2kpk56g4h5e", // NFT Luna
+    "terra1z565mu57emwc3jzxrhhw47etrf3eqclv8z3pvs", // Terra Terrapins
+    "terra1amrl8f5fqen2m478nuh2z7mz5ce096x4xqae9p", // Woof of Luna
   ]);
   // Guardian angels multisig test
   // await testAddApTeamMemberToC4Group(terra, apTeam, apTeam3, cw3ApTeam, cw4GrpApTeam);
