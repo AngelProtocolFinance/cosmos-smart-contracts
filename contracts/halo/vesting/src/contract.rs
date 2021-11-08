@@ -112,14 +112,22 @@ pub fn register_vesting_accounts(
         assert_vesting_schedules(&vesting_account.schedules)?;
 
         let vesting_address = deps.api.addr_validate(&vesting_account.address)?;
-        store_vesting_info(
-            deps.storage,
-            &vesting_address,
-            &VestingInfo {
-                last_claim_time: config.genesis_time,
-                schedules: vesting_account.schedules.clone(),
+        match read_vesting_info(deps.storage, &vesting_address) {
+            Ok(mut vesting_info) => {
+                vesting_info.schedules = vesting_account.schedules.clone();
+                store_vesting_info(deps.storage, &vesting_address, &vesting_info)?;
             },
-        )?;
+            _ => {
+                store_vesting_info(
+                    deps.storage,
+                    &vesting_address,
+                    &VestingInfo {
+                        last_claim_time: config.genesis_time,
+                        schedules: vesting_account.schedules.clone(),
+                    },
+                )?;
+            }
+        }
     }
 
     Ok(Response::new().add_attributes(vec![("action", "register_vesting_accounts")]))
@@ -142,7 +150,7 @@ pub fn update_vesting_account(
                 &addr,
                 &VestingInfo {
                     last_claim_time: config.genesis_time,
-                    schedules: vesting_account.schedules.clone(),
+                    schedules: vesting_account.schedules,
                 },
             )?;
         }
