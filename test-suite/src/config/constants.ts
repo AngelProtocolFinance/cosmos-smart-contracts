@@ -90,13 +90,13 @@ export const testnet = {
 
   // HALO contracts
   halo: {
-    airdrop_contract: "",
-    collector_contract: "",
-    community_contract: "",
-    distributor_contract: "",
-    gov_contract: "",
-    staking_contract: "",
-    vesting_contract: "",
+    airdrop_contract: "terra1qzuulq4nl2dxy3rv232jvag02wj9299jwxgumh",
+    collector_contract: "terra1qtss4sj28vkkk8c27zsdzhpacpc5ajg3tnj4gc",
+    community_contract: "terra164sasvjvfg2mhrqcpfjmt5hjly7dht88zygeh3",
+    distributor_contract: "terra1jvnn58kap7xeqej20lumkeeahx4kt8rlxw4ngy",
+    gov_contract: "terra175pv7tju0yz2q7gpvkprw5lu07wn6pv8aq6cwp",
+    staking_contract: "terra13qq9khlx6fh43txk8j6q6us52pumvcyhcqs469",
+    vesting_contract: "terra1s4q2y3ug5v5x5xvss2lvse38du492qqdp7ueny",
   }
 } as const;
 
