@@ -94,6 +94,7 @@ import {
 import {
   testVestingUpdateConfig,
   testVestingRegisterVestingAccounts,
+  testVestingUpdateVestingAccount,
   testQueryVestingConfig,
   testQueryVestingAccount,
   testQueryVestingAccounts
@@ -207,6 +208,12 @@ export async function testExecute(
   //     {address: "addr1", schedules: [[100, 110, "100"]]},
   //     {address: "addr2", schedules: [[100, 200, "100"]]},
   //   ]
+  // );
+  // await testVestingUpdateVestingAccount(
+  //   terra,
+  //   apTeam,
+  //   haloVesting,
+  //   {address: "addr1", schedules: [[100, 110, "200"]]}
   // );
   // await testQueryVestingConfig(terra, haloVesting);
   // await testQueryVestingAccount(terra, haloVesting, "addr0");
