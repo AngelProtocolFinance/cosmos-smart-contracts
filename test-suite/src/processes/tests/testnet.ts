@@ -71,6 +71,7 @@ export async function testExecute(
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   await testUpdateAngelAllianceMembers(terra, apTeam, indexFund, [
+    "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // charity#1 (testnet ONLY!) 
     "terra1zxtczmxtw8mk8xncvr8lcq2qmvk4dz88ek6f79", // community
     "terra18n2pc9x6q9str9dz8sqpt7ulz5telutclkzaec", // lunapes
     "terra17me29hk8cdd6mm6uf7cf0amsxmzxnszkfe5ph4", // lunabulls
