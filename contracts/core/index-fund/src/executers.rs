@@ -332,7 +332,7 @@ pub fn deposit(
         }))?;
     let registrar_split_configs: SplitDetails = registrar_config.split_to_liquid;
 
-    let mut donation_messages = vec![];
+    let mut donation_messages: Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))> = vec![];
 
     // check if active fund donation or if there a provided fund ID
     match msg.fund_id {
@@ -349,12 +349,8 @@ pub fn deposit(
                 fund.split_to_liquid,
                 msg.split,
             );
-            donation_messages.append(&mut build_donation_messages(
-                deps.as_ref(),
-                fund.members,
-                split,
-                deposit_amount,
-            ));
+            donation_messages =
+                update_donation_messages(&donation_messages, fund.members, split, deposit_amount);
         }
         // Active Fund donation, check donation limits
         None => {
@@ -392,12 +388,12 @@ pub fn deposit(
                             msg.split,
                         );
 
-                        donation_messages.append(&mut build_donation_messages(
-                            deps.as_ref(),
+                        donation_messages = update_donation_messages(
+                            &donation_messages,
                             fund.members,
                             split,
                             loop_donation,
-                        ));
+                        );
                         // deduct donated amount in this round from total donation amt
                         deposit_amount -= loop_donation;
                     }
@@ -415,12 +411,12 @@ pub fn deposit(
                         fund.split_to_liquid,
                         msg.split,
                     );
-                    donation_messages.append(&mut build_donation_messages(
-                        deps.as_ref(),
+                    donation_messages = update_donation_messages(
+                        &donation_messages,
                         fund.members,
                         split,
                         deposit_amount,
-                    ));
+                    );
                 }
             };
         }
@@ -429,7 +425,7 @@ pub fn deposit(
     STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
-        .add_submessages(donation_messages)
+        .add_submessages(build_donation_messages(deps.as_ref(), donation_messages))
         .add_attribute("action", "deposit"))
 }
 
@@ -467,22 +463,16 @@ pub fn calculate_split(
 
 pub fn build_donation_messages(
     deps: Deps,
-    members: Vec<Addr>,
-    split: Decimal,
-    balance: Uint128,
+    donation_messages: Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))>,
 ) -> Vec<SubMsg> {
-    // set split percentages between locked & liquid accounts
-    let member_portion = balance
-        .checked_div(Uint128::from(members.len() as u128))
-        .unwrap();
     let mut messages = vec![];
-    for member in members.iter() {
+    for member in donation_messages.iter() {
         messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: member.to_string(),
+            contract_addr: member.0.to_string(),
             msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
                 angel_core::messages::accounts::DepositMsg {
-                    locked_percentage: Decimal::one() - split,
-                    liquid_percentage: split,
+                    locked_percentage: member.1 .1,
+                    liquid_percentage: member.2 .1,
                 },
             ))
             .unwrap(),
@@ -490,13 +480,52 @@ pub fn build_donation_messages(
                 deps,
                 Coin {
                     denom: "uusd".to_string(),
-                    amount: member_portion,
+                    amount: member.1 .0 + member.2 .0,
                 },
             )
             .unwrap()],
         })));
     }
     messages
+}
+
+pub fn update_donation_messages(
+    donation_messages: &Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))>,
+    members: Vec<Addr>,
+    split: Decimal,
+    balance: Uint128,
+) -> Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))> {
+    // set split percentages between locked & liquid accounts
+    let member_portion = balance
+        .checked_div(Uint128::from(members.len() as u128))
+        .unwrap();
+    let lock_split = Decimal::one() - split;
+    let mut donation_messages = donation_messages.clone();
+
+    for member in members.iter() {
+        let pos = donation_messages
+            .clone()
+            .into_iter()
+            .position(|msg| &msg.0 == member);
+
+        if pos != None {
+            // member addr already exists in the messages vec. Update values.
+            let mut msg_data = donation_messages[pos.unwrap()].clone();
+            msg_data.1 .0 += member_portion * lock_split;
+            msg_data.1 .1 = lock_split;
+            msg_data.2 .0 += member_portion * split;
+            msg_data.2 .1 = split;
+            donation_messages[pos.unwrap()] = msg_data;
+        } else {
+            // add new entry for the member
+            donation_messages.push((
+                member.clone(), // Addr
+                (member_portion * lock_split, lock_split),
+                (member_portion * split, split),
+            ));
+        }
+    }
+    donation_messages
 }
 
 pub fn rotate_fund(
