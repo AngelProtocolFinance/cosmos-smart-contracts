@@ -172,7 +172,7 @@ export async function testExecute(
 
   // Test query for HALO airdrop
   // await testAirdropUpdateConfig(terra, apTeam, apTeam2, pleb, haloAirdrop);
-  // await testAirdropRegisterNewMerkleRoot(terra, apTeam, haloAirdrop, "634de21cde1044f41d90373733b0f0fb1c1c71f9652b905cdf159e73c4cf0d37");
+  // await testAirdropRegisterNewMerkleRoot(terra, apTeam, haloAirdrop);
   // await testAirdropClaim(terra, apTeam, haloAirdrop);
   // await testQueryAirdropConfig(terra, haloAirdrop);
   // await testQueryAirdropMerkleRoot(terra, haloAirdrop, 1);
