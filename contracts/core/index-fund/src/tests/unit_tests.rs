@@ -259,10 +259,12 @@ fn sc_owner_can_add_remove_funds() {
     let res = execute(deps.as_mut(), mock_env(), info, remove_fund_msg.clone()).unwrap();
     assert_eq!(0, res.messages.len());
 
-    // check that the fund is no longer in the FundsList
+    // check that the fund in FundsList is expired
     let res = query(deps.as_ref(), mock_env(), QueryMsg::FundsList {}).unwrap();
     let value: FundListResponse = from_binary(&res).unwrap();
-    assert_eq!(0, value.funds.len());
+    assert_eq!(1, value.funds.len());
+    assert_ne!(value.funds[0].expiry_height, None);
+    assert_eq!(value.funds[0].expiry_height, Some(mock_env().block.height));
 }
 
 #[test]
