@@ -650,7 +650,7 @@ mod test {
             100,
             Timestamp::from_seconds(10000),
         );
-        assert_eq!(new_fund_3, 3);
+        assert_eq!(new_fund_3, 1);
     }
 
     #[test]
