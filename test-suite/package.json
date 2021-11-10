@@ -27,7 +27,9 @@
     "bn.js": "^5.2.0",
     "chai": "^4.3.4",
     "chai-as-promised": "^7.1.1",
-    "chalk": "^4.1.2"
+    "chalk": "^4.1.2",
+    "@types/crypto-js": "^4.0.2",
+    "merkletreejs": "^0.2.24"
   },
   "devDependencies": {
     "@types/bn.js": "^5.1.0",
