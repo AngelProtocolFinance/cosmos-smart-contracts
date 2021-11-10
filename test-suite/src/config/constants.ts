@@ -90,7 +90,7 @@ export const testnet = {
   factory_code_id: 154,
   factory_contract: "terra18qpjm4zkvqnpjpw0zn0tdr8gdzvt8au35v45xf",
   token_contract: "terra1lxlqekpkwjhacljgcfjm7vxul50wqas6yvuc27",
-  pair_contract: "terra157pj8ra7et8jemup8z60mcwfft5yuyw745vcjd",
+  pair_contract: "terra16fm30j0v5q94cg52lkc3wpn5l7c4jzuszh8xrd",
 
   // HALO contracts
   halo: {
@@ -99,7 +99,7 @@ export const testnet = {
     community_contract: "terra1peq4zcxzcpdv89vmfx4rvv4207esv6zdhqtfjd",
     distributor_contract: "terra13gjk2n3rhelgsnjhhe5jer9auvuqmcedzzclx9",
     gov_contract: "terra1l8aj2jvjsz3whqyvt0hz5fvf3vhd8gcrxf6r56",
-    staking_contract: "terra12cj663sjxrjpyug462f446eh38p6qsn7774dte",
+    staking_contract: "terra10hgpmmuah2ppvk0n46kncaxdsqy5nwkv03kfhd",
     vesting_contract: "terra15scsvyuqkp0z2s8eet9p3jskduv8ypmc7ffwpn",
   }
 } as const;

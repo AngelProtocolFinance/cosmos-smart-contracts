@@ -5,6 +5,7 @@ import { LocalTerra, Wallet } from "@terra-money/terra.js";
 import {
   storeCode,
   instantiateContract,
+  toEncodedBinary,
 } from "../../utils/helpers";
 
 // Deploy HALO Token and HALO/UST pair contracts to the LocalTerra
@@ -47,12 +48,12 @@ export async function setupTerraSwap(
     pair_code_id: pairCodeId,
     token_code_id: tokenCodeId
   });
-  const factoryContractAddr = factoryResult.logs[0].events.find((event) => {
+  const factoryContract = factoryResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
   })?.attributes.find((attribute) => {
     return attribute.key == "contract_address";
   })?.value as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${factoryContractAddr}`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${factoryContract}`);
 
   // HALO token contract
   process.stdout.write("Instantiating HALO Token contract");
@@ -74,14 +75,35 @@ export async function setupTerraSwap(
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${tokenContract}`);
  
+  const asset_infos = {
+    "create_pair": {
+      "asset_infos": [
+        {
+          "token": {
+            "contract_addr": tokenContract
+          }
+        },
+        {
+          "native_token": {
+            "denom": "uusd"
+          }
+        }
+      ]
+    }
+  }
+  const assetBinary = toEncodedBinary(asset_infos);
   // Pair contract
   process.stdout.write("Instantiating Pair contract");
   const pairResult = await instantiateContract(terra, apTeam, apTeam, pairCodeId, {
     token_code_id: tokenCodeId,
     asset_infos: [
-      { token: { contract_addr: factoryContractAddr }},
+      { token: { contract_addr: tokenContract }},
       { native_token: { denom: "uusd" }}
-    ]
+    ],
+    init_hook: {
+      msg: assetBinary,
+      contract_addr: factoryContract
+    }
   });
   const pairContract = pairResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
