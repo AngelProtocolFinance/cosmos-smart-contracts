@@ -83,7 +83,7 @@ export async function testExecute(
     "terra1rzjxj4c6ykemk8csvtjchcqas7mul8s4w6rk8x", // tales of terra
     "terra1kf4k0l7hj5tlkuzf67ly43q8d2gcxay3hwa7fr", // hero
     "terra1yvg94g6ydgme2kdhy5t4gasgvem2kpk56g4h5e", // NFT Luna
-    "terra1z565mu57emwc3jzxrhhw47etrf3eqclv8z3pvs", // Terra Terrapins
+    "terra14amh70rm5a3wjgkf7trvten3jfqum2svppky3e", // Terra Terrapins
     "terra1amrl8f5fqen2m478nuh2z7mz5ce096x4xqae9p", // Woof of Luna
   ]);
   // Guardian angels multisig test
