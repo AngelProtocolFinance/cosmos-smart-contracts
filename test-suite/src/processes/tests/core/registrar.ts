@@ -58,12 +58,14 @@ export async function testClosingEndpoint(
 export async function testUpdatingRegistrarConfigs(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  registrar: string
+  registrar: string,
+  treasury: string,
 ): Promise<void> {
   process.stdout.write("AP Team updates Registrar Tax Rate");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_config: {
+        treasury,
         tax_rate: "0.2",
       }
     }),
