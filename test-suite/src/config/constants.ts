@@ -57,7 +57,7 @@ export const testnet = {
   // TestNet MoneyMarket Contract
   anchorMoneyMarket: "terra15dwd5mj8v59wpj0wvt233mf5efdff808c5tkal",
   // TestNet AP / DANO Treasury wallet (HALO collector contract)
-  apTreasury: "",
+  apTreasury: "terra14d0uufjsmaktaanxtnlm38cullcq449gu35x0q",
   mnemonicKeys: {
     apTeam: "forward stone width wrist outer elder supply summer extra erosion spring unlock rhythm sail goose once city ivory eight diesel upper measure betray purchase",
     apTeam2: "custom review state crisp modify sell trick replace bone wolf ridge paper later collect topple income owner head turkey estate canyon tone copy inhale",
@@ -94,13 +94,13 @@ export const testnet = {
 
   // HALO contracts
   halo: {
-    airdrop_contract: "",
-    collector_contract: "",
-    community_contract: "",
-    distributor_contract: "",
-    gov_contract: "",
-    staking_contract: "",
-    vesting_contract: "",
+    airdrop_contract: "terra1fwaaquexjhc62308y2d9xhs52jmxy8edcukrs0",
+    collector_contract: "terra14d0uufjsmaktaanxtnlm38cullcq449gu35x0q",
+    community_contract: "terra1peq4zcxzcpdv89vmfx4rvv4207esv6zdhqtfjd",
+    distributor_contract: "terra13gjk2n3rhelgsnjhhe5jer9auvuqmcedzzclx9",
+    gov_contract: "terra1l8aj2jvjsz3whqyvt0hz5fvf3vhd8gcrxf6r56",
+    staking_contract: "terra12cj663sjxrjpyug462f446eh38p6qsn7774dte",
+    vesting_contract: "terra15scsvyuqkp0z2s8eet9p3jskduv8ypmc7ffwpn",
   }
 } as const;
 
