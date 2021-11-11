@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import chalk from "chalk";
-import { LCDClient, Wallet } from "@terra-money/terra.js";
-import { instantiateContract } from "../../utils/helpers";
+import { LCDClient, Wallet, MsgExecuteContract } from "@terra-money/terra.js";
+import { instantiateContract, sendTransaction } from "../../utils/helpers";
 
 // Deploy HALO Token and HALO/UST pair contracts to the TestNet/MainNet
 export async function setupTerraSwap(
@@ -35,14 +35,26 @@ export async function setupTerraSwap(
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${tokenContract}`);
  
   // Pair contract
-  process.stdout.write("Instantiating Pair contract");
-  const pairResult = await instantiateContract(terra, apTeam, apTeam, pair_code_id, {
-    token_code_id: token_code_id,
-    asset_infos: [
-      { token: { contract_addr: factory_contract }},
-      { native_token: { denom: "uusd" }}
-    ]
-  });
+  process.stdout.write("Creating Pair contract from Token Factory");
+  const pairResult = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, factory_contract, {
+      "create_pair": {
+        "asset_infos": [
+          {
+            "token": {
+              "contract_addr": tokenContract,
+            }
+          },
+          {
+            "native_token": {
+              "denom": "uusd"
+            }
+          }
+        ]
+      }
+    })
+  ]);
+
   const pairContract = pairResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
   })?.attributes.find((attribute) => {
