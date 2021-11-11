@@ -139,6 +139,7 @@ pub struct IndexFund {
     pub name: String,
     pub description: String,
     pub members: Vec<Addr>,
+    pub rotating_fund: Option<bool>, // set a fund as a rotating fund
     // Fund Specific: over-riding SC level setting to handle a fixed split value
     // Defines the % to split off into liquid account, and if defined overrides all other splits
     pub split_to_liquid: Option<Decimal>,
