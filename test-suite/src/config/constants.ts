@@ -25,7 +25,6 @@ export const localterra = {
     cw3GuardianAngels: "",
   },
   // TerraSwap balances account
-  accAddress: "",
   token_code_id: 0,
   pair_code_id: 0,
   factory_code_id: 0,
@@ -84,7 +83,6 @@ export const testnet = {
     cw3GuardianAngels: "terra1ydp9qd9xgdq63ua6axfvauye3l7a3476lm6l28",
   },
   // TerraSwap balances account
-  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8",
   token_code_id: 148,
   pair_code_id: 155,
   factory_code_id: 154,
@@ -159,7 +157,6 @@ export const mainnet = {
     {addr: "terra1p3kcfzflagjl7lxfexwyaz43e4mprhyml0sqju", weight: 1},
   ],
   // TerraSwap balances account
-  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8",
   token_code_id: 3,
   pair_code_id: 4,
   factory_code_id: 5,

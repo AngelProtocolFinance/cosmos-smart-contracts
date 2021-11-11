@@ -7,10 +7,7 @@ import { instantiateContract, sendTransaction, toEncodedBinary } from "../../uti
 export async function setupTerraSwap(
   terra: LCDClient,
   apTeam: Wallet,
-  accAddress: string,
   token_code_id: number,
-  pair_code_id: number,
-  factory_code_id: number,
   factory_contract: string,
   ): Promise<void> {
 

@@ -1,18 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as path from "path";
 import chalk from "chalk";
-import { LocalTerra, Wallet } from "@terra-money/terra.js";
-import {
-  storeCode,
-  instantiateContract,
-  toEncodedBinary,
-} from "../../utils/helpers";
+import { LocalTerra, Wallet, MsgExecuteContract } from "@terra-money/terra.js";
+import { instantiateContract, sendTransaction, storeCode } from "../../utils/helpers";
 
 // Deploy HALO Token and HALO/UST pair contracts to the LocalTerra
 export async function setupTerraSwap(
   terra: LocalTerra,
   apTeam: Wallet,
-  accAddress: string,
   ): Promise<void> {
   process.stdout.write("Uploading TerraSwap factory Wasm");
   const factoryCodeId = await storeCode(
@@ -63,7 +58,7 @@ export async function setupTerraSwap(
     decimals: 6,
     initial_balances: [
       {
-        address: accAddress,
+        address: apTeam.key.accAddress,
         amount: "1000000000000000"
       }
     ]
@@ -74,37 +69,29 @@ export async function setupTerraSwap(
     return attribute.key == "contract_address";
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${tokenContract}`);
- 
-  const asset_infos = {
-    "create_pair": {
-      "asset_infos": [
-        {
-          "token": {
-            "contract_addr": tokenContract
-          }
-        },
-        {
-          "native_token": {
-            "denom": "uusd"
-          }
-        }
-      ]
-    }
-  }
-  const assetBinary = toEncodedBinary(asset_infos);
+
   // Pair contract
-  process.stdout.write("Instantiating Pair contract");
-  const pairResult = await instantiateContract(terra, apTeam, apTeam, pairCodeId, {
-    token_code_id: tokenCodeId,
-    asset_infos: [
-      { token: { contract_addr: tokenContract }},
-      { native_token: { denom: "uusd" }}
-    ],
-    init_hook: {
-      msg: assetBinary,
-      contract_addr: factoryContract
-    }
-  });
+  // Pair contract
+  process.stdout.write("Creating Pair contract from Token Factory");
+  const pairResult = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, factoryContract, {
+      "create_pair": {
+        "asset_infos": [
+          {
+            "token": {
+              "contract_addr": tokenContract,
+            }
+          },
+          {
+            "native_token": {
+              "denom": "uusd"
+            }
+          }
+        ]
+      }
+    })
+  ]);
+
   const pairContract = pairResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
   })?.attributes.find((attribute) => {
