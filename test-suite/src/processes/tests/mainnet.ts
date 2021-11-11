@@ -60,6 +60,7 @@ export async function testExecute(
     "terra1yvg94g6ydgme2kdhy5t4gasgvem2kpk56g4h5e", // Luna Millionares Portrait
     "terra14amh70rm5a3wjgkf7trvten3jfqum2svppky3e", // Terra Terrapins
     "terra1amrl8f5fqen2m478nuh2z7mz5ce096x4xqae9p", // Woof of Luna
+    "terra1hxrd8pnqytqpelape3aemprw3a023wryw7p0xn", // ApolloDAO
   ]);
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
