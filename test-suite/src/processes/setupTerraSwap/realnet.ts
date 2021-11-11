@@ -61,4 +61,44 @@ export async function setupTerraSwap(
     return attribute.key == "contract_address";
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${pairContract}`);
+
+  process.stdout.write("Provide liquidity to the New Pair contract");
+  const liqAddResult = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
+      increase_allowance: {
+        amount: "2000000000",
+        spender: pairContract,
+      },
+    }),
+    new MsgExecuteContract(
+      apTeam.key.accAddress,
+      pairContract,
+      {
+        provide_liquidity: {
+          assets: [
+            {
+              info: {
+                token: {
+                  contract_addr: tokenContract,
+                },
+              },
+              amount: "2000000000",
+            },
+            {
+              info: {
+                native_token: {
+                  denom: "uusd",
+                },
+              },
+              amount: "100000000",
+            },
+          ],
+        },
+      },
+      {
+        uusd: "100000000",
+      }
+    ),
+  ]);
+  console.log(chalk.green(" Done!"));
 }
