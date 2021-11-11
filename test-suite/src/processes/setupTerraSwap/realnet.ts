@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import chalk from "chalk";
 import { LCDClient, Wallet, MsgExecuteContract } from "@terra-money/terra.js";
-import { instantiateContract, sendTransaction } from "../../utils/helpers";
+import { instantiateContract, sendTransaction, toEncodedBinary } from "../../utils/helpers";
 
 // Deploy HALO Token and HALO/UST pair contracts to the TestNet/MainNet
 export async function setupTerraSwap(
@@ -62,8 +62,8 @@ export async function setupTerraSwap(
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${pairContract}`);
 
-  process.stdout.write("Provide liquidity to the New Pair contract");
-  const liqAddResult = await sendTransaction(terra, apTeam, [
+  process.stdout.write("Provide liquidity to the new Pair contract @ ratio of 0.05 UST per HALO");
+  const liqResult = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
       increase_allowance: {
         amount: "2000000000",
@@ -99,6 +99,20 @@ export async function setupTerraSwap(
         uusd: "100000000",
       }
     ),
+  ]);
+  console.log(chalk.green(" Done!"));
+
+  process.stdout.write("Perform simple swap of 1 HALO for UST on Pair contract");
+  const swapResult = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
+      send: {
+        amount: "1000000",
+        contract: pairContract,
+        msg: toEncodedBinary({
+          swap: {},
+        }),
+      },
+    })
   ]);
   console.log(chalk.green(" Done!"));
 }
