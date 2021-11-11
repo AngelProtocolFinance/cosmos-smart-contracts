@@ -180,6 +180,7 @@ pub fn distribute(deps: DepsMut, env: Env) -> StdResult<Response> {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::Pair { denom } => to_binary(&query_pair(deps, denom)?)
     }
 }
 
@@ -194,6 +195,25 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     };
 
     Ok(resp)
+}
+
+pub fn query_pair(deps: Deps, denom: String) -> StdResult<PairInfo> {
+    let config: Config = read_config(deps.storage)?;
+
+    let pair_info: PairInfo = query_pair_info(
+        &deps.querier,
+        config.terraswap_factory,
+        &[
+            AssetInfo::NativeToken {
+                denom: denom.to_string(),
+            },
+            AssetInfo::Token {
+                contract_addr: config.halo_token.to_string(),
+            },
+        ],
+    )?;
+
+    Ok(pair_info)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
