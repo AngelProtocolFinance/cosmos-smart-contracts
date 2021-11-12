@@ -52,6 +52,7 @@ fn update_config() {
 
     let msg = ExecuteMsg::UpdateConfig {
         spend_limit: Some(Uint128::from(500000u128)),
+        gov_contract: None,
     };
     let info = mock_info("addr0000", &[]);
     let res = execute(deps.as_mut(), mock_env(), info, msg.clone());

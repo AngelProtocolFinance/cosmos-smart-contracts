@@ -39,7 +39,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::UpdateConfig { spend_limit } => update_config(deps, info, spend_limit),
+        ExecuteMsg::UpdateConfig { spend_limit, gov_contract } => update_config(deps, info, spend_limit, gov_contract),
         ExecuteMsg::Spend { recipient, amount } => spend(deps, info, recipient, amount),
     }
 }
@@ -48,6 +48,7 @@ pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
     spend_limit: Option<Uint128>,
+    gov_contract: Option<String>,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
     if config.gov_contract != info.sender {
@@ -56,6 +57,10 @@ pub fn update_config(
 
     if let Some(spend_limit) = spend_limit {
         config.spend_limit = spend_limit;
+    }
+
+    if let Some(gov_contract) = gov_contract {
+        config.gov_contract = deps.api.addr_validate(&gov_contract)?;
     }
 
     store_config(deps.storage, &config)?;

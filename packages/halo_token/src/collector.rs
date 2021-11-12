@@ -16,8 +16,11 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     /// Update config interface
-    /// to enable reward_factor update
-    UpdateConfig { reward_factor: Option<Decimal> },
+    /// to enable reward_factor / gov_contract update
+    UpdateConfig { 
+        reward_factor: Option<Decimal>,
+        gov_contract: Option<String>,
+    },
     /// Public Message
     /// Sweep all given denom balance to ANC token
     /// and execute Distribute message
