@@ -21,7 +21,8 @@ export async function testCommunityUpdateConfig(
   pleb: Wallet,
   govContract: string,
   communityContract: string,
-  spend_limit: string,
+  spend_limit: string | undefined,
+  new_gov_contract: string | undefined,
 ): Promise<void> {
   process.stdout.write("Test - Pleb cannot update community config");
 
@@ -31,7 +32,7 @@ export async function testCommunityUpdateConfig(
         pleb.key.accAddress,
         communityContract,
         {
-          update_config: { spend_limit },
+          update_config: { spend_limit, gov_contract: new_gov_contract },
         },
       ),
     ])
@@ -46,7 +47,7 @@ export async function testCommunityUpdateConfig(
         govContract,
         communityContract,
         {
-          update_config: { spend_limit },
+          update_config: { spend_limit, gov_contract: new_gov_contract },
         },
       ),
     ])
