@@ -40,7 +40,6 @@ let endowmentContract4: string;
 let apTreasury: string;
 
 // TerraSwap/Pair contracts
-let accAddress: string;
 let tokenCodeId: number;
 let pairCodeId: number;
 let factoryCodeId: number;
@@ -108,7 +107,6 @@ function initialize() {
   console.log(`Use ${chalk.cyan(cw4GrpOwners)} as CW4 Endowment Owners Group`);
   console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
 
-  accAddress = config.accAddress;
   tokenCodeId = config.token_code_id;
   pairCodeId = config.pair_code_id;
   factoryCodeId = config.factory_code_id;
@@ -192,7 +190,7 @@ export async function startSetupTerraSwapContracts(): Promise<void> {
 
   // Setup TerraSwap contracts
   console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
-  await setupTerraSwap(terra, apTeam, apTeam.key.accAddress);
+  await setupTerraSwap(terra, apTeam);
 }
 
 

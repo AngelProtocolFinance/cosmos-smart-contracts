@@ -7,10 +7,7 @@ import { instantiateContract, sendTransaction, toEncodedBinary } from "../../uti
 export async function setupTerraSwap(
   terra: LCDClient,
   apTeam: Wallet,
-  accAddress: string,
   token_code_id: number,
-  pair_code_id: number,
-  factory_code_id: number,
   factory_contract: string,
   ): Promise<void> {
 
@@ -33,7 +30,7 @@ export async function setupTerraSwap(
     return attribute.key == "contract_address";
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${tokenContract}`);
- 
+
   // Pair contract
   process.stdout.write("Creating Pair contract from Token Factory");
   const pairResult = await sendTransaction(terra, apTeam, [

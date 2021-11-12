@@ -37,7 +37,7 @@ let endowmentContract2: string;
 let endowmentContract3: string;
 let endowmentContract4: string;
 let anchorMoneyMarket: string;
-let accAddress: string;
+
 let tokenCodeId: number;
 let pairCodeId: number;
 let factoryCodeId: number;
@@ -112,7 +112,6 @@ function initialize() {
   console.log(`Use ${chalk.cyan(cw4GrpOwners)} as CW4 Endowment Owners Group`);
   console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
 
-  accAddress = config.accAddress;
   tokenCodeId = config.token_code_id;
   pairCodeId = config.pair_code_id;
   factoryCodeId = config.factory_code_id;
@@ -198,10 +197,7 @@ export async function startSetupTerraSwapContracts(): Promise<void> {
   await setupTerraSwap(
     terra,
     apTeam,
-    accAddress,
     tokenCodeId,
-    pairCodeId,
-    factoryCodeId,
     factoryContract
   );
 }
