@@ -20,7 +20,8 @@ export async function testDistributorUpdateConfig(
   apTeam: Wallet,
   pleb: Wallet,
   distributorContract: string,
-  spend_limit: string,
+  spend_limit: string | undefined,
+  new_gov_contract: string | undefined,
 ): Promise<void> {
   process.stdout.write("Test - Pleb cannot update distributor config");
 
@@ -30,7 +31,7 @@ export async function testDistributorUpdateConfig(
         pleb.key.accAddress,
         distributorContract,
         {
-          update_config: { spend_limit },
+          update_config: { spend_limit, gov_contract: new_gov_contract },
         },
       ),
     ])
@@ -45,7 +46,7 @@ export async function testDistributorUpdateConfig(
         apTeam.key.accAddress,
         distributorContract,
         {
-          update_config: { spend_limit },
+          update_config: { spend_limit, gov_contract: new_gov_contract },
         },
       ),
     ])

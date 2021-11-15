@@ -21,7 +21,8 @@ export async function testCollectorUpdateConfig(
   pleb: Wallet,
   govContract: string,
   collectorContract: string,
-  reward_factor: string
+  reward_factor: string | undefined,
+  new_gov_contract: string | undefined,
 ): Promise<void> {
   process.stdout.write("Test - Pleb cannot update collector config");
 
@@ -31,7 +32,7 @@ export async function testCollectorUpdateConfig(
         pleb.key.accAddress,
         collectorContract,
         {
-          update_config: { reward_factor },
+          update_config: { reward_factor, gov_contract: new_gov_contract },
         },
       ),
     ])
