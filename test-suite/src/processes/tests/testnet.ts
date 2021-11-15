@@ -182,18 +182,18 @@ export async function testExecute(
   // await testQueryAirdropLatestStage(terra, haloAirdrop);
 
   // Test query for HALO collector
-  // await testCollectorUpdateConfig(terra, apTeam, pleb, haloGov, haloCollector, "0.5");
+  // await testCollectorUpdateConfig(terra, apTeam, pleb, haloGov, haloCollector, "0.5", undefined);
   // await testCollectorSweep(terra, apTeam, haloCollector);
   // await testQueryCollectorConfig(terra, haloCollector);
   // await testQueryCollectorPair(terra, haloCollector);
 
   // Test query for HALO community
-  // await testCommunityUpdateConfig(terra, apTeam, pleb, haloGov, haloCommunity, "1000000");
+  // await testCommunityUpdateConfig(terra, apTeam, pleb, haloGov, haloCommunity, "1000000", undefined);
   // await testCommunitySpend(terra, apTeam, haloGov, haloCommunity, "addr000", "1000000");
   // await testQueryCommunityConfig(terra, haloCommunity);
 
   // Test query for HALO distributor
-  // await testDistributorUpdateConfig(terra, apTeam, pleb, haloDistributor, "1000000");
+  // await testDistributorUpdateConfig(terra, apTeam, pleb, haloDistributor, "1000000", undefined);
   // await testDistributorSpend(terra, apTeam, haloDistributor, "addr000", "1000000");
   // await testDistributorAdd(terra, apTeam, haloGov, haloDistributor, apTeam2.key.accAddress);
   // await testDistributorRemove(terra, apTeam, haloGov, haloDistributor, apTeam2.key.accAddress);
