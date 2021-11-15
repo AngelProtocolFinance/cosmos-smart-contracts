@@ -22,23 +22,24 @@ class Airdrop {
       .map((v) => v.replace('0x', ''));
   }
 
-  public verify(
-    proof: string[],
-    account: { address: string; amount: string }
-  ): boolean {
-    let hashBuf = Buffer.from(sha256(account.address + account.amount).toString())
+  // public verify(
+  //   proof: string[],
+  //   account: { address: string; amount: string }
+  // ): boolean {
+  //   let hashBuf = Buffer.from(sha256(account.address + account.amount).toString())
 
-    proof.forEach((proofElem) => {
-      const proofBuf = Buffer.from(proofElem, 'hex');
-      if (hashBuf < proofBuf) {
-        hashBuf = Buffer.from(sha256(Buffer.concat([hashBuf, proofBuf]).toString()));
-      } else {
-        hashBuf = Buffer.from(sha256(Buffer.concat([proofBuf, hashBuf]).toString()));
-      }
-    });
+  //   proof.forEach((proofElem) => {
+  //     const proofBuf = Buffer.from(proofElem, 'hex');
+  //     const totalLength = hashBuf.length + proofBuf.length;
+  //     if (hashBuf < proofBuf) {
+  //       hashBuf = Buffer.from(sha256(Buffer.concat([hashBuf, proofBuf], totalLength).toString()));
+  //     } else {
+  //       hashBuf = Buffer.from(sha256(Buffer.concat([proofBuf, hashBuf], totalLength).toString()));
+  //     }
+  //   });
 
-    return this.getMerkleRoot() === hashBuf.toString('hex');
-  }
+  //   return this.getMerkleRoot() === hashBuf.toString('hex');
+  // }
 }
 
 export {Airdrop}

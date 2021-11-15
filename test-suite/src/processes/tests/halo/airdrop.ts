@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import * as path from "path";
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -109,13 +110,10 @@ export async function testAirdropClaim(
         airdropContract,
         {
           claim: {
-            amount: "1000001",
             stage: 1,
+            amount: "1000001",
             proof: [
-              "b8ee25ffbee5ee215c4ad992fe582f20175868bc310ad9b2b7bdf440a224b2df",
-              "98d73e0a035f23c490fef5e307f6e74652b9d3688c2aa5bff70eaa65956a24e1",
-              "f328b89c766a62b8f1c768fefa1139c9562c6e05bab57a2af87f35e83f9e9dcf",
-              "fe19ca2434f87cadb0431311ac9a484792525eb66a952e257f68bf02b4561950",
+              "d6529e73eb2c7e5013475424647e6832805a044b24828817f8aa95b7a8ebfda6",
             ],
           },
         },
@@ -187,8 +185,8 @@ async function generateMerkleRoot(): Promise<string> {
   let file1;
   let file2;
   try {
-    file1 = readFileSync("../airdrop/testdata/airdrop_stakers_list.json", 'utf-8');
-    file2 = readFileSync("../airdrop/testdata/airdrop_delegators_list.json", 'utf-8');
+    file1 = readFileSync(path.resolve(__dirname, "./airdrop/testdata/airdrop_stakers_list.json"), 'utf-8');
+    file2 = readFileSync(path.resolve(__dirname, "./airdrop/testdata/airdrop_delegators_list.json"), 'utf-8');
   } catch (e) {
     console.error(e);
     throw e;
