@@ -54,7 +54,8 @@ import {
 import {
   testCollectorUpdateConfig,
   testCollectorSweep,
-  testQueryCollectorConfig
+  testQueryCollectorConfig,
+  testQueryCollectorPair
 } from "./halo/collector";
 import {
   testCommunityUpdateConfig,
@@ -95,6 +96,7 @@ import {
 import {
   testVestingUpdateConfig,
   testVestingRegisterVestingAccounts,
+  testVestingUpdateVestingAccount,
   testQueryVestingConfig,
   testQueryVestingAccount,
   testQueryVestingAccounts
@@ -148,7 +150,7 @@ export async function testExecute(
   // await testAngelTeamCanTriggerVaultsHarvest(terra, apTeam, charity1, registrar);
   // await testCharityCanUpdateStrategies(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
   // await testBeneficiaryCanWithdrawFromLiquid(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
-  // await testUpdatingRegistrarConfigs(terra, apTeam, registrar);
+  // await testUpdatingRegistrarConfigs(terra, apTeam, registrar, haloCollector);
   // await testClosingEndpoint(terra, apTeam, registrar, endowmentContract3, endowmentContract4);
   // await testMigrateAllAccounts(terra, apTeam, registrar);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, [endowmentContract2], [endowmentContract4]);
@@ -174,7 +176,7 @@ export async function testExecute(
 
   // Test query for HALO airdrop
   // await testAirdropUpdateConfig(terra, apTeam, apTeam2, pleb, haloAirdrop);
-  // await testAirdropRegisterNewMerkleRoot(terra, apTeam, haloAirdrop, "634de21cde1044f41d90373733b0f0fb1c1c71f9652b905cdf159e73c4cf0d37");
+  // await testAirdropRegisterNewMerkleRoot(terra, apTeam, haloAirdrop);
   // await testAirdropClaim(terra, apTeam, haloAirdrop);
   // await testQueryAirdropConfig(terra, haloAirdrop);
   // await testQueryAirdropMerkleRoot(terra, haloAirdrop, 1);
@@ -185,6 +187,7 @@ export async function testExecute(
   // await testCollectorUpdateConfig(terra, apTeam, pleb, haloGov, haloCollector, "0.5");
   // await testCollectorSweep(terra, apTeam, haloCollector);
   // await testQueryCollectorConfig(terra, haloCollector);
+  // await testQueryCollectorPair(terra, haloCollector);
 
   // Test query for HALO community
   // await testCommunityUpdateConfig(terra, apTeam, pleb, haloGov, haloCommunity, "1000000");
@@ -209,6 +212,12 @@ export async function testExecute(
   //     {address: "addr1", schedules: [[100, 110, "100"]]},
   //     {address: "addr2", schedules: [[100, 200, "100"]]},
   //   ]
+  // );
+  // await testVestingUpdateVestingAccount(
+  //   terra,
+  //   apTeam,
+  //   haloVesting,
+  //   {address: "addr1", schedules: [[100, 110, "200"]]}
   // );
   // await testQueryVestingConfig(terra, haloVesting);
   // await testQueryVestingAccount(terra, haloVesting, "addr0");

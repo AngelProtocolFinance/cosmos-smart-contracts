@@ -78,6 +78,35 @@ export async function testVestingRegisterVestingAccounts(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: Update vesting account
+//
+// SCENARIO:
+// Resiger vesting accounts
+//
+//----------------------------------------------------------------------------------------
+export async function testVestingUpdateVestingAccount(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  vestingContract: string,
+  vesting_account: VestingAccount,
+): Promise<void> {
+  process.stdout.write("Test - Register vesting account");
+
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(
+        apTeam.key.accAddress,
+        vestingContract,
+        {
+          update_vesting_account: { vesting_account },
+        },
+      ),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryVestingConfig(

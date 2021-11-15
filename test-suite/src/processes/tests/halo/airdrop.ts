@@ -4,6 +4,8 @@ import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import { sendTransaction } from "../../../utils/helpers";
+import { Airdrop } from "./airdrop/airdrop";
+import { readFileSync } from 'fs';
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -68,19 +70,17 @@ export async function testAirdropRegisterNewMerkleRoot(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   airdropContract: string,
-  merkleRoot: string,
 ): Promise<void> {
   process.stdout.write("Test - Register new merkle root");
 
+  const merkle_root = await generateMerkleRoot();
   await expect(
     sendTransaction(terra, apTeam, [
       new MsgExecuteContract(
         apTeam.key.accAddress,
         airdropContract,
         {
-          register_merkle_root: {
-            merkle_root: merkleRoot
-          },
+          register_merkle_root: { merkle_root },
         },
       ),
     ])
@@ -181,4 +181,23 @@ export async function testQueryAirdropIsClaimed(
 
   console.log(result);
   console.log(chalk.green(" Passed!"));
+}
+
+async function generateMerkleRoot(): Promise<string> {
+  let file1;
+  let file2;
+  try {
+    file1 = readFileSync("../airdrop/testdata/airdrop_stakers_list.json", 'utf-8');
+    file2 = readFileSync("../airdrop/testdata/airdrop_delegators_list.json", 'utf-8');
+  } catch (e) {
+    console.error(e);
+    throw e;
+  }
+
+  const stakers: Array<{ address: string; amount: string }> = JSON.parse(file1);
+  const delegators: Array<{ address: string, amount: string }> = JSON.parse(file2);
+  const arr = stakers.concat(delegators);
+  const airdrop = new Airdrop(arr);
+  const merkleRoot = airdrop.getMerkleRoot();
+  return merkleRoot;
 }

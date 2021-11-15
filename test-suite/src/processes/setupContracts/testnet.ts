@@ -41,6 +41,7 @@ let endowmentContract4: string;
 export async function setupContracts(
   _terra: LocalTerra | LCDClient,
   _anchorMoneyMarket: string | undefined,
+  treasury_address: string,
   wallets: {
     apTeam: Wallet,
     apTeam2: Wallet,
@@ -74,6 +75,7 @@ export async function setupContracts(
   anchorMoneyMarket = _anchorMoneyMarket;
 
   await setup(
+    treasury_address,
     config.tax_rate,
     config.threshold_absolute_percentage,
     config.max_voting_period_height,
@@ -93,6 +95,7 @@ export async function setupContracts(
 }
 
 async function setup(
+  treasury_address: string,
   tax_rate: string,
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
@@ -148,7 +151,7 @@ async function setup(
   process.stdout.write("Instantiating Registrar contract");
   const registrarResult = await instantiateContract(terra, apTeam, apTeam, registrarCodeId, {
     accounts_code_id: accountsCodeId,
-    treasury: apTeam.key.accAddress,
+    treasury: treasury_address,
     tax_rate: tax_rate,
     default_vault: undefined,
   });
