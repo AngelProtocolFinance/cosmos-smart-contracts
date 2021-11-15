@@ -537,6 +537,7 @@ pub fn rotate_fund(
     let active_funds: Vec<IndexFund> = funds
         .into_iter()
         .filter(|fund| !fund.is_expired(env_height, env_time))
+        .filter(|fund| fund.rotating_fund == Some(true))
         .collect();
     let curr_fund_index = active_funds
         .iter()
@@ -564,6 +565,7 @@ mod test {
             split_to_liquid: None,
             expiry_time: None,
             expiry_height: None,
+            rotating_fund: Some(true),
         };
         let index_fund_2 = IndexFund {
             id: 2,
@@ -573,6 +575,7 @@ mod test {
             split_to_liquid: None,
             expiry_time: None,
             expiry_height: None,
+            rotating_fund: Some(true),
         };
 
         let new_fund_1 = rotate_fund(
@@ -608,6 +611,7 @@ mod test {
             split_to_liquid: None,
             expiry_time: None,
             expiry_height: None,
+            rotating_fund: Some(true),
         };
         let index_fund_2 = IndexFund {
             id: 2,
@@ -617,6 +621,7 @@ mod test {
             split_to_liquid: None,
             expiry_time: None,
             expiry_height: Some(10),
+            rotating_fund: Some(false),
         };
         let index_fund_3 = IndexFund {
             id: 3,
@@ -626,6 +631,7 @@ mod test {
             split_to_liquid: None,
             expiry_time: Some(1000),
             expiry_height: Some(1000),
+            rotating_fund: Some(true),
         };
 
         let new_fund_1 = rotate_fund(

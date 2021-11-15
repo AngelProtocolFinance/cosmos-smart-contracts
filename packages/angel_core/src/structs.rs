@@ -139,6 +139,7 @@ pub struct IndexFund {
     pub name: String,
     pub description: String,
     pub members: Vec<Addr>,
+    pub rotating_fund: Option<bool>, // set a fund as a rotating fund
     // Fund Specific: over-riding SC level setting to handle a fixed split value
     // Defines the % to split off into liquid account, and if defined overrides all other splits
     pub split_to_liquid: Option<Decimal>,
@@ -152,6 +153,7 @@ impl IndexFund {
         if (self.expiry_height != None && env_height >= self.expiry_height.unwrap())
             || (self.expiry_time != None
                 && env_time >= Timestamp::from_seconds(self.expiry_time.unwrap()))
+            || self.rotating_fund != Some(true)
         {
             return true;
         }
