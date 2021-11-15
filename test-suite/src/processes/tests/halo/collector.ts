@@ -99,3 +99,16 @@ export async function testQueryCollectorConfig(
   console.log(result);
   console.log(chalk.green(" Passed!"));
 }
+
+export async function testQueryCollectorPair(
+  terra: LocalTerra | LCDClient,
+  collectorContract: string
+): Promise<void> {
+  process.stdout.write("Test - Query Collector Config");
+  const result: any = await terra.wasm.contractQuery(collectorContract, {
+    pair: { denom: "uusd" },
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}

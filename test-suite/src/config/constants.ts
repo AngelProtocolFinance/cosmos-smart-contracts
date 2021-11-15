@@ -25,7 +25,6 @@ export const localterra = {
     cw3GuardianAngels: "",
   },
   // TerraSwap balances account
-  accAddress: "",
   token_code_id: 0,
   pair_code_id: 0,
   factory_code_id: 0,
@@ -57,7 +56,7 @@ export const testnet = {
   // TestNet MoneyMarket Contract
   anchorMoneyMarket: "terra15dwd5mj8v59wpj0wvt233mf5efdff808c5tkal",
   // TestNet AP / DANO Treasury wallet (HALO collector contract)
-  apTreasury: "",
+  apTreasury: "terra14d0uufjsmaktaanxtnlm38cullcq449gu35x0q",
   mnemonicKeys: {
     apTeam: "forward stone width wrist outer elder supply summer extra erosion spring unlock rhythm sail goose once city ivory eight diesel upper measure betray purchase",
     apTeam2: "custom review state crisp modify sell trick replace bone wolf ridge paper later collect topple income owner head turkey estate canyon tone copy inhale",
@@ -84,23 +83,22 @@ export const testnet = {
     cw3GuardianAngels: "terra1ydp9qd9xgdq63ua6axfvauye3l7a3476lm6l28",
   },
   // TerraSwap balances account
-  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8",
   token_code_id: 148,
   pair_code_id: 155,
   factory_code_id: 154,
   factory_contract: "terra18qpjm4zkvqnpjpw0zn0tdr8gdzvt8au35v45xf",
   token_contract: "terra1lxlqekpkwjhacljgcfjm7vxul50wqas6yvuc27",
-  pair_contract: "terra157pj8ra7et8jemup8z60mcwfft5yuyw745vcjd",
+  pair_contract: "terra1jvs9nnkx0lnrujfcat67ev03jff0gt6m77ytgu",
 
   // HALO contracts
   halo: {
-    airdrop_contract: "",
-    collector_contract: "",
-    community_contract: "",
-    distributor_contract: "",
-    gov_contract: "",
-    staking_contract: "",
-    vesting_contract: "",
+    airdrop_contract: "terra1fwaaquexjhc62308y2d9xhs52jmxy8edcukrs0",
+    collector_contract: "terra14d0uufjsmaktaanxtnlm38cullcq449gu35x0q",
+    community_contract: "terra1peq4zcxzcpdv89vmfx4rvv4207esv6zdhqtfjd",
+    distributor_contract: "terra13gjk2n3rhelgsnjhhe5jer9auvuqmcedzzclx9",
+    gov_contract: "terra1l8aj2jvjsz3whqyvt0hz5fvf3vhd8gcrxf6r56",
+    staking_contract: "terra1ve9jpy2pumfg33ky8gl7l6l3e7h8ppuwajkx0k",
+    vesting_contract: "terra15scsvyuqkp0z2s8eet9p3jskduv8ypmc7ffwpn",
   }
 } as const;
 
@@ -159,7 +157,6 @@ export const mainnet = {
     {addr: "terra1p3kcfzflagjl7lxfexwyaz43e4mprhyml0sqju", weight: 1},
   ],
   // TerraSwap balances account
-  accAddress: "terra1dcegyrekltswvyy0xy69ydgxn9x8x32zdtapd8",
   token_code_id: 3,
   pair_code_id: 4,
   factory_code_id: 5,

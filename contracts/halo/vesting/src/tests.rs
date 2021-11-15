@@ -235,6 +235,77 @@ fn register_vesting_accounts() {
     );
 }
 
+
+#[test]
+fn update_vesting_account() {
+    let mut deps = mock_dependencies(&[]);
+
+    let msg = InstantiateMsg {
+        owner: "owner".to_string(),
+        halo_token: "halo_token".to_string(),
+        genesis_time: 100u64,
+    };
+
+    let info = mock_info("addr0000", &[]);
+    let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    let acct1 = deps
+        .api
+        .addr_validate("acct1")
+        .unwrap()
+        .to_string();
+
+    let msg = ExecuteMsg::RegisterVestingAccounts {
+        vesting_accounts: vec![
+            VestingAccount {
+                address: acct1.clone(),
+                schedules: vec![(100u64, 110u64, Uint128::from(100u128))],
+            },
+        ],
+    };
+    let info = mock_info("addr0000", &[]);
+    let res = execute(deps.as_mut(), mock_env(), info.clone(), msg.clone());
+    match res {
+        Err(StdError::GenericErr { msg, .. }) => assert_eq!(msg, "unauthorized"),
+        _ => panic!("DO NOT ENTER HERE"),
+    }
+
+    let msg1 = ExecuteMsg::UpdateVestingAccount {
+        vesting_account: VestingAccount {
+            address: acct1.clone(),
+            schedules: vec![(100u64, 110u64, Uint128::from(200u128))],
+        }
+    };
+    let res1 = execute(deps.as_mut(), mock_env(), info, msg1.clone());
+    match res1 {
+        Err(StdError::GenericErr { msg: msg1, .. }) => assert_eq!(msg1, "unauthorized"),
+        _ => panic!("DO NOT ENTER HERE"),
+    }
+
+    let info = mock_info("owner", &[]);
+    let _res = execute(deps.as_mut(), mock_env(), info, msg1).unwrap();
+    assert_eq!(
+        from_binary::<VestingAccountResponse>(
+            &query(
+                deps.as_ref(),
+                mock_env(),
+                QueryMsg::VestingAccount {
+                    address: acct1.clone(),
+                }
+            )
+            .unwrap()
+        )
+        .unwrap(),
+        VestingAccountResponse {
+            address: acct1.clone(),
+            info: VestingInfo {
+                last_claim_time: 100u64,
+                schedules: vec![(100u64, 110u64, Uint128::from(200u128))],
+            }
+        }
+    );
+}
+
 #[test]
 fn claim() {
     let mut deps = mock_dependencies(&[]);

@@ -49,7 +49,10 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                 } => update_config(deps, owner, halo_token, genesis_time),
                 ExecuteMsg::RegisterVestingAccounts { vesting_accounts } => {
                     register_vesting_accounts(deps, vesting_accounts)
-                }
+                },
+                ExecuteMsg::UpdateVestingAccount { vesting_account } => {
+                    update_vesting_account(deps, vesting_account)
+                },
                 _ => panic!("DO NOT ENTER HERE"),
             }
         }
@@ -109,17 +112,51 @@ pub fn register_vesting_accounts(
         assert_vesting_schedules(&vesting_account.schedules)?;
 
         let vesting_address = deps.api.addr_validate(&vesting_account.address)?;
-        store_vesting_info(
-            deps.storage,
-            &vesting_address,
-            &VestingInfo {
-                last_claim_time: config.genesis_time,
-                schedules: vesting_account.schedules.clone(),
+        match read_vesting_info(deps.storage, &vesting_address) {
+            Ok(mut vesting_info) => {
+                vesting_info.schedules = vesting_account.schedules.clone();
+                store_vesting_info(deps.storage, &vesting_address, &vesting_info)?;
             },
-        )?;
+            _ => {
+                store_vesting_info(
+                    deps.storage,
+                    &vesting_address,
+                    &VestingInfo {
+                        last_claim_time: config.genesis_time,
+                        schedules: vesting_account.schedules.clone(),
+                    },
+                )?;
+            }
+        }
     }
 
     Ok(Response::new().add_attributes(vec![("action", "register_vesting_accounts")]))
+}
+
+pub fn update_vesting_account(
+    deps: DepsMut,
+    vesting_account: VestingAccount,
+) -> StdResult<Response> {
+    let addr = deps.api.addr_validate(&vesting_account.address).unwrap();
+    match read_vesting_info(deps.storage, &addr) {
+        Ok(mut vesting_info) => {
+            vesting_info.schedules = vesting_account.schedules;
+            store_vesting_info(deps.storage, &addr, &vesting_info)?;
+        },
+        _ => {
+            let config: Config = read_config(deps.storage)?;
+            store_vesting_info(
+                deps.storage,
+                &addr,
+                &VestingInfo {
+                    last_claim_time: config.genesis_time,
+                    schedules: vesting_account.schedules,
+                },
+            )?;
+        }
+    }
+
+    Ok(Response::new().add_attributes(vec![("action", "update_vesting_account")]))
 }
 
 pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
