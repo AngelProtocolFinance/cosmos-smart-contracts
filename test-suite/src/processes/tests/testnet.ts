@@ -80,6 +80,7 @@ export async function testExecute(
     "terra1tz9jtxemq5e9sw048adz32tj62vkzp6f63e26f", // Astronorcs
     "terra1pl2cus25j79ukff04fxn9wwemerm2463gnztl6", // west coast
     "terra1etwq0q8wwnmq7322kz4v6ff2dcvwfm634vdkqn", // loop finance
+    "terra157vv7nqra4zpfa58cglen5ekqmekxqw5ss3edq", // loop finance
     "terra1rzjxj4c6ykemk8csvtjchcqas7mul8s4w6rk8x", // tales of terra
     "terra1kf4k0l7hj5tlkuzf67ly43q8d2gcxay3hwa7fr", // hero
     "terra1yvg94g6ydgme2kdhy5t4gasgvem2kpk56g4h5e", // NFT Luna
