@@ -110,10 +110,11 @@ export async function testAirdropClaim(
         airdropContract,
         {
           claim: {
-            stage: 1,
+            stage: 4,
             amount: "1000001",
             proof: [
-              "d6529e73eb2c7e5013475424647e6832805a044b24828817f8aa95b7a8ebfda6",
+              "9b3bdb9e3214fefc05d52e52e722ea6a536f9af86539315cbb888b2795d2cfae",
+              "aad194125af54d70868455c4658de3a5723c64a46fffef6855ec73752a9aa17e",
             ],
           },
         },
@@ -186,15 +187,15 @@ async function generateMerkleRoot(): Promise<string> {
   let file2;
   try {
     file1 = readFileSync(path.resolve(__dirname, "./airdrop/testdata/airdrop_stakers_list.json"), 'utf-8');
-    file2 = readFileSync(path.resolve(__dirname, "./airdrop/testdata/airdrop_delegators_list.json"), 'utf-8');
+    // file2 = readFileSync(path.resolve(__dirname, "./airdrop/testdata/airdrop_delegators_list.json"), 'utf-8');
   } catch (e) {
     console.error(e);
     throw e;
   }
 
-  const stakers: Array<{ address: string; amount: string }> = JSON.parse(file1);
-  const delegators: Array<{ address: string, amount: string }> = JSON.parse(file2);
-  const arr = stakers.concat(delegators);
+  const arr: Array<{ address: string; amount: string }> = JSON.parse(file1);
+  // const delegators: Array<{ address: string, amount: string }> = JSON.parse(file2);
+  // const arr = stakers.concat(delegators);
   const airdrop = new Airdrop(arr);
   const merkleRoot = airdrop.getMerkleRoot();
   return merkleRoot;
