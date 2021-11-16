@@ -22,23 +22,15 @@ class Airdrop {
       .map((v) => v.replace('0x', ''));
   }
 
-  public verify(
+  public verifyProof(
     proof: string[],
     account: { address: string; amount: string }
   ): boolean {
-    let hashBuf = Buffer.from(sha256(account.address + account.amount).toString())
+    const leaf = sha256(account.address + account.amount).toString();
+    const root = this.getMerkleRoot();
 
-    proof.forEach((proofElem) => {
-      const proofBuf = Buffer.from(proofElem, 'hex');
-      const totalLength = hashBuf.length + proofBuf.length;
-      if (hashBuf < proofBuf) {
-        hashBuf = Buffer.from(sha256(Buffer.concat([hashBuf, proofBuf], totalLength).toString()).toString());
-      } else {
-        hashBuf = Buffer.from(sha256(Buffer.concat([proofBuf, hashBuf], totalLength).toString()).toString());
-      }
-    });
-
-    return this.getMerkleRoot() === hashBuf.toString('hex');
+    const verify = this.tree.verify(proof, leaf, root);
+    return verify;
   }
 }
 

@@ -114,7 +114,7 @@ export async function testAirdropClaim(
             amount: "1000001",
             proof: [
               "9b3bdb9e3214fefc05d52e52e722ea6a536f9af86539315cbb888b2795d2cfae",
-              "aad194125af54d70868455c4658de3a5723c64a46fffef6855ec73752a9aa17e",
+              "eb0422c52c8afe5bf78f199fcbff0e87eb1a8e5713a9e0b992b575035510b3d9",
             ],
           },
         },
@@ -187,16 +187,24 @@ async function generateMerkleRoot(): Promise<string> {
   let file2;
   try {
     file1 = readFileSync(path.resolve(__dirname, "./airdrop/testdata/airdrop_stakers_list.json"), 'utf-8');
-    // file2 = readFileSync(path.resolve(__dirname, "./airdrop/testdata/airdrop_delegators_list.json"), 'utf-8');
+    file2 = readFileSync(path.resolve(__dirname, "./airdrop/testdata/airdrop_delegators_list.json"), 'utf-8');
   } catch (e) {
     console.error(e);
     throw e;
   }
 
-  const arr: Array<{ address: string; amount: string }> = JSON.parse(file1);
-  // const delegators: Array<{ address: string, amount: string }> = JSON.parse(file2);
-  // const arr = stakers.concat(delegators);
+  const stakers: Array<{ address: string; amount: string }> = JSON.parse(file1);
+  const delegators: Array<{ address: string, amount: string }> = JSON.parse(file2);
+  const arr = stakers.concat(delegators);
   const airdrop = new Airdrop(arr);
   const merkleRoot = airdrop.getMerkleRoot();
+  console.log(merkleRoot);
+  arr.forEach(element => {
+    console.log(element);
+    const proof = airdrop.getMerkleProof(element);
+    console.log(proof); // Replace this proof when call claim
+    const verify = airdrop.verifyProof(proof, element);
+    console.log(verify);
+  });
   return merkleRoot;
 }
