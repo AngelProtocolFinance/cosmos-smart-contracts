@@ -203,7 +203,7 @@ async function generateMerkleRoot(): Promise<string> {
     console.log(element);
     const proof = airdrop.getMerkleProof(element);
     console.log(proof); // Replace this proof when call claim
-    const verify = airdrop.verifyProof(proof, element);
+    const verify = airdrop.verify(proof, element);
     console.log(verify);
   });
   return merkleRoot;
