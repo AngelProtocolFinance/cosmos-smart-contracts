@@ -110,11 +110,11 @@ export async function testAirdropClaim(
         airdropContract,
         {
           claim: {
-            stage: 4,
+            stage: 1,
             amount: "1000001",
             proof: [
-              "9b3bdb9e3214fefc05d52e52e722ea6a536f9af86539315cbb888b2795d2cfae",
               "eb0422c52c8afe5bf78f199fcbff0e87eb1a8e5713a9e0b992b575035510b3d9",
+              "9d5a269ba089bafdced3d362b80c516854a1c450b45b386fa186f80af5020021",
             ],
           },
         },
