@@ -233,7 +233,7 @@ fn sc_owner_can_add_remove_funds() {
             expiry_height: None,
         },
     };
-    let remove_fund_msg = ExecuteMsg::RemoveFund(RemoveFundMsg { fund_id: 13 });
+    let remove_fund_msg = ExecuteMsg::RemoveFund{ fund_id: 13 };
 
     // pleb cannot add funds (only SC owner should be able to)
     let info = mock_info(&pleb.clone(), &coins(1000, "earth"));

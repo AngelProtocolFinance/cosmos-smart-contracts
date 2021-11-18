@@ -153,7 +153,6 @@ impl IndexFund {
         if (self.expiry_height != None && env_height >= self.expiry_height.unwrap())
             || (self.expiry_time != None
                 && env_time >= Timestamp::from_seconds(self.expiry_time.unwrap()))
-            || self.rotating_fund != Some(true)
         {
             return true;
         }
