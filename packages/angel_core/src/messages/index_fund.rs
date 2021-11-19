@@ -36,7 +36,7 @@ pub enum ExecuteMsg {
         fund: IndexFund,
     },
     // remove a specific index fund
-    RemoveFund(RemoveFundMsg),
+    RemoveFund { fund_id: u64 },
     // updates the members in a given index fund
     UpdateMembers {
         fund_id: u64,
@@ -52,11 +52,6 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct RemoveMemberMsg {
     pub member: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct RemoveFundMsg {
-    pub fund_id: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

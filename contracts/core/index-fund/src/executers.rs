@@ -160,6 +160,17 @@ pub fn remove_index_fund(
 
     // decrement state funds totals
     let mut state = STATE.load(deps.storage)?;
+    // check if this is the active fund, update the active_fund using rotate_fund
+    if state.active_fund == fund_id {
+        let new_fund_id = rotate_fund(
+            read_funds(deps.storage).unwrap(),
+            fund_id,
+            env.block.height,
+            env.block.time,
+        );
+        
+        state.active_fund = new_fund_id;
+    }
     state.total_funds -= 1;
     STATE.save(deps.storage, &state)?;
 
@@ -537,18 +548,24 @@ pub fn rotate_fund(
     let active_funds: Vec<IndexFund> = funds
         .into_iter()
         .filter(|fund| !fund.is_expired(env_height, env_time))
-        .filter(|fund| fund.rotating_fund == Some(true))
         .collect();
     let curr_fund_index = active_funds
         .iter()
-        .position(|fund| fund.id == curr_fund)
-        .unwrap();
-    if curr_fund_index == (active_funds.len() - 1) {
-        // go back to the start of the funds list
-        return active_funds[0].id;
-    }
-    // get the next fund in the index
-    active_funds[curr_fund_index + 1].id
+        .position(|fund| fund.id == curr_fund);
+
+    let new_fund_id = match curr_fund_index {
+        Some(fund_index) => {
+            if fund_index == (active_funds.len() - 1) {
+                // go back to the start of the funds list
+                active_funds[0].id
+            } else {
+                // get the next fund in the index
+                active_funds[fund_index + 1].id
+            }
+        },
+        None => active_funds[0].id
+    };
+    new_fund_id
 }
 
 #[cfg(test)]

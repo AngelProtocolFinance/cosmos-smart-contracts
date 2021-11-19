@@ -19,7 +19,9 @@ import {
   testQueryIndexFundFundDetails,
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
-  testQueryIndexFundTcaList
+  testQueryIndexFundTcaList,
+  testRemoveIndexFund,
+  testCreateIndexFund
 } from "./indexFunds/test";
 import {
   testAddApTeamMemberToC4Group,
@@ -82,6 +84,8 @@ export async function testExecute(
   // await testClosingEndpoint(terra, apTeam, registrar, endowmentContract3, endowmentContract4);
   // await testMigrateAllAccounts(terra, apTeam, registrar);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, [endowmentContract2], [endowmentContract4]);
+  // testCreateIndexFund(terra, apTeam, indexFund, 5, "Test fund", "My 5th test fund", [endowmentContract2, endowmentContract3, endowmentContract4]);
+  // testRemoveIndexFund(terra, apTeam, indexFund, 1);
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);
