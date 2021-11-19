@@ -92,7 +92,7 @@ export const testnet = {
 
   // HALO contracts
   halo: {
-    airdrop_contract: "terra1fwaaquexjhc62308y2d9xhs52jmxy8edcukrs0",
+    airdrop_contract: "terra1mndcdkklysq22h6rz4vdd3fvyx7tffc2swg0kc",
     collector_contract: "terra14d0uufjsmaktaanxtnlm38cullcq449gu35x0q",
     community_contract: "terra1peq4zcxzcpdv89vmfx4rvv4207esv6zdhqtfjd",
     distributor_contract: "terra13gjk2n3rhelgsnjhhe5jer9auvuqmcedzzclx9",
