@@ -68,7 +68,7 @@ export const testnet = {
 export const mainnet = {
   // MainNet columbus-5
   networkInfo: {
-    url: "https://apis.ankr.com/c29102fa57024dc5a5096bb73e7e0919/aae7334102f8f52264b50ad44bf343d3/terra/full/columbus",
+    url: "https://lcd.terra.dev",
     chainId: "columbus-5",
   },
   // MainNet MoneyMarket Contract
@@ -118,6 +118,16 @@ export const mainnet = {
       "terra1aj240zlu6pg4yj6t2zqa6zu9dz5n5ez829cz22", // impact 
       "terra1f5d62v4965gk3jvtffle6g722khgmt669dwmst", // childrenreach
       "terra1ah48pqeyrue2rrmfum094vqc3v7w7dhgy3zama", // riz
+      "terra1c05fe2rpe0fs80m3nhuj952mt48amag75cyyu2", // Innocence Project of Texas
+      "terra14gspqs563mv6q7v46s60exuc90w6u9k62wjq4s", // AfgFree
+      "terra15jf75r43qrgr8xgppmzas7aelpsumpzvq6d8vl", // Marine Megafauna Foundation
+      "terra10s24t8h939dtpqgvq77f23peam84ugv5n7y82r", // Isles
+      "terra1yeqqexpkl230ca4kz4w88ne7vqzur4cncp3p5j", // 5Gyres
+      "terra1d907r2n4j6k5xw7gw4qfphtlhvf0p36u2d8ydw", // CASD-SL
+      "terra186zn38vk3qd405qgstr357cqu3p9axa2dr3fcf", // Civics Unplugged
+      "terra1le244gz3ah64m25lxgemwwgnqlm3px8skwxx5r", // Ensemble Mik Nawooj
+      "terra1wqx4frruqnn8nkeca7w35q34nd8g7p67tyk9n9", // The Institute for Citizens and Scholars
+      "terra1s6n0aq4uqla263yjjn4ze8j544ephtqkrsach0", // For A Day Foundation
     ],
   },
   members: [
