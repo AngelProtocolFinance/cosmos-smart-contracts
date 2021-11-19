@@ -548,7 +548,6 @@ pub fn rotate_fund(
     let active_funds: Vec<IndexFund> = funds
         .into_iter()
         .filter(|fund| !fund.is_expired(env_height, env_time))
-        // .filter(|fund| fund.rotating_fund == Some(true))
         .collect();
     let curr_fund_index = active_funds
         .iter()
