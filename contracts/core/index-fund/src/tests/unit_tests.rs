@@ -233,6 +233,19 @@ fn sc_owner_can_add_remove_funds() {
             expiry_height: None,
         },
     };
+
+    let new_fund_msg1 = ExecuteMsg::CreateFund {
+        fund: IndexFund {
+            id: 14,
+            name: String::from("Ending Hunger"),
+            description: String::from("Some fund of charities"),
+            members: vec![],
+            rotating_fund: Some(true),
+            split_to_liquid: None,
+            expiry_time: None,
+            expiry_height: None,
+        },
+    };
     let remove_fund_msg = ExecuteMsg::RemoveFund{ fund_id: 13 };
 
     // pleb cannot add funds (only SC owner should be able to)
@@ -242,13 +255,14 @@ fn sc_owner_can_add_remove_funds() {
 
     // real SC owner adds a fund
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
-    let res = execute(deps.as_mut(), mock_env(), info, new_fund_msg.clone()).unwrap();
+    let res = execute(deps.as_mut(), mock_env(), info.clone(), new_fund_msg.clone()).unwrap();
+    let _res = execute(deps.as_mut(), mock_env(), info, new_fund_msg1).unwrap();
     assert_eq!(0, res.messages.len());
 
     // check that the fund can be fetched in a query to FundsList
     let res = query(deps.as_ref(), mock_env(), QueryMsg::FundsList {}).unwrap();
     let value: FundListResponse = from_binary(&res).unwrap();
-    assert_eq!(1, value.funds.len());
+    assert_eq!(2, value.funds.len());
 
     // pleb cannot remove funds (only SC owner should be able to)
     let info = mock_info(&pleb.clone(), &coins(1000, "earth"));
@@ -263,9 +277,14 @@ fn sc_owner_can_add_remove_funds() {
     // check that the fund in FundsList is expired
     let res = query(deps.as_ref(), mock_env(), QueryMsg::FundsList {}).unwrap();
     let value: FundListResponse = from_binary(&res).unwrap();
-    assert_eq!(1, value.funds.len());
+    assert_eq!(2, value.funds.len());
     assert_ne!(value.funds[0].expiry_height, None);
     assert_eq!(value.funds[0].expiry_height, Some(mock_env().block.height));
+
+    // check active fund after remove current fund
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::ActiveFundDetails {}).unwrap();
+    let value: FundDetailsResponse = from_binary(&res).unwrap();
+    assert_eq!(14, value.fund.unwrap().id);
 }
 
 #[test]
