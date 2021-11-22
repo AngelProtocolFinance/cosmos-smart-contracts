@@ -548,7 +548,7 @@ pub fn rotate_fund(
     let active_funds: Vec<IndexFund> = funds
         .into_iter()
         .filter(|fund| !fund.is_expired(env_height, env_time))
-        // .filter(|fund| fund.rotating_fund == Some(true))
+        .filter(|fund| fund.rotating_fund == Some(true))
         .collect();
     let curr_fund_index = active_funds
         .iter()
@@ -564,7 +564,18 @@ pub fn rotate_fund(
                 active_funds[fund_index + 1].id
             }
         },
-        None => active_funds[0].id
+        None => {
+            let filter_funds: Vec<IndexFund> = active_funds
+                .clone()
+                .into_iter()
+                .filter(|fund| fund.id > curr_fund)
+                .collect();
+            if filter_funds.len() > 0 {
+                filter_funds[0].id
+            } else {
+                active_funds[0].id
+            }
+        }
     };
     new_fund_id
 }
