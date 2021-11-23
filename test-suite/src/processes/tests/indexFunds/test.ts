@@ -89,8 +89,8 @@ export async function testUpdatingIndexFundConfigs(
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       update_config: {
-        funding_goal: undefined,
-        fund_rotation: 1000000,
+        funding_goal: 10000000000,
+        fund_rotation: undefined,
       }
     }),
   ]);
