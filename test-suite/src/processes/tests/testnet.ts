@@ -12,6 +12,8 @@ import {
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
   testUpdateFundMembers,
+  testCreateIndexFund,
+  testRemoveIndexFund,
   testQueryIndexFundActiveFundDetails,
   testQueryIndexFundActiveFundDonations,
   testQueryIndexFundConfig,
@@ -19,9 +21,7 @@ import {
   testQueryIndexFundFundDetails,
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
-  testQueryIndexFundTcaList,
-  testRemoveIndexFund,
-  testCreateIndexFund
+  testQueryIndexFundTcaList
 } from "./indexFunds/test";
 import {
   testAddApTeamMemberToC4Group,
@@ -69,6 +69,10 @@ export async function testExecute(
 ): Promise<void> {
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // testRemoveIndexFund(terra, apTeam, indexFund, 5);
+  // await testCreateIndexFund(terra, apTeam, indexFund, 11, "MVP Rotation #5", "Fund collection for MVP", true, [
+    // "", // New funds go here!!
+  // ]);
   // Guardian angels multisig test
   // await testAddApTeamMemberToC4Group(terra, apTeam, apTeam3, cw3ApTeam, cw4GrpApTeam);
   // await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);

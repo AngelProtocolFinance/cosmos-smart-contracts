@@ -8,6 +8,8 @@ import {
 import {
   testUpdatingIndexFundConfigs,
   testUpdateFundMembers,
+  testCreateIndexFund,
+  testRemoveIndexFund,
   testQueryIndexFundActiveFundDetails,
   testQueryIndexFundActiveFundDonations,
   testQueryIndexFundConfig,
@@ -39,6 +41,10 @@ export async function testExecute(
 ): Promise<void> {
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // await testCreateIndexFund(terra, apTeam, indexFund, 11, "MVP Rotation #5", "Fund collection for MVP", true, [
+  //   // "", // New funds go here!!
+  // ]);
+  // await testRemoveIndexFund(terra, apTeam, indexFund, 5);
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 1, [], ["",""]);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, ["",""], []);

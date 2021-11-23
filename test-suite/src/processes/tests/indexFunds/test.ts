@@ -158,6 +158,7 @@ export async function testCreateIndexFund(
   fund_id: number,
   name: string,
   description: string,
+  rotating_fund: boolean,
   members: string[]
 ): Promise<void> {
   process.stdout.write("Test - SC owner can create index fund");
@@ -173,6 +174,7 @@ export async function testCreateIndexFund(
               name: name,
               description: description,
               members: members,
+              rotating_fund: rotating_fund,
             }
           }
         }
