@@ -42,13 +42,10 @@ export async function testExecute(
 ): Promise<void> {
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
-  await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
+  // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
   // await testUpdateFundMembers(terra, apTeam, indexFund, ??, [
-  //   "terra1yeqqexpkl230ca4kz4w88ne7vqzur4cncp3p5j", // 5Gyres
-  //   "", // Global Brigades
-  //   "", // SELF
+  //   "terra1yeqqexpkl230ca4kz4w88ne7vqzur4cncp3p5j"
   // ], []);
-  // await testRemoveIndexFund(terra, apTeam, indexFund, 3);
   // await testUpdateAngelAllianceMembers(terra, apTeam, indexFund, [
   //   "terra1zxtczmxtw8mk8xncvr8lcq2qmvk4dz88ek6f79", // community
   //   "terra18n2pc9x6q9str9dz8sqpt7ulz5telutclkzaec", // lunapes

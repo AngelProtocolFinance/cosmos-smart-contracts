@@ -71,7 +71,7 @@ export async function testExecute(
 ): Promise<void> {
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
-  await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
+  // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
   // await testUpdateAngelAllianceMembers(terra, apTeam, indexFund, [
   //   "terra178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // testnet admin (testnet ONLY!)
   //   "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // charity#1 (testnet ONLY!)
