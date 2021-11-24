@@ -14,6 +14,7 @@ import {
   testUpdateFundMembers,
   testUpdateAngelAllianceMembers,
   testUpdatingIndexFundConfigs,
+  testCreateIndexFund,
   testRemoveIndexFund,
   testQueryIndexFundActiveFundDetails,
   testQueryIndexFundActiveFundDonations,
@@ -90,6 +91,10 @@ export async function testExecute(
   //   "terra1amrl8f5fqen2m478nuh2z7mz5ce096x4xqae9p", // Woof of Luna
   //   "terra1hxrd8pnqytqpelape3aemprw3a023wryw7p0xn", // ApolloDAO
   // ]);
+  // testRemoveIndexFund(terra, apTeam, indexFund, 5);
+  // await testCreateIndexFund(terra, apTeam, indexFund, 11, "MVP Rotation #5", "Fund collection for MVP", true, [
+    // "", // New funds go here!!
+  // ]);
   // Guardian angels multisig test
   // await testAddApTeamMemberToC4Group(terra, apTeam, apTeam3, cw3ApTeam, cw4GrpApTeam);
   // await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);
@@ -105,6 +110,8 @@ export async function testExecute(
   // await testClosingEndpoint(terra, apTeam, registrar, endowmentContract3, endowmentContract4);
   // await testMigrateAllAccounts(terra, apTeam, registrar);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, [endowmentContract2], [endowmentContract4]);
+  // testCreateIndexFund(terra, apTeam, indexFund, 5, "Test fund", "My 5th test fund", [endowmentContract2, endowmentContract3, endowmentContract4]);
+  // testRemoveIndexFund(terra, apTeam, indexFund, 1);
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);

@@ -30,7 +30,7 @@ export async function migrateContracts(
   // await migrateApTeamMultisig(terra, apTeam, cw3ApTeam);
   // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
   // await migrateIndexFund(terra, apTeam, indexFund);
-  await migrateAccounts(terra, apTeam, registrar, endowmentContracts);
+  // await migrateAccounts(terra, apTeam, registrar, endowmentContracts);
   // await migrateVaults(terra, apTeam, vaultContracts);
 }
 

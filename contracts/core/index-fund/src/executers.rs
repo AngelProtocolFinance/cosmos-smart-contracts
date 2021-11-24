@@ -7,7 +7,7 @@ use angel_core::structs::{AcceptedTokens, IndexFund, SplitDetails};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    QueryRequest, Response, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20ReceiveMsg};
 
@@ -150,7 +150,7 @@ pub fn remove_index_fund(
     // this will fail if fund ID passed is not found
     let mut fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
 
-    if fund.is_expired(&env) {
+    if fund.is_expired(env.block.height, env.block.time) {
         return Err(ContractError::IndexFundExpired {});
     }
 
@@ -160,6 +160,17 @@ pub fn remove_index_fund(
 
     // decrement state funds totals
     let mut state = STATE.load(deps.storage)?;
+    // check if this is the active fund, update the active_fund using rotate_fund
+    if state.active_fund == fund_id {
+        let new_fund_id = rotate_fund(
+            read_funds(deps.storage).unwrap(),
+            fund_id,
+            env.block.height,
+            env.block.time,
+        );
+        
+        state.active_fund = new_fund_id;
+    }
     state.total_funds -= 1;
     STATE.save(deps.storage, &state)?;
 
@@ -182,7 +193,7 @@ pub fn update_fund_members(
     // this will fail if fund ID passed is not found
     let mut fund = fund_store(deps.storage).load(&fund_id.to_be_bytes())?;
 
-    if fund.is_expired(&env) {
+    if fund.is_expired(env.block.height, env.block.time) {
         return Err(ContractError::IndexFundExpired {});
     }
 
@@ -303,24 +314,25 @@ pub fn deposit(
     }
 
     // check if block height limit is exceeded
-    match config.fund_rotation {
-        Some(blocks) => {
-            match env.block.height >= state.next_rotation_block {
-                true => {
-                    // update STATE with new active fund & reset round donations
-                    let new_fund_id =
-                        rotate_fund(read_funds(deps.storage).unwrap(), state.active_fund);
-                    state.active_fund = new_fund_id;
-                    state.round_donations = Uint128::zero();
-                    // increment next block rotation point until it exceeds the current block height
-                    while env.block.height >= state.next_rotation_block {
-                        state.next_rotation_block += blocks;
-                    }
+    if let Some(blocks) = config.fund_rotation {
+        match env.block.height >= state.next_rotation_block {
+            true => {
+                // update STATE with new active fund & reset round donations
+                let new_fund_id = rotate_fund(
+                    read_funds(deps.storage).unwrap(),
+                    state.active_fund,
+                    env.block.height,
+                    env.block.time,
+                );
+                state.active_fund = new_fund_id;
+                state.round_donations = Uint128::zero();
+                // increment next block rotation point until it exceeds the current block height
+                while env.block.height >= state.next_rotation_block {
+                    state.next_rotation_block += blocks;
                 }
-                false => (),
             }
+            false => (),
         }
-        None => (),
     };
 
     // Get the Registrar SC Split to liquid parameters
@@ -331,7 +343,7 @@ pub fn deposit(
         }))?;
     let registrar_split_configs: SplitDetails = registrar_config.split_to_liquid;
 
-    let mut donation_messages = vec![];
+    let mut donation_messages: Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))> = vec![];
 
     // check if active fund donation or if there a provided fund ID
     match msg.fund_id {
@@ -339,7 +351,7 @@ pub fn deposit(
         Some(fund_id) => {
             let fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
             // double check the given fund is not expired
-            if fund.is_expired(&env) {
+            if fund.is_expired(env.block.height, env.block.time) {
                 return Err(ContractError::IndexFundExpired {});
             }
             let split = calculate_split(
@@ -348,12 +360,8 @@ pub fn deposit(
                 fund.split_to_liquid,
                 msg.split,
             );
-            donation_messages.append(&mut build_donation_messages(
-                deps.as_ref(),
-                fund.members,
-                split,
-                deposit_amount,
-            ));
+            donation_messages =
+                update_donation_messages(&donation_messages, fund.members, split, deposit_amount);
         }
         // Active Fund donation, check donation limits
         None => {
@@ -365,7 +373,7 @@ pub fn deposit(
                         let fund =
                             fund_read(deps.storage).load(&state.active_fund.to_be_bytes())?;
                         // double check the given fund is not expired
-                        if fund.is_expired(&env) {
+                        if fund.is_expired(env.block.height, env.block.time) {
                             return Err(ContractError::IndexFundExpired {});
                         }
                         // donate up to the donation goal limit to this round's active fund
@@ -373,8 +381,12 @@ pub fn deposit(
                         if deposit_amount >= goal_leftover {
                             state.round_donations = Uint128::zero();
                             // set state active fund to next fund for next loop iteration
-                            state.active_fund =
-                                rotate_fund(read_funds(deps.storage).unwrap(), state.active_fund);
+                            state.active_fund = rotate_fund(
+                                read_funds(deps.storage).unwrap(),
+                                state.active_fund,
+                                env.block.height,
+                                env.block.time,
+                            );
                             loop_donation = goal_leftover;
                         } else {
                             state.round_donations += deposit_amount;
@@ -387,12 +399,12 @@ pub fn deposit(
                             msg.split,
                         );
 
-                        donation_messages.append(&mut build_donation_messages(
-                            deps.as_ref(),
+                        donation_messages = update_donation_messages(
+                            &donation_messages,
                             fund.members,
                             split,
                             loop_donation,
-                        ));
+                        );
                         // deduct donated amount in this round from total donation amt
                         deposit_amount -= loop_donation;
                     }
@@ -401,21 +413,21 @@ pub fn deposit(
                     // no funding goal, dump all donated funds into current active fund
                     let fund = fund_read(deps.storage).load(&state.active_fund.to_be_bytes())?;
                     // double check the given fund is not expired
-                    if fund.is_expired(&env) {
+                    if fund.is_expired(env.block.height, env.block.time) {
                         return Err(ContractError::IndexFundExpired {});
                     }
                     let split = calculate_split(
                         tca_member,
-                        registrar_split_configs.clone(),
+                        registrar_split_configs,
                         fund.split_to_liquid,
                         msg.split,
                     );
-                    donation_messages.append(&mut build_donation_messages(
-                        deps.as_ref(),
+                    donation_messages = update_donation_messages(
+                        &donation_messages,
                         fund.members,
                         split,
                         deposit_amount,
-                    ));
+                    );
                 }
             };
         }
@@ -424,7 +436,7 @@ pub fn deposit(
     STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
-        .add_submessages(donation_messages)
+        .add_submessages(build_donation_messages(deps.as_ref(), donation_messages))
         .add_attribute("action", "deposit"))
 }
 
@@ -462,22 +474,16 @@ pub fn calculate_split(
 
 pub fn build_donation_messages(
     deps: Deps,
-    members: Vec<Addr>,
-    split: Decimal,
-    balance: Uint128,
+    donation_messages: Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))>,
 ) -> Vec<SubMsg> {
-    // set split percentages between locked & liquid accounts
-    let member_portion = balance
-        .checked_div(Uint128::from(members.len() as u128))
-        .unwrap();
     let mut messages = vec![];
-    for member in members.iter() {
+    for member in donation_messages.iter() {
         messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: member.to_string(),
+            contract_addr: member.0.to_string(),
             msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
                 angel_core::messages::accounts::DepositMsg {
-                    locked_percentage: Decimal::one() - split,
-                    liquid_percentage: split,
+                    locked_percentage: member.1 .1,
+                    liquid_percentage: member.2 .1,
                 },
             ))
             .unwrap(),
@@ -485,7 +491,7 @@ pub fn build_donation_messages(
                 deps,
                 Coin {
                     denom: "uusd".to_string(),
-                    amount: member_portion,
+                    amount: member.1 .0 + member.2 .0,
                 },
             )
             .unwrap()],
@@ -494,18 +500,84 @@ pub fn build_donation_messages(
     messages
 }
 
-pub fn rotate_fund(funds: Vec<IndexFund>, curr_fund: u64) -> u64 {
-    let new_fund;
-    let curr_fund_index = funds.iter().position(|fund| fund.id == curr_fund).unwrap();
-    if curr_fund_index < funds.len() - 1usize {
-        // get the next fund in the index
-        new_fund = funds[curr_fund_index + 1usize].id;
-    } else {
-        // go back to the start of the funds list
-        new_fund = funds[0usize].id;
+pub fn update_donation_messages(
+    donation_messages: &Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))>,
+    members: Vec<Addr>,
+    split: Decimal,
+    balance: Uint128,
+) -> Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))> {
+    // set split percentages between locked & liquid accounts
+    let member_portion = balance
+        .checked_div(Uint128::from(members.len() as u128))
+        .unwrap();
+    let lock_split = Decimal::one() - split;
+    let mut donation_messages = donation_messages.clone();
+
+    for member in members.iter() {
+        let pos = donation_messages
+            .clone()
+            .into_iter()
+            .position(|msg| &msg.0 == member);
+
+        if pos != None {
+            // member addr already exists in the messages vec. Update values.
+            let mut msg_data = donation_messages[pos.unwrap()].clone();
+            msg_data.1 .0 += member_portion * lock_split;
+            msg_data.1 .1 = lock_split;
+            msg_data.2 .0 += member_portion * split;
+            msg_data.2 .1 = split;
+            donation_messages[pos.unwrap()] = msg_data;
+        } else {
+            // add new entry for the member
+            donation_messages.push((
+                member.clone(), // Addr
+                (member_portion * lock_split, lock_split),
+                (member_portion * split, split),
+            ));
+        }
     }
-    // return the fund ID
-    new_fund
+    donation_messages
+}
+
+pub fn rotate_fund(
+    funds: Vec<IndexFund>,
+    curr_fund: u64,
+    env_height: u64,
+    env_time: Timestamp,
+) -> u64 {
+    let active_funds: Vec<IndexFund> = funds
+        .into_iter()
+        .filter(|fund| !fund.is_expired(env_height, env_time))
+        .filter(|fund| fund.rotating_fund == Some(true))
+        .collect();
+    let curr_fund_index = active_funds
+        .iter()
+        .position(|fund| fund.id == curr_fund);
+
+    let new_fund_id = match curr_fund_index {
+        Some(fund_index) => {
+            if fund_index == (active_funds.len() - 1) {
+                // go back to the start of the funds list
+                active_funds[0].id
+            } else {
+                // get the next fund in the index
+                active_funds[fund_index + 1].id
+            }
+        },
+        None => {
+            let filter_funds: Vec<IndexFund> = active_funds
+                .clone()
+                .into_iter()
+                .filter(|fund| fund.id > curr_fund)
+                .collect();
+            if filter_funds.len() > 0 {
+                filter_funds[0].id
+            } else {
+                active_funds[0].id
+            }
+        }
+    };
+    new_fund_id
 }
 
 #[cfg(test)]
@@ -522,6 +594,7 @@ mod test {
             split_to_liquid: None,
             expiry_time: None,
             expiry_height: None,
+            rotating_fund: Some(true),
         };
         let index_fund_2 = IndexFund {
             id: 2,
@@ -531,13 +604,87 @@ mod test {
             split_to_liquid: None,
             expiry_time: None,
             expiry_height: None,
+            rotating_fund: Some(true),
         };
 
-        let new_fund_1 = rotate_fund(vec![index_fund_1.clone()], 1);
+        let new_fund_1 = rotate_fund(
+            vec![index_fund_1.clone()],
+            1,
+            10,
+            Timestamp::from_seconds(100),
+        );
         assert_eq!(new_fund_1, 1);
-        let new_fund_2 = rotate_fund(vec![index_fund_1.clone(), index_fund_2.clone()], 1);
+        let new_fund_2 = rotate_fund(
+            vec![index_fund_1.clone(), index_fund_2.clone()],
+            1,
+            10,
+            Timestamp::from_seconds(100),
+        );
         assert_eq!(new_fund_2, 2);
-        let new_fund_3 = rotate_fund(vec![index_fund_1, index_fund_2], 2);
+        let new_fund_3 = rotate_fund(
+            vec![index_fund_1, index_fund_2],
+            2,
+            10,
+            Timestamp::from_seconds(100),
+        );
+        assert_eq!(new_fund_3, 1);
+    }
+
+    #[test]
+    fn rotate_funds_with_expired_funds() {
+        let index_fund_1 = IndexFund {
+            id: 1,
+            name: "Fund #1".to_string(),
+            description: "Fund number 1 test rotation".to_string(),
+            members: vec![],
+            split_to_liquid: None,
+            expiry_time: None,
+            expiry_height: None,
+            rotating_fund: Some(true),
+        };
+        let index_fund_2 = IndexFund {
+            id: 2,
+            name: "Fund #2".to_string(),
+            description: "Fund number 2 test rotation".to_string(),
+            members: vec![],
+            split_to_liquid: None,
+            expiry_time: None,
+            expiry_height: Some(10),
+            rotating_fund: Some(false),
+        };
+        let index_fund_3 = IndexFund {
+            id: 3,
+            name: "Fund #3".to_string(),
+            description: "Fund number 3 test rotation".to_string(),
+            members: vec![],
+            split_to_liquid: None,
+            expiry_time: Some(1000),
+            expiry_height: Some(1000),
+            rotating_fund: Some(true),
+        };
+
+        let new_fund_1 = rotate_fund(
+            vec![index_fund_1.clone()],
+            1,
+            100,
+            Timestamp::from_seconds(10000),
+        );
+        assert_eq!(new_fund_1, 1);
+
+        let new_fund_2 = rotate_fund(
+            vec![index_fund_2.clone(), index_fund_1.clone()],
+            1,
+            100,
+            Timestamp::from_seconds(10000),
+        );
+        assert_eq!(new_fund_2, 1);
+
+        let new_fund_3 = rotate_fund(
+            vec![index_fund_3, index_fund_1, index_fund_2],
+            1,
+            100,
+            Timestamp::from_seconds(10000),
+        );
         assert_eq!(new_fund_3, 1);
     }
 

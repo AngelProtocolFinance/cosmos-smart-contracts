@@ -8,8 +8,9 @@ import {
 import {
   testUpdatingIndexFundConfigs,
   testUpdateFundMembers,
-  testRemoveIndexFund,
   testUpdateAngelAllianceMembers,
+  testCreateIndexFund,
+  testRemoveIndexFund,
   testQueryIndexFundActiveFundDetails,
   testQueryIndexFundActiveFundDonations,
   testQueryIndexFundConfig,
@@ -65,6 +66,13 @@ export async function testExecute(
   //   "terra1amrl8f5fqen2m478nuh2z7mz5ce096x4xqae9p", // Woof of Luna
   //   "terra1hxrd8pnqytqpelape3aemprw3a023wryw7p0xn", // ApolloDAO
   // ]);
+  // await testCreateIndexFund(terra, apTeam, indexFund, 11, "MVP Rotation #5", "Fund collection for MVP", true, [
+  //   // "", // New funds go here!!
+  // ]);
+  // await testRemoveIndexFund(terra, apTeam, indexFund, 5);
+  // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
+  // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 1, [], ["",""]);
+  // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, ["",""], []);
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);

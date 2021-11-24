@@ -38,7 +38,7 @@ export async function testDonorSendsToIndexFund(
       ),
     ])
   ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Failed!"));
+  console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
@@ -63,18 +63,18 @@ export async function testTcaMemberSendsToIndexFund(
         { deposit: { fund_id: undefined, split: undefined, }, },
         { uusd: "30000000", }
       ),
-      new MsgExecuteContract(
-        tca.key.accAddress,
-        indexFund,
-        { deposit: { fund_id: 1, split: undefined, }, },
-        { uusd: "40000000", }
-      ),
-      new MsgExecuteContract(
-        tca.key.accAddress,
-        indexFund,
-        { deposit: { fund_id: 1, split: "0.76", }, },
-        { uusd: "40000000", }
-      ),
+      // new MsgExecuteContract(
+      //   tca.key.accAddress,
+      //   indexFund,
+      //   { deposit: { fund_id: 1, split: undefined, }, },
+      //   { uusd: "40000000", }
+      // ),
+      // new MsgExecuteContract(
+      //   tca.key.accAddress,
+      //   indexFund,
+      //   { deposit: { fund_id: 1, split: "0.76", }, },
+      //   { uusd: "40000000", }
+      // ),
     ])
   )
   console.log(chalk.green(" Passed!"));
@@ -89,25 +89,8 @@ export async function testUpdatingIndexFundConfigs(
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       update_config: {
-        funding_goal: 10000000000,
+        funding_goal: "10000000000",
         fund_rotation: undefined,
-      }
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
-}
-
-export async function testRemoveIndexFund(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  indexFund: string,
-  fund_id: number
-): Promise<void> {
-  process.stdout.write("AP Team removes an Index Fund");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      remove_fund: {
-        fund_id: fund_id,
       }
     }),
   ]);
@@ -154,6 +137,73 @@ export async function testUpdateFundMembers(
         indexFund,
         {
           update_members: { fund_id: fundId, add: add, remove: remove }
+        }
+      )
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: SC owner can create an Index Fund 
+//
+// SCENARIO:
+// Create index fund
+//----------------------------------------------------------------------------------------
+export async function testCreateIndexFund(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  indexFund: string,
+  fund_id: number,
+  name: string,
+  description: string,
+  rotating_fund: boolean,
+  members: string[]
+): Promise<void> {
+  process.stdout.write("Test - SC owner can create index fund");
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(
+        apTeam.key.accAddress, 
+        indexFund,
+        {
+          create_fund: {
+            fund: {
+              id: fund_id,
+              name: name,
+              description: description,
+              members: members,
+              rotating_fund: rotating_fund,
+            }
+          }
+        }
+      )
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: SC owner can remove an Index Fund 
+//
+// SCENARIO:
+// Remove index fund
+// Check if this index fund is active fund update the active fund by calling fund_rotate
+//----------------------------------------------------------------------------------------
+export async function testRemoveIndexFund(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  indexFund: string,
+  fundId: number,
+): Promise<void> {
+  process.stdout.write("Test - SC owner can remove index fund");
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(
+        apTeam.key.accAddress, 
+        indexFund,
+        {
+          remove_fund: { fund_id: fundId }
         }
       )
     ])
