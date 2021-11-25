@@ -17,6 +17,9 @@ import * as MainNet from "./environments/mainnet";
 		case "localterra_migrate":
 			await LocalNet.startMigrateContracts();
 			break;
+		case "localterra_terraswap":
+			await LocalNet.startSetupTerraSwapContracts();
+			break;
 		case "testnet":
 			await TestNet.startTest();
 			break;
@@ -26,6 +29,9 @@ import * as MainNet from "./environments/mainnet";
 		case "testnet_migrate":
 			await TestNet.startMigrateContracts();
 			break;
+		case "testnet_terraswap":
+			await TestNet.startSetupTerraSwapContracts();
+			break;
 		case "mainnet":
 			await MainNet.startTest();
 			break;
@@ -34,6 +40,9 @@ import * as MainNet from "./environments/mainnet";
 			break;
 		case "mainnet_migrate":
 			await MainNet.startMigrateContracts();
+			break;
+		case "mainnet_terraswap":
+			await MainNet.startSetupTerraSwapContracts();
 			break;
 		default:
 			console.log("Invalid command");

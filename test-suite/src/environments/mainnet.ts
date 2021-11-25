@@ -6,6 +6,7 @@ import chalk from "chalk";
 import { mainnet as config } from "../config/constants";
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts, Member } from "../processes/setupContracts/mainnet";
+import { setupTerraSwap } from "../processes/setupTerraSwap/realnet";
 import { testExecute } from "../processes/tests/mainnet";
 
 // -------------------------------------------------------------------------------------
@@ -27,6 +28,14 @@ let apTreasury: string;
 let members: Member[];
 let tcaMembers: string[];
 
+let accAddress: string;
+let tokenCodeId: number;
+let pairCodeId: number;
+let factoryCodeId: number;
+let factoryContract: string;
+let tokenContract: string;
+let pairContract: string;
+
 // -------------------------------------------------------------------------------------
 // initialize variables
 // -------------------------------------------------------------------------------------
@@ -34,7 +43,7 @@ function initialize() {
   terra = new LCDClient({
     URL: config.networkInfo.url,
     chainID: config.networkInfo.chainId,
-    gasPrices: { uusd: 0.5 },
+    gasPrices: { uusd: 0.15 },
     gasAdjustment: 1.2,
   });
   apTeam = terra.wallet(new MnemonicKey({mnemonic: config.mnemonicKeys.apTeam}));
@@ -62,6 +71,14 @@ function initialize() {
   console.log(`Use ${chalk.cyan(cw4GrpOwners)} as CW4 Endowment Owners Group`);
   console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
   console.log(`Use ${chalk.cyan(endowmentContracts)} as Endowment Contracts`);
+
+  accAddress = config.accAddress;
+  tokenCodeId = config.token_code_id;
+  pairCodeId = config.pair_code_id;
+  factoryCodeId = config.factory_code_id;
+  factoryContract = config.factory_contract;
+  tokenContract = config.token_contract;
+  pairContract = config.pair_contract;
 }
 
 // -------------------------------------------------------------------------------------
@@ -95,6 +112,29 @@ export async function startSetupContracts(): Promise<void> {
       tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
       funding_goal: "50000000", // funding goal
     },
+  );
+}
+
+// -------------------------------------------------------------------------------------
+// start setup TerraSwap contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupTerraSwapContracts(): Promise<void> {
+  console.log(chalk.blue("\nMainNet Columbus-5"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Setup contracts
+  console.log(chalk.yellow("\nStep 2. Contracts Setup"));
+  await setupTerraSwap(
+    terra,
+    apTeam,
+    accAddress,
+    tokenCodeId,
+    pairCodeId,
+    factoryCodeId,
+    factoryContract
   );
 }
 

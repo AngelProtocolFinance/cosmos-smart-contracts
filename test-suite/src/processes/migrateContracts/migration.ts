@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as path from "path";
 import chalk from "chalk";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { LCDClient, LocalTerra, Msg, MsgExecuteContract, MsgMigrateContract, Wallet } from "@terra-money/terra.js";
 import {
   sendTransaction,
   storeCode,
@@ -213,7 +213,6 @@ async function migrateAccounts(
   //     }
   //   }));
   // });
-
   // await prom;
   console.log(chalk.green(" Done!"));
 }
