@@ -198,21 +198,4 @@ async function migrateAccounts(
     }),
   ]);
   console.log(chalk.green(" Done!"));
-  
-  // process.stdout.write("Migrate Accounts contracts\n");
-  // let prom = Promise.resolve();
-  // endowmentContracts.forEach(endowment => {
-  //   // eslint-disable-next-line no-async-promise-executor
-  //   prom = prom.then(() => new Promise(async (resolve, reject) => {
-  //     try {
-  //       await migrateContract(terra, apTeam, apTeam, endowment, codeId, {});
-  //       console.log(chalk.green(`${endowment} - Completed`));
-  //       resolve();
-  //     } catch(e) {
-  //       reject(e);
-  //     }
-  //   }));
-  // });
-  // await prom;
-  console.log(chalk.green(" Done!"));
 }

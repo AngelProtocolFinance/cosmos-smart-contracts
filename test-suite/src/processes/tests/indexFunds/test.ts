@@ -23,21 +23,21 @@ export async function testDonorSendsToIndexFund(
   pleb: Wallet,
   indexFund: string
 ): Promise<void> {
-  process.stdout.write("Test - Donor (normal pleb) cannot send a UST donation to an Index Fund fund");
+  process.stdout.write("Test - Donor (normal pleb) can send a UST donation to an Index Fund fund");
 
   await expect(
     sendTransaction(terra, pleb, [
       new MsgExecuteContract(pleb.key.accAddress, indexFund,
         {
           deposit: {
-            fund_id: 1,
+            fund_id: 3,
             split: undefined,
           },
         },
         { uusd: "4200000", }
       ),
     ])
-  ).to.be.rejectedWith("Request failed with status code 400");
+  );
   console.log(chalk.green(" Passed!"));
 }
 
@@ -63,18 +63,18 @@ export async function testTcaMemberSendsToIndexFund(
         { deposit: { fund_id: undefined, split: undefined, }, },
         { uusd: "30000000", }
       ),
-      // new MsgExecuteContract(
-      //   tca.key.accAddress,
-      //   indexFund,
-      //   { deposit: { fund_id: 1, split: undefined, }, },
-      //   { uusd: "40000000", }
-      // ),
-      // new MsgExecuteContract(
-      //   tca.key.accAddress,
-      //   indexFund,
-      //   { deposit: { fund_id: 1, split: "0.76", }, },
-      //   { uusd: "40000000", }
-      // ),
+      new MsgExecuteContract(
+        tca.key.accAddress,
+        indexFund,
+        { deposit: { fund_id: 3, split: undefined, }, },
+        { uusd: "40000000", }
+      ),
+      new MsgExecuteContract(
+        tca.key.accAddress,
+        indexFund,
+        { deposit: { fund_id: 3, split: "0.76", }, },
+        { uusd: "40000000", }
+      ),
     ])
   )
   console.log(chalk.green(" Passed!"));

@@ -162,14 +162,12 @@ pub fn remove_index_fund(
     let mut state = STATE.load(deps.storage)?;
     // check if this is the active fund, update the active_fund using rotate_fund
     if state.active_fund == fund_id {
-        let new_fund_id = rotate_fund(
+        state.active_fund = rotate_fund(
             read_funds(deps.storage).unwrap(),
             fund_id,
             env.block.height,
             env.block.time,
         );
-        
-        state.active_fund = new_fund_id;
     }
     state.total_funds -= 1;
     STATE.save(deps.storage, &state)?;
@@ -343,9 +341,10 @@ pub fn deposit(
     // check if active fund donation or if there a provided fund ID
     match msg.fund_id {
         // A Fund ID was provided, simple donation of all to one fund
-        Some(fund_id) => {
-            let fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
-            // double check the given fund is not expired
+        Some(id) => {
+            let fund = fund_read(deps.storage).load(&id.to_be_bytes())?;
+
+            // double check the given fund is valid & not expired
             if fund.is_expired(env.block.height, env.block.time) {
                 return Err(ContractError::IndexFundExpired {});
             }
@@ -363,8 +362,8 @@ pub fn deposit(
             match config.funding_goal {
                 Some(_goal) => {
                     // loop active fund until the donation amount has been fully distributed
+                    let mut loop_donation;
                     while deposit_amount > Uint128::zero() {
-                        let loop_donation;
                         let fund =
                             fund_read(deps.storage).load(&state.active_fund.to_be_bytes())?;
                         // double check the given fund is not expired
@@ -542,12 +541,9 @@ pub fn rotate_fund(
 ) -> u64 {
     let active_funds: Vec<IndexFund> = funds
         .into_iter()
-        .filter(|fund| !fund.is_expired(env_height, env_time))
-        .filter(|fund| fund.rotating_fund == Some(true))
+        .filter(|fund| !fund.is_expired(env_height, env_time) && fund.rotating_fund == Some(true))
         .collect();
-    let curr_fund_index = active_funds
-        .iter()
-        .position(|fund| fund.id == curr_fund);
+    let curr_fund_index = active_funds.iter().position(|fund| fund.id == curr_fund);
 
     let new_fund_id = match curr_fund_index {
         Some(fund_index) => {
@@ -558,7 +554,7 @@ pub fn rotate_fund(
                 // get the next fund in the index
                 active_funds[fund_index + 1].id
             }
-        },
+        }
         None => {
             let filter_funds: Vec<IndexFund> = active_funds
                 .clone()
