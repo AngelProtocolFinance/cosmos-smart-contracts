@@ -124,6 +124,26 @@ export const mainnet = {
       "terra1lalzy8rvkg3j2qm4a2x74lm6lxfa3llz7kdkdp",
       "terra1ngnqymglanujrhs09qakyz84k4v6cw9yyjwp0t",
       "terra1u0dls462h33j3fgg4j98wpa5qculnq2u749qc5",
+      "terra17we0qdmf7gdnqrwtur52kn6898sf7tkxd8plq0",
+      "terra1ex254ats3kd3t6tm7dj72e90vstvz59su2mvnq",
+      "terra1fwkfncjwqnpw8snvtr20vjg3csqzeduznae628",
+      "terra1cndqxysafnuvd2m7kd60vfh65qa4jdnx4l9p2f",
+      "terra1c5kpr9pxnpfmznzhhz7cg7j5s0algnc8tk5kj6",
+      "terra1d63nva4f7fdzlq5pnvs2wy3wkuh2qlaj77xpzr", // lay
+      "terra19yy0g7jawqcfsh78e0zvywyagzezrjdhtuf94s", // foodbank
+      "terra1aj240zlu6pg4yj6t2zqa6zu9dz5n5ez829cz22", // impact
+      "terra1f5d62v4965gk3jvtffle6g722khgmt669dwmst", // childrenreach
+      "terra1ah48pqeyrue2rrmfum094vqc3v7w7dhgy3zama", // riz
+      "terra1c05fe2rpe0fs80m3nhuj952mt48amag75cyyu2", // Innocence Project of Texas
+      "terra14gspqs563mv6q7v46s60exuc90w6u9k62wjq4s", // AfgFree
+      "terra15jf75r43qrgr8xgppmzas7aelpsumpzvq6d8vl", // Marine Megafauna Foundation
+      "terra10s24t8h939dtpqgvq77f23peam84ugv5n7y82r", // Isles
+      "terra1yeqqexpkl230ca4kz4w88ne7vqzur4cncp3p5j", // 5Gyres
+      "terra1d907r2n4j6k5xw7gw4qfphtlhvf0p36u2d8ydw", // CASD-SL
+      "terra186zn38vk3qd405qgstr357cqu3p9axa2dr3fcf", // Civics Unplugged
+      "terra1le244gz3ah64m25lxgemwwgnqlm3px8skwxx5r", // Ensemble Mik Nawooj
+      "terra1wqx4frruqnn8nkeca7w35q34nd8g7p67tyk9n9", // The Institute for Citizens and Scholars
+      "terra1s6n0aq4uqla263yjjn4ze8j544ephtqkrsach0", // For A Day Foundation
     ],
   },
   members: [

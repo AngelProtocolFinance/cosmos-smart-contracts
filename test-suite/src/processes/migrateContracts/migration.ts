@@ -25,13 +25,13 @@ export async function migrateContracts(
   endowmentContracts: string[]
 ): Promise<void> {
   // run the migrations desired
-  await migrateRegistrar(terra, apTeam, registrar);
-  await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
-  await migrateApTeamMultisig(terra, apTeam, cw3ApTeam);
-  await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
-  await migrateIndexFund(terra, apTeam, indexFund);
-  await migrateAccounts(terra, apTeam, registrar, endowmentContracts);
-  await migrateVaults(terra, apTeam, vaultContracts);
+  // await migrateRegistrar(terra, apTeam, registrar);
+  // await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
+  // await migrateApTeamMultisig(terra, apTeam, cw3ApTeam);
+  // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
+  // await migrateIndexFund(terra, apTeam, indexFund);
+  // await migrateAccounts(terra, apTeam, registrar, endowmentContracts);
+  // await migrateVaults(terra, apTeam, vaultContracts);
 }
 
 // -------------------------------------------------
@@ -199,26 +199,20 @@ async function migrateAccounts(
   ]);
   console.log(chalk.green(" Done!"));
   
-  process.stdout.write("Migrate Accounts contracts\n");
-  let prom = Promise.resolve();
-  // eslint-disable-next-line no-async-promise-executor
-  prom = prom.then(() => new Promise(async (resolve, reject) => {
-    try {
-      const msgs: Msg[] = endowmentContracts.map(endowment => {
-        return new MsgMigrateContract(
-          apTeam.key.accAddress,
-          endowment,
-          codeId,
-          {}
-        );
-      });
-      const result = await sendTransaction(terra, apTeam, msgs);
-      resolve();
-    } catch(e) {
-      reject(e);
-    }
-  }));
-
-  await prom;
+  // process.stdout.write("Migrate Accounts contracts\n");
+  // let prom = Promise.resolve();
+  // endowmentContracts.forEach(endowment => {
+  //   // eslint-disable-next-line no-async-promise-executor
+  //   prom = prom.then(() => new Promise(async (resolve, reject) => {
+  //     try {
+  //       await migrateContract(terra, apTeam, apTeam, endowment, codeId, {});
+  //       console.log(chalk.green(`${endowment} - Completed`));
+  //       resolve();
+  //     } catch(e) {
+  //       reject(e);
+  //     }
+  //   }));
+  // });
+  // await prom;
   console.log(chalk.green(" Done!"));
 }
