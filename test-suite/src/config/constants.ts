@@ -115,7 +115,7 @@ export const mainnet = {
       "terra1c5kpr9pxnpfmznzhhz7cg7j5s0algnc8tk5kj6",
       "terra1d63nva4f7fdzlq5pnvs2wy3wkuh2qlaj77xpzr", // lay
       "terra19yy0g7jawqcfsh78e0zvywyagzezrjdhtuf94s", // foodbank
-      "terra1aj240zlu6pg4yj6t2zqa6zu9dz5n5ez829cz22", // impact 
+      "terra1aj240zlu6pg4yj6t2zqa6zu9dz5n5ez829cz22", // impact
       "terra1f5d62v4965gk3jvtffle6g722khgmt669dwmst", // childrenreach
       "terra1ah48pqeyrue2rrmfum094vqc3v7w7dhgy3zama", // riz
       "terra1c05fe2rpe0fs80m3nhuj952mt48amag75cyyu2", // Innocence Project of Texas

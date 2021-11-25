@@ -78,7 +78,7 @@ export async function setupContracts(
   await mainNet.initializeCharities(terra, apTeam, registrar, indexFund);
   await mainNet.setupEndowments();
   await mainNet.approveEndowments();
-  // await mainNet.createIndexFunds();
+  await mainNet.createIndexFunds();
 }
 
 async function setup(
