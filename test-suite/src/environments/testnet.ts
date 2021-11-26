@@ -45,6 +45,7 @@ let factoryCodeId: number;
 let factoryContract: string;
 let tokenContract: string;
 let pairContract: string;
+let routerContract: string;
 let apTreasury: string;
 
 // Angel/HALO contracts
@@ -119,10 +120,12 @@ function initialize() {
   factoryContract = config.factory_contract;
   tokenContract = config.token_contract;
   pairContract = config.pair_contract;
+  routerContract = config.router_contract;
 
-  console.log(`Use ${chalk.cyan(factoryContract)} as TerraSwap factory`);
+  console.log(`Use ${chalk.cyan(factoryContract)} as LBP factory`);
   console.log(`Use ${chalk.cyan(tokenContract)} as HALO token`);
-  console.log(`Use ${chalk.cyan(pairContract)} as HALO/UST pair`);
+  console.log(`Use ${chalk.cyan(pairContract)} as LBP HALO/UST pair`);
+  console.log(`Use ${chalk.cyan(routerContract)} as LBP router`);
 
   haloAirdrop = config.halo.airdrop_contract;
   haloCollector = config.halo.collector_contract;
@@ -349,5 +352,9 @@ export async function startTest(): Promise<void> {
     haloGov,
     haloStaking,
     haloVesting,
+    factoryContract,
+    pairContract,
+    tokenContract,
+    routerContract
   );
 }

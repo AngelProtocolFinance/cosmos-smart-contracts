@@ -100,6 +100,23 @@ import {
   testQueryVestingAccount,
   testQueryVestingAccounts
 } from "./halo/vesting";
+import {
+  testFactoryUpdateConfig,
+  testQueryFactoryConfig,
+  testQueryPair,
+  testQueryPairs
+} from "./lbp/factory";
+import {
+  testPairProvideLiquidity,
+  testPairSwap,
+  testQueryPairPair,
+  testQueryPairPool,
+  testQueryPairSimulation,
+  testQueryPairReverseSimulation
+} from "./lbp/pair";
+import {
+  testQueryRouterConfig
+} from "./lbp/router";
 
 export async function testExecute(
   terra: LocalTerra | LCDClient,
@@ -130,6 +147,10 @@ export async function testExecute(
   haloGov: string,
   haloStaking: string,
   haloVesting: string,
+  factoryContract: string,
+  pairContract: string,
+  tokenContract: string,
+  routerContract: string,
 ): Promise<void> {
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
@@ -242,4 +263,22 @@ export async function testExecute(
   // await testQueryStakingConfig(terra, haloStaking);
   // await testQueryStakingStakerInfo(terra, haloStaking, "addr000", undefined);
   // await testQueryStakingState(terra, haloStaking);
+
+  // Test query for LBP factory
+  // await testFactoryUpdateConfig(terra, apTeam, pleb, factoryContract, undefined, undefined, undefined);
+  // await testQueryFactoryConfig(terra, factoryContract);
+  // await testQueryPair(terra, factoryContract, tokenContract);
+  // await testQueryPairs(terra, factoryContract);
+
+  // // Test query for LBP pair
+  // await testPairProvideLiquidity(terra, apTeam, pairContract, tokenContract);
+  // await testPairSwap(terra, apTeam, pairContract);
+  // await testQueryPairPair(terra, pairContract);
+  // await testQueryPairPool(terra, pairContract);
+  // await testQueryPairSimulation(terra, pairContract);
+  // await testQueryPairReverseSimulation(terra, pairContract);
+
+  // // Test query for LBP router
+  // await testQueryRouterConfig(terra, routerContract);
+
 }
