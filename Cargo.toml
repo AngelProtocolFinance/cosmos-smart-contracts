@@ -2,6 +2,7 @@
 members = [
     "packages/angel_core",
     "packages/halo_token",
+    "packages/halo_lbp",
     "contracts/core/accounts",
     "contracts/core/index-fund",
     "contracts/core/registrar",
@@ -16,6 +17,10 @@ members = [
     "contracts/halo/gov",
     "contracts/halo/staking",
     "contracts/halo/vesting",
+    "contracts/lbp/factory",
+    "contracts/lbp/pair",
+    "contracts/lbp/router",
+    "contracts/lbp/token",
 ]
 
 exclude = []
