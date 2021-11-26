@@ -14,8 +14,8 @@ import * as MainNet from "./environments/mainnet";
 		case "localterra_setup":
 			await LocalNet.startSetupContracts();
 			break;
-		case "localterra_setup_terraswap":
-			await LocalNet.startSetupTerraSwapContracts();
+		case "localterra_setup_LBP":
+			await LocalNet.startSetupLBPContracts();
 			break;
 		case "localterra_setup_halo":
 			await LocalNet.startSetupHalo();
@@ -32,8 +32,8 @@ import * as MainNet from "./environments/mainnet";
 		case "testnet_setup":
 			await TestNet.startSetupContracts();
 			break;
-		case "testnet_setup_terraswap":
-			await TestNet.startSetupTerraSwapContracts();
+		case "testnet_setup_lbp":
+			await TestNet.startSetupLBPContracts();
 			break;
 		case "testnet_setup_halo":
 			await TestNet.startSetupHalo();
@@ -50,8 +50,8 @@ import * as MainNet from "./environments/mainnet";
 		case "mainnet_setup":
 			await MainNet.startSetupContracts();
 			break;
-		case "mainnet_setup_terraswap":
-			await MainNet.startSetupTerraSwapContracts();
+		case "mainnet_setup_lbp":
+			await MainNet.startSetupLBPContracts();
 			break;
 		case "mainnet_setup_halo":
 			await MainNet.startSetupHalo();

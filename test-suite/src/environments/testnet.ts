@@ -8,6 +8,7 @@ import { migrateHaloContracts } from "../processes/migrateContracts/migrateHalo"
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts } from "../processes/setupContracts/testnet";
 import { setupHalo } from "../processes/setupHalo/testnet";
+import { setupLBP } from "../processes/setupLBP/testnet";
 import { setupTerraSwap } from "../processes/setupTerraSwap/realnet";
 import { testExecute } from "../processes/tests/testnet";
 
@@ -182,23 +183,41 @@ export async function startSetupContracts(): Promise<void> {
   );
 }
 
+// // -------------------------------------------------------------------------------------
+// // setup TerraSwap contracts
+// // -------------------------------------------------------------------------------------
+// export async function startSetupTerraSwapContracts(): Promise<void> {
+//   console.log(chalk.blue("\nTestNet"));
+
+//   // Initialize environment information
+//   console.log(chalk.yellow("\nStep 1. Environment Info"));
+//   initialize();
+
+//   // Setup TerraSwap contracts
+//   console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
+//   await setupTerraSwap(
+//     terra,
+//     apTeam,
+//     tokenCodeId,
+//     factoryContract
+//   );
+// }
+
 // -------------------------------------------------------------------------------------
-// setup TerraSwap contracts
+// setup LBP contracts
 // -------------------------------------------------------------------------------------
-export async function startSetupTerraSwapContracts(): Promise<void> {
+export async function startSetupLBPContracts(): Promise<void> {
   console.log(chalk.blue("\nTestNet"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
   initialize();
 
-  // Setup TerraSwap contracts
+  // Setup LBP contracts
   console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
-  await setupTerraSwap(
+  await setupLBP(
     terra,
     apTeam,
-    tokenCodeId,
-    factoryContract
   );
 }
 
