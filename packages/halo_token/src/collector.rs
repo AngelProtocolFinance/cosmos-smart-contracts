@@ -17,7 +17,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     /// Update config interface
     /// to enable reward_factor / gov_contract update
-    UpdateConfig { 
+    UpdateConfig {
         reward_factor: Option<Decimal>,
         gov_contract: Option<String>,
     },
@@ -31,7 +31,7 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
-    Pair { denom: String }
+    Pair { denom: String },
 }
 
 // We define a custom struct for each query response

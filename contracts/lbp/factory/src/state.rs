@@ -4,9 +4,9 @@ use serde::{Deserialize, Serialize};
 use cosmwasm_std::{Addr, Deps, Order, StdError};
 
 use crate::error::ContractError;
+use cw_storage_plus::{Bound, Item, Map};
 use halo_lbp::asset::AssetInfo;
 use halo_lbp::factory::FactoryPairInfo;
-use cw_storage_plus::{Bound, Item, Map};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {

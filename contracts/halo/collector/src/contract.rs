@@ -38,7 +38,10 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::UpdateConfig { reward_factor, gov_contract } => update_config(deps, info, reward_factor, gov_contract),
+        ExecuteMsg::UpdateConfig {
+            reward_factor,
+            gov_contract,
+        } => update_config(deps, info, reward_factor, gov_contract),
         ExecuteMsg::Sweep { denom } => sweep(deps, env, denom),
     }
 }
@@ -185,7 +188,7 @@ pub fn distribute(deps: DepsMut, env: Env) -> StdResult<Response> {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::Pair { denom } => to_binary(&query_pair(deps, denom)?)
+        QueryMsg::Pair { denom } => to_binary(&query_pair(deps, denom)?),
     }
 }
 

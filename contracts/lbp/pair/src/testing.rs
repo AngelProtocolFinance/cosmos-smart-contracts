@@ -7,12 +7,6 @@ use proptest::prelude::*;
 
 use crate::error::ContractError;
 use crate::math::uint2dec;
-use halo_lbp::asset::{Asset, AssetInfo, PairInfo, WeightedAsset, WeightedAssetInfo};
-use halo_lbp::pair::{
-    Cw20HookMsg, ExecuteMsg, InstantiateMsg, PoolResponse, ReverseSimulationResponse,
-    SimulationResponse,
-};
-use halo_lbp::token::InstantiateMsg as TokenInstantiateMsg;
 use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -20,6 +14,12 @@ use cosmwasm_std::{
     ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse, Timestamp, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg, MinterResponse};
+use halo_lbp::asset::{Asset, AssetInfo, PairInfo, WeightedAsset, WeightedAssetInfo};
+use halo_lbp::pair::{
+    Cw20HookMsg, ExecuteMsg, InstantiateMsg, PoolResponse, ReverseSimulationResponse,
+    SimulationResponse,
+};
+use halo_lbp::token::InstantiateMsg as TokenInstantiateMsg;
 use std::str::FromStr;
 use std::time::{SystemTime, UNIX_EPOCH};
 

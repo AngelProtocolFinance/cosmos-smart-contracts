@@ -8,6 +8,8 @@ use crate::querier::compute_tax;
 use crate::state::{Config, CONFIG};
 
 use crate::error::ContractError;
+use cw2::set_contract_version;
+use cw20::Cw20ReceiveMsg;
 use halo_lbp::asset::{Asset, AssetInfo};
 use halo_lbp::factory::FactoryPairInfo;
 use halo_lbp::pair::{QueryMsg as PairQueryMsg, SimulationResponse};
@@ -16,8 +18,6 @@ use halo_lbp::router::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
     SimulateSwapOperationsResponse, SwapOperation,
 };
-use cw2::set_contract_version;
-use cw20::Cw20ReceiveMsg;
 use std::collections::HashMap;
 use terra_cosmwasm::{SwapResponse, TerraMsgWrapper, TerraQuerier};
 

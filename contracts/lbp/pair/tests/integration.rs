@@ -24,9 +24,9 @@ use cosmwasm_std::testing::{
 use cosmwasm_std::{attr, to_binary, Addr, Coin, Uint128};
 use terra_multi_test::{App, BankKeeper, ContractWrapper, Executor, TerraMockQuerier};
 
+use cw20::Cw20ExecuteMsg;
 use halo_lbp::asset::{Asset, AssetInfo, PairInfo, WeightedAssetInfo};
 use halo_lbp::pair::{Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg};
-use cw20::Cw20ExecuteMsg;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const OWNER: &str = "Owner";

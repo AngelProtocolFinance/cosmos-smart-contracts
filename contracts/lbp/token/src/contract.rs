@@ -7,8 +7,8 @@ use cw20_base::contract::{create_accounts, execute as cw20_execute, query as cw2
 use cw20_base::msg::{ExecuteMsg, QueryMsg};
 use cw20_base::state::{MinterData, TokenInfo, TOKEN_INFO};
 
-use halo_lbp::token::InstantiateMsg;
 use cw20_base::ContractError;
+use halo_lbp::token::InstantiateMsg;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "halo-lbp-token";

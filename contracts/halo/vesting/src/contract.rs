@@ -49,10 +49,10 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                 } => update_config(deps, owner, halo_token, genesis_time),
                 ExecuteMsg::RegisterVestingAccounts { vesting_accounts } => {
                     register_vesting_accounts(deps, vesting_accounts)
-                },
+                }
                 ExecuteMsg::UpdateVestingAccount { vesting_account } => {
                     update_vesting_account(deps, vesting_account)
-                },
+                }
                 _ => panic!("DO NOT ENTER HERE"),
             }
         }
@@ -116,7 +116,7 @@ pub fn register_vesting_accounts(
             Ok(mut vesting_info) => {
                 vesting_info.schedules = vesting_account.schedules.clone();
                 store_vesting_info(deps.storage, &vesting_address, &vesting_info)?;
-            },
+            }
             _ => {
                 store_vesting_info(
                     deps.storage,
@@ -142,7 +142,7 @@ pub fn update_vesting_account(
         Ok(mut vesting_info) => {
             vesting_info.schedules = vesting_account.schedules;
             store_vesting_info(deps.storage, &addr, &vesting_info)?;
-        },
+        }
         _ => {
             let config: Config = read_config(deps.storage)?;
             store_vesting_info(

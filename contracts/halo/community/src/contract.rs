@@ -39,7 +39,10 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::UpdateConfig { spend_limit, gov_contract } => update_config(deps, info, spend_limit, gov_contract),
+        ExecuteMsg::UpdateConfig {
+            spend_limit,
+            gov_contract,
+        } => update_config(deps, info, spend_limit, gov_contract),
         ExecuteMsg::Spend { recipient, amount } => spend(deps, info, recipient, amount),
     }
 }

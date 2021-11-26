@@ -7,12 +7,12 @@ use crate::querier::compute_tax;
 use crate::state::{Config, CONFIG};
 
 use crate::error::ContractError;
+use cw20::Cw20ExecuteMsg;
 use halo_lbp::asset::{Asset, AssetInfo};
 use halo_lbp::factory::FactoryPairInfo;
 use halo_lbp::pair::ExecuteMsg as PairExecuteMsg;
 use halo_lbp::querier::{query_balance, query_factory_pair_info, query_token_balance};
 use halo_lbp::router::SwapOperation;
-use cw20::Cw20ExecuteMsg;
 use terra_cosmwasm::{create_swap_msg, create_swap_send_msg, TerraMsgWrapper};
 
 /// Execute swap operation

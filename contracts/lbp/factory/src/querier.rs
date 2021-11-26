@@ -1,6 +1,6 @@
+use cosmwasm_std::{to_binary, Addr, Deps, QueryRequest, StdResult, WasmQuery};
 use halo_lbp::asset::PairInfo;
 use halo_lbp::pair::QueryMsg;
-use cosmwasm_std::{to_binary, Addr, Deps, QueryRequest, StdResult, WasmQuery};
 
 pub fn query_pair_info(deps: Deps, pair_contract: &Addr) -> StdResult<PairInfo> {
     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {

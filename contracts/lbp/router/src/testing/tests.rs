@@ -7,6 +7,7 @@ use crate::contract::{execute, instantiate, query};
 use crate::error::ContractError;
 use crate::testing::mock_querier::mock_dependencies;
 
+use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use halo_lbp::asset::{Asset, AssetInfo};
 use halo_lbp::factory::FactoryPairInfo;
 use halo_lbp::pair::ExecuteMsg as PairExecuteMsg;
@@ -14,7 +15,6 @@ use halo_lbp::router::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg,
     SimulateSwapOperationsResponse, SwapOperation,
 };
-use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use std::time::{SystemTime, UNIX_EPOCH};
 use terra_cosmwasm::{create_swap_msg, create_swap_send_msg};
 

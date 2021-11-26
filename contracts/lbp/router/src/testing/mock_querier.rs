@@ -7,10 +7,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+use cw20::{BalanceResponse, Cw20QueryMsg, TokenInfoResponse};
 use halo_lbp::asset::{Asset, AssetInfo};
 use halo_lbp::factory::FactoryPairInfo;
 use halo_lbp::pair::SimulationResponse;
-use cw20::{BalanceResponse, Cw20QueryMsg, TokenInfoResponse};
 use terra_cosmwasm::{
     SwapResponse, TaxCapResponse, TaxRateResponse, TerraQuery, TerraQueryWrapper, TerraRoute,
 };

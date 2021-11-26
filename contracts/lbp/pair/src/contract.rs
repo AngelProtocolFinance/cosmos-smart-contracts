@@ -3,13 +3,13 @@ use crate::response::MsgInstantiateContractResponse;
 
 use crate::state::PAIR_INFO;
 
-use halo_lbp::U256;
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
     attr, entry_point, from_binary, to_binary, Addr, Binary, Coin, CosmosMsg, Decimal, Deps,
     DepsMut, Env, MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
     WasmMsg,
 };
+use halo_lbp::U256;
 
 use crate::error::ContractError;
 use cw2::set_contract_version;

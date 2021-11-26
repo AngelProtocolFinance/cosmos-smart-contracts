@@ -9,9 +9,9 @@ use crate::mock_querier::mock_dependencies;
 
 use crate::state::{read_tmp_pair, CONFIG};
 
+use cosmwasm_std::testing::{mock_env, mock_info};
 use halo_lbp::asset::{AssetInfo, PairInfo, WeightedAssetInfo};
 use halo_lbp::factory::{ConfigResponse, ExecuteMsg, InstantiateMsg, PairsResponse, QueryMsg};
-use cosmwasm_std::testing::{mock_env, mock_info};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::response::MsgInstantiateContractResponse;
