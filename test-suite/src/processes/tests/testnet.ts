@@ -95,6 +95,7 @@ export async function testExecute(
   // await testCreateIndexFund(terra, apTeam, indexFund, 11, "MVP Rotation #5", "Fund collection for MVP", true, [
     // "", // New funds go here!!
   // ]);
+  // await testUpdateFundMembers(terra, apTeam, apTeam, indexFund, 6, ["","",""], ["","",""]);
   // Guardian angels multisig test
   // await testAddApTeamMemberToC4Group(terra, apTeam, apTeam3, cw3ApTeam, cw4GrpApTeam);
   // await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);
@@ -127,7 +128,7 @@ export async function testExecute(
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
   // await testQueryIndexFundFundsList(terra, indexFund);
-  // await testQueryIndexFundFundDetails(terra, indexFund);
+  // await testQueryIndexFundFundDetails(terra, indexFund, 3);
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);

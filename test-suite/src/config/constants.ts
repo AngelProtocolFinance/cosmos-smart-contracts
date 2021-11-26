@@ -144,6 +144,9 @@ export const mainnet = {
       "terra1le244gz3ah64m25lxgemwwgnqlm3px8skwxx5r", // Ensemble Mik Nawooj
       "terra1wqx4frruqnn8nkeca7w35q34nd8g7p67tyk9n9", // The Institute for Citizens and Scholars
       "terra1s6n0aq4uqla263yjjn4ze8j544ephtqkrsach0", // For A Day Foundation
+      "terra1xfecyvhwwet57fthejkle6a2suvehwwpeqzsj8", // Butte Country Local Food Network
+      "terra1hs0aqqfq0qm2jjrdhxsuerk7hcs9n2yuuft072", // Power of Nutrition
+      "terra1df9ek2ux6xka968jd5ze5ry5gj4zdwqy0z0jdu", // Ocean Web Alliance
     ],
   },
   members: [

@@ -268,11 +268,12 @@ export async function testQueryIndexFundFundsList(
 
 export async function testQueryIndexFundFundDetails(
   terra: LocalTerra | LCDClient,
-  indexFund: string
+  indexFund: string,
+  fund_id: number,
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund FundDetails");
   const result: any = await terra.wasm.contractQuery(indexFund, {
-    fund_details: { fund_id: 1 },
+    fund_details: { fund_id: fund_id },
   });
 
   console.log(result);
@@ -313,7 +314,7 @@ export async function testQueryIndexFundDeposit(
   const result: any = await terra.wasm.contractQuery(indexFund, {
     deposit: {
       amount: "100000000",
-      fund_id: undefined
+      fund_id: 6
     },
   });
 
