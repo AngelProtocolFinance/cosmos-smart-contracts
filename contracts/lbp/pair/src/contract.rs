@@ -87,7 +87,7 @@ pub fn instantiate(
         msg: WasmMsg::Instantiate {
             code_id: msg.token_code_id,
             msg: to_binary(&TokenInstantiateMsg {
-                name: "astroport-lbp liquidity token".to_string(),
+                name: "halo-lbp liquidity token".to_string(),
                 symbol: "uLP".to_string(),
                 decimals: 6,
                 initial_balances: vec![],
@@ -98,7 +98,7 @@ pub fn instantiate(
             })?,
             funds: vec![],
             admin: None,
-            label: String::from("astroport-lbp liquidity token"),
+            label: String::from("halo-lbp liquidity token"),
         }
         .into(),
         gas_limit: None,
@@ -704,7 +704,7 @@ fn compute_offer_amount(
 }
 
 /// If `belief_price` and `max_spread` both are given,
-/// we compute new spread else we just use astroport-lbp
+/// we compute new spread else we just use halo-lbp
 /// spread to check `max_spread`
 pub fn assert_max_spread(
     belief_price: Option<Decimal>,

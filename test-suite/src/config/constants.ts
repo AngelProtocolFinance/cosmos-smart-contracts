@@ -28,9 +28,12 @@ export const localterra = {
   token_code_id: 0,
   pair_code_id: 0,
   factory_code_id: 0,
+
+  // LBP contracts
   factory_contract: "",
   token_contract: "",
   pair_contract: "",
+  router_contract: "",
   
   // HALO contracts
   halo: {
@@ -86,9 +89,11 @@ export const testnet = {
   token_code_id: 148,
   pair_code_id: 155,
   factory_code_id: 154,
-  factory_contract: "terra18qpjm4zkvqnpjpw0zn0tdr8gdzvt8au35v45xf",
-  token_contract: "terra1lxlqekpkwjhacljgcfjm7vxul50wqas6yvuc27",
-  pair_contract: "terra1jvs9nnkx0lnrujfcat67ev03jff0gt6m77ytgu",
+  // LBP contracts
+  factory_contract: "terra134dje42s9xnawc00jth850kkhu788eemygak0n",
+  token_contract: "terra1evpewgaemfutt755xzeqa9zm25uy7k2eq383tg",
+  pair_contract: "terra12lhrap29kqh6sc6pdca7wjwhdjnjnh6p5qx26w",
+  router_contract: "terra12xp78fwfc2d256u3jzk8qgfhgj2p2x3faf5nl9",
 
   // HALO contracts
   halo: {
@@ -160,9 +165,12 @@ export const mainnet = {
   token_code_id: 3,
   pair_code_id: 4,
   factory_code_id: 5,
+
+  // LBP contracts
   factory_contract: "terra1ulgw0td86nvs4wtpsc80thv6xelk76ut7a7apj",
   token_contract: "terra1w8kvd6cqpsthupsk4l0clwnmek4l3zr7c84kwq",
   pair_contract: "terra1s7kc5ua5936rfsqhd2rl0ngaphmegwcsze4txh",
+  router_contract: "",
 
   // HALO contracts
   halo: {

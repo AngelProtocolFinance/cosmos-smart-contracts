@@ -184,7 +184,7 @@ fn create_pair() {
                 code_id: 321u64,
                 funds: vec![],
                 admin: Some(config.unwrap().owner.to_string()),
-                label: String::from("Astroport pair"),
+                label: String::from("HALO pair"),
             }),
             0
         )]
@@ -255,7 +255,7 @@ fn register() {
 
     let mut deployed_pairs = vec![(&pair0_addr, &pair0_info)];
 
-    // register astroport-lbp pair querier
+    // register halo-lbp pair querier
     deps.querier.with_halo_lbp_pairs(&deployed_pairs);
 
     let data = MsgInstantiateContractResponse {
@@ -331,7 +331,7 @@ fn register() {
     let info = mock_info("addr0000", &[]);
     let _res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
 
-    // register astroport-lbp pair querier
+    // register halo-lbp pair querier
     let pair1_addr = Addr::unchecked("pair0001");
     let pair1_info = PairInfo {
         asset_infos: asset_infos_2.clone(),

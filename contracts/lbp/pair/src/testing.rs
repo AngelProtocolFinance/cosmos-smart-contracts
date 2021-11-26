@@ -101,7 +101,7 @@ fn proper_initialization() {
                 admin: None,
                 code_id: 10u64,
                 msg: to_binary(&TokenInstantiateMsg {
-                    name: "astroport-lbp liquidity token".to_string(),
+                    name: "halo-lbp liquidity token".to_string(),
                     symbol: "uLP".to_string(),
                     decimals: 6,
                     initial_balances: vec![],
@@ -112,7 +112,7 @@ fn proper_initialization() {
                 })
                 .unwrap(),
                 funds: vec![],
-                label: String::from("astroport-lbp liquidity token"),
+                label: String::from("halo-lbp liquidity token"),
             }
             .into(),
             gas_limit: None,

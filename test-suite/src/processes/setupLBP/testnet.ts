@@ -74,7 +74,7 @@ export async function setupLBP(
 
   // Pair contract
   process.stdout.write("Creating Pair contract from Token Factory");
-  const currTime = new Date().getTime() / 1000;
+  const currTime = new Date().getTime() / 1000 + 10;
   const pairResult = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, factoryContract, {
       create_pair: {
@@ -83,7 +83,13 @@ export async function setupLBP(
             info:{
               token: {
                 contract_addr: tokenContract,
-              },
+              }
+            },
+            start_weight: "1",
+            end_weight: "1"
+          },
+          {
+            info:{
               native_token: {
                 denom: "uusd".toString()
               }
@@ -94,6 +100,7 @@ export async function setupLBP(
         ],
         start_time: Math.round(currTime),
         end_time: Math.round(currTime) + 1000,
+        description: undefined
       }
     })
   ]);
@@ -108,7 +115,7 @@ export async function setupLBP(
   // Router contract
   process.stdout.write("Instantiating LBP Router contract");
   const routerResult = await instantiateContract(terra, apTeam, apTeam, routerCodeId, {
-    lbp_factory: factoryContract
+    halo_lbp_factory: factoryContract
   });
   const routerContract = routerResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";

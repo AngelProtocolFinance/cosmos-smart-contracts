@@ -102,7 +102,7 @@ fn instantiate_pair(app: &mut App) -> Addr {
         Addr::unchecked(OWNER),
         &msg,
         &[],
-        "Astroport Pair",
+        "HALO Pair",
         None,
     )
     .unwrap()
