@@ -48,6 +48,7 @@ export async function testExecute(
   // ], []);
   // await testUpdateAngelAllianceMembers(terra, apTeam, indexFund, [
   //   "terra1zxtczmxtw8mk8xncvr8lcq2qmvk4dz88ek6f79", // community
+  //   "terra1janh9rs6pme3tdwhyag2lmsr2xv6wzhcrjz0xx", // community
   //   "terra18n2pc9x6q9str9dz8sqpt7ulz5telutclkzaec", // lunapes
   //   "terra17me29hk8cdd6mm6uf7cf0amsxmzxnszkfe5ph4", // lunabulls
   //   "terra1r59snugfm3gxjas565jf5ehw54junlfpmspjan", // lunabulls
