@@ -74,7 +74,7 @@ export async function setupLBP(
 
   // Pair contract
   process.stdout.write("Creating Pair contract from Factory contract");
-  const currTime = new Date().getTime() / 1000 + 10;
+  const currTime = new Date().getTime() / 1000 + 100;
   const pairResult = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, factoryContract, {
       create_pair: {
@@ -99,7 +99,7 @@ export async function setupLBP(
           }
         ],
         start_time: Math.round(currTime),
-        end_time: Math.round(currTime) + 1000,
+        end_time: Math.round(currTime) + 3600 * 24 * 7,
         description: undefined
       }
     })
