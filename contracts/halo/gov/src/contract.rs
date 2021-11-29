@@ -12,9 +12,9 @@ use cosmwasm_std::{
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use halo_token::common::OrderBy;
 use halo_token::gov::{
-    ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, PollExecuteMsg, PollResponse,
-    PollStatus, PollsResponse, QueryMsg, StateResponse, VoteOption, VoterInfo, VotersResponse,
-    VotersResponseItem,
+    ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, PollExecuteMsg,
+    PollResponse, PollStatus, PollsResponse, QueryMsg, StateResponse, VoteOption, VoterInfo,
+    VotersResponse, VotersResponseItem,
 };
 use terraswap::querier::query_token_balance;
 
@@ -25,10 +25,6 @@ const MAX_DESC_LENGTH: usize = 1024;
 const MIN_LINK_LENGTH: usize = 12;
 const MAX_LINK_LENGTH: usize = 128;
 const POLL_EXECUTE_REPLY_ID: u64 = 1;
-
-// version info for future migration info
-// const CONTRACT_NAME: &str = "halo-gov";
-// const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[entry_point]
 pub fn instantiate(
@@ -42,9 +38,8 @@ pub fn instantiate(
     validate_decimal(quorum)?;
     validate_decimal(threshold)?;
 
-    let halo_placeholder = Addr::unchecked("GOVCONTRACTDRGSDRGSDRGFG");
     let config = Config {
-        halo_token: halo_placeholder.clone(),
+        halo_token: deps.api.addr_validate(&msg.halo_token)?,
         owner: info.sender,
         quorum,
         threshold,
@@ -836,7 +831,7 @@ fn query_voters(
     })
 }
 
-// #[entry_point]
-// pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-//     Ok(Response::default())
-// }
+#[entry_point]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    Ok(Response::default())
+}
