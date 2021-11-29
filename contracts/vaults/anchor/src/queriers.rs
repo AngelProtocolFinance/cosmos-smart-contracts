@@ -9,7 +9,7 @@ pub fn query_balance(deps: Deps, address: String) -> BalanceResponse {
     let address = deps.api.addr_validate(&address).unwrap();
     let balances = BALANCES
         .load(deps.storage, &address)
-        .unwrap_or(BalanceInfo::default());
+        .unwrap_or_else(|_| BalanceInfo::default());
     BalanceResponse {
         locked_native: balances.clone().locked_balance.native,
         liquid_native: balances.clone().liquid_balance.native,

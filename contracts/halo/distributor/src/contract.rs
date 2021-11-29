@@ -4,8 +4,8 @@ use cosmwasm_std::entry_point;
 use crate::state::{read_config, store_config, Config};
 
 use cosmwasm_std::{
-    to_binary, Binary, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
-    StdError, StdResult, Uint128, WasmMsg,
+    to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult, Uint128, WasmMsg,
 };
 
 use halo_token::distributor::{ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
@@ -46,7 +46,10 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::UpdateConfig { spend_limit, gov_contract } => update_config(deps, info, spend_limit, gov_contract),
+        ExecuteMsg::UpdateConfig {
+            spend_limit,
+            gov_contract,
+        } => update_config(deps, info, spend_limit, gov_contract),
         ExecuteMsg::Spend { recipient, amount } => spend(deps, info, recipient, amount),
         ExecuteMsg::AddDistributor { distributor } => add_distributor(deps, info, distributor),
         ExecuteMsg::RemoveDistributor { distributor } => {

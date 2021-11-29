@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import * as path from "path";
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
@@ -109,13 +110,11 @@ export async function testAirdropClaim(
         airdropContract,
         {
           claim: {
-            amount: "1000001",
             stage: 1,
+            amount: "1000001",
             proof: [
-              "b8ee25ffbee5ee215c4ad992fe582f20175868bc310ad9b2b7bdf440a224b2df",
-              "98d73e0a035f23c490fef5e307f6e74652b9d3688c2aa5bff70eaa65956a24e1",
-              "f328b89c766a62b8f1c768fefa1139c9562c6e05bab57a2af87f35e83f9e9dcf",
-              "fe19ca2434f87cadb0431311ac9a484792525eb66a952e257f68bf02b4561950",
+              "eb0422c52c8afe5bf78f199fcbff0e87eb1a8e5713a9e0b992b575035510b3d9",
+              "9d5a269ba089bafdced3d362b80c516854a1c450b45b386fa186f80af5020021",
             ],
           },
         },
@@ -187,8 +186,8 @@ async function generateMerkleRoot(): Promise<string> {
   let file1;
   let file2;
   try {
-    file1 = readFileSync("../airdrop/testdata/airdrop_stakers_list.json", 'utf-8');
-    file2 = readFileSync("../airdrop/testdata/airdrop_delegators_list.json", 'utf-8');
+    file1 = readFileSync(path.resolve(__dirname, "./airdrop/testdata/airdrop_stakers_list.json"), 'utf-8');
+    file2 = readFileSync(path.resolve(__dirname, "./airdrop/testdata/airdrop_delegators_list.json"), 'utf-8');
   } catch (e) {
     console.error(e);
     throw e;
@@ -199,5 +198,13 @@ async function generateMerkleRoot(): Promise<string> {
   const arr = stakers.concat(delegators);
   const airdrop = new Airdrop(arr);
   const merkleRoot = airdrop.getMerkleRoot();
+  console.log(merkleRoot);
+  arr.forEach(element => {
+    console.log(element);
+    const proof = airdrop.getMerkleProof(element);
+    console.log(proof); // Replace this proof when call claim
+    const verify = airdrop.verify(proof, element);
+    console.log(verify);
+  });
   return merkleRoot;
 }

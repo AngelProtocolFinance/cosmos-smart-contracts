@@ -5,6 +5,10 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+/// We currently take no arguments for migrations
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MigrateMsg {}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub quorum: u64,
@@ -14,6 +18,7 @@ pub struct InstantiateMsg {
     pub proposal_deposit: Uint128,
     pub snapshot_period: u64,
     pub registrar_contract: String,
+    pub halo_token: String, // halo token address
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -78,7 +83,7 @@ pub struct PollExecuteMsg {
     pub funding_goal: Option<Uint128>,
     pub fund_rotation: Option<u64>,
     pub split_to_liquid: Option<Decimal>,
-    pub treasury_tax_rate: Option<Decimal>
+    pub treasury_tax_rate: Option<Decimal>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
