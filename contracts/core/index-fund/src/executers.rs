@@ -22,7 +22,7 @@ pub fn update_owner(
         return Err(ContractError::Unauthorized {});
     }
     let new_owner = deps.api.addr_validate(&new_owner)?;
-    // update config attributes with newly passed args
+    // update config attributes with newly passed argshttps://github.com/AngelProtocolFinance/angelprotocol-smart-contracts/pull/190
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
         config.owner = new_owner;
         Ok(config)
@@ -495,7 +495,7 @@ pub fn build_donation_messages(
 }
 
 pub fn update_donation_messages(
-    donation_messages: &Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))>,
+    donation_messages: &[(Addr, (Uint128, Decimal), (Uint128, Decimal))],
     members: Vec<Addr>,
     split: Decimal,
     balance: Uint128,
@@ -505,7 +505,7 @@ pub fn update_donation_messages(
         .checked_div(Uint128::from(members.len() as u128))
         .unwrap();
     let lock_split = Decimal::one() - split;
-    let mut donation_messages = donation_messages.clone();
+    let mut donation_messages = donation_messages.to_owned();
 
     for member in members.iter() {
         let pos = donation_messages
@@ -545,7 +545,7 @@ pub fn rotate_fund(
         .collect();
     let curr_fund_index = active_funds.iter().position(|fund| fund.id == curr_fund);
 
-    let new_fund_id = match curr_fund_index {
+    match curr_fund_index {
         Some(fund_index) => {
             if fund_index == (active_funds.len() - 1) {
                 // go back to the start of the funds list
@@ -561,14 +561,13 @@ pub fn rotate_fund(
                 .into_iter()
                 .filter(|fund| fund.id > curr_fund)
                 .collect();
-            if filter_funds.len() > 0 {
+            if !filter_funds.is_empty() {
                 filter_funds[0].id
             } else {
                 active_funds[0].id
             }
         }
-    };
-    new_fund_id
+    }
 }
 
 #[cfg(test)]
