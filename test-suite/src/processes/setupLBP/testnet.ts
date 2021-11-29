@@ -99,7 +99,7 @@ export async function setupLBP(
           }
         ],
         start_time: Math.round(currTime),
-        end_time: Math.round(currTime) + 3600 * 24 * 7,
+        end_time: Math.round(currTime) + 3600 * 24 * 3,
         description: undefined
       }
     })
