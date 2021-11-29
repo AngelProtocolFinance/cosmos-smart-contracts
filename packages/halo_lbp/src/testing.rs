@@ -249,10 +249,10 @@ fn test_asset() {
 }
 
 #[test]
-fn query_astroport_lbp_pair_contract() {
+fn query_halo_lbp_pair_contract() {
     let mut deps = mock_dependencies(&[]);
 
-    deps.querier.with_astroport_lbp_pairs(&[(
+    deps.querier.with_halo_lbp_pairs(&[(
         &"asset0000uusd".to_string(),
         &FactoryPairInfo {
             owner: Addr::unchecked("owner0000"),

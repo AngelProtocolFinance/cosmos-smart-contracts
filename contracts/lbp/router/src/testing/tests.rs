@@ -23,7 +23,7 @@ fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        halo_lbp_factory: Addr::unchecked("astroportlbpfactory"),
+        halo_lbp_factory: Addr::unchecked("halolbpfactory"),
     };
 
     let env = mock_env();
@@ -35,14 +35,14 @@ fn proper_initialization() {
     // it worked, let's query the state
     let config: ConfigResponse =
         from_binary(&query(deps.as_ref(), env, QueryMsg::Config {}).unwrap()).unwrap();
-    assert_eq!("astroportlbpfactory", config.halo_lbp_factory.as_str());
+    assert_eq!("halolbpfactory", config.halo_lbp_factory.as_str());
 }
 
 #[test]
 fn execute_swap_operations() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
-        halo_lbp_factory: Addr::unchecked("astroportlbpfactory"),
+        halo_lbp_factory: Addr::unchecked("halolbpfactory"),
     };
 
     let env = mock_env();
@@ -293,7 +293,7 @@ fn execute_swap_operations() {
 fn execute_swap_operation() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
-        halo_lbp_factory: Addr::unchecked("astroportlbpfactory"),
+        halo_lbp_factory: Addr::unchecked("halolbpfactory"),
     };
 
     let env = mock_env();
@@ -421,7 +421,7 @@ fn query_buy_with_routes() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        halo_lbp_factory: Addr::unchecked("astroportlbpfactory"),
+        halo_lbp_factory: Addr::unchecked("halolbpfactory"),
     };
 
     let env = mock_env();

@@ -41,7 +41,7 @@ pub struct WasmMockQuerier {
     base: MockQuerier<TerraQueryWrapper>,
     token_querier: TokenQuerier,
     tax_querier: TaxQuerier,
-    halo_lbp_factory_querier: AstroportFactoryQuerier,
+    halo_lbp_factory_querier: HaloFactoryQuerier,
 }
 
 #[derive(Clone, Default)]
@@ -101,13 +101,13 @@ pub(crate) fn caps_to_map(caps: &[(&String, &Uint128)]) -> HashMap<String, Uint1
 }
 
 #[derive(Clone, Default)]
-pub struct AstroportFactoryQuerier {
+pub struct HaloFactoryQuerier {
     pairs: HashMap<String, FactoryPairInfo>,
 }
 
-impl AstroportFactoryQuerier {
+impl HaloFactoryQuerier {
     pub fn new(pairs: &[(&String, &FactoryPairInfo)]) -> Self {
-        AstroportFactoryQuerier {
+        HaloFactoryQuerier {
             pairs: pairs_to_map(pairs),
         }
     }
@@ -286,7 +286,7 @@ impl WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
             tax_querier: TaxQuerier::default(),
-            halo_lbp_factory_querier: AstroportFactoryQuerier::default(),
+            halo_lbp_factory_querier: HaloFactoryQuerier::default(),
         }
     }
 
@@ -305,6 +305,6 @@ impl WasmMockQuerier {
     }
 
     pub fn with_halo_lbp_pairs(&mut self, pairs: &[(&String, &FactoryPairInfo)]) {
-        self.halo_lbp_factory_querier = AstroportFactoryQuerier::new(pairs);
+        self.halo_lbp_factory_querier = HaloFactoryQuerier::new(pairs);
     }
 }

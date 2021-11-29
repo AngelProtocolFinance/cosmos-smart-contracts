@@ -84,7 +84,7 @@ fn create_and_register_pair_with_reply() {
             Addr::unchecked(owner),
             &msg,
             &[],
-            "AstroportFactoryLBP",
+            "HALOFactoryLBP",
             None,
         )
         .unwrap();
@@ -163,7 +163,7 @@ fn update_config() {
             owner.clone(),
             &msg,
             &[],
-            "AstroportFactoryLBP",
+            "HALOFactoryLBP",
             None,
         )
         .unwrap();

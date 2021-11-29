@@ -1,6 +1,6 @@
 # Factory
 
-The factory contract can perform creation of astroport-lbp pair contract and also be used as directory contract for all pairs.
+The factory contract can perform creation of halo-lbp pair contract and also be used as directory contract for all pairs.
 
 ## InstantiateMsg
 

@@ -1,6 +1,6 @@
-# Astroport-lbp: Common Types
+# Halo-lbp: Common Types
 
-This is a collection of common types and the queriers which are commonly used in astroport-lbp contracts.
+This is a collection of common types and the queriers which are commonly used in halo-lbp contracts.
 
 ## Data Types
 
@@ -76,7 +76,7 @@ pub fn query_supply<S: Storage, A: Api, Q: Querier>(
 
 ### Pair Info Querier
 
-It also provides the query interface to query avaliable astroport-lbp pair contract info. Any contract can query pair info to astroport-lbp factory contract.
+It also provides the query interface to query avaliable halo-lbp pair contract info. Any contract can query pair info to halo-lbp factory contract.
 
 ```rust
 pub fn query_pair_contract<S: Storage, A: Api, Q: Querier>(
@@ -88,7 +88,7 @@ pub fn query_pair_contract<S: Storage, A: Api, Q: Querier>(
 
 ### Liquidity Token Querier
 
-It returns liquidity token contract address of astroport-lbp pair contract. 
+It returns liquidity token contract address of halo-lbp pair contract. 
 
 ```rust
 pub fn query_liquidity_token<S: Storage, A: Api, Q: Querier>(

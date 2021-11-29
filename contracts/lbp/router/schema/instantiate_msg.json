@@ -3,10 +3,10 @@
   "title": "InstantiateMsg",
   "type": "object",
   "required": [
-    "astroport_lbp_factory"
+    "halo_lbp_factory"
   ],
   "properties": {
-    "astroport_lbp_factory": {
+    "halo_lbp_factory": {
       "$ref": "#/definitions/Addr"
     }
   },

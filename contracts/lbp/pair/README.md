@@ -4,7 +4,7 @@
 
 ### Initialize
 
-This is mainly used from astroport-lbp factory contract to create new astroport-lbp pair. It initialize all swap created parameters which can be updated later with owner key.
+This is mainly used from halo-lbp factory contract to create new halo-lbp pair. It initialize all swap created parameters which can be updated later with owner key.
 
 It creates liquidity token contract as init response, and execute init hook to register created liquidity token contract to self.
 

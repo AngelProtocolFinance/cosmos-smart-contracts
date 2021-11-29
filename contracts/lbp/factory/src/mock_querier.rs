@@ -24,17 +24,17 @@ pub fn mock_dependencies(
 
 pub struct WasmMockQuerier {
     base: MockQuerier<Empty>,
-    halo_lbp_pair_querier: AstroportLBPPairQuerier,
+    halo_lbp_pair_querier: HaloLBPPairQuerier,
 }
 
 #[derive(Clone, Default)]
-pub struct AstroportLBPPairQuerier {
+pub struct HaloLBPPairQuerier {
     pairs: HashMap<Addr, PairInfo>,
 }
 
-impl AstroportLBPPairQuerier {
+impl HaloLBPPairQuerier {
     pub fn new(pairs: &[(&Addr, &PairInfo)]) -> Self {
-        AstroportLBPPairQuerier {
+        HaloLBPPairQuerier {
             pairs: pairs_to_map(pairs),
         }
     }
@@ -93,13 +93,13 @@ impl WasmMockQuerier {
     pub fn new(base: MockQuerier<Empty>) -> Self {
         WasmMockQuerier {
             base,
-            halo_lbp_pair_querier: AstroportLBPPairQuerier::default(),
+            halo_lbp_pair_querier: HaloLBPPairQuerier::default(),
         }
     }
 
-    // configure the astroport-lbp pair
+    // configure the halo-lbp pair
     pub fn with_halo_lbp_pairs(&mut self, pairs: &[(&Addr, &PairInfo)]) {
-        self.halo_lbp_pair_querier = AstroportLBPPairQuerier::new(pairs);
+        self.halo_lbp_pair_querier = HaloLBPPairQuerier::new(pairs);
     }
 
     // pub fn with_balance(&mut self, balances: &[(&Addr, &[Coin])]) {

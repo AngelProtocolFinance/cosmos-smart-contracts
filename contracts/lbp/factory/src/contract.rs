@@ -146,7 +146,7 @@ pub fn try_create_pair(
                     description,
                 })?,
                 funds: vec![],
-                label: "Astroport pair".to_string(),
+                label: "HALO pair".to_string(),
             }
             .into(),
             gas_limit: None,
