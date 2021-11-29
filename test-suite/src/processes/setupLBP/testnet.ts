@@ -60,7 +60,7 @@ export async function setupLBP(
     initial_balances: [
       {
         address: apTeam.key.accAddress,
-        amount: "1000000000000000"
+        amount: "80000000000000"
       },
     ],
     mint: undefined,
@@ -128,7 +128,7 @@ export async function setupLBP(
   const liqAddResult = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
       increase_allowance: {
-        amount: "2000000000",
+        amount: "80000000000000",
         spender: pairContract,
       },
     }),
@@ -144,7 +144,7 @@ export async function setupLBP(
                   contract_addr: tokenContract,
                 },
               },
-              amount: "2000000000",
+              amount: "80000000000000",
             },
             {
               info: {
@@ -152,13 +152,13 @@ export async function setupLBP(
                   denom: "uusd",
                 },
               },
-              amount: "100000000",
+              amount: "1300000000000",
             },
           ],
         },
       },
       {
-        uusd: "100000000",
+        uusd: "1300000000000",
       }
     ),
   ]);
