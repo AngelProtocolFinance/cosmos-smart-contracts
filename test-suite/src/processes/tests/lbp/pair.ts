@@ -76,16 +76,14 @@ export async function testPairSwap(
         pairContract,
         {
           swap: {
-            offser_asset: [
-              {
-                info:{
-                  native_token: {
-                    denom: "uusd".toString()
-                  }
-                },
-                amount: "100"
-              }
-            ],
+            offer_asset: {
+              info:{
+                native_token: {
+                  denom: "uusd".toString()
+                }
+              },
+              amount: "100"
+            },
             belief_price: undefined,
             max_spread: undefined,
             to: undefined,
