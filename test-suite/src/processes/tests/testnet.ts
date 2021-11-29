@@ -110,7 +110,6 @@ import {
   testQueryPairs
 } from "./lbp/factory";
 import {
-  testPairProvideLiquidity,
   testPairSwap,
   testQueryPairPair,
   testQueryPairPool,
@@ -298,7 +297,6 @@ export async function testExecute(
   // await testQueryPairs(terra, factoryContract);
 
   // // Test query for LBP pair
-  // await testPairProvideLiquidity(terra, apTeam, pairContract, tokenContract);
   // await testPairSwap(terra, apTeam, pairContract);
   // await testQueryPairPair(terra, pairContract);
   // await testQueryPairPool(terra, pairContract);

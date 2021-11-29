@@ -9,59 +9,6 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 //----------------------------------------------------------------------------------------
-// TEST: ProvideLiquidity
-//
-// SCENARIO:
-//
-//----------------------------------------------------------------------------------------
-export async function testPairProvideLiquidity(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  pairContract: string,
-  tokenContract: string,
-): Promise<void> {
-  process.stdout.write("Test - Pair ProvideLiquidity");
-
-  await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        pairContract,
-        {
-          provide_liquidity: {
-            assets: [
-              {
-                info:{
-                  token: {
-                    contract_addr: tokenContract,
-                  }
-                },
-                amount: "100"
-              },
-              {
-                info:{
-                  native_token: {
-                    denom: "uusd".toString()
-                  }
-                },
-                amount: "100"
-              }
-            ],
-            slippage_tolerance: undefined
-          },
-        },
-        [new Coin (
-          "uusd".toString(),
-          "100",
-        )]
-      ),
-    ])
-  );
-  console.log(chalk.green(" Passed!"));
-}
-
-
-//----------------------------------------------------------------------------------------
 // TEST: Swap
 //
 // SCENARIO:
