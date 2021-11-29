@@ -22,7 +22,7 @@ pub fn update_owner(
         return Err(ContractError::Unauthorized {});
     }
     let new_owner = deps.api.addr_validate(&new_owner)?;
-    // update config attributes with newly passed argshttps://github.com/AngelProtocolFinance/angelprotocol-smart-contracts/pull/190
+    // update config attributes with newly passed args
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
         config.owner = new_owner;
         Ok(config)
