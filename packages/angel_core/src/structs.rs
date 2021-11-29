@@ -1,5 +1,5 @@
 use cosmwasm_bignumber::Decimal256;
-use cosmwasm_std::{Addr, Coin, Decimal, Env, SubMsg, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Coin, Decimal, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -139,6 +139,7 @@ pub struct IndexFund {
     pub name: String,
     pub description: String,
     pub members: Vec<Addr>,
+    pub rotating_fund: Option<bool>, // set a fund as a rotating fund
     // Fund Specific: over-riding SC level setting to handle a fixed split value
     // Defines the % to split off into liquid account, and if defined overrides all other splits
     pub split_to_liquid: Option<Decimal>,
@@ -148,16 +149,12 @@ pub struct IndexFund {
 }
 
 impl IndexFund {
-    pub fn is_expired(&self, env: &Env) -> bool {
-        if let Some(expiry_height) = self.expiry_height {
-            if env.block.height > expiry_height {
-                return true;
-            }
-        }
-        if let Some(expiry_time) = self.expiry_time {
-            if env.block.time > Timestamp::from_seconds(expiry_time) {
-                return true;
-            }
+    pub fn is_expired(&self, env_height: u64, env_time: Timestamp) -> bool {
+        if (self.expiry_height != None && env_height >= self.expiry_height.unwrap())
+            || (self.expiry_time != None
+                && env_time >= Timestamp::from_seconds(self.expiry_time.unwrap()))
+        {
+            return true;
         }
         false
     }

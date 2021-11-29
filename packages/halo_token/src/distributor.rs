@@ -5,8 +5,8 @@ use cosmwasm_std::Uint128;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub gov_contract: String,   // anchor gov contract
-    pub halo_token: String,     // anchor token address
+    pub gov_contract: String,   // halo gov contract
+    pub halo_token: String,     // halo token address
     pub whitelist: Vec<String>, // whitelisted contract addresses to spend distributor
     pub spend_limit: Uint128,   // spend limit per each `spend` request
 }
