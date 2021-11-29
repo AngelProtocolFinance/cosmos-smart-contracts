@@ -73,7 +73,7 @@ export async function setupLBP(
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${tokenContract}`);
 
   // Pair contract
-  process.stdout.write("Creating Pair contract from Token Factory");
+  process.stdout.write("Creating Pair contract from Factory contract");
   const currTime = new Date().getTime() / 1000 + 10;
   const pairResult = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, factoryContract, {

@@ -90,10 +90,10 @@ export const testnet = {
   pair_code_id: 155,
   factory_code_id: 154,
   // LBP contracts
-  factory_contract: "terra134dje42s9xnawc00jth850kkhu788eemygak0n",
-  token_contract: "terra1evpewgaemfutt755xzeqa9zm25uy7k2eq383tg",
-  pair_contract: "terra12lhrap29kqh6sc6pdca7wjwhdjnjnh6p5qx26w",
-  router_contract: "terra12xp78fwfc2d256u3jzk8qgfhgj2p2x3faf5nl9",
+  factory_contract: "terra1gympylfqjf673lgdv2tl9wk3dz90688nut50un",
+  token_contract: "terra1nxztjuspv86kar4c4dp5m3s6v89tj7ugxecgds",
+  pair_contract: "terra1sjf46uvf68j6jq7rrd3pwujz8gkqq8cmndku8a",
+  router_contract: "terra1erfmu3drwgaqyxe93mvwen6dy73fg24jhs7x5y",
 
   // HALO contracts
   halo: {
