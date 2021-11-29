@@ -86,9 +86,9 @@ export const testnet = {
     cw3GuardianAngels: "terra1ydp9qd9xgdq63ua6axfvauye3l7a3476lm6l28",
   },
   // TerraSwap balances account
-  token_code_id: 148,
-  pair_code_id: 155,
-  factory_code_id: 154,
+  token_code_id: 23001,
+  pair_code_id: 23000,
+  factory_code_id: 22999,
   // LBP contracts
   factory_contract: "terra1gympylfqjf673lgdv2tl9wk3dz90688nut50un",
   token_contract: "terra1nxztjuspv86kar4c4dp5m3s6v89tj7ugxecgds",
