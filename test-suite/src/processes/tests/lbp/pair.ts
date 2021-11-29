@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { Coin, LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -50,6 +50,10 @@ export async function testPairProvideLiquidity(
             slippage_tolerance: undefined
           },
         },
+        [new Coin (
+          "uusd".toString(),
+          "100",
+        )]
       ),
     ])
   );
@@ -89,6 +93,10 @@ export async function testPairSwap(
             to: undefined,
           },
         },
+        [new Coin (
+          "uusd".toString(),
+          "100",
+        )]
       ),
     ])
   );
