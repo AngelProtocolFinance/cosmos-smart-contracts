@@ -6,7 +6,7 @@ use cosmwasm_std::Uint128;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub owner: String,
-    pub halo_token: String,
+    pub halo_token: String, // halo token address
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

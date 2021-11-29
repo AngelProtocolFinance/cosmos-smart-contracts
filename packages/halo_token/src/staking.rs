@@ -6,8 +6,8 @@ use cw20::Cw20ReceiveMsg;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub halo_token: String,
-    pub staking_token: String, // lp token of ANC-UST pair contract
+    pub halo_token: String,    // halo token address
+    pub staking_token: String, // lp token of HALO-UST pair contract
     pub distribution_schedule: Vec<(u64, u64, Uint128)>,
 }
 
