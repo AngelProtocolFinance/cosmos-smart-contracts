@@ -20,6 +20,7 @@ use halo_token::gov::{
 };
 use terraswap::querier::query_token_balance;
 
+const HALO_TOKEN: &str = "halo_token";
 const VOTING_TOKEN: &str = "voting_token";
 const TEST_CREATOR: &str = "creator";
 const TEST_VOTER: &str = "voter1";
@@ -40,6 +41,7 @@ fn mock_instantiate(deps: DepsMut) {
         timelock_period: DEFAULT_TIMELOCK_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
+        halo_token: HALO_TOKEN.to_string(),
     };
 
     let info = mock_info(TEST_CREATOR, &[]);
@@ -71,6 +73,7 @@ fn instantiate_msg() -> InstantiateMsg {
         timelock_period: DEFAULT_TIMELOCK_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
+        halo_token: HALO_TOKEN.to_string(),
     }
 }
 
@@ -145,6 +148,7 @@ fn fails_init_invalid_quorum() {
         timelock_period: DEFAULT_TIMELOCK_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
+        halo_token: HALO_TOKEN.to_string(),
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -169,6 +173,7 @@ fn fails_init_invalid_threshold() {
         timelock_period: DEFAULT_TIMELOCK_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
+        halo_token: HALO_TOKEN.to_string(),
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -193,6 +198,7 @@ fn fails_contract_already_registered() {
         timelock_period: DEFAULT_TIMELOCK_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
+        halo_token: HALO_TOKEN.to_string(),
     };
 
     let _res = instantiate(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
