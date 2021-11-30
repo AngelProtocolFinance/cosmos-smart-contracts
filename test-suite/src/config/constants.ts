@@ -86,14 +86,14 @@ export const testnet = {
     cw3GuardianAngels: "terra1ydp9qd9xgdq63ua6axfvauye3l7a3476lm6l28",
   },
   // TerraSwap balances account
-  token_code_id: 23029,
-  pair_code_id: 23028,
-  factory_code_id: 23027,
+  token_code_id: 23201,
+  pair_code_id: 23200,
+  factory_code_id: 23199,
   // LBP contracts
-  factory_contract: "terra1wtj3tdf6jzdnkx52n805j3yz00p63l5rdcqnjv",
-  token_contract: "terra149k0lmhudqzxx90htx7g5ka3wf5tt2peau3mpv",
-  pair_contract: "terra1mvntqf2x3nzquws0j5n72jdqmyzg3eag6qlm7g",
-  router_contract: "terra16csqc583xhxgz7pjuk7jvnr24pas0urg49tee6",
+  factory_contract: "terra16wfvet3u5wd2u39eqj9vlg9lz56f8ducmfp43y",
+  token_contract: "terra1aw8704nry2gaemjur65j3ervpxtvt0s2lj2jw9",
+  pair_contract: "terra1ywg8chmyagztj48wm6wzp2syxg5zycazzyx5jd",
+  router_contract: "terra1fqs3864kuddzx85hg4cvthm8yem8dts0zqltw8",
 
   // HALO contracts
   halo: {
