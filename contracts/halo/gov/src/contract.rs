@@ -6,8 +6,8 @@ use crate::state::{
     state_store, store_tmp_poll_id, Config, ExecuteData, Poll, State,
 };
 use cosmwasm_std::{
-    attr, entry_point, from_binary, to_binary, Addr, Binary, CosmosMsg, Decimal, Deps, DepsMut,
-    Env, MessageInfo, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
+    MessageInfo, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use halo_token::common::OrderBy;
@@ -71,7 +71,7 @@ pub fn execute(
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::ExecutePollMsgs { poll_id } => execute_poll_messages(deps, env, info, poll_id),
-        ExecuteMsg::RegisterContracts { halo_token } => register_contracts(deps, halo_token),
+        ExecuteMsg::RegisterContracts { halo_token } => register_contracts(deps, info, halo_token),
         ExecuteMsg::UpdateConfig {
             owner,
             quorum,
@@ -116,9 +116,13 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
     }
 }
 
-pub fn register_contracts(deps: DepsMut, halo_token: String) -> Result<Response, ContractError> {
+pub fn register_contracts(
+    deps: DepsMut,
+    info: MessageInfo,
+    halo_token: String,
+) -> Result<Response, ContractError> {
     let mut config: Config = config_read(deps.storage).load()?;
-    if config.halo_token != Addr::unchecked("GOVCONTRACTDRGSDRGSDRGFG") {
+    if config.owner != info.sender {
         return Err(ContractError::Unauthorized {});
     }
 
