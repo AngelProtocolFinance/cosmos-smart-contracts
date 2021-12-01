@@ -71,6 +71,5 @@ pub struct PairsResponse {
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct FactoryPairInfo {
-    pub owner: Addr,
     pub contract_addr: Addr,
 }

@@ -177,7 +177,6 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
         deps.storage,
         &tmp.pair_key,
         &FactoryPairInfo {
-            owner: tmp.owner,
             contract_addr: pair_contract.clone(),
         },
     )?;
@@ -189,15 +188,15 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
 pub fn try_unregister(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     asset_infos: [AssetInfo; 2],
 ) -> Result<Response, ContractError> {
     let pair_info: FactoryPairInfo = read_pair(deps.as_ref(), &asset_infos)?;
 
     // Permission check
-    if pair_info.owner != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
+    // if pair_info.owner != info.sender {
+    //     return Err(ContractError::Unauthorized {});
+    // }
 
     PAIRS.remove(deps.storage, &pair_key(&asset_infos));
 

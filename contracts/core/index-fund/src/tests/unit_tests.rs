@@ -246,7 +246,7 @@ fn sc_owner_can_add_remove_funds() {
             expiry_height: None,
         },
     };
-    let remove_fund_msg = ExecuteMsg::RemoveFund{ fund_id: 13 };
+    let remove_fund_msg = ExecuteMsg::RemoveFund { fund_id: 13 };
 
     // pleb cannot add funds (only SC owner should be able to)
     let info = mock_info(&pleb.clone(), &coins(1000, "earth"));
@@ -255,7 +255,13 @@ fn sc_owner_can_add_remove_funds() {
 
     // real SC owner adds a fund
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
-    let res = execute(deps.as_mut(), mock_env(), info.clone(), new_fund_msg.clone()).unwrap();
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info.clone(),
+        new_fund_msg.clone(),
+    )
+    .unwrap();
     let _res = execute(deps.as_mut(), mock_env(), info, new_fund_msg1).unwrap();
     assert_eq!(0, res.messages.len());
 

@@ -61,7 +61,9 @@ pub fn execute(
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, info, msg),
         ExecuteMsg::UpdateTcaList { new_list } => executers::update_tca_list(deps, info, new_list),
         ExecuteMsg::CreateFund { fund } => executers::create_index_fund(deps, info, fund),
-        ExecuteMsg::RemoveFund { fund_id } => executers::remove_index_fund(deps, env, info, fund_id),
+        ExecuteMsg::RemoveFund { fund_id } => {
+            executers::remove_index_fund(deps, env, info, fund_id)
+        }
         ExecuteMsg::RemoveMember(msg) => executers::remove_member(deps, info, msg.member),
         ExecuteMsg::UpdateMembers {
             fund_id,

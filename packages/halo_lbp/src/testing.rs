@@ -255,7 +255,6 @@ fn query_halo_lbp_pair_contract() {
     deps.querier.with_halo_lbp_pairs(&[(
         &"asset0000uusd".to_string(),
         &FactoryPairInfo {
-            owner: Addr::unchecked("owner0000"),
             contract_addr: Addr::unchecked("pair0000"),
         },
     )]);
@@ -274,6 +273,5 @@ fn query_halo_lbp_pair_contract() {
     )
     .unwrap();
 
-    assert_eq!(pair_info.owner, Addr::unchecked("owner0000"));
     assert_eq!(pair_info.contract_addr, Addr::unchecked("pair0000"));
 }

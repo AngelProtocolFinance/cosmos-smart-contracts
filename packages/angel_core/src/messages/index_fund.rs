@@ -36,7 +36,9 @@ pub enum ExecuteMsg {
         fund: IndexFund,
     },
     // remove a specific index fund
-    RemoveFund { fund_id: u64 },
+    RemoveFund {
+        fund_id: u64,
+    },
     // updates the members in a given index fund
     UpdateMembers {
         fund_id: u64,

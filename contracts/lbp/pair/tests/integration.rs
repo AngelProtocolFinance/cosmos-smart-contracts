@@ -119,8 +119,8 @@ fn multi_initialize() {
         .query_wasm_smart(pair_instance.clone(), &QueryMsg::Pair {})
         .unwrap();
 
-    assert_eq!("Contract #0", res.contract_addr);
-    assert_eq!("Contract #1", res.liquidity_token);
+    assert_eq!("contract #0", res.contract_addr);
+    assert_eq!("contract #1", res.liquidity_token);
 }
 
 #[test]

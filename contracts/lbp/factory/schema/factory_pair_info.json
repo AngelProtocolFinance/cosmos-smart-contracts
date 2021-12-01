@@ -3,14 +3,10 @@
   "title": "FactoryPairInfo",
   "type": "object",
   "required": [
-    "contract_addr",
-    "owner"
+    "contract_addr"
   ],
   "properties": {
     "contract_addr": {
-      "$ref": "#/definitions/Addr"
-    },
-    "owner": {
       "$ref": "#/definitions/Addr"
     }
   },

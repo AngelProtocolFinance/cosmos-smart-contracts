@@ -206,7 +206,6 @@ impl WasmMockQuerier {
                 match self.halo_lbp_factory_querier.pairs.get(&key) {
                     Some(v) => SystemResult::Ok(
                         to_binary(&FactoryPairInfo {
-                            owner: Addr::unchecked("owner0000"),
                             contract_addr: Addr::unchecked("pair"),
                         })
                         .into(),

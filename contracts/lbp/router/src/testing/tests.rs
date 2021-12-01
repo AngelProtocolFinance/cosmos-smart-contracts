@@ -365,7 +365,6 @@ fn execute_swap_operation() {
     deps.querier.with_halo_lbp_pairs(&[(
         &"assetuusd".to_string(),
         &FactoryPairInfo {
-            owner: Addr::unchecked("owner0000"),
             contract_addr: Addr::unchecked("pair"),
         },
     )]);
@@ -474,14 +473,12 @@ fn query_buy_with_routes() {
         (
             &"ukrwasset0000".to_string(),
             &FactoryPairInfo {
-                owner: Addr::unchecked("owner0000"),
                 contract_addr: Addr::unchecked("pair0000"),
             },
         ),
         (
             &"asset0000uluna".to_string(),
             &FactoryPairInfo {
-                owner: Addr::unchecked("owner0001"),
                 contract_addr: Addr::unchecked("pair0001"),
             },
         ),
