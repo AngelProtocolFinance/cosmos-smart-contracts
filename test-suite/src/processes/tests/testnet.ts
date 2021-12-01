@@ -117,7 +117,9 @@ import {
   testQueryPairReverseSimulation
 } from "./lbp/pair";
 import {
-  testQueryRouterConfig
+  testQueryRouterConfig,
+  testQueryRouterSimulateSwapOperations,
+  testRouterSwapOperations
 } from "./lbp/router";
 
 export async function testExecute(
@@ -305,5 +307,7 @@ export async function testExecute(
 
   // // Test query for LBP router
   // await testQueryRouterConfig(terra, routerContract);
+  // await testRouterSwapOperations(terra, apTeam, routerContract, tokenContract);
+  // await testQueryRouterSimulateSwapOperations(terra, routerContract, tokenContract, "20000000");
 
 }
