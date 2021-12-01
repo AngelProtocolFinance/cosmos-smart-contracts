@@ -26,6 +26,9 @@ import * as MainNet from "./environments/mainnet";
 		case "localterra_migrate_halo":
 			await LocalNet.startMigrateHaloContracts();
 			break;
+		case "localterra_migrate_lbp":
+			await LocalNet.startMigrateLBPContracts();
+			break;
 		case "testnet":
 			await TestNet.startTest();
 			break;
@@ -44,6 +47,9 @@ import * as MainNet from "./environments/mainnet";
 		case "testnet_migrate_halo":
 			await TestNet.startMigrateHaloContracts();
 			break;
+		case "testnet_migrate_lbp":
+			await TestNet.startMigrateLBPContracts();
+			break;
 		case "mainnet":
 			await MainNet.startTest();
 			break;
@@ -61,6 +67,9 @@ import * as MainNet from "./environments/mainnet";
 			break;
 		case "mainnet_migrate_halo":
 			await MainNet.startMigrateHaloContracts();
+			break;
+		case "mainnet_migrate_lbp":
+			await MainNet.startMigrateLBPContracts();
 			break;
 		default:
 			console.log("Invalid command");

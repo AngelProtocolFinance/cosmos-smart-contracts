@@ -5,6 +5,7 @@ import { LocalTerra, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
 import { localterra as config } from "../config/constants";
 import { migrateHaloContracts } from "../processes/migrateContracts/migrateHalo";
+import { migrateLBPContracts } from "../processes/migrateContracts/migrateLBP";
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts } from "../processes/setupContracts/testnet";
 import { setupHalo } from "../processes/setupHalo/testnet";
@@ -301,6 +302,27 @@ export async function startMigrateHaloContracts(): Promise<void> {
     haloGov,
     haloStaking,
     haloVesting
+  );
+}
+
+// -------------------------------------------------------------------------------------
+// migrate LBP contracts
+// -------------------------------------------------------------------------------------
+export async function startMigrateLBPContracts(): Promise<void> {
+  console.log(chalk.blue("\nTestnet"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Migrate Contracts
+  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  await migrateLBPContracts(
+    terra,
+    apTeam,
+    factoryContract,
+    pairContract,
+    routerContract
   );
 }
 

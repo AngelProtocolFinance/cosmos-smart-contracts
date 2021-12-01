@@ -5,6 +5,7 @@ import { LCDClient, MnemonicKey, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
 import { mainnet as config } from "../config/constants";
 import { migrateHaloContracts } from "../processes/migrateContracts/migrateHalo";
+import { migrateLBPContracts } from "../processes/migrateContracts/migrateLBP";
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts, Member } from "../processes/setupContracts/mainnet";
 import { setupHalo } from "../processes/setupHalo/testnet";
@@ -37,6 +38,7 @@ let factoryCodeId: number;
 let factoryContract: string;
 let tokenContract: string;
 let pairContract: string;
+let routerContract: string;
 
 // Angel/HALO contracts
 let haloAirdrop: string;
@@ -89,10 +91,12 @@ function initialize() {
   factoryContract = config.factory_contract;
   tokenContract = config.token_contract;
   pairContract = config.pair_contract;
+  routerContract = config.router_contract;
 
-  console.log(`Use ${chalk.cyan(factoryContract)} as TerraSwap factory`);
+  console.log(`Use ${chalk.cyan(factoryContract)} as LBP factory`);
   console.log(`Use ${chalk.cyan(tokenContract)} as HALO token`);
-  console.log(`Use ${chalk.cyan(pairContract)} as HALO/UST pair`);
+  console.log(`Use ${chalk.cyan(pairContract)} as LBP HALO/UST pair`);
+  console.log(`Use ${chalk.cyan(routerContract)} as LBP router`);
 
   haloAirdrop = config.halo.airdrop_contract;
   haloCollector = config.halo.collector_contract;
@@ -264,6 +268,27 @@ export async function startMigrateHaloContracts(): Promise<void> {
     haloGov,
     haloStaking,
     haloVesting
+  );
+}
+
+// -------------------------------------------------------------------------------------
+// migrate LBP contracts
+// -------------------------------------------------------------------------------------
+export async function startMigrateLBPContracts(): Promise<void> {
+  console.log(chalk.blue("\nTestnet"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Migrate Contracts
+  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  await migrateLBPContracts(
+    terra,
+    apTeam,
+    factoryContract,
+    pairContract,
+    routerContract
   );
 }
 
