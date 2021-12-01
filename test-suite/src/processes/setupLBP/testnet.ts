@@ -60,7 +60,7 @@ export async function setupLBP(
     initial_balances: [
       {
         address: apTeam.key.accAddress,
-        amount: "80000000000000"
+        amount: "160000000000"
       },
     ],
     mint: undefined,
