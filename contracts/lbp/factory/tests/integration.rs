@@ -10,6 +10,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use cosmwasm_std::{Addr, Uint128};
 use terra_multi_test::{App, BankKeeper, ContractWrapper, Executor, TerraMockQuerier};
 
+pub const COMMISSION_RATE: &str = "0.02";
+
 fn mock_app() -> App {
     let env = mock_env_std();
     let api = MockApi_std::default();
@@ -76,6 +78,7 @@ fn create_and_register_pair_with_reply() {
         token_code_id,
         owner: owner.to_string(),
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     // we can just call .unwrap() to assert this was a success
@@ -156,6 +159,7 @@ fn update_config() {
         token_code_id,
         owner: owner.to_string(),
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     // we can just call .unwrap() to assert this was a success
@@ -177,6 +181,7 @@ fn update_config() {
         pair_code_id: None,
         pair_contract: "pair0000".to_string(),
         collector_addr: None,
+        commission_rate: None,
     };
 
     app.execute_contract(owner.clone(), factory_instance.clone(), &msg, &[])
@@ -198,6 +203,7 @@ fn update_config() {
         pair_code_id: Some(300u64),
         pair_contract: "pair0000".to_string(),
         collector_addr: None,
+        commission_rate: None,
     };
 
     app.execute_contract(new_owner, factory_instance.clone(), &msg, &[])
@@ -218,6 +224,7 @@ fn update_config() {
         pair_code_id: None,
         pair_contract: "pair0000".to_string(),
         collector_addr: None,
+        commission_rate: None,
     };
 
     let res = app

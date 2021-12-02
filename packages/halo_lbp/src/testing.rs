@@ -215,7 +215,6 @@ fn test_asset() {
         token_asset
             .into_msg(
                 deps.as_ref(),
-                Addr::unchecked("asset0000"),
                 Addr::unchecked("addr0000")
             )
             .unwrap(),
@@ -234,7 +233,6 @@ fn test_asset() {
         native_token_asset
             .into_msg(
                 deps.as_ref(),
-                Addr::unchecked(MOCK_CONTRACT_ADDR),
                 Addr::unchecked("addr0000")
             )
             .unwrap(),

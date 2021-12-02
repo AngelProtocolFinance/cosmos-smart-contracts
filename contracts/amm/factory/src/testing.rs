@@ -12,6 +12,7 @@ use halo_amm::asset::{AssetInfo, PairInfo};
 use halo_amm::factory::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use halo_amm::pair::InstantiateMsg as PairInstantiateMsg;
 
+const COMMISSION_RATE: &str = "0.01";
 #[test]
 fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
@@ -20,6 +21,7 @@ fn proper_initialization() {
         pair_code_id: 321u64,
         token_code_id: 123u64,
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -42,6 +44,7 @@ fn update_config() {
         pair_code_id: 321u64,
         token_code_id: 123u64,
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -57,6 +60,7 @@ fn update_config() {
         token_code_id: None,
         pair_contract: "pair000".to_string(),
         collector_addr: None,
+        commission_rate: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -78,6 +82,7 @@ fn update_config() {
         token_code_id: Some(200u64),
         pair_contract: "pair000".to_string(),
         collector_addr: None,
+        commission_rate: None,
     };
 
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
@@ -99,6 +104,7 @@ fn update_config() {
         token_code_id: None,
         pair_contract: "pair000".to_string(),
         collector_addr: None,
+        commission_rate: None,
     };
 
     let res = execute(deps.as_mut(), env, info, msg);
@@ -116,6 +122,7 @@ fn create_pair() {
         pair_code_id: 321u64,
         token_code_id: 123u64,
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -158,6 +165,7 @@ fn create_pair() {
                     asset_infos: asset_infos.clone(),
                     token_code_id: 123u64,
                     collector_addr: "collector000".to_string(),
+                    commission_rate: COMMISSION_RATE.to_string(),
                 })
                 .unwrap(),
                 code_id: 321u64,

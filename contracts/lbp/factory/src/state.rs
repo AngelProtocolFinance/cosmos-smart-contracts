@@ -14,6 +14,7 @@ pub struct Config {
     pub pair_code_id: u64,
     pub token_code_id: u64,
     pub collector_addr: Addr,
+    pub commission_rate: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

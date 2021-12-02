@@ -20,6 +20,8 @@ pub struct InstantiateMsg {
     pub description: Option<String>,
     /// Collector contract address to be paid commission fee
     pub collector_addr: String,
+    /// Commission rate
+    pub commission_rate: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -27,6 +29,7 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     UpdateConfig {
         collector_addr: Option<String>,
+        commission_rate: Option<String>,
     },
     Receive(Cw20ReceiveMsg),
     /// ProvideLiquidity a user provides pool liquidity

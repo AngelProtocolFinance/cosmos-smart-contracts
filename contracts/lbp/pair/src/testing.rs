@@ -1,6 +1,6 @@
 use crate::contract::{
     assert_max_spread, compute_swap, execute, instantiate, query_pair_info, query_pool,
-    query_reverse_simulation, query_simulation, reply, COMMISSION_RATE,
+    query_reverse_simulation, query_simulation, reply,
 };
 use crate::mock_querier::mock_dependencies;
 use proptest::prelude::*;
@@ -26,6 +26,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 const COMMISSION_AMOUNT: u128 = 15;
 const COMMISSION_RATIO: u128 = 10000;
 const DECIMAL_FRACTIONAL: Uint128 = Uint128::new(1_000_000_000u128);
+const COMMISSION_RATE: &str = "0.02";
 
 fn mock_env_with_block_time(time: u64) -> Env {
     let mut env = mock_env();
@@ -88,6 +89,7 @@ fn proper_initialization() {
         end_time,
         description: Some(String::from("description")),
         collector_addr: "collecotr000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     // we can just call .unwrap() to assert this was a success
@@ -189,6 +191,7 @@ fn provide_liquidity() {
         end_time,
         description: Some(String::from("description")),
         collector_addr: "collecotr000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -635,6 +638,7 @@ fn withdraw_liquidity() {
         end_time,
         description: Some(String::from("description")),
         collector_addr: "collecotr000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -778,6 +782,7 @@ fn try_native_to_token() {
         end_time,
         description: Some(String::from("description")),
         collector_addr: "collecotr000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -985,6 +990,7 @@ fn try_token_to_native() {
         end_time,
         description: Some(String::from("description")),
         collector_addr: "collecotr000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -1267,6 +1273,7 @@ fn test_spread() {
         end_time,
         description: Some(String::from("description")),
         collector_addr: "collecotr000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -1425,6 +1432,7 @@ fn test_query_pool() {
         end_time,
         description: Some(String::from("description")),
         collector_addr: "collecotr000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -1516,6 +1524,7 @@ fn test_weight_calculations() {
         end_time,
         description: Some(String::from("description")),
         collector_addr: "collecotr000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -1615,7 +1624,7 @@ fn compute_swap_rounding() {
     let commission_amount = Uint128::from(0_u128);
 
     assert_eq!(
-        compute_swap(offer_pool, offer_weight, ask_pool, ask_weight, offer_amount),
+        compute_swap(offer_pool, offer_weight, ask_pool, ask_weight, offer_amount, COMMISSION_RATE.to_string()),
         Ok((return_amount, spread_amount, commission_amount))
     );
 }
@@ -1644,6 +1653,7 @@ proptest! {
             ask_pool,
             ask_weight,
             offer_amount,
+            COMMISSION_RATE.to_string(),
         ).unwrap();
     }
 }

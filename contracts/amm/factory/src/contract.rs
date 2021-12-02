@@ -29,6 +29,7 @@ pub fn instantiate(
         token_code_id: msg.token_code_id,
         pair_code_id: msg.pair_code_id,
         collector_addr: deps.api.addr_validate(&msg.collector_addr)?,
+        commission_rate: msg.commission_rate,
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -45,6 +46,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             pair_code_id,
             pair_contract,
             collector_addr,
+            commission_rate,
         } => execute_update_config(
             deps,
             env,
@@ -54,6 +56,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             pair_code_id,
             pair_contract,
             collector_addr,
+            commission_rate,
         ),
         ExecuteMsg::CreatePair { asset_infos } => execute_create_pair(deps, env, info, asset_infos),
     }
@@ -69,8 +72,10 @@ pub fn execute_update_config(
     pair_code_id: Option<u64>,
     pair_contract: String,
     collector_addr: Option<String>,
+    commission_rate: Option<String>,
 ) -> StdResult<Response> {
     let mut config: Config = CONFIG.load(deps.storage)?;
+    let mut is_pair_update = false;
 
     // permission check
     if deps.api.addr_canonicalize(info.sender.as_str())? != config.owner {
@@ -92,16 +97,24 @@ pub fn execute_update_config(
         config.pair_code_id = pair_code_id;
     }
 
-    if let Some(collector_addr) = collector_addr {
+    if let Some(collector_addr) = collector_addr.clone() {
         config.collector_addr = deps.api.addr_validate(&collector_addr)?;
+        is_pair_update = true;
+    }
+    if let Some(commission_rate) = commission_rate.clone() {
+        config.commission_rate = commission_rate;
+        is_pair_update = true;
+    }
 
-        CONFIG.save(deps.storage, &config)?;
+    CONFIG.save(deps.storage, &config)?;
 
+    if is_pair_update {
         // Update pair contract config
         let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: pair_contract,
             msg: to_binary(&PairUpdateConfig {
-                collector_addr: Some(collector_addr),
+                collector_addr,
+                commission_rate,
             })
             .unwrap(),
             funds: vec![],
@@ -115,7 +128,6 @@ pub fn execute_update_config(
                 reply_on: ReplyOn::Never,
             }))
     } else {
-        CONFIG.save(deps.storage, &config)?;
         Ok(Response::new().add_attribute("action", "update_config"))
     }
 }
@@ -163,6 +175,7 @@ pub fn execute_create_pair(
                     asset_infos,
                     token_code_id: config.token_code_id,
                     collector_addr: config.collector_addr.to_string(),
+                    commission_rate: config.commission_rate,
                 })?,
             }
             .into(),

@@ -10,6 +10,7 @@ pub const PAIR_INFO: Item<PairInfo> = Item::new("pair_info");
 pub struct Config {
     pub factory_addr: Addr,
     pub collector_addr: Addr,
+    pub commission_rate: String,
 }
 
 // put the length bytes at the first for compatibility with legacy singleton store

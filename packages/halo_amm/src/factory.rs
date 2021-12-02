@@ -1,6 +1,5 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
 use crate::asset::{AssetInfo, PairInfo};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -9,6 +8,7 @@ pub struct InstantiateMsg {
     pub pair_code_id: u64,
     pub token_code_id: u64,
     pub collector_addr: String,
+    pub commission_rate: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -21,6 +21,7 @@ pub enum ExecuteMsg {
         pair_code_id: Option<u64>,
         pair_contract: String,
         collector_addr: Option<String>,
+        commission_rate: Option<String>,
     },
     /// CreatePair instantiates pair contract
     CreatePair {

@@ -25,8 +25,6 @@ use std::str::FromStr;
 
 const INSTANTIATE_REPLY_ID: u64 = 1;
 
-/// Commission rate == 1%
-const COMMISSION_RATE: &str = "0.01";
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -48,6 +46,7 @@ pub fn instantiate(
     let config = Config {
         factory_addr: info.sender,
         collector_addr: deps.api.addr_validate(&msg.collector_addr)?,
+        commission_rate: msg.commission_rate,
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -85,7 +84,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::UpdateConfig { collector_addr } => update_config(deps, info, collector_addr),
+        ExecuteMsg::UpdateConfig { collector_addr, commission_rate } => update_config(deps, info, collector_addr, commission_rate),
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::ProvideLiquidity {
             assets,
@@ -193,6 +192,7 @@ pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
     collector_addr: Option<String>,
+    commission_rate: Option<String>,
 ) -> Result<Response, ContractError> {
     let mut config: Config = CONFIG.load(deps.storage)?;
 
@@ -203,6 +203,9 @@ pub fn update_config(
 
     if let Some(collector_addr) = collector_addr {
         config.collector_addr = deps.api.addr_validate(&collector_addr)?;
+    }
+    if let Some(commission_rate) = commission_rate {
+        config.commission_rate = commission_rate;
     }
 
     CONFIG.save(deps.storage, &config)?;
@@ -420,7 +423,7 @@ pub fn swap(
 
     let offer_amount = offer_asset.amount;
     let (return_amount, spread_amount, commission_amount) =
-        compute_swap(offer_pool.amount, ask_pool.amount, offer_amount);
+        compute_swap(offer_pool.amount, ask_pool.amount, offer_amount, config.commission_rate);
 
     // check max spread limit if exist
     assert_max_spread(
@@ -512,6 +515,7 @@ pub fn query_simulation(
     deps: Deps,
     offer_asset: Asset,
 ) -> Result<SimulationResponse, ContractError> {
+    let config: Config = CONFIG.load(deps.storage)?;
     let pair_info: PairInfoRaw = PAIR_INFO.load(deps.storage)?;
 
     let contract_addr = deps.api.addr_humanize(&pair_info.contract_addr)?;
@@ -530,7 +534,7 @@ pub fn query_simulation(
     }
 
     let (return_amount, spread_amount, commission_amount) =
-        compute_swap(offer_pool.amount, ask_pool.amount, offer_asset.amount);
+        compute_swap(offer_pool.amount, ask_pool.amount, offer_asset.amount, config.commission_rate);
 
     Ok(SimulationResponse {
         return_amount,
@@ -543,6 +547,7 @@ pub fn query_reverse_simulation(
     deps: Deps,
     ask_asset: Asset,
 ) -> Result<ReverseSimulationResponse, ContractError> {
+    let config: Config = CONFIG.load(deps.storage)?;
     let pair_info: PairInfoRaw = PAIR_INFO.load(deps.storage)?;
 
     let contract_addr = deps.api.addr_humanize(&pair_info.contract_addr)?;
@@ -561,7 +566,7 @@ pub fn query_reverse_simulation(
     }
 
     let (offer_amount, spread_amount, commission_amount) =
-        compute_offer_amount(offer_pool.amount, ask_pool.amount, ask_asset.amount)?;
+        compute_offer_amount(offer_pool.amount, ask_pool.amount, ask_asset.amount, config.commission_rate)?;
 
     Ok(ReverseSimulationResponse {
         offer_amount,
@@ -581,12 +586,13 @@ fn compute_swap(
     offer_pool: Uint128,
     ask_pool: Uint128,
     offer_amount: Uint128,
+    commission_rate: String,
 ) -> (Uint128, Uint128, Uint128) {
     let offer_pool: Uint256 = offer_pool.into();
     let ask_pool: Uint256 = ask_pool.into();
     let offer_amount: Uint256 = offer_amount.into();
 
-    let commission_rate = Decimal256::from_str(COMMISSION_RATE).unwrap();
+    let commission_rate = Decimal256::from_str(&commission_rate).unwrap();
 
     // offer => ask
     // ask_amount = (ask_pool - cp / (offer_pool + offer_amount)) * (1 - commission_rate)
@@ -615,7 +621,7 @@ fn test_compute_swap_with_huge_pool_variance() {
     let ask_pool = Uint128::from(317u128);
 
     assert_eq!(
-        compute_swap(offer_pool, ask_pool, Uint128::from(1u128)).0,
+        compute_swap(offer_pool, ask_pool, Uint128::from(1u128), "0.01".to_string()).0,
         Uint128::zero()
     );
 }
@@ -624,12 +630,13 @@ fn compute_offer_amount(
     offer_pool: Uint128,
     ask_pool: Uint128,
     ask_amount: Uint128,
+    commission_rate: String,
 ) -> Result<(Uint128, Uint128, Uint128), ContractError> {
     let offer_pool: Uint256 = offer_pool.into();
     let ask_pool: Uint256 = ask_pool.into();
     let ask_amount: Uint256 = ask_amount.into();
 
-    let commission_rate = Decimal256::from_str(COMMISSION_RATE).unwrap();
+    let commission_rate = Decimal256::from_str(&commission_rate).unwrap();
 
     // ask => offer
     // offer_amount = cp / (ask_pool - ask_amount / (1 - commission_rate)) - offer_pool

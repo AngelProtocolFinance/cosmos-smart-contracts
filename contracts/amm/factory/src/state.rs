@@ -11,6 +11,7 @@ pub struct Config {
     pub pair_code_id: u64,
     pub token_code_id: u64,
     pub collector_addr: Addr,
+    pub commission_rate: String,
 }
 
 // put the length bytes at the first for compatibility with legacy singleton store
@@ -97,6 +98,7 @@ mod test {
                 pair_code_id: 1,
                 token_code_id: 1,
                 collector_addr: deps.api.addr_validate("collector000").unwrap(),
+                commission_rate: "0.01".to_string(),
             },
         )
         .unwrap();

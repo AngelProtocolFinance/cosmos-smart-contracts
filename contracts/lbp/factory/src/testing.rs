@@ -18,6 +18,7 @@ use crate::response::MsgInstantiateContractResponse;
 use halo_lbp::pair::InstantiateMsg as PairInstantiateMsg;
 use protobuf::Message;
 
+pub const COMMISSION_RATE: &str = "0.02";
 #[test]
 fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
@@ -27,6 +28,7 @@ fn proper_initialization() {
         token_code_id: 123u64,
         owner: "owner0000".to_string(),
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -51,6 +53,7 @@ fn update_config() {
         token_code_id: 123u64,
         owner: "owner0000".to_string(),
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -68,6 +71,7 @@ fn update_config() {
         token_code_id: None,
         pair_contract: "pair0000".to_string(),
         collector_addr: None,
+        commission_rate: None,
     };
 
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
@@ -89,6 +93,7 @@ fn update_config() {
         token_code_id: Some(200u64),
         pair_contract: "pair0000".to_string(),
         collector_addr: None,
+        commission_rate: None,
     };
 
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
@@ -110,6 +115,7 @@ fn update_config() {
         token_code_id: None,
         pair_contract: "pair0000".to_string(),
         collector_addr: None,
+        commission_rate: None,
     };
 
     let res = execute(deps.as_mut(), env, info, msg);
@@ -134,6 +140,7 @@ fn create_pair() {
         token_code_id: 123u64,
         owner: "owner0000".to_string(),
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -189,6 +196,7 @@ fn create_pair() {
                     end_time,
                     description: Some(String::from("description")),
                     collector_addr: "collector000".to_string(),
+                    commission_rate: COMMISSION_RATE.to_string(),
                 })
                 .unwrap(),
                 code_id: 321u64,
@@ -220,6 +228,7 @@ fn register() {
         token_code_id: 123u64,
         owner: "owner0000".to_string(),
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();

@@ -18,6 +18,7 @@ use halo_amm::pair::{
 };
 use halo_amm::token::InstantiateMsg as TokenInstantiateMsg;
 
+const COMMISSION_RATE: &str = "0.01";
 #[test]
 fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
@@ -33,6 +34,7 @@ fn proper_initialization() {
         ],
         token_code_id: 10u64,
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     // we can just call .unwrap() to assert this was a success
@@ -124,6 +126,7 @@ fn provide_liquidity() {
         ],
         token_code_id: 10u64,
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -535,6 +538,7 @@ fn withdraw_liquidity() {
         ],
         token_code_id: 10u64,
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -657,6 +661,7 @@ fn try_native_to_token() {
         ],
         token_code_id: 10u64,
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -838,6 +843,7 @@ fn try_token_to_native() {
         ],
         token_code_id: 10u64,
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
@@ -1121,6 +1127,7 @@ fn test_query_pool() {
         ],
         token_code_id: 10u64,
         collector_addr: "collector000".to_string(),
+        commission_rate: COMMISSION_RATE.to_string(),
     };
 
     let env = mock_env();
