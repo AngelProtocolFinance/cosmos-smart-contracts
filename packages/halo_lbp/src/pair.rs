@@ -18,11 +18,16 @@ pub struct InstantiateMsg {
     pub end_time: u64,
     /// Pair description
     pub description: Option<String>,
+    /// Collector contract address to be paid commission fee
+    pub collector_addr: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    UpdateConfig {
+        collector_addr: Option<String>,
+    },
     Receive(Cw20ReceiveMsg),
     /// ProvideLiquidity a user provides pool liquidity
     ProvideLiquidity {

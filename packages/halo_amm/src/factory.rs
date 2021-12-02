@@ -8,6 +8,7 @@ pub struct InstantiateMsg {
     /// Pair contract code ID, which is used to
     pub pair_code_id: u64,
     pub token_code_id: u64,
+    pub collector_addr: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -18,6 +19,8 @@ pub enum ExecuteMsg {
         owner: Option<String>,
         token_code_id: Option<u64>,
         pair_code_id: Option<u64>,
+        pair_contract: String,
+        collector_addr: Option<String>,
     },
     /// CreatePair instantiates pair contract
     CreatePair {

@@ -7,13 +7,13 @@ use crate::contract::{execute, instantiate, query};
 use crate::testing::mock_querier::mock_dependencies;
 
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
-use terra_cosmwasm::{create_swap_msg, create_swap_send_msg};
 use halo_amm::asset::{Asset, AssetInfo};
 use halo_amm::pair::ExecuteMsg as PairExecuteMsg;
 use halo_amm::router::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg,
     SimulateSwapOperationsResponse, SwapOperation,
 };
+use terra_cosmwasm::{create_swap_msg, create_swap_send_msg};
 
 #[test]
 fn proper_initialization() {

@@ -13,6 +13,7 @@ pub struct Config {
     pub owner: Addr,
     pub pair_code_id: u64,
     pub token_code_id: u64,
+    pub collector_addr: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

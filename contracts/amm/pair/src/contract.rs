@@ -1,6 +1,6 @@
 use crate::error::ContractError;
 use crate::response::MsgInstantiateContractResponse;
-use crate::state::PAIR_INFO;
+use crate::state::{Config, CONFIG, PAIR_INFO};
 
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
@@ -12,9 +12,6 @@ use cosmwasm_std::{
 
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg, MinterResponse};
-use integer_sqrt::IntegerSquareRoot;
-use protobuf::Message;
-use std::str::FromStr;
 use halo_amm::asset::{Asset, AssetInfo, PairInfo, PairInfoRaw};
 use halo_amm::pair::{
     Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, PoolResponse, QueryMsg,
@@ -22,16 +19,19 @@ use halo_amm::pair::{
 };
 use halo_amm::querier::query_supply;
 use halo_amm::token::InstantiateMsg as TokenInstantiateMsg;
+use integer_sqrt::IntegerSquareRoot;
+use protobuf::Message;
+use std::str::FromStr;
 
 const INSTANTIATE_REPLY_ID: u64 = 1;
 
-/// Commission rate == 0.3%
-const COMMISSION_RATE: &str = "0.003";
+/// Commission rate == 1%
+const COMMISSION_RATE: &str = "0.01";
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     let pair_info: &PairInfoRaw = &PairInfoRaw {
@@ -45,13 +45,20 @@ pub fn instantiate(
 
     PAIR_INFO.save(deps.storage, pair_info)?;
 
+    let config = Config {
+        factory_addr: info.sender,
+        collector_addr: deps.api.addr_validate(&msg.collector_addr)?,
+    };
+
+    CONFIG.save(deps.storage, &config)?;
+
     Ok(Response::new().add_submessage(SubMsg {
         // Create LP token
         msg: WasmMsg::Instantiate {
             admin: None,
             code_id: msg.token_code_id,
             msg: to_binary(&TokenInstantiateMsg {
-                name: "terraswap liquidity token".to_string(),
+                name: "halo liquidity token".to_string(),
                 symbol: "uLP".to_string(),
                 decimals: 6,
                 initial_balances: vec![],
@@ -78,6 +85,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::UpdateConfig { collector_addr } => update_config(deps, info, collector_addr),
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::ProvideLiquidity {
             assets,
@@ -178,6 +186,28 @@ pub fn receive_cw20(
         }
         Err(err) => Err(ContractError::Std(err)),
     }
+}
+
+// Factory contract can only update the config
+pub fn update_config(
+    deps: DepsMut,
+    info: MessageInfo,
+    collector_addr: Option<String>,
+) -> Result<Response, ContractError> {
+    let mut config: Config = CONFIG.load(deps.storage)?;
+
+    // permission check
+    if info.sender != config.factory_addr {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    if let Some(collector_addr) = collector_addr {
+        config.collector_addr = deps.api.addr_validate(&collector_addr)?;
+    }
+
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::new().add_attribute("action", "update_config"))
 }
 
 /// This just stores the result for future query
@@ -362,6 +392,7 @@ pub fn swap(
 ) -> Result<Response, ContractError> {
     offer_asset.assert_sent_native_token_balance(&info)?;
 
+    let config: Config = CONFIG.load(deps.storage)?;
     let pair_info: PairInfoRaw = PAIR_INFO.load(deps.storage)?;
 
     let pools: [Asset; 2] = pair_info.query_pools(&deps.querier, deps.api, env.contract.address)?;
@@ -412,6 +443,15 @@ pub fn swap(
     let mut messages: Vec<CosmosMsg> = vec![];
     if !return_amount.is_zero() {
         messages.push(return_asset.into_msg(&deps.querier, receiver.clone())?);
+    }
+
+    // Commission fees are paid to the Collector contract
+    let commission_asset = Asset {
+        info: ask_pool.info.clone(),
+        amount: commission_amount,
+    };
+    if !commission_amount.is_zero() {
+        messages.push(commission_asset.into_msg(&deps.querier, config.collector_addr)?);
     }
 
     // 1. send collateral token from the contract to a user

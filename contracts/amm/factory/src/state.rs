@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Api, CanonicalAddr, Order, StdResult, Storage};
+use cosmwasm_std::{Addr, Api, CanonicalAddr, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
 use halo_amm::asset::{AssetInfoRaw, PairInfo, PairInfoRaw};
 
@@ -10,6 +10,7 @@ pub struct Config {
     pub owner: CanonicalAddr,
     pub pair_code_id: u64,
     pub token_code_id: u64,
+    pub collector_addr: Addr,
 }
 
 // put the length bytes at the first for compatibility with legacy singleton store
@@ -95,6 +96,7 @@ mod test {
                 owner: deps.api.addr_canonicalize("owner0000").unwrap(),
                 pair_code_id: 1,
                 token_code_id: 1,
+                collector_addr: deps.api.addr_validate("collector000").unwrap(),
             },
         )
         .unwrap();

@@ -11,8 +11,6 @@ use crate::querier::compute_tax;
 use crate::state::{Config, CONFIG};
 
 use cw20::Cw20ReceiveMsg;
-use std::collections::HashMap;
-use terra_cosmwasm::{SwapResponse, TerraMsgWrapper, TerraQuerier};
 use halo_amm::asset::{Asset, AssetInfo, PairInfo};
 use halo_amm::pair::{QueryMsg as PairQueryMsg, SimulationResponse};
 use halo_amm::querier::query_pair_info;
@@ -20,6 +18,8 @@ use halo_amm::router::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg,
     SimulateSwapOperationsResponse, SwapOperation,
 };
+use std::collections::HashMap;
+use terra_cosmwasm::{SwapResponse, TerraMsgWrapper, TerraQuerier};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(

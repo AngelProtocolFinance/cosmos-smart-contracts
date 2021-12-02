@@ -19,6 +19,7 @@ fn proper_initialization() {
     let msg = InstantiateMsg {
         pair_code_id: 321u64,
         token_code_id: 123u64,
+        collector_addr: "collector000".to_string(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -40,6 +41,7 @@ fn update_config() {
     let msg = InstantiateMsg {
         pair_code_id: 321u64,
         token_code_id: 123u64,
+        collector_addr: "collector000".to_string(),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -53,6 +55,8 @@ fn update_config() {
         owner: Some("addr0001".to_string()),
         pair_code_id: None,
         token_code_id: None,
+        pair_contract: "pair000".to_string(),
+        collector_addr: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -72,6 +76,8 @@ fn update_config() {
         owner: None,
         pair_code_id: Some(100u64),
         token_code_id: Some(200u64),
+        pair_contract: "pair000".to_string(),
+        collector_addr: None,
     };
 
     let res = execute(deps.as_mut(), env, info, msg).unwrap();
@@ -91,6 +97,8 @@ fn update_config() {
         owner: None,
         pair_code_id: None,
         token_code_id: None,
+        pair_contract: "pair000".to_string(),
+        collector_addr: None,
     };
 
     let res = execute(deps.as_mut(), env, info, msg);
@@ -107,6 +115,7 @@ fn create_pair() {
     let msg = InstantiateMsg {
         pair_code_id: 321u64,
         token_code_id: 123u64,
+        collector_addr: "collector000".to_string(),
     };
 
     let env = mock_env();
@@ -148,6 +157,7 @@ fn create_pair() {
                 msg: to_binary(&PairInstantiateMsg {
                     asset_infos: asset_infos.clone(),
                     token_code_id: 123u64,
+                    collector_addr: "collector000".to_string(),
                 })
                 .unwrap(),
                 code_id: 321u64,

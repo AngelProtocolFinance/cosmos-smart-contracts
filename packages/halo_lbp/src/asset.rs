@@ -84,7 +84,7 @@ impl Asset {
         }
     }
 
-    pub fn into_msg(self, deps: Deps, _sender: Addr, recipient: Addr) -> StdResult<CosmosMsg> {
+    pub fn into_msg(self, deps: Deps, recipient: Addr) -> StdResult<CosmosMsg> {
         let amount = self.amount;
 
         match &self.info {

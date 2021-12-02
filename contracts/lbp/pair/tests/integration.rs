@@ -95,6 +95,7 @@ fn instantiate_pair(app: &mut App) -> Addr {
         start_time,
         end_time,
         description: None,
+        collector_addr: "collecotr000".to_string(),
     };
 
     app.instantiate_contract(

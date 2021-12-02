@@ -1,20 +1,21 @@
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response, StdError,
-    StdResult, SubMsg, WasmMsg,
+    to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn, Response,
+    StdError, StdResult, SubMsg, WasmMsg,
 };
 
 use crate::querier::query_liquidity_token;
 use crate::response::MsgInstantiateContractResponse;
 use crate::state::{pair_key, read_pairs, Config, TmpPairInfo, CONFIG, PAIRS, TMP_PAIR_INFO};
 
-use protobuf::Message;
 use halo_amm::asset::{AssetInfo, PairInfo, PairInfoRaw};
 use halo_amm::factory::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, PairsResponse, QueryMsg,
 };
+use halo_amm::pair::ExecuteMsg::UpdateConfig as PairUpdateConfig;
 use halo_amm::pair::InstantiateMsg as PairInstantiateMsg;
+use protobuf::Message;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -27,6 +28,7 @@ pub fn instantiate(
         owner: deps.api.addr_canonicalize(info.sender.as_str())?,
         token_code_id: msg.token_code_id,
         pair_code_id: msg.pair_code_id,
+        collector_addr: deps.api.addr_validate(&msg.collector_addr)?,
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -41,7 +43,18 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             owner,
             token_code_id,
             pair_code_id,
-        } => execute_update_config(deps, env, info, owner, token_code_id, pair_code_id),
+            pair_contract,
+            collector_addr,
+        } => execute_update_config(
+            deps,
+            env,
+            info,
+            owner,
+            token_code_id,
+            pair_code_id,
+            pair_contract,
+            collector_addr,
+        ),
         ExecuteMsg::CreatePair { asset_infos } => execute_create_pair(deps, env, info, asset_infos),
     }
 }
@@ -54,6 +67,8 @@ pub fn execute_update_config(
     owner: Option<String>,
     token_code_id: Option<u64>,
     pair_code_id: Option<u64>,
+    pair_contract: String,
+    collector_addr: Option<String>,
 ) -> StdResult<Response> {
     let mut config: Config = CONFIG.load(deps.storage)?;
 
@@ -77,9 +92,32 @@ pub fn execute_update_config(
         config.pair_code_id = pair_code_id;
     }
 
-    CONFIG.save(deps.storage, &config)?;
+    if let Some(collector_addr) = collector_addr {
+        config.collector_addr = deps.api.addr_validate(&collector_addr)?;
 
-    Ok(Response::new().add_attribute("action", "update_config"))
+        CONFIG.save(deps.storage, &config)?;
+
+        // Update pair contract config
+        let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: pair_contract,
+            msg: to_binary(&PairUpdateConfig {
+                collector_addr: Some(collector_addr),
+            })
+            .unwrap(),
+            funds: vec![],
+        });
+        Ok(Response::new()
+            .add_attribute("action", "update_config")
+            .add_submessage(SubMsg {
+                id: 0,
+                gas_limit: None,
+                msg: wasm_msg,
+                reply_on: ReplyOn::Never,
+            }))
+    } else {
+        CONFIG.save(deps.storage, &config)?;
+        Ok(Response::new().add_attribute("action", "update_config"))
+    }
 }
 
 // Anyone can execute it to create swap pair
@@ -124,6 +162,7 @@ pub fn execute_create_pair(
                 msg: to_binary(&PairInstantiateMsg {
                     asset_infos,
                     token_code_id: config.token_code_id,
+                    collector_addr: config.collector_addr.to_string(),
                 })?,
             }
             .into(),

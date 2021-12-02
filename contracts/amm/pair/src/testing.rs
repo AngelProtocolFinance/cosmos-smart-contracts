@@ -32,6 +32,7 @@ fn proper_initialization() {
             },
         ],
         token_code_id: 10u64,
+        collector_addr: "collector000".to_string(),
     };
 
     // we can just call .unwrap() to assert this was a success
@@ -122,6 +123,7 @@ fn provide_liquidity() {
             },
         ],
         token_code_id: 10u64,
+        collector_addr: "collector000".to_string(),
     };
 
     let env = mock_env();
@@ -532,6 +534,7 @@ fn withdraw_liquidity() {
             },
         ],
         token_code_id: 10u64,
+        collector_addr: "collector000".to_string(),
     };
 
     let env = mock_env();
@@ -653,6 +656,7 @@ fn try_native_to_token() {
             },
         ],
         token_code_id: 10u64,
+        collector_addr: "collector000".to_string(),
     };
 
     let env = mock_env();
@@ -833,6 +837,7 @@ fn try_token_to_native() {
             },
         ],
         token_code_id: 10u64,
+        collector_addr: "collector000".to_string(),
     };
 
     let env = mock_env();
@@ -1115,6 +1120,7 @@ fn test_query_pool() {
             },
         ],
         token_code_id: 10u64,
+        collector_addr: "collector000".to_string(),
     };
 
     let env = mock_env();

@@ -8,11 +8,11 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg};
+use halo_amm::asset::{Asset, AssetInfo, PairInfo};
+use halo_amm::pair::SimulationResponse;
 use terra_cosmwasm::{
     SwapResponse, TaxCapResponse, TaxRateResponse, TerraQuery, TerraQueryWrapper, TerraRoute,
 };
-use halo_amm::asset::{Asset, AssetInfo, PairInfo};
-use halo_amm::pair::SimulationResponse;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

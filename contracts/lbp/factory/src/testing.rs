@@ -26,6 +26,7 @@ fn proper_initialization() {
         pair_code_id: 321u64,
         token_code_id: 123u64,
         owner: "owner0000".to_string(),
+        collector_addr: "collector000".to_string(),
     };
 
     let env = mock_env();
@@ -49,6 +50,7 @@ fn update_config() {
         pair_code_id: 321u64,
         token_code_id: 123u64,
         owner: "owner0000".to_string(),
+        collector_addr: "collector000".to_string(),
     };
 
     let env = mock_env();
@@ -64,6 +66,8 @@ fn update_config() {
         owner: Some(Addr::unchecked("addr0001")),
         pair_code_id: None,
         token_code_id: None,
+        pair_contract: "pair0000".to_string(),
+        collector_addr: None,
     };
 
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
@@ -83,6 +87,8 @@ fn update_config() {
         owner: None,
         pair_code_id: Some(100u64),
         token_code_id: Some(200u64),
+        pair_contract: "pair0000".to_string(),
+        collector_addr: None,
     };
 
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
@@ -102,6 +108,8 @@ fn update_config() {
         owner: None,
         pair_code_id: None,
         token_code_id: None,
+        pair_contract: "pair0000".to_string(),
+        collector_addr: None,
     };
 
     let res = execute(deps.as_mut(), env, info, msg);
@@ -125,6 +133,7 @@ fn create_pair() {
         pair_code_id: 321u64,
         token_code_id: 123u64,
         owner: "owner0000".to_string(),
+        collector_addr: "collector000".to_string(),
     };
 
     let env = mock_env();
@@ -179,6 +188,7 @@ fn create_pair() {
                     start_time,
                     end_time,
                     description: Some(String::from("description")),
+                    collector_addr: "collector000".to_string(),
                 })
                 .unwrap(),
                 code_id: 321u64,
@@ -209,6 +219,7 @@ fn register() {
         pair_code_id: 321u64,
         token_code_id: 123u64,
         owner: "owner0000".to_string(),
+        collector_addr: "collector000".to_string(),
     };
 
     let env = mock_env();

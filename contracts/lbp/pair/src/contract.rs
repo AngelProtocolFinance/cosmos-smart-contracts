@@ -1,7 +1,7 @@
 use crate::math::{calc_in_given_out, calc_out_given_in, uint2dec};
 use crate::response::MsgInstantiateContractResponse;
 
-use crate::state::PAIR_INFO;
+use crate::state::{Config, CONFIG, PAIR_INFO};
 
 use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
@@ -39,7 +39,7 @@ const INSTANTIATE_REPLY_ID: u64 = 1;
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -81,13 +81,20 @@ pub fn instantiate(
 
     PAIR_INFO.save(deps.storage, pair_info)?;
 
+    let config = Config {
+        factory_addr: info.sender,
+        collector_addr: deps.api.addr_validate(&msg.collector_addr)?,
+    };
+
+    CONFIG.save(deps.storage, &config)?;
+
     Ok(Response::new().add_submessage(SubMsg {
         // Create LP token
         id: INSTANTIATE_REPLY_ID,
         msg: WasmMsg::Instantiate {
             code_id: msg.token_code_id,
             msg: to_binary(&TokenInstantiateMsg {
-                name: "halo-lbp liquidity token".to_string(),
+                name: "halo liquidity token".to_string(),
                 symbol: "uLP".to_string(),
                 decimals: 6,
                 initial_balances: vec![],
@@ -98,7 +105,7 @@ pub fn instantiate(
             })?,
             funds: vec![],
             admin: None,
-            label: String::from("halo-lbp liquidity token"),
+            label: String::from("halo liquidity token"),
         }
         .into(),
         gas_limit: None,
@@ -130,6 +137,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::UpdateConfig { collector_addr } => update_config(deps, info, collector_addr),
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::ProvideLiquidity {
             assets,
@@ -157,6 +165,28 @@ pub fn execute(
             )
         }
     }
+}
+
+// Factory contract can only update the config
+pub fn update_config(
+    deps: DepsMut,
+    info: MessageInfo,
+    collector_addr: Option<String>,
+) -> Result<Response, ContractError> {
+    let mut config: Config = CONFIG.load(deps.storage)?;
+
+    // permission check
+    if info.sender != config.factory_addr {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    if let Some(collector_addr) = collector_addr {
+        config.collector_addr = deps.api.addr_validate(&collector_addr)?;
+    }
+
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::new().add_attribute("action", "update_config"))
 }
 
 pub fn receive_cw20(
@@ -335,14 +365,10 @@ pub fn try_withdraw_liquidity(
         .collect();
 
     let messages: Vec<CosmosMsg> = vec![
-        refund_assets[0].clone().into_msg(
-            deps.as_ref(),
-            env.contract.address.clone(),
-            sender.clone(),
-        )?,
-        refund_assets[1]
+        refund_assets[0]
             .clone()
-            .into_msg(deps.as_ref(), env.contract.address, sender)?,
+            .into_msg(deps.as_ref(), sender.clone())?,
+        refund_assets[1].clone().into_msg(deps.as_ref(), sender)?,
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: pair_info.liquidity_token.to_string(),
             msg: to_binary(&Cw20ExecuteMsg::Burn { amount })?,
@@ -375,6 +401,7 @@ pub fn try_swap(
 ) -> Result<Response, ContractError> {
     offer_asset.assert_sent_native_token_balance(&info)?;
 
+    let config: Config = CONFIG.load(deps.storage)?;
     let pair_info: PairInfo = PAIR_INFO.load(deps.storage)?;
 
     let pools: [WeightedAsset; 2] = pair_info.query_pools(deps.as_ref(), &env.contract.address)?;
@@ -446,25 +473,34 @@ pub fn try_swap(
     };
 
     let tax_amount = return_asset.compute_tax(deps.as_ref())?;
+    let receiver = to.unwrap_or_else(|| sender.clone());
+
+    let mut messages: Vec<CosmosMsg> = vec![];
+    if !return_amount.is_zero() {
+        messages.push(return_asset.into_msg(deps.as_ref(), receiver.clone())?);
+    }
+
+    // Commission fees are paid to the Collector contract
+    let commission_asset = Asset {
+        info: ask_pool.info.clone(),
+        amount: commission_amount,
+    };
+    if !commission_amount.is_zero() {
+        messages.push(commission_asset.into_msg(deps.as_ref(), config.collector_addr)?);
+    }
 
     // 1. send collateral token from the contract to a user
     // 2. send inactive commission to collector
-    Ok(Response::new()
-        .add_message(return_asset.into_msg(
-            deps.as_ref(),
-            env.contract.address,
-            to.unwrap_or(sender),
-        )?)
-        .add_attributes(vec![
-            attr("action", "swap"),
-            attr("offer_asset", offer_asset.info.to_string()),
-            attr("ask_asset", ask_pool.info.to_string()),
-            attr("offer_amount", offer_amount.to_string()),
-            attr("return_amount", return_amount.to_string()),
-            attr("tax_amount", tax_amount.to_string()),
-            attr("spread_amount", spread_amount.to_string()),
-            attr("commission_amount", commission_amount.to_string()),
-        ]))
+    Ok(Response::new().add_messages(messages).add_attributes(vec![
+        attr("action", "swap"),
+        attr("offer_asset", offer_asset.info.to_string()),
+        attr("ask_asset", ask_pool.info.to_string()),
+        attr("offer_amount", offer_amount.to_string()),
+        attr("return_amount", return_amount.to_string()),
+        attr("tax_amount", tax_amount.to_string()),
+        attr("spread_amount", spread_amount.to_string()),
+        attr("commission_amount", commission_amount.to_string()),
+    ]))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

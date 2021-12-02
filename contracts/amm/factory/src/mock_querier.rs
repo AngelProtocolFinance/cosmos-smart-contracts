@@ -4,8 +4,8 @@ use cosmwasm_std::{
     QueryRequest, SystemError, SystemResult, WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
-use std::collections::HashMap;
 use halo_amm::asset::{AssetInfoRaw, PairInfo, PairInfoRaw};
+use std::collections::HashMap;
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
 /// this uses our CustomQuerier.

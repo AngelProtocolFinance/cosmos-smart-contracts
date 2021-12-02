@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    attr, entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn,
-    Response, StdError, StdResult, SubMsg, WasmMsg,
+    attr, entry_point, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply,
+    ReplyOn, Response, StdError, StdResult, SubMsg, WasmMsg,
 };
 use cw2::set_contract_version;
 use protobuf::Message;
@@ -10,6 +10,7 @@ use halo_lbp::factory::{
     ConfigResponse, ExecuteMsg, FactoryPairInfo, InstantiateMsg, MigrateMsg, PairsResponse,
     QueryMsg,
 };
+use halo_lbp::pair::ExecuteMsg::UpdateConfig as PairUpdateConfig;
 use halo_lbp::pair::InstantiateMsg as PairInstantiateMsg;
 
 use crate::error::ContractError;
@@ -31,12 +32,12 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-    let owner = deps.api.addr_validate(&msg.owner)?;
 
     let config = Config {
-        owner,
+        owner: deps.api.addr_validate(&msg.owner)?,
         token_code_id: msg.token_code_id,
         pair_code_id: msg.pair_code_id,
+        collector_addr: deps.api.addr_validate(&msg.collector_addr)?,
     };
     CONFIG.save(deps.storage, &config)?;
 
@@ -55,7 +56,17 @@ pub fn execute(
             owner,
             token_code_id,
             pair_code_id,
-        } => try_update_config(deps, info, owner, token_code_id, pair_code_id),
+            pair_contract,
+            collector_addr,
+        } => try_update_config(
+            deps,
+            info,
+            owner,
+            token_code_id,
+            pair_code_id,
+            pair_contract,
+            collector_addr,
+        ),
         ExecuteMsg::CreatePair {
             asset_infos,
             start_time,
@@ -81,6 +92,8 @@ pub fn try_update_config(
     owner: Option<Addr>,
     token_code_id: Option<u64>,
     pair_code_id: Option<u64>,
+    pair_contract: String,
+    collector_addr: Option<String>,
 ) -> Result<Response, ContractError> {
     let mut config: Config = CONFIG.load(deps.storage)?;
 
@@ -97,8 +110,32 @@ pub fn try_update_config(
     if let Some(pair_code_id) = pair_code_id {
         config.pair_code_id = pair_code_id;
     }
-    CONFIG.save(deps.storage, &config)?;
-    Ok(Response::new().add_attribute("action", "update_config"))
+    if let Some(collector_addr) = collector_addr {
+        config.collector_addr = deps.api.addr_validate(&collector_addr)?;
+
+        CONFIG.save(deps.storage, &config)?;
+
+        // Update pair contract config
+        let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: pair_contract,
+            msg: to_binary(&PairUpdateConfig {
+                collector_addr: Some(collector_addr),
+            })
+            .unwrap(),
+            funds: vec![],
+        });
+        Ok(Response::new()
+            .add_attribute("action", "update_config")
+            .add_submessage(SubMsg {
+                id: 0,
+                gas_limit: None,
+                msg: wasm_msg,
+                reply_on: ReplyOn::Never,
+            }))
+    } else {
+        CONFIG.save(deps.storage, &config)?;
+        Ok(Response::new().add_attribute("action", "update_config"))
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -144,6 +181,7 @@ pub fn try_create_pair(
                     start_time,
                     end_time,
                     description,
+                    collector_addr: config.collector_addr.to_string(),
                 })?,
                 funds: vec![],
                 label: "HALO pair".to_string(),
@@ -223,6 +261,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         owner: state.owner.clone(),
         token_code_id: state.token_code_id,
         pair_code_id: state.pair_code_id,
+        collector_addr: state.collector_addr,
     };
 
     Ok(resp)
