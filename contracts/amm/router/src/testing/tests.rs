@@ -326,7 +326,7 @@ fn execute_swap_operation() {
         to: None,
     };
     let info = mock_info("addr0000", &[]);
-    let res = execute(deps.as_mut(), mock_env(), info, msg.clone());
+    let _res = execute(deps.as_mut(), mock_env(), info, msg.clone());
 
     let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();

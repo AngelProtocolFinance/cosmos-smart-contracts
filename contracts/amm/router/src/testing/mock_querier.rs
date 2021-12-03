@@ -187,7 +187,7 @@ impl WasmMockQuerier {
                 Ok(QueryMsg::Pair { asset_infos }) => {
                     let key = asset_infos[0].to_string() + asset_infos[1].to_string().as_str();
                     match self.halo_factory_querier.pairs.get(&key) {
-                        Some(v) => {
+                        Some(_v) => {
                             SystemResult::Ok(ContractResult::from(to_binary(&FactoryPairInfo {
                                 contract_addr: Addr::unchecked("pair"),
                             })))
