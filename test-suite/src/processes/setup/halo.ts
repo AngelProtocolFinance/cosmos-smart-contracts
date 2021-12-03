@@ -97,6 +97,7 @@ export async function setupHalo(
     timelock_period,
     proposal_deposit,
     snapshot_period,
+    halo_token,
   });
   const govContractAddr = govResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";

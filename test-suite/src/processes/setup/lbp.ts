@@ -8,6 +8,10 @@ import { instantiateContract, sendTransaction, storeCode } from "../../utils/hel
 export async function setupLBP(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
+  tokenCodeId: number,
+  tokenContract: string,
+  collector_addr: string,
+  commission_rate: string,
   ): Promise<void> {
   process.stdout.write("Uploading LBP factory Wasm");
   const factoryCodeId = await storeCode(
@@ -23,13 +27,6 @@ export async function setupLBP(
     path.resolve(__dirname, "../../../../artifacts/lbp_pair.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${pairCodeId}`);
 
-  process.stdout.write("Uploading LBP token Wasm");
-  const tokenCodeId = await storeCode(
-    terra,
-    apTeam,
-    path.resolve(__dirname, "../../../../artifacts/lbp_token.wasm"));
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${tokenCodeId}`);
-
   process.stdout.write("Uploading LBP router Wasm");
   const routerCodeId = await storeCode(
     terra,
@@ -43,6 +40,8 @@ export async function setupLBP(
     pair_code_id: pairCodeId,
     token_code_id: tokenCodeId,
     owner: apTeam.key.accAddress,
+    collector_addr,
+    commission_rate,
   });
   const factoryContract = factoryResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
@@ -50,27 +49,6 @@ export async function setupLBP(
     return attribute.key == "contract_address";
   })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${factoryContract}`);
-
-  // HALO token contract
-  process.stdout.write("Instantiating HALO Token contract");
-  const tokenResult = await instantiateContract(terra, apTeam, apTeam, tokenCodeId, {
-    name: "Angel Protocol",
-    symbol: "HALO",
-    decimals: 6,
-    initial_balances: [
-      {
-        address: apTeam.key.accAddress,
-        amount: "160000000000"
-      },
-    ],
-    mint: undefined,
-  });
-  const tokenContract = tokenResult.logs[0].events.find((event) => {
-    return event.type == "instantiate_contract";
-  })?.attributes.find((attribute) => {
-    return attribute.key == "contract_address";
-  })?.value as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${tokenContract}`);
 
   // Pair contract
   process.stdout.write("Creating Pair contract from Factory contract");

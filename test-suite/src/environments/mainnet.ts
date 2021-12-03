@@ -8,9 +8,9 @@ import { migrateHaloContracts } from "../processes/migrateContracts/migrateHalo"
 import { migrateLBPContracts } from "../processes/migrateContracts/migrateLBP";
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts, Member } from "../processes/setupContracts/mainnet";
-import { setupHalo } from "../processes/setupHalo/testnet";
-import { setupLBP } from "../processes/setupLBP/testnet";
-import { setupTerraSwap } from "../processes/setupTerraSwap/realnet";
+import { setupHalo } from "../processes/setup/halo";
+import { setupLBP } from "../processes/setup/lbp";
+import { setupToken } from "../processes/setup/token";
 import { testExecute } from "../processes/tests/mainnet";
 
 // -------------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ export async function startSetupContracts(): Promise<void> {
 // -------------------------------------------------------------------------------------
 // setup LBP contracts
 // -------------------------------------------------------------------------------------
-export async function startSetupLBPContracts(): Promise<void> {
+export async function startSetupTokenContract(): Promise<void> {
   console.log(chalk.blue("\nTestNet"));
 
   // Initialize environment information
@@ -160,33 +160,12 @@ export async function startSetupLBPContracts(): Promise<void> {
   initialize();
 
   // Setup LBP contracts
-  console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
-  await setupLBP(
+  console.log(chalk.yellow("\nStep 2a. Token Contract"));
+  await setupToken(
     terra,
     apTeam,
   );
 }
-
-// -------------------------------------------------------------------------------------
-// setup TerraSwap contracts
-// -------------------------------------------------------------------------------------
-// export async function startSetupTerraSwapContracts(): Promise<void> {
-//   console.log(chalk.blue("\nMainNet Columbus-5"));
-
-//   // Initialize environment information
-//   console.log(chalk.yellow("\nStep 1. Environment Info"));
-//   initialize();
-
-//   // Setup contracts
-//   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-//   await setupTerraSwap(
-//     terra,
-//     apTeam,
-//     tokenCodeId,
-//     factoryContract
-//   );
-// }
-
 
 // -------------------------------------------------------------------------------------
 // setup HALO contracts
@@ -217,6 +196,29 @@ export async function startSetupHalo(): Promise<void> {
     "0.2",            // reward_factor
     [[100, 200, "1000000"]],  // distribution_schedule
     12345             // genesis_time
+  );
+}
+
+
+// -------------------------------------------------------------------------------------
+// setup LBP contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupLBPContracts(): Promise<void> {
+  console.log(chalk.blue("\nTestNet"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Setup LBP contracts
+  console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
+  await setupLBP(
+    terra,
+    apTeam,
+    tokenCodeId,
+    tokenContract,
+    haloCollector,
+    "0.02"
   );
 }
 
