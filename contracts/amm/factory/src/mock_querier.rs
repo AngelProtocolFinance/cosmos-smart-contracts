@@ -1,10 +1,10 @@
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_slice, to_binary, Api, Coin, ContractResult, Empty, OwnedDeps, Querier, QuerierResult,
+    from_binary, from_slice, to_binary, Addr, Coin, Empty, OwnedDeps, Querier, QuerierResult,
     QueryRequest, SystemError, SystemResult, WasmQuery,
 };
-use cosmwasm_storage::to_length_prefixed;
-use halo_amm::asset::{AssetInfoRaw, PairInfo, PairInfoRaw};
+use halo_amm::asset::PairInfo;
+use halo_amm::pair::QueryMsg;
 use std::collections::HashMap;
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -24,26 +24,26 @@ pub fn mock_dependencies(
 
 pub struct WasmMockQuerier {
     base: MockQuerier<Empty>,
-    terraswap_pair_querier: TerraswapPairQuerier,
+    halo_pair_querier: HaloPairQuerier,
 }
 
 #[derive(Clone, Default)]
-pub struct TerraswapPairQuerier {
-    pairs: HashMap<String, PairInfo>,
+pub struct HaloPairQuerier {
+    pairs: HashMap<Addr, PairInfo>,
 }
 
-impl TerraswapPairQuerier {
-    pub fn new(pairs: &[(&String, &PairInfo)]) -> Self {
-        TerraswapPairQuerier {
+impl HaloPairQuerier {
+    pub fn new(pairs: &[(&Addr, &PairInfo)]) -> Self {
+        HaloPairQuerier {
             pairs: pairs_to_map(pairs),
         }
     }
 }
 
-pub(crate) fn pairs_to_map(pairs: &[(&String, &PairInfo)]) -> HashMap<String, PairInfo> {
-    let mut pairs_map: HashMap<String, PairInfo> = HashMap::new();
+pub(crate) fn pairs_to_map(pairs: &[(&Addr, &PairInfo)]) -> HashMap<Addr, PairInfo> {
+    let mut pairs_map: HashMap<Addr, PairInfo> = HashMap::new();
     for (key, pair) in pairs.iter() {
-        pairs_map.insert(key.to_string(), (*pair).clone());
+        pairs_map.insert((*key).clone(), (*pair).clone());
     }
     pairs_map
 }
@@ -67,42 +67,22 @@ impl Querier for WasmMockQuerier {
 impl WasmMockQuerier {
     pub fn handle_query(&self, request: &QueryRequest<Empty>) -> QuerierResult {
         match &request {
-            QueryRequest::Wasm(WasmQuery::Raw { contract_addr, key }) => {
-                let key: &[u8] = key.as_slice();
-                let prefix_pair_info = to_length_prefixed(b"pair_info").to_vec();
-
-                if key.to_vec() == prefix_pair_info {
-                    let pair_info: PairInfo =
-                        match self.terraswap_pair_querier.pairs.get(contract_addr) {
+            QueryRequest::Wasm(WasmQuery::Smart {contract_addr, msg})// => {
+                => match from_binary(&msg).unwrap() {
+                    QueryMsg::Pair {} => {
+                       let pair_info: PairInfo =
+                        match self.halo_pair_querier.pairs.get(&Addr::unchecked(contract_addr)) {
                             Some(v) => v.clone(),
                             None => {
-                                return SystemResult::Err(SystemError::InvalidRequest {
-                                    error: format!("PairInfo is not found for {}", contract_addr),
-                                    request: key.into(),
+                                return SystemResult::Err(SystemError::NoSuchContract {
+                                    addr: contract_addr.clone(),
                                 })
                             }
                         };
 
-                    let api: MockApi = MockApi::default();
-                    SystemResult::Ok(ContractResult::from(to_binary(&PairInfoRaw {
-                        contract_addr: api
-                            .addr_canonicalize(pair_info.contract_addr.as_str())
-                            .unwrap(),
-                        liquidity_token: api
-                            .addr_canonicalize(pair_info.liquidity_token.as_str())
-                            .unwrap(),
-                        asset_infos: [
-                            AssetInfoRaw::NativeToken {
-                                denom: "uusd".to_string(),
-                            },
-                            AssetInfoRaw::NativeToken {
-                                denom: "uusd".to_string(),
-                            },
-                        ],
-                    })))
-                } else {
-                    panic!("DO NOT ENTER HERE")
-                }
+                        SystemResult::Ok(to_binary(&pair_info).into())
+                    }
+                    _ => panic!("DO NOT ENTER HERE")
             }
             _ => self.base.handle_query(request),
         }
@@ -113,13 +93,13 @@ impl WasmMockQuerier {
     pub fn new(base: MockQuerier<Empty>) -> Self {
         WasmMockQuerier {
             base,
-            terraswap_pair_querier: TerraswapPairQuerier::default(),
+            halo_pair_querier: HaloPairQuerier::default(),
         }
     }
 
-    // configure the terraswap pair
-    pub fn with_terraswap_pairs(&mut self, pairs: &[(&String, &PairInfo)]) {
-        self.terraswap_pair_querier = TerraswapPairQuerier::new(pairs);
+    // configure the halo pair
+    pub fn with_halo_pairs(&mut self, pairs: &[(&Addr, &PairInfo)]) {
+        self.halo_pair_querier = HaloPairQuerier::new(pairs);
     }
 
     // pub fn with_balance(&mut self, balances: &[(&HumanAddr, &[Coin])]) {

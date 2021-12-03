@@ -23,7 +23,7 @@ fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        halo_lbp_factory: Addr::unchecked("halolbpfactory"),
+        halo_factory: Addr::unchecked("halofactory"),
     };
 
     let env = mock_env();
@@ -35,14 +35,14 @@ fn proper_initialization() {
     // it worked, let's query the state
     let config: ConfigResponse =
         from_binary(&query(deps.as_ref(), env, QueryMsg::Config {}).unwrap()).unwrap();
-    assert_eq!("halolbpfactory", config.halo_lbp_factory.as_str());
+    assert_eq!("halofactory", config.halo_factory.as_str());
 }
 
 #[test]
 fn execute_swap_operations() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
-        halo_lbp_factory: Addr::unchecked("halolbpfactory"),
+        halo_factory: Addr::unchecked("halofactory"),
     };
 
     let env = mock_env();
@@ -68,7 +68,7 @@ fn execute_swap_operations() {
                 offer_denom: "uusd".to_string(),
                 ask_denom: "ukrw".to_string(),
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "ukrw".to_string(),
                 },
@@ -76,7 +76,7 @@ fn execute_swap_operations() {
                     contract_addr: Addr::unchecked("asset0001"),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::Token {
                     contract_addr: Addr::unchecked("asset0001"),
                 },
@@ -84,7 +84,7 @@ fn execute_swap_operations() {
                     denom: "uluna".to_string(),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "uluna".to_string(),
                 },
@@ -119,7 +119,7 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::AstroSwap {
+                    operation: SwapOperation::HaloSwap {
                         offer_asset_info: AssetInfo::NativeToken {
                             denom: "ukrw".to_string(),
                         },
@@ -135,7 +135,7 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::AstroSwap {
+                    operation: SwapOperation::HaloSwap {
                         offer_asset_info: AssetInfo::Token {
                             contract_addr: Addr::unchecked("asset0001"),
                         },
@@ -151,7 +151,7 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::AstroSwap {
+                    operation: SwapOperation::HaloSwap {
                         offer_asset_info: AssetInfo::NativeToken {
                             denom: "uluna".to_string(),
                         },
@@ -188,7 +188,7 @@ fn execute_swap_operations() {
                     offer_denom: "uusd".to_string(),
                     ask_denom: "ukrw".to_string(),
                 },
-                SwapOperation::AstroSwap {
+                SwapOperation::HaloSwap {
                     offer_asset_info: AssetInfo::NativeToken {
                         denom: "ukrw".to_string(),
                     },
@@ -196,7 +196,7 @@ fn execute_swap_operations() {
                         contract_addr: Addr::unchecked("asset0001"),
                     },
                 },
-                SwapOperation::AstroSwap {
+                SwapOperation::HaloSwap {
                     offer_asset_info: AssetInfo::Token {
                         contract_addr: Addr::unchecked("asset0001"),
                     },
@@ -204,7 +204,7 @@ fn execute_swap_operations() {
                         denom: "uluna".to_string(),
                     },
                 },
-                SwapOperation::AstroSwap {
+                SwapOperation::HaloSwap {
                     offer_asset_info: AssetInfo::NativeToken {
                         denom: "uluna".to_string(),
                     },
@@ -241,7 +241,7 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::AstroSwap {
+                    operation: SwapOperation::HaloSwap {
                         offer_asset_info: AssetInfo::NativeToken {
                             denom: "ukrw".to_string(),
                         },
@@ -257,7 +257,7 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::AstroSwap {
+                    operation: SwapOperation::HaloSwap {
                         offer_asset_info: AssetInfo::Token {
                             contract_addr: Addr::unchecked("asset0001"),
                         },
@@ -273,7 +273,7 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::AstroSwap {
+                    operation: SwapOperation::HaloSwap {
                         offer_asset_info: AssetInfo::NativeToken {
                             denom: "uluna".to_string(),
                         },
@@ -293,7 +293,7 @@ fn execute_swap_operations() {
 fn execute_swap_operation() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
-        halo_lbp_factory: Addr::unchecked("halolbpfactory"),
+        halo_factory: Addr::unchecked("halofactory"),
     };
 
     let env = mock_env();
@@ -362,7 +362,7 @@ fn execute_swap_operation() {
         ))],
     );
 
-    deps.querier.with_halo_lbp_pairs(&[(
+    deps.querier.with_halo_pairs(&[(
         &"assetuusd".to_string(),
         &FactoryPairInfo {
             contract_addr: Addr::unchecked("pair"),
@@ -376,7 +376,7 @@ fn execute_swap_operation() {
         )],
     )]);
     let msg = ExecuteMsg::ExecuteSwapOperation {
-        operation: SwapOperation::AstroSwap {
+        operation: SwapOperation::HaloSwap {
             offer_asset_info: AssetInfo::Token {
                 contract_addr: Addr::unchecked("asset"),
             },
@@ -420,7 +420,7 @@ fn query_buy_with_routes() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        halo_lbp_factory: Addr::unchecked("halolbpfactory"),
+        halo_factory: Addr::unchecked("halofactory"),
     };
 
     let env = mock_env();
@@ -451,7 +451,7 @@ fn query_buy_with_routes() {
                 offer_denom: "uusd".to_string(),
                 ask_denom: "ukrw".to_string(),
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "ukrw".to_string(),
                 },
@@ -459,7 +459,7 @@ fn query_buy_with_routes() {
                     contract_addr: Addr::unchecked("asset0000"),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::Token {
                     contract_addr: Addr::unchecked("asset0000"),
                 },
@@ -469,7 +469,7 @@ fn query_buy_with_routes() {
             },
         ],
     };
-    deps.querier.with_halo_lbp_pairs(&[
+    deps.querier.with_halo_pairs(&[
         (
             &"ukrwasset0000".to_string(),
             &FactoryPairInfo {

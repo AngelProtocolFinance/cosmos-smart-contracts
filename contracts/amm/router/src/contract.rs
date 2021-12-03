@@ -2,18 +2,20 @@
 use cosmwasm_std::entry_point;
 
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, Api, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
+    from_binary, to_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 
+use crate::error::ContractError;
 use crate::operations::execute_swap_operation;
 use crate::querier::compute_tax;
 use crate::state::{Config, CONFIG};
 
 use cw20::Cw20ReceiveMsg;
-use halo_amm::asset::{Asset, AssetInfo, PairInfo};
+use halo_amm::asset::{Asset, AssetInfo};
+use halo_amm::factory::FactoryPairInfo;
 use halo_amm::pair::{QueryMsg as PairQueryMsg, SimulationResponse};
-use halo_amm::querier::query_pair_info;
+use halo_amm::querier::query_factory_pair_info;
 use halo_amm::router::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg,
     SimulateSwapOperationsResponse, SwapOperation,
@@ -31,7 +33,7 @@ pub fn instantiate(
     CONFIG.save(
         deps.storage,
         &Config {
-            terraswap_factory: deps.api.addr_canonicalize(&msg.terraswap_factory)?,
+            halo_factory: msg.halo_factory,
         },
     )?;
 
@@ -44,33 +46,16 @@ pub fn execute(
     env: Env,
     info: MessageInfo,
     msg: ExecuteMsg,
-) -> StdResult<Response<TerraMsgWrapper>> {
+) -> Result<Response<TerraMsgWrapper>, ContractError> {
     match msg {
-        ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
+        ExecuteMsg::Receive(msg) => receive_cw20(deps, env, msg),
         ExecuteMsg::ExecuteSwapOperations {
             operations,
             minimum_receive,
             to,
-        } => {
-            let api = deps.api;
-            execute_swap_operations(
-                deps,
-                env,
-                info.sender,
-                operations,
-                minimum_receive,
-                optional_addr_validate(api, to)?,
-            )
-        }
+        } => execute_swap_operations(deps, env, info.sender, operations, minimum_receive, to),
         ExecuteMsg::ExecuteSwapOperation { operation, to } => {
-            let api = deps.api;
-            execute_swap_operation(
-                deps,
-                env,
-                info,
-                operation,
-                optional_addr_validate(api, to)?.map(|v| v.to_string()),
-            )
+            execute_swap_operation(deps, env, info, operation, to)
         }
         ExecuteMsg::AssertMinimumReceive {
             asset_info,
@@ -82,27 +67,16 @@ pub fn execute(
             asset_info,
             prev_balance,
             minimum_receive,
-            deps.api.addr_validate(&receiver)?,
+            receiver,
         ),
     }
-}
-
-fn optional_addr_validate(api: &dyn Api, addr: Option<String>) -> StdResult<Option<Addr>> {
-    let addr = if let Some(addr) = addr {
-        Some(api.addr_validate(&addr)?)
-    } else {
-        None
-    };
-
-    Ok(addr)
 }
 
 pub fn receive_cw20(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
-) -> StdResult<Response<TerraMsgWrapper>> {
+) -> Result<Response<TerraMsgWrapper>, ContractError> {
     let sender = deps.api.addr_validate(&cw20_msg.sender)?;
     match from_binary(&cw20_msg.msg)? {
         Cw20HookMsg::ExecuteSwapOperations {
@@ -110,15 +84,12 @@ pub fn receive_cw20(
             minimum_receive,
             to,
         } => {
-            let api = deps.api;
-            execute_swap_operations(
-                deps,
-                env,
-                sender,
-                operations,
-                minimum_receive,
-                optional_addr_validate(api, to)?,
-            )
+            let to_addr = if let Some(to_addr) = to {
+                Some(deps.api.addr_validate(to_addr.as_str())?)
+            } else {
+                None
+            };
+            execute_swap_operations(deps, env, sender, operations, minimum_receive, to_addr)
         }
     }
 }
@@ -130,10 +101,10 @@ pub fn execute_swap_operations(
     operations: Vec<SwapOperation>,
     minimum_receive: Option<Uint128>,
     to: Option<Addr>,
-) -> StdResult<Response<TerraMsgWrapper>> {
+) -> Result<Response<TerraMsgWrapper>, ContractError> {
     let operations_len = operations.len();
     if operations_len == 0 {
-        return Err(StdError::generic_err("must provide operations"));
+        return Err(ContractError::MustProvideOperations {});
     }
 
     // Assert the operations are properly set
@@ -153,7 +124,7 @@ pub fn execute_swap_operations(
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
                     operation: op,
                     to: if operation_index == operations_len {
-                        Some(to.to_string())
+                        Some(to.clone())
                     } else {
                         None
                     },
@@ -164,7 +135,7 @@ pub fn execute_swap_operations(
 
     // Execute minimum amount assertion
     if let Some(minimum_receive) = minimum_receive {
-        let receiver_balance = target_asset_info.query_pool(&deps.querier, deps.api, to.clone())?;
+        let receiver_balance = target_asset_info.query_pool(deps.as_ref(), &to)?;
 
         messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: env.contract.address.to_string(),
@@ -173,7 +144,7 @@ pub fn execute_swap_operations(
                 asset_info: target_asset_info,
                 prev_balance: receiver_balance,
                 minimum_receive,
-                receiver: to.to_string(),
+                receiver: to,
             })?,
         }))
     }
@@ -185,17 +156,17 @@ fn assert_minium_receive(
     deps: Deps,
     asset_info: AssetInfo,
     prev_balance: Uint128,
-    minium_receive: Uint128,
+    minimum_receive: Uint128,
     receiver: Addr,
-) -> StdResult<Response<TerraMsgWrapper>> {
-    let receiver_balance = asset_info.query_pool(&deps.querier, deps.api, receiver)?;
+) -> Result<Response<TerraMsgWrapper>, ContractError> {
+    let receiver_balance = asset_info.query_pool(deps, &receiver)?;
     let swap_amount = receiver_balance.checked_sub(prev_balance)?;
 
-    if swap_amount < minium_receive {
-        return Err(StdError::generic_err(format!(
+    if swap_amount < minimum_receive {
+        return Err(ContractError::Std(StdError::generic_err(format!(
             "assertion failed; minimum receive amount: {}, swap amount: {}",
-            minium_receive, swap_amount
-        )));
+            minimum_receive, swap_amount
+        ))));
     }
 
     Ok(Response::default())
@@ -215,10 +186,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let state = CONFIG.load(deps.storage)?;
     let resp = ConfigResponse {
-        terraswap_factory: deps
-            .api
-            .addr_humanize(&state.terraswap_factory)?
-            .to_string(),
+        halo_factory: state.halo_factory,
     };
 
     Ok(resp)
@@ -230,7 +198,6 @@ fn simulate_swap_operations(
     operations: Vec<SwapOperation>,
 ) -> StdResult<SimulateSwapOperationsResponse> {
     let config: Config = CONFIG.load(deps.storage)?;
-    let terraswap_factory = deps.api.addr_humanize(&config.terraswap_factory)?;
     let terra_querier = TerraQuerier::new(&deps.querier);
 
     let operations_len = operations.len();
@@ -252,7 +219,7 @@ fn simulate_swap_operations(
                 // because last swap is swap_send
                 if operation_index == operations_len {
                     offer_amount = offer_amount.checked_sub(compute_tax(
-                        &deps.querier,
+                        deps,
                         offer_amount,
                         offer_denom.clone(),
                     )?)?;
@@ -268,23 +235,20 @@ fn simulate_swap_operations(
 
                 offer_amount = res.receive.amount;
             }
-            SwapOperation::TerraSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info,
                 ask_asset_info,
             } => {
-                let pair_info: PairInfo = query_pair_info(
-                    &deps.querier,
-                    terraswap_factory.clone(),
+                let pair_info: FactoryPairInfo = query_factory_pair_info(
+                    deps,
+                    &config.halo_factory,
                     &[offer_asset_info.clone(), ask_asset_info.clone()],
                 )?;
 
                 // Deduct tax before querying simulation
                 if let AssetInfo::NativeToken { denom } = offer_asset_info.clone() {
-                    offer_amount = offer_amount.checked_sub(compute_tax(
-                        &deps.querier,
-                        offer_amount,
-                        denom,
-                    )?)?;
+                    offer_amount =
+                        offer_amount.checked_sub(compute_tax(deps, offer_amount, denom)?)?;
                 }
 
                 let mut res: SimulationResponse =
@@ -301,7 +265,7 @@ fn simulate_swap_operations(
                 // Deduct tax after querying simulation
                 if let AssetInfo::NativeToken { denom } = ask_asset_info {
                     res.return_amount = res.return_amount.checked_sub(compute_tax(
-                        &deps.querier,
+                        deps,
                         res.return_amount,
                         denom,
                     )?)?;
@@ -332,7 +296,7 @@ fn assert_operations(operations: &[SwapOperation]) -> StdResult<()> {
                     denom: ask_denom.clone(),
                 },
             ),
-            SwapOperation::TerraSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info,
                 ask_asset_info,
             } => (offer_asset_info.clone(), ask_asset_info.clone()),
@@ -362,17 +326,17 @@ fn test_invalid_operations() {
             offer_denom: "uusd".to_string(),
             ask_denom: "uluna".to_string(),
         },
-        SwapOperation::TerraSwap {
+        SwapOperation::HaloSwap {
             offer_asset_info: AssetInfo::NativeToken {
                 denom: "ukrw".to_string(),
             },
             ask_asset_info: AssetInfo::Token {
-                contract_addr: "asset0001".to_string(),
+                contract_addr: Addr::unchecked("asset0001"),
             },
         },
-        SwapOperation::TerraSwap {
+        SwapOperation::HaloSwap {
             offer_asset_info: AssetInfo::Token {
-                contract_addr: "asset0001".to_string(),
+                contract_addr: Addr::unchecked("asset0001"),
             },
             ask_asset_info: AssetInfo::NativeToken {
                 denom: "uluna".to_string(),
@@ -387,28 +351,28 @@ fn test_invalid_operations() {
             offer_denom: "uusd".to_string(),
             ask_denom: "uluna".to_string(),
         },
-        SwapOperation::TerraSwap {
+        SwapOperation::HaloSwap {
             offer_asset_info: AssetInfo::NativeToken {
                 denom: "ukrw".to_string(),
             },
             ask_asset_info: AssetInfo::Token {
-                contract_addr: "asset0001".to_string(),
+                contract_addr: Addr::unchecked("asset0001"),
             },
         },
-        SwapOperation::TerraSwap {
+        SwapOperation::HaloSwap {
             offer_asset_info: AssetInfo::Token {
-                contract_addr: "asset0001".to_string(),
+                contract_addr: Addr::unchecked("asset0001"),
             },
             ask_asset_info: AssetInfo::NativeToken {
                 denom: "uluna".to_string(),
             },
         },
-        SwapOperation::TerraSwap {
+        SwapOperation::HaloSwap {
             offer_asset_info: AssetInfo::NativeToken {
                 denom: "uluna".to_string(),
             },
             ask_asset_info: AssetInfo::Token {
-                contract_addr: "asset0002".to_string(),
+                contract_addr: Addr::unchecked("asset0002"),
             },
         },
     ])
@@ -420,28 +384,28 @@ fn test_invalid_operations() {
             offer_denom: "uusd".to_string(),
             ask_denom: "ukrw".to_string(),
         },
-        SwapOperation::TerraSwap {
+        SwapOperation::HaloSwap {
             offer_asset_info: AssetInfo::NativeToken {
                 denom: "ukrw".to_string(),
             },
             ask_asset_info: AssetInfo::Token {
-                contract_addr: "asset0001".to_string(),
+                contract_addr: Addr::unchecked("asset0001"),
             },
         },
-        SwapOperation::TerraSwap {
+        SwapOperation::HaloSwap {
             offer_asset_info: AssetInfo::Token {
-                contract_addr: "asset0001".to_string(),
+                contract_addr: Addr::unchecked("asset0001"),
             },
             ask_asset_info: AssetInfo::NativeToken {
                 denom: "uaud".to_string(),
             },
         },
-        SwapOperation::TerraSwap {
+        SwapOperation::HaloSwap {
             offer_asset_info: AssetInfo::NativeToken {
                 denom: "uluna".to_string(),
             },
             ask_asset_info: AssetInfo::Token {
-                contract_addr: "asset0002".to_string(),
+                contract_addr: Addr::unchecked("asset0002"),
             },
         },
     ])

@@ -276,7 +276,7 @@ fn register() {
     let mut deployed_pairs = vec![(&pair0_addr, &pair0_info)];
 
     // register halo-lbp pair querier
-    deps.querier.with_halo_lbp_pairs(&deployed_pairs);
+    deps.querier.with_halo_pairs(&deployed_pairs);
 
     let data = MsgInstantiateContractResponse {
         contract_address: String::from("pair0000"),
@@ -364,7 +364,7 @@ fn register() {
 
     deployed_pairs.push((&pair1_addr, &pair1_info));
 
-    deps.querier.with_halo_lbp_pairs(&deployed_pairs);
+    deps.querier.with_halo_pairs(&deployed_pairs);
 
     let data = MsgInstantiateContractResponse {
         contract_address: String::from("pair0001"),

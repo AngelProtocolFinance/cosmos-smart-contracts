@@ -1,12 +1,10 @@
-use cosmwasm_std::{Addr, Binary, Deps, QueryRequest, StdResult, WasmQuery};
-use halo_amm::asset::PairInfoRaw;
+use cosmwasm_std::{to_binary, Addr, Deps, QueryRequest, StdResult, WasmQuery};
+use halo_amm::asset::PairInfo;
+use halo_amm::pair::QueryMsg;
 
-pub fn query_liquidity_token(deps: Deps, contract_addr: Addr) -> StdResult<Addr> {
-    // load pair_info form the pair contract
-    let pair_info: PairInfoRaw = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Raw {
-        contract_addr: contract_addr.to_string(),
-        key: Binary::from("\u{0}\u{9}pair_info".as_bytes()),
-    }))?;
-
-    deps.api.addr_humanize(&pair_info.liquidity_token)
+pub fn query_pair_info(deps: Deps, pair_contract: &Addr) -> StdResult<PairInfo> {
+    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: pair_contract.to_string(),
+        msg: to_binary(&QueryMsg::Pair {})?,
+    }))
 }

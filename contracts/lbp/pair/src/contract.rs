@@ -135,7 +135,10 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::UpdateConfig { collector_addr, commission_rate } => update_config(deps, info, collector_addr, commission_rate),
+        ExecuteMsg::UpdateConfig {
+            collector_addr,
+            commission_rate,
+        } => update_config(deps, info, collector_addr, commission_rate),
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::ProvideLiquidity {
             assets,

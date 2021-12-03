@@ -1,13 +1,15 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, to_binary, Coin, CosmosMsg, Decimal, StdError, SubMsg, Uint128, WasmMsg,
+    from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, StdError, SubMsg, Uint128, WasmMsg,
 };
 
 use crate::contract::{execute, instantiate, query};
+use crate::error::ContractError;
 use crate::testing::mock_querier::mock_dependencies;
 
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use halo_amm::asset::{Asset, AssetInfo};
+use halo_amm::factory::FactoryPairInfo;
 use halo_amm::pair::ExecuteMsg as PairExecuteMsg;
 use halo_amm::router::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg,
@@ -20,7 +22,7 @@ fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        terraswap_factory: "terraswapfactory".to_string(),
+        halo_factory: Addr::unchecked("halofactory"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -31,7 +33,7 @@ fn proper_initialization() {
     // it worked, let's query the state
     let config: ConfigResponse =
         from_binary(&query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap()).unwrap();
-    assert_eq!("terraswapfactory", config.terraswap_factory.as_str());
+    assert_eq!("halofactory", config.halo_factory.as_str());
 }
 
 #[test]
@@ -43,7 +45,7 @@ fn execute_swap_operations() {
     )]);
 
     let msg = InstantiateMsg {
-        terraswap_factory: "terraswapfactory".to_string(),
+        halo_factory: Addr::unchecked("halofactory"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -58,11 +60,8 @@ fn execute_swap_operations() {
     };
 
     let info = mock_info("addr0000", &[]);
-    let res = execute(deps.as_mut(), mock_env(), info, msg);
-    match res {
-        Err(StdError::GenericErr { msg, .. }) => assert_eq!(msg, "must provide operations"),
-        _ => panic!("DO NOT ENTER HERE"),
-    }
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(res, ContractError::MustProvideOperations {});
 
     let msg = ExecuteMsg::ExecuteSwapOperations {
         operations: vec![
@@ -70,28 +69,28 @@ fn execute_swap_operations() {
                 offer_denom: "uusd".to_string(),
                 ask_denom: "ukrw".to_string(),
             },
-            SwapOperation::TerraSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "ukrw".to_string(),
                 },
                 ask_asset_info: AssetInfo::Token {
-                    contract_addr: "asset0001".to_string(),
+                    contract_addr: Addr::unchecked("asset0001"),
                 },
             },
-            SwapOperation::TerraSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::Token {
-                    contract_addr: "asset0001".to_string(),
+                    contract_addr: Addr::unchecked("asset0001"),
                 },
                 ask_asset_info: AssetInfo::NativeToken {
                     denom: "uluna".to_string(),
                 },
             },
-            SwapOperation::TerraSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "uluna".to_string(),
                 },
                 ask_asset_info: AssetInfo::Token {
-                    contract_addr: "asset0002".to_string(),
+                    contract_addr: Addr::unchecked("asset0002"),
                 },
             },
         ],
@@ -120,12 +119,12 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.to_string(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::TerraSwap {
+                    operation: SwapOperation::HaloSwap {
                         offer_asset_info: AssetInfo::NativeToken {
                             denom: "ukrw".to_string(),
                         },
                         ask_asset_info: AssetInfo::Token {
-                            contract_addr: "asset0001".to_string(),
+                            contract_addr: Addr::unchecked("asset0001"),
                         },
                     },
                     to: None,
@@ -136,9 +135,9 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.to_string(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::TerraSwap {
+                    operation: SwapOperation::HaloSwap {
                         offer_asset_info: AssetInfo::Token {
-                            contract_addr: "asset0001".to_string(),
+                            contract_addr: Addr::unchecked("asset0001"),
                         },
                         ask_asset_info: AssetInfo::NativeToken {
                             denom: "uluna".to_string(),
@@ -152,15 +151,15 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.to_string(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::TerraSwap {
+                    operation: SwapOperation::HaloSwap {
                         offer_asset_info: AssetInfo::NativeToken {
                             denom: "uluna".to_string(),
                         },
                         ask_asset_info: AssetInfo::Token {
-                            contract_addr: "asset0002".to_string(),
+                            contract_addr: Addr::unchecked("asset0002"),
                         },
                     },
-                    to: Some("addr0000".to_string()),
+                    to: Some(Addr::unchecked("addr0000")),
                 })
                 .unwrap(),
             })),
@@ -169,11 +168,11 @@ fn execute_swap_operations() {
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::AssertMinimumReceive {
                     asset_info: AssetInfo::Token {
-                        contract_addr: "asset0002".to_string(),
+                        contract_addr: Addr::unchecked("asset0002"),
                     },
                     prev_balance: Uint128::zero(),
                     minimum_receive: Uint128::from(1000000u128),
-                    receiver: "addr0000".to_string(),
+                    receiver: Addr::unchecked("addr0000"),
                 })
                 .unwrap(),
             })),
@@ -189,33 +188,33 @@ fn execute_swap_operations() {
                     offer_denom: "uusd".to_string(),
                     ask_denom: "ukrw".to_string(),
                 },
-                SwapOperation::TerraSwap {
+                SwapOperation::HaloSwap {
                     offer_asset_info: AssetInfo::NativeToken {
                         denom: "ukrw".to_string(),
                     },
                     ask_asset_info: AssetInfo::Token {
-                        contract_addr: "asset0001".to_string(),
+                        contract_addr: Addr::unchecked("asset0001"),
                     },
                 },
-                SwapOperation::TerraSwap {
+                SwapOperation::HaloSwap {
                     offer_asset_info: AssetInfo::Token {
-                        contract_addr: "asset0001".to_string(),
+                        contract_addr: Addr::unchecked("asset0001"),
                     },
                     ask_asset_info: AssetInfo::NativeToken {
                         denom: "uluna".to_string(),
                     },
                 },
-                SwapOperation::TerraSwap {
+                SwapOperation::HaloSwap {
                     offer_asset_info: AssetInfo::NativeToken {
                         denom: "uluna".to_string(),
                     },
                     ask_asset_info: AssetInfo::Token {
-                        contract_addr: "asset0002".to_string(),
+                        contract_addr: Addr::unchecked("asset0002"),
                     },
                 },
             ],
             minimum_receive: None,
-            to: Some("addr0002".to_string()),
+            to: Some(Addr::unchecked("addr0002")),
         })
         .unwrap(),
     });
@@ -241,12 +240,12 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.to_string(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::TerraSwap {
+                    operation: SwapOperation::HaloSwap {
                         offer_asset_info: AssetInfo::NativeToken {
                             denom: "ukrw".to_string(),
                         },
                         ask_asset_info: AssetInfo::Token {
-                            contract_addr: "asset0001".to_string(),
+                            contract_addr: Addr::unchecked("asset0001"),
                         },
                     },
                     to: None,
@@ -257,9 +256,9 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.to_string(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::TerraSwap {
+                    operation: SwapOperation::HaloSwap {
                         offer_asset_info: AssetInfo::Token {
-                            contract_addr: "asset0001".to_string(),
+                            contract_addr: Addr::unchecked("asset0001"),
                         },
                         ask_asset_info: AssetInfo::NativeToken {
                             denom: "uluna".to_string(),
@@ -273,15 +272,15 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.to_string(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::TerraSwap {
+                    operation: SwapOperation::HaloSwap {
                         offer_asset_info: AssetInfo::NativeToken {
                             denom: "uluna".to_string(),
                         },
                         ask_asset_info: AssetInfo::Token {
-                            contract_addr: "asset0002".to_string(),
+                            contract_addr: Addr::unchecked("asset0002"),
                         },
                     },
-                    to: Some("addr0002".to_string()),
+                    to: Some(Addr::unchecked("addr0002")),
                 })
                 .unwrap(),
             }))
@@ -293,7 +292,7 @@ fn execute_swap_operations() {
 fn execute_swap_operation() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
-        terraswap_factory: "terraswapfactory".to_string(),
+        halo_factory: Addr::unchecked("halofactory"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -301,8 +300,12 @@ fn execute_swap_operation() {
     // we can just call .unwrap() to assert this was a success
     let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    deps.querier
-        .with_terraswap_pairs(&[(&"uusdasset".to_string(), &"pair".to_string())]);
+    deps.querier.with_halo_pairs(&[(
+        &"uusdasset".to_string(),
+        &FactoryPairInfo {
+            contract_addr: Addr::unchecked("pair"),
+        },
+    )]);
     deps.querier.with_tax(
         Decimal::percent(5),
         &[(&"uusd".to_string(), &Uint128::from(1000000u128))],
@@ -324,10 +327,6 @@ fn execute_swap_operation() {
     };
     let info = mock_info("addr0000", &[]);
     let res = execute(deps.as_mut(), mock_env(), info, msg.clone());
-    match res {
-        Err(StdError::GenericErr { msg, .. }) => assert_eq!(msg, "unauthorized"),
-        _ => panic!("DO NOT ENTER HERE"),
-    }
 
     let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -349,7 +348,7 @@ fn execute_swap_operation() {
             offer_denom: "uusd".to_string(),
             ask_denom: "uluna".to_string(),
         },
-        to: Some("addr0000".to_string()),
+        to: Some(Addr::unchecked("addr0000")),
     };
     let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -364,23 +363,27 @@ fn execute_swap_operation() {
             "uluna".to_string()
         ))],
     );
-    deps.querier
-        .with_terraswap_pairs(&[(&"assetuusd".to_string(), &"pair".to_string())]);
+    deps.querier.with_halo_pairs(&[(
+        &"assetuusd".to_string(),
+        &FactoryPairInfo {
+            contract_addr: Addr::unchecked("pair"),
+        },
+    )]);
     deps.querier.with_token_balances(&[(
         &"asset".to_string(),
         &[(&MOCK_CONTRACT_ADDR.to_string(), &Uint128::from(1000000u128))],
     )]);
 
     let msg = ExecuteMsg::ExecuteSwapOperation {
-        operation: SwapOperation::TerraSwap {
+        operation: SwapOperation::HaloSwap {
             offer_asset_info: AssetInfo::Token {
-                contract_addr: "asset".to_string(),
+                contract_addr: Addr::unchecked("asset"),
             },
             ask_asset_info: AssetInfo::NativeToken {
                 denom: "uusd".to_string(),
             },
         },
-        to: Some("addr0000".to_string()),
+        to: Some(Addr::unchecked("addr0000")),
     };
 
     let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
@@ -396,13 +399,13 @@ fn execute_swap_operation() {
                 msg: to_binary(&PairExecuteMsg::Swap {
                     offer_asset: Asset {
                         info: AssetInfo::Token {
-                            contract_addr: "asset".to_string(),
+                            contract_addr: Addr::unchecked("asset"),
                         },
                         amount: Uint128::from(1000000u128),
                     },
                     belief_price: None,
                     max_spread: None,
-                    to: Some("addr0000".to_string()),
+                    to: Some(Addr::unchecked("addr0000")),
                 })
                 .unwrap()
             })
@@ -416,7 +419,7 @@ fn query_buy_with_routes() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        terraswap_factory: "terraswapfactory".to_string(),
+        halo_factory: Addr::unchecked("halofactory"),
     };
 
     let info = mock_info("addr0000", &[]);
@@ -440,17 +443,17 @@ fn query_buy_with_routes() {
                 offer_denom: "uusd".to_string(),
                 ask_denom: "ukrw".to_string(),
             },
-            SwapOperation::TerraSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "ukrw".to_string(),
                 },
                 ask_asset_info: AssetInfo::Token {
-                    contract_addr: "asset0000".to_string(),
+                    contract_addr: Addr::unchecked("asset0000"),
                 },
             },
-            SwapOperation::TerraSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::Token {
-                    contract_addr: "asset0000".to_string(),
+                    contract_addr: Addr::unchecked("asset0000"),
                 },
                 ask_asset_info: AssetInfo::NativeToken {
                     denom: "uluna".to_string(),
@@ -459,9 +462,19 @@ fn query_buy_with_routes() {
         ],
     };
 
-    deps.querier.with_terraswap_pairs(&[
-        (&"ukrwasset0000".to_string(), &"pair0000".to_string()),
-        (&"asset0000uluna".to_string(), &"pair0001".to_string()),
+    deps.querier.with_halo_pairs(&[
+        (
+            &"ukrwasset0000".to_string(),
+            &FactoryPairInfo {
+                contract_addr: Addr::unchecked("pair0000"),
+            },
+        ),
+        (
+            &"asset0000uluna".to_string(),
+            &FactoryPairInfo {
+                contract_addr: Addr::unchecked("pair0001"),
+            },
+        ),
     ]);
 
     let res: SimulateSwapOperationsResponse =
@@ -516,7 +529,7 @@ fn assert_minimum_receive_native_token() {
         },
         prev_balance: Uint128::zero(),
         minimum_receive: Uint128::from(1000000u128),
-        receiver: "addr0000".to_string(),
+        receiver: Addr::unchecked("addr0000"),
     };
     let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
@@ -527,16 +540,15 @@ fn assert_minimum_receive_native_token() {
         },
         prev_balance: Uint128::zero(),
         minimum_receive: Uint128::from(1000001u128),
-        receiver: "addr0000".to_string(),
+        receiver: Addr::unchecked("addr0000"),
     };
-    let res = execute(deps.as_mut(), mock_env(), info, msg);
-    match res {
-        Err(StdError::GenericErr { msg, .. }) => assert_eq!(
-            msg,
-            "assertion failed; minimum receive amount: 1000001, swap amount: 1000000"
-        ),
-        _ => panic!("DO NOT ENTER HERE"),
-    }
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(
+        res,
+        ContractError::Std(StdError::GenericErr {
+            msg: "assertion failed; minimum receive amount: 1000001, swap amount: 1000000".into()
+        })
+    );
 }
 
 #[test]
@@ -551,29 +563,28 @@ fn assert_minimum_receive_token() {
     // success
     let msg = ExecuteMsg::AssertMinimumReceive {
         asset_info: AssetInfo::Token {
-            contract_addr: "token0000".to_string(),
+            contract_addr: Addr::unchecked("token0000"),
         },
         prev_balance: Uint128::zero(),
         minimum_receive: Uint128::from(1000000u128),
-        receiver: "addr0000".to_string(),
+        receiver: Addr::unchecked("addr0000"),
     };
     let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
     // assertion failed; native token
     let msg = ExecuteMsg::AssertMinimumReceive {
         asset_info: AssetInfo::Token {
-            contract_addr: "token0000".to_string(),
+            contract_addr: Addr::unchecked("token0000"),
         },
         prev_balance: Uint128::zero(),
         minimum_receive: Uint128::from(1000001u128),
-        receiver: "addr0000".to_string(),
+        receiver: Addr::unchecked("addr0000"),
     };
-    let res = execute(deps.as_mut(), mock_env(), info, msg);
-    match res {
-        Err(StdError::GenericErr { msg, .. }) => assert_eq!(
-            msg,
-            "assertion failed; minimum receive amount: 1000001, swap amount: 1000000"
-        ),
-        _ => panic!("DO NOT ENTER HERE"),
-    }
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(
+        res,
+        ContractError::Std(StdError::GenericErr {
+            msg: "assertion failed; minimum receive amount: 1000001, swap amount: 1000000".into()
+        })
+    )
 }

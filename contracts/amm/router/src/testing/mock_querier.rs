@@ -1,6 +1,6 @@
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Coin, ContractResult, Decimal, OwnedDeps, Querier,
+    from_binary, from_slice, to_binary, Addr, Coin, ContractResult, Decimal, OwnedDeps, Querier,
     QuerierResult, QueryRequest, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use schemars::JsonSchema;
@@ -8,7 +8,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg};
-use halo_amm::asset::{Asset, AssetInfo, PairInfo};
+use halo_amm::asset::{Asset, AssetInfo};
+use halo_amm::factory::FactoryPairInfo;
 use halo_amm::pair::SimulationResponse;
 use terra_cosmwasm::{
     SwapResponse, TaxCapResponse, TaxRateResponse, TerraQuery, TerraQueryWrapper, TerraRoute,
@@ -40,7 +41,7 @@ pub struct WasmMockQuerier {
     base: MockQuerier<TerraQueryWrapper>,
     token_querier: TokenQuerier,
     tax_querier: TaxQuerier,
-    terraswap_factory_querier: TerraswapFactoryQuerier,
+    halo_factory_querier: HaloFactoryQuerier,
 }
 
 #[derive(Clone, Default)]
@@ -97,22 +98,24 @@ pub(crate) fn caps_to_map(caps: &[(&String, &Uint128)]) -> HashMap<String, Uint1
 }
 
 #[derive(Clone, Default)]
-pub struct TerraswapFactoryQuerier {
-    pairs: HashMap<String, String>,
+pub struct HaloFactoryQuerier {
+    pairs: HashMap<String, FactoryPairInfo>,
 }
 
-impl TerraswapFactoryQuerier {
-    pub fn new(pairs: &[(&String, &String)]) -> Self {
-        TerraswapFactoryQuerier {
+impl HaloFactoryQuerier {
+    pub fn new(pairs: &[(&String, &FactoryPairInfo)]) -> Self {
+        HaloFactoryQuerier {
             pairs: pairs_to_map(pairs),
         }
     }
 }
 
-pub(crate) fn pairs_to_map(pairs: &[(&String, &String)]) -> HashMap<String, String> {
-    let mut pairs_map: HashMap<String, String> = HashMap::new();
+pub(crate) fn pairs_to_map(
+    pairs: &[(&String, &FactoryPairInfo)],
+) -> HashMap<String, FactoryPairInfo> {
+    let mut pairs_map: HashMap<String, FactoryPairInfo> = HashMap::new();
     for (key, pair) in pairs.iter() {
-        pairs_map.insert(key.to_string(), pair.to_string());
+        pairs_map.insert(key.to_string(), (*pair).clone());
     }
     pairs_map
 }
@@ -183,19 +186,12 @@ impl WasmMockQuerier {
             QueryRequest::Wasm(WasmQuery::Smart { contract_addr, msg }) => match from_binary(msg) {
                 Ok(QueryMsg::Pair { asset_infos }) => {
                     let key = asset_infos[0].to_string() + asset_infos[1].to_string().as_str();
-                    match self.terraswap_factory_querier.pairs.get(&key) {
-                        Some(v) => SystemResult::Ok(ContractResult::from(to_binary(&PairInfo {
-                            contract_addr: v.clone(),
-                            liquidity_token: "liquidity".to_string(),
-                            asset_infos: [
-                                AssetInfo::NativeToken {
-                                    denom: "uusd".to_string(),
-                                },
-                                AssetInfo::NativeToken {
-                                    denom: "uusd".to_string(),
-                                },
-                            ],
-                        }))),
+                    match self.halo_factory_querier.pairs.get(&key) {
+                        Some(v) => {
+                            SystemResult::Ok(ContractResult::from(to_binary(&FactoryPairInfo {
+                                contract_addr: Addr::unchecked("pair"),
+                            })))
+                        }
                         None => SystemResult::Err(SystemError::InvalidRequest {
                             error: "No pair info exists".to_string(),
                             request: msg.as_slice().into(),
@@ -255,7 +251,7 @@ impl WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
             tax_querier: TaxQuerier::default(),
-            terraswap_factory_querier: TerraswapFactoryQuerier::default(),
+            halo_factory_querier: HaloFactoryQuerier::default(),
         }
     }
 
@@ -273,7 +269,7 @@ impl WasmMockQuerier {
         self.tax_querier = TaxQuerier::new(rate, caps);
     }
 
-    pub fn with_terraswap_pairs(&mut self, pairs: &[(&String, &String)]) {
-        self.terraswap_factory_querier = TerraswapFactoryQuerier::new(pairs);
+    pub fn with_halo_pairs(&mut self, pairs: &[(&String, &FactoryPairInfo)]) {
+        self.halo_factory_querier = HaloFactoryQuerier::new(pairs);
     }
 }

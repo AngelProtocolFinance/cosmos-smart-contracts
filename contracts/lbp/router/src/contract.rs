@@ -36,7 +36,7 @@ pub fn instantiate(
     CONFIG.save(
         deps.storage,
         &Config {
-            halo_lbp_factory: msg.halo_lbp_factory,
+            halo_factory: msg.halo_factory,
         },
     )?;
 
@@ -193,7 +193,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let state = CONFIG.load(deps.storage)?;
     let resp = ConfigResponse {
-        halo_lbp_factory: state.halo_lbp_factory,
+        halo_factory: state.halo_factory,
     };
     Ok(resp)
 }
@@ -205,7 +205,6 @@ fn simulate_swap_operations(
     operations: Vec<SwapOperation>,
 ) -> StdResult<SimulateSwapOperationsResponse> {
     let config: Config = CONFIG.load(deps.storage)?;
-    let halo_lbp_factory = config.halo_lbp_factory;
     let terra_querier = TerraQuerier::new(&deps.querier);
 
     let operations_len = operations.len();
@@ -247,13 +246,13 @@ fn simulate_swap_operations(
                 offer_amount = res.receive.amount;
             }
 
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info,
                 ask_asset_info,
             } => {
                 let pair_info: FactoryPairInfo = query_factory_pair_info(
                     deps,
-                    &halo_lbp_factory,
+                    &config.halo_factory,
                     &[offer_asset_info.clone(), ask_asset_info.clone()],
                 )?;
 
@@ -350,7 +349,7 @@ fn test_invalid_operations() {
                 offer_denom: "uusd".to_string(),
                 ask_denom: "uluna".to_string(),
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "ukrw".to_string(),
                 },
@@ -358,7 +357,7 @@ fn test_invalid_operations() {
                     contract_addr: Addr::unchecked("asset0001"),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::Token {
                     contract_addr: Addr::unchecked("asset0001"),
                 },
@@ -378,7 +377,7 @@ fn test_invalid_operations() {
                 offer_denom: "uusd".to_string(),
                 ask_denom: "uluna".to_string(),
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "ukrw".to_string(),
                 },
@@ -386,7 +385,7 @@ fn test_invalid_operations() {
                     contract_addr: Addr::unchecked("asset0001"),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::Token {
                     contract_addr: Addr::unchecked("asset0001"),
                 },
@@ -394,7 +393,7 @@ fn test_invalid_operations() {
                     denom: "uluna".to_string(),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "uluna".to_string(),
                 },
@@ -414,7 +413,7 @@ fn test_invalid_operations() {
                 offer_denom: "uusd".to_string(),
                 ask_denom: "ukrw".to_string(),
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "ukrw".to_string(),
                 },
@@ -422,7 +421,7 @@ fn test_invalid_operations() {
                     contract_addr: Addr::unchecked("asset0001"),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::Token {
                     contract_addr: Addr::unchecked("asset0001"),
                 },
@@ -430,7 +429,7 @@ fn test_invalid_operations() {
                     denom: "uaud".to_string(),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "uluna".to_string(),
                 },
@@ -452,7 +451,7 @@ fn test_invalid_operations_order() {
                 offer_denom: "uusd".to_string(),
                 ask_denom: "uluna".to_string(),
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "uluna".to_string(),
                 },
@@ -460,7 +459,7 @@ fn test_invalid_operations_order() {
                     contract_addr: Addr::unchecked("asset0001"),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::Token {
                     contract_addr: Addr::unchecked("asset0001"),
                 },
@@ -468,7 +467,7 @@ fn test_invalid_operations_order() {
                     denom: "uluna".to_string(),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "uluna".to_string(),
                 },
@@ -487,7 +486,7 @@ fn test_invalid_operations_order() {
                 offer_denom: "uusd".to_string(),
                 ask_denom: "uluna".to_string(),
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "ukrw".to_string(),
                 },
@@ -495,7 +494,7 @@ fn test_invalid_operations_order() {
                     contract_addr: Addr::unchecked("asset0001"),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info: AssetInfo::Token {
                     contract_addr: Addr::unchecked("asset0001"),
                 },

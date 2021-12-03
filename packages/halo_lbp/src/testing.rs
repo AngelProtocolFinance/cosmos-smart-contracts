@@ -213,10 +213,7 @@ fn test_asset() {
 
     assert_eq!(
         token_asset
-            .into_msg(
-                deps.as_ref(),
-                Addr::unchecked("addr0000")
-            )
+            .into_msg(deps.as_ref(), Addr::unchecked("addr0000"))
             .unwrap(),
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: "asset0000".to_string(),
@@ -231,10 +228,7 @@ fn test_asset() {
 
     assert_eq!(
         native_token_asset
-            .into_msg(
-                deps.as_ref(),
-                Addr::unchecked("addr0000")
-            )
+            .into_msg(deps.as_ref(), Addr::unchecked("addr0000"))
             .unwrap(),
         CosmosMsg::Bank(BankMsg::Send {
             to_address: "addr0000".to_string(),
@@ -247,10 +241,10 @@ fn test_asset() {
 }
 
 #[test]
-fn query_halo_lbp_pair_contract() {
+fn query_halo_pair_contract() {
     let mut deps = mock_dependencies(&[]);
 
-    deps.querier.with_halo_lbp_pairs(&[(
+    deps.querier.with_halo_pairs(&[(
         &"asset0000uusd".to_string(),
         &FactoryPairInfo {
             contract_addr: Addr::unchecked("pair0000"),

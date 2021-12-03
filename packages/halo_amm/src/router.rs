@@ -1,14 +1,14 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Addr, Uint128};
 use cw20::Cw20ReceiveMsg;
 
 use crate::asset::AssetInfo;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub terraswap_factory: String,
+    pub halo_factory: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -18,19 +18,30 @@ pub enum SwapOperation {
         offer_denom: String,
         ask_denom: String,
     },
-    TerraSwap {
+    HaloSwap {
         offer_asset_info: AssetInfo,
         ask_asset_info: AssetInfo,
     },
 }
 
 impl SwapOperation {
+    pub fn get_offer_asset_info(&self) -> AssetInfo {
+        match self {
+            SwapOperation::NativeSwap { offer_denom, .. } => AssetInfo::NativeToken {
+                denom: offer_denom.clone(),
+            },
+            SwapOperation::HaloSwap {
+                offer_asset_info, ..
+            } => offer_asset_info.clone(),
+        }
+    }
+
     pub fn get_target_asset_info(&self) -> AssetInfo {
         match self {
             SwapOperation::NativeSwap { ask_denom, .. } => AssetInfo::NativeToken {
                 denom: ask_denom.clone(),
             },
-            SwapOperation::TerraSwap { ask_asset_info, .. } => ask_asset_info.clone(),
+            SwapOperation::HaloSwap { ask_asset_info, .. } => ask_asset_info.clone(),
         }
     }
 }
@@ -43,14 +54,14 @@ pub enum ExecuteMsg {
     ExecuteSwapOperations {
         operations: Vec<SwapOperation>,
         minimum_receive: Option<Uint128>,
-        to: Option<String>,
+        to: Option<Addr>,
     },
 
     /// Internal use
     /// Swap all offer tokens to ask token
     ExecuteSwapOperation {
         operation: SwapOperation,
-        to: Option<String>,
+        to: Option<Addr>,
     },
     /// Internal use
     /// Check the swap amount is exceed minimum_receive
@@ -58,7 +69,7 @@ pub enum ExecuteMsg {
         asset_info: AssetInfo,
         prev_balance: Uint128,
         minimum_receive: Uint128,
-        receiver: String,
+        receiver: Addr,
     },
 }
 
@@ -68,7 +79,7 @@ pub enum Cw20HookMsg {
     ExecuteSwapOperations {
         operations: Vec<SwapOperation>,
         minimum_receive: Option<Uint128>,
-        to: Option<String>,
+        to: Option<Addr>,
     },
 }
 
@@ -85,7 +96,7 @@ pub enum QueryMsg {
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub terraswap_factory: String,
+    pub halo_factory: Addr,
 }
 
 // We define a custom struct for each query response

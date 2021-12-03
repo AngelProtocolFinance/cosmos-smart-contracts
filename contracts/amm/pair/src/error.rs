@@ -15,6 +15,9 @@ pub enum ContractError {
     #[error("Invalid zero amount")]
     InvalidZeroAmount {},
 
+    #[error("Event of zero transfer")]
+    ZeroAmount {},
+
     #[error("Max spread assertion")]
     MaxSpreadAssertion {},
 

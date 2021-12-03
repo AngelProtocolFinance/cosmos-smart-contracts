@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
-    pub halo_lbp_factory: Addr,
+    pub halo_factory: Addr,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");

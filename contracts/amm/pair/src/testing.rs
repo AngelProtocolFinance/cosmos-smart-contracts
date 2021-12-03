@@ -7,8 +7,8 @@ use crate::mock_querier::mock_dependencies;
 
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    attr, to_binary, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, Reply, ReplyOn, Response,
-    StdError, SubMsg, SubMsgExecutionResponse, Uint128, WasmMsg,
+    attr, to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, Reply, ReplyOn,
+    Response, StdError, SubMsg, SubMsgExecutionResponse, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg, MinterResponse};
 use halo_amm::asset::{Asset, AssetInfo, PairInfo};
@@ -29,7 +29,7 @@ fn proper_initialization() {
                 denom: "uusd".to_string(),
             },
             AssetInfo::Token {
-                contract_addr: "asset0000".to_string(),
+                contract_addr: Addr::unchecked("asset0000"),
             },
         ],
         token_code_id: 10u64,
@@ -47,7 +47,7 @@ fn proper_initialization() {
             msg: WasmMsg::Instantiate {
                 code_id: 10u64,
                 msg: to_binary(&TokenInstantiateMsg {
-                    name: "terraswap liquidity token".to_string(),
+                    name: "halo liquidity token".to_string(),
                     symbol: "uLP".to_string(),
                     decimals: 6,
                     initial_balances: vec![],
@@ -58,7 +58,7 @@ fn proper_initialization() {
                 })
                 .unwrap(),
                 funds: vec![],
-                label: "".to_string(),
+                label: "halo liquidity token".to_string(),
                 admin: None,
             }
             .into(),
@@ -94,7 +94,7 @@ fn proper_initialization() {
                 denom: "uusd".to_string(),
             },
             AssetInfo::Token {
-                contract_addr: "asset0000".to_string()
+                contract_addr: Addr::unchecked("asset0000")
             }
         ]
     );
@@ -121,7 +121,7 @@ fn provide_liquidity() {
                 denom: "uusd".to_string(),
             },
             AssetInfo::Token {
-                contract_addr: "asset0000".to_string(),
+                contract_addr: Addr::unchecked("asset0000"),
             },
         ],
         token_code_id: 10u64,
@@ -155,7 +155,7 @@ fn provide_liquidity() {
         assets: [
             Asset {
                 info: AssetInfo::Token {
-                    contract_addr: "asset0000".to_string(),
+                    contract_addr: Addr::unchecked("asset0000"),
                 },
                 amount: Uint128::from(100u128),
             },
@@ -234,7 +234,7 @@ fn provide_liquidity() {
         assets: [
             Asset {
                 info: AssetInfo::Token {
-                    contract_addr: "asset0000".to_string(),
+                    contract_addr: Addr::unchecked("asset0000"),
                 },
                 amount: Uint128::from(100u128),
             },
@@ -293,7 +293,7 @@ fn provide_liquidity() {
         assets: [
             Asset {
                 info: AssetInfo::Token {
-                    contract_addr: "asset0000".to_string(),
+                    contract_addr: Addr::unchecked("asset0000"),
                 },
                 amount: Uint128::from(100u128),
             },
@@ -352,7 +352,7 @@ fn provide_liquidity() {
         assets: [
             Asset {
                 info: AssetInfo::Token {
-                    contract_addr: "asset0000".to_string(),
+                    contract_addr: Addr::unchecked("asset0000"),
                 },
                 amount: Uint128::from(98u128),
             },
@@ -395,7 +395,7 @@ fn provide_liquidity() {
         assets: [
             Asset {
                 info: AssetInfo::Token {
-                    contract_addr: "asset0000".to_string(),
+                    contract_addr: Addr::unchecked("asset0000"),
                 },
                 amount: Uint128::from(100u128),
             },
@@ -440,7 +440,7 @@ fn provide_liquidity() {
         assets: [
             Asset {
                 info: AssetInfo::Token {
-                    contract_addr: "asset0000".to_string(),
+                    contract_addr: Addr::unchecked("asset0000"),
                 },
                 amount: Uint128::from(99u128),
             },
@@ -479,7 +479,7 @@ fn provide_liquidity() {
         assets: [
             Asset {
                 info: AssetInfo::Token {
-                    contract_addr: "asset0000".to_string(),
+                    contract_addr: Addr::unchecked("asset0000"),
                 },
                 amount: Uint128::from(100u128),
             },
@@ -533,7 +533,7 @@ fn withdraw_liquidity() {
                 denom: "uusd".to_string(),
             },
             AssetInfo::Token {
-                contract_addr: "asset0000".to_string(),
+                contract_addr: Addr::unchecked("asset0000"),
             },
         ],
         token_code_id: 10u64,
@@ -656,7 +656,7 @@ fn try_native_to_token() {
                 denom: "uusd".to_string(),
             },
             AssetInfo::Token {
-                contract_addr: "asset0000".to_string(),
+                contract_addr: Addr::unchecked("asset0000"),
             },
         ],
         token_code_id: 10u64,
@@ -705,7 +705,7 @@ fn try_native_to_token() {
             amount: offer_amount,
         }],
     );
-    let res = execute(deps.as_mut(), env, info, msg).unwrap();
+    let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
     let msg_transfer = res.messages.get(0).expect("no message");
 
     // current price is 1.5, so expected return without spread is 1000
@@ -731,6 +731,7 @@ fn try_native_to_token() {
 
     let simulation_res: SimulationResponse = query_simulation(
         deps.as_ref(),
+        env.clone(),
         Asset {
             info: AssetInfo::NativeToken {
                 denom: "uusd".to_string(),
@@ -746,9 +747,10 @@ fn try_native_to_token() {
     // check reverse simulation res
     let reverse_simulation_res: ReverseSimulationResponse = query_reverse_simulation(
         deps.as_ref(),
+        env,
         Asset {
             info: AssetInfo::Token {
-                contract_addr: "asset0000".to_string(),
+                contract_addr: Addr::unchecked("asset0000"),
             },
             amount: expected_return_amount,
         },
@@ -838,7 +840,7 @@ fn try_token_to_native() {
                 denom: "uusd".to_string(),
             },
             AssetInfo::Token {
-                contract_addr: "asset0000".to_string(),
+                contract_addr: Addr::unchecked("asset0000"),
             },
         ],
         token_code_id: 10u64,
@@ -871,7 +873,7 @@ fn try_token_to_native() {
     let msg = ExecuteMsg::Swap {
         offer_asset: Asset {
             info: AssetInfo::Token {
-                contract_addr: "asset0000".to_string(),
+                contract_addr: Addr::unchecked("asset0000"),
             },
             amount: offer_amount,
         },
@@ -901,7 +903,7 @@ fn try_token_to_native() {
     let env = mock_env();
     let info = mock_info("asset0000", &[]);
 
-    let res = execute(deps.as_mut(), env, info, msg).unwrap();
+    let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
     let msg_transfer = res.messages.get(0).expect("no message");
 
     // current price is 1.5, so expected return without spread is 1000
@@ -938,10 +940,11 @@ fn try_token_to_native() {
 
     let simulation_res: SimulationResponse = query_simulation(
         deps.as_ref(),
+        env.clone(),
         Asset {
             amount: offer_amount,
             info: AssetInfo::Token {
-                contract_addr: "asset0000".to_string(),
+                contract_addr: Addr::unchecked("asset0000"),
             },
         },
     )
@@ -953,6 +956,7 @@ fn try_token_to_native() {
     // check reverse simulation res
     let reverse_simulation_res: ReverseSimulationResponse = query_reverse_simulation(
         deps.as_ref(),
+        env,
         Asset {
             amount: expected_return_amount,
             info: AssetInfo::NativeToken {
@@ -1089,7 +1093,7 @@ fn test_deduct() {
         },
         amount,
     })
-    .deduct_tax(&deps.as_ref().querier)
+    .deduct_tax(deps.as_ref())
     .unwrap();
 
     assert_eq!(expected_after_amount, after_amount.amount);
@@ -1122,7 +1126,7 @@ fn test_query_pool() {
                 denom: "uusd".to_string(),
             },
             AssetInfo::Token {
-                contract_addr: "asset0000".to_string(),
+                contract_addr: Addr::unchecked("asset0000"),
             },
         ],
         token_code_id: 10u64,
@@ -1133,7 +1137,7 @@ fn test_query_pool() {
     let env = mock_env();
     let info = mock_info("addr0000", &[]);
     // we can just call .unwrap() to assert this was a success
-    let _res = instantiate(deps.as_mut(), env, info, msg).unwrap();
+    let _res = instantiate(deps.as_mut(), env.clone(), info, msg).unwrap();
 
     // store liquidity token
     let reply_msg = Reply {
@@ -1151,7 +1155,7 @@ fn test_query_pool() {
 
     let _res = reply(deps.as_mut(), mock_env(), reply_msg).unwrap();
 
-    let res: PoolResponse = query_pool(deps.as_ref()).unwrap();
+    let res: PoolResponse = query_pool(deps.as_ref(), env).unwrap();
 
     assert_eq!(
         res.assets,
@@ -1164,7 +1168,7 @@ fn test_query_pool() {
             },
             Asset {
                 info: AssetInfo::Token {
-                    contract_addr: "asset0000".to_string(),
+                    contract_addr: Addr::unchecked("asset0000"),
                 },
                 amount: asset_1_amount
             }

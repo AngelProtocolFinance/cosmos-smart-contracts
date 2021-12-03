@@ -104,7 +104,7 @@ fn proper_initialization() {
                 admin: None,
                 code_id: 10u64,
                 msg: to_binary(&TokenInstantiateMsg {
-                    name: "halo-lbp liquidity token".to_string(),
+                    name: "halo liquidity token".to_string(),
                     symbol: "uLP".to_string(),
                     decimals: 6,
                     initial_balances: vec![],
@@ -115,7 +115,7 @@ fn proper_initialization() {
                 })
                 .unwrap(),
                 funds: vec![],
-                label: String::from("halo-lbp liquidity token"),
+                label: String::from("halo liquidity token"),
             }
             .into(),
             gas_limit: None,
@@ -1624,7 +1624,14 @@ fn compute_swap_rounding() {
     let commission_amount = Uint128::from(0_u128);
 
     assert_eq!(
-        compute_swap(offer_pool, offer_weight, ask_pool, ask_weight, offer_amount, COMMISSION_RATE.to_string()),
+        compute_swap(
+            offer_pool,
+            offer_weight,
+            ask_pool,
+            ask_weight,
+            offer_amount,
+            COMMISSION_RATE.to_string()
+        ),
         Ok((return_amount, spread_amount, commission_amount))
     );
 }

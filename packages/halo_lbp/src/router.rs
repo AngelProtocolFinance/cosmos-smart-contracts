@@ -8,7 +8,7 @@ use crate::asset::AssetInfo;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub halo_lbp_factory: Addr,
+    pub halo_factory: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -18,7 +18,7 @@ pub enum SwapOperation {
         offer_denom: String,
         ask_denom: String,
     },
-    AstroSwap {
+    HaloSwap {
         offer_asset_info: AssetInfo,
         ask_asset_info: AssetInfo,
     },
@@ -30,7 +30,7 @@ impl SwapOperation {
             SwapOperation::NativeSwap { offer_denom, .. } => AssetInfo::NativeToken {
                 denom: offer_denom.clone(),
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::HaloSwap {
                 offer_asset_info, ..
             } => offer_asset_info.clone(),
         }
@@ -41,7 +41,7 @@ impl SwapOperation {
             SwapOperation::NativeSwap { ask_denom, .. } => AssetInfo::NativeToken {
                 denom: ask_denom.clone(),
             },
-            SwapOperation::AstroSwap { ask_asset_info, .. } => ask_asset_info.clone(),
+            SwapOperation::HaloSwap { ask_asset_info, .. } => ask_asset_info.clone(),
         }
     }
 }
@@ -97,7 +97,7 @@ pub enum QueryMsg {
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub halo_lbp_factory: Addr,
+    pub halo_factory: Addr,
 }
 
 // We define a custom struct for each query response

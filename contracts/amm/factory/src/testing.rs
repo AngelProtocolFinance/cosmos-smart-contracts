@@ -1,14 +1,11 @@
-use crate::contract::{execute, instantiate, query, reply};
+use crate::contract::{execute, instantiate, query};
 use crate::mock_querier::mock_dependencies;
 
-use crate::state::{pair_key, TmpPairInfo, TMP_PAIR_INFO};
+use crate::state::read_tmp_pair;
 
 use cosmwasm_std::testing::{mock_env, mock_info};
-use cosmwasm_std::{
-    attr, from_binary, to_binary, ContractResult, Reply, ReplyOn, StdError, SubMsg,
-    SubMsgExecutionResponse, WasmMsg,
-};
-use halo_amm::asset::{AssetInfo, PairInfo};
+use cosmwasm_std::{attr, from_binary, to_binary, Addr, ReplyOn, StdError, SubMsg, WasmMsg};
+use halo_amm::asset::AssetInfo;
 use halo_amm::factory::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
 use halo_amm::pair::InstantiateMsg as PairInstantiateMsg;
 
@@ -20,6 +17,7 @@ fn proper_initialization() {
     let msg = InstantiateMsg {
         pair_code_id: 321u64,
         token_code_id: 123u64,
+        owner: "addr0000".to_string(),
         collector_addr: "collector000".to_string(),
         commission_rate: COMMISSION_RATE.to_string(),
     };
@@ -43,6 +41,7 @@ fn update_config() {
     let msg = InstantiateMsg {
         pair_code_id: 321u64,
         token_code_id: 123u64,
+        owner: "addr0000".to_string(),
         collector_addr: "collector000".to_string(),
         commission_rate: COMMISSION_RATE.to_string(),
     };
@@ -121,6 +120,7 @@ fn create_pair() {
     let msg = InstantiateMsg {
         pair_code_id: 321u64,
         token_code_id: 123u64,
+        owner: "addr0000".to_string(),
         collector_addr: "collector000".to_string(),
         commission_rate: COMMISSION_RATE.to_string(),
     };
@@ -133,10 +133,10 @@ fn create_pair() {
 
     let asset_infos = [
         AssetInfo::Token {
-            contract_addr: "asset0000".to_string(),
+            contract_addr: Addr::unchecked("asset0000"),
         },
         AssetInfo::Token {
-            contract_addr: "asset0001".to_string(),
+            contract_addr: Addr::unchecked("asset0001"),
         },
     ];
 
@@ -157,7 +157,7 @@ fn create_pair() {
     assert_eq!(
         res.messages,
         vec![SubMsg {
-            id: 1,
+            id: 0,
             gas_limit: None,
             reply_on: ReplyOn::Success,
             msg: WasmMsg::Instantiate {
@@ -170,99 +170,14 @@ fn create_pair() {
                 .unwrap(),
                 code_id: 321u64,
                 funds: vec![],
-                label: "".to_string(),
-                admin: None,
+                label: "HALO pair".to_string(),
+                admin: Some("addr0000".to_string()),
             }
             .into()
         },]
     );
 
-    let raw_infos = [
-        asset_infos[0].to_raw(deps.as_ref().api).unwrap(),
-        asset_infos[1].to_raw(deps.as_ref().api).unwrap(),
-    ];
+    let pair_info = read_tmp_pair(deps.as_ref()).unwrap();
 
-    assert_eq!(
-        TMP_PAIR_INFO.load(&deps.storage).unwrap(),
-        TmpPairInfo {
-            asset_infos: raw_infos.clone(),
-            pair_key: pair_key(&raw_infos),
-        }
-    );
-}
-
-#[test]
-fn reply_test() {
-    let mut deps = mock_dependencies(&[]);
-
-    let asset_infos = [
-        AssetInfo::Token {
-            contract_addr: "asset0000".to_string(),
-        },
-        AssetInfo::Token {
-            contract_addr: "asset0001".to_string(),
-        },
-    ];
-
-    let raw_infos = [
-        asset_infos[0].to_raw(deps.as_ref().api).unwrap(),
-        asset_infos[1].to_raw(deps.as_ref().api).unwrap(),
-    ];
-
-    let pair_key = pair_key(&raw_infos);
-    TMP_PAIR_INFO
-        .save(
-            &mut deps.storage,
-            &TmpPairInfo {
-                asset_infos: raw_infos,
-                pair_key,
-            },
-        )
-        .unwrap();
-
-    let reply_msg = Reply {
-        id: 1,
-        result: ContractResult::Ok(SubMsgExecutionResponse {
-            events: vec![],
-            data: Some(vec![10, 8, 112, 97, 105, 114, 48, 48, 48, 48].into()),
-        }),
-    };
-
-    // register terraswap pair querier
-    deps.querier.with_terraswap_pairs(&[(
-        &"pair0000".to_string(),
-        &PairInfo {
-            asset_infos: [
-                AssetInfo::NativeToken {
-                    denom: "uusd".to_string(),
-                },
-                AssetInfo::NativeToken {
-                    denom: "uusd".to_string(),
-                },
-            ],
-            contract_addr: "pair0000".to_string(),
-            liquidity_token: "liquidity0000".to_string(),
-        },
-    )]);
-
-    let _res = reply(deps.as_mut(), mock_env(), reply_msg).unwrap();
-
-    let query_res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::Pair {
-            asset_infos: asset_infos.clone(),
-        },
-    )
-    .unwrap();
-
-    let pair_res: PairInfo = from_binary(&query_res).unwrap();
-    assert_eq!(
-        pair_res,
-        PairInfo {
-            liquidity_token: "liquidity0000".to_string(),
-            contract_addr: "pair0000".to_string(),
-            asset_infos,
-        }
-    );
+    assert_eq!(pair_info.owner, Addr::unchecked("addr0000"));
 }

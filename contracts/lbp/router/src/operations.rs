@@ -61,15 +61,15 @@ pub fn execute_swap_operation(
                 )]
             }
         }
-        SwapOperation::AstroSwap {
+        SwapOperation::HaloSwap {
             offer_asset_info,
             ask_asset_info,
         } => {
             let config: Config = CONFIG.load(deps.storage)?;
-            let halo_lbp_factory = config.halo_lbp_factory;
+            let halo_factory = config.halo_factory;
             let pair_info: FactoryPairInfo = query_factory_pair_info(
                 deps.as_ref(),
-                &halo_lbp_factory,
+                &halo_factory,
                 &[offer_asset_info.clone(), ask_asset_info],
             )?;
 

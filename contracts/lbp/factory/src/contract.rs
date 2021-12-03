@@ -148,7 +148,6 @@ pub fn try_update_config(
     } else {
         Ok(Response::new().add_attribute("action", "update_config"))
     }
-    
 }
 
 #[allow(clippy::too_many_arguments)]

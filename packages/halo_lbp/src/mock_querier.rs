@@ -92,13 +92,13 @@ pub(crate) fn caps_to_map(caps: &[(&String, &Uint128)]) -> HashMap<String, Uint1
 }
 
 #[derive(Clone, Default)]
-pub struct HaloLbpFactoryQuerier {
+pub struct HaloFactoryQuerier {
     pairs: HashMap<String, FactoryPairInfo>,
 }
 
-impl HaloLbpFactoryQuerier {
+impl HaloFactoryQuerier {
     pub fn new(pairs: &[(&String, &FactoryPairInfo)]) -> Self {
-        HaloLbpFactoryQuerier {
+        HaloFactoryQuerier {
             pairs: pairs_to_map(pairs),
         }
     }
@@ -202,7 +202,7 @@ impl CW20QueryHandler {
 struct DefaultQueryHandler {
     base: MockQuerier<TerraQueryWrapper>,
     tax_querier: TaxQuerier,
-    halo_lbp_factory_querier: HaloLbpFactoryQuerier,
+    halo_factory_querier: HaloFactoryQuerier,
 }
 
 impl DefaultQueryHandler {
@@ -239,7 +239,7 @@ impl DefaultQueryHandler {
             }) => match from_binary(&msg).unwrap() {
                 FactoryQueryMsg::Pair { asset_infos } => {
                     let key = asset_infos[0].to_string() + asset_infos[1].to_string().as_str();
-                    match self.halo_lbp_factory_querier.pairs.get(&key) {
+                    match self.halo_factory_querier.pairs.get(&key) {
                         Some(v) => SystemResult::Ok(to_binary(&v).into()),
                         None => SystemResult::Err(SystemError::InvalidRequest {
                             error: "No pair info exists".to_string(),
@@ -260,7 +260,7 @@ impl WasmMockQuerier {
             query_handler: DefaultQueryHandler {
                 base,
                 tax_querier: TaxQuerier::default(),
-                halo_lbp_factory_querier: HaloLbpFactoryQuerier::default(),
+                halo_factory_querier: HaloFactoryQuerier::default(),
             },
             cw20_query_handler: CW20QueryHandler {
                 token_querier: TokenQuerier::default(),
@@ -279,9 +279,9 @@ impl WasmMockQuerier {
         self.query_handler.tax_querier = TaxQuerier::new(rate, caps);
     }
 
-    // configure the halo-lbp pair
-    pub fn with_halo_lbp_pairs(&mut self, pairs: &[(&String, &FactoryPairInfo)]) {
-        self.query_handler.halo_lbp_factory_querier = HaloLbpFactoryQuerier::new(pairs);
+    // configure the halo pair
+    pub fn with_halo_pairs(&mut self, pairs: &[(&String, &FactoryPairInfo)]) {
+        self.query_handler.halo_factory_querier = HaloFactoryQuerier::new(pairs);
     }
 
     pub fn with_default_query_handler(&mut self) {

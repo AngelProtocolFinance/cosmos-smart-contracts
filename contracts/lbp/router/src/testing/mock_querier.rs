@@ -41,7 +41,7 @@ pub struct WasmMockQuerier {
     base: MockQuerier<TerraQueryWrapper>,
     token_querier: TokenQuerier,
     tax_querier: TaxQuerier,
-    halo_lbp_factory_querier: HaloFactoryQuerier,
+    halo_factory_querier: HaloFactoryQuerier,
 }
 
 #[derive(Clone, Default)]
@@ -203,7 +203,7 @@ impl WasmMockQuerier {
         match from_binary(&msg).unwrap() {
             QueryMsg::Pair { asset_infos } => {
                 let key = asset_infos[0].to_string() + asset_infos[1].to_string().as_str();
-                match self.halo_lbp_factory_querier.pairs.get(&key) {
+                match self.halo_factory_querier.pairs.get(&key) {
                     Some(v) => SystemResult::Ok(
                         to_binary(&FactoryPairInfo {
                             contract_addr: Addr::unchecked("pair"),
@@ -285,7 +285,7 @@ impl WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
             tax_querier: TaxQuerier::default(),
-            halo_lbp_factory_querier: HaloFactoryQuerier::default(),
+            halo_factory_querier: HaloFactoryQuerier::default(),
         }
     }
 
@@ -303,7 +303,7 @@ impl WasmMockQuerier {
         self.tax_querier = TaxQuerier::new(rate, caps);
     }
 
-    pub fn with_halo_lbp_pairs(&mut self, pairs: &[(&String, &FactoryPairInfo)]) {
-        self.halo_lbp_factory_querier = HaloFactoryQuerier::new(pairs);
+    pub fn with_halo_pairs(&mut self, pairs: &[(&String, &FactoryPairInfo)]) {
+        self.halo_factory_querier = HaloFactoryQuerier::new(pairs);
     }
 }

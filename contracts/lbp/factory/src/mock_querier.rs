@@ -24,17 +24,17 @@ pub fn mock_dependencies(
 
 pub struct WasmMockQuerier {
     base: MockQuerier<Empty>,
-    halo_lbp_pair_querier: HaloLBPPairQuerier,
+    halo_pair_querier: HaloPairQuerier,
 }
 
 #[derive(Clone, Default)]
-pub struct HaloLBPPairQuerier {
+pub struct HaloPairQuerier {
     pairs: HashMap<Addr, PairInfo>,
 }
 
-impl HaloLBPPairQuerier {
+impl HaloPairQuerier {
     pub fn new(pairs: &[(&Addr, &PairInfo)]) -> Self {
-        HaloLBPPairQuerier {
+        HaloPairQuerier {
             pairs: pairs_to_map(pairs),
         }
     }
@@ -71,7 +71,7 @@ impl WasmMockQuerier {
                 => match from_binary(&msg).unwrap() {
                     QueryMsg::Pair {} => {
                        let pair_info: PairInfo =
-                        match self.halo_lbp_pair_querier.pairs.get(&Addr::unchecked(contract_addr)) {
+                        match self.halo_pair_querier.pairs.get(&Addr::unchecked(contract_addr)) {
                             Some(v) => v.clone(),
                             None => {
                                 return SystemResult::Err(SystemError::NoSuchContract {
@@ -93,13 +93,13 @@ impl WasmMockQuerier {
     pub fn new(base: MockQuerier<Empty>) -> Self {
         WasmMockQuerier {
             base,
-            halo_lbp_pair_querier: HaloLBPPairQuerier::default(),
+            halo_pair_querier: HaloPairQuerier::default(),
         }
     }
 
-    // configure the halo-lbp pair
-    pub fn with_halo_lbp_pairs(&mut self, pairs: &[(&Addr, &PairInfo)]) {
-        self.halo_lbp_pair_querier = HaloLBPPairQuerier::new(pairs);
+    // configure the halo pair
+    pub fn with_halo_pairs(&mut self, pairs: &[(&Addr, &PairInfo)]) {
+        self.halo_pair_querier = HaloPairQuerier::new(pairs);
     }
 
     // pub fn with_balance(&mut self, balances: &[(&Addr, &[Coin])]) {
