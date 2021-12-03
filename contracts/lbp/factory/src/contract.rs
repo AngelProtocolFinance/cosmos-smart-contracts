@@ -272,10 +272,11 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let state: Config = CONFIG.load(deps.storage)?;
     let resp = ConfigResponse {
-        owner: state.owner.clone(),
+        owner: state.owner.to_string(),
         token_code_id: state.token_code_id,
         pair_code_id: state.pair_code_id,
-        collector_addr: state.collector_addr,
+        collector_addr: state.collector_addr.to_string(),
+        commission_rate: state.commission_rate,
     };
 
     Ok(resp)

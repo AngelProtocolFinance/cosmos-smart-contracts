@@ -61,6 +61,7 @@ pub enum Cw20HookMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
+    Config {},
     Pair {},
     Pool {},
     Simulation { offer_asset: Asset, block_time: u64 },
@@ -68,6 +69,12 @@ pub enum QueryMsg {
 }
 
 // We define a custom struct for each query response
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct ConfigResponse {
+    pub collector_addr: String,
+    pub commission_rate: String,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct PoolResponse {
     pub assets: [WeightedAsset; 2],

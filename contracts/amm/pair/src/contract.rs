@@ -14,7 +14,7 @@ use cosmwasm_bignumber::{Decimal256, Uint256};
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg, MinterResponse};
 use halo_amm::asset::{Asset, AssetInfo, PairInfo, PairInfoRaw};
 use halo_amm::pair::{
-    Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, PoolResponse, QueryMsg,
+    ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, PoolResponse, QueryMsg,
     ReverseSimulationResponse, SimulationResponse,
 };
 use halo_amm::querier::query_supply;
@@ -476,6 +476,7 @@ pub fn swap(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
     match msg {
+        QueryMsg::Config {} => Ok(to_binary(&query_config(deps)?)?),
         QueryMsg::Pair {} => Ok(to_binary(&query_pair_info(deps)?)?),
         QueryMsg::Pool {} => Ok(to_binary(&query_pool(deps)?)?),
         QueryMsg::Simulation { offer_asset } => {
@@ -485,6 +486,16 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractErr
             Ok(to_binary(&query_reverse_simulation(deps, ask_asset)?)?)
         }
     }
+}
+
+pub fn query_config(deps: Deps) -> Result<ConfigResponse, ContractError> {
+    let state: Config = CONFIG.load(deps.storage)?;
+    let resp = ConfigResponse {
+        collector_addr: state.collector_addr.to_string(),
+        commission_rate: state.commission_rate,
+    };
+
+    Ok(resp)
 }
 
 pub fn query_pair_info(deps: Deps) -> Result<PairInfo, ContractError> {

@@ -229,6 +229,8 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         owner: deps.api.addr_humanize(&state.owner)?.to_string(),
         token_code_id: state.token_code_id,
         pair_code_id: state.pair_code_id,
+        collector_addr: state.collector_addr.to_string(),
+        commission_rate: state.commission_rate,
     };
 
     Ok(resp)

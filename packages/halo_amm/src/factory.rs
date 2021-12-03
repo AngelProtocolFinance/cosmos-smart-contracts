@@ -49,6 +49,8 @@ pub struct ConfigResponse {
     pub owner: String,
     pub pair_code_id: u64,
     pub token_code_id: u64,
+    pub collector_addr: String,
+    pub commission_rate: String,
 }
 
 /// We currently take no arguments for migrations
