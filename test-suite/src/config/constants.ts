@@ -86,25 +86,25 @@ export const testnet = {
     cw3GuardianAngels: "terra1ydp9qd9xgdq63ua6axfvauye3l7a3476lm6l28",
   },
   // TerraSwap balances account
-  token_code_id: 24025,
-  factory_code_id: 24033,
-  pair_code_id: 24034,
-  router_code_id: 24035,
+  token_code_id: 24201,
+  factory_code_id: 24223,
+  pair_code_id: 24224,
+  router_code_id: 24225,
   // LBP contracts
-  factory_contract: "terra1qmnmxjhjr92dwnpagvawgrh0d85e2nt8r53w4e",
-  token_contract: "terra1qqgv7nex6ugwgreuddveevkw4xdxmjzn6plwgt",
-  pair_contract: "terra19qgd32rxa7r82r5v9g5rjqf2rgc2eeyslphh89",
-  router_contract: "terra19ljzwh6clxgzmnwv9jr33f4ukv5vcznuxtm0tp",
+  token_contract: "terra1r85n2jwz642uau3ect0hnvuu7c9tc7h39le8ju",
+  factory_contract: "terra1tunw7rpjpwqt3lfcmh8kk7fpkyray942p82j79",
+  pair_contract: "terra13ur099krppathr90w65muwxave9yzuuq07fxx8",
+  router_contract: "terra1mmsp5tz6q5lzxeww8hu2qkm5vhqmqlq7wnak6k",
 
   // HALO contracts
   halo: {
-    airdrop_contract: "terra13l5pu2r9neltg8wmxqxuld3kk6sz28yq0z334k",
-    collector_contract: "terra1je7n6kdtwp8lyvy3qxz9h8zhld9vtezeqhpms4",
-    community_contract: "terra1qkhyzu3jyty58l0ckwzkkcgwt50fdvwtvjt9fs",
-    distributor_contract: "terra1a5gtzyqchz40jh3qgywms0wenyhmqh79z8jlxq",
-    gov_contract: "terra1j3hd2a6542g9zw6vjuvygptv8n6kaeukfqv5kj",
-    staking_contract: "terra1tuj428ezq8eyv8fp69r76guv3z9frvh77xmhyp",
-    vesting_contract: "terra1n70y3n4uyka5rh3alugek92hu6fn5rak3dtmag",
+    airdrop_contract: "terra1nwl0jwuf542wlg0gcqc5yg56tv7cw0jrdml7cc",
+    collector_contract: "terra1vlkn8vc3peqy3glxqyk5cy9s7wtzrfhstltyn4",
+    community_contract: "terra1dgy5z0pvgfn0ymv4pq895t7p42t454cguederl",
+    distributor_contract: "terra1y00alsldahry0k89jft8an6hd44ed9v3cd5pme",
+    gov_contract: "terra1n67sws7acgjuaqzw3yjpk5qjk8afe4emyj5dmz",
+    staking_contract: "terra1lkz2epnqg0s06xmadzz9z40w33x6huawt663sp",
+    vesting_contract: "terra1fasvyjqp8y8h5k7ww83g8sla5d4fgd329yml84",
   }
 } as const;
 

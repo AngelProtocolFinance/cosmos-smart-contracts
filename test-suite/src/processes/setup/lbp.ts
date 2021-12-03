@@ -93,7 +93,7 @@ export async function setupLBP(
   // Router contract
   process.stdout.write("Instantiating LBP Router contract");
   const routerResult = await instantiateContract(terra, apTeam, apTeam, routerCodeId, {
-    halo_lbp_factory: factoryContract
+    halo_factory: factoryContract
   });
   const routerContract = routerResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
