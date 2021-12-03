@@ -12,6 +12,7 @@ import { setupHalo } from "../processes/setup/halo";
 import { setupLBP } from "../processes/setup/lbp";
 import { setupToken } from "../processes/setup/token";
 import { testExecute } from "../processes/tests/testnet";
+import { migrateAMMContracts } from "../processes/migrateContracts/migrateAMM";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -202,7 +203,7 @@ export async function startSetupContracts(): Promise<void> {
 // setup LBP contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupTokenContract(): Promise<void> {
-  console.log(chalk.blue("\nTestNet"));
+  console.log(chalk.blue("\nLocalTerra"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -254,7 +255,7 @@ export async function startSetupHalo(): Promise<void> {
 // setup LBP contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupLBPContracts(): Promise<void> {
-  console.log(chalk.blue("\nTestNet"));
+  console.log(chalk.blue("\nLocalTerra"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -332,7 +333,7 @@ export async function startMigrateHaloContracts(): Promise<void> {
 // migrate LBP contracts
 // -------------------------------------------------------------------------------------
 export async function startMigrateLBPContracts(): Promise<void> {
-  console.log(chalk.blue("\nTestnet"));
+  console.log(chalk.blue("\nLocalTerra"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -346,6 +347,29 @@ export async function startMigrateLBPContracts(): Promise<void> {
     factoryContract,
     pairContract,
     routerContract
+  );
+}
+
+
+// -------------------------------------------------------------------------------------
+// migrate LBP contracts
+// -------------------------------------------------------------------------------------
+export async function startMigrateAMMContracts(): Promise<void> {
+  console.log(chalk.blue("\nLocalTerra"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Migrate Contracts
+  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  await migrateAMMContracts(
+    terra,
+    apTeam,
+    factoryContract,
+    pairContract,
+    routerContract,
+    "0.01"
   );
 }
 

@@ -19,19 +19,22 @@ export async function testFactoryUpdateConfig(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   pleb: Wallet,
-  factoryContract: string,
+  factory_contract: string,
   owner: string | undefined,
   token_code_id: number | undefined,
   pair_code_id: number | undefined,
+  pair_contract: string,
+  collector_addr: string | undefined,
+  commission_rate: string | undefined,
 ): Promise<void> {
   process.stdout.write("Test - Pleb cannot update factory config");
   await expect(
     sendTransaction(terra, pleb, [
       new MsgExecuteContract(
         pleb.key.accAddress,
-        factoryContract,
+        factory_contract,
         {
-          update_config: { owner, token_code_id: pair_code_id },
+          update_config: { owner, token_code_id: pair_code_id, pair_contract, collector_addr, commission_rate },
         },
       ),
     ])
@@ -43,9 +46,9 @@ export async function testFactoryUpdateConfig(
     sendTransaction(terra, apTeam, [
       new MsgExecuteContract(
         apTeam.key.accAddress,
-        factoryContract,
+        factory_contract,
         {
-          update_config: { owner, token_code_id, pair_code_id },
+          update_config: { owner, token_code_id, pair_code_id, pair_contract, collector_addr, commission_rate },
         },
       ),
     ])
@@ -58,10 +61,10 @@ export async function testFactoryUpdateConfig(
 //----------------------------------------------------------------------------------------
 export async function testQueryFactoryConfig(
   terra: LocalTerra | LCDClient,
-  factoryContract: string
+  factory_contract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Factory Config");
-  const result: any = await terra.wasm.contractQuery(factoryContract, {
+  const result: any = await terra.wasm.contractQuery(factory_contract, {
     config: {},
   });
 
@@ -71,7 +74,7 @@ export async function testQueryFactoryConfig(
 
 export async function testQueryPair(
   terra: LocalTerra | LCDClient,
-  factoryContract: string,
+  factory_contract: string,
   tokenContract: string,
 ): Promise<void> {
   process.stdout.write("Test - Query Pair");
@@ -89,7 +92,7 @@ export async function testQueryPair(
     }
   ]
 
-  const result: any = await terra.wasm.contractQuery(factoryContract, {
+  const result: any = await terra.wasm.contractQuery(factory_contract, {
     pair: { asset_infos },
   });
 
@@ -99,11 +102,11 @@ export async function testQueryPair(
 
 export async function testQueryPairs(
   terra: LocalTerra | LCDClient,
-  factoryContract: string,
+  factory_contract: string,
 ): Promise<void> {
   process.stdout.write("Test - Query Pairs");
 
-  const result: any = await terra.wasm.contractQuery(factoryContract, {
+  const result: any = await terra.wasm.contractQuery(factory_contract, {
     pairs: { start_after: undefined, limit: undefined },
   });
 

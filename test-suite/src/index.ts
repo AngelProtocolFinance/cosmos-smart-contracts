@@ -32,6 +32,9 @@ import * as MainNet from "./environments/mainnet";
 		case "localterra_migrate_lbp":
 			await LocalNet.startMigrateLBPContracts();
 			break;
+		case "localterra_migrate_amm":
+			await LocalNet.startMigrateAMMContracts();
+			break;
 		case "testnet":
 			await TestNet.startTest();
 			break;
@@ -56,6 +59,9 @@ import * as MainNet from "./environments/mainnet";
 		case "testnet_migrate_lbp":
 			await TestNet.startMigrateLBPContracts();
 			break;
+		case "testnet_migrate_amm":
+			await TestNet.startMigrateAMMContracts();
+			break;
 		case "mainnet":
 			await MainNet.startTest();
 			break;
@@ -79,6 +85,9 @@ import * as MainNet from "./environments/mainnet";
 			break;
 		case "mainnet_migrate_lbp":
 			await MainNet.startMigrateLBPContracts();
+			break;
+		case "mainnet_migrate_amm":
+			await MainNet.startMigrateAMMContracts();
 			break;
 		default:
 			console.log("Invalid command");

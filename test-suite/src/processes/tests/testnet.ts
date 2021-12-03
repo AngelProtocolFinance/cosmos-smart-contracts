@@ -293,7 +293,7 @@ export async function testExecute(
   // await testQueryStakingState(terra, haloStaking);
 
   // Test query for LBP factory
-  // await testFactoryUpdateConfig(terra, apTeam, pleb, factoryContract, undefined, undefined, undefined);
+  // await testFactoryUpdateConfig(terra, apTeam, pleb, factoryContract, undefined, undefined, undefined, pairContract, undefined, undefined);
   // await testQueryFactoryConfig(terra, factoryContract);
   // await testQueryPair(terra, factoryContract, tokenContract);
   // await testQueryPairs(terra, factoryContract);
@@ -307,7 +307,7 @@ export async function testExecute(
 
   // // Test query for LBP router
   // await testRouterSwapOperations(terra, apTeam, routerContract, tokenContract);
-  await testQueryRouterConfig(terra, routerContract);
-  await testQueryRouterSimulateSwapOperations(terra, routerContract, tokenContract, "20000000");
+  // await testQueryRouterConfig(terra, routerContract);
+  // await testQueryRouterSimulateSwapOperations(terra, routerContract, tokenContract, "20000000");
 
 }

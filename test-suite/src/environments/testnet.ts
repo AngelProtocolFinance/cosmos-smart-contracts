@@ -12,6 +12,7 @@ import { setupHalo } from "../processes/setup/halo";
 import { setupLBP } from "../processes/setup/lbp";
 import { setupToken } from "../processes/setup/token";
 import { testExecute } from "../processes/tests/testnet";
+import { migrateAMMContracts } from "../processes/migrateContracts/migrateAMM";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -336,6 +337,28 @@ export async function startMigrateLBPContracts(): Promise<void> {
     factoryContract,
     pairContract,
     routerContract
+  );
+}
+
+// -------------------------------------------------------------------------------------
+// migrate LBP contracts
+// -------------------------------------------------------------------------------------
+export async function startMigrateAMMContracts(): Promise<void> {
+  console.log(chalk.blue("\nTestnet"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Migrate Contracts
+  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  await migrateAMMContracts(
+    terra,
+    apTeam,
+    factoryContract,
+    pairContract,
+    routerContract,
+    "0.01"
   );
 }
 
