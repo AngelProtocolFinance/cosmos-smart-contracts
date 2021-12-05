@@ -24,6 +24,7 @@ export async function setupHalo(
   reward_factor: string,
   distribution_schedule: [number, number, string][],
   genesis_time: number,
+  tokenAmount: string,
   ): Promise<void> {
   process.stdout.write("Uploading token Wasm");
   const tokenCodeId = await storeCode(
@@ -90,7 +91,7 @@ export async function setupHalo(
     initial_balances: [
       {
         address: apTeam.key.accAddress,
-        amount: "160000000000"
+        amount: tokenAmount
       },
     ],
     mint: undefined,

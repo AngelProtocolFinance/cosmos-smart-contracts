@@ -14,6 +14,8 @@ export async function setupLBP(
   commission_rate: string,
   startTime: number,
   endTime: number,
+  tokenAmount: string,
+  nativeTokenAmount: string,
   ): Promise<void> {
   process.stdout.write("Uploading LBP factory Wasm");
   const factoryCodeId = await storeCode(
@@ -108,7 +110,7 @@ export async function setupLBP(
   const liqAddResult = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
       increase_allowance: {
-        amount: "160000000000",
+        amount: tokenAmount,
         spender: pairContract,
       },
     }),
@@ -124,7 +126,7 @@ export async function setupLBP(
                   contract_addr: tokenContract,
                 },
               },
-              amount: "160000000000",
+              amount: tokenAmount,
             },
             {
               info: {
@@ -132,13 +134,13 @@ export async function setupLBP(
                   denom: "uusd",
                 },
               },
-              amount: "2600000000",
+              amount: nativeTokenAmount,
             },
           ],
         },
       },
       {
-        uusd: "2600000000",
+        uusd: nativeTokenAmount,
       }
     ),
   ]);

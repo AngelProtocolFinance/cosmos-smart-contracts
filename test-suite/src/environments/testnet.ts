@@ -59,6 +59,10 @@ let haloGov: string;
 let haloStaking: string;
 let haloVesting: string;
 
+// HALO token supply amount
+let tokenAmount: string;
+let nativeTokenAmount: string;
+
 // -------------------------------------------------------------------------------------
 // initialize variables
 // -------------------------------------------------------------------------------------
@@ -144,6 +148,9 @@ function initialize() {
   console.log(`Use ${chalk.cyan(haloGov)} as HALO gov`);
   console.log(`Use ${chalk.cyan(haloStaking)} as HALO staking`);
   console.log(`Use ${chalk.cyan(haloVesting)} as HALO vesting`);
+
+  tokenAmount = config.token_amount;
+  nativeTokenAmount = config.native_token_amount;
 }
 
 // -------------------------------------------------------------------------------------
@@ -224,17 +231,18 @@ export async function startSetupHalo(): Promise<void> {
     apTeam,
     factoryContract,  // terraswap_factory contract
     pairContract,     // staking_token: lp token of ANC-UST pair contract
-    30,            // quorum
-    50,            // threshold,
+    30,               // quorum
+    50,               // threshold,
     2000,             // voting_period,
     1000,             // timelock_period,
-    "10000000000",      // proposal_deposit,
+    "10000000000",    // proposal_deposit,
     10,               // snapshot_period,
     [],               // whitelist
-    "1000",             // spend_limit
+    "1000",           // spend_limit
     "0.2",            // reward_factor
     [[100, 200, "1000000"]],  // distribution_schedule
-    12345             // genesis_time
+    12345,            // genesis_time
+    tokenAmount
   );
 }
 
@@ -263,6 +271,8 @@ export async function startSetupLBPContracts(): Promise<void> {
     "0.02",
     startTime,
     endTime,
+    tokenAmount,
+    nativeTokenAmount
   );
 }
 

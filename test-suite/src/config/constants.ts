@@ -44,7 +44,11 @@ export const localterra = {
     gov_contract: "",
     staking_contract: "",
     vesting_contract: "",
-  }
+  },
+
+  // HALO token supply amount
+  token_amount: "160000000000",
+  native_token_amount: "2600000000",
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -108,7 +112,11 @@ export const testnet = {
     gov_contract: "terra1wkuwphr80t3n6vfktm3ar4l5evjg28shx9t465",
     staking_contract: "terra1u5nm64j4kl6l3kqtc0dnv82cf5nul2k672ygcz",
     vesting_contract: "terra15kv75gw4j6u6wrlg2z5ez00ewwty6l39gufy8q",
-  }
+  },
+
+  // HALO token supply amount
+  token_amount: "160000000000",
+  native_token_amount: "2600000000",
 } as const;
 
 // ---------------------------------------------------------------------------------------------------
@@ -208,5 +216,9 @@ export const mainnet = {
     gov_contract: "",
     staking_contract: "",
     vesting_contract: "",
-  }
+  },
+
+  // HALO token supply amount
+  token_amount: "160000000000",
+  native_token_amount: "2600000000",
 } as const;
