@@ -12,6 +12,8 @@ export async function setupLBP(
   tokenContract: string,
   collector_addr: string,
   commission_rate: string,
+  startTime: number,
+  endTime: number,
   ): Promise<void> {
   process.stdout.write("Uploading LBP factory Wasm");
   const factoryCodeId = await storeCode(
@@ -52,7 +54,7 @@ export async function setupLBP(
 
   // Pair contract
   process.stdout.write("Creating Pair contract from Factory contract");
-  const currTime = new Date().getTime() / 1000 + 100;
+
   const pairResult = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, factoryContract, {
       create_pair: {
@@ -76,8 +78,8 @@ export async function setupLBP(
             end_weight: "1"
           }
         ],
-        start_time: Math.round(currTime),
-        end_time: Math.round(currTime) + 3600 * 24 * 3,
+        start_time: startTime,
+        end_time: endTime,
         description: undefined
       }
     })

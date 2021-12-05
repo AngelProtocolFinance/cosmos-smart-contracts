@@ -249,6 +249,9 @@ export async function startSetupLBPContracts(): Promise<void> {
   console.log(chalk.yellow("\nStep 1. Environment Info"));
   initialize();
 
+  const currTime = new Date().getTime() / 1000 + 100;
+  const startTime = Math.round(currTime);
+  const endTime = Math.round(currTime) + 3600 * 24 * 3;
   // Setup LBP contracts
   console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
   await setupLBP(
@@ -257,7 +260,9 @@ export async function startSetupLBPContracts(): Promise<void> {
     tokenCodeId,
     tokenContract,
     haloCollector,
-    "0.02"
+    "0.02",
+    startTime,
+    endTime,
   );
 }
 
