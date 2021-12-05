@@ -141,9 +141,9 @@ fn test_asset_info() {
             .unwrap(),
         Uint128::from(123u128)
     );
-    
+
     deps.querier.with_cw20_query_handler();
-    
+
     assert_eq!(
         token_info
             .query_pool(deps.as_ref(), &Addr::unchecked(MOCK_CONTRACT_ADDR))
@@ -193,16 +193,12 @@ fn test_asset() {
         Uint128::zero()
     );
     assert_eq!(
-        native_token_asset
-            .compute_tax(deps.as_ref())
-            .unwrap(),
+        native_token_asset.compute_tax(deps.as_ref()).unwrap(),
         Uint128::from(1220u128)
     );
 
     assert_eq!(
-        native_token_asset
-            .deduct_tax(deps.as_ref())
-            .unwrap(),
+        native_token_asset.deduct_tax(deps.as_ref()).unwrap(),
         Coin {
             denom: "uusd".to_string(),
             amount: Uint128::from(121903u128),

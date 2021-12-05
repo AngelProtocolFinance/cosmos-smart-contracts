@@ -16,7 +16,9 @@ use halo_amm::factory::{
     ConfigResponse, ExecuteMsg, FactoryPairInfo, InstantiateMsg, MigrateMsg, PairsResponse,
     QueryMsg,
 };
-use halo_amm::pair::ExecuteMsg::UpdateConfig as PairUpdateConfig;
+use halo_amm::pair::ExecuteMsg::{
+    UpdateAssetInfos as PairUpdateAssetInfos, UpdateConfig as PairUpdateConfig,
+};
 use halo_amm::pair::InstantiateMsg as PairInstantiateMsg;
 use protobuf::Message;
 
@@ -61,6 +63,10 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             collector_addr,
             commission_rate,
         ),
+        ExecuteMsg::UpdateAssetInfos {
+            pair_contract,
+            asset_infos,
+        } => execute_update_asset_infos(deps, info, pair_contract, asset_infos),
         ExecuteMsg::CreatePair { asset_infos } => execute_create_pair(deps, env, info, asset_infos),
     }
 }
@@ -131,6 +137,36 @@ pub fn execute_update_config(
     } else {
         Ok(Response::new().add_attribute("action", "update_config"))
     }
+}
+
+pub fn execute_update_asset_infos(
+    deps: DepsMut,
+    info: MessageInfo,
+    pair_contract: String,
+    asset_infos: [AssetInfo; 2],
+) -> StdResult<Response> {
+    let config: Config = CONFIG.load(deps.storage)?;
+
+    // permission check
+    if info.sender != config.owner {
+        return Err(StdError::generic_err("unauthorized"));
+    }
+
+    // Update pair contract asset infos
+    let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: pair_contract,
+        msg: to_binary(&PairUpdateAssetInfos { asset_infos }).unwrap(),
+        funds: vec![],
+    });
+
+    Ok(Response::new()
+        .add_attribute("action", "update_asset_infos")
+        .add_submessage(SubMsg {
+            id: 0,
+            gas_limit: None,
+            msg: wasm_msg,
+            reply_on: ReplyOn::Never,
+        }))
 }
 
 // Anyone can execute it to create swap pair

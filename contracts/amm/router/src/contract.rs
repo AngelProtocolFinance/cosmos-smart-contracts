@@ -17,7 +17,7 @@ use halo_amm::factory::FactoryPairInfo;
 use halo_amm::pair::{QueryMsg as PairQueryMsg, SimulationResponse};
 use halo_amm::querier::query_factory_pair_info;
 use halo_amm::router::{
-    ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg,
+    ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
     SimulateSwapOperationsResponse, SwapOperation,
 };
 use std::collections::HashMap;
@@ -313,6 +313,11 @@ fn assert_operations(operations: &[SwapOperation]) -> StdResult<()> {
     }
 
     Ok(())
+}
+
+#[cfg_attr(not(feature = "library"), entry_point)]
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    Ok(Response::default())
 }
 
 #[test]

@@ -42,6 +42,7 @@ pub fn instantiate(
 
     let config = Config {
         factory_addr: info.sender,
+        liquidity_token: Addr::unchecked(""),
         collector_addr: deps.api.addr_validate(&msg.collector_addr)?,
         commission_rate: msg.commission_rate,
     };
@@ -85,6 +86,9 @@ pub fn execute(
             collector_addr,
             commission_rate,
         } => update_config(deps, info, collector_addr, commission_rate),
+        ExecuteMsg::UpdateAssetInfos { asset_infos } => {
+            update_asset_infos_post_lbp(deps, env, info, asset_infos)
+        }
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::ProvideLiquidity {
             assets,
@@ -209,23 +213,49 @@ pub fn update_config(
     Ok(Response::new().add_attribute("action", "update_config"))
 }
 
+pub fn update_asset_infos_post_lbp(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    asset_infos: [AssetInfo; 2],
+) -> Result<Response, ContractError> {
+    let config: Config = CONFIG.load(deps.storage)?;
+
+    // permission check
+    if info.sender != config.factory_addr {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let pair_info: &PairInfo = &PairInfo {
+        contract_addr: env.contract.address.clone(),
+        liquidity_token: config.liquidity_token,
+        asset_infos: asset_infos,
+    };
+
+    PAIR_INFO.save(deps.storage, &pair_info)?;
+
+    Ok(Response::new().add_attribute("action", "update_pair_info"))
+}
+
 /// This just stores the result for future query
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> StdResult<Response> {
+    let mut pair_info: PairInfo = PAIR_INFO.load(deps.storage)?;
+    let mut config: Config = CONFIG.load(deps.storage)?;
+
     let data = msg.result.unwrap().data.unwrap();
     let res: MsgInstantiateContractResponse =
         Message::parse_from_bytes(data.as_slice()).map_err(|_| {
             StdError::parse_err("MsgInstantiateContractResponse", "failed to parse data")
         })?;
-    let liquidity_token = res.get_contract_address();
 
-    let api = deps.api;
-    PAIR_INFO.update(deps.storage, |mut meta| -> StdResult<_> {
-        meta.liquidity_token = api.addr_validate(liquidity_token)?;
-        Ok(meta)
-    })?;
+    pair_info.liquidity_token = deps.api.addr_validate(res.get_contract_address())?;
+    PAIR_INFO.save(deps.storage, &pair_info)?;
 
-    Ok(Response::new().add_attribute("liquidity_token_addr", liquidity_token))
+    config.liquidity_token = deps.api.addr_validate(res.get_contract_address())?;
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::new().add_attribute("liquidity_token_addr", pair_info.liquidity_token))
 }
 
 /// CONTRACT - should approve contract to use the amount of token
@@ -491,6 +521,8 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 pub fn query_config(deps: Deps) -> Result<ConfigResponse, ContractError> {
     let state: Config = CONFIG.load(deps.storage)?;
     let resp = ConfigResponse {
+        factory_addr: state.factory_addr.to_string(),
+        liquidity_token: state.liquidity_token.to_string(),
         collector_addr: state.collector_addr.to_string(),
         commission_rate: state.commission_rate,
     };

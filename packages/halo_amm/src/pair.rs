@@ -25,6 +25,9 @@ pub enum ExecuteMsg {
         collector_addr: Option<String>,
         commission_rate: Option<String>,
     },
+    UpdateAssetInfos {
+        asset_infos: [AssetInfo; 2],
+    },
     Receive(Cw20ReceiveMsg),
     /// ProvideLiquidity a user provides pool liquidity
     ProvideLiquidity {
@@ -66,6 +69,8 @@ pub enum QueryMsg {
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
+    pub factory_addr: String,
+    pub liquidity_token: String,
     pub collector_addr: String,
     pub commission_rate: String,
 }

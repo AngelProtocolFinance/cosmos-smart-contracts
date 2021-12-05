@@ -9,6 +9,7 @@ pub const PAIR_INFO: Item<PairInfo> = Item::new("pair_info");
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub factory_addr: Addr,
+    pub liquidity_token: Addr,
     pub collector_addr: Addr,
     pub commission_rate: String,
 }

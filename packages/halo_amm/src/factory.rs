@@ -25,6 +25,11 @@ pub enum ExecuteMsg {
         collector_addr: Option<String>,
         commission_rate: Option<String>,
     },
+    /// Update asset_infos post-LBP
+    UpdateAssetInfos {
+        pair_contract: String,
+        asset_infos: [AssetInfo; 2],
+    },
     /// CreatePair instantiates pair contract
     CreatePair {
         /// Asset infos

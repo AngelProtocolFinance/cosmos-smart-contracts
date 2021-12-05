@@ -104,3 +104,7 @@ pub struct ConfigResponse {
 pub struct SimulateSwapOperationsResponse {
     pub amount: Uint128,
 }
+
+/// We currently take no arguments for migrations
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MigrateMsg {}

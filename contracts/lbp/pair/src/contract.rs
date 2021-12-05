@@ -80,6 +80,7 @@ pub fn instantiate(
 
     let config = Config {
         factory_addr: info.sender,
+        liquidity_token: Addr::unchecked(""),
         collector_addr: deps.api.addr_validate(&msg.collector_addr)?,
         commission_rate: msg.commission_rate,
     };
@@ -113,7 +114,8 @@ pub fn instantiate(
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractError> {
-    let mut config: PairInfo = PAIR_INFO.load(deps.storage)?;
+    let mut pair_info: PairInfo = PAIR_INFO.load(deps.storage)?;
+    let mut config: Config = CONFIG.load(deps.storage)?;
 
     let data = msg.result.unwrap().data.unwrap();
     let res: MsgInstantiateContractResponse =
@@ -121,10 +123,13 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
             StdError::parse_err("MsgInstantiateContractResponse", "failed to parse data")
         })?;
 
-    config.liquidity_token = deps.api.addr_validate(res.get_contract_address())?;
+    pair_info.liquidity_token = deps.api.addr_validate(res.get_contract_address())?;
+    PAIR_INFO.save(deps.storage, &pair_info)?;
 
-    PAIR_INFO.save(deps.storage, &config)?;
-    Ok(Response::new().add_attribute("liquidity_token_addr", config.liquidity_token))
+    config.liquidity_token = deps.api.addr_validate(res.get_contract_address())?;
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::new().add_attribute("liquidity_token_addr", pair_info.liquidity_token))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -530,6 +535,8 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let state: Config = CONFIG.load(deps.storage)?;
     let resp = ConfigResponse {
+        factory_addr: state.factory_addr.to_string(),
+        liquidity_token: state.liquidity_token.to_string(),
         collector_addr: state.collector_addr.to_string(),
         commission_rate: state.commission_rate,
     };
