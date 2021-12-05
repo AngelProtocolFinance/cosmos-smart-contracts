@@ -80,6 +80,7 @@ import {
   testGovSnapshotPoll,
   testGovUpdateConfig,
   testGovWithdrawVotingTokens,
+  testGovExecutePollForRegistrarSettings,
   testQueryGovConfig,
   testQueryGovPoll,
   testQueryGovPolls,
@@ -133,6 +134,7 @@ export async function testExecute(
   haloGov: string,
   haloStaking: string,
   haloVesting: string,
+  halo_token: string,
 ): Promise<void> {
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
@@ -255,7 +257,8 @@ export async function testExecute(
   // await testGovSnapshotPoll(terra, apTeam, haloGov, 1);
   // await testGovWithdrawVotingTokens(terra, apTeam, haloGov, "11");
   // await testGovCastVote(terra, apTeam, haloGov, 1, VoteOption.YES, "1");
-  // await testGovRegisterContracts(terra, apTeam, haloGov, "halo_token");
+  // await testGovRegisterContracts(terra, apTeam, haloGov, halo_token);
+  // await testGovExecutePollForRegistrarSettings(terra, apTeam, haloGov, halo_token, "1000000", 100, "0.5", "0.1");
   // await testQueryGovConfig(terra, haloGov);
   // await testQueryGovState(terra, haloGov);
   // await testQueryGovPoll(terra, haloGov, 1);

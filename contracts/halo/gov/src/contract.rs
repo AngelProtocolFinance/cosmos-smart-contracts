@@ -22,9 +22,9 @@ const MIN_TITLE_LENGTH: usize = 4;
 const MAX_TITLE_LENGTH: usize = 64;
 const MIN_DESC_LENGTH: usize = 4;
 const MAX_DESC_LENGTH: usize = 1024;
+const POLL_EXECUTE_REPLY_ID: u64 = 1;
 const MIN_LINK_LENGTH: usize = 12;
 const MAX_LINK_LENGTH: usize = 128;
-const POLL_EXECUTE_REPLY_ID: u64 = 1;
 
 #[entry_point]
 pub fn instantiate(
@@ -47,6 +47,7 @@ pub fn instantiate(
         timelock_period: msg.timelock_period,
         proposal_deposit: msg.proposal_deposit,
         snapshot_period: msg.snapshot_period,
+        registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
     };
 
     let state = State {
@@ -158,7 +159,8 @@ pub fn receive_cw20(
             title,
             description,
             link,
-            execute_msgs,
+            proposal_type,
+            options,
         }) => create_poll(
             deps,
             env,
@@ -167,7 +169,8 @@ pub fn receive_cw20(
             title,
             description,
             link,
-            execute_msgs,
+            proposal_type,
+            options,
         ),
         _ => Err(ContractError::DataShouldBeGiven {}),
     }
@@ -282,7 +285,8 @@ pub fn create_poll(
     title: String,
     description: String,
     link: Option<String>,
-    execute_msgs: Option<Vec<PollExecuteMsg>>,
+    proposal_type: Option<String>,
+    options: Option<Vec<PollExecuteMsg>>,
 ) -> Result<Response, ContractError> {
     validate_title(&title)?;
     validate_description(&description)?;
@@ -301,14 +305,23 @@ pub fn create_poll(
     // Increase poll count & total deposit amount
     state.poll_count += 1;
     state.total_deposit += deposit_amount;
+    let contract = if proposal_type == Some("registrar".to_string()) {
+        config.registrar_contract
+    } else {
+        env.contract.address
+    };
 
     let mut data_list: Vec<ExecuteData> = vec![];
-    let all_execute_data = if let Some(exe_msgs) = execute_msgs {
+    let all_execute_data = if let Some(exe_msgs) = options {
         for msgs in exe_msgs {
             let execute_data = ExecuteData {
                 order: msgs.order,
-                contract: deps.api.addr_validate(&msgs.contract)?,
+                contract: contract.clone(),
                 msg: msgs.msg,
+                funding_goal: msgs.funding_goal,
+                fund_rotation: msgs.fund_rotation,
+                split_to_liquid: msgs.split_to_liquid,
+                treasury_tax_rate: msgs.treasury_tax_rate,
             };
             data_list.push(execute_data)
         }
@@ -328,6 +341,7 @@ pub fn create_poll(
         title,
         description,
         link,
+        proposal_type,
         execute_data: all_execute_data,
         deposit_amount,
         total_balance_at_end_poll: None,
@@ -721,13 +735,17 @@ fn query_poll(deps: Deps, poll_id: u64) -> Result<PollResponse, ContractError> {
         title: poll.title,
         description: poll.description,
         link: poll.link,
+        proposal_type: poll.proposal_type,
         deposit_amount: poll.deposit_amount,
         execute_data: if let Some(exe_msgs) = poll.execute_data.clone() {
             for msg in exe_msgs {
                 let execute_data = PollExecuteMsg {
                     order: msg.order,
-                    contract: msg.contract.to_string(),
                     msg: msg.msg,
+                    funding_goal: msg.funding_goal,
+                    fund_rotation: msg.fund_rotation,
+                    split_to_liquid: msg.split_to_liquid,
+                    treasury_tax_rate: msg.treasury_tax_rate,
                 };
                 data_list.push(execute_data)
             }
@@ -762,6 +780,7 @@ fn query_polls(
                 title: poll.title.to_string(),
                 description: poll.description.to_string(),
                 link: poll.link.clone(),
+                proposal_type: poll.proposal_type.clone(),
                 deposit_amount: poll.deposit_amount,
                 execute_data: if let Some(exe_msgs) = poll.execute_data.clone() {
                     let mut data_list: Vec<PollExecuteMsg> = vec![];
@@ -769,8 +788,11 @@ fn query_polls(
                     for msg in exe_msgs {
                         let execute_data = PollExecuteMsg {
                             order: msg.order,
-                            contract: msg.contract.to_string(),
                             msg: msg.msg,
+                            funding_goal: msg.funding_goal,
+                            fund_rotation: msg.fund_rotation,
+                            split_to_liquid: msg.split_to_liquid,
+                            treasury_tax_rate: msg.treasury_tax_rate,
                         };
                         data_list.push(execute_data)
                     }
