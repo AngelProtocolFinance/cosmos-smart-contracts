@@ -87,7 +87,8 @@ export async function testExecute(
   //   "terra1feqtlvaru4lszqnpjesgfw8splrg7u27wwwqac", // loop finance
   //   "terra1rzjxj4c6ykemk8csvtjchcqas7mul8s4w6rk8x", // tales of terra
   //   "terra1kf4k0l7hj5tlkuzf67ly43q8d2gcxay3hwa7fr", // hero
-  //   "terra1yvg94g6ydgme2kdhy5t4gasgvem2kpk56g4h5e", // NFT Luna
+  //   "terra1yvg94g6ydgme2kdhy5t4gasgvem2kpk56g4h5e", // Luna Millionares Portrait
+  //   "terra108khmulynnasux746uk02ymammus3le754ntjg", // Luna Millionares Portrait
   //   "terra14amh70rm5a3wjgkf7trvten3jfqum2svppky3e", // Terra Terrapins
   //   "terra1amrl8f5fqen2m478nuh2z7mz5ce096x4xqae9p", // Woof of Luna
   //   "terra1hxrd8pnqytqpelape3aemprw3a023wryw7p0xn", // ApolloDAO

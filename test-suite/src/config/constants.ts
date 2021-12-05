@@ -147,6 +147,9 @@ export const mainnet = {
       "terra1xfecyvhwwet57fthejkle6a2suvehwwpeqzsj8", // Butte Country Local Food Network
       "terra1hs0aqqfq0qm2jjrdhxsuerk7hcs9n2yuuft072", // Power of Nutrition
       "terra1df9ek2ux6xka968jd5ze5ry5gj4zdwqy0z0jdu", // Ocean Web Alliance
+      "terra1rttuqe9dsf5hksep8syv8nelrmdlyv2pnrx2w8", // project hawaii
+      "terra1p2dq0ct6xlt05y2zxhjfqt0nl3awp57yxdk9mq", // cup of hope
+      "terra16h3qzecumpa5lxf6ekt2869mpycms5rac0lwp8", // sumarth
     ],
   },
   members: [

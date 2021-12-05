@@ -43,8 +43,10 @@ export async function testExecute(
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
-  // await testUpdateFundMembers(terra, apTeam, indexFund, ??, [
-  //   "terra1yeqqexpkl230ca4kz4w88ne7vqzur4cncp3p5j"
+  // await testUpdateFundMembers(terra, apTeam, indexFund, 11, [
+    // "terra1rttuqe9dsf5hksep8syv8nelrmdlyv2pnrx2w8", // project hawaii
+    // "terra1p2dq0ct6xlt05y2zxhjfqt0nl3awp57yxdk9mq", // cup of hope
+    // "terra16h3qzecumpa5lxf6ekt2869mpycms5rac0lwp8", // sumarth
   // ], []);
   // await testUpdateAngelAllianceMembers(terra, apTeam, indexFund, [
   //   "terra1zxtczmxtw8mk8xncvr8lcq2qmvk4dz88ek6f79", // community
@@ -60,6 +62,7 @@ export async function testExecute(
   //   "terra1rzjxj4c6ykemk8csvtjchcqas7mul8s4w6rk8x", // tales of terra
   //   "terra1kf4k0l7hj5tlkuzf67ly43q8d2gcxay3hwa7fr", // hero
   //   "terra1yvg94g6ydgme2kdhy5t4gasgvem2kpk56g4h5e", // Luna Millionares Portrait
+  //   "terra108khmulynnasux746uk02ymammus3le754ntjg", // Luna Millionares Portrait
   //   "terra14amh70rm5a3wjgkf7trvten3jfqum2svppky3e", // Terra Terrapins
   //   "terra1amrl8f5fqen2m478nuh2z7mz5ce096x4xqae9p", // Woof of Luna
   //   "terra1hxrd8pnqytqpelape3aemprw3a023wryw7p0xn", // ApolloDAO
