@@ -11,7 +11,6 @@ import {
 export async function setupHalo(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  halo_token: string,
   terraswap_factory: string,
   staking_token: string,
   quorum: number,
@@ -26,6 +25,13 @@ export async function setupHalo(
   distribution_schedule: [number, number, string][],
   genesis_time: number,
   ): Promise<void> {
+  process.stdout.write("Uploading token Wasm");
+  const tokenCodeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, "../../../../artifacts/lbp_token.wasm"));
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${tokenCodeId}`);
+
   process.stdout.write("Uploading airdrop contract Wasm");
   const airdropCodeId = await storeCode(
     terra,
@@ -75,11 +81,32 @@ export async function setupHalo(
     path.resolve(__dirname, "../../../../artifacts/halo_vesting.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vestingCodeId}`);
 
+  // HALO token contract
+  process.stdout.write("Instantiating HALO Token contract");
+  const tokenResult = await instantiateContract(terra, apTeam, apTeam, tokenCodeId, {
+    name: "Angel Protocol",
+    symbol: "HALO",
+    decimals: 6,
+    initial_balances: [
+      {
+        address: apTeam.key.accAddress,
+        amount: "160000000000"
+      },
+    ],
+    mint: undefined,
+  });
+  const tokenContract = tokenResult.logs[0].events.find((event) => {
+    return event.type == "instantiate_contract";
+  })?.attributes.find((attribute) => {
+    return attribute.key == "contract_address";
+  })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${tokenContract}`);
+
   // airdrop contract
   process.stdout.write("Instantiating airdrop contract");
   const airdropResult = await instantiateContract(terra, apTeam, apTeam, airdropCodeId, {
     owner: apTeam.key.accAddress,
-    halo_token: halo_token
+    halo_token: tokenContract
   });
   const airdropContractAddr = airdropResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
@@ -97,7 +124,7 @@ export async function setupHalo(
     timelock_period,
     proposal_deposit,
     snapshot_period,
-    halo_token,
+    halo_token: tokenContract,
   });
   const govContractAddr = govResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";
@@ -110,7 +137,7 @@ export async function setupHalo(
   process.stdout.write("Instantiating distributor contract");
   const distributorResult = await instantiateContract(terra, apTeam, apTeam, distributorCodeId, {
     gov_contract: govContractAddr,
-    halo_token,
+    halo_token: tokenContract,
     whitelist,
     spend_limit
   });
@@ -126,7 +153,7 @@ export async function setupHalo(
   const collectorResult = await instantiateContract(terra, apTeam, apTeam, collectorCodeId, {
     gov_contract: govContractAddr,
     terraswap_factory,
-    halo_token,
+    halo_token: tokenContract,
     distributor_contract: distributorContractAddr,
     reward_factor
   });
@@ -141,7 +168,7 @@ export async function setupHalo(
   process.stdout.write("Instantiating community contract");
   const communityResult = await instantiateContract(terra, apTeam, apTeam, communityCodeId, {
     gov_contract: govContractAddr,
-    halo_token,
+    halo_token: tokenContract,
     spend_limit
   });
   const communityContractAddr = communityResult.logs[0].events.find((event) => {
@@ -154,7 +181,7 @@ export async function setupHalo(
   // staking contract
   process.stdout.write("Instantiating staking contract");
   const stakingResult = await instantiateContract(terra, apTeam, apTeam, stakingCodeId, {
-    halo_token,
+    halo_token: tokenContract,
     staking_token, // lp token of ANC-UST pair contract
     distribution_schedule
   });
@@ -169,7 +196,7 @@ export async function setupHalo(
   process.stdout.write("Instantiating vesting contract");
   const vestingResult = await instantiateContract(terra, apTeam, apTeam, vestingCodeId, {
     owner: apTeam.key.accAddress,
-    halo_token,
+    halo_token: tokenContract,
     genesis_time
   });
   const vestingContractAddr = vestingResult.logs[0].events.find((event) => {

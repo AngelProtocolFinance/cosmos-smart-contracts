@@ -22,6 +22,7 @@ export async function migrateAMMContracts(
   factoryContract: string,
   pairContract: string,
   routerContract: string,
+  tokenContract: string,
   commission_rate: string,
 ): Promise<void> {
   // run the migrations desired
@@ -41,6 +42,9 @@ export async function migrateAMMContracts(
     undefined,
     commission_rate,
   );
+
+  // Update Pair asset_infos post-LBP
+  await updateAssetInfosPostLBP(terra, apTeam, factoryContract, tokenContract, pairContract);
 }
 
 // -------------------------------------------------
@@ -125,6 +129,44 @@ async function updateCommissionRate(
         factoryContract,
         {
           update_config: { owner, token_code_id, pair_code_id, pair_contract, collector_addr, commission_rate },
+        },
+      ),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+
+}
+
+// -------------------------------------------------
+//  Update Pair asset_infos post-LBP
+//--------------------------------------------------
+async function updateAssetInfosPostLBP(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  factoryContract: string,
+  tokenContract: string,
+  pair_contract: string,
+): Promise<void> {
+  const asset_infos = [
+    {
+      token: {
+        contract_addr: tokenContract,
+      }
+    },
+    {
+      native_token: {
+        denom: "uusd".toString()
+      }
+    }
+  ];
+  process.stdout.write("Update Pair asset_infos post-LBP");
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(
+        apTeam.key.accAddress,
+        factoryContract,
+        {
+          update_asset_infos: { pair_contract, asset_infos },
         },
       ),
     ])

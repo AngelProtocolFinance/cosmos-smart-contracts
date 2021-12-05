@@ -14,9 +14,6 @@ import * as MainNet from "./environments/mainnet";
 		case "localterra_setup":
 			await LocalNet.startSetupContracts();
 			break;
-		case "localterra_setup_token":
-			await LocalNet.startSetupTokenContract();
-			break;
 		case "localterra_setup_lbp":
 			await LocalNet.startSetupLBPContracts();
 			break;
@@ -41,9 +38,6 @@ import * as MainNet from "./environments/mainnet";
 		case "testnet_setup":
 			await TestNet.startSetupContracts();
 			break;
-		case "testnet_setup_token":
-			await TestNet.startSetupTokenContract();
-			break;
 		case "testnet_setup_lbp":
 			await TestNet.startSetupLBPContracts();
 			break;
@@ -67,9 +61,6 @@ import * as MainNet from "./environments/mainnet";
 			break;
 		case "mainnet_setup":
 			await MainNet.startSetupContracts();
-			break;
-		case "mainnet_setup_token":
-			await MainNet.startSetupTokenContract();
 			break;
 		case "mainnet_setup_lbp":
 			await MainNet.startSetupLBPContracts();

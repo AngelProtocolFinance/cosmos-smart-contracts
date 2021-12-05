@@ -233,7 +233,6 @@ export async function startSetupHalo(): Promise<void> {
   await setupHalo(
     terra,
     apTeam,
-    tokenContract,    // halo_token contract
     factoryContract,  // terraswap_factory contract
     pairContract,     // staking_token: lp token of ANC-UST pair contract
     30,            // quorum
@@ -369,6 +368,7 @@ export async function startMigrateAMMContracts(): Promise<void> {
     factoryContract,
     pairContract,
     routerContract,
+    tokenContract,
     "0.01"
   );
 }

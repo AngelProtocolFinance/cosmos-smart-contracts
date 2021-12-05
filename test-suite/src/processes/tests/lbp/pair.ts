@@ -33,7 +33,7 @@ export async function testPairSwap(
                   denom: "uusd".toString()
                 }
               },
-              amount: "100"
+              amount: "100000000"
             },
             belief_price: undefined,
             max_spread: undefined,
@@ -42,7 +42,7 @@ export async function testPairSwap(
         },
         [new Coin (
           "uusd".toString(),
-          "100",
+          "100000000",
         )]
       ),
     ])
@@ -93,7 +93,7 @@ export async function testQueryPairSimulation(
             denom: "uusd".toString()
           }
         },
-        amount: "100"
+        amount: "100000000"
       },
       block_time: Math.round(currTime)
     },
@@ -117,7 +117,7 @@ export async function testQueryPairReverseSimulation(
             denom: "uusd".toString()
           }
         },
-        amount: "100"
+        amount: "100000000"
       },
       block_time: Math.round(currTime)
     },
