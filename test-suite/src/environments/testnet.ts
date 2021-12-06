@@ -200,7 +200,7 @@ export async function startSetupContracts(): Promise<void> {
 // -------------------------------------------------------------------------------------
 // setup LBP contracts
 // -------------------------------------------------------------------------------------
-export async function startSetupLBP(): Promise<void> {
+export async function startSetupLBPContracts(): Promise<void> {
   console.log(chalk.blue("\nTestnet"));
 
   // Initialize environment information
@@ -299,7 +299,7 @@ export async function startMigrateContracts(): Promise<void> {
 // migrate HALO contracts
 // -------------------------------------------------------------------------------------
 export async function startMigrateHaloContracts(): Promise<void> {
-  console.log(chalk.blue("\nLocalTerra"));
+  console.log(chalk.blue("\nTestnet"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -321,10 +321,10 @@ export async function startMigrateHaloContracts(): Promise<void> {
 }
 
 // -------------------------------------------------------------------------------------
-// migrate HALO contracts
+// migrate LBP contracts
 // -------------------------------------------------------------------------------------
 export async function startMigrateLBPContracts(): Promise<void> {
-  console.log(chalk.blue("\nLocalTerra"));
+  console.log(chalk.blue("\nTestnet"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));

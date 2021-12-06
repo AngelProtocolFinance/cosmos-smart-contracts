@@ -10,6 +10,7 @@ import { setupContracts, Member } from "../processes/setupContracts/mainnet";
 import { setupHalo } from "../processes/setup/halo";
 import { testExecute } from "../processes/tests/mainnet";
 import { setupLBP } from "../processes/setup/lbp";
+import { migrateLBPContracts } from "../processes/migrateContracts/migrateLBP";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -160,7 +161,7 @@ export async function startSetupContracts(): Promise<void> {
 // -------------------------------------------------------------------------------------
 // setup LBP contracts
 // -------------------------------------------------------------------------------------
-export async function startSetupLBP(): Promise<void> {
+export async function startSetupLBPContracts(): Promise<void> {
   console.log(chalk.blue("\nMainnet"));
 
   // Initialize environment information
@@ -254,7 +255,7 @@ export async function startMigrateContracts(): Promise<void> {
 // migrate HALO contracts
 // -------------------------------------------------------------------------------------
 export async function startMigrateHaloContracts(): Promise<void> {
-  console.log(chalk.blue("\nLocalTerra"));
+  console.log(chalk.blue("\nMainnet"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -272,6 +273,28 @@ export async function startMigrateHaloContracts(): Promise<void> {
     haloGov,
     haloStaking,
     haloVesting
+  );
+}
+
+
+// -------------------------------------------------------------------------------------
+// migrate LBP contracts
+// -------------------------------------------------------------------------------------
+export async function startMigrateLBPContracts(): Promise<void> {
+  console.log(chalk.blue("\nMainnet"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Migrate Contracts
+  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  await migrateLBPContracts(
+    terra,
+    apTeam,
+    factoryContract,
+    pairContract,
+    routerContract,
   );
 }
 
