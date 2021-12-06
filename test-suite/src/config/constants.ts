@@ -24,14 +24,22 @@ export const localterra = {
     cw4GrpOwners: "",
     cw3GuardianAngels: "",
   },
-  // TerraSwap balances account
-  token_code_id: 0,
-  pair_code_id: 0,
-  factory_code_id: 0,
-  factory_contract: "",
-  token_contract: "",
-  pair_contract: "",
-  
+  // LBP/AMM contracts
+  lbp: {
+    token_code_id: 0,
+    pair_code_id: 0,
+    factory_code_id: 0,
+    factory_contract: "",
+    token_contract: "",
+    pair_contract: "",
+    router_contract: "",
+    lp_token_contract: "",
+    // HALO token supply amount
+    token_amount: "160000000000",
+    native_token_amount: "2600000000",
+    lbp_commission_rate: "0.02",
+    amm_commission_rate: "0.01",
+  },
   // HALO contracts
   halo: {
     airdrop_contract: "",
@@ -82,14 +90,22 @@ export const testnet = {
     cw4GrpOwners: "terra1ldrkpnysrasq4sg4zu9mgh74wt9nxvk9qgvxtd",
     cw3GuardianAngels: "terra1ydp9qd9xgdq63ua6axfvauye3l7a3476lm6l28",
   },
-  // TerraSwap balances account
-  token_code_id: 148,
-  pair_code_id: 155,
-  factory_code_id: 154,
-  factory_contract: "terra18qpjm4zkvqnpjpw0zn0tdr8gdzvt8au35v45xf",
-  token_contract: "terra1lxlqekpkwjhacljgcfjm7vxul50wqas6yvuc27",
-  pair_contract: "terra1jvs9nnkx0lnrujfcat67ev03jff0gt6m77ytgu",
-
+  // LBP/AMM contracts
+  lbp: {
+    token_code_id: 148,
+    pair_code_id: 155,
+    factory_code_id: 154,
+    factory_contract: "terra18qpjm4zkvqnpjpw0zn0tdr8gdzvt8au35v45xf",
+    token_contract: "terra1lxlqekpkwjhacljgcfjm7vxul50wqas6yvuc27",
+    pair_contract: "terra1jvs9nnkx0lnrujfcat67ev03jff0gt6m77ytgu",
+    router_contract: "",
+    lp_token_contract: "",
+    // HALO token supply amount
+    token_amount: "160000000000",
+    native_token_amount: "2600000000",
+    lbp_commission_rate: "0.02",
+    amm_commission_rate: "0.01",
+  },
   // HALO contracts
   halo: {
     airdrop_contract: "terra1mndcdkklysq22h6rz4vdd3fvyx7tffc2swg0kc",
@@ -179,14 +195,22 @@ export const mainnet = {
     {addr: "terra1numzqm5mgr56ftd4y8mfen7705nfs4vpz5jf0s", weight: 1},
     {addr: "terra1p3kcfzflagjl7lxfexwyaz43e4mprhyml0sqju", weight: 1},
   ],
-  // TerraSwap balances account
-  token_code_id: 3,
-  pair_code_id: 4,
-  factory_code_id: 5,
-  factory_contract: "terra1ulgw0td86nvs4wtpsc80thv6xelk76ut7a7apj",
-  token_contract: "terra1w8kvd6cqpsthupsk4l0clwnmek4l3zr7c84kwq",
-  pair_contract: "terra1s7kc5ua5936rfsqhd2rl0ngaphmegwcsze4txh",
-
+  // LBP/AMM contracts
+  lbp: {
+    token_code_id: 0,
+    pair_code_id: 0,
+    factory_code_id: 0,
+    factory_contract: "",
+    token_contract: "",
+    pair_contract: "",
+    router_contract: "",
+    lp_token_contract: "",
+    // HALO token supply amount
+    token_amount: "160000000000",
+    native_token_amount: "2600000000",
+    lbp_commission_rate: "0.02",
+    amm_commission_rate: "0.01",
+  },
   // HALO contracts
   halo: {
     airdrop_contract: "",

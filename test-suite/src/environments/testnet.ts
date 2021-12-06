@@ -7,9 +7,9 @@ import { testnet as config } from "../config/constants";
 import { migrateHaloContracts } from "../processes/migrateContracts/migrateHalo";
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts } from "../processes/setupContracts/testnet";
-import { setupHalo } from "../processes/setupHalo/testnet";
-import { setupTerraSwap } from "../processes/setupTerraSwap/realnet";
+import { setupHalo } from "../processes/setup/halo";
 import { testExecute } from "../processes/tests/testnet";
+import { setupLBP } from "../processes/setup/lbp";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -38,12 +38,20 @@ let endowmentContract3: string;
 let endowmentContract4: string;
 let anchorMoneyMarket: string;
 
+// LBP contracts
 let tokenCodeId: number;
 let pairCodeId: number;
 let factoryCodeId: number;
 let factoryContract: string;
 let tokenContract: string;
 let pairContract: string;
+let routerContract: string;
+let lpTokenContract: string;
+let tokenAmount: string;
+let nativeTokenAmount: string;
+let lbpCommissionRate: string;
+let ammCommissionRate: string;
+
 let apTreasury: string;
 
 // Angel/HALO contracts
@@ -112,12 +120,18 @@ function initialize() {
   console.log(`Use ${chalk.cyan(cw4GrpOwners)} as CW4 Endowment Owners Group`);
   console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
 
-  tokenCodeId = config.token_code_id;
-  pairCodeId = config.pair_code_id;
-  factoryCodeId = config.factory_code_id;
-  factoryContract = config.factory_contract;
-  tokenContract = config.token_contract;
-  pairContract = config.pair_contract;
+  tokenCodeId = config.lbp.token_code_id;
+  pairCodeId = config.lbp.pair_code_id;
+  factoryCodeId = config.lbp.factory_code_id;
+  factoryContract = config.lbp.factory_contract;
+  tokenContract = config.lbp.token_contract;
+  pairContract = config.lbp.pair_contract;
+  routerContract = config.lbp.router_contract;
+  lpTokenContract = config.lbp.lp_token_contract;
+  tokenAmount = config.lbp.token_amount;
+  nativeTokenAmount = config.lbp.native_token_amount;
+  lbpCommissionRate = config.lbp.lbp_commission_rate;
+  ammCommissionRate = config.lbp.amm_commission_rate;
 
   console.log(`Use ${chalk.cyan(factoryContract)} as TerraSwap factory`);
   console.log(`Use ${chalk.cyan(tokenContract)} as HALO token`);
@@ -183,22 +197,31 @@ export async function startSetupContracts(): Promise<void> {
 }
 
 // -------------------------------------------------------------------------------------
-// setup TerraSwap contracts
+// setup LBP contracts
 // -------------------------------------------------------------------------------------
-export async function startSetupTerraSwapContracts(): Promise<void> {
-  console.log(chalk.blue("\nTestNet"));
+export async function startSetupLBP(): Promise<void> {
+  console.log(chalk.blue("\nTestnet"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
   initialize();
 
-  // Setup TerraSwap contracts
-  console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
-  await setupTerraSwap(
+  const currTime = new Date().getTime() / 1000 + 100;
+  const startTime = Math.round(currTime);
+  const endTime = Math.round(currTime) + 3600 * 24 * 3;
+
+  // Setup LBP contracts
+  console.log(chalk.yellow("\nStep2. LBP Contracts"));
+  await setupLBP(
     terra,
     apTeam,
-    tokenCodeId,
-    factoryContract
+    tokenAmount,
+    nativeTokenAmount,
+    lbpCommissionRate,
+    haloCollector,
+    startTime,
+    endTime,
+    undefined
   );
 }
 
@@ -212,26 +235,31 @@ export async function startSetupHalo(): Promise<void> {
   console.log(chalk.yellow("\nStep 1. Environment Info"));
   initialize();
 
+  const currTime = new Date().getTime() / 1000 + 100;
+  const endTime = Math.round(currTime) + 3600 * 24 * 3;
+
   // Setup HALO contracts
   console.log(chalk.yellow("\nStep2. Halo Contracts"));
   await setupHalo(
     terra,
     apTeam,
     registrar,
-    tokenContract,    // halo_token contract
-    factoryContract,  // terraswap_factory contract
-    pairContract,     // staking_token: lp token of ANC-UST pair contract
-    30,            // quorum
-    50,            // threshold,
-    2000,             // voting_period,
-    1000,             // timelock_period,
-    "10000000000",      // proposal_deposit,
-    10,               // snapshot_period,
-    [],               // whitelist
-    "1000",             // spend_limit
-    "0.2",            // reward_factor
+    tokenContract,        // halo_token contract
+    factoryContract,      // factory contract
+    pairContract,         // pair contract
+    lpTokenContract,      // staking_token: lp token of HALO-UST pair contract
+    30,                   // quorum
+    50,                   // threshold,
+    2000,                 // voting_period,
+    1000,                 // timelock_period,
+    "10000000000",        // proposal_deposit,
+    10,                   // snapshot_period,
+    [],                   // whitelist
+    "1000",               // spend_limit
+    "0.2",                // reward_factor
     [[100, 200, "1000000"]],  // distribution_schedule
-    12345             // genesis_time
+    12345,                // genesis_time
+    endTime,
   );
 }
 
