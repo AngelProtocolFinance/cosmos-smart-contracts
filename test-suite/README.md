@@ -10,7 +10,7 @@
 
 Notes:
 
-- **Windows users:** Sorry, but Windows is an inferior OS for software developement. I suggest upgrading to a Mac or install Linux on your PC (I used [arch](https://wiki.archlinux.org/title/installation_guide) btw)
+- **Windows users:** Sorry, but Windows is an inferior OS for software developement. I suggest upgrading to a Mac or install Linux on your PC (I used [Manjaro(Arch)](https://manjaro.org/downloads/official/xfce/) btw)
 - **M1 Mac users**: Sorry, LocalTerra doesn't run on ARM processors. There is currently no solution to this
 
 ## Procedures
@@ -88,7 +88,7 @@ How to know if LocalTerra is working properly:
 alias workspace-optimizer='docker run --rm -v "$(pwd)":/code \
   --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/workspace-optimizer:0.11.5'
+  cosmwasm/workspace-optimizer:0.12.4'
 ```
 
 ```bash
