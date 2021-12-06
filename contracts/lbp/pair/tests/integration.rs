@@ -97,6 +97,7 @@ fn instantiate_pair(app: &mut App) -> Addr {
         end_time,
         description: None,
         commission_rate: COMMISSION_RATE.to_string(),
+        collector_addr: Addr::unchecked("collector000"),
     };
 
     app.instantiate_contract(

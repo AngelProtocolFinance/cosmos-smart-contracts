@@ -482,15 +482,26 @@ pub fn try_swap(
     };
 
     let tax_amount = return_asset.compute_tax(deps.as_ref())?;
+    let receiver = to.unwrap_or_else(|| sender.clone());
+
+    let mut messages: Vec<CosmosMsg> = vec![];
+    if !return_amount.is_zero() {
+        messages.push(return_asset.into_msg(deps.as_ref(), env.contract.address.clone(), receiver.clone())?);
+    }
+
+    // Commission fees are paid to the Collector contract
+    let commission_asset = Asset {
+        info: ask_pool.info.clone(),
+        amount: commission_amount,
+    };
+    if !commission_amount.is_zero() {
+        messages.push(commission_asset.into_msg(deps.as_ref(), env.contract.address, pair_info.collector_addr)?);
+    }
 
     // 1. send collateral token from the contract to a user
     // 2. send inactive commission to collector
     Ok(Response::new()
-        .add_message(return_asset.into_msg(
-            deps.as_ref(),
-            env.contract.address,
-            to.unwrap_or(sender),
-        )?)
+        .add_messages(messages)
         .add_attributes(vec![
             attr("action", "swap"),
             attr("offer_asset", offer_asset.info.to_string()),
