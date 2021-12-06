@@ -104,6 +104,31 @@ import {
   testQueryVestingAccount,
   testQueryVestingAccounts
 } from "./halo/vesting";
+import {
+  testFactoryUpdateConfig,
+  testQueryFactoryConfig,
+  testQueryFactoryPair,
+  testQueryFactoryPairs,
+} from "./lbp/factory";
+import {
+  testPairSwap,
+  testPairWithdrawLiquidity,
+  testQueryPairPair,
+  testQueryPairPool,
+  testQueryPairReverseSimulation,
+  testQueryPairSimulation,
+} from "./lbp/pair";
+import {
+  testRouterSwapOperations,
+  testQueryRouterConfig,
+  testQueryRouterSimulateSwapOperations,
+} from "./lbp/router";
+import {
+  testQueryTokenBalance,
+  testQueryTokenInfo,
+  testQueryTokenMarketingInfo,
+  testQueryTokenMinter,
+} from "./lbp/token";
 
 export async function testExecute(
   terra: LocalTerra | LCDClient,
@@ -134,7 +159,11 @@ export async function testExecute(
   haloGov: string,
   haloStaking: string,
   haloVesting: string,
-  halo_token: string,
+  tokenContract: string,
+  factoryContract: string,
+  pairContract: string,
+  routerContract: string,
+  lpTokenContract: string,
 ): Promise<void> {
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
@@ -257,8 +286,8 @@ export async function testExecute(
   // await testGovSnapshotPoll(terra, apTeam, haloGov, 1);
   // await testGovWithdrawVotingTokens(terra, apTeam, haloGov, "11");
   // await testGovCastVote(terra, apTeam, haloGov, 1, VoteOption.YES, "1");
-  // await testGovRegisterContracts(terra, apTeam, haloGov, halo_token);
-  // await testGovExecutePollForRegistrarSettings(terra, apTeam, haloGov, halo_token, "1000000", 100, "0.5", "0.1");
+  // await testGovRegisterContracts(terra, apTeam, haloGov, tokenContract);
+  // await testGovExecutePollForRegistrarSettings(terra, apTeam, haloGov, tokenContract, "1000000", 100, "0.5", "0.1");
   // await testQueryGovConfig(terra, haloGov);
   // await testQueryGovState(terra, haloGov);
   // await testQueryGovPoll(terra, haloGov, 1);
@@ -272,4 +301,29 @@ export async function testExecute(
   // await testQueryStakingConfig(terra, haloStaking);
   // await testQueryStakingStakerInfo(terra, haloStaking, "addr000", undefined);
   // await testQueryStakingState(terra, haloStaking);
+
+  // Test query for LBP Factory
+  // await testFactoryUpdateConfig(terra, apTeam, pleb, factoryContract, undefined, undefined, undefined, pairContract, "0.01", undefined, undefined);
+  // await testQueryFactoryConfig(terra, factoryContract);
+  // await testQueryFactoryPair(terra, factoryContract, tokenContract);
+  // await testQueryFactoryPairs(terra, factoryContract);
+
+  // Test query for LBP Pair
+  // await testPairSwap(terra, apTeam, pairContract, apTeam.key.accAddress, "100000000");
+  // await testPairWithdrawLiquidity(terra, apTeam, pairContract, lpTokenContract, "100000000");
+  // await testQueryPairPair(terra, pairContract);
+  // await testQueryPairPool(terra, pairContract);
+  // await testQueryPairSimulation(terra, pairContract);
+  // await testQueryPairReverseSimulation(terra, pairContract);
+
+  // Test query for LBP Router
+  // await testRouterSwapOperations(terra, apTeam, routerContract, tokenContract);
+  // await testQueryRouterConfig(terra, routerContract);
+  // await testQueryRouterSimulateSwapOperations(terra, routerContract, tokenContract, "100000000");
+
+  // Test query for LBP Token
+  // await testQueryTokenBalance(terra, tokenContract, apTeam.key.accAddress);
+  // await testQueryTokenInfo(terra, tokenContract);
+  // await testQueryTokenMinter(terra, tokenContract);
+  // await testQueryTokenMarketingInfo(terra, tokenContract);
 }

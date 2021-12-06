@@ -382,5 +382,9 @@ export async function startTest(): Promise<void> {
     haloStaking,
     haloVesting,
     tokenContract,
+    factoryContract,
+    pairContract,
+    routerContract,
+    lpTokenContract,
   );
 }
