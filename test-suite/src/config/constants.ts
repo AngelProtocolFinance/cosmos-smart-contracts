@@ -91,12 +91,9 @@ export const testnet = {
   },
   // TerraSwap balances account
   token_code_id: 24295,
-  factory_code_id: 24445,
-  pair_code_id: 24446,
-  router_code_id: 24447,
-  amm_factory_code_id: 24448,
-  amm_pair_code_id: 24449,
-  amm_router_code_id: 24450,
+  factory_code_id: 24601,
+  pair_code_id: 24602,
+  router_code_id: 24603,
   // LBP contracts
   token_contract: "terra1y4r9ph2d44t7yxrep87ktdvgn74hqzljyrv78y",
   factory_contract: "terra15yv5cv89jjnu4n64vfnufasrzjsrgx5p93rux3",
