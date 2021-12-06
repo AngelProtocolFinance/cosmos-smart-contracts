@@ -10,6 +10,7 @@ import {
   migrateContract,
   sendTransaction,
 } from "../../utils/helpers";
+import { testFactoryUpdateConfig } from "../tests/lbp/factory";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -27,17 +28,17 @@ export async function migrateAMMContracts(
 ): Promise<void> {
   // run the migrations desired
   await migrateFactory(terra, apTeam, factoryContract);
-  await migratePair(terra, apTeam, pairContract);
+  const pair_code_id = await migratePair(terra, apTeam, pairContract);
   await migrateRouter(terra, apTeam, routerContract);
 
   // Update commission rate post-LBP
-  await updateCommissionRate(
+  await testFactoryUpdateConfig(
     terra,
     apTeam,
     factoryContract,
     undefined,
     undefined,
-    undefined,
+    pair_code_id,
     pairContract,
     undefined,
     commission_rate,
@@ -74,7 +75,7 @@ async function migratePair(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   pairContract: string,
-): Promise<void> {
+): Promise<number> {
   process.stdout.write("Uploading Pair wasm");
   const codeId = await storeCode(
     terra,
@@ -85,6 +86,7 @@ async function migratePair(
   process.stdout.write("Migrate Pair contract");
   const result1 = await migrateContract(terra, apTeam, apTeam, pairContract, codeId, {});
   console.log(chalk.green(" Done!"));
+  return codeId;
 }
 
 // -------------------------------------------------
@@ -105,36 +107,6 @@ async function migrateRouter(
   process.stdout.write("Migrate Router contract");
   const result1 = await migrateContract(terra, apTeam, apTeam, routerContract, codeId, {});
   console.log(chalk.green(" Done!"));
-}
-
-// -------------------------------------------------
-//  Update commission rate post-LBP
-//--------------------------------------------------
-async function updateCommissionRate(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  factoryContract: string,
-  owner: string | undefined,
-  token_code_id: number | undefined,
-  pair_code_id: number | undefined,
-  pair_contract: string,
-  collector_addr: string | undefined,
-  commission_rate: string
-): Promise<void> {
-  process.stdout.write("Update commission rate post-LBP");
-  await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        factoryContract,
-        {
-          update_config: { owner, token_code_id, pair_code_id, pair_contract, collector_addr, commission_rate },
-        },
-      ),
-    ])
-  );
-  console.log(chalk.green(" Passed!"));
-
 }
 
 // -------------------------------------------------

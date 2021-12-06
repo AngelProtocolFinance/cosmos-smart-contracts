@@ -7,6 +7,7 @@ import {
   storeCode,
   migrateContract,
 } from "../../utils/helpers";
+import { testFactoryUpdateConfig } from "../tests/lbp/factory";
 
 // -----------------------------
 // Base functions to migrate contracts with 
@@ -17,11 +18,25 @@ export async function migrateLBPContracts(
   factoryContract: string,
   pairContract: string,
   routerContract: string,
+  commission_rate: string,
 ): Promise<void> {
   // run the migrations desired
   await migrateFactory(terra, apTeam, factoryContract);
-  await migratePair(terra, apTeam, pairContract);
+  const pair_code_id = await migratePair(terra, apTeam, pairContract);
   await migrateRouter(terra, apTeam, routerContract);
+
+  // update pair_code_id in Factory contract
+  await testFactoryUpdateConfig(
+    terra,
+    apTeam,
+    factoryContract,
+    undefined,
+    undefined,
+    pair_code_id,
+    pairContract,
+    undefined,
+    commission_rate
+  );
 }
 
 // -------------------------------------------------
@@ -51,7 +66,7 @@ async function migratePair(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   pairContract: string,
-): Promise<void> {
+): Promise<number> {
   process.stdout.write("Uploading Pair wasm");
   const codeId = await storeCode(
     terra,
@@ -62,6 +77,7 @@ async function migratePair(
   process.stdout.write("Migrate Pair contract");
   const result1 = await migrateContract(terra, apTeam, apTeam, pairContract, codeId, {});
   console.log(chalk.green(" Done!"));
+  return codeId;
 }
 
 // -------------------------------------------------

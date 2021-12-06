@@ -18,7 +18,6 @@ const { expect } = chai;
 export async function testFactoryUpdateConfig(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  pleb: Wallet,
   factory_contract: string,
   owner: string | undefined,
   token_code_id: number | undefined,
@@ -27,20 +26,6 @@ export async function testFactoryUpdateConfig(
   collector_addr: string | undefined,
   commission_rate: string | undefined,
 ): Promise<void> {
-  process.stdout.write("Test - Pleb cannot update factory config");
-  await expect(
-    sendTransaction(terra, pleb, [
-      new MsgExecuteContract(
-        pleb.key.accAddress,
-        factory_contract,
-        {
-          update_config: { owner, token_code_id: pair_code_id, pair_contract, collector_addr, commission_rate },
-        },
-      ),
-    ])
-  ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Failed!"));
-
   process.stdout.write("Test - Only owner update factory config");
   await expect(
     sendTransaction(terra, apTeam, [

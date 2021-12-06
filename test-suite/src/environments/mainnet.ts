@@ -306,7 +306,8 @@ export async function startMigrateLBPContracts(): Promise<void> {
     apTeam,
     factoryContract,
     pairContract,
-    routerContract
+    routerContract,
+    "0.02"
   );
 }
 
