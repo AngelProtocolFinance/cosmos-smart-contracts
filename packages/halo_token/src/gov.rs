@@ -17,6 +17,7 @@ pub struct InstantiateMsg {
     pub timelock_period: u64,
     pub proposal_deposit: Uint128,
     pub snapshot_period: u64,
+    pub registrar_contract: String,
     pub halo_token: String, // halo token address
 }
 
@@ -69,7 +70,8 @@ pub enum Cw20HookMsg {
         title: String,
         description: String,
         link: Option<String>,
-        execute_msgs: Option<Vec<PollExecuteMsg>>,
+        proposal_type: Option<String>,
+        options: Option<Vec<PollExecuteMsg>>,
     },
 }
 
@@ -77,8 +79,11 @@ pub enum Cw20HookMsg {
 #[serde(rename_all = "snake_case")]
 pub struct PollExecuteMsg {
     pub order: u64,
-    pub contract: String,
     pub msg: Binary,
+    pub funding_goal: Option<Uint128>,
+    pub fund_rotation: Option<u64>,
+    pub split_to_liquid: Option<Decimal>,
+    pub treasury_tax_rate: Option<Decimal>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -134,6 +139,7 @@ pub struct PollResponse {
     pub title: String,
     pub description: String,
     pub link: Option<String>,
+    pub proposal_type: Option<String>,
     pub deposit_amount: Uint128,
     pub execute_data: Option<Vec<PollExecuteMsg>>,
     pub yes_votes: Uint128, // balance
