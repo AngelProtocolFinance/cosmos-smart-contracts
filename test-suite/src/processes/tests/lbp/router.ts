@@ -30,7 +30,7 @@ export async function testRouterSwapOperations(
           execute_swap_operations: {
             operations: [
               {
-                halo_swap: {
+                astro_swap: {
                   offer_asset_info: {
                     native_token: {
                       denom: "uusd",
@@ -84,7 +84,7 @@ export async function testQueryRouterSimulateSwapOperations(
       block_time: Math.round(currTime),
       operations: [
         { 
-          halo_swap: {
+          astro_swap: {
             offer_asset_info: {
               native_token: {
                 denom: "uusd",

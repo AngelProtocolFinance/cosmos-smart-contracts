@@ -92,14 +92,14 @@ export const testnet = {
   },
   // LBP/AMM contracts
   lbp: {
-    token_code_id: 148,
-    pair_code_id: 155,
-    factory_code_id: 154,
-    factory_contract: "terra18qpjm4zkvqnpjpw0zn0tdr8gdzvt8au35v45xf",
-    token_contract: "terra1lxlqekpkwjhacljgcfjm7vxul50wqas6yvuc27",
-    pair_contract: "terra1jvs9nnkx0lnrujfcat67ev03jff0gt6m77ytgu",
-    router_contract: "",
-    lp_token_contract: "",
+    factory_code_id: 24786,
+    pair_code_id: 24769,
+    token_code_id: 24770,
+    factory_contract: "terra1mkdq4qkt8mzankqhjx0vzl8azpj25v2reftkq5",
+    token_contract: "terra1z4w06dw3e2y5hxp5psewk2yfcu7f0pppuhkkc9",
+    pair_contract: "terra1wll65jm4d3zatwxf3rhhgzngu0f53m4xycred0",
+    router_contract: "terra1kw86evmyyjqre2upxx7m0mqal5ydjwx4sm5e8g",
+    lp_token_contract: "terra1azrhpy9ls6262l85sl3n2lkhjgvw5a5usjhjwy",
     // HALO token supply amount
     token_amount: "160000000000",
     native_token_amount: "2600000000",
@@ -108,13 +108,13 @@ export const testnet = {
   },
   // HALO contracts
   halo: {
-    airdrop_contract: "terra1mndcdkklysq22h6rz4vdd3fvyx7tffc2swg0kc",
-    collector_contract: "terra14d0uufjsmaktaanxtnlm38cullcq449gu35x0q",
-    community_contract: "terra1peq4zcxzcpdv89vmfx4rvv4207esv6zdhqtfjd",
-    distributor_contract: "terra13gjk2n3rhelgsnjhhe5jer9auvuqmcedzzclx9",
-    gov_contract: "terra1l8aj2jvjsz3whqyvt0hz5fvf3vhd8gcrxf6r56",
-    staking_contract: "terra1ve9jpy2pumfg33ky8gl7l6l3e7h8ppuwajkx0k",
-    vesting_contract: "terra15scsvyuqkp0z2s8eet9p3jskduv8ypmc7ffwpn",
+    airdrop_contract: "terra1uf8hvklh2nq4v68n3aaywc5h8p825ezf37nqf7",
+    collector_contract: "terra1w5ucttzhrwd7vmds6ghruv6vw2h6f9hced5lke",
+    community_contract: "terra1mwxx4hlt455f0yskyl3wnk02n4d0c868dmyxe9",
+    distributor_contract: "terra1ux0armmla3h2tna8lrdpyxrv4z6pkp6cpjj0ce",
+    gov_contract: "terra1gplyys33h97xyd2l3caqr3wr005xfr8r6um5s7",
+    staking_contract: "terra19sgcl33qr9ntqawhhhsa2yss2epcrrluya5rm5",
+    vesting_contract: "terra1z7jxc7uz3elgyqect3l6x6c7dfkujauvjhcsjx",
   }
 } as const;
 

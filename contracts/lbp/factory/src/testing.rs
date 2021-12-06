@@ -72,6 +72,7 @@ fn update_config() {
         pair_contract: "pair000".to_string(),
         commission_rate: None,
         collector_addr: None,
+        end_time: None,
     };
 
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
@@ -94,6 +95,7 @@ fn update_config() {
         pair_contract: "pair000".to_string(),
         commission_rate: None,
         collector_addr: None,
+        end_time: None,
     };
 
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
@@ -116,6 +118,7 @@ fn update_config() {
         pair_contract: "pair000".to_string(),
         commission_rate: None,
         collector_addr: None,
+        end_time: None,
     };
 
     let res = execute(deps.as_mut(), env, info, msg);

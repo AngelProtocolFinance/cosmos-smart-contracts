@@ -269,7 +269,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Pair { asset_infos } => to_binary(&query_pair(deps, asset_infos)?),
         QueryMsg::Pairs { start_after, limit } => {
             to_binary(&query_pairs(deps, start_after, limit)?)
-        }
+        },
+        QueryMsg::FactoryPair { asset_infos } => to_binary(&query_factory_pair(deps, asset_infos)?),
     }
 }
 
@@ -308,6 +309,11 @@ pub fn query_pairs(
         .collect();
 
     Ok(PairsResponse { pairs })
+}
+
+pub fn query_factory_pair(deps: Deps, asset_infos: [AssetInfo; 2]) -> StdResult<FactoryPairInfo> {
+    let pair_info: FactoryPairInfo = read_pair(deps, &asset_infos).unwrap();
+    Ok(pair_info)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

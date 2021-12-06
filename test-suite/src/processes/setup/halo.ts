@@ -36,6 +36,7 @@ export async function setupHalo(
     terra,
     apTeam,
     registrar_contract,
+    tokenContract,
     quorum,
     threshold,
     voting_period,
@@ -223,6 +224,7 @@ async function setupGov(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   registrar_contract: string,
+  halo_token: string,
   quorum: number,
   threshold: number,
   voting_period: number,
@@ -247,6 +249,7 @@ async function setupGov(
     proposal_deposit,
     snapshot_period,
     registrar_contract,
+    halo_token,
   });
   const govContractAddr = govResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";

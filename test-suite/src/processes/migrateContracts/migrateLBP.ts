@@ -7,6 +7,7 @@ import {
   storeCode,
   migrateContract,
 } from "../../utils/helpers";
+import { testFactoryUpdateConfig } from "../tests/lbp/factory";
 
 // -----------------------------
 // Base functions to migrate contracts with 
@@ -20,7 +21,7 @@ export async function migrateLBPContracts(
 ): Promise<void> {
   // run the migrations desired
   await migrateFactory(terra, apTeam, factoryContract);
-  await migratePair(terra, apTeam, pairContract);
+  await migratePair(terra, apTeam, pairContract, factoryContract);
   await migrateRouter(terra, apTeam, routerContract);
 }
 
@@ -36,7 +37,7 @@ async function migrateFactory(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/lbp_factory.wasm"));
+    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_factory.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate LBP Factory contract");
@@ -51,17 +52,32 @@ async function migratePair(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   pairContract: string,
+  factoryContract: string,
 ): Promise<void> {
   process.stdout.write("Uploading LBP Pair wasm");
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/lbp_pair.wasm"));
+    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_pair.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate LBP Pair contract");
   const result1 = await migrateContract(terra, apTeam, apTeam, pairContract, codeId, {});
   console.log(chalk.green(" Done!"));
+
+  // Update Factory pair_code_id when migrate
+  testFactoryUpdateConfig(
+    terra,
+    apTeam,
+    factoryContract,
+    undefined,
+    undefined,
+    codeId,
+    pairContract,
+    undefined,
+    undefined,
+    undefined,
+  );
 }
 
 // -------------------------------------------------
@@ -76,7 +92,7 @@ async function migrateRouter(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/lbp_router.wasm"));
+    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_router.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate LBP Router contract");

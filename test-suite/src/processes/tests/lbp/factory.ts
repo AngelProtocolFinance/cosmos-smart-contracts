@@ -18,7 +18,6 @@ const { expect } = chai;
 export async function testFactoryUpdateConfig(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  pleb: Wallet,
   factoryContract: string,
   owner: string | undefined,
   token_code_id: number | undefined,
@@ -28,29 +27,6 @@ export async function testFactoryUpdateConfig(
   collector_addr: string | undefined,
   end_time: number | undefined,
 ): Promise<void> {
-  process.stdout.write("Test - Pleb cannot update factory config");
-
-  await expect(
-    sendTransaction(terra, pleb, [
-      new MsgExecuteContract(
-        pleb.key.accAddress,
-        factoryContract,
-        {
-          update_config: {
-            owner,
-            token_code_id,
-            pair_code_id,
-            pair_contract,
-            commission_rate,
-            collector_addr,
-            end_time,
-          },
-        },
-      ),
-    ])
-  ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Failed!"));
-
   process.stdout.write("Test - Only owner can update Factory config");
 
   await expect(
@@ -124,6 +100,32 @@ export async function testQueryFactoryPairs(
   process.stdout.write("Test - Query Factory Pairs");
   const result: any = await terra.wasm.contractQuery(factoryContract, {
     pairs: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryFactoryPairInfo(
+  terra: LocalTerra | LCDClient,
+  factoryContract: string,
+  tokenContract: string,
+): Promise<void> {
+  process.stdout.write("Test - Query Factory Pair Info");
+  const asset_infos = [
+    {
+      token: {
+        contract_addr: tokenContract,
+      },
+    },
+    {
+      native_token: {
+        denom: "uusd".toString()
+      }
+    }
+  ];
+  const result: any = await terra.wasm.contractQuery(factoryContract, {
+    factory_pair: { asset_infos },
   });
 
   console.log(result);

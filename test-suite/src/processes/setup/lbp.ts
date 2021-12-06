@@ -20,28 +20,28 @@ export async function setupLBP(
   const factoryCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/lbp_factory.wasm"));
+    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_factory.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${factoryCodeId}`);
 
   process.stdout.write("Uploading LBP pair Wasm");
   const pairCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/lbp_pair.wasm"));
+    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_pair.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${pairCodeId}`);
 
   process.stdout.write("Uploading LBP token Wasm");
   const tokenCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/lbp_token.wasm"));
+    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_token.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${tokenCodeId}`);
 
   process.stdout.write("Uploading LBP router Wasm");
   const routerCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/lbp_router.wasm"));
+    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_router.wasm"));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${routerCodeId}`);
 
   // HALO token contract
@@ -208,7 +208,7 @@ async function setupRouter(
 ): Promise<void> {
   process.stdout.write("Instantiating LBP Router contract");
   const routerResult = await instantiateContract(terra, apTeam, apTeam, routerCodeId, {
-    halo_factory: factoryContract
+    lbp_factory: factoryContract
   });
   const routerContract = routerResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";

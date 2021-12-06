@@ -62,7 +62,7 @@ pub fn query_factory_pair_info(
 ) -> StdResult<FactoryPairInfo> {
     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: factory_contract.to_string(),
-        msg: to_binary(&FactoryQueryMsg::Pair {
+        msg: to_binary(&FactoryQueryMsg::FactoryPair {
             asset_infos: asset_infos.clone(),
         })?,
     }))

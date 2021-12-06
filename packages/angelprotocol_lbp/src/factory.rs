@@ -54,6 +54,9 @@ pub enum QueryMsg {
         start_after: Option<[AssetInfo; 2]>,
         limit: Option<u32>,
     },
+    FactoryPair {
+        asset_infos: [AssetInfo; 2],
+    },
 }
 
 // We define a custom struct for each query response

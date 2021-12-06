@@ -108,6 +108,7 @@ import {
   testFactoryUpdateConfig,
   testQueryFactoryConfig,
   testQueryFactoryPair,
+  testQueryFactoryPairInfo,
   testQueryFactoryPairs,
 } from "./lbp/factory";
 import {
@@ -303,10 +304,11 @@ export async function testExecute(
   // await testQueryStakingState(terra, haloStaking);
 
   // Test query for LBP Factory
-  // await testFactoryUpdateConfig(terra, apTeam, pleb, factoryContract, undefined, undefined, undefined, pairContract, "0.01", undefined, undefined);
+  // await testFactoryUpdateConfig(terra, apTeam, factoryContract, undefined, undefined, undefined, pairContract, "0.01", undefined, undefined);
   // await testQueryFactoryConfig(terra, factoryContract);
   // await testQueryFactoryPair(terra, factoryContract, tokenContract);
   // await testQueryFactoryPairs(terra, factoryContract);
+  // await testQueryFactoryPairInfo(terra, factoryContract, tokenContract);
 
   // Test query for LBP Pair
   // await testPairSwap(terra, apTeam, pairContract, apTeam.key.accAddress, "100000000");

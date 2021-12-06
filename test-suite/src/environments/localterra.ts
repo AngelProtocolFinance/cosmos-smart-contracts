@@ -127,9 +127,11 @@ function initialize() {
   lbpCommissionRate = config.lbp.lbp_commission_rate;
   ammCommissionRate = config.lbp.amm_commission_rate;
 
-  console.log(`Use ${chalk.cyan(factoryContract)} as TerraSwap factory`);
+  console.log(`Use ${chalk.cyan(factoryContract)} as LBP Factory`);
   console.log(`Use ${chalk.cyan(tokenContract)} as HALO token`);
-  console.log(`Use ${chalk.cyan(pairContract)} as HALO/UST pair`);
+  console.log(`Use ${chalk.cyan(pairContract)} as LBP HALO/UST Pair`);
+  console.log(`Use ${chalk.cyan(routerContract)} as LBP Router`);
+  console.log(`Use ${chalk.cyan(lpTokenContract)} as Liquidity Token`);
 
   haloAirdrop = config.halo.airdrop_contract;
   haloCollector = config.halo.collector_contract;
