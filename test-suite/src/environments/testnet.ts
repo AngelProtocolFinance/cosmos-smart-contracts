@@ -10,6 +10,7 @@ import { setupContracts } from "../processes/setupContracts/testnet";
 import { setupHalo } from "../processes/setup/halo";
 import { testExecute } from "../processes/tests/testnet";
 import { setupLBP } from "../processes/setup/lbp";
+import { migrateLBPContracts } from "../processes/migrateContracts/migrateLBP";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -316,6 +317,27 @@ export async function startMigrateHaloContracts(): Promise<void> {
     haloGov,
     haloStaking,
     haloVesting
+  );
+}
+
+// -------------------------------------------------------------------------------------
+// migrate HALO contracts
+// -------------------------------------------------------------------------------------
+export async function startMigrateLBPContracts(): Promise<void> {
+  console.log(chalk.blue("\nLocalTerra"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Migrate Contracts
+  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  await migrateLBPContracts(
+    terra,
+    apTeam,
+    factoryContract,
+    pairContract,
+    routerContract,
   );
 }
 
