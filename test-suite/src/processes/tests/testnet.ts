@@ -293,7 +293,7 @@ export async function testExecute(
   // await testQueryStakingState(terra, haloStaking);
 
   // Test query for LBP factory
-  // await testFactoryUpdateConfig(terra, apTeam, pleb, factoryContract, undefined, undefined, undefined, pairContract, undefined, undefined);
+  // await testFactoryUpdateConfig(terra, apTeam, factoryContract, undefined, undefined, undefined, pairContract, undefined, undefined);
   // await testQueryFactoryConfig(terra, factoryContract);
   // await testQueryPair(terra, factoryContract, tokenContract);
   // await testQueryPairs(terra, factoryContract);
