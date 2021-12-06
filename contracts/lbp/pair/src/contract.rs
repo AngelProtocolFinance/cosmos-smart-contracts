@@ -36,7 +36,7 @@ const INSTANTIATE_REPLY_ID: u64 = 1;
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -82,11 +82,13 @@ pub fn instantiate(
     let pair_info: &PairInfo = &PairInfo {
         contract_addr: env.contract.address.clone(),
         liquidity_token: Addr::unchecked(""),
+        factory_addr: info.sender,
         asset_infos: [msg.asset_infos[0].clone(), msg.asset_infos[1].clone()],
         start_time: msg.start_time,
         end_time: end_time,
         description: msg.description,
         commission_rate: msg.commission_rate,
+        collector_addr: msg.collector_addr,
     };
 
     PAIR_INFO.save(deps.storage, pair_info)?;
@@ -140,6 +142,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::UpdatePairInfo { commission_rate, collector_addr } => update_pair_info(deps, env, info, commission_rate, collector_addr),
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::ProvideLiquidity {
             assets,
@@ -167,6 +170,28 @@ pub fn execute(
             )
         }
     }
+}
+
+pub fn update_pair_info(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    commission_rate: Option<String>,
+    collector_addr: Option<String>,
+) -> Result<Response, ContractError> {
+    let mut pair_info: PairInfo = PAIR_INFO.load(deps.storage)?;
+    if info.sender != pair_info.factory_addr {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    if let Some(commission_rate) = commission_rate {
+        pair_info.commission_rate = commission_rate;
+    }
+    if let Some(collector_addr) = collector_addr {
+        pair_info.collector_addr = deps.api.addr_validate(&collector_addr)?;
+    }
+    PAIR_INFO.save(deps.storage, &pair_info)?;
+    Ok(Response::new().add_attribute("action", "update_pair_info"))
 }
 
 pub fn receive_cw20(

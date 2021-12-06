@@ -11,6 +11,7 @@ pub struct InstantiateMsg {
     pub token_code_id: u64,
     pub owner: String,
     pub commission_rate: String,
+    pub collector_addr: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -21,7 +22,9 @@ pub enum ExecuteMsg {
         owner: Option<Addr>,
         token_code_id: Option<u64>,
         pair_code_id: Option<u64>,
+        pair_contract: String,
         commission_rate: Option<String>,
+        collector_addr: Option<String>,
     },
     /// CreatePair instantiates pair contract
     CreatePair {
@@ -59,6 +62,7 @@ pub struct ConfigResponse {
     pub pair_code_id: u64,
     pub token_code_id: u64,
     pub commission_rate: String,
+    pub collector_addr: Addr,
 }
 
 /// We currently take no arguments for migrations

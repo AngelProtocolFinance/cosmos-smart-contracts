@@ -193,11 +193,13 @@ impl AssetInfo {
 pub struct PairInfo {
     pub asset_infos: [WeightedAssetInfo; 2],
     pub contract_addr: Addr,
+    pub factory_addr: Addr,
     pub liquidity_token: Addr,
     pub start_time: u64,
     pub end_time: Option<u64>,
     pub description: Option<String>,
     pub commission_rate: String,
+    pub collector_addr: Addr,
 }
 
 impl PairInfo {

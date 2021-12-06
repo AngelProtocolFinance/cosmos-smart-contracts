@@ -20,6 +20,8 @@ pub struct InstantiateMsg {
     pub description: Option<String>,
     // Commission Rate for a pair
     pub commission_rate: String,
+    // Collecotr Contract Address to be paid commission fee
+    pub collector_addr: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -38,6 +40,11 @@ pub enum ExecuteMsg {
         max_spread: Option<Decimal>,
         to: Option<Addr>,
     },
+    /// Update pair_info (commission_rate, collector_addr)
+    UpdatePairInfo {
+        commission_rate: Option<String>,
+        collector_addr: Option<String>,
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
