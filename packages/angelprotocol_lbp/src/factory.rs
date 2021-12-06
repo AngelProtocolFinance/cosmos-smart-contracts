@@ -25,6 +25,7 @@ pub enum ExecuteMsg {
         pair_contract: String,
         commission_rate: Option<String>,
         collector_addr: Option<String>,
+        end_time: Option<u64>,
     },
     /// CreatePair instantiates pair contract
     CreatePair {

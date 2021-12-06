@@ -89,6 +89,7 @@ fn proper_initialization() {
         end_time,
         description: Some(String::from("description")),
         commission_rate: COMMISSION_RATE.to_string(),
+        collector_addr: Addr::unchecked("collector000"),
     };
 
     // we can just call .unwrap() to assert this was a success
@@ -190,6 +191,7 @@ fn provide_liquidity() {
         end_time,
         description: Some(String::from("description")),
         commission_rate: COMMISSION_RATE.to_string(),
+        collector_addr: Addr::unchecked("collector000"),
     };
 
     let env = mock_env();
@@ -636,6 +638,7 @@ fn withdraw_liquidity() {
         end_time,
         description: Some(String::from("description")),
         commission_rate: COMMISSION_RATE.to_string(),
+        collector_addr: Addr::unchecked("collector000"),
     };
 
     let env = mock_env();
@@ -779,6 +782,7 @@ fn try_native_to_token() {
         end_time,
         description: Some(String::from("description")),
         commission_rate: COMMISSION_RATE.to_string(),
+        collector_addr: Addr::unchecked("collector000"),
     };
 
     let env = mock_env();
@@ -986,6 +990,7 @@ fn try_token_to_native() {
         end_time,
         description: Some(String::from("description")),
         commission_rate: COMMISSION_RATE.to_string(),
+        collector_addr: Addr::unchecked("collector000"),
     };
 
     let env = mock_env();
@@ -1268,6 +1273,7 @@ fn test_spread() {
         end_time,
         description: Some(String::from("description")),
         commission_rate: COMMISSION_RATE.to_string(),
+        collector_addr: Addr::unchecked("collector000"),
     };
 
     let env = mock_env();
@@ -1426,6 +1432,7 @@ fn test_query_pool() {
         end_time,
         description: Some(String::from("description")),
         commission_rate: COMMISSION_RATE.to_string(),
+        collector_addr: Addr::unchecked("collector000"),
     };
 
     let env = mock_env();
@@ -1517,6 +1524,7 @@ fn test_weight_calculations() {
         end_time,
         description: Some(String::from("description")),
         commission_rate: COMMISSION_RATE.to_string(),
+        collector_addr: Addr::unchecked("collector000"),
     };
 
     let env = mock_env();

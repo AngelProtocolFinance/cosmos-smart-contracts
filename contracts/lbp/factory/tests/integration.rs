@@ -182,6 +182,7 @@ fn update_config() {
         pair_contract: "pair000".to_string(),
         commission_rate: None,
         collector_addr: None,
+        end_time: None,
     };
 
     app.execute_contract(owner.clone(), factory_instance.clone(), &msg, &[])
@@ -204,6 +205,7 @@ fn update_config() {
         pair_contract: "pair000".to_string(),
         commission_rate: None,
         collector_addr: None,
+        end_time: None,
     };
 
     app.execute_contract(new_owner, factory_instance.clone(), &msg, &[])
@@ -225,6 +227,7 @@ fn update_config() {
         pair_contract: "pair000".to_string(),
         commission_rate: None,
         collector_addr: None,
+        end_time: None,
     };
 
     let res = app

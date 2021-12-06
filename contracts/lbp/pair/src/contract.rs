@@ -142,7 +142,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::UpdatePairInfo { commission_rate, collector_addr } => update_pair_info(deps, env, info, commission_rate, collector_addr),
+        ExecuteMsg::UpdatePairInfo { commission_rate, collector_addr, end_time } => update_pair_info(deps, env, info, commission_rate, collector_addr, end_time),
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::ProvideLiquidity {
             assets,
@@ -178,6 +178,7 @@ pub fn update_pair_info(
     info: MessageInfo,
     commission_rate: Option<String>,
     collector_addr: Option<String>,
+    end_time: Option<u64>,
 ) -> Result<Response, ContractError> {
     let mut pair_info: PairInfo = PAIR_INFO.load(deps.storage)?;
     if info.sender != pair_info.factory_addr {
@@ -190,6 +191,7 @@ pub fn update_pair_info(
     if let Some(collector_addr) = collector_addr {
         pair_info.collector_addr = deps.api.addr_validate(&collector_addr)?;
     }
+    pair_info.end_time = end_time;
     PAIR_INFO.save(deps.storage, &pair_info)?;
     Ok(Response::new().add_attribute("action", "update_pair_info"))
 }
@@ -826,20 +828,19 @@ fn get_current_weight(
     end_time: Option<u64>,
     block_time: u64,
 ) -> StdResult<Decimal256> {
+    let start_weight_fixed = uint2dec(start_weight);
+    // AMM pair will not have an end time & must have equal start/end weights
+    if end_time == None {
+        let ratio = uint2dec(Uint128::zero());
+        return Ok(start_weight_fixed.sub(ratio));
+    }
+    
     if block_time < start_time {
         return Err(StdError::generic_err("Sale has not started yet"));
     }
 
     if block_time > end_time.unwrap() {
         return Err(StdError::generic_err("Sale has already finished"));
-    }
-
-    let start_weight_fixed = uint2dec(start_weight);
-
-    // AMM pair will not have an end time & must have equal start/end weights
-    if end_time == None {
-        let ratio = uint2dec(Uint128::zero());
-        return Ok(start_weight_fixed.sub(ratio));
     }
 
     let time_diff = uint2dec(Uint128::from(end_time.unwrap() - start_time));

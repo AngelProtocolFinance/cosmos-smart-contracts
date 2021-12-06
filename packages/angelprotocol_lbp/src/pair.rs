@@ -44,6 +44,7 @@ pub enum ExecuteMsg {
     UpdatePairInfo {
         commission_rate: Option<String>,
         collector_addr: Option<String>,
+        end_time: Option<u64>,
     }
 }
 

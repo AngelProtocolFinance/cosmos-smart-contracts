@@ -60,6 +60,7 @@ pub fn execute(
             pair_contract,
             commission_rate,
             collector_addr,
+            end_time,
         } => try_update_config(
             deps,
             info,
@@ -69,6 +70,7 @@ pub fn execute(
             pair_contract,
             commission_rate,
             collector_addr,
+            end_time,
         ),
         ExecuteMsg::CreatePair {
             asset_infos,
@@ -98,6 +100,7 @@ pub fn try_update_config(
     pair_contract: String,
     commission_rate: Option<String>,
     collector_addr: Option<String>,
+    end_time: Option<u64>
 ) -> Result<Response, ContractError> {
     let mut config: Config = CONFIG.load(deps.storage)?;
     let mut is_pair_update = false;
@@ -132,6 +135,7 @@ pub fn try_update_config(
             msg: to_binary(&UpdatePairInfo {
                 commission_rate,
                 collector_addr,
+                end_time,
             }).unwrap(),
             funds: vec![],
         });
