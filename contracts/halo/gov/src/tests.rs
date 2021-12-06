@@ -26,6 +26,7 @@ const TEST_CREATOR: &str = "creator";
 const TEST_VOTER: &str = "voter1";
 const TEST_VOTER_2: &str = "voter2";
 const TEST_VOTER_3: &str = "voter3";
+const HALO_TOKEN: &str = "halo_token";
 const DEFAULT_QUORUM: u64 = 30u64;
 const DEFAULT_THRESHOLD: u64 = 50u64;
 const DEFAULT_VOTING_PERIOD: u64 = 20000u64;
@@ -42,6 +43,7 @@ fn mock_instantiate(deps: DepsMut) {
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
+        halo_token: HALO_TOKEN.to_string(),
     };
 
     let info = mock_info(TEST_CREATOR, &[]);
@@ -74,6 +76,7 @@ fn instantiate_msg() -> InstantiateMsg {
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
+        halo_token: HALO_TOKEN.to_string(),
     }
 }
 
@@ -150,6 +153,7 @@ fn fails_init_invalid_quorum() {
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
+        halo_token: HALO_TOKEN.to_string(),
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -175,6 +179,7 @@ fn fails_init_invalid_threshold() {
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
+        halo_token: HALO_TOKEN.to_string(),
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -200,6 +205,7 @@ fn fails_contract_already_registered() {
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
+        halo_token: HALO_TOKEN.to_string(),
     };
 
     let _res = instantiate(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
