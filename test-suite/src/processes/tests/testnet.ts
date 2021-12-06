@@ -112,8 +112,6 @@ import {
   testQueryFactoryPairs,
 } from "./lbp/factory";
 import {
-  testPairSwap,
-  testPairWithdrawLiquidity,
   testQueryPairPair,
   testQueryPairPool,
   testQueryPairReverseSimulation,
@@ -311,15 +309,13 @@ export async function testExecute(
   // await testQueryFactoryPairInfo(terra, factoryContract, tokenContract);
 
   // Test query for LBP Pair
-  // await testPairSwap(terra, apTeam, pairContract, apTeam.key.accAddress, "100000000");
-  // await testPairWithdrawLiquidity(terra, apTeam, pairContract, lpTokenContract, "100000000");
   // await testQueryPairPair(terra, pairContract);
   // await testQueryPairPool(terra, pairContract);
   // await testQueryPairSimulation(terra, pairContract);
   // await testQueryPairReverseSimulation(terra, pairContract);
 
   // Test query for LBP Router
-  // await testRouterSwapOperations(terra, apTeam, routerContract, tokenContract);
+  await testRouterSwapOperations(terra, apTeam, routerContract, tokenContract);
   // await testQueryRouterConfig(terra, routerContract);
   // await testQueryRouterSimulateSwapOperations(terra, routerContract, tokenContract, "100000000");
 
