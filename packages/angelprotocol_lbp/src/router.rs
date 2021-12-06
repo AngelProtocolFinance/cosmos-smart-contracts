@@ -18,7 +18,7 @@ pub enum SwapOperation {
         offer_denom: String,
         ask_denom: String,
     },
-    AstroSwap {
+    AngelSwap {
         offer_asset_info: AssetInfo,
         ask_asset_info: AssetInfo,
     },
@@ -30,7 +30,7 @@ impl SwapOperation {
             SwapOperation::NativeSwap { offer_denom, .. } => AssetInfo::NativeToken {
                 denom: offer_denom.clone(),
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::AngelSwap {
                 offer_asset_info, ..
             } => offer_asset_info.clone(),
         }
@@ -41,7 +41,7 @@ impl SwapOperation {
             SwapOperation::NativeSwap { ask_denom, .. } => AssetInfo::NativeToken {
                 denom: ask_denom.clone(),
             },
-            SwapOperation::AstroSwap { ask_asset_info, .. } => ask_asset_info.clone(),
+            SwapOperation::AngelSwap { ask_asset_info, .. } => ask_asset_info.clone(),
         }
     }
 }

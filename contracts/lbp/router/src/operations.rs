@@ -61,7 +61,7 @@ pub fn execute_swap_operation(
                 )]
             }
         }
-        SwapOperation::AstroSwap {
+        SwapOperation::AngelSwap {
             offer_asset_info,
             ask_asset_info,
         } => {

@@ -20,8 +20,8 @@ export async function migrateLBPContracts(
   routerContract: string,
 ): Promise<void> {
   // run the migrations desired
-  await migrateFactory(terra, apTeam, factoryContract);
-  await migratePair(terra, apTeam, pairContract, factoryContract);
+  // await migrateFactory(terra, apTeam, factoryContract);
+  // await migratePair(terra, apTeam, pairContract, factoryContract);
   await migrateRouter(terra, apTeam, routerContract);
 }
 

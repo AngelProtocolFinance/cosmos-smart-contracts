@@ -68,7 +68,7 @@ fn execute_swap_operations() {
                 offer_denom: "uusd".to_string(),
                 ask_denom: "ukrw".to_string(),
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::AngelSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "ukrw".to_string(),
                 },
@@ -76,7 +76,7 @@ fn execute_swap_operations() {
                     contract_addr: Addr::unchecked("asset0001"),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::AngelSwap {
                 offer_asset_info: AssetInfo::Token {
                     contract_addr: Addr::unchecked("asset0001"),
                 },
@@ -84,7 +84,7 @@ fn execute_swap_operations() {
                     denom: "uluna".to_string(),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::AngelSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "uluna".to_string(),
                 },
@@ -119,7 +119,7 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::AstroSwap {
+                    operation: SwapOperation::AngelSwap {
                         offer_asset_info: AssetInfo::NativeToken {
                             denom: "ukrw".to_string(),
                         },
@@ -135,7 +135,7 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::AstroSwap {
+                    operation: SwapOperation::AngelSwap {
                         offer_asset_info: AssetInfo::Token {
                             contract_addr: Addr::unchecked("asset0001"),
                         },
@@ -151,7 +151,7 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::AstroSwap {
+                    operation: SwapOperation::AngelSwap {
                         offer_asset_info: AssetInfo::NativeToken {
                             denom: "uluna".to_string(),
                         },
@@ -188,7 +188,7 @@ fn execute_swap_operations() {
                     offer_denom: "uusd".to_string(),
                     ask_denom: "ukrw".to_string(),
                 },
-                SwapOperation::AstroSwap {
+                SwapOperation::AngelSwap {
                     offer_asset_info: AssetInfo::NativeToken {
                         denom: "ukrw".to_string(),
                     },
@@ -196,7 +196,7 @@ fn execute_swap_operations() {
                         contract_addr: Addr::unchecked("asset0001"),
                     },
                 },
-                SwapOperation::AstroSwap {
+                SwapOperation::AngelSwap {
                     offer_asset_info: AssetInfo::Token {
                         contract_addr: Addr::unchecked("asset0001"),
                     },
@@ -204,7 +204,7 @@ fn execute_swap_operations() {
                         denom: "uluna".to_string(),
                     },
                 },
-                SwapOperation::AstroSwap {
+                SwapOperation::AngelSwap {
                     offer_asset_info: AssetInfo::NativeToken {
                         denom: "uluna".to_string(),
                     },
@@ -241,7 +241,7 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::AstroSwap {
+                    operation: SwapOperation::AngelSwap {
                         offer_asset_info: AssetInfo::NativeToken {
                             denom: "ukrw".to_string(),
                         },
@@ -257,7 +257,7 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::AstroSwap {
+                    operation: SwapOperation::AngelSwap {
                         offer_asset_info: AssetInfo::Token {
                             contract_addr: Addr::unchecked("asset0001"),
                         },
@@ -273,7 +273,7 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::AstroSwap {
+                    operation: SwapOperation::AngelSwap {
                         offer_asset_info: AssetInfo::NativeToken {
                             denom: "uluna".to_string(),
                         },
@@ -377,7 +377,7 @@ fn execute_swap_operation() {
         )],
     )]);
     let msg = ExecuteMsg::ExecuteSwapOperation {
-        operation: SwapOperation::AstroSwap {
+        operation: SwapOperation::AngelSwap {
             offer_asset_info: AssetInfo::Token {
                 contract_addr: Addr::unchecked("asset"),
             },
@@ -452,7 +452,7 @@ fn query_buy_with_routes() {
                 offer_denom: "uusd".to_string(),
                 ask_denom: "ukrw".to_string(),
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::AngelSwap {
                 offer_asset_info: AssetInfo::NativeToken {
                     denom: "ukrw".to_string(),
                 },
@@ -460,7 +460,7 @@ fn query_buy_with_routes() {
                     contract_addr: Addr::unchecked("asset0000"),
                 },
             },
-            SwapOperation::AstroSwap {
+            SwapOperation::AngelSwap {
                 offer_asset_info: AssetInfo::Token {
                     contract_addr: Addr::unchecked("asset0000"),
                 },
