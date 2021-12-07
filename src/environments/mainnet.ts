@@ -10,6 +10,7 @@ import { setupContracts, Member } from "../processes/setupContracts/mainnet";
 import { setupHalo } from "../processes/setup/halo";
 import { setupTerraSwap } from "../processes/setupTerraSwap/realnet";
 import { testExecute } from "../processes/tests/mainnet";
+import { setupLBP } from "../processes/setup/lbp";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -30,12 +31,19 @@ let apTreasury: string;
 let members: Member[];
 let tcaMembers: string[];
 
+// LBP contracts
 let tokenCodeId: number;
 let pairCodeId: number;
 let factoryCodeId: number;
 let factoryContract: string;
 let tokenContract: string;
 let pairContract: string;
+let routerContract: string;
+let lpTokenContract: string;
+let tokenAmount: string;
+let nativeTokenAmount: string;
+let lbpCommissionRate: string;
+let ammCommissionRate: string;
 
 // Angel/HALO contracts
 let haloAirdrop: string;
@@ -82,16 +90,24 @@ function initialize() {
   console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
   console.log(`Use ${chalk.cyan(endowmentContracts)} as Endowment Contracts`);
 
-  tokenCodeId = config.token_code_id;
-  pairCodeId = config.pair_code_id;
-  factoryCodeId = config.factory_code_id;
-  factoryContract = config.factory_contract;
-  tokenContract = config.token_contract;
-  pairContract = config.pair_contract;
+  tokenCodeId = config.lbp.token_code_id;
+  pairCodeId = config.lbp.pair_code_id;
+  factoryCodeId = config.lbp.factory_code_id;
+  factoryContract = config.lbp.factory_contract;
+  tokenContract = config.lbp.token_contract;
+  pairContract = config.lbp.pair_contract;
+  routerContract = config.lbp.router_contract;
+  lpTokenContract = config.lbp.lp_token_contract;
+  tokenAmount = config.lbp.token_amount;
+  nativeTokenAmount = config.lbp.native_token_amount;
+  lbpCommissionRate = config.lbp.lbp_commission_rate;
+  ammCommissionRate = config.lbp.amm_commission_rate;
 
-  console.log(`Use ${chalk.cyan(factoryContract)} as TerraSwap factory`);
+  console.log(`Use ${chalk.cyan(factoryContract)} as LBP Factory`);
   console.log(`Use ${chalk.cyan(tokenContract)} as HALO token`);
-  console.log(`Use ${chalk.cyan(pairContract)} as HALO/UST pair`);
+  console.log(`Use ${chalk.cyan(pairContract)} as LBP HALO/UST Pair`);
+  console.log(`Use ${chalk.cyan(routerContract)} as LBP Router`);
+  console.log(`Use ${chalk.cyan(lpTokenContract)} as Liquidity Token`);
 
   haloAirdrop = config.halo.airdrop_contract;
   haloCollector = config.halo.collector_contract;
@@ -164,6 +180,34 @@ export async function startSetupTerraSwapContracts(): Promise<void> {
   );
 }
 
+// -------------------------------------------------------------------------------------
+// setup LBP contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupLBPContracts(): Promise<void> {
+  console.log(chalk.blue("\nMainnet"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  const currTime = new Date().getTime() / 1000 + 100;
+  const startTime = Math.round(currTime);
+  const endTime = Math.round(currTime) + 3600 * 24 * 3;
+
+  // Setup LBP contracts
+  console.log(chalk.yellow("\nStep2. LBP Contracts"));
+  await setupLBP(
+    terra,
+    apTeam,
+    tokenAmount,
+    nativeTokenAmount,
+    lbpCommissionRate,
+    haloCollector,
+    startTime,
+    endTime,
+    undefined
+  );
+}
 
 // -------------------------------------------------------------------------------------
 // setup HALO contracts
