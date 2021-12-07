@@ -7,7 +7,7 @@ import { testnet as config } from "../config/constants";
 import { migrateHaloContracts } from "../processes/migrateContracts/migrateHalo";
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts } from "../processes/setupContracts/testnet";
-import { setupHalo } from "../processes/setupHalo/testnet";
+import { setupHalo } from "../processes/setup/halo";
 import { setupTerraSwap } from "../processes/setupTerraSwap/realnet";
 import { testExecute } from "../processes/tests/testnet";
 
