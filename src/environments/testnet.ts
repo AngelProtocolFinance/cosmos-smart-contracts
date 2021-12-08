@@ -50,6 +50,7 @@ let lpTokenContract: string;
 let tokenAmount: string;
 let nativeTokenAmount: string;
 let lbpCommissionRate: string;
+let splitToCollector: string;
 let ammCommissionRate: string;
 
 // Angel/HALO contracts
@@ -127,6 +128,7 @@ function initialize() {
   nativeTokenAmount = config.lbp.native_token_amount;
   lbpCommissionRate = config.lbp.lbp_commission_rate;
   ammCommissionRate = config.lbp.amm_commission_rate;
+  splitToCollector = config.lbp.split_to_collector;
 
   console.log(`Use ${chalk.cyan(factoryContract)} as LBP Factory`);
   console.log(`Use ${chalk.cyan(tokenContract)} as HALO token`);
@@ -236,6 +238,7 @@ export async function startSetupLBPContracts(): Promise<void> {
     nativeTokenAmount,
     lbpCommissionRate,
     haloCollector,
+    splitToCollector,
     startTime,
     endTime,
     undefined

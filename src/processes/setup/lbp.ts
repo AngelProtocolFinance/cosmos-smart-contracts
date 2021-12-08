@@ -13,6 +13,7 @@ export async function setupLBP(
   nativeTokenAmount: string,
   commission_rate: string,
   collector_addr: string | undefined,
+  split_to_collector: string | undefined,
   start_time: number,
   end_time: number | undefined,
   description: string | undefined,
@@ -62,6 +63,7 @@ export async function setupLBP(
     tokenCodeId,
     commission_rate,
     collector_addr,
+    split_to_collector,
   );
 
   // Create Pair contract
@@ -131,6 +133,7 @@ async function setupFactory(
   tokenCodeId: number,
   commission_rate: string,
   collector_addr: string | undefined,
+  split_to_collector: string | undefined,
 ): Promise<string> {
   process.stdout.write("Instantiating Factory contract");
   const factoryResult = await instantiateContract(terra, apTeam, apTeam, factoryCodeId, {
@@ -139,6 +142,7 @@ async function setupFactory(
     owner: apTeam.key.accAddress,
     commission_rate,
     collector_addr,
+    split_to_collector,
   });
   const factoryContract = factoryResult.logs[0].events.find((event) => {
     return event.type == "instantiate_contract";

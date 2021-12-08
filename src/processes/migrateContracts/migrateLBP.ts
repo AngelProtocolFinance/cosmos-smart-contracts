@@ -35,6 +35,7 @@ export async function migrateLBPContracts(
     pairCodeId,
     undefined,
     undefined,
+    undefined,
   );
 }
 

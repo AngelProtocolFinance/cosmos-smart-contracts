@@ -306,8 +306,8 @@ export async function testExecute(
   // await testQueryStakingState(terra, haloStaking);
 
   // Test query for LBP Factory
-  // await testFactoryUpdateConfig(terra, apTeam, factoryContract, undefined, undefined, undefined, undefined, haloCollector);
-  // await testFactoryUpdatePair(terra, apTeam, factoryContract, pairContract, undefined);
+  // await testFactoryUpdateConfig(terra, apTeam, factoryContract, undefined, undefined, undefined, undefined, haloCollector, undefined);
+  // await testFactoryUpdatePair(terra, apTeam, factoryContract, pairContract, 1639234038);
   // const currTime = new Date().getTime() / 1000 + 10;
   // const startTime = Math.round(currTime);
   // const endTime = Math.round(currTime) + 3600 * 24 * 3;
@@ -320,10 +320,10 @@ export async function testExecute(
   // Test query for LBP Pair
   // await testQueryPairPair(terra, pairContract);
   // await testQueryPairPool(terra, pairContract);
-  await testQueryPairSimulationNativeToHalo(terra, pairContract);
-  await testQueryPairSimulationHaloToNative(terra, pairContract, tokenContract);
-  await testQueryPairReverseSimulationNativeToHalo(terra, pairContract);
-  await testQueryPairReverseSimulationHaloToNative(terra, pairContract, tokenContract);
+  // await testQueryPairSimulationNativeToHalo(terra, pairContract);
+  // await testQueryPairSimulationHaloToNative(terra, pairContract, tokenContract);
+  // await testQueryPairReverseSimulationNativeToHalo(terra, pairContract);
+  // await testQueryPairReverseSimulationHaloToNative(terra, pairContract, tokenContract);
 
   // Test query for LBP Router
   // await testRouterSwapOperations(terra, apTeam, routerContract, tokenContract, apTeam.key.accAddress, "100000000");

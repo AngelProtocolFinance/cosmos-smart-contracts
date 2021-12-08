@@ -24,6 +24,7 @@ export async function testFactoryUpdateConfig(
   pair_code_id: number | undefined,
   commission_rate: string | undefined,
   collector_addr: string | undefined,
+  split_to_collector: string | undefined,
 ): Promise<void> {
   process.stdout.write("Test - Only owner can update Factory config");
 
@@ -39,6 +40,7 @@ export async function testFactoryUpdateConfig(
             pair_code_id,
             commission_rate,
             collector_addr,
+            split_to_collector,
           },
         },
       ),

@@ -41,6 +41,7 @@ export const localterra = {
     native_token_amount: "1300000000000",
     lbp_commission_rate: "0.03",
     amm_commission_rate: "0.01",
+    split_to_collector: "0.01",
   },
   
   // HALO contracts
@@ -96,27 +97,28 @@ export const testnet = {
   
   // LBP/AMM contracts
   lbp: {
-    factory_contract: "terra1prkrleycc6kvmytg0na0znmqgcvt6u8xexhs6k",
-    token_contract: "terra1pch0pzk5r4dd6vn4q49lj9rdm5dmu2s0747pvh",
-    pair_contract: "terra1v985dc0xgmsndsjry00fr6vhpa5kh9yruzhct5",
-    router_contract: "terra1ym4f69jqdpfd5jhe2w92rsarftz95aaj9r4er7",
-    lp_token_contract: "terra19szaxaeylz9frtv9sv7q8ws2q9numf4wm7d3ku",
+    factory_contract: "terra1ryjg80jend876v3awrqcvjmyl5k89t95gy2p6n",
+    token_contract: "terra1a2u20znw23hax47dmx6amuf33kk59pmg4q3ayq",
+    pair_contract: "terra1j0zd9flhdckzlwulkaqzc4vlzg02nk4e4srcgl",
+    router_contract: "terra1jcj6wzmdlkytnyg9csemkzjgc4r6phej6amdun",
+    lp_token_contract: "terra17a26m8n7870zfs8w4kn8wh6wxggdfdl2d9aw9v",
     // HALO token supply amount
     token_amount: "80000000000",
     native_token_amount: "1300000000",
     lbp_commission_rate: "0.03",
     amm_commission_rate: "0.01",
+    split_to_collector: "0.01",
   },
 
   // HALO contracts
   halo: {
-    airdrop_contract: "terra10n0dexg7xl7dkqke4r20jw3elw6fx87naar6xt",
-    collector_contract: "terra1wlr3fq2thnkzxw2flagle8w6yl52vx46mgrm5l",
-    community_contract: "terra13qsnvljqg8kd7yplwktqrgyq3vsqf7jz3k278j",
-    distributor_contract: "terra1lww65p2jg88dv0cgu8r58g0ka65u87wkuzzkpc",
-    gov_contract: "terra16gt0u9havxdc8fxs5mqnmfnu4nr28umve3rl3t",
-    staking_contract: "terra1avyyaczr5tq96jd6gedk6qfvududtgfdmhjmnf",
-    vesting_contract: "terra1rl0msz45xe888g08sktrv0k4fq39fxkun0tqg",
+    airdrop_contract: "terra18z53jn2qvp7gagu8l6lczkf9jmmy80yf9humt5",
+    collector_contract: "terra1kvenf6sjyra097wlanumwmaa3xmzfu95f4cm65",
+    community_contract: "terra1r9j84edx35gn7rtqfzuujg0f93dltedcx3e76m",
+    distributor_contract: "terra1vtrpda8arkf6mfcvjsul7lyrtks0e205fp9ny3",
+    gov_contract: "terra1t0ughmzr4u4r09lsj7z97q56fpde8qqmrxg2df",
+    staking_contract: "terra1y5klltj4u3ggel25n5ew26sndsd805fr8ngav3",
+    vesting_contract: "terra1q9p6nrv6kvanay93cjwmpxd5wz60tw6r22u3et",
   }
 } as const;
 
@@ -213,6 +215,7 @@ export const mainnet = {
     native_token_amount: "1300000000000",
     lbp_commission_rate: "0.03",
     amm_commission_rate: "0.01",
+    split_to_collector: "0.01",
   },
 
   // HALO contracts
