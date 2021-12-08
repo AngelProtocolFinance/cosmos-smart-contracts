@@ -40,9 +40,9 @@ export const localterra = {
     router_contract: "",
     lp_token_contract: "",
     // HALO token supply amount
-    token_amount: "160000000000",
-    native_token_amount: "2600000000",
-    lbp_commission_rate: "0.02",
+    token_amount: "80000000000000",
+    native_token_amount: "1300000000000",
+    lbp_commission_rate: "0.03",
     amm_commission_rate: "0.01",
   },
   
@@ -109,9 +109,9 @@ export const testnet = {
     router_contract: "terra18aja25mfpxxpdfm4xm09uju8szjzlps23cadep",
     lp_token_contract: "terra1kl37vxzsykykuzkpxrzwp9mz5thhfd0zecxej9",
     // HALO token supply amount
-    token_amount: "160000000000",
-    native_token_amount: "2600000000",
-    lbp_commission_rate: "0.02",
+    token_amount: "80000000000",
+    native_token_amount: "1300000000",
+    lbp_commission_rate: "0.03",
     amm_commission_rate: "0.01",
   },
 
@@ -196,6 +196,9 @@ export const mainnet = {
       "terra1xfecyvhwwet57fthejkle6a2suvehwwpeqzsj8", // Butte Country Local Food Network
       "terra1hs0aqqfq0qm2jjrdhxsuerk7hcs9n2yuuft072", // Power of Nutrition
       "terra1df9ek2ux6xka968jd5ze5ry5gj4zdwqy0z0jdu", // Ocean Web Alliance
+      "terra1rttuqe9dsf5hksep8syv8nelrmdlyv2pnrx2w8", // Project Hawaii
+      "terra1p2dq0ct6xlt05y2zxhjfqt0nl3awp57yxdk9mq", // Cup of Hope Las Vegas
+      "terra16h3qzecumpa5lxf6ekt2869mpycms5rac0lwp8", // Sumarth 
     ],
   },
   members: [
@@ -216,9 +219,9 @@ export const mainnet = {
     router_contract: "",
     lp_token_contract: "",
     // HALO token supply amount
-    token_amount: "160000000000",
-    native_token_amount: "2600000000",
-    lbp_commission_rate: "0.02",
+    token_amount: "80000000000000",
+    native_token_amount: "1300000000000",
+    lbp_commission_rate: "0.03",
     amm_commission_rate: "0.01",
   },
 

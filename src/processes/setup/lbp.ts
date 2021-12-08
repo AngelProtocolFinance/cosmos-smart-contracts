@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { LocalTerra, LCDClient, Wallet, MsgExecuteContract } from "@terra-money/terra.js";
 import { instantiateContract, sendTransaction, storeCode } from "../../utils/helpers";
 import { wasm_path } from "../../config/constants";
-
+  
 // Deploy HALO Token and HALO/UST pair contracts to the TestNet/MainNet
 export async function setupLBP(
   terra: LocalTerra | LCDClient,
@@ -171,8 +171,8 @@ async function createPair(
                 contract_addr: tokenContract,
               }
             },
-            start_weight: "1",
-            end_weight: "1"
+            start_weight: "96",
+            end_weight: "50"
           },
           {
             info:{
@@ -180,8 +180,8 @@ async function createPair(
                 denom: "uusd".toString()
               }
             },
-            start_weight: "1",
-            end_weight: "1"
+            start_weight: "4",
+            end_weight: "50"
           }
         ],
         start_time,
