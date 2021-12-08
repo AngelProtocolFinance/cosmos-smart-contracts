@@ -6,6 +6,7 @@ import {
   storeCode,
   instantiateContract,
 } from "../../utils/helpers";
+import { wasm_path } from "../../config/constants";
 
 // Deploy HALO/DANO contracts to the Testnet
 export async function setupHalo(
@@ -105,7 +106,7 @@ async function setupAirdrop(
   const airdropCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_airdrop.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_airdrop.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${airdropCodeId}`);
 
   process.stdout.write("Instantiating airdrop contract");
@@ -135,7 +136,7 @@ async function setupCollector(
   const collectorCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_collector.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_collector.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${collectorCodeId}`);
 
   process.stdout.write("Instantiating collector contract");
@@ -166,7 +167,7 @@ async function setupCommunity(
   const communityCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_community.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_community.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${communityCodeId}`);
 
   process.stdout.write("Instantiating community contract");
@@ -196,7 +197,7 @@ async function setupDistributor(
   const distributorCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_distributor.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_distributor.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${distributorCodeId}`);
 
   process.stdout.write("Instantiating distributor contract");
@@ -233,7 +234,7 @@ async function setupGov(
   const govCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_gov.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_gov.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${govCodeId}`);
 
   process.stdout.write("Instantiating gov contract");
@@ -269,7 +270,7 @@ async function setupStaking(
   const stakingCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_staking.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_staking.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${stakingCodeId}`);
 
   process.stdout.write("Instantiating staking contract");
@@ -297,7 +298,7 @@ async function setupVesting(
   const vestingCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_vesting.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_vesting.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vestingCodeId}`);
 
   process.stdout.write("Instantiating vesting contract");

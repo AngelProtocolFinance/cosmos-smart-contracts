@@ -7,6 +7,7 @@ import {
   storeCode,
   migrateContract,
 } from "../../utils/helpers";
+import { wasm_path } from "../../config/constants";
 
 // -----------------------------
 // Base functions to migrate contracts with 
@@ -44,7 +45,7 @@ async function migrateHaloAirdrop(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_airdrop.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_airdrop.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate HALO airdrop contract");
@@ -64,7 +65,7 @@ async function migrateHaloCollector(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_collector.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_collector.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate HALO airdrop contract");
@@ -84,7 +85,7 @@ async function migrateHaloCommunity(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_community.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_community.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate HALO community contract");
@@ -104,7 +105,7 @@ async function migrateHaloDistributor(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_distributor.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_distributor.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate HALO distributor contract");
@@ -124,7 +125,7 @@ async function migrateHaloGov(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_gov.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_gov.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate HALO gov contract");
@@ -144,7 +145,7 @@ async function migrateHaloStaking(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_staking.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_staking.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate HALO staking contract");
@@ -164,7 +165,7 @@ async function migrateHaloVesting(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/halo_vesting.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/halo_vesting.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate HALO vesting contract");

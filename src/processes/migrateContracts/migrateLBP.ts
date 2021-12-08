@@ -7,6 +7,7 @@ import {
   storeCode,
   migrateContract,
 } from "../../utils/helpers";
+import { wasm_path } from "../../config/constants";
 
 // -----------------------------
 // Base functions to migrate contracts with 
@@ -19,8 +20,8 @@ export async function migrateLBPContracts(
   routerContract: string,
 ): Promise<void> {
   // run the migrations desired
-  // await migrateFactory(terra, apTeam, factoryContract);
-  // await migratePair(terra, apTeam, pairContract, factoryContract);
+  await migrateFactory(terra, apTeam, factoryContract);
+  await migratePair(terra, apTeam, pairContract, factoryContract);
   await migrateRouter(terra, apTeam, routerContract);
 }
 
@@ -36,7 +37,7 @@ async function migrateFactory(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_factory.wasm"));
+    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_factory.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate LBP Factory contract");
@@ -57,7 +58,7 @@ async function migratePair(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_pair.wasm"));
+    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_pair.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate LBP Pair contract");
@@ -91,7 +92,7 @@ async function migrateRouter(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_router.wasm"));
+    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_router.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate LBP Router contract");

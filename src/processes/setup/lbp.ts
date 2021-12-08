@@ -3,6 +3,7 @@ import * as path from "path";
 import chalk from "chalk";
 import { LocalTerra, LCDClient, Wallet, MsgExecuteContract } from "@terra-money/terra.js";
 import { instantiateContract, sendTransaction, storeCode } from "../../utils/helpers";
+import { wasm_path } from "../../config/constants";
 
 // Deploy HALO Token and HALO/UST pair contracts to the TestNet/MainNet
 export async function setupLBP(
@@ -20,28 +21,28 @@ export async function setupLBP(
   const factoryCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_factory.wasm"));
+    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_factory.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${factoryCodeId}`);
 
   process.stdout.write("Uploading LBP pair Wasm");
   const pairCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_pair.wasm"));
+    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_pair.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${pairCodeId}`);
 
   process.stdout.write("Uploading LBP token Wasm");
   const tokenCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_token.wasm"));
+    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_token.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${tokenCodeId}`);
 
   process.stdout.write("Uploading LBP router Wasm");
   const routerCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/angelprotocol_lbp_router.wasm"));
+    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_router.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${routerCodeId}`);
 
   // HALO token contract

@@ -8,6 +8,7 @@ import {
   storeCode,
   migrateContract,
 } from "../../utils/helpers";
+import { wasm_path } from "../../config/constants";
 
 // -----------------------------
 // Base functions to migrate contracts with 
@@ -25,13 +26,13 @@ export async function migrateContracts(
   endowmentContracts: string[]
 ): Promise<void> {
   // run the migrations desired
-  // await migrateRegistrar(terra, apTeam, registrar);
-  // await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
-  // await migrateApTeamMultisig(terra, apTeam, cw3ApTeam);
-  // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
-  // await migrateIndexFund(terra, apTeam, indexFund);
-  // await migrateAccounts(terra, apTeam, registrar, endowmentContracts);
-  // await migrateVaults(terra, apTeam, vaultContracts);
+  await migrateRegistrar(terra, apTeam, registrar);
+  await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
+  await migrateApTeamMultisig(terra, apTeam, cw3ApTeam);
+  await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
+  await migrateIndexFund(terra, apTeam, indexFund);
+  await migrateAccounts(terra, apTeam, registrar, endowmentContracts);
+  await migrateVaults(terra, apTeam, vaultContracts);
 }
 
 // -------------------------------------------------
@@ -46,7 +47,7 @@ async function migrateRegistrar(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/registrar.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/registrar.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
   
   process.stdout.write("Migrate Registrar contract");
@@ -66,7 +67,7 @@ async function migrateIndexFund(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/index_fund.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/index_fund.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
   
   process.stdout.write("Migrate Index Fund contract");
@@ -87,7 +88,7 @@ async function migrateCw4Group(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/cw4_group.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/cw4_group.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate CW4 AP Team Group contract");
@@ -111,7 +112,7 @@ async function migrateApTeamMultisig(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/ap_team_multisig.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/ap_team_multisig.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate AP Team MultiSig contract");
@@ -131,7 +132,7 @@ async function migrateGuardianAngelsMultisig(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/guardian_angels_multisig.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/guardian_angels_multisig.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate Guardian Angels MultiSig contract");
@@ -151,7 +152,7 @@ async function migrateVaults(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/anchor.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/anchor.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate Vault contracts\n");
@@ -187,7 +188,7 @@ async function migrateAccounts(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/accounts.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/accounts.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
   
   // Update registrar accounts code ID and migrate all accounts contracts
