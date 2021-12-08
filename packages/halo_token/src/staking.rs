@@ -25,6 +25,10 @@ pub enum ExecuteMsg {
     MigrateStaking {
         new_staking_contract: String,
     },
+    UpdateConfig {
+        halo_token: Option<String>,    // halo token address
+        staking_token: Option<String>, // lp token of HALO-UST pair contract
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

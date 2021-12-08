@@ -52,6 +52,7 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
+        ExecuteMsg::UpdateConfig { halo_token, staking_token } => update_config(deps, env, info, halo_token, staking_token),
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::Unbond { amount } => unbond(deps, env, info, amount),
         ExecuteMsg::Withdraw {} => withdraw(deps, env, info),
@@ -59,6 +60,29 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             new_staking_contract,
         } => migrate_staking(deps, env, info, new_staking_contract),
     }
+}
+
+pub fn update_config(
+    deps: DepsMut,
+    _env: Env,
+    _info: MessageInfo,
+    halo_token: Option<String>,
+    staking_token: Option<String>,
+) -> StdResult<Response> {
+    let mut config: Config = read_config(deps.storage)?;
+
+    if let Some(halo_token) = halo_token {
+        config.halo_token = deps.api.addr_validate(&halo_token)?;
+    }
+    if let Some(staking_token) = staking_token {
+        config.staking_token = deps.api.addr_validate(&staking_token)?;
+    }
+
+    store_config(deps.storage, &config)?;
+
+    Ok(Response::new().add_attributes(vec![
+        ("action", "update_config"),
+    ]))
 }
 
 pub fn receive_cw20(
