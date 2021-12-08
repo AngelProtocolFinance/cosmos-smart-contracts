@@ -42,9 +42,6 @@ let anchorMoneyMarket: string;
 let apTreasury: string;
 
 // LBP contracts
-let tokenCodeId: number;
-let pairCodeId: number;
-let factoryCodeId: number;
 let factoryContract: string;
 let tokenContract: string;
 let pairContract: string;
@@ -121,9 +118,6 @@ function initialize() {
   console.log(`Use ${chalk.cyan(cw4GrpOwners)} as CW4 Endowment Owners Group`);
   console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
 
-  tokenCodeId = config.lbp.token_code_id;
-  pairCodeId = config.lbp.pair_code_id;
-  factoryCodeId = config.lbp.factory_code_id;
   factoryContract = config.lbp.factory_contract;
   tokenContract = config.lbp.token_contract;
   pairContract = config.lbp.pair_contract;
@@ -202,22 +196,22 @@ export async function startSetupContracts(): Promise<void> {
 // -------------------------------------------------------------------------------------
 // setup TerraSwap contracts
 // -------------------------------------------------------------------------------------
-export async function startSetupTerraSwapContracts(): Promise<void> {
-  console.log(chalk.blue("\nTestNet"));
+// export async function startSetupTerraSwapContracts(): Promise<void> {
+//   console.log(chalk.blue("\nTestNet"));
 
-  // Initialize environment information
-  console.log(chalk.yellow("\nStep 1. Environment Info"));
-  initialize();
+//   // Initialize environment information
+//   console.log(chalk.yellow("\nStep 1. Environment Info"));
+//   initialize();
 
-  // Setup TerraSwap contracts
-  console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
-  await setupTerraSwap(
-    terra,
-    apTeam,
-    tokenCodeId,
-    factoryContract
-  );
-}
+//   // Setup TerraSwap contracts
+//   console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
+//   await setupTerraSwap(
+//     terra,
+//     apTeam,
+//     tokenCodeId,
+//     factoryContract
+//   );
+// }
 
 // -------------------------------------------------------------------------------------
 // setup LBP contracts

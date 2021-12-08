@@ -8,7 +8,6 @@ import { migrateHaloContracts } from "../processes/migrateContracts/migrateHalo"
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts } from "../processes/setupContracts/testnet";
 import { setupHalo } from "../processes/setup/halo";
-import { setupTerraSwap } from "../processes/setupTerraSwap/localterra";
 import { testExecute } from "../processes/tests/testnet";
 import { setupLBP } from "../processes/setup/lbp";
 import { migrateLBPContracts } from "../processes/migrateContracts/migrateLBP";
@@ -42,9 +41,6 @@ let endowmentContract4: string;
 let apTreasury: string;
 
 // LBP contracts
-let tokenCodeId: number;
-let pairCodeId: number;
-let factoryCodeId: number;
 let factoryContract: string;
 let tokenContract: string;
 let pairContract: string;
@@ -115,9 +111,6 @@ function initialize() {
   console.log(`Use ${chalk.cyan(cw4GrpOwners)} as CW4 Endowment Owners Group`);
   console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
 
-  tokenCodeId = config.lbp.token_code_id;
-  pairCodeId = config.lbp.pair_code_id;
-  factoryCodeId = config.lbp.factory_code_id;
   factoryContract = config.lbp.factory_contract;
   tokenContract = config.lbp.token_contract;
   pairContract = config.lbp.pair_contract;
@@ -197,17 +190,17 @@ export async function startSetupContracts(): Promise<void> {
 // -------------------------------------------------------------------------------------
 // setup TerraSwap contracts
 // -------------------------------------------------------------------------------------
-export async function startSetupTerraSwapContracts(): Promise<void> {
-  console.log(chalk.blue("\nLocalTerra"));
+// export async function startSetupTerraSwapContracts(): Promise<void> {
+//   console.log(chalk.blue("\nLocalTerra"));
 
-  // Initialize environment information
-  console.log(chalk.yellow("\nStep 1. Environment Info"));
-  initialize();
+//   // Initialize environment information
+//   console.log(chalk.yellow("\nStep 1. Environment Info"));
+//   initialize();
 
-  // Setup TerraSwap contracts
-  console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
-  await setupTerraSwap(terra, apTeam);
-}
+//   // Setup TerraSwap contracts
+//   console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
+//   await setupTerraSwap(terra, apTeam);
+// }
 
 // -------------------------------------------------------------------------------------
 // setup LBP contracts

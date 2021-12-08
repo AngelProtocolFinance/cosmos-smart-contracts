@@ -31,9 +31,6 @@ export const localterra = {
 
   // LBP/AMM contracts
   lbp: {
-    factory_code_id: 0,
-    pair_code_id: 0,
-    token_code_id: 0,
     factory_contract: "",
     token_contract: "",
     pair_contract: "",
@@ -99,10 +96,6 @@ export const testnet = {
   
   // LBP/AMM contracts
   lbp: {
-    factory_code_id: 25462,
-    pair_code_id: 25463,
-    router_code_id: 25465,
-    token_code_id: 25464,
     factory_contract: "terra1xjd5wa7ka4qavl9sx3t7md8j8xleptwqtjkcmt",
     token_contract: "terra1re98scpq7husy3gg78mk7rhcdxuhfvkcvte8pg",
     pair_contract: "terra1xqku2h2up62lyn8ral7547zuc7e2ac94vhjx4t",
@@ -210,9 +203,6 @@ export const mainnet = {
   
   // LBP/AMM contracts
   lbp: {
-    factory_code_id: 5,
-    pair_code_id: 4,
-    token_code_id: 3,
     factory_contract: "terra1ulgw0td86nvs4wtpsc80thv6xelk76ut7a7apj",
     token_contract: "terra1w8kvd6cqpsthupsk4l0clwnmek4l3zr7c84kwq",
     pair_contract: "terra1s7kc5ua5936rfsqhd2rl0ngaphmegwcsze4txh",
