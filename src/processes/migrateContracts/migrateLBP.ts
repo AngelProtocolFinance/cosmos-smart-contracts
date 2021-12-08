@@ -7,6 +7,7 @@ import {
   storeCode,
   migrateContract,
 } from "../../utils/helpers";
+import { testFactoryUpdateConfig } from "../tests/lbp/factory";
 import { wasm_path } from "../../config/constants";
 
 // -----------------------------
@@ -21,8 +22,20 @@ export async function migrateLBPContracts(
 ): Promise<void> {
   // run the migrations desired
   await migrateFactory(terra, apTeam, factoryContract);
-  await migratePair(terra, apTeam, pairContract, factoryContract);
+  const pairCodeId = await migratePair(terra, apTeam, pairContract);
   await migrateRouter(terra, apTeam, routerContract);
+
+  // Update Factory pair_code_id when migrate
+  await testFactoryUpdateConfig(
+    terra,
+    apTeam,
+    factoryContract,
+    undefined,
+    undefined,
+    pairCodeId,
+    undefined,
+    undefined,
+  );
 }
 
 // -------------------------------------------------
@@ -52,8 +65,7 @@ async function migratePair(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   pairContract: string,
-  factoryContract: string,
-): Promise<void> {
+): Promise<number> {
   process.stdout.write("Uploading LBP Pair wasm");
   const codeId = await storeCode(
     terra,
@@ -65,19 +77,7 @@ async function migratePair(
   const result1 = await migrateContract(terra, apTeam, apTeam, pairContract, codeId, {});
   console.log(chalk.green(" Done!"));
 
-  // Update Factory pair_code_id when migrate
-  // testFactoryUpdateConfig(
-  //   terra,
-  //   apTeam,
-  //   factoryContract,
-  //   undefined,
-  //   undefined,
-  //   codeId,
-  //   pairContract,
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  // );
+  return codeId;
 }
 
 // -------------------------------------------------

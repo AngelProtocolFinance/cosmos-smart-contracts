@@ -99,8 +99,9 @@ export const testnet = {
   
   // LBP/AMM contracts
   lbp: {
-    factory_code_id: 24786,
-    pair_code_id: 24769,
+    factory_code_id: 25421,
+    pair_code_id: 25422,
+    router_code_id: 25423,
     token_code_id: 24770,
     factory_contract: "terra1mkdq4qkt8mzankqhjx0vzl8azpj25v2reftkq5",
     token_contract: "terra1z4w06dw3e2y5hxp5psewk2yfcu7f0pppuhkkc9",
