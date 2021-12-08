@@ -116,8 +116,10 @@ import {
 import {
   testQueryPairPair,
   testQueryPairPool,
-  testQueryPairReverseSimulation,
-  testQueryPairSimulation,
+  testQueryPairReverseSimulationNativeToHalo,
+  testQueryPairReverseSimulationHaloToNative,
+  testQueryPairSimulationNativeToHalo,
+  testQueryPairSimulationHaloToNative,
 } from "./lbp/pair";
 import {
   testRouterSwapOperations,
@@ -318,8 +320,10 @@ export async function testExecute(
   // Test query for LBP Pair
   // await testQueryPairPair(terra, pairContract);
   // await testQueryPairPool(terra, pairContract);
-  // await testQueryPairSimulation(terra, pairContract);
-  // await testQueryPairReverseSimulation(terra, pairContract);
+  await testQueryPairSimulationNativeToHalo(terra, pairContract);
+  await testQueryPairSimulationHaloToNative(terra, pairContract, tokenContract);
+  await testQueryPairReverseSimulationNativeToHalo(terra, pairContract);
+  await testQueryPairReverseSimulationHaloToNative(terra, pairContract, tokenContract);
 
   // Test query for LBP Router
   // await testRouterSwapOperations(terra, apTeam, routerContract, tokenContract, apTeam.key.accAddress, "100000000");

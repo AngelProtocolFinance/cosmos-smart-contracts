@@ -31,11 +31,11 @@ export async function testQueryPairPool(
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryPairSimulation(
+export async function testQueryPairSimulationNativeToHalo(
   terra: LocalTerra | LCDClient,
   pairContract: string,
 ): Promise<void> {
-  process.stdout.write("Test - Query Pair Simulation");
+  process.stdout.write("Test - Query Pair Simulation UST->HALO ");
   const currTime = new Date().getTime() / 1000 + 10;
   const result: any = await terra.wasm.contractQuery(pairContract, {
     simulation: {
@@ -55,11 +55,36 @@ export async function testQueryPairSimulation(
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryPairReverseSimulation(
+export async function testQueryPairSimulationHaloToNative(
+  terra: LocalTerra | LCDClient,
+  pairContract: string,
+  tokenContract: string,
+): Promise<void> {
+  process.stdout.write("Test - Query Pair Simulation HALO->UST ");
+  const currTime = new Date().getTime() / 1000 + 10;
+  const result: any = await terra.wasm.contractQuery(pairContract, {
+    simulation: {
+      offer_asset: {
+        info:{
+          token: {
+            contract_addr: tokenContract
+          }
+        },
+        amount: "100000000"
+      },
+      block_time: Math.round(currTime)
+    },
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryPairReverseSimulationNativeToHalo(
   terra: LocalTerra | LCDClient,
   pairContract: string,
 ): Promise<void> {
-  process.stdout.write("Test - Query Pair Reverse Simulation");
+  process.stdout.write("Test - Query Pair Reverse Simulation UST -> HALO ");
   const currTime = new Date().getTime() / 1000 + 10;
   const result: any = await terra.wasm.contractQuery(pairContract, {
     reverse_simulation: {
@@ -67,6 +92,31 @@ export async function testQueryPairReverseSimulation(
         info:{
           native_token: {
             denom: "uusd".toString()
+          }
+        },
+        amount: "100000000"
+      },
+      block_time: Math.round(currTime)
+    },
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryPairReverseSimulationHaloToNative(
+  terra: LocalTerra | LCDClient,
+  pairContract: string,
+  tokenContract: string,
+): Promise<void> {
+  process.stdout.write("Test - Query Pair Reverse Simulation HALO -> UST ");
+  const currTime = new Date().getTime() / 1000 + 10;
+  const result: any = await terra.wasm.contractQuery(pairContract, {
+    reverse_simulation: {
+      ask_asset: {
+        info:{
+          token: {
+            contract_addr: tokenContract
           }
         },
         amount: "100000000"
