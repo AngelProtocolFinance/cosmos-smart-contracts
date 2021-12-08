@@ -96,11 +96,11 @@ export const testnet = {
   
   // LBP/AMM contracts
   lbp: {
-    factory_contract: "terra1xjd5wa7ka4qavl9sx3t7md8j8xleptwqtjkcmt",
-    token_contract: "terra1re98scpq7husy3gg78mk7rhcdxuhfvkcvte8pg",
-    pair_contract: "terra1xqku2h2up62lyn8ral7547zuc7e2ac94vhjx4t",
-    router_contract: "terra18aja25mfpxxpdfm4xm09uju8szjzlps23cadep",
-    lp_token_contract: "terra1kl37vxzsykykuzkpxrzwp9mz5thhfd0zecxej9",
+    factory_contract: "terra1prkrleycc6kvmytg0na0znmqgcvt6u8xexhs6k",
+    token_contract: "terra1pch0pzk5r4dd6vn4q49lj9rdm5dmu2s0747pvh",
+    pair_contract: "terra1v985dc0xgmsndsjry00fr6vhpa5kh9yruzhct5",
+    router_contract: "terra1ym4f69jqdpfd5jhe2w92rsarftz95aaj9r4er7",
+    lp_token_contract: "terra19szaxaeylz9frtv9sv7q8ws2q9numf4wm7d3ku",
     // HALO token supply amount
     token_amount: "80000000000",
     native_token_amount: "1300000000",
@@ -110,13 +110,13 @@ export const testnet = {
 
   // HALO contracts
   halo: {
-    airdrop_contract: "terra1j88hsjuszkle3sm5gvc888c26zsemcecxf0wc3",
-    collector_contract: "terra1kkm8pwfm7lz5v0fvzn6lsvvshfq3jfwurqj9n2",
-    community_contract: "terra1x8g6za808xu5c462eqflqs8u7ca4ukznxzs6mg",
-    distributor_contract: "terra12px7atv0htmgmvg9exzjavl2nyqarlzhz99c6r",
-    gov_contract: "terra1w32qjal8d9eq6wnpe5x6m8ry40v6dj72dvml00",
-    staking_contract: "terra1cfzc9z8t7gr39flgt7vddjp693cxzpc4s99yqt",
-    vesting_contract: "terra144m5wpvazpngvjxzxp09qjcqk5s7pfpsulnzlg",
+    airdrop_contract: "terra10n0dexg7xl7dkqke4r20jw3elw6fx87naar6xt",
+    collector_contract: "terra1wlr3fq2thnkzxw2flagle8w6yl52vx46mgrm5l",
+    community_contract: "terra13qsnvljqg8kd7yplwktqrgyq3vsqf7jz3k278j",
+    distributor_contract: "terra1lww65p2jg88dv0cgu8r58g0ka65u87wkuzzkpc",
+    gov_contract: "terra16gt0u9havxdc8fxs5mqnmfnu4nr28umve3rl3t",
+    staking_contract: "terra1avyyaczr5tq96jd6gedk6qfvududtgfdmhjmnf",
+    vesting_contract: "terra1rl0msz45xe888g08sktrv0k4fq39fxkun0tqg",
   }
 } as const;
 
