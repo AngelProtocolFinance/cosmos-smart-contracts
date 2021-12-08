@@ -99,15 +99,15 @@ export const testnet = {
   
   // LBP/AMM contracts
   lbp: {
-    factory_code_id: 25421,
-    pair_code_id: 25422,
-    router_code_id: 25423,
-    token_code_id: 24770,
-    factory_contract: "terra1mkdq4qkt8mzankqhjx0vzl8azpj25v2reftkq5",
-    token_contract: "terra1z4w06dw3e2y5hxp5psewk2yfcu7f0pppuhkkc9",
-    pair_contract: "terra1wll65jm4d3zatwxf3rhhgzngu0f53m4xycred0",
-    router_contract: "terra1kw86evmyyjqre2upxx7m0mqal5ydjwx4sm5e8g",
-    lp_token_contract: "terra1azrhpy9ls6262l85sl3n2lkhjgvw5a5usjhjwy",
+    factory_code_id: 25462,
+    pair_code_id: 25463,
+    router_code_id: 25465,
+    token_code_id: 25464,
+    factory_contract: "terra1xjd5wa7ka4qavl9sx3t7md8j8xleptwqtjkcmt",
+    token_contract: "terra1re98scpq7husy3gg78mk7rhcdxuhfvkcvte8pg",
+    pair_contract: "terra1xqku2h2up62lyn8ral7547zuc7e2ac94vhjx4t",
+    router_contract: "terra18aja25mfpxxpdfm4xm09uju8szjzlps23cadep",
+    lp_token_contract: "terra1kl37vxzsykykuzkpxrzwp9mz5thhfd0zecxej9",
     // HALO token supply amount
     token_amount: "160000000000",
     native_token_amount: "2600000000",
@@ -117,13 +117,13 @@ export const testnet = {
 
   // HALO contracts
   halo: {
-    airdrop_contract: "terra1mndcdkklysq22h6rz4vdd3fvyx7tffc2swg0kc",
-    collector_contract: "terra14d0uufjsmaktaanxtnlm38cullcq449gu35x0q",
-    community_contract: "terra1peq4zcxzcpdv89vmfx4rvv4207esv6zdhqtfjd",
-    distributor_contract: "terra13gjk2n3rhelgsnjhhe5jer9auvuqmcedzzclx9",
-    gov_contract: "terra1l8aj2jvjsz3whqyvt0hz5fvf3vhd8gcrxf6r56",
-    staking_contract: "terra1ve9jpy2pumfg33ky8gl7l6l3e7h8ppuwajkx0k",
-    vesting_contract: "terra15scsvyuqkp0z2s8eet9p3jskduv8ypmc7ffwpn",
+    airdrop_contract: "terra1j88hsjuszkle3sm5gvc888c26zsemcecxf0wc3",
+    collector_contract: "terra1kkm8pwfm7lz5v0fvzn6lsvvshfq3jfwurqj9n2",
+    community_contract: "terra1x8g6za808xu5c462eqflqs8u7ca4ukznxzs6mg",
+    distributor_contract: "terra12px7atv0htmgmvg9exzjavl2nyqarlzhz99c6r",
+    gov_contract: "terra1w32qjal8d9eq6wnpe5x6m8ry40v6dj72dvml00",
+    staking_contract: "terra1cfzc9z8t7gr39flgt7vddjp693cxzpc4s99yqt",
+    vesting_contract: "terra144m5wpvazpngvjxzxp09qjcqk5s7pfpsulnzlg",
   }
 } as const;
 
