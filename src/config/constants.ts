@@ -40,9 +40,9 @@ export const localterra = {
     router_contract: "",
     lp_token_contract: "",
     // HALO token supply amount
-    token_amount: "160000000000",
-    native_token_amount: "2600000000",
-    lbp_commission_rate: "0.02",
+    token_amount: "80000000000000",
+    native_token_amount: "1300000000000",
+    lbp_commission_rate: "0.03",
     amm_commission_rate: "0.01",
   },
   
@@ -109,9 +109,9 @@ export const testnet = {
     router_contract: "terra18aja25mfpxxpdfm4xm09uju8szjzlps23cadep",
     lp_token_contract: "terra1kl37vxzsykykuzkpxrzwp9mz5thhfd0zecxej9",
     // HALO token supply amount
-    token_amount: "160000000000",
-    native_token_amount: "2600000000",
-    lbp_commission_rate: "0.02",
+    token_amount: "80000000000",
+    native_token_amount: "1300000000",
+    lbp_commission_rate: "0.03",
     amm_commission_rate: "0.01",
   },
 
@@ -219,9 +219,9 @@ export const mainnet = {
     router_contract: "",
     lp_token_contract: "",
     // HALO token supply amount
-    token_amount: "160000000000",
-    native_token_amount: "2600000000",
-    lbp_commission_rate: "0.02",
+    token_amount: "80000000000000",
+    native_token_amount: "1300000000000",
+    lbp_commission_rate: "0.03",
     amm_commission_rate: "0.01",
   },
 
