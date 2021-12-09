@@ -95,6 +95,39 @@ export async function testPairWithdrawLiquidity(
   console.log(chalk.green(" Done!"));
 }
 
+
+//----------------------------------------------------------------------------------------
+// TEST: Swap Native -> HALO
+//
+// SCENARIO:
+//
+//----------------------------------------------------------------------------------------
+export async function testPairSwapHaloToNative(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  pairContract: string,
+  tokenContract: string,
+  amount: string,
+): Promise<void> {
+  process.stdout.write("Swap Native -> HALO ");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(
+      apTeam.key.accAddress,
+      tokenContract,
+      {
+        send: {
+          contract: pairContract,
+          amount,
+          msg: toEncodedBinary({
+            swap: {}
+          })
+        },
+      }
+    ),
+  ]);
+  console.log(chalk.green(" Done!"));
+}
+
 //----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------

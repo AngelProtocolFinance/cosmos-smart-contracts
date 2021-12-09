@@ -122,6 +122,7 @@ import {
   testQueryPairSimulationHaloToNative,
   testPairProvideLiquidity,
   testPairWithdrawLiquidity,
+  testPairSwapHaloToNative,
 } from "./lbp/pair";
 import {
   testRouterSwapOperations,
@@ -322,6 +323,7 @@ export async function testExecute(
   // Test query for LBP Pair
   // await testPairProvideLiquidity(terra, apTeam2, tokenContract, pairContract, "100000000", "100000000");
   // await testPairWithdrawLiquidity(terra, apTeam, pairContract, lpTokenContract, "100000000");
+  // await testPairSwapHaloToNative(terra, apTeam, pairContract, tokenContract, "100000000");
   // await testQueryPairPair(terra, pairContract);
   // await testQueryPairPool(terra, pairContract);
   // await testQueryPairSimulationNativeToHalo(terra, pairContract);
