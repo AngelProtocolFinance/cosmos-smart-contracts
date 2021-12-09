@@ -247,7 +247,7 @@ export async function testExecute(
   // await testCollectorUpdateConfig(terra, apTeam, pleb, haloGov, haloCollector, "0.5", undefined);
   // await testCollectorSweep(terra, apTeam, haloCollector);
   // await testQueryCollectorConfig(terra, haloCollector);
-  await testQueryCollectorPair(terra, haloCollector);
+  // await testQueryCollectorPair(terra, haloCollector);
 
   // Test query for HALO community
   // await testCommunityUpdateConfig(terra, apTeam, pleb, haloGov, haloCommunity, "1000000", undefined);
