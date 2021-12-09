@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Coin, ContractResult, Decimal, OwnedDeps, Querier,
+    from_binary, from_slice, to_binary, Addr, Coin, ContractResult, Decimal, OwnedDeps, Querier,
     QuerierResult, QueryRequest, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg};
@@ -11,7 +11,7 @@ use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg};
 use std::collections::HashMap;
 
 use terra_cosmwasm::{TaxCapResponse, TaxRateResponse, TerraQuery, TerraQueryWrapper, TerraRoute};
-use terraswap::asset::{AssetInfo, PairInfo};
+use astroport_lbp::asset::PairInfo;
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
 /// this uses our CustomQuerier.
@@ -32,7 +32,7 @@ pub struct WasmMockQuerier {
     base: MockQuerier<TerraQueryWrapper>,
     token_querier: TokenQuerier,
     tax_querier: TaxQuerier,
-    terraswap_factory_querier: TerraswapFactoryQuerier,
+    lbp_factory_querier: LBPFactoryQuerier,
 }
 
 #[derive(Clone, Default)]
@@ -89,25 +89,26 @@ pub(crate) fn caps_to_map(caps: &[(&String, &Uint128)]) -> HashMap<String, Uint1
 }
 
 #[derive(Clone, Default)]
-pub struct TerraswapFactoryQuerier {
-    pairs: HashMap<String, String>,
+pub struct LBPFactoryQuerier {
+    pairs: HashMap<Addr, PairInfo>,
 }
 
-impl TerraswapFactoryQuerier {
-    pub fn new(pairs: &[(&String, &String)]) -> Self {
-        TerraswapFactoryQuerier {
+impl LBPFactoryQuerier {
+    pub fn new(pairs: &[(&Addr, &PairInfo)]) -> Self {
+        LBPFactoryQuerier {
             pairs: pairs_to_map(pairs),
         }
     }
 }
 
-pub(crate) fn pairs_to_map(pairs: &[(&String, &String)]) -> HashMap<String, String> {
-    let mut pairs_map: HashMap<String, String> = HashMap::new();
+pub(crate) fn pairs_to_map(pairs: &[(&Addr, &PairInfo)]) -> HashMap<Addr, PairInfo> {
+    let mut pairs_map: HashMap<Addr, PairInfo> = HashMap::new();
     for (key, pair) in pairs.iter() {
-        pairs_map.insert(key.to_string(), pair.to_string());
+        pairs_map.insert((*key).clone(), (*pair).clone());
     }
     pairs_map
 }
+
 
 impl Querier for WasmMockQuerier {
     fn raw_query(&self, bin_request: &[u8]) -> QuerierResult {
@@ -128,7 +129,7 @@ impl Querier for WasmMockQuerier {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    Pair { asset_infos: [AssetInfo; 2] },
+    Pair {},
 }
 
 impl WasmMockQuerier {
@@ -160,26 +161,17 @@ impl WasmMockQuerier {
                 }
             }
             QueryRequest::Wasm(WasmQuery::Smart { contract_addr, msg }) => match from_binary(msg) {
-                Ok(QueryMsg::Pair { asset_infos }) => {
-                    let key = asset_infos[0].to_string() + asset_infos[1].to_string().as_str();
-                    match self.terraswap_factory_querier.pairs.get(&key) {
-                        Some(v) => SystemResult::Ok(ContractResult::from(to_binary(&PairInfo {
-                            contract_addr: v.to_string(),
-                            liquidity_token: "liquidity".to_string(),
-                            asset_infos: [
-                                AssetInfo::NativeToken {
-                                    denom: "uusd".to_string(),
-                                },
-                                AssetInfo::NativeToken {
-                                    denom: "uusd".to_string(),
-                                },
-                            ],
-                        }))),
-                        None => SystemResult::Err(SystemError::InvalidRequest {
-                            error: "No pair info exists".to_string(),
-                            request: msg.as_slice().into(),
-                        }),
-                    }
+                Ok(QueryMsg::Pair {}) => {
+                    let pair_info: PairInfo =
+                        match self.lbp_factory_querier.pairs.get(&Addr::unchecked(contract_addr)) {
+                            Some(v) => v.clone(),
+                            None => {
+                                return SystemResult::Err(SystemError::NoSuchContract {
+                                    addr: contract_addr.clone(),
+                                })
+                            }
+                        };
+                    SystemResult::Ok(to_binary(&pair_info).into())
                 }
                 _ => match from_binary(msg).unwrap() {
                     Cw20QueryMsg::Balance { address } => {
@@ -227,7 +219,7 @@ impl WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
             tax_querier: TaxQuerier::default(),
-            terraswap_factory_querier: TerraswapFactoryQuerier::default(),
+            lbp_factory_querier: LBPFactoryQuerier::default(),
         }
     }
 
@@ -241,8 +233,8 @@ impl WasmMockQuerier {
         self.tax_querier = TaxQuerier::new(rate, caps);
     }
 
-    // configure the terraswap pair
-    pub fn with_terraswap_pairs(&mut self, pairs: &[(&String, &String)]) {
-        self.terraswap_factory_querier = TerraswapFactoryQuerier::new(pairs);
+    // configure the LBP pair
+    pub fn with_lbp_pairs(&mut self, pairs: &[(&Addr, &PairInfo)]) {
+        self.lbp_factory_querier = LBPFactoryQuerier::new(pairs);
     }
 }

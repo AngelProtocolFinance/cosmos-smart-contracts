@@ -7,15 +7,15 @@ use cosmwasm_std::{
 };
 use cw20::Cw20ExecuteMsg;
 use halo_token::collector::{ConfigResponse, ExecuteMsg, InstantiateMsg};
-use terraswap::asset::{Asset, AssetInfo};
-use terraswap::pair::ExecuteMsg as TerraswapExecuteMsg;
+use astroport_lbp::asset::{Asset, AssetInfo};
+use astroport_lbp::pair::ExecuteMsg as LBPExecuteMsg;
 
 #[test]
 fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        terraswap_factory: "terraswapfactory".to_string(),
+        lbp_factory: "lbpfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
         distributor_contract: "distributor".to_string(),
@@ -29,7 +29,7 @@ fn proper_initialization() {
 
     // it worked, let's query the state
     let config: ConfigResponse = query_config(deps.as_ref()).unwrap();
-    assert_eq!("terraswapfactory", config.terraswap_factory.as_str());
+    assert_eq!("lbpfactory", config.lbp_factory.as_str());
 }
 
 #[test]
@@ -37,7 +37,7 @@ fn update_config() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        terraswap_factory: "terraswapfactory".to_string(),
+        lbp_factory: "lbpfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
         distributor_contract: "distributor".to_string(),
@@ -86,12 +86,9 @@ fn test_sweep() {
         Decimal::percent(1),
         &[(&"uusd".to_string(), &Uint128::from(1000000u128))],
     );
-
-    deps.querier
-        .with_terraswap_pairs(&[(&"uusdtokenHALO".to_string(), &"pairANC".to_string())]);
-
+    
     let msg = InstantiateMsg {
-        terraswap_factory: "terraswapfactory".to_string(),
+        lbp_factory: "lbpfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
         distributor_contract: "distributor".to_string(),
@@ -113,7 +110,7 @@ fn test_sweep() {
         vec![SubMsg {
             msg: WasmMsg::Execute {
                 contract_addr: "pairANC".to_string(),
-                msg: to_binary(&TerraswapExecuteMsg::Swap {
+                msg: to_binary(&LBPExecuteMsg::Swap {
                     offer_asset: Asset {
                         info: AssetInfo::NativeToken {
                             denom: "uusd".to_string()
@@ -148,7 +145,7 @@ fn test_distribute() {
     )]);
 
     let msg = InstantiateMsg {
-        terraswap_factory: "terraswapfactory".to_string(),
+        lbp_factory: "lbpfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
         distributor_contract: "distributor".to_string(),

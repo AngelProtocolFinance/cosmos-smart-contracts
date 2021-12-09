@@ -7,12 +7,14 @@ use cosmwasm_std::{
 };
 
 use crate::state::{read_config, store_config, Config};
+use crate::querier::query_pair_info;
 
 use cw20::Cw20ExecuteMsg;
 use halo_token::collector::{ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
-use terraswap::asset::{Asset, AssetInfo, PairInfo};
-use terraswap::pair::ExecuteMsg as TerraswapExecuteMsg;
-use terraswap::querier::{query_balance, query_pair_info, query_token_balance};
+use astroport_lbp::asset::{Asset, AssetInfo, PairInfo};
+use astroport_lbp::factory::FactoryPairInfo;
+use astroport_lbp::pair::ExecuteMsg as LBPExecuteMsg;
+use astroport_lbp::querier::{query_balance, query_factory_pair_info, query_token_balance};
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -25,7 +27,7 @@ pub fn instantiate(
         deps.storage,
         &Config {
             gov_contract: deps.api.addr_validate(&msg.gov_contract)?,
-            terraswap_factory: deps.api.addr_validate(&msg.terraswap_factory)?,
+            lbp_factory: deps.api.addr_validate(&msg.lbp_factory)?,
             halo_token: deps.api.addr_validate(&msg.halo_token)?,
             distributor_contract: deps.api.addr_validate(&msg.distributor_contract)?,
             reward_factor: msg.reward_factor,
@@ -75,20 +77,20 @@ const SWEEP_REPLY_ID: u64 = 1;
 pub fn sweep(deps: DepsMut, env: Env, denom: String) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
 
-    let pair_info: PairInfo = query_pair_info(
-        &deps.querier,
-        config.terraswap_factory,
+    let pair_info: FactoryPairInfo = query_factory_pair_info(
+        deps.as_ref(),
+        &config.lbp_factory,
         &[
             AssetInfo::NativeToken {
                 denom: denom.to_string(),
             },
             AssetInfo::Token {
-                contract_addr: config.halo_token.to_string(),
+                contract_addr: config.halo_token,
             },
         ],
     )?;
 
-    let amount = query_balance(&deps.querier, env.contract.address, denom.to_string())?;
+    let amount = query_balance(deps.as_ref(), &env.contract.address, denom.to_string())?;
 
     let swap_asset = Asset {
         info: AssetInfo::NativeToken {
@@ -98,12 +100,12 @@ pub fn sweep(deps: DepsMut, env: Env, denom: String) -> StdResult<Response> {
     };
 
     // deduct tax first
-    let amount = (swap_asset.deduct_tax(&deps.querier)?).amount;
+    let amount = (swap_asset.deduct_tax(deps.as_ref())?).amount;
     Ok(Response::new()
         .add_submessage(SubMsg::reply_on_success(
             CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: pair_info.contract_addr,
-                msg: to_binary(&TerraswapExecuteMsg::Swap {
+                contract_addr: pair_info.contract_addr.to_string(),
+                msg: to_binary(&LBPExecuteMsg::Swap {
                     offer_asset: Asset {
                         amount,
                         ..swap_asset
@@ -142,9 +144,9 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> StdResult<Response> {
 pub fn distribute(deps: DepsMut, env: Env) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
     let amount = query_token_balance(
-        &deps.querier,
-        config.halo_token.clone(),
-        env.contract.address,
+        deps.as_ref(),
+        &config.halo_token,
+        &env.contract.address,
     )?;
 
     let distribute_amount = amount * config.reward_factor;
@@ -185,7 +187,7 @@ pub fn distribute(deps: DepsMut, env: Env) -> StdResult<Response> {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::Pair { denom } => to_binary(&query_pair(deps, denom)?)
+        QueryMsg::Pair {} => to_binary(&query_pair(deps)?)
     }
 }
 
@@ -193,7 +195,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let state = read_config(deps.storage)?;
     let resp = ConfigResponse {
         gov_contract: state.gov_contract.to_string(),
-        terraswap_factory: state.terraswap_factory.to_string(),
+        lbp_factory: state.lbp_factory.to_string(),
         halo_token: state.halo_token.to_string(),
         distributor_contract: state.distributor_contract.to_string(),
         reward_factor: state.reward_factor,
@@ -202,20 +204,12 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(resp)
 }
 
-pub fn query_pair(deps: Deps, denom: String) -> StdResult<PairInfo> {
+pub fn query_pair(deps: Deps) -> StdResult<PairInfo> {
     let config: Config = read_config(deps.storage)?;
 
     let pair_info: PairInfo = query_pair_info(
-        &deps.querier,
-        config.terraswap_factory,
-        &[
-            AssetInfo::NativeToken {
-                denom: denom.to_string(),
-            },
-            AssetInfo::Token {
-                contract_addr: config.halo_token.to_string(),
-            },
-        ],
+        deps,
+        &config.lbp_factory,
     )?;
 
     Ok(pair_info)

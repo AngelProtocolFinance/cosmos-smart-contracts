@@ -6,8 +6,8 @@
     "distributor_contract",
     "gov_contract",
     "halo_token",
-    "reward_factor",
-    "terraswap_factory"
+    "lbp_factory",
+    "reward_factor"
   ],
   "properties": {
     "distributor_contract": {
@@ -19,11 +19,11 @@
     "halo_token": {
       "type": "string"
     },
+    "lbp_factory": {
+      "type": "string"
+    },
     "reward_factor": {
       "$ref": "#/definitions/Decimal"
-    },
-    "terraswap_factory": {
-      "type": "string"
     }
   },
   "definitions": {

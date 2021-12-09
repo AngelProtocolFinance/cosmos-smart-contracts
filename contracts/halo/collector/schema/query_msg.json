@@ -13,6 +13,18 @@
         }
       },
       "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "pair"
+      ],
+      "properties": {
+        "pair": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
     }
   ]
 }

@@ -3,7 +3,7 @@
   "title": "ExecuteMsg",
   "anyOf": [
     {
-      "description": "Update config interface to enable reward_factor update",
+      "description": "Update config interface to enable reward_factor / gov_contract update",
       "type": "object",
       "required": [
         "update_config"
@@ -12,6 +12,12 @@
         "update_config": {
           "type": "object",
           "properties": {
+            "gov_contract": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
             "reward_factor": {
               "anyOf": [
                 {

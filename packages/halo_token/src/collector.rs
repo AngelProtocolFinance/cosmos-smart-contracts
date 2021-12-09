@@ -6,7 +6,7 @@ use cosmwasm_std::Decimal;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub gov_contract: String, // collected rewards receiver
-    pub terraswap_factory: String,
+    pub lbp_factory: String,
     pub halo_token: String,
     pub distributor_contract: String,
     pub reward_factor: Decimal,
@@ -31,14 +31,14 @@ pub enum ExecuteMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
-    Pair { denom: String }
+    Pair {}
 }
 
 // We define a custom struct for each query response
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub gov_contract: String, // collected rewards receiver
-    pub terraswap_factory: String,
+    pub lbp_factory: String,
     pub halo_token: String,
     pub distributor_contract: String,
     pub reward_factor: Decimal,
