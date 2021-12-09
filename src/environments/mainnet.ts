@@ -223,7 +223,7 @@ export async function startSetupHalo(): Promise<void> {
     apTeam,
     registrar,
     tokenContract,    // halo_token contract
-    factoryContract,  // terraswap_factory contract
+    factoryContract,  // LBP factory contract
     lpTokenContract,     // staking_token: lp token of ANC-UST pair contract
     30,            // quorum
     50,            // threshold,

@@ -107,7 +107,7 @@ export async function testQueryCollectorPair(
 ): Promise<void> {
   process.stdout.write("Test - Query Collector Config");
   const result: any = await terra.wasm.contractQuery(collectorContract, {
-    pair: { denom: "uusd" },
+    pair: {},
   });
 
   console.log(result);

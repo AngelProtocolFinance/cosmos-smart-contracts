@@ -1,6 +1,67 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import chalk from "chalk";
-import { LCDClient, LocalTerra } from "@terra-money/terra.js";
+import * as chai from "chai";
+import chaiAsPromised from "chai-as-promised";
+import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
+
+chai.use(chaiAsPromised);
+const { expect } = chai;
+
+//----------------------------------------------------------------------------------------
+// TEST: Provide liquidity
+//
+// SCENARIO:
+//
+//----------------------------------------------------------------------------------------
+export async function testPairProvideLiquidity(
+  terra: LocalTerra | LCDClient,
+  provider: Wallet,
+  tokenContract: string,
+  pairContract: string,
+  tokenAmount: string,
+  nativeTokenAmount: string,
+): Promise<void> {
+  process.stdout.write("Provide liquidity to the New Pair contract");
+  await sendTransaction(terra, provider, [
+    new MsgExecuteContract(provider.key.accAddress, tokenContract, {
+      increase_allowance: {
+        amount: tokenAmount,
+        spender: pairContract,
+      },
+    }),
+    new MsgExecuteContract(
+      provider.key.accAddress,
+      pairContract,
+      {
+        provide_liquidity: {
+          assets: [
+            {
+              info: {
+                token: {
+                  contract_addr: tokenContract,
+                },
+              },
+              amount: tokenAmount,
+            },
+            {
+              info: {
+                native_token: {
+                  denom: "uusd",
+                },
+              },
+              amount: nativeTokenAmount,
+            },
+          ],
+        },
+      },
+      {
+        uusd: nativeTokenAmount,
+      }
+    ),
+  ]);
+  console.log(chalk.green(" Done!"));
+}
 
 //----------------------------------------------------------------------------------------
 // Querying tests

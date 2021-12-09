@@ -120,6 +120,7 @@ import {
   testQueryPairReverseSimulationHaloToNative,
   testQueryPairSimulationNativeToHalo,
   testQueryPairSimulationHaloToNative,
+  testPairProvideLiquidity,
 } from "./lbp/pair";
 import {
   testRouterSwapOperations,
@@ -246,7 +247,7 @@ export async function testExecute(
   // await testCollectorUpdateConfig(terra, apTeam, pleb, haloGov, haloCollector, "0.5", undefined);
   // await testCollectorSweep(terra, apTeam, haloCollector);
   // await testQueryCollectorConfig(terra, haloCollector);
-  // await testQueryCollectorPair(terra, haloCollector);
+  await testQueryCollectorPair(terra, haloCollector);
 
   // Test query for HALO community
   // await testCommunityUpdateConfig(terra, apTeam, pleb, haloGov, haloCommunity, "1000000", undefined);
@@ -318,6 +319,7 @@ export async function testExecute(
   // await testQueryFactoryPairs(terra, factoryContract);
 
   // Test query for LBP Pair
+  // await testPairProvideLiquidity(terra, apTeam2, tokenContract, pairContract, "100000000", "100000000");
   // await testQueryPairPair(terra, pairContract);
   // await testQueryPairPool(terra, pairContract);
   // await testQueryPairSimulationNativeToHalo(terra, pairContract);

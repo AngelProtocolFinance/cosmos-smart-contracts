@@ -61,14 +61,14 @@ async function migrateHaloCollector(
   apTeam: Wallet,
   haloCollector: string,
 ): Promise<void> {
-  process.stdout.write("Uploading HALO airdrop collector");
+  process.stdout.write("Uploading HALO collector");
   const codeId = await storeCode(
     terra,
     apTeam,
     path.resolve(__dirname, `${wasm_path.core}/halo_collector.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
-  process.stdout.write("Migrate HALO airdrop contract");
+  process.stdout.write("Migrate HALO collector contract");
   const result1 = await migrateContract(terra, apTeam, apTeam, haloCollector, codeId, {});
   console.log(chalk.green(" Done!"));
 }

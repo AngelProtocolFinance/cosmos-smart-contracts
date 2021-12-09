@@ -142,7 +142,7 @@ async function setupCollector(
   process.stdout.write("Instantiating collector contract");
   const collectorResult = await instantiateContract(terra, apTeam, apTeam, collectorCodeId, {
     gov_contract: govContract,
-    terraswap_factory: factoryContract,
+    lbp_factory: factoryContract,
     halo_token: tokenContract,
     distributor_contract: distributorContract,
     reward_factor: rewardFactor

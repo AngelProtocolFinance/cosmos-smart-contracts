@@ -232,7 +232,7 @@ async function provideLiquidity(
   nativeTokenAmount: string,
 ): Promise<void> {
   process.stdout.write("Provide liquidity to the New Pair contract");
-  const liqAddResult = await sendTransaction(terra, apTeam, [
+  await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
       increase_allowance: {
         amount: tokenAmount,
