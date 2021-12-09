@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { Coin, LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -95,9 +95,8 @@ export async function testPairWithdrawLiquidity(
   console.log(chalk.green(" Done!"));
 }
 
-
 //----------------------------------------------------------------------------------------
-// TEST: Swap Native -> HALO
+// TEST: Swap HALO -> Native
 //
 // SCENARIO:
 //
@@ -109,7 +108,7 @@ export async function testPairSwapHaloToNative(
   tokenContract: string,
   amount: string,
 ): Promise<void> {
-  process.stdout.write("Swap Native -> HALO ");
+  process.stdout.write("Swap HALO -> Native ");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(
       apTeam.key.accAddress,
@@ -123,6 +122,44 @@ export async function testPairSwapHaloToNative(
           })
         },
       }
+    ),
+  ]);
+  console.log(chalk.green(" Done!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Swap HALO -> Native
+//
+// SCENARIO:
+//
+//----------------------------------------------------------------------------------------
+export async function testPairSwapNativeToHalo(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  pairContract: string,
+  amount: string,
+): Promise<void> {
+  process.stdout.write("Swap Native -> Halo ");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(
+      apTeam.key.accAddress,
+      pairContract,
+      {
+        swap: {
+          sender: apTeam.key.accAddress,
+          offer_asset: {
+            info: {
+              native_token: {
+                denom: "uusd",
+              }
+            },
+            amount,
+          }
+        },
+      },
+      [
+        new Coin("uusd", amount),
+      ]
     ),
   ]);
   console.log(chalk.green(" Done!"));
