@@ -206,10 +206,19 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
 pub fn query_pair(deps: Deps) -> StdResult<PairInfo> {
     let config: Config = read_config(deps.storage)?;
+    let asset_infos: [AssetInfo; 2] = [
+        AssetInfo::NativeToken {
+            denom: "uusd".to_string(),
+        },
+        AssetInfo::Token {
+            contract_addr: config.halo_token,
+        }
+    ];
 
     let pair_info: PairInfo = query_pair_info(
         deps,
         &config.lbp_factory,
+        asset_infos,
     )?;
 
     Ok(pair_info)
