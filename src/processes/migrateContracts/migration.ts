@@ -26,13 +26,17 @@ export async function migrateContracts(
   endowmentContracts: string[]
 ): Promise<void> {
   // run the migrations desired
-  await migrateRegistrar(terra, apTeam, registrar);
-  await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
-  await migrateApTeamMultisig(terra, apTeam, cw3ApTeam);
-  await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
-  await migrateIndexFund(terra, apTeam, indexFund);
-  await migrateAccounts(terra, apTeam, registrar, endowmentContracts);
-  await migrateVaults(terra, apTeam, vaultContracts);
+  // await migrateRegistrar(terra, apTeam, registrar);
+  // await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
+  // await migrateApTeamMultisig(terra, apTeam, cw3ApTeam);
+  // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
+  // await migrateIndexFund(terra, apTeam, indexFund);
+  // await migrateAccounts(terra, apTeam, registrar, endowmentContracts);
+  // await migrateVaults(terra, apTeam, vaultContracts);
+  // accounts_wasm_code = 1596 // change to latest wasm code
+  // await migrateExistingAccounts(terra, apTeam, account_wasm_id, [
+  //   "terra16h3qzecumpa5lxf6ekt2869mpycms5rac0lwp8",
+  // ]);
 }
 
 // -------------------------------------------------
@@ -199,4 +203,29 @@ async function migrateAccounts(
     }),
   ]);
   console.log(chalk.green(" Done!"));
+}
+
+// -------------------------------------------------
+//  Migrate a list of existing Endowment contracts
+//--------------------------------------------------
+async function migrateExistingAccounts(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  account_wasm_id: number,
+  endowmentContracts: string[]
+): Promise<void> {
+  process.stdout.write("Migrating existing Endowment Accounts contracts\n");
+  let prom = Promise.resolve();
+  endowmentContracts.forEach(endowment => {
+    // eslint-disable-next-line no-async-promise-executor
+    prom = prom.then(() => new Promise(async (resolve, reject) => {
+      try {
+        await migrateContract(terra, apTeam, apTeam, endowment, account_wasm_id, {});
+        console.log(`Endmowment ${endowment} - ${chalk.green("Done!")}`);
+        resolve();
+      } catch(e) {
+        reject(e);
+      }
+    }));
+  });
 }
