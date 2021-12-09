@@ -64,6 +64,38 @@ export async function testPairProvideLiquidity(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: Withdraw liquidity
+//
+// SCENARIO:
+//
+//----------------------------------------------------------------------------------------
+export async function testPairWithdrawLiquidity(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  pairContract: string,
+  liquidityToken: string,
+  amount: string,
+): Promise<void> {
+  process.stdout.write("Withdraw liquidity token");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(
+      apTeam.key.accAddress,
+      liquidityToken,
+      {
+        send: {
+          contract: pairContract,
+          amount,
+          msg: toEncodedBinary({
+            withdraw_liquidity: {}
+          })
+        },
+      }
+    ),
+  ]);
+  console.log(chalk.green(" Done!"));
+}
+
+//----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryPairPair(
