@@ -7,6 +7,7 @@ import {
   storeCode,
   instantiateContract,
 } from "../../utils/helpers";
+import { wasm_path } from "../../config/constants";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -108,42 +109,42 @@ async function setup(
   const registrarCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/registrar.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/registrar.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${registrarCodeId}`);
   
   process.stdout.write("Uploading Index Fund Wasm");
   const fundCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/index_fund.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/index_fund.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${fundCodeId}`);
   
   process.stdout.write("Uploading Accounts Wasm");
   const accountsCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/accounts.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/accounts.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${accountsCodeId}`);
 
   process.stdout.write("Uploading CW4 Group Wasm");
   const cw4Group = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/cw4_group.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/cw4_group.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw4Group}`);
 
   process.stdout.write("Uploading Guardian Angels MultiSig Wasm");
   const guardianAngelMultiSig = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/guardian_angels_multisig.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/guardian_angels_multisig.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${guardianAngelMultiSig}`);
 
   process.stdout.write("Uploading AP Team MultiSig Wasm");
   const apTeamMultiSig = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/ap_team_multisig.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/ap_team_multisig.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${apTeamMultiSig}`);
 
   // Step 2. Instantiate the key contracts
@@ -429,7 +430,7 @@ async function createVaults(
   const vaultCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "../../../../artifacts/anchor.wasm"));
+    path.resolve(__dirname, `${wasm_path.core}/anchor.wasm`));
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
   
   // Anchor Vault - #1

@@ -7,9 +7,10 @@ import { mainnet as config } from "../config/constants";
 import { migrateHaloContracts } from "../processes/migrateContracts/migrateHalo";
 import { migrateContracts } from "../processes/migrateContracts/migration";
 import { setupContracts, Member } from "../processes/setupContracts/mainnet";
-import { setupHalo } from "../processes/setupHalo/testnet";
-import { setupTerraSwap } from "../processes/setupTerraSwap/realnet";
+import { setupHalo } from "../processes/setup/halo";
 import { testExecute } from "../processes/tests/mainnet";
+import { setupLBP } from "../processes/setup/lbp";
+import { migrateLBPContracts } from "../processes/migrateContracts/migrateLBP";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -30,12 +31,17 @@ let apTreasury: string;
 let members: Member[];
 let tcaMembers: string[];
 
-let tokenCodeId: number;
-let pairCodeId: number;
-let factoryCodeId: number;
+// LBP contracts
 let factoryContract: string;
 let tokenContract: string;
 let pairContract: string;
+let routerContract: string;
+let lpTokenContract: string;
+let tokenAmount: string;
+let nativeTokenAmount: string;
+let lbpCommissionRate: string;
+let ammCommissionRate: string;
+let splitToCollector: string;
 
 // Angel/HALO contracts
 let haloAirdrop: string;
@@ -82,16 +88,22 @@ function initialize() {
   console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
   console.log(`Use ${chalk.cyan(endowmentContracts)} as Endowment Contracts`);
 
-  tokenCodeId = config.token_code_id;
-  pairCodeId = config.pair_code_id;
-  factoryCodeId = config.factory_code_id;
-  factoryContract = config.factory_contract;
-  tokenContract = config.token_contract;
-  pairContract = config.pair_contract;
+  factoryContract = config.lbp.factory_contract;
+  tokenContract = config.lbp.token_contract;
+  pairContract = config.lbp.pair_contract;
+  routerContract = config.lbp.router_contract;
+  lpTokenContract = config.lbp.lp_token_contract;
+  tokenAmount = config.lbp.token_amount;
+  nativeTokenAmount = config.lbp.native_token_amount;
+  lbpCommissionRate = config.lbp.lbp_commission_rate;
+  ammCommissionRate = config.lbp.amm_commission_rate;
+  splitToCollector = config.lbp.split_to_collector;
 
-  console.log(`Use ${chalk.cyan(factoryContract)} as TerraSwap factory`);
+  console.log(`Use ${chalk.cyan(factoryContract)} as LBP Factory`);
   console.log(`Use ${chalk.cyan(tokenContract)} as HALO token`);
-  console.log(`Use ${chalk.cyan(pairContract)} as HALO/UST pair`);
+  console.log(`Use ${chalk.cyan(pairContract)} as LBP HALO/UST Pair`);
+  console.log(`Use ${chalk.cyan(routerContract)} as LBP Router`);
+  console.log(`Use ${chalk.cyan(lpTokenContract)} as Liquidity Token`);
 
   haloAirdrop = config.halo.airdrop_contract;
   haloCollector = config.halo.collector_contract;
@@ -147,23 +159,52 @@ export async function startSetupContracts(): Promise<void> {
 // -------------------------------------------------------------------------------------
 // setup TerraSwap contracts
 // -------------------------------------------------------------------------------------
-export async function startSetupTerraSwapContracts(): Promise<void> {
-  console.log(chalk.blue("\nMainNet Columbus-5"));
+// export async function startSetupTerraSwapContracts(): Promise<void> {
+//   console.log(chalk.blue("\nMainNet Columbus-5"));
+
+//   // Initialize environment information
+//   console.log(chalk.yellow("\nStep 1. Environment Info"));
+//   initialize();
+
+//   // Setup contracts
+//   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
+//   await setupTerraSwap(
+//     terra,
+//     apTeam,
+//     tokenCodeId,
+//     factoryContract
+//   );
+// }
+
+// -------------------------------------------------------------------------------------
+// setup LBP contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupLBPContracts(): Promise<void> {
+  console.log(chalk.blue("\nMainnet"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
   initialize();
 
-  // Setup contracts
-  console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupTerraSwap(
+  const currTime = new Date().getTime() / 1000 + 100;
+  const startTime = Math.round(currTime);
+  const endTime = Math.round(currTime) + 3600 * 24 * 3;
+
+  // Setup LBP contracts
+  console.log(chalk.yellow("\nStep2. LBP Contracts"));
+  await setupLBP(
     terra,
     apTeam,
-    tokenCodeId,
-    factoryContract
+    tokenAmount,
+    nativeTokenAmount,
+    lbpCommissionRate,
+    haloCollector,
+    splitToCollector,
+    startTime,
+    endTime,
+    undefined
   );
 }
-
 
 // -------------------------------------------------------------------------------------
 // setup HALO contracts
@@ -182,8 +223,8 @@ export async function startSetupHalo(): Promise<void> {
     apTeam,
     registrar,
     tokenContract,    // halo_token contract
-    factoryContract,  // terraswap_factory contract
-    pairContract,     // staking_token: lp token of ANC-UST pair contract
+    factoryContract,  // LBP factory contract
+    lpTokenContract,     // staking_token: lp token of ANC-UST pair contract
     30,            // quorum
     50,            // threshold,
     2000,             // voting_period,
@@ -246,6 +287,27 @@ export async function startMigrateHaloContracts(): Promise<void> {
     haloGov,
     haloStaking,
     haloVesting
+  );
+}
+
+// -------------------------------------------------------------------------------------
+// migrate LBP contracts
+// -------------------------------------------------------------------------------------
+export async function startMigrateLBPContracts(): Promise<void> {
+  console.log(chalk.blue("\nMainnet"));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
+
+  // Migrate Contracts
+  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  await migrateLBPContracts(
+    terra,
+    apTeam,
+    factoryContract,
+    pairContract,
+    routerContract,
   );
 }
 
