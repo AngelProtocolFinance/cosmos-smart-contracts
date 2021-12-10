@@ -194,6 +194,13 @@ export const mainnet = {
       "terra1rttuqe9dsf5hksep8syv8nelrmdlyv2pnrx2w8", // Project Hawaii
       "terra1p2dq0ct6xlt05y2zxhjfqt0nl3awp57yxdk9mq", // Cup of Hope Las Vegas
       "terra16h3qzecumpa5lxf6ekt2869mpycms5rac0lwp8", // Sumarth 
+      "terra1yfemvj4epgx74j8jm0gfl3n2qen2w9q6eyhan8", // Imagine Worldwide
+      "terra1y7rk4v0y58lr2w0sx5jy2n3yl046k9yfllk2p6", // Wayuu Taya
+      "terra1k67vqfnycwzgtucz27y4z3wxqr5shdl7rx3a0w", // Eagle's Nest
+      "terra160qenex0dhdrms3lzkjv0jj26v8vkekptl5egf", // Outshine LGBTQ Film Festival
+      "terra1vm7g8ah6v95xs4d8q774fhavfrc5f2lzf9fygs", // Alex's Lemonade Stand Foundation
+      "terra1m6w3mk063vglg6eyazf8llm40wcsjsdg29sm7w", // The Biodiversity Group
+      "terra12854vdzzr909ss24lqc8nsqnvg378l23p9vukr", // SOWE
     ],
   },
   members: [
