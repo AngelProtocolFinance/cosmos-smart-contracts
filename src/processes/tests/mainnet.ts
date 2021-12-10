@@ -1,14 +1,19 @@
-import { LCDClient, Wallet } from "@terra-money/terra.js";
+import { LCDClient, LocalTerra, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
 import {
+  testBeneficiaryCanWithdrawFromLiquid,
+  testCharityCanUpdateStrategies,
+  testRejectUnapprovedDonations,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment
 } from "./core/accounts";
 import {
-  testUpdatingIndexFundConfigs,
+  testDonorSendsToIndexFund,
+  testTcaMemberSendsToIndexFund,
   testUpdateFundMembers,
   testUpdateAngelAllianceMembers,
+  testUpdatingIndexFundConfigs,
   testCreateIndexFund,
   testRemoveIndexFund,
   testQueryIndexFundActiveFundDetails,
@@ -21,6 +26,15 @@ import {
   testQueryIndexFundTcaList
 } from "./core/indexFunds";
 import {
+  testAddApTeamMemberToC4Group,
+  testAddGuardiansToEndowment,
+  testGuardiansChangeEndowmentOwner
+} from "./core/multisig";
+import {
+  testAngelTeamCanTriggerVaultsHarvest,
+  testClosingEndpoint,
+  testMigrateAllAccounts,
+  testUpdatingRegistrarConfigs,
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarApprovedVaultRateList,
   testQueryRegistrarConfig,
@@ -31,6 +45,65 @@ import {
 import {
   testQueryVaultConfig
 } from "./core/vaults";
+import {
+  testAirdropClaim,
+  testAirdropRegisterNewMerkleRoot,
+  testAirdropUpdateConfig,
+  testQueryAirdropMerkleRoot,
+  testQueryAirdropConfig,
+  testQueryAirdropIsClaimed,
+  testQueryAirdropLatestStage
+} from "./halo/airdrop";
+import {
+  testCollectorUpdateConfig,
+  testCollectorSweep,
+  testQueryCollectorConfig,
+  testQueryCollectorPair
+} from "./halo/collector";
+import {
+  testCommunityUpdateConfig,
+  testCommunitySpend,
+  testQueryCommunityConfig
+} from "./halo/community";
+import {
+  testDistributorUpdateConfig,
+  testDistributorAdd,
+  testDistributorRemove,
+  testDistributorSpend,
+  testQueryDistributorConfig
+} from "./halo/distributor";
+import {
+  testGovCastVote,
+  testGovEndPoll,
+  testGovExecutePoll,
+  testGovRegisterContracts,
+  testGovSnapshotPoll,
+  testGovUpdateConfig,
+  testGovWithdrawVotingTokens,
+  testGovExecutePollForRegistrarSettings,
+  testQueryGovConfig,
+  testQueryGovPoll,
+  testQueryGovPolls,
+  testQueryGovStaker,
+  testQueryGovState,
+  testQueryGovVoters,
+  VoteOption
+} from "./halo/gov";
+import {
+  testStakingUnbond,
+  testStakingWithdraw,
+  testQueryStakingConfig,
+  testQueryStakingStakerInfo,
+  testQueryStakingState
+} from "./halo/staking";
+import {
+  testVestingUpdateConfig,
+  testVestingRegisterVestingAccounts,
+  testVestingUpdateVestingAccount,
+  testQueryVestingConfig,
+  testQueryVestingAccount,
+  testQueryVestingAccounts
+} from "./halo/vesting";
 
 export async function testExecute(
   terra: LCDClient,
@@ -50,9 +123,14 @@ export async function testExecute(
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
-  // await testUpdateFundMembers(terra, apTeam, indexFund, ??, [
-  //   "terra1yeqqexpkl230ca4kz4w88ne7vqzur4cncp3p5j"
-  // ], []);
+  // await testUpdateFundMembers(terra, apTeam, indexFund, 12, [
+  //     "terra1yfemvj4epgx74j8jm0gfl3n2qen2w9q6eyhan8", // Imagine Worldwide
+  //   ],
+  //   []
+  // );
+  // await testCreateIndexFund(terra, apTeam, indexFund, 12, "MVP Rotation #6", "Fund collection for MVP", true, [
+  //     "terra1vm7g8ah6v95xs4d8q774fhavfrc5f2lzf9fygs", // Alex's Lemonade Stand Foundation
+  // ]);
   // await testUpdateAngelAllianceMembers(terra, apTeam, indexFund, [
   //   "terra1zxtczmxtw8mk8xncvr8lcq2qmvk4dz88ek6f79", // community
   //   "terra1janh9rs6pme3tdwhyag2lmsr2xv6wzhcrjz0xx", // community
@@ -70,9 +148,6 @@ export async function testExecute(
   //   "terra14amh70rm5a3wjgkf7trvten3jfqum2svppky3e", // Terra Terrapins
   //   "terra1amrl8f5fqen2m478nuh2z7mz5ce096x4xqae9p", // Woof of Luna
   //   "terra1hxrd8pnqytqpelape3aemprw3a023wryw7p0xn", // ApolloDAO
-  // ]);
-  // await testCreateIndexFund(terra, apTeam, indexFund, 11, "MVP Rotation #5", "Fund collection for MVP", true, [
-  //   // "", // New funds go here!!
   // ]);
   // await testRemoveIndexFund(terra, apTeam, indexFund, 5);
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
