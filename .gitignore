@@ -1,4 +1,4 @@
 .DS_Store
 node_modules
 endowment_list.txt
-
+src/config/wasmPaths.ts
