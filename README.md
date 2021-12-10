@@ -88,7 +88,7 @@ How to know if LocalTerra is working properly:
 alias workspace-optimizer='docker run --rm -v "$(pwd)":/code \
   --mount type=volume,source="$(basename "$(pwd)")_cache",target=/code/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/workspace-optimizer:0.11.5'
+  cosmwasm/workspace-optimizer:0.12.4'
 ```
 
 ```bash
@@ -96,25 +96,33 @@ alias workspace-optimizer='docker run --rm -v "$(pwd)":/code \
 workspace-optimizer
 ```
 
+### Create and configure wasms paths file 
+You need to tell the test suite where to find the wasms artifacts files locally for the various repos it works with. 
+
+In the `src/config` folder there is an example file for setting the parameters that point to your local wasm folders: `wasmPaths.ts.example`
+In the newly created file, edit the `wasm_path` object's attributes for the `core` and `lbp` to point to the correct local artifacts folders.
+
+```bash
+cp ./src/config/wasmPaths.ts.example ./src/config/wasmPaths.ts
+nano ./src/config/wasmPaths.ts
+``` 
+
 ### Run full setup of contracts & all tests
 
 Test on LocalTerra
 ```bash
-cd test-suite/scripts
 npm install
 npm run test:localterra
 ```
 
 Test on TestNet Bombay-10
 ```bash
-cd test-suite/scripts
 npm install
 npm run test:testnet
 ```
 
 Test on MainNet Columbus-4
 ```bash
-cd test-suite/scripts
 npm install
 npm run test:mainnet
 ```
