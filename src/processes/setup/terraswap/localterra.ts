@@ -17,7 +17,7 @@ export async function setupTerraSwap(
   const factoryCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "{wasm_path.terraswap}/terraswap_factory.wasm")
+    `${wasm_path.terraswap}/terraswap_factory.wasm`
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${factoryCodeId}`);
 
@@ -25,7 +25,7 @@ export async function setupTerraSwap(
   const pairCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "{wasm_path.terraswap}/terraswap_pair.wasm")
+    `${wasm_path.terraswap}/terraswap_pair.wasm`
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${pairCodeId}`);
 
@@ -33,7 +33,7 @@ export async function setupTerraSwap(
   const tokenCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "{wasm_path.terraswap}/terraswap_token.wasm")
+    `${wasm_path.terraswap}/terraswap_token.wasm`
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${tokenCodeId}`);
 
@@ -41,7 +41,7 @@ export async function setupTerraSwap(
   const routerCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, "{wasm_path.terraswap}/terraswap_router.wasm")
+    `${wasm_path.terraswap}/terraswap_router.wasm`
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${routerCodeId}`);
 
@@ -114,6 +114,16 @@ export async function setupTerraSwap(
       return attribute.key == "contract_address";
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${pairContract}`);
+
+  // Get the LP Token address of newly created pair
+  process.stdout.write("Query new Pair's LP Token contract");
+  const result: any = await terra.wasm.contractQuery(pairContract, {
+    pair: {},
+  });
+  console.log(
+    chalk.green(" Done!"),
+    `${chalk.blue("contractAddress")}=${result.liquidity_token}`
+  );
 
   // send liquidity to the new Pair contract for swaps
   process.stdout.write(

@@ -69,6 +69,16 @@ export async function setupTerraSwap(
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${pairContract}`);
 
+  // Get the LP Token address of newly created pair
+  process.stdout.write("Query new Pair's LP Token contract");
+  const result: any = await terra.wasm.contractQuery(pairContract, {
+    pair: {},
+  });
+  console.log(
+    chalk.green(" Done!"),
+    `${chalk.blue("contractAddress")}=${result.liquidity_token}`
+  );
+
   process.stdout.write(
     "Provide liquidity to the new Pair contract @ ratio of 0.05 UST per HALO"
   );

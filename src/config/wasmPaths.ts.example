@@ -1,5 +1,6 @@
 export const wasm_path = {
-  core: "../../../../angelprotocol-smart-contracts/artifacts",
-  lbp: "../../artifacts/astroport-lbp",
-  terraswap: "../../artifacts/terraswap",
+  core: "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-smart-contracts/artifacts",
+  lbp: "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/artifacts/astroport-lbp",
+  terraswap:
+    "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/artifacts/terraswap",
 };

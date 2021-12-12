@@ -24,7 +24,7 @@ export async function setupLbp(
   const factoryCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_factory.wasm`)
+    `${wasm_path.lbp}/astroport_lbp_factory.wasm`
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${factoryCodeId}`);
 
@@ -32,7 +32,7 @@ export async function setupLbp(
   const pairCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_pair.wasm`)
+    `${wasm_path.lbp}/astroport_lbp_pair.wasm`
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${pairCodeId}`);
 
@@ -40,7 +40,7 @@ export async function setupLbp(
   const tokenCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_token.wasm`)
+    `${wasm_path.lbp}/astroport_lbp_token.wasm`
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${tokenCodeId}`);
 
@@ -48,7 +48,7 @@ export async function setupLbp(
   const routerCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_router.wasm`)
+    `${wasm_path.lbp}/astroport_lbp_router.wasm`
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${routerCodeId}`);
 
