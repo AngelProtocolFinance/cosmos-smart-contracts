@@ -1,4 +1,4 @@
 export const wasm_path = {
   core: "../../../../angelprotocol-smart-contracts/artifacts",
-  lbp: "../../../../astroport-lbport/artifacts",
+  lbp: "../../artifacts/astroport-lbp",
 };

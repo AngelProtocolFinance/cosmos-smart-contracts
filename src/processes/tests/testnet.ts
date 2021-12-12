@@ -6,7 +6,7 @@ import {
   testRejectUnapprovedDonations,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
-  testQueryAccountsEndowment
+  testQueryAccountsEndowment,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -23,12 +23,12 @@ import {
   testQueryIndexFundFundDetails,
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
-  testQueryIndexFundTcaList
+  testQueryIndexFundTcaList,
 } from "./core/indexFunds";
 import {
   testAddApTeamMemberToC4Group,
   testAddGuardiansToEndowment,
-  testGuardiansChangeEndowmentOwner
+  testGuardiansChangeEndowmentOwner,
 } from "./core/multisig";
 import {
   testAngelTeamCanTriggerVaultsHarvest,
@@ -40,11 +40,9 @@ import {
   testQueryRegistrarConfig,
   testQueryRegistrarEndowmentList,
   testQueryRegistrarVault,
-  testQueryRegistrarVaultList
+  testQueryRegistrarVaultList,
 } from "./core/registrar";
-import {
-  testQueryVaultConfig
-} from "./core/vaults";
+import { testQueryVaultConfig } from "./core/vaults";
 import {
   testAirdropClaim,
   testAirdropRegisterNewMerkleRoot,
@@ -52,25 +50,25 @@ import {
   testQueryAirdropMerkleRoot,
   testQueryAirdropConfig,
   testQueryAirdropIsClaimed,
-  testQueryAirdropLatestStage
+  testQueryAirdropLatestStage,
 } from "./halo/airdrop";
 import {
   testCollectorUpdateConfig,
   testCollectorSweep,
   testQueryCollectorConfig,
-  testQueryCollectorPair
+  testQueryCollectorPair,
 } from "./halo/collector";
 import {
   testCommunityUpdateConfig,
   testCommunitySpend,
-  testQueryCommunityConfig
+  testQueryCommunityConfig,
 } from "./halo/community";
 import {
   testDistributorUpdateConfig,
   testDistributorAdd,
   testDistributorRemove,
   testDistributorSpend,
-  testQueryDistributorConfig
+  testQueryDistributorConfig,
 } from "./halo/distributor";
 import {
   testGovCastVote,
@@ -87,14 +85,14 @@ import {
   testQueryGovStaker,
   testQueryGovState,
   testQueryGovVoters,
-  VoteOption
+  VoteOption,
 } from "./halo/gov";
 import {
   testStakingUnbond,
   testStakingWithdraw,
   testQueryStakingConfig,
   testQueryStakingStakerInfo,
-  testQueryStakingState
+  testQueryStakingState,
 } from "./halo/staking";
 import {
   testVestingUpdateConfig,
@@ -102,7 +100,7 @@ import {
   testVestingUpdateVestingAccount,
   testQueryVestingConfig,
   testQueryVestingAccount,
-  testQueryVestingAccounts
+  testQueryVestingAccounts,
 } from "./halo/vesting";
 import {
   testFactoryUpdateConfig,
@@ -121,7 +119,6 @@ import {
   testQueryPairSimulationNativeToHalo,
   testQueryPairSimulationHaloToNative,
   testPairProvideLiquidity,
-  testPairWithdrawLiquidity,
   testPairSwapHaloToNative,
   testPairSwapNativeToHalo,
 } from "./lbp/pair";
@@ -135,6 +132,7 @@ import {
   testQueryTokenInfo,
   testQueryTokenMarketingInfo,
   testQueryTokenMinter,
+  testPairWithdrawLiquidity,
 } from "./lbp/token";
 
 export async function testExecute(
@@ -159,6 +157,9 @@ export async function testExecute(
   cw4GrpOwners: string,
   cw3ApTeam: string,
   cw3GuardianAngels: string,
+  terraswapFactory: string,
+  terraswapToken: string,
+  terraswapPair: string,
   haloAirdrop: string,
   haloCollector: string,
   haloCommunity: string,
@@ -166,13 +167,11 @@ export async function testExecute(
   haloGov: string,
   haloStaking: string,
   haloVesting: string,
-  tokenContract: string,
-  factoryContract: string,
-  pairContract: string,
-  routerContract: string,
-  lpTokenContract: string,
+  lbpFactoryContract: string,
+  lbpPairContract: string,
+  lbpRouterContract: string,
+  lbpLpTokenContract: string
 ): Promise<void> {
-
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
   // await testUpdateAngelAllianceMembers(terra, apTeam, indexFund, [
@@ -197,7 +196,7 @@ export async function testExecute(
   // ]);
   // testRemoveIndexFund(terra, apTeam, indexFund, 5);
   // await testCreateIndexFund(terra, apTeam, indexFund, 11, "MVP Rotation #5", "Fund collection for MVP", true, [
-    // "", // New funds go here!!
+  // "", // New funds go here!!
   // ]);
   // await testUpdateFundMembers(terra, apTeam, apTeam, indexFund, 6, ["","",""], ["","",""]);
   // Guardian angels multisig test
@@ -343,5 +342,4 @@ export async function testExecute(
   // await testQueryTokenInfo(terra, tokenContract);
   // await testQueryTokenMinter(terra, tokenContract);
   // await testQueryTokenMarketingInfo(terra, tokenContract);
-
 }

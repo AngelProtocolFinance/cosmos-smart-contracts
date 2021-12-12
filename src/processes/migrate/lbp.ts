@@ -3,22 +3,19 @@
 import * as path from "path";
 import chalk from "chalk";
 import { LCDClient, LocalTerra, Wallet } from "@terra-money/terra.js";
-import {
-  storeCode,
-  migrateContract,
-} from "../../utils/helpers";
+import { storeCode, migrateContract } from "../../utils/helpers";
 import { testFactoryUpdateConfig } from "../tests/lbp/factory";
-import { wasm_path } from "../../config/constants";
+import { wasm_path } from "../../config/wasmPaths";
 
 // -----------------------------
-// Base functions to migrate contracts with 
+// Base functions to migrate contracts with
 // -----------------------------
-export async function migrateLBPContracts(
+export async function migrateLbp(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   factoryContract: string,
   pairContract: string,
-  routerContract: string,
+  routerContract: string
 ): Promise<void> {
   // run the migrations desired
   await migrateFactory(terra, apTeam, factoryContract);
@@ -35,7 +32,7 @@ export async function migrateLBPContracts(
     pairCodeId,
     undefined,
     undefined,
-    undefined,
+    undefined
   );
 }
 
@@ -45,17 +42,25 @@ export async function migrateLBPContracts(
 async function migrateFactory(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  factoryContract: string,
+  factoryContract: string
 ): Promise<void> {
   process.stdout.write("Uploading LBP Factory Wasm");
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_factory.wasm`));
+    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_factory.wasm`)
+  );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate LBP Factory contract");
-  const result1 = await migrateContract(terra, apTeam, apTeam, factoryContract, codeId, {});
+  const result1 = await migrateContract(
+    terra,
+    apTeam,
+    apTeam,
+    factoryContract,
+    codeId,
+    {}
+  );
   console.log(chalk.green(" Done!"));
 }
 
@@ -65,13 +70,14 @@ async function migrateFactory(
 async function migratePair(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  pairContract: string,
+  pairContract: string
 ): Promise<number> {
   process.stdout.write("Uploading LBP Pair wasm");
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_pair.wasm`));
+    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_pair.wasm`)
+  );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate LBP Pair contract");
@@ -87,16 +93,24 @@ async function migratePair(
 async function migrateRouter(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  routerContract: string,
+  routerContract: string
 ): Promise<void> {
   process.stdout.write("Uploading LBP Router Wasm");
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_router.wasm`));
+    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_router.wasm`)
+  );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate LBP Router contract");
-  const result1 = await migrateContract(terra, apTeam, apTeam, routerContract, codeId, {});
+  const result1 = await migrateContract(
+    terra,
+    apTeam,
+    apTeam,
+    routerContract,
+    codeId,
+    {}
+  );
   console.log(chalk.green(" Done!"));
 }

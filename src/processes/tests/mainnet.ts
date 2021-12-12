@@ -6,7 +6,7 @@ import {
   testRejectUnapprovedDonations,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
-  testQueryAccountsEndowment
+  testQueryAccountsEndowment,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -23,12 +23,12 @@ import {
   testQueryIndexFundFundDetails,
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
-  testQueryIndexFundTcaList
+  testQueryIndexFundTcaList,
 } from "./core/indexFunds";
 import {
   testAddApTeamMemberToC4Group,
   testAddGuardiansToEndowment,
-  testGuardiansChangeEndowmentOwner
+  testGuardiansChangeEndowmentOwner,
 } from "./core/multisig";
 import {
   testAngelTeamCanTriggerVaultsHarvest,
@@ -40,11 +40,9 @@ import {
   testQueryRegistrarConfig,
   testQueryRegistrarEndowmentList,
   testQueryRegistrarVault,
-  testQueryRegistrarVaultList
+  testQueryRegistrarVaultList,
 } from "./core/registrar";
-import {
-  testQueryVaultConfig
-} from "./core/vaults";
+import { testQueryVaultConfig } from "./core/vaults";
 import {
   testAirdropClaim,
   testAirdropRegisterNewMerkleRoot,
@@ -52,25 +50,25 @@ import {
   testQueryAirdropMerkleRoot,
   testQueryAirdropConfig,
   testQueryAirdropIsClaimed,
-  testQueryAirdropLatestStage
+  testQueryAirdropLatestStage,
 } from "./halo/airdrop";
 import {
   testCollectorUpdateConfig,
   testCollectorSweep,
   testQueryCollectorConfig,
-  testQueryCollectorPair
+  testQueryCollectorPair,
 } from "./halo/collector";
 import {
   testCommunityUpdateConfig,
   testCommunitySpend,
-  testQueryCommunityConfig
+  testQueryCommunityConfig,
 } from "./halo/community";
 import {
   testDistributorUpdateConfig,
   testDistributorAdd,
   testDistributorRemove,
   testDistributorSpend,
-  testQueryDistributorConfig
+  testQueryDistributorConfig,
 } from "./halo/distributor";
 import {
   testGovCastVote,
@@ -87,14 +85,14 @@ import {
   testQueryGovStaker,
   testQueryGovState,
   testQueryGovVoters,
-  VoteOption
+  VoteOption,
 } from "./halo/gov";
 import {
   testStakingUnbond,
   testStakingWithdraw,
   testQueryStakingConfig,
   testQueryStakingStakerInfo,
-  testQueryStakingState
+  testQueryStakingState,
 } from "./halo/staking";
 import {
   testVestingUpdateConfig,
@@ -102,8 +100,40 @@ import {
   testVestingUpdateVestingAccount,
   testQueryVestingConfig,
   testQueryVestingAccount,
-  testQueryVestingAccounts
+  testQueryVestingAccounts,
 } from "./halo/vesting";
+import {
+  testFactoryUpdateConfig,
+  testFactoryCreatePair,
+  testFactoryUnregister,
+  testFactoryUpdatePair,
+  testQueryFactoryConfig,
+  testQueryFactoryPair,
+  testQueryFactoryPairs,
+} from "./lbp/factory";
+import {
+  testQueryPairPair,
+  testQueryPairPool,
+  testQueryPairReverseSimulationNativeToHalo,
+  testQueryPairReverseSimulationHaloToNative,
+  testQueryPairSimulationNativeToHalo,
+  testQueryPairSimulationHaloToNative,
+  testPairProvideLiquidity,
+  testPairSwapHaloToNative,
+  testPairSwapNativeToHalo,
+} from "./lbp/pair";
+import {
+  testRouterSwapOperations,
+  testQueryRouterConfig,
+  testQueryRouterSimulateSwapOperations,
+} from "./lbp/router";
+import {
+  testQueryTokenBalance,
+  testQueryTokenInfo,
+  testQueryTokenMarketingInfo,
+  testQueryTokenMinter,
+  testPairWithdrawLiquidity,
+} from "./lbp/token";
 
 export async function testExecute(
   terra: LCDClient,
@@ -112,6 +142,13 @@ export async function testExecute(
   indexFund: string,
   anchorVault: string,
   endowmentContract: string,
+  cw4GrpApTeam: string,
+  cw4GrpOwners: string,
+  cw3ApTeam: string,
+  cw3GuardianAngels: string,
+  terraswapFactory: string,
+  terraswapToken: string,
+  terraswapPair: string,
   haloAirdrop: string,
   haloCollector: string,
   haloCommunity: string,
@@ -119,8 +156,11 @@ export async function testExecute(
   haloGov: string,
   haloStaking: string,
   haloVesting: string,
+  lbpFactoryContract: string,
+  lbpPairContract: string,
+  lbpRouterContract: string,
+  lbpLpTokenContract: string
 ): Promise<void> {
-
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
   // await testUpdateFundMembers(terra, apTeam, indexFund, 12, [

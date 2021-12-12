@@ -4,13 +4,17 @@
 import { LCDClient, MnemonicKey, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
 import { mainnet as config } from "../config/constants";
-import { migrateHaloContracts } from "../processes/migrateContracts/migrateHalo";
-import { migrateContracts } from "../processes/migrateContracts/migration";
-import { setupContracts, Member } from "../processes/setupContracts/mainnet";
+
+import { migrateHalo } from "../processes/migrate/halo";
+import { migrateCore } from "../processes/migrate/core";
+import { migrateLbp } from "../processes/migrate/lbp";
+
+import { setupCore, Member } from "../processes/setup/core/mainnet";
+import { setupTerraSwap } from "../processes/setup/terraswap/realnet";
 import { setupHalo } from "../processes/setup/halo";
+import { setupLbp } from "../processes/setup/lbp";
+
 import { testExecute } from "../processes/tests/mainnet";
-import { setupLBP } from "../processes/setup/lbp";
-import { migrateLBPContracts } from "../processes/migrateContracts/migrateLBP";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -31,17 +35,29 @@ let apTreasury: string;
 let members: Member[];
 let tcaMembers: string[];
 
+// TerraSwap Contracts
+let terraswapTokenCode: number;
+let terraswapFactory: string;
+let terraswapHaloTokenContract: string;
+let terraswapHaloUstPairContract: string;
+let terraswapHaloUstPairLpToken: string;
+let terraswapInitialHaloSupply: string;
+let terraswapHaloLiquidity: string;
+let terraswapNativeLiquidity: string;
+
 // LBP contracts
-let factoryContract: string;
-let tokenContract: string;
-let pairContract: string;
-let routerContract: string;
-let lpTokenContract: string;
-let tokenAmount: string;
+let lbpFactoryContract: string;
+let lbpPairContract: string;
+let lbpRouterContract: string;
+let lbpLpTokenContract: string;
+let haloTokenAmount: string;
 let nativeTokenAmount: string;
-let lbpCommissionRate: string;
-let ammCommissionRate: string;
-let splitToCollector: string;
+let lbp_start_time: number;
+let lbp_end_time: number;
+let token_start_weight: string;
+let token_end_weight: string;
+let native_start_weight: string;
+let native_end_weight: string;
 
 // Angel/HALO contracts
 let haloAirdrop: string;
@@ -62,7 +78,7 @@ function initialize() {
     gasPrices: { uusd: 0.15 },
     gasAdjustment: 1.2,
   });
-  apTeam = terra.wallet(new MnemonicKey({mnemonic: config.mnemonicKeys.apTeam}));
+  apTeam = terra.wallet(new MnemonicKey({ mnemonic: config.mnemonicKeys.apTeam }));
   console.log(`Use ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
 
   registrar = config.contracts.registrar;
@@ -88,22 +104,36 @@ function initialize() {
   console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
   console.log(`Use ${chalk.cyan(endowmentContracts)} as Endowment Contracts`);
 
-  factoryContract = config.lbp.factory_contract;
-  tokenContract = config.lbp.token_contract;
-  pairContract = config.lbp.pair_contract;
-  routerContract = config.lbp.router_contract;
-  lpTokenContract = config.lbp.lp_token_contract;
-  tokenAmount = config.lbp.token_amount;
-  nativeTokenAmount = config.lbp.native_token_amount;
-  lbpCommissionRate = config.lbp.lbp_commission_rate;
-  ammCommissionRate = config.lbp.amm_commission_rate;
-  splitToCollector = config.lbp.split_to_collector;
+  terraswapTokenCode = config.terraswap.terraswap_token_code;
+  terraswapFactory = config.terraswap.terraswap_factory;
+  terraswapHaloTokenContract = config.terraswap.halo_token_contract;
+  terraswapHaloUstPairContract = config.terraswap.halo_ust_pair_contract;
+  terraswapHaloUstPairLpToken = config.terraswap.halo_ust_pair_lp_token;
+  terraswapInitialHaloSupply = config.terraswap.initial_halo_supply;
+  terraswapHaloLiquidity = config.terraswap.halo_liquidity;
+  terraswapNativeLiquidity = config.terraswap.native_liquidity;
 
-  console.log(`Use ${chalk.cyan(factoryContract)} as LBP Factory`);
-  console.log(`Use ${chalk.cyan(tokenContract)} as HALO token`);
-  console.log(`Use ${chalk.cyan(pairContract)} as LBP HALO/UST Pair`);
-  console.log(`Use ${chalk.cyan(routerContract)} as LBP Router`);
-  console.log(`Use ${chalk.cyan(lpTokenContract)} as Liquidity Token`);
+  console.log(`Use ${chalk.cyan(terraswapFactory)} as TerraSwap Factory`);
+  console.log(`Use ${chalk.cyan(terraswapHaloTokenContract)} as TerraSwap HALO Token`);
+  console.log(
+    `Use ${chalk.cyan(terraswapHaloUstPairContract)} as TerraSwap HALO/UST Pair`
+  );
+
+  lbpFactoryContract = config.lbp.factory_contract;
+  lbpPairContract = config.lbp.pair_contract;
+  lbpRouterContract = config.lbp.router_contract;
+  lbpLpTokenContract = config.lbp.lp_token_contract;
+  haloTokenAmount = config.lbp.halo_token_amount;
+  nativeTokenAmount = config.lbp.native_token_amount;
+  token_start_weight = config.lbp.token_start_weight;
+  token_end_weight = config.lbp.token_end_weight;
+  native_start_weight = config.lbp.native_start_weight;
+  native_end_weight = config.lbp.native_end_weight;
+
+  console.log(`Use ${chalk.cyan(lbpFactoryContract)} as LBP Factory`);
+  console.log(`Use ${chalk.cyan(lbpPairContract)} as LBP HALO/UST Pair`);
+  console.log(`Use ${chalk.cyan(lbpRouterContract)} as LBP Router`);
+  console.log(`Use ${chalk.cyan(lbpLpTokenContract)} as LBP HALO/UST Pair LP Token`);
 
   haloAirdrop = config.halo.airdrop_contract;
   haloCollector = config.halo.collector_contract;
@@ -125,7 +155,7 @@ function initialize() {
 // -------------------------------------------------------------------------------------
 // setup contracts
 // -------------------------------------------------------------------------------------
-export async function startSetupContracts(): Promise<void> {
+export async function startSetupCore(): Promise<void> {
   console.log(chalk.blue("\nMainNet Columbus-5"));
 
   // Initialize environment information
@@ -134,74 +164,67 @@ export async function startSetupContracts(): Promise<void> {
 
   // Setup contracts
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupContracts(
-    terra,
-    apTeam,
-    anchorMoneyMarket,
-    apTreasury,
-    members,
-    tcaMembers,
-    {
-      tax_rate: "0.2",  // tax rate
-      threshold_absolute_percentage: "0.50", // threshold absolute percentage
-      max_voting_period_height: 1000,   // max voting period height
-      max_voting_period_guardians_height: 100,    // max voting period guardians height
-      fund_rotation: 10,     // index fund rotation
-      turnover_to_multisig: false,   // turn over to AP Team multisig
-      is_localterra: false,   // is LocalTerra
-      harvest_to_liquid: "0.75", // harvest to liquid percentage
-      tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
-      funding_goal: "50000000", // funding goal
-    },
-  );
+  await setupCore(terra, apTeam, anchorMoneyMarket, apTreasury, members, tcaMembers, {
+    tax_rate: "0.2", // tax rate
+    threshold_absolute_percentage: "0.50", // threshold absolute percentage
+    max_voting_period_height: 1000, // max voting period height
+    max_voting_period_guardians_height: 100, // max voting period guardians height
+    fund_rotation: 10, // index fund rotation
+    turnover_to_multisig: false, // turn over to AP Team multisig
+    is_localterra: false, // is LocalTerra
+    harvest_to_liquid: "0.75", // harvest to liquid percentage
+    tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
+    funding_goal: "50000000", // funding goal
+  });
 }
 
 // -------------------------------------------------------------------------------------
 // setup TerraSwap contracts
 // -------------------------------------------------------------------------------------
-// export async function startSetupTerraSwapContracts(): Promise<void> {
-//   console.log(chalk.blue("\nMainNet Columbus-5"));
+export async function startSetupTerraSwap(): Promise<void> {
+  console.log(chalk.blue("\nMainNet Columbus-5"));
 
-//   // Initialize environment information
-//   console.log(chalk.yellow("\nStep 1. Environment Info"));
-//   initialize();
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
 
-//   // Setup contracts
-//   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-//   await setupTerraSwap(
-//     terra,
-//     apTeam,
-//     tokenCodeId,
-//     factoryContract
-//   );
-// }
+  // Setup contracts
+  console.log(chalk.yellow("\nStep 2. Contracts Setup"));
+  await setupTerraSwap(
+    terra,
+    apTeam,
+    terraswapTokenCode,
+    terraswapFactory,
+    terraswapInitialHaloSupply,
+    terraswapHaloLiquidity,
+    terraswapNativeLiquidity
+  );
+}
 
 // -------------------------------------------------------------------------------------
 // setup LBP contracts
 // -------------------------------------------------------------------------------------
-export async function startSetupLBPContracts(): Promise<void> {
+export async function startSetupLbp(): Promise<void> {
   console.log(chalk.blue("\nMainnet"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
   initialize();
 
-  const currTime = new Date().getTime() / 1000 + 100;
-  const startTime = Math.round(currTime);
-  const endTime = Math.round(currTime) + 3600 * 24 * 3;
-
   // Setup LBP contracts
   console.log(chalk.yellow("\nStep2. LBP Contracts"));
-  await setupLBP(
+  await setupLbp(
     terra,
     apTeam,
-    tokenAmount,
+    terraswapHaloTokenContract,
+    haloTokenAmount,
     nativeTokenAmount,
-    lbpCommissionRate,
-    haloCollector,
-    splitToCollector,
-    startTime,
-    endTime,
+    lbp_start_time,
+    lbp_end_time,
+    token_start_weight,
+    token_end_weight,
+    native_start_weight,
+    native_end_weight,
     undefined
   );
 }
@@ -222,27 +245,27 @@ export async function startSetupHalo(): Promise<void> {
     terra,
     apTeam,
     registrar,
-    tokenContract,    // halo_token contract
-    factoryContract,  // LBP factory contract
-    lpTokenContract,     // staking_token: lp token of ANC-UST pair contract
-    30,            // quorum
-    50,            // threshold,
-    2000,             // voting_period,
-    1000,             // timelock_period,
-    "10000000000",      // proposal_deposit,
-    10,               // snapshot_period,
-    [],               // whitelist
-    "1000",             // spend_limit
-    "0.2",            // reward_factor
-    [[100, 200, "1000000"]],  // distribution_schedule
-    12345             // genesis_time
+    terraswapHaloTokenContract, // halo terraswap token contract
+    terraswapFactory,
+    terraswapHaloUstPairContract, // staking_token: LP token of HALO-UST pair contract
+    30, // quorum
+    50, // threshold,
+    2000, // voting_period,
+    1000, // timelock_period,
+    "10000000000", // proposal_deposit,
+    10, // snapshot_period,
+    [], // whitelist
+    "1000", // spend_limit
+    "0.2", // reward_factor
+    [], // distribution_schedule
+    12345 // genesis_time
   );
 }
 
 // -------------------------------------------------------------------------------------
 // migrate Angel Protocol core contracts
 // -------------------------------------------------------------------------------------
-export async function startMigrateContracts(): Promise<void> {
+export async function startMigrateCore(): Promise<void> {
   console.log(chalk.blue("\nMainNet Columbus-5"));
 
   // Initialize environment information
@@ -251,7 +274,7 @@ export async function startMigrateContracts(): Promise<void> {
 
   // Migrate contracts
   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
-  await migrateContracts(
+  await migrateCore(
     terra,
     apTeam,
     registrar,
@@ -268,7 +291,7 @@ export async function startMigrateContracts(): Promise<void> {
 // -------------------------------------------------------------------------------------
 // migrate HALO contracts
 // -------------------------------------------------------------------------------------
-export async function startMigrateHaloContracts(): Promise<void> {
+export async function startMigrateHalo(): Promise<void> {
   console.log(chalk.blue("\nLocalTerra"));
 
   // Initialize environment information
@@ -277,7 +300,7 @@ export async function startMigrateHaloContracts(): Promise<void> {
 
   // Migrate Contracts
   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
-  await migrateHaloContracts(
+  await migrateHalo(
     terra,
     apTeam,
     haloAirdrop,
@@ -293,7 +316,7 @@ export async function startMigrateHaloContracts(): Promise<void> {
 // -------------------------------------------------------------------------------------
 // migrate LBP contracts
 // -------------------------------------------------------------------------------------
-export async function startMigrateLBPContracts(): Promise<void> {
+export async function startMigrateLbp(): Promise<void> {
   console.log(chalk.blue("\nMainnet"));
 
   // Initialize environment information
@@ -302,19 +325,13 @@ export async function startMigrateLBPContracts(): Promise<void> {
 
   // Migrate Contracts
   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
-  await migrateLBPContracts(
-    terra,
-    apTeam,
-    factoryContract,
-    pairContract,
-    routerContract,
-  );
+  await migrateLbp(terra, apTeam, lbpFactoryContract, lbpPairContract, lbpRouterContract);
 }
 
 // -------------------------------------------------------------------------------------
 // start test
 // -------------------------------------------------------------------------------------
-export async function startTest(): Promise<void> {
+export async function startTests(): Promise<void> {
   console.log(chalk.blue("\nMainNet Columbus-5"));
 
   // Initialize environment information
@@ -329,6 +346,13 @@ export async function startTest(): Promise<void> {
     indexFund,
     anchorVault,
     endowmentContracts[0],
+    cw4GrpApTeam,
+    cw4GrpOwners,
+    cw3ApTeam,
+    cw3GuardianAngels,
+    terraswapFactory,
+    terraswapHaloTokenContract,
+    terraswapHaloUstPairContract,
     haloAirdrop,
     haloCollector,
     haloCommunity,
@@ -336,5 +360,9 @@ export async function startTest(): Promise<void> {
     haloGov,
     haloStaking,
     haloVesting,
+    lbpFactoryContract,
+    lbpPairContract,
+    lbpRouterContract,
+    lbpLpTokenContract
   );
 }

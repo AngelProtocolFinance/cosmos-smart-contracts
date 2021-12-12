@@ -96,8 +96,9 @@ alias workspace-optimizer='docker run --rm -v "$(pwd)":/code \
 workspace-optimizer
 ```
 
-### Create and configure wasms paths file 
-You need to tell the test suite where to find the wasms artifacts files locally for the various repos it works with. 
+### Create and configure wasms paths file
+
+You need to tell the test suite where to find the wasms artifacts files locally for the various repos it works with.
 
 In the `src/config` folder there is an example file for setting the parameters that point to your local wasm folders: `wasmPaths.ts.example`
 In the newly created file, edit the `wasm_path` object's attributes for the `core` and `lbp` to point to the correct local artifacts folders.
@@ -105,26 +106,55 @@ In the newly created file, edit the `wasm_path` object's attributes for the `cor
 ```bash
 cp ./src/config/wasmPaths.ts.example ./src/config/wasmPaths.ts
 nano ./src/config/wasmPaths.ts
-``` 
+```
+
+### Optional: LocalTerra constants file setup
+
+In the `src/config` folder there is an example file for setting the constants for your LocalTerra parameters (contracts, init input settings, wallets, etc): `localterraConstants.ts.example`
+In the newly created file, edit the `wasm_path` object's attributes for the `core` and `lbp` to point to the correct local artifacts folders.
+
+```bash
+cp ./src/config/localterraConstants.ts.example ./src/config/localterraConstants.ts
+nano ./src/config/localterraConstants.ts
+```
 
 ### Run full setup of contracts & all tests
 
-Test on LocalTerra
+The npm commands follow a formula to help make it easier to remember commands and ensure we know exactly what we're running and where. It is setup as follows:
+`npm run < network >-< action >-< module >`
+
+Network options:
+
+- `localterra`
+- `testnet`
+- `mainnet`
+
+Action options:
+
+- `setup`: instantiates and configures all contracts for a module
+- `migrate`: migrates all contracts for a module (using wasms in the respective repos)
+- `tests`: runs all tests that are active the main tests file (`/src/tests/<testnet | mainnet>.ts`) [AN: LocalTerra & TestNet share the testnet tests]
+
+Module options:
+
+- `core`: Registrar, Accounts, Index Fund, Multisigs, Vaults, etc
+- `terraswap`: TerraSwap HALO CW20 token, HALO/UST Pair, & HALO/UST Pair LP Token
+- `halo`: All "support" contracts for HALO Token (gov, collector, distributor, vesting, etc)
+- `lbp`: Astroport LBP contracts (Factory, Pair, LP Token)
+
+#### Complete steps for the setup of AP contracts ecosystem & running test (ex. using LocalTerra)
+
 ```bash
 npm install
-npm run test:localterra
+npm run test:localterra-setup-core
+npm run test:localterra-setup-terraswap
+npm run test:localterra-setup-halo
+npm run test:localterra-setup-lbp
+npm run test:localterra-tests
 ```
 
-Test on TestNet Bombay-10
-```bash
-npm install
-npm run test:testnet
-```
+**NOTE:** After each of the setup commands, you may see key contract addresses or wasm codes that will need to updated in your constants file before proceeding to run the next command. These commands build upon on another.
 
-Test on MainNet Columbus-4
-```bash
-npm install
-npm run test:mainnet
-```
+**ALSO NOTE:** To run the above on other networks, simply swap out the network option in the npm command.
 
 We are building off the excellent work done by 0xLarry (from whom we lovingly :heart: ~~stole~~ borrowed).

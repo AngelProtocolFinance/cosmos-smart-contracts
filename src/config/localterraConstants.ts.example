@@ -1,0 +1,66 @@
+// ---------------------------------------------------------------------------------------------------
+// LocalTerra information
+// ---------------------------------------------------------------------------------------------------
+export const localterra = {
+  // LocalTerra
+  networkInfo: {
+    url: "http://localhost:1317",
+    chainId: "localterra",
+  },
+  // LocalTerra AP / DANO Treasury wallet
+  apTreasury: "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly",
+
+  // Should be updated contract addresses after deploying wasms in the LocalTerra
+  contracts: {
+    registrar: "",
+    indexFund: "",
+    endowmentContract1: "",
+    endowmentContract2: "",
+    endowmentContract3: "",
+    endowmentContract4: "",
+    cw4GrpApTeam: "",
+    cw3ApTeam: "",
+    cw4GrpOwners: "",
+    cw3GuardianAngels: "",
+  },
+
+  // LBP contracts
+  lbp: {
+    factory_contract: "",
+    token_contract: "",
+    pair_contract: "",
+    router_contract: "",
+    lp_token_contract: "",
+    // HALO/UST Pair token supply amount
+    halo_token_amount: "80000000000000",
+    native_token_amount: "1300000000000",
+    // HALO/UST Pair start/end weights
+    token_start_weight: "96",
+    token_end_weight: "50",
+    native_start_weight: "4",
+    native_end_weight: "50",
+  },
+
+  // TerraSwap contracts
+  terraswap: {
+    terraswap_token_code: 0,
+    terraswap_factory: "",
+    halo_token_contract: "",
+    halo_ust_pair_contract: "",
+    halo_ust_pair_lp_token: "",
+    initial_halo_supply: "1000000000000000",
+    halo_liquidity: "20000000000000",
+    native_liquidity: "1000000000000",
+  },
+
+  // HALO support contracts
+  halo: {
+    airdrop_contract: "",
+    collector_contract: "",
+    community_contract: "",
+    distributor_contract: "",
+    gov_contract: "",
+    staking_contract: "",
+    vesting_contract: "",
+  },
+};

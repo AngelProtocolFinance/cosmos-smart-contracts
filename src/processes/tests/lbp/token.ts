@@ -3,12 +3,40 @@ import chalk from "chalk";
 import { LCDClient, LocalTerra } from "@terra-money/terra.js";
 
 //----------------------------------------------------------------------------------------
+// TEST: Withdraw liquidity
+//
+// SCENARIO:
+//
+//----------------------------------------------------------------------------------------
+export async function testPairWithdrawLiquidity(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  pairContract: string,
+  liquidityToken: string,
+  amount: string
+): Promise<void> {
+  process.stdout.write("Withdraw liquidity token");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, liquidityToken, {
+      send: {
+        contract: pairContract,
+        amount,
+        msg: toEncodedBinary({
+          withdraw_liquidity: {},
+        }),
+      },
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
+}
+
+//----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryTokenBalance(
   terra: LocalTerra | LCDClient,
   tokenContract: string,
-  address: string,
+  address: string
 ): Promise<void> {
   process.stdout.write("Test - Query Token balance");
   const result: any = await terra.wasm.contractQuery(tokenContract, {
@@ -21,11 +49,11 @@ export async function testQueryTokenBalance(
 
 export async function testQueryTokenInfo(
   terra: LocalTerra | LCDClient,
-  tokenContract: string,
+  tokenContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Token Info");
   const result: any = await terra.wasm.contractQuery(tokenContract, {
-    token_info: {}
+    token_info: {},
   });
 
   console.log(result);
@@ -34,11 +62,11 @@ export async function testQueryTokenInfo(
 
 export async function testQueryTokenMinter(
   terra: LocalTerra | LCDClient,
-  tokenContract: string,
+  tokenContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Token minter");
   const result: any = await terra.wasm.contractQuery(tokenContract, {
-    minter: {}
+    minter: {},
   });
 
   console.log(result);
@@ -47,11 +75,11 @@ export async function testQueryTokenMinter(
 
 export async function testQueryTokenMarketingInfo(
   terra: LocalTerra | LCDClient,
-  tokenContract: string,
+  tokenContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Marketing info");
   const result: any = await terra.wasm.contractQuery(tokenContract, {
-    marketing_info: {}
+    marketing_info: {},
   });
 
   console.log(result);
