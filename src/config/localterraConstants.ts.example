@@ -27,9 +27,8 @@ export const localterra = {
   // LBP contracts
   lbp: {
     factory_contract: "",
-    token_contract: "",
-    pair_contract: "",
     router_contract: "",
+    pair_contract: "",
     lp_token_contract: "",
     // HALO/UST Pair token supply amount
     halo_token_amount: "80000000000000",
