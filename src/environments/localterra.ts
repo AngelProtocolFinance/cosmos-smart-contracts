@@ -4,6 +4,7 @@
 import { LocalTerra, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
 import { localterra as config } from "../config/localterraConstants";
+import { datetimeStringToUTC } from "../utils/helpers";
 
 import { migrateCore } from "../processes/migrate/core";
 import { migrateHalo } from "../processes/migrate/halo";
@@ -59,6 +60,8 @@ let lbpRouterContract: string;
 let lbpLpTokenContract: string;
 let haloTokenAmount: string;
 let nativeTokenAmount: string;
+let lbp_start_time: string;
+let lbp_end_time: string;
 let token_start_weight: string;
 let token_end_weight: string;
 let native_start_weight: string;
@@ -141,6 +144,8 @@ function initialize() {
   lbpLpTokenContract = config.lbp.lp_token_contract;
   haloTokenAmount = config.lbp.halo_token_amount;
   nativeTokenAmount = config.lbp.native_token_amount;
+  lbp_start_time = config.lbp.lbp_start_time;
+  lbp_end_time = config.lbp.lbp_end_time;
   token_start_weight = config.lbp.token_start_weight;
   token_end_weight = config.lbp.token_end_weight;
   native_start_weight = config.lbp.native_start_weight;
@@ -241,12 +246,6 @@ export async function startSetupLbp(): Promise<void> {
   console.log(chalk.yellow("\nStep 1. Environment Info"));
   initialize();
 
-  // default to a 3 day LBP sale, starting 10 minutes from NOW
-  let now = new Date();
-  const startTime = Math.round(now.getTime() + 600000);
-  let future = new Date();
-  const endTime = future.setDate(now.getDate() + 3);
-
   // Setup LBP contracts
   console.log(chalk.yellow("\nStep2. LBP Contracts"));
   await setupLbp(
@@ -255,8 +254,8 @@ export async function startSetupLbp(): Promise<void> {
     terraswapHaloTokenContract,
     haloTokenAmount,
     nativeTokenAmount,
-    startTime,
-    endTime,
+    datetimeStringToUTC(lbp_start_time),
+    datetimeStringToUTC(lbp_end_time),
     token_start_weight,
     token_end_weight,
     native_start_weight,

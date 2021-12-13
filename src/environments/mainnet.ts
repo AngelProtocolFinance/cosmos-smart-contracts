@@ -4,6 +4,7 @@
 import { LCDClient, MnemonicKey, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
 import { mainnet as config } from "../config/constants";
+import { datetimeStringToUTC } from "../utils/helpers";
 
 import { migrateHalo } from "../processes/migrate/halo";
 import { migrateCore } from "../processes/migrate/core";
@@ -52,8 +53,8 @@ let lbpRouterContract: string;
 let lbpLpTokenContract: string;
 let haloTokenAmount: string;
 let nativeTokenAmount: string;
-let lbp_start_time: number;
-let lbp_end_time: number;
+let lbp_start_time: string;
+let lbp_end_time: string;
 let token_start_weight: string;
 let token_end_weight: string;
 let native_start_weight: string;
@@ -125,6 +126,8 @@ function initialize() {
   lbpLpTokenContract = config.lbp.lp_token_contract;
   haloTokenAmount = config.lbp.halo_token_amount;
   nativeTokenAmount = config.lbp.native_token_amount;
+  lbp_start_time = config.lbp.lbp_start_time;
+  lbp_end_time = config.lbp.lbp_end_time;
   token_start_weight = config.lbp.token_start_weight;
   token_end_weight = config.lbp.token_end_weight;
   native_start_weight = config.lbp.native_start_weight;
@@ -219,8 +222,8 @@ export async function startSetupLbp(): Promise<void> {
     terraswapHaloTokenContract,
     haloTokenAmount,
     nativeTokenAmount,
-    lbp_start_time,
-    lbp_end_time,
+    datetimeStringToUTC(lbp_start_time),
+    datetimeStringToUTC(lbp_end_time),
     token_start_weight,
     token_end_weight,
     native_start_weight,
