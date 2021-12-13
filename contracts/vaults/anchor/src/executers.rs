@@ -16,9 +16,6 @@ use cosmwasm_std::{
 };
 use cw20::{Balance, Cw20CoinVerified};
 
-// Anchor Vault Collectooor contract address to send harvested funds to
-const COLLECTOR_CONTRACT: &str = "";
-
 pub fn update_owner(
     deps: DepsMut,
     info: MessageInfo,
@@ -70,6 +67,10 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
+    config.collector_contract = match msg.collector_contract {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.collector_contract,
+    };
     config.moneymarket = match msg.moneymarket {
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.moneymarket,
@@ -341,7 +342,6 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQueryMsg::Config {})?,
         }))?;
-    let collector_addr = deps.api.addr_validate(COLLECTOR_CONTRACT)?;
     let mut collector_account = BalanceInfo::default();
     let mut taxes_collected = Uint128::zero();
 
@@ -408,8 +408,8 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             &submessage_id.to_be_bytes(),
             &PendingInfo {
                 typ: "withdraw".to_string(),
-                accounts_address: collector_addr.clone(),
-                beneficiary: Some(collector_addr.clone()),
+                accounts_address: config.collector_contract.clone(),
+                beneficiary: Some(config.collector_contract.clone()),
                 fund: None,
                 locked: Uint128::zero(),
                 liquid: withdraw_total,
@@ -421,7 +421,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         Ok(Response::new()
             .add_attribute("action", "harvest_redeem_from_vault")
             .add_attribute("sender", info.sender)
-            .add_attribute("collector_addr", collector_addr)
+            .add_attribute("collector_addr", config.collector_contract)
             .add_attribute("withdraw_amount", withdraw_total)
             .add_submessage(SubMsg {
                 id: submessage_id,

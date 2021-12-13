@@ -18,16 +18,17 @@ use terraswap::querier::{query_balance, query_pair_info, query_token_balance};
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     store_config(
         deps.storage,
         &Config {
+            owner: info.sender,
             gov_contract: deps.api.addr_validate(&msg.gov_contract)?,
             terraswap_factory: deps.api.addr_validate(&msg.terraswap_factory)?,
             halo_token: deps.api.addr_validate(&msg.halo_token)?,
-            distributor_contract: deps.api.addr_validate(&msg.distributor_contract)?,
+            treasury_addr: deps.api.addr_validate(&msg.treasury_addr)?,
             reward_factor: msg.reward_factor,
         },
     )?;
@@ -38,9 +39,23 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::UpdateConfig { reward_factor, gov_contract } => update_config(deps, info, reward_factor, gov_contract),
+        ExecuteMsg::UpdateConfig {
+            reward_factor,
+            gov_contract,
+        } => update_config(deps, info, reward_factor, gov_contract),
+        ExecuteMsg::UpdateOwner { owner } => update_owner(deps, info, owner),
         ExecuteMsg::Sweep { denom } => sweep(deps, env, denom),
     }
+}
+
+pub fn update_owner(deps: DepsMut, info: MessageInfo, owner: String) -> StdResult<Response> {
+    let mut config: Config = read_config(deps.storage)?;
+    if info.sender != config.owner {
+        return Err(StdError::generic_err("unauthorized"));
+    }
+    config.owner = deps.api.addr_validate(&owner)?;
+    store_config(deps.storage, &config)?;
+    Ok(Response::default())
 }
 
 pub fn update_config(
@@ -50,7 +65,7 @@ pub fn update_config(
     gov_contract: Option<String>,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
-    if info.sender != config.gov_contract {
+    if info.sender != config.gov_contract || info.sender != config.owner {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -167,7 +182,7 @@ pub fn distribute(deps: DepsMut, env: Env) -> StdResult<Response> {
         messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: config.halo_token.to_string(),
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                recipient: config.distributor_contract.to_string(),
+                recipient: config.treasury_addr.to_string(),
                 amount: left_amount,
             })?,
             funds: vec![],
@@ -185,7 +200,7 @@ pub fn distribute(deps: DepsMut, env: Env) -> StdResult<Response> {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::Pair { denom } => to_binary(&query_pair(deps, denom)?)
+        QueryMsg::Pair { denom } => to_binary(&query_pair(deps, denom)?),
     }
 }
 
@@ -193,9 +208,9 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let state = read_config(deps.storage)?;
     let resp = ConfigResponse {
         gov_contract: state.gov_contract.to_string(),
+        treasury_addr: state.treasury_addr.to_string(),
         terraswap_factory: state.terraswap_factory.to_string(),
         halo_token: state.halo_token.to_string(),
-        distributor_contract: state.distributor_contract.to_string(),
         reward_factor: state.reward_factor,
     };
 

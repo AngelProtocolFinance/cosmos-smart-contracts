@@ -15,10 +15,11 @@ fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
+        owner: "apWallet".to_string(),
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
-        distributor_contract: "distributor".to_string(),
+        treasury_addr: "treasury_addr".to_string(),
         reward_factor: Decimal::percent(90),
     };
 
@@ -37,10 +38,11 @@ fn update_config() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
+        owner: "apWallet".to_string(),
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
-        distributor_contract: "distributor".to_string(),
+        treasury_addr: "treasury_addr".to_string(),
         reward_factor: Decimal::percent(90),
     };
 
@@ -91,10 +93,11 @@ fn test_sweep() {
         .with_terraswap_pairs(&[(&"uusdtokenHALO".to_string(), &"pairANC".to_string())]);
 
     let msg = InstantiateMsg {
+        owner: "apWallet".to_string(),
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
-        distributor_contract: "distributor".to_string(),
+        treasury_addr: "treasury_addr".to_string(),
         reward_factor: Decimal::percent(90),
     };
 
@@ -148,10 +151,11 @@ fn test_distribute() {
     )]);
 
     let msg = InstantiateMsg {
+        owner: "apWallet".to_string(),
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
-        distributor_contract: "distributor".to_string(),
+        treasury_addr: "treasury_addr".to_string(),
         reward_factor: Decimal::percent(90),
     };
 
@@ -182,7 +186,7 @@ fn test_distribute() {
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "tokenHALO".to_string(),
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                    recipient: "distributor".to_string(),
+                    recipient: "treasury_addr".to_string(),
                     amount: Uint128::from(10u128),
                 })
                 .unwrap(),
