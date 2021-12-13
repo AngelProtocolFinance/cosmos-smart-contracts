@@ -2,3 +2,4 @@
 node_modules
 endowment_list.txt
 src/config/wasmPaths.ts
+src/config/localterraConstants.ts

@@ -3,56 +3,54 @@ import * as path from "path";
 import chalk from "chalk";
 import { LocalTerra, LCDClient, Wallet, MsgExecuteContract } from "@terra-money/terra.js";
 import { instantiateContract, sendTransaction, storeCode } from "../../utils/helpers";
-import { wasm_path } from "../../config/constants";
-  
-// Deploy HALO Token and HALO/UST pair contracts to the TestNet/MainNet
-export async function setupLBP(
+import { wasm_path } from "../../config/wasmPaths";
+
+// Deploy HALO/UST LBP pair and LP Token contracts to TestNet/MainNet
+export async function setupLbp(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  tokenAmount: string,
+  terraswapToken: string,
+  haloTokenAmount: string,
   nativeTokenAmount: string,
-  commission_rate: string,
-  collector_addr: string | undefined,
-  split_to_collector: string | undefined,
   start_time: number,
-  end_time: number | undefined,
-  description: string | undefined,
-  ): Promise<void> {
+  end_time: number,
+  token_start_weight: string,
+  token_end_weight: string,
+  native_start_weight: string,
+  native_end_weight: string,
+  description: string | undefined
+): Promise<void> {
   process.stdout.write("Uploading LBP factory Wasm");
   const factoryCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_factory.wasm`));
+    `${wasm_path.lbp}/astroport_lbp_factory.wasm`
+  );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${factoryCodeId}`);
 
   process.stdout.write("Uploading LBP pair Wasm");
   const pairCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_pair.wasm`));
+    `${wasm_path.lbp}/astroport_lbp_pair.wasm`
+  );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${pairCodeId}`);
 
   process.stdout.write("Uploading LBP token Wasm");
   const tokenCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_token.wasm`));
+    `${wasm_path.lbp}/astroport_lbp_token.wasm`
+  );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${tokenCodeId}`);
 
   process.stdout.write("Uploading LBP router Wasm");
   const routerCodeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.lbp}/astroport_lbp_router.wasm`));
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${routerCodeId}`);
-
-  // HALO token contract
-  const tokenContract = await setupToken(
-    terra,
-    apTeam,
-    tokenCodeId,
-    tokenAmount,
+    `${wasm_path.lbp}/astroport_lbp_router.wasm`
   );
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${routerCodeId}`);
 
   // Factory contract
   const factoryContract = await setupFactory(
@@ -60,69 +58,39 @@ export async function setupLBP(
     apTeam,
     factoryCodeId,
     pairCodeId,
-    tokenCodeId,
-    commission_rate,
-    collector_addr,
-    split_to_collector,
+    tokenCodeId
   );
+
+  // Router contract
+  await setupRouter(terra, apTeam, routerCodeId, factoryContract);
 
   // Create Pair contract
   const pairContract = await createPair(
     terra,
     apTeam,
     factoryContract,
-    tokenContract,
+    terraswapToken,
     start_time,
     end_time,
-    description,
+    token_start_weight,
+    token_end_weight,
+    native_start_weight,
+    native_end_weight,
+    description
   );
 
-  // Router contract
-  await setupRouter(
-    terra,
-    apTeam,
-    routerCodeId,
-    factoryContract
-  );
+  // Get the LP Token address of newly created pair
+  await getPairContractLpToken(terra, pairContract);
 
   // Provide liquidity
   await provideLiquidity(
     terra,
     apTeam,
-    tokenContract,
+    terraswapToken,
     pairContract,
-    tokenAmount,
-    nativeTokenAmount,
+    haloTokenAmount,
+    nativeTokenAmount
   );
-}
-
-async function setupToken(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  tokenCodeId: number,
-  tokenAmount: string,
-  ): Promise<string> {
-  // HALO token contract
-  process.stdout.write("Instantiating HALO Token contract");
-  const tokenResult = await instantiateContract(terra, apTeam, apTeam, tokenCodeId, {
-    name: "Angel Protocol",
-    symbol: "HALO",
-    decimals: 6,
-    initial_balances: [
-      {
-        address: apTeam.key.accAddress,
-        amount: tokenAmount
-      }
-    ]
-  });
-  const tokenContract = tokenResult.logs[0].events.find((event) => {
-    return event.type == "instantiate_contract";
-  })?.attributes.find((attribute) => {
-    return attribute.key == "contract_address";
-  })?.value as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${tokenContract}`);
-
-  return tokenContract;
 }
 
 async function setupFactory(
@@ -130,26 +98,25 @@ async function setupFactory(
   apTeam: Wallet,
   factoryCodeId: number,
   pairCodeId: number,
-  tokenCodeId: number,
-  commission_rate: string,
-  collector_addr: string | undefined,
-  split_to_collector: string | undefined,
+  tokenCodeId: number
 ): Promise<string> {
   process.stdout.write("Instantiating Factory contract");
   const factoryResult = await instantiateContract(terra, apTeam, apTeam, factoryCodeId, {
     pair_code_id: pairCodeId,
     token_code_id: tokenCodeId,
     owner: apTeam.key.accAddress,
-    commission_rate,
-    collector_addr,
-    split_to_collector,
   });
-  const factoryContract = factoryResult.logs[0].events.find((event) => {
-    return event.type == "instantiate_contract";
-  })?.attributes.find((attribute) => {
-    return attribute.key == "contract_address";
-  })?.value as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${factoryContract}`);
+  const factoryContract = factoryResult.logs[0].events
+    .find((event) => {
+      return event.type == "instantiate_contract";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "contract_address";
+    })?.value as string;
+  console.log(
+    chalk.green(" Done!"),
+    `${chalk.blue("contractAddress")}=${factoryContract}`
+  );
 
   return factoryContract;
 }
@@ -158,10 +125,14 @@ async function createPair(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   factoryContract: string,
-  tokenContract: string,
+  terraswapToken: string,
   start_time: number,
-  end_time: number | undefined,
-  description: string | undefined,
+  end_time: number,
+  token_start_weight: string,
+  token_end_weight: string,
+  native_start_weight: string,
+  native_end_weight: string,
+  description: string | undefined
 ): Promise<string> {
   process.stdout.write("Creating Pair contract from Factory contract");
 
@@ -170,36 +141,38 @@ async function createPair(
       create_pair: {
         asset_infos: [
           {
-            info:{
+            info: {
               token: {
-                contract_addr: tokenContract,
-              }
+                contract_addr: terraswapToken,
+              },
             },
-            start_weight: "96",
-            end_weight: "50"
+            start_weight: token_start_weight,
+            end_weight: token_end_weight,
           },
           {
-            info:{
+            info: {
               native_token: {
-                denom: "uusd".toString()
-              }
+                denom: "uusd".toString(),
+              },
             },
-            start_weight: "4",
-            end_weight: "50"
-          }
+            start_weight: native_start_weight,
+            end_weight: native_end_weight,
+          },
         ],
         start_time,
         end_time,
         description,
-      }
-    })
+      },
+    }),
   ]);
 
-  const pairContract = pairResult.logs[0].events.find((event) => {
-    return event.type == "instantiate_contract";
-  })?.attributes.find((attribute) => {
-    return attribute.key == "contract_address";
-  })?.value as string;
+  const pairContract = pairResult.logs[0].events
+    .find((event) => {
+      return event.type == "instantiate_contract";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "contract_address";
+    })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${pairContract}`);
 
   return pairContract;
@@ -209,33 +182,38 @@ async function setupRouter(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   routerCodeId: number,
-  factoryContract: string,
+  factoryContract: string
 ): Promise<void> {
   process.stdout.write("Instantiating LBP Router contract");
   const routerResult = await instantiateContract(terra, apTeam, apTeam, routerCodeId, {
-    astroport_lbp_factory: factoryContract
+    astroport_lbp_factory: factoryContract,
   });
-  const routerContract = routerResult.logs[0].events.find((event) => {
-    return event.type == "instantiate_contract";
-  })?.attributes.find((attribute) => {
-    return attribute.key == "contract_address";
-  })?.value as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${routerContract}`);
+  const routerContract = routerResult.logs[0].events
+    .find((event) => {
+      return event.type == "instantiate_contract";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "contract_address";
+    })?.value as string;
+  console.log(
+    chalk.green(" Done!"),
+    `${chalk.blue("contractAddress")}=${routerContract}`
+  );
 }
 
 async function provideLiquidity(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  tokenContract: string,
+  terraswapToken: string,
   pairContract: string,
-  tokenAmount: string,
-  nativeTokenAmount: string,
+  haloTokenAmount: string,
+  nativeTokenAmount: string
 ): Promise<void> {
   process.stdout.write("Provide liquidity to the New Pair contract");
   await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
+    new MsgExecuteContract(apTeam.key.accAddress, terraswapToken, {
       increase_allowance: {
-        amount: tokenAmount,
+        amount: haloTokenAmount,
         spender: pairContract,
       },
     }),
@@ -248,10 +226,10 @@ async function provideLiquidity(
             {
               info: {
                 token: {
-                  contract_addr: tokenContract,
+                  contract_addr: terraswapToken,
                 },
               },
-              amount: tokenAmount,
+              amount: haloTokenAmount,
             },
             {
               info: {
@@ -270,4 +248,18 @@ async function provideLiquidity(
     ),
   ]);
   console.log(chalk.green(" Done!"));
+}
+
+async function getPairContractLpToken(
+  terra: LocalTerra | LCDClient,
+  pairContract: string
+): Promise<void> {
+  process.stdout.write("Query new Pair's LP Token contract");
+  const result: any = await terra.wasm.contractQuery(pairContract, {
+    pair: {},
+  });
+  console.log(
+    chalk.green(" Done!"),
+    `${chalk.blue("contractAddress")}=${result.liquidity_token}`
+  );
 }

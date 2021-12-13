@@ -8,68 +8,77 @@ import * as MainNet from "./environments/mainnet";
 (async () => {
 	const mode = process.env.npm_config_mode || "";
 	switch (mode) {
-		case "localterra":
-			await LocalNet.startTest();
+		case "localterra_tests":
+			await LocalNet.startTests();
 			break;
-		case "localterra_setup":
-			await LocalNet.startSetupContracts();
+		case "localterra_setup_core":
+			await LocalNet.startSetupCore();
 			break;
 		case "localterra_setup_lbp":
-			await LocalNet.startSetupLBPContracts();
+			await LocalNet.startSetupLbp();
 			break;
 		case "localterra_setup_halo":
 			await LocalNet.startSetupHalo();
 			break;
-		case "localterra_migrate":
-			await LocalNet.startMigrateContracts();
+		case "localterra_setup_terraswap":
+			await LocalNet.startSetupTerraSwap();
+			break;
+		case "localterra_migrate_core":
+			await LocalNet.startMigrateCore();
 			break;
 		case "localterra_migrate_halo":
-			await LocalNet.startMigrateHaloContracts();
+			await LocalNet.startMigrateHalo();
 			break;
 		case "localterra_migrate_lbp":
-			await LocalNet.startMigrateLBPContracts();
+			await LocalNet.startMigrateLbp();
 			break;
-		case "testnet":
-			await TestNet.startTest();
+		case "testnet_tests":
+			await TestNet.startTests();
 			break;
-		case "testnet_setup":
-			await TestNet.startSetupContracts();
+		case "testnet_setup_core":
+			await TestNet.startSetupCore();
 			break;
 		case "testnet_setup_lbp":
-			await TestNet.startSetupLBPContracts();
+			await TestNet.startSetupLbp();
 			break;
 		case "testnet_setup_halo":
 			await TestNet.startSetupHalo();
 			break;
-		case "testnet_migrate":
-			await TestNet.startMigrateContracts();
+		case "testnet_setup_terraswap":
+			await TestNet.startSetupTerraSwap();
+			break;
+		case "testnet_migrate_core":
+			await TestNet.startMigrateCore();
 			break;
 		case "testnet_migrate_halo":
-			await TestNet.startMigrateHaloContracts();
+			await TestNet.startMigrateHalo();
 			break;
 		case "testnet_migrate_lbp":
-			await TestNet.startMigrateLBPContracts();
+			await TestNet.startMigrateLbp();
 			break;
-		case "mainnet":
-			await MainNet.startTest();
+		case "mainnet_tests":
+			await MainNet.startTests();
 			break;
-		case "mainnet_setup":
-			await MainNet.startSetupContracts();
+		case "mainnet_setup_core":
+			await MainNet.startSetupCore();
 			break;
 		case "mainnet_setup_lbp":
-			await MainNet.startSetupLBPContracts();
+			await MainNet.startSetupLbp();
 			break;
 		case "mainnet_setup_halo":
 			await MainNet.startSetupHalo();
 			break;
-		case "mainnet_migrate":
-			await MainNet.startMigrateContracts();
+		case "mainnet_setup_terraswap":
+			await MainNet.startSetupTerraSwap();
+			break;
+		case "mainnet_migrate_core":
+			await MainNet.startMigrateCore();
 			break;
 		case "mainnet_migrate_halo":
-			await MainNet.startMigrateHaloContracts();
+			await MainNet.startMigrateHalo();
 			break;
 		case "mainnet_migrate_lbp":
-			await MainNet.startMigrateLBPContracts();
+			await MainNet.startMigrateLbp();
 			break;
 		default:
 			console.log("Invalid command");

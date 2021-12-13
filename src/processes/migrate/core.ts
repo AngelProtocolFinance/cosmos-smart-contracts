@@ -2,18 +2,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as path from "path";
 import chalk from "chalk";
-import { LCDClient, LocalTerra, Msg, MsgExecuteContract, MsgMigrateContract, Wallet } from "@terra-money/terra.js";
 import {
-  sendTransaction,
-  storeCode,
-  migrateContract,
-} from "../../utils/helpers";
-import { wasm_path } from "../../config/constants";
+  LCDClient,
+  LocalTerra,
+  Msg,
+  MsgExecuteContract,
+  MsgMigrateContract,
+  Wallet,
+} from "@terra-money/terra.js";
+import { sendTransaction, storeCode, migrateContract } from "../../utils/helpers";
+import { wasm_path } from "../../config/wasmPaths";
 
 // -----------------------------
-// Base functions to migrate contracts with 
+// Base functions to migrate contracts with
 // -----------------------------
-export async function migrateContracts(
+export async function migrateCore(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   registrar: string,
@@ -45,15 +48,16 @@ export async function migrateContracts(
 async function migrateRegistrar(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  registrar: string,
+  registrar: string
 ): Promise<void> {
   process.stdout.write("Uploading Registrar Wasm");
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.core}/registrar.wasm`));
+    path.resolve(__dirname, `${wasm_path.core}/registrar.wasm`)
+  );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
-  
+
   process.stdout.write("Migrate Registrar contract");
   const result1 = await migrateContract(terra, apTeam, apTeam, registrar, codeId, {});
   console.log(chalk.green(" Done!"));
@@ -71,9 +75,10 @@ async function migrateIndexFund(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.core}/index_fund.wasm`));
+    path.resolve(__dirname, `${wasm_path.core}/index_fund.wasm`)
+  );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
-  
+
   process.stdout.write("Migrate Index Fund contract");
   const result1 = await migrateContract(terra, apTeam, apTeam, indexFund, codeId, {});
   console.log(chalk.green(" Done!"));
@@ -92,7 +97,8 @@ async function migrateCw4Group(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.core}/cw4_group.wasm`));
+    path.resolve(__dirname, `${wasm_path.core}/cw4_group.wasm`)
+  );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate CW4 AP Team Group contract");
@@ -116,7 +122,8 @@ async function migrateApTeamMultisig(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.core}/ap_team_multisig.wasm`));
+    path.resolve(__dirname, `${wasm_path.core}/ap_team_multisig.wasm`)
+  );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate AP Team MultiSig contract");
@@ -136,11 +143,19 @@ async function migrateGuardianAngelsMultisig(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.core}/guardian_angels_multisig.wasm`));
+    path.resolve(__dirname, `${wasm_path.core}/guardian_angels_multisig.wasm`)
+  );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate Guardian Angels MultiSig contract");
-  const result1 = await migrateContract(terra, apTeam, apTeam, cw3GuardianAngels, codeId, {});
+  const result1 = await migrateContract(
+    terra,
+    apTeam,
+    apTeam,
+    cw3GuardianAngels,
+    codeId,
+    {}
+  );
   console.log(chalk.green(" Done!"));
 }
 
@@ -150,29 +165,33 @@ async function migrateGuardianAngelsMultisig(
 async function migrateVaults(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  anchorVaults:  string[],
+  anchorVaults: string[]
 ): Promise<void> {
   process.stdout.write("Uploading Anchor Vault Wasm");
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.core}/anchor.wasm`));
+    path.resolve(__dirname, `${wasm_path.core}/anchor.wasm`)
+  );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate Vault contracts\n");
   let prom = Promise.resolve();
   let id = 1;
-  anchorVaults.forEach(vault => {
+  anchorVaults.forEach((vault) => {
     // eslint-disable-next-line no-async-promise-executor
-    prom = prom.then(() => new Promise(async (resolve, reject) => {
-      try {
-        await migrateContract(terra, apTeam, apTeam, vault, codeId, {});
-        console.log(chalk.green(`anchorVault #${id ++} - Done!`));
-        resolve();
-      } catch(e) {
-        reject(e);
-      }
-    }));
+    prom = prom.then(
+      () =>
+        new Promise(async (resolve, reject) => {
+          try {
+            await migrateContract(terra, apTeam, apTeam, vault, codeId, {});
+            console.log(chalk.green(`anchorVault #${id++} - Done!`));
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        })
+    );
   });
 
   await prom;
@@ -192,14 +211,15 @@ async function migrateAccounts(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.core}/accounts.wasm`));
+    path.resolve(__dirname, `${wasm_path.core}/accounts.wasm`)
+  );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
-  
+
   // Update registrar accounts code ID and migrate all accounts contracts
   process.stdout.write("Update Registrar's Account Code ID stored in configs");
   const result0 = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_config: { accounts_code_id: codeId }
+      update_config: { accounts_code_id: codeId },
     }),
   ]);
   console.log(chalk.green(" Done!"));
@@ -216,16 +236,19 @@ async function migrateExistingAccounts(
 ): Promise<void> {
   process.stdout.write("Migrating existing Endowment Accounts contracts\n");
   let prom = Promise.resolve();
-  endowmentContracts.forEach(endowment => {
+  endowmentContracts.forEach((endowment) => {
     // eslint-disable-next-line no-async-promise-executor
-    prom = prom.then(() => new Promise(async (resolve, reject) => {
-      try {
-        await migrateContract(terra, apTeam, apTeam, endowment, account_wasm_id, {});
-        console.log(`Endmowment ${endowment} - ${chalk.green("Done!")}`);
-        resolve();
-      } catch(e) {
-        reject(e);
-      }
-    }));
+    prom = prom.then(
+      () =>
+        new Promise(async (resolve, reject) => {
+          try {
+            await migrateContract(terra, apTeam, apTeam, endowment, account_wasm_id, {});
+            console.log(`Endmowment ${endowment} - ${chalk.green("Done!")}`);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        })
+    );
   });
 }

@@ -20,6 +20,14 @@ export function toEncodedBinary(obj: any): string {
   return Buffer.from(JSON.stringify(obj)).toString("base64");
 }
 
+export function datetimeStringToUTC(date: string): number {
+  try {
+    return Date.parse(date) / 1000;
+  } catch (err) {
+    throw "Date given is not parsable";
+  }
+}
+
 /**
  * @notice Send a transaction. Return result if successful, throw error if failed.
  */
@@ -45,7 +53,7 @@ export async function sendTransaction(
       throw error;
     }
   }
-  const tx = await sender.createAndSignTx({msgs, fee});
+  const tx = await sender.createAndSignTx({ msgs, fee });
   const result = await terra.tx.broadcast(tx);
 
   // Print the log info
@@ -123,12 +131,7 @@ export async function migrateContract(
   migrateMsg: Record<string, unknown>
 ) {
   const result = await sendTransaction(terra, sender, [
-    new MsgMigrateContract(
-      admin.key.accAddress,
-      contract,
-      new_code_id,
-      migrateMsg
-    ),
+    new MsgMigrateContract(admin.key.accAddress, contract, new_code_id, migrateMsg),
   ]);
   return result;
 }
