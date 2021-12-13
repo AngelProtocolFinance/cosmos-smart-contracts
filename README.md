@@ -36,12 +36,12 @@ wal_file = "data/cs.wal/wal"
 - timeout_prevote_delta = "500ms"
 - timeout_precommit_delta = "500ms"
 - timeout_commit = "5s"
-+ timeout_propose = "200ms"
-+ timeout_propose_delta = "200ms"
-+ timeout_prevote = "200ms"
-+ timeout_prevote_delta = "200ms"
-+ timeout_precommit_delta = "200ms"
-+ timeout_commit = "200ms"
++ timeout_propose = "500ms"
++ timeout_propose_delta = "500ms"
++ timeout_prevote = "500ms"
++ timeout_prevote_delta = "500ms"
++ timeout_precommit_delta = "500ms"
++ timeout_commit = "500ms"
 ```
 
 Edit `LocalTerra/config/genesis.json` as follows. This fixes the stability fee ("tax") on Terra stablecoin transfers to a constant value (0.1%) so that our test transactions give reproducible results.
