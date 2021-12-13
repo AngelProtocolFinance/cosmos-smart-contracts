@@ -16,6 +16,9 @@ use cosmwasm_std::{
 };
 use cw20::{Balance, Cw20CoinVerified};
 
+// Anchor Vault Collectooor contract address to send harvested funds to
+const COLLECTOR_CONTRACT: &str = "";
+
 pub fn update_owner(
     deps: DepsMut,
     info: MessageInfo,
@@ -338,8 +341,8 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQueryMsg::Config {})?,
         }))?;
-    let treasury_addr = deps.api.addr_validate(&registrar_config.treasury)?;
-    let mut treasury_account = BalanceInfo::default();
+    let collector_addr = deps.api.addr_validate(COLLECTOR_CONTRACT)?;
+    let mut collector_account = BalanceInfo::default();
     let mut taxes_collected = Uint128::zero();
 
     // iterate over all accounts and shuffle DP tokens from Locked to Liquid
@@ -382,7 +385,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
 
             // add taxes collected to the liquid balance of the AP Treasury
             deposit_token.amount = taxes_owed;
-            treasury_account
+            collector_account
                 .liquid_balance
                 .add_tokens(Balance::Cw20(deposit_token.clone()));
 
@@ -390,13 +393,13 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         }
     }
 
-    if treasury_account
+    if collector_account
         .liquid_balance
         .get_token_amount(env.contract.address.clone())
         > Uint128::zero()
     {
         // Withdraw all DP Tokens from Treasury and send to AP Treasury Wallet
-        let withdraw_total = treasury_account
+        let withdraw_total = collector_account
             .liquid_balance
             .get_token_amount(env.contract.address);
         let submessage_id = config.next_pending_id;
@@ -405,8 +408,8 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             &submessage_id.to_be_bytes(),
             &PendingInfo {
                 typ: "withdraw".to_string(),
-                accounts_address: treasury_addr.clone(),
-                beneficiary: Some(treasury_addr.clone()),
+                accounts_address: collector_addr.clone(),
+                beneficiary: Some(collector_addr.clone()),
                 fund: None,
                 locked: Uint128::zero(),
                 liquid: withdraw_total,
@@ -418,7 +421,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         Ok(Response::new()
             .add_attribute("action", "harvest_redeem_from_vault")
             .add_attribute("sender", info.sender)
-            .add_attribute("account_addr", treasury_addr)
+            .add_attribute("collector_addr", collector_addr)
             .add_attribute("withdraw_amount", withdraw_total)
             .add_submessage(SubMsg {
                 id: submessage_id,
