@@ -413,6 +413,7 @@ export async function startTests(): Promise<void> {
     lbpFactoryContract,
     lbpPairContract,
     lbpRouterContract,
-    lbpLpTokenContract
+    lbpLpTokenContract,
+    slippage_tolerance
   );
 }
