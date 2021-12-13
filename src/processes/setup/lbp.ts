@@ -20,7 +20,8 @@ export async function setupLbp(
   token_end_weight: string,
   native_start_weight: string,
   native_end_weight: string,
-  description: string | undefined
+  description: string | undefined,
+  slippage_tolerance: string | undefined,
 ): Promise<void> {
   process.stdout.write("Uploading LBP factory Wasm");
   const factoryCodeId = await storeCode(
@@ -92,7 +93,8 @@ export async function setupLbp(
     terraswapToken,
     pairContract,
     haloTokenAmount,
-    nativeTokenAmount
+    nativeTokenAmount,
+    slippage_tolerance,
   );
 }
 
