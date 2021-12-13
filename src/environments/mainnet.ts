@@ -222,6 +222,7 @@ export async function startSetupLbp(): Promise<void> {
     terraswapHaloTokenContract,
     haloTokenAmount,
     nativeTokenAmount,
+    "uusd",
     datetimeStringToUTC(lbp_start_time),
     datetimeStringToUTC(lbp_end_time),
     token_start_weight,

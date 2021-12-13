@@ -1,5 +1,6 @@
 import { LCDClient, LocalTerra, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
+import { datetimeStringToUTC } from "../../utils/helpers";
 import {
   testBeneficiaryCanWithdrawFromLiquid,
   testCharityCanUpdateStrategies,
@@ -121,6 +122,7 @@ import {
   testPairProvideLiquidity,
   testPairSwapHaloToNative,
   testPairSwapNativeToHalo,
+  getPairContractLpToken,
 } from "./lbp/pair";
 import {
   testRouterSwapOperations,
@@ -170,7 +172,7 @@ export async function testExecute(
   lbpFactoryContract: string,
   lbpPairContract: string,
   lbpRouterContract: string,
-  lbpLpTokenContract: string
+  lbpLpTokenContract: string,
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
@@ -292,8 +294,8 @@ export async function testExecute(
   // await testGovSnapshotPoll(terra, apTeam, haloGov, 1);
   // await testGovWithdrawVotingTokens(terra, apTeam, haloGov, "11");
   // await testGovCastVote(terra, apTeam, haloGov, 1, VoteOption.YES, "1");
-  // await testGovRegisterContracts(terra, apTeam, haloGov, tokenContract);
-  // await testGovExecutePollForRegistrarSettings(terra, apTeam, haloGov, tokenContract, "1000000", 100, "0.5", "0.1");
+  // await testGovRegisterContracts(terra, apTeam, haloGov, terraswapToken);
+  // await testGovExecutePollForRegistrarSettings(terra, apTeam, haloGov, terraswapToken, "1000000", 100, "0.5", "0.1");
   // await testQueryGovConfig(terra, haloGov);
   // await testQueryGovState(terra, haloGov);
   // await testQueryGovPoll(terra, haloGov, 1);
@@ -311,35 +313,48 @@ export async function testExecute(
   // Test query for LBP Factory
   // await testFactoryUpdateConfig(terra, apTeam, factoryContract, undefined, undefined, undefined, undefined, haloCollector, undefined);
   // await testFactoryUpdatePair(terra, apTeam, factoryContract, pairContract, 1639234038);
-  // const currTime = new Date().getTime() / 1000 + 10;
-  // const startTime = Math.round(currTime);
-  // const endTime = Math.round(currTime) + 3600 * 24 * 3;
-  // await testFactoryCreatePair(terra, apTeam, factoryContract, tokenContract, startTime, endTime, undefined);
-  // await testFactoryUnregister(terra, apTeam, factoryContract, tokenContract);
+  // const lbp_start_time = "12/14/2021 00:00:00Z";
+  // const lbp_end_time = "12/17/2021 00:00:00Z";
+  // await testFactoryCreatePair(
+  //   terra,
+  //   apTeam,
+  //   lbpFactoryContract,
+  //   terraswapToken,
+  //   "uusd",
+  //   datetimeStringToUTC(lbp_start_time),
+  //   datetimeStringToUTC(lbp_end_time),
+  //   "96",
+  //   "50",
+  //   "4",
+  //   "50",
+  //   "HALO <-> UST Pair"
+  // );
+  // await getPairContractLpToken(terra, lbpPairContract);
+  // await testFactoryUnregister(terra, apTeam, lbpFactoryContract, terraswapToken, "uusd");
   // await testQueryFactoryConfig(terra, factoryContract);
-  // await testQueryFactoryPair(terra, factoryContract, tokenContract);
+  // await testQueryFactoryPair(terra, factoryContract, terraswapToken);
   // await testQueryFactoryPairs(terra, factoryContract);
 
   // Test query for LBP Pair
-  // await testPairProvideLiquidity(terra, apTeam2, tokenContract, pairContract, "100000000", "100000000");
+  // await testPairProvideLiquidity(terra, apTeam2, terraswapToken, pairContract, "100000000", "100000000");
   // await testPairWithdrawLiquidity(terra, apTeam, pairContract, lpTokenContract, "100000000");
   // await testPairSwapNativeToHalo(terra, apTeam, pairContract, "100000000");
-  // await testPairSwapHaloToNative(terra, apTeam, pairContract, tokenContract, "100000000");
+  // await testPairSwapHaloToNative(terra, apTeam, pairContract, terraswapToken, "100000000");
   // await testQueryPairPair(terra, pairContract);
   // await testQueryPairPool(terra, pairContract);
   // await testQueryPairSimulationNativeToHalo(terra, pairContract);
-  // await testQueryPairSimulationHaloToNative(terra, pairContract, tokenContract);
+  // await testQueryPairSimulationHaloToNative(terra, pairContract, terraswapToken);
   // await testQueryPairReverseSimulationNativeToHalo(terra, pairContract);
-  // await testQueryPairReverseSimulationHaloToNative(terra, pairContract, tokenContract);
+  // await testQueryPairReverseSimulationHaloToNative(terra, pairContract, terraswapToken);
 
   // Test query for LBP Router
-  // await testRouterSwapOperations(terra, apTeam, routerContract, tokenContract, apTeam.key.accAddress, "100000000");
+  // await testRouterSwapOperations(terra, apTeam, routerContract, terraswapToken, apTeam.key.accAddress, "100000000");
   // await testQueryRouterConfig(terra, routerContract);
-  // await testQueryRouterSimulateSwapOperations(terra, routerContract, tokenContract, "100000000");
+  // await testQueryRouterSimulateSwapOperations(terra, routerContract, terraswapToken, "100000000");
 
   // Test query for LBP Token
-  // await testQueryTokenBalance(terra, tokenContract, apTeam.key.accAddress);
-  // await testQueryTokenInfo(terra, tokenContract);
-  // await testQueryTokenMinter(terra, tokenContract);
-  // await testQueryTokenMarketingInfo(terra, tokenContract);
+  // await testQueryTokenBalance(terra, terraswapToken, apTeam.key.accAddress);
+  // await testQueryTokenInfo(terra, terraswapToken);
+  // await testQueryTokenMinter(terra, terraswapToken);
+  // await testQueryTokenMarketingInfo(terra, terraswapToken);
 }
