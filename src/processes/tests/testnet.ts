@@ -325,7 +325,7 @@ export async function testExecute(
   // await testPairWithdrawLiquidity(terra, apTeam, pairContract, lpTokenContract, "100000000");
   // await testPairSwapNativeToHalo(terra, apTeam, pairContract, "100000000");
   // await testPairSwapHaloToNative(terra, apTeam, pairContract, tokenContract, "100000000");
-  // await testQueryPairPair(terra, pairContract);
+  // await testQueryPairPair(terra, lbpPairContract);
   // await testQueryPairPool(terra, pairContract);
   // await testQueryPairSimulationNativeToHalo(terra, pairContract);
   // await testQueryPairSimulationHaloToNative(terra, pairContract, tokenContract);
