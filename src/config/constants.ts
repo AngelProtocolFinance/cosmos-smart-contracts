@@ -198,7 +198,7 @@ export const mainnet = {
   terraswap: {
     terraswap_token_code: 3,
     terraswap_factory: "terra1ulgw0td86nvs4wtpsc80thv6xelk76ut7a7apj",
-    halo_token_contract: "terra1a2u20znw23hax47dmx6amuf33kk59pmg4q3ayq",
+    halo_token_contract: "terra1w8kvd6cqpsthupsk4l0clwnmek4l3zr7c84kwq",
     halo_ust_pair_contract: "",
     halo_ust_pair_lp_token: "",
     initial_halo_supply: "1000000000000000",
