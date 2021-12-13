@@ -83,7 +83,7 @@ export async function setupCore(
   await createEndowments();
   await approveEndowments();
   await createIndexFunds();
-  if (!anchorMoneyMarket) {
+  if (!config.is_localterra && anchorMoneyMarket) {
     await createVaults(config.harvest_to_liquid, config.tax_per_block);
   }
   if (config.turnover_to_multisig) {
