@@ -312,8 +312,9 @@ export async function testExecute(
   // await testQueryStakingState(terra, haloStaking);
 
   // Test query for LBP Factory
-  // await testFactoryUpdateConfig(terra, apTeam, factoryContract, undefined, undefined, undefined, undefined, haloCollector, undefined);
-  // await testFactoryUpdatePair(terra, apTeam, factoryContract, lbpPairContract, 1639234038);
+  // await testFactoryUpdateConfig(terra, apTeam, lbpFactoryContract, undefined, undefined, undefined, undefined, haloCollector, undefined);
+  // const lbp_end_time = "12/17/2021 00:00:00Z";
+  // await testFactoryUpdatePair(terra, apTeam, lbpFactoryContract, lbpPairContract, datetimeStringToUTC(lbp_end_time));
   // const lbp_start_time = "12/14/2021 00:00:00Z";
   // const lbp_end_time = "12/17/2021 00:00:00Z";
   // await testFactoryCreatePair(
@@ -332,12 +333,12 @@ export async function testExecute(
   // );
   // await getPairContractLpToken(terra, lbpPairContract);
   // await testFactoryUnregister(terra, apTeam, lbpFactoryContract, terraswapToken, "uusd");
-  // await testQueryFactoryConfig(terra, factoryContract);
-  // await testQueryFactoryPair(terra, factoryContract, terraswapToken);
-  // await testQueryFactoryPairs(terra, factoryContract);
+  // await testQueryFactoryConfig(terra, lbpFactoryContract);
+  // await testQueryFactoryPair(terra, lbpFactoryContract, terraswapToken);
+  // await testQueryFactoryPairs(terra, lbpFactoryContract);
 
   // Test query for LBP Pair
-  // await testPairProvideLiquidity(terra, apTeam2, terraswapToken, lbpPairContract, "100000000", "100000000", slippageTolerance);
+  await testPairProvideLiquidity(terra, apTeam, terraswapToken, lbpPairContract, "80000000000000", "1300000000000", slippageTolerance);
   // await testPairWithdrawLiquidity(terra, apTeam, lbpPairContract, lpTokenContract, "100000000");
   // await testPairSwapNativeToHalo(terra, apTeam, lbpPairContract, "100000000");
   // await testPairSwapHaloToNative(terra, apTeam, lbpPairContract, terraswapToken, "100000000");
