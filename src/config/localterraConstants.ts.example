@@ -34,8 +34,8 @@ export const localterra = {
     halo_token_amount: "80000000000000",
     native_token_amount: "1300000000000",
     // HALO/UST Pair start/end times
-    lbp_start_time: "12/13/2021 07:00:00",
-    lbp_end_time: "12/16/2021 07:00:00",
+    lbp_start_time: "2021-12-14T02:02:00.000Z",
+    lbp_end_time: "2021-12-17T02:02:00.000Z",
     // HALO/UST Pair start/end weights
     token_start_weight: "96",
     token_end_weight: "50",

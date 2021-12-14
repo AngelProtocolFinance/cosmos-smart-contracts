@@ -53,8 +53,8 @@ export const testnet = {
     halo_token_amount: "80000000000",
     native_token_amount: "1300000000", // adjusted down from localterra/mainnet values due to faucet limitations
     // HALO/UST Pair start/end times
-    lbp_start_time: "12/14/2021 00:00:00",
-    lbp_end_time: "12/17/2021 00:00:00",
+    lbp_start_time: "2021-12-14T02:02:00.000Z",
+    lbp_end_time: "2021-12-17T02:02:00.000Z",
     // HALO/UST Pair start/end weights
     token_start_weight: "96",
     token_end_weight: "50",
@@ -185,8 +185,8 @@ export const mainnet = {
     halo_token_amount: "80000000000000",
     native_token_amount: "1300000000000",
     // HALO/UST Pair start/end times
-    lbp_start_time: "12/19/2021 15:00:00",
-    lbp_end_time: "12/22/2021 15:00:00",
+    lbp_start_time: "2021-12-19T15:00:00.000Z",
+    lbp_end_time: "2021-12-22T15:00:00.000Z",
     // HALO/UST Pair start/end weights
     token_start_weight: "96",
     token_end_weight: "50",
