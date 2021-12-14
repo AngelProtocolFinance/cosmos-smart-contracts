@@ -177,10 +177,10 @@ export const mainnet = {
 
   // LBP contracts
   lbp: {
-    factory_contract: "",
-    pair_contract: "",
-    router_contract: "",
-    lp_token_contract: "",
+    factory_contract: "terra10dl5u40lj50scntv4qmwykfw2zulf77zyv34u0",
+    router_contract: "terra1l32eafhapmn9c8m7epyraxa2yty4xngamvewfs",
+    pair_contract: "terra1hhpgcp2stvzx952zfxtxg4dhgf60yfzchesj3e",
+    lp_token_contract: "terra1kt26adtzwu4yefw37snr73n393vsu8w0hmazxc",
     // HALO/UST Pair token supply amount
     halo_token_amount: "80000000000000",
     native_token_amount: "1300000000000",
