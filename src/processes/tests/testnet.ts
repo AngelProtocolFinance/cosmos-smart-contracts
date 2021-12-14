@@ -326,7 +326,7 @@ export async function testExecute(
   // await testPairSwapNativeToHalo(terra, apTeam, pairContract, "100000000");
   // await testPairSwapHaloToNative(terra, apTeam, pairContract, tokenContract, "100000000");
   // await testQueryPairPair(terra, lbpPairContract);
-  // await testQueryPairPool(terra, pairContract);
+  // await testQueryPairPool(terra, lbpPairContract);
   // await testQueryPairSimulationNativeToHalo(terra, pairContract);
   // await testQueryPairSimulationHaloToNative(terra, pairContract, tokenContract);
   // await testQueryPairReverseSimulationNativeToHalo(terra, pairContract);
