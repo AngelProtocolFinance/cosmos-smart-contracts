@@ -151,11 +151,13 @@ export async function testQueryPairPair(
   terra: LocalTerra | LCDClient,
   pairContract: string
 ): Promise<void> {
-  process.stdout.write("Test - Query Pair");
+  process.stdout.write("Test - Query Pair\n");
   const result: any = await terra.wasm.contractQuery(pairContract, {
     pair: {},
   });
 
+  console.log(`Asset Infos #1: ${JSON.stringify(result.asset_infos[0])}`);
+  console.log(`Asset Infos #2: ${JSON.stringify(result.asset_infos[1])}`);
   console.log(result);
   console.log(chalk.green(" Passed!"));
 }
