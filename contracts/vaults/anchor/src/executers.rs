@@ -67,6 +67,10 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
+    config.collector_contract = match msg.collector_contract {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.collector_contract,
+    };
     config.moneymarket = match msg.moneymarket {
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.moneymarket,
@@ -332,14 +336,13 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         return Err(ContractError::Unauthorized {});
     }
 
-    // pull registrar SC config to fetch: 1) Treasury Tax Rate and 2) Treasury Addr
+    // pull registrar SC config to fetch the Treasury Tax Rate
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQueryMsg::Config {})?,
         }))?;
-    let treasury_addr = deps.api.addr_validate(&registrar_config.treasury)?;
-    let mut treasury_account = BalanceInfo::default();
+    let mut collector_account = BalanceInfo::default();
     let mut taxes_collected = Uint128::zero();
 
     // iterate over all accounts and shuffle DP tokens from Locked to Liquid
@@ -373,16 +376,16 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
                 .locked_balance
                 .deduct_tokens(Balance::Cw20(deposit_token.clone()));
 
-            // add to liquid balance (less taxes owed to AP Treasury)
+            // add to liquid balance (less taxes owed to Collector)
             deposit_token.amount = transfer_amt - taxes_owed;
             balances
                 .liquid_balance
                 .add_tokens(Balance::Cw20(deposit_token.clone()));
             taxes_collected += taxes_owed;
 
-            // add taxes collected to the liquid balance of the AP Treasury
+            // add taxes collected to the liquid balance of the Collector
             deposit_token.amount = taxes_owed;
-            treasury_account
+            collector_account
                 .liquid_balance
                 .add_tokens(Balance::Cw20(deposit_token.clone()));
 
@@ -390,13 +393,13 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         }
     }
 
-    if treasury_account
+    if collector_account
         .liquid_balance
         .get_token_amount(env.contract.address.clone())
         > Uint128::zero()
     {
-        // Withdraw all DP Tokens from Treasury and send to AP Treasury Wallet
-        let withdraw_total = treasury_account
+        // Withdraw all DP Tokens from Treasury and send to Collector
+        let withdraw_total = collector_account
             .liquid_balance
             .get_token_amount(env.contract.address);
         let submessage_id = config.next_pending_id;
@@ -405,8 +408,8 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             &submessage_id.to_be_bytes(),
             &PendingInfo {
                 typ: "withdraw".to_string(),
-                accounts_address: treasury_addr.clone(),
-                beneficiary: Some(treasury_addr.clone()),
+                accounts_address: config.collector_contract.clone(),
+                beneficiary: Some(config.collector_contract.clone()),
                 fund: None,
                 locked: Uint128::zero(),
                 liquid: withdraw_total,
@@ -418,7 +421,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         Ok(Response::new()
             .add_attribute("action", "harvest_redeem_from_vault")
             .add_attribute("sender", info.sender)
-            .add_attribute("account_addr", treasury_addr)
+            .add_attribute("collector_addr", config.collector_contract)
             .add_attribute("withdraw_amount", withdraw_total)
             .add_submessage(SubMsg {
                 id: submessage_id,

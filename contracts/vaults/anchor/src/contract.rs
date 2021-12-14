@@ -39,6 +39,7 @@ pub fn instantiate(
         tax_per_block: msg.tax_per_block,
         last_harvest: env.block.height,
         harvest_to_liquid: msg.harvest_to_liquid,
+        collector_contract: deps.api.addr_validate(&msg.collector_contract)?,
     };
 
     config::store(deps.storage, &config)?;

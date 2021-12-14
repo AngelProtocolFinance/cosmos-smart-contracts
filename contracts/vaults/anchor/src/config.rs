@@ -17,7 +17,8 @@ pub struct Config {
     pub next_pending_id: u64,
     pub tax_per_block: Decimal,
     pub last_harvest: u64,
-    pub harvest_to_liquid: Decimal
+    pub harvest_to_liquid: Decimal,
+    pub collector_contract: Addr,
 }
 
 pub fn store(storage: &mut dyn Storage, data: &Config) -> StdResult<()> {
