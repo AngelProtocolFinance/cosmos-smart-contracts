@@ -60,7 +60,7 @@ export const testnet = {
     token_end_weight: "50",
     native_start_weight: "4",
     native_end_weight: "50",
-    slippage_tolerance: "0.03",
+    slippage_tolerance: "0.01",
   },
 
   // TerraSwap contracts
@@ -193,7 +193,7 @@ export const mainnet = {
     token_end_weight: "50",
     native_start_weight: "4",
     native_end_weight: "50",
-    slippage_tolerance: "0.03",
+    slippage_tolerance: "0.01",
   },
 
   // TerraSwap contracts
