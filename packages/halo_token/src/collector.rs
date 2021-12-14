@@ -19,10 +19,11 @@ pub enum ExecuteMsg {
     /// Update the contract's owner
     UpdateOwner { owner: String },
     /// Update config interface
-    /// to enable reward_factor / gov_contract update
+    /// to enable reward_factor / gov_contract / treasury_addr update
     UpdateConfig {
         reward_factor: Option<Decimal>,
         gov_contract: Option<String>,
+        treasury_addr: Option<String>,
     },
     /// Public Message
     /// Sweep all given denom balance to ANC token

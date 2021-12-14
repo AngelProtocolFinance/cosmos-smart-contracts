@@ -63,6 +63,7 @@ pub fn update_config(
     info: MessageInfo,
     reward_factor: Option<Decimal>,
     gov_contract: Option<String>,
+    treasury_addr: Option<String>,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
     if info.sender != config.gov_contract || info.sender != config.owner {
@@ -75,6 +76,10 @@ pub fn update_config(
 
     if let Some(gov_contract) = gov_contract {
         config.gov_contract = deps.api.addr_validate(&gov_contract)?;
+    }
+
+    if let Some(treasury_addr) = treasury_addr {
+        config.treasury_addr = deps.api.addr_validate(&treasury_addr)?;
     }
 
     store_config(deps.storage, &config)?;
