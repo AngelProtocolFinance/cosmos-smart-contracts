@@ -42,7 +42,8 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
         ExecuteMsg::UpdateConfig {
             reward_factor,
             gov_contract,
-        } => update_config(deps, info, reward_factor, gov_contract),
+            treasury_addr,
+        } => update_config(deps, info, reward_factor, gov_contract, treasury_addr),
         ExecuteMsg::UpdateOwner { owner } => update_owner(deps, info, owner),
         ExecuteMsg::Sweep { denom } => sweep(deps, env, denom),
     }
