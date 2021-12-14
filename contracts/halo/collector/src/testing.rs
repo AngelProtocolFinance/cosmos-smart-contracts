@@ -15,7 +15,6 @@ fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        owner: "apWallet".to_string(),
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
@@ -38,7 +37,6 @@ fn update_config() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        owner: "apWallet".to_string(),
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
@@ -93,7 +91,6 @@ fn test_sweep() {
         .with_terraswap_pairs(&[(&"uusdtokenHALO".to_string(), &"pairANC".to_string())]);
 
     let msg = InstantiateMsg {
-        owner: "apWallet".to_string(),
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
@@ -151,7 +148,6 @@ fn test_distribute() {
     )]);
 
     let msg = InstantiateMsg {
-        owner: "apWallet".to_string(),
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),

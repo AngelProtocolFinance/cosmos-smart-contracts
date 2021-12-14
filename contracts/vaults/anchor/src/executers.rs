@@ -336,7 +336,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         return Err(ContractError::Unauthorized {});
     }
 
-    // pull registrar SC config to fetch: 1) Treasury Tax Rate and 2) Treasury Addr
+    // pull registrar SC config to fetch the Treasury Tax Rate
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
@@ -376,14 +376,14 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
                 .locked_balance
                 .deduct_tokens(Balance::Cw20(deposit_token.clone()));
 
-            // add to liquid balance (less taxes owed to AP Treasury)
+            // add to liquid balance (less taxes owed to Collector)
             deposit_token.amount = transfer_amt - taxes_owed;
             balances
                 .liquid_balance
                 .add_tokens(Balance::Cw20(deposit_token.clone()));
             taxes_collected += taxes_owed;
 
-            // add taxes collected to the liquid balance of the AP Treasury
+            // add taxes collected to the liquid balance of the Collector
             deposit_token.amount = taxes_owed;
             collector_account
                 .liquid_balance
@@ -398,7 +398,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         .get_token_amount(env.contract.address.clone())
         > Uint128::zero()
     {
-        // Withdraw all DP Tokens from Treasury and send to AP Treasury Wallet
+        // Withdraw all DP Tokens from Treasury and send to Collector
         let withdraw_total = collector_account
             .liquid_balance
             .get_token_amount(env.contract.address);

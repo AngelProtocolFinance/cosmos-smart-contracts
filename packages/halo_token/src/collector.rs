@@ -5,12 +5,11 @@ use cosmwasm_std::Decimal;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub gov_contract: String, // collected rewards receiver
+    pub gov_contract: String,  // collected rewards receiver
+    pub treasury_addr: String, // recieves leftover rewards
     pub terraswap_factory: String,
     pub halo_token: String,
-    pub distributor_contract: String,
     pub reward_factor: Decimal,
-    pub treasury_addr: String, // recieves leftover rewards
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
