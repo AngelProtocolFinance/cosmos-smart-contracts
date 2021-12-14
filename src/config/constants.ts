@@ -45,10 +45,10 @@ export const testnet = {
 
   // LBP contracts
   lbp: {
-    factory_contract: "terra1ryjg80jend876v3awrqcvjmyl5k89t95gy2p6n",
-    pair_contract: "terra1j0zd9flhdckzlwulkaqzc4vlzg02nk4e4srcgl",
-    router_contract: "terra1jcj6wzmdlkytnyg9csemkzjgc4r6phej6amdun",
-    lp_token_contract: "terra17a26m8n7870zfs8w4kn8wh6wxggdfdl2d9aw9v",
+    factory_contract: "terra1rg723ngfpwn2yfnvmrg4jlcq0dw0al9haxch09",
+    router_contract: "terra1vc6wxu2adjr63df8hfc2jtfeh9nktfq59slwf5",
+    pair_contract: "terra1mmqdr6es5fz2hm2l6qw26vv8g0jvvu4rfdsman",
+    lp_token_contract: "terra1mmqdr6es5fz2hm2l6qw26vv8g0jvvu4rfdsman",
     // HALO/UST Pair token supply amount
     halo_token_amount: "80000000000",
     native_token_amount: "1300000000", // adjusted down from localterra/mainnet values due to faucet limitations
