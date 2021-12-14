@@ -53,8 +53,8 @@ export const testnet = {
     halo_token_amount: "80000000000",
     native_token_amount: "1300000000", // adjusted down from localterra/mainnet values due to faucet limitations
     // HALO/UST Pair start/end times
-    lbp_start_time: "12/14/2021 00:00:00Z",
-    lbp_end_time: "12/17/2021 00:00:00Z",
+    lbp_start_time: "12/14/2021 00:00:00",
+    lbp_end_time: "12/17/2021 00:00:00",
     // HALO/UST Pair start/end weights
     token_start_weight: "96",
     token_end_weight: "50",
@@ -186,8 +186,8 @@ export const mainnet = {
     halo_token_amount: "80000000000000",
     native_token_amount: "1300000000000",
     // HALO/UST Pair start/end times
-    lbp_start_time: "12/20/2021 00:00:00Z",
-    lbp_end_time: "12/23/2021 00:00:00Z",
+    lbp_start_time: "12/19/2021 15:00:00",
+    lbp_end_time: "12/22/2021 15:00:00",
     // HALO/UST Pair start/end weights
     token_start_weight: "96",
     token_end_weight: "50",
@@ -200,7 +200,7 @@ export const mainnet = {
   terraswap: {
     terraswap_token_code: 3,
     terraswap_factory: "terra1ulgw0td86nvs4wtpsc80thv6xelk76ut7a7apj",
-    halo_token_contract: "terra1a2u20znw23hax47dmx6amuf33kk59pmg4q3ayq",
+    halo_token_contract: "terra1w8kvd6cqpsthupsk4l0clwnmek4l3zr7c84kwq",
     halo_ust_pair_contract: "",
     halo_ust_pair_lp_token: "",
     initial_halo_supply: "1000000000000000",
