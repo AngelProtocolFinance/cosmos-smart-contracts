@@ -45,16 +45,16 @@ export const testnet = {
 
   // LBP contracts
   lbp: {
-    factory_contract: "terra1ryjg80jend876v3awrqcvjmyl5k89t95gy2p6n",
-    pair_contract: "terra1j0zd9flhdckzlwulkaqzc4vlzg02nk4e4srcgl",
-    router_contract: "terra1jcj6wzmdlkytnyg9csemkzjgc4r6phej6amdun",
-    lp_token_contract: "terra17a26m8n7870zfs8w4kn8wh6wxggdfdl2d9aw9v",
+    factory_contract: "terra1rg723ngfpwn2yfnvmrg4jlcq0dw0al9haxch09",
+    router_contract: "terra1vc6wxu2adjr63df8hfc2jtfeh9nktfq59slwf5",
+    pair_contract: "terra1mmqdr6es5fz2hm2l6qw26vv8g0jvvu4rfdsman",
+    lp_token_contract: "terra1mmqdr6es5fz2hm2l6qw26vv8g0jvvu4rfdsman",
     // HALO/UST Pair token supply amount
     halo_token_amount: "80000000000",
     native_token_amount: "1300000000", // adjusted down from localterra/mainnet values due to faucet limitations
     // HALO/UST Pair start/end times
-    lbp_start_time: "12/14/2021 00:00:00",
-    lbp_end_time: "12/17/2021 00:00:00",
+    lbp_start_time: "2021-12-14T02:02:00.000Z",
+    lbp_end_time: "2021-12-17T02:02:00.000Z",
     // HALO/UST Pair start/end weights
     token_start_weight: "96",
     token_end_weight: "50",
@@ -178,16 +178,16 @@ export const mainnet = {
 
   // LBP contracts
   lbp: {
-    factory_contract: "",
-    pair_contract: "",
-    router_contract: "",
-    lp_token_contract: "",
+    factory_contract: "terra10dl5u40lj50scntv4qmwykfw2zulf77zyv34u0",
+    router_contract: "terra1l32eafhapmn9c8m7epyraxa2yty4xngamvewfs",
+    pair_contract: "terra1hhpgcp2stvzx952zfxtxg4dhgf60yfzchesj3e",
+    lp_token_contract: "terra1kt26adtzwu4yefw37snr73n393vsu8w0hmazxc",
     // HALO/UST Pair token supply amount
     halo_token_amount: "80000000000000",
     native_token_amount: "1300000000000",
     // HALO/UST Pair start/end times
-    lbp_start_time: "12/19/2021 15:00:00",
-    lbp_end_time: "12/22/2021 15:00:00",
+    lbp_start_time: "2021-12-19T15:00:00.000Z",
+    lbp_end_time: "2021-12-22T15:00:00.000Z",
     // HALO/UST Pair start/end weights
     token_start_weight: "96",
     token_end_weight: "50",
