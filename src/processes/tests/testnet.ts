@@ -338,7 +338,7 @@ export async function testExecute(
   // await testQueryFactoryPairs(terra, lbpFactoryContract);
 
   // Test query for LBP Pair
-  await testPairProvideLiquidity(terra, apTeam, terraswapToken, lbpPairContract, "80000000000000", "1300000000000", slippageTolerance);
+  // await testPairProvideLiquidity(terra, apTeam, terraswapToken, lbpPairContract, "80000000000000", "1300000000000", slippageTolerance);
   // await testPairWithdrawLiquidity(terra, apTeam, lbpPairContract, lpTokenContract, "100000000");
   // await testPairSwapNativeToHalo(terra, apTeam, lbpPairContract, "100000000");
   // await testPairSwapHaloToNative(terra, apTeam, lbpPairContract, terraswapToken, "100000000");

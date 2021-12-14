@@ -61,6 +61,8 @@ export const testnet = {
     native_start_weight: "4",
     native_end_weight: "50",
     slippage_tolerance: "0.01",
+    commission_rate: "0.02",
+    split_to_collector: "0.01",
   },
 
   // TerraSwap contracts
@@ -194,6 +196,8 @@ export const mainnet = {
     native_start_weight: "4",
     native_end_weight: "50",
     slippage_tolerance: "0.01",
+    commission_rate: "0.02",
+    split_to_collector: "0.01",
   },
 
   // TerraSwap contracts
