@@ -22,7 +22,7 @@ export function toEncodedBinary(obj: any): string {
 
 export function datetimeStringToUTC(date: string): number {
   try {
-    return Date.parse(date) / 1000;
+    return Math.round(Date.parse(date) / 1000);
   } catch (err) {
     throw "Date given is not parsable";
   }
