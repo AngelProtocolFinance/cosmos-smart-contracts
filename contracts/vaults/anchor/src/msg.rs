@@ -11,7 +11,6 @@ pub struct InitMsg {
     pub symbol: String,
     pub decimals: u8,
     pub harvest_to_liquid: Decimal,
-    pub collector_contract: String, // recieves harvest proceeds
 }
 
 /// We currently take no arguments for migrations
