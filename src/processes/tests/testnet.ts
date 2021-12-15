@@ -123,15 +123,10 @@ import {
   testPairSwapNativeToHalo,
   getPairContractLpToken,
 } from "./lbp/pair";
-import {
-  testRouterSwapOperations,
-  testQueryRouterConfig,
-  testQueryRouterSimulateSwapOperations,
-} from "./lbp/router";
+import { testQueryRouterConfig } from "./lbp/router";
 import {
   testQueryTokenBalance,
   testQueryTokenInfo,
-  testQueryTokenMarketingInfo,
   testQueryTokenMinter,
   testPairWithdrawLiquidity,
 } from "./lbp/token";
@@ -311,19 +306,25 @@ export async function testExecute(
   // await testQueryStakingState(terra, haloStaking);
 
   // Test query for LBP Factory
-  // await testFactoryUpdateConfig(terra, apTeam, lbpFactoryContract, undefined, undefined, undefined, undefined, haloCollector, undefined);
-  // const lbp_end_time = "12/17/2021 00:00:00Z";
-  // await testFactoryUpdatePair(terra, apTeam, lbpFactoryContract, lbpPairContract, datetimeStringToUTC(lbp_end_time));
-  // const lbp_start_time = "12/14/2021 00:00:00Z";
-  // const lbp_end_time = "12/17/2021 00:00:00Z";
+  // await testFactoryUpdateConfig(
+  //   terra,
+  //   apTeam,
+  //   lbpFactoryContract,
+  //   undefined,
+  //   undefined,
+  //   undefined,
+  //   undefined,
+  //   haloCollector,
+  //   undefined
+  // );
   // await testFactoryCreatePair(
   //   terra,
   //   apTeam,
   //   lbpFactoryContract,
   //   terraswapToken,
   //   "uusd",
-  //   datetimeStringToUTC(lbp_start_time),
-  //   datetimeStringToUTC(lbp_end_time),
+  //   datetimeStringToUTC("12/16/2021 00:00:00Z"),
+  //   datetimeStringToUTC("12/17/2021 00:00:00Z"),
   //   "96",
   //   "50",
   //   "4",
@@ -337,25 +338,46 @@ export async function testExecute(
   // await testQueryFactoryPairs(terra, lbpFactoryContract);
 
   // Test query for LBP Pair
-  // await testPairProvideLiquidity(terra, apTeam, terraswapToken, lbpPairContract, "80000000000000", "1300000000000", slippageTolerance);
-  // await testPairWithdrawLiquidity(terra, apTeam, lbpPairContract, lpTokenContract, "100000000");
+  // await testPairProvideLiquidity(
+  //   terra,
+  //   apTeam,
+  //   terraswapToken,
+  //   lbpPairContract,
+  //   "80000000000000",
+  //   "1300000000000",
+  //   slippageTolerance
+  // );
+  // await testPairWithdrawLiquidity(
+  //   terra,
+  //   apTeam,
+  //   lbpPairContract,
+  //   lbpLpTokenContract,
+  //   "100000000"
+  // );
   // await testPairSwapNativeToHalo(terra, apTeam, lbpPairContract, "100000000");
-  // await testPairSwapHaloToNative(terra, apTeam, lbpPairContract, terraswapToken, "100000000");
+  // await testPairSwapHaloToNative(
+  //   terra,
+  //   apTeam,
+  //   lbpPairContract,
+  //   terraswapToken,
+  //   "100000000"
+  // );
   // await testQueryPairPair(terra, lbpPairContract);
   // await testQueryPairPool(terra, lbpPairContract);
   // await testQueryPairSimulationNativeToHalo(terra, lbpPairContract);
   // await testQueryPairSimulationHaloToNative(terra, lbpPairContract, terraswapToken);
   // await testQueryPairReverseSimulationNativeToHalo(terra, lbpPairContract);
-  // await testQueryPairReverseSimulationHaloToNative(terra, lbpPairContract, terraswapToken);
+  // await testQueryPairReverseSimulationHaloToNative(
+  //   terra,
+  //   lbpPairContract,
+  //   terraswapToken
+  // );
 
   // Test query for LBP Router
-  // await testRouterSwapOperations(terra, apTeam, routerContract, terraswapToken, apTeam.key.accAddress, "100000000");
-  // await testQueryRouterConfig(terra, routerContract);
-  // await testQueryRouterSimulateSwapOperations(terra, routerContract, terraswapToken, "100000000");
+  // await testQueryRouterConfig(terra, lbpRouterContract);
 
   // Test query for LBP Token
   // await testQueryTokenBalance(terra, terraswapToken, apTeam.key.accAddress);
   // await testQueryTokenInfo(terra, terraswapToken);
   // await testQueryTokenMinter(terra, terraswapToken);
-  // await testQueryTokenMarketingInfo(terra, terraswapToken);
 }

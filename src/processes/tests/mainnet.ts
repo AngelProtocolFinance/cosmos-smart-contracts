@@ -121,15 +121,10 @@ import {
   testPairSwapHaloToNative,
   testPairSwapNativeToHalo,
 } from "./lbp/pair";
-import {
-  testRouterSwapOperations,
-  testQueryRouterConfig,
-  testQueryRouterSimulateSwapOperations,
-} from "./lbp/router";
+import { testQueryRouterConfig } from "./lbp/router";
 import {
   testQueryTokenBalance,
   testQueryTokenInfo,
-  testQueryTokenMarketingInfo,
   testQueryTokenMinter,
   testPairWithdrawLiquidity,
 } from "./lbp/token";
