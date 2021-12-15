@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import chalk from "chalk";
-import * as chai from "chai";
-import chaiAsPromised from "chai-as-promised";
 import {
   Coin,
   LCDClient,
@@ -10,9 +8,6 @@ import {
   Wallet,
 } from "@terra-money/terra.js";
 import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
-
-chai.use(chaiAsPromised);
-const { expect } = chai;
 
 //----------------------------------------------------------------------------------------
 // TEST: Provide liquidity
@@ -26,7 +21,8 @@ export async function testPairProvideLiquidity(
   tokenContract: string,
   pairContract: string,
   tokenAmount: string,
-  nativeTokenAmount: string
+  nativeTokenAmount: string,
+  slippage_tolerance: string | undefined,
 ): Promise<void> {
   process.stdout.write("Provide liquidity to the New Pair contract");
   await sendTransaction(terra, provider, [
@@ -131,6 +127,20 @@ export async function testPairSwapNativeToHalo(
     ),
   ]);
   console.log(chalk.green(" Done!"));
+}
+
+export async function getPairContractLpToken(
+  terra: LocalTerra | LCDClient,
+  pairContract: string
+): Promise<void> {
+  process.stdout.write("Query new Pair's LP Token contract");
+  const result: any = await terra.wasm.contractQuery(pairContract, {
+    pair: {},
+  });
+  console.log(
+    chalk.green(" Done!"),
+    `${chalk.blue("contractAddress")}=${result.liquidity_token}`
+  );
 }
 
 //----------------------------------------------------------------------------------------

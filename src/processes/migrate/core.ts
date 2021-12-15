@@ -34,12 +34,8 @@ export async function migrateCore(
   // await migrateApTeamMultisig(terra, apTeam, cw3ApTeam);
   // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
   // await migrateIndexFund(terra, apTeam, indexFund);
-  // await migrateAccounts(terra, apTeam, registrar, endowmentContracts);
+  // await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
   // await migrateVaults(terra, apTeam, vaultContracts);
-  // accounts_wasm_code = 1596 // change to latest wasm code
-  // await migrateExistingAccounts(terra, apTeam, account_wasm_id, [
-  //   "terra16h3qzecumpa5lxf6ekt2869mpycms5rac0lwp8",
-  // ]);
 }
 
 // -------------------------------------------------
@@ -199,9 +195,9 @@ async function migrateVaults(
 }
 
 // -------------------------------------------------
-//  Migrate endowments
+//  Migrate a list of existing Endowment contracts
 //--------------------------------------------------
-async function migrateAccounts(
+async function migrateExistingAccounts(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   registrar: string,
@@ -223,17 +219,7 @@ async function migrateAccounts(
     }),
   ]);
   console.log(chalk.green(" Done!"));
-}
 
-// -------------------------------------------------
-//  Migrate a list of existing Endowment contracts
-//--------------------------------------------------
-async function migrateExistingAccounts(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  account_wasm_id: number,
-  endowmentContracts: string[]
-): Promise<void> {
   process.stdout.write("Migrating existing Endowment Accounts contracts\n");
   let prom = Promise.resolve();
   endowmentContracts.forEach((endowment) => {
@@ -242,7 +228,7 @@ async function migrateExistingAccounts(
       () =>
         new Promise(async (resolve, reject) => {
           try {
-            await migrateContract(terra, apTeam, apTeam, endowment, account_wasm_id, {});
+            await migrateContract(terra, apTeam, apTeam, endowment, codeId, {});
             console.log(`Endmowment ${endowment} - ${chalk.green("Done!")}`);
             resolve();
           } catch (e) {
@@ -251,4 +237,7 @@ async function migrateExistingAccounts(
         })
     );
   });
+
+  await prom;
+  console.log(chalk.green(" Done!"));
 }

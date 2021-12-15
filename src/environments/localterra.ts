@@ -66,6 +66,7 @@ let token_start_weight: string;
 let token_end_weight: string;
 let native_start_weight: string;
 let native_end_weight: string;
+let slippage_tolerance: string | undefined;
 
 // Angel/HALO contracts
 let haloAirdrop: string;
@@ -150,6 +151,7 @@ function initialize() {
   token_end_weight = config.lbp.token_end_weight;
   native_start_weight = config.lbp.native_start_weight;
   native_end_weight = config.lbp.native_end_weight;
+  slippage_tolerance = config.lbp.slippage_tolerance;
 
   console.log(`Use ${chalk.cyan(lbpFactoryContract)} as LBP Factory`);
   console.log(`Use ${chalk.cyan(lbpPairContract)} as LBP HALO/UST Pair`);
@@ -254,13 +256,15 @@ export async function startSetupLbp(): Promise<void> {
     terraswapHaloTokenContract,
     haloTokenAmount,
     nativeTokenAmount,
+    "uusd",
     datetimeStringToUTC(lbp_start_time),
     datetimeStringToUTC(lbp_end_time),
     token_start_weight,
     token_end_weight,
     native_start_weight,
     native_end_weight,
-    undefined
+    undefined,
+    slippage_tolerance
   );
 }
 
@@ -409,6 +413,7 @@ export async function startTests(): Promise<void> {
     lbpFactoryContract,
     lbpPairContract,
     lbpRouterContract,
-    lbpLpTokenContract
+    lbpLpTokenContract,
+    slippage_tolerance
   );
 }

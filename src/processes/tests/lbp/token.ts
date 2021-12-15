@@ -73,16 +73,3 @@ export async function testQueryTokenMinter(
   console.log(result);
   console.log(chalk.green(" Passed!"));
 }
-
-export async function testQueryTokenMarketingInfo(
-  terra: LocalTerra | LCDClient,
-  tokenContract: string
-): Promise<void> {
-  process.stdout.write("Test - Query Marketing info");
-  const result: any = await terra.wasm.contractQuery(tokenContract, {
-    marketing_info: {},
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
