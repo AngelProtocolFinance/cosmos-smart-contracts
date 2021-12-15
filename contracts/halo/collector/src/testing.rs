@@ -18,7 +18,7 @@ fn proper_initialization() {
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
-        treasury_addr: "treasury_addr".to_string(),
+        distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
 
@@ -40,7 +40,7 @@ fn update_config() {
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
-        treasury_addr: "treasury_addr".to_string(),
+        distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
 
@@ -52,7 +52,6 @@ fn update_config() {
     let msg = ExecuteMsg::UpdateConfig {
         reward_factor: Some(Decimal::percent(80)),
         gov_contract: None,
-        treasury_addr: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -67,7 +66,6 @@ fn update_config() {
     let msg = ExecuteMsg::UpdateConfig {
         reward_factor: None,
         gov_contract: None,
-        treasury_addr: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg);
@@ -96,7 +94,7 @@ fn test_sweep() {
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
-        treasury_addr: "treasury_addr".to_string(),
+        distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
 
@@ -153,7 +151,7 @@ fn test_distribute() {
         terraswap_factory: "terraswapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
-        treasury_addr: "treasury_addr".to_string(),
+        distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
 
@@ -184,7 +182,7 @@ fn test_distribute() {
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: "tokenHALO".to_string(),
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                    recipient: "treasury_addr".to_string(),
+                    recipient: "distributor".to_string(),
                     amount: Uint128::from(10u128),
                 })
                 .unwrap(),

@@ -27,7 +27,6 @@ pub struct ConfigResponse {
     pub interest_model: String,
     pub distribution_model: String,
     pub overseer_contract: String,
-    pub collector_contract: String,
     pub distributor_contract: String,
     pub stable_denom: String,
     pub max_borrow_factor: Decimal256,
