@@ -414,7 +414,7 @@ pub fn harvest(
             .add_attribute("withdraw_amount", withdraw_total);
 
         // Harvested Amount is split by collector split input percentage
-        if !collector_share.is_zero() {
+        if !collector_share.is_zero() && collector_share <= Decimal::one() {
             let submessage_id = config.next_pending_id;
             PENDING.save(
                 deps.storage,
