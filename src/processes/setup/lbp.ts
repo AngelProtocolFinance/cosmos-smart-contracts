@@ -21,10 +21,7 @@ export async function setupLbp(
   native_start_weight: string,
   native_end_weight: string,
   description: string | undefined,
-  slippage_tolerance: string | undefined,
-  commission_rate: string,
-  split_to_collector: string | undefined,
-  collector_addr: string | undefined,
+  slippage_tolerance: string | undefined
 ): Promise<void> {
   process.stdout.write("Uploading LBP factory Wasm");
   const factoryCodeId = await storeCode(
@@ -64,10 +61,7 @@ export async function setupLbp(
     apTeam,
     factoryCodeId,
     pairCodeId,
-    tokenCodeId,
-    commission_rate,
-    split_to_collector,
-    collector_addr,
+    tokenCodeId
   );
 
   // Router contract
@@ -100,7 +94,7 @@ export async function setupLbp(
     pairContract,
     haloTokenAmount,
     nativeTokenAmount,
-    slippage_tolerance,
+    slippage_tolerance
   );
 }
 
@@ -109,19 +103,13 @@ async function setupFactory(
   apTeam: Wallet,
   factoryCodeId: number,
   pairCodeId: number,
-  tokenCodeId: number,
-  commission_rate: string,
-  split_to_collector: string | undefined,
-  collector_addr: string | undefined,
+  tokenCodeId: number
 ): Promise<string> {
   process.stdout.write("Instantiating Factory contract");
   const factoryResult = await instantiateContract(terra, apTeam, apTeam, factoryCodeId, {
     pair_code_id: pairCodeId,
     token_code_id: tokenCodeId,
     owner: apTeam.key.accAddress,
-    commission_rate,
-    split_to_collector,
-    collector_addr,
   });
   const factoryContract = factoryResult.logs[0].events
     .find((event) => {

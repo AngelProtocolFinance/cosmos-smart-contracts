@@ -60,8 +60,6 @@ let token_end_weight: string;
 let native_start_weight: string;
 let native_end_weight: string;
 let slippage_tolerance: string | undefined;
-let commission_rate: string;
-let split_to_collector: string | undefined;
 
 // Angel/HALO contracts
 let haloAirdrop: string;
@@ -136,8 +134,6 @@ function initialize() {
   native_start_weight = config.lbp.native_start_weight;
   native_end_weight = config.lbp.native_end_weight;
   slippage_tolerance = config.lbp.slippage_tolerance;
-  commission_rate = config.lbp.commission_rate;
-  split_to_collector = config.lbp.split_to_collector;
 
   console.log(`Use ${chalk.cyan(lbpFactoryContract)} as LBP Factory`);
   console.log(`Use ${chalk.cyan(lbpPairContract)} as LBP HALO/UST Pair`);
@@ -236,10 +232,7 @@ export async function startSetupLbp(): Promise<void> {
     native_start_weight,
     native_end_weight,
     undefined,
-    slippage_tolerance,
-    commission_rate,
-    split_to_collector,
-    haloCollector,
+    slippage_tolerance
   );
 }
 
