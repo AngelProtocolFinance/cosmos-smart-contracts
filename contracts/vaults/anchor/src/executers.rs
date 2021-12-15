@@ -445,7 +445,7 @@ pub fn harvest(
         }
 
         // Remainder (if any) is sent to AP Treasury Address
-        if withdraw_leftover <= Uint128::zero() {
+        if withdraw_leftover > Uint128::zero() {
             let submessage_id = config.next_pending_id;
             PENDING.save(
                 deps.storage,
