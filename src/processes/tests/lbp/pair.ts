@@ -55,7 +55,6 @@ export async function testPairProvideLiquidity(
               amount: nativeTokenAmount,
             },
           ],
-          slippage_tolerance
         },
       },
       {
