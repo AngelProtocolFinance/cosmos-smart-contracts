@@ -85,13 +85,18 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   charity1: Wallet,
-  registrar: string
+  registrar: string,
+  collector_address: string,
+  collector_share: string,
 ): Promise<void> {
   process.stdout.write("Test - Charity1 cannot trigger harvest of all Vaults (Locked to Liquid Account)");
   await expect(
     sendTransaction(terra, charity1, [
       new MsgExecuteContract(charity1.key.accAddress, registrar, {
-        harvest: {}
+        harvest: {
+          collector_address,
+          collector_share
+        }
       })
     ])
   ).to.be.rejectedWith("Request failed with status code 400");
@@ -101,7 +106,10 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
   await expect(
     sendTransaction(terra, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-        harvest: {}
+        harvest: {
+          collector_address,
+          collector_share
+        }
       })
     ])
   );

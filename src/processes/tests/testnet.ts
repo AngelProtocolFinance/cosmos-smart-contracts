@@ -204,7 +204,7 @@ export async function testExecute(
   // await testRejectUnapprovedDonations(terra, pleb, endowmentContract3);
   // await testDonorSendsToIndexFund(terra, pleb, indexFund);
   // await testTcaMemberSendsToIndexFund(terra, tca, indexFund);
-  // await testAngelTeamCanTriggerVaultsHarvest(terra, apTeam, charity1, registrar);
+  // await testAngelTeamCanTriggerVaultsHarvest(terra, apTeam, charity1, registrar, haloCollector, "0.1");
   // await testCharityCanUpdateStrategies(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
   // await testBeneficiaryCanWithdrawFromLiquid(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
   // await testUpdatingRegistrarConfigs(terra, apTeam, registrar, haloCollector);

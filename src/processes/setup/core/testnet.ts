@@ -508,7 +508,7 @@ async function createVaults(
     moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
     tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - Anchor #2",
-    symbol: "apANC",
+    symbol: "apANC2",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
   });
