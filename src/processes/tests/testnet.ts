@@ -107,7 +107,6 @@ import {
   testFactoryUpdateConfig,
   testFactoryCreatePair,
   testFactoryUnregister,
-  testFactoryUpdatePair,
   testQueryFactoryConfig,
   testQueryFactoryPair,
   testQueryFactoryPairs,
@@ -173,7 +172,7 @@ export async function testExecute(
   lbpPairContract: string,
   lbpRouterContract: string,
   lbpLpTokenContract: string,
-  slippageTolerance: string | undefined,
+  slippageTolerance: string | undefined
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);

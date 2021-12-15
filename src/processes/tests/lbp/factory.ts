@@ -24,59 +24,22 @@ export async function testFactoryUpdateConfig(
   pair_code_id: number | undefined,
   commission_rate: string | undefined,
   collector_addr: string | undefined,
-  split_to_collector: string | undefined,
+  split_to_collector: string | undefined
 ): Promise<void> {
   process.stdout.write("Test - Only owner can update Factory config");
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        factoryContract,
-        {
-          update_config: {
-            owner,
-            token_code_id,
-            pair_code_id,
-            commission_rate,
-            collector_addr,
-            split_to_collector,
-          },
+      new MsgExecuteContract(apTeam.key.accAddress, factoryContract, {
+        update_config: {
+          owner,
+          token_code_id,
+          pair_code_id,
+          commission_rate,
+          collector_addr,
+          split_to_collector,
         },
-      ),
-    ])
-  );
-  console.log(chalk.green(" Passed!"));
-}
-
-//----------------------------------------------------------------------------------------
-// TEST: Update Pair config
-//
-// SCENARIO:
-// Pleb cannot update contract config, only owner can update config
-//
-//----------------------------------------------------------------------------------------
-export async function testFactoryUpdatePair(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  factoryContract: string,
-  pair: string,
-  end_time: number | undefined,
-): Promise<void> {
-  process.stdout.write("Test - Only owner can update Factory config");
-
-  await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        factoryContract,
-        {
-          update_pair: {
-            pair,
-            end_time,
-          },
-        },
-      ),
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -100,42 +63,38 @@ export async function testFactoryCreatePair(
   token_end_weight: string,
   native_start_weight: string,
   native_end_weight: string,
-  description: string | undefined,
+  description: string | undefined
 ): Promise<string> {
   process.stdout.write("Test - Only the owner can execute it to create swap pair");
 
   const pairResult = await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(
-      apTeam.key.accAddress,
-      factoryContract,
-      {
-        create_pair: {
-          asset_infos: [
-            {
-              info:{
-                token: {
-                  contract_addr: tokenContract,
-                }
+    new MsgExecuteContract(apTeam.key.accAddress, factoryContract, {
+      create_pair: {
+        asset_infos: [
+          {
+            info: {
+              token: {
+                contract_addr: tokenContract,
               },
-              start_weight: token_start_weight,
-              end_weight: token_end_weight
             },
-            {
-              info:{
-                native_token: {
-                  denom: denom
-                }
+            start_weight: token_start_weight,
+            end_weight: token_end_weight,
+          },
+          {
+            info: {
+              native_token: {
+                denom: denom,
               },
-              start_weight: native_start_weight,
-              end_weight: native_end_weight
-            }
-          ],
-          start_time,
-          end_time,
-          description,
-        }
+            },
+            start_weight: native_start_weight,
+            end_weight: native_end_weight,
+          },
+        ],
+        start_time,
+        end_time,
+        description,
       },
-    ),
+    }),
   ]);
 
   const pairContract = pairResult.logs[0].events
@@ -151,7 +110,6 @@ export async function testFactoryCreatePair(
   return pairContract;
 }
 
-
 //----------------------------------------------------------------------------------------
 // TEST: remove from list of pairs
 //
@@ -164,32 +122,28 @@ export async function testFactoryUnregister(
   apTeam: Wallet,
   factoryContract: string,
   tokenContract: string,
-  denom: string,
+  denom: string
 ): Promise<void> {
   process.stdout.write("Test - Factory Pair owner can remove from list of pairs");
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        factoryContract,
-        {
-          unregister: {
-            asset_infos: [
-              {
-                token: {
-                  contract_addr: tokenContract,
-                }
+      new MsgExecuteContract(apTeam.key.accAddress, factoryContract, {
+        unregister: {
+          asset_infos: [
+            {
+              token: {
+                contract_addr: tokenContract,
               },
-              {
-                native_token: {
-                  denom: denom
-                }
-              }
-            ]
-          },
+            },
+            {
+              native_token: {
+                denom: denom,
+              },
+            },
+          ],
         },
-      ),
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -214,7 +168,7 @@ export async function testQueryFactoryConfig(
 export async function testQueryFactoryPair(
   terra: LocalTerra | LCDClient,
   factoryContract: string,
-  tokenContract: string,
+  tokenContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Pair");
   const asset_infos = [
@@ -225,9 +179,9 @@ export async function testQueryFactoryPair(
     },
     {
       native_token: {
-        denom: "uusd".toString()
-      }
-    }
+        denom: "uusd".toString(),
+      },
+    },
   ];
   const result: any = await terra.wasm.contractQuery(factoryContract, {
     pair: { asset_infos },

@@ -106,7 +106,6 @@ import {
   testFactoryUpdateConfig,
   testFactoryCreatePair,
   testFactoryUnregister,
-  testFactoryUpdatePair,
   testQueryFactoryConfig,
   testQueryFactoryPair,
   testQueryFactoryPairs,
