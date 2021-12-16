@@ -177,10 +177,41 @@ export async function testGovRegisterContracts(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: Stake HALO voting tokens
+//
+// SCENARIO:
+// Stake some amount of HALO tokens for voting on Polls
+//
+//----------------------------------------------------------------------------------------
+export async function testGovStakeVotingTokens(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  haloToken: string,
+  govContract: string,
+  amount: string
+): Promise<void> {
+  process.stdout.write("Test - Stake voting tokens");
+
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(apTeam.key.accAddress, haloToken, {
+        send: {
+          amount: amount,
+          contract: govContract,
+          msg: toEncodedBinary({ stake_voting_tokens: {} }),
+        },
+      }),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
 // TEST: Withdraw voting tokens
 //
 // SCENARIO:
-// Withdraw amount if not staked. By default all funds will be withdrawn
+// Withdraw amount if not staked. By default all funds will be withdrawn.
+// Withdrawn HALO is subject to an unbonding period before it can be accessed.
 //
 //----------------------------------------------------------------------------------------
 export async function testGovWithdrawVotingTokens(
@@ -195,6 +226,23 @@ export async function testGovWithdrawVotingTokens(
     sendTransaction(terra, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, govContract, {
         withdraw_voting_tokens: { amount },
+      }),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testGovClaimVotingTokens(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  govContract: string
+): Promise<void> {
+  process.stdout.write("Test - Claim all eligable withdrawn voting tokens");
+
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
+        claim_voting_tokens: {},
       }),
     ])
   );

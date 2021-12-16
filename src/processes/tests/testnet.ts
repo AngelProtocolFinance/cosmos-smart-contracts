@@ -78,7 +78,9 @@ import {
   testGovRegisterContracts,
   testGovSnapshotPoll,
   testGovUpdateConfig,
+  testGovStakeVotingTokens,
   testGovWithdrawVotingTokens,
+  testGovClaimVotingTokens,
   testGovExecutePollForRegistrarSettings,
   testQueryGovConfig,
   testQueryGovPoll,
@@ -300,10 +302,21 @@ export async function testExecute(
   // await testGovExecutePoll(terra, apTeam, haloGov, 1);
   // await testGovEndPoll(terra, apTeam, haloGov, 1);
   // await testGovSnapshotPoll(terra, apTeam, haloGov, 1);
+  // await testGovStakeVotingTokens(terra, apTeam, terraswapToken, haloGov, "20");
   // await testGovWithdrawVotingTokens(terra, apTeam, haloGov, "11");
+  // await testGovClaimVotingTokens(terra, apTeam, govContract);
   // await testGovCastVote(terra, apTeam, haloGov, 1, VoteOption.YES, "1");
   // await testGovRegisterContracts(terra, apTeam, haloGov, terraswapToken);
-  // await testGovExecutePollForRegistrarSettings(terra, apTeam, haloGov, terraswapToken, "1000000", 100, "0.5", "0.1");
+  // await testGovExecutePollForRegistrarSettings(
+  //   terra,
+  //   apTeam,
+  //   haloGov,
+  //   terraswapToken,
+  //   "1000000",
+  //   100,
+  //   "0.5",
+  //   "0.1"
+  // );
   // await testQueryGovConfig(terra, haloGov);
   // await testQueryGovState(terra, haloGov);
   // await testQueryGovPoll(terra, haloGov, 1);
