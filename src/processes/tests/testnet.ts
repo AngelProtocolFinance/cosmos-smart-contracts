@@ -283,7 +283,20 @@ export async function testExecute(
   // await testQueryVestingAccounts(terra, haloVesting, undefined, undefined);
 
   // Test query for HALO gov
-  // await testGovUpdateConfig(terra, apTeam, pleb, haloGov, apTeam2.key.accAddress, undefined, undefined, undefined, undefined, undefined, undefined);
+  // await testGovUpdateConfig(
+  //   terra,
+  //   apTeam,
+  //   pleb,
+  //   haloGov,
+  //   apTeam2.key.accAddress,
+  //   undefined,
+  //   undefined,
+  //   undefined,
+  //   undefined,
+  //   undefined,
+  //   undefined,
+  //   undefined
+  // );
   // await testGovExecutePoll(terra, apTeam, haloGov, 1);
   // await testGovEndPoll(terra, apTeam, haloGov, 1);
   // await testGovSnapshotPoll(terra, apTeam, haloGov, 1);
