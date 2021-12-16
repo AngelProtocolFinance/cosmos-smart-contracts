@@ -3,11 +3,15 @@ use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, ReadonlySingleton,
     Singleton,
 };
+use cw0::Duration;
+use cw_controllers::Claims;
 use halo_token::common::OrderBy;
 use halo_token::gov::{PollStatus, VoterInfo};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
+
+pub const CLAIMS: Claims = Claims::new("claims");
 
 static KEY_CONFIG: &[u8] = b"config";
 static KEY_STATE: &[u8] = b"state";
@@ -29,6 +33,9 @@ pub struct Config {
     pub proposal_deposit: Uint128,
     pub snapshot_period: u64,
     pub registrar_contract: Addr,
+    /// This is the unbonding period of HALO tokens
+    /// We need this to only allow claims to be redeemed after this period
+    pub unbonding_period: Duration,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

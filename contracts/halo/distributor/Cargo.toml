@@ -1,6 +1,6 @@
 [package]
 name = "halo-distributor"
-version = "0.0.0"
+version = "0.0.1"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 description = "A Faucet contract for Angel Protocol - provides claim interface only from the whitelisted contract"

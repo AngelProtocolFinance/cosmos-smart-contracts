@@ -1,5 +1,7 @@
 use crate::error::ContractError;
-use crate::staking::{query_staker, stake_voting_tokens, withdraw_voting_tokens};
+use crate::staking::{
+    claim_voting_tokens, query_staker, stake_voting_tokens, withdraw_voting_tokens,
+};
 use crate::state::{
     bank_read, bank_store, config_read, config_store, poll_indexer_store, poll_read, poll_store,
     poll_voter_read, poll_voter_store, read_poll_voters, read_polls, read_tmp_poll_id, state_read,
@@ -9,6 +11,7 @@ use cosmwasm_std::{
     attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
     MessageInfo, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
+use cw0::Duration;
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use halo_token::common::OrderBy;
 use halo_token::gov::{
@@ -48,6 +51,7 @@ pub fn instantiate(
         proposal_deposit: msg.proposal_deposit,
         snapshot_period: msg.snapshot_period,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
+        unbonding_period: msg.unbonding_period,
     };
 
     let state = State {
@@ -81,6 +85,7 @@ pub fn execute(
             timelock_period,
             proposal_deposit,
             snapshot_period,
+            unbonding_period,
         } => update_config(
             deps,
             info,
@@ -91,10 +96,12 @@ pub fn execute(
             timelock_period,
             proposal_deposit,
             snapshot_period,
+            unbonding_period,
         ),
         ExecuteMsg::WithdrawVotingTokens { amount } => {
             withdraw_voting_tokens(deps, env, info, amount)
         }
+        ExecuteMsg::ClaimVotingTokens {} => claim_voting_tokens(deps, env, info),
         ExecuteMsg::CastVote {
             poll_id,
             vote,
@@ -187,6 +194,7 @@ pub fn update_config(
     timelock_period: Option<u64>,
     proposal_deposit: Option<Uint128>,
     snapshot_period: Option<u64>,
+    unbonding_period: Option<Duration>,
 ) -> Result<Response, ContractError> {
     let api = deps.api;
     config_store(deps.storage).update(|mut config| {
@@ -222,6 +230,9 @@ pub fn update_config(
             config.snapshot_period = period;
         }
 
+        if let Some(unbonding_period) = unbonding_period {
+            config.unbonding_period = unbonding_period;
+        }
         Ok(config)
     })?;
 

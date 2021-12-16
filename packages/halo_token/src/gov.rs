@@ -1,5 +1,6 @@
 use crate::common::OrderBy;
 use cosmwasm_std::{Binary, Decimal, Uint128};
+use cw0::Duration;
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -19,6 +20,7 @@ pub struct InstantiateMsg {
     pub snapshot_period: u64,
     pub registrar_contract: String,
     pub halo_token: String, // halo token address
+    pub unbonding_period: Duration,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -39,6 +41,7 @@ pub enum ExecuteMsg {
         timelock_period: Option<u64>,
         proposal_deposit: Option<Uint128>,
         snapshot_period: Option<u64>,
+        unbonding_period: Option<Duration>,
     },
     CastVote {
         poll_id: u64,
@@ -48,6 +51,7 @@ pub enum ExecuteMsg {
     WithdrawVotingTokens {
         amount: Option<Uint128>,
     },
+    ClaimVotingTokens {},
     EndPoll {
         poll_id: u64,
     },

@@ -1,6 +1,6 @@
 [package]
 name = "halo-gov"
-version = "0.0.0"
+version = "0.0.1"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 description = "A Goverance contract for Angel Protocol - allows a user to create poll and vote"
@@ -22,7 +22,9 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cw20 = { version = "0.8.0" } 
+cw0 = "0.9.0"
+cw20 = "0.8.0"
+cw-controllers = "0.9.0"
 cosmwasm-std = { version = "0.16.0", features = ["iterator"] }
 cosmwasm-storage = { version = "0.16.0", features = ["iterator"] }
 halo-token = { version = "0.1.0", path = "../../../packages/halo_token" }
