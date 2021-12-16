@@ -4,8 +4,8 @@ use crate::state::{
     state_store, Config, Poll, State, TokenManager, CLAIMS,
 };
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
-    Storage, Uint128, WasmMsg,
+    to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage,
+    Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use halo_token::gov::{PollStatus, StakerResponse};
@@ -220,5 +220,8 @@ pub fn query_staker(deps: Deps, env: Env, address: String) -> StdResult<StakerRe
         },
         share: token_manager.share,
         locked_balance: token_manager.locked_balance,
+        claims: CLAIMS
+            .query_claims(deps, &deps.api.addr_validate(&address)?)?
+            .claims,
     })
 }

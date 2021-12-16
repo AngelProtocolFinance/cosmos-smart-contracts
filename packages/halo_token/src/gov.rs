@@ -2,6 +2,7 @@ use crate::common::OrderBy;
 use cosmwasm_std::{Binary, Decimal, Uint128};
 use cw0::Duration;
 use cw20::Cw20ReceiveMsg;
+use cw_controllers::Claim;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -95,6 +96,10 @@ pub struct PollExecuteMsg {
 pub enum QueryMsg {
     Config {},
     State {},
+    /// Claims shows the number of tokens this address can access when they are done unbonding
+    Claims {
+        address: String,
+    },
     Staker {
         address: String,
     },
@@ -125,6 +130,7 @@ pub struct ConfigResponse {
     pub timelock_period: u64,
     pub proposal_deposit: Uint128,
     pub snapshot_period: u64,
+    pub unbonding_period: Duration,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -167,6 +173,7 @@ pub struct StakerResponse {
     pub balance: Uint128,
     pub share: Uint128,
     pub locked_balance: Vec<(u64, VoterInfo)>,
+    pub claims: Vec<Claim>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]

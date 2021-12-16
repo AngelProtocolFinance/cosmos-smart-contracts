@@ -5,7 +5,7 @@ use crate::staking::{
 use crate::state::{
     bank_read, bank_store, config_read, config_store, poll_indexer_store, poll_read, poll_store,
     poll_voter_read, poll_voter_store, read_poll_voters, read_polls, read_tmp_poll_id, state_read,
-    state_store, store_tmp_poll_id, Config, ExecuteData, Poll, State,
+    state_store, store_tmp_poll_id, Config, ExecuteData, Poll, State, CLAIMS,
 };
 use cosmwasm_std::{
     attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
@@ -677,6 +677,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
     match msg {
         QueryMsg::Config {} => Ok(to_binary(&query_config(deps)?)?),
         QueryMsg::State {} => Ok(to_binary(&query_state(deps)?)?),
+        QueryMsg::Claims { address } => Ok(to_binary(
+            &CLAIMS.query_claims(deps, &deps.api.addr_validate(&address)?)?,
+        )?),
         QueryMsg::Staker { address } => Ok(to_binary(&query_staker(deps, env, address)?)?),
         QueryMsg::Poll { poll_id } => Ok(to_binary(&query_poll(deps, poll_id)?)?),
         QueryMsg::Polls {
@@ -717,6 +720,7 @@ fn query_config(deps: Deps) -> Result<ConfigResponse, ContractError> {
         timelock_period: config.timelock_period,
         proposal_deposit: config.proposal_deposit,
         snapshot_period: config.snapshot_period,
+        unbonding_period: config.unbonding_period,
     })
 }
 
