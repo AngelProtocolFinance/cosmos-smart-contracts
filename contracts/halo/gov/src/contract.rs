@@ -194,7 +194,7 @@ pub fn update_config(
     timelock_period: Option<u64>,
     proposal_deposit: Option<Uint128>,
     snapshot_period: Option<u64>,
-    unbonding_period: Option<Duration>,
+    unbonding_period: Option<u64>,
 ) -> Result<Response, ContractError> {
     let api = deps.api;
     config_store(deps.storage).update(|mut config| {
@@ -231,7 +231,8 @@ pub fn update_config(
         }
 
         if let Some(unbonding_period) = unbonding_period {
-            config.unbonding_period = unbonding_period;
+            // days of unbonding calculated out to seconds
+            config.unbonding_period = Duration::Time(24 * 60 * 60 * unbonding_period)
         }
         Ok(config)
     })?;

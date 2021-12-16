@@ -42,7 +42,7 @@ pub enum ExecuteMsg {
         timelock_period: Option<u64>,
         proposal_deposit: Option<Uint128>,
         snapshot_period: Option<u64>,
-        unbonding_period: Option<Duration>,
+        unbonding_period: Option<u64>,
     },
     CastVote {
         poll_id: u64,
