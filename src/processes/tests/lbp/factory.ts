@@ -19,12 +19,8 @@ export async function testFactoryUpdateConfig(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   factoryContract: string,
-  owner: string | undefined,
   token_code_id: number | undefined,
-  pair_code_id: number | undefined,
-  commission_rate: string | undefined,
-  collector_addr: string | undefined,
-  split_to_collector: string | undefined
+  pair_code_id: number | undefined
 ): Promise<void> {
   process.stdout.write("Test - Only owner can update Factory config");
 
@@ -32,12 +28,8 @@ export async function testFactoryUpdateConfig(
     sendTransaction(terra, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, factoryContract, {
         update_config: {
-          owner,
           token_code_id,
           pair_code_id,
-          commission_rate,
-          collector_addr,
-          split_to_collector,
         },
       }),
     ])

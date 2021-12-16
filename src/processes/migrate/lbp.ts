@@ -23,17 +23,7 @@ export async function migrateLbp(
   await migrateRouter(terra, apTeam, routerContract);
 
   // Update Factory pair_code_id when migrate
-  await testFactoryUpdateConfig(
-    terra,
-    apTeam,
-    factoryContract,
-    undefined,
-    undefined,
-    pairCodeId,
-    undefined,
-    undefined,
-    undefined
-  );
+  await testFactoryUpdateConfig(terra, apTeam, factoryContract, undefined, pairCodeId);
 }
 
 // -------------------------------------------------
