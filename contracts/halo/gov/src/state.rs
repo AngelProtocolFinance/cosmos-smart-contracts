@@ -254,8 +254,5 @@ fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
 
 // this will set the first key after the provided key, by appending a 1 byte
 fn calc_range_end_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    match start_after {
-        Some(addr) => Some(addr.as_bytes().to_vec()),
-        _ => None,
-    }
+    start_after.map(|addr| addr.as_bytes().to_vec())
 }

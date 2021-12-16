@@ -27,12 +27,9 @@ pub fn stake_voting_tokens(
     let mut state: State = state_store(deps.storage).load()?;
 
     // balance already increased, so subtract deposit amount
-    let total_balance = query_token_balance(
-        &deps.querier,
-        config.halo_token,
-        env.contract.address.clone(),
-    )?
-    .checked_sub(state.total_deposit + amount)?;
+    let total_balance =
+        query_token_balance(&deps.querier, config.halo_token, env.contract.address)?
+            .checked_sub(state.total_deposit + amount)?;
 
     let share = if total_balance.is_zero() || state.total_share.is_zero() {
         amount
@@ -103,7 +100,7 @@ pub fn withdraw_voting_tokens(
 
             CLAIMS.create_claim(
                 deps.storage,
-                &info.sender.clone(),
+                &info.sender,
                 Uint128::from(withdraw_amount),
                 config.unbonding_period.after(&env.block),
             )?;
@@ -121,7 +118,7 @@ pub fn claim_voting_tokens(
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
     let config: Config = config_store(deps.storage).load()?;
-    let mut balance = deps
+    let balance = deps
         .querier
         .query_balance(&env.contract.address, &config.halo_token)?;
     // check how much to send - min(balance, claims[sender]), and reduce the claim
@@ -133,7 +130,6 @@ pub fn claim_voting_tokens(
     }
 
     // transfer tokens to the sender
-    balance.amount = to_send;
     send_tokens(deps, &config.halo_token, &info.sender, to_send, "claim")
 }
 
