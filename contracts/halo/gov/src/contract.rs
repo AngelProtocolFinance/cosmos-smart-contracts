@@ -51,7 +51,7 @@ pub fn instantiate(
         proposal_deposit: msg.proposal_deposit,
         snapshot_period: msg.snapshot_period,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-        unbonding_period: Duration::Time(24 * 60 * 60 * msg.unbonding_period), // days of unbonding
+        unbonding_period: Duration::Time(msg.unbonding_period), // secconds of unbonding
     };
 
     let state = State {
@@ -231,8 +231,8 @@ pub fn update_config(
         }
 
         if let Some(unbonding_period) = unbonding_period {
-            // days of unbonding calculated out to seconds
-            config.unbonding_period = Duration::Time(24 * 60 * 60 * unbonding_period)
+            // unbonding calculated in seconds
+            config.unbonding_period = Duration::Time(unbonding_period)
         }
         Ok(config)
     })?;

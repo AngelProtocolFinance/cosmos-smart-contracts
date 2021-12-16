@@ -33,6 +33,7 @@ const DEFAULT_VOTING_PERIOD: u64 = 20000u64;
 const DEFAULT_FIX_PERIOD: u64 = 10u64;
 const DEFAULT_TIMELOCK_PERIOD: u64 = 10000u64;
 const DEFAULT_PROPOSAL_DEPOSIT: u128 = 10000000000u128;
+const DEFAULT_UNBONDING_PERIOD: u64 = 0; // seconds
 
 fn mock_instantiate(deps: DepsMut) {
     let msg = InstantiateMsg {
@@ -44,7 +45,7 @@ fn mock_instantiate(deps: DepsMut) {
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
-        unbonding_period: 7,
+        unbonding_period: DEFAULT_UNBONDING_PERIOD,
     };
 
     let info = mock_info(TEST_CREATOR, &[]);
@@ -78,7 +79,7 @@ fn instantiate_msg() -> InstantiateMsg {
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
-        unbonding_period: 7,
+        unbonding_period: DEFAULT_UNBONDING_PERIOD,
     }
 }
 
@@ -157,7 +158,7 @@ fn fails_init_invalid_quorum() {
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
-        unbonding_period: 7,
+        unbonding_period: DEFAULT_UNBONDING_PERIOD,
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -184,7 +185,7 @@ fn fails_init_invalid_threshold() {
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
-        unbonding_period: 7,
+        unbonding_period: DEFAULT_UNBONDING_PERIOD,
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -211,7 +212,7 @@ fn fails_contract_already_registered() {
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
-        unbonding_period: 7,
+        unbonding_period: DEFAULT_UNBONDING_PERIOD,
     };
 
     let _res = instantiate(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
