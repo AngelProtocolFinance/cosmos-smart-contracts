@@ -51,7 +51,7 @@ pub fn instantiate(
         proposal_deposit: msg.proposal_deposit,
         snapshot_period: msg.snapshot_period,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-        unbonding_period: msg.unbonding_period,
+        unbonding_period: Duration::Time(24 * 60 * 60 * msg.unbonding_period), // days of unbonding
     };
 
     let state = State {

@@ -20,8 +20,8 @@ pub struct InstantiateMsg {
     pub proposal_deposit: Uint128,
     pub snapshot_period: u64,
     pub registrar_contract: String,
-    pub halo_token: String, // halo token address
-    pub unbonding_period: Duration,
+    pub halo_token: String,    // halo token address
+    pub unbonding_period: u64, // days of unbonding
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
