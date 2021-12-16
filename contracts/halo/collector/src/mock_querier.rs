@@ -32,7 +32,7 @@ pub struct WasmMockQuerier {
     base: MockQuerier<TerraQueryWrapper>,
     token_querier: TokenQuerier,
     tax_querier: TaxQuerier,
-    terraswap_factory_querier: TerraswapFactoryQuerier,
+    swap_factory_querier: TerraswapFactoryQuerier,
 }
 
 #[derive(Clone, Default)]
@@ -162,7 +162,7 @@ impl WasmMockQuerier {
             QueryRequest::Wasm(WasmQuery::Smart { contract_addr, msg }) => match from_binary(msg) {
                 Ok(QueryMsg::Pair { asset_infos }) => {
                     let key = asset_infos[0].to_string() + asset_infos[1].to_string().as_str();
-                    match self.terraswap_factory_querier.pairs.get(&key) {
+                    match self.swap_factory_querier.pairs.get(&key) {
                         Some(v) => SystemResult::Ok(ContractResult::from(to_binary(&PairInfo {
                             contract_addr: v.to_string(),
                             liquidity_token: "liquidity".to_string(),
@@ -227,7 +227,7 @@ impl WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
             tax_querier: TaxQuerier::default(),
-            terraswap_factory_querier: TerraswapFactoryQuerier::default(),
+            swap_factory_querier: TerraswapFactoryQuerier::default(),
         }
     }
 
@@ -243,6 +243,6 @@ impl WasmMockQuerier {
 
     // configure the terraswap pair
     pub fn with_terraswap_pairs(&mut self, pairs: &[(&String, &String)]) {
-        self.terraswap_factory_querier = TerraswapFactoryQuerier::new(pairs);
+        self.swap_factory_querier = TerraswapFactoryQuerier::new(pairs);
     }
 }

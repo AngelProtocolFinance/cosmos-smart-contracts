@@ -18,14 +18,15 @@ use terraswap::querier::{query_balance, query_pair_info, query_token_balance};
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     store_config(
         deps.storage,
         &Config {
+            owner: info.sender,
             gov_contract: deps.api.addr_validate(&msg.gov_contract)?,
-            terraswap_factory: deps.api.addr_validate(&msg.terraswap_factory)?,
+            swap_factory: deps.api.addr_validate(&msg.swap_factory)?,
             halo_token: deps.api.addr_validate(&msg.halo_token)?,
             distributor_contract: deps.api.addr_validate(&msg.distributor_contract)?,
             reward_factor: msg.reward_factor,
@@ -38,7 +39,11 @@ pub fn instantiate(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
     match msg {
-        ExecuteMsg::UpdateConfig { reward_factor, gov_contract } => update_config(deps, info, reward_factor, gov_contract),
+        ExecuteMsg::UpdateConfig {
+            reward_factor,
+            gov_contract,
+            swap_factory,
+        } => update_config(deps, info, reward_factor, gov_contract, swap_factory),
         ExecuteMsg::Sweep { denom } => sweep(deps, env, denom),
     }
 }
@@ -48,9 +53,10 @@ pub fn update_config(
     info: MessageInfo,
     reward_factor: Option<Decimal>,
     gov_contract: Option<String>,
+    swap_factory: Option<String>,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
-    if info.sender != config.gov_contract {
+    if info.sender != config.gov_contract || info.sender != config.owner {
         return Err(StdError::generic_err("unauthorized"));
     }
 
@@ -60,6 +66,10 @@ pub fn update_config(
 
     if let Some(gov_contract) = gov_contract {
         config.gov_contract = deps.api.addr_validate(&gov_contract)?;
+    }
+
+    if let Some(swap_factory) = swap_factory {
+        config.swap_factory = deps.api.addr_validate(&swap_factory)?;
     }
 
     store_config(deps.storage, &config)?;
@@ -77,7 +87,7 @@ pub fn sweep(deps: DepsMut, env: Env, denom: String) -> StdResult<Response> {
 
     let pair_info: PairInfo = query_pair_info(
         &deps.querier,
-        config.terraswap_factory,
+        config.swap_factory,
         &[
             AssetInfo::NativeToken {
                 denom: denom.to_string(),
@@ -185,18 +195,19 @@ pub fn distribute(deps: DepsMut, env: Env) -> StdResult<Response> {
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
-        QueryMsg::Pair { denom } => to_binary(&query_pair(deps, denom)?)
+        QueryMsg::Pair { denom } => to_binary(&query_pair(deps, denom)?),
     }
 }
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
-    let state = read_config(deps.storage)?;
+    let config = read_config(deps.storage)?;
     let resp = ConfigResponse {
-        gov_contract: state.gov_contract.to_string(),
-        terraswap_factory: state.terraswap_factory.to_string(),
-        halo_token: state.halo_token.to_string(),
-        distributor_contract: state.distributor_contract.to_string(),
-        reward_factor: state.reward_factor,
+        owner: config.owner.to_string(),
+        gov_contract: config.gov_contract.to_string(),
+        swap_factory: config.swap_factory.to_string(),
+        halo_token: config.halo_token.to_string(),
+        distributor_contract: config.distributor_contract.to_string(),
+        reward_factor: config.reward_factor,
     };
 
     Ok(resp)
@@ -207,7 +218,7 @@ pub fn query_pair(deps: Deps, denom: String) -> StdResult<PairInfo> {
 
     let pair_info: PairInfo = query_pair_info(
         &deps.querier,
-        config.terraswap_factory,
+        config.swap_factory,
         &[
             AssetInfo::NativeToken {
                 denom: denom.to_string(),
