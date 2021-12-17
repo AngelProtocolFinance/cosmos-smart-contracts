@@ -188,7 +188,7 @@ async function setupCollector(
     collectorCodeId,
     {
       gov_contract: govContract,
-      terraswap_factory: terraswapFactory,
+      swap_factory: terraswapFactory,
       halo_token: haloTokenContract,
       distributor_contract: distributorContract,
       reward_factor: rewardFactor,

@@ -23,33 +23,33 @@ export async function testCollectorUpdateConfig(
   collectorContract: string,
   reward_factor: string | undefined,
   new_gov_contract: string | undefined,
+  swap_factory: string | undefined
 ): Promise<void> {
   process.stdout.write("Test - Pleb cannot update collector config");
 
   await expect(
     sendTransaction(terra, pleb, [
-      new MsgExecuteContract(
-        pleb.key.accAddress,
-        collectorContract,
-        {
-          update_config: { reward_factor, gov_contract: new_gov_contract },
+      new MsgExecuteContract(pleb.key.accAddress, collectorContract, {
+        update_config: {
+          reward_factor,
+          gov_contract: new_gov_contract,
+          swap_factory,
         },
-      ),
+      }),
     ])
   ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Failed!"));
 
-  process.stdout.write("Test - Only gov contract update collector config");
-
+  process.stdout.write("Test - Gov contract update collector config");
   await expect(
-    sendTransaction(terra, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
-      new MsgExecuteContract(
-        govContract,
-        collectorContract,
-        {
-          update_config: { reward_factor },
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(apTeam.key.accAddress, collectorContract, {
+        update_config: {
+          reward_factor,
+          gov_contract: new_gov_contract,
+          swap_factory,
         },
-      ),
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -67,19 +67,15 @@ export async function testCollectorUpdateConfig(
 export async function testCollectorSweep(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  collectorContract: string,
+  collectorContract: string
 ): Promise<void> {
   process.stdout.write("Test - Anyone can swap asset token => HALO token");
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        collectorContract,
-        {
-          sweep: { denom: "uusd" },
-        },
-      ),
+      new MsgExecuteContract(apTeam.key.accAddress, collectorContract, {
+        sweep: { denom: "uusd" },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -105,9 +101,9 @@ export async function testQueryCollectorPair(
   terra: LocalTerra | LCDClient,
   collectorContract: string
 ): Promise<void> {
-  process.stdout.write("Test - Query Collector Config");
+  process.stdout.write("Test - Query Collector pair");
   const result: any = await terra.wasm.contractQuery(collectorContract, {
-    pair: {},
+    pair: { denom: "uusd" },
   });
 
   console.log(result);

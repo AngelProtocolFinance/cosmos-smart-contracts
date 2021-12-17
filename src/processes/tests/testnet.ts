@@ -246,7 +246,16 @@ export async function testExecute(
   // await testQueryAirdropLatestStage(terra, haloAirdrop);
 
   // Test query for HALO collector
-  // await testCollectorUpdateConfig(terra, apTeam, pleb, haloGov, haloCollector, "0.5", undefined);
+  // await testCollectorUpdateConfig(
+  //   terra,
+  //   apTeam,
+  //   pleb,
+  //   haloGov,
+  //   haloCollector,
+  //   "0.5",
+  //   undefined,
+  //   undefined
+  // );
   // await testCollectorSweep(terra, apTeam, haloCollector);
   // await testQueryCollectorConfig(terra, haloCollector);
   // await testQueryCollectorPair(terra, haloCollector);
