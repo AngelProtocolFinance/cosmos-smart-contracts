@@ -7,7 +7,7 @@
     "gov_contract",
     "halo_token",
     "reward_factor",
-    "terraswap_factory"
+    "swap_factory"
   ],
   "properties": {
     "distributor_contract": {
@@ -22,7 +22,7 @@
     "reward_factor": {
       "$ref": "#/definitions/Decimal"
     },
-    "terraswap_factory": {
+    "swap_factory": {
       "type": "string"
     }
   },

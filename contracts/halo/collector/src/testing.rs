@@ -15,7 +15,7 @@ fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        terraswap_factory: "terraswapfactory".to_string(),
+        swap_factory: "swapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
         distributor_contract: "distributor".to_string(),
@@ -29,7 +29,7 @@ fn proper_initialization() {
 
     // it worked, let's query the state
     let config: ConfigResponse = query_config(deps.as_ref()).unwrap();
-    assert_eq!("terraswapfactory", config.terraswap_factory.as_str());
+    assert_eq!("swapfactory", config.swap_factory.as_str());
 }
 
 #[test]
@@ -37,7 +37,7 @@ fn update_config() {
     let mut deps = mock_dependencies(&[]);
 
     let msg = InstantiateMsg {
-        terraswap_factory: "terraswapfactory".to_string(),
+        swap_factory: "swapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
         distributor_contract: "distributor".to_string(),
@@ -91,7 +91,7 @@ fn test_sweep() {
         .with_terraswap_pairs(&[(&"uusdtokenHALO".to_string(), &"pairANC".to_string())]);
 
     let msg = InstantiateMsg {
-        terraswap_factory: "terraswapfactory".to_string(),
+        swap_factory: "swapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
         distributor_contract: "distributor".to_string(),
@@ -148,7 +148,7 @@ fn test_distribute() {
     )]);
 
     let msg = InstantiateMsg {
-        terraswap_factory: "terraswapfactory".to_string(),
+        swap_factory: "swapfactory".to_string(),
         gov_contract: "gov".to_string(),
         halo_token: "tokenHALO".to_string(),
         distributor_contract: "distributor".to_string(),
