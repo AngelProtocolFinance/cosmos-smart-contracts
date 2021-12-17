@@ -118,13 +118,9 @@ pub fn claim_voting_tokens(
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
     let config: Config = config_store(deps.storage).load()?;
-    let balance = deps
-        .querier
-        .query_balance(&env.contract.address, &config.halo_token)?;
     // check how much to send - min(balance, claims[sender]), and reduce the claim
     // Ensure we have enough balance to cover this and only send some claims if that is all we can cover
-    let to_send =
-        CLAIMS.claim_tokens(deps.storage, &info.sender, &env.block, Some(balance.amount))?;
+    let to_send = CLAIMS.claim_tokens(deps.storage, &info.sender, &env.block, None)?;
     if to_send == Uint128::zero() {
         return Err(ContractError::NothingToClaim {});
     }
