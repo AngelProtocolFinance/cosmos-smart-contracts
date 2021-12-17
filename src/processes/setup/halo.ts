@@ -63,22 +63,22 @@ export async function setupHalo(
   );
 
   // Setup Community contract
-  await setupCommunity(terra, apTeam, terraswapHaloToken, govContract, spend_limit);
+  // await setupCommunity(terra, apTeam, terraswapHaloToken, govContract, spend_limit);
 
   // Setup Staking contract
-  await setupStaking(
-    terra,
-    apTeam,
-    terraswapHaloToken,
-    terraswapHaloLpToken,
-    distribution_schedule
-  );
+  // await setupStaking(
+  //   terra,
+  //   apTeam,
+  //   terraswapHaloToken,
+  //   terraswapHaloLpToken,
+  //   distribution_schedule
+  // );
 
   // Setup Airdrop contract
-  await setupAirdrop(terra, apTeam, terraswapHaloToken);
+  // await setupAirdrop(terra, apTeam, terraswapHaloToken);
 
   // Setup Vesting contract
-  await setupVesting(terra, apTeam, terraswapHaloToken, genesis_time);
+  // await setupVesting(terra, apTeam, terraswapHaloToken, genesis_time);
 }
 
 // gov contract

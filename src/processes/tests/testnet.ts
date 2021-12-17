@@ -82,6 +82,7 @@ import {
   testGovWithdrawVotingTokens,
   testGovClaimVotingTokens,
   testGovExecutePollForRegistrarSettings,
+  testQueryGovClaims,
   testQueryGovConfig,
   testQueryGovPoll,
   testQueryGovPolls,
@@ -302,9 +303,9 @@ export async function testExecute(
   // await testGovExecutePoll(terra, apTeam, haloGov, 1);
   // await testGovEndPoll(terra, apTeam, haloGov, 1);
   // await testGovSnapshotPoll(terra, apTeam, haloGov, 1);
-  // await testGovStakeVotingTokens(terra, apTeam, terraswapToken, haloGov, "20");
-  // await testGovWithdrawVotingTokens(terra, apTeam, haloGov, "11");
-  // await testGovClaimVotingTokens(terra, apTeam, govContract);
+  // await testGovStakeVotingTokens(terra, apTeam, terraswapToken, haloGov, "20000000000");
+  // await testGovWithdrawVotingTokens(terra, apTeam, haloGov, "13000000000");
+  // await testGovClaimVotingTokens(terra, apTeam, haloGov);
   // await testGovCastVote(terra, apTeam, haloGov, 1, VoteOption.YES, "1");
   // await testGovRegisterContracts(terra, apTeam, haloGov, terraswapToken);
   // await testGovExecutePollForRegistrarSettings(
@@ -319,9 +320,11 @@ export async function testExecute(
   // );
   // await testQueryGovConfig(terra, haloGov);
   // await testQueryGovState(terra, haloGov);
+  // await testQueryGovClaims(terra, haloGov, apTeam.key.accAddress);
+  // await testQueryGovStaker(terra, haloGov, apTeam.key.accAddress);
   // await testQueryGovPoll(terra, haloGov, 1);
   // await testQueryGovPolls(terra, haloGov, undefined, undefined, undefined);
-  // await testQueryGovStaker(terra, haloGov, "voter1");
+
   // await testQueryGovVoters(terra, haloGov, 1, undefined, undefined);
 
   // Test query for HALO staking
@@ -336,7 +339,7 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   lbpFactoryContract,
-  //   undefined,
+  // undefined,
   //   undefined,
   //   undefined,
   //   undefined,

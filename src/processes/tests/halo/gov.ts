@@ -164,7 +164,7 @@ export async function testGovRegisterContracts(
   govContract: string,
   halo_token: string
 ): Promise<void> {
-  process.stdout.write("Test - Airdrop claim");
+  process.stdout.write("Test - Gov register staking token contract");
 
   await expect(
     sendTransaction(terra, apTeam, [
@@ -373,12 +373,13 @@ export async function testQueryGovClaims(
   govContract: string,
   address: string
 ): Promise<void> {
-  process.stdout.write("Test - Query Gov Config");
+  process.stdout.write("Test - Query Gov Claims for an addr");
   const result: any = await terra.wasm.contractQuery(govContract, {
     claims: { address },
   });
 
-  console.log(result);
+  // console.log(result);
+  result.claims.forEach((r: any) => console.log(r, r.release_at));
   console.log(chalk.green(" Passed!"));
 }
 
