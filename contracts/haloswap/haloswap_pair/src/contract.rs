@@ -418,7 +418,8 @@ pub fn swap(
         messages.push(return_asset.into_msg(&deps.querier, receiver.clone())?);
         // if fee collector address is set we send commission fees to that addr
         // otherwise fees will collect in the pool for LPs
-        if deps.api.addr_validate(FEE_COLLECTOR)? {
+        if FEE_COLLECTOR != &"" {
+            let fee_collector = deps.api.addr_validate(FEE_COLLECTOR)?;
             // send commission fee to Fee Collector Address (ie. AP treasury for now)
             messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: contract_addr.to_string(),
