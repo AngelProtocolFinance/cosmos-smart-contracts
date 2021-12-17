@@ -10,7 +10,7 @@ const { expect } = chai;
 
 export enum VoteOption {
   YES,
-  NO
+  NO,
 }
 
 //----------------------------------------------------------------------------------------
@@ -32,48 +32,43 @@ export async function testGovUpdateConfig(
   timelock_period: number | undefined,
   proposal_deposit: string | undefined,
   snapshot_period: number | undefined,
+  unbonding_period: number | undefined
 ): Promise<void> {
   process.stdout.write("Test - Pleb cannot update gov config");
 
   await expect(
     sendTransaction(terra, pleb, [
-      new MsgExecuteContract(
-        pleb.key.accAddress,
-        govContract,
-        {
-          update_config: {
-            owner,
-            quorum,
-            threshold,
-            voting_period,
-            timelock_period,
-            proposal_deposit,
-            snapshot_period
-          },
+      new MsgExecuteContract(pleb.key.accAddress, govContract, {
+        update_config: {
+          owner,
+          quorum,
+          threshold,
+          voting_period,
+          timelock_period,
+          proposal_deposit,
+          snapshot_period,
+          unbonding_period,
         },
-      ),
+      }),
     ])
   ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Failed!"));
+  console.log(chalk.green(" Passed!"));
 
   process.stdout.write("Test - Only owner can update gov config");
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        govContract,
-        {
-          update_config: {
-            quorum,
-            threshold,
-            voting_period,
-            timelock_period,
-            proposal_deposit,
-            snapshot_period
-          },
+      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
+        update_config: {
+          quorum,
+          threshold,
+          voting_period,
+          timelock_period,
+          proposal_deposit,
+          snapshot_period,
+          unbonding_period,
         },
-      ),
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -90,19 +85,15 @@ export async function testGovEndPoll(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   govContract: string,
-  poll_id: number,
+  poll_id: number
 ): Promise<void> {
   process.stdout.write("Test - Execute a msgs of poll");
 
   await expect(
-    sendTransaction(terra, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
-      new MsgExecuteContract(
-        govContract,
-        govContract,
-        {
-          end_poll: { poll_id },
-        },
-      ),
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
+        end_poll: { poll_id },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -120,19 +111,15 @@ export async function testGovExecutePoll(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   govContract: string,
-  poll_id: number,
+  poll_id: number
 ): Promise<void> {
   process.stdout.write("Test - Execute a poll");
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        govContract,
-        {
-          execute_poll: { poll_id },
-        },
-      ),
+      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
+        execute_poll: { poll_id },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -149,19 +136,16 @@ export async function testGovSnapshotPoll(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   govContract: string,
-  poll_id: number,
+  poll_id: number
 ): Promise<void> {
   process.stdout.write("Test - Execute a poll");
 
   await expect(
-    sendTransaction(terra, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
-      new MsgExecuteContract(
-        govContract,
-        govContract,
-        {
-          snapshot_poll: { poll_id },
-        },
-      ),
+    sendTransaction(terra, apTeam, [
+      // TODO: replace apTeam to govContract(Wallet)
+      new MsgExecuteContract(govContract, govContract, {
+        snapshot_poll: { poll_id },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -180,17 +164,43 @@ export async function testGovRegisterContracts(
   govContract: string,
   halo_token: string
 ): Promise<void> {
-  process.stdout.write("Test - Airdrop claim");
+  process.stdout.write("Test - Gov register staking token contract");
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        govContract,
-        {
-          register_contracts: { halo_token },
+      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
+        register_contracts: { halo_token },
+      }),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Stake HALO voting tokens
+//
+// SCENARIO:
+// Stake some amount of HALO tokens for voting on Polls
+//
+//----------------------------------------------------------------------------------------
+export async function testGovStakeVotingTokens(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  haloToken: string,
+  govContract: string,
+  amount: string
+): Promise<void> {
+  process.stdout.write("Test - Stake voting tokens");
+
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(apTeam.key.accAddress, haloToken, {
+        send: {
+          amount: amount,
+          contract: govContract,
+          msg: toEncodedBinary({ stake_voting_tokens: {} }),
         },
-      ),
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -200,7 +210,8 @@ export async function testGovRegisterContracts(
 // TEST: Withdraw voting tokens
 //
 // SCENARIO:
-// Withdraw amount if not staked. By default all funds will be withdrawn
+// Withdraw amount if not staked. By default all funds will be withdrawn.
+// Withdrawn HALO is subject to an unbonding period before it can be accessed.
 //
 //----------------------------------------------------------------------------------------
 export async function testGovWithdrawVotingTokens(
@@ -213,13 +224,26 @@ export async function testGovWithdrawVotingTokens(
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        govContract,
-        {
-          withdraw_voting_tokens: { amount },
-        },
-      ),
+      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
+        withdraw_voting_tokens: { amount },
+      }),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testGovClaimVotingTokens(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  govContract: string
+): Promise<void> {
+  process.stdout.write("Test - Claim all eligable withdrawn voting tokens");
+
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
+        claim_voting_tokens: {},
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -244,13 +268,9 @@ export async function testGovCastVote(
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        govContract,
-        {
-          cast_vote: { poll_id, vote, amount },
-        },
-      ),
+      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
+        cast_vote: { poll_id, vote, amount },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -276,33 +296,30 @@ export async function testGovExecutePollForRegistrarSettings(
   process.stdout.write("Test - Execute a poll");
 
   await expect(
-    sendTransaction(terra, apTeam, [ // TODO: replace apTeam to HALO Token(Wallet)
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        govContract,
-        {
-          receive: {
-            sender: apTeam.key.accAddress,
-            amount: "123",
-            msg: toEncodedBinary({
-                title: "title",
-                description: "description",
-                link: undefined,
-                proposal_type: "registrar",
-                options: [
-                  {
-                    order: 1,
-                    funding_goal,
-                    fund_rotation,
-                    split_to_liquid,
-                    treasury_tax_rate,
-                    msg: toEncodedBinary({ amount: "123" })
-                  }
-                ]
-            })
-          },
+    sendTransaction(terra, apTeam, [
+      // TODO: replace apTeam to HALO Token(Wallet)
+      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
+        receive: {
+          sender: apTeam.key.accAddress,
+          amount: "123",
+          msg: toEncodedBinary({
+            title: "title",
+            description: "description",
+            link: undefined,
+            proposal_type: "registrar",
+            options: [
+              {
+                order: 1,
+                funding_goal,
+                fund_rotation,
+                split_to_liquid,
+                treasury_tax_rate,
+                msg: toEncodedBinary({ amount: "123" }),
+              },
+            ],
+          }),
         },
-      ),
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -348,6 +365,21 @@ export async function testQueryGovStaker(
   });
 
   console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryGovClaims(
+  terra: LocalTerra | LCDClient,
+  govContract: string,
+  address: string
+): Promise<void> {
+  process.stdout.write("Test - Query Gov Claims for an addr");
+  const result: any = await terra.wasm.contractQuery(govContract, {
+    claims: { address },
+  });
+
+  // console.log(result);
+  result.claims.forEach((r: any) => console.log(r, r.release_at));
   console.log(chalk.green(" Passed!"));
 }
 

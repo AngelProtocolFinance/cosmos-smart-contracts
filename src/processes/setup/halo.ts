@@ -19,6 +19,7 @@ export async function setupHalo(
   timelock_period: number,
   proposal_deposit: string,
   snapshot_period: number,
+  unbonding_period: number,
   whitelist: string[],
   spend_limit: string,
   reward_factor: string,
@@ -36,7 +37,8 @@ export async function setupHalo(
     voting_period,
     timelock_period,
     proposal_deposit,
-    snapshot_period
+    snapshot_period,
+    unbonding_period
   );
 
   // Setup Distributor contract
@@ -61,22 +63,22 @@ export async function setupHalo(
   );
 
   // Setup Community contract
-  await setupCommunity(terra, apTeam, terraswapHaloToken, govContract, spend_limit);
+  // await setupCommunity(terra, apTeam, terraswapHaloToken, govContract, spend_limit);
 
   // Setup Staking contract
-  await setupStaking(
-    terra,
-    apTeam,
-    terraswapHaloToken,
-    terraswapHaloLpToken,
-    distribution_schedule
-  );
+  // await setupStaking(
+  //   terra,
+  //   apTeam,
+  //   terraswapHaloToken,
+  //   terraswapHaloLpToken,
+  //   distribution_schedule
+  // );
 
   // Setup Airdrop contract
-  await setupAirdrop(terra, apTeam, terraswapHaloToken);
+  // await setupAirdrop(terra, apTeam, terraswapHaloToken);
 
   // Setup Vesting contract
-  await setupVesting(terra, apTeam, terraswapHaloToken, genesis_time);
+  // await setupVesting(terra, apTeam, terraswapHaloToken, genesis_time);
 }
 
 // gov contract
@@ -90,7 +92,8 @@ async function setupGov(
   voting_period: number,
   timelock_period: number,
   proposal_deposit: string,
-  snapshot_period: number
+  snapshot_period: number,
+  unbonding_period: number
 ): Promise<string> {
   process.stdout.write("Uploading gov contract Wasm");
   const govCodeId = await storeCode(
@@ -110,6 +113,7 @@ async function setupGov(
     snapshot_period,
     registrar_contract,
     halo_token,
+    unbonding_period,
   });
   const govContractAddr = govResult.logs[0].events
     .find((event) => {
@@ -184,7 +188,7 @@ async function setupCollector(
     collectorCodeId,
     {
       gov_contract: govContract,
-      terraswap_factory: terraswapFactory,
+      swap_factory: terraswapFactory,
       halo_token: haloTokenContract,
       distributor_contract: distributorContract,
       reward_factor: rewardFactor,
