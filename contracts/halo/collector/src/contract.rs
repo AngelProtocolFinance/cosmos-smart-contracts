@@ -56,7 +56,7 @@ pub fn update_config(
     swap_factory: Option<String>,
 ) -> StdResult<Response> {
     let mut config: Config = read_config(deps.storage)?;
-    if info.sender != config.gov_contract || info.sender != config.owner {
+    if info.sender != config.gov_contract && info.sender != config.owner {
         return Err(StdError::generic_err("unauthorized"));
     }
 
