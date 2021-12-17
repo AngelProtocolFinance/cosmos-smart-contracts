@@ -1,6 +1,6 @@
 [package]
 name = "halo-community"
-version = "0.0.0"
+version = "0.0.1"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 description = "A Community contract for Angel Protocol - Keeps premined HALO token which can be used through Gov proposal"

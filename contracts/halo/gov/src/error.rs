@@ -68,4 +68,7 @@ pub enum ContractError {
 
     #[error("Invalid Reply Id")]
     InvalidReplyId {},
+
+    #[error("No claims that can be released currently")]
+    NothingToClaim {},
 }

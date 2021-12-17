@@ -5,12 +5,12 @@ use crate::state::{
     bank_read, bank_store, config_read, poll_store, poll_voter_read, poll_voter_store, state_read,
     Config, Poll, State, TokenManager,
 };
-
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     attr, coins, from_binary, to_binary, Addr, Api, ContractResult, CosmosMsg, Decimal, Deps,
     DepsMut, Env, Reply, Response, StdError, SubMsg, Timestamp, Uint128, WasmMsg,
 };
+use cw0::Duration;
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use halo_token::common::OrderBy;
 use halo_token::gov::{
@@ -26,13 +26,14 @@ const TEST_CREATOR: &str = "creator";
 const TEST_VOTER: &str = "voter1";
 const TEST_VOTER_2: &str = "voter2";
 const TEST_VOTER_3: &str = "voter3";
-const HALO_tOKEN: &str = "halo_token";
+const HALO_TOKEN: &str = "halo_token";
 const DEFAULT_QUORUM: u64 = 30u64;
 const DEFAULT_THRESHOLD: u64 = 50u64;
 const DEFAULT_VOTING_PERIOD: u64 = 20000u64;
 const DEFAULT_FIX_PERIOD: u64 = 10u64;
 const DEFAULT_TIMELOCK_PERIOD: u64 = 10000u64;
 const DEFAULT_PROPOSAL_DEPOSIT: u128 = 10000000000u128;
+const DEFAULT_UNBONDING_PERIOD: u64 = 0; // seconds
 
 fn mock_instantiate(deps: DepsMut) {
     let msg = InstantiateMsg {
@@ -43,7 +44,8 @@ fn mock_instantiate(deps: DepsMut) {
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
-        halo_token: HALO_tOKEN.to_string(),
+        halo_token: HALO_TOKEN.to_string(),
+        unbonding_period: DEFAULT_UNBONDING_PERIOD,
     };
 
     let info = mock_info(TEST_CREATOR, &[]);
@@ -76,7 +78,8 @@ fn instantiate_msg() -> InstantiateMsg {
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
-        halo_token: HALO_tOKEN.to_string(),
+        halo_token: HALO_TOKEN.to_string(),
+        unbonding_period: DEFAULT_UNBONDING_PERIOD,
     }
 }
 
@@ -93,7 +96,7 @@ fn proper_initialization() {
     assert_eq!(
         config,
         Config {
-            halo_token: Addr::unchecked("GOVCONTRACTDRGSDRGSDRGFG"),
+            halo_token: Addr::unchecked("halo_token"),
             owner: deps.api.addr_validate(TEST_CREATOR).unwrap(),
             quorum: Decimal::percent(DEFAULT_QUORUM),
             threshold: Decimal::percent(DEFAULT_THRESHOLD),
@@ -102,6 +105,7 @@ fn proper_initialization() {
             proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
             snapshot_period: DEFAULT_FIX_PERIOD,
             registrar_contract: deps.api.addr_validate(REGISTRAR_CONTRACT).unwrap(),
+            unbonding_period: Duration::Time(24 * 60 * 60 * 7), // 7 days of unbonding
         }
     );
 
@@ -153,7 +157,8 @@ fn fails_init_invalid_quorum() {
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
-        halo_token: HALO_tOKEN.to_string(),
+        halo_token: HALO_TOKEN.to_string(),
+        unbonding_period: DEFAULT_UNBONDING_PERIOD,
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -179,7 +184,8 @@ fn fails_init_invalid_threshold() {
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
-        halo_token: HALO_tOKEN.to_string(),
+        halo_token: HALO_TOKEN.to_string(),
+        unbonding_period: DEFAULT_UNBONDING_PERIOD,
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -205,7 +211,8 @@ fn fails_contract_already_registered() {
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
-        halo_token: HALO_tOKEN.to_string(),
+        halo_token: HALO_TOKEN.to_string(),
+        unbonding_period: DEFAULT_UNBONDING_PERIOD,
     };
 
     let _res = instantiate(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
@@ -985,7 +992,8 @@ fn happy_days_end_poll() {
         StakerResponse {
             balance: Uint128::from(stake_amount),
             share: Uint128::from(stake_amount),
-            locked_balance: vec![]
+            locked_balance: vec![],
+            claims: vec![],
         }
     );
 
@@ -1714,7 +1722,8 @@ fn happy_days_cast_vote() {
                     vote: VoteOption::Yes,
                     balance: Uint128::from(amount),
                 }
-            )]
+            )],
+            claims: vec![],
         }
     );
 
@@ -2434,6 +2443,7 @@ fn update_config() {
         timelock_period: None,
         proposal_deposit: None,
         snapshot_period: None,
+        unbonding_period: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -2459,6 +2469,7 @@ fn update_config() {
         timelock_period: Some(20000u64),
         proposal_deposit: Some(Uint128::from(123u128)),
         snapshot_period: Some(11),
+        unbonding_period: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -2485,6 +2496,7 @@ fn update_config() {
         timelock_period: None,
         proposal_deposit: None,
         snapshot_period: None,
+        unbonding_period: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg);
@@ -2827,7 +2839,13 @@ fn poll_with_empty_execute_data_marked_as_executed() {
     let mut creator_env = mock_env_height(POLL_START_HEIGHT, 10000);
     let mut creator_info = mock_info(VOTING_TOKEN, &coins(2, VOTING_TOKEN));
 
-    let msg = create_poll_msg("test".to_string(), "test".to_string(), None, None, Some(vec![]));
+    let msg = create_poll_msg(
+        "test".to_string(),
+        "test".to_string(),
+        None,
+        None,
+        Some(vec![]),
+    );
 
     let execute_res = execute(
         deps.as_mut(),
