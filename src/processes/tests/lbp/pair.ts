@@ -21,8 +21,7 @@ export async function testPairProvideLiquidity(
   tokenContract: string,
   pairContract: string,
   tokenAmount: string,
-  nativeTokenAmount: string,
-  slippage_tolerance: string | undefined,
+  nativeTokenAmount: string
 ): Promise<void> {
   process.stdout.write("Provide liquidity to the New Pair contract");
   await sendTransaction(terra, provider, [
