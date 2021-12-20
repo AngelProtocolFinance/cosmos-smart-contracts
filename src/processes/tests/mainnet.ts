@@ -157,14 +157,28 @@ export async function testExecute(
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
-  // await testUpdateFundMembers(terra, apTeam, indexFund, 12, [
-  //     "terra1yfemvj4epgx74j8jm0gfl3n2qen2w9q6eyhan8", // Imagine Worldwide
+  // await testUpdateFundMembers(
+  //   terra,
+  //   apTeam,
+  //   indexFund,
+  //   13,
+  //   [
+  //     "terra1sxpz8mm4kcsz8rg60436d3z2td6v76qxnfj056", // Papyrus
   //   ],
   //   []
   // );
-  // await testCreateIndexFund(terra, apTeam, indexFund, 12, "MVP Rotation #6", "Fund collection for MVP", true, [
-  //     "terra1vm7g8ah6v95xs4d8q774fhavfrc5f2lzf9fygs", // Alex's Lemonade Stand Foundation
-  // ]);
+  // await testCreateIndexFund(
+  //   terra,
+  //   apTeam,
+  //   indexFund,
+  //   13,
+  //   "MVP Rotation #7",
+  //   "Fund collection for MVP",
+  //   true,
+  //   [
+  //     "terra1ju737ylc3w9ltk5p643ts8k04mc5ncx4a7zxju", // Start Rescue
+  //   ]
+  // );
   // await testUpdateAngelAllianceMembers(terra, apTeam, indexFund, [
   //   "terra1zxtczmxtw8mk8xncvr8lcq2qmvk4dz88ek6f79", // community
   //   "terra1janh9rs6pme3tdwhyag2lmsr2xv6wzhcrjz0xx", // community
@@ -202,7 +216,7 @@ export async function testExecute(
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
   // await testQueryIndexFundFundsList(terra, indexFund);
-  // await testQueryIndexFundFundDetails(terra, indexFund);
+  // await testQueryIndexFundFundDetails(terra, indexFund, 13);
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);

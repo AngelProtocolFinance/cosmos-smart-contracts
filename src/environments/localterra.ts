@@ -263,8 +263,7 @@ export async function startSetupLbp(): Promise<void> {
     token_end_weight,
     native_start_weight,
     native_end_weight,
-    undefined,
-    slippage_tolerance
+    undefined
   );
 }
 

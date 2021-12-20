@@ -167,6 +167,19 @@ export const mainnet = {
       "terra1vm7g8ah6v95xs4d8q774fhavfrc5f2lzf9fygs", // Alex's Lemonade Stand Foundation
       "terra1m6w3mk063vglg6eyazf8llm40wcsjsdg29sm7w", // The Biodiversity Group
       "terra12854vdzzr909ss24lqc8nsqnvg378l23p9vukr", // SOWE
+      "terra1sxpz8mm4kcsz8rg60436d3z2td6v76qxnfj056", // Papyrus
+      "terra1hs65s48t3f7rj8z4cldst97wnsd8cchjzt4tc2", // BLOC
+      "terra1s5as2etdefsgvz6aju5wctutaqyurgc034d2ss", // MADEMAN Foundation
+      "terra1pvjzgywze624p9u373c6jfvgda5plnrgxy7tw8", // Water for Africa
+      "terra1pgzqqpqy25vqq5q9wlgzujz6jhx87megmcqlgz", // Ogallala Life
+      "terra14jx04p7wzjjnrjwaslgctwkqn5dh56upexvy5l", // Music 4 Peace Foundation
+      "terra1r3fga9xmf7wd6y38vzljqqa40juaeuzjrt05fx", // Black Women Network
+      "terra1mcf9lhce23znkpmvg6c5pxx0a36s03yamsklad", // Walk Church
+      "terra18dpzlvl78a48fjrfup6y9e3m0wjnylsa6pnaey", // 9 Lives Project
+      "terra1w4q8j6hgun0zz6smqnt5n7zv23e8wsedd3zwjk", // Silvermine Arts Center
+      "terra1m90s9m4xn5rv45t3d7d4k4xzcckgeheg37gq33", // Circle of Care
+      "terra12ws5eecm3em6f9n6gj354lf8nc7jf40mq0aepc", // Waveny Lifecare Network
+      "terra1ju737ylc3w9ltk5p643ts8k04mc5ncx4a7zxju", // Start Rescue
     ],
   },
   members: [
