@@ -56,18 +56,40 @@ pub fn update_registrar(
 pub fn update_tca_list(
     deps: DepsMut,
     info: MessageInfo,
-    new_list: Vec<String>,
+    add: Vec<String>,
+    remove: Vec<String>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // only the owner/admin of the contract can update the TCA Members List
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
+
+    let state = STATE.load(deps.storage)?;
     let mut tca_list = vec![];
-    for member in new_list.iter() {
-        tca_list.push(deps.api.addr_validate(member)?);
+    for member in state.tca_human_addresses() {
+        tca_list.push(deps.api.addr_validate(&member)?);
     }
 
+    // add members only if they do not already exist
+    for add in add.into_iter() {
+        let add_addr = deps.api.addr_validate(&add)?;
+        let pos = tca_list.iter().position(|m| *m == add_addr);
+        // ignore if that member was found in the list
+        if pos == None {
+            tca_list.push(add_addr);
+        }
+    }
+
+    // remove the members
+    for remove in remove.into_iter() {
+        let remove_addr = deps.api.addr_validate(&remove)?;
+        // ignore if no member is found
+        if let Some(pos) = tca_list.iter().position(|m| *m == remove_addr) {
+            tca_list.swap_remove(pos);
+        }
+    }
+    
     // update config attributes with newly passed list
     STATE.update(deps.storage, |mut state| -> StdResult<_> {
         state.terra_alliance = tca_list;
