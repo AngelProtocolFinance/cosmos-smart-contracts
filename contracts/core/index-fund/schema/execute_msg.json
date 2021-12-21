@@ -45,29 +45,6 @@
     {
       "type": "object",
       "required": [
-        "replace_tca_list"
-      ],
-      "properties": {
-        "replace_tca_list": {
-          "type": "object",
-          "required": [
-            "new_list"
-          ],
-          "properties": {
-            "new_list": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
         "update_tca_list"
       ],
       "properties": {

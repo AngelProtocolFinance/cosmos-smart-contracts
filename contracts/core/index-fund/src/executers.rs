@@ -53,30 +53,6 @@ pub fn update_registrar(
     Ok(Response::default())
 }
 
-pub fn replace_tca_list(
-    deps: DepsMut,
-    info: MessageInfo,
-    new_list: Vec<String>,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // only the owner/admin of the contract can update the TCA Members List
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-    let mut tca_list = vec![];
-    for member in new_list.iter() {
-        tca_list.push(deps.api.addr_validate(member)?);
-    }
-
-    // update config attributes with newly passed list
-    STATE.update(deps.storage, |mut state| -> StdResult<_> {
-        state.terra_alliance = tca_list;
-        Ok(state)
-    })?;
-
-    Ok(Response::default())
-}
-
 pub fn update_tca_list(
     deps: DepsMut,
     info: MessageInfo,

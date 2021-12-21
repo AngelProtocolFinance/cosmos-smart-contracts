@@ -24,10 +24,6 @@ pub enum ExecuteMsg {
     UpdateRegistrar {
         new_registrar: String,
     },
-    // replace TCA Member list with a new one
-    ReplaceTcaList {
-        new_list: Vec<String>,
-    },
     // Update TCA member list
     UpdateTcaList {
         add: Vec<String>,
