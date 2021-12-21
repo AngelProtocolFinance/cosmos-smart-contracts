@@ -1,6 +1,8 @@
 use crate::common::OrderBy;
 use cosmwasm_std::{Binary, Decimal, Uint128};
+use cw0::Duration;
 use cw20::Cw20ReceiveMsg;
+use cw_controllers::Claim;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -18,7 +20,8 @@ pub struct InstantiateMsg {
     pub proposal_deposit: Uint128,
     pub snapshot_period: u64,
     pub registrar_contract: String,
-    pub halo_token: String, // halo token address
+    pub halo_token: String,    // halo token address
+    pub unbonding_period: u64, // days of unbonding
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -39,6 +42,7 @@ pub enum ExecuteMsg {
         timelock_period: Option<u64>,
         proposal_deposit: Option<Uint128>,
         snapshot_period: Option<u64>,
+        unbonding_period: Option<u64>,
     },
     CastVote {
         poll_id: u64,
@@ -48,6 +52,7 @@ pub enum ExecuteMsg {
     WithdrawVotingTokens {
         amount: Option<Uint128>,
     },
+    ClaimVotingTokens {},
     EndPoll {
         poll_id: u64,
     },
@@ -91,6 +96,10 @@ pub struct PollExecuteMsg {
 pub enum QueryMsg {
     Config {},
     State {},
+    /// Claims shows the number of tokens this address can access when they are done unbonding
+    Claims {
+        address: String,
+    },
     Staker {
         address: String,
     },
@@ -121,6 +130,7 @@ pub struct ConfigResponse {
     pub timelock_period: u64,
     pub proposal_deposit: Uint128,
     pub snapshot_period: u64,
+    pub unbonding_period: Duration,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -163,6 +173,7 @@ pub struct StakerResponse {
     pub balance: Uint128,
     pub share: Uint128,
     pub locked_balance: Vec<(u64, VoterInfo)>,
+    pub claims: Vec<Claim>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
