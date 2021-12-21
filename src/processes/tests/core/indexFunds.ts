@@ -97,22 +97,6 @@ export async function testUpdatingIndexFundConfigs(
   console.log(chalk.green(" Done!"));
 }
 
-export async function testReplaceAngelAllianceMembers(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  indexFund: string,
-  new_list: string[]
-): Promise<void> {
-  process.stdout.write("AP Team updates Angel Alliance members list");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      replace_tca_list: { new_list }
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
-}
-
-
 export async function testUpdateAngelAllianceMembers(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
