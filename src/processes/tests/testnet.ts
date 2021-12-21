@@ -13,6 +13,7 @@ import {
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
   testUpdateFundMembers,
+  testReplaceAngelAllianceMembers,
   testUpdateAngelAllianceMembers,
   testUpdatingIndexFundConfigs,
   testCreateIndexFund,
@@ -174,7 +175,7 @@ export async function testExecute(
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
-  // await testUpdateAngelAllianceMembers(terra, apTeam, indexFund, [
+  // await testReplaceAngelAllianceMembers(terra, apTeam, indexFund, [
   //   "terra178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // testnet admin (testnet ONLY!)
   //   "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // charity#1 (testnet ONLY!)
   //   "terra1zxtczmxtw8mk8xncvr8lcq2qmvk4dz88ek6f79", // community
@@ -194,6 +195,7 @@ export async function testExecute(
   //   "terra1amrl8f5fqen2m478nuh2z7mz5ce096x4xqae9p", // Woof of Luna
   //   "terra1hxrd8pnqytqpelape3aemprw3a023wryw7p0xn", // ApolloDAO
   // ]);
+  // await testUpdateAngelAllianceMembers(terra, apTeam, indexFund, [], []);
   // testRemoveIndexFund(terra, apTeam, indexFund, 5);
   // await testCreateIndexFund(terra, apTeam, indexFund, 11, "MVP Rotation #5", "Fund collection for MVP", true, [
   // "", // New funds go here!!
