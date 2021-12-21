@@ -183,7 +183,7 @@ fn sc_owner_can_update_list_of_tca_members() {
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_eq!(0, res.messages.len());
 
-    let msg = ExecuteMsg::UpdateTcaList {
+    let msg = ExecuteMsg::ReplaceTcaList {
         new_list: vec![charity_addr, pleb.clone()],
     };
     // pleb cannot update the list (only owner should be able to)

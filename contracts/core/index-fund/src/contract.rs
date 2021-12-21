@@ -59,7 +59,8 @@ pub fn execute(
             executers::update_registrar(deps, info, new_registrar)
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, info, msg),
-        ExecuteMsg::UpdateTcaList { new_list } => executers::update_tca_list(deps, info, new_list),
+        ExecuteMsg::ReplaceTcaList { new_list } => executers::replace_tca_list(deps, info, new_list),
+        ExecuteMsg::UpdateTcaList { add, remove } => executers::update_tca_list(deps, info, add, remove),
         ExecuteMsg::CreateFund { fund } => executers::create_index_fund(deps, info, fund),
         ExecuteMsg::RemoveFund { fund_id } => {
             executers::remove_index_fund(deps, env, info, fund_id)

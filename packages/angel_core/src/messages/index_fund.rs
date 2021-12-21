@@ -25,8 +25,13 @@ pub enum ExecuteMsg {
         new_registrar: String,
     },
     // replace TCA Member list with a new one
-    UpdateTcaList {
+    ReplaceTcaList {
         new_list: Vec<String>,
+    },
+    // Update TCA member list
+    UpdateTcaList {
+        add: Vec<String>,
+        remove: Vec<String>,
     },
     UpdateConfig(UpdateConfigMsg),
     // endpoint to remove a single member from all index funds that they may in
