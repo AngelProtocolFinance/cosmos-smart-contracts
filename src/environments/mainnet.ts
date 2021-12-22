@@ -256,9 +256,9 @@ export async function startSetupHalo(): Promise<void> {
     terraswapHaloUstPairContract, // staking_token: LP token of HALO-UST pair contract
     30, // quorum
     50, // threshold,
-    2000, // voting_period,
+    100000000000, // voting_period (~7 days in blocks),
     1000, // timelock_period,
-    "10000000000", // proposal_deposit,
+    "5000000000", // proposal_deposit,
     10, // snapshot_period,
     7 * 24 * 60 * 60, // unbonding_period in seconds
     [], // whitelist

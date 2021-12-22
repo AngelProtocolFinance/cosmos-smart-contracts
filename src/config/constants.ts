@@ -227,7 +227,7 @@ export const mainnet = {
     collector_contract: "terra1uxqjsgnq30lg5lhlhwd2gmct844vwqcdlv93x5",
     community_contract: "",
     distributor_contract: "terra1ya34r8qj0fttkrxx435zexshyqe5fe3vlmhnd6",
-    gov_contract: "terra1lzdqv40fd8am5ac5tr9kvrmplqywmrgh4dslvk ",
+    gov_contract: "terra1lzdqv40fd8am5ac5tr9kvrmplqywmrgh4dslvk",
     staking_contract: "",
     vesting_contract: "",
   },

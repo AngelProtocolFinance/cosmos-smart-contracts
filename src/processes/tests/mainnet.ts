@@ -220,4 +220,26 @@ export async function testExecute(
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);
+
+  // HALO gov Tests
+  // await testGovUpdateConfig(
+  //   terra,
+  //   apTeam,
+  //   haloGov,
+  //   undefined,
+  //   undefined,
+  //   undefined,
+  //   100000000000,
+  //   undefined,
+  //   "5000000000",
+  //   undefined,
+  //   undefined
+  // );
+  // await testQueryGovConfig(terra, haloGov);
+  // await testQueryGovState(terra, haloGov);
+  // await testQueryGovClaims(terra, haloGov, apTeam.key.accAddress);
+  // await testQueryGovStaker(terra, haloGov, apTeam.key.accAddress);
+  // await testQueryGovPoll(terra, haloGov, 1);
+  // await testQueryGovPolls(terra, haloGov, undefined, undefined, undefined);
+  // await testQueryGovVoters(terra, haloGov, 1, undefined, undefined);
 }

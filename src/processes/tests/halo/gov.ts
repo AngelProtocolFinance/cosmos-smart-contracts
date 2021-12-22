@@ -23,7 +23,6 @@ export enum VoteOption {
 export async function testGovUpdateConfig(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  pleb: Wallet,
   govContract: string,
   owner: string | undefined,
   quorum: number | undefined,
@@ -34,32 +33,13 @@ export async function testGovUpdateConfig(
   snapshot_period: number | undefined,
   unbonding_period: number | undefined
 ): Promise<void> {
-  process.stdout.write("Test - Pleb cannot update gov config");
-
-  await expect(
-    sendTransaction(terra, pleb, [
-      new MsgExecuteContract(pleb.key.accAddress, govContract, {
-        update_config: {
-          owner,
-          quorum,
-          threshold,
-          voting_period,
-          timelock_period,
-          proposal_deposit,
-          snapshot_period,
-          unbonding_period,
-        },
-      }),
-    ])
-  ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Passed!"));
-
   process.stdout.write("Test - Only owner can update gov config");
 
   await expect(
     sendTransaction(terra, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, govContract, {
         update_config: {
+          owner,
           quorum,
           threshold,
           voting_period,
