@@ -113,7 +113,6 @@ pub fn execute(
         ExecuteMsg::EndPoll { poll_id } => end_poll(deps, env, poll_id),
         ExecuteMsg::ExecutePoll { poll_id } => execute_poll(deps, env, poll_id),
         ExecuteMsg::SnapshotPoll { poll_id } => snapshot_poll(deps, env, poll_id),
-        ExecuteMsg::ResetClaims { claim_addrs } => reset_claims(deps, env, info, claim_addrs),
     }
 }
 
@@ -126,28 +125,6 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
         }
         _ => Err(ContractError::InvalidReplyId {}),
     }
-}
-
-pub fn reset_claims(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    claim_addrs: Vec<String>,
-) -> Result<Response, ContractError> {
-    let config: Config = config_read(deps.storage).load()?;
-    if config.owner != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    for addr in claim_addrs {
-        CLAIMS.claim_tokens(
-            deps.storage,
-            &deps.api.addr_validate(&addr)?,
-            &env.block,
-            None,
-        )?;
-    }
-    Ok(Response::default())
 }
 
 pub fn register_contracts(
@@ -180,6 +157,12 @@ pub fn receive_cw20(
 
     match from_binary(&cw20_msg.msg) {
         Ok(Cw20HookMsg::StakeVotingTokens {}) => {
+            match deps.api.addr_validate(GOV_HODLER_CONTRACT) {
+                Ok(_addr) => (),
+                _ => {
+                    return Err(ContractError::Unauthorized {});
+                }
+            }
             let api = deps.api;
             stake_voting_tokens(
                 deps,
@@ -205,6 +188,19 @@ pub fn receive_cw20(
             proposal_type,
             options,
         ),
+        Ok(Cw20HookMsg::TransferStake { address }) => {
+            let api = deps.api;
+            if (cw20_msg.sender == config.owner) {
+                return stake_voting_tokens(
+                    deps,
+                    env,
+                    api.addr_validate(&address)?,
+                    cw20_msg.amount,
+                );
+            } else {
+                return Err(ContractError::Unauthorized {});
+            }
+        }
         _ => Err(ContractError::DataShouldBeGiven {}),
     }
 }

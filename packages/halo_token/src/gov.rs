@@ -62,9 +62,6 @@ pub enum ExecuteMsg {
     SnapshotPoll {
         poll_id: u64,
     },
-    ResetClaims {
-        claim_addrs: Vec<String>,
-    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -81,6 +78,8 @@ pub enum Cw20HookMsg {
         proposal_type: Option<String>,
         options: Option<Vec<PollExecuteMsg>>,
     },
+    /// allow the owner of old gov contract to transfer token
+    TransferStake { address: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
