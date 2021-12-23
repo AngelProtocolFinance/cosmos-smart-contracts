@@ -62,6 +62,9 @@ pub enum ExecuteMsg {
     SnapshotPoll {
         poll_id: u64,
     },
+    ResetClaims {
+        claim_addrs: Vec<String>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -9,7 +9,7 @@ use crate::state::{
 };
 use cosmwasm_std::{
     attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
-    MessageInfo, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    MessageInfo, Order, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw0::Duration;
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
@@ -28,6 +28,7 @@ const MAX_DESC_LENGTH: usize = 1024;
 const POLL_EXECUTE_REPLY_ID: u64 = 1;
 const MIN_LINK_LENGTH: usize = 12;
 const MAX_LINK_LENGTH: usize = 128;
+const GOV_HODLER_CONTRACT: &str = "";
 
 #[entry_point]
 pub fn instantiate(
@@ -99,9 +100,11 @@ pub fn execute(
             unbonding_period,
         ),
         ExecuteMsg::WithdrawVotingTokens { amount } => {
-            withdraw_voting_tokens(deps, env, info, amount)
+            withdraw_voting_tokens(deps, env, info, amount, GOV_HODLER_CONTRACT)
         }
-        ExecuteMsg::ClaimVotingTokens {} => claim_voting_tokens(deps, env, info),
+        ExecuteMsg::ClaimVotingTokens {} => {
+            claim_voting_tokens(deps, env, info, GOV_HODLER_CONTRACT)
+        }
         ExecuteMsg::CastVote {
             poll_id,
             vote,
@@ -110,6 +113,7 @@ pub fn execute(
         ExecuteMsg::EndPoll { poll_id } => end_poll(deps, env, poll_id),
         ExecuteMsg::ExecutePoll { poll_id } => execute_poll(deps, env, poll_id),
         ExecuteMsg::SnapshotPoll { poll_id } => snapshot_poll(deps, env, poll_id),
+        ExecuteMsg::ResetClaims { claim_addrs } => reset_claims(deps, env, info, claim_addrs),
     }
 }
 
@@ -122,6 +126,28 @@ pub fn reply(deps: DepsMut, _env: Env, msg: Reply) -> Result<Response, ContractE
         }
         _ => Err(ContractError::InvalidReplyId {}),
     }
+}
+
+pub fn reset_claims(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    claim_addrs: Vec<String>,
+) -> Result<Response, ContractError> {
+    let config: Config = config_read(deps.storage).load()?;
+    if config.owner != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    for addr in claim_addrs {
+        CLAIMS.claim_tokens(
+            deps.storage,
+            &deps.api.addr_validate(&addr)?,
+            &env.block,
+            None,
+        )?;
+    }
+    Ok(Response::default())
 }
 
 pub fn register_contracts(

@@ -14,6 +14,7 @@ members = [
     "contracts/halo/community",
     "contracts/halo/distributor",
     "contracts/halo/gov",
+    "contracts/halo/gov-hodler",
     "contracts/halo/staking",
     "contracts/halo/vesting",
 ]

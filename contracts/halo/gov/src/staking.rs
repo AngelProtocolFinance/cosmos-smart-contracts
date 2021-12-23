@@ -57,7 +57,14 @@ pub fn withdraw_voting_tokens(
     env: Env,
     info: MessageInfo,
     amount: Option<Uint128>,
+    gov_hodler: &str,
 ) -> Result<Response, ContractError> {
+    match deps.api.addr_validate(&gov_hodler) {
+        Ok(_addr) => (),
+        _ => {
+            return Err(ContractError::Unauthorized {});
+        }
+    }
     let sender_address_raw = info.sender.clone();
     let key = sender_address_raw.as_bytes();
 
@@ -98,13 +105,16 @@ pub fn withdraw_voting_tokens(
             state.total_share = Uint128::from(total_share - withdraw_share);
             state_store(deps.storage).save(&state)?;
 
+            // create claim on withdrawn HALO tokens
             CLAIMS.create_claim(
                 deps.storage,
                 &info.sender,
                 Uint128::from(withdraw_amount),
                 config.unbonding_period.after(&env.block),
             )?;
-            Ok(Response::default())
+
+            // withdraw HALO tokens to the Gov Claims Hodler contract
+            withdraw_tokens(deps, Uint128::from(withdraw_amount), gov_hodler.to_string())
         }
     } else {
         Err(ContractError::NothingStaked {})
@@ -116,8 +126,14 @@ pub fn claim_voting_tokens(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    gov_hodler: &str,
 ) -> Result<Response, ContractError> {
-    let config: Config = config_store(deps.storage).load()?;
+    match deps.api.addr_validate(&gov_hodler) {
+        Ok(_addr) => (),
+        _ => {
+            return Err(ContractError::Unauthorized {});
+        }
+    }
     // check how much to send - min(balance, claims[sender]), and reduce the claim
     // Ensure we have enough balance to cover this and only send some claims if that is all we can cover
     let to_send = CLAIMS.claim_tokens(deps.storage, &info.sender, &env.block, None)?;
@@ -125,8 +141,13 @@ pub fn claim_voting_tokens(
         return Err(ContractError::NothingToClaim {});
     }
 
-    // transfer tokens to the sender
-    send_tokens(deps, &config.halo_token, &info.sender, to_send, "claim")
+    // send message to the Gov Claims Hodler to transfer HALO tokens to the sender
+    claim_tokens(
+        deps,
+        info.sender.to_string(),
+        to_send,
+        gov_hodler.to_string(),
+    )
 }
 
 // removes not in-progress poll voter info & unlock tokens
@@ -155,30 +176,46 @@ fn compute_locked_balance(
         .unwrap_or_default()
 }
 
-fn send_tokens(
-    _deps: DepsMut,
-    asset_token: &Addr,
-    recipient: &Addr,
+fn withdraw_tokens(
+    deps: DepsMut,
     amount: Uint128,
-    action: &str,
+    gov_hodler: String,
 ) -> Result<Response, ContractError> {
-    let contract_human = asset_token.to_string();
-    let recipient_human = recipient.to_string();
-
+    let config: Config = config_store(deps.storage).load()?;
     Ok(Response::new()
         .add_messages(vec![CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: contract_human,
+            contract_addr: config.halo_token.to_string(),
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                recipient: recipient_human.clone(),
+                recipient: gov_hodler,
                 amount,
             })?,
             funds: vec![],
         })])
         .add_attributes(vec![
-            ("action", action),
-            ("recipient", recipient_human.as_str()),
+            ("action", "withdraw_to_gov_hodler"),
             ("amount", amount.to_string().as_str()),
         ]))
+}
+
+fn claim_tokens(
+    _deps: DepsMut,
+    recipient: String,
+    amount: Uint128,
+    gov_hodler: String,
+) -> Result<Response, ContractError> {
+    Ok(Response::new()
+        .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: gov_hodler,
+            msg: to_binary(&halo_token::gov_hodler::ExecuteMsg::ClaimHalo {
+                recipient: recipient.clone(),
+                amount,
+            })
+            .unwrap(),
+            funds: vec![],
+        }))
+        .add_attribute("action", "claim_from_gov_hodler")
+        .add_attribute("recipient", recipient.clone())
+        .add_attribute("amount", amount.to_string()))
 }
 
 pub fn query_staker(deps: Deps, env: Env, address: String) -> StdResult<StakerResponse> {
