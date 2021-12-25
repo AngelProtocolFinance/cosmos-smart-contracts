@@ -22,6 +22,7 @@ pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub halo_token: String,    // halo token address
     pub unbonding_period: u64, // days of unbonding
+    pub gov_hodler: String,    // contract to hold maturing claims
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -43,6 +44,7 @@ pub enum ExecuteMsg {
         proposal_deposit: Option<Uint128>,
         snapshot_period: Option<u64>,
         unbonding_period: Option<u64>,
+        gov_hodler: Option<String>,
     },
     CastVote {
         poll_id: u64,

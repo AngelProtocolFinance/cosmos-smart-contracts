@@ -57,14 +57,7 @@ pub fn withdraw_voting_tokens(
     env: Env,
     info: MessageInfo,
     amount: Option<Uint128>,
-    gov_hodler: &str,
 ) -> Result<Response, ContractError> {
-    match deps.api.addr_validate(&gov_hodler) {
-        Ok(_addr) => (),
-        _ => {
-            return Err(ContractError::Unauthorized {});
-        }
-    }
     let sender_address_raw = info.sender.clone();
     let key = sender_address_raw.as_bytes();
 
@@ -114,7 +107,11 @@ pub fn withdraw_voting_tokens(
             )?;
 
             // withdraw HALO tokens to the Gov Claims Hodler contract
-            withdraw_tokens(deps, Uint128::from(withdraw_amount), gov_hodler.to_string())
+            withdraw_tokens(
+                deps,
+                Uint128::from(withdraw_amount),
+                config.gov_hodler.to_string(),
+            )
         }
     } else {
         Err(ContractError::NothingStaked {})
@@ -126,14 +123,9 @@ pub fn claim_voting_tokens(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    gov_hodler: &str,
 ) -> Result<Response, ContractError> {
-    match deps.api.addr_validate(&gov_hodler) {
-        Ok(_addr) => (),
-        _ => {
-            return Err(ContractError::Unauthorized {});
-        }
-    }
+    let config: Config = config_store(deps.storage).load()?;
+
     // check how much to send - min(balance, claims[sender]), and reduce the claim
     // Ensure we have enough balance to cover this and only send some claims if that is all we can cover
     let to_send = CLAIMS.claim_tokens(deps.storage, &info.sender, &env.block, None)?;
@@ -146,7 +138,7 @@ pub fn claim_voting_tokens(
         deps,
         info.sender.to_string(),
         to_send,
-        gov_hodler.to_string(),
+        config.gov_hodler.to_string(),
     )
 }
 

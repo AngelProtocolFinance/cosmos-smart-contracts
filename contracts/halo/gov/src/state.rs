@@ -36,6 +36,8 @@ pub struct Config {
     /// This is the unbonding period of HALO tokens
     /// We need this to only allow claims to be redeemed after this period
     pub unbonding_period: Duration,
+    /// Contract that holds HALO Claims while they are maturing
+    pub gov_hodler: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

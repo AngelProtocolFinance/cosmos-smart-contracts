@@ -9,7 +9,7 @@ use crate::state::{
 };
 use cosmwasm_std::{
     attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
-    MessageInfo, Order, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    MessageInfo, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw0::Duration;
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
@@ -28,7 +28,6 @@ const MAX_DESC_LENGTH: usize = 1024;
 const POLL_EXECUTE_REPLY_ID: u64 = 1;
 const MIN_LINK_LENGTH: usize = 12;
 const MAX_LINK_LENGTH: usize = 128;
-const GOV_HODLER_CONTRACT: &str = "";
 
 #[entry_point]
 pub fn instantiate(
@@ -53,6 +52,7 @@ pub fn instantiate(
         snapshot_period: msg.snapshot_period,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         unbonding_period: Duration::Time(msg.unbonding_period), // secconds of unbonding
+        gov_hodler: deps.api.addr_validate(&msg.gov_hodler)?,
     };
 
     let state = State {
@@ -87,6 +87,7 @@ pub fn execute(
             proposal_deposit,
             snapshot_period,
             unbonding_period,
+            gov_hodler,
         } => update_config(
             deps,
             info,
@@ -98,13 +99,12 @@ pub fn execute(
             proposal_deposit,
             snapshot_period,
             unbonding_period,
+            gov_hodler,
         ),
         ExecuteMsg::WithdrawVotingTokens { amount } => {
-            withdraw_voting_tokens(deps, env, info, amount, GOV_HODLER_CONTRACT)
+            withdraw_voting_tokens(deps, env, info, amount)
         }
-        ExecuteMsg::ClaimVotingTokens {} => {
-            claim_voting_tokens(deps, env, info, GOV_HODLER_CONTRACT)
-        }
+        ExecuteMsg::ClaimVotingTokens {} => claim_voting_tokens(deps, env, info),
         ExecuteMsg::CastVote {
             poll_id,
             vote,
@@ -157,12 +157,6 @@ pub fn receive_cw20(
 
     match from_binary(&cw20_msg.msg) {
         Ok(Cw20HookMsg::StakeVotingTokens {}) => {
-            match deps.api.addr_validate(GOV_HODLER_CONTRACT) {
-                Ok(_addr) => (),
-                _ => {
-                    return Err(ContractError::Unauthorized {});
-                }
-            }
             let api = deps.api;
             stake_voting_tokens(
                 deps,
@@ -190,7 +184,7 @@ pub fn receive_cw20(
         ),
         Ok(Cw20HookMsg::TransferStake { address }) => {
             let api = deps.api;
-            if (cw20_msg.sender == config.owner) {
+            if cw20_msg.sender == config.owner {
                 return stake_voting_tokens(
                     deps,
                     env,
@@ -217,47 +211,53 @@ pub fn update_config(
     proposal_deposit: Option<Uint128>,
     snapshot_period: Option<u64>,
     unbonding_period: Option<u64>,
+    gov_hodler: Option<String>,
 ) -> Result<Response, ContractError> {
     let api = deps.api;
-    config_store(deps.storage).update(|mut config| {
-        if config.owner != info.sender {
-            return Err(ContractError::Unauthorized {});
-        }
+    let mut config: Config = config_read(deps.storage).load()?;
 
-        if let Some(owner) = owner {
-            config.owner = api.addr_validate(&owner)?;
-        }
+    if config.owner != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
 
-        if let Some(quorum) = quorum {
-            config.quorum = Decimal::percent(quorum);
-        }
+    if let Some(owner) = owner {
+        config.owner = api.addr_validate(&owner)?;
+    }
 
-        if let Some(threshold) = threshold {
-            config.threshold = Decimal::percent(threshold);
-        }
+    if let Some(quorum) = quorum {
+        config.quorum = Decimal::percent(quorum);
+    }
 
-        if let Some(voting_period) = voting_period {
-            config.voting_period = voting_period;
-        }
+    if let Some(threshold) = threshold {
+        config.threshold = Decimal::percent(threshold);
+    }
 
-        if let Some(timelock_period) = timelock_period {
-            config.timelock_period = timelock_period;
-        }
+    if let Some(voting_period) = voting_period {
+        config.voting_period = voting_period;
+    }
 
-        if let Some(proposal_deposit) = proposal_deposit {
-            config.proposal_deposit = proposal_deposit;
-        }
+    if let Some(timelock_period) = timelock_period {
+        config.timelock_period = timelock_period;
+    }
 
-        if let Some(period) = snapshot_period {
-            config.snapshot_period = period;
-        }
+    if let Some(proposal_deposit) = proposal_deposit {
+        config.proposal_deposit = proposal_deposit;
+    }
 
-        if let Some(unbonding_period) = unbonding_period {
-            // unbonding calculated in seconds
-            config.unbonding_period = Duration::Time(unbonding_period)
-        }
-        Ok(config)
-    })?;
+    if let Some(period) = snapshot_period {
+        config.snapshot_period = period;
+    }
+
+    if let Some(gov_hodler) = gov_hodler {
+        config.gov_hodler = deps.api.addr_validate(&gov_hodler)?;
+    }
+
+    if let Some(unbonding_period) = unbonding_period {
+        // unbonding calculated in seconds
+        config.unbonding_period = Duration::Time(unbonding_period)
+    }
+
+    config_store(deps.storage).save(&config)?;
 
     Ok(Response::new().add_attributes(vec![("action", "update_config")]))
 }
