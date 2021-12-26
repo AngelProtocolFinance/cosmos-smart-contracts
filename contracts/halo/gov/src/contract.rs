@@ -184,16 +184,7 @@ pub fn receive_cw20(
         ),
         Ok(Cw20HookMsg::TransferStake { address }) => {
             let api = deps.api;
-            if cw20_msg.sender == config.owner {
-                return stake_voting_tokens(
-                    deps,
-                    env,
-                    api.addr_validate(&address)?,
-                    cw20_msg.amount,
-                );
-            } else {
-                return Err(ContractError::Unauthorized {});
-            }
+            return stake_voting_tokens(deps, env, api.addr_validate(&address)?, cw20_msg.amount);
         }
         _ => Err(ContractError::DataShouldBeGiven {}),
     }
