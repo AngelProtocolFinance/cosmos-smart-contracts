@@ -182,10 +182,6 @@ pub fn receive_cw20(
             proposal_type,
             options,
         ),
-        Ok(Cw20HookMsg::TransferStake { address }) => {
-            let api = deps.api;
-            return stake_voting_tokens(deps, env, api.addr_validate(&address)?, cw20_msg.amount);
-        }
         _ => Err(ContractError::DataShouldBeGiven {}),
     }
 }

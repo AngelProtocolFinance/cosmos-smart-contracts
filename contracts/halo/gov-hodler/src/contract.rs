@@ -1,8 +1,8 @@
 use crate::state::{read_config, store_config, Config};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    attr, to_binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
-    SubMsg, Uint128, WasmMsg,
+    to_binary, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdError, StdResult, Uint128,
+    WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use halo_token::gov_hodler::{ExecuteMsg, InstantiateMsg, MigrateMsg};
@@ -27,7 +27,12 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> StdResult<Response> {
+pub fn execute(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: ExecuteMsg,
+) -> StdResult<Response> {
     match msg {
         ExecuteMsg::UpdateConfig { gov_contract } => update_config(deps, info, gov_contract),
         ExecuteMsg::ClaimHalo { recipient, amount } => claim_halo(deps, info, recipient, amount),
