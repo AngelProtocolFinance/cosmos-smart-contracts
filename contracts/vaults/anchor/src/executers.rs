@@ -360,6 +360,36 @@ pub fn harvest(
         let mut balances = BALANCES
             .load(deps.storage, &account_address)
             .unwrap_or_else(|_| BalanceInfo::default());
+
+        // calculate harvest taxes owed on liquid balance earnings
+        let liquid_taxes_owed = balances
+            .liquid_balance
+            .get_token_amount(env.contract.address.clone())
+            .checked_mul(harvest_blocks)
+            .unwrap()
+            * config.tax_per_block
+            * registrar_config.tax_rate;
+
+        // deduct taxes if we have a non-zero amount
+        if liquid_taxes_owed > Uint128::zero() {
+            let mut deposit_token = Cw20CoinVerified {
+                address: env.contract.address.clone(),
+                amount: liquid_taxes_owed,
+            };
+            // lower liquid balance
+            balances
+                .liquid_balance
+                .deduct_tokens(Balance::Cw20(deposit_token.clone()));
+
+            // add taxes collected to the liquid balance of the Collector
+            harvested_account
+                .liquid_balance
+                .add_tokens(Balance::Cw20(deposit_token.clone()));
+
+            BALANCES.save(deps.storage, &account_address, &balances)?;
+        }
+
+        // calulate amount to harvest from locked >> liquid
         let transfer_amt = balances
             .locked_balance
             .get_token_amount(env.contract.address.clone())
