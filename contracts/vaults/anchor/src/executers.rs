@@ -372,7 +372,7 @@ pub fn harvest(
 
         // deduct taxes if we have a non-zero amount
         if liquid_taxes_owed > Uint128::zero() {
-            let mut deposit_token = Cw20CoinVerified {
+            let deposit_token = Cw20CoinVerified {
                 address: env.contract.address.clone(),
                 amount: liquid_taxes_owed,
             };
@@ -385,8 +385,6 @@ pub fn harvest(
             harvested_account
                 .liquid_balance
                 .add_tokens(Balance::Cw20(deposit_token.clone()));
-
-            BALANCES.save(deps.storage, &account_address, &balances)?;
         }
 
         // calulate amount to harvest from locked >> liquid
@@ -422,9 +420,9 @@ pub fn harvest(
             harvested_account
                 .liquid_balance
                 .add_tokens(Balance::Cw20(deposit_token.clone()));
-
-            BALANCES.save(deps.storage, &account_address, &balances)?;
         }
+
+        BALANCES.save(deps.storage, &account_address, &balances)?;
     }
 
     if harvested_account
