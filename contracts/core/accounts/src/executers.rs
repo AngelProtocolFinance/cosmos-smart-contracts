@@ -19,7 +19,7 @@ use angel_core::utils::{
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
-    Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    Response, StdError, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Balance;
 
@@ -429,7 +429,9 @@ pub fn deposit(
 
     // check that the Endowment has been approved to receive deposits
     if !config.deposit_approved {
-        return Err(ContractError::Unauthorized {});
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Withdraws are not approved for this endowment".to_string(),
+        }));
     }
 
     // check that the split %s sum to 1
@@ -516,7 +518,9 @@ pub fn withdraw(
 
     // check that the Endowment has been approved to withdraw deposits
     if !config.withdraw_approved {
-        return Err(ContractError::Unauthorized {});
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Withdraws are not approved for this endowment".to_string(),
+        }));
     }
 
     // check if locked tokens are requested and
