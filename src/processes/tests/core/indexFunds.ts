@@ -76,7 +76,7 @@ export async function testTcaMemberSendsToIndexFund(
         { uusd: "40000000", }
       ),
     ])
-  )
+  );
   console.log(chalk.green(" Passed!"));
 }
 
@@ -101,14 +101,13 @@ export async function testUpdateAngelAllianceMembers(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   indexFund: string,
-  new_list: string[]
+  add: string[],
+  remove: string[],
 ): Promise<void> {
   process.stdout.write("AP Team updates Angel Alliance members list");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      update_tca_list: {
-        new_list: new_list,
-      }
+      update_tca_list: { add, remove }
     }),
   ]);
   console.log(chalk.green(" Done!"));
