@@ -31,6 +31,25 @@ export async function testPairWithdrawLiquidity(
   console.log(chalk.green(" Done!"));
 }
 
+export async function testTransferTokenBalance(
+  terra: LocalTerra | LCDClient,
+  tokenContract: string,
+  apTeam: Wallet
+): Promise<void> {
+  process.stdout.write("Test - Transfer Token balance");
+  const result: any = sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
+      transfer: {
+        recipient: "terra1g0uzl468etgkx0gkts42mg7ly6waqkemw89lsh",
+        amount: 40000000000,
+      },
+    }),
+  ]);
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
 //----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------

@@ -74,6 +74,7 @@ let haloCollector: string;
 let haloCommunity: string;
 let haloDistributor: string;
 let haloGov: string;
+let haloGovHodler: string;
 let haloStaking: string;
 let haloVesting: string;
 
@@ -163,6 +164,7 @@ function initialize() {
   haloCommunity = config.halo.community_contract;
   haloDistributor = config.halo.distributor_contract;
   haloGov = config.halo.gov_contract;
+  haloGovHodler = config.halo.gov_hodler_contract;
   haloStaking = config.halo.staking_contract;
   haloVesting = config.halo.vesting_contract;
 
@@ -171,6 +173,7 @@ function initialize() {
   console.log(`Use ${chalk.cyan(haloCommunity)} as HALO community`);
   console.log(`Use ${chalk.cyan(haloDistributor)} as HALO distributor`);
   console.log(`Use ${chalk.cyan(haloGov)} as HALO gov`);
+  console.log(`Use ${chalk.cyan(haloGovHodler)} as HALO gov hodler`);
   console.log(`Use ${chalk.cyan(haloStaking)} as HALO staking`);
   console.log(`Use ${chalk.cyan(haloVesting)} as HALO vesting`);
 }
@@ -232,6 +235,8 @@ export async function startSetupTerraSwap(): Promise<void> {
   await setupTerraSwap(
     terra,
     apTeam,
+    apTeam2,
+    apTeam3,
     terraswapInitialHaloSupply,
     terraswapHaloLiquidity,
     terraswapNativeLiquidity
@@ -347,6 +352,7 @@ export async function startMigrateHalo(): Promise<void> {
     haloCommunity,
     haloDistributor,
     haloGov,
+    haloGovHodler,
     haloStaking,
     haloVesting
   );

@@ -9,7 +9,7 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 //----------------------------------------------------------------------------------------
-// TEST: Cannot send funds to an Endowment that is not approved for deposits 
+// TEST: Cannot send funds to an Endowment that is not approved for deposits
 //
 // SCENARIO:
 // If an Endowment has not been approved by the AP Team, all deposits should be rejected
@@ -19,7 +19,8 @@ const { expect } = chai;
 export async function testRejectUnapprovedDonations(
   terra: LocalTerra | LCDClient,
   pleb: Wallet,
-  endowmentContract3: string
+  endowmentContract: string,
+  amount: string
 ): Promise<void> {
   process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
 
@@ -27,17 +28,17 @@ export async function testRejectUnapprovedDonations(
     sendTransaction(terra, pleb, [
       new MsgExecuteContract(
         pleb.key.accAddress,
-        endowmentContract3,
+        endowmentContract,
         {
           deposit: {
-            locked_percentage: "0.8",
-            liquid_percentage: "0.2",
+            locked_percentage: "1",
+            liquid_percentage: "0",
           },
         },
-        { uusd: "4200000", }
+        { uusd: amount }
       ),
     ])
-  ).to.be.rejectedWith("Request failed with status code 400");
+  ); //.to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Passed!"));
 }
 
@@ -56,31 +57,33 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
   anchorVault1: string,
   anchorVault2: string
 ): Promise<void> {
-  process.stdout.write("Test - Beneficiary cannot withdraw from the Endowment locked amount");
+  process.stdout.write(
+    "Test - Beneficiary cannot withdraw from the Endowment locked amount"
+  );
   await expect(
     sendTransaction(terra, charity1, [
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         withdraw: {
           sources: [
-            {vault: anchorVault1, locked: "500000", liquid: "1000000"},
-            {vault: anchorVault2, locked: "500000", liquid: "1000000"}
-          ]
-        }
-      })
+            { vault: anchorVault1, locked: "500000", liquid: "1000000" },
+            { vault: anchorVault2, locked: "500000", liquid: "1000000" },
+          ],
+        },
+      }),
     ])
   ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Passed!"));
 
-  process.stdout.write("Test - Beneficiary can withdraw from the Endowment availalble amount (liquid)");
+  process.stdout.write(
+    "Test - Beneficiary can withdraw from the Endowment availalble amount (liquid)"
+  );
   await expect(
     sendTransaction(terra, charity1, [
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         withdraw: {
-          sources: [
-            {vault: anchorVault1, locked: "0", liquid: "30000"},
-          ]
-        }
-      })
+          sources: [{ vault: anchorVault1, locked: "0", liquid: "30000" }],
+        },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -90,7 +93,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
 // TEST: Charity Owner can rebalance their portfolio/update the Accounts' strategy
 //
 // SCENARIO:
-// Charity Owner can trigger a rebalance of their Accounts, which should: 
+// Charity Owner can trigger a rebalance of their Accounts, which should:
 // 1) redeem all invested funds from Vaults to the Accounts
 // 2) reinvest all redeemed funds, according the accounts' strategy
 //
@@ -110,11 +113,11 @@ export async function testCharityCanUpdateStrategies(
       new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
         update_strategies: {
           strategies: [
-            {vault: anchorVault1, locked_percentage: "0.5", liquid_percentage: "0.5"},
-            {vault: anchorVault2, locked_percentage: "0.5", liquid_percentage: "0.5"}
-          ]
-        }
-      })
+            { vault: anchorVault1, locked_percentage: "0.5", liquid_percentage: "0.5" },
+            { vault: anchorVault2, locked_percentage: "0.5", liquid_percentage: "0.5" },
+          ],
+        },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));

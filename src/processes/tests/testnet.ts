@@ -32,6 +32,7 @@ import {
   testGuardiansChangeEndowmentOwner,
 } from "./core/multisig";
 import {
+  testApproveEndowments,
   testAngelTeamCanTriggerVaultsHarvest,
   testClosingEndpoint,
   testMigrateAllAccounts,
@@ -90,6 +91,9 @@ import {
   testQueryGovState,
   testQueryGovVoters,
   VoteOption,
+  testGovHodlerUpdateConfig,
+  testGovResetClaims,
+  testTransferStake,
 } from "./halo/gov";
 import {
   testStakingUnbond,
@@ -132,6 +136,7 @@ import {
   testQueryTokenInfo,
   testQueryTokenMinter,
   testPairWithdrawLiquidity,
+  testTransferTokenBalance,
 } from "./lbp/token";
 
 export async function testExecute(
@@ -197,17 +202,11 @@ export async function testExecute(
   // await testRejectUnapprovedDonations(terra, pleb, endowmentContract3);
   // await testDonorSendsToIndexFund(terra, pleb, indexFund);
   // await testTcaMemberSendsToIndexFund(terra, tca, indexFund);
-  // await testAngelTeamCanTriggerVaultsHarvest(
-  //   terra,
-  //   apTeam,
-  //   charity1,
-  //   registrar,
-  //   haloCollector,
-  //   "0.1"
-  // );
+  // await testAngelTeamCanTriggerVaultsHarvest(terra, apTeam, charity1, registrar, haloCollector, "0.5");
   // await testCharityCanUpdateStrategies(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
   // await testBeneficiaryCanWithdrawFromLiquid(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
-  // await testUpdatingRegistrarConfigs(terra, apTeam, registrar, haloCollector);
+  // await testUpdatingRegistrarConfigs(terra, apTeam, registrar, haloGov);
+  // await testApproveEndowments(terra, apTeam, registrar, endowmentContract1, 1);
   // await testClosingEndpoint(terra, apTeam, registrar, endowmentContract3, endowmentContract4);
   // await testMigrateAllAccounts(terra, apTeam, registrar);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, [endowmentContract2], [endowmentContract4]);
@@ -246,11 +245,9 @@ export async function testExecute(
   // await testCollectorUpdateConfig(
   //   terra,
   //   apTeam,
-  //   pleb,
-  //   haloGov,
   //   haloCollector,
-  //   "0.5",
-  //   undefined,
+  //   "1.0",
+  //   haloGov,
   //   undefined
   // );
   // await testCollectorSweep(terra, apTeam, haloCollector);
@@ -263,7 +260,7 @@ export async function testExecute(
   // await testQueryCommunityConfig(terra, haloCommunity);
 
   // Test query for HALO distributor
-  // await testDistributorUpdateConfig(terra, apTeam, pleb, haloDistributor, "1000000", undefined);
+  // await testDistributorUpdateConfig(terra, apTeam, haloDistributor, "1000000", haloGov);
   // await testDistributorSpend(terra, apTeam, haloDistributor, "addr000", "1000000");
   // await testDistributorAdd(terra, apTeam, haloGov, haloDistributor, apTeam2.key.accAddress);
   // await testDistributorRemove(terra, apTeam, haloGov, haloDistributor, apTeam2.key.accAddress);
@@ -295,22 +292,25 @@ export async function testExecute(
   // await testGovUpdateConfig(
   //   terra,
   //   apTeam,
-  //   pleb,
   //   haloGov,
   //   apTeam2.key.accAddress,
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  //   undefined
+  //   30, // quorum
+  //   50, // threshold,
+  //   2000, // voting_period,
+  //   1000, // timelock_period,
+  //   "10000000000", // proposal_deposit,
+  //   10, // snapshot_period,
+  //   120 // unbonding_period in seconds
   // );
   // await testGovExecutePoll(terra, apTeam, haloGov, 1);
   // await testGovEndPoll(terra, apTeam, haloGov, 1);
   // await testGovSnapshotPoll(terra, apTeam, haloGov, 1);
   // await testGovStakeVotingTokens(terra, apTeam, terraswapToken, haloGov, "20000000000");
-  // await testGovWithdrawVotingTokens(terra, apTeam, haloGov, "13000000000");
+  // await testGovStakeVotingTokens(terra, apTeam2, terraswapToken, haloGov, "10000000000");
+  // await testGovStakeVotingTokens(terra, apTeam3, terraswapToken, haloGov, "5000000000");
+  // await testGovWithdrawVotingTokens(terra, apTeam, haloGov, "1000000000");
+  // await testGovWithdrawVotingTokens(terra, apTeam2, haloGov, "10000000000");
+  // await testGovWithdrawVotingTokens(terra, apTeam3, haloGov, "10000000000");
   // await testGovClaimVotingTokens(terra, apTeam, haloGov);
   // await testGovCastVote(terra, apTeam, haloGov, 1, VoteOption.YES, "1");
   // await testGovRegisterContracts(terra, apTeam, haloGov, terraswapToken);
@@ -324,10 +324,17 @@ export async function testExecute(
   //   "0.5",
   //   "0.1"
   // );
+  // await testGovResetClaims(terra, apTeam, haloGov, [
+  //   apTeam.key.accAddress,
+  //   apTeam2.key.accAddress,
+  //   apTeam3.key.accAddress,
+  // ]);
   // await testQueryGovConfig(terra, haloGov);
   // await testQueryGovState(terra, haloGov);
   // await testQueryGovClaims(terra, haloGov, apTeam.key.accAddress);
   // await testQueryGovStaker(terra, haloGov, apTeam.key.accAddress);
+  // await testQueryGovStaker(terra, haloGov, apTeam2.key.accAddress);
+  // await testQueryGovStaker(terra, haloGov, apTeam3.key.accAddress);
   // await testQueryGovPoll(terra, haloGov, 1);
   // await testQueryGovPolls(terra, haloGov, undefined, undefined, undefined);
 
@@ -372,23 +379,6 @@ export async function testExecute(
   // await testQueryFactoryPair(terra, lbpFactoryContract, terraswapToken);
   // await testQueryFactoryPairs(terra, lbpFactoryContract);
 
-  // Test query for LBP Pair
-  // await testPairProvideLiquidity(
-  //   terra,
-  //   apTeam,
-  //   terraswapToken,
-  //   lbpPairContract,
-  //   "80000000000000",
-  //   "1300000000000",
-  //   slippageTolerance
-  // );
-  // await testPairWithdrawLiquidity(
-  //   terra,
-  //   apTeam,
-  //   lbpPairContract,
-  //   lbpLpTokenContract,
-  //   "100000000"
-  // );
   // await testPairSwapNativeToHalo(terra, apTeam, lbpPairContract, "100000000");
   // await testPairSwapHaloToNative(
   //   terra,
@@ -410,6 +400,24 @@ export async function testExecute(
 
   // Test query for LBP Router
   // await testQueryRouterConfig(terra, lbpRouterContract);
+
+  // Test Loop Pair
+  // await testPairProvideLiquidity(
+  //   terra,
+  //   apTeam,
+  //   terraswapToken,
+  //   "terra1yjg0tuhc6kzwz9jl8yqgxnf2ctwlfumnvscupp", // LOOP PAIR
+  //   "80000000000000", //HALO
+  //   "1300000000000", //UST
+  // );
+
+  // await testPairWithdrawLiquidity(
+  //   terra,
+  //   apTeam,
+  //   lbpPairContract,
+  //   lbpLpTokenContract,
+  //   "100000000"
+  // );
 
   // Test query for LBP Token
   // await testQueryTokenBalance(terra, terraswapToken, apTeam.key.accAddress);

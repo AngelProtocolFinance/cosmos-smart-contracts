@@ -12,7 +12,7 @@ const { expect } = chai;
 // TEST: AP Team Closes Endowment
 //
 // SCENARIO:
-// AP Team Wallet needs close an endowment for a charity that is undergoing legal 
+// AP Team Wallet needs close an endowment for a charity that is undergoing legal
 // proceedings in it's country of origin.
 //
 //----------------------------------------------------------------------------------------
@@ -30,7 +30,7 @@ export async function testClosingEndpoint(
         endowment_addr: endowmentContract3,
         status: 3,
         beneficiary: apTeam.key.accAddress,
-      }
+      },
     }),
   ]);
   console.log(chalk.green(" Done!"));
@@ -42,7 +42,7 @@ export async function testClosingEndpoint(
         endowment_addr: endowmentContract4,
         status: 3,
         beneficiary: undefined,
-      }
+      },
     }),
   ]);
   console.log(chalk.green(" Done!"));
@@ -77,7 +77,7 @@ export async function testUpdatingRegistrarConfigs(
 // TEST: AP Team and trigger harvesting of Accounts for a Vault(s)
 //
 // SCENARIO:
-// AP team needs to send a message to a Vault to trigger a rebalance of Endowment funds, 
+// AP team needs to send a message to a Vault to trigger a rebalance of Endowment funds,
 // moving money from their Locked to Liquid & taking a small tax of DP Tokens as well.
 //
 //----------------------------------------------------------------------------------------
@@ -87,32 +87,60 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
   charity1: Wallet,
   registrar: string,
   collector_address: string,
-  collector_share: string,
+  collector_share: string
 ): Promise<void> {
-  process.stdout.write("Test - Charity1 cannot trigger harvest of all Vaults (Locked to Liquid Account)");
+  process.stdout.write(
+    "Test - Charity1 cannot trigger harvest of all Vaults (Locked to Liquid Account)"
+  );
   await expect(
     sendTransaction(terra, charity1, [
       new MsgExecuteContract(charity1.key.accAddress, registrar, {
         harvest: {
           collector_address,
-          collector_share
-        }
-      })
+          collector_share,
+        },
+      }),
     ])
   ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Failed!"));
 
-  process.stdout.write("Test - AP Team can trigger harvest of all Vaults (Locked to Liquid Account)");
+  process.stdout.write(
+    "Test - AP Team can trigger harvest of all Vaults (Locked to Liquid Account)"
+  );
   await expect(
     sendTransaction(terra, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, registrar, {
         harvest: {
           collector_address,
-          collector_share
-        }
-      })
+          collector_share,
+        },
+      }),
     ])
   );
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Can update an Endowment's status from the Registrar
+//----------------------------------------------------------------------------------------
+export async function testApproveEndowments(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  registrar: string,
+  endowment: string,
+  status: number
+): Promise<void> {
+  // AP Team approves 3 of 4 newly created endowments
+  process.stdout.write("AP Team update an endowment's status");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_endowment_status: {
+        endowment_addr: endowment,
+        status: status,
+        beneficiary: undefined,
+      },
+    }),
+  ]);
   console.log(chalk.green(" Passed!"));
 }
 
@@ -125,7 +153,9 @@ export async function testMigrateAllAccounts(
   apTeam: Wallet,
   registrar: string
 ): Promise<void> {
-  process.stdout.write("Test - AP Team can trigger migration of all Account SC Endowments from Registrar");
+  process.stdout.write(
+    "Test - AP Team can trigger migration of all Account SC Endowments from Registrar"
+  );
   await expect(
     sendTransaction(terra, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, registrar, {

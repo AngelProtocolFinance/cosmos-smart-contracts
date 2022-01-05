@@ -81,7 +81,8 @@ export const testnet = {
     collector_contract: "terra12h9ssarf78t3sw3zu5xyr4v3cxjkmqmnxujlzl",
     community_contract: "",
     distributor_contract: "terra1vuktqwu0n5df0sfswzwwh4wpgznu4d2urflvlk",
-    gov_contract: "terra19e8yx8x5m5radap4plecnl4cppa0tyupzwesx6",
+    gov_contract: "terra16tw444h6qtzxr4kf2p276qt0u6w3ggtc20xgly",
+    gov_hodler_contract: "terra1mcjrurlzmne3hlqvjypyacz9l8xpf4r6zq9sa6",
     staking_contract: "",
     vesting_contract: "",
   },
@@ -221,13 +222,22 @@ export const mainnet = {
     native_liquidity: "",
   },
 
+  // LOOP LP contracts
+  loop: {
+    terraswap_factory: "terra16hdjuvghcumu6prg22cdjl96ptuay6r0hc6yns",
+    pair_contract: "terra1yjg0tuhc6kzwz9jl8yqgxnf2ctwlfumnvscupp",
+    lp_token_contract: "terra17pzt8t2hmx6587zn6yh5ensylm3s9mm4m72v2n",
+    // terra12aazc56hv7aj2fcvmhuxve0l4pmayhpn794m0p /// HALO-LOOP PAIR
+  },
+
   // HALO contracts
   halo: {
     airdrop_contract: "",
     collector_contract: "terra1uxqjsgnq30lg5lhlhwd2gmct844vwqcdlv93x5",
     community_contract: "",
     distributor_contract: "terra1ya34r8qj0fttkrxx435zexshyqe5fe3vlmhnd6",
-    gov_contract: "terra1lzdqv40fd8am5ac5tr9kvrmplqywmrgh4dslvk",
+    gov_contract: "terra1zcmp45vemypvd3j6ek2j2gz4mevjzyv3jc4ree",
+    gov_hodler_contract: "terra1vn8ycrkmm8llqcu82qe3sg5ktn6hajs6tkpnx0",
     staking_contract: "",
     vesting_contract: "",
   },

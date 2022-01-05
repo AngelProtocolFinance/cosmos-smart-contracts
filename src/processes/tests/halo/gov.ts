@@ -2,7 +2,13 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import {
+  LCDClient,
+  LocalTerra,
+  Msg,
+  MsgExecuteContract,
+  Wallet,
+} from "@terra-money/terra.js";
 import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -31,7 +37,8 @@ export async function testGovUpdateConfig(
   timelock_period: number | undefined,
   proposal_deposit: string | undefined,
   snapshot_period: number | undefined,
-  unbonding_period: number | undefined
+  unbonding_period: number | undefined,
+  gov_hodler: string | undefined
 ): Promise<void> {
   process.stdout.write("Test - Only owner can update gov config");
 
@@ -47,10 +54,64 @@ export async function testGovUpdateConfig(
           proposal_deposit,
           snapshot_period,
           unbonding_period,
+          gov_hodler,
         },
       }),
     ])
   );
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Update the configs of the Gov Hodler Contract
+//----------------------------------------------------------------------------------------
+export async function testGovHodlerUpdateConfig(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  gov_hodler: string,
+  owner: string | undefined,
+  govContract: string | undefined
+): Promise<void> {
+  process.stdout.write("Test - Only owner can update gov hodler config");
+
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(apTeam.key.accAddress, gov_hodler, {
+        update_config: {
+          owner,
+          gov_contract: govContract,
+        },
+      }),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Transfer Stake from Old to New Gov Contract
+//----------------------------------------------------------------------------------------
+export async function testTransferStake(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  oldGov: string,
+  newGov: string,
+  staker_info: string[][]
+): Promise<void> {
+  process.stdout.write("Test - Execute transfer of staker balances to a new contract");
+  let msgs: Msg[] = [];
+  staker_info.forEach((info) => {
+    msgs.push(
+      new MsgExecuteContract(apTeam.key.accAddress, oldGov, {
+        transfer_stake: {
+          new_gov_contract: newGov,
+          address: info[0],
+          amount: info[1],
+        },
+      })
+    );
+  });
+
+  await expect(sendTransaction(terra, apTeam, msgs));
   console.log(chalk.green(" Passed!"));
 }
 
@@ -223,6 +284,24 @@ export async function testGovClaimVotingTokens(
     sendTransaction(terra, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, govContract, {
         claim_voting_tokens: {},
+      }),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testGovResetClaims(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  govContract: string,
+  addresses: string[]
+): Promise<void> {
+  process.stdout.write("Test - Reset claims for all addresses passed");
+
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
+        reset_claims: { claim_addrs: addresses },
       }),
     ])
   );

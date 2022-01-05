@@ -86,6 +86,8 @@ import {
   testQueryGovState,
   testQueryGovVoters,
   VoteOption,
+  testGovHodlerUpdateConfig,
+  testTransferStake,
 } from "./halo/gov";
 import {
   testStakingUnbond,
@@ -123,10 +125,11 @@ import {
 } from "./lbp/pair";
 import { testQueryRouterConfig } from "./lbp/router";
 import {
-  testQueryTokenBalance,
+  testTransferTokenBalance,
   testQueryTokenInfo,
   testQueryTokenMinter,
   testPairWithdrawLiquidity,
+  testQueryTokenBalance,
 } from "./lbp/token";
 
 export async function testExecute(
@@ -162,22 +165,18 @@ export async function testExecute(
   //   apTeam,
   //   indexFund,
   //   13,
-  //   [
-  //     "terra1sxpz8mm4kcsz8rg60436d3z2td6v76qxnfj056", // Papyrus
-  //   ],
+  //   ["terra1680xcd2ut39u929gt9f5zfrfp0vfwgsq3epzaj"],
   //   []
   // );
   // await testCreateIndexFund(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   13,
-  //   "MVP Rotation #7",
+  //   14,
+  //   "MVP Rotation #8",
   //   "Fund collection for MVP",
   //   true,
-  //   [
-  //     "terra1ju737ylc3w9ltk5p643ts8k04mc5ncx4a7zxju", // Start Rescue
-  //   ]
+  //   ["terra1vnqvcm72sf3wxnl4g6dfwzxuryp7l9a32ztf9e"]
   // );
   // await testUpdateAngelAllianceMembers(terra, apTeam, indexFund, [
   //   "terra1zxtczmxtw8mk8xncvr8lcq2qmvk4dz88ek6f79", // community
@@ -235,6 +234,7 @@ export async function testExecute(
   //   undefined,
   //   undefined
   // );
+  // await testGovResetClaims(terra, apTeam, haloGov, [apTeam.key.accAddress]);
   // await testQueryGovConfig(terra, haloGov);
   // await testQueryGovState(terra, haloGov);
   // await testQueryGovClaims(terra, haloGov, apTeam.key.accAddress);
@@ -242,4 +242,39 @@ export async function testExecute(
   // await testQueryGovPoll(terra, haloGov, 1);
   // await testQueryGovPolls(terra, haloGov, undefined, undefined, undefined);
   // await testQueryGovVoters(terra, haloGov, 1, undefined, undefined);
+
+  // Test query for HALO collector
+  // await testCollectorUpdateConfig(
+  //   terra,
+  //   apTeam,
+  //   haloCollector,
+  //   "1.0",
+  //   undefined,
+  //   "terra16hdjuvghcumu6prg22cdjl96ptuay6r0hc6yns"
+  // );
+
+  // Test Loop Pair
+  // await testPairProvideLiquidity(
+  //   terra,
+  //   apTeam,
+  //   terraswapToken,
+  //   "terra1yjg0tuhc6kzwz9jl8yqgxnf2ctwlfumnvscupp", // LOOP PAIR
+  //   "13334400000000", //HALO
+  //   "1000000000000" //UST
+  // );
+
+  // await testPairWithdrawLiquidity(
+  //   terra,
+  //   apTeam,
+  //   lbpPairContract,
+  //   lbpLpTokenContract,
+  //   "10198039027185"
+  // );
+
+  // Test query for LBP Token
+  // await testQueryTokenBalance(terra, terraswapToken, apTeam.key.accAddress);
+
+  // await testSendTokenBalance(terra, terraswapToken, apTeam);
+
+  // await testCollectorSweep(terra, apTeam, haloCollector);
 }

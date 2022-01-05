@@ -18,37 +18,17 @@ const { expect } = chai;
 export async function testDistributorUpdateConfig(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  pleb: Wallet,
   distributorContract: string,
   spend_limit: string | undefined,
-  new_gov_contract: string | undefined,
+  gov_contract: string | undefined
 ): Promise<void> {
-  process.stdout.write("Test - Pleb cannot update distributor config");
-
-  await expect(
-    sendTransaction(terra, pleb, [
-      new MsgExecuteContract(
-        pleb.key.accAddress,
-        distributorContract,
-        {
-          update_config: { spend_limit, gov_contract: new_gov_contract },
-        },
-      ),
-    ])
-  ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Failed!"));
-
   process.stdout.write("Test - Only gov contract can update distributor config");
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        distributorContract,
-        {
-          update_config: { spend_limit, gov_contract: new_gov_contract },
-        },
-      ),
+      new MsgExecuteContract(apTeam.key.accAddress, distributorContract, {
+        update_config: { spend_limit, gov_contract },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -69,17 +49,15 @@ export async function testDistributorSpend(
   receipient: string,
   amount: string
 ): Promise<void> {
-  process.stdout.write("Test - Send `amount` of HALO token to `receipient` for community purpose");
+  process.stdout.write(
+    "Test - Send `amount` of HALO token to `receipient` for community purpose"
+  );
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        distributorContract,
-        {
-          spend: { receipient, amount },
-        },
-      ),
+      new MsgExecuteContract(apTeam.key.accAddress, distributorContract, {
+        spend: { receipient, amount },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -102,14 +80,11 @@ export async function testDistributorAdd(
   process.stdout.write("Test - Only gov contract can add new distributor");
 
   await expect(
-    sendTransaction(terra, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
-      new MsgExecuteContract(
-        govContract,
-        distributorContract,
-        {
-          add_distributor: { distributor },
-        },
-      ),
+    sendTransaction(terra, apTeam, [
+      // TODO: replace apTeam to govContract(Wallet)
+      new MsgExecuteContract(govContract, distributorContract, {
+        add_distributor: { distributor },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -132,14 +107,11 @@ export async function testDistributorRemove(
   process.stdout.write("Test - Only gov contract can remove new distributor");
 
   await expect(
-    sendTransaction(terra, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
-      new MsgExecuteContract(
-        govContract,
-        distributorContract,
-        {
-          remove_distributor: { distributor },
-        },
-      ),
+    sendTransaction(terra, apTeam, [
+      // TODO: replace apTeam to govContract(Wallet)
+      new MsgExecuteContract(govContract, distributorContract, {
+        remove_distributor: { distributor },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));

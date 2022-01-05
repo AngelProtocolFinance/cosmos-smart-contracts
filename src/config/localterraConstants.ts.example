@@ -63,6 +63,7 @@ export const localterra = {
     community_contract: "",
     distributor_contract: "",
     gov_contract: "",
+    gov_holder: "",
     staking_contract: "",
     vesting_contract: "",
   },
