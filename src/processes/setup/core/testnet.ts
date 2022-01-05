@@ -298,7 +298,7 @@ async function setup(
   process.stdout.write("Add confirmed TCA Member to allowed list");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      update_tca_list: { new_list: [tca.key.accAddress] },
+      update_tca_list: { add: [tca.key.accAddress], remove: [] },
     }),
   ]);
   console.log(chalk.green(" Done!"));

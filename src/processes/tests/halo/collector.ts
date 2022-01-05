@@ -18,35 +18,18 @@ const { expect } = chai;
 export async function testCollectorUpdateConfig(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  pleb: Wallet,
-  govContract: string,
   collectorContract: string,
   reward_factor: string | undefined,
-  new_gov_contract: string | undefined,
+  gov_contract: string | undefined,
   swap_factory: string | undefined
 ): Promise<void> {
-  process.stdout.write("Test - Pleb cannot update collector config");
-
-  await expect(
-    sendTransaction(terra, pleb, [
-      new MsgExecuteContract(pleb.key.accAddress, collectorContract, {
-        update_config: {
-          reward_factor,
-          gov_contract: new_gov_contract,
-          swap_factory,
-        },
-      }),
-    ])
-  ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Failed!"));
-
   process.stdout.write("Test - Gov contract update collector config");
   await expect(
     sendTransaction(terra, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, collectorContract, {
         update_config: {
           reward_factor,
-          gov_contract: new_gov_contract,
+          gov_contract,
           swap_factory,
         },
       }),

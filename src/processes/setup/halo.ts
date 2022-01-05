@@ -38,8 +38,17 @@ export async function setupHalo(
     timelock_period,
     proposal_deposit,
     snapshot_period,
-    unbonding_period
+    unbonding_period,
+    "terra1vn8ycrkmm8llqcu82qe3sg5ktn6hajs6tkpnx0"
   );
+
+  // Setup Gov Hodler contract
+  // const govHodlerContract = await setupGovHodler(
+  //   terra,
+  //   apTeam,
+  //   terraswapHaloToken,
+  //   govContract
+  // );
 
   // Setup Distributor contract
   const distributorContract = await setupDistributor(
@@ -93,7 +102,8 @@ async function setupGov(
   timelock_period: number,
   proposal_deposit: string,
   snapshot_period: number,
-  unbonding_period: number
+  unbonding_period: number,
+  gov_hodler: string
 ): Promise<string> {
   process.stdout.write("Uploading gov contract Wasm");
   const govCodeId = await storeCode(
@@ -114,6 +124,7 @@ async function setupGov(
     registrar_contract,
     halo_token,
     unbonding_period,
+    gov_hodler,
   });
   const govContractAddr = govResult.logs[0].events
     .find((event) => {
@@ -128,6 +139,47 @@ async function setupGov(
   );
 
   return govContractAddr;
+}
+
+// gov contract
+async function setupGovHodler(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  halo_token: string,
+  govContract: string
+): Promise<string> {
+  process.stdout.write("Uploading gov hodler contract Wasm");
+  const govHodlerCodeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, `${wasm_path.core}/halo_gov_hodler.wasm`)
+  );
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${govHodlerCodeId}`);
+
+  process.stdout.write("Instantiating gov hodler contract");
+  const govHodlerResult = await instantiateContract(
+    terra,
+    apTeam,
+    apTeam,
+    govHodlerCodeId,
+    {
+      halo_token,
+      gov_contract: govContract,
+    }
+  );
+  const govHodlerContractAddr = govHodlerResult.logs[0].events
+    .find((event) => {
+      return event.type == "instantiate_contract";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "contract_address";
+    })?.value as string;
+  console.log(
+    chalk.green(" Done!"),
+    `${chalk.blue("contractAddress")}=${govHodlerContractAddr}`
+  );
+
+  return govHodlerContractAddr;
 }
 
 // airdrop contract

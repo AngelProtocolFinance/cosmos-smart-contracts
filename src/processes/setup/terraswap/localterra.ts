@@ -9,6 +9,8 @@ import { wasm_path } from "../../../config/wasmPaths";
 export async function setupTerraSwap(
   terra: LocalTerra,
   apTeam: Wallet,
+  apTeam2: Wallet,
+  apTeam3: Wallet,
   initial_halo_supply: string,
   halo_liquidity: string,
   native_liquidity: string
@@ -72,6 +74,14 @@ export async function setupTerraSwap(
     initial_balances: [
       {
         address: apTeam.key.accAddress,
+        amount: initial_halo_supply,
+      },
+      {
+        address: apTeam2.key.accAddress,
+        amount: initial_halo_supply,
+      },
+      {
+        address: apTeam3.key.accAddress,
         amount: initial_halo_supply,
       },
     ],
