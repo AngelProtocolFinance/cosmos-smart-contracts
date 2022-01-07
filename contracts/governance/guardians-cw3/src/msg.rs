@@ -13,12 +13,9 @@ pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct InstantiateMsg {
-    pub ap_team_group: String,
-    pub endowment_owners_group: String,
-    pub registrar_contract: String,
+    pub group_addr: String,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
-    pub max_voting_period_guardians: Duration,
 }
 
 /// This defines the different ways tallies can happen.
@@ -113,46 +110,28 @@ fn valid_percentage(percent: &Decimal) -> Result<(), ContractError> {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Propose {
-        endowment_addr: String,
         title: String,
         description: String,
         msgs: Vec<CosmosMsg<Empty>>,
         // note: we ignore API-spec'd earliest if passed, always opens immediately
         latest: Option<Expiration>,
     },
-    ProposeOwnerChange {
-        endowment_addr: String,
-        new_owner_addr: String,
-    },
-    ProposeGuardianChange {
-        endowment_addr: String,
-        add: Vec<String>,
-        remove: Vec<String>,
-    },
     Vote {
         proposal_id: u64,
         vote: Vote,
     },
-    VoteGuardian {
-        proposal_id: u64,
-        vote: Vote,
-    },
-    UpdateConfig(UpdateConfigMsg),
     Execute {
         proposal_id: u64,
     },
     Close {
         proposal_id: u64,
     },
+    UpdateConfig {
+        threshold: Threshold,
+        max_voting_period: Duration,
+    },
     /// Handles update hook messages from the group contract
     MemberChangedHook(MemberChangedHookMsg),
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateConfigMsg {
-    pub threshold: Threshold,
-    pub max_voting_period: Duration,
-    pub max_voting_period_guardians: Duration,
 }
 
 // We can also add this as a cw3 extension
