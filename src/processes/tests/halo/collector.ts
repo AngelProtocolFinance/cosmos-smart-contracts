@@ -52,16 +52,26 @@ export async function testCollectorSweep(
   apTeam: Wallet,
   collectorContract: string
 ): Promise<void> {
-  process.stdout.write("Test - Anyone can swap asset token => HALO token");
+  process.stdout.write("Test - Anyone can sweep asset token => HALO token");
 
-  await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, collectorContract, {
-        sweep: { denom: "uusd" },
-      }),
-    ])
+  let result = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, collectorContract, {
+      sweep: { denom: "uusd" },
+    }),
+  ]);
+
+  let distribution_amount = result.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "distribute_amount";
+    })?.value as string;
+
+  console.log(
+    `Distributed to Gov Stakers: ${distribution_amount}`,
+    chalk.green(" Passed!")
   );
-  console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
