@@ -164,8 +164,10 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   13,
-  //   ["terra1680xcd2ut39u929gt9f5zfrfp0vfwgsq3epzaj"],
+  //   14,
+  //   [
+  //     "terra1vmmkdcw49gt8guv7su4fkksyv6dnthafeap4fw", //Rose Knight Foundation
+  //   ],
   //   []
   // );
   // await testCreateIndexFund(

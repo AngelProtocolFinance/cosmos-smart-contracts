@@ -181,6 +181,13 @@ export const mainnet = {
       "terra1m90s9m4xn5rv45t3d7d4k4xzcckgeheg37gq33", // Circle of Care
       "terra12ws5eecm3em6f9n6gj354lf8nc7jf40mq0aepc", // Waveny Lifecare Network
       "terra1ju737ylc3w9ltk5p643ts8k04mc5ncx4a7zxju", // Start Rescue
+      "terra1eezt4at6jmg762faf6sk55tktqgl6ml4zqywv0", // Yamba Hearts
+      "terra1m7sf34mp05hea0t7x2huye36u3yq7czn6g87el", // Dogs Cleaveland
+      "terra1ljhyxwjqngxjc6x85e09l658xrduqyurfcfr0n", // Wikitongues
+      "terra15kjfh3rz9yn9hwzcp9y4nke5k2q3x74tactu0g", // Hip Hop for Change
+      "terra1l8lu43gmlnv6plcp0nxhuk9jkw6gy9nr8kng7n", // Empower through Health
+      "terra1dp3zw599k3h3n7qsqzell3fnanmw65n2s3ddwt", // Associazione Teia
+      "terra1vmmkdcw49gt8guv7su4fkksyv6dnthafeap4fw", //Rose Knight Foundation
     ],
   },
   members: [
