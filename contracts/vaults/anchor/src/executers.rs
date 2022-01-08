@@ -346,8 +346,7 @@ pub fn harvest(
         }))?;
     let treasury_addr = deps.api.addr_validate(&registrar_config.treasury)?;
     let collector_addr = deps.api.addr_validate(&collector_address)?;
-    let mut harvested_account = BalanceInfo::default();
-    let mut taxes_collected = Uint128::zero();
+    let mut harvest_account = BalanceInfo::default();
 
     // iterate over all accounts and shuffle DP tokens from Locked to Liquid
     // set aside a small amount for treasury
@@ -361,6 +360,8 @@ pub fn harvest(
             .load(deps.storage, &account_address)
             .unwrap_or_else(|_| BalanceInfo::default());
 
+        // CALCULATE ALL AMOUNTS TO BE COLLECTED FOR TAXES AND TO BE TRANSFERED
+        // UPFRONT BEFORE PERFORMING ANY ACTUAL BALANCE SHUFFLES
         // calculate harvest taxes owed on liquid balance earnings
         let liquid_taxes_owed = balances
             .liquid_balance
@@ -370,7 +371,27 @@ pub fn harvest(
             * config.tax_per_block
             * registrar_config.tax_rate;
 
-        // deduct taxes if we have a non-zero amount
+        // calculate harvest taxes owed on locked balance earnings
+        let locked_taxes_owed = balances
+            .locked_balance
+            .get_token_amount(env.contract.address.clone())
+            .checked_mul(harvest_blocks)
+            .unwrap()
+            * config.tax_per_block
+            * registrar_config.tax_rate;
+
+        // calulate amount of earnings to be harvested from locked >> liquid balance
+        // reduce harvest amount by any locked taxes owed on those earnings
+        let transfer_amt = balances
+            .locked_balance
+            .get_token_amount(env.contract.address.clone())
+            .checked_mul(harvest_blocks)
+            .unwrap()
+            * config.tax_per_block
+            * config.harvest_to_liquid
+            - locked_taxes_owed;
+
+        // deduct liquid taxes if we have a non-zero amount
         if liquid_taxes_owed > Uint128::zero() {
             let deposit_token = Cw20CoinVerified {
                 address: env.contract.address.clone(),
@@ -382,42 +403,42 @@ pub fn harvest(
                 .deduct_tokens(Balance::Cw20(deposit_token.clone()));
 
             // add taxes collected to the liquid balance of the Collector
-            harvested_account
+            harvest_account
                 .liquid_balance
                 .add_tokens(Balance::Cw20(deposit_token.clone()));
         }
 
-        // calulate amount to harvest from locked >> liquid
-        let transfer_amt = balances
-            .locked_balance
-            .get_token_amount(env.contract.address.clone())
-            .checked_mul(harvest_blocks)
-            .unwrap()
-            * config.tax_per_block
-            * config.harvest_to_liquid;
+        // deduct locked taxes if we have a non-zero amount
+        if locked_taxes_owed > Uint128::zero() {
+            let deposit_token = Cw20CoinVerified {
+                address: env.contract.address.clone(),
+                amount: locked_taxes_owed,
+            };
+            // lower locked balance
+            balances
+                .locked_balance
+                .deduct_tokens(Balance::Cw20(deposit_token.clone()));
+
+            // add taxes collected to the liquid balance of the Collector
+            harvest_account
+                .liquid_balance
+                .add_tokens(Balance::Cw20(deposit_token.clone()));
+        }
+
         // proceed to shuffle balances if we have a non-zero amount
         if transfer_amt > Uint128::zero() {
             let mut deposit_token = Cw20CoinVerified {
                 address: env.contract.address.clone(),
                 amount: transfer_amt,
             };
-            let taxes_owed = transfer_amt * registrar_config.tax_rate;
 
             // lower locked balance
             balances
                 .locked_balance
                 .deduct_tokens(Balance::Cw20(deposit_token.clone()));
 
-            // add to liquid balance (less taxes owed to Collector)
-            deposit_token.amount = transfer_amt - taxes_owed;
+            // add to liquid balance
             balances
-                .liquid_balance
-                .add_tokens(Balance::Cw20(deposit_token.clone()));
-            taxes_collected += taxes_owed;
-
-            // add taxes collected to the liquid balance of the Collector
-            deposit_token.amount = taxes_owed;
-            harvested_account
                 .liquid_balance
                 .add_tokens(Balance::Cw20(deposit_token.clone()));
         }
@@ -425,13 +446,13 @@ pub fn harvest(
         BALANCES.save(deps.storage, &account_address, &balances)?;
     }
 
-    if harvested_account
+    if harvest_account
         .liquid_balance
         .get_token_amount(env.contract.address.clone())
         > Uint128::zero()
     {
         // Withdraw all DP Tokens from Treasury and send to Collector Contract and/or the AP Treasury Wallet
-        let withdraw_total = harvested_account
+        let withdraw_total = harvest_account
             .liquid_balance
             .get_token_amount(env.contract.address);
         let mut withdraw_leftover = withdraw_total;
