@@ -1,5 +1,6 @@
 use crate::structs::SplitDetails;
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
+use cw4::Member;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -57,7 +58,9 @@ pub struct CreateEndowmentMsg {
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
-    pub guardians_multisig_addr: Option<String>,
+    pub guardian_members: Vec<Member>,
+    pub guardians_group_code: u64,
+    pub guardians_multisig_code: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

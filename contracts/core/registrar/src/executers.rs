@@ -93,21 +93,11 @@ pub fn update_endowment_status(
     let sub_messages: Vec<SubMsg> = match msg_endowment_status {
         // Allowed to receive donations and process withdrawals
         EndowmentStatus::Approved => {
-            vec![
-                build_account_status_change_msg(endowment_entry.address.to_string(), true, true),
-                // send msg to C4 Endowment Owners group SC to add new member
-                SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: config.endowment_owners_group_addr.unwrap(),
-                    msg: to_binary(&UpdateMembers {
-                        add: vec![Member {
-                            addr: endowment_info.owner.to_string(),
-                            weight: 1,
-                        }],
-                        remove: vec![],
-                    })?,
-                    funds: vec![],
-                })),
-            ]
+            vec![build_account_status_change_msg(
+                endowment_entry.address.to_string(),
+                true,
+                true,
+            )]
         }
         // Can accept inbound deposits, but cannot withdraw funds out
         EndowmentStatus::Frozen => {
@@ -129,15 +119,6 @@ pub fn update_endowment_status(
                     },
                 ))
                 .unwrap(),
-                funds: vec![],
-            })),
-            // send msg to C4 Endowment Owners group SC to remove a member
-            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.endowment_owners_group_addr.unwrap(),
-                msg: to_binary(&UpdateMembers {
-                    add: vec![],
-                    remove: vec![endowment_info.owner.to_string()],
-                })?,
                 funds: vec![],
             })),
             // start redemption of Account SC's Vault holdings to final beneficiary/index fund
@@ -278,6 +259,9 @@ pub fn create_endowment(
             withdraw_before_maturity: msg.withdraw_before_maturity,
             maturity_time: msg.maturity_time,
             maturity_height: msg.maturity_height,
+            guardian_members: msg.guardian_members,
+            guardians_group_code: msg.guardians_group_code,
+            guardians_multisig_code: msg.guardians_multisig_code,
         })?,
         funds: vec![],
     };
@@ -420,13 +404,20 @@ pub fn new_accounts_reply(
     match msg {
         ContractResult::Ok(subcall) => {
             let mut endowment_addr = String::from("");
-            for event in subcall.events {
+            // set label here of the for loop we'll want to break out of
+            'outer: for event in subcall.events {
                 if event.ty == *"instantiate_contract" {
                     for attrb in event.attributes {
                         if attrb.key == "contract_address" {
                             endowment_addr = attrb.value;
                         }
                     }
+                    // break from loop to go set the address because we get
+                    // more than one instantiated contract back in these logs:
+                    // 1. Endowment contract
+                    // 2. Guardians Group contract
+                    // 3. Guardians Multisig contract
+                    break 'outer;
                 }
             }
             // Register the new Endowment on success Reply

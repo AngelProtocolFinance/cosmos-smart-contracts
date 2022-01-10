@@ -1,6 +1,7 @@
 use crate::messages::vault::AccountTransferMsg;
 use crate::structs::FundingSource;
 use cosmwasm_std::Decimal;
+use cw4::Member;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -18,6 +19,9 @@ pub struct InstantiateMsg {
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
+    pub guardians_group_code: u64,
+    pub guardians_multisig_code: u64,
+    pub guardian_members: Vec<Member>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -36,7 +40,7 @@ pub enum ExecuteMsg {
     CloseEndowment {
         beneficiary: Option<String>, // Optional Addr of the Beneficiary to receive funds
     },
-    // update owner addr
+    // update owner addrInstantiateMsg
     UpdateOwner {
         new_owner: String,
     },
@@ -52,10 +56,6 @@ pub enum ExecuteMsg {
     // Replace an Account's Strategy with that given.
     UpdateStrategies {
         strategies: Vec<Strategy>,
-    },
-    UpdateGuardians {
-        add: Vec<String>,
-        remove: Vec<String>,
     },
 }
 

@@ -1,8 +1,9 @@
-use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, Threshold};
+use crate::msg::{ExecuteMsg, MigrateMsg, QueryMsg};
 use crate::state::{
     next_id, parse_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS,
 };
+use angel_core::errors::guardians::ContractError;
+use angel_core::messages::guardians_multisig::{InstantiateMsg, Threshold};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, Order,

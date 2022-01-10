@@ -3,14 +3,16 @@ use crate::queriers;
 use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
+use angel_core::messages::guardians_group::InstantiateMsg as GuardiansGroupInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
-    Response, StdResult, Uint128, WasmQuery,
+    entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
+    QueryRequest, Reply, ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
+use cw4::Member;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";
@@ -20,7 +22,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -35,6 +37,8 @@ pub fn instantiate(
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
             pending_redemptions: None,
+            multisig_code: Some(msg.guardians_multisig_code),
+            group_code: Some(msg.guardians_group_code),
         },
     )?;
 
@@ -74,7 +78,31 @@ pub fn instantiate(
         },
     )?;
 
-    Ok(Response::default())
+    // if there is NO guardians list passed initially, use the
+    // original Endowment owner address as the sole member
+    let mut first_guardians: Vec<Member> = vec![Member {
+        addr: msg.owner.into(),
+        weight: 1,
+    }];
+    if !msg.guardian_members.is_empty() {
+        first_guardians = msg.guardian_members;
+    }
+
+    Ok(Response::new().add_submessage(SubMsg {
+        id: 1,
+        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+            code_id: msg.guardians_group_code,
+            admin: None,
+            label: "new endowment guardians group".to_string(),
+            msg: to_binary(&GuardiansGroupInstantiateMsg {
+                admin: Some(info.sender.to_string()),
+                members: first_guardians,
+            })?,
+            funds: vec![],
+        }),
+        gas_limit: None,
+        reply_on: ReplyOn::Success,
+    }))
 }
 
 #[entry_point]
@@ -109,9 +137,18 @@ pub fn execute(
             executers::close_endowment(deps, env, info, beneficiary)
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
-        ExecuteMsg::UpdateGuardians { add, remove } => {
-            executers::update_guardians(deps, env, info, add, remove)
-        }
+    }
+}
+
+/// Replies back to the Endowment Account from various multisig contract calls (@ some passed code_id)
+/// should be caught and handled to fire subsequent setup calls and ultimately the storing of the multisig
+/// as the Accounts endowment owner
+#[entry_point]
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        1 => executers::new_guardians_group_reply(deps, env, msg.result),
+        2 => executers::new_guardians_multisig_reply(deps, env, msg.result),
+        _ => Err(ContractError::Unauthorized {}),
     }
 }
 
