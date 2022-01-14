@@ -159,6 +159,12 @@ export async function testExecute(
   lbpLpTokenContract: string
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // await testRejectUnapprovedDonations(
+  //   terra,
+  //   apTeam,
+  //   "terra1qagm9wdnp6f76xy52llcjxmr4z8j4nhd9ethw8",
+  //   "10000000000"
+  // );
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
   // await testUpdateFundMembers(
   //   terra,
@@ -174,30 +180,22 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   14,
-  //   "MVP Rotation #8",
+  //   15,
+  //   "MVP Rotation #9",
   //   "Fund collection for MVP",
   //   true,
-  //   ["terra1vnqvcm72sf3wxnl4g6dfwzxuryp7l9a32ztf9e"]
+  //   [
+  //     "terra1uzrw4d95dyh5d4mygnzmgfyrushdygdecepcmf", // Proyecto Guajira
+  //     "terra1zjvygqzen4ctsjvre507vggexgtrlsal5q5nen", // Pangea Educational Development
+  //   ]
   // );
-  // await testUpdateAngelAllianceMembers(terra, apTeam, indexFund, [
-  //   "terra1zxtczmxtw8mk8xncvr8lcq2qmvk4dz88ek6f79", // community
-  //   "terra1janh9rs6pme3tdwhyag2lmsr2xv6wzhcrjz0xx", // community
-  //   "terra18n2pc9x6q9str9dz8sqpt7ulz5telutclkzaec", // lunapes
-  //   "terra17me29hk8cdd6mm6uf7cf0amsxmzxnszkfe5ph4", // lunabulls
-  //   "terra1r59snugfm3gxjas565jf5ehw54junlfpmspjan", // lunabulls
-  //   "terra1tz9jtxemq5e9sw048adz32tj62vkzp6f63e26f", // Astronorcs
-  //   "terra1pl2cus25j79ukff04fxn9wwemerm2463gnztl6", // west coast
-  //   "terra1etwq0q8wwnmq7322kz4v6ff2dcvwfm634vdkqn", // loop finance
-  //   "terra157vv7nqra4zpfa58cglen5ekqmekxqw5ss3edq", // loop finance
-  //   "terra1feqtlvaru4lszqnpjesgfw8splrg7u27wwwqac", // loop finance
-  //   "terra1rzjxj4c6ykemk8csvtjchcqas7mul8s4w6rk8x", // tales of terra
-  //   "terra1kf4k0l7hj5tlkuzf67ly43q8d2gcxay3hwa7fr", // hero
-  //   "terra1yvg94g6ydgme2kdhy5t4gasgvem2kpk56g4h5e", // Luna Millionares Portrait
-  //   "terra14amh70rm5a3wjgkf7trvten3jfqum2svppky3e", // Terra Terrapins
-  //   "terra1amrl8f5fqen2m478nuh2z7mz5ce096x4xqae9p", // Woof of Luna
-  //   "terra1hxrd8pnqytqpelape3aemprw3a023wryw7p0xn", // ApolloDAO
-  // ]);
+  // await testUpdateAngelAllianceMembers(
+  //   terra,
+  //   apTeam,
+  //   indexFund,
+  //   ["terra1gmxefcqt8sfckw0w44tpkuaz0p27eddq76elzx"],
+  //   []
+  // );
   // await testRemoveIndexFund(terra, apTeam, indexFund, 5);
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 1, [], ["",""]);

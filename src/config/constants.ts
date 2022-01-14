@@ -187,7 +187,13 @@ export const mainnet = {
       "terra15kjfh3rz9yn9hwzcp9y4nke5k2q3x74tactu0g", // Hip Hop for Change
       "terra1l8lu43gmlnv6plcp0nxhuk9jkw6gy9nr8kng7n", // Empower through Health
       "terra1dp3zw599k3h3n7qsqzell3fnanmw65n2s3ddwt", // Associazione Teia
-      "terra1vmmkdcw49gt8guv7su4fkksyv6dnthafeap4fw", //Rose Knight Foundation
+      "terra1vmmkdcw49gt8guv7su4fkksyv6dnthafeap4fw", // Rose Knight Foundation
+      "terra15w8pfr48vxzparmf8qvwsxtlkzkf0uvawzxaeu", // CORE (Community Organized Relief Effort)
+      "terra1ysuujvuhefphh6ktuawvlgpzewye7stczxzaht", // Taking Pictures, Changing Lives Foundation
+      "terra1zv52rlllk2vemgm5jk77agpukk5zqk5fmgkf2t", // REEFolution
+      "terra1uzrw4d95dyh5d4mygnzmgfyrushdygdecepcmf", // Proyecto Guajira
+      "terra1zjvygqzen4ctsjvre507vggexgtrlsal5q5nen", // Pangea Educational Development
+      "terra14ykrrzsvnjnf7664asf988p7snn33kxc5hsyju", // Direct Hand Foundation
     ],
   },
   members: [
