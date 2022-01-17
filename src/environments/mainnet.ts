@@ -262,7 +262,7 @@ export async function startSetupHalo(): Promise<void> {
     100000000000, // voting_period (~7 days in blocks),
     1000, // timelock_period,
     "5000000000", // proposal_deposit,
-    10, // snapshot_period,
+    10000000000, // snapshot_period,
     7 * 24 * 60 * 60, // unbonding_period in seconds
     [], // whitelist
     "1000", // spend_limit

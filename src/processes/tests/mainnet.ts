@@ -228,11 +228,12 @@ export async function testExecute(
   //   undefined,
   //   undefined,
   //   undefined,
-  //   100000000000,
+  //   undefined, // voting period
   //   undefined,
-  //   "5000000000",
-  //   undefined,
-  //   undefined
+  //   undefined, // deposit
+  //   10000000000, // snapshot period
+  //   undefined, // unbonding period
+  //   undefined // gov_hodler
   // );
   // await testGovResetClaims(terra, apTeam, haloGov, [apTeam.key.accAddress]);
   // await testQueryGovConfig(terra, haloGov);
