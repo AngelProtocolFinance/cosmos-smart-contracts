@@ -22,8 +22,9 @@ pub enum ExecuteMsg {
     RegisterVestingAccounts {
         vesting_accounts: Vec<VestingAccount>,
     },
-    UpdateVestingAccount {
-        vesting_account: VestingAccount,
+    AddSchedulesToVestingAccount {
+        address: String,
+        new_schedules: Vec<(u64, u64, Uint128)>,
     },
     Claim {},
 }

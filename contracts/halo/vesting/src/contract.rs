@@ -1,13 +1,10 @@
-#[cfg(not(feature = "library"))]
+use crate::state::{
+    read_config, read_vesting_info, read_vesting_infos, store_config, store_vesting_info, Config,
+};
 use cosmwasm_std::entry_point;
-
 use cosmwasm_std::{
     to_binary, Addr, Api, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, Response,
     StdError, StdResult, Storage, Uint128, WasmMsg,
-};
-
-use crate::state::{
-    read_config, read_vesting_info, read_vesting_infos, store_config, store_vesting_info, Config,
 };
 use cw20::Cw20ExecuteMsg;
 use halo_token::common::OrderBy;
@@ -49,10 +46,11 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                 } => update_config(deps, owner, halo_token, genesis_time),
                 ExecuteMsg::RegisterVestingAccounts { vesting_accounts } => {
                     register_vesting_accounts(deps, vesting_accounts)
-                },
-                ExecuteMsg::UpdateVestingAccount { vesting_account } => {
-                    update_vesting_account(deps, vesting_account)
-                },
+                }
+                ExecuteMsg::AddSchedulesToVestingAccount {
+                    address,
+                    new_schedules,
+                } => add_schedules_to_vesting_account(deps, address, new_schedules),
                 _ => panic!("DO NOT ENTER HERE"),
             }
         }
@@ -113,10 +111,7 @@ pub fn register_vesting_accounts(
 
         let vesting_address = deps.api.addr_validate(&vesting_account.address)?;
         match read_vesting_info(deps.storage, &vesting_address) {
-            Ok(mut vesting_info) => {
-                vesting_info.schedules = vesting_account.schedules.clone();
-                store_vesting_info(deps.storage, &vesting_address, &vesting_info)?;
-            },
+            Ok(_vesting_info) => (),
             _ => {
                 store_vesting_info(
                     deps.storage,
@@ -133,30 +128,21 @@ pub fn register_vesting_accounts(
     Ok(Response::new().add_attributes(vec![("action", "register_vesting_accounts")]))
 }
 
-pub fn update_vesting_account(
+pub fn add_schedules_to_vesting_account(
     deps: DepsMut,
-    vesting_account: VestingAccount,
+    address: String,
+    new_schedules: Vec<(u64, u64, Uint128)>,
 ) -> StdResult<Response> {
-    let addr = deps.api.addr_validate(&vesting_account.address).unwrap();
+    let addr = deps.api.addr_validate(&address).unwrap();
     match read_vesting_info(deps.storage, &addr) {
         Ok(mut vesting_info) => {
-            vesting_info.schedules = vesting_account.schedules;
+            vesting_info.schedules.append(&mut new_schedules.clone());
             store_vesting_info(deps.storage, &addr, &vesting_info)?;
-        },
-        _ => {
-            let config: Config = read_config(deps.storage)?;
-            store_vesting_info(
-                deps.storage,
-                &addr,
-                &VestingInfo {
-                    last_claim_time: config.genesis_time,
-                    schedules: vesting_account.schedules,
-                },
-            )?;
         }
+        _ => (),
     }
 
-    Ok(Response::new().add_attributes(vec![("action", "update_vesting_account")]))
+    Ok(Response::new().add_attributes(vec![("action", "add_schedules_to_vesting_account")]))
 }
 
 pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
