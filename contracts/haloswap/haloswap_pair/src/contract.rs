@@ -1,16 +1,12 @@
 use crate::error::ContractError;
 use crate::response::MsgInstantiateContractResponse;
 use crate::state::PAIR_INFO;
-
-#[cfg(not(feature = "library"))]
+use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::entry_point;
-
 use cosmwasm_std::{
     from_binary, to_binary, Addr, Binary, CanonicalAddr, Coin, CosmosMsg, Decimal, Deps, DepsMut,
     Env, MessageInfo, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
-
-use cosmwasm_bignumber::{Decimal256, Uint256};
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg, MinterResponse};
 use haloswap::asset::{Asset, AssetInfo, PairInfo, PairInfoRaw};
 use haloswap::pair::{
@@ -27,8 +23,6 @@ const INSTANTIATE_REPLY_ID: u64 = 1;
 
 /// Commission rate == 0.3%
 const COMMISSION_RATE: &str = "0.003";
-/// Fee Collector Address (where commission fees are sent, if set)
-const FEE_COLLECTOR: &str = "";
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -416,20 +410,6 @@ pub fn swap(
     if !return_amount.is_zero() {
         // send result of swap to receiver
         messages.push(return_asset.into_msg(&deps.querier, receiver.clone())?);
-        // if fee collector address is set we send commission fees to that addr
-        // otherwise fees will collect in the pool for LPs
-        if FEE_COLLECTOR != &"" {
-            let fee_collector = deps.api.addr_validate(FEE_COLLECTOR)?;
-            // send commission fee to Fee Collector Address (ie. AP treasury for now)
-            messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                    recipient: fee_collector.to_string(),
-                    commission_amount,
-                })?,
-                funds: vec![],
-            }))
-        }
     }
 
     // 1. send collateral token from the contract to a user
