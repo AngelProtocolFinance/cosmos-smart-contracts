@@ -51,10 +51,17 @@
         "update_tca_list": {
           "type": "object",
           "required": [
-            "new_list"
+            "add",
+            "remove"
           ],
           "properties": {
-            "new_list": {
+            "add": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "remove": {
               "type": "array",
               "items": {
                 "type": "string"
@@ -116,7 +123,17 @@
       ],
       "properties": {
         "remove_fund": {
-          "$ref": "#/definitions/RemoveFundMsg"
+          "type": "object",
+          "required": [
+            "fund_id"
+          ],
+          "properties": {
+            "fund_id": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            }
+          }
         }
       },
       "additionalProperties": false
@@ -128,7 +145,31 @@
       ],
       "properties": {
         "update_members": {
-          "$ref": "#/definitions/UpdateMembersMsg"
+          "type": "object",
+          "required": [
+            "add",
+            "fund_id",
+            "remove"
+          ],
+          "properties": {
+            "add": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "fund_id": {
+              "type": "integer",
+              "format": "uint64",
+              "minimum": 0.0
+            },
+            "remove": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
         }
       },
       "additionalProperties": false
@@ -256,6 +297,12 @@
         "name": {
           "type": "string"
         },
+        "rotating_fund": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
         "split_to_liquid": {
           "anyOf": [
             {
@@ -265,19 +312,6 @@
               "type": "null"
             }
           ]
-        }
-      }
-    },
-    "RemoveFundMsg": {
-      "type": "object",
-      "required": [
-        "fund_id"
-      ],
-      "properties": {
-        "fund_id": {
-          "type": "integer",
-          "format": "uint64",
-          "minimum": 0.0
         }
       }
     },
@@ -298,35 +332,38 @@
     },
     "UpdateConfigMsg": {
       "type": "object",
-      "required": [
-        "accepted_tokens_cw20",
-        "accepted_tokens_native",
-        "fund_member_limit",
-        "fund_rotation",
-        "split_default",
-        "split_max",
-        "split_min"
-      ],
       "properties": {
         "accepted_tokens_cw20": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
         },
         "accepted_tokens_native": {
-          "type": "array",
+          "type": [
+            "array",
+            "null"
+          ],
           "items": {
             "type": "string"
           }
         },
         "fund_member_limit": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "format": "uint32",
           "minimum": 0.0
         },
         "fund_rotation": {
-          "type": "integer",
+          "type": [
+            "integer",
+            "null"
+          ],
           "format": "uint64",
           "minimum": 0.0
         },
@@ -339,42 +376,6 @@
               "type": "null"
             }
           ]
-        },
-        "split_default": {
-          "$ref": "#/definitions/Decimal"
-        },
-        "split_max": {
-          "$ref": "#/definitions/Decimal"
-        },
-        "split_min": {
-          "$ref": "#/definitions/Decimal"
-        }
-      }
-    },
-    "UpdateMembersMsg": {
-      "type": "object",
-      "required": [
-        "add",
-        "fund_id",
-        "remove"
-      ],
-      "properties": {
-        "add": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "fund_id": {
-          "type": "integer",
-          "format": "uint64",
-          "minimum": 0.0
-        },
-        "remove": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
         }
       }
     }

@@ -52,6 +52,7 @@ pub fn instantiate(
         snapshot_period: msg.snapshot_period,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         unbonding_period: Duration::Time(msg.unbonding_period), // secconds of unbonding
+        gov_hodler: deps.api.addr_validate(&msg.gov_hodler)?,
     };
 
     let state = State {
@@ -86,6 +87,7 @@ pub fn execute(
             proposal_deposit,
             snapshot_period,
             unbonding_period,
+            gov_hodler,
         } => update_config(
             deps,
             info,
@@ -97,6 +99,7 @@ pub fn execute(
             proposal_deposit,
             snapshot_period,
             unbonding_period,
+            gov_hodler,
         ),
         ExecuteMsg::WithdrawVotingTokens { amount } => {
             withdraw_voting_tokens(deps, env, info, amount)
@@ -195,47 +198,53 @@ pub fn update_config(
     proposal_deposit: Option<Uint128>,
     snapshot_period: Option<u64>,
     unbonding_period: Option<u64>,
+    gov_hodler: Option<String>,
 ) -> Result<Response, ContractError> {
     let api = deps.api;
-    config_store(deps.storage).update(|mut config| {
-        if config.owner != info.sender {
-            return Err(ContractError::Unauthorized {});
-        }
+    let mut config: Config = config_read(deps.storage).load()?;
 
-        if let Some(owner) = owner {
-            config.owner = api.addr_validate(&owner)?;
-        }
+    if config.owner != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
 
-        if let Some(quorum) = quorum {
-            config.quorum = Decimal::percent(quorum);
-        }
+    if let Some(owner) = owner {
+        config.owner = api.addr_validate(&owner)?;
+    }
 
-        if let Some(threshold) = threshold {
-            config.threshold = Decimal::percent(threshold);
-        }
+    if let Some(quorum) = quorum {
+        config.quorum = Decimal::percent(quorum);
+    }
 
-        if let Some(voting_period) = voting_period {
-            config.voting_period = voting_period;
-        }
+    if let Some(threshold) = threshold {
+        config.threshold = Decimal::percent(threshold);
+    }
 
-        if let Some(timelock_period) = timelock_period {
-            config.timelock_period = timelock_period;
-        }
+    if let Some(voting_period) = voting_period {
+        config.voting_period = voting_period;
+    }
 
-        if let Some(proposal_deposit) = proposal_deposit {
-            config.proposal_deposit = proposal_deposit;
-        }
+    if let Some(timelock_period) = timelock_period {
+        config.timelock_period = timelock_period;
+    }
 
-        if let Some(period) = snapshot_period {
-            config.snapshot_period = period;
-        }
+    if let Some(proposal_deposit) = proposal_deposit {
+        config.proposal_deposit = proposal_deposit;
+    }
 
-        if let Some(unbonding_period) = unbonding_period {
-            // unbonding calculated in seconds
-            config.unbonding_period = Duration::Time(unbonding_period)
-        }
-        Ok(config)
-    })?;
+    if let Some(period) = snapshot_period {
+        config.snapshot_period = period;
+    }
+
+    if let Some(gov_hodler) = gov_hodler {
+        config.gov_hodler = deps.api.addr_validate(&gov_hodler)?;
+    }
+
+    if let Some(unbonding_period) = unbonding_period {
+        // unbonding calculated in seconds
+        config.unbonding_period = Duration::Time(unbonding_period)
+    }
+
+    config_store(deps.storage).save(&config)?;
 
     Ok(Response::new().add_attributes(vec![("action", "update_config")]))
 }

@@ -8,8 +8,9 @@ static KEY_CONFIG: &[u8] = b"config";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
+    pub owner: Addr,
     pub gov_contract: Addr,         // collected rewards receiver
-    pub terraswap_factory: Addr,    // terraswap factory contract
+    pub swap_factory: Addr,         // terraswap factory contract
     pub halo_token: Addr,           // HALO token address
     pub distributor_contract: Addr, // distributor contract to sent back rewards
     pub reward_factor: Decimal, // reward distribution rate to gov contract, left rewards sent back to distributor contract
