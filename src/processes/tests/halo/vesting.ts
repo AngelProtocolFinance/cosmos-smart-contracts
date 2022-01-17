@@ -9,9 +9,9 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 type VestingAccount = {
-  address: string,
-  schedules: [number, number, string][]
-}
+  address: string;
+  schedules: [number, number, string][];
+};
 
 //----------------------------------------------------------------------------------------
 // TEST: Update vesting config
@@ -32,17 +32,13 @@ export async function testVestingUpdateConfig(
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        vestingContract,
-        {
-          update_config: {
-            owner,
-            halo_token,
-            genesis_time
-          },
+      new MsgExecuteContract(apTeam.key.accAddress, vestingContract, {
+        update_config: {
+          owner,
+          halo_token,
+          genesis_time,
         },
-      ),
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -59,48 +55,43 @@ export async function testVestingRegisterVestingAccounts(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   vestingContract: string,
-  vesting_accounts: VestingAccount[],
+  vesting_accounts: VestingAccount[]
 ): Promise<void> {
   process.stdout.write("Test - Register vesting account");
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        vestingContract,
-        {
-          register_vesting_accounts: { vesting_accounts },
-        },
-      ),
+      new MsgExecuteContract(apTeam.key.accAddress, vestingContract, {
+        register_vesting_accounts: { vesting_accounts },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
-// TEST: Update vesting account
+// TEST: Add new  vesting account
 //
 // SCENARIO:
-// Resiger vesting accounts
+// Add some number of new schedules to an existing vesting account
 //
 //----------------------------------------------------------------------------------------
-export async function testVestingUpdateVestingAccount(
+export async function testAddSchedulesToVestingAccount(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  vestingContract: string,
-  vesting_account: VestingAccount,
+  address: string,
+  newSchedules: [number, number, string][]
 ): Promise<void> {
-  process.stdout.write("Test - Register vesting account");
+  process.stdout.write("Test - Add new schedules to existing vesting account");
 
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        vestingContract,
-        {
-          update_vesting_account: { vesting_account },
+      new MsgExecuteContract(apTeam.key.accAddress, vestingContract, {
+        add_schedules_to_vesting_account: {
+          address,
+          new_schedules: newSchedules,
         },
-      ),
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -147,7 +138,7 @@ export async function testQueryVestingAccounts(
     vesting_accounts: {
       start_after,
       limit,
-      order_by: undefined
+      order_by: undefined,
     },
   });
 

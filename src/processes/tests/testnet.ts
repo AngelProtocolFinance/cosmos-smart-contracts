@@ -293,14 +293,15 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   haloGov,
-  //   apTeam2.key.accAddress,
-  //   30, // quorum
-  //   50, // threshold,
-  //   2000, // voting_period,
-  //   1000, // timelock_period,
-  //   "10000000000", // proposal_deposit,
-  //   10, // snapshot_period,
-  //   120 // unbonding_period in seconds
+  //   undefined,
+  //   undefined,
+  //   undefined,
+  //   undefined, // voting period
+  //   undefined,
+  //   undefined, // deposit
+  //   10000000000, // snapshot period
+  //   undefined, // unbonding period
+  //   undefined // gov_hodler
   // );
   // await testGovExecutePoll(terra, apTeam, haloGov, 1);
   // await testGovEndPoll(terra, apTeam, haloGov, 1);
