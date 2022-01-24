@@ -194,6 +194,8 @@ export const mainnet = {
       "terra1uzrw4d95dyh5d4mygnzmgfyrushdygdecepcmf", // Proyecto Guajira
       "terra1zjvygqzen4ctsjvre507vggexgtrlsal5q5nen", // Pangea Educational Development
       "terra14ykrrzsvnjnf7664asf988p7snn33kxc5hsyju", // Direct Hand Foundation
+      "terra1vuqcqjs684sdg8gw44zr8h57tethxsz677kl79", // Chosen Generations Community Center
+      "terra15eyed7vc0apncafs7axdngn3e9tlx2zg06jyax", // The Society Library
     ],
   },
   members: [
