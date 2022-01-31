@@ -105,7 +105,7 @@ import {
 import {
   testVestingUpdateConfig,
   testVestingRegisterVestingAccounts,
-  testVestingUpdateVestingAccount,
+  // testVestingUpdateVestingAccount,
   testQueryVestingConfig,
   testQueryVestingAccount,
   testQueryVestingAccounts,
@@ -288,18 +288,17 @@ export async function testExecute(
   // await testQueryVestingAccount(terra, haloVesting, "addr0");
   // await testQueryVestingAccounts(terra, haloVesting, undefined, undefined);
 
-  // Test query for HALO gov
   // await testGovUpdateConfig(
   //   terra,
   //   apTeam,
   //   haloGov,
   //   undefined,
+  //   15, // quorum
+  //   50, // threshold
+  //   100800, // voting_period
   //   undefined,
-  //   undefined,
-  //   undefined, // voting period
-  //   undefined,
-  //   undefined, // deposit
-  //   10000000000, // snapshot period
+  //   "5000000000", // deposit
+  //   100800, // snapshot period
   //   undefined, // unbonding period
   //   undefined // gov_hodler
   // );
@@ -424,4 +423,12 @@ export async function testExecute(
   // await testQueryTokenBalance(terra, terraswapToken, apTeam.key.accAddress);
   // await testQueryTokenInfo(terra, terraswapToken);
   // await testQueryTokenMinter(terra, terraswapToken);
+
+  // await testTransferTokenBalance(
+  //   terra,
+  //   apTeam,
+  //   terraswapToken,
+  //   apTeam2.key.accAddress,
+  //   "420000000"
+  // );
 }

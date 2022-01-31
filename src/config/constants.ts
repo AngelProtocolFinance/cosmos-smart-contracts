@@ -196,6 +196,9 @@ export const mainnet = {
       "terra14ykrrzsvnjnf7664asf988p7snn33kxc5hsyju", // Direct Hand Foundation
       "terra1vuqcqjs684sdg8gw44zr8h57tethxsz677kl79", // Chosen Generations Community Center
       "terra15eyed7vc0apncafs7axdngn3e9tlx2zg06jyax", // The Society Library
+      "terra1hpdlddtyelyggzw2kteqwu8kclma0was7paedz", // Dream Machine Foundation
+      "terra1lnnu4rxzy6grumrrzu4jnq2vcsxnwzxqkrrlqe", // Upstream
+      "terra1xwepmhuqe2w7huh4nfq2ljc62ugchqe9z2q6hy", // Tibet Relief Fund
     ],
   },
   members: [

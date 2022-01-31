@@ -99,7 +99,7 @@ import {
 import {
   testVestingUpdateConfig,
   testVestingRegisterVestingAccounts,
-  testVestingUpdateVestingAccount,
+  // testVestingUpdateVestingAccount,
   testQueryVestingConfig,
   testQueryVestingAccount,
   testQueryVestingAccounts,
@@ -162,8 +162,8 @@ export async function testExecute(
   // await testRejectUnapprovedDonations(
   //   terra,
   //   apTeam,
-  //   "terra1qagm9wdnp6f76xy52llcjxmr4z8j4nhd9ethw8",
-  //   "10000000000"
+  //   "terra16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke",
+  //   "000000"
   // );
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
   // await testUpdateFundMembers(
@@ -226,12 +226,12 @@ export async function testExecute(
   //   apTeam,
   //   haloGov,
   //   undefined,
+  //   15, // quorum
+  //   50, // threshold
+  //   100800, // voting_period
   //   undefined,
-  //   undefined,
-  //   undefined, // voting period
-  //   undefined,
-  //   undefined, // deposit
-  //   10000000000, // snapshot period
+  //   "5000000000", // deposit
+  //   100800, // snapshot period
   //   undefined, // unbonding period
   //   undefined // gov_hodler
   // );

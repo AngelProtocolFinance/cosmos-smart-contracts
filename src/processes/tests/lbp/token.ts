@@ -33,15 +33,17 @@ export async function testPairWithdrawLiquidity(
 
 export async function testTransferTokenBalance(
   terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
   tokenContract: string,
-  apTeam: Wallet
+  recipient: string,
+  amount: string
 ): Promise<void> {
   process.stdout.write("Test - Transfer Token balance");
   const result: any = sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
       transfer: {
-        recipient: "terra1g0uzl468etgkx0gkts42mg7ly6waqkemw89lsh",
-        amount: 40000000000,
+        recipient,
+        amount,
       },
     }),
   ]);
