@@ -6,4 +6,4 @@ This folder contains the source code for the Vault smart contracts. These contra
 
 | Contract                                               | Reference                                                                                                      | Description                                                                   |
 | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| [`anchor`](../contracts/market)                        | [doc](https://app.gitbook.com/@AngelProtocolFinance/)                 | Handles deposits and withdrawals from Anchor Protocol's earn platform |
+| [`anchor`](../contracts/vaults/anchor)                        | [doc]()                 | Handles deposits and withdrawals from Anchor Protocol's earn platform |

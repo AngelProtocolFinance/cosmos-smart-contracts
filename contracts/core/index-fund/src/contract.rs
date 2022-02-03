@@ -59,9 +59,11 @@ pub fn execute(
             executers::update_registrar(deps, info, new_registrar)
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, info, msg),
-        ExecuteMsg::UpdateTcaList { new_list } => executers::update_tca_list(deps, info, new_list),
+        ExecuteMsg::UpdateTcaList { add, remove } => executers::update_tca_list(deps, info, add, remove),
         ExecuteMsg::CreateFund { fund } => executers::create_index_fund(deps, info, fund),
-        ExecuteMsg::RemoveFund { fund_id } => executers::remove_index_fund(deps, env, info, fund_id),
+        ExecuteMsg::RemoveFund { fund_id } => {
+            executers::remove_index_fund(deps, env, info, fund_id)
+        }
         ExecuteMsg::RemoveMember(msg) => executers::remove_member(deps, info, msg.member),
         ExecuteMsg::UpdateMembers {
             fund_id,
@@ -84,9 +86,13 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::InvolvedFunds { address } => to_binary(&queriers::involved_funds(deps, address)?),
         QueryMsg::ActiveFundDetails {} => to_binary(&queriers::active_fund_details(deps)?),
         QueryMsg::ActiveFundDonations {} => to_binary(&queriers::active_fund_donations(deps)?),
-        QueryMsg::Deposit { amount, fund_id } => {
-            to_binary(&queriers::deposit_msg_builder(deps, env, amount, fund_id)?)
-        }
+        QueryMsg::Deposit {
+            amount,
+            fund_id,
+            split,
+        } => to_binary(&queriers::deposit_msg_builder(
+            deps, env, amount, fund_id, split,
+        )?),
     }
 }
 

@@ -14,11 +14,12 @@ use angel_core::structs::{
     AcceptedTokens, FundingSource, SplitDetails, StrategyComponent, YieldVault,
 };
 use angel_core::utils::{
-    deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults, withdraw_from_vaults,
+    check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
+    withdraw_from_vaults,
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
-    Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    Response, StdError, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Balance;
 
@@ -428,7 +429,9 @@ pub fn deposit(
 
     // check that the Endowment has been approved to receive deposits
     if !config.deposit_approved {
-        return Err(ContractError::Unauthorized {});
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Withdraws are not approved for this endowment".to_string(),
+        }));
     }
 
     // check that the split %s sum to 1
@@ -450,24 +453,22 @@ pub fn deposit(
         return Err(ContractError::EmptyBalance {});
     }
 
-    let locked_split = msg.locked_percentage;
-    let liquid_split = msg.liquid_percentage;
+    let mut locked_split = msg.locked_percentage;
+    let mut liquid_split = msg.liquid_percentage;
 
-    // MVP LOGIC: Only index fund SC (aka TCA Member donations are accepted)
-    // Get the Index Fund SC address from the Registrar SC
+    // Get the split to liquid parameters set in the Registrar SC
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
-    let _registrar_split_configs: SplitDetails = registrar_config.split_to_liquid;
+    let registrar_split_configs: SplitDetails = registrar_config.split_to_liquid;
 
     // check split passed by the donor against the Registrar SC split params
     if sender_addr != registrar_config.index_fund {
-        // let new_splits = check_splits(registrar_split_configs, locked_split, liquid_split);
-        // locked_split = new_splits.0;
-        // liquid_split = new_splits.1;
-        return Err(ContractError::Unauthorized {});
+        let new_splits = check_splits(registrar_split_configs, locked_split, liquid_split);
+        locked_split = new_splits.0;
+        liquid_split = new_splits.1;
     }
 
     let ust_locked = Coin {
@@ -517,7 +518,9 @@ pub fn withdraw(
 
     // check that the Endowment has been approved to withdraw deposits
     if !config.withdraw_approved {
-        return Err(ContractError::Unauthorized {});
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Withdraws are not approved for this endowment".to_string(),
+        }));
     }
 
     // check if locked tokens are requested and

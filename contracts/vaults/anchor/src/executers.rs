@@ -10,7 +10,7 @@ use angel_core::responses::registrar::{
 use angel_core::structs::{BalanceInfo, EndowmentEntry};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
-    to_binary, Addr, Attribute, BankMsg, Coin, ContractResult, CosmosMsg, DepsMut, Env,
+    to_binary, Addr, Attribute, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env,
     MessageInfo, Order, QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse,
     Uint128, WasmMsg, WasmQuery,
 };
@@ -321,7 +321,13 @@ pub fn withdraw_stable(
         }))
 }
 
-pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+pub fn harvest(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    collector_address: String,
+    collector_share: Decimal,
+) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
     let harvest_blocks = Uint128::from((env.block.height - config.last_harvest) as u128);
@@ -332,15 +338,15 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         return Err(ContractError::Unauthorized {});
     }
 
-    // pull registrar SC config to fetch: 1) Treasury Tax Rate and 2) Treasury Addr
+    // pull registrar SC config to fetch the Treasury Tax Rate
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQueryMsg::Config {})?,
         }))?;
     let treasury_addr = deps.api.addr_validate(&registrar_config.treasury)?;
-    let mut treasury_account = BalanceInfo::default();
-    let mut taxes_collected = Uint128::zero();
+    let collector_addr = deps.api.addr_validate(&collector_address)?;
+    let mut harvest_account = BalanceInfo::default();
 
     // iterate over all accounts and shuffle DP tokens from Locked to Liquid
     // set aside a small amount for treasury
@@ -353,79 +359,171 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         let mut balances = BALANCES
             .load(deps.storage, &account_address)
             .unwrap_or_else(|_| BalanceInfo::default());
+
+        // CALCULATE ALL AMOUNTS TO BE COLLECTED FOR TAXES AND TO BE TRANSFERED
+        // UPFRONT BEFORE PERFORMING ANY ACTUAL BALANCE SHUFFLES
+        // calculate harvest taxes owed on liquid balance earnings
+        let liquid_taxes_owed = balances
+            .liquid_balance
+            .get_token_amount(env.contract.address.clone())
+            .checked_mul(harvest_blocks)
+            .unwrap()
+            * config.tax_per_block
+            * registrar_config.tax_rate;
+
+        // calculate harvest taxes owed on locked balance earnings
+        let locked_taxes_owed = balances
+            .locked_balance
+            .get_token_amount(env.contract.address.clone())
+            .checked_mul(harvest_blocks)
+            .unwrap()
+            * config.tax_per_block
+            * registrar_config.tax_rate;
+
+        // calulate amount of earnings to be harvested from locked >> liquid balance
+        // reduce harvest amount by any locked taxes owed on those earnings
         let transfer_amt = balances
             .locked_balance
             .get_token_amount(env.contract.address.clone())
             .checked_mul(harvest_blocks)
             .unwrap()
             * config.tax_per_block
-            * config.harvest_to_liquid;
+            * config.harvest_to_liquid
+            - locked_taxes_owed;
+
+        // deduct liquid taxes if we have a non-zero amount
+        if liquid_taxes_owed > Uint128::zero() {
+            let deposit_token = Cw20CoinVerified {
+                address: env.contract.address.clone(),
+                amount: liquid_taxes_owed,
+            };
+            // lower liquid balance
+            balances
+                .liquid_balance
+                .deduct_tokens(Balance::Cw20(deposit_token.clone()));
+
+            // add taxes collected to the liquid balance of the Collector
+            harvest_account
+                .liquid_balance
+                .add_tokens(Balance::Cw20(deposit_token.clone()));
+        }
+
+        // deduct locked taxes if we have a non-zero amount
+        if locked_taxes_owed > Uint128::zero() {
+            let deposit_token = Cw20CoinVerified {
+                address: env.contract.address.clone(),
+                amount: locked_taxes_owed,
+            };
+            // lower locked balance
+            balances
+                .locked_balance
+                .deduct_tokens(Balance::Cw20(deposit_token.clone()));
+
+            // add taxes collected to the liquid balance of the Collector
+            harvest_account
+                .liquid_balance
+                .add_tokens(Balance::Cw20(deposit_token.clone()));
+        }
+
         // proceed to shuffle balances if we have a non-zero amount
         if transfer_amt > Uint128::zero() {
             let mut deposit_token = Cw20CoinVerified {
                 address: env.contract.address.clone(),
                 amount: transfer_amt,
             };
-            let taxes_owed = transfer_amt * registrar_config.tax_rate;
 
             // lower locked balance
             balances
                 .locked_balance
                 .deduct_tokens(Balance::Cw20(deposit_token.clone()));
 
-            // add to liquid balance (less taxes owed to AP Treasury)
-            deposit_token.amount = transfer_amt - taxes_owed;
+            // add to liquid balance
             balances
                 .liquid_balance
                 .add_tokens(Balance::Cw20(deposit_token.clone()));
-            taxes_collected += taxes_owed;
-
-            // add taxes collected to the liquid balance of the AP Treasury
-            deposit_token.amount = taxes_owed;
-            treasury_account
-                .liquid_balance
-                .add_tokens(Balance::Cw20(deposit_token.clone()));
-
-            BALANCES.save(deps.storage, &account_address, &balances)?;
         }
+
+        BALANCES.save(deps.storage, &account_address, &balances)?;
     }
 
-    if treasury_account
+    if harvest_account
         .liquid_balance
         .get_token_amount(env.contract.address.clone())
         > Uint128::zero()
     {
-        // Withdraw all DP Tokens from Treasury and send to AP Treasury Wallet
-        let withdraw_total = treasury_account
+        // Withdraw all DP Tokens from Treasury and send to Collector Contract and/or the AP Treasury Wallet
+        let withdraw_total = harvest_account
             .liquid_balance
             .get_token_amount(env.contract.address);
-        let submessage_id = config.next_pending_id;
-        PENDING.save(
-            deps.storage,
-            &submessage_id.to_be_bytes(),
-            &PendingInfo {
-                typ: "withdraw".to_string(),
-                accounts_address: treasury_addr.clone(),
-                beneficiary: Some(treasury_addr.clone()),
-                fund: None,
-                locked: Uint128::zero(),
-                liquid: withdraw_total,
-            },
-        )?;
-        config.next_pending_id += 1;
-        config::store(deps.storage, &config)?;
+        let mut withdraw_leftover = withdraw_total;
 
-        Ok(Response::new()
+        let mut res = Response::new()
             .add_attribute("action", "harvest_redeem_from_vault")
             .add_attribute("sender", info.sender)
-            .add_attribute("account_addr", treasury_addr)
-            .add_attribute("withdraw_amount", withdraw_total)
-            .add_submessage(SubMsg {
-                id: submessage_id,
-                msg: redeem_stable_msg(&config.moneymarket, &config.yield_token, withdraw_total)?,
-                gas_limit: None,
-                reply_on: ReplyOn::Always,
-            }))
+            .add_attribute("withdraw_amount", withdraw_total);
+
+        // Harvested Amount is split by collector split input percentage
+        if !collector_share.is_zero() && collector_share <= Decimal::one() {
+            let submessage_id = config.next_pending_id;
+            PENDING.save(
+                deps.storage,
+                &submessage_id.to_be_bytes(),
+                &PendingInfo {
+                    typ: "withdraw".to_string(),
+                    accounts_address: collector_addr.clone(),
+                    beneficiary: Some(collector_addr.clone()),
+                    fund: None,
+                    locked: Uint128::zero(),
+                    liquid: withdraw_total * collector_share,
+                },
+            )?;
+            withdraw_leftover = withdraw_total - (withdraw_total * collector_share);
+            config.next_pending_id += 1;
+            res = res
+                .add_attribute("collector_addr", collector_addr)
+                .add_submessage(SubMsg {
+                    id: submessage_id,
+                    msg: redeem_stable_msg(
+                        &config.moneymarket,
+                        &config.yield_token,
+                        withdraw_total * collector_share,
+                    )?,
+                    gas_limit: None,
+                    reply_on: ReplyOn::Always,
+                });
+        }
+
+        // Remainder (if any) is sent to AP Treasury Address
+        if withdraw_leftover > Uint128::zero() {
+            let submessage_id = config.next_pending_id;
+            PENDING.save(
+                deps.storage,
+                &submessage_id.to_be_bytes(),
+                &PendingInfo {
+                    typ: "withdraw".to_string(),
+                    accounts_address: treasury_addr.clone(),
+                    beneficiary: Some(treasury_addr.clone()),
+                    fund: None,
+                    locked: Uint128::zero(),
+                    liquid: withdraw_leftover,
+                },
+            )?;
+            config.next_pending_id += 1;
+            config::store(deps.storage, &config)?;
+            res = res
+                .add_attribute("treasury_addr", treasury_addr)
+                .add_submessage(SubMsg {
+                    id: submessage_id,
+                    msg: redeem_stable_msg(
+                        &config.moneymarket,
+                        &config.yield_token,
+                        withdraw_leftover,
+                    )?,
+                    gas_limit: None,
+                    reply_on: ReplyOn::Always,
+                });
+        }
+        Ok(res)
     } else {
         Ok(Response::new()
             .add_attribute("action", "harvest_redeem_from_vault")

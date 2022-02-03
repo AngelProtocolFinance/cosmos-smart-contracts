@@ -1,0 +1,30 @@
+[package]
+name = "halo-token"
+version = "0.1.0"
+authors = ["Angel Ventures LLC"]
+edition = "2018"
+description = "Common helpers for other angel-token specs"
+license = "Apache-2.0"
+
+[features]
+# for quicker tests, cargo test --lib
+# for more explicit tests, cargo test --features=backtraces
+backtraces = ["cosmwasm-std/backtraces"]
+
+[dependencies]
+cw0 = "0.9.0"
+cw20 = "0.8.0"
+cosmwasm-bignumber = "2.2.0"
+cosmwasm-std = "0.16.0"
+cosmwasm-storage = "0.16.0"
+cw-controllers = "0.9.0"
+terra-cosmwasm = "2.2.0" 
+schemars = "0.8.1"
+serde = { version = "1.0.103", default-features = false, features = ["derive"] }
+
+[profile.dev]
+overflow-checks = true
+
+[profile.release]
+overflow-checks = true
+ 

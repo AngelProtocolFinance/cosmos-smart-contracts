@@ -9,8 +9,8 @@ use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails, YieldVault};
 use cosmwasm_std::{
-    to_binary, ContractResult, CosmosMsg, DepsMut, Env, MessageInfo, QueryRequest, ReplyOn,
-    Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg, WasmQuery,
+    to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
+    ReplyOn, Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg, WasmQuery,
 };
 use cw4::Member;
 use cw4_group::msg::ExecuteMsg::UpdateMembers;
@@ -444,7 +444,13 @@ pub fn new_accounts_reply(
     }
 }
 
-pub fn harvest(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+pub fn harvest(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    collector_address: String,
+    collector_share: Decimal,
+) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // harvest can only be valid if it comes from the  (AP Team/DANO) SC Owner
     if info.sender != config.owner {
@@ -458,7 +464,11 @@ pub fn harvest(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, 
 
     let mut sub_messages: Vec<SubMsg> = vec![];
     for vault in list.vaults.iter() {
-        sub_messages.push(harvest_msg(vault.address.to_string()));
+        sub_messages.push(harvest_msg(
+            vault.address.to_string(),
+            collector_address.clone(),
+            collector_share,
+        ));
     }
 
     Ok(Response::new()
@@ -466,10 +476,14 @@ pub fn harvest(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, 
         .add_attribute("action", "harvest"))
 }
 
-fn harvest_msg(account: String) -> SubMsg {
+fn harvest_msg(account: String, collector_address: String, collector_share: Decimal) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account,
-        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {}).unwrap(),
+        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {
+            collector_address,
+            collector_share,
+        })
+        .unwrap(),
         funds: vec![],
     });
 

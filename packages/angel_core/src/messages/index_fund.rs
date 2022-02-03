@@ -24,9 +24,10 @@ pub enum ExecuteMsg {
     UpdateRegistrar {
         new_registrar: String,
     },
-    // replace TCA Member list with a new one
+    // Update TCA member list
     UpdateTcaList {
-        new_list: Vec<String>,
+        add: Vec<String>,
+        remove: Vec<String>,
     },
     UpdateConfig(UpdateConfigMsg),
     // endpoint to remove a single member from all index funds that they may in
@@ -36,7 +37,9 @@ pub enum ExecuteMsg {
         fund: IndexFund,
     },
     // remove a specific index fund
-    RemoveFund { fund_id: u64 },
+    RemoveFund {
+        fund_id: u64,
+    },
     // updates the members in a given index fund
     UpdateMembers {
         fund_id: u64,
@@ -90,6 +93,7 @@ pub enum QueryMsg {
     Deposit {
         amount: Uint128,
         fund_id: Option<u64>,
+        split: Option<Decimal>,
     },
     // returns a list of all funds
     FundsList {},

@@ -56,18 +56,40 @@ pub fn update_registrar(
 pub fn update_tca_list(
     deps: DepsMut,
     info: MessageInfo,
-    new_list: Vec<String>,
+    add: Vec<String>,
+    remove: Vec<String>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // only the owner/admin of the contract can update the TCA Members List
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
+
+    let state = STATE.load(deps.storage)?;
     let mut tca_list = vec![];
-    for member in new_list.iter() {
-        tca_list.push(deps.api.addr_validate(member)?);
+    for member in state.tca_human_addresses() {
+        tca_list.push(deps.api.addr_validate(&member)?);
     }
 
+    // add members only if they do not already exist
+    for add in add.into_iter() {
+        let add_addr = deps.api.addr_validate(&add)?;
+        let pos = tca_list.iter().position(|m| *m == add_addr);
+        // ignore if that member was found in the list
+        if pos == None {
+            tca_list.push(add_addr);
+        }
+    }
+
+    // remove the members
+    for remove in remove.into_iter() {
+        let remove_addr = deps.api.addr_validate(&remove)?;
+        // ignore if no member is found
+        if let Some(pos) = tca_list.iter().position(|m| *m == remove_addr) {
+            tca_list.swap_remove(pos);
+        }
+    }
+    
     // update config attributes with newly passed list
     STATE.update(deps.storage, |mut state| -> StdResult<_> {
         state.terra_alliance = tca_list;
@@ -162,14 +184,12 @@ pub fn remove_index_fund(
     let mut state = STATE.load(deps.storage)?;
     // check if this is the active fund, update the active_fund using rotate_fund
     if state.active_fund == fund_id {
-        let new_fund_id = rotate_fund(
+        state.active_fund = rotate_fund(
             read_funds(deps.storage).unwrap(),
             fund_id,
             env.block.height,
             env.block.time,
         );
-        
-        state.active_fund = new_fund_id;
     }
     state.total_funds -= 1;
     STATE.save(deps.storage, &state)?;
@@ -307,11 +327,6 @@ pub fn deposit(
             TCA_DONATIONS.save(deps.storage, sender_addr.to_string(), &tca_donor)?;
         }
     }
-    // FOR MVP ONLY:
-    // if the sender address is not among them raise err
-    if !tca_member {
-        return Err(ContractError::Unauthorized {});
-    }
 
     // check if block height limit is exceeded
     if let Some(blocks) = config.fund_rotation {
@@ -348,9 +363,10 @@ pub fn deposit(
     // check if active fund donation or if there a provided fund ID
     match msg.fund_id {
         // A Fund ID was provided, simple donation of all to one fund
-        Some(fund_id) => {
-            let fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
-            // double check the given fund is not expired
+        Some(id) => {
+            let fund = fund_read(deps.storage).load(&id.to_be_bytes())?;
+
+            // double check the given fund is valid & not expired
             if fund.is_expired(env.block.height, env.block.time) {
                 return Err(ContractError::IndexFundExpired {});
             }
@@ -368,8 +384,8 @@ pub fn deposit(
             match config.funding_goal {
                 Some(_goal) => {
                     // loop active fund until the donation amount has been fully distributed
+                    let mut loop_donation;
                     while deposit_amount > Uint128::zero() {
-                        let loop_donation;
                         let fund =
                             fund_read(deps.storage).load(&state.active_fund.to_be_bytes())?;
                         // double check the given fund is not expired
@@ -501,7 +517,7 @@ pub fn build_donation_messages(
 }
 
 pub fn update_donation_messages(
-    donation_messages: &Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))>,
+    donation_messages: &[(Addr, (Uint128, Decimal), (Uint128, Decimal))],
     members: Vec<Addr>,
     split: Decimal,
     balance: Uint128,
@@ -511,7 +527,7 @@ pub fn update_donation_messages(
         .checked_div(Uint128::from(members.len() as u128))
         .unwrap();
     let lock_split = Decimal::one() - split;
-    let mut donation_messages = donation_messages.clone();
+    let mut donation_messages = donation_messages.to_owned();
 
     for member in members.iter() {
         let pos = donation_messages
@@ -547,14 +563,11 @@ pub fn rotate_fund(
 ) -> u64 {
     let active_funds: Vec<IndexFund> = funds
         .into_iter()
-        .filter(|fund| !fund.is_expired(env_height, env_time))
-        .filter(|fund| fund.rotating_fund == Some(true))
+        .filter(|fund| !fund.is_expired(env_height, env_time) && fund.rotating_fund == Some(true))
         .collect();
-    let curr_fund_index = active_funds
-        .iter()
-        .position(|fund| fund.id == curr_fund);
+    let curr_fund_index = active_funds.iter().position(|fund| fund.id == curr_fund);
 
-    let new_fund_id = match curr_fund_index {
+    match curr_fund_index {
         Some(fund_index) => {
             if fund_index == (active_funds.len() - 1) {
                 // go back to the start of the funds list
@@ -563,21 +576,20 @@ pub fn rotate_fund(
                 // get the next fund in the index
                 active_funds[fund_index + 1].id
             }
-        },
+        }
         None => {
             let filter_funds: Vec<IndexFund> = active_funds
                 .clone()
                 .into_iter()
                 .filter(|fund| fund.id > curr_fund)
                 .collect();
-            if filter_funds.len() > 0 {
+            if !filter_funds.is_empty() {
                 filter_funds[0].id
             } else {
                 active_funds[0].id
             }
         }
-    };
-    new_fund_id
+    }
 }
 
 #[cfg(test)]

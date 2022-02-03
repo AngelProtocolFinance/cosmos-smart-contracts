@@ -2,7 +2,7 @@ use crate::state::{fund_read, read_funds, CONFIG, STATE, TCA_DONATIONS};
 use angel_core::messages::index_fund::DepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg::Deposit;
 use angel_core::responses::index_fund::*;
-use cosmwasm_std::{to_binary, Coin, CosmosMsg, Deps, Env, StdResult, Uint128, WasmMsg};
+use cosmwasm_std::{to_binary, Coin, CosmosMsg, Decimal, Deps, Env, StdResult, Uint128, WasmMsg};
 
 pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
@@ -93,13 +93,11 @@ pub fn deposit_msg_builder(
     env: Env,
     amount: Uint128,
     fund_id: Option<u64>,
+    split: Option<Decimal>,
 ) -> StdResult<CosmosMsg> {
     Ok(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&Deposit(DepositMsg {
-            fund_id,
-            split: None,
-        }))?,
+        msg: to_binary(&Deposit(DepositMsg { fund_id, split }))?,
         funds: vec![Coin {
             denom: "uusd".to_string(),
             amount,

@@ -20,18 +20,30 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     CreateEndowment(CreateEndowmentMsg),
     VaultAdd(VaultAddMsg),
-    VaultUpdateStatus { vault_addr: String, approved: bool },
-    CharityAdd { charity: String },
-    CharityRemove { charity: String },
+    VaultUpdateStatus {
+        vault_addr: String,
+        approved: bool,
+    },
+    CharityAdd {
+        charity: String,
+    },
+    CharityRemove {
+        charity: String,
+    },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
     // Allows the DANO / AP Team to update the status of an Endowment
     // Approved, Frozen, (Liquidated, Terminated)
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Allows the SC owner to change ownership
-    UpdateOwner { new_owner: String },
+    UpdateOwner {
+        new_owner: String,
+    },
     // Allows the DANO/AP Team to harvest all active vaults
-    Harvest {},
+    Harvest {
+        collector_address: String,
+        collector_share: Decimal,
+    },
     // Allows SC owner to migrate all Accounts SC
     MigrateAccounts {},
 }
