@@ -30,6 +30,7 @@ pub struct State {
     pub round_donations: Uint128,  // total donations given to active charity this round
     pub next_rotation_block: u64,  // block height to perform next rotation on
     pub terra_alliance: Vec<Addr>, // Terra Charity Alliance addresses
+    pub next_fund_id: u64,
 }
 
 impl State {

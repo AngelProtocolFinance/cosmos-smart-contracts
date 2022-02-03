@@ -1,4 +1,4 @@
-use crate::structs::{AcceptedTokens, IndexFund};
+use crate::structs::AcceptedTokens;
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
@@ -34,7 +34,13 @@ pub enum ExecuteMsg {
     RemoveMember(RemoveMemberMsg),
     // create a new index fund
     CreateFund {
-        fund: IndexFund,
+        name: String,
+        description: String,
+        members: Vec<String>,
+        rotating_fund: Option<bool>,
+        split_to_liquid: Option<Decimal>,
+        expiry_time: Option<u64>,
+        expiry_height: Option<u64>,
     },
     // remove a specific index fund
     RemoveFund {
@@ -49,7 +55,7 @@ pub enum ExecuteMsg {
     // directly receive native tokens
     Deposit(DepositMsg),
     // This accepts a properly-encoded ReceiveMsg from a cw20 contract
-    Recieve(Cw20ReceiveMsg),
+    Receive(Cw20ReceiveMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

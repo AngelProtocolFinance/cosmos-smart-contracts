@@ -20,6 +20,9 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     CreateEndowment(CreateEndowmentMsg),
     VaultAdd(VaultAddMsg),
+    VaultRemove {
+        vault_addr: String,
+    },
     VaultUpdateStatus {
         vault_addr: String,
         approved: bool,

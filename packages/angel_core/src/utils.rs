@@ -12,6 +12,29 @@ use cosmwasm_std::{
 use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg};
 use terra_cosmwasm::TerraQuerier;
 
+pub fn percentage_checks(val: Decimal) -> Result<Decimal, ContractError> {
+    // percentage decimals need to be checked that they are all between zero and one (inclusive)
+    if val > Decimal::one() {
+        return Err(ContractError::InvalidInputs {});
+    }
+    Ok(val)
+}
+
+pub fn split_checks(
+    max: Decimal,
+    min: Decimal,
+    default: Decimal,
+) -> Result<SplitDetails, ContractError> {
+    // max musst be less than min
+    // min must be less than max
+    // default must be somewhere between max & min
+    if max < min || min > max || (default > max || default < min) {
+        return Err(ContractError::InvalidInputs {});
+    }
+
+    Ok(SplitDetails { max, min, default })
+}
+
 pub fn ratio_adjusted_balance(balance: Balance, portion: Uint128, total: Uint128) -> Balance {
     let adjusted_balance: Balance = match balance {
         Balance::Native(coins) => {

@@ -264,8 +264,7 @@ pub fn execute_close(
         return Err(ContractError::NotExpired {});
     }
 
-    // set it to failed
-    prop.status = Status::Rejected;
+    prop.update_status(&env.block);
     PROPOSALS.save(deps.storage, proposal_id.into(), &prop)?;
 
     Ok(Response::new()

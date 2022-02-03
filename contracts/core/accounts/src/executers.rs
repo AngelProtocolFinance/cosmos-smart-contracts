@@ -159,8 +159,8 @@ pub fn update_endowment_settings(
     }
 
     // validate address strings passed
-    endowment.owner = deps.api.addr_validate(&msg.beneficiary)?;
-    endowment.beneficiary = deps.api.addr_validate(&msg.owner)?;
+    endowment.owner = deps.api.addr_validate(&msg.owner)?;
+    endowment.beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
     ENDOWMENT.save(deps.storage, &endowment)?;
 
     Ok(Response::default())
@@ -222,11 +222,7 @@ pub fn update_strategies(
         liquid_percentages_sum = liquid_percentages_sum + strategy_component.liquid_percentage;
     }
 
-    if locked_percentages_sum != Decimal::one() {
-        return Err(ContractError::InvalidStrategyAllocation {});
-    }
-
-    if liquid_percentages_sum > Decimal::one() {
+    if locked_percentages_sum != Decimal::one() || liquid_percentages_sum != Decimal::one() {
         return Err(ContractError::InvalidStrategyAllocation {});
     }
 
@@ -269,6 +265,11 @@ pub fn vault_receipt(
     let mut config = CONFIG.load(deps.storage)?;
     let mut state = STATE.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
+
+    // only accept max of 1 deposit coin/token per donation
+    if info.funds.len() != 1 {
+        return Err(ContractError::InvalidCoinsDeposited {});
+    }
 
     let returned_amount: Coin = Coin {
         denom: "uusd".to_string(),
@@ -430,13 +431,18 @@ pub fn deposit(
     // check that the Endowment has been approved to receive deposits
     if !config.deposit_approved {
         return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Withdraws are not approved for this endowment".to_string(),
+            msg: "Deposits are not approved for this endowment".to_string(),
         }));
     }
 
     // check that the split %s sum to 1
     if msg.locked_percentage + msg.liquid_percentage != Decimal::one() {
         return Err(ContractError::InvalidSplit {});
+    }
+
+    // only accept max of 1 deposit coin/token per donation
+    if info.funds.len() != 1 {
+        return Err(ContractError::InvalidCoinsDeposited {});
     }
 
     let deposit_amount: Coin = Coin {

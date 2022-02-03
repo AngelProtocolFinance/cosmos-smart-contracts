@@ -4,7 +4,7 @@ use angel_core::messages::index_fund::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{AcceptedTokens, IndexFund, SplitDetails};
-use angel_core::utils::deduct_tax;
+use angel_core::utils::{deduct_tax, percentage_checks, split_checks};
 use cosmwasm_std::{
     from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
     QueryRequest, Response, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
@@ -18,7 +18,7 @@ pub fn update_owner(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // only the owner/admin of the contract can update their address in the configs
-    if info.sender != config.owner {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
     let new_owner = deps.api.addr_validate(&new_owner)?;
@@ -61,7 +61,7 @@ pub fn update_tca_list(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // only the owner/admin of the contract can update the TCA Members List
-    if info.sender != config.owner {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -89,7 +89,7 @@ pub fn update_tca_list(
             tca_list.swap_remove(pos);
         }
     }
-    
+
     // update config attributes with newly passed list
     STATE.update(deps.storage, |mut state| -> StdResult<_> {
         state.terra_alliance = tca_list;
@@ -107,7 +107,7 @@ pub fn update_config(
     let mut config = CONFIG.load(deps.storage)?;
 
     // only the SC owner can update these configs
-    if info.sender != config.owner {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -131,31 +131,56 @@ pub fn update_config(
 pub fn create_index_fund(
     deps: DepsMut,
     info: MessageInfo,
-    fund: IndexFund,
+    name: String,
+    description: String,
+    members: Vec<String>,
+    rotating_fund: Option<bool>,
+    split_to_liquid: Option<Decimal>,
+    expiry_time: Option<u64>,
+    expiry_height: Option<u64>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut state = STATE.load(deps.storage)?;
 
-    if info.sender != config.owner {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
-    // check that a fund does not already exists at the provided ID
-    let exists = fund_read(deps.storage).may_load(&fund.id.to_be_bytes())?;
-    match exists {
-        Some(_) => Err(ContractError::IndexFundAlreadyExists {}),
-        None => {
-            // check if this is the first fund being added in...
-            if read_funds(deps.storage)?.is_empty() {
-                state.active_fund = fund.id;
-            }
-            state.total_funds += 1;
-            STATE.save(deps.storage, &state)?;
-            // Add the new Fund to storage
-            fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
 
-            Ok(Response::default())
-        }
+    // check all members addresses passed are valid
+    let validated_members: Vec<Addr> = members
+        .iter()
+        .map(|addr| deps.api.addr_validate(&addr).unwrap())
+        .collect();
+
+    let optional_split = match split_to_liquid {
+        Some(split) => Some(percentage_checks(split).unwrap()),
+        None => None,
+    };
+
+    // build fund struct from msg params
+    let fund = IndexFund {
+        id: state.next_fund_id,
+        name,
+        description,
+        members: validated_members,
+        rotating_fund,
+        split_to_liquid: optional_split,
+        expiry_time,
+        expiry_height,
+    };
+
+    // check if this is the first fund being added in...
+    if read_funds(deps.storage)?.is_empty() {
+        state.active_fund = fund.id;
     }
+    state.total_funds += 1;
+    state.next_fund_id += 1;
+    STATE.save(deps.storage, &state)?;
+
+    // Add the new Fund to storage
+    fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
+
+    Ok(Response::default())
 }
 
 pub fn remove_index_fund(
@@ -166,7 +191,7 @@ pub fn remove_index_fund(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    if info.sender != config.owner {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
     // this will fail if fund ID passed is not found
@@ -207,7 +232,7 @@ pub fn update_fund_members(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    if info.sender != config.owner {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
     // this will fail if fund ID passed is not found
@@ -234,6 +259,11 @@ pub fn update_fund_members(
         if let Some(pos) = fund.members.iter().position(|m| *m == remove_addr) {
             fund.members.swap_remove(pos);
         }
+    }
+
+    // check that the final number of fund members is still under the upper limit
+    if fund.members.len() as u32 > config.fund_member_limit {
+        return Err(ContractError::IndexFundMembershipExceeded {});
     }
 
     // save revised fund to storage
@@ -298,6 +328,11 @@ pub fn deposit(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut state = STATE.load(deps.storage)?;
+
+    // only accept max of 1 deposit coin/token per donation
+    if info.funds.len() != 1 {
+        return Err(ContractError::InvalidCoinsDeposited {});
+    }
 
     let mut deposit_amount: Uint128 = info
         .funds
@@ -365,7 +400,10 @@ pub fn deposit(
         // A Fund ID was provided, simple donation of all to one fund
         Some(id) => {
             let fund = fund_read(deps.storage).load(&id.to_be_bytes())?;
-
+            // check that the fund has members to donate to
+            if fund.members.len() == 0 {
+                return Err(ContractError::IndexFundEmpty {});
+            }
             // double check the given fund is valid & not expired
             if fund.is_expired(env.block.height, env.block.time) {
                 return Err(ContractError::IndexFundExpired {});
@@ -388,6 +426,10 @@ pub fn deposit(
                     while deposit_amount > Uint128::zero() {
                         let fund =
                             fund_read(deps.storage).load(&state.active_fund.to_be_bytes())?;
+                        // check that the fund has members to donate to
+                        if fund.members.len() == 0 {
+                            return Err(ContractError::IndexFundEmpty {});
+                        }
                         // double check the given fund is not expired
                         if fund.is_expired(env.block.height, env.block.time) {
                             return Err(ContractError::IndexFundExpired {});
@@ -428,6 +470,10 @@ pub fn deposit(
                 None => {
                     // no funding goal, dump all donated funds into current active fund
                     let fund = fund_read(deps.storage).load(&state.active_fund.to_be_bytes())?;
+                    // check that the fund has members to donate to
+                    if fund.members.len() == 0 {
+                        return Err(ContractError::IndexFundEmpty {});
+                    }
                     // double check the given fund is not expired
                     if fund.is_expired(env.block.height, env.block.time) {
                         return Err(ContractError::IndexFundExpired {});

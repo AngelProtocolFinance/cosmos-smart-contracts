@@ -4,7 +4,9 @@ use crate::executers;
 use crate::msg::{InitMsg, MigrateMsg};
 use crate::queriers;
 use angel_core::errors::vault::ContractError;
+use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
+use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn,
@@ -53,25 +55,7 @@ pub fn instantiate(
     };
     config::TOKEN_INFO.save(deps.storage, &token_info)?;
 
-    Ok(Response::new()
-        .add_submessage(SubMsg {
-            id: 0,
-            msg: CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.registrar_contract.to_string(),
-                msg: to_binary(&angel_core::messages::registrar::ExecuteMsg::VaultAdd(
-                    angel_core::messages::registrar::VaultAddMsg {
-                        vault_addr: env.contract.address.to_string(),
-                        input_denom: config.input_denom,
-                        yield_token: config.yield_token.to_string(),
-                    },
-                ))
-                .unwrap(),
-                funds: vec![],
-            }),
-            gas_limit: None,
-            reply_on: ReplyOn::Never,
-        })
-        .add_attribute("register_vault", token_info.symbol))
+    Ok(Response::new().add_attribute("register_vault", token_info.symbol))
 }
 
 #[entry_point]

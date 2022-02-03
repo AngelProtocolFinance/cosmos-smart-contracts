@@ -38,6 +38,7 @@ pub fn instantiate(
         &State {
             total_funds: 0,
             active_fund: 0,
+            next_fund_id: 1,
             round_donations: Uint128::zero(),
             next_rotation_block: env.block.height + configs.fund_rotation.unwrap_or(0u64),
             terra_alliance: vec![],
@@ -59,8 +60,28 @@ pub fn execute(
             executers::update_registrar(deps, info, new_registrar)
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, info, msg),
-        ExecuteMsg::UpdateTcaList { add, remove } => executers::update_tca_list(deps, info, add, remove),
-        ExecuteMsg::CreateFund { fund } => executers::create_index_fund(deps, info, fund),
+        ExecuteMsg::UpdateTcaList { add, remove } => {
+            executers::update_tca_list(deps, info, add, remove)
+        }
+        ExecuteMsg::CreateFund {
+            name,
+            description,
+            members,
+            rotating_fund,
+            split_to_liquid,
+            expiry_time,
+            expiry_height,
+        } => executers::create_index_fund(
+            deps,
+            info,
+            name,
+            description,
+            members,
+            rotating_fund,
+            split_to_liquid,
+            expiry_time,
+            expiry_height,
+        ),
         ExecuteMsg::RemoveFund { fund_id } => {
             executers::remove_index_fund(deps, env, info, fund_id)
         }
@@ -71,7 +92,7 @@ pub fn execute(
             remove,
         } => executers::update_fund_members(deps, env, info, fund_id, add, remove),
         ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
-        ExecuteMsg::Recieve(msg) => executers::receive(deps, env, info, msg),
+        ExecuteMsg::Receive(msg) => executers::receive(deps, env, info, msg),
     }
 }
 

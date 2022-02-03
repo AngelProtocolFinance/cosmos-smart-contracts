@@ -25,7 +25,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 }
 
 pub fn query_vault_list(deps: Deps) -> StdResult<VaultListResponse> {
-    // returns a list of approved Vaults
+    // returns a list of all Vaults
     let vaults = read_vaults(deps.storage)?;
     Ok(VaultListResponse { vaults })
 }

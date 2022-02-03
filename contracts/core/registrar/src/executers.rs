@@ -3,17 +3,15 @@ use crate::state::{
     CONFIG,
 };
 use angel_core::errors::core::ContractError;
-use angel_core::messages::accounts::QueryMsg as AccountsQueryMsg;
 use angel_core::messages::registrar::*;
 use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails, YieldVault};
+use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
     to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
     ReplyOn, Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg, WasmQuery,
 };
-use cw4::Member;
-use cw4_group::msg::ExecuteMsg::UpdateMembers;
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
@@ -56,13 +54,6 @@ pub fn update_endowment_status(
         .may_load(endowment_addr)?
         .unwrap();
 
-    // get config details about the Endowment of interest
-    let endowment_info: EndowmentDetailsResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: endowment_entry.address.to_string(),
-            msg: to_binary(&AccountsQueryMsg::Endowment {})?,
-        }))?;
-
     let msg_endowment_status = match msg.status {
         0 => EndowmentStatus::Inactive,
         1 => EndowmentStatus::Approved,
@@ -93,21 +84,11 @@ pub fn update_endowment_status(
     let sub_messages: Vec<SubMsg> = match msg_endowment_status {
         // Allowed to receive donations and process withdrawals
         EndowmentStatus::Approved => {
-            vec![
-                build_account_status_change_msg(endowment_entry.address.to_string(), true, true),
-                // send msg to C4 Endowment Owners group SC to add new member
-                SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: config.endowment_owners_group_addr.unwrap(),
-                    msg: to_binary(&UpdateMembers {
-                        add: vec![Member {
-                            addr: endowment_info.owner.to_string(),
-                            weight: 1,
-                        }],
-                        remove: vec![],
-                    })?,
-                    funds: vec![],
-                })),
-            ]
+            vec![build_account_status_change_msg(
+                endowment_entry.address.to_string(),
+                true,
+                true,
+            )]
         }
         // Can accept inbound deposits, but cannot withdraw funds out
         EndowmentStatus::Frozen => {
@@ -129,15 +110,6 @@ pub fn update_endowment_status(
                     },
                 ))
                 .unwrap(),
-                funds: vec![],
-            })),
-            // send msg to C4 Endowment Owners group SC to remove a member
-            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.endowment_owners_group_addr.unwrap(),
-                msg: to_binary(&UpdateMembers {
-                    add: vec![],
-                    remove: vec![endowment_info.owner.to_string()],
-                })?,
                 funds: vec![],
             })),
             // start redemption of Account SC's Vault holdings to final beneficiary/index fund
@@ -231,12 +203,24 @@ pub fn update_config(
     config.treasury = deps
         .api
         .addr_validate(&msg.treasury.unwrap_or_else(|| config.treasury.to_string()))?;
-    config.tax_rate = msg.tax_rate.unwrap_or(config.tax_rate);
-    config.split_to_liquid = SplitDetails {
-        max: msg.split_max.unwrap_or(config.split_to_liquid.max),
-        min: msg.split_min.unwrap_or(config.split_to_liquid.min),
-        default: msg.split_default.unwrap_or(config.split_to_liquid.default),
+    config.tax_rate = match msg.tax_rate {
+        Some(tax_rate) => percentage_checks(tax_rate),
+        None => Ok(config.tax_rate),
+    }
+    .unwrap();
+    let max = match msg.split_max {
+        Some(max) => percentage_checks(max),
+        None => Ok(config.split_to_liquid.max),
     };
+    let min = match msg.split_min {
+        Some(min) => percentage_checks(min),
+        None => Ok(config.split_to_liquid.min),
+    };
+    let default = match msg.split_max {
+        Some(default) => percentage_checks(default),
+        None => Ok(config.split_to_liquid.default),
+    };
+    config.split_to_liquid = split_checks(max.unwrap(), min.unwrap(), default.unwrap()).unwrap();
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))
@@ -256,7 +240,7 @@ pub fn create_endowment(
         .iter()
         .position(|a| *a == info.sender);
     // ignore if that member was found in the list
-    if pos == None && info.sender != config.owner {
+    if pos == None && info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -374,18 +358,52 @@ pub fn charity_remove(
 pub fn vault_add(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: VaultAddMsg,
 ) -> Result<Response, ContractError> {
-    // save the new vault to storage (defaults to false)
+    let config = CONFIG.load(deps.storage)?;
+    // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
+    if info.sender.ne(&config.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // validate the passed address
     let addr = deps.api.addr_validate(&msg.vault_addr)?;
-    let new_vault = YieldVault {
-        address: addr.clone(),
-        input_denom: msg.input_denom,
-        yield_token: deps.api.addr_validate(&msg.yield_token)?,
-        approved: false,
-    };
-    vault_store(deps.storage).save(addr.as_bytes(), &new_vault)?;
+
+    // check that the vault does not already exist for a given address in storage
+    if vault_read(deps.storage).may_load(addr.as_bytes()).unwrap() != None {
+        return Err(ContractError::VaultAlreadyExists {});
+    }
+
+    // save the new vault to storage
+    vault_store(deps.storage).save(
+        addr.as_bytes(),
+        &YieldVault {
+            address: addr.clone(),
+            input_denom: msg.input_denom,
+            yield_token: deps.api.addr_validate(&msg.yield_token)?,
+            approved: true,
+        },
+    )?;
+    Ok(Response::default())
+}
+
+pub fn vault_remove(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    vault_addr: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
+    if info.sender.ne(&config.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+    // validate the passed address
+    let _addr = deps.api.addr_validate(&vault_addr)?;
+
+    // remove the vault from storage
+    // let mut vault = vault_read(deps.storage).load(vault_addr.as_bytes())?;
     Ok(Response::default())
 }
 
@@ -398,7 +416,7 @@ pub fn vault_update_status(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender != config.owner {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
     // try to look up the given vault in Storage
@@ -453,7 +471,7 @@ pub fn harvest(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // harvest can only be valid if it comes from the  (AP Team/DANO) SC Owner
-    if info.sender != config.owner {
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
     // gets a list of approved Vaults
