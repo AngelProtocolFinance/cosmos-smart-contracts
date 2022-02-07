@@ -102,7 +102,10 @@ pub enum QueryMsg {
         split: Option<Decimal>,
     },
     // returns a list of all funds
-    FundsList {},
+    FundsList {
+        start_after: Option<u64>,
+        limit: Option<u64>,
+    },
     // returns a single fund if the ID is valid
     FundDetails {
         fund_id: u64,

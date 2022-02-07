@@ -8,11 +8,9 @@ use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::vault::AccountTransferMsg;
 use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultListResponse,
+    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
-use angel_core::structs::{
-    AcceptedTokens, FundingSource, SplitDetails, StrategyComponent, YieldVault,
-};
+use angel_core::structs::{AcceptedTokens, FundingSource, SplitDetails, StrategyComponent};
 use angel_core::utils::{
     check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
     withdraw_from_vaults,
@@ -286,17 +284,13 @@ pub fn vault_receipt(
     }
 
     // check that the deposit token came from an approved Vault SC
-    let vaults_rsp: VaultListResponse =
+    let _vaults_rsp: VaultDetailResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::ApprovedVaultList {})?,
+            msg: to_binary(&RegistrarQuerier::Vault {
+                vault_addr: sender_addr.to_string(),
+            })?,
         }))?;
-    let vaults: Vec<YieldVault> = vaults_rsp.vaults;
-    let pos = vaults.iter().position(|p| p.address == sender_addr);
-    // reject if the sender was not found in the list of vaults
-    if pos == None {
-        return Err(ContractError::Unauthorized {});
-    }
 
     // funds go into state balances (locked/liquid)
     let total = msg.locked + msg.liquid;

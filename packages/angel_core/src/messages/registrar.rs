@@ -108,11 +108,19 @@ pub struct VaultAddMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get details on single vault
-    Vault { vault_addr: String },
+    Vault {
+        vault_addr: String,
+    },
     // Gets list of all Vaults
-    VaultList {},
+    VaultList {
+        start_after: Option<String>,
+        limit: Option<u64>,
+    },
     // Get a list of all approved Vaults
-    ApprovedVaultList {},
+    ApprovedVaultList {
+        start_after: Option<String>,
+        limit: Option<u64>,
+    },
     // Gets list of all registered Endowments
     EndowmentList {},
     // Get all Config details for the contract

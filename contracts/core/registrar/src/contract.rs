@@ -104,8 +104,12 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::EndowmentList {} => to_binary(&queriers::query_endowment_list(deps)?),
-        QueryMsg::ApprovedVaultList {} => to_binary(&queriers::query_approved_vault_list(deps)?),
-        QueryMsg::VaultList {} => to_binary(&queriers::query_vault_list(deps)?),
+        QueryMsg::ApprovedVaultList { start_after, limit } => to_binary(
+            &queriers::query_approved_vault_list(deps, start_after, limit)?,
+        ),
+        QueryMsg::VaultList { start_after, limit } => {
+            to_binary(&queriers::query_vault_list(deps, start_after, limit)?)
+        }
         QueryMsg::Vault { vault_addr } => {
             to_binary(&queriers::query_vault_details(deps, vault_addr)?)
         }

@@ -4,7 +4,7 @@ use angel_core::messages::index_fund::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{AcceptedTokens, IndexFund, SplitDetails};
-use angel_core::utils::{deduct_tax, percentage_checks, split_checks};
+use angel_core::utils::{deduct_tax, percentage_checks};
 use cosmwasm_std::{
     from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
     QueryRequest, Response, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
@@ -170,7 +170,7 @@ pub fn create_index_fund(
     };
 
     // check if this is the first fund being added in...
-    if read_funds(deps.storage)?.is_empty() {
+    if read_funds(deps.storage, None, None)?.is_empty() {
         state.active_fund = fund.id;
     }
     state.total_funds += 1;
@@ -199,7 +199,7 @@ pub fn remove_index_fund(
     // check if this is the active fund, update the active_fund using rotate_fund
     if state.active_fund == fund_id {
         state.active_fund = rotate_fund(
-            read_funds(deps.storage).unwrap(),
+            read_funds(deps.storage, None, None).unwrap(),
             fund_id,
             env.block.height,
             env.block.time,
@@ -208,8 +208,8 @@ pub fn remove_index_fund(
     state.total_funds -= 1;
     STATE.save(deps.storage, &state)?;
 
-    // this will fail if fund ID passed is not found
-    let mut fund = fund_store(deps.storage).remove(&fund_id.to_be_bytes());
+    // remove the fund from storage
+    fund_store(deps.storage).remove(&fund_id.to_be_bytes());
 
     Ok(Response::default())
 }
@@ -279,7 +279,7 @@ pub fn remove_member(
     let member_addr = deps.api.addr_validate(&member)?;
 
     // Check all Funds for the given member and remove the member if found
-    let funds = read_funds(deps.storage)?;
+    let funds = read_funds(deps.storage, None, None)?;
     for mut fund in funds.into_iter() {
         // ignore if no member is found
         if let Some(pos) = fund.members.iter().position(|m| *m == member_addr) {
@@ -361,7 +361,7 @@ pub fn deposit(
             true => {
                 // update STATE with new active fund & reset round donations
                 let new_fund_id = rotate_fund(
-                    read_funds(deps.storage).unwrap(),
+                    read_funds(deps.storage, None, None).unwrap(),
                     state.active_fund,
                     env.block.height,
                     env.block.time,
@@ -432,7 +432,7 @@ pub fn deposit(
                             state.round_donations = Uint128::zero();
                             // set state active fund to next fund for next loop iteration
                             state.active_fund = rotate_fund(
-                                read_funds(deps.storage).unwrap(),
+                                read_funds(deps.storage, None, None).unwrap(),
                                 state.active_fund,
                                 env.block.height,
                                 env.block.time,

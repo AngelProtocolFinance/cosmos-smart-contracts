@@ -4,13 +4,12 @@ use crate::state::{
 };
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails, YieldVault};
+use angel_core::structs::{EndowmentEntry, EndowmentStatus, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
-    ReplyOn, Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg, WasmQuery,
+    to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response,
+    StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
 };
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
@@ -403,7 +402,7 @@ pub fn vault_remove(
     let _addr = deps.api.addr_validate(&vault_addr)?;
 
     // remove the vault from storage
-    let mut vault = vault_store(deps.storage).remove(vault_addr.as_bytes());
+    vault_store(deps.storage).remove(vault_addr.as_bytes());
     Ok(Response::default())
 }
 
@@ -475,7 +474,7 @@ pub fn harvest(
         return Err(ContractError::Unauthorized {});
     }
     // gets a list of approved Vaults
-    let vaults = read_vaults(deps.storage)?;
+    let vaults = read_vaults(deps.storage, None, None)?;
     let list = VaultListResponse {
         vaults: vaults.into_iter().filter(|p| p.approved).collect(),
     };

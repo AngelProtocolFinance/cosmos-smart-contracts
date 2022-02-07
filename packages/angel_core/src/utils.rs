@@ -12,6 +12,31 @@ use cosmwasm_std::{
 use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg};
 use terra_cosmwasm::TerraQuerier;
 
+/// The following `calc_range_<???>` functions will set the first key after the provided key, by appending a 1 byte
+pub fn calc_range_start(start_after: Option<u64>) -> Option<Vec<u8>> {
+    start_after.map(|id| {
+        let mut v = id.to_be_bytes().to_vec();
+        v.push(1);
+        v
+    })
+}
+
+pub fn calc_range_end(start_after: Option<u64>) -> Option<Vec<u8>> {
+    start_after.map(|id| id.to_be_bytes().to_vec())
+}
+
+pub fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
+    start_after.map(|addr| {
+        let mut v = addr.as_bytes().to_vec();
+        v.push(1);
+        v
+    })
+}
+
+pub fn calc_range_end_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
+    start_after.map(|addr| addr.as_bytes().to_vec())
+}
+
 pub fn percentage_checks(val: Decimal) -> Result<Decimal, ContractError> {
     // percentage decimals need to be checked that they are all between zero and one (inclusive)
     if val > Decimal::one() {

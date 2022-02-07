@@ -4,13 +4,11 @@ use crate::executers;
 use crate::msg::{InitMsg, MigrateMsg};
 use crate::queriers;
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply, ReplyOn,
-    Response, StdResult, SubMsg, Uint128, WasmMsg,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+    Uint128,
 };
 use cw2::set_contract_version;
 use cw20::Balance;
