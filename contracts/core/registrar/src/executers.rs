@@ -403,7 +403,7 @@ pub fn vault_remove(
     let _addr = deps.api.addr_validate(&vault_addr)?;
 
     // remove the vault from storage
-    // let mut vault = vault_read(deps.storage).load(vault_addr.as_bytes())?;
+    let mut vault = vault_store(deps.storage).remove(vault_addr.as_bytes());
     Ok(Response::default())
 }
 

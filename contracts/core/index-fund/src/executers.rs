@@ -194,17 +194,6 @@ pub fn remove_index_fund(
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
-    // this will fail if fund ID passed is not found
-    let mut fund = fund_read(deps.storage).load(&fund_id.to_be_bytes())?;
-
-    if fund.is_expired(env.block.height, env.block.time) {
-        return Err(ContractError::IndexFundExpired {});
-    }
-
-    // set the fund to be expired on the current block
-    fund.expiry_height = Some(env.block.height);
-    fund_store(deps.storage).save(&fund_id.to_be_bytes(), &fund)?;
-
     // decrement state funds totals
     let mut state = STATE.load(deps.storage)?;
     // check if this is the active fund, update the active_fund using rotate_fund
@@ -218,6 +207,9 @@ pub fn remove_index_fund(
     }
     state.total_funds -= 1;
     STATE.save(deps.storage, &state)?;
+
+    // this will fail if fund ID passed is not found
+    let mut fund = fund_store(deps.storage).remove(&fund_id.to_be_bytes());
 
     Ok(Response::default())
 }
