@@ -7,6 +7,7 @@ import {
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
+  testSingleDonationAmountToManyEndowments,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -170,9 +171,11 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   14,
+  //   15,
   //   [
-  //     "terra1vmmkdcw49gt8guv7su4fkksyv6dnthafeap4fw", //Rose Knight Foundation
+  //     "terra1ku9qpt8ym2tyqutmqvfqh83m7mqu9f8sm26zc3", // America Developing Smiles
+  //     "terra1gvr02p5k77zfztzd6zavp34n8tyljlqquls7z8", // Karma Delivers
+  //     "terra1cle32fewy2xdh9z7auzj54zwjyq29tdyr20w3c", // 7000 languages
   //   ],
   //   []
   // );
@@ -180,13 +183,14 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   15,
-  //   "MVP Rotation #9",
+  //   16,
+  //   "MVP Rotation #10",
   //   "Fund collection for MVP",
   //   true,
   //   [
-  //     "terra1uzrw4d95dyh5d4mygnzmgfyrushdygdecepcmf", // Proyecto Guajira
-  //     "terra1zjvygqzen4ctsjvre507vggexgtrlsal5q5nen", // Pangea Educational Development
+  //     "terra15xturl8f6jf5p3m7u4ln32yxz76f9d4l9fnjmt", // Homen Novo
+  //     "terra19ncyspupfedqkfhckpmegtzjfpk7yae76smgtc", // Human Needs Project
+  //     "terra13myz0spjjzz3vkep5ac4mtzcffxc0rth4ea2lm", // Cat Rescue
   //   ]
   // );
   // await testUpdateAngelAllianceMembers(
@@ -215,7 +219,7 @@ export async function testExecute(
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
   // await testQueryIndexFundFundsList(terra, indexFund);
-  // await testQueryIndexFundFundDetails(terra, indexFund, 13);
+  // await testQueryIndexFundFundDetails(terra, indexFund, 15);
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);

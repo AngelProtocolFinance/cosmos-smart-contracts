@@ -199,6 +199,12 @@ export const mainnet = {
       "terra1hpdlddtyelyggzw2kteqwu8kclma0was7paedz", // Dream Machine Foundation
       "terra1lnnu4rxzy6grumrrzu4jnq2vcsxnwzxqkrrlqe", // Upstream
       "terra1xwepmhuqe2w7huh4nfq2ljc62ugchqe9z2q6hy", // Tibet Relief Fund
+      "terra1ku9qpt8ym2tyqutmqvfqh83m7mqu9f8sm26zc3", // America Developing Smiles
+      "terra1gvr02p5k77zfztzd6zavp34n8tyljlqquls7z8", // Karma Delivers
+      "terra1cle32fewy2xdh9z7auzj54zwjyq29tdyr20w3c", // 7000 languages
+      "terra15xturl8f6jf5p3m7u4ln32yxz76f9d4l9fnjmt", // Homen Novo
+      "terra19ncyspupfedqkfhckpmegtzjfpk7yae76smgtc", // Human Needs Project
+      "terra13myz0spjjzz3vkep5ac4mtzcffxc0rth4ea2lm", // Cat Rescue
     ],
   },
   members: [

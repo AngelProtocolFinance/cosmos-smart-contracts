@@ -2,7 +2,13 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import {
+  LCDClient,
+  LocalTerra,
+  Msg,
+  MsgExecuteContract,
+  Wallet,
+} from "@terra-money/terra.js";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -18,16 +24,16 @@ const { expect } = chai;
 
 export async function testRejectUnapprovedDonations(
   terra: LocalTerra | LCDClient,
-  pleb: Wallet,
+  apTeam: Wallet,
   endowmentContract: string,
   amount: string
 ): Promise<void> {
   process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
 
   await expect(
-    sendTransaction(terra, pleb, [
+    sendTransaction(terra, apTeam, [
       new MsgExecuteContract(
-        pleb.key.accAddress,
+        apTeam.key.accAddress,
         endowmentContract,
         {
           deposit: {
@@ -39,6 +45,30 @@ export async function testRejectUnapprovedDonations(
       ),
     ])
   ); //.to.be.rejectedWith("Request failed with status code 400");
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testSingleDonationAmountToManyEndowments(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  endowments: string[],
+  amount: string
+): Promise<void> {
+  process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
+  const msgs: Msg[] = endowmentkees.map((endowment) => {
+    return new MsgExecuteContract(
+      apTeam.key.accAddress,
+      endowment,
+      {
+        deposit: {
+          locked_percentage: "1",
+          liquid_percentage: "0",
+        },
+      },
+      { uusd: amount }
+    );
+  });
+  await sendTransaction(terra, apTeam, msgs);
   console.log(chalk.green(" Passed!"));
 }
 
