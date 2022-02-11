@@ -55,7 +55,7 @@ export async function testSingleDonationAmountToManyEndowments(
   amount: string
 ): Promise<void> {
   process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
-  const msgs: Msg[] = endowmentkees.map((endowment) => {
+  const msgs: Msg[] = endowments.map((endowment) => {
     return new MsgExecuteContract(
       apTeam.key.accAddress,
       endowment,
