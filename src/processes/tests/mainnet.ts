@@ -160,10 +160,18 @@ export async function testExecute(
   lbpLpTokenContract: string
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // await testSingleDonationAmountToManyEndowments(
+  //   terra,
+  //   apTeam,
+  //   [
+  //     "terra1q4sjzkztrpfujqu5vzquhvhvqy872d0drcfuq4", // Legaler Aid
+  //   ],
+  //   "000000"
+  // );
   // await testRejectUnapprovedDonations(
   //   terra,
   //   apTeam,
-  //   "terra16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke",
+  //   "terra16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke", // AP Endowment
   //   "000000"
   // );
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
@@ -171,11 +179,9 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   15,
+  //   16,
   //   [
-  //     "terra1ku9qpt8ym2tyqutmqvfqh83m7mqu9f8sm26zc3", // America Developing Smiles
-  //     "terra1gvr02p5k77zfztzd6zavp34n8tyljlqquls7z8", // Karma Delivers
-  //     "terra1cle32fewy2xdh9z7auzj54zwjyq29tdyr20w3c", // 7000 languages
+  //     "terra1q4sjzkztrpfujqu5vzquhvhvqy872d0drcfuq4", // Legaler Aid
   //   ],
   //   []
   // );

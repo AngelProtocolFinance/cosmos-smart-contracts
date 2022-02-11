@@ -205,6 +205,7 @@ export const mainnet = {
       "terra15xturl8f6jf5p3m7u4ln32yxz76f9d4l9fnjmt", // Homen Novo
       "terra19ncyspupfedqkfhckpmegtzjfpk7yae76smgtc", // Human Needs Project
       "terra13myz0spjjzz3vkep5ac4mtzcffxc0rth4ea2lm", // Cat Rescue
+      "terra1q4sjzkztrpfujqu5vzquhvhvqy872d0drcfuq4", // Legaler Aid
     ],
   },
   members: [

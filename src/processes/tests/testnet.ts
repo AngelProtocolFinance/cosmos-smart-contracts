@@ -30,6 +30,9 @@ import {
   testAddApTeamMemberToC4Group,
   testAddGuardiansToEndowment,
   testGuardiansChangeEndowmentOwner,
+  testQueryMultisigVoters,
+  testQueryMultisigThreshold,
+  testQueryGroupMembersList,
 } from "./core/multisig";
 import {
   testApproveEndowments,
@@ -194,10 +197,15 @@ export async function testExecute(
   // "", // New funds go here!!
   // ]);
   // await testUpdateFundMembers(terra, apTeam, apTeam, indexFund, 6, ["","",""], ["","",""]);
-  // Guardian angels multisig test
+
+  // Multisig test
   // await testAddApTeamMemberToC4Group(terra, apTeam, apTeam3, cw3ApTeam, cw4GrpApTeam);
   // await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);
   // await testGuardiansChangeEndowmentOwner(terra, charity2, charity3, pleb, endowmentContract1, cw3GuardianAngels);
+  // await testQueryMultisigVoters(terra, cw3ApTeam);
+  // await testQueryMultisigThreshold(terra, cw3ApTeam);
+  // await testQueryGroupMembersList(terra, cw4GrpApTeam);
+
   // Test execute
   // await testRejectUnapprovedDonations(terra, pleb, endowmentContract3);
   // await testDonorSendsToIndexFund(terra, pleb, indexFund);
