@@ -10,7 +10,7 @@
     "test:localterra-migrate-halo": "npm run test --mode=localterra_migrate_halo",
     "test:localterra-migrate-lbp": "npm run test --mode=localterra_migrate_lbp",
     "test:testnet-tests": "npm run test --mode=testnet_tests",
-    "test:testnet-setup-core": "npm run test --mode=testnet_setup",
+    "test:testnet-setup-core": "npm run test --mode=testnet_setup_core",
     "test:testnet-setup-terraswap": "npm run test --mode=testnet_setup_terraswap",
     "test:testnet-setup-halo": "npm run test --mode=testnet_setup_halo",
     "test:testnet-setup-lbp": "npm run test --mode=testnet_setup_lbp",

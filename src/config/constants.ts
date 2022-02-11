@@ -37,10 +37,10 @@ export const testnet = {
     endowmentContract2: "terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9",
     endowmentContract3: "terra1vyw5r7n02epkpk2tm2lzt67fyv28qzalwzgzuu",
     endowmentContract4: "terra1jvtf3ccpkr3vymv98vk9nz7wvwmykgv8yk9l3w",
-    cw4GrpApTeam: "terra1jngs5xj00e9fq0hfmpr2pqyq96x3aj8la8kr3p",
-    cw3ApTeam: "terra1yp5we2meetcfxql522q9ve3dsl29epye86528j",
+    cw4GrpApTeam: "terra1wpnzy6w9gd3tt9wkvnqkcmzkyc8v0tgz75nuue",
+    cw3ApTeam: "terra1qspgamxqn9slwe7ecca4n2fs2xsl5hxvkc9lzs",
     cw4GrpOwners: "terra1ldrkpnysrasq4sg4zu9mgh74wt9nxvk9qgvxtd",
-    cw3GuardianAngels: "terra1ydp9qd9xgdq63ua6axfvauye3l7a3476lm6l28",
+    cw3GuardianAngels: "",
   },
 
   // LBP contracts
