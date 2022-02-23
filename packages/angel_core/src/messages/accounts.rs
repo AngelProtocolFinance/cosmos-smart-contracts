@@ -84,14 +84,14 @@ pub struct UpdateEndowmentStatusMsg {
     pub withdraw_approved: bool,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum ReceiveMsg {
-    // Add tokens sent for a specific account
-    Deposit(DepositMsg),
-    // Tokens are sent back to an Account from a Vault
-    VaultReceipt(AccountTransferMsg),
-}
+// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+// #[serde(rename_all = "snake_case")]
+// pub enum ReceiveMsg {
+//     // Add tokens sent for a specific account
+//     Deposit(DepositMsg),
+//     // Tokens are sent back to an Account from a Vault
+//     VaultReceipt(AccountTransferMsg),
+// }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct DepositMsg {

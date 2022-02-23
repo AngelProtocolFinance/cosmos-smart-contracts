@@ -290,26 +290,26 @@ pub fn remove_member(
     Ok(Response::default())
 }
 
-pub fn receive(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    cw20_msg: Cw20ReceiveMsg,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // check that the sending token contract is an Approved Token
-    if !config.accepted_tokens.cw20_valid(info.sender.to_string()) {
-        return Err(ContractError::Unauthorized {});
-    }
-    if cw20_msg.amount.is_zero() {
-        return Err(ContractError::EmptyBalance {});
-    }
-    let sender_addr = deps.api.addr_validate(&cw20_msg.sender)?;
-    let msg = from_binary(&cw20_msg.msg)?;
-    match msg {
-        ReceiveMsg::Deposit(msg) => deposit(deps, env, info, sender_addr, msg),
-    }
-}
+// pub fn receive(
+//     deps: DepsMut,
+//     env: Env,
+//     info: MessageInfo,
+//     cw20_msg: Cw20ReceiveMsg,
+// ) -> Result<Response, ContractError> {
+//     let config = CONFIG.load(deps.storage)?;
+//     // check that the sending token contract is an Approved Token
+//     if !config.accepted_tokens.cw20_valid(info.sender.to_string()) {
+//         return Err(ContractError::Unauthorized {});
+//     }
+//     if cw20_msg.amount.is_zero() {
+//         return Err(ContractError::EmptyBalance {});
+//     }
+//     let sender_addr = deps.api.addr_validate(&cw20_msg.sender)?;
+//     let msg = from_binary(&cw20_msg.msg)?;
+//     match msg {
+//         ReceiveMsg::Deposit(msg) => deposit(deps, env, info, sender_addr, msg),
+//     }
+// }
 
 pub fn deposit(
     deps: DepsMut,
