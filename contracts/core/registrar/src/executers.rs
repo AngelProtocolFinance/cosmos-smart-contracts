@@ -215,7 +215,7 @@ pub fn update_config(
         Some(min) => percentage_checks(min),
         None => Ok(config.split_to_liquid.min),
     };
-    let default = match msg.split_max {
+    let default = match msg.split_default {
         Some(default) => percentage_checks(default),
         None => Ok(config.split_to_liquid.default),
     };
