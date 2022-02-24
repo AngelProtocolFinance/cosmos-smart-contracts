@@ -3,8 +3,8 @@ use crate::state::{
 };
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Addr, Api, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, Response,
-    StdError, StdResult, Storage, Uint128, WasmMsg,
+    to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use halo_token::common::OrderBy;
@@ -37,15 +37,18 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     match msg {
         ExecuteMsg::Claim {} => claim(deps, env, info),
         _ => {
-            assert_owner_privilege(deps.storage, deps.api, info.sender)?;
+            let config = read_config(deps.storage)?;
+            if info.sender.ne(&config.owner) {
+                return Err(StdError::generic_err("unauthorized"));
+            }
             match msg {
                 ExecuteMsg::UpdateConfig {
                     owner,
                     halo_token,
                     genesis_time,
-                } => update_config(deps, owner, halo_token, genesis_time),
+                } => update_config(deps, info, owner, halo_token, genesis_time),
                 ExecuteMsg::RegisterVestingAccounts { vesting_accounts } => {
-                    register_vesting_accounts(deps, vesting_accounts)
+                    register_vesting_accounts(deps, info, vesting_accounts)
                 }
                 ExecuteMsg::AddSchedulesToVestingAccount {
                     address,
@@ -57,21 +60,18 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
     }
 }
 
-fn assert_owner_privilege(storage: &dyn Storage, _api: &dyn Api, sender: Addr) -> StdResult<()> {
-    if read_config(storage)?.owner != sender {
-        return Err(StdError::generic_err("unauthorized"));
-    }
-
-    Ok(())
-}
-
 pub fn update_config(
     deps: DepsMut,
+    info: MessageInfo,
     owner: Option<String>,
     halo_token: Option<String>,
     genesis_time: Option<u64>,
 ) -> StdResult<Response> {
     let mut config = read_config(deps.storage)?;
+    if info.sender.ne(&config.owner) {
+        return Err(StdError::generic_err("unauthorized"));
+    }
+
     if let Some(owner) = owner {
         config.owner = deps.api.addr_validate(&owner)?;
     }
@@ -103,15 +103,23 @@ fn assert_vesting_schedules(vesting_schedules: &[(u64, u64, Uint128)]) -> StdRes
 
 pub fn register_vesting_accounts(
     deps: DepsMut,
+    info: MessageInfo,
     vesting_accounts: Vec<VestingAccount>,
 ) -> StdResult<Response> {
     let config: Config = read_config(deps.storage)?;
+    if info.sender.ne(&config.owner) {
+        return Err(StdError::generic_err("unauthorized"));
+    }
+
     for vesting_account in vesting_accounts.iter() {
         assert_vesting_schedules(&vesting_account.schedules)?;
 
         let vesting_address = deps.api.addr_validate(&vesting_account.address)?;
         match read_vesting_info(deps.storage, &vesting_address) {
-            Ok(_vesting_info) => (),
+            Ok(mut vesting_info) => {
+                vesting_info.schedules = vesting_account.schedules.clone();
+                store_vesting_info(deps.storage, &vesting_address, &vesting_info)?;
+            }
             _ => {
                 store_vesting_info(
                     deps.storage,

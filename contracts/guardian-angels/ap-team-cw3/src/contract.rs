@@ -3,12 +3,10 @@ use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, UpdateConfigM
 use crate::state::{
     next_id, parse_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS,
 };
-use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, Order,
-    QueryRequest, Response, StdResult, WasmQuery,
+    Response, StdResult,
 };
 use cw0::{maybe_addr, Expiration};
 use cw2::set_contract_version;
@@ -27,7 +25,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -51,7 +49,7 @@ pub fn instantiate(
         threshold: msg.threshold,
         max_voting_period: msg.max_voting_period,
         group_addr,
-        registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
+        this: env.contract.address,
     };
     CONFIG.save(deps.storage, &cfg)?;
 
@@ -90,15 +88,8 @@ pub fn execute_update_config(
 ) -> Result<Response<Empty>, ContractError> {
     let mut cfg = CONFIG.load(deps.storage)?;
 
-    // get the owner of the Registrar config
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: cfg.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
-        }))?;
-
-    // only the owner/admin of the Registrar contract can update the configs
-    if info.sender != registrar_config.owner {
+    // only this contract can update itself
+    if info.sender != cfg.this {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -119,8 +110,6 @@ pub fn execute_propose(
     // we ignore earliest
     latest: Option<Expiration>,
 ) -> Result<Response<Empty>, ContractError> {
-    // only Endowment Owner members of the multisig can create a proposal
-    // and can NOT be created by the Guardian Angels members
     let cfg = CONFIG.load(deps.storage)?;
 
     let vote_power = cfg
@@ -225,7 +214,6 @@ pub fn execute_execute(
     proposal_id: u64,
 ) -> Result<Response, ContractError> {
     // anyone can trigger this if the vote passed
-
     let mut prop = PROPOSALS.load(deps.storage, proposal_id.into())?;
     // we allow execution even after the proposal "expiration" as long as all vote come in before
     // that point. If it was approved on time, it can be executed any time.
@@ -264,8 +252,7 @@ pub fn execute_close(
         return Err(ContractError::NotExpired {});
     }
 
-    // set it to failed
-    prop.status = Status::Rejected;
+    prop.update_status(&env.block);
     PROPOSALS.save(deps.storage, proposal_id.into(), &prop)?;
 
     Ok(Response::new()

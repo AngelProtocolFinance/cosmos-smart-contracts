@@ -427,7 +427,7 @@ pub fn harvest(
 
         // proceed to shuffle balances if we have a non-zero amount
         if transfer_amt > Uint128::zero() {
-            let mut deposit_token = Cw20CoinVerified {
+            let deposit_token = Cw20CoinVerified {
                 address: env.contract.address.clone(),
                 amount: transfer_amt,
             };
