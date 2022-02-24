@@ -6,10 +6,10 @@ use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{AcceptedTokens, IndexFund, SplitDetails};
 use angel_core::utils::{deduct_tax, percentage_checks};
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
+    Response, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, Cw20ReceiveMsg};
+use cw20::Balance;
 
 pub fn update_owner(
     deps: DepsMut,

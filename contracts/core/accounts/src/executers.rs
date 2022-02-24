@@ -156,9 +156,50 @@ pub fn update_endowment_settings(
         }
     }
 
-    // validate address strings passed
-    endowment.owner = deps.api.addr_validate(&msg.owner)?;
-    endowment.beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
+    endowment.owner = match msg.owner {
+        Some(i) => deps.api.addr_validate(&i)?,
+        None => endowment.owner,
+    };
+    endowment.beneficiary = match msg.beneficiary {
+        Some(i) => deps.api.addr_validate(&i)?,
+        None => endowment.beneficiary,
+    };
+    endowment.whitelisted_beneficiaries = match msg.whitelisted_beneficiaries {
+        Some(i) => i,
+        None => endowment.whitelisted_beneficiaries,
+    };
+    endowment.whitelisted_contributors = match msg.whitelisted_contributors {
+        Some(i) => i,
+        None => endowment.whitelisted_contributors,
+    };
+    endowment.name = match msg.name {
+        Some(i) => i,
+        None => endowment.name,
+    };
+    endowment.description = match msg.description {
+        Some(i) => i,
+        None => endowment.description,
+    };
+    endowment.withdraw_before_maturity = match msg.withdraw_before_maturity {
+        Some(i) => i,
+        None => endowment.withdraw_before_maturity,
+    };
+    endowment.maturity_time = match msg.maturity_time {
+        Some(i) => i,
+        None => endowment.maturity_time,
+    };
+    endowment.maturity_height = match msg.maturity_height {
+        Some(i) => i,
+        None => endowment.maturity_height,
+    };
+    endowment.strategies = match msg.strategies {
+        Some(i) => i,
+        None => endowment.strategies,
+    };
+    endowment.rebalance = match msg.rebalance {
+        Some(i) => i,
+        None => endowment.rebalance,
+    };
     ENDOWMENT.save(deps.storage, &endowment)?;
 
     Ok(Response::default())

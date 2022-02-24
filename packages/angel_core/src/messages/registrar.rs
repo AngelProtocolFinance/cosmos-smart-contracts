@@ -61,6 +61,12 @@ pub struct CreateEndowmentMsg {
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
     pub guardians_multisig_addr: Option<String>,
+    pub split_max: Option<Decimal>,
+    pub split_min: Option<Decimal>,
+    pub split_default: Option<Decimal>,
+    pub locked_endowment_configs: Vec<String>,
+    pub whitelisted_beneficiaries: Vec<String>,
+    pub whitelisted_contributors: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

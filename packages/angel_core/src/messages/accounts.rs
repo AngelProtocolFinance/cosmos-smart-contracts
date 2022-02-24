@@ -1,5 +1,5 @@
 use crate::messages::vault::AccountTransferMsg;
-use crate::structs::FundingSource;
+use crate::structs::{FundingSource, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -15,9 +15,12 @@ pub struct InstantiateMsg {
     pub beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
     pub name: String,        // name of the Charity Endowment
     pub description: String, // description of the Charity Endowment
+    pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
+    pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
+    pub locked_endowment_configs: Vec<String>, // list of endowment configs that cannot be changed/altered once set at creation
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -74,8 +77,18 @@ pub struct Strategy {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentSettingsMsg {
-    pub beneficiary: String,
-    pub owner: String,
+    pub beneficiary: Option<String>,
+    pub owner: Option<String>,
+    pub whitelisted_beneficiaries: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
+    pub whitelisted_contributors: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
+    pub name: Option<String>,                          // name of the Charity Endowment
+    pub description: Option<String>,                   // description of the Charity Endowment
+    pub withdraw_before_maturity: Option<bool>, // endowment allowed to withdraw funds from locked acct before maturity date
+    pub maturity_time: Option<Option<u64>>,     // datetime int of endowment maturity
+    pub maturity_height: Option<Option<u64>>,   // block equiv of the maturity_datetime
+    pub strategies: Option<Vec<StrategyComponent>>, // list of vaults and percentage for locked/liquid accounts
+    pub locked_endowment_configs: Option<Vec<String>>, // list of endowment configs that cannot be changed/altered once set at creation
+    pub rebalance: Option<RebalanceDetails>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

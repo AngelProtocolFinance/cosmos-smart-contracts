@@ -162,8 +162,18 @@ pub fn execute_propose_owner_change(
             msg: to_binary(
                 &angel_core::messages::accounts::ExecuteMsg::UpdateEndowmentSettings(
                     UpdateEndowmentSettingsMsg {
-                        beneficiary: new_owner_addr.clone(),
-                        owner: new_owner_addr,
+                        beneficiary: Some(new_owner_addr.clone()),
+                        owner: Some(new_owner_addr),
+                        whitelisted_beneficiaries: None,
+                        whitelisted_contributors: None,
+                        name: None,
+                        description: None,
+                        withdraw_before_maturity: None,
+                        maturity_time: None,
+                        maturity_height: None,
+                        strategies: None,
+                        locked_endowment_configs: None,
+                        rebalance: None,
                     },
                 ),
             )
