@@ -166,7 +166,7 @@ export async function testExecute(
   //   [
   //     "terra1q4sjzkztrpfujqu5vzquhvhvqy872d0drcfuq4", // Legaler Aid
   //   ],
-  //   "000000"
+  //   "1000000000"
   // );
   // await testRejectUnapprovedDonations(
   //   terra,
@@ -179,24 +179,20 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   16,
-  //   [
-  //     "terra1q4sjzkztrpfujqu5vzquhvhvqy872d0drcfuq4", // Legaler Aid
-  //   ],
+  //   17,
+  //   ["terra19lldf03f8fyr4lcut6rn5c8xd3zr8kgpggxcn4"],
   //   []
   // );
   // await testCreateIndexFund(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   16,
-  //   "MVP Rotation #10",
+  //   17,
+  //   "MVP Rotation #11",
   //   "Fund collection for MVP",
   //   true,
   //   [
-  //     "terra15xturl8f6jf5p3m7u4ln32yxz76f9d4l9fnjmt", // Homen Novo
-  //     "terra19ncyspupfedqkfhckpmegtzjfpk7yae76smgtc", // Human Needs Project
-  //     "terra13myz0spjjzz3vkep5ac4mtzcffxc0rth4ea2lm", // Cat Rescue
+  //     "terra18lstx69vt9799h6uywltze30487rp9lnhn0vve", // Blue Frontier
   //   ]
   // );
   // await testUpdateAngelAllianceMembers(
@@ -225,7 +221,7 @@ export async function testExecute(
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
   // await testQueryIndexFundFundsList(terra, indexFund);
-  // await testQueryIndexFundFundDetails(terra, indexFund, 15);
+  // await testQueryIndexFundFundDetails(terra, indexFund, 16);
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);

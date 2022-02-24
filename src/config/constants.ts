@@ -206,6 +206,14 @@ export const mainnet = {
       "terra19ncyspupfedqkfhckpmegtzjfpk7yae76smgtc", // Human Needs Project
       "terra13myz0spjjzz3vkep5ac4mtzcffxc0rth4ea2lm", // Cat Rescue
       "terra1q4sjzkztrpfujqu5vzquhvhvqy872d0drcfuq4", // Legaler Aid
+      "terra15a024cu3pmzlcu3de4jqcrws0qn3ta6l6q2h4c", // Fundación CONIN
+      "terra10t7tqx5gfc5msjwvvkvga7v6yqdslj67mgh8g0", // Notes For Notes
+      "terra1c3jyn8pw2vuh9qsync50kgj2pu2aea5page3r3", // mothers2mothers
+      "terra1jcnz99mhmg3zdgxcjs2j8h66emqrc7l3emrq90", // Earth Codes Observatory
+      "terra1ypzgt3zjl6uzadvtnza25vr687ecry09spfqc9", // Team Up Canada
+      "terra10lttp7re6nscetk34t547lrnudeeull3xha0k6", // PMDP Hawaii
+      "terra18lstx69vt9799h6uywltze30487rp9lnhn0vve", // Blue Frontier
+      "terra19lldf03f8fyr4lcut6rn5c8xd3zr8kgpggxcn4", // Congo Biotropical Institute
     ],
   },
   members: [
