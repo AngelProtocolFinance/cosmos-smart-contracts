@@ -201,7 +201,13 @@ pub fn redeem_stable(
     let liquid_deposit_tokens = investment
         .liquid_balance
         .get_token_amount(env.contract.address.clone());
+
     let total_redemption = locked_deposit_tokens + liquid_deposit_tokens;
+
+    // reduce the total supply of CW20 deposit tokens by redemption amount
+    let mut token_info = TOKEN_INFO.load(deps.storage)?;
+    token_info.total_supply -= total_redemption;
+    TOKEN_INFO.save(deps.storage, &token_info)?;
 
     // update investment holdings balances to zero
     let zero_tokens = Cw20CoinVerified {
