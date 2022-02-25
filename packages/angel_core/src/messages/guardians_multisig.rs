@@ -89,7 +89,7 @@ impl Threshold {
 }
 
 /// Asserts that the 0.0 < percent <= 1.0
-fn valid_percentage(percent: &Decimal) -> Result<(), ContractError> {
+pub fn valid_percentage(percent: &Decimal) -> Result<(), ContractError> {
     if percent.is_zero() {
         Err(ContractError::ZeroThreshold {})
     } else if *percent > Decimal::one() {

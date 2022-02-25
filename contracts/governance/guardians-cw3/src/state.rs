@@ -213,7 +213,6 @@ mod test {
             false => Expiration::AtHeight(block.height + 100),
         };
         let prop = Proposal {
-            endowment_addr: "TestEndowment".to_string(),
             title: "Demo".to_string(),
             description: "Info".to_string(),
             start_height: 100,

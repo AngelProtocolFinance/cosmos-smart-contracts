@@ -52,6 +52,7 @@ fn update_config() {
     let msg = ExecuteMsg::UpdateConfig {
         reward_factor: Some(Decimal::percent(80)),
         gov_contract: None,
+        swap_factory: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -66,6 +67,7 @@ fn update_config() {
     let msg = ExecuteMsg::UpdateConfig {
         reward_factor: None,
         gov_contract: None,
+        swap_factory: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg);

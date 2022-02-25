@@ -11,7 +11,7 @@ pub struct Config {
     pub gov_contract: Addr,   // HALO gov address
     pub halo_token: Addr,     // HALO token address
     pub whitelist: Vec<Addr>, // whitelist addresses are allowed to spend contract HALO token balance
-    pub spend_limit: Uint128,          // spend limit per each `spend` request
+    pub spend_limit: Uint128, // spend limit per each `spend` request
 }
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {

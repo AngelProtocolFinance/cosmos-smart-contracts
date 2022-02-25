@@ -1,5 +1,6 @@
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, Threshold};
+use crate::msg::{ExecuteMsg, QueryMsg};
+use angel_core::messages::guardians_multisig::{InstantiateMsg, Threshold};
 use cosmwasm_std::{coin, coins, Addr, BankMsg, Coin, Decimal, Timestamp};
 use cosmwasm_std::{BlockInfo, CosmosMsg, Empty};
 use cw0::Duration;
@@ -69,19 +70,15 @@ fn instantiate_group(app: &mut App, members: Vec<Member>) -> Addr {
 
 fn instantiate_flex(
     app: &mut App,
-    ap_group: Addr,
-    endowment_group: Addr,
+    group_addr: Addr,
     threshold: Threshold,
     max_voting_period: Duration,
 ) -> Addr {
     let flex_id = app.store_code(contract_flex());
-    let msg = crate::msg::InstantiateMsg {
-        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
-        ap_team_group: ap_group.to_string(),
-        endowment_owners_group: endowment_group.to_string(),
+    let msg = InstantiateMsg {
+        group_addr: group_addr.to_string(),
         threshold,
         max_voting_period,
-        max_voting_period_guardians: Duration::Time(1234),
     };
     app.instantiate_contract(flex_id, Addr::unchecked(OWNER), &msg, &[], "flex", None)
         .unwrap()
@@ -135,13 +132,7 @@ fn setup_test_case(
     app.update_block(next_block);
 
     // 2. Set up Guardian Multisig backed by these groups
-    let flex_addr = instantiate_flex(
-        app,
-        guardian_group.clone(),
-        endowment_group.clone(),
-        threshold,
-        max_voting_period,
-    );
+    let flex_addr = instantiate_flex(app, guardian_group.clone(), threshold, max_voting_period);
     app.update_block(next_block);
 
     // 3. (Optional) Set the multisig as the group owner
@@ -180,7 +171,6 @@ fn proposal_info() -> (Vec<CosmosMsg<Empty>>, String, String) {
 fn pay_somebody_proposal() -> ExecuteMsg {
     let (msgs, title, description) = proposal_info();
     ExecuteMsg::Propose {
-        endowment_addr: ENDOWMENTOWNER1.to_string(),
         title,
         description,
         msgs,
@@ -201,12 +191,9 @@ fn test_instantiate_works() {
 
     // Zero required weight fails
     let instantiate_msg = InstantiateMsg {
-        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
-        ap_team_group: guardian_group.to_string(),
-        endowment_owners_group: endowment_group.to_string(),
+        group_addr: guardian_group.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 0 },
         max_voting_period,
-        max_voting_period_guardians: Duration::Time(1234),
     };
     let err = app
         .instantiate_contract(
@@ -222,12 +209,9 @@ fn test_instantiate_works() {
 
     // Total weight less than required weight not allowed
     let instantiate_msg = InstantiateMsg {
-        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
-        ap_team_group: guardian_group.to_string(),
-        endowment_owners_group: endowment_group.to_string(),
+        group_addr: guardian_group.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 100 },
         max_voting_period,
-        max_voting_period_guardians: Duration::Time(1234),
     };
     let err = app
         .instantiate_contract(
@@ -246,12 +230,9 @@ fn test_instantiate_works() {
 
     // All valid
     let instantiate_msg = InstantiateMsg {
-        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
-        ap_team_group: guardian_group.to_string(),
-        endowment_owners_group: endowment_group.to_string(),
+        group_addr: guardian_group.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 1 },
         max_voting_period,
-        max_voting_period_guardians: Duration::Time(1234),
     };
     let flex_addr = app
         .instantiate_contract(
@@ -321,7 +302,6 @@ fn test_propose_works() {
         _ => panic!("Wrong variant"),
     };
     let proposal_wrong_exp = ExecuteMsg::Propose {
-        endowment_addr: ENDOWMENTOWNER1.to_string(),
         title: "Rewarding somebody".to_string(),
         description: "Do we reward her?".to_string(),
         msgs,
@@ -932,7 +912,6 @@ fn execute_group_changes_from_proposal() {
         .update_members(vec![APTEAM3.into()], vec![])
         .unwrap();
     let update_proposal = ExecuteMsg::Propose {
-        endowment_addr: ENDOWMENTOWNER1.to_string(),
         title: "Kick out APTEAM3".to_string(),
         description: "He's trying to steal our money".to_string(),
         msgs: vec![update_msg],

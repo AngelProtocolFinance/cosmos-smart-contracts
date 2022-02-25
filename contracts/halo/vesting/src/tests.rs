@@ -7,8 +7,7 @@ use halo_token::vesting::{
 
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
-    attr, from_binary, to_binary, Api, CosmosMsg, StdError, SubMsg, Timestamp,
-    Uint128, WasmMsg,
+    attr, from_binary, to_binary, Api, CosmosMsg, StdError, SubMsg, Timestamp, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 
@@ -117,23 +116,11 @@ fn register_vesting_accounts() {
     let info = mock_info("addr0000", &[]);
     let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let acct1 = deps
-        .api
-        .addr_validate("acct1")
-        .unwrap()
-        .to_string();
+    let acct1 = deps.api.addr_validate("acct1").unwrap().to_string();
 
-    let acct2 = deps
-        .api
-        .addr_validate("acct2")
-        .unwrap()
-        .to_string();
+    let acct2 = deps.api.addr_validate("acct2").unwrap().to_string();
 
-    let acct3 = deps
-        .api
-        .addr_validate("acct3")
-        .unwrap()
-        .to_string();
+    let acct3 = deps.api.addr_validate("acct3").unwrap().to_string();
 
     let msg = ExecuteMsg::RegisterVestingAccounts {
         vesting_accounts: vec![
@@ -235,7 +222,6 @@ fn register_vesting_accounts() {
     );
 }
 
-
 #[test]
 fn update_vesting_account() {
     let mut deps = mock_dependencies(&[]);
@@ -249,19 +235,13 @@ fn update_vesting_account() {
     let info = mock_info("addr0000", &[]);
     let _res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let acct1 = deps
-        .api
-        .addr_validate("acct1")
-        .unwrap()
-        .to_string();
+    let acct1 = deps.api.addr_validate("acct1").unwrap().to_string();
 
     let msg = ExecuteMsg::RegisterVestingAccounts {
-        vesting_accounts: vec![
-            VestingAccount {
-                address: acct1.clone(),
-                schedules: vec![(100u64, 110u64, Uint128::from(100u128))],
-            },
-        ],
+        vesting_accounts: vec![VestingAccount {
+            address: acct1.clone(),
+            schedules: vec![(100u64, 110u64, Uint128::from(100u128))],
+        }],
     };
     let info = mock_info("addr0000", &[]);
     let res = execute(deps.as_mut(), mock_env(), info.clone(), msg.clone());
@@ -270,11 +250,9 @@ fn update_vesting_account() {
         _ => panic!("DO NOT ENTER HERE"),
     }
 
-    let msg1 = ExecuteMsg::UpdateVestingAccount {
-        vesting_account: VestingAccount {
-            address: acct1.clone(),
-            schedules: vec![(100u64, 110u64, Uint128::from(200u128))],
-        }
+    let msg1 = ExecuteMsg::AddSchedulesToVestingAccount {
+        address: acct1.clone(),
+        new_schedules: vec![(100u64, 110u64, Uint128::from(200u128))],
     };
     let res1 = execute(deps.as_mut(), mock_env(), info, msg1.clone());
     match res1 {
