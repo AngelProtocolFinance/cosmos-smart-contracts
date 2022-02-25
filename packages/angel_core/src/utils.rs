@@ -203,7 +203,9 @@ pub fn redeem_from_vaults(
                 })?,
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
-
+        if yield_vault.approved != true {
+            return Err(ContractError::InvalidInputs {});
+        }
         // create a withdraw message for X Vault, noting amounts for Locked / Liquid
         redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: yield_vault.address.to_string(),
@@ -237,7 +239,9 @@ pub fn withdraw_from_vaults(
                     })?,
                 }))?;
             let yield_vault: YieldVault = vault_config.vault;
-
+            if yield_vault.approved != true {
+                return Err(ContractError::InvalidInputs {});
+            }
             let withdraw_msg = AccountWithdrawMsg {
                 beneficiary: beneficiary.clone(),
                 locked: source.locked,

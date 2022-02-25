@@ -19,11 +19,12 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
-    let whitelist = msg
+    let mut whitelist: Vec<Addr> = msg
         .whitelist
         .into_iter()
         .map(|w| deps.api.addr_validate(&w))
         .collect::<StdResult<Vec<Addr>>>()?;
+    whitelist.dedup();
 
     store_config(
         deps.storage,

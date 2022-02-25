@@ -215,9 +215,20 @@ pub fn update_strategies(
     let mut locked_percentages_sum = Decimal::zero();
     let mut liquid_percentages_sum = Decimal::zero();
 
-    for strategy_component in strategies.iter() {
-        locked_percentages_sum = locked_percentages_sum + strategy_component.locked_percentage;
-        liquid_percentages_sum = liquid_percentages_sum + strategy_component.liquid_percentage;
+    for strategy in strategies.iter() {
+        let vault_config: VaultDetailResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: config.registrar_contract.to_string(),
+                msg: to_binary(&RegistrarQuerier::Vault {
+                    vault_addr: strategy.vault.to_string(),
+                })?,
+            }))?;
+        if vault_config.vault.approved != true {
+            return Err(ContractError::InvalidInputs {});
+        }
+
+        locked_percentages_sum = locked_percentages_sum + strategy.locked_percentage;
+        liquid_percentages_sum = liquid_percentages_sum + strategy.liquid_percentage;
     }
 
     if locked_percentages_sum != Decimal::one() || liquid_percentages_sum != Decimal::one() {
