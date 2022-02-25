@@ -1,3 +1,4 @@
+use crate::anchor;
 use crate::anchor::{deposit_stable_msg, redeem_stable_msg};
 use crate::config;
 use crate::config::{PendingInfo, BALANCES, PENDING, TOKEN_INFO};
@@ -71,11 +72,10 @@ pub fn update_config(
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.moneymarket,
     };
-    config.yield_token = match msg.yield_token {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.yield_token,
-    };
-    config.input_denom = msg.input_denom.unwrap_or(config.input_denom);
+
+    let anchor_config = anchor::config(deps.as_ref(), &config.moneymarket)?;
+    config.yield_token = deps.api.addr_validate(&anchor_config.aterra_contract)?;
+    config.input_denom = anchor_config.stable_denom.clone();
     config.tax_per_block = msg.tax_per_block.unwrap_or(config.tax_per_block);
     config.harvest_to_liquid = msg.harvest_to_liquid.unwrap_or(config.harvest_to_liquid);
     config::store(deps.storage, &config)?;
