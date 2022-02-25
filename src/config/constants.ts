@@ -214,6 +214,9 @@ export const mainnet = {
       "terra10lttp7re6nscetk34t547lrnudeeull3xha0k6", // PMDP Hawaii
       "terra18lstx69vt9799h6uywltze30487rp9lnhn0vve", // Blue Frontier
       "terra19lldf03f8fyr4lcut6rn5c8xd3zr8kgpggxcn4", // Congo Biotropical Institute
+      "terra1y27umc27wg9vtx5jadj5q0qu7yw7klys74yy08", // ISERA
+      "terra1vkrjvqxw33zdf5m67x8c2elm44xwcw0jk6fmj7", // Marrvelous Pet Rescues
+      "terra1yt9wghlqem8gql664mjfqwwe636g3t0xypf9lk", // Seminole Indian Scouts Cemetary Association
     ],
   },
   members: [
