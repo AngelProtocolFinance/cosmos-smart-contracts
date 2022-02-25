@@ -63,10 +63,10 @@ impl Threshold {
             } => valid_percentage(percentage_needed),
             Threshold::ThresholdQuorum {
                 threshold,
-                quorum: quroum,
+                quorum: quorum,
             } => {
                 valid_percentage(threshold)?;
-                valid_percentage(quroum)
+                valid_percentage(quorum)
             }
         }
     }
