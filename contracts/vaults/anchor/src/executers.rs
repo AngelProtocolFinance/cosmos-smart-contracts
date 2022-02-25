@@ -92,6 +92,25 @@ pub fn deposit_stable(
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
+    // only accept max of 1 deposit coin/token per donation
+    if info.funds.len() != 1 {
+        return Err(ContractError::InvalidCoinsDeposited {});
+    }
+
+    let deposit_amount: Coin = Coin {
+        denom: "uusd".to_string(),
+        amount: info
+            .funds
+            .iter()
+            .find(|c| c.denom == *"uusd")
+            .map(|c| c.amount)
+            .unwrap_or_else(Uint128::zero),
+    };
+
+    if deposit_amount.amount.is_zero() {
+        return Err(ContractError::EmptyBalance {});
+    }
+
     // check that the depositor is an Accounts SC
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
@@ -109,7 +128,7 @@ pub fn deposit_stable(
         deps.as_ref(),
         Coin {
             denom: config.input_denom.clone(),
-            amount: info.funds[0].amount,
+            amount: deposit_amount.amount,
         },
     )?;
     let mut after_taxes_locked = Uint128::zero();
@@ -117,7 +136,7 @@ pub fn deposit_stable(
         after_taxes_locked = after_taxes
             .amount
             .clone()
-            .multiply_ratio(msg.locked, info.funds[0].amount);
+            .multiply_ratio(msg.locked, deposit_amount.amount);
     }
 
     let mut after_taxes_liquid = Uint128::zero();
@@ -125,7 +144,7 @@ pub fn deposit_stable(
         after_taxes_liquid = after_taxes
             .amount
             .clone()
-            .multiply_ratio(msg.liquid, info.funds[0].amount);
+            .multiply_ratio(msg.liquid, deposit_amount.amount);
     }
 
     // update supply
@@ -152,7 +171,7 @@ pub fn deposit_stable(
     Ok(Response::new()
         .add_attribute("action", "deposit")
         .add_attribute("sender", info.sender.clone())
-        .add_attribute("deposit_amount", info.funds[0].amount)
+        .add_attribute("deposit_amount", deposit_amount.amount)
         .add_attribute("mint_amount", after_taxes.amount)
         .add_submessage(SubMsg {
             id: submessage_id,
