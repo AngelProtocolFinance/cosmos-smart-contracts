@@ -526,7 +526,9 @@ pub fn withdraw(
     // check if locked tokens are requested and
     // reject if endowment cannot withdraw from locked before maturity
     for source in sources.iter() {
-        if source.locked > Uint128::zero() && !endowment.withdraw_before_maturity {
+        if source.locked > Uint128::zero()
+            && (!endowment.withdraw_before_maturity || !endowment.is_expired(&env))
+        {
             return Err(ContractError::InaccessableLockedBalance {});
         }
     }

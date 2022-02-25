@@ -6,10 +6,10 @@ use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{AcceptedTokens, IndexFund, SplitDetails};
 use angel_core::utils::{deduct_tax, percentage_checks};
 use cosmwasm_std::{
-    from_binary, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
+    Response, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, Cw20ReceiveMsg};
+use cw20::Balance;
 
 pub fn update_owner(
     deps: DepsMut,
@@ -111,7 +111,17 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    config.funding_goal = msg.funding_goal; // config set as optional, don't unwrap
+    config.funding_goal = match msg.funding_goal {
+        Some(goal) => {
+            // underflow check - goal value cannot be lte round_donations
+            let state = STATE.load(deps.storage)?;
+            if goal <= state.round_donations {
+                return Err(ContractError::InvalidInputs {});
+            }
+            Some(goal) // config set as optional, don't unwrap
+        }
+        None => None,
+    };
     config.fund_rotation = msg.fund_rotation; // config set as optional, don't unwrap
     config.fund_member_limit = msg.fund_member_limit.unwrap_or(config.fund_member_limit);
     config.accepted_tokens = AcceptedTokens {
