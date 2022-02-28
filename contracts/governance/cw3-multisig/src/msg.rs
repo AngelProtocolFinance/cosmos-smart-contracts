@@ -1,6 +1,5 @@
-use crate::error::ContractError;
-use angel_core::messages::guardians_multisig::{valid_percentage, Threshold};
-use cosmwasm_std::{CosmosMsg, Decimal, Empty};
+use angel_core::messages::guardians_multisig::Threshold;
+use cosmwasm_std::{CosmosMsg, Empty};
 use cw0::{Duration, Expiration};
 use cw3::{ThresholdResponse, Vote};
 use cw4::MemberChangedHookMsg;

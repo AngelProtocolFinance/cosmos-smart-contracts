@@ -23,4 +23,10 @@ pub enum ContractError {
 
     #[error("Vault not created")]
     VaultNotCreated {},
+
+    #[error("Only accept one coin type per deposit")]
+    InvalidCoinsDeposited {},
+
+    #[error("No Balance found")]
+    EmptyBalance {},
 }

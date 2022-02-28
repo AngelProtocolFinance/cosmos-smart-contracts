@@ -111,7 +111,17 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    config.funding_goal = msg.funding_goal; // config set as optional, don't unwrap
+    config.funding_goal = match msg.funding_goal {
+        Some(goal) => {
+            // underflow check - goal value cannot be lte round_donations
+            let state = STATE.load(deps.storage)?;
+            if goal <= state.round_donations {
+                return Err(ContractError::InvalidInputs {});
+            }
+            Some(goal) // config set as optional, don't unwrap
+        }
+        None => None,
+    };
     config.fund_rotation = msg.fund_rotation; // config set as optional, don't unwrap
     config.fund_member_limit = msg.fund_member_limit.unwrap_or(config.fund_member_limit);
     config.accepted_tokens = AcceptedTokens {
@@ -281,11 +291,8 @@ pub fn remove_member(
     // Check all Funds for the given member and remove the member if found
     let funds = read_funds(deps.storage, None, None)?;
     for mut fund in funds.into_iter() {
-        // ignore if no member is found
-        if let Some(pos) = fund.members.iter().position(|m| *m == member_addr) {
-            fund.members.swap_remove(pos);
-            fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
-        }
+        fund.members.retain(|m| m != &member_addr);
+        fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
     }
     Ok(Response::default())
 }

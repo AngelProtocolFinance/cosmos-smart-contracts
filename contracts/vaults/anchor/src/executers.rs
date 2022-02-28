@@ -1,3 +1,4 @@
+use crate::anchor;
 use crate::anchor::{deposit_stable_msg, redeem_stable_msg};
 use crate::config;
 use crate::config::{PendingInfo, BALANCES, PENDING, TOKEN_INFO};
@@ -71,11 +72,10 @@ pub fn update_config(
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.moneymarket,
     };
-    config.yield_token = match msg.yield_token {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.yield_token,
-    };
-    config.input_denom = msg.input_denom.unwrap_or(config.input_denom);
+
+    let anchor_config = anchor::config(deps.as_ref(), &config.moneymarket)?;
+    config.yield_token = deps.api.addr_validate(&anchor_config.aterra_contract)?;
+    config.input_denom = anchor_config.stable_denom.clone();
     config.tax_per_block = msg.tax_per_block.unwrap_or(config.tax_per_block);
     config.harvest_to_liquid = msg.harvest_to_liquid.unwrap_or(config.harvest_to_liquid);
     config::store(deps.storage, &config)?;
@@ -91,6 +91,25 @@ pub fn deposit_stable(
     _balance: Balance,
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
+
+    // only accept max of 1 deposit coin/token per donation
+    if info.funds.len() != 1 {
+        return Err(ContractError::InvalidCoinsDeposited {});
+    }
+
+    let deposit_amount: Coin = Coin {
+        denom: "uusd".to_string(),
+        amount: info
+            .funds
+            .iter()
+            .find(|c| c.denom == *"uusd")
+            .map(|c| c.amount)
+            .unwrap_or_else(Uint128::zero),
+    };
+
+    if deposit_amount.amount.is_zero() {
+        return Err(ContractError::EmptyBalance {});
+    }
 
     // check that the depositor is an Accounts SC
     let endowments_rsp: EndowmentListResponse =
@@ -109,7 +128,7 @@ pub fn deposit_stable(
         deps.as_ref(),
         Coin {
             denom: config.input_denom.clone(),
-            amount: info.funds[0].amount,
+            amount: deposit_amount.amount,
         },
     )?;
     let mut after_taxes_locked = Uint128::zero();
@@ -117,7 +136,7 @@ pub fn deposit_stable(
         after_taxes_locked = after_taxes
             .amount
             .clone()
-            .multiply_ratio(msg.locked, info.funds[0].amount);
+            .multiply_ratio(msg.locked, deposit_amount.amount);
     }
 
     let mut after_taxes_liquid = Uint128::zero();
@@ -125,7 +144,7 @@ pub fn deposit_stable(
         after_taxes_liquid = after_taxes
             .amount
             .clone()
-            .multiply_ratio(msg.liquid, info.funds[0].amount);
+            .multiply_ratio(msg.liquid, deposit_amount.amount);
     }
 
     // update supply
@@ -152,7 +171,7 @@ pub fn deposit_stable(
     Ok(Response::new()
         .add_attribute("action", "deposit")
         .add_attribute("sender", info.sender.clone())
-        .add_attribute("deposit_amount", info.funds[0].amount)
+        .add_attribute("deposit_amount", deposit_amount.amount)
         .add_attribute("mint_amount", after_taxes.amount)
         .add_submessage(SubMsg {
             id: submessage_id,
@@ -201,7 +220,13 @@ pub fn redeem_stable(
     let liquid_deposit_tokens = investment
         .liquid_balance
         .get_token_amount(env.contract.address.clone());
+
     let total_redemption = locked_deposit_tokens + liquid_deposit_tokens;
+
+    // reduce the total supply of CW20 deposit tokens by redemption amount
+    let mut token_info = TOKEN_INFO.load(deps.storage)?;
+    token_info.total_supply -= total_redemption;
+    TOKEN_INFO.save(deps.storage, &token_info)?;
 
     // update investment holdings balances to zero
     let zero_tokens = Cw20CoinVerified {

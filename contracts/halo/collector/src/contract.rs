@@ -1,13 +1,10 @@
+use crate::state::{read_config, store_config, Config};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
-
 use cosmwasm_std::{
     attr, to_binary, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, Reply,
     Response, StdError, StdResult, SubMsg, WasmMsg,
 };
-
-use crate::state::{read_config, store_config, Config};
-
 use cw20::Cw20ExecuteMsg;
 use halo_token::collector::{ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use terraswap::asset::{Asset, AssetInfo, PairInfo};
@@ -21,6 +18,10 @@ pub fn instantiate(
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
+    if msg.reward_factor > Decimal::one() {
+        return Err(StdError::generic_err("Invalid reward factor input given"));
+    }
+
     store_config(
         deps.storage,
         &Config {
@@ -61,6 +62,9 @@ pub fn update_config(
     }
 
     if let Some(reward_factor) = reward_factor {
+        if reward_factor > Decimal::one() {
+            return Err(StdError::generic_err("Invalid reward factor input given"));
+        }
         config.reward_factor = reward_factor;
     }
 
