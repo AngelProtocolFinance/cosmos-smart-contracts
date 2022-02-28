@@ -291,11 +291,8 @@ pub fn remove_member(
     // Check all Funds for the given member and remove the member if found
     let funds = read_funds(deps.storage, None, None)?;
     for mut fund in funds.into_iter() {
-        // ignore if no member is found
-        if let Some(pos) = fund.members.iter().position(|m| *m == member_addr) {
-            fund.members.swap_remove(pos);
-            fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
-        }
+        fund.members.retain(|m| m != &member_addr);
+        fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
     }
     Ok(Response::default())
 }

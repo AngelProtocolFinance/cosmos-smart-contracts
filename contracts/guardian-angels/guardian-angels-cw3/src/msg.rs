@@ -65,10 +65,7 @@ impl Threshold {
             Threshold::AbsolutePercentage {
                 percentage: percentage_needed,
             } => valid_percentage(percentage_needed),
-            Threshold::ThresholdQuorum {
-                threshold,
-                quorum: quorum,
-            } => {
+            Threshold::ThresholdQuorum { threshold, quorum } => {
                 valid_percentage(threshold)?;
                 valid_percentage(quorum)
             }
