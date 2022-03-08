@@ -42,7 +42,9 @@ pub fn query_endowment_details(
     deps: Deps,
     endowment_addr: String,
 ) -> StdResult<EndowmentDetailResponse> {
-    let endowment = registry_read(deps.storage).load(endowment_addr.as_bytes())?;
+    let endowment = registry_read(deps.storage)
+        .may_load(endowment_addr.as_bytes())?
+        .unwrap();
     Ok(EndowmentDetailResponse { endowment })
 }
 
