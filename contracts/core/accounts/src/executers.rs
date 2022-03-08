@@ -507,12 +507,14 @@ pub fn withdraw(
     env: Env,
     info: MessageInfo,
     sources: Vec<FundingSource>,
+    beneficiary: String,
+    memo: Option<String>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
 
     // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner || info.sender != endowment.beneficiary {
+    if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -535,15 +537,16 @@ pub fn withdraw(
     let withdraw_messages = withdraw_from_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
-        &endowment.beneficiary,
+        &deps.api.addr_validate(&beneficiary)?,
         sources,
+        memo,
     )?;
 
     Ok(Response::new()
         .add_submessages(withdraw_messages)
         .add_attribute("action", "withdrawal")
         .add_attribute("sender", env.contract.address.to_string())
-        .add_attribute("beneficiary", endowment.beneficiary.to_string()))
+        .add_attribute("beneficiary", beneficiary.to_string()))
 }
 
 pub fn close_endowment(

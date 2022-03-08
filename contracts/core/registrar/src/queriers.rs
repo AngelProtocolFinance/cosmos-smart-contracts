@@ -1,4 +1,4 @@
-use crate::state::{read_registry_entries, read_vaults, vault_read, CONFIG};
+use crate::state::{read_registry_entries, read_vaults, registry_read, vault_read, CONFIG};
 use angel_core::responses::registrar::*;
 use angel_core::structs::VaultRate;
 use angel_core::utils::vault_fx_rate;
@@ -36,6 +36,14 @@ pub fn query_approved_vault_list(deps: Deps) -> StdResult<VaultListResponse> {
     Ok(VaultListResponse {
         vaults: vaults.into_iter().filter(|p| p.approved).collect(),
     })
+}
+
+pub fn query_endowment_details(
+    deps: Deps,
+    endowment_addr: String,
+) -> StdResult<EndowmentDetailResponse> {
+    let endowment = registry_read(deps.storage).load(endowment_addr.as_bytes())?;
+    Ok(EndowmentDetailResponse { endowment })
 }
 
 pub fn query_endowment_list(deps: Deps) -> StdResult<EndowmentListResponse> {

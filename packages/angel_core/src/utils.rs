@@ -174,6 +174,7 @@ pub fn withdraw_from_vaults(
     registrar_contract: String,
     beneficiary: &Addr,
     sources: Vec<FundingSource>,
+    memo: Option<String>,
 ) -> Result<Vec<SubMsg>, ContractError> {
     let mut withdraw_messages = vec![];
 
@@ -194,6 +195,7 @@ pub fn withdraw_from_vaults(
                 beneficiary: beneficiary.clone(),
                 locked: source.locked,
                 liquid: source.liquid,
+                memo: memo.clone(),
             };
 
             // create a withdraw message for X Vault, noting amounts for Locked / Liquid

@@ -110,6 +110,8 @@ pub enum QueryMsg {
     VaultList {},
     // Get a list of all approved Vaults
     ApprovedVaultList {},
+    // Get details of single Endowment
+    Endowment { endowment_addr: String },
     // Gets list of all registered Endowments
     EndowmentList {},
     // Get all Config details for the contract
