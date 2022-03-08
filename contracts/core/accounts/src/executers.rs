@@ -508,7 +508,6 @@ pub fn withdraw(
     info: MessageInfo,
     sources: Vec<FundingSource>,
     beneficiary: String,
-    memo: Option<String>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
@@ -539,7 +538,6 @@ pub fn withdraw(
         config.registrar_contract.to_string(),
         &deps.api.addr_validate(&beneficiary)?,
         sources,
-        memo,
     )?;
 
     Ok(Response::new()

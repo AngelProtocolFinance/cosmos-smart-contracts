@@ -144,7 +144,6 @@ pub fn deposit_stable(
             fund: None,
             locked: after_taxes_locked,
             liquid: after_taxes_liquid,
-            memo: None,
         },
     )?;
     config.next_pending_id += 1;
@@ -229,7 +228,6 @@ pub fn redeem_stable(
             fund: None,
             locked: locked_deposit_tokens,
             liquid: liquid_deposit_tokens,
-            memo: None,
         },
     )?;
     config.next_pending_id += 1;
@@ -303,7 +301,6 @@ pub fn withdraw_stable(
             typ: "withdraw".to_string(),
             accounts_address: info.sender.clone(),
             beneficiary: Some(msg.beneficiary.clone()),
-            memo: msg.memo,
             fund: None,
             locked: msg.locked,
             liquid: msg.liquid,
@@ -478,7 +475,6 @@ pub fn harvest(
                     fund: None,
                     locked: Uint128::zero(),
                     liquid: withdraw_total * collector_share,
-                    memo: None,
                 },
             )?;
             withdraw_leftover = withdraw_total - (withdraw_total * collector_share);
@@ -510,7 +506,6 @@ pub fn harvest(
                     fund: None,
                     locked: Uint128::zero(),
                     liquid: withdraw_leftover,
-                    memo: None,
                 },
             )?;
             config.next_pending_id += 1;

@@ -95,8 +95,7 @@ pub fn execute(
         ExecuteMsg::Withdraw {
             sources,
             beneficiary,
-            memo,
-        } => executers::withdraw(deps, env, info, sources, beneficiary, memo),
+        } => executers::withdraw(deps, env, info, sources, beneficiary),
         ExecuteMsg::VaultReceipt(msg) => {
             executers::vault_receipt(deps, env, info.clone(), info.sender, msg)
         }

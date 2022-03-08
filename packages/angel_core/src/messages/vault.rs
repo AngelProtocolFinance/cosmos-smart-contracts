@@ -55,7 +55,6 @@ pub struct AccountWithdrawMsg {
     pub beneficiary: Addr,
     pub locked: Uint128,
     pub liquid: Uint128,
-    pub memo: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
