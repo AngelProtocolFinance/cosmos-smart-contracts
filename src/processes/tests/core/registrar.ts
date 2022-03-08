@@ -59,7 +59,7 @@ export async function testUpdatingRegistrarConfigs(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   registrar: string,
-  treasury: string,
+  treasury: string
 ): Promise<void> {
   process.stdout.write("AP Team updates Registrar Tax Rate");
   await sendTransaction(terra, apTeam, [
@@ -67,7 +67,7 @@ export async function testUpdatingRegistrarConfigs(
       update_config: {
         treasury,
         tax_rate: "0.2",
-      }
+      },
     }),
   ]);
   console.log(chalk.green(" Done!"));
@@ -177,6 +177,20 @@ export async function testQueryRegistrarConfig(
   process.stdout.write("Test - Query Registrar config and get proper result");
   const result: any = await terra.wasm.contractQuery(registrar, {
     config: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryRegistrarEndowmentDetails(
+  terra: LocalTerra | LCDClient,
+  registrar: string,
+  endowment: string
+): Promise<void> {
+  process.stdout.write("Test - Query Registrar Endowment Details/Status");
+  const result: any = await terra.wasm.contractQuery(registrar, {
+    endowment: { endowment_addr: endowment },
   });
 
   console.log(result);

@@ -40,6 +40,7 @@ import {
   testQueryRegistrarApprovedVaultRateList,
   testQueryRegistrarConfig,
   testQueryRegistrarEndowmentList,
+  testQueryRegistrarEndowmentDetails,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
 } from "./core/registrar";
@@ -218,6 +219,7 @@ export async function testExecute(
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);
+  // await testQueryRegistrarEndowmentDetails(terra, registrar, endowmentContract1);
   // await testQueryRegistrarApprovedVaultList(terra, registrar);
   // await testQueryRegistrarApprovedVaultRateList(terra, registrar);
   // await testQueryRegistrarVaultList(terra, registrar);
