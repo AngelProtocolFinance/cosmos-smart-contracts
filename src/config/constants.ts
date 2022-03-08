@@ -217,6 +217,9 @@ export const mainnet = {
       "terra1y27umc27wg9vtx5jadj5q0qu7yw7klys74yy08", // ISERA
       "terra1vkrjvqxw33zdf5m67x8c2elm44xwcw0jk6fmj7", // Marrvelous Pet Rescues
       "terra1yt9wghlqem8gql664mjfqwwe636g3t0xypf9lk", // Seminole Indian Scouts Cemetary Association
+      "terra10qeaeukmyy2kqw5f2fvut5pmm9gaqvnrqtsk22", // Third Wave Volunteers
+      "terra1c95a3sjpt3jat2azphjt2sk8xqvcwj0uexjp8d", // Nova Ukraine
+      "terra14s30dkddgzu86s5yudahdm0xa9ks3u8xuht7rc", // GSG
     ],
   },
   members: [

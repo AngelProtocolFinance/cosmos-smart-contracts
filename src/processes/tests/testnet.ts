@@ -218,7 +218,16 @@ export async function testExecute(
   // await testClosingEndpoint(terra, apTeam, registrar, endowmentContract3, endowmentContract4);
   // await testMigrateAllAccounts(terra, apTeam, registrar);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, [endowmentContract2], [endowmentContract4]);
-  // testCreateIndexFund(terra, apTeam, indexFund, 5, "Test fund", "My 5th test fund", [endowmentContract2, endowmentContract3, endowmentContract4]);
+  // await testCreateIndexFund(
+  //   terra,
+  //   apTeam,
+  //   indexFund,
+  //   18,
+  //   "Test fund for Ukraine Portal",
+  //   "Another portal test fund",
+  //   false,
+  //   [endowmentContract2, endowmentContract3, endowmentContract4]
+  // );
   // testRemoveIndexFund(terra, apTeam, indexFund, 1);
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);

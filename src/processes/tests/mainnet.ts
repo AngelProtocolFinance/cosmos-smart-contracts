@@ -180,20 +180,29 @@ export async function testExecute(
   //   apTeam,
   //   indexFund,
   //   17,
-  //   ["terra19lldf03f8fyr4lcut6rn5c8xd3zr8kgpggxcn4"],
+  //   [
+  //     "terra16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke",
+  //     "terra16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke",
+  //   ],
   //   []
+  // );
+  // await testUpdateFundMembers(
+  //   terra,
+  //   apTeam,
+  //   indexFund,
+  //   18,
+  //   [],
+  //   ["terra14s30dkddgzu86s5yudahdm0xa9ks3u8xuht7rc"]
   // );
   // await testCreateIndexFund(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   17,
-  //   "MVP Rotation #11",
-  //   "Fund collection for MVP",
-  //   true,
-  //   [
-  //     "terra18lstx69vt9799h6uywltze30487rp9lnhn0vve", // Blue Frontier
-  //   ]
+  //   18,
+  //   "Refugee Relief Fund",
+  //   "Fund for providing relief, targeted at charities working with refugees",
+  //   false,
+  //   ["terra10qeaeukmyy2kqw5f2fvut5pmm9gaqvnrqtsk22"]
   // );
   // await testUpdateAngelAllianceMembers(
   //   terra,
@@ -216,12 +225,11 @@ export async function testExecute(
   // await testQueryAccountsBalance(terra, endowmentContract);
   // await testQueryVaultConfig(terra, anchorVault);
   // await testQueryAccountsConfig(terra, endowmentContract);
-  // await testQueryAccountsEndowment(terra, endowmentContract);
   // await testQueryIndexFundConfig(terra, indexFund);
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
   // await testQueryIndexFundFundsList(terra, indexFund);
-  // await testQueryIndexFundFundDetails(terra, indexFund, 16);
+  // await testQueryIndexFundFundDetails(terra, indexFund, 18);
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);
