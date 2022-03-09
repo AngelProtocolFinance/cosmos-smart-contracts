@@ -28,6 +28,7 @@ pub enum ExecuteMsg {
     // Pull funds from investment vault(s) to the Endowment Beneficiary as UST
     Withdraw {
         sources: Vec<FundingSource>,
+        beneficiary: String,
     },
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt(AccountTransferMsg),
@@ -52,10 +53,6 @@ pub enum ExecuteMsg {
     // Replace an Account's Strategy with that given.
     UpdateStrategies {
         strategies: Vec<Strategy>,
-    },
-    UpdateGuardians {
-        add: Vec<String>,
-        remove: Vec<String>,
     },
 }
 

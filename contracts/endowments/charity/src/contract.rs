@@ -13,7 +13,7 @@ use cosmwasm_std::{
 use cw2::set_contract_version;
 
 // version info for future migration info
-const CONTRACT_NAME: &str = "accounts";
+const CONTRACT_NAME: &str = "charity-endowment";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[entry_point]
@@ -92,7 +92,10 @@ pub fn execute(
             executers::update_endowment_status(deps, env, info, msg)
         }
         ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
-        ExecuteMsg::Withdraw { sources } => executers::withdraw(deps, env, info, sources),
+        ExecuteMsg::Withdraw {
+            sources,
+            beneficiary,
+        } => executers::withdraw(deps, env, info, sources, beneficiary),
         ExecuteMsg::VaultReceipt(msg) => {
             executers::vault_receipt(deps, env, info.clone(), info.sender, msg)
         }
@@ -109,9 +112,6 @@ pub fn execute(
             executers::close_endowment(deps, env, info, beneficiary)
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
-        ExecuteMsg::UpdateGuardians { add, remove } => {
-            executers::update_guardians(deps, env, info, add, remove)
-        }
     }
 }
 

@@ -60,50 +60,6 @@ pub fn update_config(
     Ok(Response::default())
 }
 
-pub fn update_guardians(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    add: Vec<String>,
-    remove: Vec<String>,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    let mut endowment = ENDOWMENT.load(deps.storage)?;
-
-    // get the guardian multisig addr from the registrar config (if exists)
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
-        }))?;
-    let multisig_addr = registrar_config.guardians_multisig_addr;
-
-    // only the guardians multisig contract can update the guardians
-    if multisig_addr == None || info.sender != multisig_addr.unwrap() {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // add all passed guardians that are not already in the set
-    for guardian in add {
-        let pos = endowment.guardian_set.iter().position(|g| *g == guardian);
-        if pos == None {
-            endowment.guardian_set.push(guardian);
-        }
-    }
-
-    // remove all passed guardians that exist in the set
-    for guardian in remove {
-        let pos = endowment.guardian_set.iter().position(|g| *g == guardian);
-        if pos != None {
-            endowment.guardian_set.swap_remove(pos.unwrap());
-        }
-    }
-
-    ENDOWMENT.save(deps.storage, &endowment)?;
-
-    Ok(Response::default())
-}
-
 pub fn update_registrar(
     deps: DepsMut,
     _env: Env,
@@ -518,12 +474,13 @@ pub fn withdraw(
     env: Env,
     info: MessageInfo,
     sources: Vec<FundingSource>,
+    beneficiary: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
 
     // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner || info.sender != endowment.beneficiary {
+    if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -548,7 +505,7 @@ pub fn withdraw(
     let withdraw_messages = withdraw_from_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
-        &endowment.beneficiary,
+        &deps.api.addr_validate(&beneficiary)?,
         sources,
     )?;
 
