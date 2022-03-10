@@ -1,7 +1,7 @@
 use angel_core::messages::guardians_multisig::Threshold;
 use cosmwasm_std::{CosmosMsg, Empty};
 use cw0::{Duration, Expiration};
-use cw3::{ThresholdResponse, Vote};
+use cw3::Vote;
 use cw4::MemberChangedHookMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

@@ -169,58 +169,122 @@ pub fn update_endowment_settings(
     info: MessageInfo,
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENT.load(deps.storage)?;
 
-    // only the contract owner can update these configs
-    if info.sender != config.owner {
+    // only the endowment owner can update these configs
+    if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
     }
 
-    endowment.owner = match msg.owner {
-        Some(i) => deps.api.addr_validate(&i)?,
-        None => endowment.owner,
-    };
-    endowment.beneficiary = match msg.beneficiary {
-        Some(i) => deps.api.addr_validate(&i)?,
-        None => endowment.beneficiary,
-    };
-    endowment.whitelisted_beneficiaries = match msg.whitelisted_beneficiaries {
-        Some(i) => i,
-        None => endowment.whitelisted_beneficiaries,
-    };
-    endowment.whitelisted_contributors = match msg.whitelisted_contributors {
-        Some(i) => i,
-        None => endowment.whitelisted_contributors,
-    };
-    endowment.name = match msg.name {
-        Some(i) => i,
-        None => endowment.name,
-    };
-    endowment.description = match msg.description {
-        Some(i) => i,
-        None => endowment.description,
-    };
-    endowment.withdraw_before_maturity = match msg.withdraw_before_maturity {
-        Some(i) => i,
-        None => endowment.withdraw_before_maturity,
-    };
-    endowment.maturity_time = match msg.maturity_time {
-        Some(i) => i,
-        None => endowment.maturity_time,
-    };
-    endowment.maturity_height = match msg.maturity_height {
-        Some(i) => i,
-        None => endowment.maturity_height,
-    };
-    endowment.strategies = match msg.strategies {
-        Some(i) => i,
-        None => endowment.strategies,
-    };
-    endowment.rebalance = match msg.rebalance {
-        Some(i) => i,
-        None => endowment.rebalance,
-    };
+    if !endowment
+        .locked_endowment_configs
+        .contains(&"endowment_owner".to_string())
+    {
+        endowment.owner = match msg.owner {
+            Some(i) => deps.api.addr_validate(&i)?,
+            None => endowment.owner,
+        };
+    }
+
+    if !endowment
+        .locked_endowment_configs
+        .contains(&"beneficiary".to_string())
+    {
+        endowment.beneficiary = match msg.beneficiary {
+            Some(i) => deps.api.addr_validate(&i)?,
+            None => endowment.beneficiary,
+        };
+    }
+
+    if !endowment
+        .locked_endowment_configs
+        .contains(&"whitelisted_beneficiaries".to_string())
+    {
+        endowment.whitelisted_beneficiaries = match msg.whitelisted_beneficiaries {
+            Some(i) => i,
+            None => endowment.whitelisted_beneficiaries,
+        };
+    }
+
+    if !endowment
+        .locked_endowment_configs
+        .contains(&"whitelisted_contributors".to_string())
+    {
+        endowment.whitelisted_contributors = match msg.whitelisted_contributors {
+            Some(i) => i,
+            None => endowment.whitelisted_contributors,
+        };
+    }
+
+    if !endowment
+        .locked_endowment_configs
+        .contains(&"name".to_string())
+    {
+        endowment.name = match msg.name {
+            Some(i) => i,
+            None => endowment.name,
+        };
+    }
+
+    if !endowment
+        .locked_endowment_configs
+        .contains(&"description".to_string())
+    {
+        endowment.description = match msg.description {
+            Some(i) => i,
+            None => endowment.description,
+        };
+    }
+
+    if !endowment
+        .locked_endowment_configs
+        .contains(&"withdraw_before_maturity".to_string())
+    {
+        endowment.withdraw_before_maturity = match msg.withdraw_before_maturity {
+            Some(i) => i,
+            None => endowment.withdraw_before_maturity,
+        };
+    }
+
+    if !endowment
+        .locked_endowment_configs
+        .contains(&"maturity_time".to_string())
+    {
+        endowment.maturity_time = match msg.maturity_time {
+            Some(i) => i,
+            None => endowment.maturity_time,
+        };
+    }
+
+    if !endowment
+        .locked_endowment_configs
+        .contains(&"maturity_height".to_string())
+    {
+        endowment.maturity_height = match msg.maturity_height {
+            Some(i) => i,
+            None => endowment.maturity_height,
+        };
+    }
+
+    if !endowment
+        .locked_endowment_configs
+        .contains(&"strategies".to_string())
+    {
+        endowment.strategies = match msg.strategies {
+            Some(i) => i,
+            None => endowment.strategies,
+        };
+    }
+
+    if !endowment
+        .locked_endowment_configs
+        .contains(&"rebalance".to_string())
+    {
+        endowment.rebalance = match msg.rebalance {
+            Some(i) => i,
+            None => endowment.rebalance,
+        };
+    }
     ENDOWMENT.save(deps.storage, &endowment)?;
 
     Ok(Response::default())
