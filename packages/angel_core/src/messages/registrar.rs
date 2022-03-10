@@ -121,6 +121,10 @@ pub enum QueryMsg {
         start_after: Option<String>,
         limit: Option<u64>,
     },
+    // Get details of single Endowment
+    Endowment {
+        endowment_addr: String,
+    },
     // Gets list of all registered Endowments
     EndowmentList {},
     // Get all Config details for the contract
