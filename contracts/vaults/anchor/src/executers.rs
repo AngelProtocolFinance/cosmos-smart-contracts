@@ -147,11 +147,6 @@ pub fn deposit_stable(
             .multiply_ratio(msg.liquid, deposit_amount.amount);
     }
 
-    // update supply
-    let mut token_info = TOKEN_INFO.load(deps.storage)?;
-    token_info.total_supply += after_taxes.amount;
-    TOKEN_INFO.save(deps.storage, &token_info)?;
-
     let submessage_id = config.next_pending_id;
     PENDING.save(
         deps.storage,
@@ -172,7 +167,6 @@ pub fn deposit_stable(
         .add_attribute("action", "deposit")
         .add_attribute("sender", info.sender.clone())
         .add_attribute("deposit_amount", deposit_amount.amount)
-        .add_attribute("mint_amount", after_taxes.amount)
         .add_submessage(SubMsg {
             id: submessage_id,
             msg: deposit_stable_msg(&config.moneymarket, "uusd", after_taxes.amount)?,
@@ -625,7 +619,14 @@ pub fn process_anchor_reply(
                         }));
                     BALANCES.save(deps.storage, &transaction.accounts_address, &investment)?;
 
-                    Response::new().add_attribute("action", "anchor_reply_processing")
+                    // update total token supply by total aUST returned from deposit
+                    let mut token_info = TOKEN_INFO.load(deps.storage)?;
+                    token_info.total_supply += anchor_amount;
+                    TOKEN_INFO.save(deps.storage, &token_info)?;
+
+                    Response::new()
+                        .add_attribute("action", "anchor_reply_processing")
+                        .add_attribute("mint_amount", anchor_amount)
                 }
                 "redeem" => {
                     let after_tax_locked = deduct_tax(
