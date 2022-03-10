@@ -18,12 +18,15 @@ const PRECISION_FACTOR: u128 = 1_000_000_000;
 pub struct Config {
     pub threshold: Threshold,
     pub max_voting_period: Duration,
-    // Total weight and voters are queried from this contract
-    pub group_addr: Cw4Contract,
+    pub max_voting_period_guardians: Duration,
+    pub ap_team_group: Cw4Contract,
+    pub endowment_owners_group: Cw4Contract,
+    pub registrar_contract: Addr,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct Proposal {
+    pub endowment_addr: String,
     pub title: String,
     pub description: String,
     pub start_height: u64,
@@ -152,6 +155,7 @@ pub const PROPOSAL_COUNT: Item<u64> = Item::new("proposal_count");
 // multiple-item map
 pub const BALLOTS: Map<(U64Key, &Addr), Ballot> = Map::new("votes");
 pub const PROPOSALS: Map<U64Key, Proposal> = Map::new("proposals");
+pub const GUARDIAN_PROPOSALS: Map<U64Key, Proposal> = Map::new("guardian-proposals");
 
 pub fn next_id(store: &mut dyn Storage) -> StdResult<u64> {
     let id: u64 = PROPOSAL_COUNT.may_load(store)?.unwrap_or_default() + 1;

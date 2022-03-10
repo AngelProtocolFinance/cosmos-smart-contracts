@@ -1,5 +1,5 @@
 [package]
-name = "charity-endowment"
+name = "accounts"
 version = "0.1.2"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
