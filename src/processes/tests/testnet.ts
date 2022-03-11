@@ -208,17 +208,49 @@ export async function testExecute(
   // await testQueryGroupMembersList(terra, cw4GrpApTeam);
 
   // Test execute
-  // await testRejectUnapprovedDonations(terra, pleb, endowmentContract3);
-  // await testDonorSendsToIndexFund(terra, pleb, indexFund);
+  // await testRejectUnapprovedDonations(terra, pleb, endowmentContract1, "10000000");
+  // await testDonorSendsToIndexFund(terra, pleb, indexFund, 1, "0.5", "4200000");
   // await testTcaMemberSendsToIndexFund(terra, tca, indexFund);
-  // await testAngelTeamCanTriggerVaultsHarvest(terra, apTeam, charity1, registrar, haloCollector, "0.5");
-  // await testCharityCanUpdateStrategies(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
-  // await testBeneficiaryCanWithdrawFromLiquid(terra, charity1, endowmentContract1, anchorVault1, anchorVault2);
+  // await testAngelTeamCanTriggerVaultsHarvest(
+  //   terra,
+  //   apTeam,
+  //   charity1,
+  //   registrar,
+  //   haloCollector,
+  //   "0.5"
+  // );
+  // await testCharityCanUpdateStrategies(
+  //   terra,
+  //   charity1,
+  //   endowmentContract1,
+  //   anchorVault1,
+  //   anchorVault2
+  // );
+  // await testBeneficiaryCanWithdrawFromLiquid(
+  //   terra,
+  //   charity1,
+  //   endowmentContract1,
+  //   anchorVault1,
+  //   pleb.key.accAddress
+  // );
   // await testUpdatingRegistrarConfigs(terra, apTeam, registrar, haloGov);
   // await testApproveEndowments(terra, apTeam, registrar, endowmentContract1, 1);
-  // await testClosingEndpoint(terra, apTeam, registrar, endowmentContract3, endowmentContract4);
+  // await testClosingEndpoint(
+  //   terra,
+  //   apTeam,
+  //   registrar,
+  //   endowmentContract3,
+  //   endowmentContract4
+  // );
   // await testMigrateAllAccounts(terra, apTeam, registrar);
-  // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, [endowmentContract2], [endowmentContract4]);
+  // await testUpdateFundMembers(
+  //   terra,
+  //   apTeam,
+  //   indexFund,
+  //   2,
+  //   [endowmentContract2],
+  //   [endowmentContract4]
+  // );
   // await testCreateIndexFund(
   //   terra,
   //   apTeam,
@@ -229,7 +261,7 @@ export async function testExecute(
   //   false,
   //   [endowmentContract2, endowmentContract3, endowmentContract4]
   // );
-  // testRemoveIndexFund(terra, apTeam, indexFund, 1);
+  // await testRemoveIndexFund(terra, apTeam, indexFund, 1);
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);
@@ -246,7 +278,7 @@ export async function testExecute(
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
   // await testQueryIndexFundFundsList(terra, indexFund);
-  // await testQueryIndexFundFundDetails(terra, indexFund, 3);
+  // await testQueryIndexFundFundDetails(terra, indexFund, 4);
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);

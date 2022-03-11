@@ -3,38 +3,43 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
-import {
-  sendTransaction,
-} from "../../../utils/helpers";
+import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
 //----------------------------------------------------------------------------------------
-// TEST: Normal Donor cannot send funds to the Index Fund 
+// TEST: Normal Donor cannot send funds to the Index Fund
 //
 // SCENARIO:
-// Normal user sends UST funds to an Index Fund SC fund to have it split 
-// up amonst the fund's charity members. 
+// Normal user sends UST funds to an Index Fund SC fund to have it split
+// up amonst the fund's charity members.
 //
 //----------------------------------------------------------------------------------------
 export async function testDonorSendsToIndexFund(
   terra: LocalTerra | LCDClient,
   pleb: Wallet,
-  indexFund: string
+  indexFund: string,
+  fund_id: number,
+  split: string,
+  amount: string
 ): Promise<void> {
-  process.stdout.write("Test - Donor (normal pleb) can send a UST donation to an Index Fund fund");
+  process.stdout.write(
+    "Test - Donor (normal pleb) can send a UST donation to an Index Fund fund"
+  );
 
   await expect(
     sendTransaction(terra, pleb, [
-      new MsgExecuteContract(pleb.key.accAddress, indexFund,
+      new MsgExecuteContract(
+        pleb.key.accAddress,
+        indexFund,
         {
           deposit: {
-            fund_id: 3,
-            split: undefined,
+            fund_id,
+            split,
           },
         },
-        { uusd: "4200000", }
+        { uusd: amount }
       ),
     ])
   );

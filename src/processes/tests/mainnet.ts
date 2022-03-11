@@ -199,11 +199,13 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   18,
-  //   "Refugee Relief Fund",
-  //   "Fund for providing relief, targeted at charities working with refugees",
-  //   false,
-  //   ["terra10qeaeukmyy2kqw5f2fvut5pmm9gaqvnrqtsk22"]
+  //   19,
+  //   "MVP Rotation #12",
+  //   "Fund collection for MVP",
+  //   true,
+  //   [
+  //     "terra1hccjcxm0vdz8d2n9y8lnrpx4ka4elt4gwfm522", // Threshold
+  //   ]
   // );
   // await testUpdateAngelAllianceMembers(
   //   terra,

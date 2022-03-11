@@ -220,6 +220,12 @@ export const mainnet = {
       "terra10qeaeukmyy2kqw5f2fvut5pmm9gaqvnrqtsk22", // Third Wave Volunteers
       "terra1c95a3sjpt3jat2azphjt2sk8xqvcwj0uexjp8d", // Nova Ukraine
       "terra14s30dkddgzu86s5yudahdm0xa9ks3u8xuht7rc", // GSG
+      "terra10gw4kgx8myfsmyr5mz472uvvseedgx7k9z5pv5", // Simbi Community Development
+      "terra1f5rtva4yjtqcr5t9dlpatgqnk0e08s5s5a3sal", // Global Synergy for Leadership
+      "terra1x9cshctwn06v7gzj6sgkhpmf4tsz5d83rrak5a", // Turtle Foundation
+      "terra1xt696t8ldx94cdrwmtznn7g2uzwfeldwclyq03", // Bumi Sehat Foundation International
+      "terra1k5auhclwzt0yy6gq5e4h9kzk8zxqgaetu9cvna", // Microscopio
+      "terra1hccjcxm0vdz8d2n9y8lnrpx4ka4elt4gwfm522", // Threshold
     ],
   },
   members: [

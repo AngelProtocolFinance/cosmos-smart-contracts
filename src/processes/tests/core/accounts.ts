@@ -82,22 +82,20 @@ export async function testSingleDonationAmountToManyEndowments(
 //----------------------------------------------------------------------------------------
 export async function testBeneficiaryCanWithdrawFromLiquid(
   terra: LocalTerra | LCDClient,
-  charity1: Wallet,
-  endowmentContract1: string,
-  anchorVault1: string,
-  anchorVault2: string
+  charityOwner: Wallet,
+  endowment: string,
+  vault: string,
+  beneficiary: string
 ): Promise<void> {
   process.stdout.write(
-    "Test - Beneficiary cannot withdraw from the Endowment locked amount"
+    "Test - Charity Owner cannot withdraw from the Endowment locked amount"
   );
   await expect(
-    sendTransaction(terra, charity1, [
-      new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
+    sendTransaction(terra, charityOwner, [
+      new MsgExecuteContract(charityOwner.key.accAddress, endowment, {
         withdraw: {
-          sources: [
-            { vault: anchorVault1, locked: "500000", liquid: "1000000" },
-            { vault: anchorVault2, locked: "500000", liquid: "1000000" },
-          ],
+          sources: [{ vault, locked: "500000", liquid: "1000000" }],
+          beneficiary,
         },
       }),
     ])
@@ -105,13 +103,14 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
   console.log(chalk.green(" Passed!"));
 
   process.stdout.write(
-    "Test - Beneficiary can withdraw from the Endowment availalble amount (liquid)"
+    "Test - Charity Owner can withdraw from the Endowment availalble amount (liquid)"
   );
   await expect(
-    sendTransaction(terra, charity1, [
-      new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
+    sendTransaction(terra, charityOwner, [
+      new MsgExecuteContract(charityOwner.key.accAddress, endowment, {
         withdraw: {
-          sources: [{ vault: anchorVault1, locked: "0", liquid: "30000" }],
+          sources: [{ vault, locked: "0", liquid: "30000000" }],
+          beneficiary,
         },
       }),
     ])
@@ -132,7 +131,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
 export async function testCharityCanUpdateStrategies(
   terra: LocalTerra | LCDClient,
   charity1: Wallet,
-  endowmentContract1: string,
+  endowment: string,
   anchorVault1: string,
   anchorVault2: string
 ): Promise<void> {
@@ -140,7 +139,7 @@ export async function testCharityCanUpdateStrategies(
 
   await expect(
     sendTransaction(terra, charity1, [
-      new MsgExecuteContract(charity1.key.accAddress, endowmentContract1, {
+      new MsgExecuteContract(charity1.key.accAddress, endowment, {
         update_strategies: {
           strategies: [
             { vault: anchorVault1, locked_percentage: "0.5", liquid_percentage: "0.5" },
