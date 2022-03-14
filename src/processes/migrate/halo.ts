@@ -145,6 +145,27 @@ async function migrateHaloGov(
 }
 
 // -------------------------------------------------
+//  Migrate HALO gov hodler
+//--------------------------------------------------
+async function migrateHaloGovHodler(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  haloGovHodler: string
+): Promise<void> {
+  process.stdout.write("Uploading HALO gov hodler Wasm");
+  const codeId = await storeCode(
+    terra,
+    apTeam,
+    path.resolve(__dirname, `${wasm_path.core}/halo_gov_hodler.wasm`)
+  );
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+
+  process.stdout.write("Migrate HALO gov hodler contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, haloGovHodler, codeId, {});
+  console.log(chalk.green(" Done!"));
+}
+
+// -------------------------------------------------
 //  Migrate HALO staking
 //--------------------------------------------------
 async function migrateHaloStaking(
