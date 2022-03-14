@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, Binary, Decimal, Deps, StdResult, Storage, Uint128};
-use cw_storage_plus::{Item, Map, Bound, Endian};
+use cw_storage_plus::{Item, Map, Bound};
 use cw0::Duration;
 use cw_controllers::Claims;
 use halo_token::common::OrderBy;
@@ -9,15 +9,6 @@ use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
 pub const CLAIMS: Claims = Claims::new("claims");
-
-static KEY_CONFIG: &[u8] = b"config";
-static KEY_STATE: &[u8] = b"state";
-static KEY_TMP_POLL_ID: &[u8] = b"tmp_poll_id";
-
-static PREFIX_POLL_INDEXER: &[u8] = b"poll_indexer";
-static PREFIX_POLL_VOTER: &[u8] = b"poll_voter";
-static PREFIX_POLL: &[u8] = b"poll";
-static PREFIX_BANK: &[u8] = b"bank";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {

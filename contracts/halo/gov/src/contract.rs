@@ -674,7 +674,7 @@ pub fn cast_vote(
         a_poll.staked_amount = Some(total_balance);
     }
 
-    store_poll(deps.storage, &poll_id.to_be_bytes(), &a_poll)?;;
+    store_poll(deps.storage, &poll_id.to_be_bytes(), &a_poll)?;
 
     Ok(Response::new().add_attributes(vec![
         ("action", "cast_vote"),
