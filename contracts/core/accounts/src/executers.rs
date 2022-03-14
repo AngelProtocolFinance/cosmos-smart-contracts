@@ -8,11 +8,9 @@ use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::vault::AccountTransferMsg;
 use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultListResponse,
+    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
-use angel_core::structs::{
-    AcceptedTokens, FundingSource, SplitDetails, StrategyComponent, YieldVault,
-};
+use angel_core::structs::{AcceptedTokens, FundingSource, SplitDetails, StrategyComponent};
 use angel_core::utils::{
     check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
     withdraw_from_vaults,
@@ -159,8 +157,8 @@ pub fn update_endowment_settings(
     }
 
     // validate address strings passed
-    endowment.owner = deps.api.addr_validate(&msg.beneficiary)?;
-    endowment.beneficiary = deps.api.addr_validate(&msg.owner)?;
+    endowment.owner = deps.api.addr_validate(&msg.owner)?;
+    endowment.beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
     ENDOWMENT.save(deps.storage, &endowment)?;
 
     Ok(Response::default())
@@ -217,16 +215,23 @@ pub fn update_strategies(
     let mut locked_percentages_sum = Decimal::zero();
     let mut liquid_percentages_sum = Decimal::zero();
 
-    for strategy_component in strategies.iter() {
-        locked_percentages_sum = locked_percentages_sum + strategy_component.locked_percentage;
-        liquid_percentages_sum = liquid_percentages_sum + strategy_component.liquid_percentage;
+    for strategy in strategies.iter() {
+        let vault_config: VaultDetailResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: config.registrar_contract.to_string(),
+                msg: to_binary(&RegistrarQuerier::Vault {
+                    vault_addr: strategy.vault.to_string(),
+                })?,
+            }))?;
+        if vault_config.vault.approved != true {
+            return Err(ContractError::InvalidInputs {});
+        }
+
+        locked_percentages_sum = locked_percentages_sum + strategy.locked_percentage;
+        liquid_percentages_sum = liquid_percentages_sum + strategy.liquid_percentage;
     }
 
-    if locked_percentages_sum != Decimal::one() {
-        return Err(ContractError::InvalidStrategyAllocation {});
-    }
-
-    if liquid_percentages_sum > Decimal::one() {
+    if locked_percentages_sum != Decimal::one() || liquid_percentages_sum != Decimal::one() {
         return Err(ContractError::InvalidStrategyAllocation {});
     }
 
@@ -270,6 +275,11 @@ pub fn vault_receipt(
     let mut state = STATE.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
 
+    // only accept max of 1 deposit coin/token per donation
+    if info.funds.len() != 1 {
+        return Err(ContractError::InvalidCoinsDeposited {});
+    }
+
     let returned_amount: Coin = Coin {
         denom: "uusd".to_string(),
         amount: info
@@ -285,17 +295,13 @@ pub fn vault_receipt(
     }
 
     // check that the deposit token came from an approved Vault SC
-    let vaults_rsp: VaultListResponse =
+    let _vaults_rsp: VaultDetailResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::ApprovedVaultList {})?,
+            msg: to_binary(&RegistrarQuerier::Vault {
+                vault_addr: sender_addr.to_string(),
+            })?,
         }))?;
-    let vaults: Vec<YieldVault> = vaults_rsp.vaults;
-    let pos = vaults.iter().position(|p| p.address == sender_addr);
-    // reject if the sender was not found in the list of vaults
-    if pos == None {
-        return Err(ContractError::Unauthorized {});
-    }
 
     // funds go into state balances (locked/liquid)
     let total = msg.locked + msg.liquid;
@@ -430,13 +436,18 @@ pub fn deposit(
     // check that the Endowment has been approved to receive deposits
     if !config.deposit_approved {
         return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Withdraws are not approved for this endowment".to_string(),
+            msg: "Deposits are not approved for this endowment".to_string(),
         }));
     }
 
     // check that the split %s sum to 1
     if msg.locked_percentage + msg.liquid_percentage != Decimal::one() {
         return Err(ContractError::InvalidSplit {});
+    }
+
+    // only accept max of 1 deposit coin/token per donation
+    if info.funds.len() != 1 {
+        return Err(ContractError::InvalidCoinsDeposited {});
     }
 
     let deposit_amount: Coin = Coin {
@@ -507,12 +518,13 @@ pub fn withdraw(
     env: Env,
     info: MessageInfo,
     sources: Vec<FundingSource>,
+    beneficiary: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
 
     // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner || info.sender != endowment.beneficiary {
+    if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -526,7 +538,9 @@ pub fn withdraw(
     // check if locked tokens are requested and
     // reject if endowment cannot withdraw from locked before maturity
     for source in sources.iter() {
-        if source.locked > Uint128::zero() && !endowment.withdraw_before_maturity {
+        if source.locked > Uint128::zero()
+            && (!endowment.withdraw_before_maturity || !endowment.is_expired(&env))
+        {
             return Err(ContractError::InaccessableLockedBalance {});
         }
     }
@@ -535,7 +549,7 @@ pub fn withdraw(
     let withdraw_messages = withdraw_from_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
-        &endowment.beneficiary,
+        &deps.api.addr_validate(&beneficiary)?,
         sources,
     )?;
 
@@ -543,7 +557,7 @@ pub fn withdraw(
         .add_submessages(withdraw_messages)
         .add_attribute("action", "withdrawal")
         .add_attribute("sender", env.contract.address.to_string())
-        .add_attribute("beneficiary", endowment.beneficiary.to_string()))
+        .add_attribute("beneficiary", beneficiary.to_string()))
 }
 
 pub fn close_endowment(

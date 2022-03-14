@@ -61,6 +61,10 @@ pub fn withdraw_voting_tokens(
     let sender_address_raw = info.sender.clone();
     let key = sender_address_raw.as_bytes();
 
+    if amount.unwrap() == Uint128::zero() {
+        return Err(ContractError::InvalidInputs {});
+    }
+
     if let Some(mut token_manager) = read_bank(deps.storage, &key)? {
         let config: Config = read_config(deps.storage)?;
         let mut state: State = read_state(deps.storage)?;

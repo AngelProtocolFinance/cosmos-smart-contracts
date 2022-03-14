@@ -1,6 +1,6 @@
-use crate::structs::{AcceptedTokens, IndexFund};
+use crate::structs::AcceptedTokens;
 use cosmwasm_std::{Decimal, Uint128};
-use cw20::Cw20ReceiveMsg;
+// use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -34,7 +34,13 @@ pub enum ExecuteMsg {
     RemoveMember(RemoveMemberMsg),
     // create a new index fund
     CreateFund {
-        fund: IndexFund,
+        name: String,
+        description: String,
+        members: Vec<String>,
+        rotating_fund: Option<bool>,
+        split_to_liquid: Option<Decimal>,
+        expiry_time: Option<u64>,
+        expiry_height: Option<u64>,
     },
     // remove a specific index fund
     RemoveFund {
@@ -49,7 +55,7 @@ pub enum ExecuteMsg {
     // directly receive native tokens
     Deposit(DepositMsg),
     // This accepts a properly-encoded ReceiveMsg from a cw20 contract
-    Recieve(Cw20ReceiveMsg),
+    // Receive(Cw20ReceiveMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -73,12 +79,12 @@ pub struct UpdateConfigMsg {
     pub accepted_tokens_cw20: Option<Vec<String>>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum ReceiveMsg {
-    // Donor deposits tokens sent for an Index Fund
-    Deposit(DepositMsg),
-}
+// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+// #[serde(rename_all = "snake_case")]
+// pub enum ReceiveMsg {
+//     // Donor deposits tokens sent for an Index Fund
+//     Deposit(DepositMsg),
+// }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct DepositMsg {
@@ -96,7 +102,10 @@ pub enum QueryMsg {
         split: Option<Decimal>,
     },
     // returns a list of all funds
-    FundsList {},
+    FundsList {
+        start_after: Option<u64>,
+        limit: Option<u64>,
+    },
     // returns a single fund if the ID is valid
     FundDetails {
         fund_id: u64,

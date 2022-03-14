@@ -1,4 +1,4 @@
-use crate::state::{read_registry_entries, read_vaults, vault_read, CONFIG};
+use crate::state::{read_registry_entries, read_vaults, registry_read, vault_read, CONFIG};
 use angel_core::responses::registrar::*;
 use angel_core::structs::VaultRate;
 use angel_core::utils::vault_fx_rate;
@@ -24,18 +24,42 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     })
 }
 
-pub fn query_vault_list(deps: Deps) -> StdResult<VaultListResponse> {
-    // returns a list of approved Vaults
-    let vaults = read_vaults(deps.storage)?;
+pub fn query_vault_list(
+    deps: Deps,
+    start_after: Option<String>,
+    limit: Option<u64>,
+) -> StdResult<VaultListResponse> {
+    // returns a list of all Vaults
+    let addr = match start_after {
+        Some(start_after) => Some(deps.api.addr_validate(&start_after)?),
+        None => None,
+    };
+    let vaults = read_vaults(deps.storage, addr, limit)?;
     Ok(VaultListResponse { vaults })
 }
 
-pub fn query_approved_vault_list(deps: Deps) -> StdResult<VaultListResponse> {
+pub fn query_approved_vault_list(
+    deps: Deps,
+    start_after: Option<String>,
+    limit: Option<u64>,
+) -> StdResult<VaultListResponse> {
     // returns a list of approved Vaults
-    let vaults = read_vaults(deps.storage)?;
-    Ok(VaultListResponse {
-        vaults: vaults.into_iter().filter(|p| p.approved).collect(),
-    })
+    let addr = match start_after {
+        Some(start_after) => Some(deps.api.addr_validate(&start_after)?),
+        None => None,
+    };
+    let vaults = read_vaults(deps.storage, addr, limit)?;
+    Ok(VaultListResponse { vaults })
+}
+
+pub fn query_endowment_details(
+    deps: Deps,
+    endowment_addr: String,
+) -> StdResult<EndowmentDetailResponse> {
+    let endowment = registry_read(deps.storage)
+        .may_load(endowment_addr.as_bytes())?
+        .unwrap();
+    Ok(EndowmentDetailResponse { endowment })
 }
 
 pub fn query_endowment_list(deps: Deps) -> StdResult<EndowmentListResponse> {
@@ -52,7 +76,7 @@ pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDet
 
 pub fn query_approved_vaults_fx_rate(deps: Deps) -> StdResult<VaultRateResponse> {
     // returns a list of approved Vaults exchange rate
-    let vaults = read_vaults(deps.storage)?;
+    let vaults = read_vaults(deps.storage, None, None)?;
     let mut vaults_rate: Vec<VaultRate> = vec![];
     for vault in vaults.iter().filter(|p| p.approved).into_iter() {
         let fx_rate = vault_fx_rate(deps, vault.address.to_string());

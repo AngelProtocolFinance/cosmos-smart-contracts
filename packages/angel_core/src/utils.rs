@@ -12,6 +12,54 @@ use cosmwasm_std::{
 use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg};
 use terra_cosmwasm::TerraQuerier;
 
+/// The following `calc_range_<???>` functions will set the first key after the provided key, by appending a 1 byte
+pub fn calc_range_start(start_after: Option<u64>) -> Option<Vec<u8>> {
+    start_after.map(|id| {
+        let mut v = id.to_be_bytes().to_vec();
+        v.push(1);
+        v
+    })
+}
+
+pub fn calc_range_end(start_after: Option<u64>) -> Option<Vec<u8>> {
+    start_after.map(|id| id.to_be_bytes().to_vec())
+}
+
+pub fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
+    start_after.map(|addr| {
+        let mut v = addr.as_bytes().to_vec();
+        v.push(1);
+        v
+    })
+}
+
+pub fn calc_range_end_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
+    start_after.map(|addr| addr.as_bytes().to_vec())
+}
+
+pub fn percentage_checks(val: Decimal) -> Result<Decimal, ContractError> {
+    // percentage decimals need to be checked that they are all between zero and one (inclusive)
+    if val > Decimal::one() {
+        return Err(ContractError::InvalidInputs {});
+    }
+    Ok(val)
+}
+
+pub fn split_checks(
+    max: Decimal,
+    min: Decimal,
+    default: Decimal,
+) -> Result<SplitDetails, ContractError> {
+    // max musst be less than min
+    // min must be less than max
+    // default must be somewhere between max & min
+    if max < min || min > max || (default > max || default < min) {
+        return Err(ContractError::InvalidInputs {});
+    }
+
+    Ok(SplitDetails { max, min, default })
+}
+
 pub fn ratio_adjusted_balance(balance: Balance, portion: Uint128, total: Uint128) -> Balance {
     let adjusted_balance: Balance = match balance {
         Balance::Native(coins) => {
@@ -155,7 +203,9 @@ pub fn redeem_from_vaults(
                 })?,
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
-
+        if yield_vault.approved != true {
+            return Err(ContractError::InvalidInputs {});
+        }
         // create a withdraw message for X Vault, noting amounts for Locked / Liquid
         redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: yield_vault.address.to_string(),
@@ -189,7 +239,9 @@ pub fn withdraw_from_vaults(
                     })?,
                 }))?;
             let yield_vault: YieldVault = vault_config.vault;
-
+            if yield_vault.approved != true {
+                return Err(ContractError::InvalidInputs {});
+            }
             let withdraw_msg = AccountWithdrawMsg {
                 beneficiary: beneficiary.clone(),
                 locked: source.locked,

@@ -18,6 +18,9 @@ pub enum ContractError {
     #[error("Invalid zero amount")]
     InvalidZeroAmount {},
 
+    #[error("Invalid inputs")]
+    InvalidInputs {},
+
     #[error("Allowance is expired")]
     Expired {},
 
@@ -77,4 +80,13 @@ pub enum ContractError {
 
     #[error("Index Fund has expired")]
     IndexFundExpired {},
+
+    #[error("Vault already exists at given address")]
+    VaultAlreadyExists {},
+
+    #[error("Index Fund has no members in it")]
+    IndexFundEmpty {},
+
+    #[error("Index Fund members limit exceeded")]
+    IndexFundMembershipExceeded {},
 }

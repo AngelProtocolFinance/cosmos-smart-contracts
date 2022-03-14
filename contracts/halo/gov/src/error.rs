@@ -71,4 +71,7 @@ pub enum ContractError {
 
     #[error("No claims that can be released currently")]
     NothingToClaim {},
+
+    #[error("Invalid inputs")]
+    InvalidInputs {},
 }
