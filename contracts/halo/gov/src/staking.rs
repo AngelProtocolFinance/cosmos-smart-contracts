@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::state::{
-    bank_read, bank_store, config_read, config_store, poll_read, poll_voter_store, state_read,
-    state_store, Config, Poll, State, TokenManager, CLAIMS,
+    read_bank, store_bank, read_config, read_poll, read_state,
+    store_state, Config, Poll, State, TokenManager, CLAIMS, remove_poll_voter,
 };
 use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage,
@@ -22,9 +22,9 @@ pub fn stake_voting_tokens(
     }
     let key = sender.as_bytes();
 
-    let mut token_manager = bank_read(deps.storage).may_load(key)?.unwrap_or_default();
-    let config: Config = config_store(deps.storage).load()?;
-    let mut state: State = state_store(deps.storage).load()?;
+    let mut token_manager = read_bank(deps.storage, &key)?.unwrap_or_default();
+    let config: Config = read_config(deps.storage)?;
+    let mut state: State = read_state(deps.storage)?;
 
     // balance already increased, so subtract deposit amount
     let total_balance =
@@ -40,8 +40,8 @@ pub fn stake_voting_tokens(
     token_manager.share += share;
     state.total_share += share;
 
-    state_store(deps.storage).save(&state)?;
-    bank_store(deps.storage).save(key, &token_manager)?;
+    store_state(deps.storage, &state)?;
+    store_bank(deps.storage, &key, &token_manager)?;
 
     Ok(Response::new().add_attributes(vec![
         ("action", "staking"),
@@ -61,9 +61,9 @@ pub fn withdraw_voting_tokens(
     let sender_address_raw = info.sender.clone();
     let key = sender_address_raw.as_bytes();
 
-    if let Some(mut token_manager) = bank_read(deps.storage).may_load(key)? {
-        let config: Config = config_store(deps.storage).load()?;
-        let mut state: State = state_store(deps.storage).load()?;
+    if let Some(mut token_manager) = read_bank(deps.storage, &key)? {
+        let config: Config = read_config(deps.storage)?;
+        let mut state: State = read_state(deps.storage)?;
 
         // Load total share & total balance except proposal deposit amount
         let total_share = state.total_share.u128();
@@ -93,10 +93,10 @@ pub fn withdraw_voting_tokens(
             let share = user_share - withdraw_share;
             token_manager.share = Uint128::from(share);
 
-            bank_store(deps.storage).save(key, &token_manager)?;
+            store_bank(deps.storage, &key, &token_manager)?;
 
             state.total_share = Uint128::from(total_share - withdraw_share);
-            state_store(deps.storage).save(&state)?;
+            store_state(deps.storage , &state)?;
 
             // create claim on withdrawn HALO tokens
             CLAIMS.create_claim(
@@ -124,7 +124,7 @@ pub fn claim_voting_tokens(
     env: Env,
     info: MessageInfo,
 ) -> Result<Response, ContractError> {
-    let config: Config = config_store(deps.storage).load()?;
+    let config: Config = read_config(deps.storage)?;
 
     // check how much to send - min(balance, claims[sender]), and reduce the claim
     // Ensure we have enough balance to cover this and only send some claims if that is all we can cover
@@ -150,11 +150,11 @@ fn compute_locked_balance(
     voter: &Addr,
 ) -> u128 {
     token_manager.locked_balance.retain(|(poll_id, _)| {
-        let poll: Poll = poll_read(storage).load(&poll_id.to_be_bytes()).unwrap();
+        let poll: Poll = read_poll(storage, &poll_id.to_be_bytes()).unwrap();
 
         if poll.status != PollStatus::InProgress {
             // remove voter info from the poll
-            poll_voter_store(storage, *poll_id).remove(voter.as_bytes());
+            remove_poll_voter(storage, *poll_id, voter);
         }
 
         poll.status == PollStatus::InProgress
@@ -173,7 +173,7 @@ fn withdraw_tokens(
     amount: Uint128,
     gov_hodler: String,
 ) -> Result<Response, ContractError> {
-    let config: Config = config_store(deps.storage).load()?;
+    let config: Config = read_config(deps.storage)?;
     Ok(Response::new()
         .add_messages(vec![CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: config.halo_token.to_string(),
@@ -212,18 +212,14 @@ fn claim_tokens(
 
 pub fn query_staker(deps: Deps, env: Env, address: String) -> StdResult<StakerResponse> {
     let addr_raw = deps.api.addr_validate(&address)?;
-    let config: Config = config_read(deps.storage).load()?;
-    let state: State = state_read(deps.storage).load()?;
-    let mut token_manager = bank_read(deps.storage)
-        .may_load(addr_raw.as_bytes())?
+    let config: Config = read_config(deps.storage)?;
+    let state: State = read_state(deps.storage)?;
+    let mut token_manager = read_bank(deps.storage, &addr_raw.as_bytes())?
         .unwrap_or_default();
 
     // filter out not in-progress polls
     token_manager.locked_balance.retain(|(poll_id, _)| {
-        let poll: Poll = poll_read(deps.storage)
-            .load(&poll_id.to_be_bytes())
-            .unwrap();
-
+        let poll: Poll = read_poll(deps.storage, &poll_id.to_be_bytes()).unwrap();
         poll.status == PollStatus::InProgress
     });
 

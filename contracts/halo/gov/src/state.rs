@@ -1,8 +1,5 @@
 use cosmwasm_std::{Addr, Binary, Decimal, Deps, StdResult, Storage, Uint128};
-use cosmwasm_storage::{
-    bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, ReadonlySingleton,
-    Singleton,
-};
+use cw_storage_plus::{Item, Map, Bound, Endian};
 use cw0::Duration;
 use cw_controllers::Claims;
 use halo_token::common::OrderBy;
@@ -102,54 +99,69 @@ impl PartialEq for ExecuteData {
     }
 }
 
-pub fn config_store(storage: &mut dyn Storage) -> Singleton<Config> {
-    singleton(storage, KEY_CONFIG)
+// "Config" storage item
+pub const CONFIG: Item<Config> = Item::new("config");
+
+pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
+    CONFIG.load(storage)
 }
 
-pub fn config_read(storage: &dyn Storage) -> ReadonlySingleton<Config> {
-    singleton_read(storage, KEY_CONFIG)
+pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
+    CONFIG.save(storage, config)
 }
 
-pub fn state_store(storage: &mut dyn Storage) -> Singleton<State> {
-    singleton(storage, KEY_STATE)
+// "state" storage item
+pub const STATE: Item<State> = Item::new("state");
+pub fn store_state(storage: &mut dyn Storage, data: &State) -> StdResult<()> {
+    STATE.save(storage, data)
 }
 
-pub fn state_read(storage: &dyn Storage) -> ReadonlySingleton<State> {
-    singleton_read(storage, KEY_STATE)
+pub fn read_state(storage: &dyn Storage) -> StdResult<State> {
+    STATE.load(storage)
 }
 
+// "tmp_poll_id" storage item
+pub const TMP_POLL_ID: Item<u64> = Item::new("tmp_poll_id");
 pub fn store_tmp_poll_id(storage: &mut dyn Storage, tmp_poll_id: u64) -> StdResult<()> {
-    singleton(storage, KEY_TMP_POLL_ID).save(&tmp_poll_id)
+    TMP_POLL_ID.save(storage, &tmp_poll_id)
 }
 
 pub fn read_tmp_poll_id(storage: &dyn Storage) -> StdResult<u64> {
-    singleton_read(storage, KEY_TMP_POLL_ID).load()
+    TMP_POLL_ID.load(storage)
 }
 
-pub fn poll_store(storage: &mut dyn Storage) -> Bucket<Poll> {
-    bucket(storage, PREFIX_POLL)
+// "poll" storage map.
+pub const POLL: Map<&[u8], Poll> = Map::new("poll");
+pub fn store_poll(storage: &mut dyn Storage, poll_id: &[u8], poll: &Poll) -> StdResult<()> {
+    POLL.save(storage, poll_id, poll)
 }
 
-pub fn poll_read(storage: &dyn Storage) -> ReadonlyBucket<Poll> {
-    bucket_read(storage, PREFIX_POLL)
+pub fn read_poll(storage: &dyn Storage, poll_id: &[u8]) -> StdResult<Poll> {
+    POLL.load(storage, poll_id)
 }
 
-pub fn poll_indexer_store<'a>(
-    storage: &'a mut dyn Storage,
-    status: &PollStatus,
-) -> Bucket<'a, bool> {
-    Bucket::multilevel(
-        storage,
-        &[PREFIX_POLL_INDEXER, status.to_string().as_bytes()],
-    )
+// "poll_indexer_store" storage map
+pub const POLL_INDEXER_STORE: Map<(&str, &[u8]), bool> = Map::new("poll_indexer_store");
+pub fn store_poll_indexer(storage: &mut dyn Storage, status: &PollStatus, poll_id: u64,  data: &bool) -> StdResult<()> {
+    POLL_INDEXER_STORE.save(storage, (status.to_string().as_str(), &poll_id.to_be_bytes()), data)
 }
 
-pub fn poll_voter_store(storage: &mut dyn Storage, poll_id: u64) -> Bucket<VoterInfo> {
-    Bucket::multilevel(storage, &[PREFIX_POLL_VOTER, &poll_id.to_be_bytes()])
+pub fn remove_poll_indexer(storage: &mut dyn Storage, status: &PollStatus, poll_id: u64) {
+    POLL_INDEXER_STORE.remove(storage, (status.to_string().as_str(), &poll_id.to_be_bytes()))
 }
 
-pub fn poll_voter_read(storage: &dyn Storage, poll_id: u64) -> ReadonlyBucket<VoterInfo> {
-    ReadonlyBucket::multilevel(storage, &[PREFIX_POLL_VOTER, &poll_id.to_be_bytes()])
+// "poll_voter" storage map.
+pub const POLL_VOTER: Map<(&[u8], &[u8]), VoterInfo> = Map::new("poll_voter"); 
+pub fn read_poll_voter(storage: &dyn Storage, poll_id: u64, user: Addr) -> StdResult<VoterInfo> {
+    POLL_VOTER.load(storage, (&poll_id.to_be_bytes(), &user.as_bytes()))
+}
+
+pub fn store_poll_voter(storage: &mut dyn Storage, poll_id: u64, user: Addr, data: &VoterInfo) -> StdResult<()> {
+    POLL_VOTER.save(storage, (&poll_id.to_be_bytes(), &user.as_bytes()), data)
+}
+
+pub fn remove_poll_voter(storage: &mut dyn Storage, poll_id: u64, user: &Addr) {
+    POLL_VOTER.remove(storage, (&poll_id.to_be_bytes(), user.as_bytes()))
 }
 
 pub fn read_poll_voters<'a>(
@@ -166,10 +178,14 @@ pub fn read_poll_voters<'a>(
         _ => (None, calc_range_end_addr(start_after), OrderBy::Desc),
     };
 
-    let voters: ReadonlyBucket<'a, VoterInfo> =
-        ReadonlyBucket::multilevel(storage, &[PREFIX_POLL_VOTER, &poll_id.to_be_bytes()]);
+    let voters = POLL_VOTER.prefix(&poll_id.to_be_bytes());
     voters
-        .range(start.as_deref(), end.as_deref(), order_by.into())
+        .range(
+            storage,  
+            start.and_then(|v| Some(Bound::inclusive(&*v))), 
+            end.and_then(|v| Some(Bound::inclusive(&*v))), 
+            order_by.into()
+        )
         .take(limit)
         .map(|item| {
             let (k, v) = item?;
@@ -194,23 +210,28 @@ pub fn read_polls<'a>(
     };
 
     if let Some(status) = filter {
-        let poll_indexer: ReadonlyBucket<'a, bool> = ReadonlyBucket::multilevel(
-            storage,
-            &[PREFIX_POLL_INDEXER, status.to_string().as_bytes()],
-        );
+        let poll_indexer = POLL_INDEXER_STORE.prefix(&status.to_string().as_str());
         poll_indexer
-            .range(start.as_deref(), end.as_deref(), order_by.into())
+            .range(
+                storage, 
+                start.and_then(|v| Some(Bound::inclusive(&*v))), 
+                end.and_then(|v| Some(Bound::inclusive(&*v))), 
+                order_by.into(),
+            )
             .take(limit)
             .map(|item| {
                 let (k, _) = item?;
-                poll_read(storage).load(&k)
+                read_poll(storage, &k)
             })
             .collect()
     } else {
-        let polls: ReadonlyBucket<'a, Poll> = ReadonlyBucket::new(storage, PREFIX_POLL);
-
-        polls
-            .range(start.as_deref(), end.as_deref(), order_by.into())
+        POLL
+            .range(
+                storage, 
+                start.and_then(|v| Some(Bound::inclusive(&*v))), 
+                end.and_then(|v| Some(Bound::inclusive(&*v))), 
+                order_by.into(),
+            )
             .take(limit)
             .map(|item| {
                 let (_, v) = item?;
@@ -220,12 +241,15 @@ pub fn read_polls<'a>(
     }
 }
 
-pub fn bank_store(storage: &mut dyn Storage) -> Bucket<TokenManager> {
-    bucket(storage, PREFIX_BANK)
+
+// "bank" storage map
+pub const BANK: Map<&[u8], TokenManager> = Map::new("bank");
+pub fn store_bank(storage: &mut dyn Storage, key: &&[u8], data: &TokenManager) -> StdResult<()> {
+    BANK.save(storage, key, data)
 }
 
-pub fn bank_read(storage: &dyn Storage) -> ReadonlyBucket<TokenManager> {
-    bucket_read(storage, PREFIX_BANK)
+pub fn read_bank(storage: &dyn Storage, key: &&[u8]) -> StdResult<Option<TokenManager>> {
+    BANK.may_load(storage, key)
 }
 
 // this will set the first key after the provided key, by appending a 1 byte
