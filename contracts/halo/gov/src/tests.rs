@@ -2,7 +2,7 @@ use crate::contract::{execute, instantiate, query, reply};
 use crate::error::ContractError;
 use crate::mock_querier::mock_dependencies;
 use crate::state::{
-    bank_read, bank_store, config_read, poll_store, poll_voter_read, poll_voter_store, state_read,
+    read_bank, store_bank, read_config, store_poll, read_poll_voter, store_poll_voter, read_state,
     Config, Poll, State, TokenManager,
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
@@ -27,6 +27,7 @@ const TEST_VOTER: &str = "voter1";
 const TEST_VOTER_2: &str = "voter2";
 const TEST_VOTER_3: &str = "voter3";
 const HALO_TOKEN: &str = "halo_token";
+const GOV_HODLER: &str = "gov_hodler";
 const DEFAULT_QUORUM: u64 = 30u64;
 const DEFAULT_THRESHOLD: u64 = 50u64;
 const DEFAULT_VOTING_PERIOD: u64 = 20000u64;
@@ -46,6 +47,7 @@ fn mock_instantiate(deps: DepsMut) {
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
         unbonding_period: DEFAULT_UNBONDING_PERIOD,
+        gov_hodler: GOV_HODLER.to_string(),
     };
 
     let info = mock_info(TEST_CREATOR, &[]);
@@ -80,6 +82,7 @@ fn instantiate_msg() -> InstantiateMsg {
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
         unbonding_period: DEFAULT_UNBONDING_PERIOD,
+        gov_hodler: GOV_HODLER.to_string(),
     }
 }
 
@@ -92,7 +95,7 @@ fn proper_initialization() {
     let res = instantiate(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
     assert_eq!(0, res.messages.len());
 
-    let config: Config = config_read(deps.as_ref().storage).load().unwrap();
+    let config: Config = read_config(deps.as_ref().storage).unwrap();
     assert_eq!(
         config,
         Config {
@@ -106,6 +109,7 @@ fn proper_initialization() {
             snapshot_period: DEFAULT_FIX_PERIOD,
             registrar_contract: deps.api.addr_validate(REGISTRAR_CONTRACT).unwrap(),
             unbonding_period: Duration::Time(24 * 60 * 60 * 7), // 7 days of unbonding
+            gov_hodler: Addr::unchecked(GOV_HODLER),
         }
     );
 
@@ -113,13 +117,13 @@ fn proper_initialization() {
         halo_token: VOTING_TOKEN.to_string(),
     };
     let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    let config: Config = config_read(deps.as_ref().storage).load().unwrap();
+    let config: Config = read_config(deps.as_ref().storage).unwrap();
     assert_eq!(
         config.halo_token,
         deps.api.addr_validate(VOTING_TOKEN).unwrap()
     );
 
-    let state: State = state_read(deps.as_ref().storage).load().unwrap();
+    let state: State = read_state(deps.as_ref().storage).unwrap();
     assert_eq!(
         state,
         State {
@@ -159,6 +163,7 @@ fn fails_init_invalid_quorum() {
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
         unbonding_period: DEFAULT_UNBONDING_PERIOD,
+        gov_hodler: GOV_HODLER.to_string(),
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -186,6 +191,7 @@ fn fails_init_invalid_threshold() {
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
         unbonding_period: DEFAULT_UNBONDING_PERIOD,
+        gov_hodler: GOV_HODLER.to_string(),
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -213,6 +219,7 @@ fn fails_contract_already_registered() {
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
         unbonding_period: DEFAULT_UNBONDING_PERIOD,
+        gov_hodler: GOV_HODLER.to_string(),
     };
 
     let _res = instantiate(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
@@ -999,8 +1006,7 @@ fn happy_days_end_poll() {
 
     // But the data is still in the store
     let voter_addr_raw = deps.api.addr_validate(TEST_VOTER).unwrap();
-    let voter = poll_voter_read(&deps.storage, 1u64)
-        .load(voter_addr_raw.as_bytes())
+    let voter = read_poll_voter(&deps.storage, 1u64, voter_addr_raw.clone())
         .unwrap();
     assert_eq!(
         voter,
@@ -1010,9 +1016,10 @@ fn happy_days_end_poll() {
         }
     );
 
-    let token_manager = bank_read(&deps.storage)
-        .load(voter_addr_raw.as_bytes())
-        .unwrap();
+    let token_manager = read_bank(
+        &deps.storage,
+         &voter_addr_raw.as_bytes()).expect("Bank read error")
+        .unwrap_or_default();
     assert_eq!(
         token_manager.locked_balance,
         vec![(
@@ -1785,7 +1792,7 @@ fn happy_days_withdraw_voting_tokens() {
     let execute_res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_stake_tokens_result(11, 0, 11, 0, execute_res, deps.as_ref());
 
-    let state: State = state_read(deps.as_ref().storage).load().unwrap();
+    let state: State = read_state(deps.as_ref().storage).unwrap();
     assert_eq!(
         state,
         State {
@@ -1822,7 +1829,7 @@ fn happy_days_withdraw_voting_tokens() {
         }))
     );
 
-    let state: State = state_read(deps.as_ref().storage).load().unwrap();
+    let state: State = read_state(deps.as_ref().storage).unwrap();
     assert_eq!(
         state,
         State {
@@ -1854,7 +1861,7 @@ fn happy_days_withdraw_voting_tokens_all() {
     let execute_res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_stake_tokens_result(11, 0, 11, 0, execute_res, deps.as_ref());
 
-    let state: State = state_read(deps.as_ref().storage).load().unwrap();
+    let state: State = read_state(deps.as_ref().storage).unwrap();
     assert_eq!(
         state,
         State {
@@ -1889,7 +1896,7 @@ fn happy_days_withdraw_voting_tokens_all() {
         }))
     );
 
-    let state: State = state_read(deps.as_ref().storage).load().unwrap();
+    let state: State = read_state(deps.as_ref().storage).unwrap();
     assert_eq!(
         state,
         State {
@@ -1922,8 +1929,7 @@ fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
     assert_stake_tokens_result(11, 0, 11, 0, execute_res, deps.as_ref());
 
     // make fake polls; one in progress & one in passed
-    poll_store(&mut deps.storage)
-        .save(
+    store_poll(&mut deps.storage, 
             &1u64.to_be_bytes(),
             &Poll {
                 id: 1u64,
@@ -1944,8 +1950,7 @@ fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
         )
         .unwrap();
 
-    poll_store(&mut deps.storage)
-        .save(
+    store_poll(&mut deps.storage,
             &2u64.to_be_bytes(),
             &Poll {
                 id: 1u64,
@@ -1967,27 +1972,26 @@ fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
         .unwrap();
 
     let voter_addr_raw = deps.api.addr_validate(TEST_VOTER).unwrap();
-    poll_voter_store(&mut deps.storage, 1u64)
-        .save(
-            voter_addr_raw.as_bytes(),
+    store_poll_voter(&mut deps.storage, 
+        1u64,
+            voter_addr_raw.clone(),
             &VoterInfo {
                 vote: VoteOption::Yes,
                 balance: Uint128::from(5u128),
             },
         )
         .unwrap();
-    poll_voter_store(&mut deps.storage, 2u64)
-        .save(
-            voter_addr_raw.as_bytes(),
+    store_poll_voter(&mut deps.storage, 
+        2u64,
+            voter_addr_raw.clone(),
             &VoterInfo {
                 vote: VoteOption::Yes,
                 balance: Uint128::from(5u128),
             },
         )
         .unwrap();
-    bank_store(&mut deps.storage)
-        .save(
-            voter_addr_raw.as_bytes(),
+    store_bank(&mut deps.storage,
+            &voter_addr_raw.as_bytes(),
             &TokenManager {
                 share: Uint128::from(11u128),
                 locked_balance: vec![
@@ -2017,8 +2021,9 @@ fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
     };
 
     let _ = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    let voter = poll_voter_read(&deps.storage, 1u64)
-        .load(voter_addr_raw.as_bytes())
+    let voter = read_poll_voter(&deps.storage, 
+        1u64,
+        voter_addr_raw.clone())
         .unwrap();
     assert_eq!(
         voter,
@@ -2027,13 +2032,13 @@ fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
             balance: Uint128::from(5u128),
         }
     );
-    assert!(poll_voter_read(&deps.storage, 2u64)
-        .load(voter_addr_raw.as_bytes())
+    assert!(read_poll_voter(&deps.storage, 2u64,
+        voter_addr_raw.clone())
         .is_err(),);
 
-    let token_manager = bank_read(&deps.storage)
-        .load(voter_addr_raw.as_bytes())
-        .unwrap();
+    let token_manager = read_bank(&deps.storage,
+        &voter_addr_raw.as_bytes()).expect("Bank read error")
+        .unwrap_or_default();
     assert_eq!(
         token_manager.locked_balance,
         vec![(
@@ -2373,7 +2378,7 @@ fn assert_create_poll_result(
     );
 
     //confirm poll count
-    let state: State = state_read(deps.storage).load().unwrap();
+    let state: State = read_state(deps.storage).unwrap();
     assert_eq!(
         state,
         State {
@@ -2397,7 +2402,7 @@ fn assert_stake_tokens_result(
         &attr("share", new_share.to_string())
     );
 
-    let state: State = state_read(deps.storage).load().unwrap();
+    let state: State = read_state(deps.storage).unwrap();
     assert_eq!(
         state,
         State {
@@ -2444,6 +2449,7 @@ fn update_config() {
         proposal_deposit: None,
         snapshot_period: None,
         unbonding_period: None,
+        gov_hodler: None, 
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -2470,6 +2476,7 @@ fn update_config() {
         proposal_deposit: Some(Uint128::from(123u128)),
         snapshot_period: Some(11),
         unbonding_period: None,
+        gov_hodler: None, 
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -2497,6 +2504,7 @@ fn update_config() {
         proposal_deposit: None,
         snapshot_period: None,
         unbonding_period: None,
+        gov_hodler: None, 
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg);

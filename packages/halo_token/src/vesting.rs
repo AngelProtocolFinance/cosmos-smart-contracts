@@ -75,3 +75,7 @@ pub struct VestingAccountResponse {
 pub struct VestingAccountsResponse {
     pub vesting_accounts: Vec<VestingAccountResponse>,
 }
+
+/// We currently take no arguments for migrations
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MigrateMsg {}

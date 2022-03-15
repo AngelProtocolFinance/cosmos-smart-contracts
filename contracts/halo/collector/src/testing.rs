@@ -52,6 +52,7 @@ fn update_config() {
     let msg = ExecuteMsg::UpdateConfig {
         reward_factor: Some(Decimal::percent(80)),
         gov_contract: None,
+        swap_factory: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -62,10 +63,11 @@ fn update_config() {
     assert_eq!(Decimal::percent(80), value.reward_factor);
 
     // Unauthorized err
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info("addr1111", &[]);
     let msg = ExecuteMsg::UpdateConfig {
         reward_factor: None,
         gov_contract: None,
+        swap_factory: None, 
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg);
