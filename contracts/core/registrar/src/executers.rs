@@ -1,5 +1,5 @@
 use crate::state::{
-    read_registry_entries, read_vaults, registry_read, registry_store, vault_read, vault_store,
+    read_registry_entries, read_vaults, registry_read, registry_store, vault_read, vault_store, vault_removee,
     CONFIG,
 };
 use angel_core::errors::core::ContractError;
@@ -49,9 +49,7 @@ pub fn update_endowment_status(
 
     // look up the endowment in the Registry. Will fail if doesn't exist
     let endowment_addr = msg.endowment_addr.as_bytes();
-    let mut endowment_entry = registry_read(deps.storage)
-        .may_load(endowment_addr)?
-        .unwrap();
+    let mut endowment_entry = registry_read(deps.storage,endowment_addr)?;
 
     let msg_endowment_status = match msg.status {
         0 => EndowmentStatus::Inactive,
@@ -73,7 +71,7 @@ pub fn update_endowment_status(
 
     // update entry status & save to the Registry
     endowment_entry.status = msg_endowment_status.clone();
-    registry_store(deps.storage).save(endowment_addr, &endowment_entry)?;
+    registry_store(deps.storage, endowment_addr, &endowment_entry)?;
 
     // Take different actions on the affected Accounts SC, based on the status passed
     // Build out list of SubMsgs to send to the Account SC and/or Index Fund SC
@@ -370,12 +368,12 @@ pub fn vault_add(
     let addr = deps.api.addr_validate(&msg.vault_addr)?;
 
     // check that the vault does not already exist for a given address in storage
-    if vault_read(deps.storage).may_load(addr.as_bytes()).unwrap() != None {
+    if vault_read(deps.storage, addr.as_bytes()).is_ok() {
         return Err(ContractError::VaultAlreadyExists {});
     }
 
     // save the new vault to storage
-    vault_store(deps.storage).save(
+    vault_store(deps.storage, 
         addr.as_bytes(),
         &YieldVault {
             address: addr.clone(),
@@ -402,7 +400,7 @@ pub fn vault_remove(
     let _addr = deps.api.addr_validate(&vault_addr)?;
 
     // remove the vault from storage
-    vault_store(deps.storage).remove(vault_addr.as_bytes());
+    vault_removee(deps.storage, vault_addr.as_bytes());
     Ok(Response::default())
 }
 
@@ -420,11 +418,11 @@ pub fn vault_update_status(
     }
     // try to look up the given vault in Storage
     let addr = deps.api.addr_validate(&vault_addr)?;
-    let mut vault = vault_read(deps.storage).load(addr.as_bytes())?;
+    let mut vault = vault_read(deps.storage, addr.as_bytes())?;
 
     // update new vault approval status attribute from passed arg
     vault.approved = approved;
-    vault_store(deps.storage).save(addr.as_bytes(), &vault)?;
+    vault_store(deps.storage, addr.as_bytes(), &vault)?;
 
     Ok(Response::default())
 }
@@ -448,7 +446,7 @@ pub fn new_accounts_reply(
             }
             // Register the new Endowment on success Reply
             let addr = deps.api.addr_validate(&endowment_addr)?;
-            registry_store(deps.storage).save(
+            registry_store(deps.storage,
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,

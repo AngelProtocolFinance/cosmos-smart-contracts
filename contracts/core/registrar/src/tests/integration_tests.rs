@@ -10,7 +10,7 @@ use cosmwasm_vm::{
 };
 
 const DESERIALIZATION_LIMIT: usize = 20_000;
-use crate::state::{Config, CONFIG_KEY};
+use crate::state::{Config};
 
 static WASM: &[u8] = include_bytes!("../../../../../artifacts/registrar.wasm");
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;

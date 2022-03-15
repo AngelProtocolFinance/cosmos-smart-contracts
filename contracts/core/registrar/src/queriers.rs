@@ -56,9 +56,7 @@ pub fn query_endowment_details(
     deps: Deps,
     endowment_addr: String,
 ) -> StdResult<EndowmentDetailResponse> {
-    let endowment = registry_read(deps.storage)
-        .may_load(endowment_addr.as_bytes())?
-        .unwrap();
+    let endowment = registry_read(deps.storage, endowment_addr.as_bytes())?;
     Ok(EndowmentDetailResponse { endowment })
 }
 
@@ -70,7 +68,7 @@ pub fn query_endowment_list(deps: Deps) -> StdResult<EndowmentListResponse> {
 pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDetailResponse> {
     // this fails if no vault is found
     let addr = deps.api.addr_validate(&vault_addr)?;
-    let vault = vault_read(deps.storage).load(addr.as_bytes())?;
+    let vault = vault_read(deps.storage, addr.as_bytes())?;
     Ok(VaultDetailResponse { vault })
 }
 
