@@ -378,7 +378,10 @@ pub fn vault_receipt(
                                 contract_addr: config.registrar_contract.to_string(),
                                 msg: to_binary(&RegistrarQuerier::Config {})?,
                             }))?;
-                        let index_fund: String = registrar_config.index_fund;
+                        let index_fund: String = match registrar_config.index_fund {
+                            Some(addr) => addr.to_string(),
+                            None => return Err(ContractError::ContractNotConfigured {  }),
+                        };
 
                         // query the Index Fund SC to find the Fund that this Endowment is a member of
                         let fund_list: FundListResponse =
@@ -476,7 +479,11 @@ pub fn deposit(
     let registrar_split_configs: SplitDetails = registrar_config.split_to_liquid;
 
     // check split passed by the donor against the Registrar SC split params
-    if sender_addr != registrar_config.index_fund {
+    let index_fund = match registrar_config.index_fund {
+        Some(addr) => addr,
+        None => return Err(ContractError::ContractNotConfigured {  }),
+    };
+    if sender_addr != index_fund {
         let new_splits = check_splits(registrar_split_configs, locked_split, liquid_split);
         locked_split = new_splits.0;
         liquid_split = new_splits.1;
