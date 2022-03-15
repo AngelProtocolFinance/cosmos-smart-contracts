@@ -379,7 +379,7 @@ pub fn vault_add(
             address: addr.clone(),
             input_denom: msg.input_denom,
             yield_token: deps.api.addr_validate(&msg.yield_token)?,
-            approved: true,
+            approved: false,
         },
     )?;
     Ok(Response::default())

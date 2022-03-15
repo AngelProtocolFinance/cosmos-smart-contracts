@@ -282,7 +282,7 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
                     funds: _,
                     label: _,
                 } => {
-                    assert_eq!(admin.clone(), Some("cosmos2contract".to_string()));
+                    assert_eq!(admin.clone(), Some(ap_team.clone()));
                     let accounts_instantiate_msg: angel_core::messages::accounts::InstantiateMsg =
                         from_binary(msg).unwrap();
                     assert_eq!(accounts_instantiate_msg.owner_sc, ap_team.clone());
