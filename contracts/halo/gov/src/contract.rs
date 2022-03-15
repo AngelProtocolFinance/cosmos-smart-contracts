@@ -329,7 +329,7 @@ pub fn create_poll(
     let contract = if proposal_type == Some("registrar".to_string()) {
         config.registrar_contract
     } else {
-        env.contract.address
+        env.contract.address.clone()
     };
 
     let mut data_list: Vec<ExecuteData> = vec![];
@@ -352,6 +352,11 @@ pub fn create_poll(
     };
 
     let sender_address_raw = deps.api.addr_validate(&proposer)?;
+    // store the current staked amount for quorum calculation
+    let staked_amount =
+        query_token_balance(&deps.querier, config.halo_token, env.contract.address)?
+            .checked_sub(state.total_deposit)?;
+
     let new_poll = Poll {
         id: poll_id,
         creator: sender_address_raw,
@@ -366,7 +371,7 @@ pub fn create_poll(
         execute_data: all_execute_data,
         deposit_amount,
         total_balance_at_end_poll: None,
-        staked_amount: None,
+        staked_amount: Some(staked_amount),
     };
 
     poll_store(deps.storage).save(&poll_id.to_be_bytes(), &new_poll)?;

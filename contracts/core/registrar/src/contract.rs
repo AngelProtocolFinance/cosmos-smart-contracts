@@ -4,6 +4,7 @@ use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::SplitDetails;
+use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
 };
@@ -22,6 +23,13 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    let tax_rate = percentage_checks(msg.tax_rate).unwrap();
+    let splits: SplitDetails = match msg.split_to_liquid {
+        Some(splits) => split_checks(splits.max, splits.min, splits.default),
+        None => Ok(SplitDetails::default()),
+    }
+    .unwrap();
+
     let configs = Config {
         owner: info.sender.clone(),
         guardian_angels: info.sender.clone(),
@@ -29,11 +37,11 @@ pub fn instantiate(
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
         approved_charities: vec![],
         treasury: deps.api.addr_validate(&msg.treasury)?,
-        tax_rate: msg.tax_rate,
+        tax_rate,
         default_vault: msg.default_vault.unwrap_or(info.sender),
         guardians_multisig_addr: None,
         endowment_owners_group_addr: None,
-        split_to_liquid: msg.split_to_liquid.unwrap_or_else(SplitDetails::default),
+        split_to_liquid: splits,
         halo_token: None,
         gov_contract: None,
         charity_shares_contract: None,
@@ -65,6 +73,9 @@ pub fn execute(
             executers::charity_remove(deps, env, info, charity)
         }
         ExecuteMsg::VaultAdd(msg) => executers::vault_add(deps, env, info, msg),
+        ExecuteMsg::VaultRemove { vault_addr } => {
+            executers::vault_remove(deps, env, info, vault_addr)
+        }
         ExecuteMsg::VaultUpdateStatus {
             vault_addr,
             approved,
@@ -92,9 +103,16 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
+        QueryMsg::Endowment { endowment_addr } => {
+            to_binary(&queriers::query_endowment_details(deps, endowment_addr)?)
+        }
         QueryMsg::EndowmentList {} => to_binary(&queriers::query_endowment_list(deps)?),
-        QueryMsg::ApprovedVaultList {} => to_binary(&queriers::query_approved_vault_list(deps)?),
-        QueryMsg::VaultList {} => to_binary(&queriers::query_vault_list(deps)?),
+        QueryMsg::ApprovedVaultList { start_after, limit } => to_binary(
+            &queriers::query_approved_vault_list(deps, start_after, limit)?,
+        ),
+        QueryMsg::VaultList { start_after, limit } => {
+            to_binary(&queriers::query_vault_list(deps, start_after, limit)?)
+        }
         QueryMsg::Vault { vault_addr } => {
             to_binary(&queriers::query_vault_details(deps, vault_addr)?)
         }

@@ -1,4 +1,5 @@
 use angel_core::structs::{EndowmentEntry, SplitDetails, YieldVault};
+use angel_core::utils::calc_range_start_addr;
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
 use cw_storage_plus::Item;
@@ -6,8 +7,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 // static PREFIX_REGISTRY_INDEXER: &[u8] = b"registry_indexer";
-// const MAX_LIMIT: u32 = 30;
-// const DEFAULT_LIMIT: u32 = 10;
+const MAX_LIMIT: u64 = 30;
+const DEFAULT_LIMIT: u64 = 10;
 
 static PREFIX_REGISTRY: &[u8] = b"registry";
 static PREFIX_PORTAL: &[u8] = b"vault";
@@ -63,10 +64,19 @@ pub fn vault_read(storage: &dyn Storage) -> ReadonlyBucket<YieldVault> {
     bucket_read(storage, PREFIX_PORTAL)
 }
 
-pub fn read_vaults<'a>(storage: &'a dyn Storage) -> StdResult<Vec<YieldVault>> {
-    let entries: ReadonlyBucket<'a, YieldVault> = ReadonlyBucket::new(storage, PREFIX_PORTAL);
-    entries
-        .range(None, None, Order::Ascending)
+pub fn read_vaults<'a>(
+    storage: &'a dyn Storage,
+    start_after: Option<Addr>,
+    limit: Option<u64>,
+) -> StdResult<Vec<YieldVault>> {
+    let vaults: ReadonlyBucket<'a, YieldVault> = ReadonlyBucket::new(storage, PREFIX_PORTAL);
+    vaults
+        .range(
+            calc_range_start_addr(start_after).as_deref(),
+            None,
+            Order::Ascending,
+        )
+        .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
         .map(|item| {
             let (_, v) = item?;
             Ok(v)

@@ -36,9 +36,12 @@ pub fn tca_list(deps: Deps) -> StdResult<TcaListResponse> {
     })
 }
 
-pub fn funds_list(deps: Deps) -> StdResult<FundListResponse> {
-    // Return a list of Index Funds
-    let funds = read_funds(deps.storage)?;
+pub fn funds_list(
+    deps: Deps,
+    start_after: Option<u64>,
+    limit: Option<u64>,
+) -> StdResult<FundListResponse> {
+    let funds = read_funds(deps.storage, start_after, limit)?;
     Ok(FundListResponse { funds })
 }
 
@@ -75,7 +78,7 @@ pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
 
 pub fn involved_funds(deps: Deps, address: String) -> StdResult<FundListResponse> {
     let query_addr = deps.api.addr_validate(&address)?;
-    let all_funds = read_funds(deps.storage)?;
+    let all_funds = read_funds(deps.storage, None, None)?;
     let mut involved_funds = vec![];
     for fund in all_funds.iter() {
         let pos = fund.members.iter().position(|m| *m == query_addr);

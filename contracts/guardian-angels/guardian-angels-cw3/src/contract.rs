@@ -498,7 +498,7 @@ pub fn execute_close(
     }
 
     // set it to failed
-    prop.status = Status::Rejected;
+    prop.update_status(&env.block);
     proposal_store.save(deps.storage, proposal_id.into(), &prop)?;
 
     Ok(Response::new()
