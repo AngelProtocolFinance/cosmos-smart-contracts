@@ -63,7 +63,7 @@ pub fn vault_read(storage: &dyn Storage, k: &[u8]) -> StdResult<YieldVault> {
     PREFIX_PORTAL.load(storage, k)
 }
 
-pub fn vault_removee(storage: &mut dyn Storage, k: &[u8]) {
+pub fn vault_remove(storage: &mut dyn Storage, k: &[u8]) {
     PREFIX_PORTAL.remove(storage, k)
 }
 

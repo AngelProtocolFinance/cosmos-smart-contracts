@@ -1,5 +1,5 @@
 use crate::state::{
-    read_registry_entries, read_vaults, registry_read, registry_store, vault_read, vault_store, vault_removee,
+    read_registry_entries, read_vaults, registry_read, registry_store, vault_read, vault_store,
     CONFIG,
 };
 use angel_core::errors::core::ContractError;
@@ -400,7 +400,7 @@ pub fn vault_remove(
     let _addr = deps.api.addr_validate(&vault_addr)?;
 
     // remove the vault from storage
-    vault_removee(deps.storage, vault_addr.as_bytes());
+    crate::state::vault_remove(deps.storage, vault_addr.as_bytes());
     Ok(Response::default())
 }
 
