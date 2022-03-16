@@ -78,6 +78,11 @@ pub fn update_endowment_status(
     // 1. INDEX FUND - Update fund members list removing a member if the member can no longer accept deposits
     // 2. ACCOUNTS - Update the Endowment deposit/withdraw approval config settings based on the new status
 
+    let index_fund_contract = match config.index_fund_contract {
+        Some(addr) => addr, 
+        None => return Err(ContractError::ContractNotConfigured {  }),
+    };
+
     let sub_messages: Vec<SubMsg> = match msg_endowment_status {
         // Allowed to receive donations and process withdrawals
         EndowmentStatus::Approved => {
@@ -100,7 +105,7 @@ pub fn update_endowment_status(
             build_account_status_change_msg(endowment_entry.address.to_string(), false, false),
             // trigger the removal of this endowment from all Index Funds
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.index_fund_contract.to_string(),
+                contract_addr: index_fund_contract.to_string(),
                 msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
                     angel_core::messages::index_fund::RemoveMemberMsg {
                         member: endowment_entry.address.to_string(),
@@ -189,14 +194,14 @@ pub fn update_config(
         Some(contract_addr) => Some(deps.api.addr_validate(&contract_addr)?),
         None => config.charity_shares_contract,
     };
-    config.default_vault = deps.api.addr_validate(
-        &msg.default_vault
-            .unwrap_or_else(|| config.default_vault.to_string()),
-    )?;
-    config.index_fund_contract = deps.api.addr_validate(
-        &msg.index_fund_contract
-            .unwrap_or_else(|| config.index_fund_contract.to_string()),
-    )?;
+    config.default_vault = match msg.default_vault {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => config.default_vault,
+    };
+    config.index_fund_contract = match msg.index_fund_contract {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => config.index_fund_contract,
+    };
     config.treasury = deps
         .api
         .addr_validate(&msg.treasury.unwrap_or_else(|| config.treasury.to_string()))?;
