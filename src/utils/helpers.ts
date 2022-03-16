@@ -137,6 +137,31 @@ export async function migrateContract(
 }
 
 /**
+ * @notice Instantiate a contract from an existing code ID. Return contract address.
+ */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export async function migrateContracts(
+  terra: LocalTerra | LCDClient,
+  sender: Wallet,
+  admin: Wallet,
+  contracts: string[],
+  new_code_id: number,
+  migrateMsg: Record<string, unknown>
+) {
+  let msgs: Msg[] = [];
+  contracts.forEach((contract) => {
+    msgs.push(
+      new MsgMigrateContract(admin.key.accAddress, contract, new_code_id, migrateMsg)
+    );
+    console.log(`Endmowment ${contract} - ${chalk.green("Msg built")}`);
+  });
+
+  const result = await sendTransaction(terra, sender, msgs);
+  console.log(result);
+  return result;
+}
+
+/**
  * @notice Return the native token balance of the specified account
  */
 // export async function queryNativeTokenBalance(

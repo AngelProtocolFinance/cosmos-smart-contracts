@@ -10,7 +10,12 @@ import {
   MsgMigrateContract,
   Wallet,
 } from "@terra-money/terra.js";
-import { sendTransaction, storeCode, migrateContract } from "../../utils/helpers";
+import {
+  sendTransaction,
+  storeCode,
+  migrateContract,
+  migrateContracts,
+} from "../../utils/helpers";
 import { wasm_path } from "../../config/wasmPaths";
 
 // -----------------------------
@@ -222,21 +227,18 @@ async function migrateExistingAccounts(
 
   process.stdout.write("Migrating existing Endowment Accounts contracts\n");
   let prom = Promise.resolve();
-  endowmentContracts.forEach((endowment) => {
-    // eslint-disable-next-line no-async-promise-executor
-    prom = prom.then(
-      () =>
-        new Promise(async (resolve, reject) => {
-          try {
-            await migrateContract(terra, apTeam, apTeam, endowment, codeId, {});
-            console.log(`Endmowment ${endowment} - ${chalk.green("Done!")}`);
-            resolve();
-          } catch (e) {
-            reject(e);
-          }
-        })
-    );
-  });
+  // eslint-disable-next-line no-async-promise-executor
+  prom = prom.then(
+    () =>
+      new Promise(async (resolve, reject) => {
+        try {
+          await migrateContracts(terra, apTeam, apTeam, endowmentContracts, codeId, {});
+          resolve();
+        } catch (e) {
+          reject(e);
+        }
+      })
+  );
 
   await prom;
   console.log(chalk.green(" Done!"));

@@ -180,20 +180,9 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   17,
-  //   [
-  //     "terra16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke",
-  //     "terra16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke",
-  //   ],
-  //   []
-  // );
-  // await testUpdateFundMembers(
-  //   terra,
-  //   apTeam,
-  //   indexFund,
   //   18,
-  //   [],
-  //   ["terra14s30dkddgzu86s5yudahdm0xa9ks3u8xuht7rc"]
+  //   ["terra15ej9284yj6v4rm07prxmcrmlhz70p20aup06zh"],
+  //   []
   // );
   // await testCreateIndexFund(
   //   terra,

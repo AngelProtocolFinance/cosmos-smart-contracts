@@ -226,6 +226,7 @@ export const mainnet = {
       "terra1xt696t8ldx94cdrwmtznn7g2uzwfeldwclyq03", // Bumi Sehat Foundation International
       "terra1k5auhclwzt0yy6gq5e4h9kzk8zxqgaetu9cvna", // Microscopio
       "terra1hccjcxm0vdz8d2n9y8lnrpx4ka4elt4gwfm522", // Threshold
+      "terra15ej9284yj6v4rm07prxmcrmlhz70p20aup06zh", // Curaj Inainte
     ],
   },
   members: [
