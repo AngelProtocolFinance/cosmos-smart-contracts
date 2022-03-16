@@ -101,7 +101,7 @@ fn update_config() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_response: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(index_fund_contract.clone(), config_response.index_fund);
+    assert_eq!(index_fund_contract.clone(), config_response.index_fund.unwrap());
     assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
 }
 
@@ -210,16 +210,38 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
     let good_charity_addr = "GOODQTWTETGSGSRHJTUIQADG".to_string();
     let bad_charity_addr = "BADQTWTETGSGSRHJTUIQADG".to_string();
     let good_endowment_addr = "ENDOWMENTADRESS".to_string();
+    let default_vault_addr = "default-vault".to_string();
+    let index_fund_contract = "index-fund-contract".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_vault: None,
+        default_vault: Some(Addr::unchecked(default_vault_addr)),
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
     assert_eq!(0, res.messages.len());
+
+    // Config the "index_fund_contract" to avoid the "ContractNotConfigured" error.
+    let update_config_msg = UpdateConfigMsg {
+        accounts_code_id: None,
+        index_fund_contract: Some(index_fund_contract.clone()),
+        approved_charities: None,
+        treasury: None,
+        tax_rate: None,
+        default_vault: None,
+        endowment_owners_group_addr: None,
+        guardians_multisig_addr: None,
+        split_max: None,
+        split_min: None,
+        split_default: None,
+        charity_shares_contract: None,
+        gov_contract: None,
+        halo_token: None,
+    };
+    let info = mock_info(ap_team.as_ref(), &[]);
+    let _ = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::UpdateConfig(update_config_msg)).unwrap();
 
     // add an approved charity to the list (Squeaky Clean Charity)
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -282,7 +304,7 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
                     funds: _,
                     label: _,
                 } => {
-                    assert_eq!(admin.clone(), Some("cosmos2contract".to_string()));
+                    assert_eq!(admin.clone(), Some(ap_team.clone()));
                     let accounts_instantiate_msg: angel_core::messages::accounts::InstantiateMsg =
                         from_binary(msg).unwrap();
                     assert_eq!(accounts_instantiate_msg.owner_sc, ap_team.clone());

@@ -49,9 +49,7 @@ pub fn update_endowment_status(
 
     // look up the endowment in the Registry. Will fail if doesn't exist
     let endowment_addr = msg.endowment_addr.as_bytes();
-    let mut endowment_entry = registry_read(deps.storage)
-        .may_load(endowment_addr)?
-        .unwrap();
+    let mut endowment_entry = registry_read(deps.storage,endowment_addr)?;
 
     let msg_endowment_status = match msg.status {
         0 => EndowmentStatus::Inactive,
@@ -73,12 +71,17 @@ pub fn update_endowment_status(
 
     // update entry status & save to the Registry
     endowment_entry.status = msg_endowment_status.clone();
-    registry_store(deps.storage).save(endowment_addr, &endowment_entry)?;
+    registry_store(deps.storage, endowment_addr, &endowment_entry)?;
 
     // Take different actions on the affected Accounts SC, based on the status passed
     // Build out list of SubMsgs to send to the Account SC and/or Index Fund SC
     // 1. INDEX FUND - Update fund members list removing a member if the member can no longer accept deposits
     // 2. ACCOUNTS - Update the Endowment deposit/withdraw approval config settings based on the new status
+
+    let index_fund_contract = match config.index_fund_contract {
+        Some(addr) => addr, 
+        None => return Err(ContractError::ContractNotConfigured {  }),
+    };
 
     let sub_messages: Vec<SubMsg> = match msg_endowment_status {
         // Allowed to receive donations and process withdrawals
@@ -102,7 +105,7 @@ pub fn update_endowment_status(
             build_account_status_change_msg(endowment_entry.address.to_string(), false, false),
             // trigger the removal of this endowment from all Index Funds
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.index_fund_contract.to_string(),
+                contract_addr: index_fund_contract.to_string(),
                 msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
                     angel_core::messages::index_fund::RemoveMemberMsg {
                         member: endowment_entry.address.to_string(),
@@ -191,14 +194,14 @@ pub fn update_config(
         Some(contract_addr) => Some(deps.api.addr_validate(&contract_addr)?),
         None => config.charity_shares_contract,
     };
-    config.default_vault = deps.api.addr_validate(
-        &msg.default_vault
-            .unwrap_or_else(|| config.default_vault.to_string()),
-    )?;
-    config.index_fund_contract = deps.api.addr_validate(
-        &msg.index_fund_contract
-            .unwrap_or_else(|| config.index_fund_contract.to_string()),
-    )?;
+    config.default_vault = match msg.default_vault {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => config.default_vault,
+    };
+    config.index_fund_contract = match msg.index_fund_contract {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => config.index_fund_contract,
+    };
     config.treasury = deps
         .api
         .addr_validate(&msg.treasury.unwrap_or_else(|| config.treasury.to_string()))?;
@@ -370,18 +373,18 @@ pub fn vault_add(
     let addr = deps.api.addr_validate(&msg.vault_addr)?;
 
     // check that the vault does not already exist for a given address in storage
-    if vault_read(deps.storage).may_load(addr.as_bytes()).unwrap() != None {
+    if vault_read(deps.storage, addr.as_bytes()).is_ok() {
         return Err(ContractError::VaultAlreadyExists {});
     }
 
     // save the new vault to storage
-    vault_store(deps.storage).save(
+    vault_store(deps.storage, 
         addr.as_bytes(),
         &YieldVault {
             address: addr.clone(),
             input_denom: msg.input_denom,
             yield_token: deps.api.addr_validate(&msg.yield_token)?,
-            approved: true,
+            approved: false,
         },
     )?;
     Ok(Response::default())
@@ -402,7 +405,7 @@ pub fn vault_remove(
     let _addr = deps.api.addr_validate(&vault_addr)?;
 
     // remove the vault from storage
-    vault_store(deps.storage).remove(vault_addr.as_bytes());
+    crate::state::vault_remove(deps.storage, vault_addr.as_bytes());
     Ok(Response::default())
 }
 
@@ -420,11 +423,11 @@ pub fn vault_update_status(
     }
     // try to look up the given vault in Storage
     let addr = deps.api.addr_validate(&vault_addr)?;
-    let mut vault = vault_read(deps.storage).load(addr.as_bytes())?;
+    let mut vault = vault_read(deps.storage, addr.as_bytes())?;
 
     // update new vault approval status attribute from passed arg
     vault.approved = approved;
-    vault_store(deps.storage).save(addr.as_bytes(), &vault)?;
+    vault_store(deps.storage, addr.as_bytes(), &vault)?;
 
     Ok(Response::default())
 }
@@ -448,7 +451,7 @@ pub fn new_accounts_reply(
             }
             // Register the new Endowment on success Reply
             let addr = deps.api.addr_validate(&endowment_addr)?;
-            registry_store(deps.storage).save(
+            registry_store(deps.storage,
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,

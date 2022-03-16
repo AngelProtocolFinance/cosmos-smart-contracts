@@ -13,8 +13,8 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         accounts_code_id: config.accounts_code_id,
         treasury: config.treasury.to_string(),
         tax_rate: config.tax_rate,
-        default_vault: config.default_vault.to_string(),
-        index_fund: config.index_fund_contract.to_string(),
+        default_vault: config.default_vault.and_then(|addr| Some(addr.to_string())),
+        index_fund: config.index_fund_contract.and_then(|addr| Some(addr.to_string())),
         endowment_owners_group_addr: config.endowment_owners_group_addr,
         guardians_multisig_addr: config.guardians_multisig_addr,
         split_to_liquid: config.split_to_liquid,
@@ -56,9 +56,7 @@ pub fn query_endowment_details(
     deps: Deps,
     endowment_addr: String,
 ) -> StdResult<EndowmentDetailResponse> {
-    let endowment = registry_read(deps.storage)
-        .may_load(endowment_addr.as_bytes())?
-        .unwrap();
+    let endowment = registry_read(deps.storage, endowment_addr.as_bytes())?;
     Ok(EndowmentDetailResponse { endowment })
 }
 
@@ -70,7 +68,7 @@ pub fn query_endowment_list(deps: Deps) -> StdResult<EndowmentListResponse> {
 pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDetailResponse> {
     // this fails if no vault is found
     let addr = deps.api.addr_validate(&vault_addr)?;
-    let vault = vault_read(deps.storage).load(addr.as_bytes())?;
+    let vault = vault_read(deps.storage, addr.as_bytes())?;
     Ok(VaultDetailResponse { vault })
 }
 
