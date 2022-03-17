@@ -1,9 +1,9 @@
+use super::mock_querier::{mock_dependencies};
 use crate::contract::{execute, instantiate, migrate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
-use angel_core::structs::SplitDetails;
-use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+use cosmwasm_std::testing::{ mock_env, mock_info};
 use cosmwasm_std::{coins, from_binary, Decimal};
 
 #[test]
