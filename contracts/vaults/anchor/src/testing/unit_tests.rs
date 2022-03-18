@@ -1,6 +1,7 @@
+use super::mock_querier::mock_dependencies;
 use crate::contract::instantiate;
 use crate::msg::InitMsg;
-use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
+use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::Decimal;
 
 #[test]
@@ -21,5 +22,5 @@ fn proper_instantiation() {
     let info = mock_info("creator", &[]);
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
-    assert_eq!(1, res.messages.len());
+    assert_eq!(0, res.messages.len());
 }

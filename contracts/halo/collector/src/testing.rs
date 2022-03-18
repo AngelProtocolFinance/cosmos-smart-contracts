@@ -63,7 +63,7 @@ fn update_config() {
     assert_eq!(Decimal::percent(80), value.reward_factor);
 
     // Unauthorized err
-    let info = mock_info("addr0000", &[]);
+    let info = mock_info("addr1111", &[]);
     let msg = ExecuteMsg::UpdateConfig {
         reward_factor: None,
         gov_contract: None,

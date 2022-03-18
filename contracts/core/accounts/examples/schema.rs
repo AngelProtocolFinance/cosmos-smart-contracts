@@ -1,10 +1,9 @@
-use std::env::current_dir;
-use std::fs::create_dir_all;
-
 use accounts::state::Config;
 use angel_core::messages::accounts::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use angel_core::responses::accounts::{ConfigResponse, EndowmentDetailsResponse};
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
+use std::env::current_dir;
+use std::fs::create_dir_all;
 
 fn main() {
     let mut out_dir = current_dir().unwrap();

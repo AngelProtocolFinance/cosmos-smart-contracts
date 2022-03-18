@@ -48,6 +48,10 @@ pub fn instantiate(
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
+    let default_vault = match registrar_config.default_vault {
+        Some(addr) => addr,
+        None => return Err(ContractError::ContractNotConfigured {}),
+    };
     ENDOWMENT.save(
         deps.storage,
         &Endowment {
@@ -62,7 +66,7 @@ pub fn instantiate(
             maturity_height: msg.maturity_height,                   // Option<u64>
             locked_endowment_configs: msg.locked_endowment_configs, // vec<String>
             strategies: vec![StrategyComponent {
-                vault: deps.api.addr_validate(&registrar_config.default_vault)?,
+                vault: deps.api.addr_validate(&default_vault)?,
                 locked_percentage: Decimal::one(),
                 liquid_percentage: Decimal::one(),
             }],
