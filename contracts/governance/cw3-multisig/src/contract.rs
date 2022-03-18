@@ -1,4 +1,4 @@
-use crate::msg::{ExecuteMsg, MigrateMsg, QueryMsg};
+use crate::msg::{ConfigResponse, ExecuteMsg, MigrateMsg, QueryMsg};
 use crate::state::{
     next_id, parse_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS,
 };
@@ -291,6 +291,7 @@ pub fn execute_membership_hook(
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
+        QueryMsg::Config {} => to_binary(&query_config(deps)?),
         QueryMsg::Threshold {} => to_binary(&query_threshold(deps)?),
         QueryMsg::Proposal { proposal_id } => to_binary(&query_proposal(deps, env, proposal_id)?),
         QueryMsg::Vote { proposal_id, voter } => to_binary(&query_vote(deps, proposal_id, voter)?),
@@ -311,6 +312,15 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&list_voters(deps, start_after, limit)?)
         }
     }
+}
+
+fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
+    let cfg = CONFIG.load(deps.storage)?;
+    Ok(ConfigResponse {
+        threshold: cfg.threshold,
+        max_voting_period: cfg.max_voting_period,
+        group_addr: cfg.group_addr.0.to_string(),
+    })
 }
 
 fn query_threshold(deps: Deps) -> StdResult<ThresholdResponse> {

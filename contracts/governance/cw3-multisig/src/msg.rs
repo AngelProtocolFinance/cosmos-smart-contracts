@@ -43,6 +43,9 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
+    /// Return ConfigResponse
+    /// (mostly to expose CW4 address for easier updating members polls)
+    Config {},
     /// Return ThresholdResponse
     Threshold {},
     /// Returns ProposalResponse
@@ -72,4 +75,12 @@ pub enum QueryMsg {
         start_after: Option<String>,
         limit: Option<u32>,
     },
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[serde(rename_all = "snake_case")]
+pub struct ConfigResponse {
+    pub threshold: Threshold,
+    pub max_voting_period: Duration,
+    pub group_addr: String,
 }
