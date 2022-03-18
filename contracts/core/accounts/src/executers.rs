@@ -148,8 +148,8 @@ pub fn update_registrar(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // only the registrar contract can update it's address in the config
-    if info.sender != config.registrar_contract {
+    // only the SC admin can update it's address in the config
+    if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
