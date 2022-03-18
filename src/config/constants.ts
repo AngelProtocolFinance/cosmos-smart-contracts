@@ -227,6 +227,11 @@ export const mainnet = {
       "terra1k5auhclwzt0yy6gq5e4h9kzk8zxqgaetu9cvna", // Microscopio
       "terra1hccjcxm0vdz8d2n9y8lnrpx4ka4elt4gwfm522", // Threshold
       "terra15ej9284yj6v4rm07prxmcrmlhz70p20aup06zh", // Curaj Inainte
+      "terra1cy93qmtfzvlvx8nv57h4xaprw2z0wyu40329vd", // Ventura Land Trust
+      "terra1t7sd5mpvynl5rgwf6v7nu8ts6vmg337dvk2tnd", // End Poverty
+      "terra1fl9tydg4yqzk39k4k0hdjcnyer93n2htyajzlm", // Yasayan Gili Matra Bersama (Coral Catch)
+      "terra1yprej80ls40lkhayxt20zhsjy5rzgwle80q02m", // Save the Waves
+      "terra197sh6vs9u483h2gxycfz7lsw964f0hf6dup75f", // The Pain Free Project
     ],
   },
   members: [
