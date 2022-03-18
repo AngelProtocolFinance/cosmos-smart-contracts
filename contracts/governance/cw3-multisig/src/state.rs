@@ -1,4 +1,4 @@
-use angel_core::messages::guardians_multisig::Threshold;
+use angel_core::messages::cw3_multisig::Threshold;
 use cosmwasm_std::{
     Addr, BlockInfo, CosmosMsg, Decimal, Empty, StdError, StdResult, Storage, Uint128,
 };

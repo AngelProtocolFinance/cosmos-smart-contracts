@@ -60,7 +60,6 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
     let endowment = ENDOWMENT.load(deps.storage)?;
     Ok(EndowmentDetailsResponse {
         owner: endowment.owner,
-        beneficiary: endowment.beneficiary,
         name: endowment.name,
         description: endowment.description,
         withdraw_before_maturity: endowment.withdraw_before_maturity,
@@ -68,6 +67,5 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
         maturity_height: endowment.maturity_height,
         strategies: endowment.strategies,
         rebalance: endowment.rebalance,
-        guardians: endowment.guardian_set,
     })
 }

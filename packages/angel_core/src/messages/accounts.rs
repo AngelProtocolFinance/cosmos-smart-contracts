@@ -13,7 +13,6 @@ pub struct InstantiateMsg {
     pub owner_sc: String,
     pub registrar_contract: String,
     pub owner: String,       // address that originally setup the endowment account
-    pub beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
     pub name: String,        // name of the Charity Endowment
     pub description: String, // description of the Charity Endowment
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
@@ -22,9 +21,9 @@ pub struct InstantiateMsg {
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
     pub locked_endowment_configs: Vec<String>, // list of endowment configs that cannot be changed/altered once set at creation
-    pub guardians_group_code: u64,
-    pub guardians_multisig_code: u64,
-    pub guardian_members: Vec<Member>,
+    pub cw4_members: Vec<Member>,
+    pub cw4_code: Option<u64>,
+    pub cw3_code: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -78,7 +77,6 @@ pub struct Strategy {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentSettingsMsg {
-    pub beneficiary: Option<String>,
     pub owner: Option<String>,
     pub whitelisted_beneficiaries: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)

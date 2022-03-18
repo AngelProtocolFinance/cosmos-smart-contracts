@@ -49,7 +49,7 @@ pub fn update_endowment_status(
 
     // look up the endowment in the Registry. Will fail if doesn't exist
     let endowment_addr = msg.endowment_addr.as_bytes();
-    let mut endowment_entry = registry_read(deps.storage,endowment_addr)?;
+    let mut endowment_entry = registry_read(deps.storage, endowment_addr)?;
 
     let msg_endowment_status = match msg.status {
         0 => EndowmentStatus::Inactive,
@@ -79,8 +79,8 @@ pub fn update_endowment_status(
     // 2. ACCOUNTS - Update the Endowment deposit/withdraw approval config settings based on the new status
 
     let index_fund_contract = match config.index_fund_contract {
-        Some(addr) => addr, 
-        None => return Err(ContractError::ContractNotConfigured {  }),
+        Some(addr) => addr,
+        None => return Err(ContractError::ContractNotConfigured {}),
     };
 
     let sub_messages: Vec<SubMsg> = match msg_endowment_status {
@@ -170,29 +170,13 @@ pub fn update_config(
     // update config attributes with newly passed configs
     config.approved_charities = msg.charities_list(deps.api)?;
     config.accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
-    config.guardians_multisig_addr = match msg.guardians_multisig_addr {
-        Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
-        None => {
-            if config.guardians_multisig_addr != None {
-                config.guardians_multisig_addr.clone()
-            } else {
-                None
-            }
-        }
+    config.cw3_code = match msg.cw3_code {
+        Some(v) => Some(v),
+        None => config.cw3_code,
     };
-    config.endowment_owners_group_addr = match msg.endowment_owners_group_addr {
-        Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
-        None => {
-            if config.endowment_owners_group_addr != None {
-                config.endowment_owners_group_addr.clone()
-            } else {
-                None
-            }
-        }
-    };
-    config.charity_shares_contract = match msg.charity_shares_contract {
-        Some(contract_addr) => Some(deps.api.addr_validate(&contract_addr)?),
-        None => config.charity_shares_contract,
+    config.cw4_code = match msg.cw4_code {
+        Some(v) => Some(v),
+        None => config.cw4_code,
     };
     config.default_vault = match msg.default_vault {
         Some(addr) => Some(deps.api.addr_validate(&addr)?),
@@ -258,7 +242,6 @@ pub fn create_endowment(
             owner_sc: config.owner.to_string(),
             registrar_contract: env.contract.address.to_string(),
             owner: msg.owner,
-            beneficiary: msg.beneficiary,
             name: msg.name,
             description: msg.description,
             withdraw_before_maturity: msg.withdraw_before_maturity,
@@ -267,9 +250,9 @@ pub fn create_endowment(
             locked_endowment_configs: msg.locked_endowment_configs,
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries,
             whitelisted_contributors: msg.whitelisted_contributors,
-            guardian_members: msg.guardian_members,
-            guardians_group_code: msg.guardians_group_code,
-            guardians_multisig_code: msg.guardians_multisig_code,
+            cw4_members: msg.cw4_members,
+            cw4_code: config.cw4_code,
+            cw3_code: config.cw3_code,
         })?,
         funds: vec![],
     };
@@ -384,7 +367,8 @@ pub fn vault_add(
     }
 
     // save the new vault to storage
-    vault_store(deps.storage, 
+    vault_store(
+        deps.storage,
         addr.as_bytes(),
         &YieldVault {
             address: addr.clone(),
@@ -464,7 +448,8 @@ pub fn new_accounts_reply(
             }
             // Register the new Endowment on success Reply
             let addr = deps.api.addr_validate(&endowment_addr)?;
-            registry_store(deps.storage,
+            registry_store(
+                deps.storage,
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,

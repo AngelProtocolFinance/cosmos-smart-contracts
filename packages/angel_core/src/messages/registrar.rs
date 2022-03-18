@@ -61,34 +61,30 @@ pub struct CreateEndowmentMsg {
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
-    pub guardians_multisig_addr: Option<String>,
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
     pub locked_endowment_configs: Vec<String>,
     pub whitelisted_beneficiaries: Vec<String>,
     pub whitelisted_contributors: Vec<String>,
-    pub guardian_members: Vec<Member>,
-    pub guardians_group_code: u64,
-    pub guardians_multisig_code: u64,
+    pub cw4_members: Vec<Member>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
     pub accounts_code_id: Option<u64>,
+    pub cw3_code: Option<u64>,
+    pub cw4_code: Option<u64>,
     pub index_fund_contract: Option<String>,
+    pub gov_contract: Option<String>,
+    pub halo_token: Option<String>,
     pub treasury: Option<String>,
     pub tax_rate: Option<Decimal>,
     pub approved_charities: Option<Vec<String>>,
     pub default_vault: Option<String>,
-    pub guardians_multisig_addr: Option<String>,
-    pub endowment_owners_group_addr: Option<String>,
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
-    pub halo_token: Option<String>,
-    pub gov_contract: Option<String>,
-    pub charity_shares_contract: Option<String>,
 }
 
 impl UpdateConfigMsg {

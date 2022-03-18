@@ -1,6 +1,6 @@
 pub mod accounts;
-pub mod guardians_group;
-pub mod guardians_multisig;
+pub mod cw3_multisig;
+pub mod cw4_group;
 pub mod index_fund;
 pub mod registrar;
 pub mod vault;

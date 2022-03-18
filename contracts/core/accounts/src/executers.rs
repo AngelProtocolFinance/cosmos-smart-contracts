@@ -1,8 +1,8 @@
 use crate::state::{CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::guardians_multisig::InstantiateMsg as GuardiansMultisigInstantiateMsg;
-use angel_core::messages::guardians_multisig::Threshold;
+use angel_core::messages::cw3_multisig::InstantiateMsg as Cw3MultisigInstantiateMsg;
+use angel_core::messages::cw3_multisig::Threshold;
 use angel_core::messages::index_fund::DepositMsg as IndexFundDepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg as IndexFundExecuter;
 use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
@@ -25,7 +25,7 @@ use cosmwasm_std::{
 use cw0::Duration;
 use cw20::Balance;
 
-pub fn new_guardians_group_reply(
+pub fn new_cw4_group_reply(
     deps: DepsMut,
     _env: Env,
     msg: ContractResult<SubMsgExecutionResponse>,
@@ -51,10 +51,10 @@ pub fn new_guardians_group_reply(
             Ok(Response::new().add_submessage(SubMsg {
                 id: 2,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: config.multisig_code.unwrap(),
+                    code_id: config.cw3_code.unwrap(),
                     admin: None,
                     label: "new endowment guardians multisig".to_string(),
-                    msg: to_binary(&GuardiansMultisigInstantiateMsg {
+                    msg: to_binary(&Cw3MultisigInstantiateMsg {
                         group_addr,
                         threshold: Threshold::ThresholdQuorum {
                             threshold: Decimal::percent(30),
@@ -72,7 +72,7 @@ pub fn new_guardians_group_reply(
     }
 }
 
-pub fn new_guardians_multisig_reply(
+pub fn new_cw3_multisig_reply(
     deps: DepsMut,
     _env: Env,
     msg: ContractResult<SubMsgExecutionResponse>,
@@ -183,16 +183,6 @@ pub fn update_endowment_settings(
         endowment.owner = match msg.owner {
             Some(i) => deps.api.addr_validate(&i)?,
             None => endowment.owner,
-        };
-    }
-
-    if !endowment
-        .locked_endowment_configs
-        .contains(&"beneficiary".to_string())
-    {
-        endowment.beneficiary = match msg.beneficiary {
-            Some(i) => deps.api.addr_validate(&i)?,
-            None => endowment.beneficiary,
         };
     }
 

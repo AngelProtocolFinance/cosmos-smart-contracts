@@ -25,19 +25,18 @@ pub struct EndowmentListResponse {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub owner: String,
-    pub guardians_multisig_addr: Option<String>,
-    pub endowment_owners_group_addr: Option<String>,
     pub version: String,
+    pub owner: String,
     pub accounts_code_id: u64,
+    pub cw3_code: Option<u64>,
+    pub cw4_code: Option<u64>,
+    pub halo_token: Option<String>,
+    pub gov_contract: Option<String>,
     pub treasury: String,
     pub tax_rate: Decimal,
     pub default_vault: Option<String>,
     pub index_fund: Option<String>,
     pub split_to_liquid: SplitDetails,
-    pub halo_token: Option<String>,
-    pub gov_contract: Option<String>,
-    pub charity_shares_contract: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

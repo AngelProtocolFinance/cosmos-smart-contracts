@@ -20,7 +20,6 @@ pub struct ConfigResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct EndowmentDetailsResponse {
     pub owner: Addr,
-    pub beneficiary: Addr,
     pub name: String,
     pub description: String,
     pub withdraw_before_maturity: bool,
@@ -28,14 +27,4 @@ pub struct EndowmentDetailsResponse {
     pub maturity_height: Option<u64>,
     pub strategies: Vec<StrategyComponent>,
     pub rebalance: RebalanceDetails,
-    pub guardians: Vec<String>,
-}
-
-impl EndowmentDetailsResponse {
-    pub fn is_guardian(&self, addr: String) -> bool {
-        match self.guardians.iter().position(|g| *g == addr) {
-            Some(_guardian) => true,
-            None => false,
-        }
-    }
 }

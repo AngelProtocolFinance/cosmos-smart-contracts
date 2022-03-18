@@ -1,4 +1,4 @@
-use angel_core::messages::guardians_multisig::InstantiateMsg;
+use angel_core::messages::cw3_multisig::InstantiateMsg;
 use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, schema_for};
 use guardian_angels_multisig::msg::{ExecuteMsg, QueryMsg};
 use std::env::current_dir;

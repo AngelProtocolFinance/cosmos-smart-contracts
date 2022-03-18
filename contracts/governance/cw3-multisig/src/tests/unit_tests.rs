@@ -1,6 +1,6 @@
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, QueryMsg};
-use angel_core::messages::guardians_multisig::{InstantiateMsg, Threshold};
+use angel_core::messages::cw3_multisig::{InstantiateMsg, Threshold};
 use cosmwasm_std::{coin, coins, Addr, BankMsg, Coin, Decimal, Timestamp};
 use cosmwasm_std::{BlockInfo, CosmosMsg, Empty};
 use cw0::Duration;

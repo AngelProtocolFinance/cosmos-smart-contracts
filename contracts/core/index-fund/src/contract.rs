@@ -5,8 +5,8 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::structs::AcceptedTokens;
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Response,
-    StdError, StdResult, Uint128,
+    entry_point, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult, Uint128,
 };
 use cw2::set_contract_version;
 

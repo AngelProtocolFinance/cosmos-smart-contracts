@@ -13,15 +13,14 @@ pub struct Config {
     pub deposit_approved: bool, // DANO has approved to receive donations & transact
     pub withdraw_approved: bool, // DANO has approved to withdraw funds
     pub pending_redemptions: Option<u64>,
-    pub multisig_code: Option<u64>,
-    pub group_code: Option<u64>,
+    pub cw3_code: Option<u64>,
+    pub cw4_code: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Endowment {
-    pub owner: Addr,       // address that originally setup the endowment account
-    pub beneficiary: Addr, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
+    pub owner: Addr, // address that originally setup the endowment account
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
     pub name: String,                          // name of the Charity Endowment
@@ -32,7 +31,6 @@ pub struct Endowment {
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
     pub locked_endowment_configs: Vec<String>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
-    pub guardian_set: Vec<String>, // set of Guardian Addr that can help owner recover Endowment if they lose their wallet
 }
 
 impl Endowment {

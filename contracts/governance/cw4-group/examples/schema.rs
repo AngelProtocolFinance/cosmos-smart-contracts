@@ -1,4 +1,4 @@
-use angel_core::messages::guardians_group::InstantiateMsg;
+use angel_core::messages::cw4_group::InstantiateMsg;
 use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, schema_for};
 pub use cw4::{AdminResponse, MemberListResponse, MemberResponse, TotalWeightResponse};
 pub use cw4_group::msg::{ExecuteMsg, QueryMsg};

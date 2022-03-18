@@ -3,7 +3,7 @@ use crate::queriers;
 use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::guardians_group::InstantiateMsg as GuardiansGroupInstantiateMsg;
+use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
@@ -37,8 +37,8 @@ pub fn instantiate(
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
             pending_redemptions: None,
-            multisig_code: Some(msg.guardians_multisig_code),
-            group_code: Some(msg.guardians_group_code),
+            cw3_code: msg.cw3_code,
+            cw4_code: msg.cw4_code,
         },
     )?;
 
@@ -56,7 +56,6 @@ pub fn instantiate(
         deps.storage,
         &Endowment {
             owner: deps.api.addr_validate(&msg.owner)?, // Addr
-            beneficiary: deps.api.addr_validate(&msg.beneficiary)?, // Addr
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries, // Vec<String>
             whitelisted_contributors: msg.whitelisted_contributors, // Vec<String>
             name: msg.name.clone(),
@@ -71,7 +70,6 @@ pub fn instantiate(
                 liquid_percentage: Decimal::one(),
             }],
             rebalance: RebalanceDetails::default(),
-            guardian_set: vec![],
         },
     )?;
 
@@ -85,31 +83,37 @@ pub fn instantiate(
         },
     )?;
 
-    // if there is NO guardians list passed initially, use the
-    // original Endowment owner address as the sole member
-    let mut first_guardians: Vec<Member> = vec![Member {
-        addr: msg.owner.into(),
-        weight: 1,
-    }];
-    if !msg.guardian_members.is_empty() {
-        first_guardians = msg.guardian_members;
-    }
+    // check if CW3/CW4 codes were passed to setup a multisig/group
+    if msg.cw3_code.ne(&None) && msg.cw4_code.ne(&None) {
+        // if there is NO guardians list passed initially, use the
+        // original Endowment owner address as the sole member
+        let mut first_guardians: Vec<Member> = vec![Member {
+            addr: msg.owner.into(),
+            weight: 1,
+        }];
+        if !msg.cw4_members.is_empty() {
+            first_guardians = msg.cw4_members;
+        }
 
-    Ok(Response::new().add_submessage(SubMsg {
-        id: 1,
-        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-            code_id: msg.guardians_group_code,
-            admin: None,
-            label: "new endowment guardians group".to_string(),
-            msg: to_binary(&GuardiansGroupInstantiateMsg {
-                admin: Some(info.sender.to_string()),
-                members: first_guardians,
-            })?,
-            funds: vec![],
-        }),
-        gas_limit: None,
-        reply_on: ReplyOn::Success,
-    }))
+        Ok(Response::new().add_submessage(SubMsg {
+            id: 1,
+            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                code_id: msg.cw4_code.unwrap(),
+                admin: None,
+                label: "new endowment cw4 group".to_string(),
+                msg: to_binary(&Cw4GroupInstantiateMsg {
+                    admin: Some(info.sender.to_string()),
+                    members: first_guardians,
+                })?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        }))
+    } else {
+        // Cut out early with msg.owner as endowment owner
+        Ok(Response::default())
+    }
 }
 
 #[entry_point]
@@ -156,8 +160,8 @@ pub fn execute(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        1 => executers::new_guardians_group_reply(deps, env, msg.result),
-        2 => executers::new_guardians_multisig_reply(deps, env, msg.result),
+        1 => executers::new_cw4_group_reply(deps, env, msg.result),
+        2 => executers::new_cw3_multisig_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }

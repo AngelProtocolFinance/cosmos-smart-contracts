@@ -3,7 +3,7 @@ use crate::contract::{
 };
 use crate::msg::ExecuteMsg;
 use crate::state::{ADMIN, HOOKS};
-use angel_core::messages::guardians_group::InstantiateMsg;
+use angel_core::messages::cw4_group::InstantiateMsg;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_slice, Addr, Api, DepsMut, OwnedDeps, Querier, Storage, SubMsg};
 use cw4::{member_key, Member, MemberChangedHookMsg, MemberDiff, TOTAL_KEY};

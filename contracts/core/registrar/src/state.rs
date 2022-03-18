@@ -14,20 +14,18 @@ pub const CONFIG: Item<Config> = Item::new("config");
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub owner: Addr,                   // AP TEAM MULTISIG
-    pub guardian_angels: Option<Addr>, // GUARDIAN ANGELS MULTISIG
+    pub owner: Addr, // AP TEAM MULTISIG
     pub index_fund_contract: Option<Addr>,
     pub accounts_code_id: u64,
     pub approved_charities: Vec<Addr>,
     pub treasury: Addr,
     pub tax_rate: Decimal,
     pub default_vault: Option<Addr>,
-    pub guardians_multisig_addr: Option<String>,
-    pub endowment_owners_group_addr: Option<String>,
+    pub cw3_code: Option<u64>,
+    pub cw4_code: Option<u64>,
     pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
     pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
     pub gov_contract: Option<Addr>,    // AP governance contract
-    pub charity_shares_contract: Option<Addr>, // Charity Shares staking contract
 }
 
 pub const PREFIX_REGISTRY: Map<&[u8], EndowmentEntry> = Map::new("registry");
