@@ -27,6 +27,7 @@ const TEST_VOTER: &str = "voter1";
 const TEST_VOTER_2: &str = "voter2";
 const TEST_VOTER_3: &str = "voter3";
 const HALO_TOKEN: &str = "halo_token";
+const GOV_HODLER: &str = "govholder_contract";
 const DEFAULT_QUORUM: u64 = 30u64;
 const DEFAULT_THRESHOLD: u64 = 50u64;
 const DEFAULT_VOTING_PERIOD: u64 = 20000u64;
@@ -46,6 +47,7 @@ fn mock_instantiate(deps: DepsMut) {
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
         unbonding_period: DEFAULT_UNBONDING_PERIOD,
+        gov_hodler: GOV_HODLER.to_string(),
     };
 
     let info = mock_info(TEST_CREATOR, &[]);
@@ -80,6 +82,7 @@ fn instantiate_msg() -> InstantiateMsg {
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
         unbonding_period: DEFAULT_UNBONDING_PERIOD,
+        gov_hodler: GOV_HODLER.to_string(),
     }
 }
 
@@ -106,6 +109,7 @@ fn proper_initialization() {
             snapshot_period: DEFAULT_FIX_PERIOD,
             registrar_contract: deps.api.addr_validate(REGISTRAR_CONTRACT).unwrap(),
             unbonding_period: Duration::Time(24 * 60 * 60 * 7), // 7 days of unbonding
+            gov_hodler: deps.api.addr_validate(GOV_HODLER).unwrap(),
         }
     );
 
@@ -159,6 +163,7 @@ fn fails_init_invalid_quorum() {
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
         unbonding_period: DEFAULT_UNBONDING_PERIOD,
+        gov_hodler: GOV_HODLER.to_string(),
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -186,6 +191,7 @@ fn fails_init_invalid_threshold() {
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
         unbonding_period: DEFAULT_UNBONDING_PERIOD,
+        gov_hodler: GOV_HODLER.to_string(),
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -213,6 +219,7 @@ fn fails_contract_already_registered() {
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         halo_token: HALO_TOKEN.to_string(),
         unbonding_period: DEFAULT_UNBONDING_PERIOD,
+        gov_hodler: GOV_HODLER.to_string(),
     };
 
     let _res = instantiate(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
@@ -2444,6 +2451,7 @@ fn update_config() {
         proposal_deposit: None,
         snapshot_period: None,
         unbonding_period: None,
+        gov_hodler: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -2470,6 +2478,7 @@ fn update_config() {
         proposal_deposit: Some(Uint128::from(123u128)),
         snapshot_period: Some(11),
         unbonding_period: None,
+        gov_hodler: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -2497,6 +2506,7 @@ fn update_config() {
         proposal_deposit: None,
         snapshot_period: None,
         unbonding_period: None,
+        gov_hodler: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg);

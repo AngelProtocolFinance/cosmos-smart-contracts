@@ -18,6 +18,26 @@ pub fn query_balance(deps: Deps, address: String) -> BalanceResponse {
     }
 }
 
+// pub fn query_tvl(deps: Deps,  env: Env) -> TvlResponse {
+//     let mut totals: (u64, u64) = (0, 0);
+
+//     let accounts: Result<Vec<_>, _> = BALANCES
+//             .keys(deps.storage, None, None, Order::Ascending)
+//             .map(String::from_utf8)
+//             .collect();
+//     for account in accounts.unwrap().iter() {
+//         let account_address = deps.api.addr_validate(account)?;
+//         let balances = BALANCES.load(deps.storage, &account_address)?;
+//         totals[0] += balances.locked_balance.get_token_amount(env.contract.address.clone())
+//         totals[1] += balances.liquid_balance.get_token_amount(env.contract.address.clone())
+//     }
+
+//     TvlResponse {
+//         locked: totals[0],
+//         liquid: totals[1],
+//     };
+// }
+
 pub fn query_token_info(deps: Deps) -> TokenInfoResponse {
     let info = TOKEN_INFO.load(deps.storage).unwrap();
     TokenInfoResponse {

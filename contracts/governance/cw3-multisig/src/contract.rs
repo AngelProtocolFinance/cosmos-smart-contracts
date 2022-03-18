@@ -1,19 +1,15 @@
-use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, Threshold, UpdateConfigMsg};
+use crate::msg::{ExecuteMsg, MigrateMsg, QueryMsg};
 use crate::state::{
-    next_id, parse_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, GUARDIAN_PROPOSALS,
-    PROPOSALS,
+    next_id, parse_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS,
 };
-use angel_core::messages::accounts::{QueryMsg as EndowmentQueryMsg, UpdateEndowmentSettingsMsg};
-use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
-use angel_core::responses::accounts::EndowmentDetailsResponse;
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::errors::guardians::ContractError;
+use angel_core::messages::guardians_multisig::{InstantiateMsg, Threshold};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, BlockInfo, CosmosMsg, Decimal, Deps, DepsMut, Empty, Env, MessageInfo,
-    Order, QueryRequest, Response, StdResult, WasmMsg, WasmQuery,
+    to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, Order,
+    Response, StdResult,
 };
-use cw0::{maybe_addr, Expiration};
+use cw0::{maybe_addr, Duration, Expiration};
 use cw2::set_contract_version;
 use cw3::{
     ProposalListResponse, ProposalResponse, Status, ThresholdResponse, Vote, VoteInfo,
@@ -24,7 +20,7 @@ use cw_storage_plus::Bound;
 use std::cmp::Ordering;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "guardian-angels-multisig";
+const CONTRACT_NAME: &str = "cw3-multisig";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -34,32 +30,20 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let ap_team_group = Cw4Contract(deps.api.addr_validate(&msg.ap_team_group).map_err(|_| {
+    let group_addr = Cw4Contract(deps.api.addr_validate(&msg.group_addr).map_err(|_| {
         ContractError::InvalidGroup {
-            addr: msg.ap_team_group.clone(),
+            addr: msg.group_addr.clone(),
         }
     })?);
-    let total_weight = ap_team_group.total_weight(&deps.querier)?;
+    let total_weight = group_addr.total_weight(&deps.querier)?;
     msg.threshold.validate(total_weight)?;
-
-    let endowment_owners_group = Cw4Contract(
-        deps.api
-            .addr_validate(&msg.endowment_owners_group)
-            .map_err(|_| ContractError::InvalidGroup {
-                addr: msg.endowment_owners_group.clone(),
-            })?,
-    );
-    let registrar_contract = deps.api.addr_validate(&msg.registrar_contract)?;
 
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let cfg = Config {
         threshold: msg.threshold,
         max_voting_period: msg.max_voting_period,
-        max_voting_period_guardians: msg.max_voting_period_guardians,
-        ap_team_group,
-        endowment_owners_group,
-        registrar_contract,
+        group_addr,
     };
     CONFIG.save(deps.storage, &cfg)?;
 
@@ -75,36 +59,16 @@ pub fn execute(
 ) -> Result<Response<Empty>, ContractError> {
     match msg {
         ExecuteMsg::Propose {
-            endowment_addr,
             title,
             description,
             msgs,
             latest,
-        } => execute_propose(
-            deps,
-            env,
-            info,
-            title,
-            description,
-            msgs,
-            latest,
-            endowment_addr,
-            None,
-        ),
-        ExecuteMsg::ProposeOwnerChange {
-            endowment_addr,
-            new_owner_addr,
-        } => execute_propose_owner_change(deps, env, info, endowment_addr, new_owner_addr),
-        ExecuteMsg::ProposeGuardianChange {
-            endowment_addr,
-            add,
-            remove,
-        } => execute_propose_guardian_change(deps, env, info, endowment_addr, add, remove),
+        } => execute_propose(deps, env, info, title, description, msgs, latest),
         ExecuteMsg::Vote { proposal_id, vote } => execute_vote(deps, env, info, proposal_id, vote),
-        ExecuteMsg::VoteGuardian { proposal_id, vote } => {
-            execute_vote_guardian(deps, env, info, proposal_id, vote)
-        }
-        ExecuteMsg::UpdateConfig(msg) => execute_update_config(deps, env, info, msg),
+        ExecuteMsg::UpdateConfig {
+            threshold,
+            max_voting_period,
+        } => execute_update_config(deps, env, info, threshold, max_voting_period),
         ExecuteMsg::Execute { proposal_id } => execute_execute(deps, env, info, proposal_id),
         ExecuteMsg::Close { proposal_id } => execute_close(deps, env, info, proposal_id),
         ExecuteMsg::MemberChangedHook(MemberChangedHookMsg { diffs }) => {
@@ -115,95 +79,22 @@ pub fn execute(
 
 pub fn execute_update_config(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
-    msg: UpdateConfigMsg,
+    threshold: Threshold,
+    max_voting_period: Duration,
 ) -> Result<Response<Empty>, ContractError> {
-    let mut cfg = CONFIG.load(deps.storage)?;
-
-    // get the owner of the Registrar config
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: cfg.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
-        }))?;
-
-    // only the owner/admin of the Registrar contract can update the configs
-    if info.sender != registrar_config.owner {
+    // only the contract can update own configs
+    if info.sender != env.contract.address {
         return Err(ContractError::Unauthorized {});
     }
+    let mut cfg = CONFIG.load(deps.storage)?;
 
-    cfg.threshold = msg.threshold;
-    cfg.max_voting_period = msg.max_voting_period;
-    cfg.max_voting_period_guardians = msg.max_voting_period_guardians;
+    cfg.threshold = threshold;
+    cfg.max_voting_period = max_voting_period;
 
     CONFIG.save(deps.storage, &cfg)?;
     Ok(Response::default())
-}
-
-pub fn execute_propose_owner_change(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    endowment_addr: String,
-    new_owner_addr: String,
-) -> Result<Response<Empty>, ContractError> {
-    execute_propose(
-        deps,
-        env,
-        info,
-        "Change Endowment Owner".to_string(),
-        format!(
-            "Changes Endowment Owner\n- endowment: {}\n- new owner: {}",
-            endowment_addr, new_owner_addr
-        ),
-        vec![CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: endowment_addr.clone(),
-            msg: to_binary(
-                &angel_core::messages::accounts::ExecuteMsg::UpdateEndowmentSettings(
-                    UpdateEndowmentSettingsMsg {
-                        beneficiary: new_owner_addr.clone(),
-                        owner: new_owner_addr,
-                    },
-                ),
-            )
-            .unwrap(),
-            funds: vec![],
-        })],
-        None,
-        endowment_addr,
-        Some("owner_change".to_string()),
-    )
-}
-pub fn execute_propose_guardian_change(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    endowment_addr: String,
-    add: Vec<String>,
-    remove: Vec<String>,
-) -> Result<Response<Empty>, ContractError> {
-    execute_propose(
-        deps,
-        env,
-        info,
-        "Change Endowment Guardians".to_string(),
-        format!(
-            "Changes Endowment Guardians set\n- endowment: {}\n- add: {:?}\n- remove: {:?}",
-            endowment_addr, add, remove
-        ),
-        vec![CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: endowment_addr.clone(),
-            msg: to_binary(
-                &angel_core::messages::accounts::ExecuteMsg::UpdateGuardians { add, remove },
-            )
-            .unwrap(),
-            funds: vec![],
-        })],
-        None,
-        endowment_addr,
-        Some("guardian_change".to_string()),
-    )
 }
 
 pub fn execute_propose(
@@ -214,70 +105,21 @@ pub fn execute_propose(
     description: String,
     msgs: Vec<CosmosMsg>,
     latest: Option<Expiration>, // we ignore earliest
-    endowment_addr: String,
-    special_proposal: Option<String>,
 ) -> Result<Response<Empty>, ContractError> {
-    // look up guardian set & current owner for the Endowment
-    let endowment_info: EndowmentDetailsResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: endowment_addr.clone(),
-            msg: to_binary(&EndowmentQueryMsg::Endowment {})?,
-        }))?;
-    let guardians_count = endowment_info.guardians.len() as u64;
     let cfg = CONFIG.load(deps.storage)?;
-    let vote_power;
-    let total_weight;
-    let threshold;
-    let max_expires;
 
-    if special_proposal == None {
-        // Only Endowment Owner members can create generic proposals (non-special proposals).
-        // General proposals cannot be created by Guardians or by AP Team Members.
-        // AP Team Group members vote to appove these generic proposals by Endowment Owners.
-        vote_power = cfg
-            .endowment_owners_group
-            .is_member(&deps.querier, &info.sender)?
-            .ok_or(ContractError::Unauthorized {})?;
-        total_weight = cfg.ap_team_group.total_weight(&deps.querier)?;
-        threshold = cfg.threshold;
-        max_expires = cfg.max_voting_period.after(&env.block);
-    } else {
-        max_expires = cfg.max_voting_period_guardians.after(&env.block);
-        let proposal_type = special_proposal.as_ref().unwrap();
-        if proposal_type == "guardian_change" && info.sender == endowment_info.owner {
-            vote_power = cfg
-                .endowment_owners_group
-                .is_member(&deps.querier, &info.sender)?
-                .ok_or(ContractError::Unauthorized {})?;
+    // Only members of the multisig can create a proposal
+    // Non-voting members are special - they are allowed to create a proposal and
+    // therefore "vote", but they aren't allowed to vote otherwise.
+    // Such vote is also special, because despite having 0 weight it still counts when
+    // counting threshold passing
+    let vote_power = cfg
+        .group_addr
+        .is_member(&deps.querier, &info.sender)?
+        .ok_or(ContractError::Unauthorized {})?;
 
-            total_weight = guardians_count + 1;
-            if guardians_count > 0 {
-                threshold = Threshold::ThresholdQuorum {
-                    // threshold is (N/2+1) where N is the current # of Guardians
-                    threshold: Decimal::from_ratio(guardians_count / 2 + 1, guardians_count),
-                    // quorum is % representation of 1 vote (ie. the owner's first vote)
-                    quorum: Decimal::from_ratio(1u128, guardians_count + 1),
-                };
-            } else {
-                threshold = Threshold::AbsoluteCount { weight: 1 };
-                threshold.validate(total_weight)?;
-            }
-            threshold.validate(total_weight)?;
-        } else if proposal_type == "owner_change"
-            && endowment_info.is_guardian(info.sender.to_string())
-        {
-            // guardians get a default voting weight of 1
-            vote_power = 1;
-            total_weight = guardians_count;
-            // threshold is (N/2+1) where N is the current # of Guardians
-            threshold = Threshold::AbsoluteCount {
-                weight: guardians_count / 2 + 1,
-            };
-            threshold.validate(total_weight)?;
-        } else {
-            return Err(ContractError::Unauthorized {});
-        }
-    }
+    // max expires also used as default
+    let max_expires = cfg.max_voting_period.after(&env.block);
     let mut expires = latest.unwrap_or(max_expires);
     let comp = expires.partial_cmp(&max_expires);
     if let Some(Ordering::Greater) = comp {
@@ -288,7 +130,6 @@ pub fn execute_propose(
 
     // create a proposal
     let mut prop = Proposal {
-        endowment_addr,
         title,
         description,
         start_height: env.block.height,
@@ -296,18 +137,12 @@ pub fn execute_propose(
         msgs,
         status: Status::Open,
         votes: Votes::new(vote_power),
-        threshold,
-        total_weight,
+        threshold: cfg.threshold,
+        total_weight: cfg.group_addr.total_weight(&deps.querier)?,
     };
     prop.update_status(&env.block);
     let id = next_id(deps.storage)?;
-
-    match special_proposal {
-        // add special proposals to focused lists for easier handling/recall later
-        Some(_p) => GUARDIAN_PROPOSALS.save(deps.storage, id.into(), &prop)?,
-        // all other proposals added to general list
-        None => PROPOSALS.save(deps.storage, id.into(), &prop)?,
-    }
+    PROPOSALS.save(deps.storage, id.into(), &prop)?;
 
     // add the first yes vote from voter
     let ballot = Ballot {
@@ -323,59 +158,6 @@ pub fn execute_propose(
         .add_attribute("status", format!("{:?}", prop.status)))
 }
 
-pub fn execute_vote_guardian(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    proposal_id: u64,
-    vote: Vote,
-) -> Result<Response<Empty>, ContractError> {
-    // only Guardian members of the Endowment can vote on these proposals
-    // ensure proposal exists and can be voted on
-    let mut prop = GUARDIAN_PROPOSALS.load(deps.storage, proposal_id.into())?;
-    if prop.status != Status::Open {
-        return Err(ContractError::NotOpen {});
-    }
-    if prop.expires.is_expired(&env.block) {
-        return Err(ContractError::Expired {});
-    }
-
-    // only Guardian members on an Endowment of the multisig can vote
-    let endowment_info: EndowmentDetailsResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: prop.endowment_addr.clone(),
-            msg: to_binary(&EndowmentQueryMsg::Endowment {})?,
-        }))?;
-    if !endowment_info.is_guardian(info.sender.to_string()) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let vote_power = 1;
-    // cast vote if no vote previously cast
-    BALLOTS.update(
-        deps.storage,
-        (proposal_id.into(), &info.sender),
-        |bal| match bal {
-            Some(_) => Err(ContractError::AlreadyVoted {}),
-            None => Ok(Ballot {
-                weight: vote_power,
-                vote,
-            }),
-        },
-    )?;
-
-    // update vote tally
-    prop.votes.add_vote(vote, vote_power);
-    prop.update_status(&env.block);
-    GUARDIAN_PROPOSALS.save(deps.storage, proposal_id.into(), &prop)?;
-
-    Ok(Response::new()
-        .add_attribute("action", "vote_guardian")
-        .add_attribute("sender", info.sender)
-        .add_attribute("proposal_id", proposal_id.to_string())
-        .add_attribute("status", format!("{:?}", prop.status)))
-}
-
 pub fn execute_vote(
     deps: DepsMut,
     env: Env,
@@ -383,6 +165,9 @@ pub fn execute_vote(
     proposal_id: u64,
     vote: Vote,
 ) -> Result<Response<Empty>, ContractError> {
+    // only members of the multisig can vote
+    let cfg = CONFIG.load(deps.storage)?;
+
     // ensure proposal exists and can be voted on
     let mut prop = PROPOSALS.load(deps.storage, proposal_id.into())?;
     if prop.status != Status::Open {
@@ -392,10 +177,11 @@ pub fn execute_vote(
         return Err(ContractError::Expired {});
     }
 
-    let cfg = CONFIG.load(deps.storage)?;
+    // Only voting members of the multisig can vote
+    // Additional check if weight >= 1
     // use a snapshot of "start of proposal"
     let vote_power = cfg
-        .ap_team_group
+        .group_addr
         .member_at_height(&deps.querier, info.sender.clone(), prop.start_height)?
         .ok_or(ContractError::Unauthorized {})?;
 
@@ -433,18 +219,11 @@ pub fn execute_execute(
     // anyone can trigger this if the vote passed
     // try to look up the proposal from the ID given
     let mut prop: Proposal;
-    let mut proposal_store = PROPOSALS;
     match PROPOSALS.load(deps.storage, proposal_id.into()) {
         Ok(p) => {
             prop = p;
         }
-        _ => match GUARDIAN_PROPOSALS.load(deps.storage, proposal_id.into()) {
-            Ok(p) => {
-                proposal_store = GUARDIAN_PROPOSALS;
-                prop = p;
-            }
-            _ => return Err(ContractError::Unauthorized {}),
-        },
+        _ => return Err(ContractError::Unauthorized {}),
     };
 
     // we allow execution even after the proposal "expiration" as long as all vote come in before
@@ -455,7 +234,7 @@ pub fn execute_execute(
 
     // set it to executed
     prop.status = Status::Executed;
-    proposal_store.save(deps.storage, proposal_id.into(), &prop)?;
+    PROPOSALS.save(deps.storage, proposal_id.into(), &prop)?;
 
     // dispatch all proposed messages
     Ok(Response::new()
@@ -471,22 +250,8 @@ pub fn execute_close(
     info: MessageInfo,
     proposal_id: u64,
 ) -> Result<Response<Empty>, ContractError> {
-    // try to look up the proposal from the ID given
-    let mut prop: Proposal;
-    let mut proposal_store = PROPOSALS;
-    match PROPOSALS.load(deps.storage, proposal_id.into()) {
-        Ok(p) => {
-            prop = p;
-        }
-        _ => match GUARDIAN_PROPOSALS.load(deps.storage, proposal_id.into()) {
-            Ok(p) => {
-                proposal_store = GUARDIAN_PROPOSALS;
-                prop = p;
-            }
-            _ => return Err(ContractError::Unauthorized {}),
-        },
-    };
-
+    // anyone can trigger this if the vote passed
+    let mut prop = PROPOSALS.load(deps.storage, proposal_id.into())?;
     if [Status::Executed, Status::Rejected, Status::Passed]
         .iter()
         .any(|x| *x == prop.status)
@@ -499,7 +264,7 @@ pub fn execute_close(
 
     // set it to failed
     prop.update_status(&env.block);
-    proposal_store.save(deps.storage, proposal_id.into(), &prop)?;
+    PROPOSALS.save(deps.storage, proposal_id.into(), &prop)?;
 
     Ok(Response::new()
         .add_attribute("action", "close")
@@ -516,7 +281,7 @@ pub fn execute_membership_hook(
     // This is now a no-op
     // But we leave the authorization check as a demo
     let cfg = CONFIG.load(deps.storage)?;
-    if info.sender != cfg.ap_team_group.0 {
+    if info.sender != cfg.group_addr.0 {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -550,15 +315,12 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 fn query_threshold(deps: Deps) -> StdResult<ThresholdResponse> {
     let cfg = CONFIG.load(deps.storage)?;
-    let total_weight = cfg.ap_team_group.total_weight(&deps.querier)?;
+    let total_weight = cfg.group_addr.total_weight(&deps.querier)?;
     Ok(cfg.threshold.to_response(total_weight))
 }
 
 fn query_proposal(deps: Deps, env: Env, id: u64) -> StdResult<ProposalResponse> {
-    // try to look up the proposal from the ID given
-    let prop = PROPOSALS
-        .load(deps.storage, id.into())
-        .unwrap_or(GUARDIAN_PROPOSALS.load(deps.storage, id.into())?);
+    let prop = PROPOSALS.load(deps.storage, id.into())?;
     let status = prop.current_status(&env.block);
     let threshold = prop.threshold.to_response(prop.total_weight);
     Ok(ProposalResponse {
@@ -589,15 +351,9 @@ fn list_proposals(
         .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();
-    let special_props: StdResult<Vec<_>> = GUARDIAN_PROPOSALS
-        .range(deps.storage, start, None, Order::Ascending)
-        .take(limit)
-        .map(|p| map_proposal(&env.block, p))
-        .collect();
-    let mut all_props = props.unwrap();
-    all_props.extend(special_props.unwrap());
+
     Ok(ProposalListResponse {
-        proposals: all_props,
+        proposals: props.unwrap(),
     })
 }
 
@@ -614,16 +370,9 @@ fn reverse_proposals(
         .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();
-    let special_props: StdResult<Vec<_>> = GUARDIAN_PROPOSALS
-        .range(deps.storage, None, end, Order::Ascending)
-        .take(limit)
-        .map(|p| map_proposal(&env.block, p))
-        .collect();
-    let mut all_props = props.unwrap();
-    all_props.extend(special_props.unwrap());
 
     Ok(ProposalListResponse {
-        proposals: all_props,
+        proposals: props.unwrap(),
     })
 }
 
@@ -686,7 +435,7 @@ fn list_votes(
 fn query_voter(deps: Deps, voter: String) -> StdResult<VoterResponse> {
     let cfg = CONFIG.load(deps.storage)?;
     let voter_addr = deps.api.addr_validate(&voter)?;
-    let weight = cfg.ap_team_group.is_member(&deps.querier, &voter_addr)?;
+    let weight = cfg.group_addr.is_member(&deps.querier, &voter_addr)?;
 
     Ok(VoterResponse { weight })
 }
@@ -698,7 +447,7 @@ fn list_voters(
 ) -> StdResult<VoterListResponse> {
     let cfg = CONFIG.load(deps.storage)?;
     let voters = cfg
-        .ap_team_group
+        .group_addr
         .list_members(&deps.querier, start_after, limit)?
         .into_iter()
         .map(|member| VoterDetail {
