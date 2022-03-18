@@ -1,8 +1,7 @@
 use angel_core::structs::{EndowmentEntry, SplitDetails, YieldVault};
 use angel_core::utils::calc_range_start_addr;
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
-use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
-use cw_storage_plus::{Item, Map, Bound};
+use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -15,7 +14,7 @@ pub const CONFIG: Item<Config> = Item::new("config");
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub owner: Addr,           // AP TEAM MULTISIG
+    pub owner: Addr,                   // AP TEAM MULTISIG
     pub guardian_angels: Option<Addr>, // GUARDIAN ANGELS MULTISIG
     pub index_fund_contract: Option<Addr>,
     pub accounts_code_id: u64,
@@ -75,7 +74,7 @@ pub fn read_vaults<'a>(
     let start = calc_range_start_addr(start_after);
     PREFIX_PORTAL
         .range(
-            storage, 
+            storage,
             start.and_then(|v| Some(Bound::Inclusive(v))),
             None,
             Order::Ascending,
