@@ -1,9 +1,9 @@
-use super::mock_querier::{mock_dependencies};
+use super::mock_querier::mock_dependencies;
 use crate::contract::{execute, instantiate, migrate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
-use cosmwasm_std::testing::{ mock_env, mock_info};
+use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{coins, from_binary, Decimal};
 
 #[test]
@@ -279,7 +279,6 @@ fn test_update_strategy() {
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
-
     assert_eq!(0, res.messages.len());
 
     // sum of the invested strategy components percentages is not equal 100%
@@ -300,8 +299,8 @@ fn test_update_strategy() {
 
     let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth"));
     let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
     assert_eq!(err, ContractError::InvalidStrategyAllocation {});
+
     let msg = ExecuteMsg::UpdateStrategies {
         strategies: vec![
             Strategy {
@@ -324,8 +323,8 @@ fn test_update_strategy() {
 
     let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth"));
     let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-
     assert_eq!(err, ContractError::StrategyComponentsNotUnique {});
+
     let msg = ExecuteMsg::UpdateStrategies {
         strategies: vec![
             Strategy {
@@ -342,7 +341,7 @@ fn test_update_strategy() {
     };
     let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth"));
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    assert_eq!(0, res.messages.len());
+    assert_eq!(1, res.messages.len());
 
     let msg = ExecuteMsg::UpdateStrategies {
         strategies: vec![

@@ -206,6 +206,7 @@ pub fn update_strategies(
         .iter()
         .map(|strategy| deps.api.addr_validate(&strategy.vault).unwrap())
         .collect();
+    addresses.sort();
     addresses.dedup();
 
     if addresses.len() < strategies.len() {
@@ -380,7 +381,7 @@ pub fn vault_receipt(
                             }))?;
                         let index_fund: String = match registrar_config.index_fund {
                             Some(addr) => addr.to_string(),
-                            None => return Err(ContractError::ContractNotConfigured {  }),
+                            None => return Err(ContractError::ContractNotConfigured {}),
                         };
 
                         // query the Index Fund SC to find the Fund that this Endowment is a member of
@@ -481,7 +482,7 @@ pub fn deposit(
     // check split passed by the donor against the Registrar SC split params
     let index_fund = match registrar_config.index_fund {
         Some(addr) => addr,
-        None => return Err(ContractError::ContractNotConfigured {  }),
+        None => return Err(ContractError::ContractNotConfigured {}),
     };
     if sender_addr != index_fund {
         let new_splits = check_splits(registrar_split_configs, locked_split, liquid_split);
