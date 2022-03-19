@@ -5,8 +5,8 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::structs::AcceptedTokens;
 use cosmwasm_std::{
-    entry_point, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError,
-    StdResult, Uint128,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    Uint128,
 };
 use cw2::set_contract_version;
 
@@ -121,21 +121,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[entry_point]
-pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, StdError> {
-    // Documentation on performing updates during migration
-    // https://docs.cosmwasm.com/docs/1.0/smart-contracts/migration/#using-migrate-to-update-otherwise-immutable-state
-    let config = CONFIG.load(deps.storage)?;
-    const STATE_KEY: &[u8] = b"state";
-    deps.storage.set(
-        STATE_KEY,
-        &to_vec(&State {
-            total_funds: 0,
-            active_fund: msg.active_fund,
-            next_fund_id: msg.next_fund_id,
-            round_donations: Uint128::zero(),
-            next_rotation_block: env.block.height + config.fund_rotation.unwrap_or(0u64),
-            terra_alliance: vec![],
-        })?,
-    );
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, StdError> {
     Ok(Response::default())
 }
