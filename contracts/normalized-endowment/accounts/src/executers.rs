@@ -7,8 +7,10 @@ use angel_core::messages::index_fund::DepositMsg as IndexFundDepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg as IndexFundExecuter;
 use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
+use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::vault::AccountTransferMsg;
 use angel_core::responses::index_fund::FundListResponse;
+use angel_core::responses::registrar::ConfigResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
@@ -47,11 +49,17 @@ pub fn new_cw4_group_reply(
             // Register the new Endowment on success Reply
             let _addr = deps.api.addr_validate(&group_addr)?;
 
+            let registrar_config: ConfigResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: config.registrar_contract.to_string(),
+                    msg: to_binary(&RegistrarConfig {})?,
+                }))?;
+
             // Fire the creation of new multisig linked to new group
             Ok(Response::new().add_submessage(SubMsg {
                 id: 2,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: config.cw3_code.unwrap(),
+                    code_id: registrar_config.cw3_code.unwrap(),
                     admin: None,
                     label: "new endowment guardians multisig".to_string(),
                     msg: to_binary(&Cw3MultisigInstantiateMsg {

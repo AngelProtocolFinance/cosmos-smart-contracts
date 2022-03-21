@@ -13,14 +13,14 @@ pub struct Config {
     pub deposit_approved: bool, // DANO has approved to receive donations & transact
     pub withdraw_approved: bool, // DANO has approved to withdraw funds
     pub pending_redemptions: Option<u64>,
-    pub cw3_code: Option<u64>,
-    pub cw4_code: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Endowment {
-    pub owner: Addr, // address that originally setup the endowment account
+    pub owner: Addr,       // address that originally setup the endowment account
+    pub dao: Option<Addr>, // subdao governance contract address
+    pub donation_match: Option<Addr>, // donation matching contract address
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
     pub name: String,                          // name of the Charity Endowment

@@ -6,6 +6,9 @@ pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
 
+    #[error("{0}")]
+    Payment(#[from] PaymentError),
+
     #[error("Unauthorized")]
     Unauthorized {},
 
@@ -20,6 +23,12 @@ pub enum ContractError {
 
     #[error("Invalid inputs")]
     InvalidInputs {},
+
+    #[error("No allowance for this account")]
+    NoAllowance {},
+
+    #[error("Minting cannot exceed the cap")]
+    CannotExceedCap {},
 
     #[error("Allowance is expired")]
     Expired {},
@@ -89,4 +98,25 @@ pub enum ContractError {
 
     #[error("Index Fund members limit exceeded")]
     IndexFundMembershipExceeded {},
+
+    #[error("No claims that can be released currently")]
+    NothingToClaim {},
+}
+
+#[derive(Error, Debug, PartialEq)]
+pub enum PaymentError {
+    #[error("Must send reserve token '{0}'")]
+    MissingDenom(String),
+
+    #[error("Received unsupported denom '{0}'")]
+    ExtraDenom(String),
+
+    #[error("Sent more than one denomination")]
+    MultipleDenoms {},
+
+    #[error("No funds sent")]
+    NoFunds {},
+
+    #[error("This message does no accept funds")]
+    NonPayable {},
 }

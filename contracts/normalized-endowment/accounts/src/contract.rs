@@ -12,7 +12,6 @@ use cosmwasm_std::{
     QueryRequest, Reply, ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
-use cw4::Member;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";
@@ -37,8 +36,6 @@ pub fn instantiate(
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
             pending_redemptions: None,
-            cw3_code: msg.cw3_code,
-            cw4_code: msg.cw4_code,
         },
     )?;
 
@@ -56,8 +53,10 @@ pub fn instantiate(
         deps.storage,
         &Endowment {
             owner: deps.api.addr_validate(&msg.owner)?, // Addr
+            dao: None,
+            donation_match: None,
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries, // Vec<String>
-            whitelisted_contributors: msg.whitelisted_contributors, // Vec<String>
+            whitelisted_contributors: msg.whitelisted_contributors,   // Vec<String>
             name: msg.name.clone(),
             description: msg.description.clone(),
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
@@ -83,37 +82,33 @@ pub fn instantiate(
         },
     )?;
 
-    // check if CW3/CW4 codes were passed to setup a multisig/group
-    if msg.cw3_code.ne(&None) && msg.cw4_code.ne(&None) {
-        // if there is NO guardians list passed initially, use the
-        // original Endowment owner address as the sole member
-        let mut first_guardians: Vec<Member> = vec![Member {
-            addr: msg.owner.into(),
-            weight: 1,
-        }];
-        if !msg.cw4_members.is_empty() {
-            first_guardians = msg.cw4_members;
-        }
+    // initial default Response to add submessages to
+    let mut res: Response = Response::new();
 
-        Ok(Response::new().add_submessage(SubMsg {
+    // check if CW3/CW4 codes were passed to setup a multisig/group
+    if msg.cw4_members.ne(&vec![])
+        && (registrar_config.cw3_code.ne(&None) && registrar_config.cw4_code.ne(&None))
+    {
+        res = res.add_submessage(SubMsg {
             id: 1,
             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                code_id: msg.cw4_code.unwrap(),
+                code_id: registrar_config.cw4_code.unwrap(),
                 admin: None,
                 label: "new endowment cw4 group".to_string(),
                 msg: to_binary(&Cw4GroupInstantiateMsg {
                     admin: Some(info.sender.to_string()),
-                    members: first_guardians,
+                    members: msg.cw4_members,
                 })?,
                 funds: vec![],
             }),
             gas_limit: None,
             reply_on: ReplyOn::Success,
-        }))
-    } else {
-        // Cut out early with msg.owner as endowment owner
-        Ok(Response::default())
+        })
     }
+
+    // check if a subdao needs to be setup
+    // if msg.subdao.ne(&None) { }
+    Ok(res)
 }
 
 #[entry_point]

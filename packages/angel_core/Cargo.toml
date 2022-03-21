@@ -20,6 +20,9 @@ schemars = "0.8.1"
 serde = { version = "1.0.125", default-features = false, features = ["derive"] }
 terra-cosmwasm = "2.2.0"
 thiserror = { version = "1.0.24" }
+rust_decimal = { version = "1.14.3" }
+integer-sqrt = { version = "0.1.5" }
+integer-cbrt = { version = "0.1.2" }
 
 [dev-dependencies]
 cosmwasm-schema = { version = "0.16.0" }
