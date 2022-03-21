@@ -34,13 +34,13 @@ export async function migrateCore(
   endowmentContracts: string[]
 ): Promise<void> {
   // run the migrations desired
-  // await migrateRegistrar(terra, apTeam, registrar);
-  // await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
-  // await migrateApTeamMultisig(terra, apTeam, cw3ApTeam);
-  // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
-  // await migrateIndexFund(terra, apTeam, indexFund);
-  // await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
-  // await migrateVaults(terra, apTeam, vaultContracts);
+  await migrateRegistrar(terra, apTeam, registrar);
+  await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
+  await migrateApTeamMultisig(terra, apTeam, cw3ApTeam);
+  await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
+  await migrateIndexFund(terra, apTeam, indexFund);
+  await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
+  await migrateVaults(terra, apTeam, vaultContracts);
 }
 
 // -------------------------------------------------
@@ -81,7 +81,8 @@ async function migrateIndexFund(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate Index Fund contract");
-  const result1 = await migrateContract(terra, apTeam, apTeam, indexFund, codeId, {});
+  // const result1 = await migrateContract(terra, apTeam, apTeam, indexFund, codeId, {});
+  const result1 = await migrateContract(terra, apTeam, apTeam, indexFund, codeId, { next_fund_id: 2, active_fund: 1 });
   console.log(chalk.green(" Done!"));
 }
 
