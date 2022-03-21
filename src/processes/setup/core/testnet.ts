@@ -451,22 +451,16 @@ async function createIndexFunds(): Promise<void> {
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       create_fund: {
-        fund: {
-          id: 1,
-          name: "Test Fund",
-          description: "My first test fund",
-          members: [endowmentContract1, endowmentContract2],
-        },
+        name: "Test Fund",
+        description: "My first test fund",
+        members: [endowmentContract1, endowmentContract2],
       },
     }),
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       create_fund: {
-        fund: {
-          id: 2,
-          name: "Test Fund #2",
-          description: "Another fund to test rotations",
-          members: [endowmentContract1, endowmentContract4],
-        },
+        name: "Test Fund #2",
+        description: "Another fund to test rotations",
+        members: [endowmentContract1, endowmentContract4],
       },
     }),
   ]);
