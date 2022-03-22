@@ -129,8 +129,17 @@ pub enum QueryMsg {
     State {},
     // return config details
     Config {},
-    // return list of TCA Members
+    // return list of TCA Members(only address)
     TcaList {},
+    // return list of Alliance Members(TCA members)
+    AllianceMembers {
+        start_after: Option<Addr>,
+        limit: Option<u64>,
+    },
+    // return the Alliance member given "wallet" address
+    AllianceMember {
+        wallet: Addr,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

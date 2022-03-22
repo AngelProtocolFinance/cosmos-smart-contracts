@@ -2,7 +2,7 @@ use crate::contract::{execute, instantiate, migrate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::index_fund::*;
 use angel_core::responses::index_fund::*;
-use angel_core::structs::{AllianceMember, IndexFund};
+use angel_core::structs::AllianceMember;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{attr, coins, from_binary, Addr};
 
@@ -477,5 +477,36 @@ fn sc_owner_can_update_alliancemember() {
             attr("method", "update_alliancemember"),
             attr("member_addr", "member-addr"),
         ]
+    );
+
+    // check alliance member with "wallet" addr
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::AllianceMember {
+            wallet: Addr::unchecked("member-addr"),
+        },
     )
+    .unwrap();
+    let alliance_member_response: AllianceMemberResponse = from_binary(&res).unwrap();
+    assert_eq!(alliance_member_response.wallet, "member-addr".to_string());
+    assert_eq!(alliance_member_response.name, "Alliance-1".to_string());
+    assert_eq!(alliance_member_response.logo, Some("A1".to_string()));
+    assert_eq!(
+        alliance_member_response.website,
+        Some("https://alliance-1.com".to_string())
+    );
+
+    // check alliance member with "wallet" addr
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::AllianceMembers {
+            start_after: None,
+            limit: None,
+        },
+    )
+    .unwrap();
+    let alliance_member_list_response: AllianceMemberListResponse = from_binary(&res).unwrap();
+    assert_eq!(alliance_member_list_response.alliance_members.len(), 1);
 }

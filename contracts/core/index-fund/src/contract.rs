@@ -121,6 +121,10 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&queriers::deposit_msg_builder(
             deps, env, amount, fund_id, split,
         )?),
+        QueryMsg::AllianceMember { wallet } => to_binary(&queriers::alliance_member(deps, wallet)?),
+        QueryMsg::AllianceMembers { start_after, limit } => {
+            to_binary(&queriers::alliance_members(deps, start_after, limit)?)
+        }
     }
 }
 

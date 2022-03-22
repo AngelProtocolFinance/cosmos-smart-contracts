@@ -1,8 +1,12 @@
-use crate::state::{fund_read, read_funds, ALLIANCE_MEMBERS, CONFIG, STATE, TCA_DONATIONS};
+use crate::state::{
+    fund_read, read_alliance_members, read_funds, ALLIANCE_MEMBERS, CONFIG, STATE, TCA_DONATIONS,
+};
 use angel_core::messages::index_fund::DepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg::Deposit;
 use angel_core::responses::index_fund::*;
-use cosmwasm_std::{to_binary, Coin, CosmosMsg, Decimal, Deps, Env, StdResult, Uint128, WasmMsg};
+use cosmwasm_std::{
+    to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, Env, StdError, StdResult, Uint128, WasmMsg,
+};
 
 pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
@@ -115,4 +119,38 @@ pub fn deposit_msg_builder(
             amount,
         }],
     }))
+}
+
+pub fn alliance_member(deps: Deps, wallet: Addr) -> StdResult<AllianceMemberResponse> {
+    let alliance_member = match ALLIANCE_MEMBERS.may_load(deps.storage, wallet.clone()) {
+        Ok(res) => match res {
+            Some(m) => m,
+            None => {
+                return Err(StdError::GenericErr {
+                    msg: "Cannot find member".to_string(),
+                })
+            }
+        },
+        Err(_) => {
+            return Err(StdError::GenericErr {
+                msg: "Cannot find member".to_string(),
+            })
+        }
+    };
+
+    Ok(AllianceMemberResponse {
+        wallet: wallet.to_string(),
+        name: alliance_member.name,
+        logo: alliance_member.logo,
+        website: alliance_member.website,
+    })
+}
+
+pub fn alliance_members(
+    deps: Deps,
+    start_after: Option<Addr>,
+    limit: Option<u64>,
+) -> StdResult<AllianceMemberListResponse> {
+    let alliance_members = read_alliance_members(deps.storage, start_after, limit)?;
+    Ok(AllianceMemberListResponse { alliance_members })
 }

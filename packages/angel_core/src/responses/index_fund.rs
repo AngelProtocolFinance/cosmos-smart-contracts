@@ -46,3 +46,16 @@ pub struct ConfigResponse {
     pub funding_goal: Option<Uint128>,
     pub accepted_tokens: AcceptedTokens,
 }
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+pub struct AllianceMemberResponse {
+    pub wallet: String,
+    pub name: String,
+    pub logo: Option<String>,
+    pub website: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+pub struct AllianceMemberListResponse {
+    pub alliance_members: Vec<AllianceMemberResponse>,
+}
