@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 pub const TCA_DONATIONS: Map<String, GenericBalance> = Map::new("tca_donation");
+pub const ALLIANCE_MEMBERS: Map<Addr, AllianceMember> = Map::new("alliance_members");
 
 static PREFIX_FUND: &[u8] = b"fund";
 
@@ -44,6 +45,14 @@ impl State {
             .map(|tca| tca.to_string())
             .collect()
     }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct AllianceMember {
+    name: String,
+    logo: Option<String>,
+    website: Option<String>,
 }
 
 // FUND Read/Write

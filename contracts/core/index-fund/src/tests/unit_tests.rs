@@ -158,7 +158,10 @@ fn migrate_contract() {
     assert_eq!(0, res.messages.len());
 
     // try to migrate the contract
-    let msg = MigrateMsg { active_fund: 0, next_fund_id: 0 }; // just place_holder
+    let msg = MigrateMsg {
+        active_fund: 0,
+        next_fund_id: 0,
+    }; // just place_holder
     let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
     assert_eq!(0, res.messages.len())
 }
@@ -241,7 +244,7 @@ fn sc_owner_can_add_remove_funds() {
         expiry_time: None,
         expiry_height: None,
     };
-    let remove_fund_msg = ExecuteMsg::RemoveFund{ fund_id: 1 };
+    let remove_fund_msg = ExecuteMsg::RemoveFund { fund_id: 1 };
 
     // pleb cannot add funds (only SC owner should be able to)
     let info = mock_info(&pleb.clone(), &coins(1000, "earth"));
@@ -250,12 +253,26 @@ fn sc_owner_can_add_remove_funds() {
 
     // real SC owner adds a fund
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
-    let res = execute(deps.as_mut(), mock_env(), info.clone(), new_fund_msg.clone()).unwrap();
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info.clone(),
+        new_fund_msg.clone(),
+    )
+    .unwrap();
     let _res = execute(deps.as_mut(), mock_env(), info, new_fund_msg1).unwrap();
     assert_eq!(0, res.messages.len());
 
     // check that the fund can be fetched in a query to FundsList
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::FundsList { start_after: None, limit: None }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::FundsList {
+            start_after: None,
+            limit: None,
+        },
+    )
+    .unwrap();
     let value: FundListResponse = from_binary(&res).unwrap();
     assert_eq!(2, value.funds.len());
 
@@ -270,7 +287,15 @@ fn sc_owner_can_add_remove_funds() {
     assert_eq!(0, res.messages.len());
 
     // check that the fund in FundsList is expired
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::FundsList { start_after: None, limit: None }).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::FundsList {
+            start_after: None,
+            limit: None,
+        },
+    )
+    .unwrap();
     let value: FundListResponse = from_binary(&res).unwrap();
     assert_eq!(1, value.funds.len());
     assert_eq!(value.funds[0].expiry_height, None);
