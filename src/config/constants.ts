@@ -232,6 +232,7 @@ export const mainnet = {
       "terra1fl9tydg4yqzk39k4k0hdjcnyer93n2htyajzlm", // Yasayan Gili Matra Bersama (Coral Catch)
       "terra1yprej80ls40lkhayxt20zhsjy5rzgwle80q02m", // Save the Waves
       "terra197sh6vs9u483h2gxycfz7lsw964f0hf6dup75f", // The Pain Free Project
+      "terra1mzkqpefs0tjww4serwyx9u2sthgjraznwvcwpa", // Brooklyn Angel
     ],
   },
   members: [
