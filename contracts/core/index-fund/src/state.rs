@@ -31,20 +31,10 @@ pub struct Config {
 #[serde(rename_all = "snake_case")]
 pub struct State {
     pub total_funds: u64,
-    pub active_fund: u64,          // index ID of the Active IndexFund
-    pub round_donations: Uint128,  // total donations given to active charity this round
-    pub next_rotation_block: u64,  // block height to perform next rotation on
-    pub terra_alliance: Vec<Addr>, // Terra Charity Alliance addresses
+    pub active_fund: u64,         // index ID of the Active IndexFund
+    pub round_donations: Uint128, // total donations given to active charity this round
+    pub next_rotation_block: u64, // block height to perform next rotation on
     pub next_fund_id: u64,
-}
-
-impl State {
-    pub fn tca_human_addresses(self) -> Vec<String> {
-        self.terra_alliance
-            .iter()
-            .map(|tca| tca.to_string())
-            .collect()
-    }
 }
 
 // FUND Read/Write

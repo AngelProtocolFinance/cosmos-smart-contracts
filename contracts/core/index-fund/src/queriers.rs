@@ -1,4 +1,4 @@
-use crate::state::{fund_read, read_funds, CONFIG, STATE, TCA_DONATIONS};
+use crate::state::{fund_read, read_funds, ALLIANCE_MEMBERS, CONFIG, STATE, TCA_DONATIONS};
 use angel_core::messages::index_fund::DepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg::Deposit;
 use angel_core::responses::index_fund::*;
@@ -24,16 +24,19 @@ pub fn state(deps: Deps) -> StdResult<StateResponse> {
         active_fund: state.active_fund,
         round_donations: state.round_donations,
         next_rotation_block: state.next_rotation_block,
-        terra_alliance: state.tca_human_addresses(),
     })
 }
 
 pub fn tca_list(deps: Deps) -> StdResult<TcaListResponse> {
     // Return a list of TCA Member Addrs
-    let state = STATE.load(deps.storage)?;
-    Ok(TcaListResponse {
-        tca_members: state.tca_human_addresses(),
-    })
+    let tca_addr_list: Vec<Vec<u8>> = ALLIANCE_MEMBERS
+        .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+        .collect();
+    let mut tca_members: Vec<String> = vec![];
+    for tca in tca_addr_list {
+        tca_members.push(std::str::from_utf8(&tca).unwrap().to_string());
+    }
+    Ok(TcaListResponse { tca_members })
 }
 
 pub fn funds_list(
@@ -59,9 +62,15 @@ pub fn active_fund_details(deps: Deps) -> StdResult<FundDetailsResponse> {
 }
 
 pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
-    let state = STATE.load(deps.storage)?;
     let mut donors = vec![];
-    for tca in state.terra_alliance.into_iter() {
+    let tca_addr_list: Vec<Vec<u8>> = ALLIANCE_MEMBERS
+        .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+        .collect();
+    let mut tca_members: Vec<String> = vec![];
+    for tca in tca_addr_list {
+        tca_members.push(std::str::from_utf8(&tca).unwrap().to_string());
+    }
+    for tca in tca_members.into_iter() {
         // add to response vector
         donors.push(DonationDetailResponse {
             address: tca.to_string(),

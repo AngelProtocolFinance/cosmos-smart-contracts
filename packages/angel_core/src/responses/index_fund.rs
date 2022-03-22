@@ -35,7 +35,6 @@ pub struct StateResponse {
     pub active_fund: u64,
     pub round_donations: Uint128,
     pub next_rotation_block: u64,
-    pub terra_alliance: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

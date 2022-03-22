@@ -186,24 +186,90 @@ fn sc_owner_can_update_list_of_tca_members() {
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_eq!(0, res.messages.len());
 
-    let msg = ExecuteMsg::UpdateTcaList {
-        add: vec![charity_addr, pleb.clone()],
-        remove: vec![],
+    let msg1 = ExecuteMsg::UpdateTcaList {
+        address: Addr::unchecked(charity_addr.as_str()),
+        member: AllianceMember {
+            name: "charity".to_string(),
+            logo: None,
+            website: None,
+        },
+        action: "add".to_string(),
+    };
+
+    let msg2 = ExecuteMsg::UpdateTcaList {
+        address: Addr::unchecked(pleb.as_str()),
+        member: AllianceMember {
+            name: "pleb".to_string(),
+            logo: None,
+            website: None,
+        },
+        action: "add".to_string(),
     };
     // pleb cannot update the list (only owner should be able to)
     let info = mock_info(&pleb.clone(), &coins(1000, "earth"));
-    let err = execute(deps.as_mut(), mock_env(), info, msg.clone()).unwrap_err();
+    let err = execute(deps.as_mut(), mock_env(), info, msg1.clone()).unwrap_err();
     assert_eq!(ContractError::Unauthorized {}, err);
 
     // real SC owner updates the list now
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
-    let res = execute(deps.as_mut(), mock_env(), info, msg.clone()).unwrap();
-    assert_eq!(0, res.messages.len());
+    let res = execute(deps.as_mut(), mock_env(), info, msg1.clone()).unwrap();
+    assert_eq!(
+        res.attributes,
+        vec![
+            attr("method", "update_tca_list"),
+            attr("action", "add"),
+            attr("address", charity_addr),
+        ]
+    );
+
+    // check that the list can be fetched in query
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::TcaList {}).unwrap();
+    let value: TcaListResponse = from_binary(&res).unwrap();
+    assert_eq!(1, value.tca_members.len());
+
+    // real SC owner updates the list again
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+    let res = execute(deps.as_mut(), mock_env(), info, msg2.clone()).unwrap();
+    assert_eq!(
+        res.attributes,
+        vec![
+            attr("method", "update_tca_list"),
+            attr("action", "add"),
+            attr("address", pleb.clone()),
+        ]
+    );
 
     // check that the list can be fetched in query
     let res = query(deps.as_ref(), mock_env(), QueryMsg::TcaList {}).unwrap();
     let value: TcaListResponse = from_binary(&res).unwrap();
     assert_eq!(2, value.tca_members.len());
+
+    // real SC owner removes the member from list
+    let msg3 = ExecuteMsg::UpdateTcaList {
+        address: Addr::unchecked(pleb.as_str()),
+        member: AllianceMember {
+            name: "pleb".to_string(),
+            logo: None,
+            website: None,
+        },
+        action: "remove".to_string(),
+    };
+
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+    let res = execute(deps.as_mut(), mock_env(), info, msg3.clone()).unwrap();
+    assert_eq!(
+        res.attributes,
+        vec![
+            attr("method", "update_tca_list"),
+            attr("action", "remove"),
+            attr("address", pleb),
+        ]
+    );
+
+    // check that the list can be fetched in query
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::TcaList {}).unwrap();
+    let value: TcaListResponse = from_binary(&res).unwrap();
+    assert_eq!(1, value.tca_members.len());
 }
 
 #[test]

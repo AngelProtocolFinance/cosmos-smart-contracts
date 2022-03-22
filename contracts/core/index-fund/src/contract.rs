@@ -42,7 +42,6 @@ pub fn instantiate(
             next_fund_id: 1,
             round_donations: Uint128::zero(),
             next_rotation_block: env.block.height + configs.fund_rotation.unwrap_or(0u64),
-            terra_alliance: vec![],
         },
     )?;
     Ok(Response::default())
@@ -61,9 +60,11 @@ pub fn execute(
             executers::update_registrar(deps, info, new_registrar)
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, info, msg),
-        ExecuteMsg::UpdateTcaList { add, remove } => {
-            executers::update_tca_list(deps, info, add, remove)
-        }
+        ExecuteMsg::UpdateTcaList {
+            address,
+            member,
+            action,
+        } => executers::update_tca_list(deps, info, address, member, action),
         ExecuteMsg::CreateFund {
             name,
             description,
@@ -137,7 +138,6 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Std
             next_fund_id: msg.next_fund_id,
             round_donations: Uint128::zero(),
             next_rotation_block: env.block.height + config.fund_rotation.unwrap_or(0u64),
-            terra_alliance: vec![],
         })?,
     );
     Ok(Response::default())

@@ -26,8 +26,9 @@ pub enum ExecuteMsg {
     },
     // Update TCA member list
     UpdateTcaList {
-        add: Vec<String>,
-        remove: Vec<String>,
+        address: Addr,
+        member: AllianceMember,
+        action: String,
     },
     UpdateConfig(UpdateConfigMsg),
     // endpoint to remove a single member from all index funds that they may in
