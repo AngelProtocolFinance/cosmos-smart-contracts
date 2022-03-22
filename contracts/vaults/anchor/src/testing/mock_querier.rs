@@ -264,7 +264,7 @@ impl WasmMockQuerier {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
-                QueryMsg::Config {  } => SystemResult::Ok(ContractResult::Ok(
+                QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&ConfigResponse {
                         owner_addr: "Owner".to_string(),
                         aterra_contract: "aterra_contract".to_string(),

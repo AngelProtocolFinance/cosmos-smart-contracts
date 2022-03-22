@@ -1,7 +1,7 @@
 use crate::error::ContractError;
 use crate::state::{
-    read_bank, store_bank, read_config, read_poll, read_state,
-    store_state, Config, Poll, State, TokenManager, CLAIMS, remove_poll_voter,
+    read_bank, read_config, read_poll, read_state, remove_poll_voter, store_bank, store_state,
+    Config, Poll, State, TokenManager, CLAIMS,
 };
 use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Storage,
@@ -100,7 +100,7 @@ pub fn withdraw_voting_tokens(
             store_bank(deps.storage, &key, &token_manager)?;
 
             state.total_share = Uint128::from(total_share - withdraw_share);
-            store_state(deps.storage , &state)?;
+            store_state(deps.storage, &state)?;
 
             // create claim on withdrawn HALO tokens
             CLAIMS.create_claim(
@@ -218,8 +218,7 @@ pub fn query_staker(deps: Deps, env: Env, address: String) -> StdResult<StakerRe
     let addr_raw = deps.api.addr_validate(&address)?;
     let config: Config = read_config(deps.storage)?;
     let state: State = read_state(deps.storage)?;
-    let mut token_manager = read_bank(deps.storage, &addr_raw.as_bytes())?
-        .unwrap_or_default();
+    let mut token_manager = read_bank(deps.storage, &addr_raw.as_bytes())?.unwrap_or_default();
 
     // filter out not in-progress polls
     token_manager.locked_balance.retain(|(poll_id, _)| {

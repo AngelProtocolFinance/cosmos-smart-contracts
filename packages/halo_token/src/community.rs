@@ -17,7 +17,10 @@ pub enum ExecuteMsg {
         spend_limit: Option<Uint128>,
         gov_contract: Option<String>,
     },
-    Spend { recipient: String, amount: Uint128 },
+    Spend {
+        recipient: String,
+        amount: Uint128,
+    },
 }
 
 /// We currently take no arguments for migrations

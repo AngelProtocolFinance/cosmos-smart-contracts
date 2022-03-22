@@ -1,4 +1,4 @@
-use angel_core::structs::{AcceptedTokens, GenericBalance, IndexFund};
+use angel_core::structs::{AcceptedTokens, AllianceMember, GenericBalance, IndexFund};
 use angel_core::utils::calc_range_start;
 use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
 use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
@@ -45,14 +45,6 @@ impl State {
             .map(|tca| tca.to_string())
             .collect()
     }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct AllianceMember {
-    name: String,
-    logo: Option<String>,
-    website: Option<String>,
 }
 
 // FUND Read/Write

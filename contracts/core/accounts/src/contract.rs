@@ -46,7 +46,7 @@ pub fn instantiate(
 
     let default_vault = match registrar_config.default_vault {
         Some(addr) => addr,
-        None => return Err(ContractError::ContractNotConfigured {  }),
+        None => return Err(ContractError::ContractNotConfigured {}),
     };
     ENDOWMENT.save(
         deps.storage,

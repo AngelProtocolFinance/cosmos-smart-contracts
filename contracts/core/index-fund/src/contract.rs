@@ -94,6 +94,9 @@ pub fn execute(
         } => executers::update_fund_members(deps, env, info, fund_id, add, remove),
         ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
         // ExecuteMsg::Receive(msg) => executers::receive(deps, env, info, msg),
+        ExecuteMsg::UpdateAlliancemember { address, member } => {
+            executers::update_alliancemember(deps, env, info, address, member)
+        }
     }
 }
 

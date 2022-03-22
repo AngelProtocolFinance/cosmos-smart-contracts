@@ -2,9 +2,9 @@ use crate::contract::{execute, instantiate, migrate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::index_fund::*;
 use angel_core::responses::index_fund::*;
-use angel_core::structs::IndexFund;
+use angel_core::structs::{AllianceMember, IndexFund};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{coins, from_binary};
+use cosmwasm_std::{attr, coins, from_binary, Addr};
 
 #[test]
 fn proper_initialization() {
@@ -367,4 +367,49 @@ fn sc_owner_can_update_fund_members() {
     let value: FundDetailsResponse = from_binary(&res).unwrap();
     let f = value.fund.unwrap();
     assert_eq!(2, f.members.len());
+}
+
+#[test]
+fn sc_owner_can_update_alliancemember() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angelprotocolteamdano".to_string();
+    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let pleb = "plebAccount".to_string();
+
+    let msg = InstantiateMsg {
+        registrar_contract: registrar_contract.clone(),
+        fund_rotation: Some(Some(1000000u64)),
+        fund_member_limit: Some(20),
+        funding_goal: None,
+        accepted_tokens: None,
+    };
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    let msg = ExecuteMsg::UpdateAlliancemember {
+        address: Addr::unchecked("member-addr"),
+        member: AllianceMember {
+            name: "Alliance-1".to_string(),
+            logo: Some("A1".to_string()),
+            website: Some("https://alliance-1.com".to_string()),
+        },
+    };
+
+    // pleb cannot update the alliance member(only owner should be able to)
+    let info = mock_info(&pleb.clone(), &[]);
+    let err = execute(deps.as_mut(), mock_env(), info, msg.clone()).unwrap_err();
+    assert_eq!(ContractError::Unauthorized {}, err);
+
+    // real SC owner can update the alliance member now
+    let info = mock_info(&ap_team.clone(), &[]);
+    let res = execute(deps.as_mut(), mock_env(), info, msg.clone()).unwrap();
+    assert_eq!(
+        res.attributes,
+        vec![
+            attr("method", "update_alliancemember"),
+            attr("member_addr", "member-addr"),
+        ]
+    )
 }

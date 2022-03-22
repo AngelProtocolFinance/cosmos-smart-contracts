@@ -12,8 +12,8 @@ use crate::state::{
 use cw20::Cw20ExecuteMsg;
 use halo_token::common::OrderBy;
 use halo_token::vesting::{
-    ConfigResponse, ExecuteMsg, InstantiateMsg, QueryMsg, VestingAccount, VestingAccountResponse,
-    VestingAccountsResponse, VestingInfo, MigrateMsg
+    ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, VestingAccount,
+    VestingAccountResponse, VestingAccountsResponse, VestingInfo,
 };
 
 #[cfg_attr(not(feature = "library"), entry_point)]

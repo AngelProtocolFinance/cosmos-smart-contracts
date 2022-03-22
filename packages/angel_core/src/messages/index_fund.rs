@@ -1,5 +1,5 @@
-use crate::structs::AcceptedTokens;
-use cosmwasm_std::{Decimal, Uint128};
+use crate::structs::{AcceptedTokens, AllianceMember};
+use cosmwasm_std::{Addr, Decimal, Uint128};
 // use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -56,6 +56,12 @@ pub enum ExecuteMsg {
     Deposit(DepositMsg),
     // This accepts a properly-encoded ReceiveMsg from a cw20 contract
     // Receive(Cw20ReceiveMsg),
+
+    // Update the alliance member
+    UpdateAlliancemember {
+        address: Addr,
+        member: AllianceMember,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
