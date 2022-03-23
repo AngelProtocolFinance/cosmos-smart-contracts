@@ -20,13 +20,11 @@ const { expect } = chai;
 export async function testAddApTeamMemberToC4Group(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  apTeam3: Wallet,
   cw3ApTeam: string,
-  cw4GrpApTeam: string
+  cw4GrpApTeam: string,
+  new_member: string
 ): Promise<void> {
-  process.stdout.write(
-    "Test - Propose and Execute adding a new member to AP Team C4 Group"
-  );
+  process.stdout.write("Test - Propose adding a new member to AP Team C4 Group");
 
   // proposal to add new member
   const proposal = await sendTransaction(terra, apTeam, [
@@ -42,7 +40,7 @@ export async function testAddApTeamMemberToC4Group(
                 funds: [],
                 msg: toEncodedBinary({
                   update_members: {
-                    add: [{ addr: apTeam3.key.accAddress, weight: 1 }],
+                    add: [{ addr: new_member, weight: 1 }],
                     remove: [],
                   },
                 }),
@@ -60,15 +58,43 @@ export async function testAddApTeamMemberToC4Group(
     ?.attributes.find((attribute) => {
       return attribute.key == "proposal_id";
     })?.value as string;
-  // execute the proposal (anyone can do this for passed proposals)
-  await expect(
-    sendTransaction(terra, apTeam3, [
-      new MsgExecuteContract(apTeam3.key.accAddress, cw3ApTeam, {
-        execute: { proposal_id: parseInt(proposal_id) },
-      }),
-    ])
-  );
 
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testUpdateCw3Config(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  cw3: string,
+  threshold: number,
+  max_voting_period: number
+): Promise<void> {
+  process.stdout.write("Test - Endowment Member Proposes changing the CW3 configs");
+
+  const proposal = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, cw3, {
+      propose: {
+        title: "Update CW3 Configurations",
+        description: "Changing the max voting period to 48 hours",
+        msgs: [
+          {
+            wasm: {
+              execute: {
+                contract_addr: cw3,
+                funds: [],
+                msg: toEncodedBinary({
+                  update_config: {
+                    threshold: { absolute_percentage: { percentage: threshold } },
+                    max_voting_period: { height: max_voting_period },
+                  },
+                }),
+              },
+            },
+          },
+        ],
+      },
+    }),
+  ]);
   console.log(chalk.green(" Passed!"));
 }
 
@@ -83,7 +109,7 @@ export async function testAddGuardiansToEndowment(
   endowmentContract1: string
 ): Promise<void> {
   process.stdout.write(
-    "Test - Endowment Owner Proposes and Executes adding 3 Guardians to their Endowment"
+    "Test - Endowment Owner Proposes adding 3 Guardians to their Endowment"
   );
 
   // proposal to add new Guardians
@@ -107,15 +133,15 @@ export async function testAddGuardiansToEndowment(
       })?.value as string
   );
 
-  // execute the proposal (anyone can do this for passed proposals)
-  await sendTransaction(terra, pleb, [
-    new MsgExecuteContract(pleb.key.accAddress, cw3GuardianAngels, {
-      execute: { proposal_id: proposal_id },
-    }),
-  ]);
-
   console.log(chalk.green(" Passed!"));
 }
+
+// // execute the proposal (anyone can do this for passed proposals)
+// await sendTransaction(terra, pleb, [
+//   new MsgExecuteContract(pleb.key.accAddress, cw3GuardianAngels, {
+//     execute: { proposal_id: proposal_id },
+//   }),
+// ]);
 
 export async function testGuardiansChangeEndowmentOwner(
   terra: LocalTerra | LCDClient,

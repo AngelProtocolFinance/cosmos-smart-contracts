@@ -27,6 +27,7 @@ import {
   testQueryIndexFundTcaList,
 } from "./core/indexFunds";
 import {
+  testUpdateCw3Config,
   testAddApTeamMemberToC4Group,
   testAddGuardiansToEndowment,
   testGuardiansChangeEndowmentOwner,
