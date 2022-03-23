@@ -384,10 +384,10 @@ pub fn deposit(
     }
 
     // check each of the currenly allowed Alliance member addr
-    let mut tca_member = false;
+    let mut alliance_member = false;
     let is_sender_alliance_member = ALLIANCE_MEMBERS.has(deps.storage, sender_addr.clone());
     if is_sender_alliance_member {
-        tca_member = true;
+        alliance_member = true;
         // note increased donation amount for the TCA member
         let mut tca_donor = TCA_DONATIONS
             .may_load(deps.storage, sender_addr.to_string())?
@@ -445,7 +445,7 @@ pub fn deposit(
                 return Err(ContractError::IndexFundExpired {});
             }
             let split = calculate_split(
-                tca_member,
+                alliance_member,
                 registrar_split_configs,
                 fund.split_to_liquid,
                 msg.split,
@@ -487,7 +487,7 @@ pub fn deposit(
                             loop_donation = deposit_amount;
                         };
                         let split = calculate_split(
-                            tca_member,
+                            alliance_member,
                             registrar_split_configs.clone(),
                             fund.split_to_liquid,
                             msg.split,
@@ -515,7 +515,7 @@ pub fn deposit(
                         return Err(ContractError::IndexFundExpired {});
                     }
                     let split = calculate_split(
-                        tca_member,
+                        alliance_member,
                         registrar_split_configs,
                         fund.split_to_liquid,
                         msg.split,

@@ -5,8 +5,8 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::structs::AcceptedTokens;
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Response,
-    StdError, StdResult, Uint128,
+    entry_point, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult, Uint128,
 };
 use cw2::set_contract_version;
 
@@ -106,7 +106,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::config(deps)?),
         QueryMsg::State {} => to_binary(&queriers::state(deps)?),
-        QueryMsg::TcaList {} => to_binary(&queriers::tca_list(deps)?),
         QueryMsg::FundsList { start_after, limit } => {
             to_binary(&queriers::funds_list(deps, start_after, limit)?)
         }

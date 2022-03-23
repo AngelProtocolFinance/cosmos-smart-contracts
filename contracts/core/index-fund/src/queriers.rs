@@ -31,20 +31,6 @@ pub fn state(deps: Deps) -> StdResult<StateResponse> {
     })
 }
 
-pub fn tca_list(deps: Deps) -> StdResult<TcaListResponse> {
-    // Return a list of TCA Member Addrs
-    let alliance_addr_list: Vec<Vec<u8>> = ALLIANCE_MEMBERS
-        .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-        .collect();
-    let mut alliance_members: Vec<String> = vec![];
-    for member in alliance_addr_list {
-        alliance_members.push(std::str::from_utf8(&member).unwrap().to_string());
-    }
-    Ok(TcaListResponse {
-        tca_members: alliance_members,
-    })
-}
-
 pub fn funds_list(
     deps: Deps,
     start_after: Option<u64>,
@@ -69,19 +55,19 @@ pub fn active_fund_details(deps: Deps) -> StdResult<FundDetailsResponse> {
 
 pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
     let mut donors = vec![];
-    let tca_addr_list: Vec<Vec<u8>> = ALLIANCE_MEMBERS
+    let alliance_addr_list: Vec<Vec<u8>> = ALLIANCE_MEMBERS
         .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
         .collect();
-    let mut tca_members: Vec<String> = vec![];
-    for tca in tca_addr_list {
-        tca_members.push(std::str::from_utf8(&tca).unwrap().to_string());
+    let mut alliance_members: Vec<String> = vec![];
+    for member in alliance_addr_list {
+        alliance_members.push(std::str::from_utf8(&member).unwrap().to_string());
     }
-    for tca in tca_members.into_iter() {
+    for member in alliance_members.into_iter() {
         // add to response vector
         donors.push(DonationDetailResponse {
-            address: tca.to_string(),
+            address: member.to_string(),
             total_ust: TCA_DONATIONS
-                .may_load(deps.storage, tca.to_string())
+                .may_load(deps.storage, member.to_string())
                 .unwrap()
                 .unwrap_or_default()
                 .get_ust()
@@ -153,6 +139,7 @@ pub fn alliance_members(
     start_after: Option<Addr>,
     limit: Option<u64>,
 ) -> StdResult<AllianceMemberListResponse> {
+    // return a list of angel alliance members
     let alliance_members = read_alliance_members(deps.storage, start_after, limit)?;
     Ok(AllianceMemberListResponse { alliance_members })
 }
