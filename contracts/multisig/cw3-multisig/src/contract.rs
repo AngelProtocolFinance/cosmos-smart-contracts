@@ -376,7 +376,7 @@ fn reverse_proposals(
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let end = start_before.map(Bound::exclusive_int);
     let props: StdResult<Vec<_>> = PROPOSALS
-        .range(deps.storage, None, end.clone(), Order::Ascending)
+        .range(deps.storage, None, end.clone(), Order::Descending)
         .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();
