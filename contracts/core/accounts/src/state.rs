@@ -55,6 +55,34 @@ pub struct State {
     pub closing_beneficiary: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct Profile {
+    overview: String,
+    un_sdg: Option<u64>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
+    tier: Option<u64>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
+    charity_logo: String,
+    charity_image: String,
+    url: Option<String>,
+    registration_number: Option<String>,
+    country_city_origin: Option<String>,
+    contact_email: Option<String>,
+    social_media_urls: SocialMedialUrls,
+    number_of_employees: Option<u64>,
+    average_annual_budget: Option<String>,
+    annual_revenue: Option<String>,
+    charity_navigator_rating: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct SocialMedialUrls {
+    facebook: Option<String>,
+    twitter: Option<String>,
+    linkedin: Option<String>,
+}
+
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");
+pub const PROFILE: Item<Profile> = Item::new("profile");

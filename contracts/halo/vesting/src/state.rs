@@ -1,4 +1,4 @@
-use cw_storage_plus::{Item, Map, Bound};
+use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -52,9 +52,9 @@ pub fn read_vesting_infos<'a>(
 
     VESTING_INFO
         .range(
-            storage, 
-            start.and_then(|v| Some(Bound::inclusive(&*v))), 
-            end.and_then(|v| Some(Bound::inclusive(&*v))), 
+            storage,
+            start.and_then(|v| Some(Bound::inclusive(&*v))),
+            end.and_then(|v| Some(Bound::inclusive(&*v))),
             order_by.into(),
         )
         .take(limit)

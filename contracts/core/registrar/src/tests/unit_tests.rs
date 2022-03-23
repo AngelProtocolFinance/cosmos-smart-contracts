@@ -101,7 +101,10 @@ fn update_config() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_response: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(index_fund_contract.clone(), config_response.index_fund.unwrap());
+    assert_eq!(
+        index_fund_contract.clone(),
+        config_response.index_fund.unwrap()
+    );
     assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
 }
 
@@ -241,7 +244,13 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
         halo_token: None,
     };
     let info = mock_info(ap_team.as_ref(), &[]);
-    let _ = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::UpdateConfig(update_config_msg)).unwrap();
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateConfig(update_config_msg),
+    )
+    .unwrap();
 
     // add an approved charity to the list (Squeaky Clean Charity)
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
