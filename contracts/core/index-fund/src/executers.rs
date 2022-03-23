@@ -1,13 +1,15 @@
-use crate::state::{fund_read, fund_store, read_funds, CONFIG, STATE, TCA_DONATIONS};
+use crate::state::{
+    fund_read, fund_store, read_funds, ALLIANCE_MEMBERS, CONFIG, STATE, TCA_DONATIONS,
+};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
-use angel_core::structs::{AcceptedTokens, IndexFund, SplitDetails};
+use angel_core::structs::{AcceptedTokens, AllianceMember, IndexFund, SplitDetails};
 use angel_core::utils::{deduct_tax, percentage_checks};
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
-    Response, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
+    attr, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
+    Response, StdError, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Balance;
 
@@ -53,50 +55,49 @@ pub fn update_registrar(
     Ok(Response::default())
 }
 
-pub fn update_tca_list(
+pub fn update_alliance_member_list(
     deps: DepsMut,
     info: MessageInfo,
-    add: Vec<String>,
-    remove: Vec<String>,
+    address: Addr,
+    member: AllianceMember,
+    action: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    // only the owner/admin of the contract can update the TCA Members List
+    // only the owner/admin of the contract can update the Alliance Members List
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
-    let state = STATE.load(deps.storage)?;
-    let mut tca_list = vec![];
-    for member in state.tca_human_addresses() {
-        tca_list.push(deps.api.addr_validate(&member)?);
+    // validate the member address
+    let member_addr = deps.api.addr_validate(address.as_str())?;
+
+    if action == "add".to_string() {
+        ALLIANCE_MEMBERS.update(
+            deps.storage,
+            member_addr.clone(),
+            |m: Option<AllianceMember>| -> Result<AllianceMember, ContractError> {
+                match m {
+                    _ => Ok(AllianceMember {
+                        name: member.name,
+                        logo: member.logo,
+                        website: member.website,
+                    }),
+                }
+            },
+        )?;
+    } else if action == "remove".to_string() {
+        ALLIANCE_MEMBERS.remove(deps.storage, member_addr.clone());
+    } else {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Invalid action".to_string(),
+        }));
     }
 
-    // add members only if they do not already exist
-    for add in add.into_iter() {
-        let add_addr = deps.api.addr_validate(&add)?;
-        let pos = tca_list.iter().position(|m| *m == add_addr);
-        // ignore if that member was found in the list
-        if pos == None {
-            tca_list.push(add_addr);
-        }
-    }
-
-    // remove the members
-    for remove in remove.into_iter() {
-        let remove_addr = deps.api.addr_validate(&remove)?;
-        // ignore if no member is found
-        if let Some(pos) = tca_list.iter().position(|m| *m == remove_addr) {
-            tca_list.swap_remove(pos);
-        }
-    }
-
-    // update config attributes with newly passed list
-    STATE.update(deps.storage, |mut state| -> StdResult<_> {
-        state.terra_alliance = tca_list;
-        Ok(state)
-    })?;
-
-    Ok(Response::default())
+    Ok(Response::new().add_attributes(vec![
+        attr("method", "update_alliance_list"),
+        attr("action", action),
+        attr("address", member_addr.clone()),
+    ]))
 }
 
 pub fn update_config(
@@ -318,6 +319,43 @@ pub fn remove_member(
 //     }
 // }
 
+pub fn update_alliance_member(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    address: Addr,
+    member: AllianceMember,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    // only the owner/admin of the contract can update the Alliance Members
+    if info.sender.ne(&config.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // check the string is proper addr
+    let member_addr = deps.api.addr_validate(address.as_str())?;
+
+    // Update the corresponding Alliance Members.
+    ALLIANCE_MEMBERS.update(
+        deps.storage,
+        member_addr.clone(),
+        |m: Option<AllianceMember>| -> Result<AllianceMember, ContractError> {
+            match m {
+                _ => Ok(AllianceMember {
+                    name: member.name,
+                    logo: member.logo,
+                    website: member.website,
+                }),
+            }
+        },
+    )?;
+
+    Ok(Response::new().add_attributes(vec![
+        attr("method", "update_alliance_member"),
+        attr("member_addr", member_addr.to_string()),
+    ]))
+}
+
 pub fn deposit(
     deps: DepsMut,
     env: Env,
@@ -345,21 +383,20 @@ pub fn deposit(
         return Err(ContractError::InvalidZeroAmount {});
     }
 
-    // check each of the currenly allowed TCA member addr
-    let mut tca_member = false;
-    for tca in state.terra_alliance.iter() {
-        if tca == &sender_addr {
-            tca_member = true;
-            // note increased donation amount for the TCA member
-            let mut tca_donor = TCA_DONATIONS
-                .may_load(deps.storage, sender_addr.to_string())?
-                .unwrap_or_default();
-            tca_donor.add_tokens(Balance::from(vec![Coin {
-                denom: "uusd".to_string(),
-                amount: deposit_amount,
-            }]));
-            TCA_DONATIONS.save(deps.storage, sender_addr.to_string(), &tca_donor)?;
-        }
+    // check each of the currenly allowed Alliance member addr
+    let mut alliance_member = false;
+    let is_sender_alliance_member = ALLIANCE_MEMBERS.has(deps.storage, sender_addr.clone());
+    if is_sender_alliance_member {
+        alliance_member = true;
+        // note increased donation amount for the TCA member
+        let mut tca_donor = TCA_DONATIONS
+            .may_load(deps.storage, sender_addr.to_string())?
+            .unwrap_or_default();
+        tca_donor.add_tokens(Balance::from(vec![Coin {
+            denom: "uusd".to_string(),
+            amount: deposit_amount,
+        }]));
+        TCA_DONATIONS.save(deps.storage, sender_addr.to_string(), &tca_donor)?;
     }
 
     // check if block height limit is exceeded
@@ -408,7 +445,7 @@ pub fn deposit(
                 return Err(ContractError::IndexFundExpired {});
             }
             let split = calculate_split(
-                tca_member,
+                alliance_member,
                 registrar_split_configs,
                 fund.split_to_liquid,
                 msg.split,
@@ -450,7 +487,7 @@ pub fn deposit(
                             loop_donation = deposit_amount;
                         };
                         let split = calculate_split(
-                            tca_member,
+                            alliance_member,
                             registrar_split_configs.clone(),
                             fund.split_to_liquid,
                             msg.split,
@@ -478,7 +515,7 @@ pub fn deposit(
                         return Err(ContractError::IndexFundExpired {});
                     }
                     let split = calculate_split(
-                        tca_member,
+                        alliance_member,
                         registrar_split_configs,
                         fund.split_to_liquid,
                         msg.split,

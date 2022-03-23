@@ -2,7 +2,7 @@ use crate::contract::{execute, instantiate, query, reply};
 use crate::error::ContractError;
 use crate::mock_querier::mock_dependencies;
 use crate::state::{
-    read_bank, store_bank, read_config, store_poll, read_poll_voter, store_poll_voter, read_state,
+    read_bank, read_config, read_poll_voter, read_state, store_bank, store_poll, store_poll_voter,
     Config, Poll, State, TokenManager,
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
@@ -1037,8 +1037,7 @@ fn happy_days_end_poll() {
 
     // But the data is still in the store
     let voter_addr_raw = deps.api.addr_validate(TEST_VOTER).unwrap();
-    let voter = read_poll_voter(&deps.storage, 1u64, voter_addr_raw.clone())
-        .unwrap();
+    let voter = read_poll_voter(&deps.storage, 1u64, voter_addr_raw.clone()).unwrap();
     assert_eq!(
         voter,
         VoterInfo {
@@ -1047,9 +1046,8 @@ fn happy_days_end_poll() {
         }
     );
 
-    let token_manager = read_bank(
-        &deps.storage,
-         &voter_addr_raw.as_bytes()).expect("Bank read error")
+    let token_manager = read_bank(&deps.storage, &voter_addr_raw.as_bytes())
+        .expect("Bank read error")
         .unwrap_or_default();
     assert_eq!(
         token_manager.locked_balance,
@@ -1269,7 +1267,7 @@ fn end_poll_zero_quorum() {
             &Uint128::from(100u128 + DEFAULT_PROPOSAL_DEPOSIT),
         )],
     )]);
-    
+
     let mut creator_env = mock_env_height(1000, 10000);
     let mut creator_info = mock_info(VOTING_TOKEN, &[]);
 
@@ -1916,7 +1914,9 @@ fn happy_days_withdraw_voting_tokens_all() {
     )]);
 
     let info = mock_info(TEST_VOTER, &[]);
-    let msg = ExecuteMsg::WithdrawVotingTokens { amount: Some(Uint128::from(22u128)) };
+    let msg = ExecuteMsg::WithdrawVotingTokens {
+        amount: Some(Uint128::from(22u128)),
+    };
 
     let execute_res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     let msg = execute_res.messages.get(0).expect("no message");
@@ -1967,90 +1967,95 @@ fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
     assert_stake_tokens_result(11, 0, 11, 0, execute_res, deps.as_ref());
 
     // make fake polls; one in progress & one in passed
-    store_poll(&mut deps.storage, 
-            &1u64.to_be_bytes(),
-            &Poll {
-                id: 1u64,
-                creator: deps.api.addr_validate("govcontract").unwrap(),
-                status: PollStatus::InProgress,
-                yes_votes: Uint128::zero(),
-                no_votes: Uint128::zero(),
-                end_height: 0u64,
-                title: "title".to_string(),
-                description: "description".to_string(),
-                deposit_amount: Uint128::zero(),
-                link: None,
-                proposal_type: None,
-                execute_data: None,
-                total_balance_at_end_poll: None,
-                staked_amount: None,
-            },
-        )
-        .unwrap();
+    store_poll(
+        &mut deps.storage,
+        &1u64.to_be_bytes(),
+        &Poll {
+            id: 1u64,
+            creator: deps.api.addr_validate("govcontract").unwrap(),
+            status: PollStatus::InProgress,
+            yes_votes: Uint128::zero(),
+            no_votes: Uint128::zero(),
+            end_height: 0u64,
+            title: "title".to_string(),
+            description: "description".to_string(),
+            deposit_amount: Uint128::zero(),
+            link: None,
+            proposal_type: None,
+            execute_data: None,
+            total_balance_at_end_poll: None,
+            staked_amount: None,
+        },
+    )
+    .unwrap();
 
-    store_poll(&mut deps.storage,
-            &2u64.to_be_bytes(),
-            &Poll {
-                id: 1u64,
-                creator: deps.api.addr_validate("govcontract").unwrap(),
-                status: PollStatus::Passed,
-                yes_votes: Uint128::zero(),
-                no_votes: Uint128::zero(),
-                end_height: 0u64,
-                title: "title".to_string(),
-                description: "description".to_string(),
-                deposit_amount: Uint128::zero(),
-                link: None,
-                proposal_type: None,
-                execute_data: None,
-                total_balance_at_end_poll: None,
-                staked_amount: None,
-            },
-        )
-        .unwrap();
+    store_poll(
+        &mut deps.storage,
+        &2u64.to_be_bytes(),
+        &Poll {
+            id: 1u64,
+            creator: deps.api.addr_validate("govcontract").unwrap(),
+            status: PollStatus::Passed,
+            yes_votes: Uint128::zero(),
+            no_votes: Uint128::zero(),
+            end_height: 0u64,
+            title: "title".to_string(),
+            description: "description".to_string(),
+            deposit_amount: Uint128::zero(),
+            link: None,
+            proposal_type: None,
+            execute_data: None,
+            total_balance_at_end_poll: None,
+            staked_amount: None,
+        },
+    )
+    .unwrap();
 
     let voter_addr_raw = deps.api.addr_validate(TEST_VOTER).unwrap();
-    store_poll_voter(&mut deps.storage, 
+    store_poll_voter(
+        &mut deps.storage,
         1u64,
-            voter_addr_raw.clone(),
-            &VoterInfo {
-                vote: VoteOption::Yes,
-                balance: Uint128::from(5u128),
-            },
-        )
-        .unwrap();
-    store_poll_voter(&mut deps.storage, 
+        voter_addr_raw.clone(),
+        &VoterInfo {
+            vote: VoteOption::Yes,
+            balance: Uint128::from(5u128),
+        },
+    )
+    .unwrap();
+    store_poll_voter(
+        &mut deps.storage,
         2u64,
-            voter_addr_raw.clone(),
-            &VoterInfo {
-                vote: VoteOption::Yes,
-                balance: Uint128::from(5u128),
-            },
-        )
-        .unwrap();
-    store_bank(&mut deps.storage,
-            &voter_addr_raw.as_bytes(),
-            &TokenManager {
-                share: Uint128::from(11u128),
-                locked_balance: vec![
-                    (
-                        1u64,
-                        VoterInfo {
-                            vote: VoteOption::Yes,
-                            balance: Uint128::from(5u128),
-                        },
-                    ),
-                    (
-                        2u64,
-                        VoterInfo {
-                            vote: VoteOption::Yes,
-                            balance: Uint128::from(5u128),
-                        },
-                    ),
-                ],
-            },
-        )
-        .unwrap();
+        voter_addr_raw.clone(),
+        &VoterInfo {
+            vote: VoteOption::Yes,
+            balance: Uint128::from(5u128),
+        },
+    )
+    .unwrap();
+    store_bank(
+        &mut deps.storage,
+        &voter_addr_raw.as_bytes(),
+        &TokenManager {
+            share: Uint128::from(11u128),
+            locked_balance: vec![
+                (
+                    1u64,
+                    VoterInfo {
+                        vote: VoteOption::Yes,
+                        balance: Uint128::from(5u128),
+                    },
+                ),
+                (
+                    2u64,
+                    VoterInfo {
+                        vote: VoteOption::Yes,
+                        balance: Uint128::from(5u128),
+                    },
+                ),
+            ],
+        },
+    )
+    .unwrap();
 
     // withdraw voting token must remove not in-progress votes infos from the store
     let info = mock_info(TEST_VOTER, &[]);
@@ -2059,10 +2064,7 @@ fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
     };
 
     let _ = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    let voter = read_poll_voter(&deps.storage, 
-        1u64,
-        voter_addr_raw.clone())
-        .unwrap();
+    let voter = read_poll_voter(&deps.storage, 1u64, voter_addr_raw.clone()).unwrap();
     assert_eq!(
         voter,
         VoterInfo {
@@ -2070,12 +2072,10 @@ fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
             balance: Uint128::from(5u128),
         }
     );
-    assert!(read_poll_voter(&deps.storage, 2u64,
-        voter_addr_raw.clone())
-        .is_err(),);
+    assert!(read_poll_voter(&deps.storage, 2u64, voter_addr_raw.clone()).is_err(),);
 
-    let token_manager = read_bank(&deps.storage,
-        &voter_addr_raw.as_bytes()).expect("Bank read error")
+    let token_manager = read_bank(&deps.storage, &voter_addr_raw.as_bytes())
+        .expect("Bank read error")
         .unwrap_or_default();
     assert_eq!(
         token_manager.locked_balance,
@@ -2485,7 +2485,7 @@ fn update_config() {
         proposal_deposit: None,
         snapshot_period: None,
         unbonding_period: None,
-        gov_hodler: None, 
+        gov_hodler: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -2512,7 +2512,7 @@ fn update_config() {
         proposal_deposit: Some(Uint128::from(123u128)),
         snapshot_period: Some(11),
         unbonding_period: None,
-        gov_hodler: None, 
+        gov_hodler: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -2540,7 +2540,7 @@ fn update_config() {
         proposal_deposit: None,
         snapshot_period: None,
         unbonding_period: None,
-        gov_hodler: None, 
+        gov_hodler: None,
     };
 
     let res = execute(deps.as_mut(), mock_env(), info, msg);
@@ -2895,7 +2895,7 @@ fn poll_with_empty_execute_data_marked_as_executed() {
             &Uint128::from((stake_amount + DEFAULT_PROPOSAL_DEPOSIT) as u128),
         )],
     )]);
-    
+
     let mut creator_env = mock_env_height(POLL_START_HEIGHT, 10000);
     let mut creator_info = mock_info(VOTING_TOKEN, &coins(2, VOTING_TOKEN));
 

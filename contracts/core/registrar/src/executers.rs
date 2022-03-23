@@ -49,7 +49,7 @@ pub fn update_endowment_status(
 
     // look up the endowment in the Registry. Will fail if doesn't exist
     let endowment_addr = msg.endowment_addr.as_bytes();
-    let mut endowment_entry = registry_read(deps.storage,endowment_addr)?;
+    let mut endowment_entry = registry_read(deps.storage, endowment_addr)?;
 
     let msg_endowment_status = match msg.status {
         0 => EndowmentStatus::Inactive,
@@ -79,8 +79,8 @@ pub fn update_endowment_status(
     // 2. ACCOUNTS - Update the Endowment deposit/withdraw approval config settings based on the new status
 
     let index_fund_contract = match config.index_fund_contract {
-        Some(addr) => addr, 
-        None => return Err(ContractError::ContractNotConfigured {  }),
+        Some(addr) => addr,
+        None => return Err(ContractError::ContractNotConfigured {}),
     };
 
     let sub_messages: Vec<SubMsg> = match msg_endowment_status {
@@ -378,7 +378,8 @@ pub fn vault_add(
     }
 
     // save the new vault to storage
-    vault_store(deps.storage, 
+    vault_store(
+        deps.storage,
         addr.as_bytes(),
         &YieldVault {
             address: addr.clone(),
@@ -451,7 +452,8 @@ pub fn new_accounts_reply(
             }
             // Register the new Endowment on success Reply
             let addr = deps.api.addr_validate(&endowment_addr)?;
-            registry_store(deps.storage,
+            registry_store(
+                deps.storage,
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,

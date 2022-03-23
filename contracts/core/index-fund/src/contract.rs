@@ -5,8 +5,8 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::structs::AcceptedTokens;
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Response,
-    StdError, StdResult, Uint128,
+    entry_point, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult, Uint128,
 };
 use cw2::set_contract_version;
 
@@ -42,7 +42,6 @@ pub fn instantiate(
             next_fund_id: 1,
             round_donations: Uint128::zero(),
             next_rotation_block: env.block.height + configs.fund_rotation.unwrap_or(0u64),
-            terra_alliance: vec![],
         },
     )?;
     Ok(Response::default())
@@ -61,9 +60,11 @@ pub fn execute(
             executers::update_registrar(deps, info, new_registrar)
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, info, msg),
-        ExecuteMsg::UpdateTcaList { add, remove } => {
-            executers::update_tca_list(deps, info, add, remove)
-        }
+        ExecuteMsg::UpdateAllianceMemberList {
+            address,
+            member,
+            action,
+        } => executers::update_alliance_member_list(deps, info, address, member, action),
         ExecuteMsg::CreateFund {
             name,
             description,
@@ -94,6 +95,9 @@ pub fn execute(
         } => executers::update_fund_members(deps, env, info, fund_id, add, remove),
         ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
         // ExecuteMsg::Receive(msg) => executers::receive(deps, env, info, msg),
+        ExecuteMsg::UpdateAllianceMember { address, member } => {
+            executers::update_alliance_member(deps, env, info, address, member)
+        }
     }
 }
 
@@ -102,7 +106,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::config(deps)?),
         QueryMsg::State {} => to_binary(&queriers::state(deps)?),
-        QueryMsg::TcaList {} => to_binary(&queriers::tca_list(deps)?),
         QueryMsg::FundsList { start_after, limit } => {
             to_binary(&queriers::funds_list(deps, start_after, limit)?)
         }
@@ -117,6 +120,12 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&queriers::deposit_msg_builder(
             deps, env, amount, fund_id, split,
         )?),
+        QueryMsg::AllianceMember { address } => {
+            to_binary(&queriers::alliance_member(deps, address)?)
+        }
+        QueryMsg::AllianceMembers { start_after, limit } => {
+            to_binary(&queriers::alliance_members(deps, start_after, limit)?)
+        }
     }
 }
 
@@ -134,7 +143,6 @@ pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, Std
             next_fund_id: msg.next_fund_id,
             round_donations: Uint128::zero(),
             next_rotation_block: env.block.height + config.fund_rotation.unwrap_or(0u64),
-            terra_alliance: vec![],
         })?,
     );
     Ok(Response::default())

@@ -3,9 +3,10 @@ use crate::staking::{
     claim_voting_tokens, query_staker, stake_voting_tokens, withdraw_voting_tokens,
 };
 use crate::state::{
-    read_bank, read_config, store_config, store_poll_indexer, remove_poll_indexer, read_poll, store_poll,
-    read_poll_voter, store_poll_voter, read_poll_voters, read_polls, read_tmp_poll_id, read_state,
-    store_state, store_tmp_poll_id, Config, ExecuteData, Poll, State, CLAIMS, store_bank,
+    read_bank, read_config, read_poll, read_poll_voter, read_poll_voters, read_polls, read_state,
+    read_tmp_poll_id, remove_poll_indexer, store_bank, store_config, store_poll,
+    store_poll_indexer, store_poll_voter, store_state, store_tmp_poll_id, Config, ExecuteData,
+    Poll, State, CLAIMS,
 };
 use cosmwasm_std::{
     attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
@@ -625,9 +626,7 @@ pub fn cast_vote(
     }
 
     // Check the voter already has a vote on the poll
-    if read_poll_voter(deps.storage, poll_id, info.sender.clone())
-        .is_ok()
-    {
+    if read_poll_voter(deps.storage, poll_id, info.sender.clone()).is_ok() {
         return Err(ContractError::AlreadyVoted {});
     }
 

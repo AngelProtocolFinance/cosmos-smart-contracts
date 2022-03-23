@@ -14,7 +14,9 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         treasury: config.treasury.to_string(),
         tax_rate: config.tax_rate,
         default_vault: config.default_vault.and_then(|addr| Some(addr.to_string())),
-        index_fund: config.index_fund_contract.and_then(|addr| Some(addr.to_string())),
+        index_fund: config
+            .index_fund_contract
+            .and_then(|addr| Some(addr.to_string())),
         endowment_owners_group_addr: config.endowment_owners_group_addr,
         guardians_multisig_addr: config.guardians_multisig_addr,
         split_to_liquid: config.split_to_liquid,

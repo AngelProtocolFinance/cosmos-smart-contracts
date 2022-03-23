@@ -68,6 +68,6 @@ pub fn read_staker_info(storage: &dyn Storage, owner: &Addr) -> StdResult<Staker
             reward_index: Decimal::zero(),
             bond_amount: Uint128::zero(),
             pending_reward: Uint128::zero(),
-        })
+        }),
     }
 }

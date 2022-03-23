@@ -335,3 +335,11 @@ impl GenericBalance {
         };
     }
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct AllianceMember {
+    pub name: String,
+    pub logo: Option<String>,
+    pub website: Option<String>,
+}
