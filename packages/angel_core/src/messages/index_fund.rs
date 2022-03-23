@@ -129,8 +129,6 @@ pub enum QueryMsg {
     State {},
     // return config details
     Config {},
-    // return list of TCA Members(only address)
-    TcaList {},
     // return list of Alliance Members(TCA members)
     AllianceMembers {
         start_after: Option<Addr>,
