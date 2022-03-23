@@ -53,22 +53,22 @@ pub fn instantiate(
         deps.storage,
         &Endowment {
             owner: deps.api.addr_validate(&msg.owner)?, // Addr
-            dao: None,
-            donation_match: None,
-            whitelisted_beneficiaries: msg.whitelisted_beneficiaries, // Vec<String>
-            whitelisted_contributors: msg.whitelisted_contributors,   // Vec<String>
             name: msg.name.clone(),
             description: msg.description.clone(),
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
             maturity_time: msg.maturity_time,                       // Option<u64>
             maturity_height: msg.maturity_height,                   // Option<u64>
-            locked_endowment_configs: msg.locked_endowment_configs, // vec<String>
             strategies: vec![StrategyComponent {
                 vault: deps.api.addr_validate(&default_vault)?,
                 locked_percentage: Decimal::one(),
                 liquid_percentage: Decimal::one(),
             }],
             rebalance: RebalanceDetails::default(),
+            dao: None,
+            donation_match: None,
+            whitelisted_beneficiaries: msg.whitelisted_beneficiaries, // Vec<String>
+            whitelisted_contributors: msg.whitelisted_contributors,   // Vec<String>
+            locked_endowment_configs: msg.locked_endowment_configs,   // vec<String>
         },
     )?;
 

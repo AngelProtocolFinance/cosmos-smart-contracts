@@ -242,12 +242,11 @@ pub fn query_allowance(deps: Deps, owner: String, spender: String) -> StdResult<
 mod tests {
     use super::*;
 
+    use crate::contract::{execute, instantiate, query_balance, query_token_info};
+    use angel_core::messages::dao_token::{ExecuteMsg, InstantiateMsg};
     use cosmwasm_std::testing::{mock_dependencies_with_balances, mock_env, mock_info};
     use cosmwasm_std::{coins, CosmosMsg, SubMsg, Timestamp, WasmMsg};
     use cw20::{Cw20Coin, TokenInfoResponse};
-
-    use crate::contract::{execute, instantiate, query_balance, query_token_info};
-    use angel_core::messages::charity_shares::{ExecuteMsg, InstantiateMsg};
 
     fn get_balance<T: Into<String>>(deps: Deps, address: T) -> Uint128 {
         query_balance(deps, address.into()).unwrap().balance

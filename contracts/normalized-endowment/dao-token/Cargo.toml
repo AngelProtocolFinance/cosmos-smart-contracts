@@ -25,6 +25,7 @@ cw0 = "0.9.0"
 cw2 = "0.9.0"
 cw20 = "0.9.0"
 cw20-base = "0.9.0"
+cw20-bonding = "0.9.0"
 cw-controllers = "0.9.0"  
 cw-storage-plus = "0.9.0"
 cosmwasm-std = { version = "0.16.0" }

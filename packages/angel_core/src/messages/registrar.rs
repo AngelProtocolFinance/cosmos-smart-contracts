@@ -55,7 +55,6 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateEndowmentMsg {
     pub owner: String,
-    pub beneficiary: String,
     pub name: String,
     pub description: String,
     pub withdraw_before_maturity: bool,
@@ -68,6 +67,8 @@ pub struct CreateEndowmentMsg {
     pub whitelisted_beneficiaries: Vec<String>,
     pub whitelisted_contributors: Vec<String>,
     pub cw4_members: Vec<Member>,
+    pub dao: bool,
+    pub donation_match: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

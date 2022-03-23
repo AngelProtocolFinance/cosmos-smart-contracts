@@ -2,9 +2,9 @@
 
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Api, CanonicalAddr, Coin, ContractResult, Decimal,
+    from_binary, from_slice, to_binary, Addr, Api, CanonicalAddr, Coin, ContractResult, Decimal,
     OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult, Uint128,
-    WasmQuery, Addr,
+    WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
 use schemars::JsonSchema;
@@ -16,7 +16,9 @@ use terra_cosmwasm::{
     TerraQueryWrapper, TerraRoute,
 };
 
-use angel_core::responses::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
+use angel_core::responses::registrar::{
+    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
+};
 use angel_core::structs::{SplitDetails, YieldVault};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -265,39 +267,38 @@ impl WasmMockQuerier {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
-                QueryMsg::Config {  } => SystemResult::Ok(ContractResult::Ok(
+                QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&RegistrarConfigResponse {
                         owner: "registrar_owner".to_string(),
-                        guardians_multisig_addr: Some("guardians_multi-sig".to_string()),
-                        endowment_owners_group_addr: Some("endowment-owners-group-addr".to_string()),
                         version: "0.1.0".to_string(),
                         accounts_code_id: 1,
                         treasury: "treasury".to_string(),
                         tax_rate: Decimal::one(),
                         default_vault: Some("default-vault".to_string()),
                         index_fund: Some("index_fund".to_string()),
-                        split_to_liquid: SplitDetails{
+                        split_to_liquid: SplitDetails {
                             min: Decimal::zero(),
                             max: Decimal::one(),
                             default: Decimal::percent(50),
                         },
                         halo_token: Some("halo_token".to_string()),
                         gov_contract: Some("gov_contract".to_string()),
-                        charity_shares_contract: Some("charity_shares".to_string()),
-                        
+                        cw3_code: None,
+                        cw4_code: None,
                     })
                     .unwrap(),
                 )),
                 QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&VaultDetailResponse {
-                        vault: YieldVault { 
-                            address: Addr::unchecked( "vault"),
+                        vault: YieldVault {
+                            address: Addr::unchecked("vault"),
                             input_denom: "input-denom".to_string(),
                             yield_token: Addr::unchecked("yield-token"),
                             approved: true,
-                        }
-                    }).unwrap(),
-                ))
+                        },
+                    })
+                    .unwrap(),
+                )),
             },
             QueryRequest::Wasm(WasmQuery::Raw { contract_addr, key }) => {
                 let key: &[u8] = key.as_slice();

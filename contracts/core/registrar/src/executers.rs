@@ -241,6 +241,8 @@ pub fn create_endowment(
         msg: to_binary(&angel_core::messages::accounts::InstantiateMsg {
             owner_sc: config.owner.to_string(),
             registrar_contract: env.contract.address.to_string(),
+            dao: msg.dao,
+            donation_match: msg.donation_match,
             owner: msg.owner,
             name: msg.name,
             description: msg.description,
@@ -250,9 +252,10 @@ pub fn create_endowment(
             locked_endowment_configs: msg.locked_endowment_configs,
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries,
             whitelisted_contributors: msg.whitelisted_contributors,
+            split_max: msg.split_max.unwrap_or(config.split_to_liquid.max),
+            split_min: msg.split_min.unwrap_or(config.split_to_liquid.min),
+            split_default: msg.split_default.unwrap_or(config.split_to_liquid.default),
             cw4_members: msg.cw4_members,
-            cw4_code: config.cw4_code,
-            cw3_code: config.cw3_code,
         })?,
         funds: vec![],
     };

@@ -12,6 +12,8 @@ pub struct MigrateMsg {}
 pub struct InstantiateMsg {
     pub owner_sc: String,
     pub registrar_contract: String,
+    pub dao: bool,
+    pub donation_match: bool,
     pub owner: String,       // address that originally setup the endowment account
     pub name: String,        // name of the Charity Endowment
     pub description: String, // description of the Charity Endowment
@@ -21,9 +23,10 @@ pub struct InstantiateMsg {
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
     pub locked_endowment_configs: Vec<String>, // list of endowment configs that cannot be changed/altered once set at creation
+    pub split_max: Decimal,
+    pub split_min: Decimal,
+    pub split_default: Decimal,
     pub cw4_members: Vec<Member>,
-    pub cw4_code: Option<u64>,
-    pub cw3_code: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

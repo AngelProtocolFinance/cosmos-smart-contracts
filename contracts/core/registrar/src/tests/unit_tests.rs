@@ -82,16 +82,14 @@ fn update_config() {
     let update_config_message = UpdateConfigMsg {
         accounts_code_id: None,
         index_fund_contract: Some(index_fund_contract.clone()),
-        approved_charities: None,
+        cw3_code: None,
+        cw4_code: None,
         treasury: Some(ap_team.clone()),
         tax_rate: None,
         default_vault: None,
-        endowment_owners_group_addr: None,
-        guardians_multisig_addr: None,
         split_max: Some(Decimal::one()),
         split_min: Some(Decimal::zero()),
         split_default: Some(Decimal::percent(30)),
-        charity_shares_contract: None,
         gov_contract: None,
         halo_token: None,
     };
@@ -101,7 +99,10 @@ fn update_config() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_response: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(index_fund_contract.clone(), config_response.index_fund.unwrap());
+    assert_eq!(
+        index_fund_contract.clone(),
+        config_response.index_fund.unwrap()
+    );
     assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
 }
 
@@ -129,81 +130,7 @@ fn migrate_contract() {
 }
 
 #[test]
-fn test_owner_can_add_remove_approved_charities() {
-    let mut deps = mock_dependencies(&[]);
-    // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let pleb = "plebAccount".to_string();
-    let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
-        treasury: ap_team.clone(),
-        default_vault: None,
-        tax_rate: Decimal::percent(20),
-        split_to_liquid: Some(SplitDetails::default()),
-    };
-    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
-    let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
-
-    // try to add as a non-owner (should fail)
-    let info = mock_info(pleb.as_ref(), &coins(100000, "earth"));
-    let env = mock_env();
-    let err = execute(
-        deps.as_mut(),
-        env.clone(),
-        info.clone(),
-        ExecuteMsg::CharityAdd {
-            charity: String::from("some-rando-charity"),
-        },
-    )
-    .unwrap_err();
-    assert_eq!(ContractError::Unauthorized {}, err);
-
-    // add Charity as SC Owner
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
-    let env = mock_env();
-    let res = execute(
-        deps.as_mut(),
-        env.clone(),
-        info.clone(),
-        ExecuteMsg::CharityAdd {
-            charity: charity_addr.clone(),
-        },
-    )
-    .unwrap();
-    assert_eq!(0, res.messages.len());
-
-    // try to remove as a non-owner (should fail)
-    let info = mock_info(pleb.as_ref(), &coins(100000, "earth"));
-    let err = execute(
-        deps.as_mut(),
-        env.clone(),
-        info.clone(),
-        ExecuteMsg::CharityRemove {
-            charity: String::from("some-rando-charity"),
-        },
-    )
-    .unwrap_err();
-    assert_eq!(ContractError::Unauthorized {}, err);
-
-    // remove Charity as SC Owner
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
-    let env = mock_env();
-    let res = execute(
-        deps.as_mut(),
-        env.clone(),
-        info.clone(),
-        ExecuteMsg::CharityRemove {
-            charity: charity_addr.clone(),
-        },
-    )
-    .unwrap();
-    assert_eq!(0, res.messages.len());
-}
-
-#[test]
-fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
+fn can_create_endowment_accounts_and_then_update() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
@@ -227,60 +154,42 @@ fn only_approved_charities_can_create_endowment_accounts_and_then_update() {
     let update_config_msg = UpdateConfigMsg {
         accounts_code_id: None,
         index_fund_contract: Some(index_fund_contract.clone()),
-        approved_charities: None,
+        cw3_code: None,
+        cw4_code: None,
         treasury: None,
         tax_rate: None,
         default_vault: None,
-        endowment_owners_group_addr: None,
-        guardians_multisig_addr: None,
         split_max: None,
         split_min: None,
         split_default: None,
-        charity_shares_contract: None,
         gov_contract: None,
         halo_token: None,
     };
     let info = mock_info(ap_team.as_ref(), &[]);
-    let _ = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::UpdateConfig(update_config_msg)).unwrap();
-
-    // add an approved charity to the list (Squeaky Clean Charity)
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
-    let env = mock_env();
-    let res = execute(
+    let _ = execute(
         deps.as_mut(),
-        env.clone(),
-        info.clone(),
-        ExecuteMsg::CharityAdd {
-            charity: good_charity_addr.clone(),
-        },
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateConfig(update_config_msg),
     )
     .unwrap();
-    assert_eq!(0, res.messages.len());
 
     let create_endowment_msg = CreateEndowmentMsg {
         owner: good_charity_addr.clone(),
-        beneficiary: good_charity_addr.clone(),
         name: "Test Endowment".to_string(),
         description: "Endowment to power an amazing charity".to_string(),
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
-        guardians_multisig_addr: None,
+        locked_endowment_configs: vec![],
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        cw4_members: vec![],
+        split_max: None,
+        split_min: None,
+        split_default: None,
     };
 
-    // non-Approved charity cannot create Accounts
-    let info = mock_info(bad_charity_addr.as_ref(), &coins(100000, "earth"));
-    let env = mock_env();
-    let err = execute(
-        deps.as_mut(),
-        env.clone(),
-        info.clone(),
-        ExecuteMsg::CreateEndowment(create_endowment_msg.clone()),
-    )
-    .unwrap_err();
-    assert_eq!(ContractError::Unauthorized {}, err);
-
-    // approved charity can create Accounts
     let info = mock_info(good_charity_addr.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
     let res = execute(
