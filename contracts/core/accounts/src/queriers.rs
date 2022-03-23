@@ -77,7 +77,7 @@ pub fn query_profile(deps: Deps) -> StdResult<ProfileResponse> {
     Ok(ProfileResponse {
         overview: profile.overview,
         un_sdg: profile.un_sdg,
-        tier: profile.un_sdg,
+        tier: profile.tier,
         charity_logo: profile.charity_logo,
         charity_image: profile.charity_image,
         url: profile.url,

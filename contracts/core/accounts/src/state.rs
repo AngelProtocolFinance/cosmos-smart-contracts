@@ -76,6 +76,31 @@ pub struct Profile {
     pub charity_navigator_rating: Option<String>,
 }
 
+impl Default for Profile {
+    fn default() -> Self {
+        Profile {
+            overview: "".to_string(),
+            un_sdg: None,
+            tier: None,
+            charity_logo: "".to_string(),
+            charity_image: "".to_string(),
+            url: None,
+            registration_number: None,
+            country_city_origin: None,
+            contact_email: None,
+            social_media_urls: SocialMedialUrls {
+                facebook: None,
+                twitter: None,
+                linkedin: None,
+            },
+            number_of_employees: None,
+            average_annual_budget: None,
+            annual_revenue: None,
+            charity_navigator_rating: None,
+        }
+    }
+}
+
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");

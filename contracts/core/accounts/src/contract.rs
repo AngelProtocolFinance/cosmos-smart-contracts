@@ -1,5 +1,7 @@
 use crate::executers;
 use crate::queriers;
+use crate::state::Profile;
+use crate::state::PROFILE;
 use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
@@ -78,6 +80,8 @@ pub fn instantiate(
         },
     )?;
 
+    PROFILE.save(deps.storage, &Profile::default())?;
+
     Ok(Response::default())
 }
 
@@ -119,6 +123,7 @@ pub fn execute(
         ExecuteMsg::UpdateGuardians { add, remove } => {
             executers::update_guardians(deps, env, info, add, remove)
         }
+        ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
     }
 }
 
