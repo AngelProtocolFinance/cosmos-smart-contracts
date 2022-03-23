@@ -335,3 +335,11 @@ impl GenericBalance {
         };
     }
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct SocialMedialUrls {
+    facebook: Option<String>,
+    twitter: Option<String>,
+    linkedin: Option<String>,
+}

@@ -129,6 +129,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::State {} => to_binary(&queriers::query_state(deps)?),
         QueryMsg::Endowment {} => to_binary(&queriers::query_endowment_details(deps)?),
+        QueryMsg::GetProfile {} => to_binary(&queriers::query_profile(deps)?),
     }
 }
 

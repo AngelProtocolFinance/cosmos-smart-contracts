@@ -123,4 +123,6 @@ pub enum QueryMsg {
     Config {},
     // Get all Endowment details
     Endowment {},
+    // Get the profile info
+    GetProfile {},
 }

@@ -1,4 +1,4 @@
-use crate::state::{CONFIG, ENDOWMENT, STATE};
+use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::messages::vault::QueryMsg as VaultQuerier;
 use angel_core::responses::accounts::*;
 use angel_core::structs::BalanceResponse;
@@ -69,5 +69,25 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
         strategies: endowment.strategies,
         rebalance: endowment.rebalance,
         guardians: endowment.guardian_set,
+    })
+}
+
+pub fn query_profile(deps: Deps) -> StdResult<ProfileResponse> {
+    let profile = PROFILE.load(deps.storage)?;
+    Ok(ProfileResponse {
+        overview: profile.overview,
+        un_sdg: profile.un_sdg,
+        tier: profile.un_sdg,
+        charity_logo: profile.charity_logo,
+        charity_image: profile.charity_image,
+        url: profile.url,
+        registration_number: profile.registration_number,
+        country_city_origin: profile.country_city_origin,
+        contact_email: profile.contact_email,
+        social_media_urls: profile.social_media_urls,
+        number_of_employees: profile.number_of_employees,
+        average_annual_budget: profile.average_annual_budget,
+        annual_revenue: profile.annual_revenue,
+        charity_navigator_rating: profile.charity_navigator_rating,
     })
 }
