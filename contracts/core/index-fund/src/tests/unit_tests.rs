@@ -167,7 +167,7 @@ fn migrate_contract() {
 }
 
 #[test]
-fn sc_owner_can_update_list_of_tca_members() {
+fn sc_owner_can_update_list_of_alliance_members() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
@@ -186,7 +186,7 @@ fn sc_owner_can_update_list_of_tca_members() {
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_eq!(0, res.messages.len());
 
-    let msg1 = ExecuteMsg::UpdateTcaList {
+    let msg1 = ExecuteMsg::UpdateAllianceMemberList {
         address: Addr::unchecked(charity_addr.as_str()),
         member: AllianceMember {
             name: "charity".to_string(),
@@ -196,7 +196,7 @@ fn sc_owner_can_update_list_of_tca_members() {
         action: "add".to_string(),
     };
 
-    let msg2 = ExecuteMsg::UpdateTcaList {
+    let msg2 = ExecuteMsg::UpdateAllianceMemberList {
         address: Addr::unchecked(pleb.as_str()),
         member: AllianceMember {
             name: "pleb".to_string(),
@@ -216,7 +216,7 @@ fn sc_owner_can_update_list_of_tca_members() {
     assert_eq!(
         res.attributes,
         vec![
-            attr("method", "update_tca_list"),
+            attr("method", "update_alliance_list"),
             attr("action", "add"),
             attr("address", charity_addr),
         ]
@@ -233,7 +233,7 @@ fn sc_owner_can_update_list_of_tca_members() {
     assert_eq!(
         res.attributes,
         vec![
-            attr("method", "update_tca_list"),
+            attr("method", "update_alliance_list"),
             attr("action", "add"),
             attr("address", pleb.clone()),
         ]
@@ -245,7 +245,7 @@ fn sc_owner_can_update_list_of_tca_members() {
     assert_eq!(2, value.tca_members.len());
 
     // real SC owner removes the member from list
-    let msg3 = ExecuteMsg::UpdateTcaList {
+    let msg3 = ExecuteMsg::UpdateAllianceMemberList {
         address: Addr::unchecked(pleb.as_str()),
         member: AllianceMember {
             name: "pleb".to_string(),
@@ -260,7 +260,7 @@ fn sc_owner_can_update_list_of_tca_members() {
     assert_eq!(
         res.attributes,
         vec![
-            attr("method", "update_tca_list"),
+            attr("method", "update_alliance_list"),
             attr("action", "remove"),
             attr("address", pleb),
         ]
@@ -436,7 +436,7 @@ fn sc_owner_can_update_fund_members() {
 }
 
 #[test]
-fn sc_owner_can_update_alliancemember() {
+fn sc_owner_can_update_alliance_member() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
@@ -454,7 +454,7 @@ fn sc_owner_can_update_alliancemember() {
     let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_eq!(0, res.messages.len());
 
-    let msg = ExecuteMsg::UpdateAlliancemember {
+    let msg = ExecuteMsg::UpdateAllianceMember {
         address: Addr::unchecked("member-addr"),
         member: AllianceMember {
             name: "Alliance-1".to_string(),
@@ -474,7 +474,7 @@ fn sc_owner_can_update_alliancemember() {
     assert_eq!(
         res.attributes,
         vec![
-            attr("method", "update_alliancemember"),
+            attr("method", "update_alliance_member"),
             attr("member_addr", "member-addr"),
         ]
     );
@@ -484,7 +484,7 @@ fn sc_owner_can_update_alliancemember() {
         deps.as_ref(),
         mock_env(),
         QueryMsg::AllianceMember {
-            wallet: Addr::unchecked("member-addr"),
+            address: Addr::unchecked("member-addr"),
         },
     )
     .unwrap();

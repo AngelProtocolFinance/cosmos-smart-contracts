@@ -60,11 +60,11 @@ pub fn execute(
             executers::update_registrar(deps, info, new_registrar)
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, info, msg),
-        ExecuteMsg::UpdateTcaList {
+        ExecuteMsg::UpdateAllianceMemberList {
             address,
             member,
             action,
-        } => executers::update_tca_list(deps, info, address, member, action),
+        } => executers::update_alliance_member_list(deps, info, address, member, action),
         ExecuteMsg::CreateFund {
             name,
             description,
@@ -95,8 +95,8 @@ pub fn execute(
         } => executers::update_fund_members(deps, env, info, fund_id, add, remove),
         ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
         // ExecuteMsg::Receive(msg) => executers::receive(deps, env, info, msg),
-        ExecuteMsg::UpdateAlliancemember { address, member } => {
-            executers::update_alliancemember(deps, env, info, address, member)
+        ExecuteMsg::UpdateAllianceMember { address, member } => {
+            executers::update_alliance_member(deps, env, info, address, member)
         }
     }
 }
@@ -121,7 +121,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&queriers::deposit_msg_builder(
             deps, env, amount, fund_id, split,
         )?),
-        QueryMsg::AllianceMember { wallet } => to_binary(&queriers::alliance_member(deps, wallet)?),
+        QueryMsg::AllianceMember { address } => {
+            to_binary(&queriers::alliance_member(deps, address)?)
+        }
         QueryMsg::AllianceMembers { start_after, limit } => {
             to_binary(&queriers::alliance_members(deps, start_after, limit)?)
         }

@@ -24,8 +24,8 @@ pub enum ExecuteMsg {
     UpdateRegistrar {
         new_registrar: String,
     },
-    // Update TCA member list
-    UpdateTcaList {
+    // Add/remove the Alliance member list
+    UpdateAllianceMemberList {
         address: Addr,
         member: AllianceMember,
         action: String,
@@ -59,7 +59,7 @@ pub enum ExecuteMsg {
     // Receive(Cw20ReceiveMsg),
 
     // Update the alliance member
-    UpdateAlliancemember {
+    UpdateAllianceMember {
         address: Addr,
         member: AllianceMember,
     },
@@ -138,7 +138,7 @@ pub enum QueryMsg {
     },
     // return the Alliance member given "wallet" address
     AllianceMember {
-        wallet: Addr,
+        address: Addr,
     },
 }
 

@@ -55,7 +55,7 @@ pub fn update_registrar(
     Ok(Response::default())
 }
 
-pub fn update_tca_list(
+pub fn update_alliance_member_list(
     deps: DepsMut,
     info: MessageInfo,
     address: Addr,
@@ -63,7 +63,7 @@ pub fn update_tca_list(
     action: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    // only the owner/admin of the contract can update the TCA Members List
+    // only the owner/admin of the contract can update the Alliance Members List
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
@@ -94,7 +94,7 @@ pub fn update_tca_list(
     }
 
     Ok(Response::new().add_attributes(vec![
-        attr("method", "update_tca_list"),
+        attr("method", "update_alliance_list"),
         attr("action", action),
         attr("address", member_addr.clone()),
     ]))
@@ -319,7 +319,7 @@ pub fn remove_member(
 //     }
 // }
 
-pub fn update_alliancemember(
+pub fn update_alliance_member(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
@@ -327,7 +327,7 @@ pub fn update_alliancemember(
     member: AllianceMember,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    // only the owner/admin of the contract can update the TCA Members
+    // only the owner/admin of the contract can update the Alliance Members
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
@@ -335,7 +335,7 @@ pub fn update_alliancemember(
     // check the string is proper addr
     let member_addr = deps.api.addr_validate(address.as_str())?;
 
-    // Update the corresponding Alliance_Members.
+    // Update the corresponding Alliance Members.
     ALLIANCE_MEMBERS.update(
         deps.storage,
         member_addr.clone(),
@@ -351,7 +351,7 @@ pub fn update_alliancemember(
     )?;
 
     Ok(Response::new().add_attributes(vec![
-        attr("method", "update_alliancemember"),
+        attr("method", "update_alliance_member"),
         attr("member_addr", member_addr.to_string()),
     ]))
 }
@@ -383,10 +383,10 @@ pub fn deposit(
         return Err(ContractError::InvalidZeroAmount {});
     }
 
-    // check each of the currenly allowed TCA member addr
+    // check each of the currenly allowed Alliance member addr
     let mut tca_member = false;
-    let is_sender_tca_member = ALLIANCE_MEMBERS.has(deps.storage, sender_addr.clone());
-    if is_sender_tca_member {
+    let is_sender_alliance_member = ALLIANCE_MEMBERS.has(deps.storage, sender_addr.clone());
+    if is_sender_alliance_member {
         tca_member = true;
         // note increased donation amount for the TCA member
         let mut tca_donor = TCA_DONATIONS

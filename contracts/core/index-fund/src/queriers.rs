@@ -33,14 +33,16 @@ pub fn state(deps: Deps) -> StdResult<StateResponse> {
 
 pub fn tca_list(deps: Deps) -> StdResult<TcaListResponse> {
     // Return a list of TCA Member Addrs
-    let tca_addr_list: Vec<Vec<u8>> = ALLIANCE_MEMBERS
+    let alliance_addr_list: Vec<Vec<u8>> = ALLIANCE_MEMBERS
         .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
         .collect();
-    let mut tca_members: Vec<String> = vec![];
-    for tca in tca_addr_list {
-        tca_members.push(std::str::from_utf8(&tca).unwrap().to_string());
+    let mut alliance_members: Vec<String> = vec![];
+    for member in alliance_addr_list {
+        alliance_members.push(std::str::from_utf8(&member).unwrap().to_string());
     }
-    Ok(TcaListResponse { tca_members })
+    Ok(TcaListResponse {
+        tca_members: alliance_members,
+    })
 }
 
 pub fn funds_list(
