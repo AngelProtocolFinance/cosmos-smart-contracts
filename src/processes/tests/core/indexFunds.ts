@@ -47,11 +47,11 @@ export async function testDonorSendsToIndexFund(
 }
 
 //----------------------------------------------------------------------------------------
-// TEST: TCA Member can send donations to the Index Fund 
+// TEST: TCA Member can send donations to the Index Fund
 //
 // SCENARIO:
-// TCA Member sends UST funds to an Index Fund SC fund to have it split 
-// up amonst the active fund's charity members. 
+// TCA Member sends UST funds to an Index Fund SC fund to have it split
+// up amonst the active fund's charity members.
 //
 //----------------------------------------------------------------------------------------
 export async function testTcaMemberSendsToIndexFund(
@@ -65,20 +65,20 @@ export async function testTcaMemberSendsToIndexFund(
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
-        { deposit: { fund_id: undefined, split: undefined, }, },
-        { uusd: "30000000", }
+        { deposit: { fund_id: undefined, split: undefined } },
+        { uusd: "30000000" }
       ),
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
-        { deposit: { fund_id: 3, split: undefined, }, },
-        { uusd: "40000000", }
+        { deposit: { fund_id: 3, split: undefined } },
+        { uusd: "40000000" }
       ),
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
-        { deposit: { fund_id: 3, split: "0.76", }, },
-        { uusd: "40000000", }
+        { deposit: { fund_id: 3, split: "0.76" } },
+        { uusd: "40000000" }
       ),
     ])
   );
@@ -96,30 +96,31 @@ export async function testUpdatingIndexFundConfigs(
       update_config: {
         funding_goal: "10000000000",
         fund_rotation: undefined,
-      }
+      },
     }),
   ]);
   console.log(chalk.green(" Done!"));
 }
 
-export async function testUpdateAngelAllianceMembers(
+export async function testUpdateAllianceMembersList(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   indexFund: string,
-  add: string[],
-  remove: string[],
+  address: string,
+  member: any,
+  action: string
 ): Promise<void> {
   process.stdout.write("AP Team updates Angel Alliance members list");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      update_tca_list: { add, remove }
+      update_alliance_member_list: { address, member, action },
     }),
   ]);
   console.log(chalk.green(" Done!"));
 }
 
 //----------------------------------------------------------------------------------------
-// TEST: SC owner can update the fund members to an Index Fund 
+// TEST: SC owner can update the fund members to an Index Fund
 //
 // SCENARIO:
 // pleb cannot update fund members, only SC owner can update fund members
@@ -131,25 +132,21 @@ export async function testUpdateFundMembers(
   indexFund: string,
   fundId: number,
   add: string[],
-  remove: string[],
+  remove: string[]
 ): Promise<void> {
   process.stdout.write("Test - SC owner can update fund members");
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress, 
-        indexFund,
-        {
-          update_members: { fund_id: fundId, add: add, remove: remove }
-        }
-      )
+      new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+        update_members: { fund_id: fundId, add: add, remove: remove },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
-// TEST: SC owner can create an Index Fund 
+// TEST: SC owner can create an Index Fund
 //
 // SCENARIO:
 // Create index fund
@@ -158,7 +155,6 @@ export async function testCreateIndexFund(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   indexFund: string,
-  fund_id: number,
   name: string,
   description: string,
   rotating_fund: boolean,
@@ -167,28 +163,21 @@ export async function testCreateIndexFund(
   process.stdout.write("Test - SC owner can create index fund");
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress, 
-        indexFund,
-        {
-          create_fund: {
-            fund: {
-              id: fund_id,
-              name: name,
-              description: description,
-              members: members,
-              rotating_fund: rotating_fund,
-            }
-          }
-        }
-      )
+      new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+        create_fund: {
+          name: name,
+          description: description,
+          members: members,
+          rotating_fund: rotating_fund,
+        },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
-// TEST: SC owner can remove an Index Fund 
+// TEST: SC owner can remove an Index Fund
 //
 // SCENARIO:
 // Remove index fund
@@ -198,18 +187,14 @@ export async function testRemoveIndexFund(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   indexFund: string,
-  fundId: number,
+  fundId: number
 ): Promise<void> {
   process.stdout.write("Test - SC owner can remove index fund");
   await expect(
     sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress, 
-        indexFund,
-        {
-          remove_fund: { fund_id: fundId }
-        }
-      )
+      new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+        remove_fund: { fund_id: fundId },
+      }),
     ])
   );
   console.log(chalk.green(" Passed!"));
@@ -273,7 +258,7 @@ export async function testQueryIndexFundFundsList(
 export async function testQueryIndexFundFundDetails(
   terra: LocalTerra | LCDClient,
   indexFund: string,
-  fund_id: number,
+  fund_id: number
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund FundDetails");
   const result: any = await terra.wasm.contractQuery(indexFund, {
@@ -318,7 +303,7 @@ export async function testQueryIndexFundDeposit(
   const result: any = await terra.wasm.contractQuery(indexFund, {
     deposit: {
       amount: "100000000",
-      fund_id: 6
+      fund_id: 6,
     },
   });
 

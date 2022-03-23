@@ -13,7 +13,7 @@ import {
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
   testUpdateFundMembers,
-  testUpdateAngelAllianceMembers,
+  // testUpdateAngelAllianceMembers,
   testUpdatingIndexFundConfigs,
   testCreateIndexFund,
   testRemoveIndexFund,
@@ -27,7 +27,7 @@ import {
   testQueryIndexFundTcaList,
 } from "./core/indexFunds";
 import {
-  testAddApTeamMemberToC4Group,
+  testAddMemberToC4Group,
   testAddGuardiansToEndowment,
   testGuardiansChangeEndowmentOwner,
 } from "./core/multisig";

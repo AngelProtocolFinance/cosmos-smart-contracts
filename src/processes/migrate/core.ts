@@ -36,7 +36,7 @@ export async function migrateCore(
   // run the migrations desired
   // await migrateRegistrar(terra, apTeam, registrar);
   // await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
-  // await migrateApTeamMultisig(terra, apTeam, cw3ApTeam);
+  // await migrateCw3Multisig(terra, apTeam, cw3ApTeam);
   // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
   // await migrateIndexFund(terra, apTeam, indexFund);
   // await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
@@ -118,21 +118,21 @@ async function migrateCw4Group(
 // -------------------------------------------------
 //  Migrate AP Team multisig
 //--------------------------------------------------
-async function migrateApTeamMultisig(
+async function migrateCw3Multisig(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  cw3ApTeam: string
+  contract: string
 ): Promise<void> {
-  process.stdout.write("Uploading AP Team MultiSig Wasm");
+  process.stdout.write("Uploading CW3 MultiSig Wasm");
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.core}/ap_team_multisig.wasm`)
+    path.resolve(__dirname, `${wasm_path.core}/cw3_multisig.wasm`)
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
-  process.stdout.write("Migrate AP Team MultiSig contract");
-  const result1 = await migrateContract(terra, apTeam, apTeam, cw3ApTeam, codeId, {});
+  process.stdout.write("Migrate CW3 MultiSig contract");
+  const result1 = await migrateContract(terra, apTeam, apTeam, contract, codeId, {});
   console.log(chalk.green(" Done!"));
 }
 

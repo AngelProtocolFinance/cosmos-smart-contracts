@@ -13,11 +13,11 @@ import {
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
   testUpdateFundMembers,
-  testUpdateAngelAllianceMembers,
+  testUpdateAllianceMembersList,
   testUpdatingIndexFundConfigs,
   testCreateIndexFund,
   testRemoveIndexFund,
-  testQueryIndexFundActiveFundDetails,
+  // testQueryIndexFundActiveFundDetails,
   testQueryIndexFundActiveFundDonations,
   testQueryIndexFundConfig,
   testQueryIndexFundDeposit,
@@ -28,7 +28,7 @@ import {
 } from "./core/indexFunds";
 import {
   testUpdateCw3Config,
-  testAddApTeamMemberToC4Group,
+  testAddMemberToC4Group,
   testAddGuardiansToEndowment,
   testGuardiansChangeEndowmentOwner,
   testQueryMultisigVoters,
@@ -184,24 +184,43 @@ export async function testExecute(
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
-  // await testUpdateAngelAllianceMembers(
+  await testUpdateAllianceMembersList(
+    terra,
+    apTeam,
+    indexFund,
+    "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // address #1
+    {
+      name: "Testnet Charity #2",
+      website:
+        "http://angelprotocol.io/app/charity/terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+      logo: "https://angelprotocol.io/favicon.ico",
+    }, // member #1`
+    // "terra178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // address #2
+    // { name: "Testnet Admin", webiste: "http://angelprotocol.io", logo: "" }, // member #2
+    "add" // action
+  );
+  // testRemoveIndexFund(terra, apTeam, indexFund, 5);
+  // await testCreateIndexFund(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   [
-  //     "terra178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // testnet admin (testnet ONLY!)
-  //     "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // charity#1 (testnet ONLY!)
-  //   ],
-  //   []
+  //   "MVP Rotation #2",
+  //   "FutCreateIndexFund(
+  //   terra,
+  //   apTeam,
+  //   indexFund,
+  //   "MVP Rotation #2",
+  //   "Fund collection for MVP",
+  //   true,
+  //   [endowmentContract3, endowmentContract2]
+  // );nd collection for MVP",
+  //   true,
+  //   [endowmentContract3, endowmentContract2]
   // );
-  // testRemoveIndexFund(terra, apTeam, indexFund, 5);
-  // await testCreateIndexFund(terra, apTeam, indexFund, 11, "MVP Rotation #5", "Fund collection for MVP", true, [
-  // "", // New funds go here!!
-  // ]);
   // await testUpdateFundMembers(terra, apTeam, apTeam, indexFund, 6, ["","",""], ["","",""]);
 
   // Multisig test
-  // await testAddApTeamMemberToC4Group(terra, apTeam, apTeam3, cw3ApTeam, cw4GrpApTeam);
+  // await testUpdateCw3Config(terra, apTeam, cw3ApTeam, 50, 25000);
   // await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);
   // await testGuardiansChangeEndowmentOwner(terra, charity2, charity3, pleb, endowmentContract1, cw3GuardianAngels);
   // await testQueryMultisigVoters(terra, cw3ApTeam);
