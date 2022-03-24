@@ -27,12 +27,6 @@ pub enum ExecuteMsg {
         vault_addr: String,
         approved: bool,
     },
-    CharityAdd {
-        charity: String,
-    },
-    CharityRemove {
-        charity: String,
-    },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
     // Allows the DANO / AP Team to update the status of an Endowment
