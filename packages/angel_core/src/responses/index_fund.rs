@@ -14,11 +14,6 @@ pub struct FundListResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct TcaListResponse {
-    pub tca_members: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct DonationDetailResponse {
     pub address: String,
     pub total_ust: Uint128,
