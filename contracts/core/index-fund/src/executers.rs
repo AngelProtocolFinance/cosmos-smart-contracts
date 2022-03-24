@@ -1,6 +1,4 @@
-use crate::state::{
-    fund_read, fund_store, read_funds, ALLIANCE_MEMBERS, CONFIG, STATE, TCA_DONATIONS,
-};
+use crate::state::{read_funds, ALLIANCE_MEMBERS, CONFIG, FUND, STATE, TCA_DONATIONS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
@@ -189,7 +187,7 @@ pub fn create_index_fund(
     STATE.save(deps.storage, &state)?;
 
     // Add the new Fund to storage
-    fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
+    FUND.save(deps.storage, &fund.id.to_be_bytes(), &fund)?;
 
     Ok(Response::default())
 }
@@ -220,7 +218,7 @@ pub fn remove_index_fund(
     STATE.save(deps.storage, &state)?;
 
     // remove the fund from storage
-    fund_store(deps.storage).remove(&fund_id.to_be_bytes());
+    FUND.remove(deps.storage, &fund_id.to_be_bytes());
 
     Ok(Response::default())
 }
@@ -239,7 +237,7 @@ pub fn update_fund_members(
         return Err(ContractError::Unauthorized {});
     }
     // this will fail if fund ID passed is not found
-    let mut fund = fund_store(deps.storage).load(&fund_id.to_be_bytes())?;
+    let mut fund = FUND.load(deps.storage, &fund_id.to_be_bytes())?;
 
     if fund.is_expired(env.block.height, env.block.time) {
         return Err(ContractError::IndexFundExpired {});
@@ -270,7 +268,7 @@ pub fn update_fund_members(
     }
 
     // save revised fund to storage
-    fund_store(deps.storage).save(&fund_id.to_be_bytes(), &fund)?;
+    FUND.save(deps.storage, &fund_id.to_be_bytes(), &fund)?;
 
     Ok(Response::default())
 }
@@ -293,7 +291,7 @@ pub fn remove_member(
     let funds = read_funds(deps.storage, None, None)?;
     for mut fund in funds.into_iter() {
         fund.members.retain(|m| m != &member_addr);
-        fund_store(deps.storage).save(&fund.id.to_be_bytes(), &fund)?;
+        FUND.save(deps.storage, &fund.id.to_be_bytes(), &fund)?;
     }
     Ok(Response::default())
 }
@@ -435,7 +433,7 @@ pub fn deposit(
     match msg.fund_id {
         // A Fund ID was provided, simple donation of all to one fund
         Some(id) => {
-            let fund = fund_read(deps.storage).load(&id.to_be_bytes())?;
+            let fund = FUND.load(deps.storage, &id.to_be_bytes())?;
             // check that the fund has members to donate to
             if fund.members.len() == 0 {
                 return Err(ContractError::IndexFundEmpty {});
@@ -460,8 +458,7 @@ pub fn deposit(
                     // loop active fund until the donation amount has been fully distributed
                     let mut loop_donation;
                     while deposit_amount > Uint128::zero() {
-                        let fund =
-                            fund_read(deps.storage).load(&state.active_fund.to_be_bytes())?;
+                        let fund = FUND.load(deps.storage, &state.active_fund.to_be_bytes())?;
                         // check that the fund has members to donate to
                         if fund.members.len() == 0 {
                             return Err(ContractError::IndexFundEmpty {});
@@ -505,7 +502,7 @@ pub fn deposit(
                 }
                 None => {
                     // no funding goal, dump all donated funds into current active fund
-                    let fund = fund_read(deps.storage).load(&state.active_fund.to_be_bytes())?;
+                    let fund = FUND.load(deps.storage, &state.active_fund.to_be_bytes())?;
                     // check that the fund has members to donate to
                     if fund.members.len() == 0 {
                         return Err(ContractError::IndexFundEmpty {});
