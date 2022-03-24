@@ -637,12 +637,8 @@ pub fn update_profile(
         profile.tier = msg.tier;
     }
 
-    if let Some(charity_logo) = msg.charity_logo {
-        profile.charity_logo = charity_logo;
-    }
-    if let Some(charity_image) = msg.charity_image {
-        profile.charity_image = charity_image;
-    }
+    profile.logo =msg.logo;
+    profile.image = msg.image;
     profile.url = msg.url;
     profile.registration_number = msg.registration_number;
     profile.country_city_origin = msg.country_city_origin;

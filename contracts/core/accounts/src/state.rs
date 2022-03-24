@@ -63,8 +63,8 @@ pub struct Profile {
     pub overview: String,
     pub un_sdg: Option<u64>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
     pub tier: Option<u64>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
-    pub charity_logo: String,
-    pub charity_image: String,
+    pub logo: Option<String>,
+    pub image: Option<String>,
     pub url: Option<String>,
     pub registration_number: Option<String>,
     pub country_city_origin: Option<String>,
@@ -82,8 +82,8 @@ impl Default for Profile {
             overview: "".to_string(),
             un_sdg: None,
             tier: None,
-            charity_logo: "".to_string(),
-            charity_image: "".to_string(),
+            logo: None,
+            image: None,
             url: None,
             registration_number: None,
             country_city_origin: None,
