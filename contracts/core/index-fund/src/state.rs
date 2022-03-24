@@ -1,14 +1,16 @@
-use angel_core::structs::{AcceptedTokens, GenericBalance, IndexFund};
+use angel_core::responses::index_fund::AllianceMemberResponse;
+use angel_core::structs::{AcceptedTokens, AllianceMember, GenericBalance, IndexFund};
 use angel_core::utils::calc_range_start;
 use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
 use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
-use cw_storage_plus::{Item, Map};
+use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 pub const TCA_DONATIONS: Map<String, GenericBalance> = Map::new("tca_donation");
+pub const ALLIANCE_MEMBERS: Map<Addr, AllianceMember> = Map::new("alliance_members");
 
 static PREFIX_FUND: &[u8] = b"fund";
 
@@ -30,20 +32,10 @@ pub struct Config {
 #[serde(rename_all = "snake_case")]
 pub struct State {
     pub total_funds: u64,
-    pub active_fund: u64,          // index ID of the Active IndexFund
-    pub round_donations: Uint128,  // total donations given to active charity this round
-    pub next_rotation_block: u64,  // block height to perform next rotation on
-    pub terra_alliance: Vec<Addr>, // Terra Charity Alliance addresses
+    pub active_fund: u64,         // index ID of the Active IndexFund
+    pub round_donations: Uint128, // total donations given to active charity this round
+    pub next_rotation_block: u64, // block height to perform next rotation on
     pub next_fund_id: u64,
-}
-
-impl State {
-    pub fn tca_human_addresses(self) -> Vec<String> {
-        self.terra_alliance
-            .iter()
-            .map(|tca| tca.to_string())
-            .collect()
-    }
 }
 
 // FUND Read/Write
@@ -73,4 +65,49 @@ pub fn read_funds<'a>(
             Ok(v)
         })
         .collect()
+}
+
+pub fn read_alliance_members(
+    storage: &dyn Storage,
+    start_after: Option<Addr>,
+    limit: Option<u64>,
+) -> StdResult<Vec<AllianceMemberResponse>> {
+    let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start: Option<Vec<u8>> = calc_range_start_addr(start_after);
+    let end: Option<Vec<u8>> = None;
+    ALLIANCE_MEMBERS
+        .range(
+            storage,
+            start.and_then(|v| Some(Bound::inclusive(&*v))),
+            end.and_then(|v| Some(Bound::inclusive(&*v))),
+            Order::Ascending,
+        )
+        .take(limit)
+        .map(|member| {
+            let (addr, mem) = member?;
+            Ok(AllianceMemberResponse {
+                wallet: std::str::from_utf8(&addr).unwrap().to_string(),
+                name: mem.name,
+                logo: mem.logo,
+                website: mem.website,
+            })
+        })
+        .collect()
+}
+
+// this will set the first key after the provided key, by appending a 1 byte
+fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
+    match start_after {
+        Some(addr) => {
+            let mut v = addr.as_bytes().to_vec();
+            v.push(1);
+            Some(v)
+        }
+        _ => None,
+    }
+}
+
+// this will set the first key after the provided key, by appending a 1 byte
+fn calc_range_end_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
+    start_after.map(|addr| addr.as_bytes().to_vec())
 }

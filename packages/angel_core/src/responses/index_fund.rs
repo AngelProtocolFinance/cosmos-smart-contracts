@@ -35,7 +35,6 @@ pub struct StateResponse {
     pub active_fund: u64,
     pub round_donations: Uint128,
     pub next_rotation_block: u64,
-    pub terra_alliance: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -46,4 +45,17 @@ pub struct ConfigResponse {
     pub fund_member_limit: u32,
     pub funding_goal: Option<Uint128>,
     pub accepted_tokens: AcceptedTokens,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+pub struct AllianceMemberResponse {
+    pub wallet: String,
+    pub name: String,
+    pub logo: Option<String>,
+    pub website: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+pub struct AllianceMemberListResponse {
+    pub alliance_members: Vec<AllianceMemberResponse>,
 }

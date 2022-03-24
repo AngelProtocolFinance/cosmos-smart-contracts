@@ -343,3 +343,11 @@ pub struct SocialMedialUrls {
     pub twitter: Option<String>,
     pub linkedin: Option<String>,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct AllianceMember {
+    pub name: String,
+    pub logo: Option<String>,
+    pub website: Option<String>,
+}
