@@ -1,3 +1,4 @@
+use crate::state::PROFILE;
 use crate::state::{CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
@@ -10,7 +11,9 @@ use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
-use angel_core::structs::{AcceptedTokens, FundingSource, SplitDetails, StrategyComponent};
+use angel_core::structs::{
+    AcceptedTokens, FundingSource, SocialMedialUrls, SplitDetails, StrategyComponent,
+};
 use angel_core::utils::{
     check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
     withdraw_from_vaults,
@@ -606,4 +609,58 @@ pub fn close_endowment(
         .add_attribute("action", "close_endowment")
         .add_attribute("sender", info.sender.to_string())
         .add_submessages(redeem_messages))
+}
+
+pub fn update_profile(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateProfileMsg,
+) -> Result<Response, ContractError> {
+    // Validation 1. Only "Endowment.owner" or "Config.owner" is able to execute
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender != endowment.owner && info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Update the Endowment profile
+    let mut profile = PROFILE.load(deps.storage)?;
+
+    // Only config.owner can update "un_sdg" & "tier" fields
+    if info.sender == config.owner {
+        profile.un_sdg = msg.un_sdg;
+        profile.tier = msg.tier;
+    }
+
+    // Only endowment.owner can update all other fields
+    if info.sender == endowment.owner {
+        if let Some(overview) = msg.overview {
+            profile.overview = overview;
+        }
+        profile.logo = msg.logo;
+        profile.image = msg.image;
+        profile.url = msg.url;
+        profile.registration_number = msg.registration_number;
+        profile.country_city_origin = msg.country_city_origin;
+        profile.contact_email = msg.contact_email;
+        profile.number_of_employees = msg.number_of_employees;
+        profile.average_annual_budget = msg.average_annual_budget;
+        profile.annual_revenue = msg.annual_revenue;
+        profile.charity_navigator_rating = msg.charity_navigator_rating;
+
+        let social_media_urls = SocialMedialUrls {
+            facebook: msg.facebook,
+            twitter: msg.twitter,
+            linkedin: msg.linkedin,
+        };
+        profile.social_media_urls = social_media_urls;
+    }
+
+    PROFILE.save(deps.storage, &profile)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "update_profile")
+        .add_attribute("sender", info.sender.to_string()))
 }

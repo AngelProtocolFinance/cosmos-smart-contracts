@@ -1,10 +1,12 @@
+use std::vec;
+
 use super::mock_querier::mock_dependencies;
 use crate::contract::{execute, instantiate, migrate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
 use cosmwasm_std::testing::{mock_env, mock_info};
-use cosmwasm_std::{coins, from_binary, Decimal};
+use cosmwasm_std::{attr, coins, from_binary, Decimal};
 
 #[test]
 fn test_proper_initialization() {
@@ -360,4 +362,105 @@ fn test_update_strategy() {
     let info = mock_info(pleb.as_ref(), &coins(100000, "earth"));
     let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
+}
+
+#[test]
+fn test_update_endowment_profile() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angelprotocolteamdano".to_string();
+    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
+    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let pleb = "plebAccount".to_string();
+
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: ap_team.clone(),
+        registrar_contract: registrar_contract.clone(),
+        owner: charity_addr.clone(),
+        beneficiary: charity_addr.clone(),
+        name: "Test Endowment".to_string(),
+        description: "Endowment to power an amazing charity".to_string(),
+        withdraw_before_maturity: false,
+        maturity_time: None,
+        maturity_height: None,
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let _res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+    let msg = UpdateProfileMsg {
+        overview: Some("Test Endowment is for just testing".to_string()),
+        un_sdg: Some(11_u64),
+        tier: Some(22_u64),
+        logo: Some("".to_string()),
+        image: Some("".to_string()),
+        url: None,
+        registration_number: None,
+        country_city_origin: None,
+        contact_email: None,
+        facebook: None,
+        twitter: None,
+        linkedin: None,
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+    };
+
+    // Not just anyone can update the Endowment's profile! Only Endowment owner or Config owner can.
+    let info = mock_info(pleb.as_ref(), &[]);
+    let env = mock_env();
+    // This should fail with an error!
+    let err = execute(
+        deps.as_mut(),
+        env,
+        info,
+        ExecuteMsg::UpdateProfile(msg.clone()),
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Endowment owner can update the profile
+    let info = mock_info(charity_addr.as_str(), &[]);
+    let env = mock_env();
+    // This should succeed!
+    let res = execute(
+        deps.as_mut(),
+        env,
+        info,
+        ExecuteMsg::UpdateProfile(msg.clone()),
+    )
+    .unwrap();
+    assert_eq!(
+        res.attributes,
+        vec![
+            attr("action", "update_profile"),
+            attr("sender", charity_addr.clone())
+        ]
+    );
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetProfile {}).unwrap();
+    let value: ProfileResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        value.overview,
+        "Test Endowment is for just testing".to_string()
+    );
+    assert_eq!(value.un_sdg, None);
+    assert_eq!(value.tier, None);
+
+    // Config owner can update certain profile
+    let info = mock_info(ap_team.as_str(), &[]);
+    let env = mock_env();
+    // This should succeed!
+    let _res = execute(
+        deps.as_mut(),
+        env,
+        info,
+        ExecuteMsg::UpdateProfile(msg.clone()),
+    )
+    .unwrap();
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::GetProfile {}).unwrap();
+    let value: ProfileResponse = from_binary(&res).unwrap();
+    assert_eq!(value.un_sdg.unwrap(), 11);
+    assert_eq!(value.tier.unwrap(), 22);
 }

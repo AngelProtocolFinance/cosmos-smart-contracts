@@ -338,6 +338,14 @@ impl GenericBalance {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub struct SocialMedialUrls {
+    pub facebook: Option<String>,
+    pub twitter: Option<String>,
+    pub linkedin: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub struct AllianceMember {
     pub name: String,
     pub logo: Option<String>,

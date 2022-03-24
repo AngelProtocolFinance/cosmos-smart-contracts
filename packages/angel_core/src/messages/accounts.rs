@@ -58,6 +58,8 @@ pub enum ExecuteMsg {
         add: Vec<String>,
         remove: Vec<String>,
     },
+    // Update Endowment profile
+    UpdateProfile(UpdateProfileMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -112,6 +114,26 @@ pub struct WithdrawMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateProfileMsg {
+    pub overview: Option<String>,
+    pub un_sdg: Option<u64>,
+    pub tier: Option<u64>,
+    pub logo: Option<String>,
+    pub image: Option<String>,
+    pub url: Option<String>,
+    pub registration_number: Option<String>,
+    pub country_city_origin: Option<String>,
+    pub contact_email: Option<String>,
+    pub facebook: Option<String>,
+    pub twitter: Option<String>,
+    pub linkedin: Option<String>,
+    pub number_of_employees: Option<u64>,
+    pub average_annual_budget: Option<String>,
+    pub annual_revenue: Option<String>,
+    pub charity_navigator_rating: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get the balance of available UST and the invested portion balances
@@ -123,4 +145,6 @@ pub enum QueryMsg {
     Config {},
     // Get all Endowment details
     Endowment {},
+    // Get the profile info
+    GetProfile {},
 }

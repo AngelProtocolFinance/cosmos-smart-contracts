@@ -1,6 +1,7 @@
 use crate::executers;
 use crate::queriers;
 use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
+use crate::state::{Profile, PROFILE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
@@ -78,6 +79,8 @@ pub fn instantiate(
         },
     )?;
 
+    PROFILE.save(deps.storage, &Profile::default())?;
+
     Ok(Response::default())
 }
 
@@ -119,6 +122,7 @@ pub fn execute(
         ExecuteMsg::UpdateGuardians { add, remove } => {
             executers::update_guardians(deps, env, info, add, remove)
         }
+        ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
     }
 }
 
@@ -129,6 +133,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::State {} => to_binary(&queriers::query_state(deps)?),
         QueryMsg::Endowment {} => to_binary(&queriers::query_endowment_details(deps)?),
+        QueryMsg::GetProfile {} => to_binary(&queriers::query_profile(deps)?),
     }
 }
 
