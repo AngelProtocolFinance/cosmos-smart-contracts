@@ -223,9 +223,17 @@ fn sc_owner_can_update_list_of_alliance_members() {
     );
 
     // check that the list can be fetched in query
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::TcaList {}).unwrap();
-    let value: TcaListResponse = from_binary(&res).unwrap();
-    assert_eq!(1, value.tca_members.len());
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::AllianceMembers {
+            start_after: None,
+            limit: None,
+        },
+    )
+    .unwrap();
+    let value: AllianceMemberListResponse = from_binary(&res).unwrap();
+    assert_eq!(1, value.alliance_members.len());
 
     // real SC owner updates the list again
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
@@ -240,9 +248,17 @@ fn sc_owner_can_update_list_of_alliance_members() {
     );
 
     // check that the list can be fetched in query
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::TcaList {}).unwrap();
-    let value: TcaListResponse = from_binary(&res).unwrap();
-    assert_eq!(2, value.tca_members.len());
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::AllianceMembers {
+            start_after: None,
+            limit: None,
+        },
+    )
+    .unwrap();
+    let value: AllianceMemberListResponse = from_binary(&res).unwrap();
+    assert_eq!(2, value.alliance_members.len());
 
     // real SC owner removes the member from list
     let msg3 = ExecuteMsg::UpdateAllianceMemberList {
@@ -267,9 +283,17 @@ fn sc_owner_can_update_list_of_alliance_members() {
     );
 
     // check that the list can be fetched in query
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::TcaList {}).unwrap();
-    let value: TcaListResponse = from_binary(&res).unwrap();
-    assert_eq!(1, value.tca_members.len());
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::AllianceMembers {
+            start_after: None,
+            limit: None,
+        },
+    )
+    .unwrap();
+    let value: AllianceMemberListResponse = from_binary(&res).unwrap();
+    assert_eq!(1, value.alliance_members.len());
 }
 
 #[test]

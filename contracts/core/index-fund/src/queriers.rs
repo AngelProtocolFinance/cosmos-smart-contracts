@@ -1,5 +1,5 @@
 use crate::state::{
-    fund_read, read_alliance_members, read_funds, ALLIANCE_MEMBERS, CONFIG, STATE, TCA_DONATIONS,
+    read_alliance_members, read_funds, ALLIANCE_MEMBERS, CONFIG, FUND, STATE, TCA_DONATIONS,
 };
 use angel_core::messages::index_fund::DepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg::Deposit;
@@ -42,14 +42,14 @@ pub fn funds_list(
 
 pub fn fund_details(deps: Deps, fund_id: u64) -> StdResult<FundDetailsResponse> {
     Ok(FundDetailsResponse {
-        fund: fund_read(deps.storage).may_load(&fund_id.to_be_bytes())?,
+        fund: FUND.may_load(deps.storage, &fund_id.to_be_bytes())?,
     })
 }
 
 pub fn active_fund_details(deps: Deps) -> StdResult<FundDetailsResponse> {
     let state = STATE.load(deps.storage)?;
     Ok(FundDetailsResponse {
-        fund: fund_read(deps.storage).may_load(&state.active_fund.to_be_bytes())?,
+        fund: FUND.may_load(deps.storage, &state.active_fund.to_be_bytes())?,
     })
 }
 

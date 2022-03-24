@@ -1,8 +1,7 @@
 use angel_core::responses::index_fund::AllianceMemberResponse;
 use angel_core::structs::{AcceptedTokens, AllianceMember, GenericBalance, IndexFund};
-use angel_core::utils::calc_range_start;
+use angel_core::utils::{calc_range_start, calc_range_start_addr};
 use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
-use cosmwasm_storage::{bucket, bucket_read, Bucket, ReadonlyBucket};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -11,8 +10,7 @@ pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 pub const TCA_DONATIONS: Map<String, GenericBalance> = Map::new("tca_donation");
 pub const ALLIANCE_MEMBERS: Map<Addr, AllianceMember> = Map::new("alliance_members");
-
-static PREFIX_FUND: &[u8] = b"fund";
+pub const FUND: Map<&[u8], IndexFund> = Map::new("fund");
 
 const MAX_LIMIT: u64 = 30;
 const DEFAULT_LIMIT: u64 = 10;
@@ -38,33 +36,25 @@ pub struct State {
     pub next_fund_id: u64,
 }
 
-// FUND Read/Write
-pub fn fund_store(storage: &mut dyn Storage) -> Bucket<IndexFund> {
-    bucket(storage, PREFIX_FUND)
-}
-
-pub fn fund_read(storage: &dyn Storage) -> ReadonlyBucket<IndexFund> {
-    bucket_read(storage, PREFIX_FUND)
-}
-
+// FUND pagination read util
 pub fn read_funds<'a>(
     storage: &'a dyn Storage,
     start_after: Option<u64>,
     limit: Option<u64>,
 ) -> StdResult<Vec<IndexFund>> {
-    let funds: ReadonlyBucket<'a, IndexFund> = ReadonlyBucket::new(storage, PREFIX_FUND);
-    funds
-        .range(
-            calc_range_start(start_after).as_deref(),
-            None,
-            Order::Ascending,
-        )
-        .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
-        .map(|item| {
-            let (_, v) = item?;
-            Ok(v)
-        })
-        .collect()
+    let start = calc_range_start(start_after);
+    FUND.range(
+        storage,
+        start.and_then(|v| Some(Bound::Inclusive(v))),
+        None,
+        Order::Ascending,
+    )
+    .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
+    .map(|item| {
+        let (_, v) = item?;
+        Ok(v)
+    })
+    .collect()
 }
 
 pub fn read_alliance_members(
@@ -93,21 +83,4 @@ pub fn read_alliance_members(
             })
         })
         .collect()
-}
-
-// this will set the first key after the provided key, by appending a 1 byte
-fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    match start_after {
-        Some(addr) => {
-            let mut v = addr.as_bytes().to_vec();
-            v.push(1);
-            Some(v)
-        }
-        _ => None,
-    }
-}
-
-// this will set the first key after the provided key, by appending a 1 byte
-fn calc_range_end_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    start_after.map(|addr| addr.as_bytes().to_vec())
 }
