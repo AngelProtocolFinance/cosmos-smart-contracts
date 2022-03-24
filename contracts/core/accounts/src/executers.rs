@@ -627,9 +627,6 @@ pub fn update_profile(
 
     // Update the Endowment profile
     let mut profile = PROFILE.load(deps.storage)?;
-    if let Some(overview) = msg.overview {
-        profile.overview = overview;
-    }
 
     // Only config.owner can update "un_sdg" & "tier" fields
     if info.sender == config.owner {
@@ -637,23 +634,29 @@ pub fn update_profile(
         profile.tier = msg.tier;
     }
 
-    profile.logo =msg.logo;
-    profile.image = msg.image;
-    profile.url = msg.url;
-    profile.registration_number = msg.registration_number;
-    profile.country_city_origin = msg.country_city_origin;
-    profile.contact_email = msg.contact_email;
-    profile.number_of_employees = msg.number_of_employees;
-    profile.average_annual_budget = msg.average_annual_budget;
-    profile.annual_revenue = msg.annual_revenue;
-    profile.charity_navigator_rating = msg.charity_navigator_rating;
+    // Only endowment.owner can update all other fields
+    if info.sender == endowment.owner {
+        if let Some(overview) = msg.overview {
+            profile.overview = overview;
+        }
+        profile.logo = msg.logo;
+        profile.image = msg.image;
+        profile.url = msg.url;
+        profile.registration_number = msg.registration_number;
+        profile.country_city_origin = msg.country_city_origin;
+        profile.contact_email = msg.contact_email;
+        profile.number_of_employees = msg.number_of_employees;
+        profile.average_annual_budget = msg.average_annual_budget;
+        profile.annual_revenue = msg.annual_revenue;
+        profile.charity_navigator_rating = msg.charity_navigator_rating;
 
-    let social_media_urls = SocialMedialUrls {
-        facebook: msg.facebook,
-        twitter: msg.twitter,
-        linkedin: msg.linkedin,
-    };
-    profile.social_media_urls = social_media_urls;
+        let social_media_urls = SocialMedialUrls {
+            facebook: msg.facebook,
+            twitter: msg.twitter,
+            linkedin: msg.linkedin,
+        };
+        profile.social_media_urls = social_media_urls;
+    }
 
     PROFILE.save(deps.storage, &profile)?;
 
