@@ -35,7 +35,6 @@ pub fn instantiate(
         guardian_angels: None,
         index_fund_contract: None,
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
-        approved_charities: vec![],
         treasury: deps.api.addr_validate(&msg.treasury)?,
         tax_rate,
         default_vault: msg.default_vault,
@@ -67,10 +66,6 @@ pub fn execute(
         }
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
-        }
-        ExecuteMsg::CharityAdd { charity } => executers::charity_add(deps, env, info, charity),
-        ExecuteMsg::CharityRemove { charity } => {
-            executers::charity_remove(deps, env, info, charity)
         }
         ExecuteMsg::VaultAdd(msg) => executers::vault_add(deps, env, info, msg),
         ExecuteMsg::VaultRemove { vault_addr } => {

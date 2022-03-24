@@ -18,7 +18,6 @@ pub struct Config {
     pub guardian_angels: Option<Addr>, // GUARDIAN ANGELS MULTISIG
     pub index_fund_contract: Option<Addr>,
     pub accounts_code_id: u64,
-    pub approved_charities: Vec<Addr>,
     pub treasury: Addr,
     pub tax_rate: Decimal,
     pub default_vault: Option<Addr>,
