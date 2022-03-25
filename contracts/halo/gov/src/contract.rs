@@ -113,7 +113,6 @@ pub fn execute(
         } => cast_vote(deps, env, info, poll_id, vote, amount),
         ExecuteMsg::EndPoll { poll_id } => end_poll(deps, env, poll_id),
         ExecuteMsg::ExecutePoll { poll_id } => execute_poll(deps, env, poll_id),
-        ExecuteMsg::SnapshotPoll { poll_id } => snapshot_poll(deps, env, poll_id),
     }
 }
 
@@ -566,43 +565,6 @@ pub fn fail_poll(deps: DepsMut, poll_id: u64) -> Result<Response, ContractError>
     Ok(Response::new().add_attributes(vec![
         ("action", "fail_poll"),
         ("poll_id", poll_id.to_string().as_str()),
-    ]))
-}
-
-/// SnapshotPoll is used to take a snapshot of the staked amount for quorum calculation
-pub fn snapshot_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, ContractError> {
-    let config: Config = read_config(deps.storage)?;
-    let mut a_poll: Poll = read_poll(deps.storage, &poll_id.to_be_bytes())?;
-
-    if a_poll.status != PollStatus::InProgress {
-        return Err(ContractError::PollNotInProgress {});
-    }
-
-    let time_to_end = a_poll.end_height - env.block.height;
-
-    if time_to_end > config.snapshot_period {
-        return Err(ContractError::SnapshotHeight {});
-    }
-
-    if a_poll.staked_amount.is_some() {
-        return Err(ContractError::SnapshotAlreadyOccurred {});
-    }
-
-    // store the current staked amount for quorum calculation
-    let state: State = read_state(deps.storage)?;
-
-    let staked_amount =
-        query_token_balance(&deps.querier, config.halo_token, env.contract.address)?
-            .checked_sub(state.total_deposit)?;
-
-    a_poll.staked_amount = Some(staked_amount);
-
-    store_poll(deps.storage, &poll_id.to_be_bytes(), &a_poll)?;
-
-    Ok(Response::new().add_attributes(vec![
-        attr("action", "snapshot_poll"),
-        attr("poll_id", poll_id.to_string().as_str()),
-        attr("staked_amount", staked_amount.to_string().as_str()),
     ]))
 }
 

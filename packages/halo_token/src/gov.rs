@@ -61,9 +61,6 @@ pub enum ExecuteMsg {
     ExecutePoll {
         poll_id: u64,
     },
-    SnapshotPoll {
-        poll_id: u64,
-    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
