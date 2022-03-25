@@ -79,30 +79,11 @@ pub fn instantiate(
         },
     )?;
 
-    PROFILE.save(
-        deps.storage,
-        &Profile {
-            name: msg.name.clone(),
-            overview: msg.description.clone(),
-            un_sdg: None,
-            tier: None,
-            logo: None,
-            image: None,
-            url: None,
-            registration_number: None,
-            country_city_origin: None,
-            contact_email: None,
-            social_media_urls: SocialMedialUrls {
-                facebook: None,
-                twitter: None,
-                linkedin: None,
-            },
-            number_of_employees: None,
-            average_annual_budget: None,
-            annual_revenue: None,
-            charity_navigator_rating: None,
-        },
-    )?;
+    let mut profile = Profile::default();
+    profile.name = msg.name;
+    profile.overview = msg.description;
+
+    PROFILE.save(deps.storage, &profile)?;
 
     Ok(Response::default())
 }
@@ -165,29 +146,11 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     // Documentation on performing updates during migration
     // https://docs.cosmwasm.com/docs/1.0/smart-contracts/migration/#using-migrate-to-update-otherwise-immutable-state
     const PROFILE_KEY: &[u8] = b"profile";
-    deps.storage.set(
-        PROFILE_KEY,
-        &to_vec(&Profile {
-            name: msg.name.clone(),
-            overview: msg.overview.clone(),
-            un_sdg: None,
-            tier: None,
-            logo: None,
-            image: None,
-            url: None,
-            registration_number: None,
-            country_city_origin: None,
-            contact_email: None,
-            social_media_urls: SocialMedialUrls {
-                facebook: None,
-                twitter: None,
-                linkedin: None,
-            },
-            number_of_employees: None,
-            average_annual_budget: None,
-            annual_revenue: None,
-            charity_navigator_rating: None,
-        })?,
-    );
+
+    let mut profile = Profile::default();
+    profile.name = msg.name;
+    profile.overview = msg.overview;
+
+    deps.storage.set(PROFILE_KEY, &to_vec(&profile)?);
     Ok(Response::default())
 }
