@@ -6,9 +6,11 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
-use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
+use angel_core::structs::{
+    AcceptedTokens, BalanceInfo, RebalanceDetails, SocialMedialUrls, StrategyComponent,
+};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
+    entry_point, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
     Response, StdResult, Uint128, WasmQuery,
 };
 use cw2::set_contract_version;
@@ -54,11 +56,9 @@ pub fn instantiate(
         &Endowment {
             owner: deps.api.addr_validate(&msg.owner)?, // Addr
             beneficiary: deps.api.addr_validate(&msg.beneficiary)?, // Addr
-            name: msg.name.clone(),
-            description: msg.description.clone(),
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
-            maturity_time: msg.maturity_time,                       // Option<u64>
-            maturity_height: msg.maturity_height,                   // Option<u64>
+            maturity_time: msg.maturity_time,           // Option<u64>
+            maturity_height: msg.maturity_height,       // Option<u64>
             strategies: vec![StrategyComponent {
                 vault: deps.api.addr_validate(&default_vault)?,
                 locked_percentage: Decimal::one(),
@@ -79,7 +79,30 @@ pub fn instantiate(
         },
     )?;
 
-    PROFILE.save(deps.storage, &Profile::default())?;
+    PROFILE.save(
+        deps.storage,
+        &Profile {
+            name: msg.name.clone(),
+            overview: msg.description.clone(),
+            un_sdg: None,
+            tier: None,
+            logo: None,
+            image: None,
+            url: None,
+            registration_number: None,
+            country_city_origin: None,
+            contact_email: None,
+            social_media_urls: SocialMedialUrls {
+                facebook: None,
+                twitter: None,
+                linkedin: None,
+            },
+            number_of_employees: None,
+            average_annual_budget: None,
+            annual_revenue: None,
+            charity_navigator_rating: None,
+        },
+    )?;
 
     Ok(Response::default())
 }
@@ -138,6 +161,33 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[entry_point]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    // Documentation on performing updates during migration
+    // https://docs.cosmwasm.com/docs/1.0/smart-contracts/migration/#using-migrate-to-update-otherwise-immutable-state
+    const PROFILE_KEY: &[u8] = b"profile";
+    deps.storage.set(
+        PROFILE_KEY,
+        &to_vec(&Profile {
+            name: msg.name.clone(),
+            overview: msg.overview.clone(),
+            un_sdg: None,
+            tier: None,
+            logo: None,
+            image: None,
+            url: None,
+            registration_number: None,
+            country_city_origin: None,
+            contact_email: None,
+            social_media_urls: SocialMedialUrls {
+                facebook: None,
+                twitter: None,
+                linkedin: None,
+            },
+            number_of_employees: None,
+            average_annual_budget: None,
+            annual_revenue: None,
+            charity_navigator_rating: None,
+        })?,
+    );
     Ok(Response::default())
 }

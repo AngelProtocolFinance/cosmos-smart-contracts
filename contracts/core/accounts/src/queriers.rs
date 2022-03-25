@@ -61,8 +61,6 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
     Ok(EndowmentDetailsResponse {
         owner: endowment.owner,
         beneficiary: endowment.beneficiary,
-        name: endowment.name,
-        description: endowment.description,
         withdraw_before_maturity: endowment.withdraw_before_maturity,
         maturity_time: endowment.maturity_time,
         maturity_height: endowment.maturity_height,
@@ -75,6 +73,7 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
 pub fn query_profile(deps: Deps) -> StdResult<ProfileResponse> {
     let profile = PROFILE.load(deps.storage)?;
     Ok(ProfileResponse {
+        name: profile.name,
         overview: profile.overview,
         un_sdg: profile.un_sdg,
         tier: profile.tier,
