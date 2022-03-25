@@ -3,7 +3,9 @@ use crate::state::{
     CONFIG,
 };
 use angel_core::errors::core::ContractError;
+use angel_core::messages::accounts::QueryMsg as EndowmentQueryMsg;
 use angel_core::messages::registrar::*;
+use angel_core::responses::accounts::ProfileResponse;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
@@ -267,31 +269,6 @@ pub fn create_endowment(
     Ok(Response::new()
         .add_submessage(sub_message)
         .add_attribute("action", "create_endowment"))
-}
-
-pub fn migrate_accounts(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let mut messages = vec![];
-    for endowment in read_registry_entries(deps.storage)?.into_iter() {
-        let wasm_msg = WasmMsg::Migrate {
-            contract_addr: endowment.address.to_string(),
-            new_code_id: config.accounts_code_id,
-            msg: to_binary(&angel_core::messages::accounts::MigrateMsg {})?,
-        };
-        messages.push(CosmosMsg::Wasm(wasm_msg));
-    }
-    Ok(Response::new()
-        .add_messages(messages)
-        .add_attribute("action", "migrate_accounts"))
 }
 
 pub fn vault_add(

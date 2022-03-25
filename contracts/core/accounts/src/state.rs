@@ -20,10 +20,8 @@ pub struct Config {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Endowment {
-    pub owner: Addr,         // address that originally setup the endowment account
+    pub owner: Addr,       // address that originally setup the endowment account
     pub beneficiary: Addr, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
-    pub name: String,      // name of the Charity Endowment
-    pub description: String, // description of the Charity Endowment
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
@@ -60,6 +58,7 @@ pub struct State {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Profile {
+    pub name: String, // name of the Charity Endowment
     pub overview: String,
     pub un_sdg: Option<u64>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
     pub tier: Option<u64>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
@@ -79,6 +78,7 @@ pub struct Profile {
 impl Default for Profile {
     fn default() -> Self {
         Profile {
+            name: "".to_string(),
             overview: "".to_string(),
             un_sdg: None,
             tier: None,

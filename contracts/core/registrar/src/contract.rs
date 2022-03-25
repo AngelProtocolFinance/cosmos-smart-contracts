@@ -79,7 +79,6 @@ pub fn execute(
             collector_address,
             collector_share,
         } => executers::harvest(deps, env, info, collector_address, collector_share),
-        ExecuteMsg::MigrateAccounts {} => executers::migrate_accounts(deps, env, info),
     }
 }
 

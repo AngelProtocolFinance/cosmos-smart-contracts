@@ -21,8 +21,6 @@ pub struct ConfigResponse {
 pub struct EndowmentDetailsResponse {
     pub owner: Addr,
     pub beneficiary: Addr,
-    pub name: String,
-    pub description: String,
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
@@ -42,6 +40,7 @@ impl EndowmentDetailsResponse {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ProfileResponse {
+    pub name: String,
     pub overview: String,
     pub un_sdg: Option<u64>,
     pub tier: Option<u64>,
