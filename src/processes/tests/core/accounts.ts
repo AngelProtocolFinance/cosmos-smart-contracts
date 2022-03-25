@@ -158,10 +158,10 @@ export async function testCharityCanUpdateStrategies(
 
 export async function testQueryAccountsBalance(
   terra: LocalTerra | LCDClient,
-  endowmentContract1: string
+  endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Balance");
-  const result: any = await terra.wasm.contractQuery(endowmentContract1, {
+  const result: any = await terra.wasm.contractQuery(endowmentContract, {
     balance: {},
   });
 
@@ -171,10 +171,10 @@ export async function testQueryAccountsBalance(
 
 export async function testQueryAccountsConfig(
   terra: LocalTerra | LCDClient,
-  endowmentContract1: string
+  endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Config");
-  const result: any = await terra.wasm.contractQuery(endowmentContract1, {
+  const result: any = await terra.wasm.contractQuery(endowmentContract, {
     config: {},
   });
 
@@ -184,11 +184,24 @@ export async function testQueryAccountsConfig(
 
 export async function testQueryAccountsEndowment(
   terra: LocalTerra | LCDClient,
-  endowmentContract1: string
+  endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Endowment");
-  const result: any = await terra.wasm.contractQuery(endowmentContract1, {
+  const result: any = await terra.wasm.contractQuery(endowmentContract, {
     endowment: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryAccountsProfile(
+  terra: LocalTerra | LCDClient,
+  endowmentContract: string
+): Promise<void> {
+  process.stdout.write("Test - Query Accounts Profile");
+  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+    get_profile: {},
   });
 
   console.log(result);
