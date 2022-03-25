@@ -41,8 +41,6 @@ pub enum ExecuteMsg {
         collector_address: String,
         collector_share: Decimal,
     },
-    // Allows SC owner to migrate all Accounts SC
-    MigrateAccounts {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

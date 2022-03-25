@@ -271,37 +271,6 @@ pub fn create_endowment(
         .add_attribute("action", "create_endowment"))
 }
 
-pub fn migrate_accounts(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let mut messages = vec![];
-    for endowment in read_registry_entries(deps.storage)?.into_iter() {
-        let profile: ProfileResponse = deps
-            .querier
-            .query_wasm_smart(endowment.address.clone(), &EndowmentQueryMsg::GetProfile {})?;
-        let wasm_msg = WasmMsg::Migrate {
-            contract_addr: endowment.address.to_string(),
-            new_code_id: config.accounts_code_id,
-            msg: to_binary(&angel_core::messages::accounts::MigrateMsg {
-                name: profile.name,
-                overview: profile.overview,
-            })?,
-        };
-        messages.push(CosmosMsg::Wasm(wasm_msg));
-    }
-    Ok(Response::new()
-        .add_messages(messages)
-        .add_attribute("action", "migrate_accounts"))
-}
-
 pub fn vault_add(
     deps: DepsMut,
     _env: Env,
