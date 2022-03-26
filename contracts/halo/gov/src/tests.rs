@@ -515,7 +515,7 @@ fn query_polls() {
                 execute_data: Some(execute_msgs.clone()),
                 yes_votes: Uint128::zero(),
                 no_votes: Uint128::zero(),
-                staked_amount: None,
+                staked_amount: Some(Uint128::from(DEFAULT_PROPOSAL_DEPOSIT)),
                 total_balance_at_end_poll: None,
             },
             PollResponse {
@@ -531,7 +531,7 @@ fn query_polls() {
                 execute_data: None,
                 yes_votes: Uint128::zero(),
                 no_votes: Uint128::zero(),
-                staked_amount: None,
+                staked_amount: Some(Uint128::zero()),
                 total_balance_at_end_poll: None,
             },
         ]
@@ -564,7 +564,7 @@ fn query_polls() {
             execute_data: None,
             yes_votes: Uint128::zero(),
             no_votes: Uint128::zero(),
-            staked_amount: None,
+            staked_amount: Some(Uint128::zero()),
             total_balance_at_end_poll: None,
         },]
     );
@@ -596,7 +596,7 @@ fn query_polls() {
             execute_data: Some(execute_msgs),
             yes_votes: Uint128::zero(),
             no_votes: Uint128::zero(),
-            staked_amount: None,
+            staked_amount: Some(Uint128::from(DEFAULT_PROPOSAL_DEPOSIT)),
             total_balance_at_end_poll: None,
         }]
     );
@@ -628,7 +628,7 @@ fn query_polls() {
             execute_data: None,
             yes_votes: Uint128::zero(),
             no_votes: Uint128::zero(),
-            staked_amount: None,
+            staked_amount: Some(Uint128::zero()),
             total_balance_at_end_poll: None,
         },]
     );
@@ -3210,82 +3210,6 @@ fn poll_with_none_execute_data_marked_as_executed() {
 }
 
 #[test]
-fn snapshot_poll() {
-    let stake_amount = 1000;
-
-    let mut deps = mock_dependencies(&coins(100, VOTING_TOKEN));
-    mock_instantiate(deps.as_mut());
-    mock_register_voting_token(deps.as_mut());
-    deps.querier.with_token_balances(&[(
-        &VOTING_TOKEN.to_string(),
-        &[(
-            &MOCK_CONTRACT_ADDR.to_string(),
-            &Uint128::from((stake_amount + DEFAULT_PROPOSAL_DEPOSIT) as u128),
-        )],
-    )]);
-
-    let msg = create_poll_msg("test".to_string(), "test".to_string(), None, None, None);
-    let mut creator_env = mock_env();
-    let creator_info = mock_info(VOTING_TOKEN, &[]);
-    let execute_res = execute(
-        deps.as_mut(),
-        creator_env.clone(),
-        creator_info.clone(),
-        msg,
-    )
-    .unwrap();
-    assert_eq!(
-        execute_res.attributes,
-        vec![
-            attr("action", "create_poll"),
-            attr("creator", TEST_CREATOR),
-            attr("poll_id", "1"),
-            attr("end_height", "32345"),
-        ]
-    );
-
-    //must not be executed
-    let snapshot_err = execute(
-        deps.as_mut(),
-        creator_env.clone(),
-        creator_info.clone(),
-        ExecuteMsg::SnapshotPoll { poll_id: 1 },
-    )
-    .unwrap_err();
-    assert_eq!(ContractError::SnapshotHeight {}, snapshot_err);
-
-    // change time
-    creator_env.block.height = 32345 - 10;
-
-    let fix_res = execute(
-        deps.as_mut(),
-        creator_env.clone(),
-        creator_info.clone(),
-        ExecuteMsg::SnapshotPoll { poll_id: 1 },
-    )
-    .unwrap();
-
-    assert_eq!(
-        fix_res.attributes,
-        vec![
-            attr("action", "snapshot_poll"),
-            attr("poll_id", "1"),
-            attr("staked_amount", stake_amount.to_string().as_str()),
-        ]
-    );
-
-    //must not be executed
-    let snapshot_error = execute(
-        deps.as_mut(),
-        creator_env,
-        creator_info,
-        ExecuteMsg::SnapshotPoll { poll_id: 1 },
-    )
-    .unwrap_err();
-    assert_eq!(ContractError::SnapshotAlreadyOccurred {}, snapshot_error);
-}
-
-#[test]
 fn happy_days_cast_vote_with_snapshot() {
     let mut deps = mock_dependencies(&[]);
     mock_instantiate(deps.as_mut());
@@ -3353,7 +3277,7 @@ fn happy_days_cast_vote_with_snapshot() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Poll { poll_id: 1 }).unwrap();
     let value: PollResponse = from_binary(&res).unwrap();
-    assert_eq!(value.staked_amount, None);
+    assert_eq!(value.staked_amount, Some(Uint128::from(11u128)));
     let end_height = value.end_height;
 
     //cast another vote
@@ -3379,17 +3303,7 @@ fn happy_days_cast_vote_with_snapshot() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Poll { poll_id: 1 }).unwrap();
     let value: PollResponse = from_binary(&res).unwrap();
-    assert_eq!(value.staked_amount, Some(Uint128::new(22)));
-
-    // snanpshot poll will not go through
-    let snap_error = execute(
-        deps.as_mut(),
-        env,
-        info,
-        ExecuteMsg::SnapshotPoll { poll_id: 1 },
-    )
-    .unwrap_err();
-    assert_eq!(ContractError::SnapshotAlreadyOccurred {}, snap_error);
+    assert_eq!(value.staked_amount, Some(Uint128::new(11)));
 
     // balance be double
     deps.querier.with_token_balances(&[(
@@ -3421,7 +3335,7 @@ fn happy_days_cast_vote_with_snapshot() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Poll { poll_id: 1 }).unwrap();
     let value: PollResponse = from_binary(&res).unwrap();
-    assert_eq!(value.staked_amount, Some(Uint128::new(22)));
+    assert_eq!(value.staked_amount, Some(Uint128::new(11)));
 }
 
 #[test]
@@ -3532,8 +3446,6 @@ fn fails_end_poll_quorum_inflation_without_snapshot_poll() {
 
     creator_env.block.height += DEFAULT_VOTING_PERIOD - 10;
 
-    // did not SnapshotPoll
-
     // staked amount get increased 10 times
     deps.querier.with_token_balances(&[(
         &VOTING_TOKEN.to_string(),
@@ -3586,15 +3498,15 @@ fn fails_end_poll_quorum_inflation_without_snapshot_poll() {
         vec![
             attr("action", "end_poll"),
             attr("poll_id", "1"),
-            attr("rejected_reason", "Quorum not reached"),
-            attr("passed", "false"),
+            attr("rejected_reason", ""),
+            attr("passed", "true"),
         ]
     );
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Poll { poll_id: 1 }).unwrap();
     let value: PollResponse = from_binary(&res).unwrap();
     assert_eq!(
-        10 * stake_amount,
+        stake_amount,
         value.total_balance_at_end_poll.unwrap().u128()
     );
 }
@@ -3706,24 +3618,6 @@ fn happy_days_end_poll_with_controlled_quorum() {
     );
 
     creator_env.block.height += DEFAULT_VOTING_PERIOD - 10;
-
-    // send SnapshotPoll
-    let fix_res = execute(
-        deps.as_mut(),
-        creator_env.clone(),
-        creator_info.clone(),
-        ExecuteMsg::SnapshotPoll { poll_id: 1 },
-    )
-    .unwrap();
-
-    assert_eq!(
-        fix_res.attributes,
-        vec![
-            attr("action", "snapshot_poll"),
-            attr("poll_id", "1"),
-            attr("staked_amount", stake_amount.to_string().as_str()),
-        ]
-    );
 
     // staked amount get increased 10 times
     deps.querier.with_token_balances(&[(

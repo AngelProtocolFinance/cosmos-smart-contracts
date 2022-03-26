@@ -190,8 +190,8 @@ pub fn read_poll_voters<'a>(
     voters
         .range(
             storage,
-            start.and_then(|v| Some(Bound::inclusive(&*v))),
-            end.and_then(|v| Some(Bound::inclusive(&*v))),
+            start.and_then(|v| Some(Bound::exclusive(&*v))),
+            end.and_then(|v| Some(Bound::exclusive(&*v))),
             order_by.into(),
         )
         .take(limit)
@@ -222,8 +222,8 @@ pub fn read_polls<'a>(
         poll_indexer
             .range(
                 storage,
-                start.and_then(|v| Some(Bound::inclusive(&*v))),
-                end.and_then(|v| Some(Bound::inclusive(&*v))),
+                start.and_then(|v| Some(Bound::exclusive(&*v))),
+                end.and_then(|v| Some(Bound::exclusive(&*v))),
                 order_by.into(),
             )
             .take(limit)
@@ -235,8 +235,8 @@ pub fn read_polls<'a>(
     } else {
         POLL.range(
             storage,
-            start.and_then(|v| Some(Bound::inclusive(&*v))),
-            end.and_then(|v| Some(Bound::inclusive(&*v))),
+            start.and_then(|v| Some(Bound::exclusive(&*v))),
+            end.and_then(|v| Some(Bound::exclusive(&*v))),
             order_by.into(),
         )
         .take(limit)
