@@ -394,8 +394,8 @@ fn test_update_endowment_profile() {
     let msg = UpdateProfileMsg {
         name: None,
         overview: Some("Test Endowment is for just testing".to_string()),
-        un_sdg: Some(11_u64),
-        tier: Some(22_u64),
+        un_sdg: Some(1_u64),
+        tier: Some(2_u64),
         logo: Some("".to_string()),
         image: Some("".to_string()),
         url: None,
@@ -467,6 +467,6 @@ fn test_update_endowment_profile() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::GetProfile {}).unwrap();
     let value: ProfileResponse = from_binary(&res).unwrap();
-    assert_eq!(value.un_sdg.unwrap(), 11);
-    assert_eq!(value.tier.unwrap(), 22);
+    assert_eq!(value.un_sdg.unwrap(), 1);
+    assert_eq!(value.tier.unwrap(), 2);
 }

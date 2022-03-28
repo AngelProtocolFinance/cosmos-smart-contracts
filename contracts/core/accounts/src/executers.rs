@@ -6,7 +6,7 @@ use angel_core::messages::index_fund::DepositMsg as IndexFundDepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg as IndexFundExecuter;
 use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
 use angel_core::messages::registrar::{
-    ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentMsg,
+    ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentTypeMsg,
 };
 use angel_core::messages::vault::AccountTransferMsg;
 use angel_core::responses::index_fund::FundListResponse;
@@ -14,7 +14,7 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, FundingSource, SocialMedialUrls, SplitDetails, StrategyComponent,
+    AcceptedTokens, FundingSource, SocialMedialUrls, SplitDetails, StrategyComponent, Tier,
 };
 use angel_core::utils::{
     check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
@@ -627,6 +627,18 @@ pub fn update_profile(
         return Err(ContractError::Unauthorized {});
     }
 
+    let tier = if info.sender == config.owner {
+        match msg.tier {
+            Some(1) => Some(Some(Tier::Worst)),
+            Some(2) => Some(Some(Tier::Average)),
+            Some(3) => Some(Some(Tier::Best)),
+            None => Some(None),
+            _ => return Err(ContractError::InvalidInputs {}),
+        }
+    } else {
+        None
+    };
+
     // Update the Endowment profile
     let mut profile = PROFILE.load(deps.storage)?;
 
@@ -667,13 +679,12 @@ pub fn update_profile(
 
     let sub_msgs: Vec<SubMsg> = vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.registrar_contract.to_string(),
-        msg: to_binary(&RegistrarExecuter::UpdateEndowmentEntry(
-            UpdateEndowmentMsg {
+        msg: to_binary(&RegistrarExecuter::UpdateEndowmentType(
+            UpdateEndowmentTypeMsg {
                 endowment_addr: env.contract.address.to_string(),
                 name: msg.name.and_then(|v| Some(v)),
                 owner: None,
-                status: None,
-                tier: None, 
+                tier,
                 endow_type: None,
                 beneficiary: None,
             },

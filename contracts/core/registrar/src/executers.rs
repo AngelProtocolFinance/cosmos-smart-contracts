@@ -42,7 +42,7 @@ pub fn update_endowment_status(
     _env: Env,
     info: MessageInfo,
     msg: UpdateEndowmentStatusMsg,
-) -> Result<Vec<SubMsg>, ContractError> {
+) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
     if info.sender.ne(&config.owner) || msg.status > 3 {
@@ -63,7 +63,7 @@ pub fn update_endowment_status(
 
     // check first that the current status is different from the new status sent
     if endowment_entry.status.to_string() == msg_endowment_status.to_string() {
-        return Ok(vec![]);
+        return Ok(Response::default());
     }
 
     // check that the endowment has not been closed (liquidated or terminated) as this is not reversable
@@ -131,7 +131,9 @@ pub fn update_endowment_status(
         _ => vec![],
     };
 
-    Ok(sub_messages)
+    Ok(Response::new()
+        .add_submessages(sub_messages)
+        .add_attribute("action", "update_endowment_status"))
 }
 
 pub fn update_owner(
@@ -441,11 +443,11 @@ fn harvest_msg(account: String, collector_address: String, collector_share: Deci
     }
 }
 
-pub fn update_endowment_entry(
-    mut deps: DepsMut,
-    env: Env,
+pub fn update_endowment_type(
+    deps: DepsMut,
+    _env: Env,
     info: MessageInfo,
-    msg: UpdateEndowmentMsg,
+    msg: UpdateEndowmentTypeMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endow_addr = deps.api.addr_validate(&msg.endowment_addr)?;
@@ -474,21 +476,7 @@ pub fn update_endowment_entry(
         endowment_entry.endow_type = endow_type;
     }
 
-    let sub_msgs: Vec<SubMsg> = match msg.status {
-        Some(status) => update_endowment_status(
-            deps.branch(),
-            env.clone(),
-            info.clone(),
-            UpdateEndowmentStatusMsg {
-                endowment_addr: msg.endowment_addr.clone(),
-                status: status as u8,
-                beneficiary: msg.beneficiary,
-            },
-        )?,
-        None => vec![],
-    };
+    registry_store(deps.storage, endowment_addr, &endowment_entry)?;
 
-    Ok(Response::new()
-        .add_submessages(sub_msgs)
-        .add_attribute("action", "update_endowment_entry"))
+    Ok(Response::new().add_attribute("action", "update_endowment_entry"))
 }

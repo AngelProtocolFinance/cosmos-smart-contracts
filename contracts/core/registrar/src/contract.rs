@@ -61,6 +61,9 @@ pub fn execute(
     match msg {
         ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
+        ExecuteMsg::UpdateEndowmentStatus(msg) => {
+            executers::update_endowment_status(deps, env, info, msg)
+        }
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
         }
@@ -76,8 +79,8 @@ pub fn execute(
             collector_address,
             collector_share,
         } => executers::harvest(deps, env, info, collector_address, collector_share),
-        ExecuteMsg::UpdateEndowmentEntry(msg) => {
-            executers::update_endowment_entry(deps, env, info, msg)
+        ExecuteMsg::UpdateEndowmentType(msg) => {
+            executers::update_endowment_type(deps, env, info, msg)
         }
     }
 }

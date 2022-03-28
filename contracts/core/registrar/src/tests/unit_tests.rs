@@ -317,11 +317,10 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     );
 
     // let's test update endowment method by admin
-    let update_endowment_entry_msg = UpdateEndowmentMsg {
+    let update_endowment_type_msg = UpdateEndowmentTypeMsg {
         endowment_addr: good_endowment_addr.clone(),
         name: None,
         owner: None,
-        status: Some(EndowmentStatus::Approved),
         tier: None,
         endow_type: None,
         beneficiary: None,
@@ -332,7 +331,23 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         deps.as_mut(),
         env.clone(),
         info.clone(),
-        ExecuteMsg::UpdateEndowmentEntry(update_endowment_entry_msg.clone()),
+        ExecuteMsg::UpdateEndowmentType(update_endowment_type_msg.clone()),
+    )
+    .unwrap();
+    assert_eq!(0, res.messages.len());
+
+    let update_endowment_status_msg = UpdateEndowmentStatusMsg {
+        endowment_addr: good_endowment_addr.clone(),
+        status: 1,
+        beneficiary: None,
+    };
+
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let res = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::UpdateEndowmentStatus(update_endowment_status_msg.clone()),
     )
     .unwrap();
     assert_eq!(1, res.messages.len());

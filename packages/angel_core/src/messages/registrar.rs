@@ -19,6 +19,7 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     CreateEndowment(CreateEndowmentMsg),
+    UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     VaultAdd(VaultAddMsg),
     VaultRemove {
         vault_addr: String,
@@ -39,7 +40,7 @@ pub enum ExecuteMsg {
         collector_share: Decimal,
     },
     // Allows the DANO/AP Team to update the EndowmentEntry
-    UpdateEndowmentEntry(UpdateEndowmentMsg),
+    UpdateEndowmentType(UpdateEndowmentTypeMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -96,11 +97,10 @@ pub struct VaultAddMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowmentMsg {
+pub struct UpdateEndowmentTypeMsg {
     pub endowment_addr: String,
     pub name: Option<String>,
     pub owner: Option<String>,
-    pub status: Option<EndowmentStatus>,
     pub tier: Option<Option<Tier>>,
     pub endow_type: Option<EndowmentType>,
     pub beneficiary: Option<String>,
