@@ -256,6 +256,7 @@ pub fn create_endowment(
             split_min: msg.split_min.unwrap_or(config.split_to_liquid.min),
             split_default: msg.split_default.unwrap_or(config.split_to_liquid.default),
             cw4_members: msg.cw4_members,
+            curve_type: msg.curve_type,
         })?,
         funds: vec![],
     };

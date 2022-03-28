@@ -1,3 +1,4 @@
+use crate::messages::dao_token::CurveType;
 use crate::messages::vault::AccountTransferMsg;
 use crate::structs::{FundingSource, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::Decimal;
@@ -14,6 +15,7 @@ pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub dao: bool,
     pub donation_match: bool,
+    pub curve_type: Option<CurveType>,
     pub owner: String,       // address that originally setup the endowment account
     pub name: String,        // name of the Charity Endowment
     pub description: String, // description of the Charity Endowment

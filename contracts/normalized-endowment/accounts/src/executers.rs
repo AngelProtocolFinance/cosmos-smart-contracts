@@ -109,6 +109,35 @@ pub fn new_cw3_multisig_reply(
     }
 }
 
+pub fn new_dao_token_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: ContractResult<SubMsgExecutionResponse>,
+) -> Result<Response, ContractError> {
+    match msg {
+        ContractResult::Ok(subcall) => {
+            let mut dao_token_addr = String::from("");
+            for event in subcall.events {
+                if event.ty == *"instantiate_contract" {
+                    for attrb in event.attributes {
+                        if attrb.key == "contract_address" {
+                            dao_token_addr = attrb.value;
+                        }
+                    }
+                }
+            }
+
+            // update the endowment owner to be the new multisig contract
+            let mut endowment = ENDOWMENT.load(deps.storage)?;
+            endowment.dao_token = Some(deps.api.addr_validate(&dao_token_addr)?);
+            ENDOWMENT.save(deps.storage, &endowment)?;
+
+            Ok(Response::default())
+        }
+        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+    }
+}
+
 pub fn update_owner(
     deps: DepsMut,
     _env: Env,

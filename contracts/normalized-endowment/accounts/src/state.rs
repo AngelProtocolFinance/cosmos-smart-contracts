@@ -18,9 +18,10 @@ pub struct Config {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Endowment {
-    pub owner: Addr,       // address that originally setup the endowment account
-    pub dao: Option<Addr>, // subdao governance contract address
-    pub donation_match: Option<Addr>, // donation matching contract address
+    pub owner: Addr,             // address that originally setup the endowment account
+    pub dao: Option<Addr>,       // subdao governance contract address
+    pub dao_token: Option<Addr>, // dao gov token contract address
+    pub donation_match: bool,    // whether to do donation matching
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
     pub name: String,                          // name of the Charity Endowment

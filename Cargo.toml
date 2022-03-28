@@ -8,7 +8,6 @@ members = [
     "contracts/normalized-endowment/fee-distributor",
     "contracts/normalized-endowment/dao",
     "contracts/normalized-endowment/dao-token",
-    "contracts/normalized-endowment/charity-shares",
     "contracts/core/index-fund",
     "contracts/core/registrar",
     "contracts/vaults/anchor",

@@ -4,6 +4,7 @@ use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
+use angel_core::messages::dao_token::InstantiateMsg as DaoTokenInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
@@ -65,7 +66,8 @@ pub fn instantiate(
             }],
             rebalance: RebalanceDetails::default(),
             dao: None,
-            donation_match: None,
+            dao_token: None,
+            donation_match: msg.donation_match,
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries, // Vec<String>
             whitelisted_contributors: msg.whitelisted_contributors,   // Vec<String>
             locked_endowment_configs: msg.locked_endowment_configs,   // vec<String>
@@ -106,8 +108,34 @@ pub fn instantiate(
         })
     }
 
-    // check if a subdao needs to be setup
-    // if msg.subdao.ne(&None) { }
+    // check if a dao needs to be setup along with subdao token contract
+    if msg.dao && msg.curve_type.ne(&None) {
+        // TO DO: setup the DAO contract in a submessage
+
+        // setup dao token contract
+        let halo_token = registrar_config.halo_token.unwrap();
+        res = res.add_submessage(SubMsg {
+            id: 3,
+            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                code_id: registrar_config.subdao_token_code.unwrap(),
+                admin: None,
+                label: "new endowment dao token contract".to_string(),
+                msg: to_binary(&DaoTokenInstantiateMsg {
+                    name: "AP Endowment Dao Token".to_string(), // need dynamic name
+                    symbol: "APEDT".to_string(),                // need dynamic symbol
+                    decimals: 6,
+                    reserve_denom: halo_token.to_string(),
+                    reserve_decimals: 6,
+                    curve_type: msg.curve_type.unwrap(),
+                    halo_token: halo_token.to_string(),
+                    unbonding_period: 7,
+                })?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        })
+    }
     Ok(res)
 }
 
@@ -157,6 +185,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
     match msg.id {
         1 => executers::new_cw4_group_reply(deps, env, msg.result),
         2 => executers::new_cw3_multisig_reply(deps, env, msg.result),
+        3 => executers::new_dao_token_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }

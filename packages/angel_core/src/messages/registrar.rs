@@ -1,3 +1,4 @@
+use crate::messages::dao_token::CurveType;
 use crate::structs::SplitDetails;
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
@@ -69,6 +70,7 @@ pub struct CreateEndowmentMsg {
     pub cw4_members: Vec<Member>,
     pub dao: bool,
     pub donation_match: bool,
+    pub curve_type: Option<CurveType>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
