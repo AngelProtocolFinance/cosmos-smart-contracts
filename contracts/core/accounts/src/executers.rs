@@ -5,7 +5,9 @@ use angel_core::messages::accounts::*;
 use angel_core::messages::index_fund::DepositMsg as IndexFundDepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg as IndexFundExecuter;
 use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
-use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
+use angel_core::messages::registrar::{
+    ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentMsg,
+};
 use angel_core::messages::vault::AccountTransferMsg;
 use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
@@ -613,7 +615,7 @@ pub fn close_endowment(
 
 pub fn update_profile(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: UpdateProfileMsg,
 ) -> Result<Response, ContractError> {
@@ -636,6 +638,9 @@ pub fn update_profile(
 
     // Only endowment.owner can update all other fields
     if info.sender == endowment.owner {
+        if let Some(name) = msg.name.clone() {
+            profile.name = name;
+        }
         if let Some(overview) = msg.overview {
             profile.overview = overview;
         }
@@ -660,7 +665,24 @@ pub fn update_profile(
 
     PROFILE.save(deps.storage, &profile)?;
 
+    let sub_msgs: Vec<SubMsg> = vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.registrar_contract.to_string(),
+        msg: to_binary(&RegistrarExecuter::UpdateEndowmentEntry(
+            UpdateEndowmentMsg {
+                endowment_addr: env.contract.address.to_string(),
+                name: msg.name.and_then(|v| Some(v)),
+                owner: None,
+                status: None,
+                tier: None, 
+                endow_type: None,
+                beneficiary: None,
+            },
+        ))?,
+        funds: vec![],
+    }))];
+
     Ok(Response::new()
+        .add_submessages(sub_msgs)
         .add_attribute("action", "update_profile")
         .add_attribute("sender", info.sender.to_string()))
 }

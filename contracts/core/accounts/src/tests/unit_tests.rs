@@ -392,6 +392,7 @@ fn test_update_endowment_profile() {
     let _res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
 
     let msg = UpdateProfileMsg {
+        name: None,
         overview: Some("Test Endowment is for just testing".to_string()),
         un_sdg: Some(11_u64),
         tier: Some(22_u64),
@@ -441,6 +442,8 @@ fn test_update_endowment_profile() {
             attr("sender", charity_addr.clone())
         ]
     );
+    assert_eq!(res.messages.len(), 1);
+
     let res = query(deps.as_ref(), mock_env(), QueryMsg::GetProfile {}).unwrap();
     let value: ProfileResponse = from_binary(&res).unwrap();
     assert_eq!(

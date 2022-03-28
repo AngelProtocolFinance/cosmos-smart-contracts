@@ -118,6 +118,7 @@ pub struct WithdrawMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateProfileMsg {
+    pub name: Option<String>,
     pub overview: Option<String>,
     pub un_sdg: Option<u64>,
     pub tier: Option<u64>,
