@@ -629,9 +629,9 @@ pub fn update_profile(
 
     let tier = if info.sender == config.owner {
         match msg.tier {
-            Some(1) => Some(Some(Tier::Worst)),
-            Some(2) => Some(Some(Tier::Average)),
-            Some(3) => Some(Some(Tier::Best)),
+            Some(1) => Some(Some(Tier::Level1)),
+            Some(2) => Some(Some(Tier::Level2)),
+            Some(3) => Some(Some(Tier::Level3)),
             None => Some(None),
             _ => return Err(ContractError::InvalidInputs {}),
         }

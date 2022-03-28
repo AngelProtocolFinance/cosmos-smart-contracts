@@ -138,9 +138,9 @@ impl fmt::Display for EndowmentStatus {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum Tier {
-    Worst = 1,
-    Average = 2,
-    Best = 3,
+    Level1 = 1,
+    Level2 = 2,
+    Level3 = 3,
 }
 
 impl fmt::Display for Tier {
@@ -149,9 +149,9 @@ impl fmt::Display for Tier {
             f,
             "{}",
             match self {
-                Tier::Worst => "1",
-                Tier::Average => "2",
-                Tier::Best => "3",
+                Tier::Level1 => "1",
+                Tier::Level2 => "2",
+                Tier::Level3 => "3",
             }
         )
     }
