@@ -294,7 +294,18 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     assert_eq!(0, res.messages.len());
 
     // test that the reply worked properly by querying
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::EndowmentList {}).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::EndowmentList {
+            name: None,
+            owner: None,
+            status: None,
+            tier: None,
+            endow_type: None,
+        },
+    )
+    .unwrap();
     let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
     assert_eq!(
         endowment_list_response.endowments[0].address,
@@ -306,9 +317,13 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     );
 
     // let's test update endowment method by admin
-    let update_endowment_status_msg = UpdateEndowmentStatusMsg {
+    let update_endowment_entry_msg = UpdateEndowmentMsg {
         endowment_addr: good_endowment_addr.clone(),
-        status: 1,
+        name: None,
+        owner: None,
+        status: Some(EndowmentStatus::Approved),
+        tier: None,
+        endow_type: None,
         beneficiary: None,
     };
 
@@ -317,13 +332,24 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         deps.as_mut(),
         env.clone(),
         info.clone(),
-        ExecuteMsg::UpdateEndowmentStatus(update_endowment_status_msg.clone()),
+        ExecuteMsg::UpdateEndowmentEntry(update_endowment_entry_msg.clone()),
     )
     .unwrap();
     assert_eq!(1, res.messages.len());
 
     // test that the updating worked properly by querying
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::EndowmentList {}).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::EndowmentList {
+            name: None,
+            owner: None,
+            status: None,
+            tier: None,
+            endow_type: None,
+        },
+    )
+    .unwrap();
     let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
     assert_eq!(
         endowment_list_response.endowments[0].address,

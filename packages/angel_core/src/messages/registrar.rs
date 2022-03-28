@@ -1,4 +1,4 @@
-use crate::structs::SplitDetails;
+use crate::structs::{EndowmentStatus, EndowmentType, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -29,9 +29,6 @@ pub enum ExecuteMsg {
     },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
-    // Allows the DANO / AP Team to update the status of an Endowment
-    // Approved, Frozen, (Liquidated, Terminated)
-    UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Allows the SC owner to change ownership
     UpdateOwner {
         new_owner: String,
@@ -41,6 +38,8 @@ pub enum ExecuteMsg {
         collector_address: String,
         collector_share: Decimal,
     },
+    // Allows the DANO/AP Team to update the EndowmentEntry
+    UpdateEndowmentEntry(UpdateEndowmentMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -97,6 +96,17 @@ pub struct VaultAddMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateEndowmentMsg {
+    pub endowment_addr: String,
+    pub name: Option<String>,
+    pub owner: Option<String>,
+    pub status: Option<EndowmentStatus>,
+    pub tier: Option<Option<Tier>>,
+    pub endow_type: Option<EndowmentType>,
+    pub beneficiary: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get details on single vault
@@ -118,7 +128,13 @@ pub enum QueryMsg {
         endowment_addr: String,
     },
     // Gets list of all registered Endowments
-    EndowmentList {},
+    EndowmentList {
+        name: Option<String>,
+        owner: Option<String>,
+        status: Option<EndowmentStatus>,
+        tier: Option<Option<Tier>>,
+        endow_type: Option<EndowmentType>,
+    },
     // Get all Config details for the contract
     Config {},
     // Get a list of all approved Vaults exchange rates

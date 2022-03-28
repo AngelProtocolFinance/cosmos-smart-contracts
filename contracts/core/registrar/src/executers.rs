@@ -7,7 +7,7 @@ use angel_core::messages::accounts::QueryMsg as EndowmentQueryMsg;
 use angel_core::messages::registrar::*;
 use angel_core::responses::accounts::ProfileResponse;
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, YieldVault};
+use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
     to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response,
@@ -42,7 +42,7 @@ pub fn update_endowment_status(
     _env: Env,
     info: MessageInfo,
     msg: UpdateEndowmentStatusMsg,
-) -> Result<Response, ContractError> {
+) -> Result<Vec<SubMsg>, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
     if info.sender.ne(&config.owner) || msg.status > 3 {
@@ -63,7 +63,7 @@ pub fn update_endowment_status(
 
     // check first that the current status is different from the new status sent
     if endowment_entry.status.to_string() == msg_endowment_status.to_string() {
-        return Ok(Response::default());
+        return Ok(vec![]);
     }
 
     // check that the endowment has not been closed (liquidated or terminated) as this is not reversable
@@ -131,9 +131,7 @@ pub fn update_endowment_status(
         _ => vec![],
     };
 
-    Ok(Response::new()
-        .add_submessages(sub_messages)
-        .add_attribute("action", "update_endowment_status"))
+    Ok(sub_messages)
 }
 
 pub fn update_owner(
@@ -355,11 +353,19 @@ pub fn new_accounts_reply(
     match msg {
         ContractResult::Ok(subcall) => {
             let mut endowment_addr = String::from("");
+            let mut endowment_name = String::from("");
+            let mut endowment_owner = String::from("");
             for event in subcall.events {
                 if event.ty == *"instantiate_contract" {
                     for attrb in event.attributes {
                         if attrb.key == "contract_address" {
-                            endowment_addr = attrb.value;
+                            endowment_addr = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_name" {
+                            endowment_name = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_owner" {
+                            endowment_owner = attrb.value.clone();
                         }
                     }
                 }
@@ -371,7 +377,11 @@ pub fn new_accounts_reply(
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,
+                    name: endowment_name,
+                    owner: endowment_owner,
                     status: EndowmentStatus::Inactive,
+                    tier: None,
+                    endow_type: EndowmentType::Charity,
                 },
             )?;
             Ok(Response::default())
@@ -429,4 +439,56 @@ fn harvest_msg(account: String, collector_address: String, collector_share: Deci
         gas_limit: None,
         reply_on: ReplyOn::Never,
     }
+}
+
+pub fn update_endowment_entry(
+    mut deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: UpdateEndowmentMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let endow_addr = deps.api.addr_validate(&msg.endowment_addr)?;
+
+    if info.sender.ne(&config.owner) && info.sender.ne(&endow_addr) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // look up the endowment in the Registry. Will fail if doesn't exist
+    let endowment_addr = msg.endowment_addr.as_bytes();
+    let mut endowment_entry = registry_read(deps.storage, endowment_addr)?;
+
+    if let Some(name) = msg.name {
+        endowment_entry.name = name;
+    }
+
+    if let Some(owner) = msg.owner {
+        endowment_entry.owner = owner;
+    }
+
+    if let Some(tier) = msg.tier {
+        endowment_entry.tier = tier;
+    }
+
+    if let Some(endow_type) = msg.endow_type {
+        endowment_entry.endow_type = endow_type;
+    }
+
+    let sub_msgs: Vec<SubMsg> = match msg.status {
+        Some(status) => update_endowment_status(
+            deps.branch(),
+            env.clone(),
+            info.clone(),
+            UpdateEndowmentStatusMsg {
+                endowment_addr: msg.endowment_addr.clone(),
+                status: status as u8,
+                beneficiary: msg.beneficiary,
+            },
+        )?,
+        None => vec![],
+    };
+
+    Ok(Response::new()
+        .add_submessages(sub_msgs)
+        .add_attribute("action", "update_endowment_entry"))
 }

@@ -61,9 +61,6 @@ pub fn execute(
     match msg {
         ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
-        ExecuteMsg::UpdateEndowmentStatus(msg) => {
-            executers::update_endowment_status(deps, env, info, msg)
-        }
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
         }
@@ -79,6 +76,9 @@ pub fn execute(
             collector_address,
             collector_share,
         } => executers::harvest(deps, env, info, collector_address, collector_share),
+        ExecuteMsg::UpdateEndowmentEntry(msg) => {
+            executers::update_endowment_entry(deps, env, info, msg)
+        }
     }
 }
 
@@ -100,7 +100,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Endowment { endowment_addr } => {
             to_binary(&queriers::query_endowment_details(deps, endowment_addr)?)
         }
-        QueryMsg::EndowmentList {} => to_binary(&queriers::query_endowment_list(deps)?),
+        QueryMsg::EndowmentList {
+            name,
+            owner,
+            status,
+            tier,
+            endow_type,
+        } => to_binary(&queriers::query_endowment_list(
+            deps, name, owner, status, tier, endow_type,
+        )?),
         QueryMsg::ApprovedVaultList { start_after, limit } => to_binary(
             &queriers::query_approved_vault_list(deps, start_after, limit)?,
         ),

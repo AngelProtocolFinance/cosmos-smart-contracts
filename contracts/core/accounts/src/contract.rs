@@ -10,8 +10,8 @@ use angel_core::structs::{
     AcceptedTokens, BalanceInfo, RebalanceDetails, SocialMedialUrls, StrategyComponent,
 };
 use cosmwasm_std::{
-    entry_point, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
-    Response, StdResult, Uint128, WasmQuery,
+    attr, entry_point, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
+    QueryRequest, Response, StdResult, Uint128, WasmQuery,
 };
 use cw2::set_contract_version;
 
@@ -80,12 +80,15 @@ pub fn instantiate(
     )?;
 
     let mut profile = Profile::default();
-    profile.name = msg.name;
+    profile.name = msg.name.clone();
     profile.overview = msg.description;
 
     PROFILE.save(deps.storage, &profile)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attributes(vec![
+        attr("endow_name", msg.name),
+        attr("endow_owner", msg.owner),
+    ]))
 }
 
 #[entry_point]

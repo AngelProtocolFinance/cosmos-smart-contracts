@@ -105,7 +105,11 @@ impl RebalanceDetails {
 #[serde(rename_all = "snake_case")]
 pub struct EndowmentEntry {
     pub address: Addr,
+    pub name: String,
+    pub owner: String,
     pub status: EndowmentStatus,
+    pub tier: Option<Tier>,
+    pub endow_type: EndowmentType,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -127,6 +131,46 @@ impl fmt::Display for EndowmentStatus {
                 EndowmentStatus::Approved => "1",
                 EndowmentStatus::Frozen => "2",
                 EndowmentStatus::Closed => "3",
+            }
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum Tier {
+    Worst = 1,
+    Average = 2,
+    Best = 3,
+}
+
+impl fmt::Display for Tier {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Tier::Worst => "1",
+                Tier::Average => "2",
+                Tier::Best => "3",
+            }
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum EndowmentType {
+    Charity,
+    Normal,
+}
+
+impl fmt::Display for EndowmentType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                EndowmentType::Charity => "charity",
+                EndowmentType::Normal => "normal",
             }
         )
     }
