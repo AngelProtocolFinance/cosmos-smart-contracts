@@ -76,6 +76,7 @@ pub fn instantiate(
             balances: BalanceInfo::default(),
             closing_endowment: false,
             closing_beneficiary: None,
+            transactions: vec![],
         },
     )?;
 

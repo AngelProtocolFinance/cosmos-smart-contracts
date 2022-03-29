@@ -1,5 +1,5 @@
 use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, RebalanceDetails, SocialMedialUrls, StrategyComponent,
+    AcceptedTokens, BalanceInfo, RebalanceDetails, SocialMedialUrls, StrategyComponent, TransactionRecord,
 };
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
@@ -53,6 +53,7 @@ pub struct State {
     pub balances: BalanceInfo,
     pub closing_endowment: bool,
     pub closing_beneficiary: Option<String>,
+    pub transactions: Vec<TransactionRecord>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
