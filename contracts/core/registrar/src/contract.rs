@@ -7,8 +7,8 @@ use angel_core::responses::accounts::{EndowmentDetailsResponse, ProfileResponse}
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Order, QueryRequest, Reply,
-    Response, StdResult, WasmQuery,
+    entry_point, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Order, QueryRequest,
+    Reply, Response, StdResult, WasmQuery,
 };
 use cw2::set_contract_version;
 
@@ -145,29 +145,29 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         // grab the endowment's profile & config info
         let details: EndowmentDetailsResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: e.0,
+                contract_addr: e.0.clone(),
                 msg: to_binary(&angel_core::messages::accounts::QueryMsg::Endowment {})?,
             }))?;
         let profile: ProfileResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: e.0,
+                contract_addr: e.0.clone(),
                 msg: to_binary(&angel_core::messages::accounts::QueryMsg::GetProfile {})?,
             }))?;
 
         // build key for registrar's endowment
-        let key = [REGISTRY_KEY, e.0.as_bytes()].concat();
+        let key = [REGISTRY_KEY, e.0.clone().as_bytes()].concat();
 
         // set the new EndowmentEntry at the given key
         deps.storage.set(
             &key,
-            &as_vec(EndowmentEntry {
+            &to_vec(&EndowmentEntry {
                 address: deps.api.addr_validate(&e.0)?, // Addr,
                 name: profile.name,                     // String,
                 owner: details.owner.to_string(),       // String,
                 status: status,                         // EndowmentStatus,
                 tier: None,                             // Option<Tier>,
                 endow_type: EndowmentType::Charity,     // EndowmentType,
-            }),
+            })?,
         );
     }
     Ok(Response::default())
