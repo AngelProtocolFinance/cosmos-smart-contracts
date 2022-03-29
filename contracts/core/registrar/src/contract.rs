@@ -3,10 +3,12 @@ use crate::queriers;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::SplitDetails;
+use angel_core::responses::accounts::{EndowmentDetailsResponse, ProfileResponse};
+use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Order, QueryRequest, Reply,
+    Response, StdResult, WasmQuery,
 };
 use cw2::set_contract_version;
 
@@ -128,6 +130,45 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    const REGISTRY_KEY: &[u8] = b"registry";
+    // msg pass in an { endowments: [ (address, status), ... ] }
+    for e in msg.endowments {
+        let status = match e.1 {
+            0 => EndowmentStatus::Inactive,
+            1 => EndowmentStatus::Approved,
+            2 => EndowmentStatus::Frozen,
+            3 => EndowmentStatus::Closed,
+            _ => EndowmentStatus::Inactive,
+        };
+
+        // grab the endowment's profile & config info
+        let details: EndowmentDetailsResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: e.0,
+                msg: to_binary(&angel_core::messages::accounts::QueryMsg::Endowment {})?,
+            }))?;
+        let profile: ProfileResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: e.0,
+                msg: to_binary(&angel_core::messages::accounts::QueryMsg::GetProfile {})?,
+            }))?;
+
+        // build key for registrar's endowment
+        let key = [REGISTRY_KEY, e.0.as_bytes()].concat();
+
+        // set the new EndowmentEntry at the given key
+        deps.storage.set(
+            &key,
+            &as_vec(EndowmentEntry {
+                address: deps.api.addr_validate(&e.0)?, // Addr,
+                name: profile.name,                     // String,
+                owner: details.owner.to_string(),       // String,
+                status: status,                         // EndowmentStatus,
+                tier: None,                             // Option<Tier>,
+                endow_type: EndowmentType::Charity,     // EndowmentType,
+            }),
+        );
+    }
     Ok(Response::default())
 }
