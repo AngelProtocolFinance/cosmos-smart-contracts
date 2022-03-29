@@ -103,7 +103,6 @@ pub struct UpdateEndowmentTypeMsg {
     pub owner: Option<String>,
     pub tier: Option<Option<Tier>>,
     pub endow_type: Option<EndowmentType>,
-    pub beneficiary: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

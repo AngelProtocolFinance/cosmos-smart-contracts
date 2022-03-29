@@ -409,6 +409,7 @@ fn test_update_endowment_profile() {
         average_annual_budget: None,
         annual_revenue: None,
         charity_navigator_rating: None,
+        endow_type: None,
     };
 
     // Not just anyone can update the Endowment's profile! Only Endowment owner or Config owner can.

@@ -14,7 +14,8 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, FundingSource, SocialMedialUrls, SplitDetails, StrategyComponent, Tier,
+    AcceptedTokens, EndowmentType, FundingSource, SocialMedialUrls, SplitDetails,
+    StrategyComponent, Tier,
 };
 use angel_core::utils::{
     check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
@@ -646,6 +647,13 @@ pub fn update_profile(
     if info.sender == config.owner {
         profile.un_sdg = msg.un_sdg;
         profile.tier = msg.tier;
+        if let Some(endow_type) = msg.endow_type {
+            profile.endow_type = match endow_type.as_str() {
+                "charity" => EndowmentType::Charity,
+                "normal" => EndowmentType::Normal,
+                _ => return Err(ContractError::InvalidInputs {}),
+            };
+        }
     }
 
     // Only endowment.owner can update all other fields
@@ -685,8 +693,7 @@ pub fn update_profile(
                 name: msg.name.and_then(|v| Some(v)),
                 owner: None,
                 tier,
-                endow_type: None,
-                beneficiary: None,
+                endow_type: Some(profile.endow_type),
             },
         ))?,
         funds: vec![],

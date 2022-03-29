@@ -285,7 +285,10 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     assert_eq!("create_endowment", res.attributes[0].value);
 
     let events = vec![Event::new("instantiate_contract")
-        .add_attribute("contract_address", good_endowment_addr.clone())];
+        .add_attribute("contract_address", good_endowment_addr.clone())
+        .add_attribute("endow_name", "Test Endowment".to_string())
+        .add_attribute("endow_owner", good_charity_addr.clone())
+        .add_attribute("endow_type", "charity".to_string())];
     let result = ContractResult::Ok(SubMsgExecutionResponse { events, data: None });
     let subcall = Reply { id: 0, result };
 
@@ -323,7 +326,6 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         owner: None,
         tier: None,
         endow_type: None,
-        beneficiary: None,
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));

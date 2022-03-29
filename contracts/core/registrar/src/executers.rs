@@ -357,6 +357,7 @@ pub fn new_accounts_reply(
             let mut endowment_addr = String::from("");
             let mut endowment_name = String::from("");
             let mut endowment_owner = String::from("");
+            let mut endowment_type = String::from("");
             for event in subcall.events {
                 if event.ty == *"instantiate_contract" {
                     for attrb in event.attributes {
@@ -368,6 +369,9 @@ pub fn new_accounts_reply(
                         }
                         if attrb.key == "endow_owner" {
                             endowment_owner = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_type" {
+                            endowment_type = attrb.value.clone();
                         }
                     }
                 }
@@ -383,7 +387,11 @@ pub fn new_accounts_reply(
                     owner: endowment_owner,
                     status: EndowmentStatus::Inactive,
                     tier: None,
-                    endow_type: EndowmentType::Charity,
+                    endow_type: match endowment_type.as_str() {
+                        "charity" => EndowmentType::Charity,
+                        "normal" => EndowmentType::Normal,
+                        _ => unimplemented!(),
+                    },
                 },
             )?;
             Ok(Response::default())
