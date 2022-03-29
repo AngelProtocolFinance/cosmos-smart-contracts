@@ -139,6 +139,13 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::State {} => to_binary(&queriers::query_state(deps)?),
         QueryMsg::Endowment {} => to_binary(&queriers::query_endowment_details(deps)?),
         QueryMsg::GetProfile {} => to_binary(&queriers::query_profile(deps)?),
+        QueryMsg::GetTxRecords {
+            sender,
+            recipient,
+            denom,
+        } => to_binary(&queriers::query_transactions(
+            deps, sender, recipient, denom,
+        )?),
     }
 }
 

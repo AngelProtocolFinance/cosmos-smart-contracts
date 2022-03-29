@@ -516,6 +516,19 @@ fn test_donate() {
     let query_res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&query_res).unwrap();
     assert_eq!(state.donations_received.u128(), donation_amt);
+
+    let query_res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetTxRecords {
+            sender: None,
+            recipient: None,
+            denom: None,
+        },
+    )
+    .unwrap();
+    let txs_response: TxRecordsResponse = from_binary(&query_res).unwrap();
+    assert_eq!(txs_response.txs.len(), 1);
 }
 
 #[test]

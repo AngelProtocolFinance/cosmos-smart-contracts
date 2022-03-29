@@ -1,8 +1,8 @@
 use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
-use angel_core::messages::vault::QueryMsg as VaultQuerier;
 use angel_core::responses::accounts::*;
 use angel_core::structs::BalanceResponse;
-use cosmwasm_std::{to_binary, Deps, Env, QueryRequest, StdResult, WasmQuery};
+use angel_core::{messages::vault::QueryMsg as VaultQuerier, structs::TransactionRecord};
+use cosmwasm_std::{to_binary, Addr, Deps, Env, QueryRequest, StdResult, WasmQuery};
 use cw2::get_contract_version;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -89,4 +89,44 @@ pub fn query_profile(deps: Deps) -> StdResult<ProfileResponse> {
         annual_revenue: profile.annual_revenue,
         charity_navigator_rating: profile.charity_navigator_rating,
     })
+}
+
+pub fn query_transactions(
+    deps: Deps,
+    sender: Option<Addr>,
+    recipient: Option<Addr>,
+    denom: Option<String>,
+) -> StdResult<TxRecordsResponse> {
+    let txs = STATE.load(deps.storage)?.transactions;
+
+    let txs = match sender {
+        Some(addr) => txs
+            .into_iter()
+            .filter(|tx| tx.sender == addr)
+            .collect::<Vec<TransactionRecord>>(),
+        None => txs,
+    };
+
+    let txs = match recipient {
+        Some(addr) => txs
+            .into_iter()
+            .filter(|tx| {
+                *tx.recipient
+                    .as_ref()
+                    .unwrap_or(&Addr::unchecked("anonymous"))
+                    == addr
+            })
+            .collect::<Vec<TransactionRecord>>(),
+        None => txs,
+    };
+
+    let txs = match denom {
+        Some(denom) => txs
+            .into_iter()
+            .filter(|tx| tx.denom == denom)
+            .collect::<Vec<TransactionRecord>>(),
+        None => txs,
+    };
+
+    Ok(TxRecordsResponse { txs })
 }
