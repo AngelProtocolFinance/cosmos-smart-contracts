@@ -5,7 +5,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {
-    pub endowments: Vec<(String, u64)>,
+    // [ (address, status, name, owner, tier), ...]
+    pub endowments: Vec<(String, u64, String, String, u64)>,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]

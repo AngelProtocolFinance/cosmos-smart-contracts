@@ -4,7 +4,7 @@ use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::responses::accounts::{EndowmentDetailsResponse, ProfileResponse};
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails};
+use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
     entry_point, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Order, QueryRequest,
@@ -132,28 +132,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     const REGISTRY_KEY: &[u8] = b"registry";
-    // msg pass in an { endowments: [ (address, status), ... ] }
+    // msg pass in an { endowments: [ (address, status, name, owner, tier), ... ] }
     for e in msg.endowments {
-        let status = match e.1 {
-            0 => EndowmentStatus::Inactive,
-            1 => EndowmentStatus::Approved,
-            2 => EndowmentStatus::Frozen,
-            3 => EndowmentStatus::Closed,
-            _ => EndowmentStatus::Inactive,
-        };
-
-        // grab the endowment's profile & config info
-        let details: EndowmentDetailsResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: e.0.clone(),
-                msg: to_binary(&angel_core::messages::accounts::QueryMsg::Endowment {})?,
-            }))?;
-        let profile: ProfileResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: e.0.clone(),
-                msg: to_binary(&angel_core::messages::accounts::QueryMsg::GetProfile {})?,
-            }))?;
-
         // build key for registrar's endowment
         let key = [REGISTRY_KEY, e.0.clone().as_bytes()].concat();
 
@@ -162,11 +142,24 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             &key,
             &to_vec(&EndowmentEntry {
                 address: deps.api.addr_validate(&e.0)?, // Addr,
-                name: profile.name,                     // String,
-                owner: details.owner.to_string(),       // String,
-                status: status,                         // EndowmentStatus,
-                tier: None,                             // Option<Tier>,
-                endow_type: EndowmentType::Charity,     // EndowmentType,
+                name: e.2,                              // String,
+                owner: e.3,                             // String,
+                // EndowmentStatus
+                status: match e.1 {
+                    0 => EndowmentStatus::Inactive,
+                    1 => EndowmentStatus::Approved,
+                    2 => EndowmentStatus::Frozen,
+                    3 => EndowmentStatus::Closed,
+                    _ => EndowmentStatus::Inactive,
+                },
+                // Option<Tier>
+                tier: match e.4 {
+                    1 => Some(Tier::Level1),
+                    2 => Some(Tier::Level2),
+                    3 => Some(Tier::Level3),
+                    _ => None,
+                },
+                endow_type: EndowmentType::Charity, // EndowmentType,
             })?,
         );
     }
