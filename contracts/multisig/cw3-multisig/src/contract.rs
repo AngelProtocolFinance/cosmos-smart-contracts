@@ -1,4 +1,7 @@
-use crate::msg::{ConfigResponse, ExecuteMsg, MigrateMsg, QueryMsg};
+use crate::msg::{
+    ConfigResponse, ExecuteMsg, MetaProposalListResponse, MetaProposalResponse, MigrateMsg,
+    QueryMsg,
+};
 use crate::state::{
     next_id, parse_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS,
 };
@@ -12,8 +15,8 @@ use cosmwasm_std::{
 use cw0::{maybe_addr, Duration, Expiration};
 use cw2::set_contract_version;
 use cw3::{
-    ProposalListResponse, ProposalResponse, Status, ThresholdResponse, Vote, VoteInfo,
-    VoteListResponse, VoteResponse, VoterDetail, VoterListResponse, VoterResponse,
+    Status, ThresholdResponse, Vote, VoteInfo, VoteListResponse, VoteResponse, VoterDetail,
+    VoterListResponse, VoterResponse,
 };
 use cw4::{Cw4Contract, MemberChangedHookMsg, MemberDiff};
 use cw_storage_plus::Bound;
@@ -63,7 +66,8 @@ pub fn execute(
             description,
             msgs,
             latest,
-        } => execute_propose(deps, env, info, title, description, msgs, latest),
+            meta,
+        } => execute_propose(deps, env, info, title, description, msgs, latest, meta),
         ExecuteMsg::Vote { proposal_id, vote } => execute_vote(deps, env, info, proposal_id, vote),
         ExecuteMsg::UpdateConfig {
             threshold,
@@ -105,6 +109,7 @@ pub fn execute_propose(
     description: String,
     msgs: Vec<CosmosMsg>,
     latest: Option<Expiration>, // we ignore earliest
+    meta: Option<String>,
 ) -> Result<Response<Empty>, ContractError> {
     let cfg = CONFIG.load(deps.storage)?;
 
@@ -139,6 +144,7 @@ pub fn execute_propose(
         votes: Votes::new(vote_power),
         threshold: cfg.threshold,
         total_weight: cfg.group_addr.total_weight(&deps.querier)?,
+        meta,
     };
     prop.update_status(&env.block);
     let id = next_id(deps.storage)?;
@@ -329,11 +335,11 @@ fn query_threshold(deps: Deps) -> StdResult<ThresholdResponse> {
     Ok(cfg.threshold.to_response(total_weight))
 }
 
-fn query_proposal(deps: Deps, env: Env, id: u64) -> StdResult<ProposalResponse> {
+fn query_proposal(deps: Deps, env: Env, id: u64) -> StdResult<MetaProposalResponse> {
     let prop = PROPOSALS.load(deps.storage, id.into())?;
     let status = prop.current_status(&env.block);
     let threshold = prop.threshold.to_response(prop.total_weight);
-    Ok(ProposalResponse {
+    Ok(MetaProposalResponse {
         id,
         title: prop.title,
         description: prop.description,
@@ -341,6 +347,7 @@ fn query_proposal(deps: Deps, env: Env, id: u64) -> StdResult<ProposalResponse> 
         status,
         expires: prop.expires,
         threshold,
+        meta: prop.meta,
     })
 }
 
@@ -353,7 +360,7 @@ fn list_proposals(
     env: Env,
     start_after: Option<u64>,
     limit: Option<u32>,
-) -> StdResult<ProposalListResponse> {
+) -> StdResult<MetaProposalListResponse> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start = start_after.map(Bound::exclusive_int);
     let props: StdResult<Vec<_>> = PROPOSALS
@@ -362,7 +369,7 @@ fn list_proposals(
         .map(|p| map_proposal(&env.block, p))
         .collect();
 
-    Ok(ProposalListResponse {
+    Ok(MetaProposalListResponse {
         proposals: props.unwrap(),
     })
 }
@@ -372,7 +379,7 @@ fn reverse_proposals(
     env: Env,
     start_before: Option<u64>,
     limit: Option<u32>,
-) -> StdResult<ProposalListResponse> {
+) -> StdResult<MetaProposalListResponse> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let end = start_before.map(Bound::exclusive_int);
     let props: StdResult<Vec<_>> = PROPOSALS
@@ -381,7 +388,7 @@ fn reverse_proposals(
         .map(|p| map_proposal(&env.block, p))
         .collect();
 
-    Ok(ProposalListResponse {
+    Ok(MetaProposalListResponse {
         proposals: props.unwrap(),
     })
 }
@@ -389,11 +396,11 @@ fn reverse_proposals(
 fn map_proposal(
     block: &BlockInfo,
     item: StdResult<(Vec<u8>, Proposal)>,
-) -> StdResult<ProposalResponse> {
+) -> StdResult<MetaProposalResponse> {
     let (key, prop) = item?;
     let status = prop.current_status(block);
     let threshold = prop.threshold.to_response(prop.total_weight);
-    Ok(ProposalResponse {
+    Ok(MetaProposalResponse {
         id: parse_id(&key)?,
         title: prop.title,
         description: prop.description,
@@ -401,6 +408,7 @@ fn map_proposal(
         status,
         expires: prop.expires,
         threshold,
+        meta: prop.meta,
     })
 }
 

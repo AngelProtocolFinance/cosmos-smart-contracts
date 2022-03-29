@@ -35,6 +35,8 @@ pub struct Proposal {
     pub total_weight: u64,
     // summary of existing votes
     pub votes: Votes,
+    /// metadata field allows for a UI to easily set and display data about the proposal
+    pub meta: Option<String>,
 }
 
 // weight of votes for each option
@@ -222,6 +224,7 @@ mod test {
             threshold,
             total_weight,
             votes,
+            meta: Some(""),
         };
         prop.is_passed(&block)
     }
