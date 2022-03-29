@@ -1,5 +1,6 @@
 use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, RebalanceDetails, SocialMedialUrls, StrategyComponent, TransactionRecord,
+    AcceptedTokens, BalanceInfo, RebalanceDetails, SocialMedialUrls, StrategyComponent,
+    TransactionRecord,
 };
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;

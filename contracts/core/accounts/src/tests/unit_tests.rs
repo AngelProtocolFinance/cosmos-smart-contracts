@@ -6,7 +6,7 @@ use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
 use cosmwasm_std::testing::{mock_env, mock_info};
-use cosmwasm_std::{attr, coins, from_binary, Decimal};
+use cosmwasm_std::{attr, coins, from_binary, Addr, Decimal};
 
 #[test]
 fn test_proper_initialization() {
@@ -466,4 +466,106 @@ fn test_update_endowment_profile() {
     let value: ProfileResponse = from_binary(&res).unwrap();
     assert_eq!(value.un_sdg.unwrap(), 11);
     assert_eq!(value.tier.unwrap(), 22);
+}
+
+#[test]
+fn test_donate() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angelprotocolteamdano".to_string();
+    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
+    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let depositor = Addr::unchecked("depositor");
+
+    // Initialize the Endowment
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: ap_team.clone(),
+        registrar_contract: registrar_contract.clone(),
+        owner: charity_addr.clone(),
+        beneficiary: charity_addr.clone(),
+        name: "Test Endowment".to_string(),
+        description: "Endowment to power an amazing charity".to_string(),
+        withdraw_before_maturity: false,
+        maturity_time: None,
+        maturity_height: None,
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let _res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+    // Update the Endowment status
+    let info = mock_info(registrar_contract.as_str(), &[]);
+    let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
+        deposit_approved: true,
+        withdraw_approved: true,
+    });
+    let _res = execute(deps.as_mut(), mock_env(), info, update_status_msg).unwrap();
+
+    // Try the "Deposit"
+    let donation_amt = 200_u128;
+    let info = mock_info(depositor.as_str(), &coins(donation_amt, "uusd"));
+    let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
+        locked_percentage: Decimal::percent(50),
+        liquid_percentage: Decimal::percent(50),
+    });
+    let res = execute(deps.as_mut(), mock_env(), info, deposit_msg).unwrap();
+
+    assert_eq!(res.attributes.len(), 3);
+
+    // Check the "STATE" for "transactions" field
+    let query_res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&query_res).unwrap();
+    assert_eq!(state.donations_received.u128(), donation_amt);
+}
+
+#[test]
+fn test_withdraw() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angelprotocolteamdano".to_string();
+    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
+    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let depositor = Addr::unchecked("depositor");
+
+    // Initialize the Endowment
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: ap_team.clone(),
+        registrar_contract: registrar_contract.clone(),
+        owner: charity_addr.clone(),
+        beneficiary: charity_addr.clone(),
+        name: "Test Endowment".to_string(),
+        description: "Endowment to power an amazing charity".to_string(),
+        withdraw_before_maturity: false,
+        maturity_time: None,
+        maturity_height: None,
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let _res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+    // Update the Endowment status
+    let info = mock_info(registrar_contract.as_str(), &[]);
+    let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
+        deposit_approved: true,
+        withdraw_approved: true,
+    });
+    let _res = execute(deps.as_mut(), mock_env(), info, update_status_msg).unwrap();
+
+    // Try the "Deposit"
+    let donation_amt = 200_u128;
+    let info = mock_info(depositor.as_str(), &coins(donation_amt, "uusd"));
+    let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
+        locked_percentage: Decimal::percent(50),
+        liquid_percentage: Decimal::percent(50),
+    });
+    let _res = execute(deps.as_mut(), mock_env(), info, deposit_msg).unwrap();
+
+    // Try the "Withdraw"
+    let info = mock_info(charity_addr.as_str(), &[]);
+    let withdraw_msg = ExecuteMsg::Withdraw {
+        sources: vec![],
+        beneficiary: "beneficiary".to_string(),
+    };
+    let res = execute(deps.as_mut(), mock_env(), info, withdraw_msg).unwrap();
+    assert_eq!(res.messages.len(), 0);
 }
