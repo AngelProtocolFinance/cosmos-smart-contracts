@@ -177,7 +177,7 @@ export async function testQueryAccountsTransactions(
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Transactions");
   const result: any = await terra.wasm.contractQuery(endowmentContract, {
-    transactions: {
+    get_tx_records: {
       sender,
       recipient,
       denom,
