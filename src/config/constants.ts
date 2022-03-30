@@ -233,6 +233,18 @@ export const mainnet = {
       "terra1yprej80ls40lkhayxt20zhsjy5rzgwle80q02m", // Save the Waves
       "terra197sh6vs9u483h2gxycfz7lsw964f0hf6dup75f", // The Pain Free Project
       "terra1mzkqpefs0tjww4serwyx9u2sthgjraznwvcwpa", // Brooklyn Angel
+      "terra16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke", // Angel Protocol Endowment
+      "terra10kjzmr3z78h560zjxew4uhrucrxsyenyse2myn", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra12auwue3l5tuzs9ld2tstdvvyljhl06k275jkyu", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra12pu07a4srek2m7k6s4a49mmttee052c53wxykh", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra17jks8n2lq28sjqahz8g7jayvev9pt2cc2tqrms", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra19nkct5e553gdvn7f0zzemsgq4ual2kcd0x3zln", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1dn4937qejkjlzf2m8sztpkzvk9l8yaqxh29gvr", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1ftvccteqkr9mactjvq236cedl80v2fpwf6alsy", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1j9lx8un3sf3e8a5zhh2v6p6zu5kc46st8u3lr8", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1sgnn3pwfeztl4z7a4c923pxwn04gyq6cfas45r", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1txhw0wp9fhcyrja9a99w4lmpz2wfpu8hnch2kn", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1y3z0s77t3amjjze7wajrt4xms2kfamx4ae9tj9", // NOT ACTIVE ENDOWMENT (creation script mishap)
     ],
   },
   members: [
