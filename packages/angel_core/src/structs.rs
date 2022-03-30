@@ -157,16 +157,6 @@ impl fmt::Display for Tier {
     }
 }
 
-impl Into<String> for Tier {
-    fn into(self) -> String {
-        match self {
-            Tier::Level1 => "1".to_string(),
-            Tier::Level2 => "2".to_string(),
-            Tier::Level3 => "3".to_string(),
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum EndowmentType {
     Charity,
