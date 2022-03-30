@@ -349,23 +349,20 @@ pub fn harvest(
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
-    let past_epoch = anchor::epoch_state(
-        deps.as_ref(),
-        &config.moneymarket,
-        Some(config.last_harvest),
-    )?;
-    let curr_epoch =
-        anchor::epoch_state(deps.as_ref(), &config.moneymarket, Some(env.block.height))?;
-    let harvest_earn_rate = Decimal::from(
-        (curr_epoch.exchange_rate - past_epoch.exchange_rate) / past_epoch.exchange_rate,
-    );
-
-    config.last_harvest = env.block.height;
-    config::store(deps.storage, &config)?;
-
     if info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
+
+    let curr_epoch = anchor::epoch_state(deps.as_ref(), &config.moneymarket)?;
+
+    let harvest_earn_rate = Decimal::from(
+        (curr_epoch.exchange_rate - config.last_harvest_fx.unwrap_or(curr_epoch.exchange_rate))
+            / config.last_harvest_fx.unwrap_or(curr_epoch.exchange_rate),
+    );
+
+    config.last_harvest = env.block.height;
+    config.last_harvest_fx = Some(curr_epoch.exchange_rate);
+    config::store(deps.storage, &config)?;
 
     // pull registrar SC config to fetch the Treasury Tax Rate
     let registrar_config: RegistrarConfigResponse =

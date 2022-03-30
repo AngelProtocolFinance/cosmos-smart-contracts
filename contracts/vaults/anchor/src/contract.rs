@@ -38,6 +38,7 @@ pub fn instantiate(
         next_pending_id: 0,
         tax_per_block: msg.tax_per_block,
         last_harvest: env.block.height,
+        last_harvest_fx: None,
         harvest_to_liquid: msg.harvest_to_liquid,
     };
 
@@ -110,7 +111,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
         // ANCHOR-SPECIFIC QUERIES BELOW THIS POINT!
         QueryMsg::ExchangeRate { input_denom: _ } => {
-            let epoch_state = anchor::epoch_state(deps, &config.moneymarket, None)?;
+            let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;
 
             to_binary(&ExchangeRateResponse {
                 exchange_rate: epoch_state.exchange_rate,
