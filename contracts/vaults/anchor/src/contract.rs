@@ -110,7 +110,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
         // ANCHOR-SPECIFIC QUERIES BELOW THIS POINT!
         QueryMsg::ExchangeRate { input_denom: _ } => {
-            let epoch_state = anchor::epoch_state(deps, &config.moneymarket)?;
+            let epoch_state = anchor::epoch_state(deps, &config.moneymarket, None)?;
 
             to_binary(&ExchangeRateResponse {
                 exchange_rate: epoch_state.exchange_rate,

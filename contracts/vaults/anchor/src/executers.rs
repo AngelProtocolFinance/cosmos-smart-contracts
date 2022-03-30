@@ -349,7 +349,17 @@ pub fn harvest(
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
+    let past_epoch = anchor::epoch_state(
+        deps.as_ref(),
+        &config.moneymarket,
+        Some(config.last_harvest),
+    )?;
+    let curr_epoch =
+        anchor::epoch_state(deps.as_ref(), &config.moneymarket, Some(env.block.height))?;
+    let fx_earn = (curr_epoch.exchange_rate - past_epoch.exchange_rate) / past_epoch.exchange_rate;
     let harvest_blocks = Uint128::from((env.block.height - config.last_harvest) as u128);
+    let earnings_per_block = Decimal::from(fx_earn) / harvest_blocks;
+
     config.last_harvest = env.block.height;
     config::store(deps.storage, &config)?;
 
@@ -387,7 +397,7 @@ pub fn harvest(
             .get_token_amount(env.contract.address.clone())
             .checked_mul(harvest_blocks)
             .unwrap()
-            * config.tax_per_block
+            * earnings_per_block
             * registrar_config.tax_rate;
 
         // calculate harvest taxes owed on locked balance earnings
@@ -396,7 +406,7 @@ pub fn harvest(
             .get_token_amount(env.contract.address.clone())
             .checked_mul(harvest_blocks)
             .unwrap()
-            * config.tax_per_block
+            * earnings_per_block
             * registrar_config.tax_rate;
 
         // calulate amount of earnings to be harvested from locked >> liquid balance
@@ -406,7 +416,7 @@ pub fn harvest(
             .get_token_amount(env.contract.address.clone())
             .checked_mul(harvest_blocks)
             .unwrap()
-            * config.tax_per_block
+            * earnings_per_block
             * config.harvest_to_liquid
             - locked_taxes_owed;
 

@@ -50,13 +50,13 @@ pub struct EpochStateResponse {
     pub aterra_supply: Uint256,
 }
 
-pub fn epoch_state(deps: Deps, market: &Addr) -> StdResult<EpochStateResponse> {
+pub fn epoch_state(deps: Deps, market: &Addr, block: Option<u64>) -> StdResult<EpochStateResponse> {
     let epoch_state = deps
         .querier
         .query::<EpochStateResponse>(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: market.to_string(),
             msg: to_binary(&QueryMsg::EpochState {
-                block_height: None,
+                block_height: block,
                 distributed_interest: None,
             })?,
         }))?;
