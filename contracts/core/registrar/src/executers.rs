@@ -1,11 +1,6 @@
-use crate::state::{
-    read_registry_entries, read_vaults, registry_read, registry_store, vault_read, vault_store,
-    CONFIG,
-};
+use crate::state::{read_vaults, registry_read, registry_store, vault_read, vault_store, CONFIG};
 use angel_core::errors::core::ContractError;
-use angel_core::messages::accounts::QueryMsg as EndowmentQueryMsg;
 use angel_core::messages::registrar::*;
-use angel_core::responses::accounts::ProfileResponse;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
@@ -232,7 +227,7 @@ pub fn update_config(
 pub fn create_endowment(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: CreateEndowmentMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;

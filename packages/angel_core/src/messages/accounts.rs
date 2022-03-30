@@ -152,4 +152,10 @@ pub enum QueryMsg {
     Endowment {},
     // Get the profile info
     GetProfile {},
+    // Get the transaction records
+    GetTxRecords {
+        sender: Option<String>,
+        recipient: Option<String>,
+        denom: Option<String>,
+    },
 }

@@ -3,12 +3,11 @@ use crate::queriers;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::responses::accounts::{EndowmentDetailsResponse, ProfileResponse};
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Order, QueryRequest,
-    Reply, Response, StdResult, WasmQuery,
+    entry_point, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
+    StdResult,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Path;

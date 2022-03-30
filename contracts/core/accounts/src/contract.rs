@@ -1,18 +1,17 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
+use crate::state::{Config, Endowment, OldState, State, CONFIG, ENDOWMENT, STATE};
 use crate::state::{Profile, PROFILE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::EndowmentType;
-use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, RebalanceDetails, SocialMedialUrls, StrategyComponent,
-};
+use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
+use cosmwasm_std::StdError;
 use cosmwasm_std::{
-    attr, entry_point, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdResult, Uint128, WasmQuery,
+    attr, entry_point, from_slice, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env,
+    MessageInfo, QueryRequest, Response, StdResult, Uint128, WasmQuery,
 };
 use cw2::set_contract_version;
 
@@ -77,6 +76,7 @@ pub fn instantiate(
             balances: BalanceInfo::default(),
             closing_endowment: false,
             closing_beneficiary: None,
+            transactions: vec![],
         },
     )?;
 
@@ -150,6 +150,13 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::State {} => to_binary(&queriers::query_state(deps)?),
         QueryMsg::Endowment {} => to_binary(&queriers::query_endowment_details(deps)?),
         QueryMsg::GetProfile {} => to_binary(&queriers::query_profile(deps)?),
+        QueryMsg::GetTxRecords {
+            sender,
+            recipient,
+            denom,
+        } => to_binary(&queriers::query_transactions(
+            deps, sender, recipient, denom,
+        )?),
     }
 }
 
@@ -157,6 +164,25 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     // Documentation on performing updates during migration
     // https://docs.cosmwasm.com/docs/1.0/smart-contracts/migration/#using-migrate-to-update-otherwise-immutable-state
+    const STATE_KEY: &[u8] = b"state";
+    let data = deps.storage.get(STATE_KEY).ok_or_else(|| {
+        ContractError::Std(StdError::NotFound {
+            kind: "State".to_string(),
+        })
+    })?;
+    let state: OldState = from_slice(&data)?;
+
+    deps.storage.set(
+        STATE_KEY,
+        &to_vec(&State {
+            donations_received: state.donations_received,
+            balances: state.balances,
+            closing_endowment: state.closing_endowment,
+            closing_beneficiary: state.closing_beneficiary,
+            transactions: vec![],
+        })?,
+    );
+
     const PROFILE_KEY: &[u8] = b"profile";
 
     let mut profile = Profile::default();

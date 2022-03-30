@@ -1,4 +1,4 @@
-use crate::structs::{EndowmentStatus, EndowmentType, SplitDetails, Tier};
+use crate::structs::{EndowmentType, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

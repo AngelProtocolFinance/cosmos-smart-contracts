@@ -15,7 +15,7 @@ use angel_core::responses::registrar::{
 };
 use angel_core::structs::{
     AcceptedTokens, EndowmentType, FundingSource, SocialMedialUrls, SplitDetails,
-    StrategyComponent, Tier,
+    StrategyComponent, Tier, TransactionRecord,
 };
 use angel_core::utils::{
     check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
@@ -436,7 +436,7 @@ pub fn vault_receipt(
 
 pub fn deposit(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     sender_addr: Addr,
     msg: DepositMsg,
@@ -509,6 +509,15 @@ pub fn deposit(
     let mut state = STATE.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
     state.donations_received += deposit_amount.amount;
+
+    let tx_record = TransactionRecord {
+        block: env.block.height,
+        sender: sender_addr,
+        recipient: None,
+        amount: deposit_amount.amount,
+        denom: deposit_amount.denom,
+    };
+    state.transactions.push(tx_record);
     STATE.save(deps.storage, &state)?;
 
     // build deposit messages for each of the sources/amounts
@@ -560,12 +569,24 @@ pub fn withdraw(
     }
 
     // build redeem messages for each of the sources/amounts
-    let withdraw_messages = withdraw_from_vaults(
+    let (withdraw_messages, tx_amounts) = withdraw_from_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
         &deps.api.addr_validate(&beneficiary)?,
         sources,
     )?;
+
+    // Save the tx record in STATE
+    let mut state = STATE.load(deps.storage)?;
+    let tx_record = TransactionRecord {
+        block: env.block.height,
+        sender: env.contract.address.clone(),
+        recipient: Some(Addr::unchecked(beneficiary.clone())),
+        amount: tx_amounts,
+        denom: "uusd".to_string(),
+    };
+    state.transactions.push(tx_record);
+    STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
         .add_submessages(withdraw_messages)
