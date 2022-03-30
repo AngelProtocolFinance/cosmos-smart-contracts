@@ -38,6 +38,7 @@ pub fn instantiate(
         next_pending_id: 0,
         tax_per_block: msg.tax_per_block,
         last_harvest: env.block.height,
+        last_harvest_fx: None,
         harvest_to_liquid: msg.harvest_to_liquid,
     };
 
