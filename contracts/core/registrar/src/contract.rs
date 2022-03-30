@@ -11,6 +11,8 @@ use cosmwasm_std::{
     Reply, Response, StdResult, WasmQuery,
 };
 use cw2::set_contract_version;
+use std::ops::Deref;
+use cw_storage_plus::Path;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -135,17 +137,20 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     // msg pass in an { endowments: [ (address, status, name, owner, tier), ... ] }
     for e in msg.endowments {
         // build key for registrar's endowment
-        let key = [REGISTRY_KEY, e.0.clone().as_bytes()].concat();
+        // let key = [REGISTRY_KEY, e.addr.clone().as_bytes()].concat();
+
+        let path: Path<EndowmentEntry> = Path::new(REGISTRY_KEY, &[e.addr.clone().as_bytes()]);
+        let key = path.deref();
 
         // set the new EndowmentEntry at the given key
         deps.storage.set(
-            &key,
+            key,
             &to_vec(&EndowmentEntry {
-                address: deps.api.addr_validate(&e.0)?, // Addr,
-                name: e.2,                              // String,
-                owner: e.3,                             // String,
+                address: deps.api.addr_validate(&e.addr)?, // Addr,
+                name: e.name,                                    // String,
+                owner: e.owner,                                  // String,
                 // EndowmentStatus
-                status: match e.1 {
+                status: match e.status {
                     0 => EndowmentStatus::Inactive,
                     1 => EndowmentStatus::Approved,
                     2 => EndowmentStatus::Frozen,
@@ -153,7 +158,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
                     _ => EndowmentStatus::Inactive,
                 },
                 // Option<Tier>
-                tier: match e.4 {
+                tier: match e.tier {
                     1 => Some(Tier::Level1),
                     2 => Some(Tier::Level2),
                     3 => Some(Tier::Level3),
