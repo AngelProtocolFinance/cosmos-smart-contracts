@@ -1,6 +1,6 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
+use crate::state::{Config, Endowment, OldState, State, CONFIG, ENDOWMENT, STATE};
 use crate::state::{Profile, PROFILE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
@@ -9,9 +9,10 @@ use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::{
     AcceptedTokens, BalanceInfo, RebalanceDetails, SocialMedialUrls, StrategyComponent,
 };
+use cosmwasm_std::StdError;
 use cosmwasm_std::{
-    entry_point, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
-    Response, StdResult, Uint128, WasmQuery,
+    entry_point, from_slice, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
+    QueryRequest, Response, StdResult, Uint128, WasmQuery,
 };
 use cw2::set_contract_version;
 
@@ -153,8 +154,14 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     // Documentation on performing updates during migration
     // https://docs.cosmwasm.com/docs/1.0/smart-contracts/migration/#using-migrate-to-update-otherwise-immutable-state
-    let state = STATE.load(deps.storage)?;
     const STATE_KEY: &[u8] = b"state";
+    let data = deps.storage.get(STATE_KEY).ok_or_else(|| {
+        ContractError::Std(StdError::NotFound {
+            kind: "State".to_string(),
+        })
+    })?;
+    let state: OldState = from_slice(&data)?;
+
     deps.storage.set(
         STATE_KEY,
         &to_vec(&State {
