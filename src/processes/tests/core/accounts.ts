@@ -155,6 +155,38 @@ export async function testCharityCanUpdateStrategies(
 //----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
+export async function testQueryAccountsState(
+  terra: LocalTerra | LCDClient,
+  endowmentContract: string
+): Promise<void> {
+  process.stdout.write("Test - Query Accounts State");
+  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+    state: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryAccountsTransactions(
+  terra: LocalTerra | LCDClient,
+  endowmentContract: string,
+  sender: string | undefined,
+  recipient: string | undefined,
+  denom: string | undefined
+): Promise<void> {
+  process.stdout.write("Test - Query Accounts Transactions");
+  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+    transactions: {
+      sender,
+      recipient,
+      denom,
+    },
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
 
 export async function testQueryAccountsBalance(
   terra: LocalTerra | LCDClient,

@@ -9,6 +9,8 @@ import {
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
   testQueryAccountsProfile,
+  testQueryAccountsState,
+  testQueryAccountsTransactions,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -285,11 +287,19 @@ export async function testExecute(
   // await testQueryRegistrarApprovedVaultRateList(terra, registrar);
   // await testQueryRegistrarVaultList(terra, registrar);
   // await testQueryRegistrarVault(terra, registrar, anchorVault1);
-  // await testQueryAccountsBalance(terra, endowmentContract1);
   // await testQueryVaultConfig(terra, anchorVault1);
-  // await testQueryAccountsConfig(terra, endowmentContract1);
-  // await testQueryAccountsEndowment(terra, endowmentContract1);
-  // await testQueryAccountsProfile(terra, endowmentContract1);
+  await testQueryAccountsBalance(terra, endowmentContract4);
+  await testQueryAccountsConfig(terra, endowmentContract4);
+  await testQueryAccountsEndowment(terra, endowmentContract4);
+  await testQueryAccountsProfile(terra, endowmentContract4);
+  await testQueryAccountsState(terra, endowmentContract4);
+  await testQueryAccountsTransactions(
+    terra,
+    endowmentContract4,
+    undefined,
+    undefined,
+    undefined
+  );
   // await testQueryIndexFundConfig(terra, indexFund);
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
