@@ -152,8 +152,8 @@ pub enum QueryMsg {
     GetProfile {},
     // Get the transaction records
     GetTxRecords {
-        sender: Option<Addr>,
-        recipient: Option<Addr>,
+        sender: Option<String>,
+        recipient: Option<String>,
         denom: Option<String>,
     },
 }
