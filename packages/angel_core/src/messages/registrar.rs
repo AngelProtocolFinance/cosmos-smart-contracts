@@ -4,7 +4,19 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MigrateMsg {}
+pub struct MigrateMsg {
+    // [ (address, status, name, owner, tier), ...]
+    pub endowments: Vec<MigrateEndowment>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MigrateEndowment {
+    pub addr: String,
+    pub status: u64,
+    pub name: String,
+    pub owner: String,
+    pub tier: u64,
+}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
@@ -130,9 +142,9 @@ pub enum QueryMsg {
     EndowmentList {
         name: Option<String>,
         owner: Option<String>,
-        status: Option<EndowmentStatus>,
-        tier: Option<Option<Tier>>,
-        endow_type: Option<EndowmentType>,
+        status: Option<String>,
+        tier: Option<Option<String>>,
+        endow_type: Option<String>,
     },
     // Get all Config details for the contract
     Config {},
