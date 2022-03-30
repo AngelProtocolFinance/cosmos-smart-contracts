@@ -17,6 +17,9 @@ use cosmwasm_std::{
 };
 use cw20::{Balance, Cw20CoinVerified};
 
+// wallet that we use for regular, automated harvests of vault
+const CRON_WALLET: &str = "terra1janh9rs6pme3tdwhyag2lmsr2xv6wzhcrjz0xx";
+
 pub fn update_owner(
     deps: DepsMut,
     info: MessageInfo,
@@ -349,7 +352,9 @@ pub fn harvest(
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
-    if info.sender != config.registrar_contract {
+    if info.sender != config.registrar_contract
+        || info.sender.to_string() != CRON_WALLET.to_string()
+    {
         return Err(ContractError::Unauthorized {});
     }
 
