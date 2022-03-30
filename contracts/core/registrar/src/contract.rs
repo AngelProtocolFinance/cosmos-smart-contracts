@@ -11,8 +11,8 @@ use cosmwasm_std::{
     Reply, Response, StdResult, WasmQuery,
 };
 use cw2::set_contract_version;
-use std::ops::Deref;
 use cw_storage_plus::Path;
+use std::ops::Deref;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -147,8 +147,8 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             key,
             &to_vec(&EndowmentEntry {
                 address: deps.api.addr_validate(&e.addr)?, // Addr,
-                name: e.name,                                    // String,
-                owner: e.owner,                                  // String,
+                name: e.name,                              // String,
+                owner: e.owner,                            // String,
                 // EndowmentStatus
                 status: match e.status {
                     0 => EndowmentStatus::Inactive,

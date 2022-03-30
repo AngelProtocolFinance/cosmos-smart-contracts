@@ -142,9 +142,9 @@ pub enum QueryMsg {
     EndowmentList {
         name: Option<String>,
         owner: Option<String>,
-        status: Option<EndowmentStatus>,
-        tier: Option<Option<Tier>>,
-        endow_type: Option<EndowmentType>,
+        status: Option<String>,
+        tier: Option<Option<String>>,
+        endow_type: Option<String>,
     },
     // Get all Config details for the contract
     Config {},
