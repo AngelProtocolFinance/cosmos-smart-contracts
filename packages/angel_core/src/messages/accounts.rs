@@ -1,6 +1,6 @@
 use crate::messages::vault::AccountTransferMsg;
 use crate::structs::FundingSource;
-use cosmwasm_std::Decimal;
+use cosmwasm_std::{Addr, Decimal};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -150,4 +150,10 @@ pub enum QueryMsg {
     Endowment {},
     // Get the profile info
     GetProfile {},
+    // Get the transaction records
+    GetTxRecords {
+        sender: Option<String>,
+        recipient: Option<String>,
+        denom: Option<String>,
+    },
 }

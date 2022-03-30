@@ -1,5 +1,6 @@
 use angel_core::structs::{
     AcceptedTokens, BalanceInfo, RebalanceDetails, SocialMedialUrls, StrategyComponent,
+    TransactionRecord,
 };
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
@@ -53,6 +54,7 @@ pub struct State {
     pub balances: BalanceInfo,
     pub closing_endowment: bool,
     pub closing_beneficiary: Option<String>,
+    pub transactions: Vec<TransactionRecord>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -99,6 +101,17 @@ impl Default for Profile {
             charity_navigator_rating: None,
         }
     }
+}
+
+// This is just for the purpose of "migrate" contract.
+// After the contract is migrated into "RC-v1.6", this should be cleaned.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct OldState {
+    pub donations_received: Uint128,
+    pub balances: BalanceInfo,
+    pub closing_endowment: bool,
+    pub closing_beneficiary: Option<String>,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
