@@ -37,7 +37,7 @@ export async function migrateCore(
   // await migrateRegistrar(terra, apTeam, registrar);
   // await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
   // await migrateCw3Multisig(terra, apTeam, cw3ApTeam);
-  // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
+  await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
   // await migrateIndexFund(terra, apTeam, indexFund);
   // await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
   // await migrateVaults(terra, apTeam, vaultContracts);
@@ -60,7 +60,14 @@ async function migrateRegistrar(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate Registrar contract");
-  const result1 = await migrateContract(terra, apTeam, apTeam, registrar, codeId, {});
+  const result1 = await migrateContract(terra, apTeam, apTeam, registrar, codeId, {
+    endowments: [
+      { addr: "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v", status: 1, name: "Testnet Endowment #1", owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", tier: 3 },
+      { addr: "terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9", status: 2, name: "Testnet Endowment #2", owner: "terra1m0exj9cz0vmde479a28l4devc34fk53mjf4j2g", tier: 1 },
+      { addr: "terra1vyw5r7n02epkpk2tm2lzt67fyv28qzalwzgzuu", status: 1, name: "Testnet Endowment #3", owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp", tier: 2 },
+      { addr: "terra1jvtf3ccpkr3vymv98vk9nz7wvwmykgv8yk9l3w", status: 0, name: "Testnet Endowment #4", owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp", tier: 3 },
+    ]
+  });
   console.log(chalk.green(" Done!"));
 }
 
@@ -219,15 +226,20 @@ async function migrateExistingAccounts(
     path.resolve(__dirname, `${wasm_path.core}/accounts.wasm`)
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+  // codeId for v1.6 : 58857
 
-  // Update registrar accounts code ID and migrate all accounts contracts
-  process.stdout.write("Update Registrar's Account Code ID stored in configs");
-  const result0 = await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_config: { accounts_code_id: codeId },
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
+  // NOTE: This step is temporarily commented. It should be done through
+  // cw3ApTeam contract to update the "accounts_code_id" as 58857 in "registrar"
+  /* ---------          ------------- */
+  // // Update registrar accounts code ID and migrate all accounts contracts
+  // process.stdout.write("Update Registrar's Account Code ID stored in configs");
+  // const result0 = await sendTransaction(terra, apTeam, [
+  //   new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+  //     update_config: { accounts_code_id: codeId },
+  //   }),
+  // ]);
+  // console.log(chalk.green(" Done!"));
+  /* ---------          -------------- */
 
   process.stdout.write("Migrating existing Endowment Accounts contracts\n");
   let prom = Promise.resolve();
@@ -236,7 +248,10 @@ async function migrateExistingAccounts(
     () =>
       new Promise(async (resolve, reject) => {
         try {
-          await migrateContracts(terra, apTeam, apTeam, endowmentContracts, codeId, {});
+          await migrateContracts(terra, apTeam, apTeam, endowmentContracts, codeId, {
+            name: "Test Endowment",
+            overview: "This is test endowment",
+          });
           resolve();
         } catch (e) {
           reject(e);
