@@ -353,7 +353,7 @@ pub fn harvest(
     let mut config = config::read(deps.storage)?;
 
     if info.sender != config.registrar_contract
-        || info.sender.to_string() != CRON_WALLET.to_string()
+        && info.sender.to_string() != CRON_WALLET.to_string()
     {
         return Err(ContractError::Unauthorized {});
     }
