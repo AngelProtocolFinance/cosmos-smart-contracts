@@ -17,6 +17,9 @@ use cosmwasm_std::{
 };
 use cw20::{Balance, Cw20CoinVerified};
 
+// wallet that we use for regular, automated harvests of vault
+const CRON_WALLET: &str = "terra1janh9rs6pme3tdwhyag2lmsr2xv6wzhcrjz0xx";
+
 pub fn update_owner(
     deps: DepsMut,
     info: MessageInfo,
@@ -367,13 +370,22 @@ pub fn harvest(
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
-    let harvest_blocks = Uint128::from((env.block.height - config.last_harvest) as u128);
-    config.last_harvest = env.block.height;
-    config::store(deps.storage, &config)?;
-
-    if info.sender != config.registrar_contract {
+    if info.sender != config.registrar_contract
+        && info.sender.to_string() != CRON_WALLET.to_string()
+    {
         return Err(ContractError::Unauthorized {});
     }
+
+    let curr_epoch = anchor::epoch_state(deps.as_ref(), &config.moneymarket)?;
+
+    let harvest_earn_rate = Decimal::from(
+        (curr_epoch.exchange_rate - config.last_harvest_fx.unwrap_or(curr_epoch.exchange_rate))
+            / config.last_harvest_fx.unwrap_or(curr_epoch.exchange_rate),
+    );
+
+    config.last_harvest = env.block.height;
+    config.last_harvest_fx = Some(curr_epoch.exchange_rate);
+    config::store(deps.storage, &config)?;
 
     // pull registrar SC config to fetch the Treasury Tax Rate
     let registrar_config: RegistrarConfigResponse =
@@ -403,18 +415,14 @@ pub fn harvest(
         let liquid_taxes_owed = balances
             .liquid_balance
             .get_token_amount(env.contract.address.clone())
-            .checked_mul(harvest_blocks)
-            .unwrap()
-            * config.tax_per_block
+            * harvest_earn_rate
             * registrar_config.tax_rate;
 
         // calculate harvest taxes owed on locked balance earnings
         let locked_taxes_owed = balances
             .locked_balance
             .get_token_amount(env.contract.address.clone())
-            .checked_mul(harvest_blocks)
-            .unwrap()
-            * config.tax_per_block
+            * harvest_earn_rate
             * registrar_config.tax_rate;
 
         // calulate amount of earnings to be harvested from locked >> liquid balance
@@ -422,9 +430,7 @@ pub fn harvest(
         let transfer_amt = balances
             .locked_balance
             .get_token_amount(env.contract.address.clone())
-            .checked_mul(harvest_blocks)
-            .unwrap()
-            * config.tax_per_block
+            * harvest_earn_rate
             * config.harvest_to_liquid
             - locked_taxes_owed;
 
