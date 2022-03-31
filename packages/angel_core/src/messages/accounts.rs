@@ -1,6 +1,6 @@
 use crate::messages::vault::AccountTransferMsg;
 use crate::structs::FundingSource;
-use cosmwasm_std::{Addr, Decimal};
+use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -118,6 +118,7 @@ pub struct WithdrawMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateProfileMsg {
+    pub name: Option<String>,
     pub overview: Option<String>,
     pub un_sdg: Option<u64>,
     pub tier: Option<u64>,
@@ -134,6 +135,7 @@ pub struct UpdateProfileMsg {
     pub average_annual_budget: Option<String>,
     pub annual_revenue: Option<String>,
     pub charity_navigator_rating: Option<String>,
+    pub endow_type: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

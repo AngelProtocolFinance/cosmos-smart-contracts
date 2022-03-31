@@ -1,6 +1,6 @@
 use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, RebalanceDetails, SocialMedialUrls, StrategyComponent,
-    TransactionRecord,
+    AcceptedTokens, BalanceInfo, EndowmentType, RebalanceDetails, SocialMedialUrls,
+    StrategyComponent, TransactionRecord,
 };
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
@@ -75,6 +75,7 @@ pub struct Profile {
     pub average_annual_budget: Option<String>,
     pub annual_revenue: Option<String>,
     pub charity_navigator_rating: Option<String>,
+    pub endow_type: EndowmentType,
 }
 
 impl Default for Profile {
@@ -99,6 +100,7 @@ impl Default for Profile {
             average_annual_budget: None,
             annual_revenue: None,
             charity_navigator_rating: None,
+            endow_type: EndowmentType::Charity,
         }
     }
 }

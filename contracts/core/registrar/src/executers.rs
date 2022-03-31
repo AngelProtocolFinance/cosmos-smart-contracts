@@ -1,13 +1,8 @@
-use crate::state::{
-    read_registry_entries, read_vaults, registry_read, registry_store, vault_read, vault_store,
-    CONFIG,
-};
+use crate::state::{read_vaults, registry_read, registry_store, vault_read, vault_store, CONFIG};
 use angel_core::errors::core::ContractError;
-use angel_core::messages::accounts::QueryMsg as EndowmentQueryMsg;
 use angel_core::messages::registrar::*;
-use angel_core::responses::accounts::ProfileResponse;
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, YieldVault};
+use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
     to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response,
@@ -232,7 +227,7 @@ pub fn update_config(
 pub fn create_endowment(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: CreateEndowmentMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -355,11 +350,23 @@ pub fn new_accounts_reply(
     match msg {
         ContractResult::Ok(subcall) => {
             let mut endowment_addr = String::from("");
+            let mut endowment_name = String::from("");
+            let mut endowment_owner = String::from("");
+            let mut endowment_type = String::from("");
             for event in subcall.events {
                 if event.ty == *"instantiate_contract" {
                     for attrb in event.attributes {
                         if attrb.key == "contract_address" {
-                            endowment_addr = attrb.value;
+                            endowment_addr = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_name" {
+                            endowment_name = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_owner" {
+                            endowment_owner = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_type" {
+                            endowment_type = attrb.value.clone();
                         }
                     }
                 }
@@ -371,7 +378,15 @@ pub fn new_accounts_reply(
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,
+                    name: endowment_name,
+                    owner: endowment_owner,
                     status: EndowmentStatus::Inactive,
+                    tier: None,
+                    endow_type: match endowment_type.as_str() {
+                        "charity" => EndowmentType::Charity,
+                        "normal" => EndowmentType::Normal,
+                        _ => unimplemented!(),
+                    },
                 },
             )?;
             Ok(Response::default())
@@ -429,4 +444,42 @@ fn harvest_msg(account: String, collector_address: String, collector_share: Deci
         gas_limit: None,
         reply_on: ReplyOn::Never,
     }
+}
+
+pub fn update_endowment_type(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateEndowmentTypeMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let endow_addr = deps.api.addr_validate(&msg.endowment_addr)?;
+
+    if info.sender.ne(&config.owner) && info.sender.ne(&endow_addr) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // look up the endowment in the Registry. Will fail if doesn't exist
+    let endowment_addr = msg.endowment_addr.as_bytes();
+    let mut endowment_entry = registry_read(deps.storage, endowment_addr)?;
+
+    if let Some(name) = msg.name {
+        endowment_entry.name = name;
+    }
+
+    if let Some(owner) = msg.owner {
+        endowment_entry.owner = owner;
+    }
+
+    if let Some(tier) = msg.tier {
+        endowment_entry.tier = tier;
+    }
+
+    if let Some(endow_type) = msg.endow_type {
+        endowment_entry.endow_type = endow_type;
+    }
+
+    registry_store(deps.storage, endowment_addr, &endowment_entry)?;
+
+    Ok(Response::new().add_attribute("action", "update_endowment_entry"))
 }

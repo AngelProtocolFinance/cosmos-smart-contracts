@@ -5,15 +5,17 @@ use angel_core::messages::accounts::*;
 use angel_core::messages::index_fund::DepositMsg as IndexFundDepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg as IndexFundExecuter;
 use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
-use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
+use angel_core::messages::registrar::{
+    ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentTypeMsg,
+};
 use angel_core::messages::vault::AccountTransferMsg;
 use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, FundingSource, SocialMedialUrls, SplitDetails, StrategyComponent,
-    TransactionRecord,
+    AcceptedTokens, EndowmentType, FundingSource, SocialMedialUrls, SplitDetails,
+    StrategyComponent, Tier, TransactionRecord,
 };
 use angel_core::utils::{
     check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
@@ -635,7 +637,7 @@ pub fn close_endowment(
 
 pub fn update_profile(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: UpdateProfileMsg,
 ) -> Result<Response, ContractError> {
@@ -647,6 +649,18 @@ pub fn update_profile(
         return Err(ContractError::Unauthorized {});
     }
 
+    let tier = if info.sender == config.owner {
+        match msg.tier {
+            Some(1) => Some(Some(Tier::Level1)),
+            Some(2) => Some(Some(Tier::Level2)),
+            Some(3) => Some(Some(Tier::Level3)),
+            None => Some(None),
+            _ => return Err(ContractError::InvalidInputs {}),
+        }
+    } else {
+        None
+    };
+
     // Update the Endowment profile
     let mut profile = PROFILE.load(deps.storage)?;
 
@@ -654,10 +668,20 @@ pub fn update_profile(
     if info.sender == config.owner {
         profile.un_sdg = msg.un_sdg;
         profile.tier = msg.tier;
+        if let Some(endow_type) = msg.endow_type {
+            profile.endow_type = match endow_type.as_str() {
+                "charity" => EndowmentType::Charity,
+                "normal" => EndowmentType::Normal,
+                _ => return Err(ContractError::InvalidInputs {}),
+            };
+        }
     }
 
     // Only endowment.owner can update all other fields
     if info.sender == endowment.owner {
+        if let Some(name) = msg.name.clone() {
+            profile.name = name;
+        }
         if let Some(overview) = msg.overview {
             profile.overview = overview;
         }
@@ -682,7 +706,22 @@ pub fn update_profile(
 
     PROFILE.save(deps.storage, &profile)?;
 
+    let sub_msgs: Vec<SubMsg> = vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.registrar_contract.to_string(),
+        msg: to_binary(&RegistrarExecuter::UpdateEndowmentType(
+            UpdateEndowmentTypeMsg {
+                endowment_addr: env.contract.address.to_string(),
+                name: msg.name.and_then(|v| Some(v)),
+                owner: None,
+                tier,
+                endow_type: Some(profile.endow_type),
+            },
+        ))?,
+        funds: vec![],
+    }))];
+
     Ok(Response::new()
+        .add_submessages(sub_msgs)
         .add_attribute("action", "update_profile")
         .add_attribute("sender", info.sender.to_string()))
 }

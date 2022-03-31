@@ -6,13 +6,12 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
-use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, RebalanceDetails, SocialMedialUrls, StrategyComponent,
-};
+use angel_core::structs::EndowmentType;
+use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::StdError;
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdResult, Uint128, WasmQuery,
+    attr, entry_point, from_slice, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env,
+    MessageInfo, QueryRequest, Response, StdResult, Uint128, WasmQuery,
 };
 use cw2::set_contract_version;
 
@@ -24,7 +23,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -44,7 +43,7 @@ pub fn instantiate(
 
     let registrar_config: ConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: msg.registrar_contract,
+            contract_addr: msg.registrar_contract.clone(),
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
@@ -82,12 +81,23 @@ pub fn instantiate(
     )?;
 
     let mut profile = Profile::default();
-    profile.name = msg.name;
+    profile.name = msg.name.clone();
     profile.overview = msg.description;
+
+    if info
+        .sender
+        .ne(&deps.api.addr_validate(msg.registrar_contract.as_str())?)
+    {
+        profile.endow_type = EndowmentType::Normal;
+    }
 
     PROFILE.save(deps.storage, &profile)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attributes(vec![
+        attr("endow_name", msg.name),
+        attr("endow_owner", msg.owner),
+        attr("endow_type", profile.endow_type.to_string()),
+    ]))
 }
 
 #[entry_point]

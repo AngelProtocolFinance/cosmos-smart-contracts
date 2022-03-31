@@ -115,7 +115,13 @@ pub fn deposit_stable(
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::EndowmentList {})?,
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {
+                name: None,
+                owner: None,
+                status: None,
+                tier: None,
+                endow_type: None,
+            })?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments.iter().position(|p| p.address == info.sender);
@@ -189,7 +195,13 @@ pub fn redeem_stable(
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::EndowmentList {})?,
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {
+                name: None,
+                owner: None,
+                status: None,
+                tier: None,
+                endow_type: None,
+            })?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments
@@ -278,7 +290,13 @@ pub fn withdraw_stable(
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::EndowmentList {})?,
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {
+                name: None,
+                owner: None,
+                status: None,
+                tier: None,
+                endow_type: None,
+            })?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments.iter().position(|p| p.address == info.sender);
