@@ -81,6 +81,29 @@ export async function testUpdatingRegistrarConfigs(
 // moving money from their Locked to Liquid & taking a small tax of DP Tokens as well.
 //
 //----------------------------------------------------------------------------------------
+export async function testCronWalletCanDirectlyHarvestVault(
+  terra: LocalTerra | LCDClient,
+  cron: Wallet,
+  vault: string,
+  collector_address: string,
+  collector_share: string
+): Promise<void> {
+  process.stdout.write(
+    "Test - Cron wallet triggers harvest of single Vault (Locked to Liquid Account)"
+  );
+  await expect(
+    sendTransaction(terra, cron, [
+      new MsgExecuteContract(cron.key.accAddress, vault, {
+        harvest: {
+          collector_address,
+          collector_share,
+        },
+      }),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
 export async function testAngelTeamCanTriggerVaultsHarvest(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,

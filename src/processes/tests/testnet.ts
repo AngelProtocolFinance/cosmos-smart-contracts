@@ -37,6 +37,7 @@ import {
 } from "./core/multisig";
 import {
   testApproveEndowments,
+  testCronWalletCanDirectlyHarvestVault,
   testAngelTeamCanTriggerVaultsHarvest,
   testClosingEndpoint,
   testMigrateAllAccounts,
