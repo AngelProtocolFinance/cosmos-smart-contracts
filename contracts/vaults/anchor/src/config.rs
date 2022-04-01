@@ -1,9 +1,12 @@
 use angel_core::structs::BalanceInfo;
 use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
+use cosmwasm_storage::{ReadonlySingleton, Singleton};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
+pub static CONFIG_KEY: &[u8] = b"config";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
@@ -19,14 +22,12 @@ pub struct Config {
     pub harvest_to_liquid: Decimal,
 }
 
-pub const CONFIG: Item<Config> = Item::new("config");
-
 pub fn store(storage: &mut dyn Storage, data: &Config) -> StdResult<()> {
-    CONFIG.save(storage, data)
+    Singleton::new(storage, CONFIG_KEY).save(data)
 }
 
 pub fn read(storage: &dyn Storage) -> StdResult<Config> {
-    CONFIG.load(storage)
+    ReadonlySingleton::new(storage, CONFIG_KEY).load()
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
