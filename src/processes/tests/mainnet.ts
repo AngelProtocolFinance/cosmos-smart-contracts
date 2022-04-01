@@ -161,11 +161,19 @@ export async function testExecute(
   lbpLpTokenContract: string
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // await testAngelTeamCanTriggerVaultsHarvest(
+  //   terra,
+  //   apTeam,
+  //   charity1,
+  //   registrar,
+  //   haloCollector,
+  //   "0.5"
+  // );
   // await testSingleDonationAmountToManyEndowments(
   //   terra,
   //   apTeam,
   //   [
-  //     "terra1q4sjzkztrpfujqu5vzquhvhvqy872d0drcfuq4", // Legaler Aid
+  //     "terra1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r", // Coalition for Engaged Education
   //   ],
   //   "1000000000"
   // );
@@ -181,19 +189,18 @@ export async function testExecute(
   //   apTeam,
   //   indexFund,
   //   19,
-  //   ["terra15ej9284yj6v4rm07prxmcrmlhz70p20aup06zh"],
+  //   ["terra1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r"],
   //   []
   // );
   // await testCreateIndexFund(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   19,
-  //   "MVP Rotation #12",
+  //   "MVP Rotation #13",
   //   "Fund collection for MVP",
   //   true,
   //   [
-  //     "terra1hccjcxm0vdz8d2n9y8lnrpx4ka4elt4gwfm522", // Threshold
+  //     "terra1783y2z9pnwaf4letldrm3l9cgaq5ns6uhx0c23", // Sustainable Surf
   //   ]
   // );
   // await testUpdateAngelAllianceMembers(
@@ -222,7 +229,7 @@ export async function testExecute(
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
   // await testQueryIndexFundFundsList(terra, indexFund);
-  // await testQueryIndexFundFundDetails(terra, indexFund, 18);
+  // await testQueryIndexFundFundDetails(terra, indexFund, 20);
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);

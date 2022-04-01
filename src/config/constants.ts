@@ -245,6 +245,14 @@ export const mainnet = {
       "terra1sgnn3pwfeztl4z7a4c923pxwn04gyq6cfas45r", // NOT ACTIVE ENDOWMENT (creation script mishap)
       "terra1txhw0wp9fhcyrja9a99w4lmpz2wfpu8hnch2kn", // NOT ACTIVE ENDOWMENT (creation script mishap)
       "terra1y3z0s77t3amjjze7wajrt4xms2kfamx4ae9tj9", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r", // Coalition for Engaged Education
+      "terra1783y2z9pnwaf4letldrm3l9cgaq5ns6uhx0c23", // Sustainable Surf
+      "terra1w6ug5mr9ql0n0l59kcpjwk0u3rtlwvy93wtwkw", // Hoffnungskinder e.V.
+      "terra1x53a2ha9rkwe67pwuq8hf268akxsuglmaczsxl", // One Flower Project
+      "terra1svzvrq4x0rpe0xrug385pgfn0qx6ryjt3srx4u", // Jeremiah's Voice
+      "terra1p045cpuk44zthetwjssmjy0xgjg7304en9m8pu", // Gomde UK
+      "terra1a73f4dandsx8crtnm93psa5d8la8e379tvtxzl", // SEED Madagascar
+      "terra185tpavqdd2qtcl5gl5fuxzkqsnxl946864fcjd", // Indian Dance Educators Association
     ],
   },
   members: [
