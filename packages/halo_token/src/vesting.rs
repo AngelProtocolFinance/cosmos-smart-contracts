@@ -11,7 +11,6 @@ pub struct MigrateMsg {}
 pub struct InstantiateMsg {
     pub owner: String,
     pub halo_token: String, // halo token address
-    pub genesis_time: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -20,7 +19,6 @@ pub enum ExecuteMsg {
     UpdateConfig {
         owner: Option<String>,
         halo_token: Option<String>,
-        genesis_time: Option<u64>,
     },
     RegisterVestingAccounts {
         vesting_accounts: Vec<VestingAccount>,

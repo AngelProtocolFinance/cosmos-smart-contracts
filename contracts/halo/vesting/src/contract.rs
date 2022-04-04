@@ -42,11 +42,9 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                 return Err(StdError::generic_err("unauthorized"));
             }
             match msg {
-                ExecuteMsg::UpdateConfig {
-                    owner,
-                    halo_token,
-                    genesis_time,
-                } => update_config(deps, info, owner, halo_token, genesis_time),
+                ExecuteMsg::UpdateConfig { owner, halo_token } => {
+                    update_config(deps, info, owner, halo_token)
+                }
                 ExecuteMsg::RegisterVestingAccounts { vesting_accounts } => {
                     register_vesting_accounts(deps, info, vesting_accounts)
                 }
@@ -65,7 +63,6 @@ pub fn update_config(
     info: MessageInfo,
     owner: Option<String>,
     halo_token: Option<String>,
-    genesis_time: Option<u64>,
 ) -> StdResult<Response> {
     let mut config = read_config(deps.storage)?;
     if info.sender.ne(&config.owner) {
@@ -75,13 +72,8 @@ pub fn update_config(
     if let Some(owner) = owner {
         config.owner = deps.api.addr_validate(&owner)?;
     }
-
     if let Some(halo_token) = halo_token {
         config.halo_token = deps.api.addr_validate(&halo_token)?;
-    }
-
-    if let Some(genesis_time) = genesis_time {
-        config.genesis_time = genesis_time;
     }
 
     store_config(deps.storage, &config)?;
@@ -93,7 +85,7 @@ fn assert_vesting_schedules(vesting_schedules: &[(u64, u64, Uint128)]) -> StdRes
     for vesting_schedule in vesting_schedules.iter() {
         if vesting_schedule.0 >= vesting_schedule.1 {
             return Err(StdError::generic_err(
-                "end_time must bigger than start_time",
+                "end_time must greater than start_time",
             ));
         }
     }
@@ -300,7 +292,7 @@ fn test_assert_vesting_schedules() {
     ]);
     match res {
         Err(StdError::GenericErr { msg, .. }) => {
-            assert_eq!(msg, "end_time must bigger than start_time")
+            assert_eq!(msg, "end_time must greater than start_time")
         }
         _ => panic!("DO NOT ENTER HERE"),
     }
