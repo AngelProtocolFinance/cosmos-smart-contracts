@@ -235,7 +235,7 @@ export async function testQueryIndexFundTcaList(
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund TcaList");
   const result: any = await terra.wasm.contractQuery(indexFund, {
-    tca_list: {},
+    alliance_members: {},
   });
 
   console.log(result);

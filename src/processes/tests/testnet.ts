@@ -113,7 +113,8 @@ import {
 import {
   testVestingUpdateConfig,
   testVestingRegisterVestingAccounts,
-  // testVestingUpdateVestingAccount,
+  testAddSchedulesToVestingAccount,
+  testUserClaimsVestedTokens,
   testQueryVestingConfig,
   testQueryVestingAccount,
   testQueryVestingAccounts,
@@ -288,18 +289,18 @@ export async function testExecute(
   // await testQueryRegistrarVaultList(terra, registrar);
   // await testQueryRegistrarVault(terra, registrar, anchorVault1);
   // await testQueryVaultConfig(terra, anchorVault1);
-  await testQueryAccountsBalance(terra, endowmentContract4);
-  await testQueryAccountsConfig(terra, endowmentContract4);
-  await testQueryAccountsEndowment(terra, endowmentContract4);
-  await testQueryAccountsProfile(terra, endowmentContract4);
-  await testQueryAccountsState(terra, endowmentContract4);
-  await testQueryAccountsTransactions(
-    terra,
-    endowmentContract4,
-    undefined,
-    undefined,
-    undefined
-  );
+  // await testQueryAccountsBalance(terra, endowmentContract4);
+  // await testQueryAccountsConfig(terra, endowmentContract4);
+  // await testQueryAccountsEndowment(terra, endowmentContract4);
+  // await testQueryAccountsProfile(terra, endowmentContract4);
+  // await testQueryAccountsState(terra, endowmentContract4);
+  // await testQueryAccountsTransactions(
+  //   terra,
+  //   endowmentContract4,
+  //   undefined,
+  //   undefined,
+  //   undefined
+  // );
   // await testQueryIndexFundConfig(terra, indexFund);
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
@@ -343,24 +344,26 @@ export async function testExecute(
   // await testDistributorRemove(terra, apTeam, haloGov, haloDistributor, apTeam2.key.accAddress);
   // await testQueryDistributorConfig(terra, haloDistributor);
 
-  // Test query for HALO vesting
-  // await testVestingUpdateConfig(terra, apTeam, haloVesting, apTeam2.key.accAddress, undefined, undefined);
+  // Tests for HALO vesting
+  // await testVestingUpdateConfig(terra, apTeam, haloVesting, undefined, undefined, undefined);
   // await testVestingRegisterVestingAccounts(
   //   terra,
   //   apTeam,
   //   haloVesting,
   //   [
-  //     {address: "addr0", schedules: [[100, 101, "100"], [100, 110, "100"], [100, 200, "100"]]},
-  //     {address: "addr1", schedules: [[100, 110, "100"]]},
-  //     {address: "addr2", schedules: [[100, 200, "100"]]},
+  //     {address: apTeam3.key.accAddress, schedules: [[100, 101, "100"], [100, 110, "100"], [100, 200, "100"]]},
+  //     {address: apTeam2.key.accAddress, schedules: [[100, 110, "100"]]},
   //   ]
   // );
+  // let new_schedules = [[1000, 2000, "100"]];
   // await testVestingUpdateVestingAccount(
   //   terra,
   //   apTeam,
   //   haloVesting,
-  //   {address: "addr1", schedules: [[100, 110, "200"]]}
+  //   apTeam3.key.accAddress,
+  //   new_schedules,
   // );
+  // await testUserClaimsVestedTokens(terra, apTeam3, haloVesting);
   // await testQueryVestingConfig(terra, haloVesting);
   // await testQueryVestingAccount(terra, haloVesting, "addr0");
   // await testQueryVestingAccounts(terra, haloVesting, undefined, undefined);

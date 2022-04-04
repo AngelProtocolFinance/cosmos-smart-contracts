@@ -79,12 +79,12 @@ export const testnet = {
   halo: {
     airdrop_contract: "terra15n2j80ufyrup8ply5nhjwwerfjpz7cx3m2hcqq",
     collector_contract: "terra12h9ssarf78t3sw3zu5xyr4v3cxjkmqmnxujlzl",
-    community_contract: "",
+    community_contract: "terra19hhk4wu5yrj90qwh6lt0zkpe65h7dlvlr48ujt",
     distributor_contract: "terra1vuktqwu0n5df0sfswzwwh4wpgznu4d2urflvlk",
     gov_contract: "terra16tw444h6qtzxr4kf2p276qt0u6w3ggtc20xgly",
     gov_hodler_contract: "terra1mcjrurlzmne3hlqvjypyacz9l8xpf4r6zq9sa6",
     staking_contract: "",
-    vesting_contract: "",
+    vesting_contract: "terra1h30cngl0hruj46dzh95wepa2n74hzenlvlq6cx",
   },
 } as const;
 
