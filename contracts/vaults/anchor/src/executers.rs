@@ -300,6 +300,18 @@ pub fn withdraw_stable(
     let mut investment = BALANCES
         .load(deps.storage, &info.sender)
         .unwrap_or_else(|_| BalanceInfo::default());
+
+    // check the account has enough balance to cover the withdraw
+    let locked_balance = investment
+        .locked_balance
+        .get_token_amount(env.contract.address.clone());
+    let liquid_balance = investment
+        .liquid_balance
+        .get_token_amount(env.contract.address.clone());
+    if locked_balance < msg.locked || liquid_balance < msg.liquid {
+        return Err(ContractError::CannotExceedCap {});
+    }
+
     // update investment holdings balances
     investment
         .locked_balance
