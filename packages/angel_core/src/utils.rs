@@ -224,8 +224,9 @@ pub fn withdraw_from_vaults(
     registrar_contract: String,
     beneficiary: &Addr,
     sources: Vec<FundingSource>,
-) -> Result<Vec<SubMsg>, ContractError> {
+) -> Result<(Vec<SubMsg>, Uint128), ContractError> {
     let mut withdraw_messages = vec![];
+    let mut tx_amounts = Uint128::zero();
 
     // redeem amounts from sources listed
     for source in sources.iter() {
@@ -248,6 +249,9 @@ pub fn withdraw_from_vaults(
                 liquid: source.liquid,
             };
 
+            tx_amounts += source.locked;
+            tx_amounts += source.liquid;
+
             // create a withdraw message for X Vault, noting amounts for Locked / Liquid
             withdraw_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: yield_vault.address.to_string(),
@@ -259,7 +263,7 @@ pub fn withdraw_from_vaults(
             })));
         }
     }
-    Ok(withdraw_messages)
+    Ok((withdraw_messages, tx_amounts))
 }
 
 pub fn deposit_to_vaults(

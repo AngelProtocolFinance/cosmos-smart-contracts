@@ -15,7 +15,7 @@ pub struct Config {
 pub const CONFIG: Item<Config> = Item::new("config");
 
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
-   CONFIG.save(storage, config)
+    CONFIG.save(storage, config)
 }
 
 pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {

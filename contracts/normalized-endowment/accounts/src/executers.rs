@@ -1,3 +1,4 @@
+use crate::state::PROFILE;
 use crate::state::{CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
@@ -6,15 +7,18 @@ use angel_core::messages::cw3_multisig::Threshold;
 use angel_core::messages::index_fund::DepositMsg as IndexFundDepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg as IndexFundExecuter;
 use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
-use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
-use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
+use angel_core::messages::registrar::{
+    ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentTypeMsg,
+};
 use angel_core::messages::vault::AccountTransferMsg;
 use angel_core::responses::index_fund::FundListResponse;
-use angel_core::responses::registrar::ConfigResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
-use angel_core::structs::{AcceptedTokens, FundingSource, SplitDetails, StrategyComponent};
+use angel_core::structs::{
+    AcceptedTokens, EndowmentType, FundingSource, SocialMedialUrls, SplitDetails,
+    StrategyComponent, Tier, TransactionRecord,
+};
 use angel_core::utils::{
     check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
     withdraw_from_vaults,
@@ -49,10 +53,10 @@ pub fn new_cw4_group_reply(
             // Register the new Endowment on success Reply
             let _addr = deps.api.addr_validate(&group_addr)?;
 
-            let registrar_config: ConfigResponse =
+            let registrar_config: RegistrarConfigResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: config.registrar_contract.to_string(),
-                    msg: to_binary(&RegistrarConfig {})?,
+                    msg: to_binary(&RegistrarQuerier::Config {})?,
                 }))?;
 
             // Fire the creation of new multisig linked to new group
@@ -583,7 +587,7 @@ pub fn vault_receipt(
 
 pub fn deposit(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     sender_addr: Addr,
     msg: DepositMsg,
@@ -656,6 +660,15 @@ pub fn deposit(
     let mut state = STATE.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
     state.donations_received += deposit_amount.amount;
+
+    let tx_record = TransactionRecord {
+        block: env.block.height,
+        sender: sender_addr,
+        recipient: None,
+        amount: deposit_amount.amount,
+        denom: deposit_amount.denom,
+    };
+    state.transactions.push(tx_record);
     STATE.save(deps.storage, &state)?;
 
     // build deposit messages for each of the sources/amounts
@@ -707,12 +720,24 @@ pub fn withdraw(
     }
 
     // build redeem messages for each of the sources/amounts
-    let withdraw_messages = withdraw_from_vaults(
+    let (withdraw_messages, tx_amounts) = withdraw_from_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
         &deps.api.addr_validate(&beneficiary)?,
         sources,
     )?;
+
+    // Save the tx record in STATE
+    let mut state = STATE.load(deps.storage)?;
+    let tx_record = TransactionRecord {
+        block: env.block.height,
+        sender: env.contract.address.clone(),
+        recipient: Some(Addr::unchecked(beneficiary.clone())),
+        amount: tx_amounts,
+        denom: "uusd".to_string(),
+    };
+    state.transactions.push(tx_record);
+    STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
         .add_submessages(withdraw_messages)
@@ -759,4 +784,95 @@ pub fn close_endowment(
         .add_attribute("action", "close_endowment")
         .add_attribute("sender", info.sender.to_string())
         .add_submessages(redeem_messages))
+}
+
+pub fn update_profile(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: UpdateProfileMsg,
+) -> Result<Response, ContractError> {
+    // Validation 1. Only "Endowment.owner" or "Config.owner" is able to execute
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender != endowment.owner && info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let tier = if info.sender == config.owner {
+        match msg.tier {
+            Some(1) => Some(Some(Tier::Level1)),
+            Some(2) => Some(Some(Tier::Level2)),
+            Some(3) => Some(Some(Tier::Level3)),
+            None => Some(None),
+            _ => return Err(ContractError::InvalidInputs {}),
+        }
+    } else {
+        None
+    };
+
+    // Update the Endowment profile
+    let mut profile = PROFILE.load(deps.storage)?;
+
+    // Only config.owner can update "un_sdg" & "tier" fields
+    if info.sender == config.owner {
+        profile.un_sdg = msg.un_sdg;
+        profile.tier = msg.tier;
+        if let Some(endow_type) = msg.endow_type {
+            profile.endow_type = match endow_type.as_str() {
+                "charity" => EndowmentType::Charity,
+                "normal" => EndowmentType::Normal,
+                _ => return Err(ContractError::InvalidInputs {}),
+            };
+        }
+    }
+
+    // Only endowment.owner can update all other fields
+    if info.sender == endowment.owner {
+        if let Some(name) = msg.name.clone() {
+            profile.name = name;
+        }
+        if let Some(overview) = msg.overview {
+            profile.overview = overview;
+        }
+        profile.logo = msg.logo;
+        profile.image = msg.image;
+        profile.url = msg.url;
+        profile.registration_number = msg.registration_number;
+        profile.country_city_origin = msg.country_city_origin;
+        profile.contact_email = msg.contact_email;
+        profile.number_of_employees = msg.number_of_employees;
+        profile.average_annual_budget = msg.average_annual_budget;
+        profile.annual_revenue = msg.annual_revenue;
+        profile.charity_navigator_rating = msg.charity_navigator_rating;
+
+        let social_media_urls = SocialMedialUrls {
+            facebook: msg.facebook,
+            twitter: msg.twitter,
+            linkedin: msg.linkedin,
+        };
+        profile.social_media_urls = social_media_urls;
+    }
+
+    PROFILE.save(deps.storage, &profile)?;
+
+    let sub_msgs: Vec<SubMsg> = vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.registrar_contract.to_string(),
+        msg: to_binary(&RegistrarExecuter::UpdateEndowmentType(
+            UpdateEndowmentTypeMsg {
+                endowment_addr: env.contract.address.to_string(),
+                name: msg.name.and_then(|v| Some(v)),
+                owner: None,
+                tier,
+                endow_type: Some(profile.endow_type),
+            },
+        ))?,
+        funds: vec![],
+    }))];
+
+    Ok(Response::new()
+        .add_submessages(sub_msgs)
+        .add_attribute("action", "update_profile")
+        .add_attribute("sender", info.sender.to_string()))
 }

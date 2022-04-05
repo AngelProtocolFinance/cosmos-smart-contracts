@@ -3,12 +3,13 @@ use crate::staking::{
     claim_voting_tokens, query_staker, stake_voting_tokens, withdraw_voting_tokens,
 };
 use crate::state::{
-    read_bank, read_config, store_config, store_poll_indexer, remove_poll_indexer, read_poll, store_poll,
-    read_poll_voter, store_poll_voter, read_poll_voters, read_polls, read_tmp_poll_id, read_state,
-    store_state, store_tmp_poll_id, Config, ExecuteData, Poll, State, CLAIMS, store_bank,
+    read_bank, read_config, read_poll, read_poll_voter, read_poll_voters, read_polls, read_state,
+    read_tmp_poll_id, remove_poll_indexer, store_bank, store_config, store_poll,
+    store_poll_indexer, store_poll_voter, store_state, store_tmp_poll_id, Config, ExecuteData,
+    Poll, State, CLAIMS,
 };
 use cosmwasm_std::{
-    attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
+    entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
     MessageInfo, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw0::Duration;
@@ -112,7 +113,6 @@ pub fn execute(
         } => cast_vote(deps, env, info, poll_id, vote, amount),
         ExecuteMsg::EndPoll { poll_id } => end_poll(deps, env, poll_id),
         ExecuteMsg::ExecutePoll { poll_id } => execute_poll(deps, env, poll_id),
-        ExecuteMsg::SnapshotPoll { poll_id } => snapshot_poll(deps, env, poll_id),
     }
 }
 
@@ -568,43 +568,6 @@ pub fn fail_poll(deps: DepsMut, poll_id: u64) -> Result<Response, ContractError>
     ]))
 }
 
-/// SnapshotPoll is used to take a snapshot of the staked amount for quorum calculation
-pub fn snapshot_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, ContractError> {
-    let config: Config = read_config(deps.storage)?;
-    let mut a_poll: Poll = read_poll(deps.storage, &poll_id.to_be_bytes())?;
-
-    if a_poll.status != PollStatus::InProgress {
-        return Err(ContractError::PollNotInProgress {});
-    }
-
-    let time_to_end = a_poll.end_height - env.block.height;
-
-    if time_to_end > config.snapshot_period {
-        return Err(ContractError::SnapshotHeight {});
-    }
-
-    if a_poll.staked_amount.is_some() {
-        return Err(ContractError::SnapshotAlreadyOccurred {});
-    }
-
-    // store the current staked amount for quorum calculation
-    let state: State = read_state(deps.storage)?;
-
-    let staked_amount =
-        query_token_balance(&deps.querier, config.halo_token, env.contract.address)?
-            .checked_sub(state.total_deposit)?;
-
-    a_poll.staked_amount = Some(staked_amount);
-
-    store_poll(deps.storage, &poll_id.to_be_bytes(), &a_poll)?;
-
-    Ok(Response::new().add_attributes(vec![
-        attr("action", "snapshot_poll"),
-        attr("poll_id", poll_id.to_string().as_str()),
-        attr("staked_amount", staked_amount.to_string().as_str()),
-    ]))
-}
-
 pub fn cast_vote(
     deps: DepsMut,
     env: Env,
@@ -625,9 +588,7 @@ pub fn cast_vote(
     }
 
     // Check the voter already has a vote on the poll
-    if read_poll_voter(deps.storage, poll_id, info.sender.clone())
-        .is_ok()
-    {
+    if read_poll_voter(deps.storage, poll_id, info.sender.clone()).is_ok() {
         return Err(ContractError::AlreadyVoted {});
     }
 

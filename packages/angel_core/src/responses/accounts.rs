@@ -1,4 +1,4 @@
-use crate::structs::{RebalanceDetails, StrategyComponent};
+use crate::structs::{RebalanceDetails, SocialMedialUrls, StrategyComponent, TransactionRecord};
 use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -27,4 +27,28 @@ pub struct EndowmentDetailsResponse {
     pub maturity_height: Option<u64>,
     pub strategies: Vec<StrategyComponent>,
     pub rebalance: RebalanceDetails,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+pub struct ProfileResponse {
+    pub name: String,
+    pub overview: String,
+    pub un_sdg: Option<u64>,
+    pub tier: Option<u64>,
+    pub logo: Option<String>,
+    pub image: Option<String>,
+    pub url: Option<String>,
+    pub registration_number: Option<String>,
+    pub country_city_origin: Option<String>,
+    pub contact_email: Option<String>,
+    pub social_media_urls: SocialMedialUrls,
+    pub number_of_employees: Option<u64>,
+    pub average_annual_budget: Option<String>,
+    pub annual_revenue: Option<String>,
+    pub charity_navigator_rating: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+pub struct TxRecordsResponse {
+    pub txs: Vec<TransactionRecord>,
 }

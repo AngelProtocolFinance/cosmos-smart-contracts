@@ -1,6 +1,6 @@
 use crate::state::{read_registry_entries, read_vaults, registry_read, vault_read, CONFIG};
 use angel_core::responses::registrar::*;
-use angel_core::structs::VaultRate;
+use angel_core::structs::{EndowmentEntry, Tier, VaultRate};
 use angel_core::utils::vault_fx_rate;
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
@@ -66,8 +66,59 @@ pub fn query_endowment_details(
     Ok(EndowmentDetailResponse { endowment })
 }
 
-pub fn query_endowment_list(deps: Deps) -> StdResult<EndowmentListResponse> {
+pub fn query_endowment_list(
+    deps: Deps,
+    name: Option<String>,
+    owner: Option<String>,
+    status: Option<String>,       // String -> EndowmentStatus
+    tier: Option<Option<String>>, // String -> Tier
+    endow_type: Option<String>,   // String -> EndowmentType
+) -> StdResult<EndowmentListResponse> {
     let endowments = read_registry_entries(deps.storage)?;
+    let endowments = match name {
+        Some(name) => endowments
+            .into_iter()
+            .filter(|e| e.name == name)
+            .collect::<Vec<EndowmentEntry>>(),
+        None => endowments,
+    };
+    let endowments = match owner {
+        Some(owner) => endowments
+            .into_iter()
+            .filter(|e| e.owner == owner)
+            .collect::<Vec<EndowmentEntry>>(),
+        None => endowments,
+    };
+    let endowments = match status {
+        Some(status) => endowments
+            .into_iter()
+            .filter(|e| e.status.to_string() == status)
+            .collect::<Vec<EndowmentEntry>>(),
+        None => endowments,
+    };
+    let endowments = match tier {
+        Some(tier) => {
+            let tier = tier.and_then(|v| match v.as_str() {
+                "1" => Some(Tier::Level1),
+                "2" => Some(Tier::Level2),
+                "3" => Some(Tier::Level3),
+                _ => unimplemented!(),
+            });
+            endowments
+                .into_iter()
+                .filter(|e| e.tier == tier)
+                .collect::<Vec<EndowmentEntry>>()
+        }
+        None => endowments,
+    };
+    let endowments = match endow_type {
+        Some(endow_type) => endowments
+            .into_iter()
+            .filter(|e| e.endow_type.to_string() == endow_type)
+            .collect::<Vec<EndowmentEntry>>(),
+        None => endowments,
+    };
+
     Ok(EndowmentListResponse { endowments })
 }
 

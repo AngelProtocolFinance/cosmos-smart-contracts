@@ -1,8 +1,12 @@
-use crate::state::{fund_read, read_funds, CONFIG, STATE, TCA_DONATIONS};
+use crate::state::{
+    read_alliance_members, read_funds, ALLIANCE_MEMBERS, CONFIG, FUND, STATE, TCA_DONATIONS,
+};
 use angel_core::messages::index_fund::DepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg::Deposit;
 use angel_core::responses::index_fund::*;
-use cosmwasm_std::{to_binary, Coin, CosmosMsg, Decimal, Deps, Env, StdResult, Uint128, WasmMsg};
+use cosmwasm_std::{
+    to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, Env, StdError, StdResult, Uint128, WasmMsg,
+};
 
 pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
@@ -24,15 +28,6 @@ pub fn state(deps: Deps) -> StdResult<StateResponse> {
         active_fund: state.active_fund,
         round_donations: state.round_donations,
         next_rotation_block: state.next_rotation_block,
-        terra_alliance: state.tca_human_addresses(),
-    })
-}
-
-pub fn tca_list(deps: Deps) -> StdResult<TcaListResponse> {
-    // Return a list of TCA Member Addrs
-    let state = STATE.load(deps.storage)?;
-    Ok(TcaListResponse {
-        tca_members: state.tca_human_addresses(),
     })
 }
 
@@ -47,26 +42,32 @@ pub fn funds_list(
 
 pub fn fund_details(deps: Deps, fund_id: u64) -> StdResult<FundDetailsResponse> {
     Ok(FundDetailsResponse {
-        fund: fund_read(deps.storage).may_load(&fund_id.to_be_bytes())?,
+        fund: FUND.may_load(deps.storage, &fund_id.to_be_bytes())?,
     })
 }
 
 pub fn active_fund_details(deps: Deps) -> StdResult<FundDetailsResponse> {
     let state = STATE.load(deps.storage)?;
     Ok(FundDetailsResponse {
-        fund: fund_read(deps.storage).may_load(&state.active_fund.to_be_bytes())?,
+        fund: FUND.may_load(deps.storage, &state.active_fund.to_be_bytes())?,
     })
 }
 
 pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
-    let state = STATE.load(deps.storage)?;
     let mut donors = vec![];
-    for tca in state.terra_alliance.into_iter() {
+    let alliance_addr_list: Vec<Vec<u8>> = ALLIANCE_MEMBERS
+        .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
+        .collect();
+    let mut alliance_members: Vec<String> = vec![];
+    for member in alliance_addr_list {
+        alliance_members.push(std::str::from_utf8(&member).unwrap().to_string());
+    }
+    for member in alliance_members.into_iter() {
         // add to response vector
         donors.push(DonationDetailResponse {
-            address: tca.to_string(),
+            address: member.to_string(),
             total_ust: TCA_DONATIONS
-                .may_load(deps.storage, tca.to_string())
+                .may_load(deps.storage, member.to_string())
                 .unwrap()
                 .unwrap_or_default()
                 .get_ust()
@@ -106,4 +107,39 @@ pub fn deposit_msg_builder(
             amount,
         }],
     }))
+}
+
+pub fn alliance_member(deps: Deps, wallet: Addr) -> StdResult<AllianceMemberResponse> {
+    let alliance_member = match ALLIANCE_MEMBERS.may_load(deps.storage, wallet.clone()) {
+        Ok(res) => match res {
+            Some(m) => m,
+            None => {
+                return Err(StdError::GenericErr {
+                    msg: "Cannot find member".to_string(),
+                })
+            }
+        },
+        Err(_) => {
+            return Err(StdError::GenericErr {
+                msg: "Cannot find member".to_string(),
+            })
+        }
+    };
+
+    Ok(AllianceMemberResponse {
+        wallet: wallet.to_string(),
+        name: alliance_member.name,
+        logo: alliance_member.logo,
+        website: alliance_member.website,
+    })
+}
+
+pub fn alliance_members(
+    deps: Deps,
+    start_after: Option<Addr>,
+    limit: Option<u64>,
+) -> StdResult<AllianceMemberListResponse> {
+    // return a list of angel alliance members
+    let alliance_members = read_alliance_members(deps.storage, start_after, limit)?;
+    Ok(AllianceMemberListResponse { alliance_members })
 }

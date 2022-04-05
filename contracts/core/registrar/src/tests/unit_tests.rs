@@ -124,18 +124,36 @@ fn migrate_contract() {
     assert_eq!(0, res.messages.len());
 
     // try to migrate the contract
-    let msg = MigrateMsg {};
+    let msg = MigrateMsg { endowments: vec![] };
     let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
     assert_eq!(0, res.messages.len())
 }
 
 #[test]
-fn can_create_endowment_accounts_and_then_update() {
+fn test_owner_can_add_remove_approved_charities() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angelprotocolteamdano".to_string();
+    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
+    let pleb = "plebAccount".to_string();
+    let instantiate_msg = InstantiateMsg {
+        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
+        treasury: ap_team.clone(),
+        default_vault: None,
+        tax_rate: Decimal::percent(20),
+        split_to_liquid: Some(SplitDetails::default()),
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+    assert_eq!(0, res.messages.len());
+}
+
+#[test]
+fn anyone_can_create_endowment_accounts_and_then_update() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let good_charity_addr = "GOODQTWTETGSGSRHJTUIQADG".to_string();
-    let bad_charity_addr = "BADQTWTETGSGSRHJTUIQADG".to_string();
     let good_endowment_addr = "ENDOWMENTADRESS".to_string();
     let default_vault_addr = "default-vault".to_string();
     let index_fund_contract = "index-fund-contract".to_string();
@@ -267,7 +285,10 @@ fn can_create_endowment_accounts_and_then_update() {
     assert_eq!("create_endowment", res.attributes[0].value);
 
     let events = vec![Event::new("instantiate_contract")
-        .add_attribute("contract_address", good_endowment_addr.clone())];
+        .add_attribute("contract_address", good_endowment_addr.clone())
+        .add_attribute("endow_name", "Test Endowment".to_string())
+        .add_attribute("endow_owner", good_charity_addr.clone())
+        .add_attribute("endow_type", "charity".to_string())];
     let result = ContractResult::Ok(SubMsgExecutionResponse { events, data: None });
     let subcall = Reply { id: 0, result };
 
@@ -276,7 +297,18 @@ fn can_create_endowment_accounts_and_then_update() {
     assert_eq!(0, res.messages.len());
 
     // test that the reply worked properly by querying
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::EndowmentList {}).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::EndowmentList {
+            name: None,
+            owner: None,
+            status: None,
+            tier: None,
+            endow_type: None,
+        },
+    )
+    .unwrap();
     let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
     assert_eq!(
         endowment_list_response.endowments[0].address,
@@ -288,6 +320,24 @@ fn can_create_endowment_accounts_and_then_update() {
     );
 
     // let's test update endowment method by admin
+    let update_endowment_type_msg = UpdateEndowmentTypeMsg {
+        endowment_addr: good_endowment_addr.clone(),
+        name: None,
+        owner: None,
+        tier: None,
+        endow_type: None,
+    };
+
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let res = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::UpdateEndowmentType(update_endowment_type_msg.clone()),
+    )
+    .unwrap();
+    assert_eq!(0, res.messages.len());
+
     let update_endowment_status_msg = UpdateEndowmentStatusMsg {
         endowment_addr: good_endowment_addr.clone(),
         status: 1,
@@ -305,7 +355,18 @@ fn can_create_endowment_accounts_and_then_update() {
     assert_eq!(1, res.messages.len());
 
     // test that the updating worked properly by querying
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::EndowmentList {}).unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::EndowmentList {
+            name: None,
+            owner: None,
+            status: None,
+            tier: None,
+            endow_type: None,
+        },
+    )
+    .unwrap();
     let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
     assert_eq!(
         endowment_list_response.endowments[0].address,

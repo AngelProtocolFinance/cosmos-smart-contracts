@@ -250,9 +250,17 @@ fn update_vesting_account() {
         _ => panic!("DO NOT ENTER HERE"),
     }
 
+<<<<<<< HEAD
     let msg1 = ExecuteMsg::AddSchedulesToVestingAccount {
         address: acct1.clone(),
         new_schedules: vec![(100u64, 110u64, Uint128::from(200u128))],
+=======
+    let msg1 = ExecuteMsg::UpdateVestingAccount {
+        vesting_account: VestingAccount {
+            address: acct1.clone(),
+            schedules: vec![(100u64, 110u64, Uint128::from(200u128))],
+        },
+>>>>>>> RC-v1.6
     };
     let res1 = execute(deps.as_mut(), mock_env(), info, msg1.clone());
     match res1 {

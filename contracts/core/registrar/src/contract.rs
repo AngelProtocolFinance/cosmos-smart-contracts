@@ -3,12 +3,15 @@ use crate::queriers;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::SplitDetails;
+use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+    entry_point, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
+    StdResult,
 };
 use cw2::set_contract_version;
+use cw_storage_plus::Path;
+use std::ops::Deref;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -34,7 +37,6 @@ pub fn instantiate(
         owner: info.sender.clone(),
         index_fund_contract: None,
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
-        approved_charities: vec![],
         treasury: deps.api.addr_validate(&msg.treasury)?,
         tax_rate,
         default_vault: msg.default_vault,
@@ -71,10 +73,6 @@ pub fn execute(
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
         }
-        ExecuteMsg::CharityAdd { charity } => executers::charity_add(deps, env, info, charity),
-        ExecuteMsg::CharityRemove { charity } => {
-            executers::charity_remove(deps, env, info, charity)
-        }
         ExecuteMsg::VaultAdd(msg) => executers::vault_add(deps, env, info, msg),
         ExecuteMsg::VaultRemove { vault_addr } => {
             executers::vault_remove(deps, env, info, vault_addr)
@@ -87,7 +85,9 @@ pub fn execute(
             collector_address,
             collector_share,
         } => executers::harvest(deps, env, info, collector_address, collector_share),
-        ExecuteMsg::MigrateAccounts {} => executers::migrate_accounts(deps, env, info),
+        ExecuteMsg::UpdateEndowmentType(msg) => {
+            executers::update_endowment_type(deps, env, info, msg)
+        }
     }
 }
 
@@ -109,7 +109,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Endowment { endowment_addr } => {
             to_binary(&queriers::query_endowment_details(deps, endowment_addr)?)
         }
-        QueryMsg::EndowmentList {} => to_binary(&queriers::query_endowment_list(deps)?),
+        QueryMsg::EndowmentList {
+            name,
+            owner,
+            status,
+            tier,
+            endow_type,
+        } => to_binary(&queriers::query_endowment_list(
+            deps, name, owner, status, tier, endow_type,
+        )?),
         QueryMsg::ApprovedVaultList { start_after, limit } => to_binary(
             &queriers::query_approved_vault_list(deps, start_after, limit)?,
         ),
@@ -126,6 +134,41 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    const REGISTRY_KEY: &[u8] = b"registry";
+    // msg pass in an { endowments: [ (address, status, name, owner, tier), ... ] }
+    for e in msg.endowments {
+        // build key for registrar's endowment
+        // let key = [REGISTRY_KEY, e.addr.clone().as_bytes()].concat();
+
+        let path: Path<EndowmentEntry> = Path::new(REGISTRY_KEY, &[e.addr.clone().as_bytes()]);
+        let key = path.deref();
+
+        // set the new EndowmentEntry at the given key
+        deps.storage.set(
+            key,
+            &to_vec(&EndowmentEntry {
+                address: deps.api.addr_validate(&e.addr)?, // Addr,
+                name: e.name,                              // String,
+                owner: e.owner,                            // String,
+                // EndowmentStatus
+                status: match e.status {
+                    0 => EndowmentStatus::Inactive,
+                    1 => EndowmentStatus::Approved,
+                    2 => EndowmentStatus::Frozen,
+                    3 => EndowmentStatus::Closed,
+                    _ => EndowmentStatus::Inactive,
+                },
+                // Option<Tier>
+                tier: match e.tier {
+                    1 => Some(Tier::Level1),
+                    2 => Some(Tier::Level2),
+                    3 => Some(Tier::Level3),
+                    _ => None,
+                },
+                endow_type: EndowmentType::Charity, // EndowmentType,
+            })?,
+        );
+    }
     Ok(Response::default())
 }

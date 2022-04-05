@@ -1,5 +1,5 @@
-use crate::structs::AcceptedTokens;
-use cosmwasm_std::{Decimal, Uint128};
+use crate::structs::{AcceptedTokens, AllianceMember};
+use cosmwasm_std::{Addr, Decimal, Uint128};
 // use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -24,10 +24,11 @@ pub enum ExecuteMsg {
     UpdateRegistrar {
         new_registrar: String,
     },
-    // Update TCA member list
-    UpdateTcaList {
-        add: Vec<String>,
-        remove: Vec<String>,
+    // Add/remove the Alliance member list
+    UpdateAllianceMemberList {
+        address: Addr,
+        member: AllianceMember,
+        action: String,
     },
     UpdateConfig(UpdateConfigMsg),
     // endpoint to remove a single member from all index funds that they may in
@@ -56,6 +57,12 @@ pub enum ExecuteMsg {
     Deposit(DepositMsg),
     // This accepts a properly-encoded ReceiveMsg from a cw20 contract
     // Receive(Cw20ReceiveMsg),
+
+    // Update the alliance member
+    UpdateAllianceMember {
+        address: Addr,
+        member: AllianceMember,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -122,8 +129,15 @@ pub enum QueryMsg {
     State {},
     // return config details
     Config {},
-    // return list of TCA Members
-    TcaList {},
+    // return list of Alliance Members(TCA members)
+    AllianceMembers {
+        start_after: Option<Addr>,
+        limit: Option<u64>,
+    },
+    // return the Alliance member given "wallet" address
+    AllianceMember {
+        address: Addr,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -1,15 +1,17 @@
 use crate::executers;
 use crate::queriers;
 use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
+use crate::state::{Profile, PROFILE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
 use angel_core::messages::dao_token::InstantiateMsg as DaoTokenInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
+use angel_core::structs::EndowmentType;
 use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
+    attr, entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
     QueryRequest, Reply, ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
@@ -42,7 +44,7 @@ pub fn instantiate(
 
     let registrar_config: ConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: msg.registrar_contract,
+            contract_addr: msg.registrar_contract.clone(),
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
@@ -81,11 +83,29 @@ pub fn instantiate(
             balances: BalanceInfo::default(),
             closing_endowment: false,
             closing_beneficiary: None,
+            transactions: vec![],
         },
     )?;
 
+    let mut profile = Profile::default();
+    profile.name = msg.name.clone();
+    profile.overview = msg.description;
+
+    if info
+        .sender
+        .ne(&deps.api.addr_validate(msg.registrar_contract.as_str())?)
+    {
+        profile.endow_type = EndowmentType::Normal;
+    }
+
+    PROFILE.save(deps.storage, &profile)?;
+
     // initial default Response to add submessages to
-    let mut res: Response = Response::new();
+    let mut res: Response = Response::new().add_attributes(vec![
+        attr("endow_name", msg.name),
+        attr("endow_owner", msg.owner),
+        attr("endow_type", profile.endow_type.to_string()),
+    ]);
 
     // check if CW3/CW4 codes were passed to setup a multisig/group
     if msg.cw4_members.ne(&vec![])
@@ -174,6 +194,7 @@ pub fn execute(
             executers::close_endowment(deps, env, info, beneficiary)
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
+        ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
     }
 }
 
@@ -197,6 +218,14 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::State {} => to_binary(&queriers::query_state(deps)?),
         QueryMsg::Endowment {} => to_binary(&queriers::query_endowment_details(deps)?),
+        QueryMsg::GetProfile {} => to_binary(&queriers::query_profile(deps)?),
+        QueryMsg::GetTxRecords {
+            sender,
+            recipient,
+            denom,
+        } => to_binary(&queriers::query_transactions(
+            deps, sender, recipient, denom,
+        )?),
     }
 }
 

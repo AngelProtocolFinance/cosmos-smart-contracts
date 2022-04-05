@@ -1,11 +1,8 @@
-use crate::state::{
-    read_registry_entries, read_vaults, registry_read, registry_store, vault_read, vault_store,
-    CONFIG,
-};
+use crate::state::{read_vaults, registry_read, registry_store, vault_read, vault_store, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, YieldVault};
+use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
     to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response,
@@ -168,7 +165,6 @@ pub fn update_config(
     }
 
     // update config attributes with newly passed configs
-    config.approved_charities = msg.charities_list(deps.api)?;
     config.accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
     config.cw3_code = match msg.cw3_code {
         Some(v) => Some(v),
@@ -215,20 +211,10 @@ pub fn update_config(
 pub fn create_endowment(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: CreateEndowmentMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-
-    // check that the sender is an approved charity address
-    let pos = config
-        .approved_charities
-        .iter()
-        .position(|a| *a == info.sender);
-    // ignore if that member was found in the list
-    if pos == None && info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
 
     if config.accounts_code_id == 0 {
         return Err(ContractError::ContractNotConfigured {});
@@ -271,83 +257,6 @@ pub fn create_endowment(
     Ok(Response::new()
         .add_submessage(sub_message)
         .add_attribute("action", "create_endowment"))
-}
-
-pub fn migrate_accounts(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let mut messages = vec![];
-    for endowment in read_registry_entries(deps.storage)?.into_iter() {
-        let wasm_msg = WasmMsg::Migrate {
-            contract_addr: endowment.address.to_string(),
-            new_code_id: config.accounts_code_id,
-            msg: to_binary(&angel_core::messages::accounts::MigrateMsg {})?,
-        };
-        messages.push(CosmosMsg::Wasm(wasm_msg));
-    }
-    Ok(Response::new()
-        .add_messages(messages)
-        .add_attribute("action", "migrate_accounts"))
-}
-
-pub fn charity_add(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    charity: String,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // save the new charity to the list if it does not already exist
-    let addr = deps.api.addr_validate(&charity)?;
-    let pos = config.approved_charities.iter().position(|a| *a == addr);
-    // ignore if that member was found in the list
-    if pos == None {
-        CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-            config.approved_charities.push(addr);
-            Ok(config)
-        })?;
-    }
-
-    Ok(Response::default())
-}
-
-pub fn charity_remove(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    charity: String,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // remove the charity from the list if it exists
-    let addr = deps.api.addr_validate(&charity)?;
-    let pos = config.approved_charities.iter().position(|a| *a == addr);
-    // ignore if that member was found in the list
-    if pos != None {
-        CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-            config.approved_charities.swap_remove(pos.unwrap());
-            Ok(config)
-        })?;
-    }
-
-    Ok(Response::default())
 }
 
 pub fn vault_add(
@@ -434,20 +343,25 @@ pub fn new_accounts_reply(
     match msg {
         ContractResult::Ok(subcall) => {
             let mut endowment_addr = String::from("");
-            // set label here of the for loop we'll want to break out of
-            'outer: for event in subcall.events {
+            let mut endowment_name = String::from("");
+            let mut endowment_owner = String::from("");
+            let mut endowment_type = String::from("");
+            for event in subcall.events {
                 if event.ty == *"instantiate_contract" {
                     for attrb in event.attributes {
                         if attrb.key == "contract_address" {
-                            endowment_addr = attrb.value;
+                            endowment_addr = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_name" {
+                            endowment_name = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_owner" {
+                            endowment_owner = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_type" {
+                            endowment_type = attrb.value.clone();
                         }
                     }
-                    // break from loop to go set the address because we get
-                    // more than one instantiated contract back in these logs:
-                    // 1. Endowment contract
-                    // 2. Guardians Group contract
-                    // 3. Guardians Multisig contract
-                    break 'outer;
                 }
             }
             // Register the new Endowment on success Reply
@@ -457,7 +371,15 @@ pub fn new_accounts_reply(
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,
+                    name: endowment_name,
+                    owner: endowment_owner,
                     status: EndowmentStatus::Inactive,
+                    tier: None,
+                    endow_type: match endowment_type.as_str() {
+                        "charity" => EndowmentType::Charity,
+                        "normal" => EndowmentType::Normal,
+                        _ => unimplemented!(),
+                    },
                 },
             )?;
             Ok(Response::default())
@@ -515,4 +437,42 @@ fn harvest_msg(account: String, collector_address: String, collector_share: Deci
         gas_limit: None,
         reply_on: ReplyOn::Never,
     }
+}
+
+pub fn update_endowment_type(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateEndowmentTypeMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let endow_addr = deps.api.addr_validate(&msg.endowment_addr)?;
+
+    if info.sender.ne(&config.owner) && info.sender.ne(&endow_addr) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // look up the endowment in the Registry. Will fail if doesn't exist
+    let endowment_addr = msg.endowment_addr.as_bytes();
+    let mut endowment_entry = registry_read(deps.storage, endowment_addr)?;
+
+    if let Some(name) = msg.name {
+        endowment_entry.name = name;
+    }
+
+    if let Some(owner) = msg.owner {
+        endowment_entry.owner = owner;
+    }
+
+    if let Some(tier) = msg.tier {
+        endowment_entry.tier = tier;
+    }
+
+    if let Some(endow_type) = msg.endow_type {
+        endowment_entry.endow_type = endow_type;
+    }
+
+    registry_store(deps.storage, endowment_addr, &endowment_entry)?;
+
+    Ok(Response::new().add_attribute("action", "update_endowment_entry"))
 }
