@@ -242,11 +242,12 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response
     // Should be removed after v1.6 deployment
     let config_key: &[u8] = b"config";
     let prefixed_config_key: &[u8] = &cosmwasm_storage::to_length_prefixed(config_key);
-    let data = deps.storage.get(prefixed_config_key).ok_or_else(|| {
-        StdError::NotFound {
+    let data = deps
+        .storage
+        .get(prefixed_config_key)
+        .ok_or_else(|| StdError::NotFound {
             kind: "Config".to_string(),
-        }
-    })?;
+        })?;
     let config: Config = cosmwasm_std::from_slice(&data)?;
     deps.storage.set(
         config_key,

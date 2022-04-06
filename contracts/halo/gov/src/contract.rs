@@ -847,6 +847,68 @@ fn query_voters(
 }
 
 #[entry_point]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    // Re-save the config because of storage switch (singleton -> Item)
+    // Should be removed after v1.6 deployment
+
+    // CONFIG
+    let config_key: &[u8] = b"config";
+    let prefixed_config_key: &[u8] = &cosmwasm_storage::to_length_prefixed(config_key);
+    let data = deps
+        .storage
+        .get(prefixed_config_key)
+        .ok_or_else(|| StdError::NotFound {
+            kind: "Config".to_string(),
+        })?;
+    let config: Config = cosmwasm_std::from_slice(&data)?;
+    deps.storage.set(
+        config_key,
+        &cosmwasm_std::to_vec(&Config {
+            owner: config.owner,
+            halo_token: config.halo_token,
+            quorum: config.quorum,
+            threshold: config.threshold,
+            voting_period: config.voting_period,
+            timelock_period: config.timelock_period,
+            proposal_deposit: config.proposal_deposit,
+            snapshot_period: config.snapshot_period,
+            registrar_contract: config.registrar_contract,
+            unbonding_period: config.unbonding_period,
+            gov_hodler: config.gov_hodler,
+        })?,
+    );
+
+    // STATE
+    let state_key: &[u8] = b"state";
+    let prefixed_state_key: &[u8] = &cosmwasm_storage::to_length_prefixed(state_key);
+    let data = deps
+        .storage
+        .get(prefixed_state_key)
+        .ok_or_else(|| StdError::NotFound {
+            kind: "State".to_string(),
+        })?;
+    let state: State = cosmwasm_std::from_slice(&data)?;
+    deps.storage.set(
+        state_key,
+        &cosmwasm_std::to_vec(&State {
+            poll_count: state.poll_count,
+            total_share: state.total_share,
+            total_deposit: state.total_deposit,
+        })?,
+    );
+
+    // TMP_POLL_ID
+    let tmp_poll_id_key: &[u8] = b"tmp_poll_id";
+    let prefixed_tmp_poll_id_key: &[u8] = &cosmwasm_storage::to_length_prefixed(tmp_poll_id_key);
+    let data = deps
+        .storage
+        .get(prefixed_tmp_poll_id_key)
+        .ok_or_else(|| StdError::NotFound {
+            kind: "TMP_POLL_ID".to_string(),
+        })?;
+    let tmp_poll_id: u64 = cosmwasm_std::from_slice(&data)?;
+    deps.storage
+        .set(tmp_poll_id_key, &cosmwasm_std::to_vec(&tmp_poll_id)?);
+
     Ok(Response::default())
 }
