@@ -50,6 +50,7 @@ pub fn instantiate(
         split_to_liquid: splits,
         halo_token: None,
         gov_contract: None,
+        donation_match_charites_contract: None,
     };
 
     CONFIG.save(deps.storage, &configs)?;

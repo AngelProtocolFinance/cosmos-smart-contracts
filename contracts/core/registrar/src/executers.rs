@@ -203,6 +203,11 @@ pub fn update_config(
         None => Ok(config.split_to_liquid.default),
     };
     config.split_to_liquid = split_checks(max.unwrap(), min.unwrap(), default.unwrap()).unwrap();
+    config.donation_match_charites_contract = match msg.donation_match_charites_contract {
+        Some(v) => Some(deps.api.addr_validate(v.as_str())?),
+        None => config.donation_match_charites_contract,
+    };
+
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))

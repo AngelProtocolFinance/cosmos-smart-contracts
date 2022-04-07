@@ -68,6 +68,7 @@ fn update_config() {
     let mut deps = mock_dependencies(&[]);
     let ap_team = "angelprotocolteamdano".to_string();
     let index_fund_contract = String::from("index_fund_contract");
+    let donation_match_charites_contract = String::from("donation-match-contract");
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
@@ -92,6 +93,8 @@ fn update_config() {
         split_default: Some(Decimal::percent(30)),
         gov_contract: None,
         halo_token: None,
+        approved_charities: None,
+        donation_match_charites_contract: Some(donation_match_charites_contract.clone()),
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -104,6 +107,10 @@ fn update_config() {
         config_response.index_fund.unwrap()
     );
     assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
+    assert_eq!(
+        donation_match_charites_contract.clone(),
+        config_response.donation_match_charites_contract.unwrap(),
+    );
 }
 
 #[test]
@@ -182,6 +189,8 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         split_default: None,
         gov_contract: None,
         halo_token: None,
+        approved_charities: None,
+        donation_match_charites_contract: None,
     };
     let info = mock_info(ap_team.as_ref(), &[]);
     let _ = execute(
@@ -206,6 +215,9 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         split_max: None,
         split_min: None,
         split_default: None,
+        dao: true,
+        donation_match: true,
+        curve_type: None,
     };
 
     let info = mock_info(good_charity_addr.as_ref(), &coins(100000, "earth"));
