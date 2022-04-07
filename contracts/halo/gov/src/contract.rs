@@ -897,18 +897,5 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
         })?,
     );
 
-    // TMP_POLL_ID
-    let tmp_poll_id_key: &[u8] = b"tmp_poll_id";
-    let prefixed_tmp_poll_id_key: &[u8] = &cosmwasm_storage::to_length_prefixed(tmp_poll_id_key);
-    let data = deps
-        .storage
-        .get(prefixed_tmp_poll_id_key)
-        .ok_or_else(|| StdError::NotFound {
-            kind: "TMP_POLL_ID".to_string(),
-        })?;
-    let tmp_poll_id: u64 = cosmwasm_std::from_slice(&data)?;
-    deps.storage
-        .set(tmp_poll_id_key, &cosmwasm_std::to_vec(&tmp_poll_id)?);
-
     Ok(Response::default())
 }
