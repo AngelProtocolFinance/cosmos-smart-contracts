@@ -623,6 +623,7 @@ pub fn deposit(
     msg: DepositMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+    let profile = PROFILE.load(deps.storage)?;
 
     // check that the Endowment has been approved to receive deposits
     if !config.deposit_approved {
@@ -677,7 +678,7 @@ pub fn deposit(
         liquid_split = new_splits.1;
     }
 
-    let ust_locked = Coin {
+    let mut ust_locked = Coin {
         amount: deposit_amount.amount * locked_split,
         denom: "uusd".to_string(),
     };
@@ -701,6 +702,39 @@ pub fn deposit(
     state.transactions.push(tx_record);
     STATE.save(deps.storage, &state)?;
 
+    // check if the donation matching is possible
+    let mut doner_match_messages: Vec<SubMsg> = vec![];
+    if !ust_locked.amount.is_zero() && endowment.donation_match && endowment.dao_token.is_some() {
+        // get the correct donation match contract to use
+        let donation_match_contract = match profile.endow_type {
+            EndowmentType::Normal => match endowment.donation_matching_contract {
+                Some(addr) => addr,
+                None => return Err(ContractError::AccountNotCreated {}),
+            },
+            EndowmentType::Charity => match registrar_config.donation_match_charites_contract {
+                Some(addr) => deps.api.addr_validate(&addr)?,
+                None => return Err(ContractError::AccountDoesNotExist {}),
+            },
+        };
+        // 10% of "ust_locked" amount
+        let donation_match_amount = ust_locked.amount.multiply_ratio(100_u128, 1000_u128);
+        ust_locked = Coin {
+            amount: ust_locked.amount - donation_match_amount,
+            denom: "uusd".to_string(),
+        };
+
+        // build "doner_match" message for donation matching
+        doner_match_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: donation_match_contract.to_string(),
+            // TODO: This "doner_match" message should be filled after "donation matching" contract impl
+            msg: to_binary("doner_match message")?,
+            funds: vec![Coin {
+                amount: donation_match_amount,
+                denom: "uusd".to_string(),
+            }],
+        })));
+    };
+
     // build deposit messages for each of the sources/amounts
     let deposit_messages = deposit_to_vaults(
         deps.as_ref(),
@@ -712,6 +746,7 @@ pub fn deposit(
 
     Ok(Response::new()
         .add_submessages(deposit_messages)
+        .add_submessages(doner_match_messages)
         .add_attribute("action", "account_deposit")
         .add_attribute("sender", info.sender.to_string())
         .add_attribute("deposit_amount", deposit_amount.amount.to_string()))
