@@ -142,6 +142,36 @@ pub fn new_dao_token_reply(
     }
 }
 
+pub fn new_donation_match_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: ContractResult<SubMsgExecutionResponse>,
+) -> Result<Response, ContractError> {
+    match msg {
+        ContractResult::Ok(subcall) => {
+            let mut donation_match_contract_addr = String::from("");
+            for event in subcall.events {
+                if event.ty == *"instantiate_contract" {
+                    for attrb in event.attributes {
+                        if attrb.key == "contract_address" {
+                            donation_match_contract_addr = attrb.value;
+                        }
+                    }
+                }
+            }
+
+            // update the endowment "donation_matching_contract" to be new donation_match_contract_addr
+            let mut endowment = ENDOWMENT.load(deps.storage)?;
+            endowment.donation_matching_contract =
+                Some(deps.api.addr_validate(&donation_match_contract_addr)?);
+            ENDOWMENT.save(deps.storage, &endowment)?;
+
+            Ok(Response::default())
+        }
+        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+    }
+}
+
 pub fn update_owner(
     deps: DepsMut,
     _env: Env,

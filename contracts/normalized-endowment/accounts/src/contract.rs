@@ -12,7 +12,8 @@ use angel_core::structs::EndowmentType;
 use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{
     attr, entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Reply, ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    WasmQuery,
 };
 use cw2::set_contract_version;
 
@@ -73,6 +74,7 @@ pub fn instantiate(
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries, // Vec<String>
             whitelisted_contributors: msg.whitelisted_contributors,   // Vec<String>
             locked_endowment_configs: msg.locked_endowment_configs,   // vec<String>
+            donation_matching_contract: None,
         },
     )?;
 
@@ -156,6 +158,34 @@ pub fn instantiate(
             reply_on: ReplyOn::Success,
         })
     }
+
+    // check if donation_matching_contract needs to be instantiated
+    if profile.endow_type == EndowmentType::Normal {
+        // setup the donation_matching contract
+        let donation_match_code = match registrar_config.donation_match_code {
+            Some(id) => id,
+            None => {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "No code id for donation matching contract".to_string(),
+                }))
+            }
+        };
+
+        res = res.add_submessage(SubMsg {
+            id: 4,
+            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                code_id: donation_match_code,
+                admin: None,
+                label: "new donation match contract".to_string(),
+                // TODO: The instantiate msg for "donation match" contract
+                // should be filled after the contract implementation.
+                msg: to_binary("Donation match contract instantiate msg")?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        })
+    }
     Ok(res)
 }
 
@@ -207,6 +237,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
         1 => executers::new_cw4_group_reply(deps, env, msg.result),
         2 => executers::new_cw3_multisig_reply(deps, env, msg.result),
         3 => executers::new_dao_token_reply(deps, env, msg.result),
+        4 => executers::new_donation_match_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }

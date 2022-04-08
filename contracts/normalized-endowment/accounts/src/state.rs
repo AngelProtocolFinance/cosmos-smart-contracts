@@ -35,6 +35,7 @@ pub struct Endowment {
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
     pub locked_endowment_configs: Vec<String>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
+    pub donation_matching_contract: Option<Addr>, // donation matching contract address
 }
 
 impl Endowment {
