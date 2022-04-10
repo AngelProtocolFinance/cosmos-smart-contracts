@@ -227,7 +227,7 @@ export async function testExecute(
 
   // Test execute
   // await testRejectUnapprovedDonations(terra, pleb, endowmentContract1, "10000000");
-  // await testDonorSendsToIndexFund(terra, pleb, indexFund, 1, "0.5", "4200000");
+  // await testDonorSendsToIndexFund(terra, pleb, indexFund, 3, "0.5", "4200000");
   // await testTcaMemberSendsToIndexFund(terra, tca, indexFund);
   // await testAngelTeamCanTriggerVaultsHarvest(
   //   terra,
@@ -246,8 +246,8 @@ export async function testExecute(
   // );
   // await testBeneficiaryCanWithdrawFromLiquid(
   //   terra,
-  //   charity1,
-  //   endowmentContract1,
+  //   charity3,
+  //   endowmentContract3,
   //   anchorVault1,
   //   pleb.key.accAddress
   // );
@@ -260,7 +260,6 @@ export async function testExecute(
   //   endowmentContract3,
   //   endowmentContract4
   // );
-  // await testMigrateAllAccounts(terra, apTeam, registrar);
   // await testUpdateFundMembers(
   //   terra,
   //   apTeam,

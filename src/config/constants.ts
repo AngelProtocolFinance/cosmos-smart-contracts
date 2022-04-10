@@ -253,6 +253,15 @@ export const mainnet = {
       "terra1p045cpuk44zthetwjssmjy0xgjg7304en9m8pu", // Gomde UK
       "terra1a73f4dandsx8crtnm93psa5d8la8e379tvtxzl", // SEED Madagascar
       "terra185tpavqdd2qtcl5gl5fuxzkqsnxl946864fcjd", // Indian Dance Educators Association
+      "terra1uegpp7nuxazgf20medwy4dwdhvkzvdztmrj8jx", // PEPA
+      "terra19atulfz5fgx7qdwvw9aq25gp3hp6qx4kk2uh42", // Southern Highlands Participatory Organisation
+      "terra1w80ea4dw9u3eh74uavw8f96psawmgmvyuu7t40", // Justdiggit
+      "terra14hmdpqwr49j7vyeqmjmp9zxsym0fczp66kuz0g", // Mauti Cancer
+      "terra16a8gcgpty72ude24z9dwm396q8ma6x2fnned62", // GRACE: Give Refugees A ChancE
+      "terra1ru70nkw23jxh0cr6ev6mldlcx220flhsf640tz", // Island Beach Access
+      "terra1scqfr8dy8hmq9c567mmvmhqkzerstul7sgtfws", // IDEAS For Us
+      "terra1usmzclqksa9g47ugevc4cstqwyzp2xmrd527pe", // Amalfi Impresa Sociale
+      "terra1ayr42zeh4srqcv6d4rgghkq6l25tzgyupxvf7q", // Blue Warriors
     ],
   },
   members: [

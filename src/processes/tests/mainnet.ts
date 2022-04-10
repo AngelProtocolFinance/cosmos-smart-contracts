@@ -188,19 +188,21 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   19,
-  //   ["terra1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r"],
+  //   21,
+  //   [
+  //     "terra1uegpp7nuxazgf20medwy4dwdhvkzvdztmrj8jx", // PEPA
+  //   ],
   //   []
   // );
   // await testCreateIndexFund(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   "MVP Rotation #13",
+  //   "MVP Rotation #14",
   //   "Fund collection for MVP",
   //   true,
   //   [
-  //     "terra1783y2z9pnwaf4letldrm3l9cgaq5ns6uhx0c23", // Sustainable Surf
+  //     "terra14hmdpqwr49j7vyeqmjmp9zxsym0fczp66kuz0g", // Mauti Cancer
   //   ]
   // );
   // await testUpdateAngelAllianceMembers(
@@ -229,7 +231,7 @@ export async function testExecute(
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
   // await testQueryIndexFundFundsList(terra, indexFund);
-  // await testQueryIndexFundFundDetails(terra, indexFund, 20);
+  // await testQueryIndexFundFundDetails(terra, indexFund, 21);
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);
