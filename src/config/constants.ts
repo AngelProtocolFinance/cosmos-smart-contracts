@@ -265,10 +265,11 @@ export const mainnet = {
     ],
   },
   members: [
+    { addr: "terra1numzqm5mgr56ftd4y8mfen7705nfs4vpz5jf0s", weight: 1 },
     { addr: "terra1wvsugzhszkstexl0v6fv86c9ryjy8xm6u9t2fk", weight: 1 },
     { addr: "terra103rakc90xgcuxaee6alqhkmnp7qh92hwt0hxur", weight: 1 },
-    { addr: "terra1numzqm5mgr56ftd4y8mfen7705nfs4vpz5jf0s", weight: 1 },
-    { addr: "terra1p3kcfzflagjl7lxfexwyaz43e4mprhyml0sqju", weight: 1 },
+    { addr: "terra1kqk3x5mscrl94z6jfqam78rrdg42uyc3w63mye", weight: 1 },
+    { addr: "terra1qxma5jlwlxx8mfu5ge7rnq3x03asaptd4fvaa4", weight: 1 },
   ],
 
   // LBP contracts
@@ -315,11 +316,11 @@ export const mainnet = {
   halo: {
     airdrop_contract: "terra1pe6mnf0ursz0h80h2hwk690hvrph8vgt9pnw0w",
     collector_contract: "terra1uxqjsgnq30lg5lhlhwd2gmct844vwqcdlv93x5",
-    community_contract: "",
+    community_contract: "terra1umunfh7hfa4d4wx8pmssfzma9msgvf3njxz64w",
     distributor_contract: "terra1ya34r8qj0fttkrxx435zexshyqe5fe3vlmhnd6",
     gov_contract: "terra1zcmp45vemypvd3j6ek2j2gz4mevjzyv3jc4ree",
     gov_hodler_contract: "terra1vn8ycrkmm8llqcu82qe3sg5ktn6hajs6tkpnx0",
     staking_contract: "",
-    vesting_contract: "",
+    vesting_contract: "terra19vv0hu406qpg9gu7uh4wnqr9lz0dlemw20pz4f",
   },
 } as const;
