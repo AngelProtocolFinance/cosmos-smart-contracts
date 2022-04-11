@@ -110,10 +110,10 @@ export const mainnet = {
     registrar: "terra1nwk2y5nfa5sxx6gtxr84lre3zpnn7cad2f266h",
     indexFund: "terra19cevhng6nunl7gmc90sph0syuqyvtqn7mlhwz0",
     anchorVault: "terra172ue5d0zm7jlsj2d9af4vdff6wua7mnv6dq5vp",
-    cw4GrpApTeam: "terra1qzdgs73h3rnh9j7f4t6tyuw9lmrp5esn6yunyl",
-    cw3ApTeam: "terra1m6rqwmxlpztjf3zfhza906d44c9rpf2t6vn37n",
-    cw4GrpOwners: "terra1lycc2zyhd676294c604euh8hxw7h6jrjd68x83",
-    cw3GuardianAngels: "terra1jd2n0ze7er80x9h8k3x006aypaxs7mvrggdmn9",
+    cw4GrpApTeam: "terra1eueh924845wwsc2mna5u3ysn79q66kwqgq26mj",
+    cw3ApTeam: "terra1zrwpm9htqdh80nhqcuvw999cexvtmu0xt4dks5",
+    cw4GrpOwners: "terra1lycc2zyhd676294c604euh8hxw7h6jrjd68x83", // NO LONGER USED!!
+    cw3GuardianAngels: "terra1jd2n0ze7er80x9h8k3x006aypaxs7mvrggdmn9", // NO LONGER USED!!
     endowmentContracts: [
       "terra12crxq8nxml96e9h38fe67c4p76pc24l54zjzzh",
       "terra1uwtk2hs65332emnjn8n9s8d3l692pgyqnew4dq",
