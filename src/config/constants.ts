@@ -316,7 +316,7 @@ export const mainnet = {
   halo: {
     airdrop_contract: "terra1pe6mnf0ursz0h80h2hwk690hvrph8vgt9pnw0w",
     collector_contract: "terra1uxqjsgnq30lg5lhlhwd2gmct844vwqcdlv93x5",
-    community_contract: "terra1umunfh7hfa4d4wx8pmssfzma9msgvf3njxz64w",
+    community_contract: "terra1cjaez6nzl08g4q9yklmxqqqcs79j9p0yfjs2mz",
     distributor_contract: "terra1ya34r8qj0fttkrxx435zexshyqe5fe3vlmhnd6",
     gov_contract: "terra1zcmp45vemypvd3j6ek2j2gz4mevjzyv3jc4ree",
     gov_hodler_contract: "terra1vn8ycrkmm8llqcu82qe3sg5ktn6hajs6tkpnx0",
