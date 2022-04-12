@@ -16,10 +16,10 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     /// DonerMatch will attempt to send reserve tokens to CS/dao-token contract.
-    /// You must send only reserve tokens in that message
-    /// `amount`: UST amount for reserve tokens
-    /// `donor` : Wallet address, which done donation
-    /// `token` : CS/dao-token address
+    /// You must send only reserve tokens in that message  
+    /// `amount`: UST amount for reserve tokens  
+    /// `donor` : Wallet address, which done donation  
+    /// `token` : CS/dao-token address  
     DonorMatch {
         amount: Uint128,
         donor: Addr,

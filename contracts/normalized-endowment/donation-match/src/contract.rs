@@ -4,6 +4,7 @@ use angel_core::messages::donation_match::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
 };
 
+use angel_core::messages::dao_token::Cw20HookMsg as DaoTokenHookMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::responses::registrar::EndowmentListResponse;
 use cosmwasm_std::{
@@ -74,8 +75,9 @@ fn execute_donor_match(
     token: Addr,
 ) -> Result<Response, ContractError> {
     let uusd_amount = amount;
-    let doner_addr = donor;
     let dao_token = token;
+    let donor = donor.to_string();
+    let endowment_contract = info.sender.to_string();
 
     let config = CONFIG.load(deps.storage)?;
 
@@ -143,7 +145,11 @@ fn execute_donor_match(
         msg: to_binary(&Cw20ExecuteMsg::Send {
             contract: dao_token.to_string(),
             amount: reserve_token_amount,
-            msg: to_binary("Should be refilled with real message")?,
+            msg: to_binary(&DaoTokenHookMsg::DonorMatch {
+                amount: reserve_token_amount,
+                donor,
+                endowment_contract,
+            })?,
         })?,
         funds: vec![],
     })];

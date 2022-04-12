@@ -1,5 +1,6 @@
 use crate::curves::{decimal, Constant, Curve, DecimalPlaces, Linear, SquareRoot};
 use cosmwasm_std::{Binary, Decimal, Uint128};
+use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -84,6 +85,14 @@ pub enum Cw20HookMsg {
     /// Buy will attempt to purchase as many supply tokens as possible.
     /// You must send only CW20 reserve tokens (HALO)
     Buy {},
+    /// DonorMatch will attempt to receive the CW20 reserve tokens (HALO).
+    /// It will also attempt to send the dao tokens (CS) to "donor" & "endowment" contract.
+    /// You must send only CW20 reserve tokens (HALO)
+    DonorMatch {
+        amount: Uint128,
+        donor: String,
+        endowment_contract: String,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -138,6 +147,10 @@ pub enum ExecuteMsg {
     // BurnFrom { owner: String, amount: Uint128 },
     /// Claim all tokens available for the message sender
     ClaimTokens {},
+
+    // Implements CW20. Receive is a base message to receive tokens to a this contract and trigger an action
+    /// on the receiving contract.
+    Receive(Cw20ReceiveMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

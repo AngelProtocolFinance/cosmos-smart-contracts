@@ -90,6 +90,19 @@ pub fn receive_cw20(
             cw20_msg.amount,              // how much HALO sending
             curve_fn,                     // some curve
         ),
+        Ok(Cw20HookMsg::DonorMatch {
+            amount,
+            donor,
+            endowment_contract,
+        }) => execute_donor_match(
+            deps,
+            env,
+            info,
+            cw20_msg.amount,
+            amount,
+            donor,
+            endowment_contract,
+        ),
         _ => Err(ContractError::Unauthorized {}),
     }
 }
@@ -163,6 +176,9 @@ pub fn do_execute(
         // } => Ok(execute_send_from(
         //     deps, env, info, owner, contract, amount, msg,
         // )?),
+        ExecuteMsg::Receive(cw20_receive_msg) => {
+            Ok(receive_cw20(deps, env, info, cw20_receive_msg)?)
+        }
     }
 }
 
@@ -199,6 +215,59 @@ pub fn execute_buy_cw20(
         .add_attribute("reserve", buyer_amount)
         .add_attribute("supply", minted);
     Ok(res)
+}
+
+fn execute_donor_match(
+    mut deps: DepsMut,
+    env: Env,
+    _info: MessageInfo,
+    sent_reserve_token_amount: Uint128,
+    amount: Uint128,
+    donor: String,
+    endowment_contract: String,
+) -> Result<Response, ContractError> {
+    // Validation: Check if the correct amount of tokens are sent
+    if sent_reserve_token_amount != amount {
+        return Err(ContractError::InsufficientFunds {});
+    }
+
+    // Calculate the amounts of dao-token to be sent
+    // "donor": 40%
+    // "endowment_contract": 40%
+    // Burn: 20%
+    let donor_amount = amount.multiply_ratio(40_u128, 100_u128);
+    let endowment_amount = amount.multiply_ratio(40_u128, 100_u128);
+    let burn_amount = amount.multiply_ratio(20_u128, 100_u128);
+
+    // Burn the 20%
+    let sub_info = MessageInfo {
+        sender: env.contract.address.clone(),
+        funds: vec![],
+    };
+    execute_burn(deps.branch(), env.clone(), sub_info.clone(), burn_amount)?;
+
+    // Send the remainders to "donor" & "endowment" contract
+    execute_transfer(
+        deps.branch(),
+        env.clone(),
+        sub_info.clone(),
+        donor,
+        donor_amount,
+    )?;
+    execute_transfer(
+        deps.branch(),
+        env,
+        sub_info,
+        endowment_contract,
+        endowment_amount,
+    )?;
+
+    Ok(Response::default().add_attributes(vec![
+        attr("method", "donor_match"),
+        attr("donor_amount", donor_amount),
+        attr("endowment_amount", endowment_amount),
+        attr("burnt_amount", burn_amount),
+    ]))
 }
 
 //

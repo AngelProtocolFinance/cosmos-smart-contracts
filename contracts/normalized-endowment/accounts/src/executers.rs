@@ -4,6 +4,7 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::InstantiateMsg as Cw3MultisigInstantiateMsg;
 use angel_core::messages::cw3_multisig::Threshold;
+use angel_core::messages::donation_match::ExecuteMsg as DonationMatchExecMsg;
 use angel_core::messages::index_fund::DepositMsg as IndexFundDepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg as IndexFundExecuter;
 use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
@@ -694,7 +695,7 @@ pub fn deposit(
 
     let tx_record = TransactionRecord {
         block: env.block.height,
-        sender: sender_addr,
+        sender: sender_addr.clone(),
         recipient: None,
         amount: deposit_amount.amount,
         denom: deposit_amount.denom,
@@ -726,8 +727,11 @@ pub fn deposit(
         // build "doner_match" message for donation matching
         doner_match_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: donation_match_contract.to_string(),
-            // TODO: This "doner_match" message should be filled after "donation matching" contract impl
-            msg: to_binary("doner_match message")?,
+            msg: to_binary(&DonationMatchExecMsg::DonorMatch {
+                amount: donation_match_amount,
+                donor: sender_addr,
+                token: endowment.dao_token.unwrap(),
+            })?,
             funds: vec![Coin {
                 amount: donation_match_amount,
                 denom: "uusd".to_string(),
