@@ -649,6 +649,15 @@ pub fn update_profile(
         return Err(ContractError::Unauthorized {});
     }
 
+    let un_sdg = if info.sender == config.owner {
+        match msg.un_sdg {
+            Some(i) => Some(Some(i)),
+            None => Some(None),
+        }
+    } else {
+        None
+    };
+
     let tier = if info.sender == config.owner {
         match msg.tier {
             Some(1) => Some(Some(Tier::Level1)),
@@ -714,6 +723,7 @@ pub fn update_profile(
                 name: msg.name.and_then(|v| Some(v)),
                 owner: None,
                 tier,
+                un_sdg,
                 endow_type: Some(profile.endow_type),
             },
         ))?,

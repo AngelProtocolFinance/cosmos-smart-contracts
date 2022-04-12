@@ -109,6 +109,7 @@ pub struct EndowmentEntry {
     pub owner: String,
     pub status: EndowmentStatus,
     pub tier: Option<Tier>,
+    pub un_sdg: Option<u64>,
     pub endow_type: EndowmentType,
 }
 
