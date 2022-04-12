@@ -16,6 +16,7 @@ pub struct MigrateEndowment {
     pub name: String,
     pub owner: String,
     pub tier: u64,
+    pub un_sdg: u64,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
@@ -114,6 +115,7 @@ pub struct UpdateEndowmentTypeMsg {
     pub name: Option<String>,
     pub owner: Option<String>,
     pub tier: Option<Option<Tier>>,
+    pub un_sdg: Option<Option<u64>>,
     pub endow_type: Option<EndowmentType>,
 }
 
@@ -144,6 +146,7 @@ pub enum QueryMsg {
         owner: Option<String>,
         status: Option<String>,
         tier: Option<Option<String>>,
+        un_sdg: Option<Option<u64>>,
         endow_type: Option<String>,
     },
     // Get all Config details for the contract

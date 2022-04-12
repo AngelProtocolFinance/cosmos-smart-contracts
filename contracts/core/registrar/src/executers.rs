@@ -382,6 +382,7 @@ pub fn new_accounts_reply(
                     owner: endowment_owner,
                     status: EndowmentStatus::Inactive,
                     tier: None,
+                    un_sdg: None,
                     endow_type: match endowment_type.as_str() {
                         "charity" => EndowmentType::Charity,
                         "normal" => EndowmentType::Normal,
