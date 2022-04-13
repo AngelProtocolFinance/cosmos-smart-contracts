@@ -2,8 +2,8 @@ use crate::contract::{execute, instantiate, migrate, query, reply};
 use angel_core::errors::core::*;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
-use angel_core::structs::EndowmentStatus;
 use angel_core::structs::SplitDetails;
+use angel_core::structs::{EndowmentStatus, EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
     coins, from_binary, Addr, ContractResult, CosmosMsg, Decimal, Event, Reply,
@@ -196,15 +196,37 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     )
     .unwrap();
 
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_city_origin: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
     let create_endowment_msg = CreateEndowmentMsg {
         owner: good_charity_addr.clone(),
         beneficiary: good_charity_addr.clone(),
-        name: "Test Endowment".to_string(),
-        description: "Endowment to power an amazing charity".to_string(),
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
         guardians_multisig_addr: None,
+        profile: profile,
     };
 
     // anyone can create Accounts
