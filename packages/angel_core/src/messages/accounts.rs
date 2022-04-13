@@ -1,5 +1,5 @@
-use crate::messages::vault::AccountTransferMsg;
 use crate::structs::FundingSource;
+use crate::{messages::vault::AccountTransferMsg, structs::Profile};
 use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -16,11 +16,10 @@ pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub owner: String,       // address that originally setup the endowment account
     pub beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
-    pub name: String,        // name of the Charity Endowment
-    pub description: String, // description of the Charity Endowment
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
+    pub profile: Profile,               // struct holding the Endowment info
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

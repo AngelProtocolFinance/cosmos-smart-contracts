@@ -245,11 +245,10 @@ pub fn create_endowment(
             registrar_contract: env.contract.address.to_string(),
             owner: msg.owner,
             beneficiary: msg.beneficiary,
-            name: msg.name,
-            description: msg.description,
             withdraw_before_maturity: msg.withdraw_before_maturity,
             maturity_time: msg.maturity_time,
             maturity_height: msg.maturity_height,
+            profile: msg.profile,
         })?,
         funds: vec![],
     };

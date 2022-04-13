@@ -1,13 +1,15 @@
 use crate::executers;
 use crate::queriers;
+use crate::state::PROFILE;
 use crate::state::{Config, Endowment, OldState, State, CONFIG, ENDOWMENT, STATE};
-use crate::state::{Profile, PROFILE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::EndowmentType;
-use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
+use angel_core::structs::{
+    AcceptedTokens, BalanceInfo, Profile, RebalanceDetails, StrategyComponent,
+};
 use cosmwasm_std::StdError;
 use cosmwasm_std::{
     attr, entry_point, from_slice, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env,
@@ -80,9 +82,7 @@ pub fn instantiate(
         },
     )?;
 
-    let mut profile = Profile::default();
-    profile.name = msg.name.clone();
-    profile.overview = msg.description;
+    let mut profile = msg.profile;
 
     if info
         .sender
@@ -94,7 +94,7 @@ pub fn instantiate(
     PROFILE.save(deps.storage, &profile)?;
 
     Ok(Response::default().add_attributes(vec![
-        attr("endow_name", msg.name),
+        attr("endow_name", profile.name),
         attr("endow_owner", msg.owner),
         attr("endow_type", profile.endow_type.to_string()),
     ]))

@@ -1,4 +1,4 @@
-use crate::structs::{EndowmentType, SplitDetails, Tier};
+use crate::structs::{EndowmentType, Profile, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -60,12 +60,11 @@ pub enum ExecuteMsg {
 pub struct CreateEndowmentMsg {
     pub owner: String,
     pub beneficiary: String,
-    pub name: String,
-    pub description: String,
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
     pub guardians_multisig_addr: Option<String>,
+    pub profile: Profile,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
