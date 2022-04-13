@@ -306,6 +306,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
             status: None,
             tier: None,
             endow_type: None,
+            un_sdg: None,
         },
     )
     .unwrap();
@@ -326,6 +327,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         owner: None,
         tier: None,
         endow_type: None,
+        un_sdg: None,
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -364,6 +366,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
             status: None,
             tier: None,
             endow_type: None,
+            un_sdg: None,
         },
     )
     .unwrap();
