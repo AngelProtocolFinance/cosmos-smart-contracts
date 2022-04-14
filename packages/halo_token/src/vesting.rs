@@ -27,6 +27,9 @@ pub enum ExecuteMsg {
         address: String,
         new_schedules: Vec<(u64, u64, Uint128)>,
     },
+    UpdateVestingAccount {
+        vesting_account: VestingAccount,
+    },
     Claim {},
 }
 
