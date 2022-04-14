@@ -74,6 +74,57 @@ export async function testUpdatingRegistrarConfigs(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: Endowment created from the Registrar
+//
+// SCENARIO:
+// User sends request to create a new endowment to the Registrar
+//
+//----------------------------------------------------------------------------------------
+export async function testCreateEndowmentViaRegistrar(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  registrar: string,
+  owner: string
+): Promise<void> {
+  process.stdout.write("Create a new endowment via the Registrar");
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      create_endowment: {
+        owner,
+        beneficiary: owner,
+        withdraw_before_maturity: false,
+        maturity_time: undefined,
+        maturity_height: undefined,
+        guardians_multisig_addr: undefined,
+        profile: {
+          name: "Test-Suite Endowment",
+          overview: "Endowment created from the test-suite integration test",
+          un_sdg: 2,
+          tier: 3,
+          logo: undefined,
+          image: undefined,
+          url: undefined,
+          registration_number: undefined,
+          country_city_origin: undefined,
+          contact_email: undefined,
+          social_media_urls: {
+            facebook: undefined,
+            twitter: undefined,
+            linkedin: undefined,
+          },
+          number_of_employees: undefined,
+          average_annual_budget: undefined,
+          annual_revenue: undefined,
+          charity_navigator_rating: undefined,
+          endow_type: "Charity",
+        },
+      },
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
+}
+
+//----------------------------------------------------------------------------------------
 // TEST: AP Team and trigger harvesting of Accounts for a Vault(s)
 //
 // SCENARIO:

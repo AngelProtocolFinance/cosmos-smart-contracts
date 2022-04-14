@@ -34,12 +34,12 @@ export async function migrateCore(
   endowmentContracts: string[]
 ): Promise<void> {
   // run the migrations desired
-  // await migrateRegistrar(terra, apTeam, registrar);
+  await migrateRegistrar(terra, apTeam, registrar);
   // await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
   // await migrateCw3Multisig(terra, apTeam, cw3ApTeam);
   // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
   // await migrateIndexFund(terra, apTeam, indexFund);
-  // await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
+  await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
   // await migrateVaults(terra, apTeam, vaultContracts);
 }
 
@@ -62,11 +62,111 @@ async function migrateRegistrar(
   process.stdout.write("Migrate Registrar contract");
   const result1 = await migrateContract(terra, apTeam, apTeam, registrar, codeId, {
     endowments: [
-      { addr: "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v", status: 1, name: "Testnet Endowment #1", owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", tier: 3 },
-      { addr: "terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9", status: 2, name: "Testnet Endowment #2", owner: "terra1m0exj9cz0vmde479a28l4devc34fk53mjf4j2g", tier: 1 },
-      { addr: "terra1vyw5r7n02epkpk2tm2lzt67fyv28qzalwzgzuu", status: 1, name: "Testnet Endowment #3", owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp", tier: 2 },
-      { addr: "terra1jvtf3ccpkr3vymv98vk9nz7wvwmykgv8yk9l3w", status: 0, name: "Testnet Endowment #4", owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp", tier: 3 },
-    ]
+      {
+        addr: "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v",
+        status: 1,
+        name: "Testnet Endowment #1",
+        owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+        tier: 3,
+        un_sdg: 2,
+      },
+      {
+        addr: "terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9",
+        status: 2,
+        name: "Testnet Endowment #2",
+        owner: "terra1m0exj9cz0vmde479a28l4devc34fk53mjf4j2g",
+        tier: 1,
+        un_sdg: 0,
+      },
+      {
+        addr: "terra1vyw5r7n02epkpk2tm2lzt67fyv28qzalwzgzuu",
+        status: 1,
+        name: "Testnet Endowment #3",
+        owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
+        tier: 2,
+        un_sdg: 5,
+      },
+      {
+        addr: "terra1jvtf3ccpkr3vymv98vk9nz7wvwmykgv8yk9l3w",
+        status: 0,
+        name: "Testnet Endowment #4",
+        owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
+        tier: 3,
+        un_sdg: 6,
+      },
+      {
+        addr: "terra1802dg4mn7x3a3dkhkch6z9ekhuw5g02duz75yk",
+        status: 1,
+        name: "Test Endowment #1",
+        owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+        tier: 3,
+        un_sdg: 4,
+      },
+      {
+        addr: "terra19xd98t0n43lt2nv8pvvc67lxu29savfeh537cu",
+        status: 1,
+        name: "Test Endowment #1",
+        owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+        tier: 3,
+        un_sdg: 5,
+      },
+      {
+        addr: "terra1as3akr2l98vaeq2hxwql7nu6kksmf9cvl8nalq",
+        status: 0,
+        name: "Test Endowment #3",
+        owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
+        tier: 3,
+        un_sdg: 0,
+      },
+      {
+        addr: "terra1eu53vumcfnf7n2ysn22z0hf0tjrm8evu0lecl8",
+        status: 0,
+        name: "Test Endowment #3",
+        owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
+        tier: 3,
+        un_sdg: 0,
+      },
+      {
+        addr: "terra1nd69mmkftjufu30z4paa57pwe6zhwe5cp7cgsv",
+        status: 0,
+        name: "Vibin' Endowment #4",
+        owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
+        tier: 3,
+        un_sdg: 0,
+      },
+      {
+        addr: "terra1t8c0akud92e7qw6q4kk027y6z02ue2zkq62l4y",
+        status: 1,
+        name: "Test Endowment #2",
+        owner: "terra1m0exj9cz0vmde479a28l4devc34fk53mjf4j2g",
+        tier: 3,
+        un_sdg: 9,
+      },
+      {
+        addr: "terra1tr8prcpl7ncahmq7c0ttjlks2mcf5cywsf54k2",
+        status: 1,
+        name: "Vibin' Endowment #4",
+        owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
+        tier: 3,
+        un_sdg: 1,
+      },
+      {
+        addr: "terra1wpe8837ll4u5k94jtw28endp0lf5zff3jr3j2n",
+        status: 1,
+        name: "My First Endowment Creation",
+        owner: "terra1m0exj9cz0vmde479a28l4devc34fk53mjf4j2g",
+        tier: 3,
+        un_sdg: 0,
+      },
+      {
+        addr: "terra1x428sa7avmpm7f2fpcpz2wjr37m4ayzrxs9s2m",
+        status: 0,
+        name: "Test Endowment #2",
+        owner: "terra1m0exj9cz0vmde479a28l4devc34fk53mjf4j2g",
+        tier: 3,
+        un_sdg: 0,
+      },
+    ],
   });
   console.log(chalk.green(" Done!"));
 }
@@ -232,13 +332,13 @@ async function migrateExistingAccounts(
   // cw3ApTeam contract to update the "accounts_code_id" as 58857 in "registrar"
   /* ---------          ------------- */
   // // Update registrar accounts code ID and migrate all accounts contracts
-  // process.stdout.write("Update Registrar's Account Code ID stored in configs");
-  // const result0 = await sendTransaction(terra, apTeam, [
-  //   new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-  //     update_config: { accounts_code_id: codeId },
-  //   }),
-  // ]);
-  // console.log(chalk.green(" Done!"));
+  process.stdout.write("Update Registrar's Account Code ID stored in configs");
+  const result0 = await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      update_config: { accounts_code_id: codeId },
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
   /* ---------          -------------- */
 
   process.stdout.write("Migrating existing Endowment Accounts contracts\n");

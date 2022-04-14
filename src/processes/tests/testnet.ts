@@ -5,6 +5,8 @@ import {
   testBeneficiaryCanWithdrawFromLiquid,
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
+  testApTeamChangesAccountsEndowmentOwner,
+  testChangeManyAccountsEndowmentOwners,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
@@ -40,6 +42,7 @@ import {
 } from "./core/multisig";
 import {
   testApproveEndowments,
+  testCreateEndowmentViaRegistrar,
   testAngelTeamCanTriggerVaultsHarvest,
   testClosingEndpoint,
   testMigrateAllAccounts,
@@ -215,7 +218,27 @@ export async function testExecute(
   //   []
   // );
   // await testUpdateFundMembers(terra, apTeam, apTeam, indexFund, 6, ["","",""], ["","",""]);
+  // await testChangeManyAccountsEndowmentOwners(terra, apTeam, []);
 
+  // [
+  //   ,
+  //   {
+  //     address: "terra1jvtf3ccpkr3vymv98vk9nz7wvwmykgv8yk9l3w",
+  //     owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
+  //   },
+  // ].forEach(async (endowment) => {
+  // await createAccountCw4GroupCw3Multisig(
+  //   terra,
+  //   apTeam,
+  //   registrar,
+  //   62653, // cw4Code
+  //   62654, // cw3Code
+  //   {
+  //     address: "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v",
+  //     owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+  //   }
+  // );
+  await testCreateEndowmentViaRegistrar(terra, apTeam, registrar, apTeam2.key.accAddress);
   // Multisig test
   // await testAddMemberToC4Group(terra, apTeam, cw3ApTeam, cw4GrpApTeam, "terra1......");
   // await testUpdateCw3Config(terra, apTeam, cw3ApTeam, 50, 25000);
