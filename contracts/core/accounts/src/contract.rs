@@ -97,6 +97,11 @@ pub fn instantiate(
         attr("endow_name", profile.name),
         attr("endow_owner", msg.owner),
         attr("endow_type", profile.endow_type.to_string()),
+        attr("endow_logo", profile.logo.unwrap_or_else(|| "".to_string())),
+        attr(
+            "endow_image",
+            profile.image.unwrap_or_else(|| "".to_string()),
+        ),
     ]))
 }
 

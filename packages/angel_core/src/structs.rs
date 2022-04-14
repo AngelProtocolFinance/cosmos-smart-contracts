@@ -106,6 +106,8 @@ impl RebalanceDetails {
 pub struct EndowmentEntry {
     pub address: Addr,
     pub name: String,
+    pub logo: String,
+    pub image: String,
     pub owner: String,
     pub status: EndowmentStatus,
     pub tier: Option<Tier>,
