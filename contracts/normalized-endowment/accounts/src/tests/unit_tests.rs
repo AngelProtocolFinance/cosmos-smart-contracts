@@ -31,11 +31,15 @@ fn test_proper_initialization() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
+        curve_type: None,
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::percent(30),
     };
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len()); // no news is good news! :)
+    assert_eq!(1, res.messages.len()); // no news is good news! :)
 }
 
 #[test]
@@ -61,11 +65,15 @@ fn test_get_config() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
+        curve_type: None,
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::percent(30),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
+    assert_eq!(1, res.messages.len());
 }
 
 #[test]
@@ -92,11 +100,15 @@ fn test_update_endowment_settings() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
+        curve_type: None,
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::percent(30),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
+    assert_eq!(1, res.messages.len());
 
     // update the endowment owner and beneficiary
     let msg = UpdateEndowmentSettingsMsg {
@@ -112,7 +124,7 @@ fn test_update_endowment_settings() {
         locked_endowment_configs: None,
         rebalance: None,
     };
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth "));
+    let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth "));
     let env = mock_env();
     let res = execute(
         deps.as_mut(),
@@ -174,21 +186,25 @@ fn test_change_registrar_contract() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
+        curve_type: None,
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::percent(30),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
+    assert_eq!(1, res.messages.len());
 
     // change the owner to some pleb
-    let info = mock_info(registrar_contract.as_ref(), &coins(100000, "earth"));
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
     let res = execute(
         deps.as_mut(),
         env.clone(),
         info.clone(),
-        ExecuteMsg::UpdateRegistrar {
-            new_registrar: pleb.clone(),
+        ExecuteMsg::UpdateOwner {
+            new_owner: pleb.clone(),
         },
     )
     .unwrap();
@@ -197,7 +213,7 @@ fn test_change_registrar_contract() {
     // check changes saved and can be recalled
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let value: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(pleb.clone(), value.registrar_contract);
+    assert_eq!(pleb.clone(), value.owner);
 
     // Original contract owner should not be able to update the registrar now
     let msg = ExecuteMsg::UpdateRegistrar {
@@ -234,11 +250,15 @@ fn test_change_admin() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
+        curve_type: None,
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::percent(30),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
+    assert_eq!(1, res.messages.len());
 
     // change the admin to some pleb
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -294,11 +314,15 @@ fn migrate_contract() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
+        curve_type: None,
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::percent(30),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
+    assert_eq!(1, res.messages.len());
 
     // try to migrate the contract
     let msg = MigrateMsg {
@@ -333,11 +357,15 @@ fn test_update_strategy() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
+        curve_type: None,
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::percent(30),
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
+    assert_eq!(1, res.messages.len());
 
     // sum of the invested strategy components percentages is not equal 100%
     let msg = ExecuteMsg::UpdateStrategies {
@@ -433,12 +461,21 @@ fn test_update_endowment_profile() {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
         owner: charity_addr.clone(),
-        beneficiary: charity_addr.clone(),
+        cw4_members: vec![],
+        dao: false,
+        donation_match: false,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        locked_endowment_configs: vec![],
         name: "Test Endowment".to_string(),
         description: "Endowment to power an amazing charity".to_string(),
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
+        curve_type: None,
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::percent(30),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -539,12 +576,21 @@ fn test_donate() {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
         owner: charity_addr.clone(),
-        beneficiary: charity_addr.clone(),
+        cw4_members: vec![],
+        dao: false,
+        donation_match: false,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        locked_endowment_configs: vec![],
         name: "Test Endowment".to_string(),
         description: "Endowment to power an amazing charity".to_string(),
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
+        curve_type: None,
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::percent(30),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -602,12 +648,21 @@ fn test_withdraw() {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
         owner: charity_addr.clone(),
-        beneficiary: charity_addr.clone(),
+        cw4_members: vec![],
+        dao: false,
+        donation_match: false,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        locked_endowment_configs: vec![],
         name: "Test Endowment".to_string(),
         description: "Endowment to power an amazing charity".to_string(),
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
+        curve_type: None,
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::percent(30),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
