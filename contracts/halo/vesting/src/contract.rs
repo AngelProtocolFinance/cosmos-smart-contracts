@@ -52,6 +52,9 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                     address,
                     new_schedules,
                 } => add_schedules_to_vesting_account(deps, address, new_schedules),
+                ExecuteMsg::UpdateVestingAccount { vesting_account } => {
+                    update_vesting_account(deps, info, vesting_account)
+                }
                 _ => panic!("DO NOT ENTER HERE"),
             }
         }
@@ -143,6 +146,38 @@ pub fn add_schedules_to_vesting_account(
     }
 
     Ok(Response::new().add_attributes(vec![("action", "add_schedules_to_vesting_account")]))
+}
+
+pub fn update_vesting_account(
+    deps: DepsMut,
+    info: MessageInfo,
+    vesting_account: VestingAccount,
+) -> StdResult<Response> {
+    let config: Config = read_config(deps.storage)?;
+    if info.sender.ne(&config.owner) {
+        return Err(StdError::generic_err("unauthorized"));
+    }
+
+    let addr = deps.api.addr_validate(&vesting_account.address).unwrap();
+    match read_vesting_info(deps.storage, &addr) {
+        Ok(mut vesting_info) => {
+            vesting_info.schedules = vesting_account.schedules;
+            store_vesting_info(deps.storage, &addr, &vesting_info)?;
+        }
+        _ => {
+            let config: Config = read_config(deps.storage)?;
+            store_vesting_info(
+                deps.storage,
+                &addr,
+                &VestingInfo {
+                    last_claim_time: config.genesis_time,
+                    schedules: vesting_account.schedules,
+                },
+            )?;
+        }
+    }
+
+    Ok(Response::new().add_attributes(vec![("action", "update_vesting_account")]))
 }
 
 pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> StdResult<Response> {
