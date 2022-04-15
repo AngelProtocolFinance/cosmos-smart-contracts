@@ -395,8 +395,8 @@ pub fn new_accounts_reply(
                         "normal" => EndowmentType::Normal,
                         _ => unimplemented!(),
                     },
-                    logo: endowment_logo,
-                    image: endowment_image,
+                    logo: Some(endowment_logo),
+                    image: Some(endowment_image),
                 },
             )?;
             Ok(Response::default())
