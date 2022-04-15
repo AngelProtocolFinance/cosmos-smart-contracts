@@ -193,6 +193,8 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     let mut profile = Profile::default();
     profile.name = msg.name;
     profile.overview = msg.overview;
+    profile.logo = Some(msg.logo);
+    profile.image = Some(msg.image);
 
     deps.storage.set(PROFILE_KEY, &to_vec(&profile)?);
     Ok(Response::default())
