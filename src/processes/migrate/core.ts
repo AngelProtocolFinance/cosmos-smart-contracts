@@ -69,6 +69,8 @@ async function migrateRegistrar(
         owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
         tier: 3,
         un_sdg: 2,
+        logo: "Testnet ENDOW #1",
+        image: "Testnet Endowment Image #1",
       },
       {
         addr: "terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9",
@@ -77,6 +79,8 @@ async function migrateRegistrar(
         owner: "terra1m0exj9cz0vmde479a28l4devc34fk53mjf4j2g",
         tier: 1,
         un_sdg: 0,
+        logo: "Testnet ENDOW #2",
+        image: "Testnet Endowment Image #2",
       },
       {
         addr: "terra1vyw5r7n02epkpk2tm2lzt67fyv28qzalwzgzuu",
@@ -85,6 +89,8 @@ async function migrateRegistrar(
         owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
         tier: 2,
         un_sdg: 5,
+        logo: "Testnet ENDOW #3",
+        image: "Testnet Endowment Image #3",
       },
       {
         addr: "terra1jvtf3ccpkr3vymv98vk9nz7wvwmykgv8yk9l3w",
@@ -93,6 +99,8 @@ async function migrateRegistrar(
         owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
         tier: 3,
         un_sdg: 6,
+        logo: "Testnet ENDOW #4",
+        image: "Testnet Endowment Image #4",
       },
       {
         addr: "terra1802dg4mn7x3a3dkhkch6z9ekhuw5g02duz75yk",
@@ -101,6 +109,8 @@ async function migrateRegistrar(
         owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
         tier: 3,
         un_sdg: 4,
+        logo: "Testnet ENDOW #5",
+        image: "Testnet Endowment Image #5",
       },
       {
         addr: "terra19xd98t0n43lt2nv8pvvc67lxu29savfeh537cu",
@@ -109,6 +119,8 @@ async function migrateRegistrar(
         owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
         tier: 3,
         un_sdg: 5,
+        logo: "Testnet ENDOW #6",
+        image: "Testnet Endowment Image #6",
       },
       {
         addr: "terra1as3akr2l98vaeq2hxwql7nu6kksmf9cvl8nalq",
@@ -117,6 +129,8 @@ async function migrateRegistrar(
         owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
         tier: 3,
         un_sdg: 0,
+        logo: "Testnet ENDOW #7",
+        image: "Testnet Endowment Image #7",
       },
       {
         addr: "terra1eu53vumcfnf7n2ysn22z0hf0tjrm8evu0lecl8",
@@ -125,6 +139,8 @@ async function migrateRegistrar(
         owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
         tier: 3,
         un_sdg: 0,
+        logo: "Testnet ENDOW #8",
+        image: "Testnet Endowment Image #8",
       },
       {
         addr: "terra1nd69mmkftjufu30z4paa57pwe6zhwe5cp7cgsv",
@@ -133,6 +149,8 @@ async function migrateRegistrar(
         owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
         tier: 3,
         un_sdg: 0,
+        logo: "Testnet ENDOW #9",
+        image: "Testnet Endowment Image #9",
       },
       {
         addr: "terra1t8c0akud92e7qw6q4kk027y6z02ue2zkq62l4y",
@@ -141,6 +159,8 @@ async function migrateRegistrar(
         owner: "terra1m0exj9cz0vmde479a28l4devc34fk53mjf4j2g",
         tier: 3,
         un_sdg: 9,
+        logo: "Testnet ENDOW #10",
+        image: "Testnet Endowment Image #10",
       },
       {
         addr: "terra1tr8prcpl7ncahmq7c0ttjlks2mcf5cywsf54k2",
@@ -149,6 +169,8 @@ async function migrateRegistrar(
         owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
         tier: 3,
         un_sdg: 1,
+        logo: "Testnet ENDOW #11",
+        image: "Testnet Endowment Image #11",
       },
       {
         addr: "terra1wpe8837ll4u5k94jtw28endp0lf5zff3jr3j2n",
@@ -157,6 +179,8 @@ async function migrateRegistrar(
         owner: "terra1m0exj9cz0vmde479a28l4devc34fk53mjf4j2g",
         tier: 3,
         un_sdg: 0,
+        logo: "Testnet ENDOW #1",
+        image: "Testnet Endowment Image #1",
       },
       {
         addr: "terra1x428sa7avmpm7f2fpcpz2wjr37m4ayzrxs9s2m",
@@ -165,6 +189,8 @@ async function migrateRegistrar(
         owner: "terra1m0exj9cz0vmde479a28l4devc34fk53mjf4j2g",
         tier: 3,
         un_sdg: 0,
+        logo: "Testnet ENDOW #12",
+        image: "Testnet Endowment Image #12",
       },
     ],
   });
@@ -351,6 +377,8 @@ async function migrateExistingAccounts(
           await migrateContracts(terra, apTeam, apTeam, endowmentContracts, codeId, {
             name: "Test Endowment",
             overview: "This is test endowment",
+            logo: "Test Logo",
+            image: "Test image url",
           });
           resolve();
         } catch (e) {
