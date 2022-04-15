@@ -262,6 +262,9 @@ export const mainnet = {
       "terra1scqfr8dy8hmq9c567mmvmhqkzerstul7sgtfws", // IDEAS For Us
       "terra1usmzclqksa9g47ugevc4cstqwyzp2xmrd527pe", // Amalfi Impresa Sociale
       "terra1ayr42zeh4srqcv6d4rgghkq6l25tzgyupxvf7q", // Blue Warriors
+      "terra152f28c0kgyuhpynwvt03xewvtf85283ewlppvg", // Newmarket Food Pantry
+      "terra1xux8zyum6lwv2ykjhxmwcguhj705yenctq8ff7", // Kashmir Humanity Foundation
+      "terra17jrfprzuhgnkm9pq4xqx6lm4pa3yznzp32sd9v", // Africa Innovation Network For Climate and Education
     ],
   },
   members: [
