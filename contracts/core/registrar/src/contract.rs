@@ -159,17 +159,19 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
                 },
                 // Option<Tier>
                 tier: match e.tier {
-                    1 => Some(Tier::Level1),
-                    2 => Some(Tier::Level2),
-                    3 => Some(Tier::Level3),
+                    Some(1) => Some(Tier::Level1),
+                    Some(2) => Some(Tier::Level2),
+                    Some(3) => Some(Tier::Level3),
                     _ => None,
                 },
                 // UN_SDG Option<u64>
                 un_sdg: match e.un_sdg {
-                    0 => None,
-                    _ => Some(e.un_sdg),
+                    Some(0) => None,
+                    _ => e.un_sdg,
                 },
                 endow_type: EndowmentType::Charity, // EndowmentType,
+                logo: e.logo,
+                image: e.image,
             })?,
         );
     }

@@ -97,6 +97,11 @@ pub fn instantiate(
         attr("endow_name", profile.name),
         attr("endow_owner", msg.owner),
         attr("endow_type", profile.endow_type.to_string()),
+        attr("endow_logo", profile.logo.unwrap_or_else(|| "".to_string())),
+        attr(
+            "endow_image",
+            profile.image.unwrap_or_else(|| "".to_string()),
+        ),
     ]))
 }
 
@@ -188,6 +193,8 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     let mut profile = Profile::default();
     profile.name = msg.name;
     profile.overview = msg.overview;
+    profile.logo = msg.logo;
+    profile.image = msg.image;
 
     deps.storage.set(PROFILE_KEY, &to_vec(&profile)?);
     Ok(Response::default())

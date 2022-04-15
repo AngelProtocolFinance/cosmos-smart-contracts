@@ -352,6 +352,8 @@ pub fn new_accounts_reply(
             let mut endowment_name = String::from("");
             let mut endowment_owner = String::from("");
             let mut endowment_type = String::from("");
+            let mut endowment_logo = String::from("");
+            let mut endowment_image = String::from("");
             for event in subcall.events {
                 if event.ty == *"instantiate_contract" {
                     for attrb in event.attributes {
@@ -366,6 +368,12 @@ pub fn new_accounts_reply(
                         }
                         if attrb.key == "endow_type" {
                             endowment_type = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_logo" {
+                            endowment_logo = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_image" {
+                            endowment_image = attrb.value.clone();
                         }
                     }
                 }
@@ -387,6 +395,8 @@ pub fn new_accounts_reply(
                         "normal" => EndowmentType::Normal,
                         _ => unimplemented!(),
                     },
+                    logo: Some(endowment_logo),
+                    image: Some(endowment_image),
                 },
             )?;
             Ok(Response::default())

@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 pub struct MigrateMsg {
     pub name: String,
     pub overview: String,
+    pub logo: Option<String>,
+    pub image: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
