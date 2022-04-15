@@ -170,8 +170,8 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
                     _ => Some(e.un_sdg),
                 },
                 endow_type: EndowmentType::Charity, // EndowmentType,
-                logo: e.logo,
-                image: e.image,
+                logo: "".to_string(),
+                image: "".to_string(),
             })?,
         );
     }

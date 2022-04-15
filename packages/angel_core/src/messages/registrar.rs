@@ -17,8 +17,6 @@ pub struct MigrateEndowment {
     pub owner: String,
     pub tier: u64,
     pub un_sdg: u64,
-    pub logo: String,
-    pub image: String,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
