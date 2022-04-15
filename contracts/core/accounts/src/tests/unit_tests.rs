@@ -387,8 +387,8 @@ fn migrate_contract() {
     let msg = MigrateMsg {
         name: "TEST_CHARITY".to_string(),
         overview: "Migrate test charity".to_string(),
-        logo: "TEST LOGO".to_string(),
-        image: "TEST IMAGE".to_string(),
+        logo: Some("TEST LOGO".to_string()),
+        image: Some("TEST IMAGE".to_string()),
     };
     let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
     assert_eq!(0, res.messages.len())
