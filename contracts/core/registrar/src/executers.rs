@@ -5,7 +5,7 @@ use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response,
+    attr, to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response,
     StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
 };
 
@@ -355,7 +355,7 @@ pub fn new_accounts_reply(
             let mut endowment_logo = String::from("");
             let mut endowment_image = String::from("");
             for event in subcall.events {
-                if event.ty == *"instantiate_contract" {
+                if event.ty == *"wasm" {
                     for attrb in event.attributes {
                         if attrb.key == "contract_address" {
                             endowment_addr = attrb.value.clone();
@@ -385,8 +385,8 @@ pub fn new_accounts_reply(
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,
-                    name: endowment_name,
-                    owner: endowment_owner,
+                    name: endowment_name.clone(),
+                    owner: endowment_owner.clone(),
                     status: EndowmentStatus::Inactive,
                     tier: None,
                     un_sdg: None,
@@ -395,11 +395,18 @@ pub fn new_accounts_reply(
                         "normal" => EndowmentType::Normal,
                         _ => unimplemented!(),
                     },
-                    logo: Some(endowment_logo),
-                    image: Some(endowment_image),
+                    logo: Some(endowment_logo.clone()),
+                    image: Some(endowment_image.clone()),
                 },
             )?;
-            Ok(Response::default())
+            Ok(Response::default().add_attributes(vec![
+                attr("reply", "instantiate_endowment"),
+                attr("addr", endowment_addr),
+                attr("name", endowment_name),
+                attr("owner", endowment_owner),
+                attr("logo", endowment_logo),
+                attr("image", endowment_image),
+            ]))
         }
         ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
