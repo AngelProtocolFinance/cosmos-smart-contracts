@@ -5,8 +5,8 @@ use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    attr, to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response,
-    StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
+    attr, to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn,
+    Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
 };
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
