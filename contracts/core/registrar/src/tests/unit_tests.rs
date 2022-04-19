@@ -306,7 +306,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     assert_eq!("action", res.attributes[0].key);
     assert_eq!("create_endowment", res.attributes[0].value);
 
-    let events = vec![Event::new("instantiate_contract")
+    let events = vec![Event::new("wasm")
         .add_attribute("contract_address", good_endowment_addr.clone())
         .add_attribute("endow_name", "Test Endowment".to_string())
         .add_attribute("endow_owner", good_charity_addr.clone())
