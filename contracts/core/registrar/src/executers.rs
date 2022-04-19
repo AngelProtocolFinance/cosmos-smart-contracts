@@ -219,6 +219,19 @@ pub fn update_config(
         None => Ok(config.split_to_liquid.default),
     };
     config.split_to_liquid = split_checks(max.unwrap(), min.unwrap(), default.unwrap()).unwrap();
+
+    let cw3_code = match msg.cw3_code {
+        Some(v) => v,
+        None => config.cw3_code,
+    };
+    config.cw3_code = cw3_code;
+
+    let cw4_code = match msg.cw4_code {
+        Some(v) => v,
+        None => config.cw4_code,
+    };
+    config.cw4_code = cw4_code;
+
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))

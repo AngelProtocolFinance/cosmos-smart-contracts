@@ -288,6 +288,8 @@ impl WasmMockQuerier {
                         halo_token: Some("halo_token".to_string()),
                         gov_contract: Some("gov_contract".to_string()),
                         charity_shares_contract: Some("charity_shares".to_string()),
+                        cw3_code: 2,
+                        cw4_code: 3,
                     })
                     .unwrap(),
                 )),

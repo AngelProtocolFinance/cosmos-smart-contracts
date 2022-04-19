@@ -23,6 +23,8 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         halo_token: config.halo_token.map(|addr| addr.to_string()),
         gov_contract: config.gov_contract.map(|addr| addr.to_string()),
         charity_shares_contract: config.charity_shares_contract.map(|addr| addr.to_string()),
+        cw3_code: config.cw3_code,
+        cw4_code: config.cw4_code,
     })
 }
 

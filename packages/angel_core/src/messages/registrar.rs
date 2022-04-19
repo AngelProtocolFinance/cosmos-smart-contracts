@@ -28,8 +28,8 @@ pub struct InstantiateMsg {
     pub tax_rate: Decimal,
     pub default_vault: Option<Addr>,
     pub split_to_liquid: Option<SplitDetails>, // default %s to split off into liquid account, if donor provided split is not present
-    pub cw3_code_id: Option<u64>,
-    pub cw4_code_id: Option<u64>,
+    pub cw3_code: Option<u64>,
+    pub cw4_code: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -87,6 +87,8 @@ pub struct UpdateConfigMsg {
     pub halo_token: Option<String>,
     pub gov_contract: Option<String>,
     pub charity_shares_contract: Option<String>,
+    pub cw3_code: Option<u64>,
+    pub cw4_code: Option<u64>,
 }
 
 impl UpdateConfigMsg {
