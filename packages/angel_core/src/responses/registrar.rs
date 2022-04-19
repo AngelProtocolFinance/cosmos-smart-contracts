@@ -38,8 +38,8 @@ pub struct ConfigResponse {
     pub halo_token: Option<String>,
     pub gov_contract: Option<String>,
     pub charity_shares_contract: Option<String>,
-    pub cw3_code: u64,
-    pub cw4_code: u64,
+    pub cw3_code: Option<u64>,
+    pub cw4_code: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

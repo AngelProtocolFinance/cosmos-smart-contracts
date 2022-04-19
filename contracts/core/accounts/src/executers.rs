@@ -2,6 +2,8 @@ use crate::state::PROFILE;
 use crate::state::{CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
+use angel_core::messages::cw3_multisig::InstantiateMsg as Cw3MultisigInstantiateMsg;
+use angel_core::messages::cw3_multisig::Threshold;
 use angel_core::messages::index_fund::DepositMsg as IndexFundDepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg as IndexFundExecuter;
 use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
@@ -22,10 +24,94 @@ use angel_core::utils::{
     withdraw_from_vaults,
 };
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
-    Response, StdError, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
+    QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgExecutionResponse, Uint128,
+    WasmMsg, WasmQuery,
 };
+use cw0::Duration;
 use cw20::Balance;
+
+pub fn new_cw4_group_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: ContractResult<SubMsgExecutionResponse>,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    match msg {
+        ContractResult::Ok(subcall) => {
+            let mut group_addr = String::from("");
+            for event in subcall.events {
+                if event.ty == *"instantiate_contract" {
+                    for attrb in event.attributes {
+                        if attrb.key == "contract_address" {
+                            group_addr = attrb.value;
+                        }
+                    }
+                }
+            }
+
+            // Register the new Endowment on success Reply
+            let _addr = deps.api.addr_validate(&group_addr)?;
+
+            let registrar_config: RegistrarConfigResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: config.registrar_contract.to_string(),
+                    msg: to_binary(&RegistrarQuerier::Config {})?,
+                }))?;
+
+            // Fire the creation of new multisig linked to new group
+            Ok(Response::new().add_submessage(SubMsg {
+                id: 2,
+                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                    code_id: registrar_config.cw3_code.unwrap(),
+                    admin: None,
+                    label: "new endowment guardians multisig".to_string(),
+                    msg: to_binary(&Cw3MultisigInstantiateMsg {
+                        group_addr,
+                        threshold: Threshold::ThresholdQuorum {
+                            threshold: Decimal::percent(30),
+                            quorum: Decimal::percent(50),
+                        },
+                        max_voting_period: Duration::Time(600),
+                    })?,
+                    funds: vec![],
+                }),
+                gas_limit: None,
+                reply_on: ReplyOn::Success,
+            }))
+        }
+        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+    }
+}
+
+pub fn new_cw3_multisig_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: ContractResult<SubMsgExecutionResponse>,
+) -> Result<Response, ContractError> {
+    match msg {
+        ContractResult::Ok(subcall) => {
+            let mut multisig_addr = String::from("");
+            for event in subcall.events {
+                if event.ty == *"instantiate_contract" {
+                    for attrb in event.attributes {
+                        if attrb.key == "contract_address" {
+                            multisig_addr = attrb.value;
+                        }
+                    }
+                }
+            }
+
+            // update the endowment owner to be the new multisig contract
+            let mut endowment = ENDOWMENT.load(deps.storage)?;
+            endowment.owner = deps.api.addr_validate(&multisig_addr)?;
+            ENDOWMENT.save(deps.storage, &endowment)?;
+
+            Ok(Response::default())
+        }
+        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+    }
+}
 
 pub fn update_owner(
     deps: DepsMut,

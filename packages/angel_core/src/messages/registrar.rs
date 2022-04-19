@@ -1,5 +1,6 @@
 use crate::structs::{EndowmentType, Profile, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
+use cw4::Member;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -28,8 +29,6 @@ pub struct InstantiateMsg {
     pub tax_rate: Decimal,
     pub default_vault: Option<Addr>,
     pub split_to_liquid: Option<SplitDetails>, // default %s to split off into liquid account, if donor provided split is not present
-    pub cw3_code: Option<u64>,
-    pub cw4_code: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -69,6 +68,7 @@ pub struct CreateEndowmentMsg {
     pub maturity_height: Option<u64>,
     pub guardians_multisig_addr: Option<String>,
     pub profile: Profile,
+    pub cw4_members: Vec<Member>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

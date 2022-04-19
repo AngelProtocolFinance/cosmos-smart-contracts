@@ -166,6 +166,18 @@ pub fn update_config(
 
     // update config attributes with newly passed configs
     config.accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
+    let cw3_code = match msg.cw3_code {
+        Some(v) => Some(v),
+        None => config.cw3_code,
+    };
+    config.cw3_code = cw3_code;
+
+    let cw4_code = match msg.cw4_code {
+        Some(v) => Some(v),
+        None => config.cw4_code,
+    };
+    config.cw4_code = cw4_code;
+
     config.guardians_multisig_addr = match msg.guardians_multisig_addr {
         Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
         None => {
@@ -220,18 +232,6 @@ pub fn update_config(
     };
     config.split_to_liquid = split_checks(max.unwrap(), min.unwrap(), default.unwrap()).unwrap();
 
-    let cw3_code = match msg.cw3_code {
-        Some(v) => v,
-        None => config.cw3_code,
-    };
-    config.cw3_code = cw3_code;
-
-    let cw4_code = match msg.cw4_code {
-        Some(v) => v,
-        None => config.cw4_code,
-    };
-    config.cw4_code = cw4_code;
-
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))
@@ -262,6 +262,7 @@ pub fn create_endowment(
             maturity_time: msg.maturity_time,
             maturity_height: msg.maturity_height,
             profile: msg.profile,
+            cw4_members: msg.cw4_members,
         })?,
         funds: vec![],
     };

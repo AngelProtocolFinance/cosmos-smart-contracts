@@ -24,8 +24,6 @@ fn proper_initialization() {
         default_vault: None,
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
-        cw3_code: Some(MOCK_CW3_CODE_ID),
-        cw4_code: Some(MOCK_CW4_CODE_ID),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -48,8 +46,6 @@ fn update_owner() {
         default_vault: None,
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
-        cw3_code: Some(MOCK_CW3_CODE_ID),
-        cw4_code: Some(MOCK_CW4_CODE_ID),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -80,8 +76,6 @@ fn update_config() {
         default_vault: None,
         tax_rate: Decimal::percent(0),
         split_to_liquid: Some(SplitDetails::default()),
-        cw3_code: Some(MOCK_CW3_CODE_ID),
-        cw4_code: Some(MOCK_CW4_CODE_ID),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -102,8 +96,8 @@ fn update_config() {
         charity_shares_contract: None,
         gov_contract: None,
         halo_token: None,
-        cw3_code: None,
-        cw4_code: None,
+        cw3_code: Some(MOCK_CW3_CODE_ID),
+        cw4_code: Some(MOCK_CW4_CODE_ID),
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -116,8 +110,8 @@ fn update_config() {
         config_response.index_fund.unwrap()
     );
     assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
-    assert_eq!(MOCK_CW3_CODE_ID, config_response.cw3_code);
-    assert_eq!(MOCK_CW4_CODE_ID, config_response.cw4_code);
+    assert_eq!(MOCK_CW3_CODE_ID, config_response.cw3_code.unwrap());
+    assert_eq!(MOCK_CW4_CODE_ID, config_response.cw4_code.unwrap());
 }
 
 #[test]
@@ -131,8 +125,6 @@ fn migrate_contract() {
         default_vault: None,
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
-        cw3_code: Some(MOCK_CW3_CODE_ID),
-        cw4_code: Some(MOCK_CW4_CODE_ID),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -158,8 +150,6 @@ fn test_owner_can_add_remove_approved_charities() {
         default_vault: None,
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
-        cw3_code: Some(MOCK_CW3_CODE_ID),
-        cw4_code: Some(MOCK_CW4_CODE_ID),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -181,8 +171,6 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         default_vault: Some(Addr::unchecked(default_vault_addr)),
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
-        cw3_code: Some(MOCK_CW3_CODE_ID),
-        cw4_code: Some(MOCK_CW4_CODE_ID),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -247,6 +235,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         maturity_height: None,
         guardians_multisig_addr: None,
         profile: profile,
+        cw4_members: vec![],
     };
 
     // anyone can create Accounts
@@ -434,8 +423,6 @@ fn test_add_update_and_remove_vault() {
         default_vault: None,
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
-        cw3_code: Some(MOCK_CW3_CODE_ID),
-        cw4_code: Some(MOCK_CW4_CODE_ID),
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();

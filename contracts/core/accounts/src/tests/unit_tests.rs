@@ -48,6 +48,7 @@ fn test_proper_initialization() {
         maturity_time: None,
         maturity_height: None,
         profile: profile,
+        cw4_members: vec![],
     };
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();
@@ -94,6 +95,7 @@ fn test_get_config() {
         maturity_time: None,
         maturity_height: None,
         profile: profile,
+        cw4_members: vec![],
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -142,6 +144,7 @@ fn test_update_endowment_settings() {
         maturity_time: None,
         maturity_height: None,
         profile: profile,
+        cw4_members: vec![],
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -223,6 +226,7 @@ fn test_change_registrar_contract() {
         maturity_time: None,
         maturity_height: None,
         profile: profile,
+        cw4_members: vec![],
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -300,6 +304,7 @@ fn test_change_admin() {
         maturity_time: None,
         maturity_height: None,
         profile: profile,
+        cw4_members: vec![],
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -377,6 +382,7 @@ fn migrate_contract() {
         maturity_time: None,
         maturity_height: None,
         profile: profile,
+        cw4_members: vec![],
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -435,6 +441,7 @@ fn test_update_strategy() {
         maturity_time: None,
         maturity_height: None,
         profile: profile,
+        cw4_members: vec![],
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -563,6 +570,7 @@ fn test_update_endowment_profile() {
         maturity_time: None,
         maturity_height: None,
         profile: profile,
+        cw4_members: vec![],
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -691,6 +699,7 @@ fn test_donate() {
         maturity_time: None,
         maturity_height: None,
         profile: profile,
+        cw4_members: vec![],
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -776,6 +785,7 @@ fn test_withdraw() {
         maturity_time: None,
         maturity_height: None,
         profile: profile,
+        cw4_members: vec![],
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();

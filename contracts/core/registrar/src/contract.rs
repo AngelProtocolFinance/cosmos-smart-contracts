@@ -47,8 +47,8 @@ pub fn instantiate(
         halo_token: None,
         gov_contract: None,
         charity_shares_contract: None,
-        cw3_code: msg.cw3_code.unwrap_or(0u64),
-        cw4_code: msg.cw4_code.unwrap_or(0u64),
+        cw3_code: None,
+        cw4_code: None,
     };
 
     CONFIG.save(deps.storage, &configs)?;

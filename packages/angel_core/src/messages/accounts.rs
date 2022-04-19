@@ -1,6 +1,7 @@
 use crate::structs::FundingSource;
 use crate::{messages::vault::AccountTransferMsg, structs::Profile};
 use cosmwasm_std::Decimal;
+use cw4::Member;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -22,6 +23,7 @@ pub struct InstantiateMsg {
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
     pub profile: Profile,               // struct holding the Endowment info
+    pub cw4_members: Vec<Member>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
