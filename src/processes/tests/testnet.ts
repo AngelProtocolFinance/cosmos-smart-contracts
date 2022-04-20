@@ -238,7 +238,37 @@ export async function testExecute(
   //     owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
   //   }
   // );
-  await testCreateEndowmentViaRegistrar(terra, apTeam, registrar, apTeam2.key.accAddress);
+  await testCreateEndowmentViaRegistrar(terra, apTeam, registrar, {
+    owner,
+    beneficiary: owner,
+    withdraw_before_maturity: false,
+    maturity_time: undefined,
+    maturity_height: undefined,
+    guardians_multisig_addr: undefined,
+    cw4_members: [{ addr: apTeam2.key.accAddress, weight: 1 }],
+    profile: {
+      name: "Test-Suite Endowment",
+      overview: "Endowment created from the test-suite integration test",
+      un_sdg: 2,
+      tier: 3,
+      logo: undefined,
+      image: undefined,
+      url: undefined,
+      registration_number: undefined,
+      country_city_origin: undefined,
+      contact_email: undefined,
+      social_media_urls: {
+        facebook: undefined,
+        twitter: undefined,
+        linkedin: undefined,
+      },
+      number_of_employees: undefined,
+      average_annual_budget: undefined,
+      annual_revenue: undefined,
+      charity_navigator_rating: undefined,
+      endow_type: "Charity",
+    },
+  });
   // Multisig test
   // await testAddMemberToC4Group(terra, apTeam, cw3ApTeam, cw4GrpApTeam, "terra1......");
   // await testUpdateCw3Config(terra, apTeam, cw3ApTeam, 50, 25000);
@@ -274,7 +304,11 @@ export async function testExecute(
   //   anchorVault1,
   //   pleb.key.accAddress
   // );
-  // await testUpdatingRegistrarConfigs(terra, apTeam, registrar, haloGov);
+  // await testUpdatingRegistrarConfigs(terra, apTeam, registrar, {
+  //   cw3_code: 102,
+  //   cw4_code: 104,
+  //   accounts_code_id: 102,
+  // });
   // await testApproveEndowments(terra, apTeam, registrar, endowmentContract1, 1);
   // await testClosingEndpoint(
   //   terra,
