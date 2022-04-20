@@ -1,8 +1,9 @@
 use crate::state::{ALLOWANCES, BALANCES, TOKEN_INFO};
 use angel_core::errors::core::ContractError;
+use angel_core::messages::dao_token::Cw20HookMsg;
 use cosmwasm_std::{
-    attr, Addr, Binary, BlockInfo, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
-    Storage, Uint128,
+    attr, to_binary, Addr, Binary, BlockInfo, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult, Storage, Uint128,
 };
 use cw20::{AllowanceResponse, Cw20ReceiveMsg, Expiration};
 
@@ -243,10 +244,12 @@ mod tests {
     use super::*;
 
     use crate::contract::{execute, instantiate, query_balance, query_token_info};
-    use angel_core::messages::dao_token::{ExecuteMsg, InstantiateMsg};
-    use cosmwasm_std::testing::{mock_dependencies_with_balances, mock_env, mock_info};
+    use angel_core::messages::dao_token::{CurveType, ExecuteMsg, InstantiateMsg};
+    use cosmwasm_std::testing::{
+        mock_dependencies_with_balances, mock_env, mock_info, MOCK_CONTRACT_ADDR,
+    };
     use cosmwasm_std::{coins, CosmosMsg, SubMsg, Timestamp, WasmMsg};
-    use cw20::{Cw20Coin, TokenInfoResponse};
+    use cw20::TokenInfoResponse;
 
     fn get_balance<T: Into<String>>(deps: Deps, address: T) -> Uint128 {
         query_balance(deps, address.into()).unwrap().balance
@@ -258,26 +261,39 @@ mod tests {
         addr: T,
         amount: Uint128,
     ) -> TokenInfoResponse {
+        let reserve_denom = "RESERVE";
         let instantiate_msg = InstantiateMsg {
             name: "Auto Gen".to_string(),
             symbol: "AUTO".to_string(),
             decimals: 3,
-            initial_balances: vec![Cw20Coin {
-                address: addr.into(),
-                amount,
-            }],
-            mint: None,
-            marketing: None,
+            reserve_denom: reserve_denom.to_string(),
+            reserve_decimals: 4,
+            curve_type: CurveType::Constant {
+                value: Uint128::from(1_u128),
+                scale: 1,
+            },
+            halo_token: "halo".to_string(),
+            unbonding_period: 1000,
         };
         let info = mock_info("creator", &[]);
         let env = mock_env();
         instantiate(deps.branch(), env, info, instantiate_msg).unwrap();
+
+        let buyer = addr.into();
+        let buy_cw20_msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+            sender: buyer.clone(),
+            amount: amount,
+            msg: to_binary(&Cw20HookMsg::Buy {}).unwrap(),
+        });
+        let info = mock_info(reserve_denom, &[]);
+        execute(deps.branch(), mock_env(), info, buy_cw20_msg).unwrap();
+
         query_token_info(deps.as_ref()).unwrap()
     }
 
     #[test]
     fn increase_decrease_allowances() {
-        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+        let mut deps = mock_dependencies_with_balances(&[(MOCK_CONTRACT_ADDR, &coins(2, "token"))]);
 
         let owner = String::from("addr0001");
         let spender = String::from("addr0002");
@@ -359,7 +375,7 @@ mod tests {
 
     #[test]
     fn allowances_independent() {
-        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+        let mut deps = mock_dependencies_with_balances(&[(MOCK_CONTRACT_ADDR, &coins(2, "token"))]);
 
         let owner = String::from("addr0001");
         let spender = String::from("addr0002");
@@ -454,7 +470,7 @@ mod tests {
 
     #[test]
     fn no_self_allowance() {
-        let mut deps = mock_dependencies_with_balance(&coins(2, "token"));
+        let mut deps = mock_dependencies_with_balances(&[(MOCK_CONTRACT_ADDR, &coins(2, "token"))]);
 
         let owner = String::from("addr0001");
         let info = mock_info(owner.as_ref(), &[]);
@@ -482,14 +498,14 @@ mod tests {
 
     #[test]
     fn transfer_from_respects_limits() {
-        let mut deps = mock_dependencies_with_balance(&[]);
+        let mut deps = mock_dependencies_with_balances(&[]);
         let owner = String::from("addr0001");
         let spender = String::from("addr0002");
         let rcpt = String::from("addr0003");
 
         let start = Uint128::new(999999);
-        do_instantiate(deps.as_mut(), &owner, start);
-
+        let bal = do_instantiate(deps.as_mut(), &owner, start);
+        println!("{:?}", bal);
         // provide an allowance
         let allow1 = Uint128::new(77777);
         let msg = ExecuteMsg::IncreaseAllowance {
@@ -563,7 +579,7 @@ mod tests {
 
     #[test]
     fn burn_from_respects_limits() {
-        let mut deps = mock_dependencies_with_balance(&[]);
+        let mut deps = mock_dependencies_with_balances(&[]);
         let owner = String::from("addr0001");
         let spender = String::from("addr0002");
 
@@ -590,7 +606,16 @@ mod tests {
         let info = mock_info(spender.as_ref(), &[]);
         let env = mock_env();
         let res = execute(deps.as_mut(), env, info, msg).unwrap();
-        assert_eq!(res.attributes[0], attr("action", "burn_from"));
+        assert_eq!(
+            res.attributes,
+            vec![
+                attr("from", "addr0001"),
+                attr("supply", "44444"),
+                attr("claim", "44444"),
+                attr("action", "burn_from"),
+                attr("by", "addr0002"),
+            ]
+        );
 
         // make sure money burnt
         assert_eq!(
@@ -639,7 +664,7 @@ mod tests {
 
     #[test]
     fn send_from_respects_limits() {
-        let mut deps = mock_dependencies_with_balance(&[]);
+        let mut deps = mock_dependencies_with_balances(&[]);
         let owner = String::from("addr0001");
         let spender = String::from("addr0002");
         let contract = String::from("cool-dex");
