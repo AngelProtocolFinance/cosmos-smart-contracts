@@ -41,9 +41,11 @@ pub fn new_cw4_group_reply(
         ContractResult::Ok(subcall) => {
             let mut group_addr = String::from("");
             for event in subcall.events {
-                if event.ty == *"instantiate_contract" {
+                if event.ty == *"wasm" {
                     for attrb in event.attributes {
-                        if attrb.key == "contract_address" {
+                        // This value comes from the custom attrbiute
+                        // set in "cw4_group" instantiation response.
+                        if attrb.key == "group_addr" {
                             group_addr = attrb.value;
                         }
                     }
@@ -67,7 +69,7 @@ pub fn new_cw4_group_reply(
                     admin: None,
                     label: "new endowment guardians multisig".to_string(),
                     msg: to_binary(&Cw3MultisigInstantiateMsg {
-                        group_addr,
+                        group_addr: group_addr,
                         threshold: Threshold::ThresholdQuorum {
                             threshold: Decimal::percent(30),
                             quorum: Decimal::percent(50),
@@ -93,9 +95,11 @@ pub fn new_cw3_multisig_reply(
         ContractResult::Ok(subcall) => {
             let mut multisig_addr = String::from("");
             for event in subcall.events {
-                if event.ty == *"instantiate_contract" {
+                if event.ty == *"wasm" {
+                    // This value comes from the custom attrbiute
+                    // set in "cw3_multisig" instantiation response.
                     for attrb in event.attributes {
-                        if attrb.key == "contract_address" {
+                        if attrb.key == "multisig_addr" {
                             multisig_addr = attrb.value;
                         }
                     }
