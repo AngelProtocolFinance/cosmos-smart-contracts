@@ -74,7 +74,7 @@ pub fn read_vaults<'a>(
     PREFIX_PORTAL
         .range(
             storage,
-            start.and_then(|v| Some(Bound::Inclusive(v))),
+            start.map(|v| Bound::Inclusive(v)),
             None,
             Order::Ascending,
         )

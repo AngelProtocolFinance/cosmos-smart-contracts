@@ -224,9 +224,7 @@ pub fn query_pair(deps: Deps, denom: String) -> StdResult<PairInfo> {
         &deps.querier,
         config.swap_factory,
         &[
-            AssetInfo::NativeToken {
-                denom: denom.to_string(),
-            },
+            AssetInfo::NativeToken { denom },
             AssetInfo::Token {
                 contract_addr: config.halo_token.to_string(),
             },

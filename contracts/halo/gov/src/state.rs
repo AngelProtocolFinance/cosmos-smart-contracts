@@ -156,7 +156,7 @@ pub fn remove_poll_indexer(storage: &mut dyn Storage, status: &PollStatus, poll_
 // "poll_voter" storage map.
 pub const POLL_VOTER: Map<(&[u8], &[u8]), VoterInfo> = Map::new("poll_voter");
 pub fn read_poll_voter(storage: &dyn Storage, poll_id: u64, user: Addr) -> StdResult<VoterInfo> {
-    POLL_VOTER.load(storage, (&poll_id.to_be_bytes(), &user.as_bytes()))
+    POLL_VOTER.load(storage, (&poll_id.to_be_bytes(), user.as_bytes()))
 }
 
 pub fn store_poll_voter(
@@ -165,7 +165,7 @@ pub fn store_poll_voter(
     user: Addr,
     data: &VoterInfo,
 ) -> StdResult<()> {
-    POLL_VOTER.save(storage, (&poll_id.to_be_bytes(), &user.as_bytes()), data)
+    POLL_VOTER.save(storage, (&poll_id.to_be_bytes(), user.as_bytes()), data)
 }
 
 pub fn remove_poll_voter(storage: &mut dyn Storage, poll_id: u64, user: &Addr) {
@@ -190,8 +190,8 @@ pub fn read_poll_voters<'a>(
     voters
         .range(
             storage,
-            start.and_then(|v| Some(Bound::exclusive(&*v))),
-            end.and_then(|v| Some(Bound::exclusive(&*v))),
+            start.map(|v| Bound::exclusive(&*v)),
+            end.map(|v| Bound::exclusive(&*v)),
             order_by.into(),
         )
         .take(limit)
@@ -218,12 +218,12 @@ pub fn read_polls<'a>(
     };
 
     if let Some(status) = filter {
-        let poll_indexer = POLL_INDEXER_STORE.prefix(&status.to_string().as_str());
+        let poll_indexer = POLL_INDEXER_STORE.prefix(status.to_string().as_str());
         poll_indexer
             .range(
                 storage,
-                start.and_then(|v| Some(Bound::exclusive(&*v))),
-                end.and_then(|v| Some(Bound::exclusive(&*v))),
+                start.map(|v| Bound::exclusive(&*v)),
+                end.map(|v| Bound::exclusive(&*v)),
                 order_by.into(),
             )
             .take(limit)
@@ -235,8 +235,8 @@ pub fn read_polls<'a>(
     } else {
         POLL.range(
             storage,
-            start.and_then(|v| Some(Bound::exclusive(&*v))),
-            end.and_then(|v| Some(Bound::exclusive(&*v))),
+            start.map(|v| Bound::exclusive(&*v)),
+            end.map(|v| Bound::exclusive(&*v)),
             order_by.into(),
         )
         .take(limit)
