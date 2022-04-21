@@ -34,7 +34,7 @@ pub fn instantiate(
     .unwrap();
 
     let configs = Config {
-        owner: info.sender.clone(),
+        owner: info.sender,
         guardian_angels: None,
         index_fund_contract: None,
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
