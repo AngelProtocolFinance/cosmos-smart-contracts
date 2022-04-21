@@ -239,8 +239,8 @@ export async function testExecute(
   //   }
   // );
   await testCreateEndowmentViaRegistrar(terra, apTeam, registrar, {
-    owner,
-    beneficiary: owner,
+    owner: charity1.key.accAddress,
+    beneficiary: charity1.key.accAddress,
     withdraw_before_maturity: false,
     maturity_time: undefined,
     maturity_height: undefined,
