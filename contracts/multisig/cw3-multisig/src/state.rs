@@ -1,4 +1,4 @@
-use crate::msg::Threshold;
+use angel_core::messages::cw3_multisig::Threshold;
 use cosmwasm_std::{
     Addr, BlockInfo, CosmosMsg, Decimal, Empty, StdError, StdResult, Storage, Uint128,
 };
@@ -18,15 +18,11 @@ const PRECISION_FACTOR: u128 = 1_000_000_000;
 pub struct Config {
     pub threshold: Threshold,
     pub max_voting_period: Duration,
-    pub max_voting_period_guardians: Duration,
-    pub ap_team_group: Cw4Contract,
-    pub endowment_owners_group: Cw4Contract,
-    pub registrar_contract: Addr,
+    pub group_addr: Cw4Contract,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct Proposal {
-    pub endowment_addr: String,
     pub title: String,
     pub description: String,
     pub start_height: u64,
@@ -39,6 +35,8 @@ pub struct Proposal {
     pub total_weight: u64,
     // summary of existing votes
     pub votes: Votes,
+    /// metadata field allows for a UI to easily set and display data about the proposal
+    pub meta: Option<String>,
 }
 
 // weight of votes for each option
@@ -155,7 +153,6 @@ pub const PROPOSAL_COUNT: Item<u64> = Item::new("proposal_count");
 // multiple-item map
 pub const BALLOTS: Map<(U64Key, &Addr), Ballot> = Map::new("votes");
 pub const PROPOSALS: Map<U64Key, Proposal> = Map::new("proposals");
-pub const GUARDIAN_PROPOSALS: Map<U64Key, Proposal> = Map::new("guardian-proposals");
 
 pub fn next_id(store: &mut dyn Storage) -> StdResult<u64> {
     let id: u64 = PROPOSAL_COUNT.may_load(store)?.unwrap_or_default() + 1;
@@ -218,7 +215,6 @@ mod test {
             false => Expiration::AtHeight(block.height + 100),
         };
         let prop = Proposal {
-            endowment_addr: "TestEndowment".to_string(),
             title: "Demo".to_string(),
             description: "Info".to_string(),
             start_height: 100,
@@ -228,6 +224,7 @@ mod test {
             threshold,
             total_weight,
             votes,
+            meta: Some("".to_string()),
         };
         prop.is_passed(&block)
     }

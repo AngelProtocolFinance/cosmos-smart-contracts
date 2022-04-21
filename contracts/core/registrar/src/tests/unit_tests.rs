@@ -11,6 +11,8 @@ use cosmwasm_std::{
 };
 
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
+const MOCK_CW3_CODE_ID: u64 = 18;
+const MOCK_CW4_CODE_ID: u64 = 19;
 
 #[test]
 fn proper_initialization() {
@@ -94,6 +96,8 @@ fn update_config() {
         charity_shares_contract: None,
         gov_contract: None,
         halo_token: None,
+        cw3_code: Some(MOCK_CW3_CODE_ID),
+        cw4_code: Some(MOCK_CW4_CODE_ID),
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -106,6 +110,8 @@ fn update_config() {
         config_response.index_fund.unwrap()
     );
     assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
+    assert_eq!(MOCK_CW3_CODE_ID, config_response.cw3_code.unwrap());
+    assert_eq!(MOCK_CW4_CODE_ID, config_response.cw4_code.unwrap());
 }
 
 #[test]
@@ -186,6 +192,8 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         charity_shares_contract: None,
         gov_contract: None,
         halo_token: None,
+        cw3_code: None,
+        cw4_code: None,
     };
     let info = mock_info(ap_team.as_ref(), &[]);
     let _ = execute(
@@ -227,6 +235,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         maturity_height: None,
         guardians_multisig_addr: None,
         profile: profile,
+        cw4_members: vec![],
     };
 
     // anyone can create Accounts
@@ -306,7 +315,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     assert_eq!("action", res.attributes[0].key);
     assert_eq!("create_endowment", res.attributes[0].value);
 
-    let events = vec![Event::new("instantiate_contract")
+    let events = vec![Event::new("wasm")
         .add_attribute("contract_address", good_endowment_addr.clone())
         .add_attribute("endow_name", "Test Endowment".to_string())
         .add_attribute("endow_owner", good_charity_addr.clone())

@@ -1,5 +1,6 @@
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, Threshold};
+use crate::msg::{ExecuteMsg, QueryMsg};
+use angel_core::messages::cw3_multisig::{InstantiateMsg, Threshold};
 use cosmwasm_std::{coin, coins, Addr, BankMsg, Coin, Decimal, Timestamp};
 use cosmwasm_std::{BlockInfo, CosmosMsg, Empty};
 use cw0::Duration;
@@ -69,19 +70,15 @@ fn instantiate_group(app: &mut App, members: Vec<Member>) -> Addr {
 
 fn instantiate_flex(
     app: &mut App,
-    ap_group: Addr,
-    endowment_group: Addr,
+    group_addr: Addr,
     threshold: Threshold,
     max_voting_period: Duration,
 ) -> Addr {
     let flex_id = app.store_code(contract_flex());
-    let msg = crate::msg::InstantiateMsg {
-        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
-        ap_team_group: ap_group.to_string(),
-        endowment_owners_group: endowment_group.to_string(),
+    let msg = InstantiateMsg {
+        group_addr: group_addr.to_string(),
         threshold,
         max_voting_period,
-        max_voting_period_guardians: Duration::Time(1234),
     };
     app.instantiate_contract(flex_id, Addr::unchecked(OWNER), &msg, &[], "flex", None)
         .unwrap()
@@ -135,13 +132,7 @@ fn setup_test_case(
     app.update_block(next_block);
 
     // 2. Set up Guardian Multisig backed by these groups
-    let flex_addr = instantiate_flex(
-        app,
-        guardian_group.clone(),
-        endowment_group.clone(),
-        threshold,
-        max_voting_period,
-    );
+    let flex_addr = instantiate_flex(app, guardian_group.clone(), threshold, max_voting_period);
     app.update_block(next_block);
 
     // 3. (Optional) Set the multisig as the group owner
@@ -180,11 +171,11 @@ fn proposal_info() -> (Vec<CosmosMsg<Empty>>, String, String) {
 fn pay_somebody_proposal() -> ExecuteMsg {
     let (msgs, title, description) = proposal_info();
     ExecuteMsg::Propose {
-        endowment_addr: ENDOWMENTOWNER1.to_string(),
         title,
         description,
         msgs,
         latest: None,
+        meta: Some("".to_string()),
     }
 }
 
@@ -193,20 +184,16 @@ fn test_instantiate_works() {
     let mut app = mock_app();
 
     // make a simple group
-    let guardian_group = instantiate_group(&mut app, vec![member(OWNER, 1)]);
-    let endowment_group = instantiate_group(&mut app, vec![member(OWNER, 1)]);
+    let group_address = instantiate_group(&mut app, vec![member(OWNER, 1)]);
     let flex_id = app.store_code(contract_flex());
 
     let max_voting_period = Duration::Time(1234567);
 
     // Zero required weight fails
     let instantiate_msg = InstantiateMsg {
-        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
-        ap_team_group: guardian_group.to_string(),
-        endowment_owners_group: endowment_group.to_string(),
+        group_addr: group_address.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 0 },
         max_voting_period,
-        max_voting_period_guardians: Duration::Time(1234),
     };
     let err = app
         .instantiate_contract(
@@ -218,16 +205,13 @@ fn test_instantiate_works() {
             None,
         )
         .unwrap_err();
-    assert_eq!(ContractError::ZeroThreshold {}, err.downcast().unwrap());
+    assert_eq!(ContractError::ZeroThreshold {}.to_string(), err.to_string());
 
     // Total weight less than required weight not allowed
     let instantiate_msg = InstantiateMsg {
-        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
-        ap_team_group: guardian_group.to_string(),
-        endowment_owners_group: endowment_group.to_string(),
+        group_addr: group_address.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 100 },
         max_voting_period,
-        max_voting_period_guardians: Duration::Time(1234),
     };
     let err = app
         .instantiate_contract(
@@ -240,18 +224,15 @@ fn test_instantiate_works() {
         )
         .unwrap_err();
     assert_eq!(
-        ContractError::UnreachableThreshold {},
-        err.downcast().unwrap()
+        ContractError::UnreachableThreshold {}.to_string(),
+        err.to_string(),
     );
 
     // All valid
     let instantiate_msg = InstantiateMsg {
-        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
-        ap_team_group: guardian_group.to_string(),
-        endowment_owners_group: endowment_group.to_string(),
+        group_addr: group_address.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 1 },
         max_voting_period,
-        max_voting_period_guardians: Duration::Time(1234),
     };
     let flex_addr = app
         .instantiate_contract(
@@ -313,7 +294,7 @@ fn test_propose_works() {
     let err = app
         .execute_contract(Addr::unchecked(PLEB), flex_addr.clone(), &proposal, &[])
         .unwrap_err();
-    assert_eq!(ContractError::Unauthorized {}, err.downcast().unwrap());
+    assert_eq!(ContractError::Unauthorized {}.to_string(), err.to_string());
 
     // Wrong expiration option fails
     let msgs = match proposal.clone() {
@@ -321,11 +302,11 @@ fn test_propose_works() {
         _ => panic!("Wrong variant"),
     };
     let proposal_wrong_exp = ExecuteMsg::Propose {
-        endowment_addr: ENDOWMENTOWNER1.to_string(),
         title: "Rewarding somebody".to_string(),
         description: "Do we reward her?".to_string(),
         msgs,
         latest: Some(Expiration::AtHeight(123456)),
+        meta: Some("".to_string()),
     };
     let err = app
         .execute_contract(
@@ -335,22 +316,20 @@ fn test_propose_works() {
             &[],
         )
         .unwrap_err();
-    assert_eq!(ContractError::WrongExpiration {}, err.downcast().unwrap());
+    assert_eq!(
+        ContractError::WrongExpiration {}.to_string(),
+        err.to_string()
+    );
 
     // Proposal from voter works
     let res = app
-        .execute_contract(
-            Addr::unchecked(ENDOWMENTOWNER1),
-            flex_addr.clone(),
-            &proposal,
-            &[],
-        )
+        .execute_contract(Addr::unchecked(APTEAM1), flex_addr.clone(), &proposal, &[])
         .unwrap();
     assert_eq!(
         res.custom_attrs(1),
         [
             ("action", "propose"),
-            ("sender", ENDOWMENTOWNER1),
+            ("sender", APTEAM1),
             ("proposal_id", "1"),
             ("status", "Open"),
         ],
@@ -411,12 +390,7 @@ fn test_proposal_queries() {
     // create proposal with 0 vote power
     let proposal = pay_somebody_proposal();
     let res = app
-        .execute_contract(
-            Addr::unchecked(ENDOWMENTOWNER1),
-            flex_addr.clone(),
-            &proposal,
-            &[],
-        )
+        .execute_contract(Addr::unchecked(APTEAM1), flex_addr.clone(), &proposal, &[])
         .unwrap();
     let proposal_id1: u64 = res.custom_attrs(1)[2].value.parse().unwrap();
 
@@ -426,12 +400,7 @@ fn test_proposal_queries() {
     // add one more open proposal, 2 votes
     let proposal = pay_somebody_proposal();
     let res = app
-        .execute_contract(
-            Addr::unchecked(ENDOWMENTOWNER2),
-            flex_addr.clone(),
-            &proposal,
-            &[],
-        )
+        .execute_contract(Addr::unchecked(APTEAM2), flex_addr.clone(), &proposal, &[])
         .unwrap();
     let proposal_id2: u64 = res.custom_attrs(1)[2].value.parse().unwrap();
     let proposed_at = app.block_info();
@@ -446,7 +415,7 @@ fn test_proposal_queries() {
         .wrap()
         .query_wasm_smart(&flex_addr, &list_query)
         .unwrap();
-    assert_eq!(3, res.proposals.len());
+    assert_eq!(2, res.proposals.len());
 
     // check the id and status are properly set
     let info: Vec<_> = res.proposals.iter().map(|p| (p.id, p.status)).collect();
@@ -522,13 +491,13 @@ fn test_vote_works() {
     let err = app
         .execute_contract(Addr::unchecked(OWNER), flex_addr.clone(), &yes_vote, &[])
         .unwrap_err();
-    assert_eq!(ContractError::AlreadyVoted {}, err.downcast().unwrap());
+    assert_eq!(ContractError::AlreadyVoted {}.to_string(), err.to_string());
 
     // Only voters can vote
     let err = app
         .execute_contract(Addr::unchecked(PLEB), flex_addr.clone(), &yes_vote, &[])
         .unwrap_err();
-    assert_eq!(ContractError::Unauthorized {}, err.downcast().unwrap());
+    assert_eq!(ContractError::Unauthorized {}.to_string(), err.to_string());
 
     // But voter1 can
     let res = app
@@ -573,14 +542,14 @@ fn test_vote_works() {
     let err = app
         .execute_contract(Addr::unchecked(APTEAM3), flex_addr.clone(), &yes_vote, &[])
         .unwrap_err();
-    assert_eq!(ContractError::AlreadyVoted {}, err.downcast().unwrap());
+    assert_eq!(ContractError::AlreadyVoted {}.to_string(), err.to_string());
 
     // Expired proposals cannot be voted
     app.update_block(expire(voting_period));
     let err = app
         .execute_contract(Addr::unchecked(APTEAM4), flex_addr.clone(), &yes_vote, &[])
         .unwrap_err();
-    assert_eq!(ContractError::Expired {}, err.downcast().unwrap());
+    assert_eq!(ContractError::Expired {}.to_string(), err.to_string());
     app.update_block(unexpire(voting_period));
 
     // Powerful voter supports it, so it passes
@@ -601,7 +570,7 @@ fn test_vote_works() {
     let err = app
         .execute_contract(Addr::unchecked(APTEAM5), flex_addr.clone(), &yes_vote, &[])
         .unwrap_err();
-    assert_eq!(ContractError::NotOpen {}, err.downcast().unwrap());
+    assert_eq!(ContractError::NotOpen {}.to_string(), err.to_string());
 
     // query individual votes
     // initial (with 0 weight)
@@ -676,8 +645,8 @@ fn test_execute_works() {
         .execute_contract(Addr::unchecked(OWNER), flex_addr.clone(), &execution, &[])
         .unwrap_err();
     assert_eq!(
-        ContractError::WrongExecuteStatus {},
-        err.downcast().unwrap()
+        ContractError::WrongExecuteStatus {}.to_string(),
+        err.to_string(),
     );
 
     // Vote it, so it passes
@@ -703,7 +672,10 @@ fn test_execute_works() {
     let err = app
         .execute_contract(Addr::unchecked(OWNER), flex_addr.clone(), &closing, &[])
         .unwrap_err();
-    assert_eq!(ContractError::WrongCloseStatus {}, err.downcast().unwrap());
+    assert_eq!(
+        ContractError::WrongCloseStatus {}.to_string(),
+        err.to_string()
+    );
 
     // Execute works. Anybody can execute Passed proposals
     let res = app
@@ -728,7 +700,10 @@ fn test_execute_works() {
     let err = app
         .execute_contract(Addr::unchecked(OWNER), flex_addr, &closing, &[])
         .unwrap_err();
-    assert_eq!(ContractError::WrongCloseStatus {}, err.downcast().unwrap());
+    assert_eq!(
+        ContractError::WrongCloseStatus {}.to_string(),
+        err.to_string()
+    );
 }
 
 #[test]
@@ -759,7 +734,7 @@ fn test_close_works() {
     let err = app
         .execute_contract(Addr::unchecked(PLEB), flex_addr.clone(), &closing, &[])
         .unwrap_err();
-    assert_eq!(ContractError::NotExpired {}, err.downcast().unwrap());
+    assert_eq!(ContractError::NotExpired {}.to_string(), err.to_string());
 
     // Expired proposals can be closed
     app.update_block(expire(voting_period));
@@ -780,7 +755,10 @@ fn test_close_works() {
     let err = app
         .execute_contract(Addr::unchecked(PLEB), flex_addr, &closing, &[])
         .unwrap_err();
-    assert_eq!(ContractError::WrongCloseStatus {}, err.downcast().unwrap());
+    assert_eq!(
+        ContractError::WrongCloseStatus {}.to_string(),
+        err.to_string()
+    );
 }
 
 // uses the power from the beginning of the voting period
@@ -889,7 +867,7 @@ fn execute_group_changes_from_external() {
     let err = app
         .execute_contract(Addr::unchecked(newbie), flex_addr.clone(), &yes_vote, &[])
         .unwrap_err();
-    assert_eq!(ContractError::Unauthorized {}, err.downcast().unwrap());
+    assert_eq!(ContractError::Unauthorized {}.to_string(), err.to_string());
 
     // previously removed APTEAM3 can still vote, passing the proposal
     app.execute_contract(Addr::unchecked(APTEAM3), flex_addr.clone(), &yes_vote, &[])
@@ -932,11 +910,11 @@ fn execute_group_changes_from_proposal() {
         .update_members(vec![APTEAM3.into()], vec![])
         .unwrap();
     let update_proposal = ExecuteMsg::Propose {
-        endowment_addr: ENDOWMENTOWNER1.to_string(),
         title: "Kick out APTEAM3".to_string(),
         description: "He's trying to steal our money".to_string(),
         msgs: vec![update_msg],
         latest: None,
+        meta: Some("".to_string()),
     };
     let res = app
         .execute_contract(
@@ -1021,7 +999,7 @@ fn execute_group_changes_from_proposal() {
             &[],
         )
         .unwrap_err();
-    assert_eq!(ContractError::Unauthorized {}, err.downcast().unwrap());
+    assert_eq!(ContractError::Unauthorized {}.to_string(), err.to_string());
 
     // extra: ensure no one else can call the hook
     let hook_hack = ExecuteMsg::MemberChangedHook(MemberChangedHookMsg {
@@ -1030,7 +1008,7 @@ fn execute_group_changes_from_proposal() {
     let err = app
         .execute_contract(Addr::unchecked(APTEAM2), flex_addr.clone(), &hook_hack, &[])
         .unwrap_err();
-    assert_eq!(ContractError::Unauthorized {}, err.downcast().unwrap());
+    assert_eq!(ContractError::Unauthorized {}.to_string(), err.to_string());
 }
 
 // uses the power from the beginning of the voting period

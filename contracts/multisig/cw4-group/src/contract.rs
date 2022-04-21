@@ -1,6 +1,7 @@
 use crate::error::ContractError;
-use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, MigrateMsg, QueryMsg};
 use crate::state::{ADMIN, HOOKS, MEMBERS, TOTAL};
+use angel_core::messages::cw4_group::InstantiateMsg;
 use cosmwasm_std::{
     attr, entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response,
     StdResult, SubMsg,
@@ -14,7 +15,7 @@ use cw4::{
 use cw_storage_plus::Bound;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "crates.io:cw4-group";
+const CONTRACT_NAME: &str = "cw4-group";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 // Note, you can use StdResult in some functions where you do not
@@ -28,7 +29,8 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     create(deps, msg.admin, msg.members, env.block.height)?;
-    Ok(Response::default())
+    Ok(Response::default()
+        .add_attributes(vec![attr("group_addr", env.contract.address.to_string())]))
 }
 
 // create is the instantiation logic with set_contract_version removed so it can more

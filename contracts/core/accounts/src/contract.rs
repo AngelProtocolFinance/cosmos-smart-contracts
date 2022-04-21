@@ -4,16 +4,19 @@ use crate::state::PROFILE;
 use crate::state::{Config, Endowment, OldState, State, CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
+use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::EndowmentType;
 use angel_core::structs::{
     AcceptedTokens, BalanceInfo, Profile, RebalanceDetails, StrategyComponent,
 };
+use cosmwasm_std::ReplyOn;
 use cosmwasm_std::StdError;
 use cosmwasm_std::{
-    attr, entry_point, from_slice, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env,
-    MessageInfo, QueryRequest, Response, StdResult, Uint128, WasmQuery,
+    attr, entry_point, from_slice, to_binary, to_vec, Binary, CosmosMsg, Decimal, Deps, DepsMut,
+    Env, MessageInfo, QueryRequest, Reply, Response, StdResult, SubMsg, Uint128, WasmMsg,
+    WasmQuery,
 };
 use cw2::set_contract_version;
 
@@ -93,7 +96,8 @@ pub fn instantiate(
 
     PROFILE.save(deps.storage, &profile)?;
 
-    Ok(Response::default().add_attributes(vec![
+    // initial default Response to add submessages to
+    let mut res = Response::new().add_attributes(vec![
         attr("endow_name", profile.name),
         attr("endow_owner", msg.owner),
         attr("endow_type", profile.endow_type.to_string()),
@@ -102,7 +106,30 @@ pub fn instantiate(
             "endow_image",
             profile.image.unwrap_or_else(|| "".to_string()),
         ),
-    ]))
+    ]);
+
+    // check if CW3/CW4 codes were passed to setup a multisig/group
+    if msg.cw4_members.ne(&vec![])
+        && (registrar_config.cw3_code.ne(&None) && registrar_config.cw4_code.ne(&None))
+    {
+        res = res.add_submessage(SubMsg {
+            id: 1,
+            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                code_id: registrar_config.cw4_code.unwrap(),
+                admin: None,
+                label: "new endowment cw4 group".to_string(),
+                msg: to_binary(&Cw4GroupInstantiateMsg {
+                    admin: Some(info.sender.to_string()),
+                    members: msg.cw4_members,
+                })?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        })
+    }
+
+    Ok(res)
 }
 
 #[entry_point]
@@ -144,6 +171,18 @@ pub fn execute(
             executers::update_guardians(deps, env, info, add, remove)
         }
         ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
+    }
+}
+
+/// Replies back to the Endowment Account from various multisig contract calls (@ some passed code_id)
+/// should be caught and handled to fire subsequent setup calls and ultimately the storing of the multisig
+/// as the Accounts endowment owner
+#[entry_point]
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        1 => executers::new_cw4_group_reply(deps, env, msg.result),
+        2 => executers::new_cw3_multisig_reply(deps, env, msg.result),
+        _ => Err(ContractError::Unauthorized {}),
     }
 }
 
