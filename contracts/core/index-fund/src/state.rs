@@ -45,7 +45,7 @@ pub fn read_funds<'a>(
     let start = calc_range_start(start_after);
     FUND.range(
         storage,
-        start.and_then(|v| Some(Bound::Inclusive(v))),
+        start.map(|v| Bound::Inclusive(v)),
         None,
         Order::Ascending,
     )
@@ -68,8 +68,8 @@ pub fn read_alliance_members(
     ALLIANCE_MEMBERS
         .range(
             storage,
-            start.and_then(|v| Some(Bound::inclusive(&*v))),
-            end.and_then(|v| Some(Bound::inclusive(&*v))),
+            start.map(|v| Bound::inclusive(&*v)),
+            end.map(|v| Bound::inclusive(&*v)),
             Order::Ascending,
         )
         .take(limit)

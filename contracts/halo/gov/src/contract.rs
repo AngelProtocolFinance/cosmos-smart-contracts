@@ -9,7 +9,7 @@ use crate::state::{
     Poll, State, CLAIMS,
 };
 use cosmwasm_std::{
-    attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
+    entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
     MessageInfo, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw0::Duration;

@@ -13,10 +13,8 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         accounts_code_id: config.accounts_code_id,
         treasury: config.treasury.to_string(),
         tax_rate: config.tax_rate,
-        default_vault: config.default_vault.and_then(|addr| Some(addr.to_string())),
-        index_fund: config
-            .index_fund_contract
-            .and_then(|addr| Some(addr.to_string())),
+        default_vault: config.default_vault.map(|addr| addr.to_string()),
+        index_fund: config.index_fund_contract.map(|addr| addr.to_string()),
         endowment_owners_group_addr: config.endowment_owners_group_addr,
         guardians_multisig_addr: config.guardians_multisig_addr,
         split_to_liquid: config.split_to_liquid,
@@ -137,7 +135,7 @@ pub fn query_approved_vaults_fx_rate(deps: Deps) -> StdResult<VaultRateResponse>
     // returns a list of approved Vaults exchange rate
     let vaults = read_vaults(deps.storage, None, None)?;
     let mut vaults_rate: Vec<VaultRate> = vec![];
-    for vault in vaults.iter().filter(|p| p.approved).into_iter() {
+    for vault in vaults.iter().filter(|p| p.approved) {
         let fx_rate = vault_fx_rate(deps, vault.address.to_string());
         vaults_rate.push(VaultRate {
             vault_addr: vault.address.clone(),
