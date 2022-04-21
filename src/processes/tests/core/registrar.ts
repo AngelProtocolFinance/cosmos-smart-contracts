@@ -84,12 +84,19 @@ export async function testCreateEndowmentViaRegistrar(
   msg: any
 ): Promise<void> {
   process.stdout.write("Create a new endowment via the Registrar");
-  await sendTransaction(terra, apTeam, [
+  const result = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       create_endowment: msg,
     }),
   ]);
-  console.log(chalk.green(" Done!"));
+  const acct = result.logs[0].events
+    .find((event) => {
+      return event.type == "instantiate_contract";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "contract_address";
+    })?.value as string;
+  console.log(chalk.green(` ${acct} - Done!`));
 }
 
 //----------------------------------------------------------------------------------------

@@ -34,12 +34,12 @@ export async function migrateCore(
   endowmentContracts: string[]
 ): Promise<void> {
   // run the migrations desired
-  await migrateRegistrar(terra, apTeam, registrar);
+  // await migrateRegistrar(terra, apTeam, registrar);
   // await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
   // await migrateCw3Multisig(terra, apTeam, cw3ApTeam);
   // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
   // await migrateIndexFund(terra, apTeam, indexFund);
-  await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
+  // await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
   // await migrateVaults(terra, apTeam, vaultContracts);
 }
 

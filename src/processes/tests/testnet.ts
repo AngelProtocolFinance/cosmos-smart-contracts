@@ -239,13 +239,13 @@ export async function testExecute(
   //   }
   // );
   await testCreateEndowmentViaRegistrar(terra, apTeam, registrar, {
-    owner,
-    beneficiary: owner,
+    owner: charity1.key.accAddress,
+    beneficiary: charity1.key.accAddress,
     withdraw_before_maturity: false,
     maturity_time: undefined,
     maturity_height: undefined,
     guardians_multisig_addr: undefined,
-    cw4_members: [{ addr: apTeam2.key.accAddress, weight: 1 }],
+    cw4_members: [{ addr: charity1.key.accAddress, weight: 1 }],
     profile: {
       name: "Test-Suite Endowment",
       overview: "Endowment created from the test-suite integration test",
