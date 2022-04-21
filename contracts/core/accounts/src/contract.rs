@@ -7,7 +7,6 @@ use angel_core::messages::accounts::*;
 use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
-use angel_core::structs::EndowmentType;
 use angel_core::structs::{
     AcceptedTokens, BalanceInfo, Profile, RebalanceDetails, StrategyComponent,
 };
@@ -85,26 +84,20 @@ pub fn instantiate(
         },
     )?;
 
-    let mut profile = msg.profile;
-
-    if info
-        .sender
-        .ne(&deps.api.addr_validate(msg.registrar_contract.as_str())?)
-    {
-        profile.endow_type = EndowmentType::Normal;
-    }
-
-    PROFILE.save(deps.storage, &profile)?;
+    PROFILE.save(deps.storage, &msg.profile)?;
 
     // initial default Response to add submessages to
     let mut res = Response::new().add_attributes(vec![
-        attr("endow_name", profile.name),
+        attr("endow_name", msg.profile.name),
         attr("endow_owner", msg.owner),
-        attr("endow_type", profile.endow_type.to_string()),
-        attr("endow_logo", profile.logo.unwrap_or_else(|| "".to_string())),
+        attr("endow_type", msg.profile.endow_type.to_string()),
+        attr(
+            "endow_logo",
+            msg.profile.logo.unwrap_or_else(|| "".to_string()),
+        ),
         attr(
             "endow_image",
-            profile.image.unwrap_or_else(|| "".to_string()),
+            msg.profile.image.unwrap_or_else(|| "".to_string()),
         ),
     ]);
 
