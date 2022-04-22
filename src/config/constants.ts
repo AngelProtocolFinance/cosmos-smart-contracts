@@ -265,6 +265,11 @@ export const mainnet = {
       "terra152f28c0kgyuhpynwvt03xewvtf85283ewlppvg", // Newmarket Food Pantry
       "terra1xux8zyum6lwv2ykjhxmwcguhj705yenctq8ff7", // Kashmir Humanity Foundation
       "terra17jrfprzuhgnkm9pq4xqx6lm4pa3yznzp32sd9v", // Africa Innovation Network For Climate and Education
+      "terra1mfy4x5sl8pq6qqfq9e9vfhk3cc26u8wdsupjf3", // Planting Justice
+      "terra1xrymezcys9p7znqszn3yreavlr04x0mzym28cg", // Buckminster Fuller Institute
+      "terra1yv2x5shrw3cunw7fxmnkdmqq3un3d27wn0a9um", // Regenerative Community Land Trust
+      "terra1ajtrehcrcxvc2rk3pgua87ze49yzsyyuljzj6n", // Anna's Pals
+      "terra10smnhjh5zqy3659mmv3ygxwpke2add623cteus", // WAGOA
     ],
   },
   members: [
