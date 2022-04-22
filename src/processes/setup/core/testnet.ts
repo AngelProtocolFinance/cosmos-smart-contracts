@@ -129,12 +129,21 @@ async function setup(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw4Group}`);
 
   process.stdout.write("Uploading CW3 MultiSig Wasm");
-  const guardianAngelMultiSig = await storeCode(
+  const cw3MultiSig = await storeCode(
     terra,
     apTeam,
     `${wasm_path.core}/cw3_multisig.wasm`
   );
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${guardianAngelMultiSig}`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSig}`);
+
+  process.stdout.write("Uploading AP Team MultiSig Wasm");
+  const apTeamMultiSig = await storeCode(
+    terra,
+    apTeam,
+    `${wasm_path.core}/cw3_multisig.wasm`
+  );
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${apTeamMultiSig}`);
+
 
   // Step 2. Instantiate the key contracts
   // Registrar
@@ -176,6 +185,61 @@ async function setup(
       return attribute.key == "contract_address";
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
+
+  // CW4 AP Team Group
+  process.stdout.write("Instantiating CW4 AP Team Group contract");
+  const cw4GrpApTeamResult = await instantiateContract(terra, apTeam, apTeam, cw4Group, {
+    admin: apTeam.key.accAddress,
+    members: [
+      { addr: apTeam.key.accAddress, weight: 1 },
+      { addr: apTeam2.key.accAddress, weight: 1 },
+    ],
+  });
+  cw4GrpApTeam = cw4GrpApTeamResult.logs[0].events
+    .find((event) => {
+      return event.type == "instantiate_contract";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "contract_address";
+    })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpApTeam}`);
+
+  // CW3 AP Team MultiSig
+  process.stdout.write("Instantiating CW3 AP Team MultiSig contract");
+  const cw3ApTeamResult = await instantiateContract(
+    terra,
+    apTeam,
+    apTeam,
+    apTeamMultiSig,
+    {
+      group_addr: cw4GrpApTeam,
+      threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
+      max_voting_period: { height: max_voting_period_height },
+      registrar_contract: registrar,
+    }
+  );
+  cw3ApTeam = cw3ApTeamResult.logs[0].events
+    .find((event) => {
+      return event.type == "instantiate_contract";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "contract_address";
+    })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw3ApTeam}`);
+
+  // Setup AP Team C3 to be the admin to it's C4 Group
+  process.stdout.write(
+    "AddHook & UpdateAdmin on AP Team CW4 Group to point to AP Team C3"
+  );
+  await sendTransaction(terra, apTeam, [
+    new MsgExecuteContract(apTeam.key.accAddress, cw4GrpApTeam, {
+      add_hook: { addr: cw3ApTeam },
+    }),
+    new MsgExecuteContract(apTeam.key.accAddress, cw4GrpApTeam, {
+      update_admin: { admin: cw3ApTeam },
+    }),
+  ]);
+  console.log(chalk.green(" Done!"));
 
   // Add confirmed TCA Members to the Index Fund SCs approved list
   process.stdout.write("Add confirmed TCA Member to allowed list");
