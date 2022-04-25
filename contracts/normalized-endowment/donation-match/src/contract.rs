@@ -6,7 +6,8 @@ use angel_core::messages::donation_match::{
 
 use angel_core::messages::dao_token::Cw20HookMsg as DaoTokenHookMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
-use angel_core::responses::registrar::EndowmentListResponse;
+use angel_core::responses::registrar::{EndowmentDetailResponse, EndowmentListResponse};
+use angel_core::structs::EndowmentStatus;
 use cosmwasm_std::{
     attr, entry_point, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     Response, StdError, StdResult, Uint128, WasmMsg,
@@ -82,23 +83,14 @@ fn execute_donor_match(
     let config = CONFIG.load(deps.storage)?;
 
     // Validation 1. Check if the tx sender is valid endowment contract
-    let endow_list_resp: EndowmentListResponse = deps.querier.query_wasm_smart(
+    let endow_detail: EndowmentDetailResponse = deps.querier.query_wasm_smart(
         config.registrar_contract,
-        &RegistrarQueryMsg::EndowmentList {
-            name: None,
-            owner: None,
-            status: Some("approved".to_string()),
-            tier: None,
-            endow_type: None,
+        &RegistrarQueryMsg::Endowment {
+            endowment_addr: info.sender.to_string(),
         },
     )?;
 
-    if endow_list_resp
-        .endowments
-        .iter()
-        .find(|&endow_entry| endow_entry.address == info.sender)
-        .is_none()
-    {
+    if endow_detail.endowment.status != EndowmentStatus::Approved {
         return Err(ContractError::Unauthorized {});
     }
 
