@@ -76,8 +76,11 @@ fn test_execute_donor_match() {
     };
     let info = mock_info("not_endowment", &coins(UST_AMT, "uusd"));
 
-    let err = execute(deps.as_mut(), mock_env(), info, donor_match_msg).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
+    let res = execute(deps.as_mut(), mock_env(), info, donor_match_msg);
+    assert!(
+        res.is_err(),
+        "This call should fail with \"Unauthorized\" error"
+    );
 
     // Fail the "donor_match" since did not send enough UST
     let donor_match_msg = ExecuteMsg::DonorMatch {

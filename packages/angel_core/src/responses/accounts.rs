@@ -27,6 +27,7 @@ pub struct EndowmentDetailsResponse {
     pub maturity_height: Option<u64>,
     pub strategies: Vec<StrategyComponent>,
     pub rebalance: RebalanceDetails,
+    pub donation_match_contract_addr: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

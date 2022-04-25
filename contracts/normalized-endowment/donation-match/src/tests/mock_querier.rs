@@ -1,12 +1,13 @@
 // Contains mock functionality to test multi-contract scenarios
 
+use angel_core::errors::core::ContractError;
 use angel_core::responses::registrar::EndowmentListResponse;
-use angel_core::structs::EndowmentEntry;
+use angel_core::responses::registrar::{ConfigResponse, EndowmentDetailResponse};
+use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Addr, Api, CanonicalAddr, Coin, ContractResult, Decimal,
-    OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult, Uint128,
-    WasmQuery,
+    from_binary, from_slice, to_binary, Addr, Api, Coin, ContractResult, Decimal, OwnedDeps,
+    Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::BalanceResponse;
 use schemars::JsonSchema;
@@ -36,6 +37,12 @@ pub enum QueryMsg {
     Balance {
         address: String,
     },
+    // Mock the `registrar` endowment
+    Endowment {
+        endowment_addr: String,
+    },
+    // Mock the `registrar` config
+    Config {},
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -289,9 +296,9 @@ impl WasmMockQuerier {
                             address: Addr::unchecked("endowment_contract"),
                             name: "test-endow".to_string(),
                             owner: "endowment-owner".to_string(),
-                            status: angel_core::structs::EndowmentStatus::Approved,
+                            status: EndowmentStatus::Approved,
                             tier: None,
-                            endow_type: angel_core::structs::EndowmentType::Charity,
+                            endow_type: EndowmentType::Charity,
                         }],
                     })
                     .unwrap(),
@@ -307,6 +314,52 @@ impl WasmMockQuerier {
                 QueryMsg::Balance { address: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&BalanceResponse {
                         balance: Uint128::from(100_u128),
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::Endowment { endowment_addr } => {
+                    if endowment_addr != "endowment_contract".to_string() {
+                        SystemResult::Err(SystemError::InvalidResponse {
+                            error: "Query error".to_string(),
+                            response: to_binary(&ContractError::Unauthorized {}.to_string())
+                                .unwrap(),
+                        })
+                    } else {
+                        SystemResult::Ok(ContractResult::Ok(
+                            to_binary(&EndowmentDetailResponse {
+                                endowment: EndowmentEntry {
+                                    address: Addr::unchecked("Test-Endowment-Address"),
+                                    name: "Test-Endowment-#1".to_string(),
+                                    owner: "Test-Endowment-Owner".to_string(),
+                                    status: angel_core::structs::EndowmentStatus::Approved,
+                                    endow_type: angel_core::structs::EndowmentType::Charity,
+                                    tier: Some(Tier::Level1),
+                                },
+                            })
+                            .unwrap(),
+                        ))
+                    }
+                }
+                QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&ConfigResponse {
+                        version: "1.7.0".to_string(),
+                        owner: "Test-Endowment-Owner".to_string(),
+                        accounts_code_id: 123,
+                        cw3_code: Some(124),
+                        cw4_code: Some(125),
+                        subdao_gov_code: Some(126),
+                        subdao_token_code: Some(127),
+                        subdao_cw900_code: Some(128),
+                        subdao_distributor_code: None,
+                        donation_match_code: None,
+                        halo_token: None,
+                        gov_contract: None,
+                        treasury: "treasury-address".to_string(),
+                        tax_rate: Decimal::from_ratio(10_u64, 100_u64),
+                        default_vault: None,
+                        index_fund: None,
+                        split_to_liquid: SplitDetails::default(),
+                        donation_match_charites_contract: Some(MOCK_CONTRACT_ADDR.to_string()),
                     })
                     .unwrap(),
                 )),

@@ -4,10 +4,14 @@ use angel_core::messages::donation_match::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
 };
 
+use angel_core::messages::accounts::QueryMsg as AccountQueryMsg;
 use angel_core::messages::dao_token::Cw20HookMsg as DaoTokenHookMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
-use angel_core::responses::registrar::{EndowmentDetailResponse, EndowmentListResponse};
-use angel_core::structs::EndowmentStatus;
+use angel_core::responses::accounts::EndowmentDetailsResponse;
+use angel_core::responses::registrar::{
+    ConfigResponse as RegistrarConfig, EndowmentDetailResponse,
+};
+use angel_core::structs::{EndowmentStatus, EndowmentType};
 use cosmwasm_std::{
     attr, entry_point, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     Response, StdError, StdResult, Uint128, WasmMsg,
@@ -84,7 +88,7 @@ fn execute_donor_match(
 
     // Validation 1. Check if the tx sender is valid endowment contract
     let endow_detail: EndowmentDetailResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract,
+        config.registrar_contract.clone(),
         &RegistrarQueryMsg::Endowment {
             endowment_addr: info.sender.to_string(),
         },
@@ -93,6 +97,29 @@ fn execute_donor_match(
     if endow_detail.endowment.status != EndowmentStatus::Approved {
         return Err(ContractError::Unauthorized {});
     }
+
+    // Validation 2. Check if the correct endowment is calling this entry
+    match endow_detail.endowment.endow_type {
+        EndowmentType::Charity => {
+            let registrar_config: RegistrarConfig = deps.querier.query_wasm_smart(
+                config.registrar_contract.clone(),
+                &RegistrarQueryMsg::Config {},
+            )?;
+            if env.contract.address.to_string()
+                != registrar_config.donation_match_charites_contract.unwrap()
+            {
+                return Err(ContractError::Unauthorized {});
+            }
+        }
+        EndowmentType::Normal => {
+            let endow: EndowmentDetailsResponse = deps
+                .querier
+                .query_wasm_smart(config.registrar_contract, &AccountQueryMsg::Endowment {})?;
+            if env.contract.address.to_string() != endow.donation_match_contract_addr {
+                return Err(ContractError::Unauthorized {});
+            }
+        }
+    };
 
     // Validation 2. Check if the correct amount of UST is sent.
     let received_uusd = match info.funds.into_iter().find(|coin| coin.denom == "uusd") {
