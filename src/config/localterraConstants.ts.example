@@ -22,6 +22,8 @@ export const localterra = {
     cw3ApTeam: "",
     cw4GrpOwners: "",
     cw3GuardianAngels: "",
+    cw3MultiSig: "",
+    cw4Grp: "",
   },
 
   // LBP contracts

@@ -120,19 +120,19 @@ async function setup(
   const cw4Group = await storeCode(terra, apTeam, `${wasm_path.core}/cw4_group.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw4Group}`);
 
-  process.stdout.write("Uploading Guardian Angels MultiSig Wasm");
-  const guardianAngelMultiSig = await storeCode(
+  process.stdout.write("Uploading CW3 MultiSig Wasm");
+  const cw3MultiSig = await storeCode(
     terra,
     apTeam,
-    `${wasm_path.core}/guardian_angels_multisig.wasm`
+    `${wasm_path.core}/cw3_multisig.wasm`
   );
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${guardianAngelMultiSig}`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSig}`);
 
   process.stdout.write("Uploading AP Team MultiSig Wasm");
   const apTeamMultiSig = await storeCode(
     terra,
     apTeam,
-    `${wasm_path.core}/ap_team_multisig.wasm`
+    `${wasm_path.core}/cw3_multisig.wasm`
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${apTeamMultiSig}`);
 
@@ -186,7 +186,6 @@ async function setup(
       group_addr: cw4GrpApTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
-      registrar_contract: registrar,
     }
   );
   cw3ApTeam = cw3ApTeamResult.logs[0].events
@@ -208,64 +207,6 @@ async function setup(
     }),
     new MsgExecuteContract(apTeam.key.accAddress, cw4GrpApTeam, {
       update_admin: { admin: cw3ApTeam },
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
-
-  // CW4 Endowment Owners Group
-  // Registrar SC is the Admin & no members in the group to start
-  process.stdout.write("Instantiating CW4 Endowment Owners Group contract");
-  const cw4GrpOwnersResult = await instantiateContract(terra, apTeam, apTeam, cw4Group, {
-    admin: registrar,
-    members: [],
-  });
-  cw4GrpOwners = cw4GrpOwnersResult.logs[0].events
-    .find((event) => {
-      return event.type == "instantiate_contract";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
-    })?.value as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpOwners}`);
-
-  // CW3 Guardian Angels MultiSig
-  process.stdout.write("Instantiating CW3 Guardian Angels MultiSig contract");
-  const cw3Result = await instantiateContract(
-    terra,
-    apTeam,
-    apTeam,
-    guardianAngelMultiSig,
-    {
-      ap_team_group: cw4GrpApTeam,
-      endowment_owners_group: cw4GrpOwners,
-      registrar_contract: registrar,
-      threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
-      max_voting_period: { height: max_voting_period_height },
-      max_voting_period_guardians: { height: max_voting_period_guardians_height },
-    }
-  );
-  cw3GuardianAngels = cw3Result.logs[0].events
-    .find((event) => {
-      return event.type == "instantiate_contract";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
-    })?.value as string;
-  console.log(
-    chalk.green(" Done!"),
-    `${chalk.blue("contractAddress")}=${cw3GuardianAngels}`
-  );
-
-  // Update the Registrar with newly created Endowment Owners Group & Guardians Multisig address
-  process.stdout.write(
-    "Update Registrar with the Address of the CW4 Endowment Owners Group contract"
-  );
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_config: {
-        endowment_owners_group_addr: cw4GrpOwners,
-        guardians_multisig_addr: cw3GuardianAngels,
-      },
     }),
   ]);
   console.log(chalk.green(" Done!"));
