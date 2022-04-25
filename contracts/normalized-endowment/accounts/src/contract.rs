@@ -6,6 +6,7 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
 use angel_core::messages::dao_token::InstantiateMsg as DaoTokenInstantiateMsg;
+use angel_core::messages::donation_match::InstantiateMsg as DonationMatchInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::EndowmentType;
@@ -15,6 +16,11 @@ use cosmwasm_std::{
     QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
     WasmQuery,
 };
+
+// Terraswap-related
+use terraswap::asset::{AssetInfo, PairInfo};
+use terraswap::querier::query_pair_info;
+
 use cw2::set_contract_version;
 
 // version info for future migration info
@@ -171,15 +177,37 @@ pub fn instantiate(
             }
         };
 
+        let reserve_token = match registrar_config.halo_token {
+            Some(addr) => addr,
+            None => {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "No code id for donation matching contract".to_string(),
+                }))
+            }
+        };
+        let pair_info: PairInfo = query_pair_info(
+            &deps.querier,
+            terraswap_factory,
+            &[
+                AssetInfo::NativeToken {
+                    denom: "uusd".to_string(),
+                },
+                AssetInfo::Token {
+                    contract_addr: reserve_token,
+                },
+            ],
+        )?;
         res = res.add_submessage(SubMsg {
             id: 4,
             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                 code_id: donation_match_code,
                 admin: None,
                 label: "new donation match contract".to_string(),
-                // TODO: The instantiate msg for "donation match" contract
-                // should be filled after the contract implementation.
-                msg: to_binary("Donation match contract instantiate msg")?,
+                msg: to_binary(&DonationMatchInstantiateMsg {
+                    reserve_token,
+                    lp_pair: pair_info.contract_addr,
+                    registrar_contract: msg.registrar_contract.clone(),
+                })?,
                 funds: vec![],
             }),
             gas_limit: None,
