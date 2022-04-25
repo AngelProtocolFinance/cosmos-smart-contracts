@@ -186,7 +186,6 @@ async function setup(
       group_addr: cw4GrpApTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
-      registrar_contract: registrar,
     }
   );
   cw3ApTeam = cw3ApTeamResult.logs[0].events
