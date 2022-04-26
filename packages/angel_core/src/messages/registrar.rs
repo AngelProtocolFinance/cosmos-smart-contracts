@@ -55,6 +55,8 @@ pub enum ExecuteMsg {
     },
     // Allows the DANO/AP Team to update the EndowmentEntry
     UpdateEndowmentType(UpdateEndowmentTypeMsg),
+    // Set/Update/Nullify the EndowmentTypeFees
+    UpdateEndowTypeFees(UpdateEndowTypeFeesMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -126,6 +128,12 @@ pub struct UpdateEndowmentTypeMsg {
     pub owner: Option<String>,
     pub tier: Option<Option<Tier>>,
     pub endow_type: Option<EndowmentType>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateEndowTypeFeesMsg {
+    pub endowtype_charity: Option<Decimal>,
+    pub endowtype_normal: Option<Decimal>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -466,3 +466,35 @@ fn test_query_fees() {
     assert_eq!(fees_response.endowtype_charity, None);
     assert_eq!(fees_response.endowtype_normal, None);
 }
+
+#[test]
+fn test_update_endowtype_fees() {
+    let mut deps = mock_dependencies(&[]);
+    let ap_team = "angelprotocolteamdano".to_string();
+    let vault_addr = "vault_addr".to_string();
+    let instantiate_msg = InstantiateMsg {
+        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
+        treasury: ap_team.clone(),
+        default_vault: None,
+        tax_rate: Decimal::percent(20),
+        split_to_liquid: Some(SplitDetails::default()),
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // Update the "EndowmentTypeFees"
+    let msg = ExecuteMsg::UpdateEndowTypeFees(UpdateEndowTypeFeesMsg {
+        endowtype_charity: Some(Decimal::percent(40)),
+        endowtype_normal: Some(Decimal::percent(30)),
+    });
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Check the "fees" by query.
+    let query_fees_response = query(deps.as_ref(), mock_env(), QueryMsg::Fees {}).unwrap();
+    let fees_response: FeesResponse = from_binary(&query_fees_response).unwrap();
+    assert_eq!(fees_response.tax_rate, Decimal::percent(20));
+    assert_eq!(fees_response.endowtype_charity, Some(Decimal::percent(40)));
+    assert_eq!(fees_response.endowtype_normal, Some(Decimal::percent(30)));
+}

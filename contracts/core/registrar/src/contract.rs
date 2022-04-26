@@ -91,6 +91,9 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentType(msg) => {
             executers::update_endowment_type(deps, env, info, msg)
         }
+        ExecuteMsg::UpdateEndowTypeFees(msg) => {
+            executers::update_endowtype_fees(deps, env, info, msg)
+        }
     }
 }
 
