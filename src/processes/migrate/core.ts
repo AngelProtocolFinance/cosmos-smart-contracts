@@ -34,12 +34,12 @@ export async function migrateCore(
   endowmentContracts: string[]
 ): Promise<void> {
   // run the migrations desired
-  await migrateRegistrar(terra, apTeam, registrar);
+  // await migrateRegistrar(terra, apTeam, registrar);
   // await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
   // await migrateCw3Multisig(terra, apTeam, cw3ApTeam);
   // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
   // await migrateIndexFund(terra, apTeam, indexFund);
-  await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
+  // await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
   // await migrateVaults(terra, apTeam, vaultContracts);
 }
 
@@ -239,12 +239,8 @@ async function migrateCw4Group(
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
-  process.stdout.write("Migrate CW4 AP Team Group contract");
+  process.stdout.write("Migrate CW4 Group contract");
   const result1 = await migrateContract(terra, apTeam, apTeam, cw4GrpApTeam, codeId, {});
-  console.log(chalk.green(" Done!"));
-
-  process.stdout.write("Migrate CW4 Endowment Owners Group contract");
-  const result2 = await migrateContract(terra, apTeam, apTeam, cw4GrpOwners, codeId, {});
   console.log(chalk.green(" Done!"));
 }
 
@@ -260,7 +256,7 @@ async function migrateCw3Multisig(
   const codeId = await storeCode(
     terra,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.core}/cw3_multisig.wasm`)
+    path.resolve(__dirname, `${wasm_path.core}/ap_team_multisig.wasm`)
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
