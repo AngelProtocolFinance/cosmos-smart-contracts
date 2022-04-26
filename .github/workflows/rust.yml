@@ -1,0 +1,24 @@
+name: Rust
+
+on:
+  push:
+    branches: [ main, RC-v1.6, RC-v1.7, RC-v2 ]
+  pull_request:
+    branches: [ main, RC-v1.6, RC-v1.7, RC-v2 ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        toolchain:
+          - nightly
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      run: cargo build --verbose
+    - name: Run tests
+      run: cargo test --verbose
