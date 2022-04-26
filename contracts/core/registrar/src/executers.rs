@@ -203,6 +203,13 @@ pub fn update_config(
         None => Ok(config.split_to_liquid.default),
     };
     config.split_to_liquid = split_checks(max.unwrap(), min.unwrap(), default.unwrap()).unwrap();
+    config.collector_addr = msg
+        .collector_addr
+        .map(|addr| deps.api.addr_validate(&addr).unwrap());
+    config.collector_share = match msg.collector_share {
+        Some(share) => share,
+        None => config.collector_share,
+    };
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))

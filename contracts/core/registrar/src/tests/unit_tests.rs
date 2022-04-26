@@ -92,6 +92,8 @@ fn update_config() {
         split_default: Some(Decimal::percent(30)),
         gov_contract: None,
         halo_token: None,
+        collector_addr: None,
+        collector_share: None,
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -182,6 +184,8 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         split_default: None,
         gov_contract: None,
         halo_token: None,
+        collector_addr: None,
+        collector_share: None,
     };
     let info = mock_info(ap_team.as_ref(), &[]);
     let _ = execute(

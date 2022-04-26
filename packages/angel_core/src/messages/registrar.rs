@@ -92,6 +92,8 @@ pub struct UpdateConfigMsg {
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
+    pub collector_addr: Option<String>,
+    pub collector_share: Option<Decimal>,
 }
 
 impl UpdateConfigMsg {
