@@ -704,7 +704,7 @@ pub fn deposit(
     STATE.save(deps.storage, &state)?;
 
     // check if the donation matching is possible
-    let mut doner_match_messages: Vec<SubMsg> = vec![];
+    let mut donor_match_messages: Vec<SubMsg> = vec![];
     if !ust_locked.amount.is_zero() && endowment.donation_match && endowment.dao_token.is_some() {
         // get the correct donation match contract to use
         let donation_match_contract = match profile.endow_type {
