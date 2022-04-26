@@ -161,4 +161,6 @@ pub enum QueryMsg {
     Config {},
     // Get a list of all approved Vaults exchange rates
     ApprovedVaultRateList {},
+    // Get all Fees(both BaseFee & all of the EndowmentTypeFees)
+    Fees {},
 }

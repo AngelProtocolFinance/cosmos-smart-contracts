@@ -1,4 +1,4 @@
-use angel_core::structs::{EndowmentEntry, SplitDetails, YieldVault};
+use angel_core::structs::{EndowmentEntry, EndowmentType, SplitDetails, YieldVault};
 use angel_core::utils::calc_range_start_addr;
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
@@ -113,4 +113,20 @@ pub fn read_vaults<'a>(
             Ok(v)
         })
         .collect()
+}
+
+// EndowmentType -> Option<Decimal>
+pub const ENDOWTYPE_FEES: Map<String, Option<Decimal>> = Map::new("endowment_type_fees");
+
+// ENDOWTYPE_FEES (EndowmentType_Fees) Read/Write
+pub fn endow_type_fees_read(storage: &dyn Storage, k: EndowmentType) -> StdResult<Option<Decimal>> {
+    ENDOWTYPE_FEES.load(storage, k.to_string())
+}
+
+pub fn endow_type_fees_write(
+    storage: &mut dyn Storage,
+    k: EndowmentType,
+    v: Option<Decimal>,
+) -> StdResult<()> {
+    ENDOWTYPE_FEES.save(storage, k.to_string(), &v)
 }

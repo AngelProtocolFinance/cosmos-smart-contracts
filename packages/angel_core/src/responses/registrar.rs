@@ -50,3 +50,10 @@ pub struct ConfigResponse {
 pub struct VaultRateResponse {
     pub vaults_rate: Vec<VaultRate>,
 }
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+pub struct FeesResponse {
+    pub tax_rate: Decimal,
+    pub endowtype_charity: Option<Decimal>,
+    pub endowtype_normal: Option<Decimal>,
+}

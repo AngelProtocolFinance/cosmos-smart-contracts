@@ -133,6 +133,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::ApprovedVaultRateList {} => {
             to_binary(&queriers::query_approved_vaults_fx_rate(deps)?)
         }
+        QueryMsg::Fees {} => to_binary(&queriers::query_fees(deps)?),
     }
 }
 
