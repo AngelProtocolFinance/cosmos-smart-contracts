@@ -724,8 +724,8 @@ pub fn deposit(
             denom: "uusd".to_string(),
         };
 
-        // build "doner_match" message for donation matching
-        doner_match_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+        // build "donor_match" message for donation matching
+        donor_match_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: donation_match_contract.to_string(),
             msg: to_binary(&DonationMatchExecMsg::DonorMatch {
                 amount: donation_match_amount,
@@ -750,7 +750,7 @@ pub fn deposit(
 
     Ok(Response::new()
         .add_submessages(deposit_messages)
-        .add_submessages(doner_match_messages)
+        .add_submessages(donor_match_messages)
         .add_attribute("action", "account_deposit")
         .add_attribute("sender", info.sender.to_string())
         .add_attribute("deposit_amount", deposit_amount.amount.to_string()))
