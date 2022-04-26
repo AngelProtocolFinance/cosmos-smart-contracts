@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 pub struct MigrateMsg {
     // [ (address, status, name, owner, tier), ...]
     pub endowments: Vec<MigrateEndowment>,
+    // EndowmentTypeFees
+    pub endowtype_fees: MigrateEndowTypeFees,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -18,6 +20,12 @@ pub struct MigrateEndowment {
     pub name: String,
     pub owner: String,
     pub tier: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MigrateEndowTypeFees {
+    pub endowtype_charity: Option<Decimal>,
+    pub endowtype_normal: Option<Decimal>,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]

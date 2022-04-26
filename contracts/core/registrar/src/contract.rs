@@ -215,5 +215,27 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             })?,
         );
     }
+
+    // Save the values for "EndowTypeFees" map
+    const ENDOWTYPE_FEES_KEY: &[u8] = b"endowment_type_fees";
+
+    let charity_path: Path<String> = Path::new(
+        ENDOWTYPE_FEES_KEY,
+        &[EndowmentType::Charity.to_string().as_bytes()],
+    );
+    let normal_path: Path<String> = Path::new(
+        ENDOWTYPE_FEES_KEY,
+        &[EndowmentType::Normal.to_string().as_bytes()],
+    );
+
+    deps.storage.set(
+        charity_path.deref(),
+        &to_vec(&msg.endowtype_fees.endowtype_charity)?,
+    );
+    deps.storage.set(
+        normal_path.deref(),
+        &to_vec(&msg.endowtype_fees.endowtype_normal)?,
+    );
+
     Ok(Response::default())
 }
