@@ -189,14 +189,6 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     );
 
     const PROFILE_KEY: &[u8] = b"profile";
-
-    let profile = Profile {
-        name: msg.name,
-        overview: msg.overview,
-        logo: msg.logo,
-        image: msg.image,
-        ..Default::default()
-    };
-    deps.storage.set(PROFILE_KEY, &to_vec(&profile)?);
+    deps.storage.set(PROFILE_KEY, &to_vec(&msg.profile)?);
     Ok(Response::default())
 }

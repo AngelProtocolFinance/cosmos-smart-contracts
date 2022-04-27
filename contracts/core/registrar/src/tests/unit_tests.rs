@@ -205,7 +205,8 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         image: None,
         url: None,
         registration_number: None,
-        country_city_origin: None,
+        country_of_origin: None,
+        street_address: None,
         contact_email: None,
         social_media_urls: SocialMedialUrls {
             facebook: None,
