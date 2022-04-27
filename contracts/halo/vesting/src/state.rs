@@ -37,9 +37,9 @@ pub fn store_vesting_info(
 
 const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
-pub fn read_vesting_infos<'a>(
+pub fn read_vesting_infos(
     deps: Deps,
-    storage: &'a dyn Storage,
+    storage: &dyn Storage,
     start_after: Option<Addr>,
     limit: Option<u32>,
     order_by: Option<OrderBy>,
@@ -53,8 +53,8 @@ pub fn read_vesting_infos<'a>(
     VESTING_INFO
         .range(
             storage,
-            start.and_then(|v| Some(Bound::inclusive(&*v))),
-            end.and_then(|v| Some(Bound::inclusive(&*v))),
+            start.map(|v| Bound::inclusive(&*v)),
+            end.map(|v| Bound::inclusive(&*v)),
             order_by.into(),
         )
         .take(limit)
@@ -79,8 +79,5 @@ fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
 
 // this will set the first key after the provided key, by appending a 1 byte
 fn calc_range_end_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    match start_after {
-        Some(addr) => Some(addr.as_bytes().to_vec()),
-        _ => None,
-    }
+    start_after.map(|addr| addr.as_bytes().to_vec())
 }

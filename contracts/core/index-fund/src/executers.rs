@@ -69,21 +69,19 @@ pub fn update_alliance_member_list(
     // validate the member address
     let member_addr = deps.api.addr_validate(address.as_str())?;
 
-    if action == "add".to_string() {
+    if action == *"add" {
         ALLIANCE_MEMBERS.update(
             deps.storage,
             member_addr.clone(),
-            |m: Option<AllianceMember>| -> Result<AllianceMember, ContractError> {
-                match m {
-                    _ => Ok(AllianceMember {
-                        name: member.name,
-                        logo: member.logo,
-                        website: member.website,
-                    }),
-                }
+            |_m: Option<AllianceMember>| -> Result<AllianceMember, ContractError> {
+                Ok(AllianceMember {
+                    name: member.name,
+                    logo: member.logo,
+                    website: member.website,
+                })
             },
         )?;
-    } else if action == "remove".to_string() {
+    } else if action == *"remove" {
         ALLIANCE_MEMBERS.remove(deps.storage, member_addr.clone());
     } else {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -94,7 +92,7 @@ pub fn update_alliance_member_list(
     Ok(Response::new().add_attributes(vec![
         attr("method", "update_alliance_list"),
         attr("action", action),
-        attr("address", member_addr.clone()),
+        attr("address", member_addr),
     ]))
 }
 
@@ -158,13 +156,10 @@ pub fn create_index_fund(
     // check all members addresses passed are valid
     let validated_members: Vec<Addr> = members
         .iter()
-        .map(|addr| deps.api.addr_validate(&addr).unwrap())
+        .map(|addr| deps.api.addr_validate(addr).unwrap())
         .collect();
 
-    let optional_split = match split_to_liquid {
-        Some(split) => Some(percentage_checks(split).unwrap()),
-        None => None,
-    };
+    let optional_split = split_to_liquid.map(|split| percentage_checks(split).unwrap());
 
     // build fund struct from msg params
     let fund = IndexFund {
@@ -337,14 +332,12 @@ pub fn update_alliance_member(
     ALLIANCE_MEMBERS.update(
         deps.storage,
         member_addr.clone(),
-        |m: Option<AllianceMember>| -> Result<AllianceMember, ContractError> {
-            match m {
-                _ => Ok(AllianceMember {
-                    name: member.name,
-                    logo: member.logo,
-                    website: member.website,
-                }),
-            }
+        |_m: Option<AllianceMember>| -> Result<AllianceMember, ContractError> {
+            Ok(AllianceMember {
+                name: member.name,
+                logo: member.logo,
+                website: member.website,
+            })
         },
     )?;
 
@@ -435,7 +428,7 @@ pub fn deposit(
         Some(id) => {
             let fund = FUND.load(deps.storage, &id.to_be_bytes())?;
             // check that the fund has members to donate to
-            if fund.members.len() == 0 {
+            if fund.members.is_empty() {
                 return Err(ContractError::IndexFundEmpty {});
             }
             // double check the given fund is valid & not expired
@@ -460,7 +453,7 @@ pub fn deposit(
                     while deposit_amount > Uint128::zero() {
                         let fund = FUND.load(deps.storage, &state.active_fund.to_be_bytes())?;
                         // check that the fund has members to donate to
-                        if fund.members.len() == 0 {
+                        if fund.members.is_empty() {
                             return Err(ContractError::IndexFundEmpty {});
                         }
                         // double check the given fund is not expired
@@ -504,7 +497,7 @@ pub fn deposit(
                     // no funding goal, dump all donated funds into current active fund
                     let fund = FUND.load(deps.storage, &state.active_fund.to_be_bytes())?;
                     // check that the fund has members to donate to
-                    if fund.members.len() == 0 {
+                    if fund.members.is_empty() {
                         return Err(ContractError::IndexFundEmpty {});
                     }
                     // double check the given fund is not expired

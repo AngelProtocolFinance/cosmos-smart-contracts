@@ -34,7 +34,7 @@ pub fn instantiate(
     .unwrap();
 
     let configs = Config {
-        owner: info.sender.clone(),
+        owner: info.sender,
         index_fund_contract: None,
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
         treasury: deps.api.addr_validate(&msg.treasury)?,

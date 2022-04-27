@@ -224,9 +224,7 @@ pub fn query_pair(deps: Deps, denom: String) -> StdResult<PairInfo> {
         &deps.querier,
         config.swap_factory,
         &[
-            AssetInfo::NativeToken {
-                denom: denom.to_string(),
-            },
+            AssetInfo::NativeToken { denom },
             AssetInfo::Token {
                 contract_addr: config.halo_token.to_string(),
             },
@@ -237,6 +235,6 @@ pub fn query_pair(deps: Deps, denom: String) -> StdResult<PairInfo> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
     Ok(Response::default())
 }

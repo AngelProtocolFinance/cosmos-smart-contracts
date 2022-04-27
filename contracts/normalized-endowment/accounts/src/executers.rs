@@ -381,7 +381,7 @@ pub fn update_strategies(
                     vault_addr: strategy.vault.to_string(),
                 })?,
             }))?;
-        if vault_config.vault.approved != true {
+        if !vault_config.vault.approved {
             return Err(ContractError::InvalidInputs {});
         }
 
@@ -537,7 +537,7 @@ pub fn vault_receipt(
                                 msg: to_binary(&RegistrarQuerier::Config {})?,
                             }))?;
                         let index_fund: String = match registrar_config.index_fund {
-                            Some(addr) => addr.to_string(),
+                            Some(addr) => addr,
                             None => return Err(ContractError::ContractNotConfigured {}),
                         };
 
@@ -743,7 +743,7 @@ pub fn withdraw(
         .add_submessages(withdraw_messages)
         .add_attribute("action", "withdrawal")
         .add_attribute("sender", env.contract.address.to_string())
-        .add_attribute("beneficiary", beneficiary.to_string()))
+        .add_attribute("beneficiary", beneficiary))
 }
 
 pub fn close_endowment(
@@ -862,7 +862,7 @@ pub fn update_profile(
         msg: to_binary(&RegistrarExecuter::UpdateEndowmentType(
             UpdateEndowmentTypeMsg {
                 endowment_addr: env.contract.address.to_string(),
-                name: msg.name.and_then(|v| Some(v)),
+                name: msg.name,
                 owner: None,
                 tier,
                 endow_type: Some(profile.endow_type),
