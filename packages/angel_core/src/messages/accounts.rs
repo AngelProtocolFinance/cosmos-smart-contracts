@@ -6,10 +6,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {
-    pub name: String,
-    pub overview: String,
-    pub logo: Option<String>,
-    pub image: Option<String>,
+    pub profile: Profile,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
@@ -127,7 +124,8 @@ pub struct UpdateProfileMsg {
     pub image: Option<String>,
     pub url: Option<String>,
     pub registration_number: Option<String>,
-    pub country_city_origin: Option<String>,
+    pub country_of_origin: Option<String>,
+    pub street_address: Option<String>,
     pub contact_email: Option<String>,
     pub facebook: Option<String>,
     pub twitter: Option<String>,

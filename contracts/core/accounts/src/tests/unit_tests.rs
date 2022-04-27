@@ -25,7 +25,8 @@ fn test_proper_initialization() {
         image: None,
         url: None,
         registration_number: None,
-        country_city_origin: None,
+        country_of_origin: None,
+        street_address: None,
         contact_email: None,
         social_media_urls: SocialMedialUrls {
             facebook: None,
@@ -71,7 +72,8 @@ fn test_get_config() {
         image: None,
         url: None,
         registration_number: None,
-        country_city_origin: None,
+        country_of_origin: None,
+        street_address: None,
         contact_email: None,
         social_media_urls: SocialMedialUrls {
             facebook: None,
@@ -119,7 +121,8 @@ fn test_update_endowment_settings() {
         image: None,
         url: None,
         registration_number: None,
-        country_city_origin: None,
+        country_of_origin: None,
+        street_address: None,
         contact_email: None,
         social_media_urls: SocialMedialUrls {
             facebook: None,
@@ -200,7 +203,8 @@ fn test_change_registrar_contract() {
         image: None,
         url: None,
         registration_number: None,
-        country_city_origin: None,
+        country_of_origin: None,
+        street_address: None,
         contact_email: None,
         social_media_urls: SocialMedialUrls {
             facebook: None,
@@ -277,7 +281,8 @@ fn test_change_admin() {
         image: None,
         url: None,
         registration_number: None,
-        country_city_origin: None,
+        country_of_origin: None,
+        street_address: None,
         contact_email: None,
         social_media_urls: SocialMedialUrls {
             facebook: None,
@@ -354,7 +359,8 @@ fn migrate_contract() {
         image: None,
         url: None,
         registration_number: None,
-        country_city_origin: None,
+        country_of_origin: None,
+        street_address: None,
         contact_email: None,
         social_media_urls: SocialMedialUrls {
             facebook: None,
@@ -376,7 +382,7 @@ fn migrate_contract() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
-        profile: profile,
+        profile: profile.clone(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -384,12 +390,7 @@ fn migrate_contract() {
     assert_eq!(0, res.messages.len());
 
     // try to migrate the contract
-    let msg = MigrateMsg {
-        name: "TEST_CHARITY".to_string(),
-        overview: "Migrate test charity".to_string(),
-        logo: Some("TEST LOGO".to_string()),
-        image: Some("TEST IMAGE".to_string()),
-    };
+    let msg = MigrateMsg { profile };
     let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
     assert_eq!(0, res.messages.len())
 }
@@ -412,7 +413,8 @@ fn test_update_strategy() {
         image: None,
         url: None,
         registration_number: None,
-        country_city_origin: None,
+        country_of_origin: None,
+        street_address: None,
         contact_email: None,
         social_media_urls: SocialMedialUrls {
             facebook: None,
@@ -540,7 +542,8 @@ fn test_update_endowment_profile() {
         image: None,
         url: None,
         registration_number: None,
-        country_city_origin: None,
+        country_of_origin: None,
+        street_address: None,
         contact_email: None,
         social_media_urls: SocialMedialUrls {
             facebook: None,
@@ -577,7 +580,8 @@ fn test_update_endowment_profile() {
         image: Some("".to_string()),
         url: None,
         registration_number: None,
-        country_city_origin: None,
+        country_of_origin: None,
+        street_address: None,
         contact_email: None,
         facebook: None,
         twitter: None,
@@ -668,7 +672,8 @@ fn test_donate() {
         image: None,
         url: None,
         registration_number: None,
-        country_city_origin: None,
+        country_of_origin: None,
+        street_address: None,
         contact_email: None,
         social_media_urls: SocialMedialUrls {
             facebook: None,
@@ -753,7 +758,8 @@ fn test_withdraw() {
         image: None,
         url: None,
         registration_number: None,
-        country_city_origin: None,
+        country_of_origin: None,
+        street_address: None,
         contact_email: None,
         social_media_urls: SocialMedialUrls {
             facebook: None,
