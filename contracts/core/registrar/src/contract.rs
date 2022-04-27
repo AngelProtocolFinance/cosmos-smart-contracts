@@ -153,6 +153,9 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     })?;
     let old_config: OldConfig = from_slice(&old_config_data)?;
 
+    let default_collector_addr = deps.api.addr_validate("terra1uxqjsgnq30lg5lhlhwd2gmct844vwqcdlv93x5")?;
+    let collector_addr = msg.collector_addr.map_or(default_collector_addr, |addr| deps.api.addr_validate(&addr).unwrap());
+
     let config: Config = Config {
         owner: old_config.owner,
         index_fund_contract: old_config.index_fund_contract,
@@ -170,11 +173,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         split_to_liquid: old_config.split_to_liquid,
         halo_token: old_config.halo_token,
         gov_contract: old_config.gov_contract,
-        collector_addr: Some(
-            deps.api
-                .addr_validate("terra1uxqjsgnq30lg5lhlhwd2gmct844vwqcdlv93x5")
-                .unwrap(),
-        ),
+        collector_addr: Some(collector_addr),
         collector_share: Decimal::percent(50_u64),
     };
     deps.storage.set(CONFIG_KEY, &to_vec(&config)?);

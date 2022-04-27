@@ -11,6 +11,8 @@ pub struct MigrateMsg {
     pub endowments: Vec<MigrateEndowment>,
     // EndowmentTypeFees
     pub endowtype_fees: MigrateEndowTypeFees,
+    // collector_addr
+    pub collector_addr: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
