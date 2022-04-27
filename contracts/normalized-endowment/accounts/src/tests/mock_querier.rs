@@ -285,7 +285,6 @@ impl WasmMockQuerier {
                         gov_contract: Some("gov_contract".to_string()),
                         cw3_code: None,
                         cw4_code: None,
-                        donation_match_charites_contract: None,
                         donation_match_code: Some(111),
                         subdao_distributor_code: None,
                         subdao_cw900_code: None,

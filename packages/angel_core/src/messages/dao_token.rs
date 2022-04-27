@@ -139,6 +139,10 @@ pub enum ExecuteMsg {
     BurnFrom { owner: String, amount: Uint128 },
     /// Claim all tokens available for the message sender
     ClaimTokens {},
+
+    // Implements CW20. Receive is a base message to receive tokens to a this contract and trigger an action
+    /// on the receiving contract.
+    Receive(Cw20ReceiveMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
