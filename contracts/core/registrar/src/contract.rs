@@ -153,8 +153,12 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     })?;
     let old_config: OldConfig = from_slice(&old_config_data)?;
 
-    let default_collector_addr = deps.api.addr_validate("terra1uxqjsgnq30lg5lhlhwd2gmct844vwqcdlv93x5")?;
-    let collector_addr = msg.collector_addr.map_or(default_collector_addr, |addr| deps.api.addr_validate(&addr).unwrap());
+    let default_collector_addr = deps
+        .api
+        .addr_validate("terra1uxqjsgnq30lg5lhlhwd2gmct844vwqcdlv93x5")?;
+    let collector_addr = msg.collector_addr.map_or(default_collector_addr, |addr| {
+        deps.api.addr_validate(&addr).unwrap()
+    });
 
     let config: Config = Config {
         owner: old_config.owner,

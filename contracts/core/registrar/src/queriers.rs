@@ -1,6 +1,5 @@
 use crate::state::{
-    endow_type_fees_read, read_registry_entries, read_vaults, registry_read, vault_read, Config,
-    CONFIG,
+    endow_type_fees_read, read_registry_entries, read_vaults, registry_read, vault_read, CONFIG,
 };
 use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentType, Tier, VaultRate};
@@ -31,7 +30,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         collector_addr: config
             .collector_addr
             .map(|addr| addr.to_string())
-            .unwrap_or("".to_string()),
+            .unwrap_or_else(|| "".to_string()),
         collector_share: config.collector_share,
     })
 }
@@ -152,8 +151,10 @@ pub fn query_approved_vaults_fx_rate(deps: Deps) -> StdResult<VaultRateResponse>
 pub fn query_fees(deps: Deps) -> StdResult<FeesResponse> {
     // returns all Fees(both BaseFee & all of the EndowmentTypeFees)
     let tax_rate = CONFIG.load(deps.storage)?.tax_rate;
-    let endowtype_charity = endow_type_fees_read(deps.storage, EndowmentType::Charity)?;
-    let endowtype_normal = endow_type_fees_read(deps.storage, EndowmentType::Normal)?;
+    let endowtype_charity =
+        endow_type_fees_read(deps.storage, EndowmentType::Charity).unwrap_or(None);
+    let endowtype_normal =
+        endow_type_fees_read(deps.storage, EndowmentType::Normal).unwrap_or(None);
     Ok(FeesResponse {
         tax_rate,
         endowtype_charity,

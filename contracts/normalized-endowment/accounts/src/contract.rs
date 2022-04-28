@@ -147,7 +147,7 @@ pub fn instantiate(
                     reserve_denom: halo_token.to_string(),
                     reserve_decimals: 6,
                     curve_type: msg.curve_type.unwrap(),
-                    halo_token: halo_token,
+                    halo_token,
                     unbonding_period: 7,
                 })?,
                 funds: vec![],
