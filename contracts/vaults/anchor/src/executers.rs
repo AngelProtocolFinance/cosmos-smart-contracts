@@ -78,7 +78,7 @@ pub fn update_config(
 
     let anchor_config = anchor::config(deps.as_ref(), &config.moneymarket)?;
     config.yield_token = deps.api.addr_validate(&anchor_config.aterra_contract)?;
-    config.input_denom = anchor_config.stable_denom.clone();
+    config.input_denom = anchor_config.stable_denom;
     config.tax_per_block = msg.tax_per_block.unwrap_or(config.tax_per_block);
     config.harvest_to_liquid = msg.harvest_to_liquid.unwrap_or(config.harvest_to_liquid);
     config::store(deps.storage, &config)?;
@@ -174,7 +174,7 @@ pub fn deposit_stable(
 
     Ok(Response::new()
         .add_attribute("action", "deposit")
-        .add_attribute("sender", info.sender.clone())
+        .add_attribute("sender", info.sender)
         .add_attribute("deposit_amount", deposit_amount.amount)
         .add_submessage(SubMsg {
             id: submessage_id,
@@ -382,9 +382,7 @@ pub fn harvest(
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
-    if info.sender != config.registrar_contract
-        && info.sender.to_string() != CRON_WALLET.to_string()
-    {
+    if info.sender != config.registrar_contract && info.sender.as_str() != CRON_WALLET {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -730,8 +728,6 @@ pub fn process_anchor_reply(
             // messages to beneficiary/Accounts/etc
             Ok(res)
         }
-        ContractResult::Err(err) => Err(ContractError::Std {
-            0: StdError::GenericErr { msg: err },
-        }),
+        ContractResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }

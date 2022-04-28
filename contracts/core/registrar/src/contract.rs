@@ -35,7 +35,7 @@ pub fn instantiate(
     .unwrap();
 
     let configs = Config {
-        owner: info.sender.clone(),
+        owner: info.sender,
         index_fund_contract: None,
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
         treasury: deps.api.addr_validate(&msg.treasury)?,
@@ -153,8 +153,12 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     })?;
     let old_config: OldConfig = from_slice(&old_config_data)?;
 
-    let default_collector_addr = deps.api.addr_validate("terra1uxqjsgnq30lg5lhlhwd2gmct844vwqcdlv93x5")?;
-    let collector_addr = msg.collector_addr.map_or(default_collector_addr, |addr| deps.api.addr_validate(&addr).unwrap());
+    let default_collector_addr = deps
+        .api
+        .addr_validate("terra1uxqjsgnq30lg5lhlhwd2gmct844vwqcdlv93x5")?;
+    let collector_addr = msg.collector_addr.map_or(default_collector_addr, |addr| {
+        deps.api.addr_validate(&addr).unwrap()
+    });
 
     let config: Config = Config {
         owner: old_config.owner,

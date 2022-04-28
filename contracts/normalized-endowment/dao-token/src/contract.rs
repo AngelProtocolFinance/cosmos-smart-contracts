@@ -1,4 +1,7 @@
-use crate::allowances::{deduct_allowance, query_allowance};
+use crate::allowances::{
+    deduct_allowance, execute_decrease_allowance, execute_increase_allowance, execute_send_from,
+    execute_transfer_from, query_allowance,
+};
 use crate::state::{
     Config, CurveState, MinterData, TokenInfo, BALANCES, CLAIMS, CONFIG, CURVE_STATE, CURVE_TYPE,
     TOKEN_INFO,
@@ -71,7 +74,7 @@ pub fn receive_cw20(
 ) -> Result<Response, ContractError> {
     // only reserve asset contract can execute these messages
     let curve = CURVE_STATE.load(deps.storage)?;
-    if curve.reserve_denom != info.sender.to_string() {
+    if curve.reserve_denom != info.sender {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -86,9 +89,9 @@ pub fn receive_cw20(
         Ok(Cw20HookMsg::Buy {}) => execute_buy_cw20(
             deps,
             env,
-            token_holder_address.clone(), // addr of HALO holder who's purchasing
-            cw20_msg.amount,              // how much HALO sending
-            curve_fn,                     // some curve
+            token_holder_address, // addr of HALO holder who's purchasing
+            cw20_msg.amount,      // how much HALO sending
+            curve_fn,             // some curve
         ),
         _ => Err(ContractError::Unauthorized {}),
     }
@@ -123,9 +126,9 @@ pub fn do_execute(
         // We only accept CW20 tokens for reseve asset curve at this time (see receive_cw20 > Buy above).
         // ExecuteMsg::Buy {} => execute_buy(deps, env, info, curve_fn),
         ExecuteMsg::Burn { amount } => Ok(execute_sell(deps, env, info, curve_fn, amount)?),
-        // ExecuteMsg::BurnFrom { owner, amount } => {
-        //     Ok(execute_sell_from(deps, env, info, curve_fn, owner, amount)?)
-        // }
+        ExecuteMsg::BurnFrom { owner, amount } => {
+            Ok(execute_sell_from(deps, env, info, curve_fn, owner, amount)?)
+        }
         ExecuteMsg::Transfer { recipient, amount } => {
             Ok(execute_transfer(deps, env, info, recipient, amount)?)
         }
@@ -134,35 +137,38 @@ pub fn do_execute(
             amount,
             msg,
         } => Ok(execute_send(deps, env, info, contract, amount, msg)?),
-        // ExecuteMsg::IncreaseAllowance {
-        //     spender,
-        //     amount,
-        //     expires,
-        // } => Ok(execute_increase_allowance(
-        //     deps, env, info, spender, amount, expires,
-        // )?),
-        // ExecuteMsg::DecreaseAllowance {
-        //     spender,
-        //     amount,
-        //     expires,
-        // } => Ok(execute_decrease_allowance(
-        //     deps, env, info, spender, amount, expires,
-        // )?),
-        // ExecuteMsg::TransferFrom {
-        //     owner,
-        //     recipient,
-        //     amount,
-        // } => Ok(execute_transfer_from(
-        //     deps, env, info, owner, recipient, amount,
-        // )?),
-        // ExecuteMsg::SendFrom {
-        //     owner,
-        //     contract,
-        //     amount,
-        //     msg,
-        // } => Ok(execute_send_from(
-        //     deps, env, info, owner, contract, amount, msg,
-        // )?),
+        ExecuteMsg::IncreaseAllowance {
+            spender,
+            amount,
+            expires,
+        } => Ok(execute_increase_allowance(
+            deps, env, info, spender, amount, expires,
+        )?),
+        ExecuteMsg::DecreaseAllowance {
+            spender,
+            amount,
+            expires,
+        } => Ok(execute_decrease_allowance(
+            deps, env, info, spender, amount, expires,
+        )?),
+        ExecuteMsg::TransferFrom {
+            owner,
+            recipient,
+            amount,
+        } => Ok(execute_transfer_from(
+            deps, env, info, owner, recipient, amount,
+        )?),
+        ExecuteMsg::SendFrom {
+            owner,
+            contract,
+            amount,
+            msg,
+        } => Ok(execute_send_from(
+            deps, env, info, owner, contract, amount, msg,
+        )?),
+        ExecuteMsg::Receive(cw20_receive_msg) => {
+            Ok(receive_cw20(deps, env, info, cw20_receive_msg)?)
+        }
     }
 }
 
@@ -323,7 +329,7 @@ fn do_sell(
     CLAIMS.create_claim(
         deps.storage,
         &info.sender,
-        Uint128::from(released),
+        released,
         config.unbonding_period.after(&env.block),
     )?;
 
@@ -555,7 +561,7 @@ pub fn query_curve_info(deps: Deps, curve_fn: CurveFn) -> StdResult<CurveInfoRes
         reserve,
         supply,
         spot_price,
-        reserve_denom: reserve_denom.into(),
+        reserve_denom,
     })
 }
 

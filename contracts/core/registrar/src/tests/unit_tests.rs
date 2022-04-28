@@ -92,6 +92,7 @@ fn update_config() {
         split_default: Some(Decimal::percent(30)),
         gov_contract: None,
         halo_token: None,
+        approved_charities: None,
         collector_addr: None,
         collector_share: None,
     };
@@ -126,7 +127,14 @@ fn migrate_contract() {
     assert_eq!(0, res.messages.len());
 
     // try to migrate the contract
-    let msg = MigrateMsg { endowments: vec![] };
+    let msg = MigrateMsg {
+        collector_addr: Some("collector_contract".to_string()),
+        endowtype_fees: MigrateEndowTypeFees {
+            endowtype_charity: Some(Decimal::percent(20)),
+            endowtype_normal: Some(Decimal::percent(10)),
+        },
+        endowments: vec![],
+    };
     let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
     assert_eq!(0, res.messages.len())
 }
@@ -184,6 +192,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         split_default: None,
         gov_contract: None,
         halo_token: None,
+        approved_charities: None,
         collector_addr: None,
         collector_share: None,
     };
@@ -210,6 +219,9 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         split_max: None,
         split_min: None,
         split_default: None,
+        dao: true,
+        donation_match: true,
+        curve_type: None,
     };
 
     let info = mock_info(good_charity_addr.as_ref(), &coins(100000, "earth"));

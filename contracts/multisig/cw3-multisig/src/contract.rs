@@ -23,7 +23,7 @@ use cw_storage_plus::Bound;
 use std::cmp::Ordering;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "cw3-multisig";
+const CONTRACT_NAME: &str = "guardian-angels-multisig";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -224,11 +224,8 @@ pub fn execute_execute(
 ) -> Result<Response, ContractError> {
     // anyone can trigger this if the vote passed
     // try to look up the proposal from the ID given
-    let mut prop: Proposal;
-    match PROPOSALS.load(deps.storage, proposal_id.into()) {
-        Ok(p) => {
-            prop = p;
-        }
+    let mut prop: Proposal = match PROPOSALS.load(deps.storage, proposal_id.into()) {
+        Ok(p) => p,
         _ => return Err(ContractError::Unauthorized {}),
     };
 
@@ -364,7 +361,7 @@ fn list_proposals(
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start = start_after.map(Bound::exclusive_int);
     let props: StdResult<Vec<_>> = PROPOSALS
-        .range(deps.storage, start.clone(), None, Order::Ascending)
+        .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();
@@ -383,7 +380,7 @@ fn reverse_proposals(
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let end = start_before.map(Bound::exclusive_int);
     let props: StdResult<Vec<_>> = PROPOSALS
-        .range(deps.storage, None, end.clone(), Order::Descending)
+        .range(deps.storage, None, end, Order::Descending)
         .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();

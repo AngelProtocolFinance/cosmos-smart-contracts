@@ -224,7 +224,7 @@ mod test {
             threshold,
             total_weight,
             votes,
-            meta: Some(""),
+            meta: Some("".to_string()),
         };
         prop.is_passed(&block)
     }

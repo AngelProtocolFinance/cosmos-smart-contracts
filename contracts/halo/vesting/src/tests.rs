@@ -18,7 +18,6 @@ fn proper_initialization() {
     let msg = InstantiateMsg {
         owner: "owner".to_string(),
         halo_token: "halo_token".to_string(),
-        genesis_time: 12345u64,
     };
 
     let info = mock_info("addr0000", &[]);
@@ -32,7 +31,7 @@ fn proper_initialization() {
         ConfigResponse {
             owner: "owner".to_string(),
             halo_token: "halo_token".to_string(),
-            genesis_time: 12345u64,
+            genesis_time: 12_345,
         }
     );
 }
@@ -44,7 +43,6 @@ fn update_config() {
     let msg = InstantiateMsg {
         owner: "owner".to_string(),
         halo_token: "halo_token".to_string(),
-        genesis_time: 12345u64,
     };
 
     let info = mock_info("addr0000", &[]);
@@ -53,7 +51,6 @@ fn update_config() {
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some("owner2".to_string()),
         halo_token: None,
-        genesis_time: None,
     };
     let info = mock_info("owner", &[]);
     let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -66,14 +63,13 @@ fn update_config() {
         ConfigResponse {
             owner: "owner2".to_string(),
             halo_token: "halo_token".to_string(),
-            genesis_time: 12345u64,
+            genesis_time: 12_345,
         }
     );
 
     let msg = ExecuteMsg::UpdateConfig {
         owner: Some("owner".to_string()),
         halo_token: None,
-        genesis_time: None,
     };
     let info = mock_info("owner", &[]);
     let res = execute(deps.as_mut(), mock_env(), info, msg);
@@ -85,7 +81,6 @@ fn update_config() {
     let msg = ExecuteMsg::UpdateConfig {
         owner: None,
         halo_token: Some("halo_token2".to_string()),
-        genesis_time: Some(1u64),
     };
     let info = mock_info("owner2", &[]);
     let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -98,7 +93,7 @@ fn update_config() {
         ConfigResponse {
             owner: "owner2".to_string(),
             halo_token: "halo_token2".to_string(),
-            genesis_time: 1u64,
+            genesis_time: 12_345,
         }
     );
 }
@@ -110,7 +105,6 @@ fn register_vesting_accounts() {
     let msg = InstantiateMsg {
         owner: "owner".to_string(),
         halo_token: "halo_token".to_string(),
-        genesis_time: 100u64,
     };
 
     let info = mock_info("addr0000", &[]);
@@ -166,7 +160,7 @@ fn register_vesting_accounts() {
         VestingAccountResponse {
             address: acct1.clone(),
             info: VestingInfo {
-                last_claim_time: 100u64,
+                last_claim_time: 12_345,
                 schedules: vec![
                     (100u64, 101u64, Uint128::from(100u128)),
                     (100u64, 110u64, Uint128::from(100u128)),
@@ -195,7 +189,7 @@ fn register_vesting_accounts() {
                 VestingAccountResponse {
                     address: acct1,
                     info: VestingInfo {
-                        last_claim_time: 100u64,
+                        last_claim_time: 12_345,
                         schedules: vec![
                             (100u64, 101u64, Uint128::from(100u128)),
                             (100u64, 110u64, Uint128::from(100u128)),
@@ -206,14 +200,14 @@ fn register_vesting_accounts() {
                 VestingAccountResponse {
                     address: acct2,
                     info: VestingInfo {
-                        last_claim_time: 100u64,
+                        last_claim_time: 12_345,
                         schedules: vec![(100u64, 110u64, Uint128::from(100u128))],
                     }
                 },
                 VestingAccountResponse {
                     address: acct3,
                     info: VestingInfo {
-                        last_claim_time: 100u64,
+                        last_claim_time: 12_345,
                         schedules: vec![(100u64, 200u64, Uint128::from(100u128))],
                     }
                 }
@@ -229,7 +223,6 @@ fn update_vesting_account() {
     let msg = InstantiateMsg {
         owner: "owner".to_string(),
         halo_token: "halo_token".to_string(),
-        genesis_time: 100u64,
     };
 
     let info = mock_info("addr0000", &[]);
@@ -250,17 +243,11 @@ fn update_vesting_account() {
         _ => panic!("DO NOT ENTER HERE"),
     }
 
-<<<<<<< HEAD
-    let msg1 = ExecuteMsg::AddSchedulesToVestingAccount {
-        address: acct1.clone(),
-        new_schedules: vec![(100u64, 110u64, Uint128::from(200u128))],
-=======
     let msg1 = ExecuteMsg::UpdateVestingAccount {
         vesting_account: VestingAccount {
             address: acct1.clone(),
             schedules: vec![(100u64, 110u64, Uint128::from(200u128))],
         },
->>>>>>> RC-v1.6
     };
     let res1 = execute(deps.as_mut(), mock_env(), info, msg1.clone());
     match res1 {
@@ -285,7 +272,7 @@ fn update_vesting_account() {
         VestingAccountResponse {
             address: acct1.clone(),
             info: VestingInfo {
-                last_claim_time: 100u64,
+                last_claim_time: 12_345_u64,
                 schedules: vec![(100u64, 110u64, Uint128::from(200u128))],
             }
         }
@@ -299,7 +286,6 @@ fn claim() {
     let msg = InstantiateMsg {
         owner: "owner".to_string(),
         halo_token: "halo_token".to_string(),
-        genesis_time: 100u64,
     };
 
     let info = mock_info("addr0000", &[]);

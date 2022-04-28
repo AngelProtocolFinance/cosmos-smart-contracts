@@ -53,7 +53,7 @@ pub fn split_checks(
     // max musst be less than min
     // min must be less than max
     // default must be somewhere between max & min
-    if max < min || min > max || (default > max || default < min) {
+    if max < min || default > max || default < min {
         return Err(ContractError::InvalidInputs {});
     }
 
@@ -203,7 +203,7 @@ pub fn redeem_from_vaults(
                 })?,
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
-        if yield_vault.approved != true {
+        if !yield_vault.approved {
             return Err(ContractError::InvalidInputs {});
         }
         // create a withdraw message for X Vault, noting amounts for Locked / Liquid
@@ -240,7 +240,7 @@ pub fn withdraw_from_vaults(
                     })?,
                 }))?;
             let yield_vault: YieldVault = vault_config.vault;
-            if yield_vault.approved != true {
+            if !yield_vault.approved {
                 return Err(ContractError::InvalidInputs {});
             }
             let withdraw_msg = AccountWithdrawMsg {

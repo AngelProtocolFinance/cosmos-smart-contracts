@@ -210,7 +210,7 @@ fn claim_tokens(
             funds: vec![],
         }))
         .add_attribute("action", "claim_from_gov_hodler")
-        .add_attribute("recipient", recipient.clone())
+        .add_attribute("recipient", recipient)
         .add_attribute("amount", amount.to_string()))
 }
 
