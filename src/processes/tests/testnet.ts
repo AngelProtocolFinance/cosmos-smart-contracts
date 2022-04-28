@@ -41,10 +41,9 @@ import {
   testQueryGroupMembersList,
 } from "./core/multisig";
 import {
-  testApproveEndowments,
+  testUpdateEndowmentsStatus,
   testCreateEndowmentViaRegistrar,
   testAngelTeamCanTriggerVaultsHarvest,
-  testClosingEndpoint,
   testMigrateAllAccounts,
   testUpdatingRegistrarConfigs,
   testQueryRegistrarApprovedVaultList,
@@ -275,14 +274,7 @@ export async function testExecute(
   //   pleb.key.accAddress
   // );
   // await testUpdatingRegistrarConfigs(terra, apTeam, registrar, haloGov);
-  // await testApproveEndowments(terra, apTeam, registrar, endowmentContract1, 1);
-  // await testClosingEndpoint(
-  //   terra,
-  //   apTeam,
-  //   registrar,
-  //   endowmentContract3,
-  //   endowmentContract4
-  // );
+  // await testUpdateEndowmentsStatus(terra, apTeam, registrar, []);
   // await testUpdateFundMembers(
   //   terra,
   //   apTeam,
