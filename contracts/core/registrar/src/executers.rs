@@ -1,4 +1,7 @@
-use crate::state::{read_vaults, registry_read, registry_store, vault_read, vault_store, CONFIG};
+use crate::state::{
+    endow_type_fees_write, read_vaults, registry_read, registry_store, vault_read, vault_store,
+    CONFIG,
+};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
@@ -203,6 +206,13 @@ pub fn update_config(
         None => Ok(config.split_to_liquid.default),
     };
     config.split_to_liquid = split_checks(max.unwrap(), min.unwrap(), default.unwrap()).unwrap();
+    config.collector_addr = msg
+        .collector_addr
+        .map(|addr| deps.api.addr_validate(&addr).unwrap());
+    config.collector_share = match msg.collector_share {
+        Some(share) => share,
+        None => config.collector_share,
+    };
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))
@@ -475,4 +485,23 @@ pub fn update_endowment_type(
     registry_store(deps.storage, endowment_addr, &endowment_entry)?;
 
     Ok(Response::new().add_attribute("action", "update_endowment_entry"))
+}
+
+pub fn update_endowtype_fees(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateEndowTypeFeesMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender.ne(&config.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Update the "fees"
+    endow_type_fees_write(deps.storage, EndowmentType::Charity, msg.endowtype_charity)?;
+    endow_type_fees_write(deps.storage, EndowmentType::Normal, msg.endowtype_normal)?;
+
+    Ok(Response::new().add_attribute("action", "update_endowtype_fees"))
 }
