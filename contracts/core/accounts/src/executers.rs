@@ -69,7 +69,7 @@ pub fn new_cw4_group_reply(
                     admin: None,
                     label: "new endowment guardians multisig".to_string(),
                     msg: to_binary(&Cw3MultisigInstantiateMsg {
-                        group_addr: group_addr,
+                        group_addr,
                         threshold: Threshold::ThresholdQuorum {
                             threshold: Decimal::percent(30),
                             quorum: Decimal::percent(50),

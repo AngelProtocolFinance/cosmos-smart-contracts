@@ -43,18 +43,13 @@ pub fn read_funds<'a>(
     limit: Option<u64>,
 ) -> StdResult<Vec<IndexFund>> {
     let start = calc_range_start(start_after);
-    FUND.range(
-        storage,
-        start.map(|v| Bound::Inclusive(v)),
-        None,
-        Order::Ascending,
-    )
-    .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
-    .map(|item| {
-        let (_, v) = item?;
-        Ok(v)
-    })
-    .collect()
+    FUND.range(storage, start.map(Bound::Inclusive), None, Order::Ascending)
+        .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
+        .map(|item| {
+            let (_, v) = item?;
+            Ok(v)
+        })
+        .collect()
 }
 
 pub fn read_alliance_members(

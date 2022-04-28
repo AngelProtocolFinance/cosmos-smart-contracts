@@ -387,7 +387,7 @@ fn migrate_contract() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
-        profile: profile,
+        profile: profile.clone(),
         cw4_members: vec![],
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
