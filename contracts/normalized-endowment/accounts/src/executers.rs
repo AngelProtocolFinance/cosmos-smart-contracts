@@ -800,6 +800,15 @@ pub fn update_profile(
         return Err(ContractError::Unauthorized {});
     }
 
+    let un_sdg = if info.sender == config.owner {
+        match msg.un_sdg {
+            Some(i) => Some(Some(i)),
+            None => Some(None),
+        }
+    } else {
+        None
+    };
+
     let tier = if info.sender == config.owner {
         match msg.tier {
             Some(1) => Some(Some(Tier::Level1)),
@@ -840,7 +849,8 @@ pub fn update_profile(
         profile.image = msg.image;
         profile.url = msg.url;
         profile.registration_number = msg.registration_number;
-        profile.country_city_origin = msg.country_city_origin;
+        profile.country_of_origin = msg.country_of_origin;
+        profile.street_address = msg.street_address;
         profile.contact_email = msg.contact_email;
         profile.number_of_employees = msg.number_of_employees;
         profile.average_annual_budget = msg.average_annual_budget;
@@ -865,6 +875,7 @@ pub fn update_profile(
                 name: msg.name,
                 owner: None,
                 tier,
+                un_sdg,
                 endow_type: Some(profile.endow_type),
             },
         ))?,

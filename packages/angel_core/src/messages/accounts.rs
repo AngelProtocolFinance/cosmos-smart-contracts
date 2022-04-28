@@ -1,6 +1,6 @@
 use crate::messages::dao_token::CurveType;
 use crate::messages::vault::AccountTransferMsg;
-use crate::structs::{FundingSource, RebalanceDetails, StrategyComponent};
+use crate::structs::{FundingSource, Profile, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::Decimal;
 use cw4::Member;
 use schemars::JsonSchema;
@@ -8,8 +8,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {
-    pub name: String,
-    pub overview: String,
+    pub profile: Profile,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
@@ -32,6 +31,8 @@ pub struct InstantiateMsg {
     pub split_min: Decimal,
     pub split_default: Decimal,
     pub cw4_members: Vec<Member>,
+    pub beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
+    pub profile: Profile,    // struct holding the Endowment info
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -142,7 +143,8 @@ pub struct UpdateProfileMsg {
     pub image: Option<String>,
     pub url: Option<String>,
     pub registration_number: Option<String>,
-    pub country_city_origin: Option<String>,
+    pub country_of_origin: Option<String>,
+    pub street_address: Option<String>,
     pub contact_email: Option<String>,
     pub facebook: Option<String>,
     pub twitter: Option<String>,

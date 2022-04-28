@@ -2,8 +2,8 @@ use crate::contract::{execute, instantiate, migrate, query, reply};
 use angel_core::errors::core::*;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
-use angel_core::structs::EndowmentStatus;
 use angel_core::structs::SplitDetails;
+use angel_core::structs::{EndowmentStatus, EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
     coins, from_binary, Addr, ContractResult, CosmosMsg, Decimal, Event, Reply,
@@ -205,6 +205,30 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     )
     .unwrap();
 
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
     let create_endowment_msg = CreateEndowmentMsg {
         owner: good_charity_addr.clone(),
         name: "Test Endowment".to_string(),
@@ -222,6 +246,8 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         dao: true,
         donation_match: true,
         curve_type: None,
+        beneficiary: good_charity_addr.clone(),
+        profile: profile,
     };
 
     let info = mock_info(good_charity_addr.as_ref(), &coins(100000, "earth"));
@@ -300,7 +326,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     assert_eq!("action", res.attributes[0].key);
     assert_eq!("create_endowment", res.attributes[0].value);
 
-    let events = vec![Event::new("instantiate_contract")
+    let events = vec![Event::new("wasm")
         .add_attribute("contract_address", good_endowment_addr.clone())
         .add_attribute("endow_name", "Test Endowment".to_string())
         .add_attribute("endow_owner", good_charity_addr.clone())
@@ -322,6 +348,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
             status: None,
             tier: None,
             endow_type: None,
+            un_sdg: None,
         },
     )
     .unwrap();
@@ -342,6 +369,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         owner: None,
         tier: None,
         endow_type: None,
+        un_sdg: None,
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -380,6 +408,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
             status: None,
             tier: None,
             endow_type: None,
+            un_sdg: None,
         },
     )
     .unwrap();
