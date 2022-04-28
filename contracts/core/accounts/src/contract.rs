@@ -198,7 +198,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[entry_point]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     // Documentation on performing updates during migration
     // https://docs.cosmwasm.com/docs/1.0/smart-contracts/migration/#using-migrate-to-update-otherwise-immutable-state
     const STATE_KEY: &[u8] = b"state";
@@ -220,15 +220,5 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         })?,
     );
 
-    const PROFILE_KEY: &[u8] = b"profile";
-
-    let profile = Profile {
-        name: msg.name,
-        overview: msg.overview,
-        logo: msg.logo,
-        image: msg.image,
-        ..Default::default()
-    };
-    deps.storage.set(PROFILE_KEY, &to_vec(&profile)?);
     Ok(Response::default())
 }

@@ -204,8 +204,8 @@ pub fn read_poll_voters<'a>(
 
 const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
-pub fn read_polls<'a>(
-    storage: &'a dyn Storage,
+pub fn read_polls(
+    storage: &dyn Storage,
     filter: Option<PollStatus>,
     start_after: Option<u64>,
     limit: Option<u32>,

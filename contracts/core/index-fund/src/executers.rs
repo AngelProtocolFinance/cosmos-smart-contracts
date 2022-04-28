@@ -73,14 +73,12 @@ pub fn update_alliance_member_list(
         ALLIANCE_MEMBERS.update(
             deps.storage,
             member_addr.clone(),
-            |m: Option<AllianceMember>| -> Result<AllianceMember, ContractError> {
-                match m {
-                    _ => Ok(AllianceMember {
-                        name: member.name,
-                        logo: member.logo,
-                        website: member.website,
-                    }),
-                }
+            |_m: Option<AllianceMember>| -> Result<AllianceMember, ContractError> {
+                Ok(AllianceMember {
+                    name: member.name,
+                    logo: member.logo,
+                    website: member.website,
+                })
             },
         )?;
     } else if action == *"remove" {
