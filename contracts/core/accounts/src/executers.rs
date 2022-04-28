@@ -788,7 +788,8 @@ pub fn update_profile(
         profile.image = msg.image;
         profile.url = msg.url;
         profile.registration_number = msg.registration_number;
-        profile.country_city_origin = msg.country_city_origin;
+        profile.country_of_origin = msg.country_of_origin;
+        profile.street_address = msg.street_address;
         profile.contact_email = msg.contact_email;
         profile.number_of_employees = msg.number_of_employees;
         profile.average_annual_budget = msg.average_annual_budget;
