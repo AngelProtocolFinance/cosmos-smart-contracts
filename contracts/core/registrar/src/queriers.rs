@@ -1,6 +1,9 @@
-use crate::state::{read_registry_entries, read_vaults, registry_read, vault_read, CONFIG};
+use crate::state::{
+    endow_type_fees_read, read_registry_entries, read_vaults, registry_read, vault_read, Config,
+    CONFIG,
+};
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, Tier, VaultRate};
+use angel_core::structs::{EndowmentEntry, EndowmentType, Tier, VaultRate};
 use angel_core::utils::vault_fx_rate;
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
@@ -25,6 +28,11 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         split_to_liquid: config.split_to_liquid,
         halo_token: config.halo_token.map(|addr| addr.to_string()),
         gov_contract: config.gov_contract.map(|addr| addr.to_string()),
+        collector_addr: config
+            .collector_addr
+            .map(|addr| addr.to_string())
+            .unwrap_or("".to_string()),
+        collector_share: config.collector_share,
     })
 }
 
@@ -139,4 +147,18 @@ pub fn query_approved_vaults_fx_rate(deps: Deps) -> StdResult<VaultRateResponse>
         });
     }
     Ok(VaultRateResponse { vaults_rate })
+}
+
+pub fn query_fees(deps: Deps) -> StdResult<FeesResponse> {
+    // returns all Fees(both BaseFee & all of the EndowmentTypeFees)
+    let tax_rate = CONFIG.load(deps.storage)?.tax_rate;
+    let endowtype_charity =
+        endow_type_fees_read(deps.storage, EndowmentType::Charity).unwrap_or(None);
+    let endowtype_normal =
+        endow_type_fees_read(deps.storage, EndowmentType::Normal).unwrap_or(None);
+    Ok(FeesResponse {
+        tax_rate,
+        endowtype_charity,
+        endowtype_normal,
+    })
 }

@@ -9,6 +9,10 @@ use serde::{Deserialize, Serialize};
 pub struct MigrateMsg {
     // [ (address, status, name, owner, tier), ...]
     pub endowments: Vec<MigrateEndowment>,
+    // EndowmentTypeFees
+    pub endowtype_fees: MigrateEndowTypeFees,
+    // collector_addr
+    pub collector_addr: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -18,6 +22,12 @@ pub struct MigrateEndowment {
     pub name: String,
     pub owner: String,
     pub tier: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MigrateEndowTypeFees {
+    pub endowtype_charity: Option<Decimal>,
+    pub endowtype_normal: Option<Decimal>,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
@@ -55,6 +65,8 @@ pub enum ExecuteMsg {
     },
     // Allows the DANO/AP Team to update the EndowmentEntry
     UpdateEndowmentType(UpdateEndowmentTypeMsg),
+    // Set/Update/Nullify the EndowmentTypeFees
+    UpdateEndowTypeFees(UpdateEndowTypeFeesMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -92,6 +104,8 @@ pub struct UpdateConfigMsg {
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
+    pub collector_addr: Option<String>,
+    pub collector_share: Option<Decimal>,
 }
 
 impl UpdateConfigMsg {
@@ -127,6 +141,12 @@ pub struct UpdateEndowmentTypeMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateEndowTypeFeesMsg {
+    pub endowtype_charity: Option<Decimal>,
+    pub endowtype_normal: Option<Decimal>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get details on single vault
@@ -159,4 +179,6 @@ pub enum QueryMsg {
     Config {},
     // Get a list of all approved Vaults exchange rates
     ApprovedVaultRateList {},
+    // Get all Fees(both BaseFee & all of the EndowmentTypeFees)
+    Fees {},
 }

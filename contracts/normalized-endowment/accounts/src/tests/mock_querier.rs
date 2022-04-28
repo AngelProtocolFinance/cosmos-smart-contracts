@@ -290,6 +290,8 @@ impl WasmMockQuerier {
                         subdao_cw900_code: None,
                         subdao_gov_code: None,
                         subdao_token_code: None,
+                        collector_addr: "collector_addr".to_string(),
+                        collector_share: Decimal::percent(50),
                     })
                     .unwrap(),
                 )),
