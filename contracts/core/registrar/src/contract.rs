@@ -1,6 +1,6 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{endow_type_fees_write, Config, OldConfig, CONFIG};
+use crate::state::{Config, OldConfig, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier};

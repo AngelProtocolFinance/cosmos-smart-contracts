@@ -1,6 +1,5 @@
 use crate::state::{
-    endow_type_fees_read, read_registry_entries, read_vaults, registry_read, vault_read, Config,
-    CONFIG,
+    endow_type_fees_read, read_registry_entries, read_vaults, registry_read, vault_read, CONFIG,
 };
 use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentType, Tier, VaultRate};
@@ -31,7 +30,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         collector_addr: config
             .collector_addr
             .map(|addr| addr.to_string())
-            .unwrap_or("".to_string()),
+            .unwrap_or_else(|| "".to_string()),
         collector_share: config.collector_share,
     })
 }
