@@ -37,9 +37,9 @@ pub fn store_vesting_info(
 
 const MAX_LIMIT: u32 = 30;
 const DEFAULT_LIMIT: u32 = 10;
-pub fn read_vesting_infos<'a>(
+pub fn read_vesting_infos(
     deps: Deps,
-    storage: &'a dyn Storage,
+    storage: &dyn Storage,
     start_after: Option<Addr>,
     limit: Option<u32>,
     order_by: Option<OrderBy>,

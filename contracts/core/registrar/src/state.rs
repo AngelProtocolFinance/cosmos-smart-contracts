@@ -67,8 +67,8 @@ pub fn vault_remove(storage: &mut dyn Storage, k: &[u8]) {
     PREFIX_PORTAL.remove(storage, k)
 }
 
-pub fn read_vaults<'a>(
-    storage: &'a dyn Storage,
+pub fn read_vaults(
+    storage: &dyn Storage,
     start_after: Option<Addr>,
     limit: Option<u64>,
 ) -> StdResult<Vec<YieldVault>> {

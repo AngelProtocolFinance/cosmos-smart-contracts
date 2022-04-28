@@ -37,8 +37,8 @@ pub struct State {
 }
 
 // FUND pagination read util
-pub fn read_funds<'a>(
-    storage: &'a dyn Storage,
+pub fn read_funds(
+    storage: &dyn Storage,
     start_after: Option<u64>,
     limit: Option<u64>,
 ) -> StdResult<Vec<IndexFund>> {
