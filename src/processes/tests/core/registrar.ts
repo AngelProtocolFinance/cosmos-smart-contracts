@@ -2,51 +2,17 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import {
+  LCDClient,
+  LocalTerra,
+  Msg,
+  MsgExecuteContract,
+  Wallet,
+} from "@terra-money/terra.js";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
-
-//----------------------------------------------------------------------------------------
-// TEST: AP Team Closes Endowment
-//
-// SCENARIO:
-// AP Team Wallet needs close an endowment for a charity that is undergoing legal
-// proceedings in it's country of origin.
-//
-//----------------------------------------------------------------------------------------
-export async function testClosingEndpoint(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  registrar: string,
-  endowmentContract3: string,
-  endowmentContract4: string
-): Promise<void> {
-  process.stdout.write("AP Team closes down endowment #3 - Sends to beneficiary");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_endowment_status: {
-        endowment_addr: endowmentContract3,
-        status: 3,
-        beneficiary: apTeam.key.accAddress,
-      },
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
-
-  process.stdout.write("AP Team closes down endowment #4 - Sends to parent Index Fund");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_endowment_status: {
-        endowment_addr: endowmentContract4,
-        status: 3,
-        beneficiary: undefined,
-      },
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
-}
 
 //----------------------------------------------------------------------------------------
 // TEST: Update registrar configs
@@ -173,26 +139,34 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
 
 //----------------------------------------------------------------------------------------
 // TEST: Can update an Endowment's status from the Registrar
+//    Possible Status Values:
+//    0. Inactive - NO Deposits | NO Withdraws - no beneficiary needed
+//    1. Approved - YES Deposits | YES Withdraws - no beneficiary needed
+//    2. Frozen - YES Deposits | NO Withdraws - no beneficiary needed
+//    3. Closed - NO Deposits | NO Withdraws - IF beneficiary address given: funds go to that wallet
+//                ELSE: sent to fund members
 //----------------------------------------------------------------------------------------
-export async function testApproveEndowments(
+export async function testUpdateEndowmentsStatus(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   registrar: string,
-  endowment: string,
-  status: number
+  endowments: any[] // [ { address: "terra1....", status: 0|1|2|3, benficiary: "terra1.." | undefined }, ... ]
 ): Promise<void> {
-  // AP Team approves 3 of 4 newly created endowments
-  process.stdout.write("AP Team update an endowment's status");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_endowment_status: {
-        endowment_addr: endowment,
-        status: status,
-        beneficiary: undefined,
-      },
-    }),
-  ]);
-  console.log(chalk.green(" Passed!"));
+  process.stdout.write("AP Team updates endowments statuses");
+  let msgs: Msg[] = [];
+  endowments.forEach((endow) => {
+    msgs.push(
+      new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+        update_endowment_status: {
+          endowment_addr: endow.address,
+          status: endow.status,
+          beneficiary: endow.beneficiary,
+        },
+      })
+    );
+  });
+  await sendTransaction(terra, apTeam, msgs);
+  console.log(chalk.green(" Done!"));
 }
 
 //----------------------------------------------------------------------------------------

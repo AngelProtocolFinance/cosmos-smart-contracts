@@ -33,8 +33,8 @@ import {
 } from "./core/multisig";
 import {
   testAngelTeamCanTriggerVaultsHarvest,
-  testClosingEndpoint,
   testMigrateAllAccounts,
+  testUpdateEndowmentsStatus,
   testUpdatingRegistrarConfigs,
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarApprovedVaultRateList,
@@ -216,6 +216,20 @@ export async function testExecute(
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 1, [], ["",""]);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, ["",""], []);
+
+  // await testUpdateEndowmentsStatus(terra, apTeam, registrar, [
+  //   {
+  //     address: "terra1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2",
+  //     status: 3,
+  //     beneficiary: "terra1suxqzxtzztxvakvucc6u4s9833n4u0cyk9pmv8",
+  //   }, // Lion's Club Manitowish Waters
+  //   {
+  //     address: "terra1w80ea4dw9u3eh74uavw8f96psawmgmvyuu7t40",
+  //     status: 3,
+  //     beneficiary: "terra1hpumgc72x4wkwcuvr3hl5sanc3mjpmhxuqjxrg",
+  //   }, // JustDiggit
+  // ]);
+
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);
