@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 0eb1f7c23d186e61fb54aa477ef898e6f0cd38a2866079b3a22a44558779778d  target/wasm32-unknown-unknown/release/accounts.wasm
 a08a6294a0b11dc0c872a59b011e05ad126d636e3376753ca55969415d3138b9  target/wasm32-unknown-unknown/release/anchor.wasm
 b1cc6e66f98be9df848ff22c7f7d915c60cff8bc5e4c2fdf4efdcd7110b117d7  target/wasm32-unknown-unknown/release/cw3_multisig.wasm
@@ -16,3 +17,19 @@ fa489c8a9747d4ccfaab03863b4c63b889d7fadbd8602aae441288dcbe89ec4a  target/wasm32-
 b5c49dfa28501dacbe8a47d8b211731b07690564d38c9dcc2c61e26acf41bb45  target/wasm32-unknown-unknown/release/registrar.wasm
 32f4100372ca6b8f5f119d641015e105c76ee48261045a70054295e3e41770ab  target/wasm32-unknown-unknown/release/subdao_token.wasm
 829432c18157f1a1fb19e35298f08a974150b5e05c566c24510f9538e4065353  target/wasm32-unknown-unknown/release/ve_token.wasm
+=======
+34ca32c7f8a304d1b5231821c703e73044b18057b98640b09285bbee26055d1d  target/wasm32-unknown-unknown/release/accounts.wasm
+369312b7b626cbb1ae03ad60b634b690a077cb4ab9ded94a7f9826dbedcb8976  target/wasm32-unknown-unknown/release/anchor.wasm
+cabe814f218b4c2410d2ed767364d2c455fa42881a63b76e1c6ee44bbe72c14a  target/wasm32-unknown-unknown/release/cw3_multisig.wasm
+9261faf21ec7190020c61a50387c0939cc3f3b5c555d04ac6bbc29b086f33c5e  target/wasm32-unknown-unknown/release/cw4_group.wasm
+04fedabb27dc502515d4b1f830a0e92fe14031dfa7b3cbfd461dc03fbf29e3b0  target/wasm32-unknown-unknown/release/halo_airdrop.wasm
+576964c82d40798ecc49be03cf21c677130146b5f65bd713ad300f2c15b0585b  target/wasm32-unknown-unknown/release/halo_collector.wasm
+a5c072ace3bdb85078942a278836ca2c2e9ccd9b28545da59b04e1131cc7eec3  target/wasm32-unknown-unknown/release/halo_community.wasm
+650e2b45951bc433a4164a264c7e04f30f72d2dddc048fb237c1217b75bf688b  target/wasm32-unknown-unknown/release/halo_distributor.wasm
+3a94d55ba1b2c7254cd36902f0d1a7074055e090e3a658add9863fcf33db2a40  target/wasm32-unknown-unknown/release/halo_gov.wasm
+70346276ccf03116cdb86450ad47f48789094608779e3bdf1a9e8c333098f037  target/wasm32-unknown-unknown/release/halo_gov_hodler.wasm
+aa4e4a5261225892cdced8bebbef03a7bf2c0f1c12a54e72f7df50199be3a575  target/wasm32-unknown-unknown/release/halo_staking.wasm
+acf9279c6f6f253d023920feceb714635142f7c6d2ef231865962c5247ab80c1  target/wasm32-unknown-unknown/release/halo_vesting.wasm
+fe407498e6c8de4e05a4931a5ff05c046249dc569c128bb1709174a08853edb0  target/wasm32-unknown-unknown/release/index_fund.wasm
+71bc38c8d90644c862504b970450407835f6f8077116c669334844ee6ad15f3a  target/wasm32-unknown-unknown/release/registrar.wasm
+>>>>>>> RC-v1.7

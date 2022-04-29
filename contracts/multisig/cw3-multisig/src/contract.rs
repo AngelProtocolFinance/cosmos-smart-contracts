@@ -5,11 +5,11 @@ use crate::msg::{
 use crate::state::{
     next_id, parse_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS,
 };
-use angel_core::errors::guardians::ContractError;
+use angel_core::errors::multisig::ContractError;
 use angel_core::messages::cw3_multisig::{InstantiateMsg, Threshold};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, Order,
+    attr, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, Order,
     Response, StdResult,
 };
 use cw0::{maybe_addr, Duration, Expiration};
@@ -23,13 +23,13 @@ use cw_storage_plus::Bound;
 use std::cmp::Ordering;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "guardian-angels-multisig";
+const CONTRACT_NAME: &str = "cw3-multisig";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -50,7 +50,10 @@ pub fn instantiate(
     };
     CONFIG.save(deps.storage, &cfg)?;
 
-    Ok(Response::default())
+    Ok(Response::default().add_attributes(vec![attr(
+        "multisig_addr",
+        env.contract.address.to_string(),
+    )]))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

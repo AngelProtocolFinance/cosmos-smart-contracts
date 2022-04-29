@@ -120,9 +120,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             owner,
             status,
             tier,
+            un_sdg,
             endow_type,
         } => to_binary(&queriers::query_endowment_list(
-            deps, name, owner, status, tier, endow_type,
+            deps, name, owner, status, tier, un_sdg, endow_type,
         )?),
         QueryMsg::ApprovedVaultList { start_after, limit } => to_binary(
             &queriers::query_approved_vault_list(deps, start_after, limit)?,
@@ -209,12 +210,19 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
                 },
                 // Option<Tier>
                 tier: match e.tier {
-                    1 => Some(Tier::Level1),
-                    2 => Some(Tier::Level2),
-                    3 => Some(Tier::Level3),
+                    Some(1) => Some(Tier::Level1),
+                    Some(2) => Some(Tier::Level2),
+                    Some(3) => Some(Tier::Level3),
                     _ => None,
                 },
+                // UN_SDG Option<u64>
+                un_sdg: match e.un_sdg {
+                    Some(0) => None,
+                    _ => e.un_sdg,
+                },
                 endow_type: EndowmentType::Charity, // EndowmentType,
+                logo: e.logo,
+                image: e.image,
             })?,
         );
     }

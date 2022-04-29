@@ -1,4 +1,4 @@
-use crate::errors::guardians::ContractError;
+use crate::errors::multisig::ContractError;
 use cosmwasm_std::Decimal;
 use cw0::Duration;
 use cw3::ThresholdResponse;

@@ -1,7 +1,7 @@
 use crate::executers;
 use crate::queriers;
+use crate::state::PROFILE;
 use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
-use crate::state::{Profile, PROFILE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
@@ -87,24 +87,21 @@ pub fn instantiate(
         },
     )?;
 
-    let mut profile = Profile::default();
-    profile.name = msg.name.clone();
-    profile.overview = msg.description;
-
-    if info
-        .sender
-        .ne(&deps.api.addr_validate(msg.registrar_contract.as_str())?)
-    {
-        profile.endow_type = EndowmentType::Normal;
-    }
-
-    PROFILE.save(deps.storage, &profile)?;
+    PROFILE.save(deps.storage, &msg.profile)?;
 
     // initial default Response to add submessages to
     let mut res: Response = Response::new().add_attributes(vec![
         attr("endow_name", msg.name),
         attr("endow_owner", msg.owner),
-        attr("endow_type", profile.endow_type.to_string()),
+        attr("endow_type", msg.profile.endow_type.to_string()),
+        attr(
+            "endow_logo",
+            msg.profile.logo.unwrap_or_else(|| "".to_string()),
+        ),
+        attr(
+            "endow_image",
+            msg.profile.image.unwrap_or_else(|| "".to_string()),
+        ),
     ]);
 
     // check if CW3/CW4 codes were passed to setup a multisig/group
