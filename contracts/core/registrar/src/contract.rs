@@ -147,7 +147,6 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             key,
             &to_vec(&EndowmentEntry {
                 address: deps.api.addr_validate(&e.addr)?, // Addr,
-                name: e.name,                              // String,
                 owner: e.owner,                            // String,
                 // EndowmentStatus
                 status: match e.status {
@@ -157,21 +156,12 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
                     3 => EndowmentStatus::Closed,
                     _ => EndowmentStatus::Inactive,
                 },
-                // Option<Tier>
-                tier: match e.tier {
-                    Some(1) => Some(Tier::Level1),
-                    Some(2) => Some(Tier::Level2),
-                    Some(3) => Some(Tier::Level3),
-                    _ => None,
-                },
-                // UN_SDG Option<u64>
-                un_sdg: match e.un_sdg {
-                    Some(0) => None,
-                    _ => e.un_sdg,
-                },
+                name: "".to_string(),               // String,
+                tier: None,                         // Option<Tier>
+                un_sdg: None,                       // Option<u64>
                 endow_type: EndowmentType::Charity, // EndowmentType,
-                logo: e.logo,
-                image: e.image,
+                logo: None,
+                image: None,
             })?,
         );
     }
