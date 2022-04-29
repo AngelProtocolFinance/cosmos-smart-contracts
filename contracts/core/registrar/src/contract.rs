@@ -132,38 +132,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-    const REGISTRY_KEY: &[u8] = b"registry";
-    // msg pass in an { endowments: [ (address, status, name, owner, tier), ... ] }
-    for e in msg.endowments {
-        // build key for registrar's endowment
-        // let key = [REGISTRY_KEY, e.addr.clone().as_bytes()].concat();
-
-        let path: Path<EndowmentEntry> = Path::new(REGISTRY_KEY, &[e.addr.clone().as_bytes()]);
-        let key = path.deref();
-
-        // set the new EndowmentEntry at the given key
-        deps.storage.set(
-            key,
-            &to_vec(&EndowmentEntry {
-                address: deps.api.addr_validate(&e.addr)?, // Addr,
-                owner: e.owner,                            // String,
-                // EndowmentStatus
-                status: match e.status {
-                    0 => EndowmentStatus::Inactive,
-                    1 => EndowmentStatus::Approved,
-                    2 => EndowmentStatus::Frozen,
-                    3 => EndowmentStatus::Closed,
-                    _ => EndowmentStatus::Inactive,
-                },
-                name: "".to_string(),               // String,
-                tier: None,                         // Option<Tier>
-                un_sdg: None,                       // Option<u64>
-                endow_type: EndowmentType::Charity, // EndowmentType,
-                logo: None,
-                image: None,
-            })?,
-        );
-    }
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::default())
 }
