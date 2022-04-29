@@ -7,8 +7,8 @@ use angel_core::messages::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
-    StdResult, StdError, from_slice,
+    entry_point, from_slice, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Reply,
+    Response, StdError, StdResult,
 };
 use cw2::set_contract_version;
 use cw_storage_plus::Path;
@@ -153,13 +153,13 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         deps.storage.set(
             key,
             &to_vec(&EndowmentEntry {
-                address: old_endowment_entry.address,  // Addr,
-                status: old_endowment_entry.status,    // EndowmentStatus
-                owner: None,                           // String,
-                name: None,                            // String,
-                tier: None,                            // Option<Tier>
-                un_sdg: None,                          // Option<u64>
-                endow_type: None,                      // EndowmentType,
+                address: old_endowment_entry.address, // Addr,
+                status: old_endowment_entry.status,   // EndowmentStatus
+                owner: None,                          // String,
+                name: None,                           // String,
+                tier: None,                           // Option<Tier>
+                un_sdg: None,                         // Option<u64>
+                endow_type: None,                     // EndowmentType,
                 logo: None,
                 image: None,
             })?,

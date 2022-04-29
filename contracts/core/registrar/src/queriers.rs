@@ -1,6 +1,6 @@
 use crate::state::{read_registry_entries, read_vaults, registry_read, vault_read, CONFIG};
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, Tier, VaultRate, EndowmentType};
+use angel_core::structs::{EndowmentEntry, EndowmentType, Tier, VaultRate};
 use angel_core::utils::vault_fx_rate;
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
@@ -70,11 +70,14 @@ pub fn query_endowment_list(
     endow_type: Option<String>,   // String -> EndowmentType
 ) -> StdResult<EndowmentListResponse> {
     let endowments = read_registry_entries(deps.storage)?;
-    let endowments = endowments.into_iter().filter(|e| e.name == name).collect::<Vec<EndowmentEntry>>();
     let endowments = endowments
-            .into_iter()
-            .filter(|e| e.owner == owner)
-            .collect::<Vec<EndowmentEntry>>();
+        .into_iter()
+        .filter(|e| e.name == name)
+        .collect::<Vec<EndowmentEntry>>();
+    let endowments = endowments
+        .into_iter()
+        .filter(|e| e.owner == owner)
+        .collect::<Vec<EndowmentEntry>>();
     let endowments = match status {
         Some(status) => endowments
             .into_iter()
