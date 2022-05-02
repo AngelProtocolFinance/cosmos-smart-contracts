@@ -374,7 +374,7 @@ pub fn may_pay(info: &MessageInfo, denom: &str) -> Result<Uint128, PaymentError>
     }
 }
 
-// Check if given address is contract or not.
+/// Check if the given address is contract or not.
 pub fn check_is_contract(deps: Deps, address: Addr) -> bool {
     TerraQuerier::new(&deps.querier)
         .query_contract_info(&address)
