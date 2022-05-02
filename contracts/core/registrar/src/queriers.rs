@@ -77,6 +77,7 @@ pub fn query_endowment_list(
     owner: Option<String>,
     status: Option<String>,       // String -> EndowmentStatus
     tier: Option<Option<String>>, // String -> Tier
+    un_sdg: Option<Option<u64>>,  // u64 -> UN SDG
     endow_type: Option<String>,   // String -> EndowmentType
 ) -> StdResult<EndowmentListResponse> {
     let endowments = read_registry_entries(deps.storage)?;
@@ -114,6 +115,13 @@ pub fn query_endowment_list(
                 .filter(|e| e.tier == tier)
                 .collect::<Vec<EndowmentEntry>>()
         }
+        None => endowments,
+    };
+    let endowments = match un_sdg {
+        Some(un_sdg) => endowments
+            .into_iter()
+            .filter(|e| e.un_sdg == un_sdg)
+            .collect::<Vec<EndowmentEntry>>(),
         None => endowments,
     };
     let endowments = match endow_type {

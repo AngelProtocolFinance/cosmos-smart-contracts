@@ -1,5 +1,5 @@
 use crate::messages::dao_token::CurveType;
-use crate::structs::{EndowmentType, SplitDetails, Tier};
+use crate::structs::{EndowmentType, Profile, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
 use schemars::JsonSchema;
@@ -21,7 +21,10 @@ pub struct MigrateEndowment {
     pub status: u64,
     pub name: String,
     pub owner: String,
-    pub tier: u64,
+    pub tier: Option<u64>,
+    pub un_sdg: Option<u64>,
+    pub logo: Option<String>,
+    pub image: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -87,6 +90,8 @@ pub struct CreateEndowmentMsg {
     pub dao: bool,
     pub donation_match: bool,
     pub curve_type: Option<CurveType>,
+    pub beneficiary: String,
+    pub profile: Profile,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -137,6 +142,7 @@ pub struct UpdateEndowmentTypeMsg {
     pub name: Option<String>,
     pub owner: Option<String>,
     pub tier: Option<Option<Tier>>,
+    pub un_sdg: Option<Option<u64>>,
     pub endow_type: Option<EndowmentType>,
 }
 
@@ -173,6 +179,7 @@ pub enum QueryMsg {
         owner: Option<String>,
         status: Option<String>,
         tier: Option<Option<String>>,
+        un_sdg: Option<Option<u64>>,
         endow_type: Option<String>,
     },
     // Get all Config details for the contract

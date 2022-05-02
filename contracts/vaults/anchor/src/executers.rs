@@ -123,6 +123,7 @@ pub fn deposit_stable(
                 owner: None,
                 status: None,
                 tier: None,
+                un_sdg: None,
                 endow_type: None,
             })?,
         }))?;
@@ -203,6 +204,7 @@ pub fn redeem_stable(
                 owner: None,
                 status: None,
                 tier: None,
+                un_sdg: None,
                 endow_type: None,
             })?,
         }))?;
@@ -298,6 +300,7 @@ pub fn withdraw_stable(
                 owner: None,
                 status: None,
                 tier: None,
+                un_sdg: None,
                 endow_type: None,
             })?,
         }))?;
