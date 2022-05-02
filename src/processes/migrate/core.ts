@@ -34,7 +34,7 @@ export async function migrateCore(
   endowmentContracts: string[]
 ): Promise<void> {
   // run the migrations desired
-  // await migrateRegistrar(terra, apTeam, registrar);
+  await migrateRegistrar(terra, apTeam, registrar, endowmentContracts);
   // await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
   // await migrateCw3Multisig(terra, apTeam, cw3ApTeam);
   // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
@@ -49,7 +49,8 @@ export async function migrateCore(
 async function migrateRegistrar(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  registrar: string
+  registrar: string,
+  endowmentContracts: string[],
 ): Promise<void> {
   process.stdout.write("Uploading Registrar Wasm");
   const codeId = await storeCode(
@@ -61,7 +62,10 @@ async function migrateRegistrar(
 
   process.stdout.write("Migrate Registrar contract");
   const result1 = await migrateContract(terra, apTeam, apTeam, registrar, codeId, {
-    endowments: [],
+    endowments: [
+      endowmentContracts[0],
+      endowmentContracts[1],
+    ],
   });
   console.log(chalk.green(" Done!"));
 }

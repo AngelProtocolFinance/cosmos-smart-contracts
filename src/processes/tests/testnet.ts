@@ -53,6 +53,7 @@ import {
   testQueryRegistrarEndowmentDetails,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
+  testUpdateEndowmentsType,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -237,7 +238,7 @@ export async function testExecute(
   //     owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
   //   }
   // );
-  await testCreateEndowmentViaRegistrar(terra, apTeam, registrar, apTeam2.key.accAddress);
+  // await testCreateEndowmentViaRegistrar(terra, apTeam, registrar, apTeam2.key.accAddress);
   // Multisig test
   // await testAddMemberToC4Group(terra, apTeam, cw3ApTeam, cw4GrpApTeam, "terra1......");
   // await testUpdateCw3Config(terra, apTeam, cw3ApTeam, 50, 25000);
@@ -274,7 +275,8 @@ export async function testExecute(
   //   pleb.key.accAddress
   // );
   // await testUpdatingRegistrarConfigs(terra, apTeam, registrar, haloGov);
-  // await testUpdateEndowmentsStatus(terra, apTeam, registrar, []);
+  // await testUpdateEndowmentsStatus(terra, apTeam, registrar, [{ "address": endowmentContract3, "status": 1, "beneficiary": "" }]);
+  // await testUpdateEndowmentsType(terra, apTeam, registrar, [{"address": endowmentContract3, "name": "Test Endow 3", "owner": undefined, "tier": undefined, "un_sdg": undefined, "endow_type": undefined}]);
   // await testUpdateFundMembers(
   //   terra,
   //   apTeam,
@@ -297,7 +299,7 @@ export async function testExecute(
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);
-  // await testQueryRegistrarEndowmentDetails(terra, registrar, endowmentContract1);
+  // await testQueryRegistrarEndowmentDetails(terra, registrar, endowmentContract3);
   // await testQueryRegistrarApprovedVaultList(terra, registrar);
   // await testQueryRegistrarApprovedVaultRateList(terra, registrar);
   // await testQueryRegistrarVaultList(terra, registrar);
