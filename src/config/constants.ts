@@ -4,7 +4,7 @@
 export const testnet = {
   // TestNet bombay-12
   networkInfo: {
-    url: "https://bombay-lcd.terra.dev",
+    url: "https://59vigz9r91.execute-api.us-east-1.amazonaws.com/terra/lcd/test",
     chainId: "bombay-12",
   },
   // TestNet MoneyMarket Contract
@@ -79,12 +79,12 @@ export const testnet = {
   halo: {
     airdrop_contract: "terra15n2j80ufyrup8ply5nhjwwerfjpz7cx3m2hcqq",
     collector_contract: "terra12h9ssarf78t3sw3zu5xyr4v3cxjkmqmnxujlzl",
-    community_contract: "",
+    community_contract: "terra19hhk4wu5yrj90qwh6lt0zkpe65h7dlvlr48ujt",
     distributor_contract: "terra1vuktqwu0n5df0sfswzwwh4wpgznu4d2urflvlk",
     gov_contract: "terra16tw444h6qtzxr4kf2p276qt0u6w3ggtc20xgly",
     gov_hodler_contract: "terra1mcjrurlzmne3hlqvjypyacz9l8xpf4r6zq9sa6",
     staking_contract: "",
-    vesting_contract: "",
+    vesting_contract: "terra1h30cngl0hruj46dzh95wepa2n74hzenlvlq6cx",
   },
 } as const;
 
@@ -94,7 +94,7 @@ export const testnet = {
 export const mainnet = {
   // MainNet columbus-5
   networkInfo: {
-    url: "https://lcd.terra.dev",
+    url: "https://59vigz9r91.execute-api.us-east-1.amazonaws.com/terra/lcd/main",
     chainId: "columbus-5",
   },
   // MainNet MoneyMarket Contract
@@ -110,10 +110,10 @@ export const mainnet = {
     registrar: "terra1nwk2y5nfa5sxx6gtxr84lre3zpnn7cad2f266h",
     indexFund: "terra19cevhng6nunl7gmc90sph0syuqyvtqn7mlhwz0",
     anchorVault: "terra172ue5d0zm7jlsj2d9af4vdff6wua7mnv6dq5vp",
-    cw4GrpApTeam: "terra1qzdgs73h3rnh9j7f4t6tyuw9lmrp5esn6yunyl",
-    cw3ApTeam: "terra1m6rqwmxlpztjf3zfhza906d44c9rpf2t6vn37n",
-    cw4GrpOwners: "terra1lycc2zyhd676294c604euh8hxw7h6jrjd68x83",
-    cw3GuardianAngels: "terra1jd2n0ze7er80x9h8k3x006aypaxs7mvrggdmn9",
+    cw4GrpApTeam: "terra1eueh924845wwsc2mna5u3ysn79q66kwqgq26mj",
+    cw3ApTeam: "terra1zrwpm9htqdh80nhqcuvw999cexvtmu0xt4dks5",
+    cw4GrpOwners: "terra1lycc2zyhd676294c604euh8hxw7h6jrjd68x83", // NO LONGER USED!!
+    cw3GuardianAngels: "terra1jd2n0ze7er80x9h8k3x006aypaxs7mvrggdmn9", // NO LONGER USED!!
     endowmentContracts: [
       "terra12crxq8nxml96e9h38fe67c4p76pc24l54zjzzh",
       "terra1uwtk2hs65332emnjn8n9s8d3l692pgyqnew4dq",
@@ -233,13 +233,51 @@ export const mainnet = {
       "terra1yprej80ls40lkhayxt20zhsjy5rzgwle80q02m", // Save the Waves
       "terra197sh6vs9u483h2gxycfz7lsw964f0hf6dup75f", // The Pain Free Project
       "terra1mzkqpefs0tjww4serwyx9u2sthgjraznwvcwpa", // Brooklyn Angel
+      "terra16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke", // Angel Protocol Endowment
+      "terra10kjzmr3z78h560zjxew4uhrucrxsyenyse2myn", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra12auwue3l5tuzs9ld2tstdvvyljhl06k275jkyu", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra12pu07a4srek2m7k6s4a49mmttee052c53wxykh", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra17jks8n2lq28sjqahz8g7jayvev9pt2cc2tqrms", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra19nkct5e553gdvn7f0zzemsgq4ual2kcd0x3zln", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1dn4937qejkjlzf2m8sztpkzvk9l8yaqxh29gvr", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1ftvccteqkr9mactjvq236cedl80v2fpwf6alsy", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1j9lx8un3sf3e8a5zhh2v6p6zu5kc46st8u3lr8", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1sgnn3pwfeztl4z7a4c923pxwn04gyq6cfas45r", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1txhw0wp9fhcyrja9a99w4lmpz2wfpu8hnch2kn", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1y3z0s77t3amjjze7wajrt4xms2kfamx4ae9tj9", // NOT ACTIVE ENDOWMENT (creation script mishap)
+      "terra1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r", // Coalition for Engaged Education
+      "terra1783y2z9pnwaf4letldrm3l9cgaq5ns6uhx0c23", // Sustainable Surf
+      "terra1w6ug5mr9ql0n0l59kcpjwk0u3rtlwvy93wtwkw", // Hoffnungskinder e.V.
+      "terra1x53a2ha9rkwe67pwuq8hf268akxsuglmaczsxl", // One Flower Project
+      "terra1svzvrq4x0rpe0xrug385pgfn0qx6ryjt3srx4u", // Jeremiah's Voice
+      "terra1p045cpuk44zthetwjssmjy0xgjg7304en9m8pu", // Gomde UK
+      "terra1a73f4dandsx8crtnm93psa5d8la8e379tvtxzl", // SEED Madagascar
+      "terra185tpavqdd2qtcl5gl5fuxzkqsnxl946864fcjd", // Indian Dance Educators Association
+      "terra1uegpp7nuxazgf20medwy4dwdhvkzvdztmrj8jx", // PEPA
+      "terra19atulfz5fgx7qdwvw9aq25gp3hp6qx4kk2uh42", // Southern Highlands Participatory Organisation
+      "terra1w80ea4dw9u3eh74uavw8f96psawmgmvyuu7t40", // Justdiggit
+      "terra14hmdpqwr49j7vyeqmjmp9zxsym0fczp66kuz0g", // Mauti Cancer
+      "terra16a8gcgpty72ude24z9dwm396q8ma6x2fnned62", // GRACE: Give Refugees A ChancE
+      "terra1ru70nkw23jxh0cr6ev6mldlcx220flhsf640tz", // Island Beach Access
+      "terra1scqfr8dy8hmq9c567mmvmhqkzerstul7sgtfws", // IDEAS For Us
+      "terra1usmzclqksa9g47ugevc4cstqwyzp2xmrd527pe", // Amalfi Impresa Sociale
+      "terra1ayr42zeh4srqcv6d4rgghkq6l25tzgyupxvf7q", // Blue Warriors
+      "terra152f28c0kgyuhpynwvt03xewvtf85283ewlppvg", // Newmarket Food Pantry
+      "terra1xux8zyum6lwv2ykjhxmwcguhj705yenctq8ff7", // Kashmir Humanity Foundation
+      "terra17jrfprzuhgnkm9pq4xqx6lm4pa3yznzp32sd9v", // Africa Innovation Network For Climate and Education
+      "terra1mfy4x5sl8pq6qqfq9e9vfhk3cc26u8wdsupjf3", // Planting Justice
+      "terra1xrymezcys9p7znqszn3yreavlr04x0mzym28cg", // Buckminster Fuller Institute
+      "terra1yv2x5shrw3cunw7fxmnkdmqq3un3d27wn0a9um", // Regenerative Community Land Trust
+      "terra1ajtrehcrcxvc2rk3pgua87ze49yzsyyuljzj6n", // Anna's Pals
+      "terra10smnhjh5zqy3659mmv3ygxwpke2add623cteus", // WAGOA
     ],
   },
   members: [
+    { addr: "terra1numzqm5mgr56ftd4y8mfen7705nfs4vpz5jf0s", weight: 1 },
     { addr: "terra1wvsugzhszkstexl0v6fv86c9ryjy8xm6u9t2fk", weight: 1 },
     { addr: "terra103rakc90xgcuxaee6alqhkmnp7qh92hwt0hxur", weight: 1 },
-    { addr: "terra1numzqm5mgr56ftd4y8mfen7705nfs4vpz5jf0s", weight: 1 },
-    { addr: "terra1p3kcfzflagjl7lxfexwyaz43e4mprhyml0sqju", weight: 1 },
+    { addr: "terra1kqk3x5mscrl94z6jfqam78rrdg42uyc3w63mye", weight: 1 },
+    { addr: "terra1qxma5jlwlxx8mfu5ge7rnq3x03asaptd4fvaa4", weight: 1 },
   ],
 
   // LBP contracts
@@ -286,11 +324,11 @@ export const mainnet = {
   halo: {
     airdrop_contract: "terra1pe6mnf0ursz0h80h2hwk690hvrph8vgt9pnw0w",
     collector_contract: "terra1uxqjsgnq30lg5lhlhwd2gmct844vwqcdlv93x5",
-    community_contract: "",
+    community_contract: "terra1cjaez6nzl08g4q9yklmxqqqcs79j9p0yfjs2mz",
     distributor_contract: "terra1ya34r8qj0fttkrxx435zexshyqe5fe3vlmhnd6",
     gov_contract: "terra1zcmp45vemypvd3j6ek2j2gz4mevjzyv3jc4ree",
     gov_hodler_contract: "terra1vn8ycrkmm8llqcu82qe3sg5ktn6hajs6tkpnx0",
     staking_contract: "",
-    vesting_contract: "",
+    vesting_contract: "terra19vv0hu406qpg9gu7uh4wnqr9lz0dlemw20pz4f",
   },
 } as const;

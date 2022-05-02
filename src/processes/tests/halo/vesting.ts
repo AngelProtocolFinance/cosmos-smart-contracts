@@ -98,6 +98,30 @@ export async function testAddSchedulesToVestingAccount(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: User claims vested tokens from vesting contract
+//
+// SCENARIO:
+// User has tokens that are available for claiming from the vesting contract
+//
+//----------------------------------------------------------------------------------------
+export async function testUserClaimsVestedTokens(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  vestingContract: string
+): Promise<void> {
+  process.stdout.write("Test - User can claim available tokens from the vesting account");
+
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(apTeam.key.accAddress, vestingContract, {
+        claim: {},
+      }),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryVestingConfig(

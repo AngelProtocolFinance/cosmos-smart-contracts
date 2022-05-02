@@ -5,19 +5,24 @@ import {
   testBeneficiaryCanWithdrawFromLiquid,
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
+  testApTeamChangesAccountsEndowmentOwner,
+  testChangeManyAccountsEndowmentOwners,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
+  testQueryAccountsProfile,
+  testQueryAccountsState,
+  testQueryAccountsTransactions,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
   testUpdateFundMembers,
-  testUpdateAngelAllianceMembers,
+  testUpdateAllianceMembersList,
   testUpdatingIndexFundConfigs,
   testCreateIndexFund,
   testRemoveIndexFund,
-  testQueryIndexFundActiveFundDetails,
+  // testQueryIndexFundActiveFundDetails,
   testQueryIndexFundActiveFundDonations,
   testQueryIndexFundConfig,
   testQueryIndexFundDeposit,
@@ -28,7 +33,7 @@ import {
 } from "./core/indexFunds";
 import {
   testUpdateCw3Config,
-  testAddApTeamMemberToC4Group,
+  testAddMemberToC4Group,
   testAddGuardiansToEndowment,
   testGuardiansChangeEndowmentOwner,
   testQueryMultisigVoters,
@@ -36,10 +41,9 @@ import {
   testQueryGroupMembersList,
 } from "./core/multisig";
 import {
-  testApproveEndowments,
-  testCronWalletCanDirectlyHarvestVault,
+  testUpdateEndowmentsStatus,
+  testCreateEndowmentViaRegistrar,
   testAngelTeamCanTriggerVaultsHarvest,
-  testClosingEndpoint,
   testMigrateAllAccounts,
   testUpdatingRegistrarConfigs,
   testQueryRegistrarApprovedVaultList,
@@ -49,6 +53,7 @@ import {
   testQueryRegistrarEndowmentDetails,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
+  testUpdateEndowmentsType,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -111,7 +116,8 @@ import {
 import {
   testVestingUpdateConfig,
   testVestingRegisterVestingAccounts,
-  // testVestingUpdateVestingAccount,
+  testAddSchedulesToVestingAccount,
+  testUserClaimsVestedTokens,
   testQueryVestingConfig,
   testQueryVestingAccount,
   testQueryVestingAccounts,
@@ -185,7 +191,23 @@ export async function testExecute(
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
-  // await testUpdateAngelAllianceMembers(
+  // await testUpdateAllianceMembersList(
+  //   terra,
+  //   apTeam,
+  //   indexFund,
+  //   "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // address #1
+  //   {
+  //     name: "Testnet Charity #2",
+  //     website:
+  //       "http://angelprotocol.io/app/charity/terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+  //     logo: "https://angelprotocol.io/favicon.ico",
+  //   }, // member #1`
+  //   // "terra178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // address #2
+  //   // { name: "Testnet Admin", webiste: "http://angelprotocol.io", logo: "" }, // member #2
+  //   "add" // action
+  // );
+  // testRemoveIndexFund(terra, apTeam, indexFund, 5);
+  // await testCreateIndexFund(
   //   terra,
   //   apTeam,
   //   indexFund,
@@ -195,14 +217,31 @@ export async function testExecute(
   //   ],
   //   []
   // );
-  // testRemoveIndexFund(terra, apTeam, indexFund, 5);
-  // await testCreateIndexFund(terra, apTeam, indexFund, 11, "MVP Rotation #5", "Fund collection for MVP", true, [
-  // "", // New funds go here!!
-  // ]);
   // await testUpdateFundMembers(terra, apTeam, apTeam, indexFund, 6, ["","",""], ["","",""]);
+  // await testChangeManyAccountsEndowmentOwners(terra, apTeam, []);
 
+  // [
+  //   ,
+  //   {
+  //     address: "terra1jvtf3ccpkr3vymv98vk9nz7wvwmykgv8yk9l3w",
+  //     owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
+  //   },
+  // ].forEach(async (endowment) => {
+  // await createAccountCw4GroupCw3Multisig(
+  //   terra,
+  //   apTeam,
+  //   registrar,
+  //   62653, // cw4Code
+  //   62654, // cw3Code
+  //   {
+  //     address: "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v",
+  //     owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+  //   }
+  // );
+  // await testCreateEndowmentViaRegistrar(terra, apTeam, registrar, apTeam2.key.accAddress);
   // Multisig test
-  // await testAddApTeamMemberToC4Group(terra, apTeam, apTeam3, cw3ApTeam, cw4GrpApTeam);
+  // await testAddMemberToC4Group(terra, apTeam, cw3ApTeam, cw4GrpApTeam, "terra1......");
+  // await testUpdateCw3Config(terra, apTeam, cw3ApTeam, 50, 25000);
   // await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);
   // await testGuardiansChangeEndowmentOwner(terra, charity2, charity3, pleb, endowmentContract1, cw3GuardianAngels);
   // await testQueryMultisigVoters(terra, cw3ApTeam);
@@ -211,7 +250,7 @@ export async function testExecute(
 
   // Test execute
   // await testRejectUnapprovedDonations(terra, pleb, endowmentContract1, "10000000");
-  // await testDonorSendsToIndexFund(terra, pleb, indexFund, 1, "0.5", "4200000");
+  // await testDonorSendsToIndexFund(terra, pleb, indexFund, 3, "0.5", "4200000");
   // await testTcaMemberSendsToIndexFund(terra, tca, indexFund);
   // await testAngelTeamCanTriggerVaultsHarvest(
   //   terra,
@@ -230,21 +269,14 @@ export async function testExecute(
   // );
   // await testBeneficiaryCanWithdrawFromLiquid(
   //   terra,
-  //   charity1,
-  //   endowmentContract1,
+  //   charity3,
+  //   endowmentContract3,
   //   anchorVault1,
   //   pleb.key.accAddress
   // );
   // await testUpdatingRegistrarConfigs(terra, apTeam, registrar, haloGov);
-  // await testApproveEndowments(terra, apTeam, registrar, endowmentContract1, 1);
-  // await testClosingEndpoint(
-  //   terra,
-  //   apTeam,
-  //   registrar,
-  //   endowmentContract3,
-  //   endowmentContract4
-  // );
-  // await testMigrateAllAccounts(terra, apTeam, registrar);
+  // await testUpdateEndowmentsStatus(terra, apTeam, registrar, [{ "address": endowmentContract3, "status": 1, "beneficiary": "" }]);
+  // await testUpdateEndowmentsType(terra, apTeam, registrar, [{"address": endowmentContract3, "name": "Test Endow 3", "owner": undefined, "tier": undefined, "un_sdg": undefined, "endow_type": undefined}]);
   // await testUpdateFundMembers(
   //   terra,
   //   apTeam,
@@ -267,15 +299,24 @@ export async function testExecute(
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);
-  // await testQueryRegistrarEndowmentDetails(terra, registrar, endowmentContract1);
+  // await testQueryRegistrarEndowmentDetails(terra, registrar, endowmentContract3);
   // await testQueryRegistrarApprovedVaultList(terra, registrar);
   // await testQueryRegistrarApprovedVaultRateList(terra, registrar);
   // await testQueryRegistrarVaultList(terra, registrar);
   // await testQueryRegistrarVault(terra, registrar, anchorVault1);
-  // await testQueryAccountsBalance(terra, endowmentContract1);
   // await testQueryVaultConfig(terra, anchorVault1);
-  // await testQueryAccountsConfig(terra, endowmentContract1);
-  // await testQueryAccountsEndowment(terra, endowmentContract1);
+  // await testQueryAccountsBalance(terra, endowmentContract4);
+  // await testQueryAccountsConfig(terra, endowmentContract4);
+  // await testQueryAccountsEndowment(terra, endowmentContract4);
+  // await testQueryAccountsProfile(terra, endowmentContract4);
+  // await testQueryAccountsState(terra, endowmentContract4);
+  // await testQueryAccountsTransactions(
+  //   terra,
+  //   endowmentContract4,
+  //   undefined,
+  //   undefined,
+  //   undefined
+  // );
   // await testQueryIndexFundConfig(terra, indexFund);
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
@@ -319,24 +360,26 @@ export async function testExecute(
   // await testDistributorRemove(terra, apTeam, haloGov, haloDistributor, apTeam2.key.accAddress);
   // await testQueryDistributorConfig(terra, haloDistributor);
 
-  // Test query for HALO vesting
-  // await testVestingUpdateConfig(terra, apTeam, haloVesting, apTeam2.key.accAddress, undefined, undefined);
+  // Tests for HALO vesting
+  // await testVestingUpdateConfig(terra, apTeam, haloVesting, undefined, undefined, undefined);
   // await testVestingRegisterVestingAccounts(
   //   terra,
   //   apTeam,
   //   haloVesting,
   //   [
-  //     {address: "addr0", schedules: [[100, 101, "100"], [100, 110, "100"], [100, 200, "100"]]},
-  //     {address: "addr1", schedules: [[100, 110, "100"]]},
-  //     {address: "addr2", schedules: [[100, 200, "100"]]},
+  //     {address: apTeam3.key.accAddress, schedules: [[100, 101, "100"], [100, 110, "100"], [100, 200, "100"]]},
+  //     {address: apTeam2.key.accAddress, schedules: [[100, 110, "100"]]},
   //   ]
   // );
+  // let new_schedules = [[1000, 2000, "100"]];
   // await testVestingUpdateVestingAccount(
   //   terra,
   //   apTeam,
   //   haloVesting,
-  //   {address: "addr1", schedules: [[100, 110, "200"]]}
+  //   apTeam3.key.accAddress,
+  //   new_schedules,
   // );
+  // await testUserClaimsVestedTokens(terra, apTeam3, haloVesting);
   // await testQueryVestingConfig(terra, haloVesting);
   // await testQueryVestingAccount(terra, haloVesting, "addr0");
   // await testQueryVestingAccounts(terra, haloVesting, undefined, undefined);

@@ -13,7 +13,7 @@ import {
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
   testUpdateFundMembers,
-  testUpdateAngelAllianceMembers,
+  // testUpdateAngelAllianceMembers,
   testUpdatingIndexFundConfigs,
   testCreateIndexFund,
   testRemoveIndexFund,
@@ -27,14 +27,14 @@ import {
   testQueryIndexFundTcaList,
 } from "./core/indexFunds";
 import {
-  testAddApTeamMemberToC4Group,
+  testAddMemberToC4Group,
   testAddGuardiansToEndowment,
   testGuardiansChangeEndowmentOwner,
 } from "./core/multisig";
 import {
   testAngelTeamCanTriggerVaultsHarvest,
-  testClosingEndpoint,
   testMigrateAllAccounts,
+  testUpdateEndowmentsStatus,
   testUpdatingRegistrarConfigs,
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarApprovedVaultRateList,
@@ -161,11 +161,19 @@ export async function testExecute(
   lbpLpTokenContract: string
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // await testAngelTeamCanTriggerVaultsHarvest(
+  //   terra,
+  //   apTeam,
+  //   charity1,
+  //   registrar,
+  //   haloCollector,
+  //   "0.5"
+  // );
   // await testSingleDonationAmountToManyEndowments(
   //   terra,
   //   apTeam,
   //   [
-  //     "terra1q4sjzkztrpfujqu5vzquhvhvqy872d0drcfuq4", // Legaler Aid
+  //     "terra1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r", // Coalition for Engaged Education
   //   ],
   //   "1000000000"
   // );
@@ -180,20 +188,21 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   19,
-  //   ["terra15ej9284yj6v4rm07prxmcrmlhz70p20aup06zh"],
+  //   21,
+  //   [
+  //     "terra1uegpp7nuxazgf20medwy4dwdhvkzvdztmrj8jx", // PEPA
+  //   ],
   //   []
   // );
   // await testCreateIndexFund(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   19,
-  //   "MVP Rotation #12",
+  //   "MVP Rotation #14",
   //   "Fund collection for MVP",
   //   true,
   //   [
-  //     "terra1hccjcxm0vdz8d2n9y8lnrpx4ka4elt4gwfm522", // Threshold
+  //     "terra14hmdpqwr49j7vyeqmjmp9zxsym0fczp66kuz0g", // Mauti Cancer
   //   ]
   // );
   // await testUpdateAngelAllianceMembers(
@@ -207,6 +216,20 @@ export async function testExecute(
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 1, [], ["",""]);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, ["",""], []);
+
+  // await testUpdateEndowmentsStatus(terra, apTeam, registrar, [
+  //   {
+  //     address: "terra1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2",
+  //     status: 3,
+  //     beneficiary: "terra1suxqzxtzztxvakvucc6u4s9833n4u0cyk9pmv8",
+  //   }, // Lion's Club Manitowish Waters
+  //   {
+  //     address: "terra1w80ea4dw9u3eh74uavw8f96psawmgmvyuu7t40",
+  //     status: 3,
+  //     beneficiary: "terra1hpumgc72x4wkwcuvr3hl5sanc3mjpmhxuqjxrg",
+  //   }, // JustDiggit
+  // ]);
+
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);
@@ -222,7 +245,7 @@ export async function testExecute(
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
   // await testQueryIndexFundFundsList(terra, indexFund);
-  // await testQueryIndexFundFundDetails(terra, indexFund, 18);
+  // await testQueryIndexFundFundDetails(terra, indexFund, 22);
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);

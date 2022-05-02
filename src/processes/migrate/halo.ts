@@ -22,14 +22,14 @@ export async function migrateHalo(
   haloVesting: string
 ): Promise<void> {
   // run the migrations desired
-  await migrateHaloAirdrop(terra, apTeam, haloAirdrop);
-  await migrateHaloCollector(terra, apTeam, haloCollector);
-  await migrateHaloCommunity(terra, apTeam, haloCommunity);
-  await migrateHaloDistributor(terra, apTeam, haloDistributor);
-  await migrateHaloGov(terra, apTeam, haloGov);
-  await migrateHaloGovHodler(terra, apTeam, haloGovHodler);
-  await migrateHaloStaking(terra, apTeam, haloStaking);
-  await migrateHaloVesting(terra, apTeam, haloVesting);
+  // await migrateHaloAirdrop(terra, apTeam, haloAirdrop);
+  // await migrateHaloCollector(terra, apTeam, haloCollector);
+  // await migrateHaloCommunity(terra, apTeam, haloCommunity);
+  // await migrateHaloDistributor(terra, apTeam, haloDistributor);
+  // await migrateHaloGov(terra, apTeam, haloGov);
+  // await migrateHaloGovHodler(terra, apTeam, haloGovHodler);
+  // await migrateHaloStaking(terra, apTeam, haloStaking);
+  // await migrateHaloVesting(terra, apTeam, haloVesting);
 }
 
 // -------------------------------------------------

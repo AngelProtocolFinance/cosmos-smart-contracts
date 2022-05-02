@@ -153,15 +153,98 @@ export async function testCharityCanUpdateStrategies(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: Contract Owner can set new owner of endowment
+//
+// SCENARIO:
+// Contract owner needs to change the endowment owner from single wallet to a CW3 multisig
+//
+//----------------------------------------------------------------------------------------
+
+export async function testApTeamChangesAccountsEndowmentOwner(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  endowment: string,
+  owner: string,
+  beneficiary: string
+): Promise<void> {
+  process.stdout.write("Test - Contract Owner can set new owner of an Endowment");
+
+  await expect(
+    sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(apTeam.key.accAddress, endowment, {
+        update_endowment_settings: {
+          owner,
+          beneficiary,
+        },
+      }),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testChangeManyAccountsEndowmentOwners(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  endowments: any[] // [ { address: <string>, owner: <string> }, ... ]
+): Promise<void> {
+  process.stdout.write("Test - Contract Owner can set new owner of an Endowment");
+  let msgs: Msg[] = [];
+  endowments.forEach((e) => {
+    msgs.push(
+      new MsgExecuteContract(apTeam.key.accAddress, e.address, {
+        update_endowment_settings: {
+          owner: e.owner,
+          beneficiary: e.owner,
+        },
+      })
+    );
+  });
+  await expect(sendTransaction(terra, apTeam, msgs));
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
+export async function testQueryAccountsState(
+  terra: LocalTerra | LCDClient,
+  endowmentContract: string
+): Promise<void> {
+  process.stdout.write("Test - Query Accounts State");
+  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+    state: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryAccountsTransactions(
+  terra: LocalTerra | LCDClient,
+  endowmentContract: string,
+  sender: string | undefined,
+  recipient: string | undefined,
+  denom: string | undefined
+): Promise<void> {
+  process.stdout.write("Test - Query Accounts Transactions");
+  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+    get_tx_records: {
+      sender,
+      recipient,
+      denom,
+    },
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
 
 export async function testQueryAccountsBalance(
   terra: LocalTerra | LCDClient,
-  endowmentContract1: string
+  endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Balance");
-  const result: any = await terra.wasm.contractQuery(endowmentContract1, {
+  const result: any = await terra.wasm.contractQuery(endowmentContract, {
     balance: {},
   });
 
@@ -171,10 +254,10 @@ export async function testQueryAccountsBalance(
 
 export async function testQueryAccountsConfig(
   terra: LocalTerra | LCDClient,
-  endowmentContract1: string
+  endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Config");
-  const result: any = await terra.wasm.contractQuery(endowmentContract1, {
+  const result: any = await terra.wasm.contractQuery(endowmentContract, {
     config: {},
   });
 
@@ -184,11 +267,24 @@ export async function testQueryAccountsConfig(
 
 export async function testQueryAccountsEndowment(
   terra: LocalTerra | LCDClient,
-  endowmentContract1: string
+  endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Endowment");
-  const result: any = await terra.wasm.contractQuery(endowmentContract1, {
+  const result: any = await terra.wasm.contractQuery(endowmentContract, {
     endowment: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryAccountsProfile(
+  terra: LocalTerra | LCDClient,
+  endowmentContract: string
+): Promise<void> {
+  process.stdout.write("Test - Query Accounts Profile");
+  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+    get_profile: {},
   });
 
   console.log(result);

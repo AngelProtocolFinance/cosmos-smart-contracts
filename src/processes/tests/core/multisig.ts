@@ -17,18 +17,18 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 
-export async function testAddApTeamMemberToC4Group(
+export async function testAddMemberToC4Group(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  cw3ApTeam: string,
-  cw4GrpApTeam: string,
+  cw3: string,
+  cw4Grp: string,
   new_member: string
 ): Promise<void> {
   process.stdout.write("Test - Propose adding a new member to AP Team C4 Group");
 
   // proposal to add new member
   const proposal = await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, cw3ApTeam, {
+    new MsgExecuteContract(apTeam.key.accAddress, cw3, {
       propose: {
         title: "New CW4 member",
         description: "New member for the CW4 AP Team Group. They are legit, I swear!",
@@ -36,7 +36,7 @@ export async function testAddApTeamMemberToC4Group(
           {
             wasm: {
               execute: {
-                contract_addr: cw4GrpApTeam,
+                contract_addr: cw4Grp,
                 funds: [],
                 msg: toEncodedBinary({
                   update_members: {

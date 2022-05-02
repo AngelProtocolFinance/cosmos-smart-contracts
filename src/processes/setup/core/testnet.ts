@@ -78,14 +78,15 @@ export async function setupCore(
     config.max_voting_period_height,
     config.max_voting_period_guardians_height,
     config.fund_rotation,
-    config.funding_goal
+    config.funding_goal,
+    config.is_localterra
   );
-  await createEndowments();
-  await approveEndowments();
-  await createIndexFunds();
   if (!config.is_localterra && anchorMoneyMarket) {
     await createVaults(config.harvest_to_liquid, config.tax_per_block);
   }
+  await createEndowments();
+  await approveEndowments();
+  await createIndexFunds();
   if (config.turnover_to_multisig) {
     await turnOverApTeamMultisig(config.is_localterra);
   }
@@ -98,7 +99,8 @@ async function setup(
   max_voting_period_height: number,
   max_voting_period_guardians_height: number,
   fund_rotation: number | undefined,
-  funding_goal: string | undefined
+  funding_goal: string | undefined,
+  is_localterra: boolean
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each....
   process.stdout.write("Uploading Registrar Wasm");
@@ -298,10 +300,33 @@ async function setup(
   process.stdout.write("Add confirmed TCA Member to allowed list");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      update_tca_list: { add: [tca.key.accAddress], remove: [] },
+      update_alliance_member_list: {
+        address: tca.key.accAddress,
+        member: {
+          name: "TCA Member",
+          logo: undefined,
+          website: "https://angelprotocol.io/app",
+        },
+        action: "add",
+      },
     }),
   ]);
   console.log(chalk.green(" Done!"));
+
+  if (is_localterra) {
+    process.stdout.write(
+      "Set default vault in Registrar as a placeholder for account creation on localterra & update Index Fund"
+    );
+    await sendTransaction(terra, apTeam, [
+      new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+        update_config: {
+          default_vault: apTeam.key.accAddress,
+          index_fund_contract: indexFund,
+        },
+      }),
+    ]);
+    console.log(chalk.green(" Done!"));
+  }
 }
 
 // Step 4: Create Endowments via the Registrar contract
@@ -313,11 +338,31 @@ async function createEndowments(): Promise<void> {
       create_endowment: {
         owner: charity1.key.accAddress,
         beneficiary: charity1.key.accAddress,
-        name: "Test Endowment #1",
-        description: "A wonderful charity endowment that aims to test all the things",
         withdraw_before_maturity: false,
         maturity_time: undefined,
         maturity_height: undefined,
+        profile: {
+          name: "Test Endowment #1",
+          overview: "A wonderful charity endowment that aims to test all the things",
+          un_sdg: undefined,
+          tier: undefined,
+          logo: undefined,
+          image: undefined,
+          url: undefined,
+          registration_number: undefined,
+          country_city_origin: undefined,
+          contact_email: undefined,
+          social_media_urls: {
+            facebook: undefined,
+            twitter: undefined,
+            linkedin: undefined,
+          },
+          number_of_employees: undefined,
+          average_annual_budget: undefined,
+          annual_revenue: undefined,
+          charity_navigator_rating: undefined,
+          endow_type: "Charity",
+        },
       },
     }),
   ]);
@@ -340,11 +385,31 @@ async function createEndowments(): Promise<void> {
       create_endowment: {
         owner: charity2.key.accAddress,
         beneficiary: charity2.key.accAddress,
-        name: "Test Endowment #2",
-        description: "An even better endowment full of butterflies and rainbows",
         withdraw_before_maturity: false,
         maturity_time: undefined,
         maturity_height: undefined,
+        profile: {
+          name: "Test Endowment #2",
+          overview: "An even better endowment full of butterflies and rainbows",
+          un_sdg: undefined,
+          tier: undefined,
+          logo: undefined,
+          image: undefined,
+          url: undefined,
+          registration_number: undefined,
+          country_city_origin: undefined,
+          contact_email: undefined,
+          social_media_urls: {
+            facebook: undefined,
+            twitter: undefined,
+            linkedin: undefined,
+          },
+          number_of_employees: undefined,
+          average_annual_budget: undefined,
+          annual_revenue: undefined,
+          charity_navigator_rating: undefined,
+          endow_type: "Charity",
+        },
       },
     }),
   ]);
@@ -367,11 +432,31 @@ async function createEndowments(): Promise<void> {
       create_endowment: {
         owner: charity3.key.accAddress,
         beneficiary: charity3.key.accAddress,
-        name: "Test Endowment #3",
-        description: "Shady endowment that will never be approved",
         withdraw_before_maturity: false,
         maturity_time: undefined,
         maturity_height: undefined,
+        profile: {
+          name: "Test Endowment #3",
+          overview: "Shady endowment that will never be approved",
+          un_sdg: undefined,
+          tier: undefined,
+          logo: undefined,
+          image: undefined,
+          url: undefined,
+          registration_number: undefined,
+          country_city_origin: undefined,
+          contact_email: undefined,
+          social_media_urls: {
+            facebook: undefined,
+            twitter: undefined,
+            linkedin: undefined,
+          },
+          number_of_employees: undefined,
+          average_annual_budget: undefined,
+          annual_revenue: undefined,
+          charity_navigator_rating: undefined,
+          endow_type: "Charity",
+        },
       },
     }),
   ]);
@@ -394,11 +479,31 @@ async function createEndowments(): Promise<void> {
       create_endowment: {
         owner: charity3.key.accAddress,
         beneficiary: charity3.key.accAddress,
-        name: "Vibin' Endowment #4",
-        description: "Global endowment that spreads good vibes",
         withdraw_before_maturity: false,
         maturity_time: undefined,
         maturity_height: undefined,
+        profile: {
+          name: "Vibin' Endowment #4",
+          overview: "Global endowment that spreads good vibes",
+          un_sdg: undefined,
+          tier: undefined,
+          logo: undefined,
+          image: undefined,
+          url: undefined,
+          registration_number: undefined,
+          country_city_origin: undefined,
+          contact_email: undefined,
+          social_media_urls: {
+            facebook: undefined,
+            twitter: undefined,
+            linkedin: undefined,
+          },
+          number_of_employees: undefined,
+          average_annual_budget: undefined,
+          annual_revenue: undefined,
+          charity_navigator_rating: undefined,
+          endow_type: "Charity",
+        },
       },
     }),
   ]);
@@ -454,6 +559,10 @@ async function createIndexFunds(): Promise<void> {
         name: "Test Fund",
         description: "My first test fund",
         members: [endowmentContract1, endowmentContract2],
+        rotating_fund: true,
+        split_to_liquid: undefined,
+        expiry_time: undefined,
+        expiry_height: undefined,
       },
     }),
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
@@ -461,6 +570,10 @@ async function createIndexFunds(): Promise<void> {
         name: "Test Fund #2",
         description: "Another fund to test rotations",
         members: [endowmentContract1, endowmentContract4],
+        rotating_fund: true,
+        split_to_liquid: undefined,
+        expiry_time: undefined,
+        expiry_height: undefined,
       },
     }),
   ]);
@@ -534,9 +647,8 @@ async function createVaults(
   console.log(chalk.green(" Done!"));
 
   process.stdout.write(
-    "Set default vault in Registrar (for newly created Endowments) as Anchor Vault #1"
+    "Set default vault in Registrar as Anchor Vault #1 && Update Registrar with the Address of the Index Fund contract"
   );
-  process.stdout.write("Update Registrar with the Address of the Index Fund contract");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_config: {
