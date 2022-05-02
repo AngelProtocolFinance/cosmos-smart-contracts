@@ -2,62 +2,57 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, StdResult, Storage};
-use cosmwasm_storage::{singleton, singleton_read, Bucket, ReadonlyBucket};
+use cw_storage_plus::{Item, Map};
 
-static KEY_CONFIG: &[u8] = b"config";
-static KEY_LATEST_STAGE: &[u8] = b"latest_stage";
-
-static PREFIX_MERKLE_ROOT: &[u8] = b"merkle_root";
-static PREFIX_CLAIM_INDEX: &[u8] = b"claim_index";
-
+// "Config" Storage Item & its utils.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
     pub halo_token: Addr,
 }
 
+pub const CONFIG: Item<Config> = Item::new("config");
+
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
-    singleton(storage, KEY_CONFIG).save(config)
+    CONFIG.save(storage, config)
 }
 
 pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
-    singleton_read(storage, KEY_CONFIG).load()
+    CONFIG.load(storage)
 }
 
+// "latest_stage" Storage item & its utils.
+pub const LATEST_STAGE: Item<u8> = Item::new("latest_stage");
 pub fn store_latest_stage(storage: &mut dyn Storage, stage: u8) -> StdResult<()> {
-    singleton(storage, KEY_LATEST_STAGE).save(&stage)
+    LATEST_STAGE.save(storage, &stage)
 }
 
 pub fn read_latest_stage(storage: &dyn Storage) -> StdResult<u8> {
-    singleton_read(storage, KEY_LATEST_STAGE).load()
+    LATEST_STAGE.load(storage)
 }
 
+// "merkle_root" storage map & its utils. (stage -> merkle_root)
+pub const MERKLE_ROOT: Map<&[u8], String> = Map::new("merkle_root");
 pub fn store_merkle_root(
     storage: &mut dyn Storage,
     stage: u8,
     merkle_root: String,
 ) -> StdResult<()> {
-    let mut merkle_root_bucket: Bucket<String> = Bucket::new(storage, PREFIX_MERKLE_ROOT);
-    merkle_root_bucket.save(&[stage], &merkle_root)
+    MERKLE_ROOT.save(storage, &[stage], &merkle_root)
 }
 
 pub fn read_merkle_root(storage: &dyn Storage, stage: u8) -> StdResult<String> {
-    let claim_index_bucket: ReadonlyBucket<String> =
-        ReadonlyBucket::new(storage, PREFIX_MERKLE_ROOT);
-    claim_index_bucket.load(&[stage])
+    MERKLE_ROOT.load(storage, &[stage])
 }
 
+// "claim_index" storage map & its utils: ((address, stage) -> bool)
+pub const CLAIM_INDEX: Map<(&str, &str), bool> = Map::new("claim_index");
 pub fn store_claimed(storage: &mut dyn Storage, user: &Addr, stage: u8) -> StdResult<()> {
-    let mut claim_index_bucket: Bucket<bool> =
-        Bucket::multilevel(storage, &[PREFIX_CLAIM_INDEX, user.as_bytes()]);
-    claim_index_bucket.save(&[stage], &true)
+    CLAIM_INDEX.save(storage, (user.as_str(), stage.to_string().as_str()), &true)
 }
 
 pub fn read_claimed(storage: &dyn Storage, user: &Addr, stage: u8) -> StdResult<bool> {
-    let claim_index_bucket: ReadonlyBucket<bool> =
-        ReadonlyBucket::multilevel(storage, &[PREFIX_CLAIM_INDEX, user.as_bytes()]);
-    let res = claim_index_bucket.may_load(&[stage])?;
-    match res {
+    match CLAIM_INDEX.may_load(storage, (user.as_str(), stage.to_string().as_str()))? {
         Some(v) => Ok(v),
         None => Ok(false),
     }

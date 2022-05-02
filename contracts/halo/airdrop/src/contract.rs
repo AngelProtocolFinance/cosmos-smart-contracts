@@ -8,8 +8,8 @@ use crate::state::{
 };
 
 use cosmwasm_std::{
-    to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
-    WasmMsg,
+    to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use halo_token::airdrop::{
@@ -89,7 +89,7 @@ pub fn register_merkle_root(
     }
 
     let mut root_buf: [u8; 32] = [0; 32];
-    match hex::decode_to_slice(merkle_root.to_string(), &mut root_buf) {
+    match hex::decode_to_slice(&merkle_root, &mut root_buf) {
         Ok(()) => {}
         _ => return Err(ContractError::InvalidHexMerkle {}),
     }
@@ -233,6 +233,38 @@ pub fn query_is_claimed(deps: Deps, stage: u8, address: String) -> StdResult<IsC
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    // Re-save the config because of storage switch (singleton -> Item)
+    // Should be removed after v1.6 deployment
+
+    // CONFIG
+    let config_key: &[u8] = b"config";
+    let prefixed_config_key: &[u8] = &cosmwasm_storage::to_length_prefixed(config_key);
+    let data = deps.storage.get(prefixed_config_key).ok_or_else(|| {
+        ContractError::Std(StdError::NotFound {
+            kind: "Config".to_string(),
+        })
+    })?;
+    let config: Config = cosmwasm_std::from_slice(&data)?;
+    deps.storage.set(
+        config_key,
+        &cosmwasm_std::to_vec(&Config {
+            owner: config.owner,
+            halo_token: config.halo_token,
+        })?,
+    );
+
+    // LATEST_STAGE
+    let latest_stage_key: &[u8] = b"latest_stage";
+    let prefixed_stage_key: &[u8] = &cosmwasm_storage::to_length_prefixed(latest_stage_key);
+    let data = deps.storage.get(prefixed_stage_key).ok_or_else(|| {
+        ContractError::Std(StdError::NotFound {
+            kind: "latest_stage".to_string(),
+        })
+    })?;
+    let latest_stage: u8 = cosmwasm_std::from_slice(&data)?;
+    deps.storage
+        .set(latest_stage_key, &cosmwasm_std::to_vec(&latest_stage)?);
+
     Ok(Response::default())
 }

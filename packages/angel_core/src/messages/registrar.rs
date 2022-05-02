@@ -1,10 +1,12 @@
-use crate::structs::SplitDetails;
+use crate::structs::{EndowmentType, Profile, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MigrateMsg {}
+pub struct MigrateMsg {
+    pub endowments: Vec<String>,
+}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
@@ -19,6 +21,7 @@ pub struct InstantiateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     CreateEndowment(CreateEndowmentMsg),
+    UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     VaultAdd(VaultAddMsg),
     VaultRemove {
         vault_addr: String,
@@ -27,17 +30,8 @@ pub enum ExecuteMsg {
         vault_addr: String,
         approved: bool,
     },
-    CharityAdd {
-        charity: String,
-    },
-    CharityRemove {
-        charity: String,
-    },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
-    // Allows the DANO / AP Team to update the status of an Endowment
-    // Approved, Frozen, (Liquidated, Terminated)
-    UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Allows the SC owner to change ownership
     UpdateOwner {
         new_owner: String,
@@ -47,20 +41,19 @@ pub enum ExecuteMsg {
         collector_address: String,
         collector_share: Decimal,
     },
-    // Allows SC owner to migrate all Accounts SC
-    MigrateAccounts {},
+    // Allows the DANO/AP Team to update the EndowmentEntry
+    UpdateEndowmentType(UpdateEndowmentTypeMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateEndowmentMsg {
     pub owner: String,
     pub beneficiary: String,
-    pub name: String,
-    pub description: String,
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
     pub guardians_multisig_addr: Option<String>,
+    pub profile: Profile,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -105,6 +98,16 @@ pub struct VaultAddMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateEndowmentTypeMsg {
+    pub endowment_addr: String,
+    pub name: Option<String>,
+    pub owner: Option<String>,
+    pub tier: Option<Option<Tier>>,
+    pub un_sdg: Option<Option<u64>>,
+    pub endow_type: Option<EndowmentType>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get details on single vault
@@ -126,7 +129,14 @@ pub enum QueryMsg {
         endowment_addr: String,
     },
     // Gets list of all registered Endowments
-    EndowmentList {},
+    EndowmentList {
+        name: Option<String>,
+        owner: Option<String>,
+        status: Option<String>,
+        tier: Option<Option<String>>,
+        un_sdg: Option<Option<u64>>,
+        endow_type: Option<String>,
+    },
     // Get all Config details for the contract
     Config {},
     // Get a list of all approved Vaults exchange rates

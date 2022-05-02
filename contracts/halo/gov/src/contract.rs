@@ -3,12 +3,13 @@ use crate::staking::{
     claim_voting_tokens, query_staker, stake_voting_tokens, withdraw_voting_tokens,
 };
 use crate::state::{
-    bank_read, bank_store, config_read, config_store, poll_indexer_store, poll_read, poll_store,
-    poll_voter_read, poll_voter_store, read_poll_voters, read_polls, read_tmp_poll_id, state_read,
-    state_store, store_tmp_poll_id, Config, ExecuteData, Poll, State, CLAIMS,
+    read_bank, read_config, read_poll, read_poll_voter, read_poll_voters, read_polls, read_state,
+    read_tmp_poll_id, remove_poll_indexer, store_bank, store_config, store_poll,
+    store_poll_indexer, store_poll_voter, store_state, store_tmp_poll_id, Config, ExecuteData,
+    Poll, State, CLAIMS,
 };
 use cosmwasm_std::{
-    attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
+    entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
     MessageInfo, Reply, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
 };
 use cw0::Duration;
@@ -61,8 +62,8 @@ pub fn instantiate(
         total_deposit: Uint128::zero(),
     };
 
-    config_store(deps.storage).save(&config)?;
-    state_store(deps.storage).save(&state)?;
+    store_config(deps.storage, &config)?;
+    store_state(deps.storage, &state)?;
 
     Ok(Response::default())
 }
@@ -112,7 +113,6 @@ pub fn execute(
         } => cast_vote(deps, env, info, poll_id, vote, amount),
         ExecuteMsg::EndPoll { poll_id } => end_poll(deps, env, poll_id),
         ExecuteMsg::ExecutePoll { poll_id } => execute_poll(deps, env, poll_id),
-        ExecuteMsg::SnapshotPoll { poll_id } => snapshot_poll(deps, env, poll_id),
     }
 }
 
@@ -132,13 +132,13 @@ pub fn register_contracts(
     info: MessageInfo,
     halo_token: String,
 ) -> Result<Response, ContractError> {
-    let mut config: Config = config_read(deps.storage).load()?;
+    let mut config: Config = read_config(deps.storage)?;
     if config.owner != info.sender {
         return Err(ContractError::Unauthorized {});
     }
 
     config.halo_token = deps.api.addr_validate(&halo_token)?;
-    config_store(deps.storage).save(&config)?;
+    store_config(deps.storage, &config)?;
 
     Ok(Response::default())
 }
@@ -150,7 +150,7 @@ pub fn receive_cw20(
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
     // only asset contract can execute this message
-    let config: Config = config_read(deps.storage).load()?;
+    let config: Config = read_config(deps.storage)?;
     if config.halo_token != info.sender {
         return Err(ContractError::Unauthorized {});
     }
@@ -201,7 +201,7 @@ pub fn update_config(
     gov_hodler: Option<String>,
 ) -> Result<Response, ContractError> {
     let api = deps.api;
-    let mut config: Config = config_read(deps.storage).load()?;
+    let mut config: Config = read_config(deps.storage)?;
 
     if config.owner != info.sender {
         return Err(ContractError::Unauthorized {});
@@ -244,7 +244,7 @@ pub fn update_config(
         config.unbonding_period = Duration::Time(unbonding_period)
     }
 
-    config_store(deps.storage).save(&config)?;
+    store_config(deps.storage, &config)?;
 
     Ok(Response::new().add_attributes(vec![("action", "update_config")]))
 }
@@ -313,14 +313,14 @@ pub fn create_poll(
     validate_description(&description)?;
     validate_link(&link)?;
 
-    let config: Config = config_store(deps.storage).load()?;
+    let config: Config = read_config(deps.storage)?;
     if deposit_amount < config.proposal_deposit {
         return Err(ContractError::InsufficientProposalDeposit(
             config.proposal_deposit.u128(),
         ));
     }
 
-    let mut state: State = state_store(deps.storage).load()?;
+    let mut state: State = read_state(deps.storage)?;
     let poll_id = state.poll_count + 1;
 
     // Increase poll count & total deposit amount
@@ -374,11 +374,10 @@ pub fn create_poll(
         staked_amount: Some(staked_amount),
     };
 
-    poll_store(deps.storage).save(&poll_id.to_be_bytes(), &new_poll)?;
-    poll_indexer_store(deps.storage, &PollStatus::InProgress)
-        .save(&poll_id.to_be_bytes(), &true)?;
+    store_poll(deps.storage, &poll_id.to_be_bytes(), &new_poll)?;
+    store_poll_indexer(deps.storage, &PollStatus::InProgress, poll_id, &true)?;
 
-    state_store(deps.storage).save(&state)?;
+    store_state(deps.storage, &state)?;
 
     Ok(Response::new().add_attributes(vec![
         ("action", "create_poll"),
@@ -392,7 +391,7 @@ pub fn create_poll(
  * Ends a poll.
  */
 pub fn end_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, ContractError> {
-    let mut a_poll: Poll = poll_store(deps.storage).load(&poll_id.to_be_bytes())?;
+    let mut a_poll: Poll = read_poll(deps.storage, &poll_id.to_be_bytes())?;
 
     if a_poll.status != PollStatus::InProgress {
         return Err(ContractError::PollNotInProgress {});
@@ -412,8 +411,8 @@ pub fn end_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, Contr
     let mut passed = false;
 
     let mut messages: Vec<CosmosMsg> = vec![];
-    let config: Config = config_read(deps.storage).load()?;
-    let mut state: State = state_read(deps.storage).load()?;
+    let config: Config = read_config(deps.storage)?;
+    let mut state: State = read_state(deps.storage)?;
 
     let (quorum, staked_weight) = if state.total_share.u128() == 0 {
         (Decimal::zero(), Uint128::zero())
@@ -465,16 +464,16 @@ pub fn end_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, Contr
 
     // Decrease total deposit amount
     state.total_deposit = state.total_deposit.checked_sub(a_poll.deposit_amount)?;
-    state_store(deps.storage).save(&state)?;
+    store_state(deps.storage, &state)?;
 
     // Update poll indexer
-    poll_indexer_store(deps.storage, &PollStatus::InProgress).remove(&a_poll.id.to_be_bytes());
-    poll_indexer_store(deps.storage, &poll_status).save(&a_poll.id.to_be_bytes(), &true)?;
+    remove_poll_indexer(deps.storage, &PollStatus::InProgress, a_poll.id);
+    store_poll_indexer(deps.storage, &poll_status, poll_id, &true)?;
 
     // Update poll status
     a_poll.status = poll_status;
     a_poll.total_balance_at_end_poll = Some(staked_weight);
-    poll_store(deps.storage).save(&poll_id.to_be_bytes(), &a_poll)?;
+    store_poll(deps.storage, &poll_id.to_be_bytes(), &a_poll)?;
 
     Ok(Response::new().add_messages(messages).add_attributes(vec![
         ("action", "end_poll"),
@@ -488,8 +487,8 @@ pub fn end_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, Contr
  * Execute a msgs of passed poll as one submsg to catch failures
  */
 pub fn execute_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, ContractError> {
-    let config: Config = config_read(deps.storage).load()?;
-    let a_poll: Poll = poll_store(deps.storage).load(&poll_id.to_be_bytes())?;
+    let config: Config = read_config(deps.storage)?;
+    let a_poll: Poll = read_poll(deps.storage, &poll_id.to_be_bytes())?;
 
     if a_poll.status != PollStatus::Passed {
         return Err(ContractError::PollNotPassed {});
@@ -524,13 +523,13 @@ pub fn execute_poll_messages(
         return Err(ContractError::Unauthorized {});
     }
 
-    let mut a_poll: Poll = poll_store(deps.storage).load(&poll_id.to_be_bytes())?;
+    let mut a_poll: Poll = read_poll(deps.storage, &poll_id.to_be_bytes())?;
 
-    poll_indexer_store(deps.storage, &PollStatus::Passed).remove(&poll_id.to_be_bytes());
-    poll_indexer_store(deps.storage, &PollStatus::Executed).save(&poll_id.to_be_bytes(), &true)?;
+    remove_poll_indexer(deps.storage, &PollStatus::Passed, poll_id);
+    store_poll_indexer(deps.storage, &PollStatus::Executed, poll_id, &true)?;
 
     a_poll.status = PollStatus::Executed;
-    poll_store(deps.storage).save(&poll_id.to_be_bytes(), &a_poll)?;
+    store_poll(deps.storage, &poll_id.to_be_bytes(), &a_poll)?;
 
     let mut messages: Vec<CosmosMsg> = vec![];
     if let Some(all_msgs) = a_poll.execute_data {
@@ -555,54 +554,17 @@ pub fn execute_poll_messages(
  * Set the status of a poll to Failed if execute_poll fails
  */
 pub fn fail_poll(deps: DepsMut, poll_id: u64) -> Result<Response, ContractError> {
-    let mut a_poll: Poll = poll_store(deps.storage).load(&poll_id.to_be_bytes())?;
+    let mut a_poll: Poll = read_poll(deps.storage, &poll_id.to_be_bytes())?;
 
-    poll_indexer_store(deps.storage, &PollStatus::Passed).remove(&poll_id.to_be_bytes());
-    poll_indexer_store(deps.storage, &PollStatus::Failed).save(&poll_id.to_be_bytes(), &true)?;
+    remove_poll_indexer(deps.storage, &PollStatus::Passed, poll_id);
+    store_poll_indexer(deps.storage, &PollStatus::Failed, poll_id, &true)?;
 
     a_poll.status = PollStatus::Failed;
-    poll_store(deps.storage).save(&poll_id.to_be_bytes(), &a_poll)?;
+    store_poll(deps.storage, &poll_id.to_be_bytes(), &a_poll)?;
 
     Ok(Response::new().add_attributes(vec![
         ("action", "fail_poll"),
         ("poll_id", poll_id.to_string().as_str()),
-    ]))
-}
-
-/// SnapshotPoll is used to take a snapshot of the staked amount for quorum calculation
-pub fn snapshot_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, ContractError> {
-    let config: Config = config_read(deps.storage).load()?;
-    let mut a_poll: Poll = poll_store(deps.storage).load(&poll_id.to_be_bytes())?;
-
-    if a_poll.status != PollStatus::InProgress {
-        return Err(ContractError::PollNotInProgress {});
-    }
-
-    let time_to_end = a_poll.end_height - env.block.height;
-
-    if time_to_end > config.snapshot_period {
-        return Err(ContractError::SnapshotHeight {});
-    }
-
-    if a_poll.staked_amount.is_some() {
-        return Err(ContractError::SnapshotAlreadyOccurred {});
-    }
-
-    // store the current staked amount for quorum calculation
-    let state: State = state_store(deps.storage).load()?;
-
-    let staked_amount =
-        query_token_balance(&deps.querier, config.halo_token, env.contract.address)?
-            .checked_sub(state.total_deposit)?;
-
-    a_poll.staked_amount = Some(staked_amount);
-
-    poll_store(deps.storage).save(&poll_id.to_be_bytes(), &a_poll)?;
-
-    Ok(Response::new().add_attributes(vec![
-        attr("action", "snapshot_poll"),
-        attr("poll_id", poll_id.to_string().as_str()),
-        attr("staked_amount", staked_amount.to_string().as_str()),
     ]))
 }
 
@@ -614,27 +576,24 @@ pub fn cast_vote(
     vote: VoteOption,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let config = config_read(deps.storage).load()?;
-    let state = state_read(deps.storage).load()?;
+    let config = read_config(deps.storage)?;
+    let state = read_state(deps.storage)?;
     if poll_id == 0 || state.poll_count < poll_id {
         return Err(ContractError::PollNotFound {});
     }
 
-    let mut a_poll: Poll = poll_store(deps.storage).load(&poll_id.to_be_bytes())?;
+    let mut a_poll: Poll = read_poll(deps.storage, &poll_id.to_be_bytes())?;
     if a_poll.status != PollStatus::InProgress || env.block.height > a_poll.end_height {
         return Err(ContractError::PollNotInProgress {});
     }
 
     // Check the voter already has a vote on the poll
-    if poll_voter_read(deps.storage, poll_id)
-        .load(info.sender.as_bytes())
-        .is_ok()
-    {
+    if read_poll_voter(deps.storage, poll_id, info.sender.clone()).is_ok() {
         return Err(ContractError::AlreadyVoted {});
     }
 
     let key = &info.sender.as_bytes();
-    let mut token_manager = bank_read(deps.storage).may_load(key)?.unwrap_or_default();
+    let mut token_manager = read_bank(deps.storage, key)?.unwrap_or_default();
 
     // convert share to amount
     let total_share = state.total_share;
@@ -664,10 +623,10 @@ pub fn cast_vote(
     token_manager
         .locked_balance
         .push((poll_id, vote_info.clone()));
-    bank_store(deps.storage).save(key, &token_manager)?;
+    store_bank(deps.storage, key, &token_manager)?;
 
     // store poll voter && and update poll data
-    poll_voter_store(deps.storage, poll_id).save(info.sender.as_bytes(), &vote_info)?;
+    store_poll_voter(deps.storage, poll_id, info.sender.clone(), &vote_info)?;
 
     // processing snapshot
     let time_to_end = a_poll.end_height - env.block.height;
@@ -676,7 +635,7 @@ pub fn cast_vote(
         a_poll.staked_amount = Some(total_balance);
     }
 
-    poll_store(deps.storage).save(&poll_id.to_be_bytes(), &a_poll)?;
+    store_poll(deps.storage, &poll_id.to_be_bytes(), &a_poll)?;
 
     Ok(Response::new().add_attributes(vec![
         ("action", "cast_vote"),
@@ -725,7 +684,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractErro
 }
 
 fn query_config(deps: Deps) -> Result<ConfigResponse, ContractError> {
-    let config: Config = config_read(deps.storage).load()?;
+    let config: Config = read_config(deps.storage)?;
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
         halo_token: config.halo_token.to_string(),
@@ -740,7 +699,7 @@ fn query_config(deps: Deps) -> Result<ConfigResponse, ContractError> {
 }
 
 fn query_state(deps: Deps) -> Result<StateResponse, ContractError> {
-    let state: State = state_read(deps.storage).load()?;
+    let state: State = read_state(deps.storage)?;
     Ok(StateResponse {
         poll_count: state.poll_count,
         total_share: state.total_share,
@@ -749,9 +708,9 @@ fn query_state(deps: Deps) -> Result<StateResponse, ContractError> {
 }
 
 fn query_poll(deps: Deps, poll_id: u64) -> Result<PollResponse, ContractError> {
-    let poll = match poll_read(deps.storage).may_load(&poll_id.to_be_bytes())? {
-        Some(poll) => Some(poll),
-        None => return Err(ContractError::PollNotFound {}),
+    let poll = match read_poll(deps.storage, &poll_id.to_be_bytes()) {
+        Ok(poll) => Some(poll),
+        Err(_) => return Err(ContractError::PollNotFound {}),
     }
     .unwrap();
 
@@ -850,9 +809,9 @@ fn query_voters(
     limit: Option<u32>,
     order_by: Option<OrderBy>,
 ) -> Result<VotersResponse, ContractError> {
-    let poll: Poll = match poll_read(deps.storage).may_load(&poll_id.to_be_bytes())? {
-        Some(poll) => Some(poll),
-        None => return Err(ContractError::PollNotFound {}),
+    let poll: Poll = match read_poll(deps.storage, &poll_id.to_be_bytes()) {
+        Ok(poll) => Some(poll),
+        Err(_) => return Err(ContractError::PollNotFound {}),
     }
     .unwrap();
 
@@ -888,6 +847,55 @@ fn query_voters(
 }
 
 #[entry_point]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    // Re-save the config because of storage switch (singleton -> Item)
+    // Should be removed after v1.6 deployment
+
+    // CONFIG
+    let config_key: &[u8] = b"config";
+    let prefixed_config_key: &[u8] = &cosmwasm_storage::to_length_prefixed(config_key);
+    let data = deps
+        .storage
+        .get(prefixed_config_key)
+        .ok_or_else(|| StdError::NotFound {
+            kind: "Config".to_string(),
+        })?;
+    let config: Config = cosmwasm_std::from_slice(&data)?;
+    deps.storage.set(
+        config_key,
+        &cosmwasm_std::to_vec(&Config {
+            owner: config.owner,
+            halo_token: config.halo_token,
+            quorum: config.quorum,
+            threshold: config.threshold,
+            voting_period: config.voting_period,
+            timelock_period: config.timelock_period,
+            proposal_deposit: config.proposal_deposit,
+            snapshot_period: config.snapshot_period,
+            registrar_contract: config.registrar_contract,
+            unbonding_period: config.unbonding_period,
+            gov_hodler: config.gov_hodler,
+        })?,
+    );
+
+    // STATE
+    let state_key: &[u8] = b"state";
+    let prefixed_state_key: &[u8] = &cosmwasm_storage::to_length_prefixed(state_key);
+    let data = deps
+        .storage
+        .get(prefixed_state_key)
+        .ok_or_else(|| StdError::NotFound {
+            kind: "State".to_string(),
+        })?;
+    let state: State = cosmwasm_std::from_slice(&data)?;
+    deps.storage.set(
+        state_key,
+        &cosmwasm_std::to_vec(&State {
+            poll_count: state.poll_count,
+            total_share: state.total_share,
+            total_deposit: state.total_deposit,
+        })?,
+    );
+
     Ok(Response::default())
 }

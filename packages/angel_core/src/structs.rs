@@ -106,6 +106,13 @@ impl RebalanceDetails {
 pub struct EndowmentEntry {
     pub address: Addr,
     pub status: EndowmentStatus,
+    pub name: Option<String>,
+    pub logo: Option<String>,
+    pub image: Option<String>,
+    pub owner: Option<String>,
+    pub tier: Option<Tier>,
+    pub un_sdg: Option<u64>,
+    pub endow_type: Option<EndowmentType>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -127,6 +134,46 @@ impl fmt::Display for EndowmentStatus {
                 EndowmentStatus::Approved => "1",
                 EndowmentStatus::Frozen => "2",
                 EndowmentStatus::Closed => "3",
+            }
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum Tier {
+    Level1 = 1,
+    Level2 = 2,
+    Level3 = 3,
+}
+
+impl fmt::Display for Tier {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Tier::Level1 => "1",
+                Tier::Level2 => "2",
+                Tier::Level3 => "3",
+            }
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum EndowmentType {
+    Charity,
+    Normal,
+}
+
+impl fmt::Display for EndowmentType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                EndowmentType::Charity => "charity",
+                EndowmentType::Normal => "normal",
             }
         )
     }
@@ -333,5 +380,81 @@ impl GenericBalance {
                 }
             }
         };
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct SocialMedialUrls {
+    pub facebook: Option<String>,
+    pub twitter: Option<String>,
+    pub linkedin: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct AllianceMember {
+    pub name: String,
+    pub logo: Option<String>,
+    pub website: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct TransactionRecord {
+    pub block: u64,
+    pub sender: Addr,
+    pub recipient: Option<Addr>,
+    pub amount: Uint128,
+    pub denom: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct Profile {
+    pub name: String, // name of the Charity Endowment
+    pub overview: String,
+    pub un_sdg: Option<u64>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
+    pub tier: Option<u64>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
+    pub logo: Option<String>,
+    pub image: Option<String>,
+    pub url: Option<String>,
+    pub registration_number: Option<String>,
+    pub country_of_origin: Option<String>,
+    pub street_address: Option<String>,
+    pub contact_email: Option<String>,
+    pub social_media_urls: SocialMedialUrls,
+    pub number_of_employees: Option<u64>,
+    pub average_annual_budget: Option<String>,
+    pub annual_revenue: Option<String>,
+    pub charity_navigator_rating: Option<String>,
+    pub endow_type: EndowmentType,
+}
+
+impl Default for Profile {
+    fn default() -> Self {
+        Profile {
+            name: "".to_string(),
+            overview: "".to_string(),
+            un_sdg: None,
+            tier: None,
+            logo: None,
+            image: None,
+            url: None,
+            registration_number: None,
+            country_of_origin: None,
+            street_address: None,
+            contact_email: None,
+            social_media_urls: SocialMedialUrls {
+                facebook: None,
+                twitter: None,
+                linkedin: None,
+            },
+            number_of_employees: None,
+            average_annual_budget: None,
+            annual_revenue: None,
+            charity_navigator_rating: None,
+            endow_type: EndowmentType::Charity,
+        }
     }
 }

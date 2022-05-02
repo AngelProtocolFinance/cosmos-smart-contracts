@@ -378,6 +378,47 @@ pub fn query_staker_info(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> StdResult<Response> {
+    // Re-save the config because of storage switch (singleton -> Item)
+    // Should be removed after v1.6 deployment
+
+    // CONFIG
+    let config_key: &[u8] = b"config";
+    let prefixed_config_key: &[u8] = &cosmwasm_storage::to_length_prefixed(config_key);
+    let data = deps
+        .storage
+        .get(prefixed_config_key)
+        .ok_or_else(|| StdError::NotFound {
+            kind: "Config".to_string(),
+        })?;
+    let config: Config = cosmwasm_std::from_slice(&data)?;
+    deps.storage.set(
+        config_key,
+        &cosmwasm_std::to_vec(&Config {
+            halo_token: config.halo_token,
+            staking_token: config.staking_token,
+            distribution_schedule: config.distribution_schedule,
+        })?,
+    );
+
+    // STATE
+    let state_key: &[u8] = b"state";
+    let prefixed_state_key: &[u8] = &cosmwasm_storage::to_length_prefixed(state_key);
+    let data = deps
+        .storage
+        .get(prefixed_state_key)
+        .ok_or_else(|| StdError::NotFound {
+            kind: "State".to_string(),
+        })?;
+    let state: State = cosmwasm_std::from_slice(&data)?;
+    deps.storage.set(
+        state_key,
+        &cosmwasm_std::to_vec(&State {
+            last_distributed: state.last_distributed,
+            total_bond_amount: state.total_bond_amount,
+            global_reward_index: state.global_reward_index,
+        })?,
+    );
+
     Ok(Response::default())
 }

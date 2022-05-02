@@ -1,14 +1,19 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
+use crate::state::PROFILE;
+use crate::state::{Config, Endowment, OldState, State, CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
-use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
+use angel_core::structs::EndowmentType;
+use angel_core::structs::{
+    AcceptedTokens, BalanceInfo, Profile, RebalanceDetails, StrategyComponent,
+};
+use cosmwasm_std::StdError;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
-    Response, StdResult, Uint128, WasmQuery,
+    attr, entry_point, from_slice, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env,
+    MessageInfo, QueryRequest, Response, StdResult, Uint128, WasmQuery,
 };
 use cw2::set_contract_version;
 
@@ -20,7 +25,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -40,22 +45,24 @@ pub fn instantiate(
 
     let registrar_config: ConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: msg.registrar_contract,
+            contract_addr: msg.registrar_contract.clone(),
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
+    let default_vault = match registrar_config.default_vault {
+        Some(addr) => addr,
+        None => return Err(ContractError::ContractNotConfigured {}),
+    };
     ENDOWMENT.save(
         deps.storage,
         &Endowment {
             owner: deps.api.addr_validate(&msg.owner)?, // Addr
             beneficiary: deps.api.addr_validate(&msg.beneficiary)?, // Addr
-            name: msg.name.clone(),
-            description: msg.description.clone(),
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
-            maturity_time: msg.maturity_time,                       // Option<u64>
-            maturity_height: msg.maturity_height,                   // Option<u64>
+            maturity_time: msg.maturity_time,           // Option<u64>
+            maturity_height: msg.maturity_height,       // Option<u64>
             strategies: vec![StrategyComponent {
-                vault: deps.api.addr_validate(&registrar_config.default_vault)?,
+                vault: deps.api.addr_validate(&default_vault)?,
                 locked_percentage: Decimal::one(),
                 liquid_percentage: Decimal::one(),
             }],
@@ -71,10 +78,31 @@ pub fn instantiate(
             balances: BalanceInfo::default(),
             closing_endowment: false,
             closing_beneficiary: None,
+            transactions: vec![],
         },
     )?;
 
-    Ok(Response::default())
+    let mut profile = msg.profile;
+
+    if info
+        .sender
+        .ne(&deps.api.addr_validate(msg.registrar_contract.as_str())?)
+    {
+        profile.endow_type = EndowmentType::Normal;
+    }
+
+    PROFILE.save(deps.storage, &profile)?;
+
+    Ok(Response::default().add_attributes(vec![
+        attr("endow_name", profile.name),
+        attr("endow_owner", msg.owner),
+        attr("endow_type", profile.endow_type.to_string()),
+        attr("endow_logo", profile.logo.unwrap_or_else(|| "".to_string())),
+        attr(
+            "endow_image",
+            profile.image.unwrap_or_else(|| "".to_string()),
+        ),
+    ]))
 }
 
 #[entry_point]
@@ -115,6 +143,7 @@ pub fn execute(
         ExecuteMsg::UpdateGuardians { add, remove } => {
             executers::update_guardians(deps, env, info, add, remove)
         }
+        ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
     }
 }
 
@@ -125,10 +154,41 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::State {} => to_binary(&queriers::query_state(deps)?),
         QueryMsg::Endowment {} => to_binary(&queriers::query_endowment_details(deps)?),
+        QueryMsg::GetProfile {} => to_binary(&queriers::query_profile(deps)?),
+        QueryMsg::GetTxRecords {
+            sender,
+            recipient,
+            denom,
+        } => to_binary(&queriers::query_transactions(
+            deps, sender, recipient, denom,
+        )?),
     }
 }
 
 #[entry_point]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    // Documentation on performing updates during migration
+    // https://docs.cosmwasm.com/docs/1.0/smart-contracts/migration/#using-migrate-to-update-otherwise-immutable-state
+    const STATE_KEY: &[u8] = b"state";
+    let data = deps.storage.get(STATE_KEY).ok_or_else(|| {
+        ContractError::Std(StdError::NotFound {
+            kind: "State".to_string(),
+        })
+    })?;
+    let state: OldState = from_slice(&data)?;
+
+    deps.storage.set(
+        STATE_KEY,
+        &to_vec(&State {
+            donations_received: state.donations_received,
+            balances: state.balances,
+            closing_endowment: state.closing_endowment,
+            closing_beneficiary: state.closing_beneficiary,
+            transactions: vec![],
+        })?,
+    );
+
+    const PROFILE_KEY: &[u8] = b"profile";
+    deps.storage.set(PROFILE_KEY, &to_vec(&msg.profile)?);
     Ok(Response::default())
 }

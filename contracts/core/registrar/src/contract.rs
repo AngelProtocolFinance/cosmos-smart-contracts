@@ -1,14 +1,18 @@
 use crate::executers;
 use crate::queriers;
+use crate::state::OldEndowmentEntry;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::SplitDetails;
+use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdResult,
+    entry_point, from_slice, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Reply,
+    Response, StdError, StdResult,
 };
 use cw2::set_contract_version;
+use cw_storage_plus::Path;
+use std::ops::Deref;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -31,14 +35,13 @@ pub fn instantiate(
     .unwrap();
 
     let configs = Config {
-        owner: info.sender.clone(),
-        guardian_angels: info.sender.clone(),
-        index_fund_contract: info.sender.clone(),
+        owner: info.sender,
+        guardian_angels: None,
+        index_fund_contract: None,
         accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
-        approved_charities: vec![],
         treasury: deps.api.addr_validate(&msg.treasury)?,
         tax_rate,
-        default_vault: msg.default_vault.unwrap_or(info.sender),
+        default_vault: msg.default_vault,
         guardians_multisig_addr: None,
         endowment_owners_group_addr: None,
         split_to_liquid: splits,
@@ -68,10 +71,6 @@ pub fn execute(
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
         }
-        ExecuteMsg::CharityAdd { charity } => executers::charity_add(deps, env, info, charity),
-        ExecuteMsg::CharityRemove { charity } => {
-            executers::charity_remove(deps, env, info, charity)
-        }
         ExecuteMsg::VaultAdd(msg) => executers::vault_add(deps, env, info, msg),
         ExecuteMsg::VaultRemove { vault_addr } => {
             executers::vault_remove(deps, env, info, vault_addr)
@@ -84,7 +83,9 @@ pub fn execute(
             collector_address,
             collector_share,
         } => executers::harvest(deps, env, info, collector_address, collector_share),
-        ExecuteMsg::MigrateAccounts {} => executers::migrate_accounts(deps, env, info),
+        ExecuteMsg::UpdateEndowmentType(msg) => {
+            executers::update_endowment_type(deps, env, info, msg)
+        }
     }
 }
 
@@ -106,7 +107,16 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Endowment { endowment_addr } => {
             to_binary(&queriers::query_endowment_details(deps, endowment_addr)?)
         }
-        QueryMsg::EndowmentList {} => to_binary(&queriers::query_endowment_list(deps)?),
+        QueryMsg::EndowmentList {
+            name,
+            owner,
+            status,
+            tier,
+            un_sdg,
+            endow_type,
+        } => to_binary(&queriers::query_endowment_list(
+            deps, name, owner, status, tier, un_sdg, endow_type,
+        )?),
         QueryMsg::ApprovedVaultList { start_after, limit } => to_binary(
             &queriers::query_approved_vault_list(deps, start_after, limit)?,
         ),
@@ -123,6 +133,37 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    const REGISTRY_KEY: &[u8] = b"registry";
+    // msg pass in an { endowments: [ (address, status, name, owner, tier), ... ] }
+    for addr in msg.endowments {
+        let old_path: Path<OldEndowmentEntry> = Path::new(REGISTRY_KEY, &[addr.clone().as_bytes()]);
+        let old_key = old_path.deref();
+        let data = deps.storage.get(old_key).ok_or_else(|| {
+            ContractError::Std(StdError::NotFound {
+                kind: "OldEndowmentEntry".to_string(),
+            })
+        })?;
+        let old_endowment_entry: OldEndowmentEntry = from_slice(&data)?;
+
+        let path: Path<EndowmentEntry> = Path::new(REGISTRY_KEY, &[addr.clone().as_bytes()]);
+        let key = path.deref();
+
+        // set the new EndowmentEntry at the given key
+        deps.storage.set(
+            key,
+            &to_vec(&EndowmentEntry {
+                address: old_endowment_entry.address, // Addr,
+                status: old_endowment_entry.status,   // EndowmentStatus
+                owner: None,                          // String,
+                name: None,                           // String,
+                tier: None,                           // Option<Tier>
+                un_sdg: None,                         // Option<u64>
+                endow_type: None,                     // EndowmentType,
+                logo: None,
+                image: None,
+            })?,
+        );
+    }
     Ok(Response::default())
 }

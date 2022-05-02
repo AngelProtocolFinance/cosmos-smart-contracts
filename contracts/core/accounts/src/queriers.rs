@@ -1,8 +1,8 @@
-use crate::state::{CONFIG, ENDOWMENT, STATE};
-use angel_core::messages::vault::QueryMsg as VaultQuerier;
+use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::responses::accounts::*;
 use angel_core::structs::BalanceResponse;
-use cosmwasm_std::{to_binary, Deps, Env, QueryRequest, StdResult, WasmQuery};
+use angel_core::{messages::vault::QueryMsg as VaultQuerier, structs::TransactionRecord};
+use cosmwasm_std::{to_binary, Addr, Deps, Env, QueryRequest, StdError, StdResult, WasmQuery};
 use cw2::get_contract_version;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -61,8 +61,6 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
     Ok(EndowmentDetailsResponse {
         owner: endowment.owner,
         beneficiary: endowment.beneficiary,
-        name: endowment.name,
-        description: endowment.description,
         withdraw_before_maturity: endowment.withdraw_before_maturity,
         maturity_time: endowment.maturity_time,
         maturity_height: endowment.maturity_height,
@@ -70,4 +68,78 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
         rebalance: endowment.rebalance,
         guardians: endowment.guardian_set,
     })
+}
+
+pub fn query_profile(deps: Deps) -> StdResult<ProfileResponse> {
+    let profile = PROFILE.load(deps.storage)?;
+    Ok(ProfileResponse {
+        name: profile.name,
+        overview: profile.overview,
+        un_sdg: profile.un_sdg,
+        tier: profile.tier,
+        logo: profile.logo,
+        image: profile.image,
+        url: profile.url,
+        registration_number: profile.registration_number,
+        country_of_origin: profile.country_of_origin,
+        street_address: profile.street_address,
+        contact_email: profile.contact_email,
+        social_media_urls: profile.social_media_urls,
+        number_of_employees: profile.number_of_employees,
+        average_annual_budget: profile.average_annual_budget,
+        annual_revenue: profile.annual_revenue,
+        charity_navigator_rating: profile.charity_navigator_rating,
+    })
+}
+
+pub fn query_transactions(
+    deps: Deps,
+    sender: Option<String>,
+    recipient: Option<String>,
+    denom: Option<String>,
+) -> StdResult<TxRecordsResponse> {
+    let txs = STATE.load(deps.storage)?.transactions;
+
+    let txs = match sender {
+        Some(addr) => {
+            if deps.api.addr_validate(&addr).is_err() {
+                return Err(StdError::GenericErr {
+                    msg: "Invalid sender address".to_string(),
+                });
+            }
+            txs.into_iter()
+                .filter(|tx| tx.sender == addr)
+                .collect::<Vec<TransactionRecord>>()
+        }
+        None => txs,
+    };
+
+    let txs = match recipient {
+        Some(addr) => {
+            if deps.api.addr_validate(&addr).is_err() {
+                return Err(StdError::GenericErr {
+                    msg: "Invalid recipient address".to_string(),
+                });
+            }
+            txs.into_iter()
+                .filter(|tx| {
+                    *tx.recipient
+                        .as_ref()
+                        .unwrap_or(&Addr::unchecked("anonymous"))
+                        == addr
+                })
+                .collect::<Vec<TransactionRecord>>()
+        }
+        None => txs,
+    };
+
+    let txs = match denom {
+        Some(denom) => txs
+            .into_iter()
+            .filter(|tx| tx.denom == denom)
+            .collect::<Vec<TransactionRecord>>(),
+        None => txs,
+    };
+
+    Ok(TxRecordsResponse { txs })
 }

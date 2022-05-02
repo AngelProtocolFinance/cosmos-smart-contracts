@@ -1,13 +1,10 @@
+use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::{Addr, Deps, StdResult, Storage};
-use cosmwasm_storage::{bucket, bucket_read, singleton, singleton_read, ReadonlyBucket};
 use halo_token::common::OrderBy;
 use halo_token::vesting::VestingInfo;
-
-const KEY_CONFIG: &[u8] = b"config";
-const PREFIX_KEY_VESTING_INFO: &[u8] = b"vesting_info";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
@@ -16,16 +13,18 @@ pub struct Config {
     pub genesis_time: u64,
 }
 
+pub const CONFIG: Item<Config> = Item::new("config");
 pub fn store_config(storage: &mut dyn Storage, config: &Config) -> StdResult<()> {
-    singleton::<Config>(storage, KEY_CONFIG).save(config)
+    CONFIG.save(storage, config)
 }
 
 pub fn read_config(storage: &dyn Storage) -> StdResult<Config> {
-    singleton_read::<Config>(storage, KEY_CONFIG).load()
+    CONFIG.load(storage)
 }
 
+pub const VESTING_INFO: Map<&[u8], VestingInfo> = Map::new("vesting_info");
 pub fn read_vesting_info(storage: &dyn Storage, address: &Addr) -> StdResult<VestingInfo> {
-    bucket_read::<VestingInfo>(storage, PREFIX_KEY_VESTING_INFO).load(address.as_bytes())
+    VESTING_INFO.load(storage, address.as_bytes())
 }
 
 pub fn store_vesting_info(
@@ -33,7 +32,7 @@ pub fn store_vesting_info(
     address: &Addr,
     vesting_info: &VestingInfo,
 ) -> StdResult<()> {
-    bucket::<VestingInfo>(storage, PREFIX_KEY_VESTING_INFO).save(address.as_bytes(), vesting_info)
+    VESTING_INFO.save(storage, address.as_bytes(), vesting_info)
 }
 
 const MAX_LIMIT: u32 = 30;
@@ -51,11 +50,13 @@ pub fn read_vesting_infos<'a>(
         _ => (None, calc_range_end_addr(start_after), OrderBy::Desc),
     };
 
-    let vesting_accounts: ReadonlyBucket<'a, VestingInfo> =
-        ReadonlyBucket::new(storage, PREFIX_KEY_VESTING_INFO);
-
-    vesting_accounts
-        .range(start.as_deref(), end.as_deref(), order_by.into())
+    VESTING_INFO
+        .range(
+            storage,
+            start.map(|v| Bound::inclusive(&*v)),
+            end.map(|v| Bound::inclusive(&*v)),
+            order_by.into(),
+        )
         .take(limit)
         .map(|item| {
             let (k, v) = item?;
@@ -78,8 +79,5 @@ fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
 
 // this will set the first key after the provided key, by appending a 1 byte
 fn calc_range_end_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    match start_after {
-        Some(addr) => Some(addr.as_bytes().to_vec()),
-        _ => None,
-    }
+    start_after.map(|addr| addr.as_bytes().to_vec())
 }

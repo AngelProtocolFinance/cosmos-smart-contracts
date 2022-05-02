@@ -1,15 +1,12 @@
-use crate::state::{
-    read_registry_entries, read_vaults, registry_read, registry_store, vault_read, vault_store,
-    CONFIG,
-};
+use crate::state::{read_vaults, registry_read, registry_store, vault_read, vault_store, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, YieldVault};
+use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response,
-    StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
+    attr, to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn,
+    Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
 };
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
@@ -49,9 +46,7 @@ pub fn update_endowment_status(
 
     // look up the endowment in the Registry. Will fail if doesn't exist
     let endowment_addr = msg.endowment_addr.as_bytes();
-    let mut endowment_entry = registry_read(deps.storage)
-        .may_load(endowment_addr)?
-        .unwrap();
+    let mut endowment_entry = registry_read(deps.storage, endowment_addr)?;
 
     let msg_endowment_status = match msg.status {
         0 => EndowmentStatus::Inactive,
@@ -73,12 +68,17 @@ pub fn update_endowment_status(
 
     // update entry status & save to the Registry
     endowment_entry.status = msg_endowment_status.clone();
-    registry_store(deps.storage).save(endowment_addr, &endowment_entry)?;
+    registry_store(deps.storage, endowment_addr, &endowment_entry)?;
 
     // Take different actions on the affected Accounts SC, based on the status passed
     // Build out list of SubMsgs to send to the Account SC and/or Index Fund SC
     // 1. INDEX FUND - Update fund members list removing a member if the member can no longer accept deposits
     // 2. ACCOUNTS - Update the Endowment deposit/withdraw approval config settings based on the new status
+
+    let index_fund_contract = match config.index_fund_contract {
+        Some(addr) => addr,
+        None => return Err(ContractError::ContractNotConfigured {}),
+    };
 
     let sub_messages: Vec<SubMsg> = match msg_endowment_status {
         // Allowed to receive donations and process withdrawals
@@ -102,7 +102,7 @@ pub fn update_endowment_status(
             build_account_status_change_msg(endowment_entry.address.to_string(), false, false),
             // trigger the removal of this endowment from all Index Funds
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: config.index_fund_contract.to_string(),
+                contract_addr: index_fund_contract.to_string(),
                 msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
                     angel_core::messages::index_fund::RemoveMemberMsg {
                         member: endowment_entry.address.to_string(),
@@ -165,7 +165,6 @@ pub fn update_config(
     }
 
     // update config attributes with newly passed configs
-    config.approved_charities = msg.charities_list(deps.api)?;
     config.accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
     config.guardians_multisig_addr = match msg.guardians_multisig_addr {
         Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
@@ -191,14 +190,14 @@ pub fn update_config(
         Some(contract_addr) => Some(deps.api.addr_validate(&contract_addr)?),
         None => config.charity_shares_contract,
     };
-    config.default_vault = deps.api.addr_validate(
-        &msg.default_vault
-            .unwrap_or_else(|| config.default_vault.to_string()),
-    )?;
-    config.index_fund_contract = deps.api.addr_validate(
-        &msg.index_fund_contract
-            .unwrap_or_else(|| config.index_fund_contract.to_string()),
-    )?;
+    config.default_vault = match msg.default_vault {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => config.default_vault,
+    };
+    config.index_fund_contract = match msg.index_fund_contract {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => config.index_fund_contract,
+    };
     config.treasury = deps
         .api
         .addr_validate(&msg.treasury.unwrap_or_else(|| config.treasury.to_string()))?;
@@ -228,20 +227,10 @@ pub fn update_config(
 pub fn create_endowment(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: CreateEndowmentMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-
-    // check that the sender is an approved charity address
-    let pos = config
-        .approved_charities
-        .iter()
-        .position(|a| *a == info.sender);
-    // ignore if that member was found in the list
-    if pos == None && info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
 
     if config.accounts_code_id == 0 {
         return Err(ContractError::ContractNotConfigured {});
@@ -256,11 +245,10 @@ pub fn create_endowment(
             registrar_contract: env.contract.address.to_string(),
             owner: msg.owner,
             beneficiary: msg.beneficiary,
-            name: msg.name,
-            description: msg.description,
             withdraw_before_maturity: msg.withdraw_before_maturity,
             maturity_time: msg.maturity_time,
             maturity_height: msg.maturity_height,
+            profile: msg.profile,
         })?,
         funds: vec![],
     };
@@ -275,83 +263,6 @@ pub fn create_endowment(
     Ok(Response::new()
         .add_submessage(sub_message)
         .add_attribute("action", "create_endowment"))
-}
-
-pub fn migrate_accounts(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let mut messages = vec![];
-    for endowment in read_registry_entries(deps.storage)?.into_iter() {
-        let wasm_msg = WasmMsg::Migrate {
-            contract_addr: endowment.address.to_string(),
-            new_code_id: config.accounts_code_id,
-            msg: to_binary(&angel_core::messages::accounts::MigrateMsg {})?,
-        };
-        messages.push(CosmosMsg::Wasm(wasm_msg));
-    }
-    Ok(Response::new()
-        .add_messages(messages)
-        .add_attribute("action", "migrate_accounts"))
-}
-
-pub fn charity_add(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    charity: String,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // save the new charity to the list if it does not already exist
-    let addr = deps.api.addr_validate(&charity)?;
-    let pos = config.approved_charities.iter().position(|a| *a == addr);
-    // ignore if that member was found in the list
-    if pos == None {
-        CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-            config.approved_charities.push(addr);
-            Ok(config)
-        })?;
-    }
-
-    Ok(Response::default())
-}
-
-pub fn charity_remove(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    charity: String,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // remove the charity from the list if it exists
-    let addr = deps.api.addr_validate(&charity)?;
-    let pos = config.approved_charities.iter().position(|a| *a == addr);
-    // ignore if that member was found in the list
-    if pos != None {
-        CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-            config.approved_charities.swap_remove(pos.unwrap());
-            Ok(config)
-        })?;
-    }
-
-    Ok(Response::default())
 }
 
 pub fn vault_add(
@@ -370,18 +281,19 @@ pub fn vault_add(
     let addr = deps.api.addr_validate(&msg.vault_addr)?;
 
     // check that the vault does not already exist for a given address in storage
-    if vault_read(deps.storage).may_load(addr.as_bytes()).unwrap() != None {
+    if vault_read(deps.storage, addr.as_bytes()).is_ok() {
         return Err(ContractError::VaultAlreadyExists {});
     }
 
     // save the new vault to storage
-    vault_store(deps.storage).save(
+    vault_store(
+        deps.storage,
         addr.as_bytes(),
         &YieldVault {
             address: addr.clone(),
             input_denom: msg.input_denom,
             yield_token: deps.api.addr_validate(&msg.yield_token)?,
-            approved: true,
+            approved: false,
         },
     )?;
     Ok(Response::default())
@@ -402,7 +314,7 @@ pub fn vault_remove(
     let _addr = deps.api.addr_validate(&vault_addr)?;
 
     // remove the vault from storage
-    vault_store(deps.storage).remove(vault_addr.as_bytes());
+    crate::state::vault_remove(deps.storage, vault_addr.as_bytes());
     Ok(Response::default())
 }
 
@@ -420,11 +332,11 @@ pub fn vault_update_status(
     }
     // try to look up the given vault in Storage
     let addr = deps.api.addr_validate(&vault_addr)?;
-    let mut vault = vault_read(deps.storage).load(addr.as_bytes())?;
+    let mut vault = vault_read(deps.storage, addr.as_bytes())?;
 
     // update new vault approval status attribute from passed arg
     vault.approved = approved;
-    vault_store(deps.storage).save(addr.as_bytes(), &vault)?;
+    vault_store(deps.storage, addr.as_bytes(), &vault)?;
 
     Ok(Response::default())
 }
@@ -437,25 +349,64 @@ pub fn new_accounts_reply(
     match msg {
         ContractResult::Ok(subcall) => {
             let mut endowment_addr = String::from("");
+            let mut endowment_name = String::from("");
+            let mut endowment_owner = String::from("");
+            let mut endowment_type = String::from("");
+            let mut endowment_logo = String::from("");
+            let mut endowment_image = String::from("");
             for event in subcall.events {
-                if event.ty == *"instantiate_contract" {
+                if event.ty == *"wasm" {
                     for attrb in event.attributes {
                         if attrb.key == "contract_address" {
-                            endowment_addr = attrb.value;
+                            endowment_addr = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_name" {
+                            endowment_name = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_owner" {
+                            endowment_owner = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_type" {
+                            endowment_type = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_logo" {
+                            endowment_logo = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_image" {
+                            endowment_image = attrb.value.clone();
                         }
                     }
                 }
             }
             // Register the new Endowment on success Reply
             let addr = deps.api.addr_validate(&endowment_addr)?;
-            registry_store(deps.storage).save(
+            registry_store(
+                deps.storage,
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,
+                    name: Some(endowment_name.clone()),
+                    owner: Some(endowment_owner.clone()),
                     status: EndowmentStatus::Inactive,
+                    tier: None,
+                    un_sdg: None,
+                    endow_type: match endowment_type.as_str() {
+                        "charity" => Some(EndowmentType::Charity),
+                        "normal" => Some(EndowmentType::Normal),
+                        _ => unimplemented!(),
+                    },
+                    logo: Some(endowment_logo.clone()),
+                    image: Some(endowment_image.clone()),
                 },
             )?;
-            Ok(Response::default())
+            Ok(Response::default().add_attributes(vec![
+                attr("reply", "instantiate_endowment"),
+                attr("addr", endowment_addr),
+                attr("name", endowment_name),
+                attr("owner", endowment_owner),
+                attr("logo", endowment_logo),
+                attr("image", endowment_image),
+            ]))
         }
         ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
@@ -510,4 +461,34 @@ fn harvest_msg(account: String, collector_address: String, collector_share: Deci
         gas_limit: None,
         reply_on: ReplyOn::Never,
     }
+}
+
+pub fn update_endowment_type(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateEndowmentTypeMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let endow_addr = deps.api.addr_validate(&msg.endowment_addr)?;
+
+    if info.sender.ne(&config.owner) && info.sender.ne(&endow_addr) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // look up the endowment in the Registry. Will fail if doesn't exist
+    let endowment_addr = msg.endowment_addr.as_bytes();
+    let mut endowment_entry = registry_read(deps.storage, endowment_addr)?;
+
+    endowment_entry.name = msg.name;
+    endowment_entry.owner = msg.owner;
+    endowment_entry.endow_type = msg.endow_type;
+
+    if let Some(tier) = msg.tier {
+        endowment_entry.tier = tier;
+    }
+
+    registry_store(deps.storage, endowment_addr, &endowment_entry)?;
+
+    Ok(Response::new().add_attribute("action", "update_endowment_entry"))
 }

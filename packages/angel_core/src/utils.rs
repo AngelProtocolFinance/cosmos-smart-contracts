@@ -53,7 +53,7 @@ pub fn split_checks(
     // max musst be less than min
     // min must be less than max
     // default must be somewhere between max & min
-    if max < min || min > max || (default > max || default < min) {
+    if !(max >= min && default <= max && default >= min) {
         return Err(ContractError::InvalidInputs {});
     }
 
@@ -203,7 +203,7 @@ pub fn redeem_from_vaults(
                 })?,
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
-        if yield_vault.approved != true {
+        if !yield_vault.approved {
             return Err(ContractError::InvalidInputs {});
         }
         // create a withdraw message for X Vault, noting amounts for Locked / Liquid
@@ -224,8 +224,9 @@ pub fn withdraw_from_vaults(
     registrar_contract: String,
     beneficiary: &Addr,
     sources: Vec<FundingSource>,
-) -> Result<Vec<SubMsg>, ContractError> {
+) -> Result<(Vec<SubMsg>, Uint128), ContractError> {
     let mut withdraw_messages = vec![];
+    let mut tx_amounts = Uint128::zero();
 
     // redeem amounts from sources listed
     for source in sources.iter() {
@@ -239,7 +240,7 @@ pub fn withdraw_from_vaults(
                     })?,
                 }))?;
             let yield_vault: YieldVault = vault_config.vault;
-            if yield_vault.approved != true {
+            if !yield_vault.approved {
                 return Err(ContractError::InvalidInputs {});
             }
             let withdraw_msg = AccountWithdrawMsg {
@@ -247,6 +248,9 @@ pub fn withdraw_from_vaults(
                 locked: source.locked,
                 liquid: source.liquid,
             };
+
+            tx_amounts += source.locked;
+            tx_amounts += source.liquid;
 
             // create a withdraw message for X Vault, noting amounts for Locked / Liquid
             withdraw_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -259,7 +263,7 @@ pub fn withdraw_from_vaults(
             })));
         }
     }
-    Ok(withdraw_messages)
+    Ok((withdraw_messages, tx_amounts))
 }
 
 pub fn deposit_to_vaults(

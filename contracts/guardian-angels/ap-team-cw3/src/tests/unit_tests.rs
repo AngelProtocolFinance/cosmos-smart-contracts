@@ -73,7 +73,6 @@ fn instantiate_flex(
 ) -> Addr {
     let flex_id = app.store_code(contract_flex());
     let msg = crate::msg::InstantiateMsg {
-        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
         group_addr: group.to_string(),
         threshold,
         max_voting_period,
@@ -181,7 +180,6 @@ fn test_instantiate_works() {
 
     // Zero required weight fails
     let instantiate_msg = InstantiateMsg {
-        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
         group_addr: group_addr.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 0 },
         max_voting_period,
@@ -200,7 +198,6 @@ fn test_instantiate_works() {
 
     // Total weight less than required weight not allowed
     let instantiate_msg = InstantiateMsg {
-        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
         group_addr: group_addr.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 100 },
         max_voting_period,
@@ -222,7 +219,6 @@ fn test_instantiate_works() {
 
     // All valid
     let instantiate_msg = InstantiateMsg {
-        registrar_contract: "REGISTRARGSDRGSDRGSDRGFG".to_string(),
         group_addr: group_addr.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 1 },
         max_voting_period,
