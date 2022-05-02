@@ -170,6 +170,42 @@ export async function testUpdateEndowmentsStatus(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: Can update an Endowment's Entry from the Registrar
+//    Possible Values:
+//      "address": endowment address
+//      "name":    endowment name string | undefined
+//      "owner":   endowment owner address | undefined
+//      "tier":    endowment tier number(1, 2, 3) | undefined
+//      "un_sdg":  endowment "un_sdg" number (u64) | undefined
+//      "endow_type": endowment `EndowmentType` | undefined
+//----------------------------------------------------------------------------------------
+export async function testUpdateEndowmentsType(
+  terra: LocalTerra | LCDClient,
+  apTeam: Wallet,
+  registrar: string,
+  endowments: any[] // [{ address: "terra...", name: "...", owner: "...", tier: "", un_sdg: "", endow_type: "..." }]
+): Promise<void> {
+  process.stdout.write("AP Team updates endowments type(EndowmentEntry info)");
+  let msgs: Msg[] = [];
+  endowments.forEach((endow) => {
+    msgs.push(
+      new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+        update_endowment_type: {
+          endowment_addr: endow.address,
+          name: endow.name,
+          owner: endow.owner,
+          tier: endow.tier,
+          un_sdg: endow.un_sdg,
+          endow_type: endow.endow_type,
+        },
+      })
+    );
+  });
+  await sendTransaction(terra, apTeam, msgs);
+  console.log(chalk.green(" Done!"));
+}
+
+//----------------------------------------------------------------------------------------
 // TEST: AP Team can trigger migration of all Account SC Endowments from Registrar
 //----------------------------------------------------------------------------------------
 
