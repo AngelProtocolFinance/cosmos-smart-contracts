@@ -1,5 +1,5 @@
 use crate::messages::dao_token::CurveType;
-use crate::structs::{EndowmentType, SplitDetails, Tier};
+use crate::structs::{EndowmentType, Profile, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
 use schemars::JsonSchema;
@@ -9,6 +9,10 @@ use serde::{Deserialize, Serialize};
 pub struct MigrateMsg {
     // [ (address, status, name, owner, tier), ...]
     pub endowments: Vec<MigrateEndowment>,
+    // EndowmentTypeFees
+    pub endowtype_fees: MigrateEndowTypeFees,
+    // collector_addr
+    pub collector_addr: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -17,7 +21,16 @@ pub struct MigrateEndowment {
     pub status: u64,
     pub name: String,
     pub owner: String,
-    pub tier: u64,
+    pub tier: Option<u64>,
+    pub un_sdg: Option<u64>,
+    pub logo: Option<String>,
+    pub image: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct MigrateEndowTypeFees {
+    pub endowtype_charity: Option<Decimal>,
+    pub endowtype_normal: Option<Decimal>,
 }
 
 #[derive(Serialize, Deserialize, JsonSchema)]
@@ -55,6 +68,8 @@ pub enum ExecuteMsg {
     },
     // Allows the DANO/AP Team to update the EndowmentEntry
     UpdateEndowmentType(UpdateEndowmentTypeMsg),
+    // Set/Update/Nullify the EndowmentTypeFees
+    UpdateEndowTypeFees(UpdateEndowTypeFeesMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -75,6 +90,8 @@ pub struct CreateEndowmentMsg {
     pub dao: bool,
     pub donation_match: bool,
     pub curve_type: Option<CurveType>,
+    pub beneficiary: String,
+    pub profile: Profile,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -93,6 +110,8 @@ pub struct UpdateConfigMsg {
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
     pub donation_match_charites_contract: Option<String>,
+    pub collector_addr: Option<String>,
+    pub collector_share: Option<Decimal>,
 }
 
 impl UpdateConfigMsg {
@@ -124,7 +143,14 @@ pub struct UpdateEndowmentTypeMsg {
     pub name: Option<String>,
     pub owner: Option<String>,
     pub tier: Option<Option<Tier>>,
+    pub un_sdg: Option<Option<u64>>,
     pub endow_type: Option<EndowmentType>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateEndowTypeFeesMsg {
+    pub endowtype_charity: Option<Decimal>,
+    pub endowtype_normal: Option<Decimal>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -154,10 +180,13 @@ pub enum QueryMsg {
         owner: Option<String>,
         status: Option<String>,
         tier: Option<Option<String>>,
+        un_sdg: Option<Option<u64>>,
         endow_type: Option<String>,
     },
     // Get all Config details for the contract
     Config {},
     // Get a list of all approved Vaults exchange rates
     ApprovedVaultRateList {},
+    // Get all Fees(both BaseFee & all of the EndowmentTypeFees)
+    Fees {},
 }

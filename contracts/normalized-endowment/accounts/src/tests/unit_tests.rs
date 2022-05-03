@@ -5,6 +5,7 @@ use crate::contract::{execute, instantiate, migrate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
+use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{attr, coins, from_binary, Addr, Decimal};
 
@@ -15,6 +16,29 @@ fn test_proper_initialization() {
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
 
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
@@ -35,6 +59,8 @@ fn test_proper_initialization() {
         split_max: Decimal::one(),
         split_min: Decimal::zero(),
         split_default: Decimal::percent(30),
+        beneficiary: charity_addr.clone(),
+        profile: profile,
     };
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();
@@ -49,6 +75,29 @@ fn test_get_config() {
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
 
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
@@ -69,6 +118,8 @@ fn test_get_config() {
         split_max: Decimal::one(),
         split_min: Decimal::zero(),
         split_default: Decimal::percent(30),
+        beneficiary: charity_addr.clone(),
+        profile: profile,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -85,6 +136,30 @@ fn test_update_endowment_settings() {
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
@@ -104,6 +179,8 @@ fn test_update_endowment_settings() {
         split_max: Decimal::one(),
         split_min: Decimal::zero(),
         split_default: Decimal::percent(30),
+        beneficiary: charity_addr.clone(),
+        profile: profile,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -171,6 +248,30 @@ fn test_change_registrar_contract() {
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
@@ -190,6 +291,8 @@ fn test_change_registrar_contract() {
         split_max: Decimal::one(),
         split_min: Decimal::zero(),
         split_default: Decimal::percent(30),
+        beneficiary: charity_addr.clone(),
+        profile: profile,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -235,6 +338,30 @@ fn test_change_admin() {
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
@@ -254,6 +381,8 @@ fn test_change_admin() {
         split_max: Decimal::one(),
         split_min: Decimal::zero(),
         split_default: Decimal::percent(30),
+        beneficiary: charity_addr.clone(),
+        profile: profile,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -299,6 +428,30 @@ fn migrate_contract() {
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let _pleb = "plebAccount".to_string();
 
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
@@ -318,6 +471,8 @@ fn migrate_contract() {
         split_max: Decimal::one(),
         split_min: Decimal::zero(),
         split_default: Decimal::percent(30),
+        beneficiary: charity_addr.clone(),
+        profile: profile.clone(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -325,10 +480,7 @@ fn migrate_contract() {
     assert_eq!(1, res.messages.len());
 
     // try to migrate the contract
-    let msg = MigrateMsg {
-        name: "TEST_CHARITY".to_string(),
-        overview: "Migrate test charity".to_string(),
-    };
+    let msg = MigrateMsg {};
     let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
     assert_eq!(0, res.messages.len())
 }
@@ -342,6 +494,30 @@ fn test_update_strategy() {
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
@@ -361,6 +537,8 @@ fn test_update_strategy() {
         split_max: Decimal::one(),
         split_min: Decimal::zero(),
         split_default: Decimal::percent(30),
+        beneficiary: charity_addr.clone(),
+        profile: profile,
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -457,6 +635,30 @@ fn test_update_endowment_profile() {
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let pleb = "plebAccount".to_string();
 
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
@@ -476,6 +678,8 @@ fn test_update_endowment_profile() {
         split_max: Decimal::one(),
         split_min: Decimal::zero(),
         split_default: Decimal::percent(30),
+        beneficiary: charity_addr.clone(),
+        profile: profile,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -490,7 +694,8 @@ fn test_update_endowment_profile() {
         image: Some("".to_string()),
         url: None,
         registration_number: None,
-        country_city_origin: None,
+        country_of_origin: None,
+        street_address: None,
         contact_email: None,
         facebook: None,
         twitter: None,
@@ -572,6 +777,30 @@ fn test_donate() {
     let depositor = Addr::unchecked("depositor");
 
     // Initialize the Endowment
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
@@ -591,6 +820,8 @@ fn test_donate() {
         split_max: Decimal::one(),
         split_min: Decimal::zero(),
         split_default: Decimal::percent(30),
+        beneficiary: charity_addr.clone(),
+        profile: profile,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -644,6 +875,30 @@ fn test_withdraw() {
     let depositor = Addr::unchecked("depositor");
 
     // Initialize the Endowment
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
     let instantiate_msg = InstantiateMsg {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
@@ -663,6 +918,8 @@ fn test_withdraw() {
         split_max: Decimal::one(),
         split_min: Decimal::zero(),
         split_default: Decimal::percent(30),
+        beneficiary: charity_addr.clone(),
+        profile: profile,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();

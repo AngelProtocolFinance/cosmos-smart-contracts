@@ -37,24 +37,19 @@ pub struct State {
 }
 
 // FUND pagination read util
-pub fn read_funds<'a>(
-    storage: &'a dyn Storage,
+pub fn read_funds(
+    storage: &dyn Storage,
     start_after: Option<u64>,
     limit: Option<u64>,
 ) -> StdResult<Vec<IndexFund>> {
     let start = calc_range_start(start_after);
-    FUND.range(
-        storage,
-        start.and_then(|v| Some(Bound::Inclusive(v))),
-        None,
-        Order::Ascending,
-    )
-    .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
-    .map(|item| {
-        let (_, v) = item?;
-        Ok(v)
-    })
-    .collect()
+    FUND.range(storage, start.map(Bound::Inclusive), None, Order::Ascending)
+        .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
+        .map(|item| {
+            let (_, v) = item?;
+            Ok(v)
+        })
+        .collect()
 }
 
 pub fn read_alliance_members(
@@ -68,8 +63,8 @@ pub fn read_alliance_members(
     ALLIANCE_MEMBERS
         .range(
             storage,
-            start.and_then(|v| Some(Bound::inclusive(&*v))),
-            end.and_then(|v| Some(Bound::inclusive(&*v))),
+            start.map(|v| Bound::inclusive(&*v)),
+            end.map(|v| Bound::inclusive(&*v)),
             Order::Ascending,
         )
         .take(limit)

@@ -53,7 +53,7 @@ pub fn split_checks(
     // max musst be less than min
     // min must be less than max
     // default must be somewhere between max & min
-    if max < min || min > max || (default > max || default < min) {
+    if max < min || default > max || default < min {
         return Err(ContractError::InvalidInputs {});
     }
 
@@ -203,7 +203,7 @@ pub fn redeem_from_vaults(
                 })?,
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
-        if yield_vault.approved != true {
+        if !yield_vault.approved {
             return Err(ContractError::InvalidInputs {});
         }
         // create a withdraw message for X Vault, noting amounts for Locked / Liquid
@@ -240,7 +240,7 @@ pub fn withdraw_from_vaults(
                     })?,
                 }))?;
             let yield_vault: YieldVault = vault_config.vault;
-            if yield_vault.approved != true {
+            if !yield_vault.approved {
                 return Err(ContractError::InvalidInputs {});
             }
             let withdraw_msg = AccountWithdrawMsg {
@@ -372,4 +372,11 @@ pub fn may_pay(info: &MessageInfo, denom: &str) -> Result<Uint128, PaymentError>
         let wrong = info.funds.iter().find(|c| c.denom != denom).unwrap();
         Err(PaymentError::ExtraDenom(wrong.denom.to_string()))
     }
+}
+
+/// Check if the given address is contract or not.
+pub fn check_is_contract(deps: Deps, address: Addr) -> bool {
+    TerraQuerier::new(&deps.querier)
+        .query_contract_info(&address)
+        .is_ok()
 }

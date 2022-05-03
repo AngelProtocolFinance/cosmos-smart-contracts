@@ -74,7 +74,7 @@ pub fn receive_cw20(
 ) -> Result<Response, ContractError> {
     // only reserve asset contract can execute these messages
     let curve = CURVE_STATE.load(deps.storage)?;
-    if curve.reserve_denom != info.sender.to_string() {
+    if curve.reserve_denom != info.sender {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -89,9 +89,9 @@ pub fn receive_cw20(
         Ok(Cw20HookMsg::Buy {}) => execute_buy_cw20(
             deps,
             env,
-            token_holder_address.clone(), // addr of HALO holder who's purchasing
-            cw20_msg.amount,              // how much HALO sending
-            curve_fn,                     // some curve
+            token_holder_address, // addr of HALO holder who's purchasing
+            cw20_msg.amount,      // how much HALO sending
+            curve_fn,             // some curve
         ),
         Ok(Cw20HookMsg::DonorMatch {
             amount,
@@ -395,7 +395,7 @@ fn do_sell(
     CLAIMS.create_claim(
         deps.storage,
         &info.sender,
-        Uint128::from(released),
+        released,
         config.unbonding_period.after(&env.block),
     )?;
 
@@ -627,7 +627,7 @@ pub fn query_curve_info(deps: Deps, curve_fn: CurveFn) -> StdResult<CurveInfoRes
         reserve,
         supply,
         spot_price,
-        reserve_denom: reserve_denom.into(),
+        reserve_denom,
     })
 }
 

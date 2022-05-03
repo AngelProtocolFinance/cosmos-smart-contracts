@@ -42,9 +42,11 @@ pub fn new_cw4_group_reply(
         ContractResult::Ok(subcall) => {
             let mut group_addr = String::from("");
             for event in subcall.events {
-                if event.ty == *"instantiate_contract" {
+                if event.ty == *"wasm" {
                     for attrb in event.attributes {
-                        if attrb.key == "contract_address" {
+                        // This value comes from the custom attrbiute
+                        // set in "cw4_group" instantiation response.
+                        if attrb.key == "group_addr" {
                             group_addr = attrb.value;
                         }
                     }
@@ -412,7 +414,7 @@ pub fn update_strategies(
                     vault_addr: strategy.vault.to_string(),
                 })?,
             }))?;
-        if vault_config.vault.approved != true {
+        if !vault_config.vault.approved {
             return Err(ContractError::InvalidInputs {});
         }
 
@@ -568,7 +570,7 @@ pub fn vault_receipt(
                                 msg: to_binary(&RegistrarQuerier::Config {})?,
                             }))?;
                         let index_fund: String = match registrar_config.index_fund {
-                            Some(addr) => addr.to_string(),
+                            Some(addr) => addr,
                             None => return Err(ContractError::ContractNotConfigured {}),
                         };
 
@@ -812,7 +814,7 @@ pub fn withdraw(
         .add_submessages(withdraw_messages)
         .add_attribute("action", "withdrawal")
         .add_attribute("sender", env.contract.address.to_string())
-        .add_attribute("beneficiary", beneficiary.to_string()))
+        .add_attribute("beneficiary", beneficiary))
 }
 
 pub fn close_endowment(
@@ -869,6 +871,15 @@ pub fn update_profile(
         return Err(ContractError::Unauthorized {});
     }
 
+    let un_sdg = if info.sender == config.owner {
+        match msg.un_sdg {
+            Some(i) => Some(Some(i)),
+            None => Some(None),
+        }
+    } else {
+        None
+    };
+
     let tier = if info.sender == config.owner {
         match msg.tier {
             Some(1) => Some(Some(Tier::Level1)),
@@ -909,7 +920,8 @@ pub fn update_profile(
         profile.image = msg.image;
         profile.url = msg.url;
         profile.registration_number = msg.registration_number;
-        profile.country_city_origin = msg.country_city_origin;
+        profile.country_of_origin = msg.country_of_origin;
+        profile.street_address = msg.street_address;
         profile.contact_email = msg.contact_email;
         profile.number_of_employees = msg.number_of_employees;
         profile.average_annual_budget = msg.average_annual_budget;
@@ -931,9 +943,10 @@ pub fn update_profile(
         msg: to_binary(&RegistrarExecuter::UpdateEndowmentType(
             UpdateEndowmentTypeMsg {
                 endowment_addr: env.contract.address.to_string(),
-                name: msg.name.and_then(|v| Some(v)),
+                name: msg.name,
                 owner: None,
                 tier,
+                un_sdg,
                 endow_type: Some(profile.endow_type),
             },
         ))?,

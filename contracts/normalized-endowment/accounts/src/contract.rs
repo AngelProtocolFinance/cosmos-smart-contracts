@@ -1,7 +1,7 @@
 use crate::executers;
 use crate::queriers;
+use crate::state::PROFILE;
 use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
-use crate::state::{Profile, PROFILE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
@@ -95,24 +95,21 @@ pub fn instantiate(
         },
     )?;
 
-    let mut profile = Profile::default();
-    profile.name = msg.name.clone();
-    profile.overview = msg.description;
-
-    if info
-        .sender
-        .ne(&deps.api.addr_validate(msg.registrar_contract.as_str())?)
-    {
-        profile.endow_type = EndowmentType::Normal;
-    }
-
-    PROFILE.save(deps.storage, &profile)?;
+    PROFILE.save(deps.storage, &msg.profile)?;
 
     // initial default Response to add submessages to
     let mut res: Response = Response::new().add_attributes(vec![
         attr("endow_name", msg.name),
         attr("endow_owner", msg.owner),
-        attr("endow_type", profile.endow_type.to_string()),
+        attr("endow_type", msg.profile.endow_type.to_string()),
+        attr(
+            "endow_logo",
+            msg.profile.logo.unwrap_or_else(|| "".to_string()),
+        ),
+        attr(
+            "endow_image",
+            msg.profile.image.unwrap_or_else(|| "".to_string()),
+        ),
     ]);
 
     // check if CW3/CW4 codes were passed to setup a multisig/group
@@ -155,7 +152,7 @@ pub fn instantiate(
                     reserve_denom: halo_token.to_string(),
                     reserve_decimals: 6,
                     curve_type: msg.curve_type.unwrap(),
-                    halo_token: halo_token.to_string(),
+                    halo_token,
                     unbonding_period: 7,
                 })?,
                 funds: vec![],
@@ -166,53 +163,53 @@ pub fn instantiate(
     }
 
     // check if donation_matching_contract needs to be instantiated
-    if profile.endow_type == EndowmentType::Normal {
-        // setup the donation_matching contract
-        let donation_match_code = match registrar_config.donation_match_code {
-            Some(id) => id,
-            None => {
-                return Err(ContractError::Std(StdError::GenericErr {
-                    msg: "No code id for donation matching contract".to_string(),
-                }))
-            }
-        };
+    if msg.profile.endow_type == EndowmentType::Normal {
+        // // setup the donation_matching contract
+        // let donation_match_code = match registrar_config.donation_match_code {
+        //     Some(id) => id,
+        //     None => {
+        //         return Err(ContractError::Std(StdError::GenericErr {
+        //             msg: "No code id for donation matching contract".to_string(),
+        //         }))
+        //     }
+        // };
 
-        let reserve_token = match registrar_config.halo_token {
-            Some(addr) => addr,
-            None => {
-                return Err(ContractError::Std(StdError::GenericErr {
-                    msg: "No code id for donation matching contract".to_string(),
-                }))
-            }
-        };
-        let pair_info: PairInfo = query_pair_info(
-            &deps.querier,
-            terraswap_factory,
-            &[
-                AssetInfo::NativeToken {
-                    denom: "uusd".to_string(),
-                },
-                AssetInfo::Token {
-                    contract_addr: reserve_token,
-                },
-            ],
-        )?;
-        res = res.add_submessage(SubMsg {
-            id: 4,
-            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                code_id: donation_match_code,
-                admin: None,
-                label: "new donation match contract".to_string(),
-                msg: to_binary(&DonationMatchInstantiateMsg {
-                    reserve_token,
-                    lp_pair: pair_info.contract_addr,
-                    registrar_contract: msg.registrar_contract.clone(),
-                })?,
-                funds: vec![],
-            }),
-            gas_limit: None,
-            reply_on: ReplyOn::Success,
-        })
+        // let reserve_token = match registrar_config.halo_token {
+        //     Some(addr) => addr,
+        //     None => {
+        //         return Err(ContractError::Std(StdError::GenericErr {
+        //             msg: "No code id for donation matching contract".to_string(),
+        //         }))
+        //     }
+        // };
+        // let pair_info: PairInfo = query_pair_info(
+        //     &deps.querier,
+        //     terraswap_factory,
+        //     &[
+        //         AssetInfo::NativeToken {
+        //             denom: "uusd".to_string(),
+        //         },
+        //         AssetInfo::Token {
+        //             contract_addr: reserve_token,
+        //         },
+        //     ],
+        // )?;
+        // res = res.add_submessage(SubMsg {
+        //     id: 4,
+        //     msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+        //         code_id: donation_match_code,
+        //         admin: None,
+        //         label: "new donation match contract".to_string(),
+        //         msg: to_binary(&DonationMatchInstantiateMsg {
+        //             reserve_token,
+        //             lp_pair: pair_info.contract_addr,
+        //             registrar_contract: msg.registrar_contract.clone(),
+        //         })?,
+        //         funds: vec![],
+        //     }),
+        //     gas_limit: None,
+        //     reply_on: ReplyOn::Success,
+        // })
     }
     Ok(res)
 }

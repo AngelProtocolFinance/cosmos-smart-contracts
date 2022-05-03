@@ -137,12 +137,10 @@ pub fn add_schedules_to_vesting_account(
     new_schedules: Vec<(u64, u64, Uint128)>,
 ) -> StdResult<Response> {
     let addr = deps.api.addr_validate(&address).unwrap();
-    match read_vesting_info(deps.storage, &addr) {
-        Ok(mut vesting_info) => {
-            vesting_info.schedules.append(&mut new_schedules.clone());
-            store_vesting_info(deps.storage, &addr, &vesting_info)?;
-        }
-        _ => (),
+
+    if let Ok(mut vesting_info) = read_vesting_info(deps.storage, &addr) {
+        vesting_info.schedules.append(&mut new_schedules.clone());
+        store_vesting_info(deps.storage, &addr, &vesting_info)?;
     }
 
     Ok(Response::new().add_attributes(vec![("action", "add_schedules_to_vesting_account")]))

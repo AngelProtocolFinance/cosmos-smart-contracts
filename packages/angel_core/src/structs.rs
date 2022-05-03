@@ -106,9 +106,12 @@ impl RebalanceDetails {
 pub struct EndowmentEntry {
     pub address: Addr,
     pub name: String,
+    pub logo: Option<String>,
+    pub image: Option<String>,
     pub owner: String,
     pub status: EndowmentStatus,
     pub tier: Option<Tier>,
+    pub un_sdg: Option<u64>,
     pub endow_type: EndowmentType,
 }
 
@@ -404,4 +407,54 @@ pub struct TransactionRecord {
     pub recipient: Option<Addr>,
     pub amount: Uint128,
     pub denom: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct Profile {
+    pub name: String, // name of the Charity Endowment
+    pub overview: String,
+    pub un_sdg: Option<u64>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
+    pub tier: Option<u64>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
+    pub logo: Option<String>,
+    pub image: Option<String>,
+    pub url: Option<String>,
+    pub registration_number: Option<String>,
+    pub country_of_origin: Option<String>,
+    pub street_address: Option<String>,
+    pub contact_email: Option<String>,
+    pub social_media_urls: SocialMedialUrls,
+    pub number_of_employees: Option<u64>,
+    pub average_annual_budget: Option<String>,
+    pub annual_revenue: Option<String>,
+    pub charity_navigator_rating: Option<String>,
+    pub endow_type: EndowmentType,
+}
+
+impl Default for Profile {
+    fn default() -> Self {
+        Profile {
+            name: "".to_string(),
+            overview: "".to_string(),
+            un_sdg: None,
+            tier: None,
+            logo: None,
+            image: None,
+            url: None,
+            registration_number: None,
+            country_of_origin: None,
+            street_address: None,
+            contact_email: None,
+            social_media_urls: SocialMedialUrls {
+                facebook: None,
+                twitter: None,
+                linkedin: None,
+            },
+            number_of_employees: None,
+            average_annual_budget: None,
+            annual_revenue: None,
+            charity_navigator_rating: None,
+            endow_type: EndowmentType::Charity,
+        }
+    }
 }

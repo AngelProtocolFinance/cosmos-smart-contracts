@@ -1,12 +1,15 @@
-use crate::state::{read_vaults, registry_read, registry_store, vault_read, vault_store, CONFIG};
+use crate::state::{
+    endow_type_fees_write, read_vaults, registry_read, registry_store, vault_read, vault_store,
+    CONFIG,
+};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response,
-    StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
+    attr, to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn,
+    Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
 };
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
@@ -208,6 +211,13 @@ pub fn update_config(
         None => config.donation_match_charites_contract,
     };
 
+    config.collector_addr = msg
+        .collector_addr
+        .map(|addr| deps.api.addr_validate(&addr).unwrap());
+    config.collector_share = match msg.collector_share {
+        Some(share) => share,
+        None => config.collector_share,
+    };
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))
@@ -246,8 +256,10 @@ pub fn create_endowment(
             split_max: msg.split_max.unwrap_or(config.split_to_liquid.max),
             split_min: msg.split_min.unwrap_or(config.split_to_liquid.min),
             split_default: msg.split_default.unwrap_or(config.split_to_liquid.default),
-            cw4_members: msg.cw4_members,
             curve_type: msg.curve_type,
+            beneficiary: msg.beneficiary,
+            profile: msg.profile,
+            cw4_members: msg.cw4_members,
         })?,
         funds: vec![],
     };
@@ -351,8 +363,10 @@ pub fn new_accounts_reply(
             let mut endowment_name = String::from("");
             let mut endowment_owner = String::from("");
             let mut endowment_type = String::from("");
+            let mut endowment_logo = String::from("");
+            let mut endowment_image = String::from("");
             for event in subcall.events {
-                if event.ty == *"instantiate_contract" {
+                if event.ty == *"wasm" {
                     for attrb in event.attributes {
                         if attrb.key == "contract_address" {
                             endowment_addr = attrb.value.clone();
@@ -366,6 +380,12 @@ pub fn new_accounts_reply(
                         if attrb.key == "endow_type" {
                             endowment_type = attrb.value.clone();
                         }
+                        if attrb.key == "endow_logo" {
+                            endowment_logo = attrb.value.clone();
+                        }
+                        if attrb.key == "endow_image" {
+                            endowment_image = attrb.value.clone();
+                        }
                     }
                 }
             }
@@ -376,18 +396,28 @@ pub fn new_accounts_reply(
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,
-                    name: endowment_name,
-                    owner: endowment_owner,
+                    name: endowment_name.clone(),
+                    owner: endowment_owner.clone(),
                     status: EndowmentStatus::Inactive,
                     tier: None,
+                    un_sdg: None,
                     endow_type: match endowment_type.as_str() {
                         "charity" => EndowmentType::Charity,
                         "normal" => EndowmentType::Normal,
                         _ => unimplemented!(),
                     },
+                    logo: Some(endowment_logo.clone()),
+                    image: Some(endowment_image.clone()),
                 },
             )?;
-            Ok(Response::default())
+            Ok(Response::default().add_attributes(vec![
+                attr("reply", "instantiate_endowment"),
+                attr("addr", endowment_addr),
+                attr("name", endowment_name),
+                attr("owner", endowment_owner),
+                attr("logo", endowment_logo),
+                attr("image", endowment_image),
+            ]))
         }
         ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
@@ -480,4 +510,23 @@ pub fn update_endowment_type(
     registry_store(deps.storage, endowment_addr, &endowment_entry)?;
 
     Ok(Response::new().add_attribute("action", "update_endowment_entry"))
+}
+
+pub fn update_endowtype_fees(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateEndowTypeFeesMsg,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender.ne(&config.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Update the "fees"
+    endow_type_fees_write(deps.storage, EndowmentType::Charity, msg.endowtype_charity)?;
+    endow_type_fees_write(deps.storage, EndowmentType::Normal, msg.endowtype_normal)?;
+
+    Ok(Response::new().add_attribute("action", "update_endowtype_fees"))
 }

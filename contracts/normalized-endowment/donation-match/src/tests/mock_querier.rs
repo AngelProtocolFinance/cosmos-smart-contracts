@@ -295,6 +295,9 @@ impl WasmMockQuerier {
                         endowments: vec![EndowmentEntry {
                             address: Addr::unchecked("endowment_contract"),
                             name: "test-endow".to_string(),
+                            logo: Some("test-logo".to_string()),
+                            image: Some("test-image".to_string()),
+                            un_sdg: Some(333_u64),
                             owner: "endowment-owner".to_string(),
                             status: EndowmentStatus::Approved,
                             tier: None,
@@ -330,6 +333,9 @@ impl WasmMockQuerier {
                                 endowment: EndowmentEntry {
                                     address: Addr::unchecked("Test-Endowment-Address"),
                                     name: "Test-Endowment-#1".to_string(),
+                                    logo: Some("test-logo".to_string()),
+                                    image: Some("test-image".to_string()),
+                                    un_sdg: Some(333_u64),
                                     owner: "Test-Endowment-Owner".to_string(),
                                     status: angel_core::structs::EndowmentStatus::Approved,
                                     endow_type: angel_core::structs::EndowmentType::Charity,
@@ -360,6 +366,8 @@ impl WasmMockQuerier {
                         index_fund: None,
                         split_to_liquid: SplitDetails::default(),
                         donation_match_charites_contract: Some(MOCK_CONTRACT_ADDR.to_string()),
+                        collector_addr: "collector-addr".to_string(),
+                        collector_share: Decimal::percent(50),
                     })
                     .unwrap(),
                 )),
