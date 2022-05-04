@@ -227,6 +227,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&queriers::query_transactions(
             deps, sender, recipient, denom,
         )?),
+        QueryMsg::GetEndowmentFees {} => to_binary(&queriers::query_endowment_fees(deps)?),
     }
 }
 

@@ -143,3 +143,13 @@ pub fn query_transactions(
 
     Ok(TxRecordsResponse { txs })
 }
+
+pub fn query_endowment_fees(deps: Deps) -> StdResult<EndowmentFeesResponse> {
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    Ok(EndowmentFeesResponse {
+        earnings_fee: endowment.earnings_fee,
+        deposit_fee: endowment.deposit_fee,
+        withdraw_fee: endowment.withdraw_fee,
+        aum_fee: endowment.aum_fee,
+    })
+}

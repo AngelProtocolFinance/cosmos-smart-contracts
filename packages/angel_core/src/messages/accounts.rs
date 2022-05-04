@@ -178,4 +178,6 @@ pub enum QueryMsg {
         recipient: Option<String>,
         denom: Option<String>,
     },
+    // Get all "EndowmentFee"s
+    GetEndowmentFees {},
 }
