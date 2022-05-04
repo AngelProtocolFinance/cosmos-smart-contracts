@@ -196,6 +196,9 @@ pub fn execute(
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
+        ExecuteMsg::UpdateEndowmentFees(msg) => {
+            executers::update_endowment_fees(deps, env, info, msg)
+        }
     }
 }
 

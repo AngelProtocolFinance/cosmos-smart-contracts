@@ -73,6 +73,8 @@ pub enum ExecuteMsg {
     },
     // Update Endowment profile
     UpdateProfile(UpdateProfileMsg),
+    // Update various "EndowmentFee"s
+    UpdateEndowmentFees(UpdateEndowmentFeesMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -156,6 +158,14 @@ pub struct UpdateProfileMsg {
     pub annual_revenue: Option<String>,
     pub charity_navigator_rating: Option<String>,
     pub endow_type: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateEndowmentFeesMsg {
+    pub earnings_fee: Option<EndowmentFee>,
+    pub deposit_fee: Option<EndowmentFee>,
+    pub withdraw_fee: Option<EndowmentFee>,
+    pub aum_fee: Option<EndowmentFee>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

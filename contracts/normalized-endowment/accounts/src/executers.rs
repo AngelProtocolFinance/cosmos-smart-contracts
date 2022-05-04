@@ -889,3 +889,30 @@ pub fn update_profile(
         .add_attribute("action", "update_profile")
         .add_attribute("sender", info.sender.to_string()))
 }
+
+pub fn update_endowment_fees(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateEndowmentFeesMsg,
+) -> Result<Response, ContractError> {
+    // Validation 1. Only "Endowment.owner" or "Config.owner" is able to execute
+    let mut endowment = ENDOWMENT.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender != endowment.owner && info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Update the "EndowmentFee"s
+    endowment.earnings_fee = msg.earnings_fee;
+    endowment.deposit_fee = msg.deposit_fee;
+    endowment.withdraw_fee = msg.withdraw_fee;
+    endowment.aum_fee = msg.aum_fee;
+
+    ENDOWMENT.save(deps.storage, &endowment)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "update_endowment_fees")
+        .add_attribute("sender", info.sender.to_string()))
+}

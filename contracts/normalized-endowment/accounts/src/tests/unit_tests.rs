@@ -1075,3 +1075,116 @@ fn test_query_endowment_fees() {
     assert_eq!(endow_fee_response.withdraw_fee, None);
     assert_eq!(endow_fee_response.aum_fee, None);
 }
+
+#[test]
+fn test_update_endowment_fees() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angelprotocolteamdano".to_string();
+    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
+    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let depositor = Addr::unchecked("depositor");
+
+    // Initialize the Endowment
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: ap_team.clone(),
+        registrar_contract: registrar_contract.clone(),
+        owner: charity_addr.clone(),
+        cw4_members: vec![],
+        dao: false,
+        donation_match: false,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        locked_endowment_configs: vec![],
+        name: "Test Endowment".to_string(),
+        description: "Endowment to power an amazing charity".to_string(),
+        withdraw_before_maturity: false,
+        maturity_time: None,
+        maturity_height: None,
+        curve_type: None,
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::percent(30),
+        beneficiary: charity_addr.clone(),
+        profile: profile,
+        earnings_fee: Some(EndowmentFee {
+            payout_address: Addr::unchecked("payout-wallet"),
+            fee_percentage: Decimal::percent(3),
+            active: false,
+        }),
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let _res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+    // Update the "EndowmentFee"s
+    let update_endowment_fees_msg = UpdateEndowmentFeesMsg {
+        earnings_fee: None,
+        deposit_fee: Some(EndowmentFee {
+            payout_address: Addr::unchecked("another-payout-address"),
+            fee_percentage: Decimal::percent(2),
+            active: true,
+        }),
+        withdraw_fee: None,
+        aum_fee: None,
+    };
+
+    let info = mock_info(&ap_team, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateEndowmentFees(update_endowment_fees_msg),
+    )
+    .unwrap();
+
+    assert_eq!(
+        res.attributes,
+        vec![
+            attr("action", "update_endowment_fees"),
+            attr("sender", ap_team.to_string()),
+        ]
+    );
+
+    // Query the "EndowmentFee"s
+    let query_res = query(deps.as_ref(), mock_env(), QueryMsg::GetEndowmentFees {}).unwrap();
+    let endow_fee_response: EndowmentFeesResponse = from_binary(&query_res).unwrap();
+    assert_eq!(
+        endow_fee_response.deposit_fee,
+        Some(EndowmentFee {
+            payout_address: Addr::unchecked("another-payout-address"),
+            fee_percentage: Decimal::percent(2),
+            active: true,
+        })
+    );
+    assert_eq!(endow_fee_response.earnings_fee, None);
+    assert_eq!(endow_fee_response.withdraw_fee, None);
+    assert_eq!(endow_fee_response.aum_fee, None);
+}
