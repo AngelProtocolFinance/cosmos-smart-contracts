@@ -16,7 +16,7 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, EndowmentType, FundingSource, SocialMedialUrls, SplitDetails,
+    AcceptedTokens, EndowmentFee, EndowmentType, FundingSource, SocialMedialUrls, SplitDetails,
     StrategyComponent, Tier, TransactionRecord,
 };
 use angel_core::utils::{
@@ -24,9 +24,9 @@ use angel_core::utils::{
     withdraw_from_vaults,
 };
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
-    QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgExecutionResponse, Uint128,
-    WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env,
+    Fraction, MessageInfo, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg,
+    SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
 };
 use cw0::Duration;
 use cw20::Balance;
@@ -595,6 +595,8 @@ pub fn deposit(
     msg: DepositMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    let mut res = Response::new();
 
     // check that the Endowment has been approved to receive deposits
     if !config.deposit_approved {
@@ -613,7 +615,7 @@ pub fn deposit(
         return Err(ContractError::InvalidCoinsDeposited {});
     }
 
-    let deposit_amount: Coin = Coin {
+    let mut deposit_amount: Coin = Coin {
         denom: "uusd".to_string(),
         amount: info
             .funds
@@ -625,6 +627,30 @@ pub fn deposit(
 
     if deposit_amount.amount.is_zero() {
         return Err(ContractError::EmptyBalance {});
+    }
+
+    // Deduct the `deposit_fee` from `deposit_amount` if configured.
+    // Send the `deposit_fee` to `payout_address` if any.
+    if endowment.deposit_fee.is_some() {
+        let EndowmentFee {
+            payout_address,
+            fee_percentage,
+            active,
+        } = endowment.deposit_fee.unwrap();
+        if active {
+            let deposit_fee: Coin = Coin {
+                denom: "uusd".to_string(),
+                amount: deposit_amount
+                    .amount
+                    .multiply_ratio(fee_percentage.numerator(), fee_percentage.denominator()),
+            };
+            deposit_amount.amount -= deposit_fee.amount;
+
+            res = res.add_message(CosmosMsg::Bank(BankMsg::Send {
+                to_address: payout_address.to_string(),
+                amount: vec![deposit_fee],
+            }));
+        }
     }
 
     let mut locked_split = msg.locked_percentage;
@@ -682,7 +708,7 @@ pub fn deposit(
         &endowment.strategies,
     )?;
 
-    Ok(Response::new()
+    Ok(res
         .add_submessages(deposit_messages)
         .add_attribute("action", "account_deposit")
         .add_attribute("sender", info.sender.to_string())

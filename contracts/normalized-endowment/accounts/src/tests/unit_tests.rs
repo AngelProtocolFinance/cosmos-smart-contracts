@@ -7,7 +7,7 @@ use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
 use angel_core::structs::{EndowmentFee, EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info};
-use cosmwasm_std::{attr, coins, from_binary, Addr, Decimal};
+use cosmwasm_std::{attr, coins, from_binary, Addr, Decimal, Fraction};
 
 #[test]
 fn test_proper_initialization() {
@@ -807,6 +807,7 @@ fn test_donate() {
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
     let depositor = Addr::unchecked("depositor");
+    let deposit_fee_perc = Decimal::percent(10);
 
     // Initialize the Endowment
     let profile: Profile = Profile {
@@ -855,7 +856,11 @@ fn test_donate() {
         beneficiary: charity_addr.clone(),
         profile: profile,
         earnings_fee: None,
-        deposit_fee: None,
+        deposit_fee: Some(EndowmentFee {
+            payout_address: Addr::unchecked("payout-address"),
+            fee_percentage: deposit_fee_perc,
+            active: true,
+        }),
         withdraw_fee: None,
         aum_fee: None,
     };
@@ -885,7 +890,9 @@ fn test_donate() {
     // Check the "STATE" for "transactions" field
     let query_res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&query_res).unwrap();
-    assert_eq!(state.donations_received.u128(), donation_amt);
+    // Since the `deposit_fee` is configured, the real `donation_amt` is less than original one.
+    let deposit_fee = donation_amt * deposit_fee_perc.numerator() / deposit_fee_perc.denominator();
+    assert_eq!(state.donations_received.u128(), donation_amt - deposit_fee);
 
     let query_res = query(
         deps.as_ref(),
