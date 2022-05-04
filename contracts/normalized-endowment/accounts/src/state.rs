@@ -1,5 +1,6 @@
 use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, Profile, RebalanceDetails, StrategyComponent, TransactionRecord,
+    AcceptedTokens, BalanceInfo, EndowmentFee, Profile, RebalanceDetails, StrategyComponent,
+    TransactionRecord,
 };
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
@@ -34,6 +35,10 @@ pub struct Endowment {
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
     pub locked_endowment_configs: Vec<String>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
+    pub earnings_fee: Option<EndowmentFee>, // Earnings Fee
+    pub withdraw_fee: Option<EndowmentFee>, // Withdraw Fee
+    pub deposit_fee: Option<EndowmentFee>, // Deposit Fee
+    pub aum_fee: Option<EndowmentFee>, // AUM(Assets Under Management) Fee
 }
 
 impl Endowment {

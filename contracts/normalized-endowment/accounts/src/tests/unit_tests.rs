@@ -61,6 +61,10 @@ fn test_proper_initialization() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
     };
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();
@@ -120,6 +124,10 @@ fn test_get_config() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -181,6 +189,10 @@ fn test_update_endowment_settings() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -293,6 +305,10 @@ fn test_change_registrar_contract() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -383,6 +399,10 @@ fn test_change_admin() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -473,6 +493,10 @@ fn migrate_contract() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile.clone(),
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -539,6 +563,10 @@ fn test_update_strategy() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -680,6 +708,10 @@ fn test_update_endowment_profile() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -822,6 +854,10 @@ fn test_donate() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -920,6 +956,10 @@ fn test_withdraw() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();

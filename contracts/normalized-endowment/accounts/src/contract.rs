@@ -73,6 +73,10 @@ pub fn instantiate(
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries, // Vec<String>
             whitelisted_contributors: msg.whitelisted_contributors,   // Vec<String>
             locked_endowment_configs: msg.locked_endowment_configs,   // vec<String>
+            earnings_fee: msg.earnings_fee,
+            withdraw_fee: msg.withdraw_fee,
+            deposit_fee: msg.deposit_fee,
+            aum_fee: msg.aum_fee,
         },
     )?;
 

@@ -252,6 +252,10 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         beneficiary: good_charity_addr.clone(),
         profile: profile,
         cw4_members: vec![],
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
     };
 
     let info = mock_info(good_charity_addr.as_ref(), &coins(100000, "earth"));

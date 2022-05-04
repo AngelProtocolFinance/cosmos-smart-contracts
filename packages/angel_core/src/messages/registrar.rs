@@ -1,5 +1,5 @@
 use crate::messages::dao_token::CurveType;
-use crate::structs::{EndowmentType, Profile, SplitDetails, Tier};
+use crate::structs::{EndowmentFee, EndowmentType, Profile, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
 use schemars::JsonSchema;
@@ -92,6 +92,10 @@ pub struct CreateEndowmentMsg {
     pub curve_type: Option<CurveType>,
     pub beneficiary: String,
     pub profile: Profile,
+    pub earnings_fee: Option<EndowmentFee>,
+    pub deposit_fee: Option<EndowmentFee>,
+    pub withdraw_fee: Option<EndowmentFee>,
+    pub aum_fee: Option<EndowmentFee>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

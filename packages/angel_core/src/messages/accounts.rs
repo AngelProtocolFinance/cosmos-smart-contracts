@@ -1,5 +1,5 @@
 use crate::messages::dao_token::CurveType;
-use crate::structs::{FundingSource, RebalanceDetails, StrategyComponent};
+use crate::structs::{EndowmentFee, FundingSource, RebalanceDetails, StrategyComponent};
 use crate::{messages::vault::AccountTransferMsg, structs::Profile};
 use cosmwasm_std::Decimal;
 use cw4::Member;
@@ -31,6 +31,10 @@ pub struct InstantiateMsg {
     pub beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
     pub profile: Profile,    // struct holding the Endowment info
     pub cw4_members: Vec<Member>,
+    pub earnings_fee: Option<EndowmentFee>,
+    pub withdraw_fee: Option<EndowmentFee>,
+    pub deposit_fee: Option<EndowmentFee>,
+    pub aum_fee: Option<EndowmentFee>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

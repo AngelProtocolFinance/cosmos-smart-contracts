@@ -255,6 +255,10 @@ pub fn create_endowment(
             beneficiary: msg.beneficiary,
             profile: msg.profile,
             cw4_members: msg.cw4_members,
+            earnings_fee: msg.earnings_fee,
+            deposit_fee: msg.deposit_fee,
+            withdraw_fee: msg.withdraw_fee,
+            aum_fee: msg.aum_fee,
         })?,
         funds: vec![],
     };
