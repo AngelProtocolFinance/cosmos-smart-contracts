@@ -31,9 +31,9 @@ let pleb: Wallet;
 let tca: Wallet;
 
 let registrar: string;
-let cw4GrpOwners: string;
+// let cw4GrpOwners: string;
 let cw4GrpApTeam: string;
-let cw3GuardianAngels: string;
+// let cw3GuardianAngels: string;
 let cw3ApTeam: string;
 let indexFund: string;
 let anchorVault1: string;
@@ -109,9 +109,9 @@ function initialize() {
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
   registrar = config.contracts.registrar;
-  cw4GrpOwners = config.contracts.cw4GrpOwners;
+  // cw4GrpOwners = config.contracts.cw4GrpOwners;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
-  cw3GuardianAngels = config.contracts.cw3GuardianAngels;
+  // cw3GuardianAngels = config.contracts.cw3GuardianAngels;
   cw3ApTeam = config.contracts.cw3ApTeam;
   indexFund = config.contracts.indexFund;
   anchorVault1 = config.contracts.anchorVault1;
@@ -134,8 +134,8 @@ function initialize() {
   console.log(`Use ${chalk.cyan(endowmentContract4)} as Endowment Contract #4`);
   console.log(`Use ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Use ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
-  console.log(`Use ${chalk.cyan(cw4GrpOwners)} as CW4 Endowment Owners Group`);
-  console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
+  // console.log(`Use ${chalk.cyan(cw4GrpOwners)} as CW4 Endowment Owners Group`);
+  // console.log(`Use ${chalk.cyan(cw3GuardianAngels)} as CW3 Guardian Angels MultiSig`);
 
   terraswapTokenCode = config.terraswap.terraswap_token_code;
   terraswapFactory = config.terraswap.terraswap_factory;
@@ -228,6 +228,8 @@ export async function startSetupCore(): Promise<void> {
       harvest_to_liquid: "0.75", // harvest to liquid percentage
       tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
       funding_goal: "50000000", // funding goal
+      fund_member_limit: undefined, // fund_member_limit
+      accepted_tokens: undefined,  // accepted_tokens for "index_fund"
     }
   );
 }
@@ -336,9 +338,9 @@ export async function startMigrateCore(): Promise<void> {
     registrar,
     indexFund,
     cw4GrpApTeam,
-    cw4GrpOwners,
+    // cw4GrpOwners,
     cw3ApTeam,
-    cw3GuardianAngels,
+    // cw3GuardianAngels,
     [anchorVault1, anchorVault2],
     [endowmentContract1, endowmentContract2, endowmentContract3, endowmentContract4]
   );
@@ -415,9 +417,9 @@ export async function startTests(): Promise<void> {
     endowmentContract3,
     endowmentContract4,
     cw4GrpApTeam,
-    cw4GrpOwners,
+    // cw4GrpOwners,
     cw3ApTeam,
-    cw3GuardianAngels,
+    // cw3GuardianAngels,
     terraswapFactory,
     terraswapHaloTokenContract,
     terraswapHaloUstPairContract,

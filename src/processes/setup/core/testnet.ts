@@ -19,9 +19,7 @@ let charity3: Wallet;
 let tca: Wallet;
 
 let registrar: string;
-let cw4GrpOwners: string;
 let cw4GrpApTeam: string;
-let cw3GuardianAngels: string;
 let cw3ApTeam: string;
 let indexFund: string;
 let anchorVault1: string;
@@ -60,6 +58,8 @@ export async function setupCore(
     harvest_to_liquid: string;
     tax_per_block: string;
     funding_goal: string | undefined;
+    fund_member_limit: number | undefined;
+    accepted_tokens: any | undefined;
   }
 ): Promise<void> {
   terra = _terra;
@@ -79,7 +79,9 @@ export async function setupCore(
     config.max_voting_period_height,
     config.max_voting_period_guardians_height,
     config.fund_rotation,
+    config.fund_member_limit,
     config.funding_goal,
+    config.accepted_tokens,
     config.is_localterra
   );
   if (!config.is_localterra && anchorMoneyMarket) {
@@ -100,7 +102,9 @@ async function setup(
   max_voting_period_height: number,
   max_voting_period_guardians_height: number,
   fund_rotation: number | undefined,
+  fund_member_limit: number | undefined,
   funding_goal: string | undefined,
+  accepted_tokens: any | undefined,
   is_localterra: boolean
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each....
@@ -175,7 +179,9 @@ async function setup(
   const fundResult = await instantiateContract(terra, apTeam, apTeam, fundCodeId, {
     registrar_contract: registrar,
     fund_rotation: fund_rotation,
+    fund_member_limit: fund_member_limit,
     funding_goal: funding_goal,
+    accepted_tokens: accepted_tokens,
   });
   indexFund = fundResult.logs[0].events
     .find((event) => {
@@ -205,7 +211,7 @@ async function setup(
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpApTeam}`);
 
   // CW3 AP Team MultiSig
-  process.stdout.write("Instantiating CW3 AP Team MultiSig contract");
+  process.stdout.write("Instantiating CW3 AP Team (cw3-MultiSig) contract");
   const cw3ApTeamResult = await instantiateContract(
     terra,
     apTeam,
@@ -281,10 +287,22 @@ async function createEndowments(): Promise<void> {
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       create_endowment: {
         owner: charity1.key.accAddress,
+        name: "Test Endowment #1",
+        description: "A wonderful charity endowment that aims to test all the things",
         beneficiary: charity1.key.accAddress,
         withdraw_before_maturity: false,
         maturity_time: undefined,
         maturity_height: undefined,
+        split_max: undefined,
+        split_min: undefined,
+        split_default: undefined,
+        locked_endowment_configs: [],
+        whitelisted_beneficiaries: [],
+        whitelisted_contributors: [],
+        cw4_members: [],
+        dao: false,
+        donation_match: false,
+        curve_type: undefined,
         profile: {
           name: "Test Endowment #1",
           overview: "A wonderful charity endowment that aims to test all the things",
@@ -328,10 +346,22 @@ async function createEndowments(): Promise<void> {
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       create_endowment: {
         owner: charity2.key.accAddress,
+        name: "Test Endowment #2",
+        description: "An even better endowment full of butterflies and rainbows",
         beneficiary: charity2.key.accAddress,
         withdraw_before_maturity: false,
         maturity_time: undefined,
         maturity_height: undefined,
+        split_max: undefined,
+        split_min: undefined,
+        split_default: undefined,
+        locked_endowment_configs: [],
+        whitelisted_beneficiaries: [],
+        whitelisted_contributors: [],
+        cw4_members: [],
+        dao: false,
+        donation_match: false,
+        curve_type: undefined,
         profile: {
           name: "Test Endowment #2",
           overview: "An even better endowment full of butterflies and rainbows",
@@ -375,10 +405,22 @@ async function createEndowments(): Promise<void> {
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       create_endowment: {
         owner: charity3.key.accAddress,
+        name: "Test Endowment #3",
+        description: "Shady endowment that will never be approved",
         beneficiary: charity3.key.accAddress,
         withdraw_before_maturity: false,
         maturity_time: undefined,
         maturity_height: undefined,
+        split_max: undefined,
+        split_min: undefined,
+        split_default: undefined,
+        locked_endowment_configs: [],
+        whitelisted_beneficiaries: [],
+        whitelisted_contributors: [],
+        cw4_members: [],
+        dao: false,
+        donation_match: false,
+        curve_type: undefined,
         profile: {
           name: "Test Endowment #3",
           overview: "Shady endowment that will never be approved",
@@ -422,10 +464,22 @@ async function createEndowments(): Promise<void> {
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       create_endowment: {
         owner: charity3.key.accAddress,
+        name: "Vibin' Endowment #4",
+        description: "Global endowment that spreads good vibes",
         beneficiary: charity3.key.accAddress,
         withdraw_before_maturity: false,
         maturity_time: undefined,
         maturity_height: undefined,
+        split_max: undefined,
+        split_min: undefined,
+        split_default: undefined,
+        locked_endowment_configs: [],
+        whitelisted_beneficiaries: [],
+        whitelisted_contributors: [],
+        cw4_members: [],
+        dao: false,
+        donation_match: false,
+        curve_type: undefined,
         profile: {
           name: "Vibin' Endowment #4",
           overview: "Global endowment that spreads good vibes",

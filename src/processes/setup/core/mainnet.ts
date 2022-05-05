@@ -52,6 +52,8 @@ export async function setupCore(
     harvest_to_liquid: string;
     tax_per_block: string;
     funding_goal: string | undefined;
+    fund_member_limit: undefined, // fund_member_limit
+    accepted_tokens: undefined,  // accepted_tokens for "index_fund"
   }
 ): Promise<void> {
   // Initialize variables
@@ -70,7 +72,9 @@ export async function setupCore(
     config.fund_rotation,
     config.harvest_to_liquid,
     config.tax_per_block,
-    config.funding_goal
+    config.funding_goal,
+    config.fund_member_limit,
+    config.accepted_tokens,
   );
   await mainNet.initializeCharities(terra, apTeam, registrar, indexFund);
   await mainNet.setupEndowments();
@@ -89,7 +93,9 @@ async function setup(
   fund_rotation: number | undefined,
   harvest_to_liquid: string,
   tax_per_block: string,
-  funding_goal: string | undefined
+  funding_goal: string | undefined,
+  fund_member_limit: number | undefined,
+  accepted_tokens: any | undefined,
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each....
   process.stdout.write("Uploading Registrar Wasm");
@@ -216,7 +222,9 @@ async function setup(
   const fundResult = await instantiateContract(terra, apTeam, apTeam, fundCodeId, {
     registrar_contract: registrar,
     fund_rotation: fund_rotation,
+    fund_member_limit: fund_member_limit,
     funding_goal: funding_goal,
+    accepted_tokens: accepted_tokens,
   });
   indexFund = fundResult.logs[0].events
     .find((event) => {

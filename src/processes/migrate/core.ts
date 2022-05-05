@@ -27,9 +27,9 @@ export async function migrateCore(
   registrar: string,
   indexFund: string,
   cw4GrpApTeam: string,
-  cw4GrpOwners: string,
+  // cw4GrpOwners: string,
   cw3ApTeam: string,
-  cw3GuardianAngels: string,
+  // cw3GuardianAngels: string,
   vaultContracts: string[],
   endowmentContracts: string[]
 ): Promise<void> {
