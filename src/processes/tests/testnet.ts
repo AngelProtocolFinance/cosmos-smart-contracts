@@ -22,7 +22,7 @@ import {
   testUpdatingIndexFundConfigs,
   testCreateIndexFund,
   testRemoveIndexFund,
-  // testQueryIndexFundActiveFundDetails,
+  testQueryIndexFundActiveFundDetails,
   testQueryIndexFundActiveFundDonations,
   testQueryIndexFundConfig,
   testQueryIndexFundDeposit,
@@ -190,7 +190,7 @@ export async function testExecute(
   slippageTolerance: string | undefined
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
-  // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
+  // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund); /passed
   // await testUpdateAllianceMembersList(
   //   terra,
   //   apTeam,
@@ -205,28 +205,23 @@ export async function testExecute(
   //   // "terra178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // address #2
   //   // { name: "Testnet Admin", webiste: "http://angelprotocol.io", logo: "" }, // member #2
   //   "add" // action
-  // );
-  // testRemoveIndexFund(terra, apTeam, indexFund, 5);
+  // ); /passed
+  // await testRemoveIndexFund(terra, apTeam, indexFund, 5); /passed
   // await testCreateIndexFund(
   //   terra,
   //   apTeam,
   //   indexFund,
+  //   "", // name
+  //   "", // description
+  //   false, // rotating_fund
   //   [
   //     "terra178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // testnet admin (testnet ONLY!)
   //     "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // charity#1 (testnet ONLY!)
   //   ],
-  //   []
-  // );
-  // await testUpdateFundMembers(terra, apTeam, apTeam, indexFund, 6, ["","",""], ["","",""]);
+  // ); /passed
+  // await testUpdateFundMembers(terra, apTeam, indexFund, 5, ["","",""], ["","",""]);
   // await testChangeManyAccountsEndowmentOwners(terra, apTeam, []);
 
-  // [
-  //   ,
-  //   {
-  //     address: "terra1jvtf3ccpkr3vymv98vk9nz7wvwmykgv8yk9l3w",
-  //     owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
-  //   },
-  // ].forEach(async (endowment) => {
   // await createAccountCw4GroupCw3Multisig(
   //   terra,
   //   apTeam,
@@ -237,46 +232,49 @@ export async function testExecute(
   //     address: "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v",
   //     owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
   //   }
-  // );
-  await testCreateEndowmentViaRegistrar(terra, apTeam, registrar, {
-    owner: charity1.key.accAddress,
-    beneficiary: charity1.key.accAddress,
-    withdraw_before_maturity: false,
-    maturity_time: undefined,
-    maturity_height: undefined,
-    guardians_multisig_addr: undefined,
-    cw4_members: [{ addr: charity1.key.accAddress, weight: 1 }],
-    profile: {
-      name: "Test-Suite Endowment",
-      overview: "Endowment created from the test-suite integration test",
-      un_sdg: 2,
-      tier: 3,
-      logo: undefined,
-      image: undefined,
-      url: undefined,
-      registration_number: undefined,
-      country_city_origin: undefined,
-      contact_email: undefined,
-      social_media_urls: {
-        facebook: undefined,
-        twitter: undefined,
-        linkedin: undefined,
-      },
-      number_of_employees: undefined,
-      average_annual_budget: undefined,
-      annual_revenue: undefined,
-      charity_navigator_rating: undefined,
-      endow_type: "Charity",
-    },
-  });
+  // ); /unimplemented
+  // await testCreateEndowmentViaRegistrar(terra, apTeam, registrar, {
+  //   owner: charity1.key.accAddress,
+  //   name: "Test Endowment #5",
+  //   description: "Endowment created from the test-suite integration test",
+  //   beneficiary: charity1.key.accAddress,
+  //   withdraw_before_maturity: false,
+  //   maturity_time: undefined,
+  //   maturity_height: undefined,
+  //   guardians_multisig_addr: undefined,
+  //   cw4_members: [{ addr: charity1.key.accAddress, weight: 1 }],
+  //   profile: {
+  //     name: "Test Endowment #5",
+  //     overview: "Endowment created from the test-suite integration test",
+  //     un_sdg: 2,
+  //     tier: 3,
+  //     logo: undefined,
+  //     image: undefined,
+  //     url: undefined,
+  //     registration_number: undefined,
+  //     country_city_origin: undefined,
+  //     contact_email: undefined,
+  //     social_media_urls: {
+  //       facebook: undefined,
+  //       twitter: undefined,
+  //       linkedin: undefined,
+  //     },
+  //     number_of_employees: undefined,
+  //     average_annual_budget: undefined,
+  //     annual_revenue: undefined,
+  //     charity_navigator_rating: undefined,
+  //     endow_type: "Charity",
+  //   },
+  // });
+
   // Multisig test
-  // await testAddMemberToC4Group(terra, apTeam, cw3ApTeam, cw4GrpApTeam, "terra1......");
-  // await testUpdateCw3Config(terra, apTeam, cw3ApTeam, 50, 25000);
-  // await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);
-  // await testGuardiansChangeEndowmentOwner(terra, charity2, charity3, pleb, endowmentContract1, cw3GuardianAngels);
-  // await testQueryMultisigVoters(terra, cw3ApTeam);
-  // await testQueryMultisigThreshold(terra, cw3ApTeam);
-  // await testQueryGroupMembersList(terra, cw4GrpApTeam);
+  // await testAddMemberToC4Group(terra, apTeam, cw3ApTeam, cw4GrpApTeam, "terra1......"); /passed
+  // await testUpdateCw3Config(terra, apTeam, cw3ApTeam, 50, 25000); /passed
+  // await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);  /SHOULD_REMOVE
+  // await testGuardiansChangeEndowmentOwner(terra, charity2, charity3, pleb, endowmentContract1, cw3GuardianAngels); /SHOULD_REMOVE
+  // await testQueryMultisigVoters(terra, cw3ApTeam); /passed
+  // await testQueryMultisigThreshold(terra, cw3ApTeam); /passed
+  // await testQueryGroupMembersList(terra, cw4GrpApTeam); /passed
 
   // Test execute
   // await testRejectUnapprovedDonations(terra, pleb, endowmentContract1, "10000000");
@@ -289,7 +287,7 @@ export async function testExecute(
   //   registrar,
   //   haloCollector,
   //   "0.5"
-  // );
+  // ); /passed
   // await testCharityCanUpdateStrategies(
   //   terra,
   //   charity1,
@@ -308,8 +306,8 @@ export async function testExecute(
   //   cw3_code: 102,
   //   cw4_code: 104,
   //   accounts_code_id: 102,
-  // });
-  // await testApproveEndowments(terra, apTeam, registrar, endowmentContract1, 1);
+  // }); /passed
+  // await testApproveEndowments(terra, apTeam, registrar, endowmentContract1, 1); /passed
   // await testClosingEndpoint(
   //   terra,
   //   apTeam,
@@ -324,56 +322,55 @@ export async function testExecute(
   //   2,
   //   [endowmentContract2],
   //   [endowmentContract4]
-  // );
+  // ); /passed
   // await testCreateIndexFund(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   18,
   //   "Test fund for Ukraine Portal",
   //   "Another portal test fund",
   //   false,
   //   [endowmentContract2, endowmentContract3, endowmentContract4]
-  // );
-  // await testRemoveIndexFund(terra, apTeam, indexFund, 1);
+  // ); /passed
+  // await testRemoveIndexFund(terra, apTeam, indexFund, 1); /passed
   // Test query
-  // await testQueryRegistrarConfig(terra, registrar);
-  // await testQueryRegistrarEndowmentList(terra, registrar);
-  // await testQueryRegistrarEndowmentDetails(terra, registrar, endowmentContract1);
-  // await testQueryRegistrarApprovedVaultList(terra, registrar);
-  // await testQueryRegistrarApprovedVaultRateList(terra, registrar);
-  // await testQueryRegistrarVaultList(terra, registrar);
+  // await testQueryRegistrarConfig(terra, registrar); /passed
+  // await testQueryRegistrarEndowmentList(terra, registrar); /pased
+  // await testQueryRegistrarEndowmentDetails(terra, registrar, endowmentContract1); /passed
+  // await testQueryRegistrarApprovedVaultList(terra, registrar); /passed
+  // await testQueryRegistrarApprovedVaultRateList(terra, registrar); /passed
+  // await testQueryRegistrarVaultList(terra, registrar); /passed
   // await testQueryRegistrarVault(terra, registrar, anchorVault1);
   // await testQueryVaultConfig(terra, anchorVault1);
   // await testQueryAccountsBalance(terra, endowmentContract4);
-  // await testQueryAccountsConfig(terra, endowmentContract4);
-  // await testQueryAccountsEndowment(terra, endowmentContract4);
-  // await testQueryAccountsProfile(terra, endowmentContract4);
-  // await testQueryAccountsState(terra, endowmentContract4);
+  // await testQueryAccountsConfig(terra, endowmentContract4); /passed
+  // await testQueryAccountsEndowment(terra, endowmentContract4); /passed
+  // await testQueryAccountsProfile(terra, endowmentContract4); /passed
+  // await testQueryAccountsState(terra, endowmentContract4); /passed
   // await testQueryAccountsTransactions(
   //   terra,
   //   endowmentContract4,
   //   undefined,
   //   undefined,
   //   undefined
-  // );
-  // await testQueryIndexFundConfig(terra, indexFund);
-  // await testQueryIndexFundState(terra, indexFund);
-  // await testQueryIndexFundTcaList(terra, indexFund);
-  // await testQueryIndexFundFundsList(terra, indexFund);
-  // await testQueryIndexFundFundDetails(terra, indexFund, 4);
-  // await testQueryIndexFundActiveFundDetails(terra, indexFund);
-  // await testQueryIndexFundActiveFundDonations(terra, indexFund);
-  // await testQueryIndexFundDeposit(terra, indexFund);
+  // ); /passed
+  // await testQueryIndexFundConfig(terra, indexFund); /passed
+  // await testQueryIndexFundState(terra, indexFund); /passed
+  // await testQueryIndexFundTcaList(terra, indexFund); /passed
+  // await testQueryIndexFundFundsList(terra, indexFund); /passed
+  // await testQueryIndexFundFundDetails(terra, indexFund, 4); /passed
+  // await testQueryIndexFundActiveFundDetails(terra, indexFund); /passed
+  // await testQueryIndexFundActiveFundDonations(terra, indexFund); /passed
+  // await testQueryIndexFundDeposit(terra, indexFund); /passed
 
   // Test query for HALO airdrop
-  // await testAirdropUpdateConfig(terra, apTeam, apTeam2, pleb, haloAirdrop);
+  // await testAirdropUpdateConfig(terra, apTeam, apTeam2, pleb, haloAirdrop); /passed
   // await testAirdropRegisterNewMerkleRoot(terra, apTeam, haloAirdrop);
   // await testAirdropClaim(terra, apTeam, haloAirdrop);
-  // await testQueryAirdropConfig(terra, haloAirdrop);
+  // await testQueryAirdropConfig(terra, haloAirdrop); /passed
   // await testQueryAirdropMerkleRoot(terra, haloAirdrop, 1);
-  // await testQueryAirdropIsClaimed(terra, haloAirdrop, 1, "terra1qfqa2eu9wp272ha93lj4yhcenrc6ymng079nu8");
-  // await testQueryAirdropLatestStage(terra, haloAirdrop);
+  // await testQueryAirdropIsClaimed(terra, haloAirdrop, 1, "terra1qfqa2eu9wp272ha93lj4yhcenrc6ymng079nu8"); /passed
+  // await testQueryAirdropLatestStage(terra, haloAirdrop); /passed
 
   // Test query for HALO collector
   // await testCollectorUpdateConfig(
@@ -383,22 +380,22 @@ export async function testExecute(
   //   "1.0",
   //   haloGov,
   //   undefined
-  // );
+  // ); /passed
   // await testCollectorSweep(terra, apTeam, haloCollector);
-  // await testQueryCollectorConfig(terra, haloCollector);
-  // await testQueryCollectorPair(terra, haloCollector);
+  // await testQueryCollectorConfig(terra, haloCollector); /passed
+  // await testQueryCollectorPair(terra, haloCollector); /passed
 
   // Test query for HALO community
   // await testCommunityUpdateConfig(terra, apTeam, pleb, haloGov, haloCommunity, "1000000", undefined);
   // await testCommunitySpend(terra, apTeam, haloGov, haloCommunity, "addr000", "1000000");
-  // await testQueryCommunityConfig(terra, haloCommunity);
+  // await testQueryCommunityConfig(terra, haloCommunity); /passed
 
   // Test query for HALO distributor
   // await testDistributorUpdateConfig(terra, apTeam, haloDistributor, "1000000", haloGov);
   // await testDistributorSpend(terra, apTeam, haloDistributor, "addr000", "1000000");
   // await testDistributorAdd(terra, apTeam, haloGov, haloDistributor, apTeam2.key.accAddress);
   // await testDistributorRemove(terra, apTeam, haloGov, haloDistributor, apTeam2.key.accAddress);
-  // await testQueryDistributorConfig(terra, haloDistributor);
+  // await testQueryDistributorConfig(terra, haloDistributor); /passed
 
   // Tests for HALO vesting
   // await testVestingUpdateConfig(terra, apTeam, haloVesting, undefined, undefined, undefined);
@@ -437,19 +434,19 @@ export async function testExecute(
   //   100800, // snapshot period
   //   undefined, // unbonding period
   //   undefined // gov_hodler
-  // );
+  // ); /passed
   // await testGovExecutePoll(terra, apTeam, haloGov, 1);
   // await testGovEndPoll(terra, apTeam, haloGov, 1);
   // await testGovSnapshotPoll(terra, apTeam, haloGov, 1);
-  // await testGovStakeVotingTokens(terra, apTeam, terraswapToken, haloGov, "20000000000");
-  // await testGovStakeVotingTokens(terra, apTeam2, terraswapToken, haloGov, "10000000000");
-  // await testGovStakeVotingTokens(terra, apTeam3, terraswapToken, haloGov, "5000000000");
-  // await testGovWithdrawVotingTokens(terra, apTeam, haloGov, "1000000000");
-  // await testGovWithdrawVotingTokens(terra, apTeam2, haloGov, "10000000000");
+  // await testGovStakeVotingTokens(terra, apTeam, terraswapToken, haloGov, "20000000000"); /passed
+  // await testGovStakeVotingTokens(terra, apTeam2, terraswapToken, haloGov, "10000000000"); /passed
+  // await testGovStakeVotingTokens(terra, apTeam3, terraswapToken, haloGov, "5000000000"); /passed
+  // await testGovWithdrawVotingTokens(terra, apTeam, haloGov, "1000000000"); /passed
+  // await testGovWithdrawVotingTokens(terra, apTeam2, haloGov, "10000000000"); /passed
   // await testGovWithdrawVotingTokens(terra, apTeam3, haloGov, "10000000000");
   // await testGovClaimVotingTokens(terra, apTeam, haloGov);
   // await testGovCastVote(terra, apTeam, haloGov, 1, VoteOption.YES, "1");
-  // await testGovRegisterContracts(terra, apTeam, haloGov, terraswapToken);
+  // await testGovRegisterContracts(terra, apTeam, haloGov, terraswapToken); /passed
   // await testGovExecutePollForRegistrarSettings(
   //   terra,
   //   apTeam,
@@ -465,36 +462,32 @@ export async function testExecute(
   //   apTeam2.key.accAddress,
   //   apTeam3.key.accAddress,
   // ]);
-  // await testQueryGovConfig(terra, haloGov);
-  // await testQueryGovState(terra, haloGov);
-  // await testQueryGovClaims(terra, haloGov, apTeam.key.accAddress);
-  // await testQueryGovStaker(terra, haloGov, apTeam.key.accAddress);
-  // await testQueryGovStaker(terra, haloGov, apTeam2.key.accAddress);
-  // await testQueryGovStaker(terra, haloGov, apTeam3.key.accAddress);
+  // await testQueryGovConfig(terra, haloGov); /passed
+  // await testQueryGovState(terra, halGov); /passed
+  // await testQueryGovClaims(terra, haloGov, apTeam.key.accAddress); /passed
+  // await testQueryGovStaker(terra, haloGov, apTeam.key.accAddress); /passed
+  // await testQueryGovStaker(terra, haloGov, apTeam2.key.accAddress); /passed
+  // await testQueryGovStaker(terra, haloGov, apTeam3.key.accAddress); /passed
   // await testQueryGovPoll(terra, haloGov, 1);
-  // await testQueryGovPolls(terra, haloGov, undefined, undefined, undefined);
+  // await testQueryGovPolls(terra, haloGov, undefined, undefined, undefined); /passed
 
   // await testQueryGovVoters(terra, haloGov, 1, undefined, undefined);
 
   // Test query for HALO staking
   // await testStakingUnbond(terra, apTeam, haloStaking, "100");
   // await testStakingWithdraw(terra, apTeam, haloStaking);
-  // await testQueryStakingConfig(terra, haloStaking);
+  // await testQueryStakingConfig(terra, haloStaking); /passed
   // await testQueryStakingStakerInfo(terra, haloStaking, "addr000", undefined);
-  // await testQueryStakingState(terra, haloStaking);
+  // await testQueryStakingState(terra, haloStaking); /passed
 
   // Test query for LBP Factory
   // await testFactoryUpdateConfig(
   //   terra,
   //   apTeam,
   //   lbpFactoryContract,
-  // undefined,
   //   undefined,
   //   undefined,
-  //   undefined,
-  //   haloCollector,
-  //   undefined
-  // );
+  // ); /passed
   // await testFactoryCreatePair(
   //   terra,
   //   apTeam,
@@ -509,11 +502,11 @@ export async function testExecute(
   //   "50",
   //   "HALO <-> UST Pair"
   // );
-  // await getPairContractLpToken(terra, lbpPairContract);
-  // await testFactoryUnregister(terra, apTeam, lbpFactoryContract, terraswapToken, "uusd");
-  // await testQueryFactoryConfig(terra, lbpFactoryContract);
+  // await getPairContractLpToken(terra, lbpPairContract); /passed
+  // await testFactoryUnregister(terra, apTeam, lbpFactoryContract, terraswapToken, "uusd"); /passed
+  // await testQueryFactoryConfig(terra, lbpFactoryContract); /passed
   // await testQueryFactoryPair(terra, lbpFactoryContract, terraswapToken);
-  // await testQueryFactoryPairs(terra, lbpFactoryContract);
+  // await testQueryFactoryPairs(terra, lbpFactoryContract); /passed
 
   // await testPairSwapNativeToHalo(terra, apTeam, lbpPairContract, "100000000");
   // await testPairSwapHaloToNative(
@@ -523,8 +516,8 @@ export async function testExecute(
   //   terraswapToken,
   //   "100000000"
   // );
-  // await testQueryPairPair(terra, lbpPairContract);
-  // await testQueryPairPool(terra, lbpPairContract);
+  // await testQueryPairPair(terra, lbpPairContract); /passed
+  // await testQueryPairPool(terra, lbpPairContract); /passed
   // await testQueryPairSimulationNativeToHalo(terra, lbpPairContract);
   // await testQueryPairSimulationHaloToNative(terra, lbpPairContract, terraswapToken);
   // await testQueryPairReverseSimulationNativeToHalo(terra, lbpPairContract);
@@ -535,7 +528,7 @@ export async function testExecute(
   // );
 
   // Test query for LBP Router
-  // await testQueryRouterConfig(terra, lbpRouterContract);
+  // await testQueryRouterConfig(terra, lbpRouterContract); /passed
 
   // Test Loop Pair
   // await testPairProvideLiquidity(
@@ -553,12 +546,12 @@ export async function testExecute(
   //   lbpPairContract,
   //   lbpLpTokenContract,
   //   "100000000"
-  // );
+  // ); /passed
 
   // Test query for LBP Token
-  // await testQueryTokenBalance(terra, terraswapToken, apTeam.key.accAddress);
-  // await testQueryTokenInfo(terra, terraswapToken);
-  // await testQueryTokenMinter(terra, terraswapToken);
+  // await testQueryTokenBalance(terra, terraswapToken, apTeam.key.accAddress); /passed
+  // await testQueryTokenInfo(terra, terraswapToken); /passed
+  // await testQueryTokenMinter(terra, terraswapToken); /passed
 
   // await testTransferTokenBalance(
   //   terra,
@@ -566,5 +559,5 @@ export async function testExecute(
   //   terraswapToken,
   //   apTeam2.key.accAddress,
   //   "420000000"
-  // );
+  // ); /passed
 }
