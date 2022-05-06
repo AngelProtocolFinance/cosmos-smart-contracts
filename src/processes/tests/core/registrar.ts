@@ -215,7 +215,7 @@ export async function testUpdateEndowmentsEntry(
   endowments.forEach((endow) => {
     msgs.push(
       new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-        update_endowment_type: {
+        update_endowment_entry: {
           endowment_addr: endow.address,
           name: endow.name,
           logo: endow.logo,
