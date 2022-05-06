@@ -197,25 +197,29 @@ export async function testUpdateEndowmentsStatus(
 //    Possible Values:
 //      "address": endowment address
 //      "name":    endowment name string | undefined
+//      "logo":    endowment logo string | undefined
+//      "image":   endowment image string | undefined
 //      "owner":   endowment owner address | undefined
 //      "tier":    endowment tier number(1, 2, 3) | undefined
 //      "un_sdg":  endowment "un_sdg" number (u64) | undefined
 //      "endow_type": endowment `EndowmentType` | undefined
 //----------------------------------------------------------------------------------------
-export async function testUpdateEndowmentsType(
+export async function testUpdateEndowmentsEntry(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   registrar: string,
-  endowments: any[] // [{ address: "terra...", name: "...", owner: "...", tier: "", un_sdg: "", endow_type: "..." }]
+  endowments: any[] // [{ address: "terra...", name: "...", owner: "...", tier: "", un_sdg: "", endow_type: "...", logo: "...", image: "..." }]
 ): Promise<void> {
   process.stdout.write("AP Team updates endowments type(EndowmentEntry info)");
   let msgs: Msg[] = [];
   endowments.forEach((endow) => {
     msgs.push(
       new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-        update_endowment_type: {
+        update_endowment_entry: {
           endowment_addr: endow.address,
           name: endow.name,
+          logo: endow.logo,
+          image: endow.image,
           owner: endow.owner,
           tier: endow.tier,
           un_sdg: endow.un_sdg,
