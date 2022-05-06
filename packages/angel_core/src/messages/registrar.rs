@@ -130,12 +130,12 @@ pub enum QueryMsg {
     },
     // Gets list of all registered Endowments
     EndowmentList {
-        name: Option<String>,
-        owner: Option<String>,
         status: Option<String>,
+        name: Option<Option<String>>,
+        owner: Option<Option<String>>,
         tier: Option<Option<String>>,
         un_sdg: Option<Option<u64>>,
-        endow_type: Option<String>,
+        endow_type: Option<Option<String>>,
     },
     // Get all Config details for the contract
     Config {},
