@@ -53,7 +53,7 @@ import {
   testQueryRegistrarEndowmentDetails,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
-  testUpdateEndowmentsType,
+  testUpdateEndowmentsEntry,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -276,7 +276,7 @@ export async function testExecute(
   // );
   // await testUpdatingRegistrarConfigs(terra, apTeam, registrar, haloGov);
   // await testUpdateEndowmentsStatus(terra, apTeam, registrar, [{ "address": endowmentContract3, "status": 1, "beneficiary": "" }]);
-  // await testUpdateEndowmentsType(terra, apTeam, registrar, [{"address": endowmentContract3, "name": "Test Endow 3", "owner": undefined, "tier": undefined, "un_sdg": undefined, "endow_type": undefined}]);
+  // await testUpdateEndowmentsEntry(terra, apTeam, registrar, [{"address": endowmentContract3, "name": "Test Endow 3", "logo": "Test logo #3", "image": "Test image #3", "owner": undefined, "tier": undefined, "un_sdg": undefined, "endow_type": undefined}]);
   // await testUpdateFundMembers(
   //   terra,
   //   apTeam,

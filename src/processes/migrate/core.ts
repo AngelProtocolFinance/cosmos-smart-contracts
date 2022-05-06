@@ -61,12 +61,7 @@ async function migrateRegistrar(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate Registrar contract");
-  const result1 = await migrateContract(terra, apTeam, apTeam, registrar, codeId, {
-    endowments: [
-      endowmentContracts[0],
-      endowmentContracts[1],
-    ],
-  });
+  const result1 = await migrateContract(terra, apTeam, apTeam, registrar, codeId, {});
   console.log(chalk.green(" Done!"));
 }
 
