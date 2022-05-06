@@ -1,6 +1,5 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::OldEndowmentEntry;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
@@ -83,8 +82,8 @@ pub fn execute(
             collector_address,
             collector_share,
         } => executers::harvest(deps, env, info, collector_address, collector_share),
-        ExecuteMsg::UpdateEndowmentType(msg) => {
-            executers::update_endowment_type(deps, env, info, msg)
+        ExecuteMsg::UpdateEndowmentEntry(msg) => {
+            executers::update_endowment_entry(deps, env, info, msg)
         }
     }
 }
@@ -133,37 +132,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-    const REGISTRY_KEY: &[u8] = b"registry";
-    // msg pass in an { endowments: [ (address, status, name, owner, tier), ... ] }
-    for addr in msg.endowments {
-        let old_path: Path<OldEndowmentEntry> = Path::new(REGISTRY_KEY, &[addr.clone().as_bytes()]);
-        let old_key = old_path.deref();
-        let data = deps.storage.get(old_key).ok_or_else(|| {
-            ContractError::Std(StdError::NotFound {
-                kind: "OldEndowmentEntry".to_string(),
-            })
-        })?;
-        let old_endowment_entry: OldEndowmentEntry = from_slice(&data)?;
-
-        let path: Path<EndowmentEntry> = Path::new(REGISTRY_KEY, &[addr.clone().as_bytes()]);
-        let key = path.deref();
-
-        // set the new EndowmentEntry at the given key
-        deps.storage.set(
-            key,
-            &to_vec(&EndowmentEntry {
-                address: old_endowment_entry.address, // Addr,
-                status: old_endowment_entry.status,   // EndowmentStatus
-                owner: None,                          // String,
-                name: None,                           // String,
-                tier: None,                           // Option<Tier>
-                un_sdg: None,                         // Option<u64>
-                endow_type: None,                     // EndowmentType,
-                logo: None,
-                image: None,
-            })?,
-        );
-    }
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::default())
 }

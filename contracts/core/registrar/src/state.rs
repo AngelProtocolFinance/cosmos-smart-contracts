@@ -1,11 +1,10 @@
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, SplitDetails, YieldVault};
+use angel_core::structs::{EndowmentEntry, SplitDetails, YieldVault};
 use angel_core::utils::calc_range_start_addr;
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-// static PREFIX_REGISTRY_INDEXER: &[u8] = b"registry_indexer";
 const MAX_LIMIT: u64 = 30;
 const DEFAULT_LIMIT: u64 = 10;
 
@@ -27,13 +26,6 @@ pub struct Config {
     pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
     pub gov_contract: Option<Addr>,    // AP governance contract
     pub charity_shares_contract: Option<Addr>, // Charity Shares staking contract
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct OldEndowmentEntry {
-    pub address: Addr,
-    pub status: EndowmentStatus,
 }
 
 pub const PREFIX_REGISTRY: Map<&[u8], EndowmentEntry> = Map::new("registry");

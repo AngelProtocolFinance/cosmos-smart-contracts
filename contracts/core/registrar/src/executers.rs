@@ -463,11 +463,11 @@ fn harvest_msg(account: String, collector_address: String, collector_share: Deci
     }
 }
 
-pub fn update_endowment_type(
+pub fn update_endowment_entry(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: UpdateEndowmentTypeMsg,
+    msg: UpdateEndowmentEntryMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endow_addr = deps.api.addr_validate(&msg.endowment_addr)?;
@@ -483,6 +483,8 @@ pub fn update_endowment_type(
     endowment_entry.name = msg.name;
     endowment_entry.owner = msg.owner;
     endowment_entry.endow_type = msg.endow_type;
+    endowment_entry.logo = msg.logo;
+    endowment_entry.image = msg.image;
 
     if let Some(tier) = msg.tier {
         endowment_entry.tier = tier;
