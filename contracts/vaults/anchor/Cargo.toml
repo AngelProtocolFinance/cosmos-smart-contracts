@@ -1,6 +1,6 @@
 [package]
 name = "anchor"
-version = "0.1.8"
+version = "1.6.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 

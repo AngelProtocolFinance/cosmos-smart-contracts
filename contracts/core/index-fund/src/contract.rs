@@ -8,7 +8,7 @@ use cosmwasm_std::{
     entry_point, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError,
     StdResult, Uint128,
 };
-use cw2::set_contract_version;
+use cw2::{get_contract_version, set_contract_version};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "index-fund";
@@ -130,20 +130,23 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[entry_point]
-pub fn migrate(deps: DepsMut, env: Env, msg: MigrateMsg) -> Result<Response, StdError> {
-    // Documentation on performing updates during migration
-    // https://docs.cosmwasm.com/docs/1.0/smart-contracts/migration/#using-migrate-to-update-otherwise-immutable-state
-    let config = CONFIG.load(deps.storage)?;
-    const STATE_KEY: &[u8] = b"state";
-    deps.storage.set(
-        STATE_KEY,
-        &to_vec(&State {
-            total_funds: 0,
-            active_fund: msg.active_fund,
-            next_fund_id: msg.next_fund_id,
-            round_donations: Uint128::zero(),
-            next_rotation_block: env.block.height + config.fund_rotation.unwrap_or(0u64),
-        })?,
-    );
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let ver = get_contract_version(deps.storage)?;
+    // ensure we are migrating from an allowed contract
+    if ver.contract != CONTRACT_NAME {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Can only upgrade from same type".to_string(),
+        }));
+    }
+    // note: better to do proper semver compare, but string compare *usually* works
+    if ver.version >= CONTRACT_VERSION.to_string() {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Cannot upgrade from a newer version".to_string(),
+        }));
+    }
+
+    // set the new version
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     Ok(Response::default())
 }
