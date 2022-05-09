@@ -34,12 +34,12 @@ export async function migrateCore(
   endowmentContracts: string[]
 ): Promise<void> {
   // run the migrations desired
-  await migrateRegistrar(terra, apTeam, registrar, endowmentContracts);
+  // await migrateRegistrar(terra, apTeam, registrar);
   // await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
   // await migrateCw3Multisig(terra, apTeam, cw3ApTeam);
   // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
   // await migrateIndexFund(terra, apTeam, indexFund);
-  // await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
+  // await migrateExistingAccounts(terra, apTeam, registrar, undefined, []);
   // await migrateVaults(terra, apTeam, vaultContracts);
 }
 
@@ -49,8 +49,7 @@ export async function migrateCore(
 async function migrateRegistrar(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  registrar: string,
-  endowmentContracts: string[]
+  registrar: string
 ): Promise<void> {
   process.stdout.write("Uploading Registrar Wasm");
   const codeId = await storeCode(
@@ -82,11 +81,7 @@ async function migrateIndexFund(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate Index Fund contract");
-  // const result1 = await migrateContract(terra, apTeam, apTeam, indexFund, codeId, {});
-  const result1 = await migrateContract(terra, apTeam, apTeam, indexFund, codeId, {
-    next_fund_id: 2,
-    active_fund: 1,
-  });
+  const result1 = await migrateContract(terra, apTeam, apTeam, indexFund, codeId, {});
   console.log(chalk.green(" Done!"));
 }
 
@@ -241,9 +236,7 @@ async function migrateExistingAccounts(
       () =>
         new Promise(async (resolve, reject) => {
           try {
-            await migrateContract(terra, apTeam, apTeam, endow[0], codeId, {
-              profile: endow[1],
-            });
+            await migrateContract(terra, apTeam, apTeam, endow[0], codeId, endow[1]);
             console.log(chalk.green(`Endowment ${endow[0]}`));
             resolve();
           } catch (e) {
