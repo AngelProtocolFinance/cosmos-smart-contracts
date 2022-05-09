@@ -382,7 +382,7 @@ fn migrate_contract() {
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
-        profile: profile.clone(),
+        profile,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -390,7 +390,7 @@ fn migrate_contract() {
     assert_eq!(0, res.messages.len());
 
     // try to migrate the contract
-    let msg = MigrateMsg { profile };
+    let msg = MigrateMsg {};
     let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
     assert_eq!(0, res.messages.len())
 }

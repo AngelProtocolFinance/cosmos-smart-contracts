@@ -71,12 +71,7 @@ pub fn read_vaults<'a>(
 ) -> StdResult<Vec<YieldVault>> {
     let start = calc_range_start_addr(start_after);
     PREFIX_PORTAL
-        .range(
-            storage,
-            start.map(|v| Bound::Inclusive(v)),
-            None,
-            Order::Ascending,
-        )
+        .range(storage, start.map(Bound::Inclusive), None, Order::Ascending)
         .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
         .map(|item| {
             let (_, v) = item?;
