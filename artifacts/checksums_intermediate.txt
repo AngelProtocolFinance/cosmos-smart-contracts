@@ -1,4 +1,4 @@
-f31d823b7a05bf6b7c3b349baf6909b065c047fe05e203e83b34be1fb5167ffc  target/wasm32-unknown-unknown/release/accounts.wasm
+b4e94ee93fb83443cffddbc625b3f8a512efe2da31624776e9918c164edf6176  target/wasm32-unknown-unknown/release/accounts.wasm
 fdd666f25fd961ca0e634a7dd3dd26f323f5a74a0e55803f0458e3f3a73159f8  target/wasm32-unknown-unknown/release/anchor.wasm
 34b69834e2306da21c63d7ea3a30da288addddca507b12233976d9e797eb9396  target/wasm32-unknown-unknown/release/ap_team_multisig.wasm
 7450c47e6fe83f21d55946f1d08bd83a37e595fb859e5ab99762ae837730cf4f  target/wasm32-unknown-unknown/release/cw4_group.wasm
