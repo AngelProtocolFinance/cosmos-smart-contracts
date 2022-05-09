@@ -10,12 +10,11 @@ use angel_core::structs::EndowmentType;
 use angel_core::structs::{
     AcceptedTokens, BalanceInfo, Profile, RebalanceDetails, StrategyComponent,
 };
-use cosmwasm_std::StdError;
 use cosmwasm_std::{
     attr, entry_point, from_slice, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env,
-    MessageInfo, QueryRequest, Response, StdResult, Uint128, WasmQuery,
+    MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmQuery,
 };
-use cw2::set_contract_version;
+use cw2::{get_contract_version, set_contract_version};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";
@@ -166,8 +165,23 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[entry_point]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    // Documentation on performing updates during migration
-    // https://docs.cosmwasm.com/docs/1.0/smart-contracts/migration/#using-migrate-to-update-otherwise-immutable-state
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let ver = get_contract_version(deps.storage)?;
+    // ensure we are migrating from an allowed contract
+    if ver.contract != CONTRACT_NAME {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Can only upgrade from same type".to_string(),
+        }));
+    }
+    // note: better to do proper semver compare, but string compare *usually* works
+    if ver.version >= CONTRACT_VERSION.to_string() {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Cannot upgrade from a newer version".to_string(),
+        }));
+    }
+
+    // set the new version
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     Ok(Response::default())
 }
