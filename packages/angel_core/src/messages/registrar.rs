@@ -4,9 +4,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MigrateMsg {
-    pub endowments: Vec<String>,
-}
+pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
@@ -42,7 +40,7 @@ pub enum ExecuteMsg {
         collector_share: Decimal,
     },
     // Allows the DANO/AP Team to update the EndowmentEntry
-    UpdateEndowmentType(UpdateEndowmentTypeMsg),
+    UpdateEndowmentEntry(UpdateEndowmentEntryMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -98,9 +96,11 @@ pub struct VaultAddMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowmentTypeMsg {
+pub struct UpdateEndowmentEntryMsg {
     pub endowment_addr: String,
     pub name: Option<String>,
+    pub logo: Option<String>,
+    pub image: Option<String>,
     pub owner: Option<String>,
     pub tier: Option<Option<Tier>>,
     pub un_sdg: Option<Option<u64>>,
@@ -130,12 +130,12 @@ pub enum QueryMsg {
     },
     // Gets list of all registered Endowments
     EndowmentList {
-        name: Option<String>,
-        owner: Option<String>,
         status: Option<String>,
+        name: Option<Option<String>>,
+        owner: Option<Option<String>>,
         tier: Option<Option<String>>,
         un_sdg: Option<Option<u64>>,
-        endow_type: Option<String>,
+        endow_type: Option<Option<String>>,
     },
     // Get all Config details for the contract
     Config {},

@@ -126,7 +126,7 @@ fn migrate_contract() {
     assert_eq!(0, res.messages.len());
 
     // try to migrate the contract
-    let msg = MigrateMsg { endowments: vec![] };
+    let msg = MigrateMsg {};
     let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
     assert_eq!(0, res.messages.len())
 }
@@ -307,11 +307,13 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     assert_eq!("action", res.attributes[0].key);
     assert_eq!("create_endowment", res.attributes[0].value);
 
-    let events = vec![Event::new("instantiate_contract")
+    let events = vec![Event::new("wasm")
         .add_attribute("contract_address", good_endowment_addr.clone())
         .add_attribute("endow_name", "Test Endowment".to_string())
         .add_attribute("endow_owner", good_charity_addr.clone())
-        .add_attribute("endow_type", "charity".to_string())];
+        .add_attribute("endow_type", "charity".to_string())
+        .add_attribute("endow_logo", "Test logo".to_string())
+        .add_attribute("endow_image", "Test image".to_string())];
     let result = ContractResult::Ok(SubMsgExecutionResponse { events, data: None });
     let subcall = Reply { id: 0, result };
 
@@ -344,13 +346,15 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     );
 
     // let's test update endowment method by admin
-    let update_endowment_type_msg = UpdateEndowmentTypeMsg {
+    let update_endowment_entry_msg = UpdateEndowmentEntryMsg {
         endowment_addr: good_endowment_addr.clone(),
         name: None,
         owner: None,
         tier: None,
         endow_type: None,
         un_sdg: None,
+        logo: None,
+        image: None,
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -358,7 +362,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         deps.as_mut(),
         env.clone(),
         info.clone(),
-        ExecuteMsg::UpdateEndowmentType(update_endowment_type_msg.clone()),
+        ExecuteMsg::UpdateEndowmentEntry(update_endowment_entry_msg.clone()),
     )
     .unwrap();
     assert_eq!(0, res.messages.len());
