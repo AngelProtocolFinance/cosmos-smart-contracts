@@ -50,7 +50,7 @@ async function migrateRegistrar(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
   registrar: string,
-  endowmentContracts: string[],
+  endowmentContracts: string[]
 ): Promise<void> {
   process.stdout.write("Uploading Registrar Wasm");
   const codeId = await storeCode(

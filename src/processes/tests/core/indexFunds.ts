@@ -244,11 +244,16 @@ export async function testQueryIndexFundTcaList(
 
 export async function testQueryIndexFundFundsList(
   terra: LocalTerra | LCDClient,
-  indexFund: string
+  indexFund: string,
+  start_after: number | undefined,
+  limit: number | undefined
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund FundsList");
   const result: any = await terra.wasm.contractQuery(indexFund, {
-    funds_list: {},
+    funds_list: {
+      limit,
+      start_after,
+    },
   });
 
   console.log(result);

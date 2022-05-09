@@ -188,7 +188,7 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   21,
+  //   23,
   //   [
   //     "terra1uegpp7nuxazgf20medwy4dwdhvkzvdztmrj8jx", // PEPA
   //   ],
@@ -244,8 +244,8 @@ export async function testExecute(
   // await testQueryIndexFundConfig(terra, indexFund);
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
-  // await testQueryIndexFundFundsList(terra, indexFund);
-  // await testQueryIndexFundFundDetails(terra, indexFund, 22);
+  // await testQueryIndexFundFundsList(terra, indexFund, 10, 20);
+  // await testQueryIndexFundFundDetails(terra, indexFund, 23);
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);
