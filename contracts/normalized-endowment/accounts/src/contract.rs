@@ -1,5 +1,6 @@
 use crate::executers;
 use crate::queriers;
+use crate::state::OldConfig;
 use crate::state::PROFILE;
 use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
@@ -9,6 +10,9 @@ use angel_core::messages::dao_token::InstantiateMsg as DaoTokenInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
+use cosmwasm_std::from_slice;
+use cosmwasm_std::to_vec;
+use cosmwasm_std::StdError;
 use cosmwasm_std::{
     attr, entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
     QueryRequest, Reply, ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
@@ -38,6 +42,7 @@ pub fn instantiate(
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
             pending_redemptions: None,
+            last_learnings_harvest: 0,
         },
     )?;
 
@@ -234,6 +239,26 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[entry_point]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    const CONFIG_KEY: &[u8] = b"config";
+    let data = deps
+        .storage
+        .get(CONFIG_KEY)
+        .ok_or_else(|| ContractError::Std(StdError::not_found("config")))?;
+    let old_config: OldConfig = from_slice(&data)?;
+
+    deps.storage.set(
+        CONFIG_KEY,
+        &to_vec(&Config {
+            owner: old_config.owner,
+            registrar_contract: old_config.registrar_contract,
+            accepted_tokens: old_config.accepted_tokens,
+            deposit_approved: old_config.deposit_approved,
+            withdraw_approved: old_config.withdraw_approved,
+            pending_redemptions: old_config.pending_redemptions,
+            last_learnings_harvest: msg.last_earnings_harvest,
+        })?,
+    );
+
     Ok(Response::default())
 }

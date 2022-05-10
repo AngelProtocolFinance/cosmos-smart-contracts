@@ -504,7 +504,9 @@ fn migrate_contract() {
     assert_eq!(0, res.messages.len());
 
     // try to migrate the contract
-    let msg = MigrateMsg {};
+    let msg = MigrateMsg {
+        last_earnings_harvest: 10_u64,
+    };
     let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
     assert_eq!(0, res.messages.len())
 }

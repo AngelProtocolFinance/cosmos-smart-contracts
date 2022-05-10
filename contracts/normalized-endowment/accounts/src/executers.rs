@@ -24,8 +24,8 @@ use angel_core::utils::{
     withdraw_from_vaults,
 };
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env,
-    Fraction, MessageInfo, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg,
+    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env, Fraction,
+    MessageInfo, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg,
     SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
 };
 use cw0::Duration;

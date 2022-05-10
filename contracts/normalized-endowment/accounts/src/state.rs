@@ -16,6 +16,18 @@ pub struct Config {
     pub deposit_approved: bool, // DANO has approved to receive donations & transact
     pub withdraw_approved: bool, // DANO has approved to withdraw funds
     pub pending_redemptions: Option<u64>,
+    pub last_learnings_harvest: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct OldConfig {
+    pub owner: Addr, // DANO/AP Team Address
+    pub registrar_contract: Addr,
+    pub accepted_tokens: AcceptedTokens,
+    pub deposit_approved: bool, // DANO has approved to receive donations & transact
+    pub withdraw_approved: bool, // DANO has approved to withdraw funds
+    pub pending_redemptions: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
