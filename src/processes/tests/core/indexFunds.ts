@@ -315,3 +315,19 @@ export async function testQueryIndexFundDeposit(
   console.log(result);
   console.log(chalk.green(" Passed!"));
 }
+
+export async function testQueryIndexFundInvolvedAddress(
+  terra: LocalTerra | LCDClient,
+  indexFund: string,
+  address: string
+): Promise<void> {
+  process.stdout.write(
+    "Test - Query IndexFund for all funds an Address is involoved with"
+  );
+  const result: any = await terra.wasm.contractQuery(indexFund, {
+    involved_funds: { address },
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
