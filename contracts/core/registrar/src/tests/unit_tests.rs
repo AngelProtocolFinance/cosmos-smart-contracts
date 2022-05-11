@@ -259,6 +259,10 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         beneficiary: good_charity_addr.clone(),
         profile: profile,
         cw4_members: vec![],
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
     };
 
     let info = mock_info(good_charity_addr.as_ref(), &coins(100000, "earth"));

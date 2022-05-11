@@ -260,6 +260,10 @@ pub fn create_endowment(
             beneficiary: msg.beneficiary,
             profile: msg.profile,
             cw4_members: msg.cw4_members,
+            donation_match_setup_option: msg.donation_match_setup_option,
+            halo_ust_lp_pair_contract: msg.halo_ust_lp_pair_contract,
+            user_reserve_token: msg.user_reserve_token,
+            user_reserve_ust_lp_pair_contract: msg.user_reserve_ust_lp_pair_contract,
         })?,
         funds: vec![],
     };
