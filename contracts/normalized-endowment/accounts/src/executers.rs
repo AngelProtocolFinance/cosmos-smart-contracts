@@ -10,14 +10,17 @@ use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
 use angel_core::messages::registrar::{
     ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentTypeMsg,
 };
-use angel_core::messages::vault::AccountTransferMsg;
+use angel_core::messages::vault::{
+    AccountTransferMsg, AccountWithdrawMsg, ExecuteMsg as VaultExecuteMsg,
+    QueryMsg as VaultQueryMsg,
+};
 use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, EndowmentFee, EndowmentType, FundingSource, SocialMedialUrls, SplitDetails,
-    StrategyComponent, Tier, TransactionRecord,
+    AcceptedTokens, BalanceResponse, EndowmentFee, EndowmentType, FundingSource, SocialMedialUrls,
+    SplitDetails, StrategyComponent, Tier, TransactionRecord,
 };
 use angel_core::utils::{
     check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
@@ -941,4 +944,86 @@ pub fn update_endowment_fees(
     Ok(Response::new()
         .add_attribute("action", "update_endowment_fees")
         .add_attribute("sender", info.sender.to_string()))
+}
+
+pub fn harvest_earnings(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+) -> Result<Response, ContractError> {
+    // TODO
+    Ok(Response::new())
+}
+
+pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    let endowment = ENDOWMENT.load(deps.storage)?;
+
+    // Validations
+    if info.sender != endowment.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Get the `aum_fee` info
+    if endowment.aum_fee.is_none() {
+        return Err(ContractError::Std(StdError::generic_err(
+            "AUM_FEE info is not set",
+        )));
+    }
+    let EndowmentFee {
+        fee_percentage,
+        payout_address,
+        active,
+    } = endowment.aum_fee.unwrap();
+    if !active {
+        return Err(ContractError::Std(StdError::generic_err(
+            "AUM_FEE info is not activated",
+        )));
+    }
+
+    // Calc the total AUM & aum_harvest_withdraw from vaults balances
+    let mut msgs: Vec<CosmosMsg> = vec![];
+    let vaults: Vec<Addr> = endowment
+        .strategies
+        .iter()
+        .map(|s| s.vault.clone())
+        .collect();
+    for vault in vaults {
+        let vault_balances: BalanceResponse = deps.querier.query_wasm_smart(
+            vault.to_string(),
+            &VaultQueryMsg::Balance {
+                address: vault.to_string(),
+            },
+        )?;
+        // Here, we assume that only one native coin -
+        // `UST` is used for deposit/withdraw in vault
+        let mut total_aum: Uint128 = Uint128::zero();
+        total_aum += vault_balances.locked_native[0].amount;
+        total_aum += vault_balances.liquid_native[0].amount;
+
+        // Calc the `aum_harvest_withdraw` amount
+        if !total_aum.is_zero() {
+            let aum_harvest_withdraw =
+                total_aum.multiply_ratio(fee_percentage.numerator(), fee_percentage.denominator());
+            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: vault.to_string(),
+                msg: to_binary(&VaultExecuteMsg::Withdraw(AccountWithdrawMsg {
+                    beneficiary: payout_address.clone(),
+                    locked: aum_harvest_withdraw.multiply_ratio(1_u128, 2_u128),
+                    liquid: aum_harvest_withdraw.multiply_ratio(1_u128, 2_u128),
+                }))
+                .unwrap(),
+                funds: vec![],
+            }))
+        }
+    }
+
+    if msgs.is_empty() {
+        return Err(ContractError::Std(StdError::generic_err(
+            "Total AUM is zero",
+        )));
+    }
+
+    Ok(Response::new()
+        .add_messages(msgs)
+        .add_attribute("action", "harvest_aum_fee"))
 }

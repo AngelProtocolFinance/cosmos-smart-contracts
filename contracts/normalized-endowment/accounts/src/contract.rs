@@ -203,6 +203,8 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentFees(msg) => {
             executers::update_endowment_fees(deps, env, info, msg)
         }
+        ExecuteMsg::HarvestEarnings {} => executers::harvest_earnings(deps, env, info),
+        ExecuteMsg::HarvestAum {} => executers::harvest_aum(deps, env, info),
     }
 }
 

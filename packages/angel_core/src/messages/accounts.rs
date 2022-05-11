@@ -77,6 +77,10 @@ pub enum ExecuteMsg {
     UpdateProfile(UpdateProfileMsg),
     // Update various "EndowmentFee"s
     UpdateEndowmentFees(UpdateEndowmentFeesMsg),
+    // Earnings harvest
+    HarvestEarnings {},
+    // AUM harvest
+    HarvestAum {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
