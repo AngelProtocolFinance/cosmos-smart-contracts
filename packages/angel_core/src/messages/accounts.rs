@@ -77,8 +77,10 @@ pub enum ExecuteMsg {
     UpdateProfile(UpdateProfileMsg),
     // Update various "EndowmentFee"s
     UpdateEndowmentFees(UpdateEndowmentFeesMsg),
-    // Earnings harvest
-    HarvestEarnings {},
+    // (earnings) Harvest
+    Harvest {
+        vault_addr: String,
+    },
     // AUM harvest
     HarvestAum {},
 }

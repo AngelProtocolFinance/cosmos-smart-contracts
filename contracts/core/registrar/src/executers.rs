@@ -422,43 +422,6 @@ pub fn new_accounts_reply(
     }
 }
 
-pub fn harvest(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // harvest can only be valid if it comes from the  (AP Team/DANO) SC Owner
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-    // gets a list of approved Vaults
-    let vaults = read_vaults(deps.storage, None, None)?;
-    let list = VaultListResponse {
-        vaults: vaults.into_iter().filter(|p| p.approved).collect(),
-    };
-
-    let mut sub_messages: Vec<SubMsg> = vec![];
-    for vault in list.vaults.iter() {
-        sub_messages.push(harvest_msg(vault.address.to_string()));
-    }
-
-    Ok(Response::new()
-        .add_submessages(sub_messages)
-        .add_attribute("action", "harvest"))
-}
-
-fn harvest_msg(account: String) -> SubMsg {
-    let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: account,
-        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {}).unwrap(),
-        funds: vec![],
-    });
-
-    SubMsg {
-        id: 0,
-        msg: wasm_msg,
-        gas_limit: None,
-        reply_on: ReplyOn::Never,
-    }
-}
-
 pub fn update_endowment_type(
     deps: DepsMut,
     _env: Env,

@@ -48,21 +48,12 @@ pub enum ExecuteMsg {
     CreateEndowment(CreateEndowmentMsg),
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     VaultAdd(VaultAddMsg),
-    VaultRemove {
-        vault_addr: String,
-    },
-    VaultUpdateStatus {
-        vault_addr: String,
-        approved: bool,
-    },
+    VaultRemove { vault_addr: String },
+    VaultUpdateStatus { vault_addr: String, approved: bool },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
     // Allows the SC owner to change ownership
-    UpdateOwner {
-        new_owner: String,
-    },
-    // Allows the DANO/AP Team to harvest all active vaults
-    Harvest { },
+    UpdateOwner { new_owner: String },
     // Allows the DANO/AP Team to update the EndowmentEntry
     UpdateEndowmentType(UpdateEndowmentTypeMsg),
     // Set/Update/Nullify the EndowmentTypeFees

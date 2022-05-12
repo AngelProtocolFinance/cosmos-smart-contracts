@@ -203,7 +203,8 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentFees(msg) => {
             executers::update_endowment_fees(deps, env, info, msg)
         }
-        ExecuteMsg::HarvestEarnings {} => executers::harvest_earnings(deps, env, info),
+        // Allows the DANO/AP Team to harvest all active vaults
+        ExecuteMsg::Harvest { vault_addr } => executers::harvest(deps, env, info, vault_addr),
         ExecuteMsg::HarvestAum {} => executers::harvest_aum(deps, env, info),
     }
 }
