@@ -16,7 +16,7 @@ pub struct Config {
     pub deposit_approved: bool, // DANO has approved to receive donations & transact
     pub withdraw_approved: bool, // DANO has approved to withdraw funds
     pub pending_redemptions: Option<u64>,
-    pub last_learnings_harvest: u64,
+    pub last_earnings_harvest: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

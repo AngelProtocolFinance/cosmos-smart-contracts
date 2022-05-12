@@ -42,7 +42,7 @@ pub fn instantiate(
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
             pending_redemptions: None,
-            last_learnings_harvest: 0,
+            last_earnings_harvest: 0,
         },
     )?;
 
@@ -259,7 +259,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             deposit_approved: old_config.deposit_approved,
             withdraw_approved: old_config.withdraw_approved,
             pending_redemptions: old_config.pending_redemptions,
-            last_learnings_harvest: msg.last_earnings_harvest,
+            last_earnings_harvest: msg.last_earnings_harvest,
         })?,
     );
 

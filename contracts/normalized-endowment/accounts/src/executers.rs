@@ -976,7 +976,7 @@ fn harvest_msg(account: String) -> SubMsg {
     });
 
     SubMsg {
-        id: 0,
+        id: 4,
         msg: wasm_msg,
         gas_limit: None,
         reply_on: ReplyOn::Never,
