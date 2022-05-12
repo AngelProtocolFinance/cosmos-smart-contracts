@@ -422,13 +422,7 @@ pub fn new_accounts_reply(
     }
 }
 
-pub fn harvest(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    collector_address: String,
-    collector_share: Decimal,
-) -> Result<Response, ContractError> {
+pub fn harvest(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // harvest can only be valid if it comes from the  (AP Team/DANO) SC Owner
     if info.sender.ne(&config.owner) {
@@ -442,11 +436,7 @@ pub fn harvest(
 
     let mut sub_messages: Vec<SubMsg> = vec![];
     for vault in list.vaults.iter() {
-        sub_messages.push(harvest_msg(
-            vault.address.to_string(),
-            collector_address.clone(),
-            collector_share,
-        ));
+        sub_messages.push(harvest_msg(vault.address.to_string()));
     }
 
     Ok(Response::new()
@@ -454,14 +444,10 @@ pub fn harvest(
         .add_attribute("action", "harvest"))
 }
 
-fn harvest_msg(account: String, collector_address: String, collector_share: Decimal) -> SubMsg {
+fn harvest_msg(account: String) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account,
-        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {
-            collector_address,
-            collector_share,
-        })
-        .unwrap(),
+        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {}).unwrap(),
         funds: vec![],
     });
 

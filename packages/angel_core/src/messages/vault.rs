@@ -16,22 +16,13 @@ pub struct MigrateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    UpdateOwner {
-        new_owner: String,
-    },
-    UpdateRegistrar {
-        new_registrar: Addr,
-    },
+    UpdateOwner { new_owner: String },
+    UpdateRegistrar { new_registrar: Addr },
     UpdateConfig(UpdateConfigMsg),
     Deposit(AccountTransferMsg),
-    Redeem {
-        account_addr: Addr,
-    },
+    Redeem { account_addr: Addr },
     Withdraw(AccountWithdrawMsg),
-    Harvest {
-        collector_address: String,
-        collector_share: Decimal,
-    },
+    Harvest {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

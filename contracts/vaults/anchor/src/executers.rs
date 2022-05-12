@@ -355,9 +355,7 @@ pub fn withdraw_stable(
             contract_addr: info.sender.to_string(),
             msg: to_binary(&EndowmentQueryMsg::GetEndowmentFees {})?,
         }))?;
-    let withdraw_fee_info = endow_fees_resp.withdraw_fee;
-    if withdraw_fee_info.is_some() {
-        let fee_info = withdraw_fee_info.unwrap();
+    if let Some(fee_info) = endow_fees_resp.withdraw_fee {
         if fee_info.active {
             payout_address = Some(fee_info.payout_address);
             fee_amount = Some(withdraw_total.multiply_ratio(
@@ -397,13 +395,7 @@ pub fn withdraw_stable(
         }))
 }
 
-pub fn harvest(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    collector_address: String,
-    collector_share: Decimal,
-) -> Result<Response, ContractError> {
+pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
     // check that the tx sender is an approved Accounts SC
@@ -539,8 +531,23 @@ pub fn harvest(
 
         let mut res = Response::new()
             .add_attribute("action", "harvest_redeem_from_vault")
-            .add_attribute("sender", info.sender)
+            .add_attribute("sender", info.sender.to_string())
             .add_attribute("withdraw_amount", withdraw_total);
+
+        // check the "earnings_fee" info
+        let mut payout_address: Option<Addr> = None;
+        let mut fee_amount: Option<Uint128> = None;
+        let endow_fees_resp: EndowmentFeesResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: info.sender.to_string(),
+                msg: to_binary(&EndowmentQueryMsg::GetEndowmentFees {})?,
+            }))?;
+        if let Some(fee_info) = endow_fees_resp.earnings_fee {
+            if fee_info.active {
+                payout_address = Some(fee_info.payout_address);
+                fee_amount = Some(withdraw_total * collector_share * fee_info.fee_percentage);
+            }
+        }
 
         // Harvested Amount is split by collector split input percentage
         if !collector_share.is_zero() && collector_share <= Decimal::one() {
@@ -555,8 +562,8 @@ pub fn harvest(
                     fund: None,
                     locked: Uint128::zero(),
                     liquid: withdraw_total * collector_share,
-                    payout_address: None,
-                    fee_amount: None,
+                    payout_address,
+                    fee_amount,
                 },
             )?;
             withdraw_leftover = withdraw_total - (withdraw_total * collector_share);
@@ -737,8 +744,8 @@ pub fn process_anchor_reply(
                 "withdraw" => {
                     let mut msgs: Vec<BankMsg> = vec![];
                     let mut fee_amount: Uint128 = Uint128::zero();
-                    if transaction.fee_amount.is_some() {
-                        fee_amount = transaction.fee_amount.unwrap();
+                    if let Some(amount) = transaction.fee_amount {
+                        fee_amount = amount;
                         msgs.push(BankMsg::Send {
                             to_address: transaction.payout_address.unwrap().to_string(),
                             amount: vec![deduct_tax(
