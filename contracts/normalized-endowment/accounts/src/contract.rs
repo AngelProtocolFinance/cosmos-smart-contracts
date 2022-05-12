@@ -7,16 +7,17 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
 use angel_core::messages::dao_token::InstantiateMsg as DaoTokenInstantiateMsg;
+use angel_core::messages::donation_match::InstantiateMsg as DonationMatchInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
+use angel_core::structs::EndowmentType;
 use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
-use cosmwasm_std::from_slice;
-use cosmwasm_std::to_vec;
-use cosmwasm_std::StdError;
 use cosmwasm_std::{
-    attr, entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Reply, ReplyOn, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    attr, entry_point, from_slice, to_binary, to_vec, Binary, CosmosMsg, Decimal, Deps, DepsMut,
+    Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
+    WasmMsg, WasmQuery,
 };
+
 use cw2::set_contract_version;
 
 // version info for future migration info
@@ -77,6 +78,7 @@ pub fn instantiate(
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries, // Vec<String>
             whitelisted_contributors: msg.whitelisted_contributors,   // Vec<String>
             locked_endowment_configs: msg.locked_endowment_configs,   // vec<String>
+            donation_matching_contract: None,
             earnings_fee: msg.earnings_fee,
             withdraw_fee: msg.withdraw_fee,
             deposit_fee: msg.deposit_fee,
@@ -135,10 +137,15 @@ pub fn instantiate(
 
     // check if a dao needs to be setup along with subdao token contract
     if msg.dao && msg.curve_type.ne(&None) {
-        // TO DO: setup the DAO contract in a submessage
-
-        // setup dao token contract
-        let halo_token = registrar_config.halo_token.unwrap();
+        // setup DAO token contract
+        let halo_token = match registrar_config.halo_token.clone() {
+            Some(addr) => addr,
+            None => {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "HALO token address is empty".to_string(),
+                }))
+            }
+        };
         res = res.add_submessage(SubMsg {
             id: 3,
             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
@@ -154,6 +161,93 @@ pub fn instantiate(
                     curve_type: msg.curve_type.unwrap(),
                     halo_token,
                     unbonding_period: 7,
+                })?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        })
+    }
+
+    // check if donation_matching_contract needs to be instantiated
+    // `donation_match_setup_option`: Field to determine the various way of setting up "donation_match" contract
+    // Possible values:
+    //   0 => Endowment doesn't want a DAO. No dao, dao token, or donation matching contract are need (obviously!! )
+    //   1 => Endowment wants to have a DAO and they choose to use $HALO as reserve token for their bonding curve from the Endowment Launchpad UI.
+    //   2 => Endowment wants to have a DAO but they want to use an existing Token (other than HALO) as the reserve token for their bonding curve.
+    //        They would then have to supply several contract addresses during their endowment creation:
+    //           - the Token contract address (CW20)
+    //           - a Token / UST LP Pair contract ( this attribute would be updatable should they move supply to a new pool, etc)
+    //   3 =>  Endowment wants to have a DAO but they want to use an brand new CW20 Token that will not be attached to a bonding curve. (coming later)
+    if msg.profile.endow_type == EndowmentType::Normal && msg.donation_match_setup_option != 0 {
+        // setup the donation_matching contract
+        let donation_match_code = match registrar_config.donation_match_code {
+            Some(id) => id,
+            None => {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "No code id for donation matching contract".to_string(),
+                }))
+            }
+        };
+
+        let reserve_token = match msg.donation_match_setup_option {
+            1 => match registrar_config.halo_token {
+                Some(addr) => addr,
+                None => {
+                    return Err(ContractError::Std(StdError::GenericErr {
+                        msg: "No reserve token(halo_token) is available".to_string(),
+                    }))
+                }
+            },
+            2 => match msg.user_reserve_token {
+                Some(addr) => addr,
+                None => {
+                    return Err(ContractError::Std(StdError::GenericErr {
+                        msg: "No reserve token address is given".to_string(),
+                    }))
+                }
+            },
+            _ => {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "Invalid donation_match setup option".to_string(),
+                }));
+            }
+        };
+
+        let reserve_token_ust_lp_pair = match msg.donation_match_setup_option {
+            1 => match msg.halo_ust_lp_pair_contract {
+                Some(addr) => addr,
+                None => {
+                    return Err(ContractError::Std(StdError::GenericErr {
+                        msg: "No halo-ust lp pair contract is given".to_string(),
+                    }))
+                }
+            },
+            2 => match msg.user_reserve_ust_lp_pair_contract {
+                Some(addr) => addr,
+                None => {
+                    return Err(ContractError::Std(StdError::GenericErr {
+                        msg: "No reserve token - ust lp pair contract is given".to_string(),
+                    }))
+                }
+            },
+            _ => {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "Invalid donation_match setup option".to_string(),
+                }));
+            }
+        };
+
+        res = res.add_submessage(SubMsg {
+            id: 4,
+            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                code_id: donation_match_code,
+                admin: None,
+                label: "new donation match contract".to_string(),
+                msg: to_binary(&DonationMatchInstantiateMsg {
+                    reserve_token,
+                    lp_pair: reserve_token_ust_lp_pair,
+                    registrar_contract: msg.registrar_contract.clone(),
                 })?,
                 funds: vec![],
             }),
@@ -218,6 +312,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
         1 => executers::new_cw4_group_reply(deps, env, msg.result),
         2 => executers::new_cw3_multisig_reply(deps, env, msg.result),
         3 => executers::new_dao_token_reply(deps, env, msg.result),
+        4 => executers::new_donation_match_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }

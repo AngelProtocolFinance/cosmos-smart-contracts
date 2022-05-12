@@ -51,6 +51,7 @@ pub struct Endowment {
     pub withdraw_fee: Option<EndowmentFee>, // Withdraw Fee
     pub deposit_fee: Option<EndowmentFee>, // Deposit Fee
     pub aum_fee: Option<EndowmentFee>, // AUM(Assets Under Management) Fee
+    pub donation_matching_contract: Option<Addr>, // donation matching contract address
 }
 
 impl Endowment {

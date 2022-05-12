@@ -70,6 +70,7 @@ fn update_config() {
     let mut deps = mock_dependencies(&[]);
     let ap_team = "angelprotocolteamdano".to_string();
     let index_fund_contract = String::from("index_fund_contract");
+    let donation_match_charites_contract = String::from("donation-match-contract");
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
@@ -95,6 +96,7 @@ fn update_config() {
         gov_contract: None,
         halo_token: None,
         approved_charities: None,
+        donation_match_charites_contract: Some(donation_match_charites_contract.clone()),
         collector_addr: None,
         collector_share: None,
     };
@@ -109,6 +111,10 @@ fn update_config() {
         config_response.index_fund.unwrap()
     );
     assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
+    assert_eq!(
+        donation_match_charites_contract.clone(),
+        config_response.donation_match_charites_contract.unwrap(),
+    );
     assert_eq!(MOCK_CW3_CODE_ID, config_response.cw3_code.unwrap());
     assert_eq!(MOCK_CW4_CODE_ID, config_response.cw4_code.unwrap());
 }
@@ -197,6 +203,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         gov_contract: None,
         halo_token: None,
         approved_charities: None,
+        donation_match_charites_contract: None,
         collector_addr: None,
         collector_share: None,
     };
@@ -252,6 +259,10 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         beneficiary: good_charity_addr.clone(),
         profile: profile,
         cw4_members: vec![],
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,

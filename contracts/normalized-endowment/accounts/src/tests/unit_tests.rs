@@ -61,7 +61,15 @@ fn test_proper_initialization() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
-        earnings_fee: None,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
+        earnings_fee: Some(EndowmentFee {
+            payout_address: Addr::unchecked("payout-wallet"),
+            fee_percentage: Decimal::percent(3),
+            active: false,
+        }),
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
@@ -128,6 +136,10 @@ fn test_get_config() {
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -193,6 +205,10 @@ fn test_update_endowment_settings() {
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -309,6 +325,10 @@ fn test_change_registrar_contract() {
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -403,6 +423,10 @@ fn test_change_admin() {
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -497,6 +521,10 @@ fn migrate_contract() {
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -569,6 +597,10 @@ fn test_update_strategy() {
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -714,6 +746,10 @@ fn test_update_endowment_profile() {
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -865,6 +901,10 @@ fn test_donate() {
         }),
         withdraw_fee: None,
         aum_fee: None,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -969,6 +1009,10 @@ fn test_withdraw() {
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -1056,6 +1100,10 @@ fn test_query_endowment_fees() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
         earnings_fee: Some(EndowmentFee {
             payout_address: Addr::unchecked("payout-wallet"),
             fee_percentage: Decimal::percent(3),
@@ -1140,6 +1188,10 @@ fn test_update_endowment_fees() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
         earnings_fee: Some(EndowmentFee {
             payout_address: Addr::unchecked("payout-wallet"),
             fee_percentage: Decimal::percent(3),
