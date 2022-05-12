@@ -3,17 +3,19 @@ use crate::anchor::{deposit_stable_msg, redeem_stable_msg};
 use crate::config;
 use crate::config::{PendingInfo, BALANCES, PENDING, TOKEN_INFO};
 use angel_core::errors::vault::ContractError;
+use angel_core::messages::accounts::QueryMsg as EndowmentQueryMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{AccountTransferMsg, AccountWithdrawMsg, UpdateConfigMsg};
+use angel_core::responses::accounts::{EndowmentDetailsResponse, EndowmentFeesResponse};
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, EndowmentListResponse,
+    ConfigResponse as RegistrarConfigResponse, EndowmentDetailResponse, EndowmentListResponse,
 };
 use angel_core::structs::{BalanceInfo, EndowmentEntry};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
     to_binary, Addr, Attribute, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env,
-    MessageInfo, Order, QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse,
-    Uint128, WasmMsg, WasmQuery,
+    Fraction, MessageInfo, Order, QueryRequest, ReplyOn, Response, StdError, SubMsg,
+    SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20CoinVerified};
 
@@ -168,6 +170,8 @@ pub fn deposit_stable(
             fund: None,
             locked: after_taxes_locked,
             liquid: after_taxes_liquid,
+            payout_address: None,
+            fee_amount: None,
         },
     )?;
     config.next_pending_id += 1;
@@ -264,6 +268,8 @@ pub fn redeem_stable(
             fund: None,
             locked: locked_deposit_tokens,
             liquid: liquid_deposit_tokens,
+            payout_address: None,
+            fee_amount: None,
         },
     )?;
     config.next_pending_id += 1;
@@ -292,25 +298,18 @@ pub fn withdraw_stable(
     let mut config = config::read(deps.storage)?;
 
     // check that the tx sender is an Accounts SC
-    let endowments_rsp: EndowmentListResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+    // Also, it gets some Endowment info
+    // If tx sender is an invalid Account or wrong address,
+    // this rejects the tx by sending "Unauthroized" error.
+    let _endow_detail_resp: EndowmentDetailResponse = deps
+        .querier
+        .query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::EndowmentList {
-                name: None,
-                owner: None,
-                status: None,
-                tier: None,
-                un_sdg: None,
-                endow_type: None,
+            msg: to_binary(&RegistrarQueryMsg::Endowment {
+                endowment_addr: info.sender.to_string(),
             })?,
-        }))?;
-    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments.iter().position(|p| p.address == info.sender);
-
-    // reject if the sender was found not in the list of endowments
-    if pos == None {
-        return Err(ContractError::Unauthorized {});
-    }
+        }))
+        .map_err(|_| ContractError::Unauthorized {})?;
 
     // reduce the total supply of CW20 deposit tokens
     let withdraw_total = msg.locked + msg.liquid;
@@ -348,6 +347,26 @@ pub fn withdraw_stable(
         }));
     BALANCES.save(deps.storage, &info.sender, &investment)?;
 
+    // check the "withdraw_fee" info
+    let mut payout_address: Option<Addr> = None;
+    let mut fee_amount: Option<Uint128> = None;
+    let endow_fees_resp: EndowmentFeesResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: info.sender.to_string(),
+            msg: to_binary(&EndowmentQueryMsg::GetEndowmentFees {})?,
+        }))?;
+    let withdraw_fee_info = endow_fees_resp.withdraw_fee;
+    if withdraw_fee_info.is_some() {
+        let fee_info = withdraw_fee_info.unwrap();
+        if fee_info.active {
+            payout_address = Some(fee_info.payout_address);
+            fee_amount = Some(withdraw_total.multiply_ratio(
+                fee_info.fee_percentage.numerator(),
+                fee_info.fee_percentage.denominator(),
+            ));
+        }
+    }
+
     let submessage_id = config.next_pending_id;
     PENDING.save(
         deps.storage,
@@ -359,6 +378,8 @@ pub fn withdraw_stable(
             fund: None,
             locked: msg.locked,
             liquid: msg.liquid,
+            payout_address,
+            fee_amount,
         },
     )?;
     config.next_pending_id += 1;
@@ -531,6 +552,8 @@ pub fn harvest(
                     fund: None,
                     locked: Uint128::zero(),
                     liquid: withdraw_total * collector_share,
+                    payout_address: None,
+                    fee_amount: None,
                 },
             )?;
             withdraw_leftover = withdraw_total - (withdraw_total * collector_share);
@@ -562,6 +585,8 @@ pub fn harvest(
                     fund: None,
                     locked: Uint128::zero(),
                     liquid: withdraw_leftover,
+                    payout_address: None,
+                    fee_amount: None,
                 },
             )?;
             config.next_pending_id += 1;
@@ -707,22 +732,43 @@ pub fn process_anchor_reply(
                         }))
                 }
                 "withdraw" => {
-                    Response::new()
-                        .add_attribute("action", "anchor_reply_processing")
-                        // Send UST to the Beneficiary via BankMsg::Send
-                        .add_message(BankMsg::Send {
-                            to_address: transaction.beneficiary.unwrap().to_string(),
+                    let mut msgs: Vec<BankMsg> = vec![];
+                    let mut fee_amount: Uint128 = Uint128::zero();
+                    if transaction.fee_amount.is_some() {
+                        fee_amount = transaction.fee_amount.unwrap();
+                        msgs.push(BankMsg::Send {
+                            to_address: transaction.payout_address.unwrap().to_string(),
                             amount: vec![deduct_tax(
                                 deps.as_ref(),
                                 deduct_tax(
                                     deps.as_ref(),
                                     Coin {
-                                        amount: anchor_amount,
+                                        amount: fee_amount,
                                         denom: "uusd".to_string(),
                                     },
                                 )?,
                             )?],
                         })
+                    };
+                    
+                    // Send UST to the Beneficiary via BankMsg::Send
+                    msgs.push(BankMsg::Send {
+                        to_address: transaction.beneficiary.unwrap().to_string(),
+                        amount: vec![deduct_tax(
+                            deps.as_ref(),
+                            deduct_tax(
+                                deps.as_ref(),
+                                Coin {
+                                    amount: anchor_amount - fee_amount,
+                                    denom: "uusd".to_string(),
+                                },
+                            )?,
+                        )?],
+                    });
+
+                    Response::new()
+                        .add_attribute("action", "anchor_reply_processing")
+                        .add_messages(msgs)
                 }
                 &_ => Response::new().add_attribute("action", "anchor_reply_processing"),
             };
