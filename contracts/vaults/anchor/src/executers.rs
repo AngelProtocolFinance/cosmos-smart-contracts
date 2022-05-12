@@ -10,12 +10,12 @@ use angel_core::responses::accounts::{EndowmentDetailsResponse, EndowmentFeesRes
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, EndowmentDetailResponse, EndowmentListResponse,
 };
-use angel_core::structs::{BalanceInfo, EndowmentEntry};
+use angel_core::structs::{BalanceInfo, EndowmentEntry, EndowmentStatus};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
     to_binary, Addr, Attribute, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env,
     Fraction, MessageInfo, Order, QueryRequest, ReplyOn, Response, StdError, SubMsg,
-    SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
+    SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery, StdResult,
 };
 use cw20::{Balance, Cw20CoinVerified};
 
@@ -406,7 +406,16 @@ pub fn harvest(
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
-    if info.sender != config.registrar_contract && info.sender.as_str() != CRON_WALLET {
+    // check that the tx sender is an approved Accounts SC
+    let res: StdResult<EndowmentDetailResponse> = deps
+        .querier
+        .query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQueryMsg::Endowment {
+                endowment_addr: info.sender.to_string(),
+            })?,
+        }));
+    if res.is_err() || res.unwrap().endowment.status != EndowmentStatus::Approved {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -431,97 +440,91 @@ pub fn harvest(
     let collector_addr = deps.api.addr_validate(&collector_address)?;
     let mut harvest_account = BalanceInfo::default();
 
-    // iterate over all accounts and shuffle DP tokens from Locked to Liquid
+    // shuffle DP tokens from Locked to Liquid
     // set aside a small amount for treasury
-    let accounts: Result<Vec<_>, _> = BALANCES
-        .keys(deps.storage, None, None, Order::Ascending)
-        .map(String::from_utf8)
-        .collect();
-    for account in accounts.unwrap().iter() {
-        let account_address = deps.api.addr_validate(account)?;
-        let mut balances = BALANCES
-            .load(deps.storage, &account_address)
-            .unwrap_or_else(|_| BalanceInfo::default());
+    let account_address = deps.api.addr_validate(info.sender.as_str())?;
+    let mut balances = BALANCES
+        .load(deps.storage, &account_address)
+        .unwrap_or_else(|_| BalanceInfo::default());
 
-        // CALCULATE ALL AMOUNTS TO BE COLLECTED FOR TAXES AND TO BE TRANSFERED
-        // UPFRONT BEFORE PERFORMING ANY ACTUAL BALANCE SHUFFLES
-        // calculate harvest taxes owed on liquid balance earnings
-        let liquid_taxes_owed = balances
+    // CALCULATE ALL AMOUNTS TO BE COLLECTED FOR TAXES AND TO BE TRANSFERED
+    // UPFRONT BEFORE PERFORMING ANY ACTUAL BALANCE SHUFFLES
+    // calculate harvest taxes owed on liquid balance earnings
+    let liquid_taxes_owed = balances
+        .liquid_balance
+        .get_token_amount(env.contract.address.clone())
+        * harvest_earn_rate
+        * registrar_config.tax_rate;
+
+    // calculate harvest taxes owed on locked balance earnings
+    let locked_taxes_owed = balances
+        .locked_balance
+        .get_token_amount(env.contract.address.clone())
+        * harvest_earn_rate
+        * registrar_config.tax_rate;
+
+    // calulate amount of earnings to be harvested from locked >> liquid balance
+    // reduce harvest amount by any locked taxes owed on those earnings
+    let transfer_amt = balances
+        .locked_balance
+        .get_token_amount(env.contract.address.clone())
+        * harvest_earn_rate
+        * config.harvest_to_liquid
+        - locked_taxes_owed;
+
+    // deduct liquid taxes if we have a non-zero amount
+    if liquid_taxes_owed > Uint128::zero() {
+        let deposit_token = Cw20CoinVerified {
+            address: env.contract.address.clone(),
+            amount: liquid_taxes_owed,
+        };
+        // lower liquid balance
+        balances
             .liquid_balance
-            .get_token_amount(env.contract.address.clone())
-            * harvest_earn_rate
-            * registrar_config.tax_rate;
+            .deduct_tokens(Balance::Cw20(deposit_token.clone()));
 
-        // calculate harvest taxes owed on locked balance earnings
-        let locked_taxes_owed = balances
-            .locked_balance
-            .get_token_amount(env.contract.address.clone())
-            * harvest_earn_rate
-            * registrar_config.tax_rate;
-
-        // calulate amount of earnings to be harvested from locked >> liquid balance
-        // reduce harvest amount by any locked taxes owed on those earnings
-        let transfer_amt = balances
-            .locked_balance
-            .get_token_amount(env.contract.address.clone())
-            * harvest_earn_rate
-            * config.harvest_to_liquid
-            - locked_taxes_owed;
-
-        // deduct liquid taxes if we have a non-zero amount
-        if liquid_taxes_owed > Uint128::zero() {
-            let deposit_token = Cw20CoinVerified {
-                address: env.contract.address.clone(),
-                amount: liquid_taxes_owed,
-            };
-            // lower liquid balance
-            balances
-                .liquid_balance
-                .deduct_tokens(Balance::Cw20(deposit_token.clone()));
-
-            // add taxes collected to the liquid balance of the Collector
-            harvest_account
-                .liquid_balance
-                .add_tokens(Balance::Cw20(deposit_token.clone()));
-        }
-
-        // deduct locked taxes if we have a non-zero amount
-        if locked_taxes_owed > Uint128::zero() {
-            let deposit_token = Cw20CoinVerified {
-                address: env.contract.address.clone(),
-                amount: locked_taxes_owed,
-            };
-            // lower locked balance
-            balances
-                .locked_balance
-                .deduct_tokens(Balance::Cw20(deposit_token.clone()));
-
-            // add taxes collected to the liquid balance of the Collector
-            harvest_account
-                .liquid_balance
-                .add_tokens(Balance::Cw20(deposit_token.clone()));
-        }
-
-        // proceed to shuffle balances if we have a non-zero amount
-        if transfer_amt > Uint128::zero() {
-            let deposit_token = Cw20CoinVerified {
-                address: env.contract.address.clone(),
-                amount: transfer_amt,
-            };
-
-            // lower locked balance
-            balances
-                .locked_balance
-                .deduct_tokens(Balance::Cw20(deposit_token.clone()));
-
-            // add to liquid balance
-            balances
-                .liquid_balance
-                .add_tokens(Balance::Cw20(deposit_token.clone()));
-        }
-
-        BALANCES.save(deps.storage, &account_address, &balances)?;
+        // add taxes collected to the liquid balance of the Collector
+        harvest_account
+            .liquid_balance
+            .add_tokens(Balance::Cw20(deposit_token.clone()));
     }
+
+    // deduct locked taxes if we have a non-zero amount
+    if locked_taxes_owed > Uint128::zero() {
+        let deposit_token = Cw20CoinVerified {
+            address: env.contract.address.clone(),
+            amount: locked_taxes_owed,
+        };
+        // lower locked balance
+        balances
+            .locked_balance
+            .deduct_tokens(Balance::Cw20(deposit_token.clone()));
+
+        // add taxes collected to the liquid balance of the Collector
+        harvest_account
+            .liquid_balance
+            .add_tokens(Balance::Cw20(deposit_token.clone()));
+    }
+
+    // proceed to shuffle balances if we have a non-zero amount
+    if transfer_amt > Uint128::zero() {
+        let deposit_token = Cw20CoinVerified {
+            address: env.contract.address.clone(),
+            amount: transfer_amt,
+        };
+
+        // lower locked balance
+        balances
+            .locked_balance
+            .deduct_tokens(Balance::Cw20(deposit_token.clone()));
+
+        // add to liquid balance
+        balances
+            .liquid_balance
+            .add_tokens(Balance::Cw20(deposit_token.clone()));
+    }
+
+    BALANCES.save(deps.storage, &account_address, &balances)?;
 
     if harvest_account
         .liquid_balance
