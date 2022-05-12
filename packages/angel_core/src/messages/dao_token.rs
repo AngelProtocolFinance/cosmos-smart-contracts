@@ -85,6 +85,14 @@ pub enum Cw20HookMsg {
     /// Buy will attempt to purchase as many supply tokens as possible.
     /// You must send only CW20 reserve tokens (HALO)
     Buy {},
+    /// DonorMatch will attempt to receive the CW20 reserve tokens (HALO).
+    /// It will also attempt to send the dao tokens (CS) to "donor" & "endowment" contract.
+    /// You must send only CW20 reserve tokens (HALO)
+    DonorMatch {
+        amount: Uint128,
+        donor: String,
+        endowment_contract: String,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -92,6 +92,10 @@ pub struct CreateEndowmentMsg {
     pub curve_type: Option<CurveType>,
     pub beneficiary: String,
     pub profile: Profile,
+    pub donation_match_setup_option: u32,
+    pub halo_ust_lp_pair_contract: Option<String>,
+    pub user_reserve_token: Option<String>,
+    pub user_reserve_ust_lp_pair_contract: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -109,6 +113,7 @@ pub struct UpdateConfigMsg {
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
+    pub donation_match_charites_contract: Option<String>,
     pub collector_addr: Option<String>,
     pub collector_share: Option<Decimal>,
 }

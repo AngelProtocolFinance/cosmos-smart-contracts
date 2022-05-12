@@ -51,6 +51,7 @@ pub fn instantiate(
         split_to_liquid: splits,
         halo_token: None,
         gov_contract: None,
+        donation_match_charites_contract: None,
         collector_addr: None,
         collector_share: Decimal::percent(50_u64),
     };
@@ -178,6 +179,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         split_to_liquid: old_config.split_to_liquid,
         halo_token: old_config.halo_token,
         gov_contract: old_config.gov_contract,
+        donation_match_charites_contract: None,
         collector_addr: Some(collector_addr),
         collector_share: Decimal::percent(50_u64),
     };

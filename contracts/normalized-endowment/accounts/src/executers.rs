@@ -4,6 +4,7 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::InstantiateMsg as Cw3MultisigInstantiateMsg;
 use angel_core::messages::cw3_multisig::Threshold;
+use angel_core::messages::donation_match::ExecuteMsg as DonationMatchExecMsg;
 use angel_core::messages::index_fund::DepositMsg as IndexFundDepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg as IndexFundExecuter;
 use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
@@ -136,6 +137,36 @@ pub fn new_dao_token_reply(
             // update the endowment owner to be the new multisig contract
             let mut endowment = ENDOWMENT.load(deps.storage)?;
             endowment.dao_token = Some(deps.api.addr_validate(&dao_token_addr)?);
+            ENDOWMENT.save(deps.storage, &endowment)?;
+
+            Ok(Response::default())
+        }
+        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+    }
+}
+
+pub fn new_donation_match_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: ContractResult<SubMsgExecutionResponse>,
+) -> Result<Response, ContractError> {
+    match msg {
+        ContractResult::Ok(subcall) => {
+            let mut donation_match_contract_addr = String::from("");
+            for event in subcall.events {
+                if event.ty == *"instantiate_contract" {
+                    for attrb in event.attributes {
+                        if attrb.key == "contract_address" {
+                            donation_match_contract_addr = attrb.value;
+                        }
+                    }
+                }
+            }
+
+            // update the endowment "donation_matching_contract" to be new donation_match_contract_addr
+            let mut endowment = ENDOWMENT.load(deps.storage)?;
+            endowment.donation_matching_contract =
+                Some(deps.api.addr_validate(&donation_match_contract_addr)?);
             ENDOWMENT.save(deps.storage, &endowment)?;
 
             Ok(Response::default())
@@ -595,6 +626,7 @@ pub fn deposit(
     msg: DepositMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+    let profile = PROFILE.load(deps.storage)?;
 
     // check that the Endowment has been approved to receive deposits
     if !config.deposit_approved {
@@ -649,7 +681,7 @@ pub fn deposit(
         liquid_split = new_splits.1;
     }
 
-    let ust_locked = Coin {
+    let mut ust_locked = Coin {
         amount: deposit_amount.amount * locked_split,
         denom: "uusd".to_string(),
     };
@@ -665,13 +697,49 @@ pub fn deposit(
 
     let tx_record = TransactionRecord {
         block: env.block.height,
-        sender: sender_addr,
+        sender: sender_addr.clone(),
         recipient: None,
         amount: deposit_amount.amount,
         denom: deposit_amount.denom,
     };
     state.transactions.push(tx_record);
     STATE.save(deps.storage, &state)?;
+
+    // check if the donation matching is possible
+    let mut donor_match_messages: Vec<SubMsg> = vec![];
+    if !ust_locked.amount.is_zero() && endowment.donation_match && endowment.dao_token.is_some() {
+        // get the correct donation match contract to use
+        let donation_match_contract = match profile.endow_type {
+            EndowmentType::Normal => match endowment.donation_matching_contract {
+                Some(addr) => addr,
+                None => return Err(ContractError::AccountNotCreated {}),
+            },
+            EndowmentType::Charity => match registrar_config.donation_match_charites_contract {
+                Some(addr) => deps.api.addr_validate(&addr)?,
+                None => return Err(ContractError::AccountDoesNotExist {}),
+            },
+        };
+        // 10% of "ust_locked" amount
+        let donation_match_amount = ust_locked.amount.multiply_ratio(100_u128, 1000_u128);
+        ust_locked = Coin {
+            amount: ust_locked.amount - donation_match_amount,
+            denom: "uusd".to_string(),
+        };
+
+        // build "donor_match" message for donation matching
+        donor_match_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: donation_match_contract.to_string(),
+            msg: to_binary(&DonationMatchExecMsg::DonorMatch {
+                amount: donation_match_amount,
+                donor: sender_addr,
+                token: endowment.dao_token.unwrap(),
+            })?,
+            funds: vec![Coin {
+                amount: donation_match_amount,
+                denom: "uusd".to_string(),
+            }],
+        })));
+    };
 
     // build deposit messages for each of the sources/amounts
     let deposit_messages = deposit_to_vaults(
@@ -684,6 +752,7 @@ pub fn deposit(
 
     Ok(Response::new()
         .add_submessages(deposit_messages)
+        .add_submessages(donor_match_messages)
         .add_attribute("action", "account_deposit")
         .add_attribute("sender", info.sender.to_string())
         .add_attribute("deposit_amount", deposit_amount.amount.to_string()))

@@ -206,6 +206,11 @@ pub fn update_config(
         None => Ok(config.split_to_liquid.default),
     };
     config.split_to_liquid = split_checks(max.unwrap(), min.unwrap(), default.unwrap()).unwrap();
+    config.donation_match_charites_contract = match msg.donation_match_charites_contract {
+        Some(v) => Some(deps.api.addr_validate(v.as_str())?),
+        None => config.donation_match_charites_contract,
+    };
+
     config.collector_addr = msg
         .collector_addr
         .map(|addr| deps.api.addr_validate(&addr).unwrap());
@@ -255,6 +260,10 @@ pub fn create_endowment(
             beneficiary: msg.beneficiary,
             profile: msg.profile,
             cw4_members: msg.cw4_members,
+            donation_match_setup_option: msg.donation_match_setup_option,
+            halo_ust_lp_pair_contract: msg.halo_ust_lp_pair_contract,
+            user_reserve_token: msg.user_reserve_token,
+            user_reserve_ust_lp_pair_contract: msg.user_reserve_ust_lp_pair_contract,
         })?,
         funds: vec![],
     };

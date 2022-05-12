@@ -27,6 +27,9 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         split_to_liquid: config.split_to_liquid,
         halo_token: config.halo_token.map(|addr| addr.to_string()),
         gov_contract: config.gov_contract.map(|addr| addr.to_string()),
+        donation_match_charites_contract: config
+            .donation_match_charites_contract
+            .map(|addr| addr.to_string()),
         collector_addr: config
             .collector_addr
             .map(|addr| addr.to_string())

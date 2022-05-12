@@ -67,6 +67,10 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
         maturity_height: endowment.maturity_height,
         strategies: endowment.strategies,
         rebalance: endowment.rebalance,
+        donation_match_contract_addr: endowment
+            .donation_matching_contract
+            .and_then(|addr| Some(addr.to_string()))
+            .unwrap_or("".to_string()),
     })
 }
 
