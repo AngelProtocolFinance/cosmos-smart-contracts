@@ -14,8 +14,8 @@ use angel_core::structs::{BalanceInfo, EndowmentEntry, EndowmentStatus};
 use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
     to_binary, Addr, Attribute, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env,
-    Fraction, MessageInfo, Order, QueryRequest, ReplyOn, Response, StdError, SubMsg,
-    SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery, StdResult,
+    Fraction, MessageInfo, Order, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg,
+    SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20CoinVerified};
 
@@ -407,9 +407,8 @@ pub fn harvest(
     let mut config = config::read(deps.storage)?;
 
     // check that the tx sender is an approved Accounts SC
-    let res: StdResult<EndowmentDetailResponse> = deps
-        .querier
-        .query(&QueryRequest::Wasm(WasmQuery::Smart {
+    let res: StdResult<EndowmentDetailResponse> =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQueryMsg::Endowment {
                 endowment_addr: info.sender.to_string(),
@@ -437,7 +436,8 @@ pub fn harvest(
             msg: to_binary(&RegistrarQueryMsg::Config {})?,
         }))?;
     let treasury_addr = deps.api.addr_validate(&registrar_config.treasury)?;
-    let collector_addr = deps.api.addr_validate(&collector_address)?;
+    let collector_addr = deps.api.addr_validate(&registrar_config.collector_addr)?;
+    let collector_share = registrar_config.collector_share;
     let mut harvest_account = BalanceInfo::default();
 
     // shuffle DP tokens from Locked to Liquid
@@ -753,7 +753,7 @@ pub fn process_anchor_reply(
                             )?],
                         })
                     };
-                    
+
                     // Send UST to the Beneficiary via BankMsg::Send
                     msgs.push(BankMsg::Send {
                         to_address: transaction.beneficiary.unwrap().to_string(),
