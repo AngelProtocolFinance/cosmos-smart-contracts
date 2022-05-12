@@ -952,9 +952,9 @@ pub fn harvest(
     info: MessageInfo,
     vault_addr: String,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let endowment = ENDOWMENT.load(deps.storage)?;
     // harvest can only be valid if it comes from the  (AP Team/DANO) SC Owner
-    if info.sender.ne(&config.owner) {
+    if info.sender.ne(&endowment.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
