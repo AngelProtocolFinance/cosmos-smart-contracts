@@ -1,6 +1,6 @@
 [package]
 name = "halo-staking"
-version = "0.0.1"
+version = "1.6.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 description = "A Staking contract for Angel Protocol - distribute rewards to stakers"
@@ -26,7 +26,7 @@ cw20 = { version = "0.8.0" }
 cosmwasm-std = { version = "0.16.0", features = ["iterator"] }
 cosmwasm-storage = { version = "0.16.0", features = ["iterator"] }
 cw-storage-plus = { version = "0.9.0" }
-halo-token = { version = "0.1.0", path = "../../../packages/halo_token" }
+halo-token = { version = "2.0.0", path = "../../../packages/halo_token" }
 schemars = "0.8.1"
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 

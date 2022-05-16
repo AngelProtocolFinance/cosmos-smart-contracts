@@ -76,25 +76,26 @@ pub fn query_endowment_details(
 
 pub fn query_endowment_list(
     deps: Deps,
-    name: Option<String>,
-    owner: Option<String>,
-    status: Option<String>,       // String -> EndowmentStatus
-    tier: Option<Option<String>>, // String -> Tier
-    un_sdg: Option<Option<u64>>,  // u64 -> UN SDG
-    endow_type: Option<String>,   // String -> EndowmentType
+    name: Option<Option<String>>,
+    owner: Option<Option<String>>,
+    status: Option<String>,             // String -> EndowmentStatus
+    tier: Option<Option<String>>,       // String -> Tier
+    un_sdg: Option<Option<u64>>,        // u64 -> UN SDG
+    endow_type: Option<Option<String>>, // String -> EndowmentType
 ) -> StdResult<EndowmentListResponse> {
     let endowments = read_registry_entries(deps.storage)?;
     let endowments = match name {
-        Some(name) => endowments
+        Some(nm) => endowments
             .into_iter()
-            .filter(|e| e.name == name)
+            .filter(|e| e.name == nm)
             .collect::<Vec<EndowmentEntry>>(),
         None => endowments,
     };
+
     let endowments = match owner {
-        Some(owner) => endowments
+        Some(oner) => endowments
             .into_iter()
-            .filter(|e| e.owner == owner)
+            .filter(|e| e.owner == oner)
             .collect::<Vec<EndowmentEntry>>(),
         None => endowments,
     };
@@ -128,10 +129,17 @@ pub fn query_endowment_list(
         None => endowments,
     };
     let endowments = match endow_type {
-        Some(endow_type) => endowments
-            .into_iter()
-            .filter(|e| e.endow_type.to_string() == endow_type)
-            .collect::<Vec<EndowmentEntry>>(),
+        Some(endow_type) => {
+            let end_ty = endow_type.and_then(|v| match v.as_str() {
+                "charity" => Some(EndowmentType::Charity),
+                "normal" => Some(EndowmentType::Normal),
+                _ => unimplemented!(),
+            });
+            endowments
+                .into_iter()
+                .filter(|e| e.endow_type == end_ty)
+                .collect::<Vec<EndowmentEntry>>()
+        }
         None => endowments,
     };
 

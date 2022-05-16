@@ -294,14 +294,14 @@ impl WasmMockQuerier {
                     to_binary(&EndowmentListResponse {
                         endowments: vec![EndowmentEntry {
                             address: Addr::unchecked("endowment_contract"),
-                            name: "test-endow".to_string(),
+                            name: Some("test-endow".to_string()),
                             logo: Some("test-logo".to_string()),
                             image: Some("test-image".to_string()),
                             un_sdg: Some(333_u64),
-                            owner: "endowment-owner".to_string(),
+                            owner: Some("endowment-owner".to_string()),
                             status: EndowmentStatus::Approved,
                             tier: None,
-                            endow_type: EndowmentType::Charity,
+                            endow_type: Some(EndowmentType::Charity),
                         }],
                     })
                     .unwrap(),
@@ -332,13 +332,13 @@ impl WasmMockQuerier {
                             to_binary(&EndowmentDetailResponse {
                                 endowment: EndowmentEntry {
                                     address: Addr::unchecked("Test-Endowment-Address"),
-                                    name: "Test-Endowment-#1".to_string(),
+                                    name: Some("Test-Endowment-#1".to_string()),
                                     logo: Some("test-logo".to_string()),
                                     image: Some("test-image".to_string()),
                                     un_sdg: Some(333_u64),
-                                    owner: "Test-Endowment-Owner".to_string(),
+                                    owner: Some("Test-Endowment-Owner".to_string()),
                                     status: angel_core::structs::EndowmentStatus::Approved,
-                                    endow_type: angel_core::structs::EndowmentType::Charity,
+                                    endow_type: Some(angel_core::structs::EndowmentType::Charity),
                                     tier: Some(Tier::Level1),
                                 },
                             })

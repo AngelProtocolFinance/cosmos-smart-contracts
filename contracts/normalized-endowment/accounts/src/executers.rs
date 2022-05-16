@@ -9,7 +9,7 @@ use angel_core::messages::index_fund::DepositMsg as IndexFundDepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg as IndexFundExecuter;
 use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
 use angel_core::messages::registrar::{
-    ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentTypeMsg,
+    ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentEntryMsg,
 };
 use angel_core::messages::vault::{
     AccountTransferMsg, AccountWithdrawMsg, ExecuteMsg as VaultExecuteMsg,
@@ -945,8 +945,8 @@ pub fn update_profile(
         if let Some(overview) = msg.overview {
             profile.overview = overview;
         }
-        profile.logo = msg.logo;
-        profile.image = msg.image;
+        profile.logo = msg.logo.clone();
+        profile.image = msg.image.clone();
         profile.url = msg.url;
         profile.registration_number = msg.registration_number;
         profile.country_of_origin = msg.country_of_origin;
@@ -969,10 +969,12 @@ pub fn update_profile(
 
     let sub_msgs: Vec<SubMsg> = vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.registrar_contract.to_string(),
-        msg: to_binary(&RegistrarExecuter::UpdateEndowmentType(
-            UpdateEndowmentTypeMsg {
+        msg: to_binary(&RegistrarExecuter::UpdateEndowmentEntry(
+            UpdateEndowmentEntryMsg {
                 endowment_addr: env.contract.address.to_string(),
                 name: msg.name,
+                logo: msg.logo,
+                image: msg.image,
                 owner: None,
                 tier,
                 un_sdg,

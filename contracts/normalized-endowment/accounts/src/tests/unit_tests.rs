@@ -1,5 +1,3 @@
-use std::vec;
-
 use super::mock_querier::mock_dependencies;
 use crate::contract::{execute, instantiate, migrate, query};
 use angel_core::errors::core::*;
@@ -8,6 +6,7 @@ use angel_core::responses::accounts::*;
 use angel_core::structs::{EndowmentFee, EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{attr, coins, from_binary, Addr, Decimal, Fraction};
+use std::vec;
 
 #[test]
 fn test_proper_initialization() {

@@ -1,6 +1,6 @@
 [package]
 name = "halo-airdrop"
-version = "0.0.1"
+version = "1.6.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 description = "A Airdrop contract for Angel Protocol - allow users to claim rewards with Merkle Tree based proof"
@@ -22,7 +22,7 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-halo-token = { version = "0.1.0", path = "../../../packages/halo_token" }
+halo-token = { version = "2.0.0", path = "../../../packages/halo_token" }
 cosmwasm-std = { version = "0.16.0" }
 cosmwasm-storage = { version = "0.16.0" }
 cw-storage-plus = { version = "0.9.0" }

@@ -1,6 +1,6 @@
 [package]
 name = "halo-token"
-version = "0.1.0"
+version = "2.0.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 description = "Common helpers for other angel-token specs"
