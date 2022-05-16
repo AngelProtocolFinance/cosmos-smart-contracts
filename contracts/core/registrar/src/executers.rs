@@ -400,14 +400,14 @@ pub fn new_accounts_reply(
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,
-                    name: endowment_name.clone(),
-                    owner: endowment_owner.clone(),
+                    name: Some(endowment_name.clone()),
+                    owner: Some(endowment_owner.clone()),
                     status: EndowmentStatus::Inactive,
                     tier: None,
                     un_sdg: None,
                     endow_type: match endowment_type.as_str() {
-                        "charity" => EndowmentType::Charity,
-                        "normal" => EndowmentType::Normal,
+                        "charity" => Some(EndowmentType::Charity),
+                        "normal" => Some(EndowmentType::Normal),
                         _ => unimplemented!(),
                     },
                     logo: Some(endowment_logo.clone()),
@@ -478,11 +478,11 @@ fn harvest_msg(account: String, collector_address: String, collector_share: Deci
     }
 }
 
-pub fn update_endowment_type(
+pub fn update_endowment_entry(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: UpdateEndowmentTypeMsg,
+    msg: UpdateEndowmentEntryMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endow_addr = deps.api.addr_validate(&msg.endowment_addr)?;
@@ -495,20 +495,14 @@ pub fn update_endowment_type(
     let endowment_addr = msg.endowment_addr.as_bytes();
     let mut endowment_entry = registry_read(deps.storage, endowment_addr)?;
 
-    if let Some(name) = msg.name {
-        endowment_entry.name = name;
-    }
-
-    if let Some(owner) = msg.owner {
-        endowment_entry.owner = owner;
-    }
+    endowment_entry.name = msg.name;
+    endowment_entry.owner = msg.owner;
+    endowment_entry.endow_type = msg.endow_type;
+    endowment_entry.logo = msg.logo;
+    endowment_entry.image = msg.image;
 
     if let Some(tier) = msg.tier {
         endowment_entry.tier = tier;
-    }
-
-    if let Some(endow_type) = msg.endow_type {
-        endowment_entry.endow_type = endow_type;
     }
 
     registry_store(deps.storage, endowment_addr, &endowment_entry)?;

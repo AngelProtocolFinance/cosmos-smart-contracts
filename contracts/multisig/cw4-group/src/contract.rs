@@ -4,10 +4,10 @@ use crate::state::{ADMIN, HOOKS, MEMBERS, TOTAL};
 use angel_core::messages::cw4_group::InstantiateMsg;
 use cosmwasm_std::{
     attr, entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response,
-    StdResult, SubMsg,
+    StdError, StdResult, SubMsg,
 };
 use cw0::maybe_addr;
-use cw2::set_contract_version;
+use cw2::{get_contract_version, set_contract_version};
 use cw4::{
     Member, MemberChangedHookMsg, MemberDiff, MemberListResponse, MemberResponse,
     TotalWeightResponse,
@@ -206,7 +206,24 @@ pub fn list_members(
     Ok(MemberListResponse { members: members? })
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+#[entry_point]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let ver = get_contract_version(deps.storage)?;
+    // ensure we are migrating from an allowed contract
+    if ver.contract != CONTRACT_NAME {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Can only upgrade from same type".to_string(),
+        }));
+    }
+    // note: better to do proper semver compare, but string compare *usually* works
+    if ver.version >= CONTRACT_VERSION.to_string() {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Cannot upgrade from a newer version".to_string(),
+        }));
+    }
+
+    // set the new version
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     Ok(Response::default())
 }
