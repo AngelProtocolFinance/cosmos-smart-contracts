@@ -6,10 +6,10 @@ use angel_core::messages::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
-    StdResult,
+    entry_point, from_slice, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Reply,
+    Response, StdError, StdResult,
 };
-use cw2::set_contract_version;
+use cw2::{get_contract_version, set_contract_version};
 use cw_storage_plus::Path;
 use std::ops::Deref;
 
@@ -84,8 +84,8 @@ pub fn execute(
             collector_address,
             collector_share,
         } => executers::harvest(deps, env, info, collector_address, collector_share),
-        ExecuteMsg::UpdateEndowmentType(msg) => {
-            executers::update_endowment_type(deps, env, info, msg)
+        ExecuteMsg::UpdateEndowmentEntry(msg) => {
+            executers::update_endowment_entry(deps, env, info, msg)
         }
     }
 }
@@ -133,49 +133,24 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     }
 }
 
-#[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
-    const REGISTRY_KEY: &[u8] = b"registry";
-    // msg pass in an { endowments: [ (address, status, name, owner, tier), ... ] }
-    for e in msg.endowments {
-        // build key for registrar's endowment
-        // let key = [REGISTRY_KEY, e.addr.clone().as_bytes()].concat();
-
-        let path: Path<EndowmentEntry> = Path::new(REGISTRY_KEY, &[e.addr.clone().as_bytes()]);
-        let key = path.deref();
-
-        // set the new EndowmentEntry at the given key
-        deps.storage.set(
-            key,
-            &to_vec(&EndowmentEntry {
-                address: deps.api.addr_validate(&e.addr)?, // Addr,
-                name: e.name,                              // String,
-                owner: e.owner,                            // String,
-                // EndowmentStatus
-                status: match e.status {
-                    0 => EndowmentStatus::Inactive,
-                    1 => EndowmentStatus::Approved,
-                    2 => EndowmentStatus::Frozen,
-                    3 => EndowmentStatus::Closed,
-                    _ => EndowmentStatus::Inactive,
-                },
-                // Option<Tier>
-                tier: match e.tier {
-                    Some(1) => Some(Tier::Level1),
-                    Some(2) => Some(Tier::Level2),
-                    Some(3) => Some(Tier::Level3),
-                    _ => None,
-                },
-                // UN_SDG Option<u64>
-                un_sdg: match e.un_sdg {
-                    Some(0) => None,
-                    _ => e.un_sdg,
-                },
-                endow_type: EndowmentType::Charity, // EndowmentType,
-                logo: e.logo,
-                image: e.image,
-            })?,
-        );
+#[entry_point]
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+    let ver = get_contract_version(deps.storage)?;
+    // ensure we are migrating from an allowed contract
+    if ver.contract != CONTRACT_NAME {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Can only upgrade from same type".to_string(),
+        }));
     }
+    // note: better to do proper semver compare, but string compare *usually* works
+    if ver.version >= CONTRACT_VERSION.to_string() {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Cannot upgrade from a newer version".to_string(),
+        }));
+    }
+
+    // set the new version
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     Ok(Response::default())
 }

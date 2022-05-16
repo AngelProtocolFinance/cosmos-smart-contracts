@@ -5,7 +5,6 @@ use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-// static PREFIX_REGISTRY_INDEXER: &[u8] = b"registry_indexer";
 const MAX_LIMIT: u64 = 30;
 const DEFAULT_LIMIT: u64 = 10;
 
