@@ -172,7 +172,7 @@ export async function testCharityCanHarvestWithdrawFee(
     sendTransaction(terra, charity1, [
       new MsgExecuteContract(charity1.key.accAddress, endowment, {
         harvest: {
-          vault: anchorVault1,
+          vault_addr: anchorVault1,
         },
       }),
     ])
@@ -192,19 +192,16 @@ export async function testCharityCanHarvestAUMFee(
   terra: LocalTerra | LCDClient,
   charity1: Wallet,
   endowment: string,
-  anchorVault1: string,
 ): Promise<void> {
   process.stdout.write("Test - Charity can harvest aum_fee");
 
   await expect(
     sendTransaction(terra, charity1, [
       new MsgExecuteContract(charity1.key.accAddress, endowment, {
-        harvest_aum: {
-          vault: anchorVault1,
-        },
+        harvest_aum: { },
       }),
     ])
-  );
+  ).to.be.rejectedWith("AUM_FEE info is not set");
   console.log(chalk.green(" Passed!"));
 }
 

@@ -14,6 +14,7 @@ import {
   testQueryAccountsState,
   testQueryAccountsTransactions,
   testCharityCanHarvestWithdrawFee,
+  testCharityCanHarvestAUMFee,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -334,7 +335,9 @@ export async function testExecute(
   //   [endowmentContract2, endowmentContract3, endowmentContract4]
   // );
   // await testRemoveIndexFund(terra, apTeam, indexFund, 1);
-  await testCharityCanHarvestWithdrawFee(terra, apTeam, endowmentContract1, anchorVault1);
+  // await testCharityCanHarvestWithdrawFee(terra, charity1, endowmentContract1, anchorVault1);
+  // await testCharityCanHarvestAUMFee(terra, charity1, endowmentContract1);
+  
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);
@@ -346,7 +349,7 @@ export async function testExecute(
   // await testQueryVaultConfig(terra, anchorVault1);  //EMPTY_ANCHORVAULT_ERR
   // await testQueryAccountsBalance(terra, endowmentContract4); //QUERY_VAULT_ADDRESS_ERR
   // await testQueryAccountsConfig(terra, endowmentContract4);
-  // await testQueryAccountsEndowment(terra, endowmentContract4);
+  // await testQueryAccountsEndowment(terra, endowmentContract1);
   // await testQueryAccountsProfile(terra, endowmentContract4);
   // await testQueryAccountsState(terra, endowmentContract4);
   // await testQueryAccountsTransactions(
