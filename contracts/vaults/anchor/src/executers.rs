@@ -534,21 +534,6 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
             .add_attribute("sender", info.sender.to_string())
             .add_attribute("withdraw_amount", withdraw_total);
 
-        // check the "earnings_fee" info
-        let mut payout_address: Option<Addr> = None;
-        let mut fee_amount: Option<Uint128> = None;
-        let endow_fees_resp: EndowmentFeesResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: info.sender.to_string(),
-                msg: to_binary(&EndowmentQueryMsg::GetEndowmentFees {})?,
-            }))?;
-        if let Some(fee_info) = endow_fees_resp.earnings_fee {
-            if fee_info.active {
-                payout_address = Some(fee_info.payout_address);
-                fee_amount = Some(withdraw_total * collector_share * fee_info.fee_percentage);
-            }
-        }
-
         // Harvested Amount is split by collector split input percentage
         if !collector_share.is_zero() && collector_share <= Decimal::one() {
             let submessage_id = config.next_pending_id;
@@ -562,8 +547,8 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
                     fund: None,
                     locked: Uint128::zero(),
                     liquid: withdraw_total * collector_share,
-                    payout_address,
-                    fee_amount,
+                    payout_address: None,
+                    fee_amount: None,
                 },
             )?;
             withdraw_leftover = withdraw_total - (withdraw_total * collector_share);
@@ -584,6 +569,21 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
 
         // Remainder (if any) is sent to AP Treasury Address
         if withdraw_leftover > Uint128::zero() {
+            // check the "earnings_fee" info
+            let mut payout_address: Option<Addr> = None;
+            let mut fee_amount: Option<Uint128> = None;
+            let endow_fees_resp: EndowmentFeesResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: info.sender.to_string(),
+                    msg: to_binary(&EndowmentQueryMsg::GetEndowmentFees {})?,
+                }))?;
+            if let Some(fee_info) = endow_fees_resp.earnings_fee {
+                if fee_info.active {
+                    payout_address = Some(fee_info.payout_address);
+                    fee_amount = Some(withdraw_total * fee_info.fee_percentage);
+                }
+            }
+
             let submessage_id = config.next_pending_id;
             PENDING.save(
                 deps.storage,
@@ -595,8 +595,8 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
                     fund: None,
                     locked: Uint128::zero(),
                     liquid: withdraw_leftover,
-                    payout_address: None,
-                    fee_amount: None,
+                    payout_address,
+                    fee_amount,
                 },
             )?;
             config.next_pending_id += 1;
