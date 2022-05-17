@@ -137,32 +137,6 @@ fn only_registrar_can_change_registrar_contract() {
     );
 }
 
-// #[test]
-// fn migrate_contract() {
-//     let mut deps = mock_dependencies(&[]);
-//     // meet the cast of characters
-//     let ap_team = "angelprotocolteamdano".to_string();
-//     let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-//     let _pleb = "plebAccount".to_string();
-
-//     let instantiate_msg = InstantiateMsg {
-//         registrar_contract: registrar_contract.clone(),
-//         fund_rotation: Some(Some(1000000u64)),
-//         fund_member_limit: Some(20),
-//         funding_goal: None,
-//         accepted_tokens: None,
-//     };
-//     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
-//     let env = mock_env();
-//     let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-//     assert_eq!(0, res.messages.len());
-
-//     // try to migrate the contract
-//     let msg = MigrateMsg {};
-//     let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
-//     assert_eq!(0, res.messages.len())
-// }
-
 #[test]
 fn sc_owner_can_update_list_of_alliance_members() {
     let mut deps = mock_dependencies(&[]);
