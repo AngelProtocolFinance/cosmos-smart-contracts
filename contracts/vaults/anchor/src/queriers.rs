@@ -57,7 +57,6 @@ pub fn query_vault_config(deps: Deps) -> VaultConfigResponse {
         input_denom: config.input_denom,
         yield_token: config.yield_token.to_string(),
         tax_per_block: config.tax_per_block,
-        last_harvest: config.last_harvest,
         harvest_to_liquid: config.harvest_to_liquid,
     }
 }

@@ -458,3 +458,11 @@ impl Default for Profile {
         }
     }
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct EndowmentFee {
+    pub payout_address: Addr,
+    pub fee_percentage: Decimal,
+    pub active: bool,
+}

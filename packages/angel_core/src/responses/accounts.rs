@@ -1,4 +1,6 @@
-use crate::structs::{RebalanceDetails, SocialMedialUrls, StrategyComponent, TransactionRecord};
+use crate::structs::{
+    EndowmentFee, RebalanceDetails, SocialMedialUrls, StrategyComponent, TransactionRecord,
+};
 use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -15,6 +17,8 @@ pub struct ConfigResponse {
     pub registrar_contract: String,
     pub deposit_approved: bool,
     pub withdraw_approved: bool,
+    pub last_earnings_harvest: u64,
+    pub last_harvest_fx: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -53,4 +57,12 @@ pub struct ProfileResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct TxRecordsResponse {
     pub txs: Vec<TransactionRecord>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+pub struct EndowmentFeesResponse {
+    pub earnings_fee: Option<EndowmentFee>,
+    pub deposit_fee: Option<EndowmentFee>,
+    pub withdraw_fee: Option<EndowmentFee>,
+    pub aum_fee: Option<EndowmentFee>,
 }

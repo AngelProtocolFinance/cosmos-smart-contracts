@@ -17,8 +17,6 @@ pub struct Config {
     pub yield_token: Addr,
     pub next_pending_id: u64,
     pub tax_per_block: Decimal,
-    pub last_harvest: u64,
-    pub last_harvest_fx: Option<Decimal256>,
     pub harvest_to_liquid: Decimal,
 }
 
@@ -62,6 +60,8 @@ pub struct PendingInfo {
     pub fund: Option<u64>, // return to the active fund
     pub locked: Uint128,
     pub liquid: Uint128,
+    pub payout_address: Option<Addr>, // Addr to pay the fee, like "withdraw_fee"
+    pub fee_amount: Option<Uint128>,  // Fee amount to pay to "payout_address"
 }
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");

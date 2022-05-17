@@ -264,6 +264,10 @@ pub fn create_endowment(
             halo_ust_lp_pair_contract: msg.halo_ust_lp_pair_contract,
             user_reserve_token: msg.user_reserve_token,
             user_reserve_ust_lp_pair_contract: msg.user_reserve_ust_lp_pair_contract,
+            earnings_fee: msg.earnings_fee,
+            deposit_fee: msg.deposit_fee,
+            withdraw_fee: msg.withdraw_fee,
+            aum_fee: msg.aum_fee,
         })?,
         funds: vec![],
     };
@@ -424,57 +428,6 @@ pub fn new_accounts_reply(
             ]))
         }
         ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
-    }
-}
-
-pub fn harvest(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    collector_address: String,
-    collector_share: Decimal,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // harvest can only be valid if it comes from the  (AP Team/DANO) SC Owner
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-    // gets a list of approved Vaults
-    let vaults = read_vaults(deps.storage, None, None)?;
-    let list = VaultListResponse {
-        vaults: vaults.into_iter().filter(|p| p.approved).collect(),
-    };
-
-    let mut sub_messages: Vec<SubMsg> = vec![];
-    for vault in list.vaults.iter() {
-        sub_messages.push(harvest_msg(
-            vault.address.to_string(),
-            collector_address.clone(),
-            collector_share,
-        ));
-    }
-
-    Ok(Response::new()
-        .add_submessages(sub_messages)
-        .add_attribute("action", "harvest"))
-}
-
-fn harvest_msg(account: String, collector_address: String, collector_share: Decimal) -> SubMsg {
-    let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: account,
-        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {
-            collector_address,
-            collector_share,
-        })
-        .unwrap(),
-        funds: vec![],
-    });
-
-    SubMsg {
-        id: 0,
-        msg: wasm_msg,
-        gas_limit: None,
-        reply_on: ReplyOn::Never,
     }
 }
 

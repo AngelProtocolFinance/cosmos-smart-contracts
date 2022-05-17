@@ -84,10 +84,6 @@ pub fn execute(
             vault_addr,
             approved,
         } => executers::vault_update_status(deps, env, info, vault_addr, approved),
-        ExecuteMsg::Harvest {
-            collector_address,
-            collector_share,
-        } => executers::harvest(deps, env, info, collector_address, collector_share),
         ExecuteMsg::UpdateEndowmentEntry(msg) => {
             executers::update_endowment_entry(deps, env, info, msg)
         }

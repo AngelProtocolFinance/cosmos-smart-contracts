@@ -1,5 +1,5 @@
 use crate::messages::dao_token::CurveType;
-use crate::structs::{FundingSource, RebalanceDetails, StrategyComponent};
+use crate::structs::{EndowmentFee, FundingSource, RebalanceDetails, StrategyComponent};
 use crate::{messages::vault::AccountTransferMsg, structs::Profile};
 use cosmwasm_std::Decimal;
 use cw4::Member;
@@ -7,7 +7,9 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MigrateMsg {}
+pub struct MigrateMsg {
+    pub last_earnings_harvest: u64,
+}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
@@ -31,6 +33,10 @@ pub struct InstantiateMsg {
     pub beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
     pub profile: Profile,    // struct holding the Endowment info
     pub cw4_members: Vec<Member>,
+    pub earnings_fee: Option<EndowmentFee>,
+    pub withdraw_fee: Option<EndowmentFee>,
+    pub deposit_fee: Option<EndowmentFee>,
+    pub aum_fee: Option<EndowmentFee>,
     pub halo_ust_lp_pair_contract: Option<String>, // HALO-UST LP pair contract. Necessary when user wants HALO token as reserve token
     pub donation_match_setup_option: u32, // Donation matching setup options(possible values: 0, 1, 2, 3)
     pub user_reserve_token: Option<String>, // Address of cw20 token, which user wants to use as reserve token in "donation_matching"
@@ -73,6 +79,14 @@ pub enum ExecuteMsg {
     },
     // Update Endowment profile
     UpdateProfile(UpdateProfileMsg),
+    // Update various "EndowmentFee"s
+    UpdateEndowmentFees(UpdateEndowmentFeesMsg),
+    // (earnings) Harvest
+    Harvest {
+        vault_addr: String,
+    },
+    // AUM harvest
+    HarvestAum {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -159,6 +173,14 @@ pub struct UpdateProfileMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateEndowmentFeesMsg {
+    pub earnings_fee: Option<EndowmentFee>,
+    pub deposit_fee: Option<EndowmentFee>,
+    pub withdraw_fee: Option<EndowmentFee>,
+    pub aum_fee: Option<EndowmentFee>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get the balance of available UST and the invested portion balances
@@ -178,4 +200,6 @@ pub enum QueryMsg {
         recipient: Option<String>,
         denom: Option<String>,
     },
+    // Get all "EndowmentFee"s
+    GetEndowmentFees {},
 }

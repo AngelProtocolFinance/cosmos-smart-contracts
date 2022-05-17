@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::state::PROFILE;
 use crate::state::{CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
@@ -11,23 +13,27 @@ use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
 use angel_core::messages::registrar::{
     ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentEntryMsg,
 };
-use angel_core::messages::vault::AccountTransferMsg;
+use angel_core::messages::vault::{
+    AccountTransferMsg, AccountWithdrawMsg, ExecuteMsg as VaultExecuteMsg,
+    QueryMsg as VaultQueryMsg,
+};
 use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, EndowmentType, FundingSource, SocialMedialUrls, SplitDetails,
-    StrategyComponent, Tier, TransactionRecord,
+    AcceptedTokens, BalanceResponse, EndowmentFee, EndowmentType, FundingSource, SocialMedialUrls,
+    SplitDetails, StrategyComponent, Tier, TransactionRecord,
 };
 use angel_core::utils::{
     check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
     withdraw_from_vaults,
 };
+use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
-    QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgExecutionResponse, Uint128,
-    WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env, Fraction,
+    MessageInfo, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg,
+    SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
 };
 use cw0::Duration;
 use cw20::Balance;
@@ -626,6 +632,8 @@ pub fn deposit(
     msg: DepositMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    let mut res = Response::new();
     let profile = PROFILE.load(deps.storage)?;
 
     // check that the Endowment has been approved to receive deposits
@@ -645,7 +653,7 @@ pub fn deposit(
         return Err(ContractError::InvalidCoinsDeposited {});
     }
 
-    let deposit_amount: Coin = Coin {
+    let mut deposit_amount: Coin = Coin {
         denom: "uusd".to_string(),
         amount: info
             .funds
@@ -657,6 +665,30 @@ pub fn deposit(
 
     if deposit_amount.amount.is_zero() {
         return Err(ContractError::EmptyBalance {});
+    }
+
+    // Deduct the `deposit_fee` from `deposit_amount` if configured.
+    // Send the `deposit_fee` to `payout_address` if any.
+    if endowment.deposit_fee.is_some() {
+        let EndowmentFee {
+            payout_address,
+            fee_percentage,
+            active,
+        } = endowment.deposit_fee.unwrap();
+        if active {
+            let deposit_fee: Coin = Coin {
+                denom: "uusd".to_string(),
+                amount: deposit_amount
+                    .amount
+                    .multiply_ratio(fee_percentage.numerator(), fee_percentage.denominator()),
+            };
+            deposit_amount.amount -= deposit_fee.amount;
+
+            res = res.add_message(CosmosMsg::Bank(BankMsg::Send {
+                to_address: payout_address.to_string(),
+                amount: vec![deposit_fee],
+            }));
+        }
     }
 
     let mut locked_split = msg.locked_percentage;
@@ -750,7 +782,7 @@ pub fn deposit(
         &endowment.strategies,
     )?;
 
-    Ok(Response::new()
+    Ok(res
         .add_submessages(deposit_messages)
         .add_submessages(donor_match_messages)
         .add_attribute("action", "account_deposit")
@@ -959,4 +991,187 @@ pub fn update_profile(
         .add_submessages(sub_msgs)
         .add_attribute("action", "update_profile")
         .add_attribute("sender", info.sender.to_string()))
+}
+
+pub fn update_endowment_fees(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateEndowmentFeesMsg,
+) -> Result<Response, ContractError> {
+    // Validation 1. Only "Endowment.owner" or "Config.owner" is able to execute
+    let mut endowment = ENDOWMENT.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender != endowment.owner && info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Update the "EndowmentFee"s
+    endowment.earnings_fee = msg.earnings_fee;
+    endowment.deposit_fee = msg.deposit_fee;
+    endowment.withdraw_fee = msg.withdraw_fee;
+    endowment.aum_fee = msg.aum_fee;
+
+    ENDOWMENT.save(deps.storage, &endowment)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "update_endowment_fees")
+        .add_attribute("sender", info.sender.to_string()))
+}
+
+pub fn harvest(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    vault_addr: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    // harvest can only be valid if it comes from the  (AP Team/DANO) SC Owner
+    if info.sender.ne(&endowment.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let vault_addr = deps.api.addr_validate(&vault_addr)?;
+
+    let mut sub_messages: Vec<SubMsg> = vec![];
+    sub_messages.push(harvest_msg(
+        vault_addr.to_string(),
+        config.last_earnings_harvest,
+        config.last_harvest_fx,
+    ));
+
+    Ok(Response::new()
+        .add_submessages(sub_messages)
+        .add_attribute("action", "harvest"))
+}
+
+fn harvest_msg(
+    account: String,
+    last_earnings_harvest: u64,
+    last_harvest_fx: Option<Decimal256>,
+) -> SubMsg {
+    let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: account,
+        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {
+            last_earnings_harvest,
+            last_harvest_fx,
+        })
+        .unwrap(),
+        funds: vec![],
+    });
+
+    SubMsg {
+        id: 5,
+        msg: wasm_msg,
+        gas_limit: None,
+        reply_on: ReplyOn::Success,
+    }
+}
+
+pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    let endowment = ENDOWMENT.load(deps.storage)?;
+
+    // Validations
+    if info.sender != endowment.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Get the `aum_fee` info
+    if endowment.aum_fee.is_none() {
+        return Err(ContractError::Std(StdError::generic_err(
+            "AUM_FEE info is not set",
+        )));
+    }
+    let EndowmentFee {
+        fee_percentage,
+        payout_address,
+        active,
+    } = endowment.aum_fee.unwrap();
+    if !active {
+        return Err(ContractError::Std(StdError::generic_err(
+            "AUM_FEE info is not activated",
+        )));
+    }
+
+    // Calc the total AUM & aum_harvest_withdraw from vaults balances
+    let mut msgs: Vec<CosmosMsg> = vec![];
+    let vaults: Vec<Addr> = endowment
+        .strategies
+        .iter()
+        .map(|s| s.vault.clone())
+        .collect();
+    for vault in vaults {
+        let vault_balances: BalanceResponse = deps.querier.query_wasm_smart(
+            vault.to_string(),
+            &VaultQueryMsg::Balance {
+                address: vault.to_string(),
+            },
+        )?;
+        // Here, we assume that only one native coin -
+        // `UST` is used for deposit/withdraw in vault
+        let mut total_aum: Uint128 = Uint128::zero();
+        total_aum += vault_balances.locked_native[0].amount;
+        total_aum += vault_balances.liquid_native[0].amount;
+
+        // Calc the `aum_harvest_withdraw` amount
+        if !total_aum.is_zero() {
+            let aum_harvest_withdraw =
+                total_aum.multiply_ratio(fee_percentage.numerator(), fee_percentage.denominator());
+            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: vault.to_string(),
+                msg: to_binary(&VaultExecuteMsg::Withdraw(AccountWithdrawMsg {
+                    beneficiary: payout_address.clone(),
+                    locked: aum_harvest_withdraw.multiply_ratio(1_u128, 2_u128),
+                    liquid: aum_harvest_withdraw.multiply_ratio(1_u128, 2_u128),
+                }))
+                .unwrap(),
+                funds: vec![],
+            }))
+        }
+    }
+
+    if msgs.is_empty() {
+        return Err(ContractError::Std(StdError::generic_err(
+            "Total AUM is zero",
+        )));
+    }
+
+    Ok(Response::new()
+        .add_messages(msgs)
+        .add_attribute("action", "harvest_aum_fee"))
+}
+
+pub fn harvest_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: ContractResult<SubMsgExecutionResponse>,
+) -> Result<Response, ContractError> {
+    match msg {
+        ContractResult::Ok(subcall) => {
+            let mut last_earnings_harvest: u64 = 0;
+            let mut last_harvest_fx: Option<Decimal256> = None;
+            for event in subcall.events {
+                if event.ty == "wasm" {
+                    for attrb in event.attributes {
+                        if attrb.key == "last_earnings_harvest" {
+                            last_earnings_harvest = attrb.value.parse::<u64>().unwrap();
+                        }
+                        if attrb.key == "last_harvest_fx" {
+                            last_harvest_fx = Some(Decimal256::from_str(&attrb.value).unwrap());
+                        }
+                    }
+                }
+            }
+
+            let mut config = CONFIG.load(deps.storage)?;
+            config.last_earnings_harvest = last_earnings_harvest;
+            config.last_harvest_fx = last_harvest_fx;
+            CONFIG.save(deps.storage, &config)?;
+
+            Ok(Response::default())
+        }
+        ContractResult::Err(_) => Err(ContractError::Std(StdError::generic_err("Harvest failed"))),
+    }
 }

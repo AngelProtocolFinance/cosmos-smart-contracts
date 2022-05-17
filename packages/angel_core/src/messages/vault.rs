@@ -1,3 +1,4 @@
+use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -29,8 +30,8 @@ pub enum ExecuteMsg {
     },
     Withdraw(AccountWithdrawMsg),
     Harvest {
-        collector_address: String,
-        collector_share: Decimal,
+        last_earnings_harvest: u64,
+        last_harvest_fx: Option<Decimal256>,
     },
 }
 

@@ -1,5 +1,6 @@
 use crate::executers;
 use crate::queriers;
+use crate::state::OldConfig;
 use crate::state::PROFILE;
 use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
@@ -12,9 +13,9 @@ use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::EndowmentType;
 use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{
-    attr, entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
-    WasmQuery,
+    attr, entry_point, from_slice, to_binary, to_vec, Binary, CosmosMsg, Decimal, Deps, DepsMut,
+    Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
+    WasmMsg, WasmQuery,
 };
 
 use cw2::set_contract_version;
@@ -26,7 +27,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -42,6 +43,8 @@ pub fn instantiate(
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
             pending_redemptions: None,
+            last_earnings_harvest: env.block.height,
+            last_harvest_fx: None,
         },
     )?;
 
@@ -77,6 +80,10 @@ pub fn instantiate(
             whitelisted_contributors: msg.whitelisted_contributors,   // Vec<String>
             locked_endowment_configs: msg.locked_endowment_configs,   // vec<String>
             donation_matching_contract: None,
+            earnings_fee: msg.earnings_fee,
+            withdraw_fee: msg.withdraw_fee,
+            deposit_fee: msg.deposit_fee,
+            aum_fee: msg.aum_fee,
         },
     )?;
 
@@ -288,6 +295,12 @@ pub fn execute(
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
+        ExecuteMsg::UpdateEndowmentFees(msg) => {
+            executers::update_endowment_fees(deps, env, info, msg)
+        }
+        // Allows the DANO/AP Team to harvest all active vaults
+        ExecuteMsg::Harvest { vault_addr } => executers::harvest(deps, env, info, vault_addr),
+        ExecuteMsg::HarvestAum {} => executers::harvest_aum(deps, env, info),
     }
 }
 
@@ -301,6 +314,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
         2 => executers::new_cw3_multisig_reply(deps, env, msg.result),
         3 => executers::new_dao_token_reply(deps, env, msg.result),
         4 => executers::new_donation_match_reply(deps, env, msg.result),
+        5 => executers::harvest_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }
@@ -320,10 +334,32 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&queriers::query_transactions(
             deps, sender, recipient, denom,
         )?),
+        QueryMsg::GetEndowmentFees {} => to_binary(&queriers::query_endowment_fees(deps)?),
     }
 }
 
 #[entry_point]
-pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    const CONFIG_KEY: &[u8] = b"config";
+    let data = deps
+        .storage
+        .get(CONFIG_KEY)
+        .ok_or_else(|| ContractError::Std(StdError::not_found("config")))?;
+    let old_config: OldConfig = from_slice(&data)?;
+
+    deps.storage.set(
+        CONFIG_KEY,
+        &to_vec(&Config {
+            owner: old_config.owner,
+            registrar_contract: old_config.registrar_contract,
+            accepted_tokens: old_config.accepted_tokens,
+            deposit_approved: old_config.deposit_approved,
+            withdraw_approved: old_config.withdraw_approved,
+            pending_redemptions: old_config.pending_redemptions,
+            last_earnings_harvest: msg.last_earnings_harvest,
+            last_harvest_fx: None,
+        })?,
+    );
+
     Ok(Response::default())
 }

@@ -14,6 +14,11 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         registrar_contract: config.registrar_contract.to_string(),
         deposit_approved: config.deposit_approved,
         withdraw_approved: config.withdraw_approved,
+        last_earnings_harvest: config.last_earnings_harvest,
+        last_harvest_fx: config
+            .last_harvest_fx
+            .map(|v| v.to_string())
+            .unwrap_or("".to_string()),
     })
 }
 
@@ -146,4 +151,14 @@ pub fn query_transactions(
     };
 
     Ok(TxRecordsResponse { txs })
+}
+
+pub fn query_endowment_fees(deps: Deps) -> StdResult<EndowmentFeesResponse> {
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    Ok(EndowmentFeesResponse {
+        earnings_fee: endowment.earnings_fee,
+        deposit_fee: endowment.deposit_fee,
+        withdraw_fee: endowment.withdraw_fee,
+        aum_fee: endowment.aum_fee,
+    })
 }

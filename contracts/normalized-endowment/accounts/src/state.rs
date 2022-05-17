@@ -1,6 +1,8 @@
 use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, Profile, RebalanceDetails, StrategyComponent, TransactionRecord,
+    AcceptedTokens, BalanceInfo, EndowmentFee, Profile, RebalanceDetails, StrategyComponent,
+    TransactionRecord,
 };
+use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
@@ -9,6 +11,19 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
+    pub owner: Addr, // DANO/AP Team Address
+    pub registrar_contract: Addr,
+    pub accepted_tokens: AcceptedTokens,
+    pub deposit_approved: bool, // DANO has approved to receive donations & transact
+    pub withdraw_approved: bool, // DANO has approved to withdraw funds
+    pub pending_redemptions: Option<u64>,
+    pub last_earnings_harvest: u64,
+    pub last_harvest_fx: Option<Decimal256>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct OldConfig {
     pub owner: Addr, // DANO/AP Team Address
     pub registrar_contract: Addr,
     pub accepted_tokens: AcceptedTokens,
@@ -34,6 +49,10 @@ pub struct Endowment {
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
     pub locked_endowment_configs: Vec<String>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
+    pub earnings_fee: Option<EndowmentFee>, // Earnings Fee
+    pub withdraw_fee: Option<EndowmentFee>, // Withdraw Fee
+    pub deposit_fee: Option<EndowmentFee>, // Deposit Fee
+    pub aum_fee: Option<EndowmentFee>, // AUM(Assets Under Management) Fee
     pub donation_matching_contract: Option<Addr>, // donation matching contract address
 }
 

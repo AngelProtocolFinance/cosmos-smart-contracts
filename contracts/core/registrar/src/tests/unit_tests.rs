@@ -17,7 +17,7 @@ const MOCK_CW4_CODE_ID: u64 = 19;
 #[test]
 fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
-    let ap_team = "angelprotocolteamdano".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
@@ -38,7 +38,7 @@ fn proper_initialization() {
 #[test]
 fn update_owner() {
     let mut deps = mock_dependencies(&[]);
-    let ap_team = "angelprotocolteamdano".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
     let pleb = "plebAccount".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
@@ -68,7 +68,7 @@ fn update_owner() {
 #[test]
 fn update_config() {
     let mut deps = mock_dependencies(&[]);
-    let ap_team = "angelprotocolteamdano".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
     let index_fund_contract = String::from("index_fund_contract");
     let donation_match_charites_contract = String::from("donation-match-contract");
     let instantiate_msg = InstantiateMsg {
@@ -120,39 +120,10 @@ fn update_config() {
 }
 
 #[test]
-fn migrate_contract() {
-    let mut deps = mock_dependencies(&[]);
-    // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
-        treasury: ap_team.clone(),
-        default_vault: None,
-        tax_rate: Decimal::percent(20),
-        split_to_liquid: Some(SplitDetails::default()),
-    };
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
-    let env = mock_env();
-    let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
-
-    // try to migrate the contract
-    let msg = MigrateMsg {
-        collector_addr: Some("collector_contract".to_string()),
-        endowtype_fees: MigrateEndowTypeFees {
-            endowtype_charity: Some(Decimal::percent(20)),
-            endowtype_normal: Some(Decimal::percent(10)),
-        },
-    };
-    let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
-    assert_eq!(0, res.messages.len())
-}
-
-#[test]
 fn test_owner_can_add_remove_approved_charities() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
     let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
     let pleb = "plebAccount".to_string();
     let instantiate_msg = InstantiateMsg {
@@ -171,7 +142,7 @@ fn test_owner_can_add_remove_approved_charities() {
 fn anyone_can_create_endowment_accounts_and_then_update() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
     let good_charity_addr = "GOODQTWTETGSGSRHJTUIQADG".to_string();
     let good_endowment_addr = "ENDOWMENTADRESS".to_string();
     let default_vault_addr = "default-vault".to_string();
@@ -262,6 +233,10 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         halo_ust_lp_pair_contract: None,
         user_reserve_token: None,
         user_reserve_ust_lp_pair_contract: None,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
     };
 
     let info = mock_info(good_charity_addr.as_ref(), &coins(100000, "earth"));
@@ -444,7 +419,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
 #[test]
 fn test_add_update_and_remove_vault() {
     let mut deps = mock_dependencies(&[]);
-    let ap_team = "angelprotocolteamdano".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
     let vault_addr = "vault_addr".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
@@ -505,7 +480,7 @@ fn test_add_update_and_remove_vault() {
 #[test]
 fn test_query_fees() {
     let mut deps = mock_dependencies(&[]);
-    let ap_team = "angelprotocolteamdano".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
     let vault_addr = "vault_addr".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
@@ -529,7 +504,7 @@ fn test_query_fees() {
 #[test]
 fn test_update_endowtype_fees() {
     let mut deps = mock_dependencies(&[]);
-    let ap_team = "angelprotocolteamdano".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
     let vault_addr = "vault_addr".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),

@@ -3,18 +3,18 @@ use crate::contract::{execute, instantiate, migrate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
-use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
+use angel_core::structs::{EndowmentFee, EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info};
-use cosmwasm_std::{attr, coins, from_binary, Addr, Decimal};
+use cosmwasm_std::{attr, coins, from_binary, Addr, Decimal, Fraction};
 use std::vec;
 
 #[test]
 fn test_proper_initialization() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
         overview: "Endowment to power an amazing charity".to_string(),
@@ -64,6 +64,14 @@ fn test_proper_initialization() {
         halo_ust_lp_pair_contract: None,
         user_reserve_token: None,
         user_reserve_ust_lp_pair_contract: None,
+        earnings_fee: Some(EndowmentFee {
+            payout_address: Addr::unchecked("payout-wallet"),
+            fee_percentage: Decimal::percent(3),
+            active: false,
+        }),
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
     };
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();
@@ -75,9 +83,9 @@ fn test_proper_initialization() {
 fn test_get_config() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
         overview: "Endowment to power an amazing charity".to_string(),
@@ -123,6 +131,10 @@ fn test_get_config() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
         donation_match_setup_option: 0,
         halo_ust_lp_pair_contract: None,
         user_reserve_token: None,
@@ -138,10 +150,10 @@ fn test_get_config() {
 fn test_update_endowment_settings() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
+    let pleb = "pleb-address".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -188,6 +200,10 @@ fn test_update_endowment_settings() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
         donation_match_setup_option: 0,
         halo_ust_lp_pair_contract: None,
         user_reserve_token: None,
@@ -254,10 +270,10 @@ fn test_update_endowment_settings() {
 fn test_change_registrar_contract() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
+    let pleb = "pleb-address".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -304,6 +320,10 @@ fn test_change_registrar_contract() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
         donation_match_setup_option: 0,
         halo_ust_lp_pair_contract: None,
         user_reserve_token: None,
@@ -348,10 +368,10 @@ fn test_change_registrar_contract() {
 fn test_change_admin() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
+    let pleb = "pleb-address".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -398,6 +418,10 @@ fn test_change_admin() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
         donation_match_setup_option: 0,
         halo_ust_lp_pair_contract: None,
         user_reserve_token: None,
@@ -439,83 +463,13 @@ fn test_change_admin() {
 }
 
 #[test]
-fn migrate_contract() {
-    let mut deps = mock_dependencies(&[]);
-    // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let _pleb = "plebAccount".to_string();
-
-    let profile: Profile = Profile {
-        name: "Test Endowment".to_string(),
-        overview: "Endowment to power an amazing charity".to_string(),
-        un_sdg: None,
-        tier: None,
-        logo: None,
-        image: None,
-        url: None,
-        registration_number: None,
-        country_of_origin: None,
-        street_address: None,
-        contact_email: None,
-        social_media_urls: SocialMedialUrls {
-            facebook: None,
-            twitter: None,
-            linkedin: None,
-        },
-        number_of_employees: None,
-        average_annual_budget: None,
-        annual_revenue: None,
-        charity_navigator_rating: None,
-        endow_type: EndowmentType::Charity,
-    };
-
-    let instantiate_msg = InstantiateMsg {
-        owner_sc: ap_team.clone(),
-        registrar_contract: registrar_contract.clone(),
-        owner: charity_addr.clone(),
-        cw4_members: vec![],
-        dao: false,
-        donation_match: false,
-        whitelisted_beneficiaries: vec![],
-        whitelisted_contributors: vec![],
-        locked_endowment_configs: vec![],
-        name: "Test Endowment".to_string(),
-        description: "Endowment to power an amazing charity".to_string(),
-        withdraw_before_maturity: false,
-        maturity_time: None,
-        maturity_height: None,
-        curve_type: None,
-        split_max: Decimal::one(),
-        split_min: Decimal::zero(),
-        split_default: Decimal::percent(30),
-        beneficiary: charity_addr.clone(),
-        profile: profile.clone(),
-        donation_match_setup_option: 0,
-        halo_ust_lp_pair_contract: None,
-        user_reserve_token: None,
-        user_reserve_ust_lp_pair_contract: None,
-    };
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
-    let env = mock_env();
-    let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
-
-    // try to migrate the contract
-    let msg = MigrateMsg {};
-    let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
-    assert_eq!(0, res.messages.len())
-}
-
-#[test]
 fn test_update_strategy() {
     let mut deps = mock_dependencies(&[]);
 
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
+    let pleb = "pleb-address".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -562,6 +516,10 @@ fn test_update_strategy() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
         donation_match_setup_option: 0,
         halo_ust_lp_pair_contract: None,
         user_reserve_token: None,
@@ -657,10 +615,10 @@ fn test_update_strategy() {
 fn test_update_endowment_profile() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
+    let pleb = "pleb-address".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -707,6 +665,10 @@ fn test_update_endowment_profile() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
         donation_match_setup_option: 0,
         halo_ust_lp_pair_contract: None,
         user_reserve_token: None,
@@ -802,10 +764,11 @@ fn test_update_endowment_profile() {
 fn test_donate() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
     let depositor = Addr::unchecked("depositor");
+    let deposit_fee_perc = Decimal::percent(10);
 
     // Initialize the Endowment
     let profile: Profile = Profile {
@@ -853,6 +816,14 @@ fn test_donate() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: Some(EndowmentFee {
+            payout_address: Addr::unchecked("payout-address"),
+            fee_percentage: deposit_fee_perc,
+            active: true,
+        }),
+        withdraw_fee: None,
+        aum_fee: None,
         donation_match_setup_option: 0,
         halo_ust_lp_pair_contract: None,
         user_reserve_token: None,
@@ -884,7 +855,9 @@ fn test_donate() {
     // Check the "STATE" for "transactions" field
     let query_res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&query_res).unwrap();
-    assert_eq!(state.donations_received.u128(), donation_amt);
+    // Since the `deposit_fee` is configured, the real `donation_amt` is less than original one.
+    let deposit_fee = donation_amt * deposit_fee_perc.numerator() / deposit_fee_perc.denominator();
+    assert_eq!(state.donations_received.u128(), donation_amt - deposit_fee);
 
     let query_res = query(
         deps.as_ref(),
@@ -904,9 +877,9 @@ fn test_donate() {
 fn test_withdraw() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
     let depositor = Addr::unchecked("depositor");
 
     // Initialize the Endowment
@@ -955,6 +928,10 @@ fn test_withdraw() {
         split_default: Decimal::percent(30),
         beneficiary: charity_addr.clone(),
         profile: profile,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
         donation_match_setup_option: 0,
         halo_ust_lp_pair_contract: None,
         user_reserve_token: None,
@@ -989,4 +966,209 @@ fn test_withdraw() {
     };
     let res = execute(deps.as_mut(), mock_env(), info, withdraw_msg).unwrap();
     assert_eq!(res.messages.len(), 0);
+}
+
+#[test]
+fn test_query_endowment_fees() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
+    let depositor = Addr::unchecked("depositor");
+
+    // Initialize the Endowment
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: ap_team.clone(),
+        registrar_contract: registrar_contract.clone(),
+        owner: charity_addr.clone(),
+        cw4_members: vec![],
+        dao: false,
+        donation_match: false,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        locked_endowment_configs: vec![],
+        name: "Test Endowment".to_string(),
+        description: "Endowment to power an amazing charity".to_string(),
+        withdraw_before_maturity: false,
+        maturity_time: None,
+        maturity_height: None,
+        curve_type: None,
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::percent(30),
+        beneficiary: charity_addr.clone(),
+        profile: profile,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
+        earnings_fee: Some(EndowmentFee {
+            payout_address: Addr::unchecked("payout-wallet"),
+            fee_percentage: Decimal::percent(3),
+            active: false,
+        }),
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let _res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+    // Query the "EndowmentFee"s
+    let query_res = query(deps.as_ref(), mock_env(), QueryMsg::GetEndowmentFees {}).unwrap();
+    let endow_fee_response: EndowmentFeesResponse = from_binary(&query_res).unwrap();
+    assert_eq!(
+        endow_fee_response.earnings_fee,
+        Some(EndowmentFee {
+            payout_address: Addr::unchecked("payout-wallet"),
+            fee_percentage: Decimal::percent(3),
+            active: false,
+        })
+    );
+    assert_eq!(endow_fee_response.deposit_fee, None);
+    assert_eq!(endow_fee_response.withdraw_fee, None);
+    assert_eq!(endow_fee_response.aum_fee, None);
+}
+
+#[test]
+fn test_update_endowment_fees() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
+    let depositor = Addr::unchecked("depositor");
+
+    // Initialize the Endowment
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: ap_team.clone(),
+        registrar_contract: registrar_contract.clone(),
+        owner: charity_addr.clone(),
+        cw4_members: vec![],
+        dao: false,
+        donation_match: false,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        locked_endowment_configs: vec![],
+        name: "Test Endowment".to_string(),
+        description: "Endowment to power an amazing charity".to_string(),
+        withdraw_before_maturity: false,
+        maturity_time: None,
+        maturity_height: None,
+        curve_type: None,
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::percent(30),
+        beneficiary: charity_addr.clone(),
+        profile: profile,
+        donation_match_setup_option: 0,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
+        earnings_fee: Some(EndowmentFee {
+            payout_address: Addr::unchecked("payout-wallet"),
+            fee_percentage: Decimal::percent(3),
+            active: false,
+        }),
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let _res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+    // Update the "EndowmentFee"s
+    let update_endowment_fees_msg = UpdateEndowmentFeesMsg {
+        earnings_fee: None,
+        deposit_fee: Some(EndowmentFee {
+            payout_address: Addr::unchecked("another-payout-address"),
+            fee_percentage: Decimal::percent(2),
+            active: true,
+        }),
+        withdraw_fee: None,
+        aum_fee: None,
+    };
+
+    let info = mock_info(&ap_team, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateEndowmentFees(update_endowment_fees_msg),
+    )
+    .unwrap();
+
+    assert_eq!(
+        res.attributes,
+        vec![
+            attr("action", "update_endowment_fees"),
+            attr("sender", ap_team.to_string()),
+        ]
+    );
+
+    // Query the "EndowmentFee"s
+    let query_res = query(deps.as_ref(), mock_env(), QueryMsg::GetEndowmentFees {}).unwrap();
+    let endow_fee_response: EndowmentFeesResponse = from_binary(&query_res).unwrap();
+    assert_eq!(
+        endow_fee_response.deposit_fee,
+        Some(EndowmentFee {
+            payout_address: Addr::unchecked("another-payout-address"),
+            fee_percentage: Decimal::percent(2),
+            active: true,
+        })
+    );
+    assert_eq!(endow_fee_response.earnings_fee, None);
+    assert_eq!(endow_fee_response.withdraw_fee, None);
+    assert_eq!(endow_fee_response.aum_fee, None);
 }

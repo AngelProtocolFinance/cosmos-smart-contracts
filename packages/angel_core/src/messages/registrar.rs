@@ -1,5 +1,5 @@
 use crate::messages::dao_token::CurveType;
-use crate::structs::{EndowmentType, Profile, SplitDetails, Tier};
+use crate::structs::{EndowmentFee, EndowmentType, Profile, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
 use schemars::JsonSchema;
@@ -8,8 +8,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 
 pub struct MigrateMsg {
-    // [ (address, status, name, owner, tier), ...]
-    pub endowments: Vec<MigrateEndowment>,
     // EndowmentTypeFees
     pub endowtype_fees: MigrateEndowTypeFees,
     // collector_addr
@@ -49,24 +47,12 @@ pub enum ExecuteMsg {
     CreateEndowment(CreateEndowmentMsg),
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     VaultAdd(VaultAddMsg),
-    VaultRemove {
-        vault_addr: String,
-    },
-    VaultUpdateStatus {
-        vault_addr: String,
-        approved: bool,
-    },
+    VaultRemove { vault_addr: String },
+    VaultUpdateStatus { vault_addr: String, approved: bool },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
     // Allows the SC owner to change ownership
-    UpdateOwner {
-        new_owner: String,
-    },
-    // Allows the DANO/AP Team to harvest all active vaults
-    Harvest {
-        collector_address: String,
-        collector_share: Decimal,
-    },
+    UpdateOwner { new_owner: String },
     // Set/Update/Nullify the EndowmentTypeFees
     UpdateEndowTypeFees(UpdateEndowTypeFeesMsg),
     // Allows the DANO/AP Team to update the EndowmentEntry
@@ -93,6 +79,10 @@ pub struct CreateEndowmentMsg {
     pub curve_type: Option<CurveType>,
     pub beneficiary: String,
     pub profile: Profile,
+    pub earnings_fee: Option<EndowmentFee>,
+    pub deposit_fee: Option<EndowmentFee>,
+    pub withdraw_fee: Option<EndowmentFee>,
+    pub aum_fee: Option<EndowmentFee>,
     pub donation_match_setup_option: u32,
     pub halo_ust_lp_pair_contract: Option<String>,
     pub user_reserve_token: Option<String>,
