@@ -12,9 +12,9 @@ use std::vec;
 fn test_proper_initialization() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
         overview: "Endowment to power an amazing charity".to_string(),
@@ -83,9 +83,9 @@ fn test_proper_initialization() {
 fn test_get_config() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
         overview: "Endowment to power an amazing charity".to_string(),
@@ -150,10 +150,10 @@ fn test_get_config() {
 fn test_update_endowment_settings() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
+    let pleb = "pleb-address".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -270,10 +270,10 @@ fn test_update_endowment_settings() {
 fn test_change_registrar_contract() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
+    let pleb = "pleb-address".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -368,10 +368,10 @@ fn test_change_registrar_contract() {
 fn test_change_admin() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
+    let pleb = "pleb-address".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -466,10 +466,10 @@ fn test_change_admin() {
 fn test_update_strategy() {
     let mut deps = mock_dependencies(&[]);
 
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
+    let pleb = "pleb-address".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -615,10 +615,10 @@ fn test_update_strategy() {
 fn test_update_endowment_profile() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
+    let pleb = "pleb-address".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -764,9 +764,9 @@ fn test_update_endowment_profile() {
 fn test_donate() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
     let depositor = Addr::unchecked("depositor");
     let deposit_fee_perc = Decimal::percent(10);
 
@@ -877,9 +877,9 @@ fn test_donate() {
 fn test_withdraw() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
     let depositor = Addr::unchecked("depositor");
 
     // Initialize the Endowment
@@ -972,9 +972,9 @@ fn test_withdraw() {
 fn test_query_endowment_fees() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
     let depositor = Addr::unchecked("depositor");
 
     // Initialize the Endowment
@@ -1060,9 +1060,9 @@ fn test_query_endowment_fees() {
 fn test_update_endowment_fees() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "angel-protocol-team-dano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-address".to_string();
     let depositor = Addr::unchecked("depositor");
 
     // Initialize the Endowment
