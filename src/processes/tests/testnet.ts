@@ -13,6 +13,7 @@ import {
   testQueryAccountsProfile,
   testQueryAccountsState,
   testQueryAccountsTransactions,
+  testCharityCanHarvestWithdrawFee,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -333,6 +334,7 @@ export async function testExecute(
   //   [endowmentContract2, endowmentContract3, endowmentContract4]
   // );
   // await testRemoveIndexFund(terra, apTeam, indexFund, 1);
+  await testCharityCanHarvestWithdrawFee(terra, apTeam, endowmentContract1, anchorVault1);
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);

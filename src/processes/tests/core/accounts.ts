@@ -153,6 +153,62 @@ export async function testCharityCanUpdateStrategies(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: Charity Owner can harvest the "withdraw_fee"
+//
+// SCENARIO:
+// Charity Owner can trigger a "harvest".
+//
+//----------------------------------------------------------------------------------------
+
+export async function testCharityCanHarvestWithdrawFee(
+  terra: LocalTerra | LCDClient,
+  charity1: Wallet,
+  endowment: string,
+  anchorVault1: string,
+): Promise<void> {
+  process.stdout.write("Test - Charity can harvest withdraw_fee");
+
+  await expect(
+    sendTransaction(terra, charity1, [
+      new MsgExecuteContract(charity1.key.accAddress, endowment, {
+        harvest: {
+          vault: anchorVault1,
+        },
+      }),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Charity Owner can harvest the "aum_fee"
+//
+// SCENARIO:
+// Charity Owner can trigger a "harvest_aum" .
+//
+//----------------------------------------------------------------------------------------
+
+export async function testCharityCanHarvestAUMFee(
+  terra: LocalTerra | LCDClient,
+  charity1: Wallet,
+  endowment: string,
+  anchorVault1: string,
+): Promise<void> {
+  process.stdout.write("Test - Charity can harvest aum_fee");
+
+  await expect(
+    sendTransaction(terra, charity1, [
+      new MsgExecuteContract(charity1.key.accAddress, endowment, {
+        harvest_aum: {
+          vault: anchorVault1,
+        },
+      }),
+    ])
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
 // TEST: Contract Owner can set new owner of endowment
 //
 // SCENARIO:
