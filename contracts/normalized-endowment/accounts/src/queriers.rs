@@ -14,6 +14,11 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         registrar_contract: config.registrar_contract.to_string(),
         deposit_approved: config.deposit_approved,
         withdraw_approved: config.withdraw_approved,
+        last_earnings_harvest: config.last_earnings_harvest,
+        last_harvest_fx: config
+            .last_harvest_fx
+            .map(|v| v.to_string())
+            .unwrap_or("".to_string()),
     })
 }
 

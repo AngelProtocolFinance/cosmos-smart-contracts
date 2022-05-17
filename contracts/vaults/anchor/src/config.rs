@@ -17,8 +17,6 @@ pub struct Config {
     pub yield_token: Addr,
     pub next_pending_id: u64,
     pub tax_per_block: Decimal,
-    pub last_harvest: u64,
-    pub last_harvest_fx: Option<Decimal256>,
     pub harvest_to_liquid: Decimal,
 }
 

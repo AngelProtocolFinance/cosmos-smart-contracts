@@ -1,3 +1,4 @@
+use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -16,13 +17,22 @@ pub struct MigrateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    UpdateOwner { new_owner: String },
-    UpdateRegistrar { new_registrar: Addr },
+    UpdateOwner {
+        new_owner: String,
+    },
+    UpdateRegistrar {
+        new_registrar: Addr,
+    },
     UpdateConfig(UpdateConfigMsg),
     Deposit(AccountTransferMsg),
-    Redeem { account_addr: Addr },
+    Redeem {
+        account_addr: Addr,
+    },
     Withdraw(AccountWithdrawMsg),
-    Harvest {},
+    Harvest {
+        last_earnings_harvest: u64,
+        last_harvest_fx: Option<Decimal256>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

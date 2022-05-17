@@ -53,8 +53,6 @@ pub enum ExecuteMsg {
     UpdateConfig(UpdateConfigMsg),
     // Allows the SC owner to change ownership
     UpdateOwner { new_owner: String },
-    // Allows the DANO/AP Team to harvest all active vaults
-    Harvest {},
     // Set/Update/Nullify the EndowmentTypeFees
     UpdateEndowTypeFees(UpdateEndowTypeFeesMsg),
     // Allows the DANO/AP Team to update the EndowmentEntry

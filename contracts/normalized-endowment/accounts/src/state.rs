@@ -2,6 +2,7 @@ use angel_core::structs::{
     AcceptedTokens, BalanceInfo, EndowmentFee, Profile, RebalanceDetails, StrategyComponent,
     TransactionRecord,
 };
+use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
@@ -17,6 +18,7 @@ pub struct Config {
     pub withdraw_approved: bool, // DANO has approved to withdraw funds
     pub pending_redemptions: Option<u64>,
     pub last_earnings_harvest: u64,
+    pub last_harvest_fx: Option<Decimal256>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

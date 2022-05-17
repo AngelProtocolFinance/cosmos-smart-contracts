@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use crate::state::PROFILE;
 use crate::state::{CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
@@ -27,6 +29,7 @@ use angel_core::utils::{
     check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
     withdraw_from_vaults,
 };
+use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env, Fraction,
     MessageInfo, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg,
@@ -1023,6 +1026,7 @@ pub fn harvest(
     info: MessageInfo,
     vault_addr: String,
 ) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
     // harvest can only be valid if it comes from the  (AP Team/DANO) SC Owner
     if info.sender.ne(&endowment.owner) {
@@ -1032,25 +1036,37 @@ pub fn harvest(
     let vault_addr = deps.api.addr_validate(&vault_addr)?;
 
     let mut sub_messages: Vec<SubMsg> = vec![];
-    sub_messages.push(harvest_msg(vault_addr.to_string()));
+    sub_messages.push(harvest_msg(
+        vault_addr.to_string(),
+        config.last_earnings_harvest,
+        config.last_harvest_fx,
+    ));
 
     Ok(Response::new()
         .add_submessages(sub_messages)
         .add_attribute("action", "harvest"))
 }
 
-fn harvest_msg(account: String) -> SubMsg {
+fn harvest_msg(
+    account: String,
+    last_earnings_harvest: u64,
+    last_harvest_fx: Option<Decimal256>,
+) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account,
-        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {}).unwrap(),
+        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {
+            last_earnings_harvest,
+            last_harvest_fx,
+        })
+        .unwrap(),
         funds: vec![],
     });
 
     SubMsg {
-        id: 4,
+        id: 5,
         msg: wasm_msg,
         gas_limit: None,
-        reply_on: ReplyOn::Never,
+        reply_on: ReplyOn::Success,
     }
 }
 
@@ -1125,4 +1141,37 @@ pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
     Ok(Response::new()
         .add_messages(msgs)
         .add_attribute("action", "harvest_aum_fee"))
+}
+
+pub fn harvest_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: ContractResult<SubMsgExecutionResponse>,
+) -> Result<Response, ContractError> {
+    match msg {
+        ContractResult::Ok(subcall) => {
+            let mut last_earnings_harvest: u64 = 0;
+            let mut last_harvest_fx: Option<Decimal256> = None;
+            for event in subcall.events {
+                if event.ty == "wasm" {
+                    for attrb in event.attributes {
+                        if attrb.key == "last_earnings_harvest" {
+                            last_earnings_harvest = attrb.value.parse::<u64>().unwrap();
+                        }
+                        if attrb.key == "last_harvest_fx" {
+                            last_harvest_fx = Some(Decimal256::from_str(&attrb.value).unwrap());
+                        }
+                    }
+                }
+            }
+
+            let mut config = CONFIG.load(deps.storage)?;
+            config.last_earnings_harvest = last_earnings_harvest;
+            config.last_harvest_fx = last_harvest_fx;
+            CONFIG.save(deps.storage, &config)?;
+
+            Ok(Response::default())
+        }
+        ContractResult::Err(_) => Err(ContractError::Std(StdError::generic_err("Harvest failed"))),
+    }
 }

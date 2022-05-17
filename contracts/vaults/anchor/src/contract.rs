@@ -20,7 +20,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
     msg: InitMsg,
 ) -> Result<Response, ContractError> {
@@ -37,8 +37,6 @@ pub fn instantiate(
         yield_token: deps.api.addr_validate(&anchor_config.aterra_contract)?,
         next_pending_id: 0,
         tax_per_block: msg.tax_per_block,
-        last_harvest: env.block.height,
-        last_harvest_fx: None,
         harvest_to_liquid: msg.harvest_to_liquid,
     };
 
@@ -82,7 +80,10 @@ pub fn execute(
             executers::redeem_stable(deps, env, info, account_addr)
         } // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
         ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info, msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
-        ExecuteMsg::Harvest {} => executers::harvest(deps, env, info), // DP -> DP shuffle (taxes collected)
+        ExecuteMsg::Harvest {
+            last_earnings_harvest,
+            last_harvest_fx,
+        } => executers::harvest(deps, env, info, last_earnings_harvest, last_harvest_fx), // DP -> DP shuffle (taxes collected)
     }
 }
 

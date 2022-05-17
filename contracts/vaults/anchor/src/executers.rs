@@ -12,6 +12,7 @@ use angel_core::responses::registrar::{
 };
 use angel_core::structs::{BalanceInfo, EndowmentEntry, EndowmentStatus};
 use angel_core::utils::deduct_tax;
+use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{
     to_binary, Addr, Attribute, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env,
     Fraction, MessageInfo, Order, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg,
@@ -395,7 +396,13 @@ pub fn withdraw_stable(
         }))
 }
 
-pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+pub fn harvest(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    last_earnings_harvest: u64,
+    last_harvest_fx: Option<Decimal256>,
+) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
     // check that the tx sender is an approved Accounts SC
@@ -413,12 +420,12 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
     let curr_epoch = anchor::epoch_state(deps.as_ref(), &config.moneymarket)?;
 
     let harvest_earn_rate = Decimal::from(
-        (curr_epoch.exchange_rate - config.last_harvest_fx.unwrap_or(curr_epoch.exchange_rate))
-            / config.last_harvest_fx.unwrap_or(curr_epoch.exchange_rate),
+        (curr_epoch.exchange_rate - last_harvest_fx.unwrap_or(curr_epoch.exchange_rate))
+            / last_harvest_fx.unwrap_or(curr_epoch.exchange_rate),
     );
 
-    config.last_harvest = env.block.height;
-    config.last_harvest_fx = Some(curr_epoch.exchange_rate);
+    let last_earnings_harvest = env.block.height;
+    let last_harvest_fx = Some(curr_epoch.exchange_rate);
     config::store(deps.storage, &config)?;
 
     // pull registrar SC config to fetch the Treasury Tax Rate
@@ -614,7 +621,12 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
                     reply_on: ReplyOn::Always,
                 });
         }
-        Ok(res)
+        Ok(res
+            .add_attribute("last_earnings_harvest", last_earnings_harvest.to_string())
+            .add_attribute(
+                "last_harvest_fx",
+                last_harvest_fx.map(|v| v.to_string()).unwrap(),
+            ))
     } else {
         Ok(Response::new()
             .add_attribute("action", "harvest_redeem_from_vault")

@@ -17,6 +17,8 @@ pub struct ConfigResponse {
     pub registrar_contract: String,
     pub deposit_approved: bool,
     pub withdraw_approved: bool,
+    pub last_earnings_harvest: u64,
+    pub last_harvest_fx: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

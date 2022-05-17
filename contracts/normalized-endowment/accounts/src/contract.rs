@@ -27,7 +27,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -43,7 +43,8 @@ pub fn instantiate(
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
             pending_redemptions: None,
-            last_earnings_harvest: 0,
+            last_earnings_harvest: env.block.height,
+            last_harvest_fx: None,
         },
     )?;
 
@@ -313,6 +314,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
         2 => executers::new_cw3_multisig_reply(deps, env, msg.result),
         3 => executers::new_dao_token_reply(deps, env, msg.result),
         4 => executers::new_donation_match_reply(deps, env, msg.result),
+        5 => executers::harvest_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }
@@ -355,6 +357,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             withdraw_approved: old_config.withdraw_approved,
             pending_redemptions: old_config.pending_redemptions,
             last_earnings_harvest: msg.last_earnings_harvest,
+            last_harvest_fx: None,
         })?,
     );
 
