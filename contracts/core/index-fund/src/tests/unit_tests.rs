@@ -10,9 +10,9 @@ use cosmwasm_std::{attr, coins, from_binary, Addr};
 fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let _pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let _pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
@@ -32,9 +32,9 @@ fn proper_initialization() {
 fn only_sc_owner_can_change_owner() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
@@ -85,9 +85,9 @@ fn only_sc_owner_can_change_owner() {
 fn only_registrar_can_change_registrar_contract() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
@@ -141,9 +141,9 @@ fn only_registrar_can_change_registrar_contract() {
 fn migrate_contract() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let _pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let _pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let instantiate_msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
@@ -166,10 +166,10 @@ fn migrate_contract() {
 fn sc_owner_can_update_list_of_alliance_members() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
@@ -296,9 +296,9 @@ fn sc_owner_can_update_list_of_alliance_members() {
 fn sc_owner_can_add_remove_funds() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
@@ -397,10 +397,10 @@ fn sc_owner_can_add_remove_funds() {
 fn sc_owner_can_update_fund_members() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
@@ -459,9 +459,9 @@ fn sc_owner_can_update_fund_members() {
 fn sc_owner_can_update_alliance_member() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),

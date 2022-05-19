@@ -12,9 +12,9 @@ use std::vec;
 fn test_proper_initialization() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
         overview: "Endowment to power an amazing charity".to_string(),
@@ -60,9 +60,9 @@ fn test_proper_initialization() {
 fn test_get_config() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
         overview: "Endowment to power an amazing charity".to_string(),
@@ -108,10 +108,10 @@ fn test_get_config() {
 fn test_update_endowment_settings() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -191,10 +191,10 @@ fn test_update_endowment_settings() {
 fn test_change_registrar_contract() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -270,10 +270,10 @@ fn test_change_registrar_contract() {
 fn test_change_admin() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -349,10 +349,10 @@ fn test_change_admin() {
 fn migrate_contract() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let _pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let _pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -404,10 +404,10 @@ fn migrate_contract() {
 fn test_update_strategy() {
     let mut deps = mock_dependencies(&[]);
 
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -534,10 +534,10 @@ fn test_update_strategy() {
 fn test_update_endowment_profile() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -664,9 +664,9 @@ fn test_update_endowment_profile() {
 fn test_donate() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
     let depositor = Addr::unchecked("depositor");
 
     // Initialize the Endowment
@@ -751,9 +751,9 @@ fn test_donate() {
 fn test_withdraw() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let registrar_contract = "REGISTRARGSDRGSDRGSDRGFG".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
     let depositor = Addr::unchecked("depositor");
 
     // Initialize the Endowment
