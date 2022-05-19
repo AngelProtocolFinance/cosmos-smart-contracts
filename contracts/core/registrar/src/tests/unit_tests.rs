@@ -115,29 +115,6 @@ fn update_config() {
 }
 
 #[test]
-fn migrate_contract() {
-    let mut deps = mock_dependencies(&[]);
-    // meet the cast of characters
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
-    let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
-        treasury: ap_team.clone(),
-        default_vault: None,
-        tax_rate: Decimal::percent(20),
-        split_to_liquid: Some(SplitDetails::default()),
-    };
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
-    let env = mock_env();
-    let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
-
-    // try to migrate the contract
-    let msg = MigrateMsg {};
-    let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
-    assert_eq!(0, res.messages.len())
-}
-
-#[test]
 fn test_owner_can_add_remove_approved_charities() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters

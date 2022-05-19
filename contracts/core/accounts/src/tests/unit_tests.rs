@@ -346,61 +346,6 @@ fn test_change_admin() {
 }
 
 #[test]
-fn migrate_contract() {
-    let mut deps = mock_dependencies(&[]);
-    // meet the cast of characters
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
-    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
-    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
-    let _pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
-
-    let profile: Profile = Profile {
-        name: "Test Endowment".to_string(),
-        overview: "Endowment to power an amazing charity".to_string(),
-        un_sdg: None,
-        tier: None,
-        logo: None,
-        image: None,
-        url: None,
-        registration_number: None,
-        country_of_origin: None,
-        street_address: None,
-        contact_email: None,
-        social_media_urls: SocialMedialUrls {
-            facebook: None,
-            twitter: None,
-            linkedin: None,
-        },
-        number_of_employees: None,
-        average_annual_budget: None,
-        annual_revenue: None,
-        charity_navigator_rating: None,
-        endow_type: EndowmentType::Charity,
-    };
-
-    let instantiate_msg = InstantiateMsg {
-        owner_sc: ap_team.clone(),
-        registrar_contract: registrar_contract.clone(),
-        owner: charity_addr.clone(),
-        beneficiary: charity_addr.clone(),
-        withdraw_before_maturity: false,
-        maturity_time: None,
-        maturity_height: None,
-        profile: profile.clone(),
-        cw4_members: vec![],
-    };
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
-    let env = mock_env();
-    let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
-
-    // try to migrate the contract
-    let msg = MigrateMsg {};
-    let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
-    assert_eq!(0, res.messages.len())
-}
-
-#[test]
 fn test_update_strategy() {
     let mut deps = mock_dependencies(&[]);
 
