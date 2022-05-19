@@ -1,19 +1,17 @@
 use crate::executers;
 use crate::queriers;
 use crate::state::PROFILE;
-use crate::state::{Config, Endowment, OldState, State, CONFIG, ENDOWMENT, STATE};
+use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
-use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, Profile, RebalanceDetails, StrategyComponent,
-};
+use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{
-    attr, entry_point, from_slice, to_binary, to_vec, Binary, CosmosMsg, Decimal, Deps, DepsMut,
-    Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
-    WasmMsg, WasmQuery,
+    attr, entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
+    QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 
