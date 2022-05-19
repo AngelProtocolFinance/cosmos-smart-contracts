@@ -25,6 +25,7 @@ import {
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
   testQueryIndexFundTcaList,
+  testQueryIndexFundInvolvedAddress,
 } from "./core/indexFunds";
 import {
   testAddMemberToC4Group,
@@ -222,12 +223,7 @@ export async function testExecute(
   //     address: "terra1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2",
   //     status: 3,
   //     beneficiary: "terra1suxqzxtzztxvakvucc6u4s9833n4u0cyk9pmv8",
-  //   }, // Lion's Club Manitowish Waters
-  //   {
-  //     address: "terra1w80ea4dw9u3eh74uavw8f96psawmgmvyuu7t40",
-  //     status: 3,
-  //     beneficiary: "terra1hpumgc72x4wkwcuvr3hl5sanc3mjpmhxuqjxrg",
-  //   }, // JustDiggit
+  //   },
   // ]);
 
   // Test query
@@ -249,6 +245,11 @@ export async function testExecute(
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);
+  // await testQueryIndexFundInvolvedAddress(
+  //   terra,
+  //   indexFund,
+  //   "terra1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2"
+  // );
 
   // HALO gov Tests
   // await testGovUpdateConfig(
