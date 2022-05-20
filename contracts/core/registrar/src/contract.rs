@@ -3,15 +3,13 @@ use crate::queriers;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier};
+use angel_core::structs::SplitDetails;
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, to_vec, Binary, Deps, DepsMut, Env, MessageInfo, Reply,
-    Response, StdError, StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
+    StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
-use cw_storage_plus::Path;
-use std::ops::Deref;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -47,6 +45,8 @@ pub fn instantiate(
         halo_token: None,
         gov_contract: None,
         charity_shares_contract: None,
+        cw3_code: None,
+        cw4_code: None,
     };
 
     CONFIG.save(deps.storage, &configs)?;

@@ -1,5 +1,6 @@
 use crate::structs::{EndowmentType, Profile, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
+use cw4::Member;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -52,6 +53,7 @@ pub struct CreateEndowmentMsg {
     pub maturity_height: Option<u64>,
     pub guardians_multisig_addr: Option<String>,
     pub profile: Profile,
+    pub cw4_members: Vec<Member>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -70,6 +72,8 @@ pub struct UpdateConfigMsg {
     pub halo_token: Option<String>,
     pub gov_contract: Option<String>,
     pub charity_shares_contract: Option<String>,
+    pub cw3_code: Option<u64>,
+    pub cw4_code: Option<u64>,
 }
 
 impl UpdateConfigMsg {

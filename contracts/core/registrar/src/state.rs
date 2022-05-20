@@ -26,6 +26,8 @@ pub struct Config {
     pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
     pub gov_contract: Option<Addr>,    // AP governance contract
     pub charity_shares_contract: Option<Addr>, // Charity Shares staking contract
+    pub cw3_code: Option<u64>,
+    pub cw4_code: Option<u64>,
 }
 
 pub const PREFIX_REGISTRY: Map<&[u8], EndowmentEntry> = Map::new("registry");
@@ -39,7 +41,7 @@ pub fn registry_read(storage: &dyn Storage, k: &[u8]) -> StdResult<EndowmentEntr
     PREFIX_REGISTRY.load(storage, k)
 }
 
-pub fn read_registry_entries<'a>(storage: &'a dyn Storage) -> StdResult<Vec<EndowmentEntry>> {
+pub fn read_registry_entries(storage: &dyn Storage) -> StdResult<Vec<EndowmentEntry>> {
     PREFIX_REGISTRY
         .range(storage, None, None, Order::Ascending)
         .map(|item| {
@@ -64,8 +66,8 @@ pub fn vault_remove(storage: &mut dyn Storage, k: &[u8]) {
     PREFIX_PORTAL.remove(storage, k)
 }
 
-pub fn read_vaults<'a>(
-    storage: &'a dyn Storage,
+pub fn read_vaults(
+    storage: &dyn Storage,
     start_after: Option<Addr>,
     limit: Option<u64>,
 ) -> StdResult<Vec<YieldVault>> {

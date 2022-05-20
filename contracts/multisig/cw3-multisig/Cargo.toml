@@ -1,6 +1,6 @@
 [package]
-name = "guardian-angels-multisig"
-version = "0.1.0"
+name = "cw3-multisig"
+version = "1.6.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 
@@ -22,7 +22,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-angel-core = { path = "../../../packages/angel_core" }
+angel-core = { version = "0.1.0", path = "../../../packages/angel_core" }
 cw0 = "0.9.0"
 cw2 = "0.9.0"
 cw3 = "0.9.0"

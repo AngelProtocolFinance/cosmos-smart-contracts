@@ -11,11 +11,13 @@ use cosmwasm_std::{
 };
 
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
+const MOCK_CW3_CODE_ID: u64 = 18;
+const MOCK_CW4_CODE_ID: u64 = 19;
 
 #[test]
 fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
-    let ap_team = "angelprotocolteamdano".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
@@ -36,8 +38,8 @@ fn proper_initialization() {
 #[test]
 fn update_owner() {
     let mut deps = mock_dependencies(&[]);
-    let ap_team = "angelprotocolteamdano".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
@@ -66,8 +68,8 @@ fn update_owner() {
 #[test]
 fn update_config() {
     let mut deps = mock_dependencies(&[]);
-    let ap_team = "angelprotocolteamdano".to_string();
-    let index_fund_contract = String::from("index_fund_contract");
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let index_fund_contract = String::from("terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d");
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
@@ -94,6 +96,8 @@ fn update_config() {
         charity_shares_contract: None,
         gov_contract: None,
         halo_token: None,
+        cw3_code: Some(MOCK_CW3_CODE_ID),
+        cw4_code: Some(MOCK_CW4_CODE_ID),
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -106,38 +110,17 @@ fn update_config() {
         config_response.index_fund.unwrap()
     );
     assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
-}
-
-#[test]
-fn migrate_contract() {
-    let mut deps = mock_dependencies(&[]);
-    // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
-        treasury: ap_team.clone(),
-        default_vault: None,
-        tax_rate: Decimal::percent(20),
-        split_to_liquid: Some(SplitDetails::default()),
-    };
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
-    let env = mock_env();
-    let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
-
-    // try to migrate the contract
-    let msg = MigrateMsg {};
-    let res = migrate(deps.as_mut(), env.clone(), msg).unwrap();
-    assert_eq!(0, res.messages.len())
+    assert_eq!(MOCK_CW3_CODE_ID, config_response.cw3_code.unwrap());
+    assert_eq!(MOCK_CW4_CODE_ID, config_response.cw4_code.unwrap());
 }
 
 #[test]
 fn test_owner_can_add_remove_approved_charities() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "XCEMQTWTETGSGSRHJTUIQADG".to_string();
-    let pleb = "plebAccount".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
@@ -154,11 +137,11 @@ fn test_owner_can_add_remove_approved_charities() {
 fn anyone_can_create_endowment_accounts_and_then_update() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let good_charity_addr = "GOODQTWTETGSGSRHJTUIQADG".to_string();
-    let good_endowment_addr = "ENDOWMENTADRESS".to_string();
-    let default_vault_addr = "default-vault".to_string();
-    let index_fund_contract = "index-fund-contract".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let good_charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let good_endowment_addr = "terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9".to_string();
+    let default_vault_addr = "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg".to_string();
+    let index_fund_contract = "terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
@@ -186,6 +169,8 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         charity_shares_contract: None,
         gov_contract: None,
         halo_token: None,
+        cw3_code: None,
+        cw4_code: None,
     };
     let info = mock_info(ap_team.as_ref(), &[]);
     let _ = execute(
@@ -228,6 +213,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         maturity_height: None,
         guardians_multisig_addr: None,
         profile: profile,
+        cw4_members: vec![],
     };
 
     // anyone can create Accounts
@@ -411,8 +397,8 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
 #[test]
 fn test_add_update_and_remove_vault() {
     let mut deps = mock_dependencies(&[]);
-    let ap_team = "angelprotocolteamdano".to_string();
-    let vault_addr = "vault_addr".to_string();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let vault_addr = "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
@@ -450,7 +436,7 @@ fn test_add_update_and_remove_vault() {
     // update vault status
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let msg = ExecuteMsg::VaultUpdateStatus {
-        vault_addr: String::from("vault_addr"),
+        vault_addr: String::from("terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg"),
         approved: true,
     };
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
