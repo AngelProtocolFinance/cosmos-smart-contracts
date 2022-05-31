@@ -1,11 +1,11 @@
-// ---------------------------------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------------------------------
 // TestNet information
 // ---------------------------------------------------------------------------------------------------
 export const testnet = {
   // TestNet bombay-12
   networkInfo: {
-    url: "https://bombay-lcd.terra.dev",
-    chainId: "bombay-12",
+    url: "https://pisco-lcd.terra.dev",
+    chainId: "pisco-1",
   },
   // TestNet MoneyMarket Contract
   anchorMoneyMarket: "terra15dwd5mj8v59wpj0wvt233mf5efdff808c5tkal",
@@ -95,7 +95,7 @@ export const mainnet = {
   // MainNet columbus-5
   networkInfo: {
     url: "https://lcd.terra.dev",
-    chainId: "columbus-5",
+    chainId: "phoenix-1",
   },
   // MainNet MoneyMarket Contract
   anchorMoneyMarket: "terra1sepfj7s0aeg5967uxnfk4thzlerrsktkpelm5s",
