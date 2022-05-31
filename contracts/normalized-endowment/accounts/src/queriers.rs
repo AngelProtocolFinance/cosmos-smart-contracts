@@ -18,7 +18,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         last_harvest_fx: config
             .last_harvest_fx
             .map(|v| v.to_string())
-            .unwrap_or("".to_string()),
+            .unwrap_or_else(|| "".to_string()),
     })
 }
 
@@ -74,8 +74,8 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
         rebalance: endowment.rebalance,
         donation_match_contract_addr: endowment
             .donation_matching_contract
-            .and_then(|addr| Some(addr.to_string()))
-            .unwrap_or("".to_string()),
+            .map(|addr| addr.to_string())
+            .unwrap_or_else(|| "".to_string()),
     })
 }
 

@@ -1,7 +1,3 @@
-use crate::allowances::{
-    deduct_allowance, execute_decrease_allowance, execute_increase_allowance, execute_send_from,
-    execute_transfer_from, query_allowance,
-};
 use crate::state::{
     Config, CurveState, MinterData, TokenInfo, BALANCES, CLAIMS, CONFIG, CURVE_STATE, CURVE_TYPE,
     TOKEN_INFO,
@@ -16,9 +12,9 @@ use cosmwasm_std::{
     attr, entry_point, from_binary, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env,
     MessageInfo, Response, StdError, StdResult, Uint128, WasmMsg,
 };
-use cw0::Duration;
 use cw2::set_contract_version;
 use cw20::{BalanceResponse, Cw20ExecuteMsg, Cw20ReceiveMsg, TokenInfoResponse};
+use cw_utils::Duration;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "dao-token";
@@ -139,9 +135,6 @@ pub fn do_execute(
         // We only accept CW20 tokens for reseve asset curve at this time (see receive_cw20 > Buy above).
         // ExecuteMsg::Buy {} => execute_buy(deps, env, info, curve_fn),
         ExecuteMsg::Burn { amount } => Ok(execute_sell(deps, env, info, curve_fn, amount)?),
-        ExecuteMsg::BurnFrom { owner, amount } => {
-            Ok(execute_sell_from(deps, env, info, curve_fn, owner, amount)?)
-        }
         ExecuteMsg::Transfer { recipient, amount } => {
             Ok(execute_transfer(deps, env, info, recipient, amount)?)
         }
@@ -150,35 +143,6 @@ pub fn do_execute(
             amount,
             msg,
         } => Ok(execute_send(deps, env, info, contract, amount, msg)?),
-        ExecuteMsg::IncreaseAllowance {
-            spender,
-            amount,
-            expires,
-        } => Ok(execute_increase_allowance(
-            deps, env, info, spender, amount, expires,
-        )?),
-        ExecuteMsg::DecreaseAllowance {
-            spender,
-            amount,
-            expires,
-        } => Ok(execute_decrease_allowance(
-            deps, env, info, spender, amount, expires,
-        )?),
-        ExecuteMsg::TransferFrom {
-            owner,
-            recipient,
-            amount,
-        } => Ok(execute_transfer_from(
-            deps, env, info, owner, recipient, amount,
-        )?),
-        ExecuteMsg::SendFrom {
-            owner,
-            contract,
-            amount,
-            msg,
-        } => Ok(execute_send_from(
-            deps, env, info, owner, contract, amount, msg,
-        )?),
         ExecuteMsg::Receive(cw20_receive_msg) => {
             Ok(receive_cw20(deps, env, info, cw20_receive_msg)?)
         }
@@ -327,42 +291,6 @@ pub fn execute_sell(
     Ok(res)
 }
 
-pub fn execute_sell_from(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo, // info.sender is the one burning tokens
-    curve_fn: CurveFn,
-    owner: String,
-    amount: Uint128,
-) -> Result<Response, ContractError> {
-    nonpayable(&info)?;
-    let owner_addr = deps.api.addr_validate(&owner)?;
-    let spender_addr = info.sender.clone();
-
-    // deduct allowance before doing anything else have enough allowance
-    deduct_allowance(deps.storage, &owner_addr, &spender_addr, &env.block, amount)?;
-
-    // do all the work in do_sell
-    let receiver_addr = info.sender;
-    let owner_info = MessageInfo {
-        sender: owner_addr,
-        funds: info.funds,
-    };
-    let mut res = do_sell(
-        deps,
-        env,
-        owner_info,
-        curve_fn,
-        receiver_addr.clone(),
-        amount,
-    )?;
-
-    // add our custom attributes
-    res.attributes.push(attr("action", "burn_from"));
-    res.attributes.push(attr("by", receiver_addr));
-    Ok(res)
-}
-
 fn do_sell(
     mut deps: DepsMut,
     env: Env,
@@ -395,7 +323,7 @@ fn do_sell(
     CLAIMS.create_claim(
         deps.storage,
         &info.sender,
-        released,
+        amount,
         config.unbonding_period.after(&env.block),
     )?;
 
@@ -605,9 +533,6 @@ pub fn do_query(deps: Deps, _env: Env, msg: QueryMsg, curve_fn: CurveFn) -> StdR
         // inherited from cw20-base
         QueryMsg::TokenInfo {} => to_binary(&query_token_info(deps)?),
         QueryMsg::Balance { address } => to_binary(&query_balance(deps, address)?),
-        QueryMsg::Allowance { owner, spender } => {
-            to_binary(&query_allowance(deps, owner, spender)?)
-        }
     }
 }
 

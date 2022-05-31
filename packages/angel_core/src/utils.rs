@@ -4,15 +4,14 @@ use crate::messages::vault::{AccountTransferMsg, AccountWithdrawMsg};
 use crate::responses::registrar::VaultDetailResponse;
 use crate::responses::vault::ExchangeRateResponse;
 use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
-use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, MessageInfo, QueryRequest, StdResult,
-    SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, to_vec, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, Decimal256, Deps,
+    Empty, MessageInfo, QueryRequest, StdError, StdResult, SubMsg, SystemError, SystemResult,
+    Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg};
-use terra_cosmwasm::TerraQuerier;
 
-/// The following `calc_range_<???>` functions will set the first key after the provided key, by appending a 1 byte
+// this will set the first key after the provided key, by appending a 1 byte
 pub fn calc_range_start(start_after: Option<u64>) -> Option<Vec<u8>> {
     start_after.map(|id| {
         let mut v = id.to_be_bytes().to_vec();
@@ -21,10 +20,12 @@ pub fn calc_range_start(start_after: Option<u64>) -> Option<Vec<u8>> {
     })
 }
 
+// this will set the first key after the provided key, by appending a 1 byte
 pub fn calc_range_end(start_after: Option<u64>) -> Option<Vec<u8>> {
     start_after.map(|id| id.to_be_bytes().to_vec())
 }
 
+// this will set the first key after the provided key, by appending a 1 byte
 pub fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
     start_after.map(|addr| {
         let mut v = addr.as_bytes().to_vec();
@@ -33,6 +34,7 @@ pub fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
     })
 }
 
+// this will set the first key after the provided key, by appending a 1 byte
 pub fn calc_range_end_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
     start_after.map(|addr| addr.as_bytes().to_vec())
 }
@@ -79,28 +81,6 @@ pub fn ratio_adjusted_balance(balance: Balance, portion: Uint128, total: Uint128
         }),
     };
     adjusted_balance
-}
-
-pub fn compute_tax(deps: Deps, coin: &Coin) -> StdResult<Uint128> {
-    let terra_querier = TerraQuerier::new(&deps.querier);
-    let tax_rate: Decimal = (terra_querier.query_tax_rate()?).rate;
-    let tax_cap: Uint128 = (terra_querier.query_tax_cap(coin.denom.to_string())?).cap;
-    const DECIMAL_FRACTION: Uint128 = Uint128::new(1_000_000_000_000_000_000u128);
-    Ok(std::cmp::min(
-        (coin.amount.checked_sub(coin.amount.multiply_ratio(
-            DECIMAL_FRACTION,
-            DECIMAL_FRACTION * tax_rate + DECIMAL_FRACTION,
-        )))?,
-        tax_cap,
-    ))
-}
-
-pub fn deduct_tax(deps: Deps, coin: Coin) -> StdResult<Coin> {
-    let tax_amount = compute_tax(deps, &coin)?;
-    Ok(Coin {
-        denom: coin.denom,
-        amount: coin.amount - tax_amount,
-    })
 }
 
 pub fn check_splits(
@@ -286,24 +266,8 @@ pub fn deposit_to_vaults(
         let yield_vault: YieldVault = vault_config.vault;
 
         let transfer_msg = AccountTransferMsg {
-            locked: deduct_tax(
-                deps,
-                Coin {
-                    denom: "uusd".to_string(),
-                    amount: locked_ust.amount * strategy.locked_percentage,
-                },
-            )
-            .unwrap()
-            .amount,
-            liquid: deduct_tax(
-                deps,
-                Coin {
-                    denom: "uusd".to_string(),
-                    amount: liquid_ust.amount * strategy.liquid_percentage,
-                },
-            )
-            .unwrap()
-            .amount,
+            locked: locked_ust.amount * strategy.locked_percentage,
+            liquid: liquid_ust.amount * strategy.liquid_percentage,
         };
 
         // create a deposit message for X Vault, noting amounts for Locked / Liquid
@@ -375,8 +339,25 @@ pub fn may_pay(info: &MessageInfo, denom: &str) -> Result<Uint128, PaymentError>
 }
 
 /// Check if the given address is contract or not.
-pub fn check_is_contract(deps: Deps, address: Addr) -> bool {
-    TerraQuerier::new(&deps.querier)
-        .query_contract_info(&address)
-        .is_ok()
+pub fn check_is_contract(deps: Deps, address: Addr) -> Result<bool, ContractError> {
+    let raw = QueryRequest::<Empty>::Wasm(WasmQuery::ContractInfo {
+        contract_addr: address.to_string(),
+    });
+    match deps.querier.raw_query(&to_vec(&raw)?) {
+        SystemResult::Err(SystemError::NoSuchContract { .. }) => Ok(false),
+        SystemResult::Err(system_err) => Err(ContractError::Std(StdError::GenericErr {
+            msg: format!("Querier system error: {}", system_err),
+        })),
+        SystemResult::Ok(ContractResult::Err(contract_err))
+            if contract_err.contains("not found") =>
+        {
+            Ok(false)
+        }
+        SystemResult::Ok(ContractResult::Err(contract_err)) => {
+            Err(ContractError::Std(StdError::GenericErr {
+                msg: format!("Querier contract error: {}", contract_err),
+            }))
+        }
+        SystemResult::Ok(ContractResult::Ok(_)) => Ok(true),
+    }
 }

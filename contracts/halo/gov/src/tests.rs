@@ -10,8 +10,8 @@ use cosmwasm_std::{
     attr, coins, from_binary, to_binary, Addr, Api, ContractResult, CosmosMsg, Decimal, Deps,
     DepsMut, Env, Reply, Response, StdError, SubMsg, Timestamp, Uint128, WasmMsg,
 };
-use cw0::Duration;
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw_utils::Duration;
 use halo_token::common::OrderBy;
 use halo_token::gov::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, PollExecuteMsg, PollResponse,

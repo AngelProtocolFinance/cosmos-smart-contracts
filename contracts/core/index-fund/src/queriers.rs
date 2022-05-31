@@ -54,15 +54,12 @@ pub fn active_fund_details(deps: Deps) -> StdResult<FundDetailsResponse> {
 }
 
 pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
-    let mut donors = vec![];
-    let alliance_addr_list: Vec<Vec<u8>> = ALLIANCE_MEMBERS
+    let alliance_addr_list: Vec<Addr> = ALLIANCE_MEMBERS
         .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-        .collect();
-    let mut alliance_members: Vec<String> = vec![];
+        .collect::<StdResult<_>>()?;
+
+    let mut donors: Vec<DonationDetailResponse> = vec![];
     for member in alliance_addr_list {
-        alliance_members.push(std::str::from_utf8(&member).unwrap().to_string());
-    }
-    for member in alliance_members.into_iter() {
         // add to response vector
         donors.push(DonationDetailResponse {
             address: member.to_string(),

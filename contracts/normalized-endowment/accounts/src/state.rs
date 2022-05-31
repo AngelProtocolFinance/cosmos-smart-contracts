@@ -2,8 +2,7 @@ use angel_core::structs::{
     AcceptedTokens, BalanceInfo, EndowmentFee, Profile, RebalanceDetails, StrategyComponent,
     TransactionRecord,
 };
-use cosmwasm_bignumber::Decimal256;
-use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Decimal256, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

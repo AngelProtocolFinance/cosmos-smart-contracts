@@ -1,8 +1,8 @@
 use crate::common::OrderBy;
 use cosmwasm_std::{Binary, Decimal, Uint128};
-use cw0::Duration;
 use cw20::Cw20ReceiveMsg;
 use cw_controllers::Claim;
+use cw_utils::Duration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;

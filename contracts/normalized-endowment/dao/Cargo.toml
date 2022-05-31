@@ -17,33 +17,19 @@ exclude = [
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[profile.release]
-opt-level = 3
-debug = false
-rpath = false
-lto = true
-debug-assertions = false
-codegen-units = 1
-panic = 'abort'
-incremental = false
-overflow-checks = true
-
 [features]
 # for quicker tests, cargo test --lib
 # for more explicit tests, cargo test --features=backtraces
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cw20 = "0.8.0"
-terraswap = "2.3.0"
-cosmwasm-std = "0.16.0"
-cosmwasm-storage = "0.16.0"
+cw20 = "0.13.2"
+cosmwasm-std = "1.0.0"
+cosmwasm-storage = "1.0.0"
 cw900 = { path = "../../../packages/cw900" }
-schemars = "0.8.1"
-serde = { version = "1.0.103", default-features = false, features = ["derive"] }
-thiserror = "1.0.20"
+cw-asset = "2.0.0"
+angel-core = { path = "../../../packages/angel_core" }
+schemars = "0.8.10"
+serde = "1.0.137"
+thiserror = "1.0.24"
 hex = "0.4"
-
-[dev-dependencies]
-cosmwasm-schema = "0.16.0"
-terra-cosmwasm = "2.2.0"

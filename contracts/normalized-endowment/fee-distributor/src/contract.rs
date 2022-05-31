@@ -8,17 +8,14 @@ use crate::state::{
 };
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    attr, to_binary, Addr, Binary, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
-    StdResult, Uint128, WasmMsg,
+    attr, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
+    Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use cw900::fee_distributor::{
     ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, StakerResponse, StateResponse,
 };
-use cw_storage_plus::U64Key;
-use terraswap::asset::{Asset, AssetInfo, PairInfo};
-use terraswap::pair::ExecuteMsg as TerraswapExecuteMsg;
-use terraswap::querier::{query_balance, query_pair_info, query_token_balance};
+use cw900::querier::query_token_balance;
 
 pub const SECONDS_PER_WEEK: u64 = 7 * 24 * 60 * 60;
 pub const DEFAULT_CLAIM_LIMIT: u32 = 20;
@@ -61,14 +58,13 @@ pub fn execute(
             ve_token,
             terraswap_factory,
         } => register_contracts(deps, dao_token, ve_token, terraswap_factory),
-        ExecuteMsg::Sweep { denom } => sweep(deps, env, denom),
-        ExecuteMsg::DistributeGlow {} => distribute_glow(deps, env),
+        ExecuteMsg::DistributeDaoToken {} => distribute_dao_token(deps, env),
         ExecuteMsg::Claim { limit } => claim(deps, env, info, limit),
         ExecuteMsg::UpdateConfig { owner } => update_config(deps, info, owner),
     }
 }
 
-pub fn distribute_glow(deps: DepsMut, env: Env) -> Result<Response, ContractError> {
+pub fn distribute_dao_token(deps: DepsMut, env: Env) -> Result<Response, ContractError> {
     // Get the config and mutable state
     let config = CONFIG.load(deps.storage)?;
     let mut state = STATE.load(deps.storage)?;
@@ -93,7 +89,7 @@ pub fn distribute_glow(deps: DepsMut, env: Env) -> Result<Response, ContractErro
     // Get the amount to distribute which includes the GLOW that has just been sent to the contractx
     // but subtracts the amount reserved for previous unclaimed fee distribution.
     let amount_to_distribute =
-        query_token_balance(&deps.querier, config.dao_token, state.contract_addr.clone())?
+        query_token_balance(deps.as_ref(), config.dao_token, state.contract_addr.clone())?
             .checked_sub(state.total_distributed_unclaimed_fees)?;
 
     // Verify that the amount to distribute is non zero.
@@ -111,7 +107,7 @@ pub fn distribute_glow(deps: DepsMut, env: Env) -> Result<Response, ContractErro
     // Update WEEKLY_TOKEN_DISTRIBUTION according to the new amount_to_distribute
     WEEKLY_TOKEN_DISTRIBUTION.update(
         deps.storage,
-        U64Key::from(week_timestamp),
+        week_timestamp,
         add_to_week_token_distribution,
     )?;
 
@@ -201,68 +197,6 @@ pub fn register_contracts(
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::default())
-}
-
-/// Sweep
-/// Anyone can execute sweep function to swap
-/// asset native denom => GLOW token
-pub fn sweep(deps: DepsMut, env: Env, denom: String) -> Result<Response, ContractError> {
-    // Read the config, dao_token, and terraswap_factory_addr
-    let config = CONFIG.load(deps.storage)?;
-    let dao_token = config.dao_token;
-    let terraswap_factory_addr = config.terraswap_factory;
-
-    // Get the pair info
-    let pair_info: PairInfo = query_pair_info(
-        &deps.querier,
-        terraswap_factory_addr,
-        &[
-            AssetInfo::NativeToken {
-                denom: denom.to_string(),
-            },
-            AssetInfo::Token {
-                contract_addr: dao_token.to_string(),
-            },
-        ],
-    )?;
-
-    // Sweep the entire balance worth of the denom to glow
-    let amount = query_balance(&deps.querier, env.contract.address, denom.to_string())?;
-    let swap_asset = Asset {
-        info: AssetInfo::NativeToken {
-            denom: denom.to_string(),
-        },
-        amount,
-    };
-
-    // Deduct tax first
-    let amount = (swap_asset.deduct_tax(&deps.querier)?).amount;
-
-    // Response which sweeps all the contracts UST for GLOW
-    Ok(Response::new()
-        .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: pair_info.contract_addr,
-            msg: to_binary(&TerraswapExecuteMsg::Swap {
-                offer_asset: Asset {
-                    amount,
-                    ..swap_asset
-                },
-                max_spread: None,
-                belief_price: None,
-                to: None,
-            })?,
-            funds: vec![Coin {
-                denom: denom.to_string(),
-                amount,
-            }],
-        }))
-        .add_attributes(vec![
-            attr("action", "sweep"),
-            attr(
-                "collected_rewards",
-                format!("{:?}{:?}", amount.to_string(), denom),
-            ),
-        ]))
 }
 
 pub fn update_config(

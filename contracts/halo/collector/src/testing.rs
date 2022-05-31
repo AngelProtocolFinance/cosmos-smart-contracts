@@ -3,7 +3,7 @@ use crate::mock_querier::mock_dependencies;
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     to_binary, Coin, ContractResult, CosmosMsg, Decimal, Reply, ReplyOn, StdError, SubMsg,
-    SubMsgExecutionResponse, Uint128, WasmMsg,
+    SubMsgResponse, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use halo_token::collector::{ConfigResponse, ExecuteMsg, InstantiateMsg};
@@ -162,7 +162,7 @@ fn test_distribute() {
 
     let reply_msg = Reply {
         id: 1,
-        result: ContractResult::Ok(SubMsgExecutionResponse {
+        result: ContractResult::Ok(SubMsgResponse {
             events: vec![],
             data: None,
         }),

@@ -1,10 +1,9 @@
 use angel_core::curves::DecimalPlaces;
 use angel_core::messages::dao_token::CurveType;
 use cosmwasm_std::{Addr, Uint128};
-use cw0::Duration;
-use cw20::AllowanceResponse;
 use cw_controllers::Claims;
 use cw_storage_plus::{Item, Map};
+use cw_utils::Duration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -63,7 +62,6 @@ pub struct Config {
     pub unbonding_period: Duration,
 }
 
-pub const ALLOWANCES: Map<(&Addr, &Addr), AllowanceResponse> = Map::new("allowance");
 pub const BALANCES: Map<&Addr, Uint128> = Map::new("balance");
 pub const CLAIMS: Claims = Claims::new("claims");
 pub const CURVE_STATE: Item<CurveState> = Item::new("curve_state");

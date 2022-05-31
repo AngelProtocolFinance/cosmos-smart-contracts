@@ -1,11 +1,10 @@
 use core::fmt;
-use std::convert::TryFrom;
-use std::ops::{Add, AddAssign, Sub, SubAssign};
-
 use cosmwasm_std::{Addr, Decimal256, Uint128, Uint256};
-use cw_storage_plus::{Item, Map, SnapshotItem, SnapshotMap, U64Key};
+use cw_storage_plus::{Item, Map, SnapshotItem, SnapshotMap};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 pub const SECONDS_PER_WEEK: u64 = 7 * 24 * 60 * 60; // Order of 10 ** 6
 pub const MAX_WEEKS: u64 = 52;
@@ -14,7 +13,7 @@ pub const VOTING_POWER_CONSTANT_DIVISOR: u64 = MAX_SECONDS;
 
 pub const CONFIG: Item<Config> = Item::new("config");
 // pub const STATE: Item<State> = Item::new("state");
-pub const COEFFICIENT_CHANGES: Map<U64Key, QuadraticEquationCoefficients> =
+pub const COEFFICIENT_CHANGES: Map<u64, QuadraticEquationCoefficients> =
     Map::new("coefficient_changes");
 
 pub const USER_LOCKED_BALANCES: SnapshotMap<&Addr, UserLockedBalance> = SnapshotMap::new(

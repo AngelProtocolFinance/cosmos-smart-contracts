@@ -1,9 +1,8 @@
-use crate::state::{read_config, store_config, Config};
 #[cfg(not(feature = "library"))]
-use cosmwasm_std::entry_point;
+use crate::state::{read_config, store_config, Config};
 use cosmwasm_std::{
-    attr, to_binary, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, Reply,
-    Response, StdError, StdResult, SubMsg, WasmMsg,
+    attr, entry_point, to_binary, Binary, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env,
+    MessageInfo, Reply, Response, StdError, StdResult, SubMsg, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use halo_token::collector::{ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
@@ -111,8 +110,6 @@ pub fn sweep(deps: DepsMut, env: Env, denom: String) -> StdResult<Response> {
         amount,
     };
 
-    // deduct tax first
-    let amount = (swap_asset.deduct_tax(&deps.querier)?).amount;
     Ok(Response::new()
         .add_submessage(SubMsg::reply_on_success(
             CosmosMsg::Wasm(WasmMsg::Execute {

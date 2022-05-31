@@ -2,10 +2,8 @@ use crate::error::ContractError;
 use crate::state::{
     State, UserLockedBalance, COEFFICIENT_CHANGES, SECONDS_PER_WEEK, STATE, USER_LOCKED_BALANCES,
 };
-
 use cosmwasm_std::{to_binary, Addr, CosmosMsg, Response, StdResult, Storage, Uint128, WasmMsg};
 use cw20::Cw20ExecuteMsg;
-use cw_storage_plus::U64Key;
 
 pub fn update_user_lock(
     storage: &mut dyn Storage,
@@ -135,7 +133,7 @@ fn internal_apply_pending_slope_changes_to_state(
                     IMStorage::ImmutableStorage(x) => *x,
                     IMStorage::MutableStorage(x) => *x,
                 },
-                U64Key::from(week_iterator_timestamp),
+                week_iterator_timestamp,
             )?
             .unwrap_or_default();
 
@@ -197,10 +195,7 @@ pub fn update_slope_changes_for_lock_update(
 ) -> StdResult<()> {
     // Get old slope
     let mut old_coefficient_changes = COEFFICIENT_CHANGES
-        .may_load(
-            storage,
-            U64Key::from(prev_user_locked_balance.end_lock_time),
-        )?
+        .may_load(storage, prev_user_locked_balance.end_lock_time)?
         .unwrap_or_default();
 
     // Remove prev token point slope
@@ -216,7 +211,7 @@ pub fn update_slope_changes_for_lock_update(
         // If new token points ends at a new location,
         // read the corresponding slope, update it, and save it
         let mut new_coefficient_changes = COEFFICIENT_CHANGES
-            .may_load(storage, U64Key::from(new_user_locked_balance.end_lock_time))?
+            .may_load(storage, new_user_locked_balance.end_lock_time)?
             .unwrap_or_default();
 
         // Add new coefficient changes
@@ -224,7 +219,7 @@ pub fn update_slope_changes_for_lock_update(
 
         COEFFICIENT_CHANGES.save(
             storage,
-            U64Key::from(new_user_locked_balance.end_lock_time),
+            new_user_locked_balance.end_lock_time,
             &new_coefficient_changes,
         )?;
     }
@@ -232,7 +227,7 @@ pub fn update_slope_changes_for_lock_update(
     // Save old_dslope
     COEFFICIENT_CHANGES.save(
         storage,
-        U64Key::from(prev_user_locked_balance.end_lock_time),
+        prev_user_locked_balance.end_lock_time,
         &old_coefficient_changes,
     )?;
 

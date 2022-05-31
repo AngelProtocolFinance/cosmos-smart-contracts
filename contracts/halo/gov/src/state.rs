@@ -1,7 +1,10 @@
+use angel_core::utils::{
+    calc_range_end, calc_range_end_addr, calc_range_start, calc_range_start_addr,
+};
 use cosmwasm_std::{Addr, Binary, Decimal, Deps, StdResult, Storage, Uint128};
-use cw0::Duration;
 use cw_controllers::Claims;
 use cw_storage_plus::{Bound, Item, Map};
+use cw_utils::Duration;
 use halo_token::common::OrderBy;
 use halo_token::gov::{PollStatus, VoterInfo};
 use schemars::JsonSchema;
@@ -256,35 +259,4 @@ pub fn store_bank(storage: &mut dyn Storage, key: &&[u8], data: &TokenManager) -
 
 pub fn read_bank(storage: &dyn Storage, key: &&[u8]) -> StdResult<Option<TokenManager>> {
     BANK.may_load(storage, key)
-}
-
-// this will set the first key after the provided key, by appending a 1 byte
-fn calc_range_start(start_after: Option<u64>) -> Option<Vec<u8>> {
-    start_after.map(|id| {
-        let mut v = id.to_be_bytes().to_vec();
-        v.push(1);
-        v
-    })
-}
-
-// this will set the first key after the provided key, by appending a 1 byte
-fn calc_range_end(start_after: Option<u64>) -> Option<Vec<u8>> {
-    start_after.map(|id| id.to_be_bytes().to_vec())
-}
-
-// this will set the first key after the provided key, by appending a 1 byte
-fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    match start_after {
-        Some(addr) => {
-            let mut v = addr.as_bytes().to_vec();
-            v.push(1);
-            Some(v)
-        }
-        _ => None,
-    }
-}
-
-// this will set the first key after the provided key, by appending a 1 byte
-fn calc_range_end_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    start_after.map(|addr| addr.as_bytes().to_vec())
 }

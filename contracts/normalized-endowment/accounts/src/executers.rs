@@ -26,26 +26,25 @@ use angel_core::structs::{
     SplitDetails, StrategyComponent, Tier, TransactionRecord,
 };
 use angel_core::utils::{
-    check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
+    check_splits, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
     withdraw_from_vaults,
 };
-use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env, Fraction,
-    MessageInfo, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg,
-    SubMsgExecutionResponse, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, DepsMut, Env, Fraction,
+    MessageInfo, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult,
+    Uint128, WasmMsg, WasmQuery,
 };
-use cw0::Duration;
 use cw20::Balance;
+use cw_utils::Duration;
 
 pub fn new_cw4_group_reply(
     deps: DepsMut,
     _env: Env,
-    msg: ContractResult<SubMsgExecutionResponse>,
+    msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     match msg {
-        ContractResult::Ok(subcall) => {
+        SubMsgResult::Ok(subcall) => {
             let mut group_addr = String::from("");
             for event in subcall.events {
                 if event.ty == *"wasm" {
@@ -89,17 +88,17 @@ pub fn new_cw4_group_reply(
                 reply_on: ReplyOn::Success,
             }))
         }
-        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
 }
 
 pub fn new_cw3_multisig_reply(
     deps: DepsMut,
     _env: Env,
-    msg: ContractResult<SubMsgExecutionResponse>,
+    msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
     match msg {
-        ContractResult::Ok(subcall) => {
+        SubMsgResult::Ok(subcall) => {
             let mut multisig_addr = String::from("");
             for event in subcall.events {
                 if event.ty == *"instantiate_contract" {
@@ -118,17 +117,17 @@ pub fn new_cw3_multisig_reply(
 
             Ok(Response::default())
         }
-        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
 }
 
 pub fn new_dao_token_reply(
     deps: DepsMut,
     _env: Env,
-    msg: ContractResult<SubMsgExecutionResponse>,
+    msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
     match msg {
-        ContractResult::Ok(subcall) => {
+        SubMsgResult::Ok(subcall) => {
             let mut dao_token_addr = String::from("");
             for event in subcall.events {
                 if event.ty == *"instantiate_contract" {
@@ -147,17 +146,17 @@ pub fn new_dao_token_reply(
 
             Ok(Response::default())
         }
-        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
 }
 
 pub fn new_donation_match_reply(
     deps: DepsMut,
     _env: Env,
-    msg: ContractResult<SubMsgExecutionResponse>,
+    msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
     match msg {
-        ContractResult::Ok(subcall) => {
+        SubMsgResult::Ok(subcall) => {
             let mut donation_match_contract_addr = String::from("");
             for event in subcall.events {
                 if event.ty == *"instantiate_contract" {
@@ -177,7 +176,7 @@ pub fn new_donation_match_reply(
 
             Ok(Response::default())
         }
-        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
 }
 
@@ -424,8 +423,8 @@ pub fn update_strategies(
             return Err(ContractError::InvalidInputs {});
         }
 
-        locked_percentages_sum = locked_percentages_sum + strategy.locked_percentage;
-        liquid_percentages_sum = liquid_percentages_sum + strategy.liquid_percentage;
+        locked_percentages_sum += strategy.locked_percentage;
+        liquid_percentages_sum += strategy.liquid_percentage;
     }
 
     if locked_percentages_sum != Decimal::one() || liquid_percentages_sum != Decimal::one() {
@@ -555,14 +554,11 @@ pub fn vault_receipt(
             } else {
                 // this is a vault receipt triggered by closing an Endowment
                 // need to handle beneficiary vs index fund submsg actions taken
-                let balance_after_tax = deduct_tax(
-                    deps.as_ref(),
-                    Coin {
-                        amount: state.balances.locked_balance.get_ust().amount
-                            + state.balances.liquid_balance.get_ust().amount,
-                        denom: "uusd".to_string(),
-                    },
-                )?;
+                let balance_after_tax = Coin {
+                    amount: state.balances.locked_balance.get_ust().amount
+                        + state.balances.liquid_balance.get_ust().amount,
+                    denom: "uusd".to_string(),
+                };
                 match state.closing_beneficiary {
                     Some(ref addr) => submessages.push(SubMsg::new(BankMsg::Send {
                         to_address: deps.api.addr_validate(addr)?.to_string(),
@@ -1035,12 +1031,11 @@ pub fn harvest(
 
     let vault_addr = deps.api.addr_validate(&vault_addr)?;
 
-    let mut sub_messages: Vec<SubMsg> = vec![];
-    sub_messages.push(harvest_msg(
+    let sub_messages: Vec<SubMsg> = vec![harvest_msg(
         vault_addr.to_string(),
         config.last_earnings_harvest,
         config.last_harvest_fx,
-    ));
+    )];
 
     Ok(Response::new()
         .add_submessages(sub_messages)
@@ -1146,10 +1141,10 @@ pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
 pub fn harvest_reply(
     deps: DepsMut,
     _env: Env,
-    msg: ContractResult<SubMsgExecutionResponse>,
+    msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
     match msg {
-        ContractResult::Ok(subcall) => {
+        SubMsgResult::Ok(subcall) => {
             let mut last_earnings_harvest: u64 = 0;
             let mut last_harvest_fx: Option<Decimal256> = None;
             for event in subcall.events {
@@ -1172,6 +1167,6 @@ pub fn harvest_reply(
 
             Ok(Response::default())
         }
-        ContractResult::Err(_) => Err(ContractError::Std(StdError::generic_err("Harvest failed"))),
+        SubMsgResult::Err(_) => Err(ContractError::Std(StdError::generic_err("Harvest failed"))),
     }
 }

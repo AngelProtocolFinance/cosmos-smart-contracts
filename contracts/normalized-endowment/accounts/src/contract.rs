@@ -17,7 +17,6 @@ use cosmwasm_std::{
     Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
     WasmMsg, WasmQuery,
 };
-
 use cw2::set_contract_version;
 
 // version info for future migration info

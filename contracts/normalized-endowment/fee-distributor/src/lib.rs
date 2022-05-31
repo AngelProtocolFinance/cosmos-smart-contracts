@@ -1,12 +1,8 @@
 pub mod contract;
-
-mod error;
-mod helpers;
-mod querier;
-mod state;
+pub mod error;
+pub mod helpers;
+pub mod querier;
+pub mod state;
 
 #[cfg(test)]
 mod tests;
-
-#[cfg(test)]
-mod mock_querier;

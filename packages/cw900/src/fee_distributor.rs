@@ -20,7 +20,7 @@ pub enum ExecuteMsg {
     Claim {
         limit: Option<u32>,
     },
-    DistributeGlow {},
+    DistributeDaoToken {},
     UpdateConfig {
         owner: Option<String>,
     },
