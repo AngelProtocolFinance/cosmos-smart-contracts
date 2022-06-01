@@ -1,6 +1,4 @@
-use angel_core::utils::{
-    calc_range_end, calc_range_end_addr, calc_range_start, calc_range_start_addr,
-};
+use angel_core::utils::{calc_range_end, calc_range_start};
 use cosmwasm_std::{Addr, Binary, Decimal, Deps, StdResult, Storage, Uint128};
 use cw_controllers::Claims;
 use cw_storage_plus::{Bound, Item, Map};
@@ -184,19 +182,15 @@ pub fn read_poll_voters(
     order_by: Option<OrderBy>,
 ) -> StdResult<Vec<(Addr, VoterInfo)>> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start = start_after.map(|v| Bound::exclusive(v.as_bytes()));
     let (start, end, order_by) = match order_by {
-        Some(OrderBy::Asc) => (calc_range_start_addr(start_after), None, OrderBy::Asc),
-        _ => (None, calc_range_end_addr(start_after), OrderBy::Desc),
+        Some(OrderBy::Asc) => (start, None, OrderBy::Asc),
+        _ => (None, start, OrderBy::Desc),
     };
 
     let voters = POLL_VOTER.prefix(&poll_id.to_be_bytes());
     voters
-        .range(
-            storage,
-            start.map(|v| Bound::exclusive(&*v)),
-            end.map(|v| Bound::exclusive(&*v)),
-            order_by.into(),
-        )
+        .range(storage, start, end, order_by.into())
         .take(limit)
         .map(|item| {
             let (k, v) = item?;
@@ -221,7 +215,8 @@ pub fn read_polls(
     };
 
     if let Some(status) = filter {
-        let poll_indexer = POLL_INDEXER_STORE.prefix(status.to_string().as_str());
+        let status_str = status.to_string();
+        let poll_indexer = POLL_INDEXER_STORE.prefix(status_str.as_str());
         poll_indexer
             .range(
                 storage,
