@@ -78,7 +78,7 @@ function initialize() {
   terra = new LCDClient({
     URL: config.networkInfo.url,
     chainID: config.networkInfo.chainId,
-    gasPrices: { uusd: 0.15 },
+    gasPrices: { uluna: 0.15 },
     gasAdjustment: 1.2,
   });
   apTeam = terra.wallet(new MnemonicKey({ mnemonic: config.mnemonicKeys.apTeam }));
@@ -175,8 +175,8 @@ export async function startSetupCore(): Promise<void> {
   await setupCore(terra, apTeam, anchorMoneyMarket, apTreasury, members, tcaMembers, {
     tax_rate: "0.2", // tax rate
     threshold_absolute_percentage: "0.50", // threshold absolute percentage
-    max_voting_period_height: 1000, // max voting period height
-    max_voting_period_guardians_height: 100, // max voting period guardians height
+    max_voting_period_height: 100000, // max voting period height
+    max_voting_period_guardians_height: 10000, // max voting period guardians height
     fund_rotation: 10, // index fund rotation
     turnover_to_multisig: false, // turn over to AP Team multisig
     is_localterra: false, // is LocalTerra
@@ -263,7 +263,7 @@ export async function startSetupHalo(): Promise<void> {
     50, // threshold,
     100000000000, // voting_period (~7 days in blocks),
     1000, // timelock_period,
-    "5000000000", // proposal_deposit,
+    "500000000", // proposal_deposit,
     10000000000, // snapshot_period,
     7 * 24 * 60 * 60, // unbonding_period in seconds
     [], // whitelist

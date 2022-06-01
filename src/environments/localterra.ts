@@ -206,8 +206,8 @@ export async function startSetupCore(): Promise<void> {
     {
       tax_rate: "0.2", // tax rate
       threshold_absolute_percentage: "0.50", // threshold absolute percentage
-      max_voting_period_height: 1000, // max voting period height
-      max_voting_period_guardians_height: 100, // max voting period guardians height
+      max_voting_period_height: 100000, // max voting period height
+      max_voting_period_guardians_height: 1000, // max voting period guardians height
       fund_rotation: undefined, // index fund rotation
       turnover_to_multisig: false, // turn over to AP Team multisig
       is_localterra: true, // is LocalTerra
@@ -261,7 +261,7 @@ export async function startSetupLbp(): Promise<void> {
     terraswapHaloTokenContract,
     haloTokenAmount,
     nativeTokenAmount,
-    "uusd",
+    "uluna",
     datetimeStringToUTC(lbp_start_time),
     datetimeStringToUTC(lbp_end_time),
     token_start_weight,

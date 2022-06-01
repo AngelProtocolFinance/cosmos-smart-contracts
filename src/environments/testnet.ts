@@ -87,7 +87,7 @@ function initialize() {
   terra = new LCDClient({
     URL: config.networkInfo.url,
     chainID: config.networkInfo.chainId,
-    gasPrices: { uusd: 0.15 },
+    gasPrices: { uluna: 0.15 },
     gasAdjustment: 1.2,
   });
   apTeam = terra.wallet(new MnemonicKey({ mnemonic: config.mnemonicKeys.apTeam }));
@@ -220,14 +220,14 @@ export async function startSetupCore(): Promise<void> {
     {
       tax_rate: "0.2", // tax rate
       threshold_absolute_percentage: "0.50", // threshold absolute percentage
-      max_voting_period_height: 1000, // max voting period height
-      max_voting_period_guardians_height: 100, // max voting period guardians height
+      max_voting_period_height: 100000, // max voting period height
+      max_voting_period_guardians_height: 10000, // max voting period guardians height
       fund_rotation: 10, // index fund rotation
       turnover_to_multisig: false, // turn over to AP Team multisig
       is_localterra: false, // is LocalTerra
       harvest_to_liquid: "0.75", // harvest to liquid percentage
       tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
-      funding_goal: "50000000", // funding goal
+      funding_goal: "500000000", // funding goal
       fund_member_limit: undefined, // fund_member_limit
       accepted_tokens: undefined,  // accepted_tokens for "index_fund"
     }

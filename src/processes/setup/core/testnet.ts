@@ -247,21 +247,21 @@ async function setup(
   console.log(chalk.green(" Done!"));
 
   // Add confirmed TCA Members to the Index Fund SCs approved list
-  process.stdout.write("Add confirmed TCA Member to allowed list");
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      update_alliance_member_list: {
-        address: tca.key.accAddress,
-        member: {
-          name: "TCA Member",
-          logo: undefined,
-          website: "https://angelprotocol.io/app",
-        },
-        action: "add",
-      },
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
+  // process.stdout.write("Add confirmed TCA Member to allowed list");
+  // await sendTransaction(terra, apTeam, [
+  //   new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
+  //     update_alliance_member_list: {
+  //       address: tca.key.accAddress,
+  //       member: {
+  //         name: "TCA Member",
+  //         logo: undefined,
+  //         website: "https://angelprotocol.io/app",
+  //       },
+  //       action: "add",
+  //     },
+  //   }),
+  // ]);
+  // console.log(chalk.green(" Done!"));
 
   if (is_localterra) {
     process.stdout.write(
