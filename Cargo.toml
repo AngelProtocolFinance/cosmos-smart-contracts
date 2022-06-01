@@ -16,15 +16,15 @@ members = [
     "contracts/halo/gov-hodler",
     "contracts/halo/staking",
     "contracts/halo/vesting",
-]
-
-exclude = [
-    "contracts/vaults/anchor",
     "contracts/normalized-endowment/cw900-lv",
     "contracts/normalized-endowment/dao",
     "contracts/normalized-endowment/dao-token",
     "contracts/normalized-endowment/donation-match",
     "contracts/normalized-endowment/fee-distributor",
+]
+
+exclude = [
+    "contracts/vaults/anchor",
 ]
 
 [profile.release]
