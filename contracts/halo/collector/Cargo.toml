@@ -34,3 +34,4 @@ angel-core = { path = "../../../packages/angel_core" }
 schemars = "0.8.10"
 serde = "1.0.137"
 terraswap = "2.6.0"
+cosmwasm-schema = "1.0.0"

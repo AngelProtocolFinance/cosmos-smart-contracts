@@ -1,8 +1,7 @@
 use crate::contract::{execute, instantiate, query, SECONDS_PER_WEEK};
 use crate::error::ContractError;
-use crate::mock_querier::mock_dependencies;
 use crate::state::{Config, State, CONFIG, STATE};
-use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
+use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     coins, from_binary, to_binary, Addr, Api, CosmosMsg, DepsMut, Env, SubMsg, Timestamp, Uint128,
     WasmMsg,
@@ -55,7 +54,7 @@ fn instantiate_msg() -> InstantiateMsg {
 
 #[test]
 fn proper_initialization() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = instantiate_msg();
     let info = mock_info(TEST_CREATOR, &coins(2, VOTING_TOKEN));
@@ -97,7 +96,7 @@ fn proper_initialization() {
 
 #[test]
 fn fail_distribute_dao_nothing_staked() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     mock_instantiate(deps.as_mut());
     mock_register_contracts(deps.as_mut());
     let env = mock_env_height(0, 10000);
@@ -114,7 +113,7 @@ fn fail_distribute_dao_nothing_staked() {
 
 #[test]
 fn fail_distribute_dao_nothing_to_distribute() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     mock_instantiate(deps.as_mut());
     mock_register_contracts(deps.as_mut());
     let env = mock_env_height(0, 10000);
@@ -142,7 +141,7 @@ fn fail_distribute_dao_nothing_to_distribute() {
 
 #[test]
 fn distribute_dao_to_voter() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     mock_instantiate(deps.as_mut());
     mock_register_contracts(deps.as_mut());
     let mut env = mock_env_height(0, 1000000);
@@ -212,7 +211,7 @@ fn distribute_dao_to_voter() {
 
 #[test]
 fn many_distribute_dao_to_voter() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     mock_instantiate(deps.as_mut());
     mock_register_contracts(deps.as_mut());
     let mut env = mock_env_height(0, 1000000);
@@ -311,7 +310,7 @@ fn many_distribute_dao_to_voter() {
 
 #[test]
 fn many_distribute_dao_to_two_voters() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     mock_instantiate(deps.as_mut());
     mock_register_contracts(deps.as_mut());
     let mut env = mock_env_height(0, 1000000);

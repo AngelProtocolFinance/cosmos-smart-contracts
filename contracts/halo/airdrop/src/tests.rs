@@ -10,7 +10,7 @@ use halo_token::airdrop::{
 
 #[test]
 fn proper_initialization() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         owner: "owner0000".to_string(),
@@ -35,7 +35,7 @@ fn proper_initialization() {
 
 #[test]
 fn update_config() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         owner: "owner0000".to_string(),
@@ -72,7 +72,7 @@ fn update_config() {
 
 #[test]
 fn register_merkle_root() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         owner: "owner0000".to_string(),
@@ -122,7 +122,7 @@ fn register_merkle_root() {
 
 #[test]
 fn claim() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         owner: "owner0000".to_string(),

@@ -8,7 +8,7 @@ use crate::state::{
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     attr, coins, from_binary, to_binary, Addr, Api, ContractResult, CosmosMsg, Decimal, Deps,
-    DepsMut, Env, Reply, Response, StdError, SubMsg, Timestamp, Uint128, WasmMsg,
+    DepsMut, Env, Reply, Response, StdError, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw_utils::Duration;
@@ -1219,7 +1219,7 @@ fn fail_poll() {
     // invalid reply id
     let reply_msg = Reply {
         id: 2,
-        result: ContractResult::Err("Error".to_string()),
+        result: SubMsgResult::Err("Error".to_string()),
     };
     let res = reply(deps.as_mut(), mock_env(), reply_msg);
     assert_eq!(res, Err(ContractError::InvalidReplyId {}));
@@ -1227,7 +1227,7 @@ fn fail_poll() {
     // correct reply id
     let reply_msg = Reply {
         id: 1,
-        result: ContractResult::Err("Error".to_string()),
+        result: SubMsgResult::Err("Error".to_string()),
     };
     let res = reply(deps.as_mut(), mock_env(), reply_msg).unwrap();
     assert_eq!(

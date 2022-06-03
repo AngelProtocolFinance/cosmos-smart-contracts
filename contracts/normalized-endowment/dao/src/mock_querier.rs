@@ -11,6 +11,7 @@ use cosmwasm_std::{
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg};
 
 use std::collections::HashMap;
+use std::marker::PhantomData;
 use terra_cosmwasm::{TaxCapResponse, TaxRateResponse, TerraQuery, TerraQueryWrapper, TerraRoute};
 use terraswap::asset::{AssetInfo, PairInfo};
 
@@ -26,6 +27,7 @@ pub fn mock_dependencies(
         api: MockApi::default(),
         storage: MockStorage::default(),
         querier: custom_querier,
+        custom_query_type: PhantomData,
     }
 }
 
@@ -171,96 +173,40 @@ impl WasmMockQuerier {
                     panic!("DO NOT ENTER HERE")
                 }
             }
-            QueryRequest::Wasm(WasmQuery::Smart { contract_addr, msg }) => match from_binary(msg) {
-                Ok(QueryMsg::Pair { asset_infos }) => {
-                    let key = asset_infos[0].to_string() + asset_infos[1].to_string().as_str();
-                    match self.terraswap_factory_querier.pairs.get(&key) {
-                        Some(v) => SystemResult::Ok(ContractResult::from(to_binary(&PairInfo {
-                            contract_addr: v.to_string(),
-                            liquidity_token: "liquidity".to_string(),
-                            asset_infos: [
-                                AssetInfo::NativeToken {
-                                    denom: "uusd".to_string(),
-                                },
-                                AssetInfo::NativeToken {
-                                    denom: "uusd".to_string(),
-                                },
-                            ],
-                        }))),
-                        None => SystemResult::Err(SystemError::InvalidRequest {
-                            error: "No pair info exists".to_string(),
-                            request: msg.as_slice().into(),
-                        }),
-                    }
-                }
-
-                Ok(QueryMsg::Staker { address, .. }) => {
-                    let balances: &HashMap<String, Uint128> =
-                        match self.token_querier.balances.get(contract_addr) {
-                            Some(balances) => balances,
-                            None => {
-                                return SystemResult::Ok(ContractResult::Ok(
-                                    to_binary(&StakerResponse::default()).unwrap(),
-                                ));
+            QueryRequest::Wasm(WasmQuery::Smart { contract_addr, msg }) => {
+                match from_binary(&msg) {
+                    Ok(QueryMsg::Pair { asset_infos }) => {
+                        let key = asset_infos[0].to_string() + asset_infos[1].to_string().as_str();
+                        match self.terraswap_factory_querier.pairs.get(&key) {
+                            Some(v) => {
+                                SystemResult::Ok(ContractResult::from(to_binary(&PairInfo {
+                                    contract_addr: v.to_string(),
+                                    liquidity_token: "liquidity".to_string(),
+                                    asset_infos: [
+                                        AssetInfo::NativeToken {
+                                            denom: "uusd".to_string(),
+                                        },
+                                        AssetInfo::NativeToken {
+                                            denom: "uusd".to_string(),
+                                        },
+                                    ],
+                                })))
                             }
-                        };
-
-                    let balance = match balances.get(&address) {
-                        Some(v) => *v,
-                        None => {
-                            return SystemResult::Ok(ContractResult::Ok(
-                                to_binary(&StakerResponse::default()).unwrap(),
-                            ));
+                            None => SystemResult::Err(SystemError::InvalidRequest {
+                                error: "No pair info exists".to_string(),
+                                request: msg.as_slice().into(),
+                            }),
                         }
-                    };
+                    }
 
-                    SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&StakerResponse {
-                            deposited_amount: balance,
-                            balance,
-                            locked_amount: balance,
-                        })
-                        .unwrap(),
-                    ))
-                }
-
-                Ok(QueryMsg::State { .. }) => {
-                    let balances: &HashMap<String, Uint128> =
-                        match self.token_querier.balances.get(contract_addr) {
-                            Some(balances) => balances,
-                            None => {
-                                return SystemResult::Ok(ContractResult::Ok(
-                                    to_binary(&StateResponse::default()).unwrap(),
-                                ))
-                            }
-                        };
-
-                    // Sum over the entire balance
-                    let balance = balances.iter().fold(Uint128::zero(), |sum, x| sum + x.1);
-
-                    SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&StateResponse {
-                            total_deposited_amount: balance,
-                            total_balance: balance,
-                            total_locked_amount: balance,
-                        })
-                        .unwrap(),
-                    ))
-                }
-
-                _ => match from_binary(msg).unwrap() {
-                    Cw20QueryMsg::Balance { address } => {
+                    Ok(QueryMsg::Staker { address, .. }) => {
                         let balances: &HashMap<String, Uint128> =
-                            match self.token_querier.balances.get(contract_addr) {
+                            match self.token_querier.balances.get(&contract_addr) {
                                 Some(balances) => balances,
                                 None => {
-                                    return SystemResult::Err(SystemError::InvalidRequest {
-                                        error: format!(
-                                            "No balance info exists for the contract {}",
-                                            contract_addr
-                                        ),
-                                        request: msg.as_slice().into(),
-                                    })
+                                    return SystemResult::Ok(ContractResult::Ok(
+                                        to_binary(&StakerResponse::default()).unwrap(),
+                                    ));
                                 }
                             };
 
@@ -268,21 +214,81 @@ impl WasmMockQuerier {
                             Some(v) => *v,
                             None => {
                                 return SystemResult::Ok(ContractResult::Ok(
-                                    to_binary(&Cw20BalanceResponse {
-                                        balance: Uint128::zero(),
-                                    })
-                                    .unwrap(),
+                                    to_binary(&StakerResponse::default()).unwrap(),
                                 ));
                             }
                         };
 
                         SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&Cw20BalanceResponse { balance }).unwrap(),
+                            to_binary(&StakerResponse {
+                                deposited_amount: balance,
+                                balance,
+                                locked_amount: balance,
+                            })
+                            .unwrap(),
                         ))
                     }
-                    _ => panic!("DO NOT ENTER HERE"),
-                },
-            },
+
+                    Ok(QueryMsg::State { .. }) => {
+                        let balances: &HashMap<String, Uint128> =
+                            match self.token_querier.balances.get(&contract_addr) {
+                                Some(balances) => balances,
+                                None => {
+                                    return SystemResult::Ok(ContractResult::Ok(
+                                        to_binary(&StateResponse::default()).unwrap(),
+                                    ))
+                                }
+                            };
+
+                        // Sum over the entire balance
+                        let balance = balances.iter().fold(Uint128::zero(), |sum, x| sum + x.1);
+
+                        SystemResult::Ok(ContractResult::Ok(
+                            to_binary(&StateResponse {
+                                total_deposited_amount: balance,
+                                total_balance: balance,
+                                total_locked_amount: balance,
+                            })
+                            .unwrap(),
+                        ))
+                    }
+
+                    _ => match from_binary(msg).unwrap() {
+                        Cw20QueryMsg::Balance { address } => {
+                            let balances: &HashMap<String, Uint128> =
+                                match self.token_querier.balances.get(contract_addr) {
+                                    Some(balances) => balances,
+                                    None => {
+                                        return SystemResult::Err(SystemError::InvalidRequest {
+                                            error: format!(
+                                                "No balance info exists for the contract {}",
+                                                contract_addr
+                                            ),
+                                            request: msg.as_slice().into(),
+                                        })
+                                    }
+                                };
+
+                            let balance = match balances.get(&address) {
+                                Some(v) => *v,
+                                None => {
+                                    return SystemResult::Ok(ContractResult::Ok(
+                                        to_binary(&Cw20BalanceResponse {
+                                            balance: Uint128::zero(),
+                                        })
+                                        .unwrap(),
+                                    ));
+                                }
+                            };
+
+                            SystemResult::Ok(ContractResult::Ok(
+                                to_binary(&Cw20BalanceResponse { balance }).unwrap(),
+                            ))
+                        }
+                        _ => panic!("DO NOT ENTER HERE"),
+                    },
+                }
+            }
             _ => self.base.handle_query(request),
         }
     }

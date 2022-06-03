@@ -229,12 +229,7 @@ pub fn read_polls(
         let status_str = status.to_string();
         let poll_indexer = POLL_INDEXER_STORE.prefix(status_str.as_str());
         poll_indexer
-            .range(
-                storage,
-                start,
-                end,
-                order_by.into(),
-            )
+            .range(storage, start, end, order_by.into())
             .take(limit)
             .map(|item| {
                 let (k, _) = item?;
@@ -242,18 +237,13 @@ pub fn read_polls(
             })
             .collect()
     } else {
-        POLL.range(
-            storage,
-            start,
-            end,
-            order_by.into(),
-        )
-        .take(limit)
-        .map(|item| {
-            let (_, v) = item?;
-            Ok(v)
-        })
-        .collect()
+        POLL.range(storage, start, end, order_by.into())
+            .take(limit)
+            .map(|item| {
+                let (_, v) = item?;
+                Ok(v)
+            })
+            .collect()
     }
 }
 
