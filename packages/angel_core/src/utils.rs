@@ -21,8 +21,8 @@ pub fn calc_range_start(start_after: Option<u64>) -> Option<Vec<u8>> {
 }
 
 // this will set the first key after the provided key, by appending a 1 byte
-pub fn calc_range_end(start_after: Option<u64>) -> Option<Vec<u8>> {
-    start_after.map(|id| id.to_be_bytes().to_vec())
+pub fn calc_range_end(end_before: Option<u64>) -> Option<Vec<u8>> {
+    end_before.map(|id| id.to_be_bytes().to_vec())
 }
 
 // this will set the first key after the provided key, by appending a 1 byte
@@ -35,8 +35,8 @@ pub fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
 }
 
 // this will set the first key after the provided key, by appending a 1 byte
-pub fn calc_range_end_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    start_after.map(|addr| addr.as_bytes().to_vec())
+pub fn calc_range_end_addr(end_before: Option<Addr>) -> Option<Vec<u8>> {
+    end_before.map(|addr| addr.as_bytes().to_vec())
 }
 
 pub fn percentage_checks(val: Decimal) -> Result<Decimal, ContractError> {

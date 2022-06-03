@@ -1,7 +1,7 @@
 use angel_core::utils::{calc_range_end, calc_range_start};
 use cosmwasm_std::{Addr, Binary, Decimal, Deps, StdResult, Storage, Uint128};
 use cw_controllers::Claims;
-use cw_storage_plus::{Bound, Item, Map};
+use cw_storage_plus::{Bound, Endian, Item, Map};
 use cw_utils::Duration;
 use halo_token::common::OrderBy;
 use halo_token::gov::{PollStatus, VoterInfo};
@@ -182,13 +182,17 @@ pub fn read_poll_voters(
     order_by: Option<OrderBy>,
 ) -> StdResult<Vec<(Addr, VoterInfo)>> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-    let start = start_after.map(|v| Bound::exclusive(v.as_bytes()));
+    let start = match start_after {
+        Some(ref v) => Some(Bound::exclusive(v.as_bytes())),
+        None => None,
+    };
     let (start, end, order_by) = match order_by {
         Some(OrderBy::Asc) => (start, None, OrderBy::Asc),
         _ => (None, start, OrderBy::Desc),
     };
 
-    let voters = POLL_VOTER.prefix(&poll_id.to_be_bytes());
+    let poll_id = &poll_id.to_be_bytes().to_vec()[..];
+    let voters = POLL_VOTER.prefix(poll_id);
     voters
         .range(storage, start, end, order_by.into())
         .take(limit)
@@ -213,15 +217,22 @@ pub fn read_polls(
         Some(OrderBy::Asc) => (calc_range_start(start_after), None, OrderBy::Asc),
         _ => (None, calc_range_end(start_after), OrderBy::Desc),
     };
-
+    let start = match start {
+        Some(ref v) => Some(Bound::exclusive(&v[..])),
+        None => None,
+    };
+    let end = match end {
+        Some(ref v) => Some(Bound::inclusive(&v[..])),
+        None => None,
+    };
     if let Some(status) = filter {
         let status_str = status.to_string();
         let poll_indexer = POLL_INDEXER_STORE.prefix(status_str.as_str());
         poll_indexer
             .range(
                 storage,
-                start.map(|v| Bound::exclusive(&*v)),
-                end.map(|v| Bound::exclusive(&*v)),
+                start,
+                end,
                 order_by.into(),
             )
             .take(limit)
@@ -233,8 +244,8 @@ pub fn read_polls(
     } else {
         POLL.range(
             storage,
-            start.map(|v| Bound::exclusive(&*v)),
-            end.map(|v| Bound::exclusive(&*v)),
+            start,
+            end,
             order_by.into(),
         )
         .take(limit)
