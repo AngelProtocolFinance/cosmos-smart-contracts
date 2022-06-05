@@ -925,9 +925,9 @@ fn happy_days_end_poll() {
     assert_eq!(response.voters.len(), 0);
 
     // But the data is still in the store
-    let voter_addr_raw = deps.api.addr_canonicalize(TEST_VOTER).unwrap();
+    let voter_addr_raw = Addr::unchecked(TEST_VOTER);
     let voter = poll_voter_read(&deps.storage, 1u64)
-        .load(voter_addr_raw.as_slice())
+        .load(&voter_addr_raw.as_bytes().to_vec())
         .unwrap();
     assert_eq!(
         voter,

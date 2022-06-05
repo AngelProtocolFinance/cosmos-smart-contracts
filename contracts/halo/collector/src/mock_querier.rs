@@ -161,19 +161,19 @@ impl WasmMockQuerier {
                 Ok(QueryMsg::Pair { asset_infos }) => {
                     let key = asset_infos[0].to_string() + asset_infos[1].to_string().as_str();
                     match self.swap_factory_querier.pairs.get(&key) {
-                        Some(v) => SystemResult::Ok(ContractResult::from(to_binary(&PairInfo {
-                            contract_addr: v.to_string(),
-                            liquidity_token: "liquidity".to_string(),
-                            asset_infos: [
-                                AssetInfo::NativeToken {
-                                    denom: "uusd".to_string(),
-                                },
-                                AssetInfo::NativeToken {
-                                    denom: "uusd".to_string(),
-                                },
-                            ],
-                        }))),
-                        None => SystemResult::Err(SystemError::InvalidRequest {
+                        // Some(v) => SystemResult::Ok(ContractResult::from(to_binary(&PairInfo {
+                        //     contract_addr: v.to_string(),
+                        //     liquidity_token: "liquidity".to_string(),
+                        //     asset_infos: [
+                        //         AssetInfo::NativeToken {
+                        //             denom: "uusd".to_string(),
+                        //         },
+                        //         AssetInfo::NativeToken {
+                        //             denom: "uusd".to_string(),
+                        //         },
+                        //     ],
+                        // }))),
+                        _ => SystemResult::Err(SystemError::InvalidRequest {
                             error: "No pair info exists".to_string(),
                             request: msg.as_slice().into(),
                         }),
