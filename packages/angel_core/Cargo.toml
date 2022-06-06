@@ -23,6 +23,4 @@ thiserror = "1.0.24"
 rust_decimal = { version = "1.14.3" }
 integer-sqrt = { version = "0.1.5" }
 integer-cbrt = { version = "0.1.2" }
-
-[dev-dependencies]
 cosmwasm-schema = { version = "1.0.0" }

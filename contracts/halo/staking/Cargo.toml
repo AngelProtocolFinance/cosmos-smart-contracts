@@ -29,3 +29,4 @@ cw-storage-plus = "0.13.2"
 halo-token = { path = "../../../packages/halo_token" }
 schemars = "0.8.10"
 serde = "1.0.137"
+cosmwasm-schema = "1.0.0"

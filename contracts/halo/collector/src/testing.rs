@@ -3,7 +3,7 @@ use crate::mock_querier::mock_dependencies;
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     to_binary, Coin, ContractResult, CosmosMsg, Decimal, Reply, ReplyOn, StdError, SubMsg,
-    SubMsgResponse, Uint128, WasmMsg,
+    SubMsgResponse, SubMsgResult, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use halo_token::collector::{ConfigResponse, ExecuteMsg, InstantiateMsg};
@@ -17,7 +17,7 @@ fn proper_initialization() {
     let msg = InstantiateMsg {
         swap_factory: "swapfactory".to_string(),
         gov_contract: "gov".to_string(),
-        halo_token: "tokenHALO".to_string(),
+        halo_token: "halo-token".to_string(),
         distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
@@ -39,7 +39,7 @@ fn update_config() {
     let msg = InstantiateMsg {
         swap_factory: "swapfactory".to_string(),
         gov_contract: "gov".to_string(),
-        halo_token: "tokenHALO".to_string(),
+        halo_token: "halo-token".to_string(),
         distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
@@ -90,12 +90,12 @@ fn test_sweep() {
     );
 
     deps.querier
-        .with_terraswap_pairs(&[(&"uusdtokenHALO".to_string(), &"pairANC".to_string())]);
+        .with_terraswap_pairs(&[(&"uusdhalo-token".to_string(), &"pairANC".to_string())]);
 
     let msg = InstantiateMsg {
         swap_factory: "swapfactory".to_string(),
         gov_contract: "gov".to_string(),
-        halo_token: "tokenHALO".to_string(),
+        halo_token: "halo-token".to_string(),
         distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
@@ -120,7 +120,7 @@ fn test_sweep() {
                         info: AssetInfo::NativeToken {
                             denom: "uusd".to_string()
                         },
-                        amount: Uint128::from(99u128),
+                        amount: Uint128::from(100u128),
                     },
                     max_spread: None,
                     belief_price: None,
@@ -129,7 +129,7 @@ fn test_sweep() {
                 .unwrap(),
                 funds: vec![Coin {
                     denom: "uusd".to_string(),
-                    amount: Uint128::from(99u128),
+                    amount: Uint128::from(100u128),
                 }],
             }
             .into(),
@@ -145,14 +145,14 @@ fn test_distribute() {
     let mut deps = mock_dependencies(&[]);
 
     deps.querier.with_token_balances(&[(
-        &"tokenHALO".to_string(),
+        &"halo-token".to_string(),
         &[(&MOCK_CONTRACT_ADDR.to_string(), &Uint128::from(100u128))],
     )]);
 
     let msg = InstantiateMsg {
         swap_factory: "swapfactory".to_string(),
         gov_contract: "gov".to_string(),
-        halo_token: "tokenHALO".to_string(),
+        halo_token: "halo-token".to_string(),
         distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
@@ -162,7 +162,7 @@ fn test_distribute() {
 
     let reply_msg = Reply {
         id: 1,
-        result: ContractResult::Ok(SubMsgResponse {
+        result: SubMsgResult::Ok(SubMsgResponse {
             events: vec![],
             data: None,
         }),
@@ -173,7 +173,7 @@ fn test_distribute() {
         res.messages,
         vec![
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: "tokenHALO".to_string(),
+                contract_addr: "halo-token".to_string(),
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: "gov".to_string(),
                     amount: Uint128::from(90u128),
@@ -182,7 +182,7 @@ fn test_distribute() {
                 funds: vec![],
             })),
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: "tokenHALO".to_string(),
+                contract_addr: "halo-token".to_string(),
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: "distributor".to_string(),
                     amount: Uint128::from(10u128),

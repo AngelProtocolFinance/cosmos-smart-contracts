@@ -88,10 +88,10 @@ fn proper_initialization() {
     assert_eq!(
         config,
         Config {
-            dao_token: CanonicalAddr::from(vec![]),
-            ve_token: CanonicalAddr::from(vec![]),
-            terraswap_factory: CanonicalAddr::from(vec![]),
-            owner: deps.api.addr_canonicalize(TEST_CREATOR).unwrap(),
+            dao_token: Addr::unchecked(""),
+            ve_token: Addr::unchecked(""),
+            terraswap_factory: Addr::unchecked(""),
+            owner: Addr::unchecked(TEST_CREATOR),
             quorum: Decimal::percent(DEFAULT_QUORUM),
             threshold: Decimal::percent(DEFAULT_THRESHOLD),
             voting_period: DEFAULT_VOTING_PERIOD,
@@ -109,16 +109,13 @@ fn proper_initialization() {
     };
     let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     let config: Config = config_read(deps.as_ref().storage).load().unwrap();
-    assert_eq!(
-        config.dao_token,
-        deps.api.addr_canonicalize(VOTING_TOKEN).unwrap()
-    );
+    assert_eq!(config.dao_token, Addr::unchecked(VOTING_TOKEN),);
 
     let state: State = state_read(deps.as_ref().storage).load().unwrap();
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_canonicalize(MOCK_CONTRACT_ADDR).unwrap(),
+            contract_addr: Addr::unchecked(MOCK_CONTRACT_ADDR),
             poll_count: 0,
             total_deposit: Uint128::zero(),
             total_share: Uint128::zero(),
@@ -928,9 +925,9 @@ fn happy_days_end_poll() {
     assert_eq!(response.voters.len(), 0);
 
     // But the data is still in the store
-    let voter_addr_raw = deps.api.addr_canonicalize(TEST_VOTER).unwrap();
+    let voter_addr_raw = Addr::unchecked(TEST_VOTER);
     let voter = poll_voter_read(&deps.storage, 1u64)
-        .load(voter_addr_raw.as_slice())
+        .load(&voter_addr_raw.as_bytes().to_vec())
         .unwrap();
     assert_eq!(
         voter,
@@ -1634,7 +1631,7 @@ fn assert_create_poll_result(
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_canonicalize(MOCK_CONTRACT_ADDR).unwrap(),
+            contract_addr: Addr::unchecked(MOCK_CONTRACT_ADDR),
             poll_count: 1,
             total_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
             total_share: Uint128::zero()
@@ -1653,7 +1650,7 @@ fn assert_stake_tokens_result(
     assert_eq!(
         state,
         State {
-            contract_addr: deps.api.addr_canonicalize(MOCK_CONTRACT_ADDR).unwrap(),
+            contract_addr: Addr::unchecked(MOCK_CONTRACT_ADDR),
             poll_count,
             total_deposit: Uint128::from(total_deposit),
             total_share: Uint128::zero()

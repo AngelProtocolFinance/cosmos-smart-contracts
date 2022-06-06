@@ -46,8 +46,8 @@ pub fn compute_claimable(
     let token_distributions = WEEKLY_TOKEN_DISTRIBUTION
         .range(
             deps.storage,
-            calc_range_start(Some(start_time)).map(|v| Bound::exclusive(v)),
-            calc_range_end(Some(end_time)).map(|v| Bound::inclusive(v)),
+            Some(Bound::inclusive(start_time)),
+            Some(Bound::inclusive(end_time)),
             Order::Ascending,
         )
         .take(limit)

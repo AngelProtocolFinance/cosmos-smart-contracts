@@ -23,6 +23,7 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
+angel-core = { path = "../../../packages/angel_core", feature=["utils"]}
 cw20 = "0.13.2"
 cosmwasm-std = "1.0.0"
 cosmwasm-storage = "1.0.0"
@@ -32,3 +33,4 @@ serde = "1.0.137"
 thiserror = "1.0.24"
 hex = "0.4"
 cw-storage-plus = "0.13.2"
+cosmwasm-schema = "1.0.0"
