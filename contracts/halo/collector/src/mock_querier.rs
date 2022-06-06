@@ -4,7 +4,7 @@ use cosmwasm_std::{
     QuerierResult, QueryRequest, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg};
-use cw_asset::{Asset, AssetInfo};
+use terraswap::asset::{AssetInfo, PairInfo};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -132,47 +132,23 @@ pub enum QueryMsg {
 impl WasmMockQuerier {
     pub fn handle_query(&self, request: &QueryRequest<Empty>) -> QuerierResult {
         match &request {
-            // QueryRequest::Custom(Empty { route, query_data }) => {
-            //     if route == &TerraRoute::Treasury {
-            //         match query_data {
-            //             TerraQuery::TaxRate {} => {
-            //                 let res = TaxRateResponse {
-            //                     rate: self.tax_querier.rate,
-            //                 };
-            //                 SystemResult::Ok(ContractResult::from(to_binary(&res)))
-            //             }
-            //             TerraQuery::TaxCap { denom } => {
-            //                 let cap = self
-            //                     .tax_querier
-            //                     .caps
-            //                     .get(denom)
-            //                     .copied()
-            //                     .unwrap_or_default();
-            //                 let res = TaxCapResponse { cap };
-            //                 SystemResult::Ok(ContractResult::from(to_binary(&res)))
-            //             }
-            //             _ => panic!("DO NOT ENTER HERE"),
-            //         }
-            //     } else {
-            //         panic!("DO NOT ENTER HERE")
-            //     }
-            // }
             QueryRequest::Wasm(WasmQuery::Smart { contract_addr, msg }) => match from_binary(msg) {
                 Ok(QueryMsg::Pair { asset_infos }) => {
                     let key = asset_infos[0].to_string() + asset_infos[1].to_string().as_str();
                     match self.swap_factory_querier.pairs.get(&key) {
-                        // Some(v) => SystemResult::Ok(ContractResult::from(to_binary(&PairInfo {
-                        //     contract_addr: v.to_string(),
-                        //     liquidity_token: "liquidity".to_string(),
-                        //     asset_infos: [
-                        //         AssetInfo::NativeToken {
-                        //             denom: "uusd".to_string(),
-                        //         },
-                        //         AssetInfo::NativeToken {
-                        //             denom: "uusd".to_string(),
-                        //         },
-                        //     ],
-                        // }))),
+                        Some(v) => SystemResult::Ok(ContractResult::from(to_binary(&PairInfo {
+                            contract_addr: v.to_string(),
+                            liquidity_token: "liquidity".to_string(),
+                            asset_infos: [
+                                AssetInfo::NativeToken {
+                                    denom: "uusd".to_string(),
+                                },
+                                AssetInfo::NativeToken {
+                                    denom: "uusd".to_string(),
+                                },
+                            ],
+                            asset_decimals: [6u8, 6u8],
+                        }))),
                         _ => SystemResult::Err(SystemError::InvalidRequest {
                             error: "No pair info exists".to_string(),
                             request: msg.as_slice().into(),

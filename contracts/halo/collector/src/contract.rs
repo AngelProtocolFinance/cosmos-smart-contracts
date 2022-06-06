@@ -102,7 +102,7 @@ pub fn sweep(deps: DepsMut, env: Env, denom: String) -> StdResult<Response> {
     )?;
 
     let amount = query_balance(&deps.querier, env.contract.address, denom.to_string())?;
-
+    println!("amount: {}", amount);
     let swap_asset = Asset {
         info: AssetInfo::NativeToken {
             denom: denom.to_string(),
