@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, query, SECONDS_PER_WEEK};
 use crate::error::ContractError;
+use crate::mock_querier::mock_dependencies;
 use crate::state::{Config, State, CONFIG, STATE};
-use crate::mock_querier::{mock_dependencies};
 use cosmwasm_std::testing::{
     mock_dependencies_with_balances, mock_env, mock_info, MOCK_CONTRACT_ADDR,
 };

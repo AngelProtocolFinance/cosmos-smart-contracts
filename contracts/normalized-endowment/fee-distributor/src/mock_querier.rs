@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Coin, ContractResult, Decimal, OwnedDeps, Querier,
-    QuerierResult, QueryRequest, SystemError, SystemResult, Uint128, WasmQuery, Empty,
+    from_binary, from_slice, to_binary, Coin, ContractResult, Decimal, Empty, OwnedDeps, Querier,
+    QuerierResult, QueryRequest, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg};
 
@@ -132,7 +132,6 @@ pub enum QueryMsg {
     // Pair {
     //     asset_infos: [AssetInfo; 2],
     // },
-
     State {
         timestamp: Option<u64>,
     },
@@ -193,7 +192,6 @@ impl WasmMockQuerier {
                 //         }),
                 //     }
                 // }
-
                 Ok(QueryMsg::Staker { address, .. }) => {
                     let balances: &HashMap<String, Uint128> =
                         match self.token_querier.balances.get(contract_addr) {

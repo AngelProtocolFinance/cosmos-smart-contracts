@@ -86,9 +86,6 @@ fn instantiate_msg() -> InstantiateMsg {
     }
 }
 
-
-
-
 fn proper_initialization() {
     let mut deps = mock_dependencies(&[]);
 
@@ -136,9 +133,6 @@ fn proper_initialization() {
     );
 }
 
-
-
-
 fn poll_not_found() {
     let mut deps = mock_dependencies(&[]);
     mock_instantiate(deps.as_mut());
@@ -152,9 +146,6 @@ fn poll_not_found() {
         _ => panic!("Must return error"),
     }
 }
-
-
-
 
 fn fails_init_invalid_quorum() {
     let mut deps = mock_dependencies(&[]);
@@ -183,9 +174,6 @@ fn fails_init_invalid_quorum() {
     }
 }
 
-
-
-
 fn fails_init_invalid_threshold() {
     let mut deps = mock_dependencies(&[]);
     let info = mock_info("voter", &coins(11, VOTING_TOKEN));
@@ -212,9 +200,6 @@ fn fails_init_invalid_threshold() {
         Err(e) => panic!("Unexpected error: {:?}", e),
     }
 }
-
-
-
 
 fn fails_contract_register_from_non_owner() {
     let mut deps = mock_dependencies(&[]);
@@ -246,9 +231,6 @@ fn fails_contract_register_from_non_owner() {
         Err(e) => panic!("Unexpected error: {:?}", e),
     }
 }
-
-
-
 
 fn fails_create_poll_invalid_title() {
     let mut deps = mock_dependencies(&[]);
@@ -282,9 +264,6 @@ fn fails_create_poll_invalid_title() {
     }
 }
 
-
-
-
 fn fails_create_poll_invalid_description() {
     let mut deps = mock_dependencies(&[]);
     mock_instantiate(deps.as_mut());
@@ -316,9 +295,6 @@ fn fails_create_poll_invalid_description() {
         Err(_) => panic!("Unknown error"),
     }
 }
-
-
-
 
 fn fails_create_poll_invalid_link() {
     let mut deps = mock_dependencies(&[]);
@@ -357,9 +333,6 @@ fn fails_create_poll_invalid_link() {
         Err(_) => panic!("Unknown error"),
     }
 }
-
-
-
 
 fn fails_create_poll_invalid_deposit() {
     let mut deps = mock_dependencies(&[]);
@@ -408,9 +381,6 @@ fn create_poll_msg(
     })
 }
 
-
-
-
 fn happy_days_create_poll() {
     let mut deps = mock_dependencies(&[]);
     mock_instantiate(deps.as_mut());
@@ -436,9 +406,6 @@ fn happy_days_create_poll() {
         deps.as_ref(),
     );
 }
-
-
-
 
 fn query_polls() {
     let mut deps = mock_dependencies(&[]);
@@ -605,37 +572,40 @@ fn query_polls() {
     let response: PollsResponse = from_binary(&res).unwrap();
     assert_eq!(
         response.polls,
-        vec![PollResponse { 
-            id: 2, 
-            creator: "creator".to_string(), 
-            status: PollStatus::InProgress, 
-            end_height: 20000, 
-            title: "test2".to_string(), 
-            description: "test2".to_string(), 
-            link: None, 
-            proposal_type: None, 
-            deposit_amount: Uint128::new(10000000000), 
-            execute_data: None, 
-            yes_votes: Uint128::new(0), 
-            no_votes: Uint128::new(0), 
-            staked_amount: Some(Uint128::new(0)), 
-            total_balance_at_end_poll: None 
-        }, PollResponse {
-            id: 1u64,
-            creator: TEST_CREATOR.to_string(),
-            status: PollStatus::InProgress,
-            end_height: 20000u64,
-            title: "test".to_string(),
-            description: "test".to_string(),
-            link: Some("http://google.com".to_string()),
-            proposal_type: Some("gov".to_string()),
-            deposit_amount: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
-            execute_data: Some(execute_msgs),
-            yes_votes: Uint128::zero(),
-            no_votes: Uint128::zero(),
-            staked_amount: Some(Uint128::from(DEFAULT_PROPOSAL_DEPOSIT)),
-            total_balance_at_end_poll: None,
-        }]
+        vec![
+            PollResponse {
+                id: 2,
+                creator: "creator".to_string(),
+                status: PollStatus::InProgress,
+                end_height: 20000,
+                title: "test2".to_string(),
+                description: "test2".to_string(),
+                link: None,
+                proposal_type: None,
+                deposit_amount: Uint128::new(10000000000),
+                execute_data: None,
+                yes_votes: Uint128::new(0),
+                no_votes: Uint128::new(0),
+                staked_amount: Some(Uint128::new(0)),
+                total_balance_at_end_poll: None
+            },
+            PollResponse {
+                id: 1u64,
+                creator: TEST_CREATOR.to_string(),
+                status: PollStatus::InProgress,
+                end_height: 20000u64,
+                title: "test".to_string(),
+                description: "test".to_string(),
+                link: Some("http://google.com".to_string()),
+                proposal_type: Some("gov".to_string()),
+                deposit_amount: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
+                execute_data: Some(execute_msgs),
+                yes_votes: Uint128::zero(),
+                no_votes: Uint128::zero(),
+                staked_amount: Some(Uint128::from(DEFAULT_PROPOSAL_DEPOSIT)),
+                total_balance_at_end_poll: None,
+            }
+        ]
     );
 
     let res = query(
@@ -685,9 +655,6 @@ fn query_polls() {
     assert_eq!(response.polls, vec![]);
 }
 
-
-
-
 fn create_poll_no_quorum() {
     let mut deps = mock_dependencies(&[]);
     mock_instantiate(deps.as_mut());
@@ -714,9 +681,6 @@ fn create_poll_no_quorum() {
         deps.as_ref(),
     );
 }
-
-
-
 
 fn fails_end_poll_before_end_height() {
     let mut deps = mock_dependencies(&[]);
@@ -759,9 +723,6 @@ fn fails_end_poll_before_end_height() {
         Err(e) => panic!("Unexpected error: {:?}", e),
     }
 }
-
-
-
 
 fn happy_days_end_poll() {
     const POLL_START_HEIGHT: u64 = 1000;
@@ -1104,9 +1065,6 @@ fn happy_days_end_poll() {
     );
 }
 
-
-
-
 fn fail_poll() {
     const POLL_START_HEIGHT: u64 = 1000;
     const POLL_ID: u64 = 1;
@@ -1299,9 +1257,6 @@ fn fail_poll() {
     assert_eq!(polls_res.polls[0], poll_res);
 }
 
-
-
-
 fn end_poll_zero_quorum() {
     let mut deps = mock_dependencies(&coins(1000, VOTING_TOKEN));
     mock_instantiate(deps.as_mut());
@@ -1424,9 +1379,6 @@ fn end_poll_zero_quorum() {
     assert_eq!(response.polls.len(), 0);
 }
 
-
-
-
 fn end_poll_quorum_rejected() {
     let mut deps = mock_dependencies(&coins(100, VOTING_TOKEN));
     mock_instantiate(deps.as_mut());
@@ -1513,9 +1465,6 @@ fn end_poll_quorum_rejected() {
     );
 }
 
-
-
-
 fn end_poll_quorum_rejected_nothing_staked() {
     let mut deps = mock_dependencies(&coins(100, VOTING_TOKEN));
     mock_instantiate(deps.as_mut());
@@ -1564,9 +1513,6 @@ fn end_poll_quorum_rejected_nothing_staked() {
         ]
     );
 }
-
-
-
 
 fn end_poll_nay_rejected() {
     let voter1_stake = 100;
@@ -1671,9 +1617,6 @@ fn end_poll_nay_rejected() {
     );
 }
 
-
-
-
 fn fails_cast_vote_not_enough_staked() {
     let mut deps = mock_dependencies(&[]);
     mock_instantiate(deps.as_mut());
@@ -1734,9 +1677,6 @@ fn fails_cast_vote_not_enough_staked() {
         Err(e) => panic!("Unexpected error: {:?}", e),
     }
 }
-
-
-
 
 fn happy_days_cast_vote() {
     let mut deps = mock_dependencies(&[]);
@@ -1864,9 +1804,6 @@ fn happy_days_cast_vote() {
     assert_eq!(response.voters.len(), 0);
 }
 
-
-
-
 fn happy_days_withdraw_voting_tokens() {
     let mut deps = mock_dependencies(&[]);
     mock_instantiate(deps.as_mut());
@@ -1935,9 +1872,6 @@ fn happy_days_withdraw_voting_tokens() {
     );
 }
 
-
-
-
 fn happy_days_withdraw_voting_tokens_all() {
     let mut deps = mock_dependencies(&[]);
     mock_instantiate(deps.as_mut());
@@ -2005,9 +1939,6 @@ fn happy_days_withdraw_voting_tokens_all() {
         }
     );
 }
-
-
-
 
 fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
     let mut deps = mock_dependencies(&[]);
@@ -2152,9 +2083,6 @@ fn withdraw_voting_tokens_remove_not_in_progress_poll_voter_info() {
     );
 }
 
-
-
-
 fn fails_withdraw_voting_tokens_no_stake() {
     let mut deps = mock_dependencies(&[]);
     mock_instantiate(deps.as_mut());
@@ -2173,9 +2101,6 @@ fn fails_withdraw_voting_tokens_no_stake() {
         Err(e) => panic!("Unexpected error: {:?}", e),
     }
 }
-
-
-
 
 fn fails_withdraw_too_many_tokens() {
     let mut deps = mock_dependencies(&[]);
@@ -2210,9 +2135,6 @@ fn fails_withdraw_too_many_tokens() {
         Err(e) => panic!("Unexpected error: {:?}", e),
     }
 }
-
-
-
 
 fn fails_cast_vote_twice() {
     let mut deps = mock_dependencies(&[]);
@@ -2282,9 +2204,6 @@ fn fails_cast_vote_twice() {
     }
 }
 
-
-
-
 fn fails_cast_vote_without_poll() {
     let mut deps = mock_dependencies(&[]);
     mock_instantiate(deps.as_mut());
@@ -2306,9 +2225,6 @@ fn fails_cast_vote_without_poll() {
     }
 }
 
-
-
-
 fn happy_days_stake_voting_tokens() {
     let mut deps = mock_dependencies(&[]);
     mock_instantiate(deps.as_mut());
@@ -2329,9 +2245,6 @@ fn happy_days_stake_voting_tokens() {
     let execute_res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_stake_tokens_result(11, 0, 11, 0, execute_res, deps.as_ref());
 }
-
-
-
 
 fn fails_insufficient_funds() {
     let mut deps = mock_dependencies(&[]);
@@ -2356,9 +2269,6 @@ fn fails_insufficient_funds() {
         Err(e) => panic!("Unexpected error: {:?}", e),
     }
 }
-
-
-
 
 fn fails_staking_wrong_token() {
     let mut deps = mock_dependencies(&[]);
@@ -2388,9 +2298,6 @@ fn fails_staking_wrong_token() {
         Err(e) => panic!("Unexpected error: {:?}", e),
     }
 }
-
-
-
 
 fn share_calculation() {
     let mut deps = mock_dependencies(&[]);
@@ -2547,9 +2454,6 @@ fn assert_cast_vote_success(
     );
 }
 
-
-
-
 fn update_config() {
     let mut deps = mock_dependencies(&[]);
     mock_instantiate(deps.as_mut());
@@ -2630,9 +2534,6 @@ fn update_config() {
         _ => panic!("Must return unauthorized error"),
     }
 }
-
-
-
 
 fn add_several_execute_msgs() {
     let mut deps = mock_dependencies(&[]);
@@ -2716,9 +2617,6 @@ fn add_several_execute_msgs() {
     assert_eq!(response_execute_data.len(), 3);
     assert_eq!(response_execute_data, execute_msgs);
 }
-
-
-
 
 fn execute_poll_with_order() {
     const POLL_START_HEIGHT: u64 = 1000;
@@ -2964,9 +2862,6 @@ fn execute_poll_with_order() {
     );
 }
 
-
-
-
 fn poll_with_empty_execute_data_marked_as_executed() {
     const POLL_START_HEIGHT: u64 = 1000;
     const POLL_ID: u64 = 1;
@@ -3134,9 +3029,6 @@ fn poll_with_empty_execute_data_marked_as_executed() {
     assert_eq!(polls_res.polls[0], poll_res);
 }
 
-
-
-
 fn poll_with_none_execute_data_marked_as_executed() {
     const POLL_START_HEIGHT: u64 = 1000;
     const POLL_ID: u64 = 1;
@@ -3298,9 +3190,6 @@ fn poll_with_none_execute_data_marked_as_executed() {
     assert_eq!(polls_res.polls[0], poll_res);
 }
 
-
-
-
 fn happy_days_cast_vote_with_snapshot() {
     let mut deps = mock_dependencies(&[]);
     mock_instantiate(deps.as_mut());
@@ -3428,9 +3317,6 @@ fn happy_days_cast_vote_with_snapshot() {
     let value: PollResponse = from_binary(&res).unwrap();
     assert_eq!(value.staked_amount, Some(Uint128::new(11)));
 }
-
-
-
 
 fn fails_end_poll_quorum_inflation_without_snapshot_poll() {
     const POLL_START_HEIGHT: u64 = 1000;
@@ -3603,9 +3489,6 @@ fn fails_end_poll_quorum_inflation_without_snapshot_poll() {
         value.total_balance_at_end_poll.unwrap().u128()
     );
 }
-
-
-
 
 fn happy_days_end_poll_with_controlled_quorum() {
     const POLL_START_HEIGHT: u64 = 1000;
