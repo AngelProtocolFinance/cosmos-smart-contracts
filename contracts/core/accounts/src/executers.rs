@@ -2,15 +2,14 @@ use crate::state::PROFILE;
 use crate::state::{CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::cw3_multisig::InstantiateMsg as Cw3MultisigInstantiateMsg;
-use angel_core::messages::cw3_multisig::Threshold;
-use angel_core::messages::index_fund::DepositMsg as IndexFundDepositMsg;
-use angel_core::messages::index_fund::ExecuteMsg as IndexFundExecuter;
-use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
+use angel_core::messages::cw3_multisig::{InstantiateMsg as Cw3MultisigInstantiateMsg, Threshold};
+use angel_core::messages::index_fund::{
+    DepositMsg as IndexFundDepositMsg, ExecuteMsg as IndexFundExecuter,
+    QueryMsg as IndexFundQuerier,
+};
 use angel_core::messages::registrar::{
     ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentEntryMsg,
 };
-use angel_core::messages::vault::AccountTransferMsg;
 use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
@@ -20,7 +19,7 @@ use angel_core::structs::{
     StrategyComponent, Tier, TransactionRecord,
 };
 use angel_core::utils::{
-    check_splits, deduct_tax, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
+    check_splits, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
     withdraw_from_vaults,
 };
 use cosmwasm_std::{
@@ -254,7 +253,6 @@ pub fn update_endowment_settings(
 
     // validate address strings passed
     endowment.owner = deps.api.addr_validate(&msg.owner)?;
-    endowment.beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
     ENDOWMENT.save(deps.storage, &endowment)?;
 
     Ok(Response::default())
@@ -309,9 +307,7 @@ pub fn update_strategies(
         return Err(ContractError::StrategyComponentsNotUnique {});
     };
 
-    let mut locked_percentages_sum = Decimal::zero();
-    let mut liquid_percentages_sum = Decimal::zero();
-
+    let mut percentages_sum = Decimal::zero();
     for strategy in strategies.iter() {
         let vault_config: VaultDetailResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
@@ -324,11 +320,10 @@ pub fn update_strategies(
             return Err(ContractError::InvalidInputs {});
         }
 
-        locked_percentages_sum = locked_percentages_sum + strategy.locked_percentage;
-        liquid_percentages_sum = liquid_percentages_sum + strategy.liquid_percentage;
+        percentages_sum = percentages_sum + strategy.percentage;
     }
 
-    if locked_percentages_sum != Decimal::one() || liquid_percentages_sum != Decimal::one() {
+    if percentages_sum != Decimal::one() {
         return Err(ContractError::InvalidStrategyAllocation {});
     }
 
@@ -349,8 +344,7 @@ pub fn update_strategies(
     for strategy in strategies {
         new_strategies.push(StrategyComponent {
             vault: deps.api.addr_validate(&strategy.vault.clone())?,
-            locked_percentage: strategy.locked_percentage,
-            liquid_percentage: strategy.liquid_percentage,
+            percentage: strategy.percentage,
         });
     }
     endowment.strategies = new_strategies;
@@ -366,7 +360,6 @@ pub fn vault_receipt(
     env: Env,
     info: MessageInfo,
     sender_addr: Addr,
-    msg: AccountTransferMsg,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
     let mut state = STATE.load(deps.storage)?;
@@ -400,29 +393,6 @@ pub fn vault_receipt(
             })?,
         }))?;
 
-    // funds go into state balances (locked/liquid)
-    let total = msg.locked + msg.liquid;
-    if !msg.locked.is_zero() {
-        state
-            .balances
-            .locked_balance
-            .add_tokens(ratio_adjusted_balance(
-                Balance::from(vec![returned_amount.clone()]),
-                msg.locked,
-                total,
-            ));
-    }
-    if !msg.liquid.is_zero() {
-        state
-            .balances
-            .liquid_balance
-            .add_tokens(ratio_adjusted_balance(
-                Balance::from(vec![returned_amount]),
-                msg.liquid,
-                total,
-            ));
-    }
-
     let mut submessages: Vec<SubMsg> = vec![];
     match config.pending_redemptions {
         // last redemption, remove pending u64, and build deposit submsgs
@@ -434,10 +404,9 @@ pub fn vault_receipt(
                     deps.as_ref(),
                     config.registrar_contract.to_string(),
                     state.balances.locked_balance.get_ust(),
-                    state.balances.liquid_balance.get_ust(),
                     &endowment.strategies,
                 )?;
-                // set UST balances available to zero
+                // set UST balances available to zero for locked
                 state
                     .balances
                     .locked_balance
@@ -445,28 +414,18 @@ pub fn vault_receipt(
                         amount: Uint128::zero(),
                         denom: "uusd".to_string(),
                     }]));
-                state
-                    .balances
-                    .liquid_balance
-                    .set_token_balances(Balance::from(vec![Coin {
-                        amount: Uint128::zero(),
-                        denom: "uusd".to_string(),
-                    }]));
             } else {
                 // this is a vault receipt triggered by closing an Endowment
                 // need to handle beneficiary vs index fund submsg actions taken
-                let balance_after_tax = deduct_tax(
-                    deps.as_ref(),
-                    Coin {
-                        amount: state.balances.locked_balance.get_ust().amount
-                            + state.balances.liquid_balance.get_ust().amount,
-                        denom: "uusd".to_string(),
-                    },
-                )?;
+                let balance = Coin {
+                    denom: "uust".to_string(),
+                    amount: state.balances.locked_balance.get_ust().amount
+                        + state.balances.liquid_balance.get_ust().amount,
+                };
                 match state.closing_beneficiary {
                     Some(ref addr) => submessages.push(SubMsg::new(BankMsg::Send {
                         to_address: deps.api.addr_validate(addr)?.to_string(),
-                        amount: vec![balance_after_tax],
+                        amount: vec![balance],
                     })),
                     None => {
                         // Get the Index Fund SC address from the Registrar SC
@@ -496,14 +455,14 @@ pub fn vault_receipt(
                                     fund_id: Some(fund_list.funds[0].id),
                                     split: None,
                                 }))?,
-                                funds: vec![balance_after_tax],
+                                funds: vec![balance],
                             })))
                         } else {
                             // Orphaned Endowment (ie. no parent index fund)
                             // send funds to the DANO treasury
                             submessages.push(SubMsg::new(BankMsg::Send {
                                 to_address: registrar_config.treasury,
-                                amount: vec![balance_after_tax],
+                                amount: vec![balance],
                             }))
                         }
                     }
@@ -550,6 +509,13 @@ pub fn deposit(
         return Err(ContractError::InvalidCoinsDeposited {});
     }
 
+    // Get the split to liquid parameters set in the Registrar SC
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+
     let deposit_amount: Coin = Coin {
         denom: "uusd".to_string(),
         amount: info
@@ -567,14 +533,7 @@ pub fn deposit(
     let mut locked_split = msg.locked_percentage;
     let mut liquid_split = msg.liquid_percentage;
 
-    // Get the split to liquid parameters set in the Registrar SC
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
-        }))?;
     let registrar_split_configs: SplitDetails = registrar_config.split_to_liquid;
-
     // check split passed by the donor against the Registrar SC split params
     let index_fund = match registrar_config.index_fund {
         Some(addr) => addr,
@@ -586,11 +545,11 @@ pub fn deposit(
         liquid_split = new_splits.1;
     }
 
-    let ust_locked = Coin {
+    let locked_amount = Coin {
         amount: deposit_amount.amount * locked_split,
         denom: "uusd".to_string(),
     };
-    let ust_liquid = Coin {
+    let liquid_amount = Coin {
         amount: deposit_amount.amount * liquid_split,
         denom: "uusd".to_string(),
     };
@@ -614,8 +573,7 @@ pub fn deposit(
     let deposit_messages = deposit_to_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
-        ust_locked,
-        ust_liquid,
+        locked_amount,
         &endowment.strategies,
     )?;
 
@@ -651,7 +609,7 @@ pub fn withdraw(
     // check if locked tokens are requested and
     // reject if endowment cannot withdraw from locked before maturity
     for source in sources.iter() {
-        if source.locked > Uint128::zero()
+        if source.amount > Uint128::zero()
             && (!endowment.withdraw_before_maturity || !endowment.is_expired(&env))
         {
             return Err(ContractError::InaccessableLockedBalance {});

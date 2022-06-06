@@ -61,8 +61,7 @@ pub fn instantiate(
             maturity_height: msg.maturity_height,       // Option<u64>
             strategies: vec![StrategyComponent {
                 vault: deps.api.addr_validate(&default_vault)?,
-                locked_percentage: Decimal::one(),
-                liquid_percentage: Decimal::one(),
+                percentage: Decimal::one(),
             }],
             rebalance: RebalanceDetails::default(),
             guardian_set: vec![],
@@ -140,8 +139,8 @@ pub fn execute(
             sources,
             beneficiary,
         } => executers::withdraw(deps, env, info, sources, beneficiary),
-        ExecuteMsg::VaultReceipt(msg) => {
-            executers::vault_receipt(deps, env, info.clone(), info.sender, msg)
+        ExecuteMsg::VaultReceipt {} => {
+            executers::vault_receipt(deps, env, info.clone(), info.sender)
         }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)

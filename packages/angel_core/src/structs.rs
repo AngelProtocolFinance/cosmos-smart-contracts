@@ -43,16 +43,14 @@ pub struct VaultRate {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct StrategyComponent {
-    pub vault: Addr,                // Vault SC Address
-    pub locked_percentage: Decimal, // percentage of funds to invest
-    pub liquid_percentage: Decimal, // percentage of funds to invest
+    pub vault: Addr,         // Vault SC Address
+    pub percentage: Decimal, // percentage of funds to invest
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct FundingSource {
     pub vault: String,
-    pub locked: Uint128,
-    pub liquid: Uint128,
+    pub amount: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]

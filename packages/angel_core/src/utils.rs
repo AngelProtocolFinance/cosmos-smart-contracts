@@ -1,6 +1,6 @@
 use crate::errors::core::ContractError;
 use crate::messages::registrar::QueryMsg as RegistrarQuerier;
-use crate::messages::vault::{AccountTransferMsg, AccountWithdrawMsg};
+use crate::messages::vault::AccountWithdrawMsg;
 use crate::responses::registrar::VaultDetailResponse;
 use crate::responses::vault::ExchangeRateResponse;
 use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
@@ -230,7 +230,7 @@ pub fn withdraw_from_vaults(
 
     // redeem amounts from sources listed
     for source in sources.iter() {
-        if source.locked > Uint128::zero() || source.liquid > Uint128::zero() {
+        if source.amount > Uint128::zero() {
             // check source vault is in registrar vaults list and is approved
             let vault_config: VaultDetailResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
@@ -245,12 +245,10 @@ pub fn withdraw_from_vaults(
             }
             let withdraw_msg = AccountWithdrawMsg {
                 beneficiary: beneficiary.clone(),
-                locked: source.locked,
-                liquid: source.liquid,
+                amount: source.amount,
             };
 
-            tx_amounts += source.locked;
-            tx_amounts += source.liquid;
+            tx_amounts += source.amount;
 
             // create a withdraw message for X Vault, noting amounts for Locked / Liquid
             withdraw_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -269,8 +267,7 @@ pub fn withdraw_from_vaults(
 pub fn deposit_to_vaults(
     deps: Deps,
     registrar_contract: String,
-    locked_ust: Coin,
-    liquid_ust: Coin,
+    amount: Coin,
     strategies: &[StrategyComponent],
 ) -> Result<Vec<SubMsg>, ContractError> {
     let mut deposit_messages = vec![];
@@ -285,38 +282,14 @@ pub fn deposit_to_vaults(
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
 
-        let transfer_msg = AccountTransferMsg {
-            locked: deduct_tax(
-                deps,
-                Coin {
-                    denom: "uusd".to_string(),
-                    amount: locked_ust.amount * strategy.locked_percentage,
-                },
-            )
-            .unwrap()
-            .amount,
-            liquid: deduct_tax(
-                deps,
-                Coin {
-                    denom: "uusd".to_string(),
-                    amount: liquid_ust.amount * strategy.liquid_percentage,
-                },
-            )
-            .unwrap()
-            .amount,
-        };
-
         // create a deposit message for X Vault, noting amounts for Locked / Liquid
         // funds payload contains both amounts for locked and liquid accounts
         deposit_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: yield_vault.address.to_string(),
-            msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit(
-                transfer_msg.clone(),
-            ))
-            .unwrap(),
+            msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {}).unwrap(),
             funds: vec![Coin {
-                amount: transfer_msg.locked + transfer_msg.liquid,
-                denom: "uusd".to_string(),
+                denom: amount.denom.clone(),
+                amount: amount.amount.clone() * strategy.percentage,
             }],
         })));
     }

@@ -1,5 +1,4 @@
-use crate::structs::FundingSource;
-use crate::{messages::vault::AccountTransferMsg, structs::Profile};
+use crate::structs::{FundingSource, Profile};
 use cosmwasm_std::Decimal;
 use cw4::Member;
 use schemars::JsonSchema;
@@ -32,7 +31,7 @@ pub enum ExecuteMsg {
         beneficiary: String,
     },
     // Tokens are sent back to an Account from an Asset Vault
-    VaultReceipt(AccountTransferMsg),
+    VaultReceipt {},
     // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.
     // If not provided, looks up the Index Fund an Endowment is tied to to donates the funds to it.
     CloseEndowment {
@@ -71,14 +70,12 @@ pub struct UpdateConfigMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Strategy {
-    pub vault: String,              // Vault SC Address
-    pub locked_percentage: Decimal, // percentage of funds to invest
-    pub liquid_percentage: Decimal, // percentage of funds to invest
+    pub vault: String,       // Vault SC Address
+    pub percentage: Decimal, // percentage of funds to invest
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentSettingsMsg {
-    pub beneficiary: String,
     pub owner: String,
 }
 

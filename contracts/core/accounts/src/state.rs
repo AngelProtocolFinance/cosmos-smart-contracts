@@ -56,17 +56,6 @@ pub struct State {
     pub transactions: Vec<TransactionRecord>,
 }
 
-// This is just for the purpose of "migrate" contract.
-// After the contract is migrated into "RC-v1.6", this should be cleaned.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct OldState {
-    pub donations_received: Uint128,
-    pub balances: BalanceInfo,
-    pub closing_endowment: bool,
-    pub closing_beneficiary: Option<String>,
-}
-
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");
