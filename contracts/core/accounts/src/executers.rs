@@ -16,7 +16,7 @@ use angel_core::responses::registrar::{
 };
 use angel_core::structs::{
     AcceptedTokens, EndowmentType, FundingSource, SocialMedialUrls, SplitDetails,
-    StrategyComponent, Tier, TransactionRecord,
+    StrategyComponent, Tier, TransactionRecord, DEPOSIT_TOKEN_DENOM,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
@@ -371,13 +371,11 @@ pub fn vault_receipt(
     }
 
     let returned_amount: Coin = Coin {
-        denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+        denom: DEPOSIT_TOKEN_DENOM.to_string(),
         amount: info
             .funds
             .iter()
-            .find(|c| {
-                c.denom == *"ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
-            })
+            .find(|c| c.denom == *DEPOSIT_TOKEN_DENOM)
             .map(|c| c.amount)
             .unwrap_or_else(Uint128::zero),
     };
@@ -414,16 +412,13 @@ pub fn vault_receipt(
                     .locked_balance
                     .set_token_balances(Balance::from(vec![Coin {
                         amount: Uint128::zero(),
-                        denom:
-                            "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
-                                .to_string(),
+                        denom: DEPOSIT_TOKEN_DENOM.to_string(),
                     }]));
             } else {
                 // this is a vault receipt triggered by closing an Endowment
                 // need to handle beneficiary vs index fund submsg actions taken
                 let balance = Coin {
-                    denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
-                        .to_string(),
+                    denom: DEPOSIT_TOKEN_DENOM.to_string(),
                     amount: state.balances.locked_balance.get_ust().amount
                         + state.balances.liquid_balance.get_ust().amount,
                 };
@@ -522,13 +517,11 @@ pub fn deposit(
         }))?;
 
     let deposit_amount: Coin = Coin {
-        denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+        denom: DEPOSIT_TOKEN_DENOM.to_string(),
         amount: info
             .funds
             .iter()
-            .find(|c| {
-                c.denom == *"ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
-            })
+            .find(|c| c.denom == *DEPOSIT_TOKEN_DENOM)
             .map(|c| c.amount)
             .unwrap_or_else(Uint128::zero),
     };
@@ -554,11 +547,11 @@ pub fn deposit(
 
     let locked_amount = Coin {
         amount: deposit_amount.amount * locked_split,
-        denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+        denom: DEPOSIT_TOKEN_DENOM.to_string(),
     };
     let liquid_amount = Coin {
         amount: deposit_amount.amount * liquid_split,
-        denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+        denom: DEPOSIT_TOKEN_DENOM.to_string(),
     };
 
     // update total donations recieved for a charity
@@ -638,7 +631,7 @@ pub fn withdraw(
         sender: env.contract.address.clone(),
         recipient: Some(Addr::unchecked(beneficiary.clone())),
         amount: tx_amounts,
-        denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+        denom: DEPOSIT_TOKEN_DENOM.to_string(),
     };
     state.transactions.push(tx_record);
     STATE.save(deps.storage, &state)?;

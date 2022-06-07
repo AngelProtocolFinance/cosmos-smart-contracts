@@ -100,12 +100,12 @@ pub fn deposit_stable(
     }
 
     let deposit_amount: Coin = Coin {
-        denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+        denom: DEPOSIT_TOKEN_DENOM.to_string(),
         amount: info
             .funds
             .iter()
             .find(|c| {
-                c.denom == *"ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                c.denom == *DEPOSIT_TOKEN_DENOM
             })
             .map(|c| c.amount)
             .unwrap_or_else(Uint128::zero),
@@ -158,7 +158,7 @@ pub fn deposit_stable(
             id: submessage_id,
             msg: deposit_stable_msg(
                 &config.moneymarket,
-                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+                DEPOSIT_TOKEN_DENOM,
                 deposit_amount.amount,
             )?,
             reply_on: ReplyOn::Always,
@@ -568,7 +568,7 @@ pub fn process_anchor_reply(
                             )?,
                             funds: vec![Coin {
                                 amount: anchor_amount,
-                                denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+                                denom: DEPOSIT_TOKEN_DENOM.to_string(),
                             }],
                         }))
                 }
@@ -580,7 +580,7 @@ pub fn process_anchor_reply(
                             to_address: transaction.beneficiary.unwrap().to_string(),
                             amount: vec![Coin {
                                 amount: anchor_amount,
-                                denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+                                denom: DEPOSIT_TOKEN_DENOM.to_string(),
                             }],
                         })
                 }

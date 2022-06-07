@@ -3,7 +3,9 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
-use angel_core::structs::{AcceptedTokens, AllianceMember, IndexFund, SplitDetails};
+use angel_core::structs::{
+    AcceptedTokens, AllianceMember, IndexFund, SplitDetails, DEPOSIT_TOKEN_DENOM,
+};
 use angel_core::utils::{deduct_tax, percentage_checks};
 use cosmwasm_std::{
     attr, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
@@ -365,9 +367,7 @@ pub fn deposit(
     let mut deposit_amount: Uint128 = info
         .funds
         .iter()
-        .find(|c| {
-            c.denom == *"ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
-        })
+        .find(|c| c.denom == *DEPOSIT_TOKEN_DENOM)
         .map(|c| c.amount)
         .unwrap_or_else(Uint128::zero);
 
@@ -386,8 +386,7 @@ pub fn deposit(
             .may_load(deps.storage, sender_addr.to_string())?
             .unwrap_or_default();
         tca_donor.add_tokens(Balance::from(vec![Coin {
-            denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
-                .to_string(),
+            denom: DEPOSIT_TOKEN_DENOM.to_string(),
             amount: deposit_amount,
         }]));
         TCA_DONATIONS.save(deps.storage, sender_addr.to_string(), &tca_donor)?;
@@ -581,8 +580,7 @@ pub fn build_donation_messages(
             funds: vec![deduct_tax(
                 deps,
                 Coin {
-                    denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
-                        .to_string(),
+                    denom: DEPOSIT_TOKEN_DENOM.to_string(),
                     amount: member.1 .0 + member.2 .0,
                 },
             )

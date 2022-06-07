@@ -1,9 +1,9 @@
 use crate::state::{
     read_alliance_members, read_funds, ALLIANCE_MEMBERS, CONFIG, FUND, STATE, TCA_DONATIONS,
 };
-use angel_core::messages::index_fund::DepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg::Deposit;
 use angel_core::responses::index_fund::*;
+use angel_core::{messages::index_fund::DepositMsg, structs::DEPOSIT_TOKEN_DENOM};
 use cosmwasm_std::{
     to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, Env, StdError, StdResult, Uint128, WasmMsg,
 };
@@ -103,8 +103,7 @@ pub fn deposit_msg_builder(
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&Deposit(DepositMsg { fund_id, split }))?,
         funds: vec![Coin {
-            denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
-                .to_string(),
+            denom: DEPOSIT_TOKEN_DENOM.to_string(),
             amount,
         }],
     }))

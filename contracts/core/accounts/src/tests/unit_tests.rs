@@ -3,7 +3,7 @@ use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
-use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
+use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls, DEPOSIT_TOKEN_DENOM};
 use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{attr, coins, from_binary, Addr, Decimal};
 use std::vec;
@@ -156,7 +156,6 @@ fn test_update_endowment_settings() {
     // update the endowment owner and beneficiary
     let msg = UpdateEndowmentSettingsMsg {
         owner: charity_addr.clone(),
-        beneficiary: pleb.clone(),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth "));
     let env = mock_env();
@@ -172,7 +171,6 @@ fn test_update_endowment_settings() {
     // Not just anyone can update the Endowment's settings! Only Endowment owner can.
     let msg = UpdateEndowmentSettingsMsg {
         owner: charity_addr.clone(),
-        beneficiary: pleb.clone(),
     };
     let info = mock_info(pleb.as_ref(), &coins(100000, "earth "));
     let env = mock_env();
@@ -399,7 +397,7 @@ fn test_update_strategy() {
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(40),
+                percentage: Decimal::percent(30),
             },
             Strategy {
                 vault: "tech_strategy_component_addr".to_string(),
@@ -655,7 +653,10 @@ fn test_donate() {
 
     // Try the "Deposit"
     let donation_amt = 200_u128;
-    let info = mock_info(depositor.as_str(), &coins(donation_amt, "uusd"));
+    let info = mock_info(
+        depositor.as_str(),
+        &coins(donation_amt, DEPOSIT_TOKEN_DENOM),
+    );
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         locked_percentage: Decimal::percent(50),
         liquid_percentage: Decimal::percent(50),
@@ -744,10 +745,7 @@ fn test_withdraw() {
     let donation_amt = 200_u128;
     let info = mock_info(
         depositor.as_str(),
-        &coins(
-            donation_amt,
-            "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
-        ),
+        &coins(donation_amt, DEPOSIT_TOKEN_DENOM),
     );
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         locked_percentage: Decimal::percent(50),
