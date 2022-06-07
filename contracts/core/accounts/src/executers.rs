@@ -1,5 +1,4 @@
-use crate::state::PROFILE;
-use crate::state::{CONFIG, ENDOWMENT, STATE};
+use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::{InstantiateMsg as Cw3MultisigInstantiateMsg, Threshold};
@@ -19,8 +18,7 @@ use angel_core::structs::{
     StrategyComponent, Tier, TransactionRecord,
 };
 use angel_core::utils::{
-    check_splits, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
-    withdraw_from_vaults,
+    check_splits, deposit_to_vaults, redeem_from_vaults, withdraw_from_vaults,
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
@@ -405,7 +403,7 @@ pub fn vault_receipt(
                 submessages = deposit_to_vaults(
                     deps.as_ref(),
                     config.registrar_contract.to_string(),
-                    state.balances.locked_balance.get_ust(),
+                    state.balances.locked_balance.get_usd(),
                     &endowment.strategies,
                 )?;
                 // set UST balances available to zero for locked
@@ -424,8 +422,8 @@ pub fn vault_receipt(
                 let balance = Coin {
                     denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
                         .to_string(),
-                    amount: state.balances.locked_balance.get_ust().amount
-                        + state.balances.liquid_balance.get_ust().amount,
+                    amount: state.balances.locked_balance.get_usd().amount
+                        + state.balances.liquid_balance.get_usd().amount,
                 };
                 match state.closing_beneficiary {
                     Some(ref addr) => submessages.push(SubMsg::new(BankMsg::Send {
@@ -563,9 +561,8 @@ pub fn deposit(
 
     // update total donations recieved for a charity
     let mut state = STATE.load(deps.storage)?;
-    let endowment = ENDOWMENT.load(deps.storage)?;
     state.donations_received += deposit_amount.amount;
-
+    // note the tx in records
     let tx_record = TransactionRecord {
         block: env.block.height,
         sender: sender_addr,
@@ -574,16 +571,34 @@ pub fn deposit(
         denom: deposit_amount.denom,
     };
     state.transactions.push(tx_record);
+    // increase the liquid balance by donation (liquid) amount
+    state
+        .balances
+        .liquid_balance
+        .add_tokens(Balance::from(vec![liquid_amount]));
+
+    let deposit_messages;
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    // check endowment strategies set.
+    // if empty: hold locked funds until a vault is set
+    if endowment.strategies.is_empty() {
+        deposit_messages = vec![];
+        // increase the liquid balance by donation (liquid) amount
+        state
+            .balances
+            .locked_balance
+            .add_tokens(Balance::from(vec![locked_amount]));
+    } else {
+        // if not empty: build deposit messages for each of the sources/amounts
+        deposit_messages = deposit_to_vaults(
+            deps.as_ref(),
+            config.registrar_contract.to_string(),
+            locked_amount,
+            &endowment.strategies,
+        )?;
+    }
+
     STATE.save(deps.storage, &state)?;
-
-    // build deposit messages for each of the sources/amounts
-    let deposit_messages = deposit_to_vaults(
-        deps.as_ref(),
-        config.registrar_contract.to_string(),
-        locked_amount,
-        &endowment.strategies,
-    )?;
-
     Ok(Response::new()
         .add_submessages(deposit_messages)
         .add_attribute("action", "account_deposit")
@@ -645,6 +660,60 @@ pub fn withdraw(
 
     Ok(Response::new()
         .add_submessages(withdraw_messages)
+        .add_attribute("action", "withdrawal")
+        .add_attribute("sender", env.contract.address.to_string())
+        .add_attribute("beneficiary", beneficiary))
+}
+
+pub fn withdraw_liquid(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    liquid_amount: Uint128,
+    beneficiary: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let endowment = ENDOWMENT.load(deps.storage)?;
+
+    // check that sender is the owner or the beneficiary
+    if info.sender != endowment.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // check that the Endowment has been approved to withdraw deposits
+    if !config.withdraw_approved {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Withdraws are not approved for this endowment".to_string(),
+        }));
+    }
+
+    let mut state = STATE.load(deps.storage)?;
+    // check that the amount in liquid balance is sufficient to cover request
+    if state.balances.liquid_balance.get_usd().amount < liquid_amount {
+        return Err(ContractError::InsufficientFunds {});
+    }
+
+    // Update the Liquid Balance in STATE
+    state
+        .balances
+        .liquid_balance
+        .deduct_tokens(Balance::from(vec![Coin {
+            denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                .to_string(),
+            amount: liquid_amount,
+        }]));
+    STATE.save(deps.storage, &state)?;
+
+    Ok(Response::new()
+        // Send UST to the Beneficiary via BankMsg::Send
+        .add_message(BankMsg::Send {
+            to_address: beneficiary.to_string(),
+            amount: vec![Coin {
+                amount: liquid_amount,
+                denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                    .to_string(),
+            }],
+        })
         .add_attribute("action", "withdrawal")
         .add_attribute("sender", env.contract.address.to_string())
         .add_attribute("beneficiary", beneficiary))
