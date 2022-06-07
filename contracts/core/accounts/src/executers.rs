@@ -371,11 +371,13 @@ pub fn vault_receipt(
     }
 
     let returned_amount: Coin = Coin {
-        denom: "uusd".to_string(),
+        denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
         amount: info
             .funds
             .iter()
-            .find(|c| c.denom == *"uusd")
+            .find(|c| {
+                c.denom == *"ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+            })
             .map(|c| c.amount)
             .unwrap_or_else(Uint128::zero),
     };
@@ -412,13 +414,16 @@ pub fn vault_receipt(
                     .locked_balance
                     .set_token_balances(Balance::from(vec![Coin {
                         amount: Uint128::zero(),
-                        denom: "uusd".to_string(),
+                        denom:
+                            "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                                .to_string(),
                     }]));
             } else {
                 // this is a vault receipt triggered by closing an Endowment
                 // need to handle beneficiary vs index fund submsg actions taken
                 let balance = Coin {
-                    denom: "uust".to_string(),
+                    denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                        .to_string(),
                     amount: state.balances.locked_balance.get_ust().amount
                         + state.balances.liquid_balance.get_ust().amount,
                 };
@@ -517,11 +522,13 @@ pub fn deposit(
         }))?;
 
     let deposit_amount: Coin = Coin {
-        denom: "uusd".to_string(),
+        denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
         amount: info
             .funds
             .iter()
-            .find(|c| c.denom == *"uusd")
+            .find(|c| {
+                c.denom == *"ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+            })
             .map(|c| c.amount)
             .unwrap_or_else(Uint128::zero),
     };
@@ -547,11 +554,11 @@ pub fn deposit(
 
     let locked_amount = Coin {
         amount: deposit_amount.amount * locked_split,
-        denom: "uusd".to_string(),
+        denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
     };
     let liquid_amount = Coin {
         amount: deposit_amount.amount * liquid_split,
-        denom: "uusd".to_string(),
+        denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
     };
 
     // update total donations recieved for a charity
@@ -631,7 +638,7 @@ pub fn withdraw(
         sender: env.contract.address.clone(),
         recipient: Some(Addr::unchecked(beneficiary.clone())),
         amount: tx_amounts,
-        denom: "uusd".to_string(),
+        denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
     };
     state.transactions.push(tx_record);
     STATE.save(deps.storage, &state)?;
