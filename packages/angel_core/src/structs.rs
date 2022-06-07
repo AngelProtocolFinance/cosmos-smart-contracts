@@ -218,7 +218,9 @@ pub struct AcceptedTokens {
 impl AcceptedTokens {
     pub fn default() -> Self {
         AcceptedTokens {
-            native: vec!["uusd".to_string()],
+            native: vec![
+                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+            ],
             cw20: vec![],
         }
     }
@@ -291,12 +293,15 @@ impl GenericBalance {
             }
         };
     }
-    pub fn get_ust(&self) -> Coin {
-        match self.native.iter().find(|t| t.denom == *"uusd") {
+    pub fn get_usd(&self) -> Coin {
+        match self.native.iter().find(|t| {
+            t.denom == *"ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+        }) {
             Some(coin) => coin.clone(),
             None => Coin {
                 amount: Uint128::zero(),
-                denom: "uusd".to_string(),
+                denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                    .to_string(),
             },
         }
     }

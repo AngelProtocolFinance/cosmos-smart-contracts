@@ -199,7 +199,10 @@ pub fn update_config(
         None => config.charity_shares_contract,
     };
     config.default_vault = match msg.default_vault {
-        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        Some(addr) => match addr {
+            Some(a) => Some(deps.api.addr_validate(&a)?),
+            None => None,
+        },
         None => config.default_vault,
     };
     config.index_fund_contract = match msg.index_fund_contract {

@@ -63,7 +63,7 @@ pub struct UpdateConfigMsg {
     pub treasury: Option<String>,
     pub tax_rate: Option<Decimal>,
     pub approved_charities: Option<Vec<String>>,
-    pub default_vault: Option<String>,
+    pub default_vault: Option<Option<String>>,
     pub guardians_multisig_addr: Option<String>,
     pub endowment_owners_group_addr: Option<String>,
     pub split_max: Option<Decimal>,
