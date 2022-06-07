@@ -6,8 +6,8 @@ use angel_core::structs::SplitDetails;
 use angel_core::structs::{EndowmentStatus, EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
-    coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply,
-    WasmMsg, SubMsgResult, SubMsgResponse,
+    coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply, SubMsgResponse, SubMsgResult,
+    WasmMsg,
 };
 
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;

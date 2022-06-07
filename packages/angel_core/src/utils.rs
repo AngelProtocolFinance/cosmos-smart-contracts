@@ -10,7 +10,6 @@ use cosmwasm_std::{
     Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg};
-use terra_cosmwasm::TerraQuerier;
 
 /// The following `calc_range_<???>` functions will set the first key after the provided key, by appending a 1 byte
 pub fn calc_range_start(start_after: Option<u64>) -> Option<Vec<u8>> {
@@ -267,7 +266,7 @@ pub fn deposit_to_vaults(
             msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {}).unwrap(),
             funds: vec![Coin {
                 denom: amount.denom.clone(),
-                amount: amount.amount.clone() * strategy.percentage,
+                amount: amount.amount * strategy.percentage,
             }],
         })));
     }

@@ -21,9 +21,8 @@ use angel_core::utils::{
     check_splits, deposit_to_vaults, redeem_from_vaults, withdraw_from_vaults,
 };
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
-    QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
-    WasmMsg, WasmQuery, SubMsgResult,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
+    ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw0::Duration;
 use cw20::Balance;
@@ -318,7 +317,7 @@ pub fn update_strategies(
             return Err(ContractError::InvalidInputs {});
         }
 
-        percentages_sum = percentages_sum + strategy.percentage;
+        percentages_sum += strategy.percentage;
     }
 
     if percentages_sum != Decimal::one() {

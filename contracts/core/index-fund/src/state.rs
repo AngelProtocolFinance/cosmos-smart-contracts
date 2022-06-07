@@ -64,15 +64,15 @@ pub fn read_alliance_members(
     ALLIANCE_MEMBERS
         .range(
             storage,
-            start_after.map(|v| Bound::inclusive(v.clone())),
-            end_before.map(|v| Bound::inclusive(v.clone())),
+            start_after.map(|v| Bound::inclusive(v)),
+            end_before.map(|v| Bound::inclusive(v)),
             Order::Ascending,
         )
         .take(limit)
         .map(|member| {
             let (addr, mem) = member?;
             Ok(AllianceMemberResponse {
-                wallet: std::str::from_utf8(&addr.as_bytes().to_vec()).unwrap().to_string(),
+                wallet: std::str::from_utf8(&addr.as_bytes()).unwrap().to_string(),
                 name: mem.name,
                 logo: mem.logo,
                 website: mem.website,

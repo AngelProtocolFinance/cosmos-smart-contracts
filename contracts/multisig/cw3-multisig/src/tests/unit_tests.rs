@@ -1,7 +1,6 @@
 use crate::error::ContractError;
 use crate::msg::{ExecuteMsg, QueryMsg};
 use angel_core::messages::cw3_multisig::{InstantiateMsg, Threshold};
-use cosmwasm_std::testing::{mock_env, MockApi};
 use cosmwasm_std::{coin, coins, Addr, BankMsg, Coin, Decimal, Timestamp};
 use cosmwasm_std::{BlockInfo, CosmosMsg, Empty};
 use cw0::Duration;
@@ -9,13 +8,13 @@ use cw0::Expiration;
 
 use cw2::{query_contract_info, ContractVersion};
 use cw3::{
-    ProposalListResponse, ProposalResponse, Status, Vote, VoteInfo,
-    VoteListResponse, VoteResponse, VoterDetail, VoterListResponse, VoterResponse,
+    ProposalListResponse, ProposalResponse, Status, Vote, VoteInfo, VoteListResponse, VoteResponse,
+    VoterDetail, VoterListResponse, VoterResponse,
 };
 use cw4::{Cw4ExecuteMsg, Member, MemberChangedHookMsg, MemberDiff};
-use cw_utils::ThresholdResponse;
 use cw4_group::helpers::Cw4GroupContract;
-use cw_multi_test::{next_block, App, AppBuilder, Contract, ContractWrapper, Executor, BankKeeper};
+use cw_multi_test::{next_block, App, AppBuilder, BankKeeper, Contract, ContractWrapper, Executor};
+use cw_utils::ThresholdResponse;
 
 const CONTRACT_NAME: &str = "guardian-angels-multisig";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");

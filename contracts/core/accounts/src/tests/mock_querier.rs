@@ -3,8 +3,8 @@
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, CanonicalAddr, Coin, ContractResult, Decimal,
-    OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult, Uint128,
-    WasmQuery, Empty,
+    Empty, OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult,
+    Uint128, WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
 use schemars::JsonSchema;

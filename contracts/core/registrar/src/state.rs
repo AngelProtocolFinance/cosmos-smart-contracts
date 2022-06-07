@@ -1,5 +1,4 @@
 use angel_core::structs::{EndowmentEntry, SplitDetails, YieldVault};
-use angel_core::utils::calc_range_start_addr;
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;

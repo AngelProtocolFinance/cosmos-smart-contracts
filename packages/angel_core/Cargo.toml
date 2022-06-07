@@ -19,7 +19,6 @@ cw4 = "0.13.4"
 cw-utils = "0.13.4"
 schemars = "0.8.1"
 serde = { version = "1.0.125", default-features = false, features = ["derive"] }
-terra-cosmwasm = "2.2.0"
 thiserror = { version = "1.0.24" }
 
 [dev-dependencies]
