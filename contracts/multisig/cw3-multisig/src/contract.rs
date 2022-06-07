@@ -5,12 +5,10 @@ use crate::msg::{
 use crate::state::{next_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS};
 use angel_core::errors::multisig::ContractError;
 use angel_core::messages::cw3_multisig::{InstantiateMsg, Threshold};
-use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    attr, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo, Order,
-    Response, StdError, StdResult,
+    attr, entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env,
+    MessageInfo, Order, Response, StdError, StdResult,
 };
-use cw0::{Duration, Expiration};
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
     Status, Vote, VoteInfo, VoteListResponse, VoteResponse, VoterDetail, VoterListResponse,
@@ -18,7 +16,7 @@ use cw3::{
 };
 use cw4::{Cw4Contract, MemberChangedHookMsg, MemberDiff};
 use cw_storage_plus::Bound;
-use cw_utils::ThresholdResponse;
+use cw_utils::{Duration, Expiration, ThresholdResponse};
 use std::cmp::Ordering;
 
 // version info for migration info

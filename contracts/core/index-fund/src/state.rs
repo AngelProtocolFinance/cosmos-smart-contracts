@@ -1,6 +1,5 @@
 use angel_core::responses::index_fund::AllianceMemberResponse;
 use angel_core::structs::{AcceptedTokens, AllianceMember, GenericBalance, IndexFund};
-use angel_core::utils::{calc_range_start, calc_range_start_addr};
 use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;

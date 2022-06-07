@@ -22,17 +22,17 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cw0 = "0.10.3"
+cw-utils = "0.13.4"
 cw20 = "0.13.4"
 cw-controllers = "0.13.4"
 cosmwasm-std = { version = "1.0.0", features = ["iterator"] }
 cosmwasm-storage = { version = "1.0.0", features = ["iterator"] }
-cw-storage-plus = { version = "0.13.4" }
-halo-token = { version = "0.1.0", path = "../../../packages/halo_token" }
+cw-storage-plus = "0.13.4"
+halo-token = { path = "../../../packages/halo_token" }
 schemars = "0.8.1"
-serde = { version = "1.0.103", default-features = false, features = ["derive"] }
-terraswap = { version = "2.4.0" }
-thiserror = { version = "1.0.20" }
+serde = { version = "1.0.125", default-features = false, features = ["derive"] }
+terraswap = "2.4.0"
+thiserror = "1.0.20"
 hex = "0.4"
 
 [dev-dependencies]

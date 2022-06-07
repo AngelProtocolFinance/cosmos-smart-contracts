@@ -1,16 +1,13 @@
 [workspace]
 members = [
     "packages/angel_core",
+    "packages/halo_token",
     "contracts/core/accounts",
     "contracts/core/index-fund",
     "contracts/core/registrar",
     "contracts/multisig/cw4-group",
     "contracts/multisig/cw3-multisig",
-]
-
-exclude = [
-    "packages/halo_token",
-    "contracts/vaults/anchor",
+    "contracts/halo/airdrop",
     "contracts/halo/collector",
     "contracts/halo/community",
     "contracts/halo/distributor",
@@ -18,7 +15,10 @@ exclude = [
     "contracts/halo/gov-hodler",
     "contracts/halo/staking",
     "contracts/halo/vesting",
-    "contracts/halo/airdrop",
+]
+
+exclude = [
+    "contracts/vaults/anchor",
 ]
 
 [profile.release]

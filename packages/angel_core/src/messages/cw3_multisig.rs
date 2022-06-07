@@ -1,6 +1,6 @@
 use crate::errors::multisig::ContractError;
 use cosmwasm_std::Decimal;
-use cw0::Duration;
+use cw_utils::Duration;
 use cw_utils::ThresholdResponse;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

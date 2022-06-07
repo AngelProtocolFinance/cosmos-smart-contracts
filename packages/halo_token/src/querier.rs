@@ -1,10 +1,8 @@
-use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
     to_binary, Addr, AllBalanceResponse, BalanceResponse, BankQuery, Coin, Deps, QueryRequest,
-    StdResult, WasmQuery,
+    StdResult, Uint128, WasmQuery,
 };
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg, TokenInfoResponse};
-use terra_cosmwasm::TerraQuerier;
 
 pub fn query_all_balances(deps: Deps, account_addr: Addr) -> StdResult<Vec<Coin>> {
     // load price form the oracle
@@ -16,20 +14,20 @@ pub fn query_all_balances(deps: Deps, account_addr: Addr) -> StdResult<Vec<Coin>
     Ok(all_balances.amount)
 }
 
-pub fn query_balance(deps: Deps, account_addr: Addr, denom: String) -> StdResult<Uint256> {
+pub fn query_balance(deps: Deps, account_addr: Addr, denom: String) -> StdResult<Uint128> {
     // load price form the oracle
     let balance: BalanceResponse = deps.querier.query(&QueryRequest::Bank(BankQuery::Balance {
         address: account_addr.to_string(),
         denom,
     }))?;
-    Ok(balance.amount.amount.into())
+    Ok(Uint128::from(balance.amount.amount.u128()))
 }
 
 pub fn query_token_balance(
     deps: Deps,
     contract_addr: Addr,
     account_addr: Addr,
-) -> StdResult<Uint256> {
+) -> StdResult<Uint128> {
     // load balance form the token contract
     let res: Cw20BalanceResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: contract_addr.to_string(),
@@ -42,12 +40,12 @@ pub fn query_token_balance(
     Ok(res.balance.into())
 }
 
-pub fn query_supply(deps: Deps, contract_addr: Addr) -> StdResult<Uint256> {
+pub fn query_supply(deps: Deps, contract_addr: Addr) -> StdResult<Uint128> {
     let token_info: TokenInfoResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: contract_addr.to_string(),
             msg: to_binary(&Cw20QueryMsg::TokenInfo {})?,
         }))?;
 
-    Ok(Uint256::from(token_info.total_supply.u128()))
+    Ok(Uint128::from(token_info.total_supply.u128()))
 }

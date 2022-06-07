@@ -1,7 +1,7 @@
 use cosmwasm_std::{Addr, Binary, Decimal, Deps, StdResult, Storage, Uint128};
-use cw0::Duration;
 use cw_controllers::Claims;
 use cw_storage_plus::{Bound, Item, Map};
+use cw_utils::Duration;
 use halo_token::common::OrderBy;
 use halo_token::gov::{PollStatus, VoterInfo};
 use schemars::JsonSchema;

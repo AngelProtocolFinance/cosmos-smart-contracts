@@ -24,8 +24,8 @@ use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
     ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
 };
-use cw0::Duration;
 use cw20::Balance;
+use cw_utils::Duration;
 
 pub fn new_cw4_group_reply(
     deps: DepsMut,
