@@ -139,6 +139,10 @@ pub fn execute(
             sources,
             beneficiary,
         } => executers::withdraw(deps, env, info, sources, beneficiary),
+        ExecuteMsg::WithdrawLiquid {
+            liquid_amount,
+            beneficiary,
+        } => executers::withdraw_liquid(deps, env, info, liquid_amount, beneficiary),
         ExecuteMsg::VaultReceipt {} => {
             executers::vault_receipt(deps, env, info.clone(), info.sender)
         }

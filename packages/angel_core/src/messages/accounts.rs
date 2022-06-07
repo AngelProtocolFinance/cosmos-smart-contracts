@@ -1,5 +1,5 @@
 use crate::structs::{FundingSource, Profile};
-use cosmwasm_std::Decimal;
+use cosmwasm_std::{Decimal, Uint128};
 use cw4::Member;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -28,6 +28,10 @@ pub enum ExecuteMsg {
     // Pull funds from investment vault(s) to the Endowment Beneficiary as UST
     Withdraw {
         sources: Vec<FundingSource>,
+        beneficiary: String,
+    },
+    WithdrawLiquid {
+        liquid_amount: Uint128,
         beneficiary: String,
     },
     // Tokens are sent back to an Account from an Asset Vault

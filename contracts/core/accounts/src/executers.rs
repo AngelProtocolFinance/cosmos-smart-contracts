@@ -648,6 +648,60 @@ pub fn withdraw(
         .add_attribute("beneficiary", beneficiary))
 }
 
+pub fn withdraw_liquid(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    liquid_amount: Uint128,
+    beneficiary: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let endowment = ENDOWMENT.load(deps.storage)?;
+
+    // check that sender is the owner or the beneficiary
+    if info.sender != endowment.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // check that the Endowment has been approved to withdraw deposits
+    if !config.withdraw_approved {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Withdraws are not approved for this endowment".to_string(),
+        }));
+    }
+
+    let mut state = STATE.load(deps.storage)?;
+    // check that the amount in liquid balance is sufficient to cover request
+    if state.balances.liquid_balance.get_usd().amount < liquid_amount {
+        return Err(ContractError::InsufficientFunds {});
+    }
+
+    // Update the Liquid Balance in STATE
+    state
+        .balances
+        .liquid_balance
+        .deduct_tokens(Balance::from(vec![Coin {
+            denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                .to_string(),
+            amount: liquid_amount,
+        }]));
+    STATE.save(deps.storage, &state)?;
+
+    Ok(Response::new()
+        // Send UST to the Beneficiary via BankMsg::Send
+        .add_message(BankMsg::Send {
+            to_address: beneficiary.to_string(),
+            amount: vec![Coin {
+                amount: liquid_amount,
+                denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                    .to_string(),
+            }],
+        })
+        .add_attribute("action", "withdrawal")
+        .add_attribute("sender", env.contract.address.to_string())
+        .add_attribute("beneficiary", beneficiary))
+}
+
 pub fn close_endowment(
     deps: DepsMut,
     env: Env,
