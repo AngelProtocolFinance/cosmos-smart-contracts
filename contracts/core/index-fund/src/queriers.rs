@@ -70,7 +70,7 @@ pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
                 .may_load(deps.storage, member.to_string())
                 .unwrap()
                 .unwrap_or_default()
-                .get_ust()
+                .get_usd()
                 .amount,
         });
     }

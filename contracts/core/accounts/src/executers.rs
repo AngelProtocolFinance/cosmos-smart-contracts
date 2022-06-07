@@ -1,5 +1,4 @@
-use crate::state::PROFILE;
-use crate::state::{CONFIG, ENDOWMENT, STATE};
+use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::{InstantiateMsg as Cw3MultisigInstantiateMsg, Threshold};
@@ -19,8 +18,7 @@ use angel_core::structs::{
     StrategyComponent, Tier, TransactionRecord,
 };
 use angel_core::utils::{
-    check_splits, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
-    withdraw_from_vaults,
+    check_splits, deposit_to_vaults, redeem_from_vaults, withdraw_from_vaults,
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
@@ -405,7 +403,7 @@ pub fn vault_receipt(
                 submessages = deposit_to_vaults(
                     deps.as_ref(),
                     config.registrar_contract.to_string(),
-                    state.balances.locked_balance.get_ust(),
+                    state.balances.locked_balance.get_usd(),
                     &endowment.strategies,
                 )?;
                 // set UST balances available to zero for locked
@@ -424,8 +422,8 @@ pub fn vault_receipt(
                 let balance = Coin {
                     denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
                         .to_string(),
-                    amount: state.balances.locked_balance.get_ust().amount
-                        + state.balances.liquid_balance.get_ust().amount,
+                    amount: state.balances.locked_balance.get_usd().amount
+                        + state.balances.liquid_balance.get_usd().amount,
                 };
                 match state.closing_beneficiary {
                     Some(ref addr) => submessages.push(SubMsg::new(BankMsg::Send {
