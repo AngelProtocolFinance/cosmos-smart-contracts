@@ -561,9 +561,8 @@ pub fn deposit(
 
     // update total donations recieved for a charity
     let mut state = STATE.load(deps.storage)?;
-    let endowment = ENDOWMENT.load(deps.storage)?;
     state.donations_received += deposit_amount.amount;
-
+    // note the tx in records
     let tx_record = TransactionRecord {
         block: env.block.height,
         sender: sender_addr,
@@ -572,9 +571,15 @@ pub fn deposit(
         denom: deposit_amount.denom,
     };
     state.transactions.push(tx_record);
+    // increase the liquid balance buy donation (liquid) amount
+    state
+        .balances
+        .liquid_balance
+        .add_tokens(Balance::from(vec![liquid_amount]));
     STATE.save(deps.storage, &state)?;
 
     // build deposit messages for each of the sources/amounts
+    let endowment = ENDOWMENT.load(deps.storage)?;
     let deposit_messages = deposit_to_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
