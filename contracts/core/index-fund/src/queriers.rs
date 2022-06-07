@@ -103,7 +103,8 @@ pub fn deposit_msg_builder(
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&Deposit(DepositMsg { fund_id, split }))?,
         funds: vec![Coin {
-            denom: "uusd".to_string(),
+            denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                .to_string(),
             amount,
         }],
     }))

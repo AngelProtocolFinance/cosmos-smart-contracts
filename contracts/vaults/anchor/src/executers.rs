@@ -100,11 +100,13 @@ pub fn deposit_stable(
     }
 
     let deposit_amount: Coin = Coin {
-        denom: "uusd".to_string(),
+        denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
         amount: info
             .funds
             .iter()
-            .find(|c| c.denom == *"uusd")
+            .find(|c| {
+                c.denom == *"ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+            })
             .map(|c| c.amount)
             .unwrap_or_else(Uint128::zero),
     };
@@ -154,7 +156,11 @@ pub fn deposit_stable(
         .add_attribute("deposit_amount", deposit_amount.amount)
         .add_submessage(SubMsg {
             id: submessage_id,
-            msg: deposit_stable_msg(&config.moneymarket, "uusd", deposit_amount.amount)?,
+            msg: deposit_stable_msg(
+                &config.moneymarket,
+                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+                deposit_amount.amount,
+            )?,
             reply_on: ReplyOn::Always,
             gas_limit: None,
         }))
@@ -562,7 +568,7 @@ pub fn process_anchor_reply(
                             )?,
                             funds: vec![Coin {
                                 amount: anchor_amount,
-                                denom: "uusd".to_string(),
+                                denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
                             }],
                         }))
                 }
@@ -574,7 +580,7 @@ pub fn process_anchor_reply(
                             to_address: transaction.beneficiary.unwrap().to_string(),
                             amount: vec![Coin {
                                 amount: anchor_amount,
-                                denom: "uusd".to_string(),
+                                denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
                             }],
                         })
                 }

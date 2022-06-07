@@ -365,7 +365,9 @@ pub fn deposit(
     let mut deposit_amount: Uint128 = info
         .funds
         .iter()
-        .find(|c| c.denom == *"uusd")
+        .find(|c| {
+            c.denom == *"ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+        })
         .map(|c| c.amount)
         .unwrap_or_else(Uint128::zero);
 
@@ -384,7 +386,8 @@ pub fn deposit(
             .may_load(deps.storage, sender_addr.to_string())?
             .unwrap_or_default();
         tca_donor.add_tokens(Balance::from(vec![Coin {
-            denom: "uusd".to_string(),
+            denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                .to_string(),
             amount: deposit_amount,
         }]));
         TCA_DONATIONS.save(deps.storage, sender_addr.to_string(), &tca_donor)?;
@@ -578,7 +581,8 @@ pub fn build_donation_messages(
             funds: vec![deduct_tax(
                 deps,
                 Coin {
-                    denom: "uusd".to_string(),
+                    denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                        .to_string(),
                     amount: member.1 .0 + member.2 .0,
                 },
             )
