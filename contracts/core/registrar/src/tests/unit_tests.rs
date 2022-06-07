@@ -6,8 +6,8 @@ use angel_core::structs::SplitDetails;
 use angel_core::structs::{EndowmentStatus, EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
-    coins, from_binary, Addr, ContractResult, CosmosMsg, Decimal, Event, Reply,
-    SubMsgExecutionResponse, WasmMsg,
+    coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply,
+    WasmMsg, SubMsgResult, SubMsgResponse,
 };
 
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
@@ -16,7 +16,7 @@ const MOCK_CW4_CODE_ID: u64 = 19;
 
 #[test]
 fn proper_initialization() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let instantiate_msg = InstantiateMsg {
         accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
@@ -37,7 +37,7 @@ fn proper_initialization() {
 
 #[test]
 fn update_owner() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
     let instantiate_msg = InstantiateMsg {
@@ -67,7 +67,7 @@ fn update_owner() {
 
 #[test]
 fn update_config() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let index_fund_contract = String::from("terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d");
     let instantiate_msg = InstantiateMsg {
@@ -116,7 +116,7 @@ fn update_config() {
 
 #[test]
 fn test_owner_can_add_remove_approved_charities() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     // meet the cast of characters
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
@@ -135,7 +135,7 @@ fn test_owner_can_add_remove_approved_charities() {
 
 #[test]
 fn anyone_can_create_endowment_accounts_and_then_update() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     // meet the cast of characters
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let good_charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
@@ -246,7 +246,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
                     assert_eq!(accounts_instantiate_msg.owner_sc, ap_team.clone());
 
                     // let's instantiate account sc with our sub_message
-                    let mut deps = mock_dependencies(&[]);
+                    let mut deps = mock_dependencies();
                     let info = mock_info("creator", &coins(100000, "earth"));
                     let env = mock_env();
 
@@ -300,7 +300,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         .add_attribute("endow_type", "charity".to_string())
         .add_attribute("endow_logo", "Test logo".to_string())
         .add_attribute("endow_image", "Test image".to_string())];
-    let result = ContractResult::Ok(SubMsgExecutionResponse { events, data: None });
+    let result = SubMsgResult::Ok(SubMsgResponse { events, data: None });
     let subcall = Reply { id: 0, result };
 
     // test the reply method
@@ -396,7 +396,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
 
 #[test]
 fn test_add_update_and_remove_vault() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let vault_addr = "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg".to_string();
     let instantiate_msg = InstantiateMsg {

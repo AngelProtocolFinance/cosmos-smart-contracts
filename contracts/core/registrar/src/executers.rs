@@ -6,7 +6,7 @@ use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, YieldV
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
     attr, to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn,
-    Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
+    Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg, SubMsgResult,
 };
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
@@ -354,10 +354,10 @@ pub fn vault_update_status(
 pub fn new_accounts_reply(
     deps: DepsMut,
     _env: Env,
-    msg: ContractResult<SubMsgExecutionResponse>,
+    msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
     match msg {
-        ContractResult::Ok(subcall) => {
+        SubMsgResult::Ok(subcall) => {
             let mut endowment_addr = String::from("");
             let mut endowment_name = String::from("");
             let mut endowment_owner = String::from("");
@@ -418,7 +418,7 @@ pub fn new_accounts_reply(
                 attr("image", endowment_image),
             ]))
         }
-        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
 }
 

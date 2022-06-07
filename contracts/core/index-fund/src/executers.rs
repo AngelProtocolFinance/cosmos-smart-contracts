@@ -6,7 +6,7 @@ use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{
     AcceptedTokens, AllianceMember, IndexFund, SplitDetails, DEPOSIT_TOKEN_DENOM,
 };
-use angel_core::utils::{deduct_tax, percentage_checks};
+use angel_core::utils::{percentage_checks};
 use cosmwasm_std::{
     attr, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
     Response, StdError, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
@@ -577,14 +577,10 @@ pub fn build_donation_messages(
                 },
             ))
             .unwrap(),
-            funds: vec![deduct_tax(
-                deps,
-                Coin {
+            funds: vec![Coin {
                     denom: DEPOSIT_TOKEN_DENOM.to_string(),
                     amount: member.1 .0 + member.2 .0,
-                },
-            )
-            .unwrap()],
+                }],
         })));
     }
     messages

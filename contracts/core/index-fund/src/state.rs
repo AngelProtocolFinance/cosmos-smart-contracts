@@ -42,8 +42,8 @@ pub fn read_funds(
     start_after: Option<u64>,
     limit: Option<u64>,
 ) -> StdResult<Vec<IndexFund>> {
-    let start = calc_range_start(start_after);
-    FUND.range(storage, start.map(Bound::Inclusive), None, Order::Ascending)
+    let start = start_after.map(|s| Bound::ExclusiveRaw(s.to_be_bytes().to_vec()));
+    FUND.range(storage, start, None, Order::Ascending)
         .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
         .map(|item| {
             let (_, v) = item?;
@@ -58,20 +58,21 @@ pub fn read_alliance_members(
     limit: Option<u64>,
 ) -> StdResult<Vec<AllianceMemberResponse>> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-    let start: Option<Vec<u8>> = calc_range_start_addr(start_after);
-    let end: Option<Vec<u8>> = None;
+    // let start: Option<Vec<u8>> = calc_range_start_addr(start_after);
+    // let end: Option<Vec<u8>> = None;
+    let end_before: Option<Addr> = None;
     ALLIANCE_MEMBERS
         .range(
             storage,
-            start.map(|v| Bound::inclusive(&*v)),
-            end.map(|v| Bound::inclusive(&*v)),
+            start_after.map(|v| Bound::inclusive(v.clone())),
+            end_before.map(|v| Bound::inclusive(v.clone())),
             Order::Ascending,
         )
         .take(limit)
         .map(|member| {
             let (addr, mem) = member?;
             Ok(AllianceMemberResponse {
-                wallet: std::str::from_utf8(&addr).unwrap().to_string(),
+                wallet: std::str::from_utf8(&addr.as_bytes().to_vec()).unwrap().to_string(),
                 name: mem.name,
                 logo: mem.logo,
                 website: mem.website,

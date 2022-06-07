@@ -15,10 +15,11 @@ use cosmwasm_std::{
 use cw0::{maybe_addr, Duration, Expiration};
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
-    Status, ThresholdResponse, Vote, VoteInfo, VoteListResponse, VoteResponse, VoterDetail,
+    Status, Vote, VoteInfo, VoteListResponse, VoteResponse, VoterDetail,
     VoterListResponse, VoterResponse,
 };
 use cw4::{Cw4Contract, MemberChangedHookMsg, MemberDiff};
+use cw_utils::ThresholdResponse;
 use cw_storage_plus::Bound;
 use std::cmp::Ordering;
 
@@ -123,7 +124,7 @@ pub fn execute_propose(
     // counting threshold passing
     let vote_power = cfg
         .group_addr
-        .is_member(&deps.querier, &info.sender)?
+        .is_member(&deps.querier, &info.sender, Some(env.block.height))?
         .ok_or(ContractError::Unauthorized {})?;
 
     // max expires also used as default
@@ -191,7 +192,7 @@ pub fn execute_vote(
     // use a snapshot of "start of proposal"
     let vote_power = cfg
         .group_addr
-        .member_at_height(&deps.querier, info.sender.clone(), prop.start_height)?
+        .member_at_height(&deps.querier, info.sender.clone(), Some(prop.start_height))?
         .ok_or(ContractError::Unauthorized {})?;
 
     // cast vote if no vote previously cast
@@ -362,16 +363,14 @@ fn list_proposals(
     limit: Option<u32>,
 ) -> StdResult<MetaProposalListResponse> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-    let start = start_after.map(Bound::exclusive_int);
-    let props: StdResult<Vec<_>> = PROPOSALS
+    let start = start_after.map(Bound::exclusive);
+    let proposals = PROPOSALS
         .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
         .map(|p| map_proposal(&env.block, p))
-        .collect();
+        .collect::<StdResult<_>>()?;
 
-    Ok(MetaProposalListResponse {
-        proposals: props.unwrap(),
-    })
+    Ok(MetaProposalListResponse { proposals })
 }
 
 fn reverse_proposals(
@@ -381,42 +380,43 @@ fn reverse_proposals(
     limit: Option<u32>,
 ) -> StdResult<MetaProposalListResponse> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-    let end = start_before.map(Bound::exclusive_int);
+    let end = start_before.map(Bound::exclusive);
     let props: StdResult<Vec<_>> = PROPOSALS
         .range(deps.storage, None, end, Order::Descending)
         .take(limit)
         .map(|p| map_proposal(&env.block, p))
         .collect();
 
-    Ok(MetaProposalListResponse {
-        proposals: props.unwrap(),
-    })
+    Ok(MetaProposalListResponse { proposals: props? })
 }
 
 fn map_proposal(
     block: &BlockInfo,
-    item: StdResult<(Vec<u8>, Proposal)>,
+    item: StdResult<(u64, Proposal)>,
 ) -> StdResult<MetaProposalResponse> {
-    let (key, prop) = item?;
-    let status = prop.current_status(block);
-    let threshold = prop.threshold.to_response(prop.total_weight);
-    Ok(MetaProposalResponse {
-        id: parse_id(&key)?,
-        title: prop.title,
-        description: prop.description,
-        msgs: prop.msgs,
-        status,
-        expires: prop.expires,
-        threshold,
-        meta: prop.meta,
+    item.map(|(id, prop)| {
+        let status = prop.current_status(block);
+        let threshold = prop.threshold.to_response(prop.total_weight);
+        MetaProposalResponse {
+            id,
+            title: prop.title,
+            description: prop.description,
+            msgs: prop.msgs,
+            status,
+            expires: prop.expires,
+            threshold,
+            meta: prop.meta,
+        }
     })
 }
+
 
 fn query_vote(deps: Deps, proposal_id: u64, voter: String) -> StdResult<VoteResponse> {
     let voter_addr = deps.api.addr_validate(&voter)?;
     let prop = BALLOTS.may_load(deps.storage, (proposal_id.into(), &voter_addr))?;
     let vote = prop.map(|b| VoteInfo {
         voter,
+        proposal_id,
         vote: b.vote,
         weight: b.weight,
     });
@@ -430,30 +430,29 @@ fn list_votes(
     limit: Option<u32>,
 ) -> StdResult<VoteListResponse> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-    let addr = maybe_addr(deps.api, start_after)?;
-    let start = addr.map(|addr| Bound::exclusive(addr.as_ref()));
+    let start = start_after.map(|s| Bound::ExclusiveRaw(s.into()));
 
-    let votes: StdResult<Vec<_>> = BALLOTS
-        .prefix(proposal_id.into())
+    let votes = BALLOTS
+        .prefix(proposal_id)
         .range(deps.storage, start, None, Order::Ascending)
         .take(limit)
         .map(|item| {
-            let (voter, ballot) = item?;
-            Ok(VoteInfo {
-                voter: String::from_utf8(voter)?,
+            item.map(|(addr, ballot)| VoteInfo {
+                proposal_id,
+                voter: addr.into(),
                 vote: ballot.vote,
                 weight: ballot.weight,
             })
         })
-        .collect();
+        .collect::<StdResult<_>>()?;
 
-    Ok(VoteListResponse { votes: votes? })
+    Ok(VoteListResponse { votes })
 }
 
 fn query_voter(deps: Deps, voter: String) -> StdResult<VoterResponse> {
     let cfg = CONFIG.load(deps.storage)?;
     let voter_addr = deps.api.addr_validate(&voter)?;
-    let weight = cfg.group_addr.is_member(&deps.querier, &voter_addr)?;
+    let weight = cfg.group_addr.is_member(&deps.querier, &voter_addr, None)?;
 
     Ok(VoterResponse { weight })
 }

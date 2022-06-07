@@ -81,28 +81,6 @@ pub fn ratio_adjusted_balance(balance: Balance, portion: Uint128, total: Uint128
     adjusted_balance
 }
 
-pub fn compute_tax(deps: Deps, coin: &Coin) -> StdResult<Uint128> {
-    let terra_querier = TerraQuerier::new(&deps.querier);
-    let tax_rate: Decimal = (terra_querier.query_tax_rate()?).rate;
-    let tax_cap: Uint128 = (terra_querier.query_tax_cap(coin.denom.to_string())?).cap;
-    const DECIMAL_FRACTION: Uint128 = Uint128::new(1_000_000_000_000_000_000u128);
-    Ok(std::cmp::min(
-        (coin.amount.checked_sub(coin.amount.multiply_ratio(
-            DECIMAL_FRACTION,
-            DECIMAL_FRACTION * tax_rate + DECIMAL_FRACTION,
-        )))?,
-        tax_cap,
-    ))
-}
-
-pub fn deduct_tax(deps: Deps, coin: Coin) -> StdResult<Coin> {
-    let tax_amount = compute_tax(deps, &coin)?;
-    Ok(Coin {
-        denom: coin.denom,
-        amount: coin.amount - tax_amount,
-    })
-}
-
 pub fn check_splits(
     registrar_splits: SplitDetails,
     user_locked: Decimal,

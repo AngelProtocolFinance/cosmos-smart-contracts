@@ -23,9 +23,9 @@ use angel_core::utils::{
     withdraw_from_vaults,
 };
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
-    QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgExecutionResponse, Uint128,
-    WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
+    QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
+    WasmMsg, WasmQuery, SubMsgResult,
 };
 use cw0::Duration;
 use cw20::Balance;
@@ -33,11 +33,11 @@ use cw20::Balance;
 pub fn new_cw4_group_reply(
     deps: DepsMut,
     _env: Env,
-    msg: ContractResult<SubMsgExecutionResponse>,
+    msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     match msg {
-        ContractResult::Ok(subcall) => {
+        SubMsgResult::Ok(subcall) => {
             let mut group_addr = String::from("");
             for event in subcall.events {
                 if event.ty == *"wasm" {
@@ -81,17 +81,17 @@ pub fn new_cw4_group_reply(
                 reply_on: ReplyOn::Success,
             }))
         }
-        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
 }
 
 pub fn new_cw3_multisig_reply(
     deps: DepsMut,
     _env: Env,
-    msg: ContractResult<SubMsgExecutionResponse>,
+    msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
     match msg {
-        ContractResult::Ok(subcall) => {
+        SubMsgResult::Ok(subcall) => {
             let mut multisig_addr = String::from("");
             for event in subcall.events {
                 if event.ty == *"wasm" {
@@ -112,7 +112,7 @@ pub fn new_cw3_multisig_reply(
 
             Ok(Response::default())
         }
-        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
 }
 

@@ -9,7 +9,6 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, EndowmentListResponse,
 };
 use angel_core::structs::{BalanceInfo, EndowmentEntry};
-use angel_core::utils::deduct_tax;
 use cosmwasm_std::{
     to_binary, Addr, Attribute, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, DepsMut, Env,
     MessageInfo, Order, QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgExecutionResponse,
