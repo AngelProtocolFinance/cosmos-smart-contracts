@@ -571,22 +571,34 @@ pub fn deposit(
         denom: deposit_amount.denom,
     };
     state.transactions.push(tx_record);
-    // increase the liquid balance buy donation (liquid) amount
+    // increase the liquid balance by donation (liquid) amount
     state
         .balances
         .liquid_balance
         .add_tokens(Balance::from(vec![liquid_amount]));
-    STATE.save(deps.storage, &state)?;
 
-    // build deposit messages for each of the sources/amounts
+    let deposit_messages;
     let endowment = ENDOWMENT.load(deps.storage)?;
-    let deposit_messages = deposit_to_vaults(
-        deps.as_ref(),
-        config.registrar_contract.to_string(),
-        locked_amount,
-        &endowment.strategies,
-    )?;
+    // check endowment strategies set.
+    // if empty: hold locked funds until a vault is set
+    if endowment.strategies.is_empty() {
+        deposit_messages = vec![];
+        // increase the liquid balance by donation (liquid) amount
+        state
+            .balances
+            .locked_balance
+            .add_tokens(Balance::from(vec![locked_amount]));
+    } else {
+        // if not empty: build deposit messages for each of the sources/amounts
+        deposit_messages = deposit_to_vaults(
+            deps.as_ref(),
+            config.registrar_contract.to_string(),
+            locked_amount,
+            &endowment.strategies,
+        )?;
+    }
 
+    STATE.save(deps.storage, &state)?;
     Ok(Response::new()
         .add_submessages(deposit_messages)
         .add_attribute("action", "account_deposit")

@@ -47,9 +47,12 @@ pub fn instantiate(
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
-    let default_vault = match registrar_config.default_vault {
-        Some(addr) => addr,
-        None => return Err(ContractError::ContractNotConfigured {}),
+    let default_strategy: Vec<StrategyComponent> = match registrar_config.default_vault {
+        Some(addr) => vec![StrategyComponent {
+            vault: deps.api.addr_validate(&addr)?,
+            percentage: Decimal::one(),
+        }],
+        None => vec![],
     };
     ENDOWMENT.save(
         deps.storage,
@@ -59,10 +62,7 @@ pub fn instantiate(
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
             maturity_time: msg.maturity_time,           // Option<u64>
             maturity_height: msg.maturity_height,       // Option<u64>
-            strategies: vec![StrategyComponent {
-                vault: deps.api.addr_validate(&default_vault)?,
-                percentage: Decimal::one(),
-            }],
+            strategies: default_strategy,
             rebalance: RebalanceDetails::default(),
             guardian_set: vec![],
         },
