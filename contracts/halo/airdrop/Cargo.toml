@@ -26,12 +26,12 @@ halo-token = { version = "0.1.0", path = "../../../packages/halo_token" }
 cosmwasm-std = { version = "1.0.0" }
 cosmwasm-storage = { version = "1.0.0" }
 cw-storage-plus = { version = "0.13.4" }
-cw20 = { version = "0.8.0" } 
+cw20 = { version = "0.13.4" } 
 hex = "0.4"
 schemars = "0.8.1"
-sha3 = { version = "0.9.1", default-features = false }
+sha3 = { version = "0.10.1", default-features = false }
 serde = { version = "1.0.103", default-features = false, features = ["derive"] }
 thiserror = { version = "1.0.20" }
 
 [dev-dependencies]
-cosmwasm-schema = "0.16.0"
+cosmwasm-schema = "1.0.0"
