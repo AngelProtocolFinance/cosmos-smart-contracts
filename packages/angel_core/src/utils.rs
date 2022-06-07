@@ -4,10 +4,9 @@ use crate::messages::vault::AccountWithdrawMsg;
 use crate::responses::registrar::VaultDetailResponse;
 use crate::responses::vault::ExchangeRateResponse;
 use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
-use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, QueryRequest, StdResult, SubMsg,
-    Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, Deps, QueryRequest, StdResult,
+    SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg};
 

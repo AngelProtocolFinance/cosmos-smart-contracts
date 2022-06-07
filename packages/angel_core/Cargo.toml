@@ -10,7 +10,6 @@ edition = "2018"
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cosmwasm-bignumber = "2.2.0"
 cosmwasm-std = "1.0.0"
 cw0 = "0.10.3"
 cw20 = "0.13.4"

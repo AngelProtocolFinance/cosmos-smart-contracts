@@ -28,7 +28,6 @@ cosmwasm-std = "1.0.0"
 cosmwasm-storage = "1.0.0"
 cw-storage-plus = "0.13.4"
 halo-token = { path = "../../../packages/halo_token" }
-terra-cosmwasm = "2.2.0"
 terraswap = "2.4.0"
 schemars = "0.8.1"
 serde = { version = "1.0.125", default-features = false, features = ["derive"] }

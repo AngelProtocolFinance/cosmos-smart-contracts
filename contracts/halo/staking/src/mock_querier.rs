@@ -1,3 +1,5 @@
+use std::marker::PhantomData;
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -20,6 +22,7 @@ pub fn mock_dependencies(
         api: MockApi::default(),
         storage: MockStorage::default(),
         querier: custom_querier,
+        custom_query_type: PhantomData,
     }
 }
 

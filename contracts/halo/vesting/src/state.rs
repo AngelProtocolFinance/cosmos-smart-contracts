@@ -46,15 +46,15 @@ pub fn read_vesting_infos(
 ) -> StdResult<Vec<(Addr, VestingInfo)>> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let (start, end, order_by) = match order_by {
-        Some(OrderBy::Asc) => (calc_range_start_addr(start_after), None, OrderBy::Asc),
-        _ => (None, calc_range_end_addr(start_after), OrderBy::Desc),
+        Some(OrderBy::Asc) => (start_after, None, OrderBy::Asc),
+        _ => (None, start_after, OrderBy::Desc),
     };
 
     VESTING_INFO
         .range(
             storage,
-            start.map(|v| Bound::inclusive(&*v)),
-            end.map(|v| Bound::inclusive(&*v)),
+            start.map(|s| Bound::ExclusiveRaw(s.as_bytes().to_vec())),
+            end.map(|s| Bound::InclusiveRaw(s.as_bytes().to_vec())),
             order_by.into(),
         )
         .take(limit)
