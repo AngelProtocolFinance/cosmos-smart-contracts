@@ -64,7 +64,6 @@ pub fn instantiate(
             maturity_height: msg.maturity_height,       // Option<u64>
             strategies: default_strategy,
             rebalance: RebalanceDetails::default(),
-            guardian_set: vec![],
         },
     )?;
 
@@ -159,9 +158,6 @@ pub fn execute(
             executers::close_endowment(deps, env, info, beneficiary)
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
-        ExecuteMsg::UpdateGuardians { add, remove } => {
-            executers::update_guardians(deps, env, info, add, remove)
-        }
         ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
     }
 }
