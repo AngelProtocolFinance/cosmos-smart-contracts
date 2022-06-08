@@ -226,10 +226,6 @@ impl WasmMockQuerier {
                 QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&RegistrarConfigResponse {
                         owner: "registrar_owner".to_string(),
-                        guardians_multisig_addr: Some("guardians_multi-sig".to_string()),
-                        endowment_owners_group_addr: Some(
-                            "endowment-owners-group-addr".to_string(),
-                        ),
                         version: "0.1.0".to_string(),
                         accounts_code_id: 1,
                         treasury: "treasury".to_string(),

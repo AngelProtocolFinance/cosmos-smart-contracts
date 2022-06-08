@@ -174,26 +174,6 @@ pub fn update_config(
         Some(v) => Some(v),
         None => config.cw4_code,
     };
-    config.guardians_multisig_addr = match msg.guardians_multisig_addr {
-        Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
-        None => {
-            if config.guardians_multisig_addr != None {
-                config.guardians_multisig_addr.clone()
-            } else {
-                None
-            }
-        }
-    };
-    config.endowment_owners_group_addr = match msg.endowment_owners_group_addr {
-        Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
-        None => {
-            if config.endowment_owners_group_addr != None {
-                config.endowment_owners_group_addr.clone()
-            } else {
-                None
-            }
-        }
-    };
     config.charity_shares_contract = match msg.charity_shares_contract {
         Some(contract_addr) => Some(deps.api.addr_validate(&contract_addr)?),
         None => config.charity_shares_contract,

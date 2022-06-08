@@ -39,8 +39,6 @@ pub fn instantiate(
         treasury: deps.api.addr_validate(&msg.treasury)?,
         tax_rate,
         default_vault: msg.default_vault,
-        guardians_multisig_addr: None,
-        endowment_owners_group_addr: None,
         split_to_liquid: splits,
         halo_token: None,
         gov_contract: None,

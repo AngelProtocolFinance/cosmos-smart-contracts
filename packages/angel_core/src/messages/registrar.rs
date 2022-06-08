@@ -51,7 +51,6 @@ pub struct CreateEndowmentMsg {
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
-    pub guardians_multisig_addr: Option<String>,
     pub profile: Profile,
     pub cw4_members: Vec<Member>,
 }
@@ -64,8 +63,6 @@ pub struct UpdateConfigMsg {
     pub tax_rate: Option<Decimal>,
     pub approved_charities: Option<Vec<String>>,
     pub default_vault: Option<Option<String>>,
-    pub guardians_multisig_addr: Option<String>,
-    pub endowment_owners_group_addr: Option<String>,
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
