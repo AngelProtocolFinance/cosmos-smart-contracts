@@ -58,10 +58,6 @@ pub enum ExecuteMsg {
     UpdateStrategies {
         strategies: Vec<Strategy>,
     },
-    UpdateGuardians {
-        add: Vec<String>,
-        remove: Vec<String>,
-    },
     // Update Endowment profile
     UpdateProfile(UpdateProfileMsg),
 }

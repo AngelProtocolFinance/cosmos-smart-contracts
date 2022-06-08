@@ -27,7 +27,6 @@ pub struct Endowment {
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
-    pub guardian_set: Vec<String>, // set of Guardian Addr that can help owner recover Endowment if they lose their wallet
 }
 
 impl Endowment {
