@@ -40,7 +40,8 @@ export async function sendTransaction(
 ) {
   let fee;
   try {
-    fee = await terra.tx.estimateFee(sender.key.accAddress, msgs);
+    let sequence = await sender.sequence();
+    fee = await terra.tx.estimateFee([{ sequenceNumber: sequence }], { msgs });
   } catch (error) {
     if (axios.isAxiosError(error)) {
       throw new Error(
