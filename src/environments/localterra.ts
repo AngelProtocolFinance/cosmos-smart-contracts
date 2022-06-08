@@ -102,9 +102,7 @@ function initialize() {
   console.log(`Use ${chalk.cyan(tca.key.accAddress)} as TCA member`);
 
   registrar = config.contracts.registrar;
-  cw4GrpOwners = config.contracts.cw4GrpOwners;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
-  cw3GuardianAngels = config.contracts.cw3GuardianAngels;
   cw3ApTeam = config.contracts.cw3ApTeam;
   indexFund = config.contracts.indexFund;
   endowmentContract1 = config.contracts.endowmentContract1;
