@@ -113,7 +113,9 @@ export async function instantiateContract(
       deployer.key.accAddress,
       admin.key.accAddress,
       codeId,
-      instantiateMsg
+      instantiateMsg,
+      undefined,
+      "instantiate_contract",
     ),
   ]);
   return result;

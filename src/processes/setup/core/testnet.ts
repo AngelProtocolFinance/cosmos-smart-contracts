@@ -163,10 +163,10 @@ async function setup(
   );
   registrar = registrarResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${registrar}`);
 
@@ -179,10 +179,10 @@ async function setup(
   });
   indexFund = fundResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
 
@@ -197,10 +197,10 @@ async function setup(
   });
   cw4GrpApTeam = cw4GrpApTeamResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpApTeam}`);
 
@@ -219,10 +219,10 @@ async function setup(
   );
   cw3ApTeam = cw3ApTeamResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw3ApTeam}`);
 
@@ -285,6 +285,7 @@ async function createEndowments(): Promise<void> {
         withdraw_before_maturity: false,
         maturity_time: undefined,
         maturity_height: undefined,
+        guardians_multisig_addr: undefined,
         profile: {
           name: "Test Endowment #1",
           overview: "A wonderful charity endowment that aims to test all the things",
@@ -301,21 +302,17 @@ async function createEndowments(): Promise<void> {
             twitter: undefined,
             linkedin: undefined,
           },
-          number_of_employees: undefined,
-          average_annual_budget: undefined,
-          annual_revenue: undefined,
-          charity_navigator_rating: undefined,
-          endow_type: "Charity",
+          cw4_members: [],
         },
       },
     }),
   ]);
   endowmentContract1 = charityResult1.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -359,10 +356,10 @@ async function createEndowments(): Promise<void> {
   ]);
   endowmentContract2 = charityResult2.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -406,10 +403,10 @@ async function createEndowments(): Promise<void> {
   ]);
   endowmentContract3 = charityResult3.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -453,10 +450,10 @@ async function createEndowments(): Promise<void> {
   ]);
   endowmentContract4 = charityResult4.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -545,10 +542,10 @@ async function createVaults(
   });
   anchorVault1 = vaultResult1.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault1}`);
 
@@ -565,10 +562,10 @@ async function createVaults(
   });
   anchorVault2 = vaultResult2.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault2}`);
 

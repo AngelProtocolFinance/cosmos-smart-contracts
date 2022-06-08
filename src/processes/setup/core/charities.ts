@@ -87,10 +87,10 @@ async function createEndowment(charity: Charity): Promise<void> {
   ]);
   const endowmentContract = charityResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
