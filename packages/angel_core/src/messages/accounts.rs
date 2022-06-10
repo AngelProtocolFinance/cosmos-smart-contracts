@@ -25,10 +25,14 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
-    // Pull funds from investment vault(s) to the Endowment Beneficiary as UST
+    // Pull funds from investment vault(s) to the Endowment Beneficiary as <token_denom>
+    // NOTE: Here, we assume that the user wants to withdraw "native token"
+    //       Hence, it receives the "token_denom" for building message.
+    //       This part is prone to future change so that it can also handle "cw20 token".
     Withdraw {
         sources: Vec<FundingSource>,
         beneficiary: String,
+        token_denom: String,
     },
     WithdrawLiquid {
         liquid_amount: Uint128,

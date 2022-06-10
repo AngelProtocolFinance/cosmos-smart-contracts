@@ -14,8 +14,8 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, EndowmentType, FundingSource, SocialMedialUrls, SplitDetails,
-    StrategyComponent, Tier, TransactionRecord, DEPOSIT_TOKEN_DENOM,
+    EndowmentType, FundingSource, SocialMedialUrls, SplitDetails, StrategyComponent, Tier,
+    TransactionRecord,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, redeem_from_vaults, withdraw_from_vaults,
@@ -285,12 +285,27 @@ pub fn vault_receipt(
         return Err(ContractError::InvalidCoinsDeposited {});
     }
 
+    // Check the token with "accepted_tokens"
+    let deposit_token_denom = &info.funds[0].denom;
+    let config_response: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &RegistrarQuerier::Config {},
+    )?;
+    if !config_response
+        .accepted_tokens
+        .native_valid(deposit_token_denom.to_string())
+    {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: format!("Invalid token denom: {}", deposit_token_denom),
+        }));
+    }
+
     let returned_amount: Coin = Coin {
-        denom: DEPOSIT_TOKEN_DENOM.to_string(),
+        denom: deposit_token_denom.to_string(),
         amount: info
             .funds
             .iter()
-            .find(|c| c.denom == *DEPOSIT_TOKEN_DENOM)
+            .find(|c| c.denom == *deposit_token_denom)
             .map(|c| c.amount)
             .unwrap_or_else(Uint128::zero),
     };
@@ -327,13 +342,13 @@ pub fn vault_receipt(
                     .locked_balance
                     .set_token_balances(Balance::from(vec![Coin {
                         amount: Uint128::zero(),
-                        denom: DEPOSIT_TOKEN_DENOM.to_string(),
+                        denom: deposit_token_denom.to_string(),
                     }]));
             } else {
                 // this is a vault receipt triggered by closing an Endowment
                 // need to handle beneficiary vs index fund submsg actions taken
                 let balance = Coin {
-                    denom: DEPOSIT_TOKEN_DENOM.to_string(),
+                    denom: deposit_token_denom.to_string(),
                     amount: state.balances.locked_balance.get_usd().amount
                         + state.balances.liquid_balance.get_usd().amount,
                 };
@@ -424,6 +439,21 @@ pub fn deposit(
         return Err(ContractError::InvalidCoinsDeposited {});
     }
 
+    // Check the token with "accepted_tokens"
+    let deposit_token_denom = &info.funds[0].denom;
+    let config_response: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &RegistrarQuerier::Config {},
+    )?;
+    if !config_response
+        .accepted_tokens
+        .native_valid(deposit_token_denom.to_string())
+    {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: format!("Invalid token denom: {}", deposit_token_denom),
+        }));
+    }
+
     // Get the split to liquid parameters set in the Registrar SC
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
@@ -432,11 +462,11 @@ pub fn deposit(
         }))?;
 
     let deposit_amount: Coin = Coin {
-        denom: DEPOSIT_TOKEN_DENOM.to_string(),
+        denom: deposit_token_denom.to_string(),
         amount: info
             .funds
             .iter()
-            .find(|c| c.denom == *DEPOSIT_TOKEN_DENOM)
+            .find(|c| c.denom == *deposit_token_denom)
             .map(|c| c.amount)
             .unwrap_or_else(Uint128::zero),
     };
@@ -462,11 +492,11 @@ pub fn deposit(
 
     let locked_amount = Coin {
         amount: deposit_amount.amount * locked_split,
-        denom: DEPOSIT_TOKEN_DENOM.to_string(),
+        denom: deposit_token_denom.to_string(),
     };
     let liquid_amount = Coin {
         amount: deposit_amount.amount * liquid_split,
-        denom: DEPOSIT_TOKEN_DENOM.to_string(),
+        denom: deposit_token_denom.to_string(),
     };
 
     // update total donations recieved for a charity
@@ -522,6 +552,7 @@ pub fn withdraw(
     info: MessageInfo,
     sources: Vec<FundingSource>,
     beneficiary: String,
+    token_denom: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
@@ -563,7 +594,7 @@ pub fn withdraw(
         sender: env.contract.address.clone(),
         recipient: Some(Addr::unchecked(beneficiary.clone())),
         amount: tx_amounts,
-        denom: DEPOSIT_TOKEN_DENOM.to_string(),
+        denom: token_denom,
     };
     state.transactions.push(tx_record);
     STATE.save(deps.storage, &state)?;

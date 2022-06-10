@@ -3,7 +3,6 @@ use crate::queriers;
 use crate::state::{Config, State, CONFIG, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
-use angel_core::structs::AcceptedTokens;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
     Uint128,
@@ -113,11 +112,17 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::ActiveFundDetails {} => to_binary(&queriers::active_fund_details(deps)?),
         QueryMsg::ActiveFundDonations {} => to_binary(&queriers::active_fund_donations(deps)?),
         QueryMsg::Deposit {
+            token_denom,
             amount,
             fund_id,
             split,
         } => to_binary(&queriers::deposit_msg_builder(
-            deps, env, amount, fund_id, split,
+            deps,
+            env,
+            token_denom,
+            amount,
+            fund_id,
+            split,
         )?),
         QueryMsg::AllianceMember { address } => {
             to_binary(&queriers::alliance_member(deps, address)?)

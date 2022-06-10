@@ -3,7 +3,7 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
-use angel_core::structs::{AllianceMember, IndexFund, SplitDetails, DEPOSIT_TOKEN_DENOM};
+use angel_core::structs::{AllianceMember, IndexFund, SplitDetails};
 use angel_core::utils::percentage_checks;
 use cosmwasm_std::{
     attr, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
@@ -353,11 +353,25 @@ pub fn deposit(
     if info.funds.len() != 1 {
         return Err(ContractError::InvalidCoinsDeposited {});
     }
+    // Check the token with "accepted_tokens"
+    let deposit_token_denom = &info.funds[0].denom;
+    let config_response: RegistrarConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &RegistrarQuerier::Config {},
+    )?;
+    if !config_response
+        .accepted_tokens
+        .native_valid(deposit_token_denom.to_string())
+    {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: format!("Invalid token denom: {}", deposit_token_denom),
+        }));
+    }
 
     let mut deposit_amount: Uint128 = info
         .funds
         .iter()
-        .find(|c| c.denom == *DEPOSIT_TOKEN_DENOM)
+        .find(|c| c.denom == *deposit_token_denom)
         .map(|c| c.amount)
         .unwrap_or_else(Uint128::zero);
 
@@ -376,7 +390,7 @@ pub fn deposit(
             .may_load(deps.storage, sender_addr.to_string())?
             .unwrap_or_default();
         tca_donor.add_tokens(Balance::from(vec![Coin {
-            denom: DEPOSIT_TOKEN_DENOM.to_string(),
+            denom: deposit_token_denom.to_string(),
             amount: deposit_amount,
         }]));
         TCA_DONATIONS.save(deps.storage, sender_addr.to_string(), &tca_donor)?;
@@ -516,7 +530,11 @@ pub fn deposit(
     STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
-        .add_submessages(build_donation_messages(deps.as_ref(), donation_messages))
+        .add_submessages(build_donation_messages(
+            deps.as_ref(),
+            donation_messages,
+            &deposit_token_denom,
+        ))
         .add_attribute("action", "deposit"))
 }
 
@@ -555,6 +573,7 @@ pub fn calculate_split(
 pub fn build_donation_messages(
     _deps: Deps,
     donation_messages: Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))>,
+    deposit_token_denom: &str,
 ) -> Vec<SubMsg> {
     let mut messages = vec![];
     for member in donation_messages.iter() {
@@ -568,7 +587,7 @@ pub fn build_donation_messages(
             ))
             .unwrap(),
             funds: vec![Coin {
-                denom: DEPOSIT_TOKEN_DENOM.to_string(),
+                denom: deposit_token_denom.to_string(),
                 amount: member.1 .0 + member.2 .0,
             }],
         })));

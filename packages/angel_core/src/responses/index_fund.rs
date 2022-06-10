@@ -1,4 +1,4 @@
-use crate::structs::{AcceptedTokens, IndexFund};
+use crate::structs::IndexFund;
 use cosmwasm_std::Uint128;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

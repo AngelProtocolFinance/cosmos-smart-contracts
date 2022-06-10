@@ -136,7 +136,8 @@ pub fn execute(
         ExecuteMsg::Withdraw {
             sources,
             beneficiary,
-        } => executers::withdraw(deps, env, info, sources, beneficiary),
+            token_denom,
+        } => executers::withdraw(deps, env, info, sources, beneficiary, token_denom),
         ExecuteMsg::WithdrawLiquid {
             liquid_amount,
             beneficiary,

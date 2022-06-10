@@ -100,7 +100,11 @@ pub struct DepositMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // builds and returns a Deposit CosmosMsg based on query inputs
+    // NOTE: Here, we assume that the user wants to deposit "native token"
+    //       Hence, it receives the "token_denom" for building message.
+    //       This part is prone to future change so that it can also handle "cw20 token".
     Deposit {
+        token_denom: String,
         amount: Uint128,
         fund_id: Option<u64>,
         split: Option<Decimal>,

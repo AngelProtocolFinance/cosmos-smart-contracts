@@ -4,10 +4,6 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-// "axlUSDC" token(native)
-pub const DEPOSIT_TOKEN_DENOM: &str =
-    "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4";
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct BalanceResponse {
     pub locked_native: Vec<Coin>,
