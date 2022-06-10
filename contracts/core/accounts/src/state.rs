@@ -1,5 +1,5 @@
 use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, Profile, RebalanceDetails, StrategyComponent, TransactionRecord,
+    BalanceInfo, Profile, RebalanceDetails, StrategyComponent, TransactionRecord,
 };
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
@@ -11,7 +11,6 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub owner: Addr, // DANO/AP Team Address
     pub registrar_contract: Addr,
-    pub accepted_tokens: AcceptedTokens,
     pub deposit_approved: bool, // DANO has approved to receive donations & transact
     pub withdraw_approved: bool, // DANO has approved to withdraw funds
     pub pending_redemptions: Option<u64>,

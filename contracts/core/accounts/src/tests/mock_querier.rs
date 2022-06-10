@@ -16,7 +16,7 @@ use std::marker::PhantomData;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
-use angel_core::structs::{SplitDetails, YieldVault};
+use angel_core::structs::{AcceptedTokens, SplitDetails, YieldVault};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -242,6 +242,10 @@ impl WasmMockQuerier {
                         charity_shares_contract: Some("charity_shares".to_string()),
                         cw3_code: Some(2),
                         cw4_code: Some(3),
+                        accepted_tokens: AcceptedTokens {
+                            native: vec!["uluna".to_string()],
+                            cw20: vec![],
+                        },
                     })
                     .unwrap(),
                 )),

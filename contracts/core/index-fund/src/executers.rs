@@ -3,9 +3,7 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
-use angel_core::structs::{
-    AcceptedTokens, AllianceMember, IndexFund, SplitDetails, DEPOSIT_TOKEN_DENOM,
-};
+use angel_core::structs::{AllianceMember, IndexFund, SplitDetails, DEPOSIT_TOKEN_DENOM};
 use angel_core::utils::percentage_checks;
 use cosmwasm_std::{
     attr, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
@@ -123,14 +121,6 @@ pub fn update_config(
     };
     config.fund_rotation = msg.fund_rotation; // config set as optional, don't unwrap
     config.fund_member_limit = msg.fund_member_limit.unwrap_or(config.fund_member_limit);
-    config.accepted_tokens = AcceptedTokens {
-        native: msg
-            .accepted_tokens_native
-            .unwrap_or(config.accepted_tokens.native),
-        cw20: msg
-            .accepted_tokens_cw20
-            .unwrap_or(config.accepted_tokens.cw20),
-    };
 
     CONFIG.save(deps.storage, &config)?;
 

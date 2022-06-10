@@ -16,7 +16,6 @@ pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
         fund_rotation: config.fund_rotation,
         fund_member_limit: config.fund_member_limit,
         funding_goal: config.funding_goal,
-        accepted_tokens: config.accepted_tokens,
     })
 }
 

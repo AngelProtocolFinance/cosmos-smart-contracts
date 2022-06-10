@@ -29,7 +29,6 @@ pub fn instantiate(
         fund_rotation: msg.fund_rotation.unwrap_or(None), // blocks
         fund_member_limit: msg.fund_member_limit.unwrap_or(10),
         funding_goal: msg.funding_goal.unwrap_or(None),
-        accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
     };
     CONFIG.save(deps.storage, &configs)?;
 

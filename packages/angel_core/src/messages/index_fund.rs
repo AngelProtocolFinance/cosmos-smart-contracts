@@ -1,4 +1,4 @@
-use crate::structs::{AcceptedTokens, AllianceMember};
+use crate::structs::AllianceMember;
 use cosmwasm_std::{Addr, Decimal, Uint128};
 // use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
@@ -10,7 +10,6 @@ pub struct InstantiateMsg {
     pub fund_rotation: Option<Option<u64>>, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: Option<u32>,     // limit to number of members an IndexFund can have
     pub funding_goal: Option<Option<Uint128>>, // donation funding limit to trigger early cycle of the Active IndexFund
-    pub accepted_tokens: Option<AcceptedTokens>, // list of approved native and CW20 coins can accept inward
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -82,8 +81,6 @@ pub struct UpdateConfigMsg {
     pub fund_rotation: Option<u64>,
     pub fund_member_limit: Option<u32>,
     pub funding_goal: Option<Uint128>,
-    pub accepted_tokens_native: Option<Vec<String>>,
-    pub accepted_tokens_cw20: Option<Vec<String>>,
 }
 
 // #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

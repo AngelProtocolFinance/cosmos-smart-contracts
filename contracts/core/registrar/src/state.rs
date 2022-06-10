@@ -1,4 +1,4 @@
-use angel_core::structs::{EndowmentEntry, SplitDetails, YieldVault};
+use angel_core::structs::{AcceptedTokens, EndowmentEntry, SplitDetails, YieldVault};
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
@@ -25,6 +25,7 @@ pub struct Config {
     pub charity_shares_contract: Option<Addr>, // Charity Shares staking contract
     pub cw3_code: Option<u64>,
     pub cw4_code: Option<u64>,
+    pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
 pub const PREFIX_REGISTRY: Map<&[u8], EndowmentEntry> = Map::new("registry");

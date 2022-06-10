@@ -1,5 +1,5 @@
 use angel_core::responses::index_fund::AllianceMemberResponse;
-use angel_core::structs::{AcceptedTokens, AllianceMember, GenericBalance, IndexFund};
+use angel_core::structs::{AllianceMember, GenericBalance, IndexFund};
 use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
@@ -17,12 +17,11 @@ const DEFAULT_LIMIT: u64 = 10;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub owner: Addr,                     // DANO Address
-    pub registrar_contract: Addr,        // Address of Registrar SC
+    pub owner: Addr,                   // DANO Address
+    pub registrar_contract: Addr,      // Address of Registrar SC
     pub fund_rotation: Option<u64>, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: u32,     // limit to number of members an IndexFund can have
     pub funding_goal: Option<Uint128>, // donation funding limit (in UUSD) to trigger early cycle of the Active IndexFund
-    pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

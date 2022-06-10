@@ -131,27 +131,6 @@ pub fn update_owner(
     Ok(Response::default())
 }
 
-pub fn update_config(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: UpdateConfigMsg,
-) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-
-    // only the SC admin can update these configs...for now
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    config.accepted_tokens = AcceptedTokens {
-        native: msg.accepted_tokens_native,
-        cw20: msg.accepted_tokens_cw20,
-    };
-    CONFIG.save(deps.storage, &config)?;
-    Ok(Response::default())
-}
-
 pub fn update_registrar(
     deps: DepsMut,
     _env: Env,
