@@ -266,6 +266,7 @@ pub fn create_endowment(
             deposit_fee: msg.deposit_fee,
             withdraw_fee: msg.withdraw_fee,
             aum_fee: msg.aum_fee,
+            settings_controller: msg.settings_controller,
         })?,
         funds: vec![],
     };

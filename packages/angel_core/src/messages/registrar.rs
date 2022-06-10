@@ -1,5 +1,7 @@
 use crate::messages::dao_token::CurveType;
-use crate::structs::{EndowmentFee, EndowmentType, Profile, SplitDetails, Tier};
+use crate::structs::{
+    EndowmentFee, EndowmentType, Profile, SettingsController, SplitDetails, Tier,
+};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
 use schemars::JsonSchema;
@@ -87,6 +89,7 @@ pub struct CreateEndowmentMsg {
     pub halo_ust_lp_pair_contract: Option<String>,
     pub user_reserve_token: Option<String>,
     pub user_reserve_ust_lp_pair_contract: Option<String>,
+    pub settings_controller: Option<SettingsController>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
