@@ -1,4 +1,4 @@
-use crate::structs::{EndowmentEntry, SplitDetails, VaultRate, YieldVault};
+use crate::structs::{AcceptedTokens, EndowmentEntry, SplitDetails, VaultRate, YieldVault};
 use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -38,9 +38,15 @@ pub struct ConfigResponse {
     pub charity_shares_contract: Option<String>,
     pub cw3_code: Option<u64>,
     pub cw4_code: Option<u64>,
+    pub accepted_tokens: AcceptedTokens,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct VaultRateResponse {
     pub vaults_rate: Vec<VaultRate>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+pub struct AccTokensListResponse {
+    pub tokens: Vec<String>,
 }

@@ -7,7 +7,7 @@ use angel_core::messages::accounts::*;
 use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
-use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
+use angel_core::structs::{BalanceInfo, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{
     attr, entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
     QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
@@ -34,7 +34,6 @@ pub fn instantiate(
         &Config {
             owner: deps.api.addr_validate(&msg.owner_sc)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-            accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
             pending_redemptions: None,
@@ -138,7 +137,8 @@ pub fn execute(
         ExecuteMsg::Withdraw {
             sources,
             beneficiary,
-        } => executers::withdraw(deps, env, info, sources, beneficiary),
+            token_denom,
+        } => executers::withdraw(deps, env, info, sources, beneficiary, token_denom),
         ExecuteMsg::WithdrawLiquid {
             liquid_amount,
             beneficiary,
@@ -158,7 +158,6 @@ pub fn execute(
         ExecuteMsg::CloseEndowment { beneficiary } => {
             executers::close_endowment(deps, env, info, beneficiary)
         }
-        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
     }
 }

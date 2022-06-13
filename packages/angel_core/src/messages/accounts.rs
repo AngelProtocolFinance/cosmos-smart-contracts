@@ -26,10 +26,14 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
-    // Pull funds from investment vault(s) to the Endowment Beneficiary as UST
+    // Pull funds from investment vault(s) to the Endowment Beneficiary as <token_denom>
+    // NOTE: Here, we assume that the user wants to withdraw "native token"
+    //       Hence, it receives the "token_denom" for building message.
+    //       This part is prone to future change so that it can also handle "cw20 token".
     Withdraw {
         sources: Vec<FundingSource>,
         beneficiary: String,
+        token_denom: String,
     },
     WithdrawLiquid {
         liquid_amount: Uint128,
@@ -50,7 +54,6 @@ pub enum ExecuteMsg {
     UpdateRegistrar {
         new_registrar: String,
     },
-    UpdateConfig(UpdateConfigMsg),
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
     // Update an Endowment ability to receive/send funds
@@ -64,10 +67,7 @@ pub enum ExecuteMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateConfigMsg {
-    pub accepted_tokens_native: Vec<String>,
-    pub accepted_tokens_cw20: Vec<String>,
-}
+pub struct UpdateConfigMsg {}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Strategy {

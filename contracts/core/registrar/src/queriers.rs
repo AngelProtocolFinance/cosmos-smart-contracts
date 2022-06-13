@@ -21,6 +21,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         charity_shares_contract: config.charity_shares_contract.map(|addr| addr.to_string()),
         cw3_code: config.cw3_code,
         cw4_code: config.cw4_code,
+        accepted_tokens: config.accepted_tokens,
     })
 }
 

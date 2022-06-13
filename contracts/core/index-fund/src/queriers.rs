@@ -1,9 +1,9 @@
 use crate::state::{
     read_alliance_members, read_funds, ALLIANCE_MEMBERS, CONFIG, FUND, STATE, TCA_DONATIONS,
 };
+use angel_core::messages::index_fund::DepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg::Deposit;
 use angel_core::responses::index_fund::*;
-use angel_core::{messages::index_fund::DepositMsg, structs::DEPOSIT_TOKEN_DENOM};
 use cosmwasm_std::{
     to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, Env, StdError, StdResult, Uint128, WasmMsg,
 };
@@ -16,7 +16,6 @@ pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
         fund_rotation: config.fund_rotation,
         fund_member_limit: config.fund_member_limit,
         funding_goal: config.funding_goal,
-        accepted_tokens: config.accepted_tokens,
     })
 }
 
@@ -95,6 +94,7 @@ pub fn involved_funds(deps: Deps, address: String) -> StdResult<FundListResponse
 pub fn deposit_msg_builder(
     _deps: Deps,
     env: Env,
+    token_denom: String,
     amount: Uint128,
     fund_id: Option<u64>,
     split: Option<Decimal>,
@@ -103,7 +103,7 @@ pub fn deposit_msg_builder(
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&Deposit(DepositMsg { fund_id, split }))?,
         funds: vec![Coin {
-            denom: DEPOSIT_TOKEN_DENOM.to_string(),
+            denom: token_denom,
             amount,
         }],
     }))

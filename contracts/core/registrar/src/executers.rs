@@ -2,11 +2,13 @@ use crate::state::{read_vaults, registry_read, registry_store, vault_read, vault
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault};
+use angel_core::structs::{
+    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault,
+};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    attr, to_binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
-    SubMsg, SubMsgResult, WasmMsg,
+    attr, to_binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError,
+    StdResult, SubMsg, SubMsgResult, WasmMsg,
 };
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
@@ -210,6 +212,14 @@ pub fn update_config(
         None => Ok(config.split_to_liquid.default),
     };
     config.split_to_liquid = split_checks(max.unwrap(), min.unwrap(), default.unwrap()).unwrap();
+    config.accepted_tokens = AcceptedTokens {
+        native: msg
+            .accepted_tokens_native
+            .unwrap_or(config.accepted_tokens.native),
+        cw20: msg
+            .accepted_tokens_cw20
+            .unwrap_or(config.accepted_tokens.cw20),
+    };
 
     CONFIG.save(deps.storage, &config)?;
 

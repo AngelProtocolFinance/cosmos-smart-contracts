@@ -1,4 +1,4 @@
-use crate::structs::{EndowmentType, Profile, SplitDetails, Tier};
+use crate::structs::{AcceptedTokens, EndowmentType, Profile, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
 use schemars::JsonSchema;
@@ -14,6 +14,7 @@ pub struct InstantiateMsg {
     pub tax_rate: Decimal,
     pub default_vault: Option<Addr>,
     pub split_to_liquid: Option<SplitDetails>, // default %s to split off into liquid account, if donor provided split is not present
+    pub accepted_tokens: Option<AcceptedTokens>, // list of approved native and CW20 coins can accept inward
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -72,6 +73,8 @@ pub struct UpdateConfigMsg {
     pub charity_shares_contract: Option<String>,
     pub cw3_code: Option<u64>,
     pub cw4_code: Option<u64>,
+    pub accepted_tokens_native: Option<Vec<String>>,
+    pub accepted_tokens_cw20: Option<Vec<String>>,
 }
 
 impl UpdateConfigMsg {

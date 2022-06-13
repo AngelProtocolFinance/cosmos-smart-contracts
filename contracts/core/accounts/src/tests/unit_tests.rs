@@ -3,7 +3,7 @@ use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
-use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls, DEPOSIT_TOKEN_DENOM};
+use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{attr, coins, from_binary, Addr, Decimal};
 use std::vec;
@@ -653,10 +653,7 @@ fn test_donate() {
 
     // Try the "Deposit"
     let donation_amt = 200_u128;
-    let info = mock_info(
-        depositor.as_str(),
-        &coins(donation_amt, DEPOSIT_TOKEN_DENOM),
-    );
+    let info = mock_info(depositor.as_str(), &coins(donation_amt, "uluna"));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         locked_percentage: Decimal::percent(50),
         liquid_percentage: Decimal::percent(50),
@@ -743,10 +740,7 @@ fn test_withdraw() {
 
     // Try the "Deposit"
     let donation_amt = 200_u128;
-    let info = mock_info(
-        depositor.as_str(),
-        &coins(donation_amt, DEPOSIT_TOKEN_DENOM),
-    );
+    let info = mock_info(depositor.as_str(), &coins(donation_amt, "uluna"));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         locked_percentage: Decimal::percent(50),
         liquid_percentage: Decimal::percent(50),
@@ -758,6 +752,7 @@ fn test_withdraw() {
     let withdraw_msg = ExecuteMsg::Withdraw {
         sources: vec![],
         beneficiary: "beneficiary".to_string(),
+        token_denom: "uluna".to_string(),
     };
     let res = execute(deps.as_mut(), mock_env(), info, withdraw_msg).unwrap();
     assert_eq!(res.messages.len(), 0);
