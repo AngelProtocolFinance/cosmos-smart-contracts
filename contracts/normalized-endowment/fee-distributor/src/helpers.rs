@@ -3,7 +3,6 @@ use crate::querier::{
     query_address_voting_balance_at_timestamp, query_total_voting_balance_at_timestamp,
 };
 use crate::state::{Config, USER_LAST_CLAIMED_FEE_TIMESTAMP, WEEKLY_TOKEN_DISTRIBUTION};
-use angel_core::utils::{calc_range_end, calc_range_start};
 use cosmwasm_std::{Addr, Deps, Env, Order, StdResult, Uint128};
 use cw_storage_plus::Bound;
 

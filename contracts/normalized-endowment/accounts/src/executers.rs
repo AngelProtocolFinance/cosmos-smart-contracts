@@ -211,6 +211,10 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
+    config.settings_controller = match msg.settings_controller {
+        Some(controller) => controller,
+        None => config.settings_controller,
+    };
     config.accepted_tokens = AcceptedTokens {
         native: msg.accepted_tokens_native,
         cw20: msg.accepted_tokens_cw20,
@@ -389,7 +393,11 @@ pub fn update_strategies(
     let mut config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENT.load(deps.storage)?;
 
-    if info.sender != endowment.owner {
+    if config.settings_controller.strategies.can_change(
+        &info.sender,
+        &endowment.owner,
+        endowment.dao.as_ref(),
+    ) {
         return Err(ContractError::Unauthorized {});
     }
 

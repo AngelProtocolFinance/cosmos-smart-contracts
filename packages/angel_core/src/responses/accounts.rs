@@ -1,5 +1,6 @@
 use crate::structs::{
-    EndowmentFee, RebalanceDetails, SocialMedialUrls, StrategyComponent, TransactionRecord,
+    EndowmentFee, RebalanceDetails, SettingsController, SocialMedialUrls, StrategyComponent,
+    TransactionRecord,
 };
 use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
@@ -19,6 +20,7 @@ pub struct ConfigResponse {
     pub withdraw_approved: bool,
     pub last_earnings_harvest: u64,
     pub last_harvest_fx: String,
+    pub settings_controller: SettingsController,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

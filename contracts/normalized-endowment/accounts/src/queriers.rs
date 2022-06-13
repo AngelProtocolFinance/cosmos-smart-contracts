@@ -19,6 +19,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
             .last_harvest_fx
             .map(|v| v.to_string())
             .unwrap_or_else(|| "".to_string()),
+        settings_controller: config.settings_controller,
     })
 }
 

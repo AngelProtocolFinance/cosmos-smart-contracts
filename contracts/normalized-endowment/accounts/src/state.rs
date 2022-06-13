@@ -1,6 +1,6 @@
 use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, EndowmentFee, Profile, RebalanceDetails, StrategyComponent,
-    TransactionRecord,
+    AcceptedTokens, BalanceInfo, EndowmentFee, Profile, RebalanceDetails, SettingsController,
+    StrategyComponent, TransactionRecord,
 };
 use cosmwasm_std::{Addr, Decimal256, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
@@ -18,6 +18,7 @@ pub struct Config {
     pub pending_redemptions: Option<u64>,
     pub last_earnings_harvest: u64,
     pub last_harvest_fx: Option<Decimal256>,
+    pub settings_controller: SettingsController,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
