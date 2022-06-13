@@ -1,6 +1,6 @@
 use crate::structs::AllianceMember;
 use cosmwasm_std::{Addr, Decimal, Uint128};
-// use cw20::Cw20ReceiveMsg;
+use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -15,6 +15,7 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    Receive(Cw20ReceiveMsg),
     // updates the owner of the contract
     UpdateOwner {
         new_owner: String,
@@ -83,12 +84,12 @@ pub struct UpdateConfigMsg {
     pub funding_goal: Option<Uint128>,
 }
 
-// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-// #[serde(rename_all = "snake_case")]
-// pub enum ReceiveMsg {
-//     // Donor deposits tokens sent for an Index Fund
-//     Deposit(DepositMsg),
-// }
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ReceiveMsg {
+    // Donor deposits tokens sent for an Index Fund
+    Deposit(DepositMsg),
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct DepositMsg {

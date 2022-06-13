@@ -1,5 +1,6 @@
 use crate::structs::{FundingSource, Profile};
 use cosmwasm_std::{Decimal, Uint128};
+use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -24,6 +25,7 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    Receive(Cw20ReceiveMsg),
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     // Pull funds from investment vault(s) to the Endowment Beneficiary as <token_denom>
@@ -87,14 +89,14 @@ pub struct UpdateEndowmentStatusMsg {
     pub withdraw_approved: bool,
 }
 
-// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-// #[serde(rename_all = "snake_case")]
-// pub enum ReceiveMsg {
-//     // Add tokens sent for a specific account
-//     Deposit(DepositMsg),
-//     // Tokens are sent back to an Account from a Vault
-//     VaultReceipt(AccountTransferMsg),
-// }
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ReceiveMsg {
+    // Add tokens sent for a specific account
+    Deposit(DepositMsg),
+    // Tokens are sent back to an Account from a Vault
+    VaultReceipt {},
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct DepositMsg {

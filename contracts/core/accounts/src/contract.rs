@@ -9,11 +9,12 @@ use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::{BalanceInfo, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{
-    attr, entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
-    WasmQuery,
+    attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
+    MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
+    WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
+use cw20::Cw20ReceiveMsg;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";
@@ -127,6 +128,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
             executers::update_endowment_settings(deps, env, info, msg)
         }
@@ -159,6 +161,31 @@ pub fn execute(
             executers::close_endowment(deps, env, info, beneficiary)
         }
         ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
+    }
+}
+
+pub fn receive_cw20(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    cw20_msg: Cw20ReceiveMsg,
+) -> Result<Response, ContractError> {
+    let api = deps.api;
+    match from_binary(&cw20_msg.msg) {
+        Ok(ReceiveMsg::VaultReceipt {}) => executers::vault_receipt(
+            deps,
+            env,
+            info.clone(),
+            api.addr_validate(&cw20_msg.sender)?,
+        ),
+        Ok(ReceiveMsg::Deposit(msg)) => executers::deposit(
+            deps,
+            env,
+            info.clone(),
+            api.addr_validate(&cw20_msg.sender)?,
+            msg,
+        ),
+        _ => Err(ContractError::InvalidInputs {}),
     }
 }
 

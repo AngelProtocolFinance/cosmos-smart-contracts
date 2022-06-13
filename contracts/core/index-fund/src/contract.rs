@@ -4,10 +4,11 @@ use crate::state::{Config, State, CONFIG, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
-    Uint128,
+    entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
+    StdError, StdResult, Uint128,
 };
 use cw2::{get_contract_version, set_contract_version};
+use cw20::Cw20ReceiveMsg;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "index-fund";
@@ -96,6 +97,26 @@ pub fn execute(
         ExecuteMsg::UpdateAllianceMember { address, member } => {
             executers::update_alliance_member(deps, env, info, address, member)
         }
+        ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
+    }
+}
+
+pub fn receive_cw20(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    cw20_msg: Cw20ReceiveMsg,
+) -> Result<Response, ContractError> {
+    let api = deps.api;
+    match from_binary(&cw20_msg.msg) {
+        Ok(ReceiveMsg::Deposit(msg)) => executers::deposit(
+            deps,
+            env,
+            info.clone(),
+            api.addr_validate(&cw20_msg.sender)?,
+            msg,
+        ),
+        _ => Err(ContractError::InvalidInputs {}),
     }
 }
 
