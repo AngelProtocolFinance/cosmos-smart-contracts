@@ -43,6 +43,7 @@ export async function sendTransaction(
     let sequence = await sender.sequence();
     fee = await terra.tx.estimateFee([{ sequenceNumber: sequence }], { msgs });
   } catch (error) {
+    console.error(error);
     if (axios.isAxiosError(error)) {
       throw new Error(
         chalk.red("Transaction failed!") +
@@ -170,7 +171,7 @@ export async function migrateContracts(
 // export async function queryNativeTokenBalance(
 //   terra: LocalTerra | LCDClient,
 //   account: string,
-//   denom = "uusd"
+//   denom = "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
 // ): Promise<string> {
 //   const balance = (await terra.bank.balance(account)).get(denom)?.amount.toString();
 //   if (balance) {

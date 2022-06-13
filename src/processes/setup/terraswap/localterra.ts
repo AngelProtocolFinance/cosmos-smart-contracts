@@ -5,7 +5,7 @@ import { LocalTerra, Wallet, MsgExecuteContract } from "@terra-money/terra.js";
 import { instantiateContract, sendTransaction, storeCode } from "../../../utils/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
 
-// Deploy HALO Token and HALO/UST pair contracts to the LocalTerra
+// Deploy HALO Token and HALO/LUNA pair contracts to the LocalTerra
 export async function setupTerraSwap(
   terra: LocalTerra,
   apTeam: Wallet,
@@ -108,12 +108,15 @@ export async function setupTerraSwap(
           },
           {
             native_token: {
-              denom: "uusd",
+              // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              denom: "uluna",
             },
           },
         ],
-      },
-    }),
+      }
+    // }, { "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4": "100" },
+    }, { "uluna": 1000 },
+    ),
   ]);
 
   const pairContract = pairResult.logs[0].events
@@ -137,7 +140,7 @@ export async function setupTerraSwap(
 
   // send liquidity to the new Pair contract for swaps
   process.stdout.write(
-    "Provide liquidity to the new Pair contract @ ratio of 0.05 UST per HALO"
+    "Provide liquidity to the new Pair contract @ ratio of 0.05 LUNA per HALO"
   );
   const liqResult = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
@@ -163,7 +166,8 @@ export async function setupTerraSwap(
             {
               info: {
                 native_token: {
-                  denom: "uusd",
+                  // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+                  denom: "uluna",
                 },
               },
               amount: native_liquidity,
@@ -172,7 +176,7 @@ export async function setupTerraSwap(
         },
       },
       {
-        uusd: native_liquidity,
+        uluna: native_liquidity,
       }
     ),
   ]);

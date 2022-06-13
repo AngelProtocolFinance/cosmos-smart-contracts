@@ -500,7 +500,7 @@ export async function testExecute(
   //   apTeam,
   //   lbpFactoryContract,
   //   terraswapToken,
-  //   "uusd",
+  //   "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
   //   datetimeStringToUTC("12/16/2021 00:00:00Z"),
   //   datetimeStringToUTC("12/17/2021 00:00:00Z"),
   //   "96",
@@ -510,7 +510,7 @@ export async function testExecute(
   //   "HALO <-> UST Pair"
   // );
   // await getPairContractLpToken(terra, lbpPairContract);
-  // await testFactoryUnregister(terra, apTeam, lbpFactoryContract, terraswapToken, "uusd");
+  // await testFactoryUnregister(terra, apTeam, lbpFactoryContract, terraswapToken, "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4");
   // await testQueryFactoryConfig(terra, lbpFactoryContract);
   // await testQueryFactoryPair(terra, lbpFactoryContract, terraswapToken);
   // await testQueryFactoryPairs(terra, lbpFactoryContract);

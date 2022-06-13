@@ -47,8 +47,8 @@ let apTreasury: string;
 let terraswapTokenCode: number;
 let terraswapFactory: string;
 let terraswapHaloTokenContract: string;
-let terraswapHaloUstPairContract: string;
-let terraswapHaloUstPairLpToken: string;
+let terraswapHaloLunaPairContract: string;
+let terraswapHaloLunaPairLpToken: string;
 let terraswapInitialHaloSupply: string;
 let terraswapHaloLiquidity: string;
 let terraswapNativeLiquidity: string;
@@ -126,8 +126,8 @@ function initialize() {
   terraswapTokenCode = config.terraswap.terraswap_token_code;
   terraswapFactory = config.terraswap.terraswap_factory;
   terraswapHaloTokenContract = config.terraswap.halo_token_contract;
-  terraswapHaloUstPairContract = config.terraswap.halo_ust_pair_contract;
-  terraswapHaloUstPairLpToken = config.terraswap.halo_ust_pair_lp_token;
+  terraswapHaloLunaPairContract = config.terraswap.halo_luna_pair_contract;
+  terraswapHaloLunaPairLpToken = config.terraswap.halo_luna_pair_lp_token;
   terraswapInitialHaloSupply = config.terraswap.initial_halo_supply;
   terraswapHaloLiquidity = config.terraswap.halo_liquidity;
   terraswapNativeLiquidity = config.terraswap.native_liquidity;
@@ -135,7 +135,7 @@ function initialize() {
   console.log(`Use ${chalk.cyan(terraswapFactory)} as TerraSwap Factory`);
   console.log(`Use ${chalk.cyan(terraswapHaloTokenContract)} as TerraSwap HALO Token`);
   console.log(
-    `Use ${chalk.cyan(terraswapHaloUstPairContract)} as TerraSwap HALO/UST Pair`
+    `Use ${chalk.cyan(terraswapHaloLunaPairContract)} as TerraSwap HALO/LUNA Pair`
   );
 
   lbpFactoryContract = config.lbp.factory_contract;
@@ -153,9 +153,9 @@ function initialize() {
   slippage_tolerance = config.lbp.slippage_tolerance;
 
   console.log(`Use ${chalk.cyan(lbpFactoryContract)} as LBP Factory`);
-  console.log(`Use ${chalk.cyan(lbpPairContract)} as LBP HALO/UST Pair`);
+  console.log(`Use ${chalk.cyan(lbpPairContract)} as LBP HALO/LUNA Pair`);
   console.log(`Use ${chalk.cyan(lbpRouterContract)} as LBP Router`);
-  console.log(`Use ${chalk.cyan(lbpLpTokenContract)} as LBP HALO/UST Pair LP Token`);
+  console.log(`Use ${chalk.cyan(lbpLpTokenContract)} as LBP HALO/LUNA Pair LP Token`);
 
   haloAirdrop = config.halo.airdrop_contract;
   haloCollector = config.halo.collector_contract;
@@ -259,7 +259,7 @@ export async function startSetupLbp(): Promise<void> {
     terraswapHaloTokenContract,
     haloTokenAmount,
     nativeTokenAmount,
-    "uusd",
+    "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
     datetimeStringToUTC(lbp_start_time),
     datetimeStringToUTC(lbp_end_time),
     token_start_weight,
@@ -288,7 +288,7 @@ export async function startSetupHalo(): Promise<void> {
     registrar,
     terraswapHaloTokenContract, // halo terraswap token contract
     terraswapFactory,
-    terraswapHaloUstPairLpToken, // staking_token: HALO-UST pair LP Token contract
+    terraswapHaloLunaPairLpToken, // staking_token: HALO-LUNA pair LP Token contract
     30, // quorum
     50, // threshold,
     2000, // voting_period,
@@ -406,7 +406,7 @@ export async function startTests(): Promise<void> {
     cw3GuardianAngels,
     terraswapFactory,
     terraswapHaloTokenContract,
-    terraswapHaloUstPairContract,
+    terraswapHaloLunaPairContract,
     haloAirdrop,
     haloCollector,
     haloCommunity,

@@ -52,7 +52,7 @@ export async function setupTerraSwap(
           },
           {
             native_token: {
-              denom: "uusd",
+              denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
             },
           },
         ],
@@ -106,7 +106,7 @@ export async function setupTerraSwap(
             {
               info: {
                 native_token: {
-                  denom: "uusd",
+                  denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
                 },
               },
               amount: native_liquidity,
