@@ -26,6 +26,7 @@ pub struct EndowmentDetailsResponse {
     pub maturity_height: Option<u64>,
     pub strategies: Vec<StrategyComponent>,
     pub rebalance: RebalanceDetails,
+    pub kyc_donors_only: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

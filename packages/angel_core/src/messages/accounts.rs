@@ -18,6 +18,7 @@ pub struct InstantiateMsg {
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
     pub profile: Profile,               // struct holding the Endowment info
     pub cw4_members: Vec<Member>,
+    pub kyc_donors_only: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -77,6 +78,7 @@ pub struct Strategy {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentSettingsMsg {
     pub owner: String,
+    pub kyc_donors_only: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

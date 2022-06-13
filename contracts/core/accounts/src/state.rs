@@ -27,6 +27,7 @@ pub struct Endowment {
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
+    pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
 }
 
 impl Endowment {
