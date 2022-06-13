@@ -188,6 +188,7 @@ pub fn update_endowment_settings(
     }
 
     // validate address strings passed
+    endowment.kyc_donors_only = msg.kyc_donors_only;
     endowment.owner = deps.api.addr_validate(&msg.owner)?;
     ENDOWMENT.save(deps.storage, &endowment)?;
 
