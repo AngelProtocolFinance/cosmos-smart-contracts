@@ -1,7 +1,7 @@
 use crate::errors::core::ContractError;
 use crate::messages::registrar::QueryMsg as RegistrarQuerier;
 use crate::messages::vault::AccountWithdrawMsg;
-use crate::responses::registrar::VaultDetailResponse;
+use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
 use crate::responses::vault::ExchangeRateResponse;
 use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
 use cosmwasm_std::{
@@ -270,4 +270,29 @@ pub fn deposit_to_vaults(
         })));
     }
     Ok(deposit_messages)
+}
+
+/// Check if the given "token"(denom or contract address) is in "accepted_tokens" list.  
+///     "token":              native token denom or cw20 token contract address  
+///     "token_type":         either of two values - `native` or `cw20`  
+///     "registrar_contract": address of `registrar` contract  
+pub fn is_accepted_token(
+    deps: Deps,
+    token: &str,
+    token_type: &str,
+    registrar_contract: &str,
+) -> Result<bool, ContractError> {
+    let config_response: RegistrarConfigResponse = deps
+        .querier
+        .query_wasm_smart(registrar_contract.to_string(), &RegistrarQuerier::Config {})?;
+
+    match token_type {
+        "native" => Ok(config_response
+            .accepted_tokens
+            .native_valid(token.to_string())),
+        "cw20" => Ok(config_response
+            .accepted_tokens
+            .cw20_valid(token.to_string())),
+        _ => Ok(false),
+    }
 }

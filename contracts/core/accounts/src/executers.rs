@@ -18,7 +18,7 @@ use angel_core::structs::{
     TransactionRecord,
 };
 use angel_core::utils::{
-    check_splits, deposit_to_vaults, redeem_from_vaults, withdraw_from_vaults,
+    check_splits, deposit_to_vaults, is_accepted_token, redeem_from_vaults, withdraw_from_vaults,
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
@@ -287,16 +287,14 @@ pub fn vault_receipt(
 
     // Check the token with "accepted_tokens"
     let deposit_token_denom = &info.funds[0].denom;
-    let config_response: RegistrarConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract.to_string(),
-        &RegistrarQuerier::Config {},
-    )?;
-    if !config_response
-        .accepted_tokens
-        .native_valid(deposit_token_denom.to_string())
-    {
+    if !is_accepted_token(
+        deps.as_ref(),
+        deposit_token_denom,
+        "native",
+        config.registrar_contract.as_str(),
+    )? {
         return Err(ContractError::Std(StdError::GenericErr {
-            msg: format!("Invalid token denom: {}", deposit_token_denom),
+            msg: format!("Not accepted token: {}", deposit_token_denom),
         }));
     }
 
@@ -441,16 +439,14 @@ pub fn deposit(
 
     // Check the token with "accepted_tokens"
     let deposit_token_denom = &info.funds[0].denom;
-    let config_response: RegistrarConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract.to_string(),
-        &RegistrarQuerier::Config {},
-    )?;
-    if !config_response
-        .accepted_tokens
-        .native_valid(deposit_token_denom.to_string())
-    {
+    if !is_accepted_token(
+        deps.as_ref(),
+        deposit_token_denom,
+        "native",
+        config.registrar_contract.as_str(),
+    )? {
         return Err(ContractError::Std(StdError::GenericErr {
-            msg: format!("Invalid token denom: {}", deposit_token_denom),
+            msg: format!("Not accepted token: {}", deposit_token_denom),
         }));
     }
 

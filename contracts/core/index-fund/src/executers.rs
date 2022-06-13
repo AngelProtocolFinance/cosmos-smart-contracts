@@ -4,7 +4,7 @@ use angel_core::messages::index_fund::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{AllianceMember, IndexFund, SplitDetails};
-use angel_core::utils::percentage_checks;
+use angel_core::utils::{is_accepted_token, percentage_checks};
 use cosmwasm_std::{
     attr, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
     Response, StdError, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
@@ -355,16 +355,14 @@ pub fn deposit(
     }
     // Check the token with "accepted_tokens"
     let deposit_token_denom = &info.funds[0].denom;
-    let config_response: RegistrarConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract.to_string(),
-        &RegistrarQuerier::Config {},
-    )?;
-    if !config_response
-        .accepted_tokens
-        .native_valid(deposit_token_denom.to_string())
-    {
+    if !is_accepted_token(
+        deps.as_ref(),
+        deposit_token_denom,
+        "native",
+        config.registrar_contract.as_str(),
+    )? {
         return Err(ContractError::Std(StdError::GenericErr {
-            msg: format!("Invalid token denom: {}", deposit_token_denom),
+            msg: format!("Not accepted token: {}", deposit_token_denom),
         }));
     }
 
