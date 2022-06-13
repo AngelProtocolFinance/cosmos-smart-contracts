@@ -242,6 +242,7 @@ pub fn create_endowment(
             maturity_height: msg.maturity_height,
             profile: msg.profile,
             cw4_members: msg.cw4_members,
+            kyc_donors_only: msg.kyc_donors_only,
         })?,
         funds: vec![],
     };

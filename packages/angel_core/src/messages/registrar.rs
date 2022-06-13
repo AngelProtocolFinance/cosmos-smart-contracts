@@ -53,6 +53,7 @@ pub struct CreateEndowmentMsg {
     pub maturity_height: Option<u64>,
     pub profile: Profile,
     pub cw4_members: Vec<Member>,
+    pub kyc_donors_only: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

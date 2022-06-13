@@ -64,6 +64,7 @@ pub fn instantiate(
             maturity_height: msg.maturity_height,       // Option<u64>
             strategies: default_strategy,
             rebalance: RebalanceDetails::default(),
+            kyc_donors_only: msg.kyc_donors_only,
         },
     )?;
 
