@@ -15,6 +15,8 @@ use cosmwasm_std::{
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
+use terraswap::asset::Asset;
+use terraswap::asset::AssetInfo;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";
@@ -135,18 +137,39 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
             executers::update_endowment_status(deps, env, info, msg)
         }
-        ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
+        ExecuteMsg::Deposit(msg) => {
+            if info.funds.len() != 1 {
+                return Err(ContractError::InvalidCoinsDeposited {});
+            }
+            let native_fund = Asset {
+                info: AssetInfo::NativeToken {
+                    denom: info.funds[0].denom.to_string(),
+                },
+                amount: info.funds[0].amount,
+            };
+            executers::deposit(deps, env, info.clone(), info.sender, msg, native_fund)
+        }
         ExecuteMsg::Withdraw {
             sources,
             beneficiary,
-            token_denom,
-        } => executers::withdraw(deps, env, info, sources, beneficiary, token_denom),
+            asset_info,
+        } => executers::withdraw(deps, env, info, sources, beneficiary, asset_info),
         ExecuteMsg::WithdrawLiquid {
             liquid_amount,
             beneficiary,
-        } => executers::withdraw_liquid(deps, env, info, liquid_amount, beneficiary),
+            asset_info,
+        } => executers::withdraw_liquid(deps, env, info, liquid_amount, beneficiary, asset_info),
         ExecuteMsg::VaultReceipt {} => {
-            executers::vault_receipt(deps, env, info.clone(), info.sender)
+            if info.funds.len() != 1 {
+                return Err(ContractError::InvalidCoinsDeposited {});
+            }
+            let native_fund = Asset {
+                info: AssetInfo::NativeToken {
+                    denom: info.funds[0].denom.to_string(),
+                },
+                amount: info.funds[0].amount,
+            };
+            executers::vault_receipt(deps, env, info.clone(), info.sender, native_fund)
         }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
@@ -171,12 +194,19 @@ pub fn receive_cw20(
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
     let api = deps.api;
+    let cw20_fund = Asset {
+        info: AssetInfo::Token {
+            contract_addr: info.sender.to_string(),
+        },
+        amount: cw20_msg.amount,
+    };
     match from_binary(&cw20_msg.msg) {
         Ok(ReceiveMsg::VaultReceipt {}) => executers::vault_receipt(
             deps,
             env,
             info.clone(),
             api.addr_validate(&cw20_msg.sender)?,
+            cw20_fund,
         ),
         Ok(ReceiveMsg::Deposit(msg)) => executers::deposit(
             deps,
@@ -184,6 +214,7 @@ pub fn receive_cw20(
             info.clone(),
             api.addr_validate(&cw20_msg.sender)?,
             msg,
+            cw20_fund,
         ),
         _ => Err(ContractError::InvalidInputs {}),
     }

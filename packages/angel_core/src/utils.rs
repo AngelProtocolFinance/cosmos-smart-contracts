@@ -5,10 +5,11 @@ use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, Vau
 use crate::responses::vault::ExchangeRateResponse;
 use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, Deps, QueryRequest, StdResult,
-    SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, Deps, QueryRequest, StdError,
+    StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg};
+use terraswap::asset::{Asset, AssetInfo};
 
 /// The following `calc_range_<???>` functions will set the first key after the provided key, by appending a 1 byte
 pub fn calc_range_start(start_after: Option<u64>) -> Option<Vec<u8>> {
@@ -200,6 +201,7 @@ pub fn withdraw_from_vaults(
     registrar_contract: String,
     beneficiary: &Addr,
     sources: Vec<FundingSource>,
+    asset_info: AssetInfo,
 ) -> Result<(Vec<SubMsg>, Uint128), ContractError> {
     let mut withdraw_messages = vec![];
     let mut tx_amounts = Uint128::zero();
@@ -243,7 +245,7 @@ pub fn withdraw_from_vaults(
 pub fn deposit_to_vaults(
     deps: Deps,
     registrar_contract: String,
-    amount: Coin,
+    fund: Asset,
     strategies: &[StrategyComponent],
 ) -> Result<Vec<SubMsg>, ContractError> {
     let mut deposit_messages = vec![];
@@ -260,21 +262,36 @@ pub fn deposit_to_vaults(
 
         // create a deposit message for X Vault, noting amounts for Locked / Liquid
         // funds payload contains both amounts for locked and liquid accounts
-        deposit_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: yield_vault.address.to_string(),
-            msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {}).unwrap(),
-            funds: vec![Coin {
-                denom: amount.denom.clone(),
-                amount: amount.amount * strategy.percentage,
-            }],
-        })));
+        match fund.info {
+            AssetInfo::NativeToken { ref denom } => {
+                deposit_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: yield_vault.address.to_string(),
+                    msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {}).unwrap(),
+                    funds: vec![Coin {
+                        denom: denom.clone(),
+                        amount: fund.amount * strategy.percentage,
+                    }],
+                })));
+            }
+            AssetInfo::Token { ref contract_addr } => {
+                deposit_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: contract_addr.to_string(),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                        contract: yield_vault.address.to_string(),
+                        amount: fund.amount * strategy.percentage,
+                        msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {}).unwrap(),
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                })));
+            }
+        }
     }
     Ok(deposit_messages)
 }
 
 /// Check if the given "token"(denom or contract address) is in "accepted_tokens" list.  
-///     "token":              native token denom or cw20 token contract address  
-///     "token_type":         either of two values - `native` or `cw20`  
+///     "token":              native token denom or cw20 token contract address   
 ///     "registrar_contract": address of `registrar` contract  
 pub fn is_accepted_token(
     deps: Deps,
@@ -291,4 +308,28 @@ pub fn is_accepted_token(
         || config_response
             .accepted_tokens
             .cw20_valid(token.to_string()))
+}
+
+pub fn validate_deposit_fund(
+    deps: Deps,
+    registrar_contract: &str,
+    fund: Asset,
+) -> Result<Asset, ContractError> {
+    let token = match fund.info {
+        AssetInfo::NativeToken { ref denom } => denom.to_string(),
+        AssetInfo::Token { ref contract_addr } => contract_addr.to_string(),
+    };
+
+    if !is_accepted_token(deps, &token, registrar_contract)? {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: format!("Not accepted token: {}", token),
+        }));
+    }
+
+    // Cannot deposit zero amount
+    if fund.amount.is_zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
+
+    Ok(fund)
 }

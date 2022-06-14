@@ -4,7 +4,7 @@ use angel_core::messages::index_fund::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{AllianceMember, IndexFund, SplitDetails};
-use angel_core::utils::{is_accepted_token, percentage_checks};
+use angel_core::utils::{percentage_checks, validate_deposit_fund};
 use cosmwasm_std::{
     attr, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
     Response, StdError, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
@@ -811,28 +811,4 @@ mod test {
             sc_split.default
         );
     }
-}
-
-fn validate_deposit_fund(
-    deps: Deps,
-    registrar_contract: &str,
-    fund: Asset,
-) -> Result<Asset, ContractError> {
-    let token = match fund.info {
-        AssetInfo::NativeToken { ref denom } => denom.to_string(),
-        AssetInfo::Token { ref contract_addr } => contract_addr.to_string(),
-    };
-
-    if !is_accepted_token(deps, &token, registrar_contract)? {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: format!("Not accepted token: {}", token),
-        }));
-    }
-
-    // Cannot deposit zero amount
-    if fund.amount.is_zero() {
-        return Err(ContractError::InvalidZeroAmount {});
-    }
-
-    Ok(fund)
 }

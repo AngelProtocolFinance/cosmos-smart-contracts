@@ -4,6 +4,7 @@ use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use terraswap::asset::AssetInfo;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {}
@@ -28,18 +29,18 @@ pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
-    // Pull funds from investment vault(s) to the Endowment Beneficiary as <token_denom>
-    // NOTE: Here, we assume that the user wants to withdraw "native token"
-    //       Hence, it receives the "token_denom" for building message.
-    //       This part is prone to future change so that it can also handle "cw20 token".
+    // Pull funds from investment vault(s) to the Endowment Beneficiary as <asset_info>
+    // NOTE: Atm, the "vault" logic is not fixed.
+    //       Hence, it SHOULD be updated when the "vault" logic is implemented.
     Withdraw {
         sources: Vec<FundingSource>,
         beneficiary: String,
-        token_denom: String,
+        asset_info: AssetInfo,
     },
     WithdrawLiquid {
         liquid_amount: Uint128,
         beneficiary: String,
+        asset_info: AssetInfo,
     },
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt {},
