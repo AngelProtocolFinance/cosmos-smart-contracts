@@ -89,6 +89,7 @@ pub fn instantiate(
             withdraw_fee: msg.withdraw_fee,
             deposit_fee: msg.deposit_fee,
             aum_fee: msg.aum_fee,
+            parent: msg.parent,
         },
     )?;
 
@@ -272,6 +273,9 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::CreateChildEndowment(msg) => {
+            executers::create_child_endowment(deps, env, info, msg)
+        }
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
             executers::update_endowment_settings(deps, env, info, msg)
         }

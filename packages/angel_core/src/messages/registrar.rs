@@ -90,6 +90,7 @@ pub struct CreateEndowmentMsg {
     pub user_reserve_token: Option<String>,
     pub user_reserve_ust_lp_pair_contract: Option<String>,
     pub settings_controller: Option<SettingsController>,
+    pub parent: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
