@@ -243,9 +243,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetTxRecords {
             sender,
             recipient,
-            denom,
+            asset_info,
         } => to_binary(&queriers::query_transactions(
-            deps, sender, recipient, denom,
+            deps, sender, recipient, asset_info,
         )?),
     }
 }

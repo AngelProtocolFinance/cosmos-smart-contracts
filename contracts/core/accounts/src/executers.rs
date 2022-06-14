@@ -306,13 +306,14 @@ pub fn vault_receipt(
             // normal vault receipt if closing_endowment has not been set to TRUE
             if !state.closing_endowment {
                 let asset = match returned_token.info {
-                    AssetInfo::NativeToken { denom } => {
-                        state.balances.locked_balance.get_denom_amount(denom)
-                    }
-                    AssetInfo::Token { contract_addr } => state
+                    AssetInfo::NativeToken { ref denom } => state
                         .balances
                         .locked_balance
-                        .get_token_amount(deps.api.addr_validate(&contract_addr)?),
+                        .get_denom_amount(denom.to_string()),
+                    AssetInfo::Token { ref contract_addr } => state
+                        .balances
+                        .locked_balance
+                        .get_token_amount(deps.api.addr_validate(&contract_addr.to_string())?),
                 };
                 submessages = deposit_to_vaults(
                     deps.as_ref(),
@@ -323,11 +324,11 @@ pub fn vault_receipt(
 
                 // set token balances available to zero for locked
                 let balance = match returned_token.info {
-                    AssetInfo::NativeToken { denom } => Balance::from(vec![Coin {
+                    AssetInfo::NativeToken { ref denom } => Balance::from(vec![Coin {
                         amount: Uint128::zero(),
                         denom: denom.to_string(),
                     }]),
-                    AssetInfo::Token { contract_addr } => Balance::Cw20(Cw20CoinVerified {
+                    AssetInfo::Token { ref contract_addr } => Balance::Cw20(Cw20CoinVerified {
                         address: deps.api.addr_validate(&contract_addr)?,
                         amount: Uint128::zero(),
                     }),
@@ -336,11 +337,6 @@ pub fn vault_receipt(
             } else {
                 // this is a vault receipt triggered by closing an Endowment
                 // need to handle beneficiary vs index fund submsg actions taken
-                // let balance = Coin {
-                //     denom: deposit_token_denom.to_string(),
-                //     amount: state.balances.locked_balance.get_usd().amount
-                //         + state.balances.liquid_balance.get_usd().amount,
-                // };
                 let asset = match returned_token.info {
                     AssetInfo::NativeToken { denom } => Balance::from(vec![Coin {
                         amount: state
@@ -701,14 +697,14 @@ pub fn withdraw_liquid(
     let mut state = STATE.load(deps.storage)?;
     // check that the amount in liquid balance is sufficient to cover request
     let amount = match asset_info {
-        AssetInfo::NativeToken { denom } => {
+        AssetInfo::NativeToken { ref denom } => {
             state
                 .balances
                 .liquid_balance
                 .get_denom_amount(denom.to_string())
                 .amount
         }
-        AssetInfo::Token { contract_addr } => {
+        AssetInfo::Token { ref contract_addr } => {
             state
                 .balances
                 .liquid_balance
@@ -722,12 +718,12 @@ pub fn withdraw_liquid(
 
     // Update the Liquid Balance in STATE
     let balance = match asset_info {
-        AssetInfo::NativeToken { denom } => Balance::from(vec![Coin {
+        AssetInfo::NativeToken { ref denom } => Balance::from(vec![Coin {
             denom: denom.to_string(),
             amount: liquid_amount,
         }]),
-        AssetInfo::Token { contract_addr } => Balance::Cw20(Cw20CoinVerified {
-            address: deps.api.addr_validate(&contract_addr)?,
+        AssetInfo::Token { ref contract_addr } => Balance::Cw20(Cw20CoinVerified {
+            address: deps.api.addr_validate(&contract_addr.to_string())?,
             amount: liquid_amount,
         }),
     };
@@ -737,13 +733,13 @@ pub fn withdraw_liquid(
     // Send "asset" to the Beneficiary via BankMsg::Send
     let mut messages: Vec<SubMsg> = vec![];
     match asset_info {
-        AssetInfo::NativeToken { denom } => {
+        AssetInfo::NativeToken { ref denom } => {
             messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
                 to_address: beneficiary.to_string(),
-                amount: coins(liquid_amount.u128(), denom),
+                amount: coins(liquid_amount.u128(), denom.to_string()),
             })))
         }
-        AssetInfo::Token { contract_addr } => {
+        AssetInfo::Token { ref contract_addr } => {
             messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: contract_addr.to_string(),
                 msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {

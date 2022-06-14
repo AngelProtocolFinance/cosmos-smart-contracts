@@ -157,6 +157,6 @@ pub enum QueryMsg {
     GetTxRecords {
         sender: Option<String>,
         recipient: Option<String>,
-        denom: Option<String>,
+        asset_info: AssetInfo,
     },
 }
