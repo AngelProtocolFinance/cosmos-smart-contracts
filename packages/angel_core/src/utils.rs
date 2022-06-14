@@ -279,20 +279,16 @@ pub fn deposit_to_vaults(
 pub fn is_accepted_token(
     deps: Deps,
     token: &str,
-    token_type: &str,
     registrar_contract: &str,
 ) -> Result<bool, ContractError> {
     let config_response: RegistrarConfigResponse = deps
         .querier
         .query_wasm_smart(registrar_contract.to_string(), &RegistrarQuerier::Config {})?;
 
-    match token_type {
-        "native" => Ok(config_response
+    Ok(config_response
+        .accepted_tokens
+        .native_valid(token.to_string())
+        || config_response
             .accepted_tokens
-            .native_valid(token.to_string())),
-        "cw20" => Ok(config_response
-            .accepted_tokens
-            .cw20_valid(token.to_string())),
-        _ => Ok(false),
-    }
+            .cw20_valid(token.to_string()))
 }

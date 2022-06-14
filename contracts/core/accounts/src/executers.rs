@@ -451,13 +451,6 @@ pub fn deposit(
         }));
     }
 
-    // Get the split to liquid parameters set in the Registrar SC
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
-        }))?;
-
     let deposit_amount: Coin = Coin {
         denom: deposit_token_denom.to_string(),
         amount: info
@@ -471,6 +464,13 @@ pub fn deposit(
     if deposit_amount.amount.is_zero() {
         return Err(ContractError::EmptyBalance {});
     }
+
+    // Get the split to liquid parameters set in the Registrar SC
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
 
     let mut locked_split = msg.locked_percentage;
     let mut liquid_split = msg.liquid_percentage;
