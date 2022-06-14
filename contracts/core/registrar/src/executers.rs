@@ -238,7 +238,7 @@ pub fn create_endowment(
     // Pull the list of Endowments and ensure that the calling sender is:
     // 1. The owner of an Endowment
     // 2. The Endowment is Approved & a Normal Endowment type (ie. NOT a Charity)
-    // If above are satisfied, set parent field as the msg sender (ie. the Endowment)
+    // If above are satisfied, set parent field as the msg sender (ie. the Endowment MultiSig)
     let mut parent: Option<Addr> = None;
     if msg.parent {
         let endowments: Vec<EndowmentEntry> = read_registry_entries(deps.storage)
@@ -249,10 +249,7 @@ pub fn create_endowment(
             .collect();
 
         if endowments.len() > 0 {
-            parent = Some(
-                deps.api
-                    .addr_validate(&endowments[0].owner.clone().unwrap())?,
-            );
+            parent = Some(info.sender);
         }
     };
 

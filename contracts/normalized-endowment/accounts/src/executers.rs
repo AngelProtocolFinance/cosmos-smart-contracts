@@ -11,8 +11,7 @@ use angel_core::messages::index_fund::DepositMsg as IndexFundDepositMsg;
 use angel_core::messages::index_fund::ExecuteMsg as IndexFundExecuter;
 use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
 use angel_core::messages::registrar::{
-    CreateEndowmentMsg, ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier,
-    UpdateEndowmentEntryMsg,
+    ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentEntryMsg,
 };
 use angel_core::messages::vault::{
     AccountTransferMsg, AccountWithdrawMsg, ExecuteMsg as VaultExecuteMsg,
@@ -179,27 +178,6 @@ pub fn new_donation_match_reply(
         }
         SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
-}
-
-pub fn create_child_endowment(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: CreateEndowmentMsg,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    Ok(Response::new()
-        .add_attribute("action", "create_child_endowment")
-        .add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarExecuter::CreateEndowment(msg))?,
-            funds: vec![],
-        }))))
 }
 
 pub fn update_owner(

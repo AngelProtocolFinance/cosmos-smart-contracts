@@ -1,5 +1,4 @@
 use crate::messages::dao_token::CurveType;
-use crate::messages::registrar::CreateEndowmentMsg;
 use crate::messages::vault::AccountTransferMsg;
 use crate::structs::{
     EndowmentFee, FundingSource, Profile, RebalanceDetails, SettingsController, StrategyComponent,
@@ -92,8 +91,6 @@ pub enum ExecuteMsg {
     },
     // AUM harvest
     HarvestAum {},
-    // Allows Endowment owner to create a new Child Endowment, over which they are the Parent
-    CreateChildEndowment(CreateEndowmentMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
