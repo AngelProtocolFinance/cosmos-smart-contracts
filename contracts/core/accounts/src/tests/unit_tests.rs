@@ -49,6 +49,7 @@ fn test_proper_initialization() {
         maturity_height: None,
         profile: profile,
         cw4_members: vec![],
+        kyc_donors_only: true,
     };
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();
@@ -97,6 +98,7 @@ fn test_get_config() {
         maturity_height: None,
         profile: profile,
         cw4_members: vec![],
+        kyc_donors_only: true,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -147,6 +149,7 @@ fn test_update_endowment_settings() {
         maturity_height: None,
         profile: profile,
         cw4_members: vec![],
+        kyc_donors_only: false,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -156,6 +159,7 @@ fn test_update_endowment_settings() {
     // update the endowment owner and beneficiary
     let msg = UpdateEndowmentSettingsMsg {
         owner: charity_addr.clone(),
+        kyc_donors_only: true,
     };
     let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth "));
     let env = mock_env();
@@ -171,6 +175,7 @@ fn test_update_endowment_settings() {
     // Not just anyone can update the Endowment's settings! Only Endowment owner can.
     let msg = UpdateEndowmentSettingsMsg {
         owner: charity_addr.clone(),
+        kyc_donors_only: true,
     };
     let info = mock_info(pleb.as_ref(), &coins(100000, "earth "));
     let env = mock_env();
@@ -228,6 +233,7 @@ fn test_change_registrar_contract() {
         maturity_height: None,
         profile: profile,
         cw4_members: vec![],
+        kyc_donors_only: true,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -307,6 +313,7 @@ fn test_change_admin() {
         maturity_height: None,
         profile: profile,
         cw4_members: vec![],
+        kyc_donors_only: true,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -386,6 +393,7 @@ fn test_update_strategy() {
         maturity_height: None,
         profile: profile,
         cw4_members: vec![],
+        kyc_donors_only: true,
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -507,6 +515,7 @@ fn test_update_endowment_profile() {
         maturity_height: None,
         profile: profile,
         cw4_members: vec![],
+        kyc_donors_only: true,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -638,6 +647,7 @@ fn test_donate() {
         maturity_height: None,
         profile: profile,
         cw4_members: vec![],
+        kyc_donors_only: true,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -673,7 +683,7 @@ fn test_donate() {
         QueryMsg::GetTxRecords {
             sender: None,
             recipient: None,
-            denom: None,
+            asset_info: terraswap::asset::AssetInfo::NativeToken { denom: "uluna".to_string() },
         },
     )
     .unwrap();
@@ -725,6 +735,7 @@ fn test_withdraw() {
         maturity_height: None,
         profile: profile,
         cw4_members: vec![],
+        kyc_donors_only: true,
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -752,7 +763,7 @@ fn test_withdraw() {
     let withdraw_msg = ExecuteMsg::Withdraw {
         sources: vec![],
         beneficiary: "beneficiary".to_string(),
-        token_denom: "uluna".to_string(),
+        asset_info: terraswap::asset::AssetInfo::NativeToken { denom: "uluna".to_string() },
     };
     let res = execute(deps.as_mut(), mock_env(), info, withdraw_msg).unwrap();
     assert_eq!(res.messages.len(), 0);
