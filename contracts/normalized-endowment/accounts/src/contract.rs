@@ -89,6 +89,7 @@ pub fn instantiate(
             withdraw_fee: msg.withdraw_fee,
             deposit_fee: msg.deposit_fee,
             aum_fee: msg.aum_fee,
+            parent: msg.parent,
         },
     )?;
 

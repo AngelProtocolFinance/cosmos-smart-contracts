@@ -1,9 +1,9 @@
 use crate::messages::dao_token::CurveType;
+use crate::messages::vault::AccountTransferMsg;
 use crate::structs::{
-    EndowmentFee, FundingSource, RebalanceDetails, SettingsController, StrategyComponent,
+    EndowmentFee, FundingSource, Profile, RebalanceDetails, SettingsController, StrategyComponent,
 };
-use crate::{messages::vault::AccountTransferMsg, structs::Profile};
-use cosmwasm_std::Decimal;
+use cosmwasm_std::{Addr, Decimal};
 use cw4::Member;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -44,6 +44,7 @@ pub struct InstantiateMsg {
     pub user_reserve_token: Option<String>, // Address of cw20 token, which user wants to use as reserve token in "donation_matching"
     pub user_reserve_ust_lp_pair_contract: Option<String>, // Address of lp pair contract(cw20 token above - UST)
     pub settings_controller: Option<SettingsController>,
+    pub parent: Option<Addr>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
