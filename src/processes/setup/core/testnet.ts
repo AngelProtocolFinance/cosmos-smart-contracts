@@ -159,6 +159,10 @@ async function setup(
       tax_rate: tax_rate,
       default_vault: undefined,
       split_to_liquid: undefined,
+      accepted_tokens: {
+        native: ["ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4", "uluna"],
+        cw20: [],
+      }
     }
   );
   registrar = registrarResult.logs[0].events
@@ -308,6 +312,7 @@ async function createEndowments(): Promise<void> {
           endow_type: "Charity",
         },
         cw4_members: [],
+        kyc_donors_only: false,
       },
     }),
   ]);
@@ -356,6 +361,7 @@ async function createEndowments(): Promise<void> {
           endow_type: "Charity",
         },
         cw4_members: [],
+        kyc_donors_only: false,
       },
     }),
   ]);
@@ -404,6 +410,7 @@ async function createEndowments(): Promise<void> {
           endow_type: "Charity",
         },
         cw4_members: [],
+        kyc_donors_only: false,
       },
     }),
   ]);
@@ -452,6 +459,7 @@ async function createEndowments(): Promise<void> {
           endow_type: "Charity",
         },
         cw4_members: [],
+        kyc_donors_only: false,
       },
     }),
   ]);
