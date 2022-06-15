@@ -18,7 +18,7 @@ use angel_core::structs::{
     TransactionRecord,
 };
 use angel_core::utils::{
-    check_splits, deposit_to_vaults, is_accepted_token, redeem_from_vaults, validate_deposit_fund,
+    check_splits, deposit_to_vaults, redeem_from_vaults, validate_deposit_fund,
     withdraw_from_vaults,
 };
 use cosmwasm_std::{
@@ -481,7 +481,7 @@ pub fn vault_receipt(
 pub fn deposit(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     sender_addr: Addr,
     msg: DepositMsg,
     fund: Asset,
@@ -498,11 +498,6 @@ pub fn deposit(
     // check that the split %s sum to 1
     if msg.locked_percentage + msg.liquid_percentage != Decimal::one() {
         return Err(ContractError::InvalidSplit {});
-    }
-
-    // only accept max of 1 deposit coin/token per donation
-    if info.funds.len() != 1 {
-        return Err(ContractError::InvalidCoinsDeposited {});
     }
 
     // Check the token with "accepted_tokens"
@@ -526,20 +521,12 @@ pub fn deposit(
         Some(addr) => addr,
         None => return Err(ContractError::ContractNotConfigured {}),
     };
-    if sender_addr != index_fund {
+    if sender_addr.to_string() != index_fund {
         let new_splits = check_splits(registrar_split_configs, locked_split, liquid_split);
         locked_split = new_splits.0;
         liquid_split = new_splits.1;
     }
 
-    // let locked_amount = Coin {
-    //     amount: deposit_amount.amount * locked_split,
-    //     denom: deposit_token_denom.to_string(),
-    // };
-    // let liquid_amount = Coin {
-    //     amount: deposit_amount.amount * liquid_split,
-    //     denom: deposit_token_denom.to_string(),
-    // };
     let locked_amount = Asset {
         info: deposit_token.info.clone(),
         amount: deposit_amount * locked_split,
@@ -555,7 +542,7 @@ pub fn deposit(
     // note the tx in records
     let tx_record = TransactionRecord {
         block: env.block.height,
-        sender: sender_addr,
+        sender: sender_addr.clone(),
         recipient: None,
         amount: deposit_amount,
         asset_info: deposit_token.info,
@@ -606,7 +593,7 @@ pub fn deposit(
     Ok(Response::new()
         .add_submessages(deposit_messages)
         .add_attribute("action", "account_deposit")
-        .add_attribute("sender", info.sender.to_string())
+        .add_attribute("sender", sender_addr)
         .add_attribute("deposit_amount", deposit_amount.to_string()))
 }
 

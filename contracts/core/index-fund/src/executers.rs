@@ -343,7 +343,7 @@ pub fn update_alliance_member(
 pub fn deposit(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     sender_addr: Addr,
     msg: DepositMsg,
     fund: Asset,

@@ -683,7 +683,9 @@ fn test_donate() {
         QueryMsg::GetTxRecords {
             sender: None,
             recipient: None,
-            asset_info: terraswap::asset::AssetInfo::NativeToken { denom: "uluna".to_string() },
+            asset_info: terraswap::asset::AssetInfo::NativeToken {
+                denom: "uluna".to_string(),
+            },
         },
     )
     .unwrap();
@@ -763,7 +765,9 @@ fn test_withdraw() {
     let withdraw_msg = ExecuteMsg::Withdraw {
         sources: vec![],
         beneficiary: "beneficiary".to_string(),
-        asset_info: terraswap::asset::AssetInfo::NativeToken { denom: "uluna".to_string() },
+        asset_info: terraswap::asset::AssetInfo::NativeToken {
+            denom: "uluna".to_string(),
+        },
     };
     let res = execute(deps.as_mut(), mock_env(), info, withdraw_msg).unwrap();
     assert_eq!(res.messages.len(), 0);
