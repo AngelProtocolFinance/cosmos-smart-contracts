@@ -1,15 +1,14 @@
 use crate::state::{
-    endow_type_fees_write, read_vaults, registry_read, registry_store, vault_read, vault_store,
-    CONFIG,
+    endow_type_fees_write, read_registry_entries, registry_read, registry_store, vault_read,
+    vault_store, CONFIG,
 };
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    attr, to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn,
-    Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
+    attr, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
+    SubMsg, SubMsgResult, WasmMsg,
 };
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
@@ -226,7 +225,7 @@ pub fn update_config(
 pub fn create_endowment(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: CreateEndowmentMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -234,6 +233,25 @@ pub fn create_endowment(
     if config.accounts_code_id == 0 {
         return Err(ContractError::ContractNotConfigured {});
     }
+
+    // Only if msg.parent == True:
+    // Pull the list of Endowments and ensure that the calling sender is:
+    // 1. The owner of an Endowment
+    // 2. The Endowment is Approved & a Normal Endowment type (ie. NOT a Charity)
+    // If above are satisfied, set parent field as the msg sender (ie. the Endowment MultiSig)
+    let mut parent: Option<Addr> = None;
+    if msg.parent {
+        let endowments: Vec<EndowmentEntry> = read_registry_entries(deps.storage)
+            .unwrap()
+            .into_iter()
+            .filter(|e| e.owner == Some(info.sender.to_string()))
+            .filter(|e| e.status.to_string() == "Approved")
+            .collect();
+
+        if endowments.len() > 0 {
+            parent = Some(info.sender);
+        }
+    };
 
     let wasm_msg = WasmMsg::Instantiate {
         code_id: config.accounts_code_id,
@@ -268,6 +286,8 @@ pub fn create_endowment(
             deposit_fee: msg.deposit_fee,
             withdraw_fee: msg.withdraw_fee,
             aum_fee: msg.aum_fee,
+            settings_controller: msg.settings_controller,
+            parent,
         })?,
         funds: vec![],
     };
@@ -363,10 +383,10 @@ pub fn vault_update_status(
 pub fn new_accounts_reply(
     deps: DepsMut,
     _env: Env,
-    msg: ContractResult<SubMsgExecutionResponse>,
+    msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
     match msg {
-        ContractResult::Ok(subcall) => {
+        SubMsgResult::Ok(subcall) => {
             let mut endowment_addr = String::from("");
             let mut endowment_name = String::from("");
             let mut endowment_owner = String::from("");
@@ -427,7 +447,7 @@ pub fn new_accounts_reply(
                 attr("image", endowment_image),
             ]))
         }
-        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
 }
 

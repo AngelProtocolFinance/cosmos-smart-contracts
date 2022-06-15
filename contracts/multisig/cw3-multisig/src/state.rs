@@ -2,10 +2,10 @@ use angel_core::messages::cw3_multisig::Threshold;
 use cosmwasm_std::{
     Addr, BlockInfo, CosmosMsg, Decimal, Empty, StdError, StdResult, Storage, Uint128,
 };
-use cw0::{Duration, Expiration};
 use cw3::{Status, Vote};
 use cw4::Cw4Contract;
-use cw_storage_plus::{Item, Map, U64Key};
+use cw_storage_plus::{Item, Map};
+use cw_utils::{Duration, Expiration};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
@@ -151,8 +151,8 @@ pub const CONFIG: Item<Config> = Item::new("config");
 pub const PROPOSAL_COUNT: Item<u64> = Item::new("proposal_count");
 
 // multiple-item map
-pub const BALLOTS: Map<(U64Key, &Addr), Ballot> = Map::new("votes");
-pub const PROPOSALS: Map<U64Key, Proposal> = Map::new("proposals");
+pub const BALLOTS: Map<(u64, &Addr), Ballot> = Map::new("votes");
+pub const PROPOSALS: Map<u64, Proposal> = Map::new("proposals");
 
 pub fn next_id(store: &mut dyn Storage) -> StdResult<u64> {
     let id: u64 = PROPOSAL_COUNT.may_load(store)?.unwrap_or_default() + 1;

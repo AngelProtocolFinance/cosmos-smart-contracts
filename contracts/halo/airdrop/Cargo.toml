@@ -22,16 +22,15 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-halo-token = { version = "2.0.0", path = "../../../packages/halo_token" }
-cosmwasm-std = { version = "0.16.0" }
-cosmwasm-storage = { version = "0.16.0" }
-cw-storage-plus = { version = "0.9.0" }
-cw20 = { version = "0.8.0" } 
+angel-core = { path = "../../../packages/angel_core", feature=["utils"]}
+halo-token = { path = "../../../packages/halo_token" }
+cosmwasm-std = "1.0.0"
+cosmwasm-storage = "1.0.0"
+cw-storage-plus = "0.13.2"
+cw20 = "0.13.2"
 hex = "0.4"
-schemars = "0.8.1"
-sha3 = { version = "0.9.1", default-features = false }
-serde = { version = "1.0.103", default-features = false, features = ["derive"] }
-thiserror = { version = "1.0.20" }
-
-[dev-dependencies]
-cosmwasm-schema = "0.16.0"
+schemars = "0.8.10"
+sha3 = "0.9.1"
+serde = "1.0.137"
+thiserror = "1.0.24"
+cosmwasm-schema = "1.0.0"

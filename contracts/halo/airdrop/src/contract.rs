@@ -1,15 +1,12 @@
 #[cfg(not(feature = "library"))]
-use cosmwasm_std::entry_point;
-
 use crate::error::ContractError;
 use crate::state::{
     read_claimed, read_config, read_latest_stage, read_merkle_root, store_claimed, store_config,
     store_latest_stage, store_merkle_root, Config,
 };
-
 use cosmwasm_std::{
-    to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult, Uint128,
-    WasmMsg,
+    entry_point, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response,
+    StdResult, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use halo_token::airdrop::{

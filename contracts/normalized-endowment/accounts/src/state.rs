@@ -1,9 +1,8 @@
 use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, EndowmentFee, Profile, RebalanceDetails, StrategyComponent,
-    TransactionRecord,
+    AcceptedTokens, BalanceInfo, EndowmentFee, Profile, RebalanceDetails, SettingsController,
+    StrategyComponent, TransactionRecord,
 };
-use cosmwasm_bignumber::Decimal256;
-use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Decimal256, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -19,6 +18,7 @@ pub struct Config {
     pub pending_redemptions: Option<u64>,
     pub last_earnings_harvest: u64,
     pub last_harvest_fx: Option<Decimal256>,
+    pub settings_controller: SettingsController,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -54,6 +54,7 @@ pub struct Endowment {
     pub deposit_fee: Option<EndowmentFee>, // Deposit Fee
     pub aum_fee: Option<EndowmentFee>, // AUM(Assets Under Management) Fee
     pub donation_matching_contract: Option<Addr>, // donation matching contract address
+    pub parent: Option<Addr>,        // Address of the Parent Endowment contract
 }
 
 impl Endowment {

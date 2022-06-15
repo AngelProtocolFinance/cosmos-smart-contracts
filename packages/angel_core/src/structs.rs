@@ -1,9 +1,81 @@
-use cosmwasm_bignumber::Decimal256;
-use cosmwasm_std::{Addr, Coin, Decimal, SubMsg, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct SettingsPermissions {
+    owner_controlled: bool,
+    gov_controlled: bool,
+    modifiable_after_init: bool,
+}
+
+impl SettingsPermissions {
+    pub fn default() -> Self {
+        SettingsPermissions {
+            owner_controlled: true,
+            gov_controlled: false,
+            modifiable_after_init: true,
+        }
+    }
+
+    pub fn can_change(&self, sender: &Addr, owner: &Addr, gov: Option<&Addr>) -> bool {
+        if sender == owner && self.owner_controlled
+            || !gov.is_none() && self.gov_controlled && sender == gov.unwrap()
+        {
+            if self.modifiable_after_init {
+                return true;
+            }
+        }
+        return false;
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct SettingsController {
+    pub strategies: SettingsPermissions,
+    pub whitelisted_beneficiaries: SettingsPermissions,
+    pub whitelisted_contributors: SettingsPermissions,
+    pub withdraw_before_maturity: SettingsPermissions,
+    pub maturity_time: SettingsPermissions,
+    pub maturity_height: SettingsPermissions,
+    pub locked_endowment_configs: SettingsPermissions,
+    pub split_max: SettingsPermissions,
+    pub split_min: SettingsPermissions,
+    pub split_default: SettingsPermissions,
+    pub beneficiary: SettingsPermissions,
+    pub profile: SettingsPermissions,
+    pub cw4_members: SettingsPermissions,
+    pub earnings_fee: SettingsPermissions,
+    pub withdraw_fee: SettingsPermissions,
+    pub deposit_fee: SettingsPermissions,
+    pub aum_fee: SettingsPermissions,
+}
+
+impl SettingsController {
+    pub fn default() -> Self {
+        SettingsController {
+            strategies: SettingsPermissions::default(),
+            whitelisted_beneficiaries: SettingsPermissions::default(),
+            whitelisted_contributors: SettingsPermissions::default(),
+            withdraw_before_maturity: SettingsPermissions::default(),
+            maturity_time: SettingsPermissions::default(),
+            maturity_height: SettingsPermissions::default(),
+            locked_endowment_configs: SettingsPermissions::default(),
+            split_max: SettingsPermissions::default(),
+            split_min: SettingsPermissions::default(),
+            split_default: SettingsPermissions::default(),
+            beneficiary: SettingsPermissions::default(),
+            profile: SettingsPermissions::default(),
+            cw4_members: SettingsPermissions::default(),
+            earnings_fee: SettingsPermissions::default(),
+            withdraw_fee: SettingsPermissions::default(),
+            deposit_fee: SettingsPermissions::default(),
+            aum_fee: SettingsPermissions::default(),
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct BalanceResponse {

@@ -56,7 +56,7 @@ fn increase_env_time(env: &mut Env, increase_time: u64) {
 pub fn one_depositor_query_staker() {
     let mut env = mock_env_time(SECONDS_PER_WEEK);
 
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     mock_instantiate(deps.as_mut(), env.clone());
     mock_register_contracts(deps.as_mut(), env.clone());
@@ -287,7 +287,7 @@ pub fn one_depositor_query_staker() {
 #[test]
 pub fn voting_power_consistency() {
     let mut env = mock_env_time(SECONDS_PER_WEEK);
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     mock_instantiate(deps.as_mut(), env.clone());
     mock_register_contracts(deps.as_mut(), env.clone());
@@ -342,7 +342,7 @@ pub fn voting_power_consistency() {
 pub fn expired_at_edge() {
     // Set the time to right before the next week starts
     let env = mock_env_time(SECONDS_PER_WEEK - 1);
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     mock_instantiate(deps.as_mut(), env.clone());
     mock_register_contracts(deps.as_mut(), env.clone());
@@ -385,7 +385,7 @@ pub fn test_underflow_overflow() {
     // Set the time to right before the next week starts
     let mut env = mock_env_time(52 * 100 * SECONDS_PER_WEEK);
 
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     mock_instantiate(deps.as_mut(), env.clone());
     mock_register_contracts(deps.as_mut(), env.clone());
@@ -440,7 +440,7 @@ pub fn test_underflow_overflow() {
 pub fn test_create_lock_validation() {
     // Set the time to right before the next week starts
     let env = mock_env_time(SECONDS_PER_WEEK - 1);
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     mock_instantiate(deps.as_mut(), env.clone());
     mock_register_contracts(deps.as_mut(), env.clone());
@@ -567,7 +567,7 @@ pub fn test_create_lock_validation() {
 pub fn test_increase_end_lock_time_validation() {
     // Set the time to right before the next week starts
     let env = mock_env_time(SECONDS_PER_WEEK);
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     mock_instantiate(deps.as_mut(), env.clone());
     mock_register_contracts(deps.as_mut(), env.clone());
@@ -661,7 +661,7 @@ pub fn test_increase_end_lock_time_validation() {
 pub fn test_increase_lock_amount_validation() {
     // Set the time to right before the next week starts
     let env = mock_env_time(SECONDS_PER_WEEK - 1);
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     mock_instantiate(deps.as_mut(), env.clone());
     mock_register_contracts(deps.as_mut(), env.clone());
@@ -751,7 +751,7 @@ pub fn test_increase_lock_amount_validation() {
 pub fn test_create_lock_user_locked_balances_update() {
     // Set the time to right before the next week starts
     let env = mock_env_time(SECONDS_PER_WEEK);
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     mock_instantiate(deps.as_mut(), env.clone());
     mock_register_contracts(deps.as_mut(), env.clone());
@@ -802,7 +802,7 @@ pub fn test_create_lock_user_locked_balances_update() {
 pub fn test_increase_amount_user_locked_balances_update() {
     // Set the time to right before the next week starts
     let mut env = mock_env_time(SECONDS_PER_WEEK);
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     mock_instantiate(deps.as_mut(), env.clone());
     mock_register_contracts(deps.as_mut(), env.clone());
@@ -862,7 +862,7 @@ pub fn test_increase_amount_user_locked_balances_update() {
 pub fn test_increase_end_lock_time_user_locked_balances_update() {
     // Set the time to right before the next week starts
     let mut env = mock_env_time(SECONDS_PER_WEEK);
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     mock_instantiate(deps.as_mut(), env.clone());
     mock_register_contracts(deps.as_mut(), env.clone());
@@ -920,7 +920,7 @@ pub fn test_increase_end_lock_time_user_locked_balances_update() {
 pub fn test_full_withdraw_user_locked_balances_update() {
     // Set the time to right before the next week starts
     let mut env = mock_env_time(SECONDS_PER_WEEK);
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     mock_instantiate(deps.as_mut(), env.clone());
     mock_register_contracts(deps.as_mut(), env.clone());
@@ -986,7 +986,7 @@ pub fn test_full_withdraw_user_locked_balances_update() {
 pub fn test_partial_withdraw_user_locked_balances_update() {
     // Set the time to right before the next week starts
     let mut env = mock_env_time(SECONDS_PER_WEEK);
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     mock_instantiate(deps.as_mut(), env.clone());
     mock_register_contracts(deps.as_mut(), env.clone());
@@ -1059,7 +1059,7 @@ pub fn two_depositors_query_total_balance() {
     let mut env = mock_env_time(SECONDS_PER_WEEK);
     // Create a lock
 
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     mock_instantiate(deps.as_mut(), env.clone());
     mock_register_contracts(deps.as_mut(), env.clone());

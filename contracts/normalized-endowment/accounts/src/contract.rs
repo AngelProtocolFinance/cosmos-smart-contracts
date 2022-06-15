@@ -11,13 +11,14 @@ use angel_core::messages::donation_match::InstantiateMsg as DonationMatchInstant
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::EndowmentType;
-use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
+use angel_core::structs::{
+    AcceptedTokens, BalanceInfo, RebalanceDetails, SettingsController, StrategyComponent,
+};
 use cosmwasm_std::{
     attr, entry_point, from_slice, to_binary, to_vec, Binary, CosmosMsg, Decimal, Deps, DepsMut,
     Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
     WasmMsg, WasmQuery,
 };
-
 use cw2::set_contract_version;
 
 // version info for future migration info
@@ -45,6 +46,10 @@ pub fn instantiate(
             pending_redemptions: None,
             last_earnings_harvest: env.block.height,
             last_harvest_fx: None,
+            settings_controller: match msg.settings_controller {
+                Some(controller) => controller,
+                None => SettingsController::default(),
+            },
         },
     )?;
 
@@ -84,6 +89,7 @@ pub fn instantiate(
             withdraw_fee: msg.withdraw_fee,
             deposit_fee: msg.deposit_fee,
             aum_fee: msg.aum_fee,
+            parent: msg.parent,
         },
     )?;
 
@@ -358,6 +364,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
             pending_redemptions: old_config.pending_redemptions,
             last_earnings_harvest: msg.last_earnings_harvest,
             last_harvest_fx: None,
+            settings_controller: SettingsController::default(),
         })?,
     );
 

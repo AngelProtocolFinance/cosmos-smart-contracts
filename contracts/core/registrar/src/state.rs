@@ -1,5 +1,4 @@
 use angel_core::structs::{EndowmentEntry, EndowmentType, SplitDetails, YieldVault};
-use angel_core::utils::calc_range_start_addr;
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
@@ -99,9 +98,9 @@ pub fn read_vaults(
     start_after: Option<Addr>,
     limit: Option<u64>,
 ) -> StdResult<Vec<YieldVault>> {
-    let start = calc_range_start_addr(start_after);
+    let start = start_after.map(|s| Bound::ExclusiveRaw(s.as_bytes().to_vec()));
     PREFIX_PORTAL
-        .range(storage, start.map(Bound::Inclusive), None, Order::Ascending)
+        .range(storage, start, None, Order::Ascending)
         .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
         .map(|item| {
             let (_, v) = item?;

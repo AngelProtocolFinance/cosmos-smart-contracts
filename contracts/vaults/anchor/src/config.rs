@@ -1,5 +1,4 @@
 use angel_core::structs::BalanceInfo;
-use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
 use cosmwasm_storage::{ReadonlySingleton, Singleton};
 use cw_storage_plus::{Item, Map};

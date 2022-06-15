@@ -2,7 +2,9 @@ use crate::contract::{execute, instantiate, query, SECONDS_PER_WEEK};
 use crate::error::ContractError;
 use crate::mock_querier::mock_dependencies;
 use crate::state::{Config, State, CONFIG, STATE};
-use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
+use cosmwasm_std::testing::{
+    mock_dependencies_with_balances, mock_env, mock_info, MOCK_CONTRACT_ADDR,
+};
 use cosmwasm_std::{
     coins, from_binary, to_binary, Addr, Api, CosmosMsg, DepsMut, Env, SubMsg, Timestamp, Uint128,
     WasmMsg,
@@ -103,7 +105,7 @@ fn fail_distribute_dao_nothing_staked() {
     let env = mock_env_height(0, 10000);
     let info = mock_info(VOTING_TOKEN, &[]);
 
-    let distribute_msg = ExecuteMsg::DistributeGlow {};
+    let distribute_msg = ExecuteMsg::DistributeDaoToken {};
     let execute_res = execute(deps.as_mut(), env, info, distribute_msg);
 
     match execute_res {
@@ -115,6 +117,16 @@ fn fail_distribute_dao_nothing_staked() {
 #[test]
 fn fail_distribute_dao_nothing_to_distribute() {
     let mut deps = mock_dependencies(&[]);
+    // let mut deps = mock_dependencies_with_balances(&[
+    //     (
+    //         &VOTING_TOKEN.to_string(),
+    //         &[(&MOCK_CONTRACT_ADDR.to_string(), &Uint128::from(0_u128))],
+    //     ),
+    //     (
+    //         &VE_TOKEN.to_string(),
+    //         &[(&TEST_VOTER.to_string(), &Uint128::from(100_u128))],
+    //     ),
+    // ]);
     mock_instantiate(deps.as_mut());
     mock_register_contracts(deps.as_mut());
     let env = mock_env_height(0, 10000);
@@ -131,7 +143,7 @@ fn fail_distribute_dao_nothing_to_distribute() {
         ),
     ]);
 
-    let distribute_msg = ExecuteMsg::DistributeGlow {};
+    let distribute_msg = ExecuteMsg::DistributeDaoToken {};
     let execute_res = execute(deps.as_mut(), env, info, distribute_msg);
 
     match execute_res {
@@ -147,7 +159,6 @@ fn distribute_dao_to_voter() {
     mock_register_contracts(deps.as_mut());
     let mut env = mock_env_height(0, 1000000);
     let info = mock_info(VOTING_TOKEN, &[]);
-
     deps.querier.with_token_balances(&[
         (
             &VOTING_TOKEN.to_string(),
@@ -159,7 +170,7 @@ fn distribute_dao_to_voter() {
         ),
     ]);
 
-    let distribute_msg = ExecuteMsg::DistributeGlow {};
+    let distribute_msg = ExecuteMsg::DistributeDaoToken {};
     let _execute_res = execute(deps.as_mut(), env.clone(), info, distribute_msg).unwrap();
 
     // Increase the clock by a week to get things going
@@ -242,7 +253,7 @@ fn many_distribute_dao_to_voter() {
             ),
         ]);
 
-        let distribute_msg = ExecuteMsg::DistributeGlow {};
+        let distribute_msg = ExecuteMsg::DistributeDaoToken {};
         let _execute_res =
             execute(deps.as_mut(), env.clone(), info.clone(), distribute_msg).unwrap();
     }
@@ -342,7 +353,7 @@ fn many_distribute_dao_to_two_voters() {
             ),
         ]);
 
-        let distribute_msg = ExecuteMsg::DistributeGlow {};
+        let distribute_msg = ExecuteMsg::DistributeDaoToken {};
         let _execute_res =
             execute(deps.as_mut(), env.clone(), info.clone(), distribute_msg).unwrap();
     }

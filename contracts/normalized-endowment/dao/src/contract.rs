@@ -9,8 +9,8 @@ use crate::state::{
 };
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    attr, from_binary, to_binary, Binary, CanonicalAddr, Coin, CosmosMsg, Decimal, Deps, DepsMut,
-    Env, MessageInfo, Response, StdError, StdResult, Uint128, WasmMsg,
+    from_binary, to_binary, Addr, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
+    Response, StdError, StdResult, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw900::common::OrderBy;
@@ -19,9 +19,6 @@ use cw900::gov::{
     PollResponse, PollStatus, PollsResponse, QueryMsg, StateResponse, VoteOption, VoterInfo,
     VotersResponse, VotersResponseItem,
 };
-use terraswap::asset::{Asset, AssetInfo, PairInfo};
-use terraswap::pair::ExecuteMsg as TerraswapExecuteMsg;
-use terraswap::querier::{query_balance, query_pair_info};
 
 const MIN_TITLE_LENGTH: usize = 4;
 const MAX_TITLE_LENGTH: usize = 64;
@@ -41,10 +38,10 @@ pub fn instantiate(
     validate_threshold(msg.threshold)?;
 
     let config = Config {
-        dao_token: CanonicalAddr::from(vec![]),
-        ve_token: CanonicalAddr::from(vec![]),
-        terraswap_factory: CanonicalAddr::from(vec![]),
-        owner: deps.api.addr_canonicalize(info.sender.as_str())?,
+        owner: deps.api.addr_validate(info.sender.as_str())?,
+        dao_token: Addr::unchecked(""),
+        ve_token: Addr::unchecked(""),
+        terraswap_factory: Addr::unchecked(""),
         quorum: msg.quorum,
         threshold: msg.threshold,
         voting_period: msg.voting_period,
@@ -55,7 +52,7 @@ pub fn instantiate(
     };
 
     let state = State {
-        contract_addr: deps.api.addr_canonicalize(env.contract.address.as_str())?,
+        contract_addr: deps.api.addr_validate(env.contract.address.as_str())?,
         poll_count: 0,
         total_share: Uint128::zero(),
         total_deposit: Uint128::zero(),
@@ -81,7 +78,6 @@ pub fn execute(
             ve_token,
             terraswap_factory,
         } => register_contracts(deps, dao_token, ve_token, terraswap_factory),
-        ExecuteMsg::Sweep { denom } => sweep(deps, env, denom),
         ExecuteMsg::UpdateConfig {
             owner,
             quorum,
@@ -107,6 +103,7 @@ pub fn execute(
         ExecuteMsg::EndPoll { poll_id } => end_poll(deps, env, poll_id),
         ExecuteMsg::ExecutePoll { poll_id } => execute_poll(deps, env, poll_id),
         ExecuteMsg::ExpirePoll { poll_id } => expire_poll(deps, env, poll_id),
+        _ => Err(ContractError::Unauthorized {}),
     }
 }
 
@@ -118,7 +115,7 @@ pub fn receive_cw20(
 ) -> Result<Response, ContractError> {
     // only asset contract can execute this message
     let config: Config = config_read(deps.storage).load()?;
-    if config.dao_token != deps.api.addr_canonicalize(info.sender.as_str())? {
+    if config.dao_token != deps.api.addr_validate(info.sender.as_str())? {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -149,73 +146,16 @@ pub fn register_contracts(
     terraswap_factory: String,
 ) -> Result<Response, ContractError> {
     let mut config: Config = config_read(deps.storage).load()?;
-    if config.dao_token != CanonicalAddr::from(vec![]) {
+    if config.dao_token.to_string().ne(&"".to_string()) {
         return Err(ContractError::Unauthorized {});
     }
 
-    config.dao_token = deps.api.addr_canonicalize(&dao_token)?;
-    config.ve_token = deps.api.addr_canonicalize(&ve_token)?;
-    config.terraswap_factory = deps.api.addr_canonicalize(&terraswap_factory)?;
+    config.dao_token = deps.api.addr_validate(&dao_token)?;
+    config.ve_token = deps.api.addr_validate(&ve_token)?;
+    config.terraswap_factory = deps.api.addr_validate(&terraswap_factory)?;
     config_store(deps.storage).save(&config)?;
 
     Ok(Response::default())
-}
-
-/// Sweep
-/// Anyone can execute sweep function to swap
-/// asset native denom => GLOW token
-pub fn sweep(deps: DepsMut, env: Env, denom: String) -> Result<Response, ContractError> {
-    let config: Config = config_read(deps.storage).load()?;
-    let dao_token = deps.api.addr_humanize(&config.dao_token)?;
-    let terraswap_factory_addr = deps.api.addr_humanize(&config.terraswap_factory)?;
-
-    let pair_info: PairInfo = query_pair_info(
-        &deps.querier,
-        terraswap_factory_addr,
-        &[
-            AssetInfo::NativeToken {
-                denom: denom.to_string(),
-            },
-            AssetInfo::Token {
-                contract_addr: dao_token.to_string(),
-            },
-        ],
-    )?;
-
-    let amount = query_balance(&deps.querier, env.contract.address, denom.to_string())?;
-    let swap_asset = Asset {
-        info: AssetInfo::NativeToken {
-            denom: denom.to_string(),
-        },
-        amount,
-    };
-
-    // deduct tax first
-    let amount = (swap_asset.deduct_tax(&deps.querier)?).amount;
-    Ok(Response::new()
-        .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: pair_info.contract_addr,
-            msg: to_binary(&TerraswapExecuteMsg::Swap {
-                offer_asset: Asset {
-                    amount,
-                    ..swap_asset
-                },
-                max_spread: None,
-                belief_price: None,
-                to: None,
-            })?,
-            funds: vec![Coin {
-                denom: denom.to_string(),
-                amount,
-            }],
-        }))
-        .add_attributes(vec![
-            attr("action", "sweep"),
-            attr(
-                "collected_rewards",
-                format!("{:?}{:?}", amount.to_string(), denom),
-            ),
-        ]))
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -233,12 +173,12 @@ pub fn update_config(
 ) -> Result<Response, ContractError> {
     let api = deps.api;
     config_store(deps.storage).update(|mut config| {
-        if config.owner != api.addr_canonicalize(info.sender.as_str())? {
+        if config.owner != api.addr_validate(info.sender.as_str())? {
             return Err(ContractError::Unauthorized {});
         }
 
         if let Some(owner) = owner {
-            config.owner = api.addr_canonicalize(&owner)?;
+            config.owner = api.addr_validate(&owner)?;
         }
 
         if let Some(quorum) = quorum {
@@ -367,7 +307,7 @@ pub fn create_poll(
         for msgs in exe_msgs {
             let execute_data = ExecuteData {
                 order: msgs.order,
-                contract: deps.api.addr_canonicalize(&msgs.contract)?,
+                contract: deps.api.addr_validate(&msgs.contract)?,
                 msg: msgs.msg,
             };
             data_list.push(execute_data)
@@ -379,14 +319,14 @@ pub fn create_poll(
 
     let staked_amount = query_total_voting_balance_at_timestamp(
         &deps.querier,
-        &deps.api.addr_humanize(&config.ve_token)?,
+        &config.ve_token,
         Some(env.block.time.seconds()),
     )?;
 
-    let sender_address_raw = deps.api.addr_canonicalize(&proposer)?;
+    let sender_addr_raw = deps.api.addr_validate(&proposer)?;
     let new_poll = Poll {
         id: poll_id,
-        creator: sender_address_raw,
+        creator: sender_addr_raw,
         status: PollStatus::InProgress,
         yes_votes: Uint128::zero(),
         no_votes: Uint128::zero(),
@@ -409,13 +349,7 @@ pub fn create_poll(
 
     Ok(Response::new().add_attributes(vec![
         ("action", "create_poll"),
-        (
-            "creator",
-            deps.api
-                .addr_humanize(&new_poll.creator)?
-                .to_string()
-                .as_str(),
-        ),
+        ("creator", &new_poll.creator.to_string().as_str()),
         ("poll_id", &poll_id.to_string()),
         ("end_height", new_poll.end_height.to_string().as_str()),
     ]))
@@ -476,10 +410,10 @@ pub fn end_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, Contr
         // Refunds deposit only when quorum is reached
         if !a_poll.deposit_amount.is_zero() {
             messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: deps.api.addr_humanize(&config.dao_token)?.to_string(),
+                contract_addr: config.dao_token.to_string(),
                 funds: vec![],
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
-                    recipient: deps.api.addr_humanize(&a_poll.creator)?.to_string(),
+                    recipient: a_poll.creator.to_string(),
                     amount: a_poll.deposit_amount,
                 })?,
             }))
@@ -534,7 +468,7 @@ pub fn execute_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, C
         msgs.sort();
         for msg in msgs {
             messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: deps.api.addr_humanize(&msg.contract)?.to_string(),
+                contract_addr: msg.contract.to_string(),
                 msg: msg.msg,
                 funds: vec![],
             }))
@@ -545,7 +479,7 @@ pub fn execute_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, C
 
     Ok(Response::new().add_messages(messages).add_attributes(vec![
         ("action", "execute_poll"),
-        ("poll_id", poll_id.to_string().as_str()),
+        ("poll_id", &poll_id.to_string()),
     ]))
 }
 
@@ -574,7 +508,7 @@ pub fn expire_poll(deps: DepsMut, env: Env, poll_id: u64) -> Result<Response, Co
 
     Ok(Response::new().add_attributes(vec![
         ("action", "expire_poll"),
-        ("poll_id", poll_id.to_string().as_str()),
+        ("poll_id", &poll_id.to_string()),
     ]))
 }
 
@@ -585,7 +519,8 @@ pub fn cast_vote(
     poll_id: u64,
     vote: VoteOption,
 ) -> Result<Response, ContractError> {
-    let sender_address_raw = deps.api.addr_canonicalize(info.sender.as_str())?;
+    let sender_address = deps.api.addr_validate(info.sender.as_str())?;
+    let sender_addr_raw = sender_address.as_bytes();
     let config = config_read(deps.storage).load()?;
     let state = state_read(deps.storage).load()?;
     if poll_id == 0 || state.poll_count < poll_id {
@@ -599,7 +534,7 @@ pub fn cast_vote(
 
     // Check the voter already has a vote on the poll
     if poll_voter_read(deps.storage, poll_id)
-        .load(sender_address_raw.as_slice())
+        .load(sender_addr_raw)
         .is_ok()
     {
         return Err(ContractError::AlreadyVoted {});
@@ -607,7 +542,7 @@ pub fn cast_vote(
 
     let amount = query_address_voting_balance_at_timestamp(
         &deps.querier,
-        &deps.api.addr_humanize(&config.ve_token)?,
+        &config.ve_token,
         Some(a_poll.start_time),
         &info.sender,
     )?;
@@ -625,15 +560,14 @@ pub fn cast_vote(
     };
 
     // store poll voter && and update poll data
-    poll_voter_store(deps.storage, poll_id).save(sender_address_raw.as_slice(), &vote_info)?;
-
+    poll_voter_store(deps.storage, poll_id).save(sender_addr_raw, &vote_info)?;
     poll_store(deps.storage).save(&poll_id.to_be_bytes(), &a_poll)?;
 
     Ok(Response::new().add_attributes(vec![
         ("action", "cast_vote"),
-        ("poll_id", poll_id.to_string().as_str()),
-        ("amount", amount.to_string().as_str()),
-        ("voter", info.sender.as_str()),
+        ("poll_id", &poll_id.to_string()),
+        ("amount", &amount.to_string().as_str()),
+        ("voter", info.sender.to_string().as_str()),
         ("vote_option", vote_info.vote.to_string().as_str()),
     ]))
 }
@@ -674,12 +608,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> Result<Binary, ContractErr
 fn query_config(deps: Deps) -> Result<ConfigResponse, ContractError> {
     let config: Config = config_read(deps.storage).load()?;
     Ok(ConfigResponse {
-        owner: deps.api.addr_humanize(&config.owner)?.to_string(),
-        dao_token: deps.api.addr_humanize(&config.dao_token)?.to_string(),
-        terraswap_factory: deps
-            .api
-            .addr_humanize(&config.terraswap_factory)?
-            .to_string(),
+        owner: config.owner.to_string(),
+        dao_token: config.dao_token.to_string(),
+        terraswap_factory: config.terraswap_factory.to_string(),
         quorum: config.quorum,
         threshold: config.threshold,
         voting_period: config.voting_period,
@@ -710,7 +641,7 @@ fn query_poll(deps: Deps, poll_id: u64) -> Result<PollResponse, ContractError> {
 
     Ok(PollResponse {
         id: poll.id,
-        creator: deps.api.addr_humanize(&poll.creator)?.to_string(),
+        creator: poll.creator.to_string(),
         status: poll.status,
         start_time: poll.start_time,
         end_height: poll.end_height,
@@ -722,7 +653,7 @@ fn query_poll(deps: Deps, poll_id: u64) -> Result<PollResponse, ContractError> {
             for msg in exe_msgs {
                 let execute_data = PollExecuteMsg {
                     order: msg.order,
-                    contract: deps.api.addr_humanize(&msg.contract)?.to_string(),
+                    contract: msg.contract.to_string(),
                     msg: msg.msg,
                 };
                 data_list.push(execute_data)
@@ -752,7 +683,7 @@ fn query_polls(
         .map(|poll| {
             Ok(PollResponse {
                 id: poll.id,
-                creator: deps.api.addr_humanize(&poll.creator)?.to_string(),
+                creator: poll.creator.to_string(),
                 status: poll.status.clone(),
                 start_time: poll.start_time,
                 end_height: poll.end_height,
@@ -766,7 +697,7 @@ fn query_polls(
                     for msg in exe_msgs {
                         let execute_data = PollExecuteMsg {
                             order: msg.order,
-                            contract: deps.api.addr_humanize(&msg.contract)?.to_string(),
+                            contract: msg.contract.to_string(),
                             msg: msg.msg,
                         };
                         data_list.push(execute_data)
@@ -807,7 +738,7 @@ fn query_voters(
         read_poll_voters(
             deps.storage,
             poll_id,
-            Some(deps.api.addr_canonicalize(&start_after)?),
+            Some(deps.api.addr_validate(&start_after)?),
             limit,
             order_by,
         )?
@@ -819,7 +750,7 @@ fn query_voters(
         .iter()
         .map(|voter_info| {
             Ok(VotersResponseItem {
-                voter: deps.api.addr_humanize(&voter_info.0)?.to_string(),
+                voter: String::from_utf8(voter_info.0.clone())?,
                 vote: voter_info.1.vote.clone(),
                 balance: voter_info.1.balance,
             })

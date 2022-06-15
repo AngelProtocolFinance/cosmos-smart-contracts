@@ -14,13 +14,10 @@ pub enum ExecuteMsg {
         terraswap_factory: String,
     },
     /// Public Message
-    Sweep {
-        denom: String,
-    },
     Claim {
         limit: Option<u32>,
     },
-    DistributeGlow {},
+    DistributeDaoToken {},
     UpdateConfig {
         owner: Option<String>,
     },
