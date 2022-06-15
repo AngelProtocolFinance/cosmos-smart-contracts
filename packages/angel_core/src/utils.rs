@@ -297,7 +297,7 @@ pub fn is_accepted_token(
     deps: Deps,
     token: &str,
     registrar_contract: &str,
-) -> Result<bool, ContractError> {
+) -> StdResult<bool> {
     let config_response: RegistrarConfigResponse = deps
         .querier
         .query_wasm_smart(registrar_contract.to_string(), &RegistrarQuerier::Config {})?;
