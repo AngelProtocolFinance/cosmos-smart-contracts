@@ -7,11 +7,11 @@ use crate::state::{
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    attr, coins, from_binary, to_binary, Addr, Api, ContractResult, CosmosMsg, Decimal, Deps,
-    DepsMut, Env, Reply, Response, StdError, SubMsg, Timestamp, Uint128, WasmMsg,
+    attr, coins, from_binary, to_binary, Addr, Api, CosmosMsg, Decimal, Deps, DepsMut, Env, Reply,
+    Response, StdError, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg,
 };
-use cw0::Duration;
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw_utils::Duration;
 use halo_token::common::OrderBy;
 use halo_token::gov::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, PollExecuteMsg, PollResponse,
@@ -583,22 +583,40 @@ fn query_polls() {
     let response: PollsResponse = from_binary(&res).unwrap();
     assert_eq!(
         response.polls,
-        vec![PollResponse {
-            id: 1u64,
-            creator: TEST_CREATOR.to_string(),
-            status: PollStatus::InProgress,
-            end_height: 20000u64,
-            title: "test".to_string(),
-            description: "test".to_string(),
-            link: Some("http://google.com".to_string()),
-            proposal_type: Some("gov".to_string()),
-            deposit_amount: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
-            execute_data: Some(execute_msgs),
-            yes_votes: Uint128::zero(),
-            no_votes: Uint128::zero(),
-            staked_amount: Some(Uint128::from(DEFAULT_PROPOSAL_DEPOSIT)),
-            total_balance_at_end_poll: None,
-        }]
+        vec![
+            PollResponse {
+                id: 2u64,
+                creator: TEST_CREATOR.to_string(),
+                status: PollStatus::InProgress,
+                end_height: 20000u64,
+                title: "test2".to_string(),
+                description: "test2".to_string(),
+                link: None,
+                proposal_type: None,
+                deposit_amount: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
+                execute_data: None,
+                yes_votes: Uint128::zero(),
+                no_votes: Uint128::zero(),
+                staked_amount: Some(Uint128::zero()),
+                total_balance_at_end_poll: None,
+            },
+            PollResponse {
+                id: 1u64,
+                creator: TEST_CREATOR.to_string(),
+                status: PollStatus::InProgress,
+                end_height: 20000u64,
+                title: "test".to_string(),
+                description: "test".to_string(),
+                link: Some("http://google.com".to_string()),
+                proposal_type: Some("gov".to_string()),
+                deposit_amount: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
+                execute_data: Some(execute_msgs),
+                yes_votes: Uint128::zero(),
+                no_votes: Uint128::zero(),
+                staked_amount: Some(Uint128::from(DEFAULT_PROPOSAL_DEPOSIT)),
+                total_balance_at_end_poll: None,
+            }
+        ]
     );
 
     let res = query(
@@ -1219,7 +1237,7 @@ fn fail_poll() {
     // invalid reply id
     let reply_msg = Reply {
         id: 2,
-        result: ContractResult::Err("Error".to_string()),
+        result: SubMsgResult::Err("Error".to_string()),
     };
     let res = reply(deps.as_mut(), mock_env(), reply_msg);
     assert_eq!(res, Err(ContractError::InvalidReplyId {}));
@@ -1227,7 +1245,7 @@ fn fail_poll() {
     // correct reply id
     let reply_msg = Reply {
         id: 1,
-        result: ContractResult::Err("Error".to_string()),
+        result: SubMsgResult::Err("Error".to_string()),
     };
     let res = reply(deps.as_mut(), mock_env(), reply_msg).unwrap();
     assert_eq!(

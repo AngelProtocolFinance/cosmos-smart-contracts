@@ -66,7 +66,7 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
         maturity_height: endowment.maturity_height,
         strategies: endowment.strategies,
         rebalance: endowment.rebalance,
-        guardians: endowment.guardian_set,
+        kyc_donors_only: endowment.kyc_donors_only,
     })
 }
 

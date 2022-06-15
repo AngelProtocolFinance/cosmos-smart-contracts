@@ -2,11 +2,13 @@ use crate::state::{read_vaults, registry_read, registry_store, vault_read, vault
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault};
+use angel_core::structs::{
+    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault,
+};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    attr, to_binary, ContractResult, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn,
-    Response, StdResult, SubMsg, SubMsgExecutionResponse, WasmMsg,
+    attr, to_binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError,
+    StdResult, SubMsg, SubMsgResult, WasmMsg,
 };
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
@@ -174,32 +176,15 @@ pub fn update_config(
         Some(v) => Some(v),
         None => config.cw4_code,
     };
-    config.guardians_multisig_addr = match msg.guardians_multisig_addr {
-        Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
-        None => {
-            if config.guardians_multisig_addr != None {
-                config.guardians_multisig_addr.clone()
-            } else {
-                None
-            }
-        }
-    };
-    config.endowment_owners_group_addr = match msg.endowment_owners_group_addr {
-        Some(v) => Some(deps.api.addr_validate(&v)?.to_string()),
-        None => {
-            if config.endowment_owners_group_addr != None {
-                config.endowment_owners_group_addr.clone()
-            } else {
-                None
-            }
-        }
-    };
     config.charity_shares_contract = match msg.charity_shares_contract {
         Some(contract_addr) => Some(deps.api.addr_validate(&contract_addr)?),
         None => config.charity_shares_contract,
     };
     config.default_vault = match msg.default_vault {
-        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        Some(addr) => match addr {
+            Some(a) => Some(deps.api.addr_validate(&a)?),
+            None => None,
+        },
         None => config.default_vault,
     };
     config.index_fund_contract = match msg.index_fund_contract {
@@ -227,6 +212,14 @@ pub fn update_config(
         None => Ok(config.split_to_liquid.default),
     };
     config.split_to_liquid = split_checks(max.unwrap(), min.unwrap(), default.unwrap()).unwrap();
+    config.accepted_tokens = AcceptedTokens {
+        native: msg
+            .accepted_tokens_native
+            .unwrap_or(config.accepted_tokens.native),
+        cw20: msg
+            .accepted_tokens_cw20
+            .unwrap_or(config.accepted_tokens.cw20),
+    };
 
     CONFIG.save(deps.storage, &config)?;
 
@@ -259,6 +252,7 @@ pub fn create_endowment(
             maturity_height: msg.maturity_height,
             profile: msg.profile,
             cw4_members: msg.cw4_members,
+            kyc_donors_only: msg.kyc_donors_only,
         })?,
         funds: vec![],
     };
@@ -354,10 +348,10 @@ pub fn vault_update_status(
 pub fn new_accounts_reply(
     deps: DepsMut,
     _env: Env,
-    msg: ContractResult<SubMsgExecutionResponse>,
+    msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
     match msg {
-        ContractResult::Ok(subcall) => {
+        SubMsgResult::Ok(subcall) => {
             let mut endowment_addr = String::from("");
             let mut endowment_name = String::from("");
             let mut endowment_owner = String::from("");
@@ -367,7 +361,7 @@ pub fn new_accounts_reply(
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
-                        if attrb.key == "contract_address" {
+                        if attrb.key == "_contract_address" {
                             endowment_addr = attrb.value.clone();
                         }
                         if attrb.key == "endow_name" {
@@ -418,7 +412,7 @@ pub fn new_accounts_reply(
                 attr("image", endowment_image),
             ]))
         }
-        ContractResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
 }
 

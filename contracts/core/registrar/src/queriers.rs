@@ -15,14 +15,13 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         tax_rate: config.tax_rate,
         default_vault: config.default_vault.map(|addr| addr.to_string()),
         index_fund: config.index_fund_contract.map(|addr| addr.to_string()),
-        endowment_owners_group_addr: config.endowment_owners_group_addr,
-        guardians_multisig_addr: config.guardians_multisig_addr,
         split_to_liquid: config.split_to_liquid,
         halo_token: config.halo_token.map(|addr| addr.to_string()),
         gov_contract: config.gov_contract.map(|addr| addr.to_string()),
         charity_shares_contract: config.charity_shares_contract.map(|addr| addr.to_string()),
         cw3_code: config.cw3_code,
         cw4_code: config.cw4_code,
+        accepted_tokens: config.accepted_tokens,
     })
 }
 

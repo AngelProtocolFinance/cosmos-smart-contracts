@@ -7,7 +7,7 @@ use angel_core::messages::accounts::*;
 use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
-use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, StrategyComponent};
+use angel_core::structs::{BalanceInfo, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{
     attr, entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
     QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
@@ -34,7 +34,6 @@ pub fn instantiate(
         &Config {
             owner: deps.api.addr_validate(&msg.owner_sc)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-            accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
             pending_redemptions: None,
@@ -47,9 +46,12 @@ pub fn instantiate(
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
-    let default_vault = match registrar_config.default_vault {
-        Some(addr) => addr,
-        None => return Err(ContractError::ContractNotConfigured {}),
+    let default_strategy: Vec<StrategyComponent> = match registrar_config.default_vault {
+        Some(addr) => vec![StrategyComponent {
+            vault: deps.api.addr_validate(&addr)?,
+            percentage: Decimal::one(),
+        }],
+        None => vec![],
     };
     ENDOWMENT.save(
         deps.storage,
@@ -59,13 +61,9 @@ pub fn instantiate(
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
             maturity_time: msg.maturity_time,           // Option<u64>
             maturity_height: msg.maturity_height,       // Option<u64>
-            strategies: vec![StrategyComponent {
-                vault: deps.api.addr_validate(&default_vault)?,
-                locked_percentage: Decimal::one(),
-                liquid_percentage: Decimal::one(),
-            }],
+            strategies: default_strategy,
             rebalance: RebalanceDetails::default(),
-            guardian_set: vec![],
+            kyc_donors_only: msg.kyc_donors_only,
         },
     )?;
 
@@ -139,9 +137,14 @@ pub fn execute(
         ExecuteMsg::Withdraw {
             sources,
             beneficiary,
-        } => executers::withdraw(deps, env, info, sources, beneficiary),
-        ExecuteMsg::VaultReceipt(msg) => {
-            executers::vault_receipt(deps, env, info.clone(), info.sender, msg)
+            token_denom,
+        } => executers::withdraw(deps, env, info, sources, beneficiary, token_denom),
+        ExecuteMsg::WithdrawLiquid {
+            liquid_amount,
+            beneficiary,
+        } => executers::withdraw_liquid(deps, env, info, liquid_amount, beneficiary),
+        ExecuteMsg::VaultReceipt {} => {
+            executers::vault_receipt(deps, env, info.clone(), info.sender)
         }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
@@ -154,10 +157,6 @@ pub fn execute(
         }
         ExecuteMsg::CloseEndowment { beneficiary } => {
             executers::close_endowment(deps, env, info, beneficiary)
-        }
-        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
-        ExecuteMsg::UpdateGuardians { add, remove } => {
-            executers::update_guardians(deps, env, info, add, remove)
         }
         ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
     }

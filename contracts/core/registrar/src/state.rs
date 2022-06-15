@@ -1,5 +1,4 @@
-use angel_core::structs::{EndowmentEntry, SplitDetails, YieldVault};
-use angel_core::utils::calc_range_start_addr;
+use angel_core::structs::{AcceptedTokens, EndowmentEntry, SplitDetails, YieldVault};
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
@@ -20,14 +19,13 @@ pub struct Config {
     pub treasury: Addr,
     pub tax_rate: Decimal,
     pub default_vault: Option<Addr>,
-    pub guardians_multisig_addr: Option<String>,
-    pub endowment_owners_group_addr: Option<String>,
     pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
     pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
     pub gov_contract: Option<Addr>,    // AP governance contract
     pub charity_shares_contract: Option<Addr>, // Charity Shares staking contract
     pub cw3_code: Option<u64>,
     pub cw4_code: Option<u64>,
+    pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
 pub const PREFIX_REGISTRY: Map<&[u8], EndowmentEntry> = Map::new("registry");
@@ -71,9 +69,9 @@ pub fn read_vaults(
     start_after: Option<Addr>,
     limit: Option<u64>,
 ) -> StdResult<Vec<YieldVault>> {
-    let start = calc_range_start_addr(start_after);
+    let start = start_after.map(|s| Bound::ExclusiveRaw(s.as_bytes().to_vec()));
     PREFIX_PORTAL
-        .range(storage, start.map(Bound::Inclusive), None, Order::Ascending)
+        .range(storage, start, None, Order::Ascending)
         .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
         .map(|item| {
             let (_, v) = item?;

@@ -112,7 +112,7 @@ pub fn sweep(deps: DepsMut, env: Env, denom: String) -> StdResult<Response> {
     };
 
     // deduct tax first
-    let amount = (swap_asset.deduct_tax(&deps.querier)?).amount;
+    let amount = swap_asset.amount;
     Ok(Response::new()
         .add_submessage(SubMsg::reply_on_success(
             CosmosMsg::Wasm(WasmMsg::Execute {

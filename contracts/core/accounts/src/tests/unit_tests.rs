@@ -1,5 +1,5 @@
 use super::mock_querier::mock_dependencies;
-use crate::contract::{execute, instantiate, migrate, query};
+use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
@@ -156,9 +156,8 @@ fn test_update_endowment_settings() {
     // update the endowment owner and beneficiary
     let msg = UpdateEndowmentSettingsMsg {
         owner: charity_addr.clone(),
-        beneficiary: pleb.clone(),
     };
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth "));
+    let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth "));
     let env = mock_env();
     let res = execute(
         deps.as_mut(),
@@ -172,7 +171,6 @@ fn test_update_endowment_settings() {
     // Not just anyone can update the Endowment's settings! Only Endowment owner can.
     let msg = UpdateEndowmentSettingsMsg {
         owner: charity_addr.clone(),
-        beneficiary: pleb.clone(),
     };
     let info = mock_info(pleb.as_ref(), &coins(100000, "earth "));
     let env = mock_env();
@@ -399,13 +397,11 @@ fn test_update_strategy() {
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
-                locked_percentage: Decimal::percent(20),
-                liquid_percentage: Decimal::percent(20),
+                percentage: Decimal::percent(30),
             },
             Strategy {
                 vault: "tech_strategy_component_addr".to_string(),
-                locked_percentage: Decimal::percent(60),
-                liquid_percentage: Decimal::percent(60),
+                percentage: Decimal::percent(60),
             },
         ],
     };
@@ -418,18 +414,15 @@ fn test_update_strategy() {
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
-                locked_percentage: Decimal::percent(40),
-                liquid_percentage: Decimal::percent(40),
+                percentage: Decimal::percent(40),
             },
             Strategy {
                 vault: "tech_strategy_component_addr".to_string(),
-                locked_percentage: Decimal::percent(20),
-                liquid_percentage: Decimal::percent(20),
+                percentage: Decimal::percent(20),
             },
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
-                locked_percentage: Decimal::percent(40),
-                liquid_percentage: Decimal::percent(40),
+                percentage: Decimal::percent(40),
             },
         ],
     };
@@ -442,13 +435,11 @@ fn test_update_strategy() {
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
-                locked_percentage: Decimal::percent(40),
-                liquid_percentage: Decimal::percent(40),
+                percentage: Decimal::percent(40),
             },
             Strategy {
                 vault: "tech_strategy_component_addr".to_string(),
-                locked_percentage: Decimal::percent(60),
-                liquid_percentage: Decimal::percent(60),
+                percentage: Decimal::percent(60),
             },
         ],
     };
@@ -460,13 +451,11 @@ fn test_update_strategy() {
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
-                locked_percentage: Decimal::percent(40),
-                liquid_percentage: Decimal::percent(40),
+                percentage: Decimal::percent(40),
             },
             Strategy {
                 vault: "tech_strategy_component_addr".to_string(),
-                locked_percentage: Decimal::percent(60),
-                liquid_percentage: Decimal::percent(60),
+                percentage: Decimal::percent(60),
             },
         ],
     };
@@ -664,7 +653,7 @@ fn test_donate() {
 
     // Try the "Deposit"
     let donation_amt = 200_u128;
-    let info = mock_info(depositor.as_str(), &coins(donation_amt, "uusd"));
+    let info = mock_info(depositor.as_str(), &coins(donation_amt, "uluna"));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         locked_percentage: Decimal::percent(50),
         liquid_percentage: Decimal::percent(50),
@@ -751,7 +740,7 @@ fn test_withdraw() {
 
     // Try the "Deposit"
     let donation_amt = 200_u128;
-    let info = mock_info(depositor.as_str(), &coins(donation_amt, "uusd"));
+    let info = mock_info(depositor.as_str(), &coins(donation_amt, "uluna"));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         locked_percentage: Decimal::percent(50),
         liquid_percentage: Decimal::percent(50),
@@ -763,6 +752,7 @@ fn test_withdraw() {
     let withdraw_msg = ExecuteMsg::Withdraw {
         sources: vec![],
         beneficiary: "beneficiary".to_string(),
+        token_denom: "uluna".to_string(),
     };
     let res = execute(deps.as_mut(), mock_env(), info, withdraw_msg).unwrap();
     assert_eq!(res.messages.len(), 0);

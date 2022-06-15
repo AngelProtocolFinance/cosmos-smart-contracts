@@ -1,7 +1,7 @@
 use cosmwasm_std::{Addr, Binary, Decimal, Deps, StdResult, Storage, Uint128};
-use cw0::Duration;
 use cw_controllers::Claims;
 use cw_storage_plus::{Bound, Item, Map};
+use cw_utils::Duration;
 use halo_token::common::OrderBy;
 use halo_token::gov::{PollStatus, VoterInfo};
 use schemars::JsonSchema;
@@ -181,19 +181,19 @@ pub fn read_poll_voters<'a>(
     order_by: Option<OrderBy>,
 ) -> StdResult<Vec<(Addr, VoterInfo)>> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
+    let start = match start_after {
+        Some(ref v) => Some(Bound::exclusive(v.as_bytes())),
+        None => None,
+    };
     let (start, end, order_by) = match order_by {
-        Some(OrderBy::Asc) => (calc_range_start_addr(start_after), None, OrderBy::Asc),
-        _ => (None, calc_range_end_addr(start_after), OrderBy::Desc),
+        Some(OrderBy::Asc) => (start, None, OrderBy::Asc),
+        _ => (None, start, OrderBy::Desc),
     };
 
-    let voters = POLL_VOTER.prefix(&poll_id.to_be_bytes());
+    let poll_id = &poll_id.to_be_bytes().to_vec()[..];
+    let voters = POLL_VOTER.prefix(poll_id);
     voters
-        .range(
-            storage,
-            start.map(|v| Bound::exclusive(&*v)),
-            end.map(|v| Bound::exclusive(&*v)),
-            order_by.into(),
-        )
+        .range(storage, start, end, order_by.into())
         .take(limit)
         .map(|item| {
             let (k, v) = item?;
@@ -216,16 +216,19 @@ pub fn read_polls(
         Some(OrderBy::Asc) => (calc_range_start(start_after), None, OrderBy::Asc),
         _ => (None, calc_range_end(start_after), OrderBy::Desc),
     };
-
+    let start = match start {
+        Some(ref v) => Some(Bound::exclusive(&v[..])),
+        None => None,
+    };
+    let end = match end {
+        Some(ref v) => Some(Bound::inclusive(&v[..])),
+        None => None,
+    };
     if let Some(status) = filter {
-        let poll_indexer = POLL_INDEXER_STORE.prefix(status.to_string().as_str());
+        let status_str = status.to_string();
+        let poll_indexer = POLL_INDEXER_STORE.prefix(status_str.as_str());
         poll_indexer
-            .range(
-                storage,
-                start.map(|v| Bound::exclusive(&*v)),
-                end.map(|v| Bound::exclusive(&*v)),
-                order_by.into(),
-            )
+            .range(storage, start, end, order_by.into())
             .take(limit)
             .map(|item| {
                 let (k, _) = item?;
@@ -233,18 +236,13 @@ pub fn read_polls(
             })
             .collect()
     } else {
-        POLL.range(
-            storage,
-            start.map(|v| Bound::exclusive(&*v)),
-            end.map(|v| Bound::exclusive(&*v)),
-            order_by.into(),
-        )
-        .take(limit)
-        .map(|item| {
-            let (_, v) = item?;
-            Ok(v)
-        })
-        .collect()
+        POLL.range(storage, start, end, order_by.into())
+            .take(limit)
+            .map(|item| {
+                let (_, v) = item?;
+                Ok(v)
+            })
+            .collect()
     }
 }
 
@@ -270,21 +268,4 @@ fn calc_range_start(start_after: Option<u64>) -> Option<Vec<u8>> {
 // this will set the first key after the provided key, by appending a 1 byte
 fn calc_range_end(start_after: Option<u64>) -> Option<Vec<u8>> {
     start_after.map(|id| id.to_be_bytes().to_vec())
-}
-
-// this will set the first key after the provided key, by appending a 1 byte
-fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    match start_after {
-        Some(addr) => {
-            let mut v = addr.as_bytes().to_vec();
-            v.push(1);
-            Some(v)
-        }
-        _ => None,
-    }
-}
-
-// this will set the first key after the provided key, by appending a 1 byte
-fn calc_range_end_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    start_after.map(|addr| addr.as_bytes().to_vec())
 }

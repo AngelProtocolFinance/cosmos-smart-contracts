@@ -1,6 +1,5 @@
-use crate::structs::FundingSource;
-use crate::{messages::vault::AccountTransferMsg, structs::Profile};
-use cosmwasm_std::Decimal;
+use crate::structs::{FundingSource, Profile};
+use cosmwasm_std::{Decimal, Uint128};
 use cw4::Member;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -19,6 +18,7 @@ pub struct InstantiateMsg {
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
     pub profile: Profile,               // struct holding the Endowment info
     pub cw4_members: Vec<Member>,
+    pub kyc_donors_only: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -26,13 +26,21 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
-    // Pull funds from investment vault(s) to the Endowment Beneficiary as UST
+    // Pull funds from investment vault(s) to the Endowment Beneficiary as <token_denom>
+    // NOTE: Here, we assume that the user wants to withdraw "native token"
+    //       Hence, it receives the "token_denom" for building message.
+    //       This part is prone to future change so that it can also handle "cw20 token".
     Withdraw {
         sources: Vec<FundingSource>,
         beneficiary: String,
+        token_denom: String,
+    },
+    WithdrawLiquid {
+        liquid_amount: Uint128,
+        beneficiary: String,
     },
     // Tokens are sent back to an Account from an Asset Vault
-    VaultReceipt(AccountTransferMsg),
+    VaultReceipt {},
     // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.
     // If not provided, looks up the Index Fund an Endowment is tied to to donates the funds to it.
     CloseEndowment {
@@ -46,7 +54,6 @@ pub enum ExecuteMsg {
     UpdateRegistrar {
         new_registrar: String,
     },
-    UpdateConfig(UpdateConfigMsg),
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
     // Update an Endowment ability to receive/send funds
@@ -55,31 +62,23 @@ pub enum ExecuteMsg {
     UpdateStrategies {
         strategies: Vec<Strategy>,
     },
-    UpdateGuardians {
-        add: Vec<String>,
-        remove: Vec<String>,
-    },
     // Update Endowment profile
     UpdateProfile(UpdateProfileMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateConfigMsg {
-    pub accepted_tokens_native: Vec<String>,
-    pub accepted_tokens_cw20: Vec<String>,
-}
+pub struct UpdateConfigMsg {}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Strategy {
-    pub vault: String,              // Vault SC Address
-    pub locked_percentage: Decimal, // percentage of funds to invest
-    pub liquid_percentage: Decimal, // percentage of funds to invest
+    pub vault: String,       // Vault SC Address
+    pub percentage: Decimal, // percentage of funds to invest
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentSettingsMsg {
-    pub beneficiary: String,
     pub owner: String,
+    pub kyc_donors_only: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

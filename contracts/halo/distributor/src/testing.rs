@@ -7,7 +7,7 @@ use halo_token::distributor::{ConfigResponse, ExecuteMsg, InstantiateMsg, QueryM
 
 #[test]
 fn proper_initialization() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         gov_contract: "gov".to_string(),
@@ -43,7 +43,7 @@ fn proper_initialization() {
 
 #[test]
 fn update_config() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         gov_contract: "gov".to_string(),
@@ -109,7 +109,7 @@ fn update_config() {
 
 #[test]
 fn test_add_remove_distributor() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         gov_contract: "gov".to_string(),
@@ -201,7 +201,7 @@ fn test_add_remove_distributor() {
 
 #[test]
 fn test_spend() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         gov_contract: "gov".to_string(),

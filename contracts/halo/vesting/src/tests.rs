@@ -13,7 +13,7 @@ use cw20::Cw20ExecuteMsg;
 
 #[test]
 fn proper_initialization() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         owner: "owner".to_string(),
@@ -39,7 +39,7 @@ fn proper_initialization() {
 
 #[test]
 fn update_config() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         owner: "owner".to_string(),
@@ -105,7 +105,7 @@ fn update_config() {
 
 #[test]
 fn register_vesting_accounts() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         owner: "owner".to_string(),
@@ -224,7 +224,7 @@ fn register_vesting_accounts() {
 
 #[test]
 fn update_vesting_account() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         owner: "owner".to_string(),
@@ -288,7 +288,7 @@ fn update_vesting_account() {
 
 #[test]
 fn claim() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = InstantiateMsg {
         owner: "owner".to_string(),

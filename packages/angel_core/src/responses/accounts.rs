@@ -26,16 +26,7 @@ pub struct EndowmentDetailsResponse {
     pub maturity_height: Option<u64>,
     pub strategies: Vec<StrategyComponent>,
     pub rebalance: RebalanceDetails,
-    pub guardians: Vec<String>,
-}
-
-impl EndowmentDetailsResponse {
-    pub fn is_guardian(&self, addr: String) -> bool {
-        match self.guardians.iter().position(|g| *g == addr) {
-            Some(_guardian) => true,
-            None => false,
-        }
-    }
+    pub kyc_donors_only: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

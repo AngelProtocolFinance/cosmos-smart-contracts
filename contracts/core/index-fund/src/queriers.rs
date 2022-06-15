@@ -16,7 +16,6 @@ pub fn config(deps: Deps) -> StdResult<ConfigResponse> {
         fund_rotation: config.fund_rotation,
         fund_member_limit: config.fund_member_limit,
         funding_goal: config.funding_goal,
-        accepted_tokens: config.accepted_tokens,
     })
 }
 
@@ -55,12 +54,12 @@ pub fn active_fund_details(deps: Deps) -> StdResult<FundDetailsResponse> {
 
 pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
     let mut donors = vec![];
-    let alliance_addr_list: Vec<Vec<u8>> = ALLIANCE_MEMBERS
+    let alliance_addr_list: Vec<Addr> = ALLIANCE_MEMBERS
         .keys(deps.storage, None, None, cosmwasm_std::Order::Ascending)
-        .collect();
+        .collect::<StdResult<_>>()?;
     let mut alliance_members: Vec<String> = vec![];
     for member in alliance_addr_list {
-        alliance_members.push(std::str::from_utf8(&member).unwrap().to_string());
+        alliance_members.push(member.to_string());
     }
     for member in alliance_members.into_iter() {
         // add to response vector
@@ -70,7 +69,7 @@ pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
                 .may_load(deps.storage, member.to_string())
                 .unwrap()
                 .unwrap_or_default()
-                .get_ust()
+                .get_usd()
                 .amount,
         });
     }
@@ -95,6 +94,7 @@ pub fn involved_funds(deps: Deps, address: String) -> StdResult<FundListResponse
 pub fn deposit_msg_builder(
     _deps: Deps,
     env: Env,
+    token_denom: String,
     amount: Uint128,
     fund_id: Option<u64>,
     split: Option<Decimal>,
@@ -103,7 +103,7 @@ pub fn deposit_msg_builder(
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&Deposit(DepositMsg { fund_id, split }))?,
         funds: vec![Coin {
-            denom: "uusd".to_string(),
+            denom: token_denom,
             amount,
         }],
     }))

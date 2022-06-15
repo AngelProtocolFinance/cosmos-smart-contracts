@@ -1,4 +1,4 @@
-use crate::structs::{AcceptedTokens, IndexFund};
+use crate::structs::IndexFund;
 use cosmwasm_std::Uint128;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -39,7 +39,6 @@ pub struct ConfigResponse {
     pub fund_rotation: Option<u64>,
     pub fund_member_limit: u32,
     pub funding_goal: Option<Uint128>,
-    pub accepted_tokens: AcceptedTokens,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

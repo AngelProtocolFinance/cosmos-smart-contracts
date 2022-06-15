@@ -1,10 +1,9 @@
-use cw_storage_plus::{Bound, Item, Map};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
 use cosmwasm_std::{Addr, Deps, StdResult, Storage};
+use cw_storage_plus::{Bound, Item, Map};
 use halo_token::common::OrderBy;
 use halo_token::vesting::VestingInfo;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
@@ -46,15 +45,15 @@ pub fn read_vesting_infos(
 ) -> StdResult<Vec<(Addr, VestingInfo)>> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let (start, end, order_by) = match order_by {
-        Some(OrderBy::Asc) => (calc_range_start_addr(start_after), None, OrderBy::Asc),
-        _ => (None, calc_range_end_addr(start_after), OrderBy::Desc),
+        Some(OrderBy::Asc) => (start_after, None, OrderBy::Asc),
+        _ => (None, start_after, OrderBy::Desc),
     };
 
     VESTING_INFO
         .range(
             storage,
-            start.map(|v| Bound::inclusive(&*v)),
-            end.map(|v| Bound::inclusive(&*v)),
+            start.map(|s| Bound::ExclusiveRaw(s.as_bytes().to_vec())),
+            end.map(|s| Bound::InclusiveRaw(s.as_bytes().to_vec())),
             order_by.into(),
         )
         .take(limit)
@@ -63,21 +62,4 @@ pub fn read_vesting_infos(
             Ok((deps.api.addr_validate(&String::from_utf8_lossy(&k))?, v))
         })
         .collect()
-}
-
-// this will set the first key after the provided key, by appending a 1 byte
-fn calc_range_start_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    match start_after {
-        Some(addr) => {
-            let mut v = addr.as_bytes().to_vec();
-            v.push(1);
-            Some(v)
-        }
-        _ => None,
-    }
-}
-
-// this will set the first key after the provided key, by appending a 1 byte
-fn calc_range_end_addr(start_after: Option<Addr>) -> Option<Vec<u8>> {
-    start_after.map(|addr| addr.as_bytes().to_vec())
 }

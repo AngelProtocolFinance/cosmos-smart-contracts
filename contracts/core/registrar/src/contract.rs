@@ -3,6 +3,7 @@ use crate::queriers;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
+use angel_core::structs::AcceptedTokens;
 use angel_core::structs::SplitDetails;
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
@@ -39,14 +40,13 @@ pub fn instantiate(
         treasury: deps.api.addr_validate(&msg.treasury)?,
         tax_rate,
         default_vault: msg.default_vault,
-        guardians_multisig_addr: None,
-        endowment_owners_group_addr: None,
         split_to_liquid: splits,
         halo_token: None,
         gov_contract: None,
         charity_shares_contract: None,
         cw3_code: None,
         cw4_code: None,
+        accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
     };
 
     CONFIG.save(deps.storage, &configs)?;

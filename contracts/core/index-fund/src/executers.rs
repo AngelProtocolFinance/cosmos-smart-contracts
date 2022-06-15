@@ -3,8 +3,8 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
-use angel_core::structs::{AcceptedTokens, AllianceMember, IndexFund, SplitDetails};
-use angel_core::utils::{deduct_tax, percentage_checks};
+use angel_core::structs::{AllianceMember, IndexFund, SplitDetails};
+use angel_core::utils::{is_accepted_token, percentage_checks};
 use cosmwasm_std::{
     attr, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
     Response, StdError, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
@@ -121,14 +121,6 @@ pub fn update_config(
     };
     config.fund_rotation = msg.fund_rotation; // config set as optional, don't unwrap
     config.fund_member_limit = msg.fund_member_limit.unwrap_or(config.fund_member_limit);
-    config.accepted_tokens = AcceptedTokens {
-        native: msg
-            .accepted_tokens_native
-            .unwrap_or(config.accepted_tokens.native),
-        cw20: msg
-            .accepted_tokens_cw20
-            .unwrap_or(config.accepted_tokens.cw20),
-    };
 
     CONFIG.save(deps.storage, &config)?;
 
@@ -361,11 +353,23 @@ pub fn deposit(
     if info.funds.len() != 1 {
         return Err(ContractError::InvalidCoinsDeposited {});
     }
+    // Check the token with "accepted_tokens"
+    let deposit_token_denom = &info.funds[0].denom;
+    if !is_accepted_token(
+        deps.as_ref(),
+        deposit_token_denom,
+        "native",
+        config.registrar_contract.as_str(),
+    )? {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: format!("Not accepted token: {}", deposit_token_denom),
+        }));
+    }
 
     let mut deposit_amount: Uint128 = info
         .funds
         .iter()
-        .find(|c| c.denom == *"uusd")
+        .find(|c| c.denom == *deposit_token_denom)
         .map(|c| c.amount)
         .unwrap_or_else(Uint128::zero);
 
@@ -384,7 +388,7 @@ pub fn deposit(
             .may_load(deps.storage, sender_addr.to_string())?
             .unwrap_or_default();
         tca_donor.add_tokens(Balance::from(vec![Coin {
-            denom: "uusd".to_string(),
+            denom: deposit_token_denom.to_string(),
             amount: deposit_amount,
         }]));
         TCA_DONATIONS.save(deps.storage, sender_addr.to_string(), &tca_donor)?;
@@ -524,7 +528,11 @@ pub fn deposit(
     STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
-        .add_submessages(build_donation_messages(deps.as_ref(), donation_messages))
+        .add_submessages(build_donation_messages(
+            deps.as_ref(),
+            donation_messages,
+            &deposit_token_denom,
+        ))
         .add_attribute("action", "deposit"))
 }
 
@@ -561,8 +569,9 @@ pub fn calculate_split(
 }
 
 pub fn build_donation_messages(
-    deps: Deps,
+    _deps: Deps,
     donation_messages: Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))>,
+    deposit_token_denom: &str,
 ) -> Vec<SubMsg> {
     let mut messages = vec![];
     for member in donation_messages.iter() {
@@ -575,14 +584,10 @@ pub fn build_donation_messages(
                 },
             ))
             .unwrap(),
-            funds: vec![deduct_tax(
-                deps,
-                Coin {
-                    denom: "uusd".to_string(),
-                    amount: member.1 .0 + member.2 .0,
-                },
-            )
-            .unwrap()],
+            funds: vec![Coin {
+                denom: deposit_token_denom.to_string(),
+                amount: member.1 .0 + member.2 .0,
+            }],
         })));
     }
     messages
