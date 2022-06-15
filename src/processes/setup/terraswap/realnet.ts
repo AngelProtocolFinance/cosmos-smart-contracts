@@ -7,7 +7,7 @@ import {
   toEncodedBinary,
 } from "../../../utils/helpers";
 
-// Deploy HALO Token and HALO/UST pair contracts to the TestNet/MainNet
+// Deploy HALO Token and HALO/LUNA pair contracts to the TestNet/MainNet
 export async function setupTerraSwap(
   terra: LCDClient,
   apTeam: Wallet,
@@ -52,7 +52,8 @@ export async function setupTerraSwap(
           },
           {
             native_token: {
-              denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              denom: "uluna", // only for testnet
             },
           },
         ],
@@ -80,7 +81,7 @@ export async function setupTerraSwap(
   );
 
   process.stdout.write(
-    "Provide liquidity to the new Pair contract @ ratio of 0.05 UST per HALO"
+    "Provide liquidity to the new Pair contract @ ratio of 0.05 LUNA per HALO"
   );
   const liqResult = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
@@ -106,7 +107,8 @@ export async function setupTerraSwap(
             {
               info: {
                 native_token: {
-                  denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+                  // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+                  denom: "uluna", // only for testnet
                 },
               },
               amount: native_liquidity,
@@ -115,13 +117,13 @@ export async function setupTerraSwap(
         },
       },
       {
-        uusd: native_liquidity,
+        uluna: native_liquidity,
       }
     ),
   ]);
   console.log(chalk.green(" Done!"));
 
-  // process.stdout.write("Perform simple swap of 1 HALO for UST on Pair contract");
+  // process.stdout.write("Perform simple swap of 1 HALO for LUNA on Pair contract");
   // const swapResult = await sendTransaction(terra, apTeam, [
   //   new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
   //     send: {

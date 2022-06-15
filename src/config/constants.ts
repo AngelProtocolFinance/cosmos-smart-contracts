@@ -10,7 +10,7 @@ export const testnet = {
   // TestNet MoneyMarket Contract
   anchorMoneyMarket: "terra15dwd5mj8v59wpj0wvt233mf5efdff808c5tkal",
   // TestNet AP / DANO Treasury wallet
-  apTreasury: "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly",
+  apTreasury: "terra1tc2yp07pce93uwnneqr0cptqze6lvke9edal3l",  // apTeam wallet address
   mnemonicKeys: {
     apTeam:
       "forward stone width wrist outer elder supply summer extra erosion spring unlock rhythm sail goose once city ivory eight diesel upper measure betray purchase",
@@ -29,17 +29,17 @@ export const testnet = {
   },
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
-    registrar: "terra15upcsqpg57earvp7mc49kl5e7cppptu2ndmpak",
-    indexFund: "terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d",
-    anchorVault1: "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg",
-    anchorVault2: "terra16y7du2keuersslsevvqx32z04wy6juyfwjs3ru",
-    endowmentContract1: "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v",
-    endowmentContract2: "terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9",
-    endowmentContract3: "terra1vyw5r7n02epkpk2tm2lzt67fyv28qzalwzgzuu",
-    endowmentContract4: "terra1jvtf3ccpkr3vymv98vk9nz7wvwmykgv8yk9l3w",
-    cw4GrpApTeam: "terra1wpnzy6w9gd3tt9wkvnqkcmzkyc8v0tgz75nuue",
-    cw3ApTeam: "terra1qspgamxqn9slwe7ecca4n2fs2xsl5hxvkc9lzs",
-    cw4GrpOwners: "terra1ldrkpnysrasq4sg4zu9mgh74wt9nxvk9qgvxtd",
+    registrar: "terra1jpdrgx66yhz23yjs0nzthjtrafrhfmmst67h73atn6km8pnuh7ys42dnlj",
+    indexFund: "terra1h6j0jhetc3qef4m8ypksa82jmn5wlue9dxncpx53zxvznlsukdwq9vagev",
+    anchorVault1: "",
+    anchorVault2: "",
+    endowmentContract1: "terra1lf9r0s4w5fht76u6pddnxhvj2j09y62al27ldtjrznrj04tph8aspte3zg",
+    endowmentContract2: "terra15faa0u5mpr3vj2vaktp5pq99d40c6jsdtdfl9dcuaa2l5034h66qrqhlj7",
+    endowmentContract3: "terra17n3h42egrnqj5uh0fjuegtmhh9qrfpxvqtfj5awrn9wmvcf6zm0sfhtg8u",
+    endowmentContract4: "terra1frzxamuqnnnmr6kaa4wzyrg6q2vty70tmpwhg6hv6a80ltjpluqskrav7y",
+    cw4GrpApTeam: "terra138ejrx6fu62gx7jwnypjfjxt2p9epm083892tymxh93kzhysu74qak3clf",
+    cw3ApTeam: "terra1hjx9hspsm62x7aasxktxsv75asquyss9ns3wmr03xsqyp3wfj4vqxpq5l6",
+    cw4GrpOwners: "",
     cw3GuardianAngels: "",
   },
 
@@ -65,26 +65,26 @@ export const testnet = {
 
   // TerraSwap contracts
   terraswap: {
-    terraswap_token_code: 148,
-    terraswap_factory: "terra18qpjm4zkvqnpjpw0zn0tdr8gdzvt8au35v45xf",
-    halo_token_contract: "terra1ah3gd4uhxtrpc3qeqn84l6v3wcvfkh3vw25fyl",
-    halo_ust_pair_contract: "",
-    halo_ust_pair_lp_token: "",
+    terraswap_token_code: 83,
+    terraswap_factory: "terra1jha5avc92uerwp9qzx3flvwnyxs3zax2rrm6jkcedy2qvzwd2k7qk7yxcl",
+    halo_token_contract: "terra1xqvq0sglawp39crdax6729uexcp49c842tlmvk26wwkdjlq9qx2skrd7rf",
+    halo_uluna_pair_contract: "terra1p6qq27havgzu9p9rxw9zqflghs23ffm9gppf95ea63w9h2ahwd9sg0l989",
+    halo_uluna_pair_lp_token: "terra19hv35wnhgxnr64rr96z0y8qxgc85q8my9g249cpxmyzxxwaw0zpq0n3mak",
     initial_halo_supply: "1000000000000000",
-    halo_liquidity: "20000000000",
-    native_liquidity: "1000000000", // reduced to 1000 UST due to faucet limitations
+    halo_liquidity: "2000000",
+    native_liquidity: "1000000", // reduced to 1 LUNA due to faucet limitations
   },
 
   // HALO contracts
   halo: {
-    airdrop_contract: "terra15n2j80ufyrup8ply5nhjwwerfjpz7cx3m2hcqq",
-    collector_contract: "terra12h9ssarf78t3sw3zu5xyr4v3cxjkmqmnxujlzl",
-    community_contract: "terra19hhk4wu5yrj90qwh6lt0zkpe65h7dlvlr48ujt",
-    distributor_contract: "terra1vuktqwu0n5df0sfswzwwh4wpgznu4d2urflvlk",
-    gov_contract: "terra16tw444h6qtzxr4kf2p276qt0u6w3ggtc20xgly",
-    gov_hodler_contract: "terra1mcjrurlzmne3hlqvjypyacz9l8xpf4r6zq9sa6",
-    staking_contract: "",
-    vesting_contract: "terra1h30cngl0hruj46dzh95wepa2n74hzenlvlq6cx",
+    airdrop_contract: "terra1dxav8ulphpqvvv00jd6hkvx7smfzhyn2345s3uydvpvr6fd8salqcc88d9",
+    collector_contract: "terra1qhslq202gvj4e9w5mgkl096rmy63waeulkay88sjp6kk6vehcqsq04n7nd",
+    community_contract: "terra1jc0ykn63fseg9h8lxwgqg9cehf9r9dzg6gtgtl4nr3kejvnltndqfscvfv",
+    distributor_contract: "terra1z48excnads2hmqnuur2ag5v2qkrxrv4az8zxq66v8nawznrysqfqtaxnjq",
+    gov_contract: "terra1jdvcmnzkf7zc8ua2kqnlac8uhyl9wp0ucgrfv9mds9xzgndspv3srlkrn9",
+    gov_hodler_contract: "terra19qhtl7gwj46x98ne0vr4fwayee87u5fqcj3njqkyrtuxx0h6j9vs59mmtx",
+    staking_contract: "terra1ev7rjtp26e0gy8szclz78a4depwl8l7cg369my93z0qrsqt8tc2qf2yzja",
+    vesting_contract: "terra1c5elxxtafafpmrsc63dg32tptc4qp5rw65nrj3xuhs4whka6xvpstwwyyc",
   },
 } as const;
 
@@ -297,8 +297,8 @@ export const mainnet = {
 
   // TerraSwap contracts
   terraswap: {
-    terraswap_token_code: 3,
-    terraswap_factory: "terra1ulgw0td86nvs4wtpsc80thv6xelk76ut7a7apj",
+    terraswap_token_code: 4,
+    terraswap_factory: "terra1466nf3zuxpya8q9emxukd7vftaf6h4psr0a07srl5zw74zh84yjqxl5qul",
     halo_token_contract: "terra1w8kvd6cqpsthupsk4l0clwnmek4l3zr7c84kwq",
     halo_ust_pair_contract: "",
     halo_ust_pair_lp_token: "",
