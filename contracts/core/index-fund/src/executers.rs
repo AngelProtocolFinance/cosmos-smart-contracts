@@ -10,7 +10,7 @@ use cosmwasm_std::{
     Response, StdError, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20CoinVerified};
-use terraswap::asset::{Asset, AssetInfo};
+use cw_asset::{Asset, AssetInfoBase};
 
 pub fn update_owner(
     deps: DepsMut,
@@ -366,12 +366,12 @@ pub fn deposit(
             .unwrap_or_default();
 
         let balance = match deposit_fund.info {
-            AssetInfo::NativeToken { ref denom } => Balance::from(vec![Coin {
+            AssetInfoBase::Native(ref denom) => Balance::from(vec![Coin {
                 denom: denom.to_string(),
                 amount: deposit_amount,
             }]),
-            AssetInfo::Token { ref contract_addr } => Balance::from(Cw20CoinVerified {
-                address: deps.api.addr_validate(&contract_addr)?,
+            AssetInfoBase::Cw20(ref contract_addr) => Balance::from(Cw20CoinVerified {
+                address: contract_addr.clone(),
                 amount: deposit_amount,
             }),
         };
@@ -556,12 +556,12 @@ pub fn calculate_split(
 pub fn build_donation_messages(
     _deps: Deps,
     donation_messages: Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))>,
-    deposit_fund_info: AssetInfo,
+    deposit_fund_info: AssetInfoBase<Addr>,
 ) -> Vec<SubMsg> {
     let mut messages = vec![];
     for member in donation_messages.iter() {
         match deposit_fund_info {
-            AssetInfo::NativeToken { ref denom } => {
+            AssetInfoBase::Native(ref denom) => {
                 messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: member.0.to_string(),
                     msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
@@ -577,7 +577,7 @@ pub fn build_donation_messages(
                     }],
                 })));
             }
-            AssetInfo::Token { ref contract_addr } => {
+            AssetInfoBase::Cw20(ref contract_addr) => {
                 messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: contract_addr.to_string(),
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Send {

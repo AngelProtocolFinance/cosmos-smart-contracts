@@ -1,9 +1,9 @@
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
+use cw_asset::{Asset, AssetInfoBase};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-use terraswap::asset::{Asset, AssetInfo};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct BalanceResponse {
@@ -298,7 +298,7 @@ impl GenericBalance {
             },
         };
         Asset {
-            info: AssetInfo::NativeToken { denom: coin.denom },
+            info: AssetInfoBase::Native(coin.denom),
             amount: coin.amount,
         }
     }
@@ -325,9 +325,7 @@ impl GenericBalance {
             .amount;
 
         Asset {
-            info: AssetInfo::Token {
-                contract_addr: token_address.to_string(),
-            },
+            info: AssetInfoBase::Cw20(token_address),
             amount,
         }
     }
@@ -418,7 +416,7 @@ pub struct TransactionRecord {
     pub sender: Addr,
     pub recipient: Option<Addr>,
     pub amount: Uint128,
-    pub asset_info: AssetInfo,
+    pub asset_info: AssetInfoBase<Addr>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

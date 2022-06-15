@@ -27,8 +27,8 @@ use cosmwasm_std::{
     WasmQuery,
 };
 use cw20::{Balance, Cw20CoinVerified};
+use cw_asset::{Asset, AssetInfoBase};
 use cw_utils::Duration;
-use terraswap::asset::{Asset, AssetInfo};
 
 pub fn new_cw4_group_reply(
     deps: DepsMut,
@@ -306,11 +306,11 @@ pub fn vault_receipt(
             // normal vault receipt if closing_endowment has not been set to TRUE
             if !state.closing_endowment {
                 let asset = match returned_token.info {
-                    AssetInfo::NativeToken { ref denom } => state
+                    AssetInfoBase::Native(ref denom) => state
                         .balances
                         .locked_balance
                         .get_denom_amount(denom.to_string()),
-                    AssetInfo::Token { ref contract_addr } => state
+                    AssetInfoBase::Cw20(ref contract_addr) => state
                         .balances
                         .locked_balance
                         .get_token_amount(deps.api.addr_validate(&contract_addr.to_string())?),
@@ -324,12 +324,12 @@ pub fn vault_receipt(
 
                 // set token balances available to zero for locked
                 let balance = match returned_token.info {
-                    AssetInfo::NativeToken { ref denom } => Balance::from(vec![Coin {
+                    AssetInfoBase::Native(ref denom) => Balance::from(vec![Coin {
                         amount: Uint128::zero(),
                         denom: denom.to_string(),
                     }]),
-                    AssetInfo::Token { ref contract_addr } => Balance::Cw20(Cw20CoinVerified {
-                        address: deps.api.addr_validate(&contract_addr)?,
+                    AssetInfoBase::Cw20(ref contract_addr) => Balance::Cw20(Cw20CoinVerified {
+                        address: contract_addr.clone(),
                         amount: Uint128::zero(),
                     }),
                 };
@@ -338,7 +338,7 @@ pub fn vault_receipt(
                 // this is a vault receipt triggered by closing an Endowment
                 // need to handle beneficiary vs index fund submsg actions taken
                 let asset = match returned_token.info {
-                    AssetInfo::NativeToken { denom } => Balance::from(vec![Coin {
+                    AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
                         amount: state
                             .balances
                             .locked_balance
@@ -351,17 +351,17 @@ pub fn vault_receipt(
                                 .amount,
                         denom: denom.to_string(),
                     }]),
-                    AssetInfo::Token { contract_addr } => Balance::Cw20(Cw20CoinVerified {
-                        address: deps.api.addr_validate(&contract_addr)?,
+                    AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
+                        address: contract_addr.clone(),
                         amount: state
                             .balances
                             .locked_balance
-                            .get_token_amount(deps.api.addr_validate(&contract_addr)?)
+                            .get_token_amount(contract_addr.clone())
                             .amount
                             + state
                                 .balances
                                 .liquid_balance
-                                .get_token_amount(deps.api.addr_validate(&contract_addr)?)
+                                .get_token_amount(contract_addr)
                                 .amount,
                     }),
                 };
@@ -550,12 +550,12 @@ pub fn deposit(
     state.transactions.push(tx_record);
     // increase the liquid balance by donation (liquid) amount
     let liquid_balance = match liquid_amount.info {
-        AssetInfo::NativeToken { denom } => Balance::from(vec![Coin {
+        AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
             denom: denom.to_string(),
             amount: liquid_amount.amount,
         }]),
-        AssetInfo::Token { contract_addr } => Balance::Cw20(Cw20CoinVerified {
-            address: deps.api.addr_validate(&contract_addr)?,
+        AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
+            address: contract_addr.clone(),
             amount: liquid_amount.amount,
         }),
     };
@@ -569,12 +569,12 @@ pub fn deposit(
         deposit_messages = vec![];
         // increase the liquid balance by donation (liquid) amount
         let locked_balance = match locked_amount.info {
-            AssetInfo::NativeToken { denom } => Balance::from(vec![Coin {
+            AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
                 denom: denom.to_string(),
                 amount: locked_amount.amount,
             }]),
-            AssetInfo::Token { contract_addr } => Balance::Cw20(Cw20CoinVerified {
-                address: deps.api.addr_validate(&contract_addr)?,
+            AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
+                address: contract_addr.clone(),
                 amount: locked_amount.amount,
             }),
         };
@@ -603,7 +603,7 @@ pub fn withdraw(
     info: MessageInfo,
     sources: Vec<FundingSource>,
     beneficiary: String,
-    asset_info: AssetInfo,
+    asset_info: AssetInfoBase<Addr>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
@@ -664,7 +664,7 @@ pub fn withdraw_liquid(
     info: MessageInfo,
     liquid_amount: Uint128,
     beneficiary: String,
-    asset_info: AssetInfo,
+    asset_info: AssetInfoBase<Addr>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
@@ -684,18 +684,18 @@ pub fn withdraw_liquid(
     let mut state = STATE.load(deps.storage)?;
     // check that the amount in liquid balance is sufficient to cover request
     let amount = match asset_info {
-        AssetInfo::NativeToken { ref denom } => {
+        AssetInfoBase::Native(ref denom) => {
             state
                 .balances
                 .liquid_balance
                 .get_denom_amount(denom.to_string())
                 .amount
         }
-        AssetInfo::Token { ref contract_addr } => {
+        AssetInfoBase::Cw20(ref contract_addr) => {
             state
                 .balances
                 .liquid_balance
-                .get_token_amount(deps.api.addr_validate(&contract_addr)?)
+                .get_token_amount(contract_addr.clone())
                 .amount
         }
     };
@@ -705,11 +705,11 @@ pub fn withdraw_liquid(
 
     // Update the Liquid Balance in STATE
     let balance = match asset_info {
-        AssetInfo::NativeToken { ref denom } => Balance::from(vec![Coin {
+        AssetInfoBase::Native(ref denom) => Balance::from(vec![Coin {
             denom: denom.to_string(),
             amount: liquid_amount,
         }]),
-        AssetInfo::Token { ref contract_addr } => Balance::Cw20(Cw20CoinVerified {
+        AssetInfoBase::Cw20(ref contract_addr) => Balance::Cw20(Cw20CoinVerified {
             address: deps.api.addr_validate(&contract_addr.to_string())?,
             amount: liquid_amount,
         }),
@@ -720,13 +720,13 @@ pub fn withdraw_liquid(
     // Send "asset" to the Beneficiary via BankMsg::Send
     let mut messages: Vec<SubMsg> = vec![];
     match asset_info {
-        AssetInfo::NativeToken { ref denom } => {
+        AssetInfoBase::Native(ref denom) => {
             messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
                 to_address: beneficiary.to_string(),
                 amount: coins(liquid_amount.u128(), denom.to_string()),
             })))
         }
-        AssetInfo::Token { ref contract_addr } => {
+        AssetInfoBase::Cw20(ref contract_addr) => {
             messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: contract_addr.to_string(),
                 msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {

@@ -4,7 +4,7 @@ use angel_core::structs::BalanceResponse;
 use angel_core::{messages::vault::QueryMsg as VaultQuerier, structs::TransactionRecord};
 use cosmwasm_std::{to_binary, Addr, Deps, Env, QueryRequest, StdError, StdResult, WasmQuery};
 use cw2::get_contract_version;
-use terraswap::asset::AssetInfo;
+use cw_asset::AssetInfoBase;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
@@ -97,7 +97,7 @@ pub fn query_transactions(
     deps: Deps,
     sender: Option<String>,
     recipient: Option<String>,
-    asset_info: AssetInfo,
+    asset_info: AssetInfoBase<Addr>,
 ) -> StdResult<TxRecordsResponse> {
     let txs = STATE.load(deps.storage)?.transactions;
 

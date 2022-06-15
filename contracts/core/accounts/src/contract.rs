@@ -15,8 +15,7 @@ use cosmwasm_std::{
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
-use terraswap::asset::Asset;
-use terraswap::asset::AssetInfo;
+use cw_asset::{Asset, AssetInfoBase};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";
@@ -142,9 +141,7 @@ pub fn execute(
                 return Err(ContractError::InvalidCoinsDeposited {});
             }
             let native_fund = Asset {
-                info: AssetInfo::NativeToken {
-                    denom: info.funds[0].denom.to_string(),
-                },
+                info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
                 amount: info.funds[0].amount,
             };
             executers::deposit(deps, env, info.clone(), info.sender, msg, native_fund)
@@ -164,9 +161,7 @@ pub fn execute(
                 return Err(ContractError::InvalidCoinsDeposited {});
             }
             let native_fund = Asset {
-                info: AssetInfo::NativeToken {
-                    denom: info.funds[0].denom.to_string(),
-                },
+                info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
                 amount: info.funds[0].amount,
             };
             executers::vault_receipt(deps, env, info.clone(), info.sender, native_fund)
@@ -195,9 +190,7 @@ pub fn receive_cw20(
 ) -> Result<Response, ContractError> {
     let api = deps.api;
     let cw20_fund = Asset {
-        info: AssetInfo::Token {
-            contract_addr: info.sender.to_string(),
-        },
+        info: AssetInfoBase::Cw20(deps.api.addr_validate(info.sender.as_str())?),
         amount: cw20_msg.amount,
     };
     match from_binary(&cw20_msg.msg) {

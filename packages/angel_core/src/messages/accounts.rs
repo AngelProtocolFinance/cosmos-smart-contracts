@@ -1,10 +1,10 @@
 use crate::structs::{FundingSource, Profile};
-use cosmwasm_std::{Decimal, Uint128};
+use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
+use cw_asset::AssetInfoBase;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use terraswap::asset::AssetInfo;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {}
@@ -35,12 +35,12 @@ pub enum ExecuteMsg {
     Withdraw {
         sources: Vec<FundingSource>,
         beneficiary: String,
-        asset_info: AssetInfo,
+        asset_info: AssetInfoBase<Addr>,
     },
     WithdrawLiquid {
         liquid_amount: Uint128,
         beneficiary: String,
-        asset_info: AssetInfo,
+        asset_info: AssetInfoBase<Addr>,
     },
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt {},
@@ -157,6 +157,6 @@ pub enum QueryMsg {
     GetTxRecords {
         sender: Option<String>,
         recipient: Option<String>,
-        asset_info: AssetInfo,
+        asset_info: AssetInfoBase<Addr>,
     },
 }

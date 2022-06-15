@@ -6,6 +6,7 @@ use angel_core::responses::accounts::*;
 use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{attr, coins, from_binary, Addr, Decimal};
+use cw_asset::AssetInfoBase;
 use std::vec;
 
 #[test]
@@ -683,9 +684,7 @@ fn test_donate() {
         QueryMsg::GetTxRecords {
             sender: None,
             recipient: None,
-            asset_info: terraswap::asset::AssetInfo::NativeToken {
-                denom: "uluna".to_string(),
-            },
+            asset_info: AssetInfoBase::Native("uluna".to_string()),
         },
     )
     .unwrap();
@@ -765,9 +764,7 @@ fn test_withdraw() {
     let withdraw_msg = ExecuteMsg::Withdraw {
         sources: vec![],
         beneficiary: "beneficiary".to_string(),
-        asset_info: terraswap::asset::AssetInfo::NativeToken {
-            denom: "uluna".to_string(),
-        },
+        asset_info: AssetInfoBase::Native("uluna".to_string()),
     };
     let res = execute(deps.as_mut(), mock_env(), info, withdraw_msg).unwrap();
     assert_eq!(res.messages.len(), 0);

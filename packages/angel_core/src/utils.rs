@@ -9,7 +9,7 @@ use cosmwasm_std::{
     StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg};
-use terraswap::asset::{Asset, AssetInfo};
+use cw_asset::{Asset, AssetInfoBase};
 
 /// The following `calc_range_<???>` functions will set the first key after the provided key, by appending a 1 byte
 pub fn calc_range_start(start_after: Option<u64>) -> Option<Vec<u8>> {
@@ -201,7 +201,7 @@ pub fn withdraw_from_vaults(
     registrar_contract: String,
     beneficiary: &Addr,
     sources: Vec<FundingSource>,
-    asset_info: AssetInfo,
+    asset_info: AssetInfoBase<Addr>,
 ) -> Result<(Vec<SubMsg>, Uint128), ContractError> {
     let mut withdraw_messages = vec![];
     let mut tx_amounts = Uint128::zero();
@@ -263,7 +263,7 @@ pub fn deposit_to_vaults(
         // create a deposit message for X Vault, noting amounts for Locked / Liquid
         // funds payload contains both amounts for locked and liquid accounts
         match fund.info {
-            AssetInfo::NativeToken { ref denom } => {
+            AssetInfoBase::Native(ref denom) => {
                 deposit_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: yield_vault.address.to_string(),
                     msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {}).unwrap(),
@@ -273,7 +273,7 @@ pub fn deposit_to_vaults(
                     }],
                 })));
             }
-            AssetInfo::Token { ref contract_addr } => {
+            AssetInfoBase::Cw20(ref contract_addr) => {
                 deposit_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: contract_addr.to_string(),
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
@@ -316,8 +316,8 @@ pub fn validate_deposit_fund(
     fund: Asset,
 ) -> Result<Asset, ContractError> {
     let token = match fund.info {
-        AssetInfo::NativeToken { ref denom } => denom.to_string(),
-        AssetInfo::Token { ref contract_addr } => contract_addr.to_string(),
+        AssetInfoBase::Native(ref denom) => denom.to_string(),
+        AssetInfoBase::Cw20(ref contract_addr) => contract_addr.to_string(),
     };
 
     if !is_accepted_token(deps, &token, registrar_contract)? {
