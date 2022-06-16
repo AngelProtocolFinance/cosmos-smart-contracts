@@ -48,7 +48,7 @@ export async function testPairProvideLiquidity(
             {
               info: {
                 native_token: {
-                  denom: "uusd",
+                  denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
                 },
               },
               amount: nativeTokenAmount,
@@ -115,14 +115,14 @@ export async function testPairSwapNativeToHalo(
           offer_asset: {
             info: {
               native_token: {
-                denom: "uusd",
+                denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
               },
             },
             amount,
           },
         },
       },
-      [new Coin("uusd", amount)]
+      [new Coin("ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4", amount)]
     ),
   ]);
   console.log(chalk.green(" Done!"));
@@ -184,7 +184,7 @@ export async function testQueryPairSimulationNativeToHalo(
       offer_asset: {
         info: {
           native_token: {
-            denom: "uusd".toString(),
+            denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".toString(),
           },
         },
         amount: "100000000",
@@ -233,7 +233,7 @@ export async function testQueryPairReverseSimulationNativeToHalo(
       ask_asset: {
         info: {
           native_token: {
-            denom: "uusd".toString(),
+            denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".toString(),
           },
         },
         amount: "100000000",

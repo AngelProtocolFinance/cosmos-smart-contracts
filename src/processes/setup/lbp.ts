@@ -111,10 +111,10 @@ async function setupFactory(
   });
   const factoryContract = factoryResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -136,10 +136,10 @@ async function setupRouter(
   });
   const routerContract = routerResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),

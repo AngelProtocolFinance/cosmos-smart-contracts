@@ -12,7 +12,7 @@ const { expect } = chai;
 // TEST: Normal Donor cannot send funds to the Index Fund
 //
 // SCENARIO:
-// Normal user sends UST funds to an Index Fund SC fund to have it split
+// Normal user sends LUNA funds to an Index Fund SC fund to have it split
 // up amonst the fund's charity members.
 //
 //----------------------------------------------------------------------------------------
@@ -25,7 +25,7 @@ export async function testDonorSendsToIndexFund(
   amount: string
 ): Promise<void> {
   process.stdout.write(
-    "Test - Donor (normal pleb) can send a UST donation to an Index Fund fund"
+    "Test - Donor (normal pleb) can send a LUNA donation to an Index Fund fund"
   );
 
   await expect(
@@ -39,7 +39,7 @@ export async function testDonorSendsToIndexFund(
             split,
           },
         },
-        { uusd: amount }
+        { uluna: amount }
       ),
     ])
   );
@@ -50,7 +50,7 @@ export async function testDonorSendsToIndexFund(
 // TEST: TCA Member can send donations to the Index Fund
 //
 // SCENARIO:
-// TCA Member sends UST funds to an Index Fund SC fund to have it split
+// TCA Member sends LUNA funds to an Index Fund SC fund to have it split
 // up amonst the active fund's charity members.
 //
 //----------------------------------------------------------------------------------------
@@ -59,26 +59,26 @@ export async function testTcaMemberSendsToIndexFund(
   tca: Wallet,
   indexFund: string
 ): Promise<void> {
-  process.stdout.write("Test - TCA Member can send a UST donation to an Index Fund");
+  process.stdout.write("Test - TCA Member can send a LUNA donation to an Index Fund");
   await expect(
     sendTransaction(terra, tca, [
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
         { deposit: { fund_id: undefined, split: undefined } },
-        { uusd: "30000000" }
+        { uluna: "30000000" }
       ),
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
         { deposit: { fund_id: 3, split: undefined } },
-        { uusd: "40000000" }
+        { uluna: "40000000" }
       ),
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
         { deposit: { fund_id: 3, split: "0.76" } },
-        { uusd: "40000000" }
+        { uluna: "40000000" }
       ),
     ])
   );
@@ -244,11 +244,16 @@ export async function testQueryIndexFundTcaList(
 
 export async function testQueryIndexFundFundsList(
   terra: LocalTerra | LCDClient,
-  indexFund: string
+  indexFund: string,
+  start_after: number | undefined,
+  limit: number | undefined
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund FundsList");
   const result: any = await terra.wasm.contractQuery(indexFund, {
-    funds_list: {},
+    funds_list: {
+      limit,
+      start_after,
+    },
   });
 
   console.log(result);
@@ -305,6 +310,22 @@ export async function testQueryIndexFundDeposit(
       amount: "100000000",
       fund_id: 6,
     },
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryIndexFundInvolvedAddress(
+  terra: LocalTerra | LCDClient,
+  indexFund: string,
+  address: string
+): Promise<void> {
+  process.stdout.write(
+    "Test - Query IndexFund for all funds an Address is involoved with"
+  );
+  const result: any = await terra.wasm.contractQuery(indexFund, {
+    involved_funds: { address },
   });
 
   console.log(result);

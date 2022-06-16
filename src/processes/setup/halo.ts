@@ -128,10 +128,10 @@ async function setupGov(
   });
   const govContractAddr = govResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -169,10 +169,10 @@ async function setupGovHodler(
   );
   const govHodlerContractAddr = govHodlerResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -203,10 +203,10 @@ async function setupAirdrop(
   });
   const airdropContractAddr = airdropResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -248,10 +248,10 @@ async function setupCollector(
   );
   const collectorContractAddr = collectorResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -289,10 +289,10 @@ async function setupCommunity(
   );
   const communityContractAddr = communityResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -332,10 +332,10 @@ async function setupDistributor(
   );
   const distributorContractAddr = distributorResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -369,10 +369,10 @@ async function setupStaking(
   });
   const stakingContractAddr = stakingResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -403,10 +403,10 @@ async function setupVesting(
   });
   const vestingContractAddr = vestingResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
