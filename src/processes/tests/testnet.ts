@@ -1,5 +1,6 @@
 import { LCDClient, LocalTerra, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
+import { localterra } from "../../config/localterraConstants";
 import { datetimeStringToUTC } from "../../utils/helpers";
 import {
   testBeneficiaryCanWithdrawFromLiquid,
@@ -206,82 +207,69 @@ export async function testExecute(
   //   // { name: "Testnet Admin", webiste: "http://angelprotocol.io", logo: "" }, // member #2
   //   "add" // action
   // );
-  // testRemoveIndexFund(terra, apTeam, indexFund, 5);
+  // await testRemoveIndexFund(terra, apTeam, indexFund, 5);
   // await testCreateIndexFund(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   [
-  //     "terra178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // testnet admin (testnet ONLY!)
-  //     "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // charity#1 (testnet ONLY!)
-  //   ],
+  //   "Test Index Fund Name",
+  //   "Test Index Fund desc",
+  //   false,
   //   []
   // );
-  // await testUpdateFundMembers(terra, apTeam, apTeam, indexFund, 6, ["","",""], ["","",""]);
-  // await testChangeManyAccountsEndowmentOwners(terra, apTeam, []);
-
-  // [
-  //   ,
+  // await testUpdateFundMembers(terra, apTeam, indexFund, 2, [], []);
+  // await testChangeManyAccountsEndowmentOwners(terra, apTeam, [
   //   {
-  //     address: "terra1jvtf3ccpkr3vymv98vk9nz7wvwmykgv8yk9l3w",
-  //     owner: "terra1egdvq6wycqrj3rugzc70lx7lpjsrpdfdzqufcp",
-  //   },
-  // ].forEach(async (endowment) => {
-  // await createAccountCw4GroupCw3Multisig(
-  //   terra,
-  //   apTeam,
-  //   registrar,
-  //   62653, // cw4Code
-  //   62654, // cw3Code
-  //   {
-  //     address: "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v",
-  //     owner: "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+  //     "address": "terra16zj5dw97sk7q3rvakzu76uyfv6zrxkvsln0yjz2wa5s58mq67vhs5wdv7l", // Current one is localterra endow1.
+  //     "owner": apTeam, 
+  //     "kyc_donors_only": false,
   //   }
-  // );
-  await testCreateEndowmentViaRegistrar(terra, apTeam, registrar, {
-    owner: charity1.key.accAddress,
-    beneficiary: charity1.key.accAddress,
-    withdraw_before_maturity: false,
-    maturity_time: undefined,
-    maturity_height: undefined,
-    guardians_multisig_addr: undefined,
-    cw4_members: [{ addr: charity1.key.accAddress, weight: 1 }],
-    profile: {
-      name: "Test-Suite Endowment",
-      overview: "Endowment created from the test-suite integration test",
-      un_sdg: 2,
-      tier: 3,
-      logo: undefined,
-      image: undefined,
-      url: undefined,
-      registration_number: undefined,
-      country_city_origin: undefined,
-      contact_email: undefined,
-      social_media_urls: {
-        facebook: undefined,
-        twitter: undefined,
-        linkedin: undefined,
-      },
-      number_of_employees: undefined,
-      average_annual_budget: undefined,
-      annual_revenue: undefined,
-      charity_navigator_rating: undefined,
-      endow_type: "Charity",
-    },
-  });
+  // ]);
+
+  // await testCreateEndowmentViaRegistrar(terra, apTeam, registrar, {
+  //   owner: charity1.key.accAddress,
+  //   beneficiary: charity1.key.accAddress,
+  //   withdraw_before_maturity: false,
+  //   maturity_time: undefined,
+  //   maturity_height: undefined,
+  //   guardians_multisig_addr: undefined,
+  //   cw4_members: [{ addr: charity1.key.accAddress, weight: 1 }],
+  //   kyc_donors_only: false,
+  //   profile: {
+  //     name: "Test-Suite Endowment",
+  //     overview: "Endowment created from the test-suite integration test",
+  //     un_sdg: 2,
+  //     tier: 3,
+  //     logo: "test logo",
+  //     image: "test image",
+  //     url: undefined,
+  //     registration_number: undefined,
+  //     country_city_origin: undefined,
+  //     contact_email: undefined,
+  //     social_media_urls: {
+  //       facebook: undefined,
+  //       twitter: undefined,
+  //       linkedin: undefined,
+  //     },
+  //     number_of_employees: undefined,
+  //     average_annual_budget: undefined,
+  //     annual_revenue: undefined,
+  //     charity_navigator_rating: undefined,
+  //     endow_type: "Charity",
+  //   },
+  // });
   // Multisig test
-  // await testAddMemberToC4Group(terra, apTeam, cw3ApTeam, cw4GrpApTeam, "terra1......");
+  // await testAddMemberToC4Group(terra, apTeam, cw3ApTeam, cw4GrpApTeam, apTeam.key.accAddress);
   // await testUpdateCw3Config(terra, apTeam, cw3ApTeam, 50, 25000);
-  // await testAddGuardiansToEndowment(terra, apTeam3, charity1, charity2, charity3, pleb, cw3GuardianAngels, endowmentContract1);
-  // await testGuardiansChangeEndowmentOwner(terra, charity2, charity3, pleb, endowmentContract1, cw3GuardianAngels);
+
   // await testQueryMultisigVoters(terra, cw3ApTeam);
   // await testQueryMultisigThreshold(terra, cw3ApTeam);
   // await testQueryGroupMembersList(terra, cw4GrpApTeam);
 
   // Test execute
-  // await testRejectUnapprovedDonations(terra, pleb, endowmentContract1, "10000000");
-  // await testDonorSendsToIndexFund(terra, pleb, indexFund, 3, "0.5", "4200000");
-  // await testTcaMemberSendsToIndexFund(terra, tca, indexFund);
+  // await testRejectUnapprovedDonations(terra, pleb, endowmentContract1, "10000000"); // possible query registrar error
+  // await testDonorSendsToIndexFund(terra, pleb, indexFund, 1, "0.5", "4200000"); // possible query registrar error
+  // await testTcaMemberSendsToIndexFund(terra, tca, indexFund); // possible query registrar error
   // await testAngelTeamCanTriggerVaultsHarvest(
   //   terra,
   //   apTeam,
@@ -289,21 +277,21 @@ export async function testExecute(
   //   registrar,
   //   haloCollector,
   //   "0.5"
-  // );
+  // );  // vault-related
   // await testCharityCanUpdateStrategies(
   //   terra,
   //   charity1,
   //   endowmentContract1,
   //   anchorVault1,
   //   anchorVault2
-  // );
+  // );  // vault-related
   // await testBeneficiaryCanWithdrawFromLiquid(
   //   terra,
   //   charity3,
   //   endowmentContract3,
   //   anchorVault1,
   //   pleb.key.accAddress
-  // );
+  // );  // vault-related
   // await testUpdatingRegistrarConfigs(terra, apTeam, registrar, {
   //   cw3_code: 102,
   //   cw4_code: 104,
@@ -329,7 +317,6 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   18,
   //   "Test fund for Ukraine Portal",
   //   "Another portal test fund",
   //   false,
@@ -500,7 +487,7 @@ export async function testExecute(
   //   apTeam,
   //   lbpFactoryContract,
   //   terraswapToken,
-  //   "uusd",
+  //   "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
   //   datetimeStringToUTC("12/16/2021 00:00:00Z"),
   //   datetimeStringToUTC("12/17/2021 00:00:00Z"),
   //   "96",
@@ -510,7 +497,7 @@ export async function testExecute(
   //   "HALO <-> UST Pair"
   // );
   // await getPairContractLpToken(terra, lbpPairContract);
-  // await testFactoryUnregister(terra, apTeam, lbpFactoryContract, terraswapToken, "uusd");
+  // await testFactoryUnregister(terra, apTeam, lbpFactoryContract, terraswapToken, "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4");
   // await testQueryFactoryConfig(terra, lbpFactoryContract);
   // await testQueryFactoryPair(terra, lbpFactoryContract, terraswapToken);
   // await testQueryFactoryPairs(terra, lbpFactoryContract);

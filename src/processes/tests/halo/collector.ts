@@ -56,7 +56,7 @@ export async function testCollectorSweep(
 
   let result = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, collectorContract, {
-      sweep: { denom: "uusd" },
+      sweep: { denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4" },
     }),
   ]);
 
@@ -96,7 +96,7 @@ export async function testQueryCollectorPair(
 ): Promise<void> {
   process.stdout.write("Test - Query Collector pair");
   const result: any = await terra.wasm.contractQuery(collectorContract, {
-    pair: { denom: "uusd" },
+    pair: { denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4" },
   });
 
   console.log(result);

@@ -41,7 +41,7 @@ export async function testQueryRouterSimulateSwapOperations(
           astro_swap: {
             offer_asset_info: {
               native_token: {
-                denom: "uusd",
+                denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
               },
             },
             ask_asset_info: {

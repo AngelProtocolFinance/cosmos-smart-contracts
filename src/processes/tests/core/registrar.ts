@@ -61,7 +61,7 @@ export async function testUpdatingRegistrarConfigs(
   registrar: string,
   config: any
 ): Promise<void> {
-  process.stdout.write("AP Team updates Registrar Tax Rate");
+  process.stdout.write("AP Team updates Registrar Config");
   await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_config: config,
@@ -91,10 +91,10 @@ export async function testCreateEndowmentViaRegistrar(
   ]);
   const acct = result.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(chalk.green(` ${acct} - Done!`));
 }

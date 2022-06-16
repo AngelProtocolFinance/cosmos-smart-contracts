@@ -171,7 +171,7 @@ export async function testQueryFactoryPair(
     },
     {
       native_token: {
-        denom: "uusd".toString(),
+        denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".toString(),
       },
     },
   ];
