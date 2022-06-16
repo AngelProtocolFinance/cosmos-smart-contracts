@@ -5,7 +5,8 @@ use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
 use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info};
-use cosmwasm_std::{attr, coins, from_binary, Addr, Decimal};
+use cosmwasm_std::{attr, coins, from_binary, Addr, Decimal, to_binary, Uint128};
+use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfoBase;
 use std::vec;
 
@@ -685,6 +686,99 @@ fn test_donate() {
             sender: None,
             recipient: None,
             asset_info: AssetInfoBase::Native("uluna".to_string()),
+        },
+    )
+    .unwrap();
+    let txs_response: TxRecordsResponse = from_binary(&query_res).unwrap();
+    assert_eq!(txs_response.txs.len(), 1);
+}
+
+#[test]
+fn test_deposit_cw20() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
+    let registrar_contract = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt".to_string();
+    let depositor = Addr::unchecked("depositor");
+
+    // Initialize the Endowment
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: None,
+        tier: None,
+        logo: None,
+        image: None,
+        url: None,
+        registration_number: None,
+        country_of_origin: None,
+        street_address: None,
+        contact_email: None,
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: None,
+            linkedin: None,
+        },
+        number_of_employees: None,
+        average_annual_budget: None,
+        annual_revenue: None,
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: ap_team.clone(),
+        registrar_contract: registrar_contract.clone(),
+        owner: charity_addr.clone(),
+        beneficiary: charity_addr.clone(),
+        withdraw_before_maturity: false,
+        maturity_time: None,
+        maturity_height: None,
+        profile: profile,
+        cw4_members: vec![],
+        kyc_donors_only: true,
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let _res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+    // Update the Endowment status
+    let info = mock_info(registrar_contract.as_str(), &[]);
+    let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
+        deposit_approved: true,
+        withdraw_approved: true,
+    });
+    let _res = execute(deps.as_mut(), mock_env(), info, update_status_msg).unwrap();
+
+    // Try the "Deposit"
+    let donation_amt = 200_u128;
+    let info = mock_info("test-cw20", &[]);
+    let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
+        locked_percentage: Decimal::percent(50),
+        liquid_percentage: Decimal::percent(50),
+    });
+    let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
+        sender: depositor.to_string(),
+        amount: Uint128::from(donation_amt),
+        msg: to_binary(&deposit_msg).unwrap()
+    });
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    assert_eq!(res.attributes.len(), 3);
+
+    // Check the "STATE" for "transactions" field
+    let query_res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&query_res).unwrap();
+    assert_eq!(state.donations_received.u128(), donation_amt);
+
+    let query_res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::GetTxRecords {
+            sender: None,
+            recipient: None,
+            asset_info: AssetInfoBase::Cw20(Addr::unchecked("test-cw20")),
         },
     )
     .unwrap();
