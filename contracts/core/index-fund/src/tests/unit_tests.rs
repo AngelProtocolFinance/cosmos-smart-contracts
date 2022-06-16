@@ -1,17 +1,19 @@
-use angel_core::structs::{IndexFund, SplitDetails};
-use cosmwasm_std::{Decimal, Timestamp};
-
-use crate::contract::{execute, instantiate, migrate, query};
-use crate::executers::{calculate_split, rotate_fund};
 use angel_core::errors::core::*;
 use angel_core::messages::index_fund::*;
 use angel_core::responses::index_fund::*;
-use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{coins, from_binary};
+use angel_core::structs::{IndexFund, SplitDetails};
+use cosmwasm_std::testing::{mock_env, mock_info};
+use cosmwasm_std::{coins, from_binary, to_binary, Decimal, Timestamp, Uint128};
+use cw20::Cw20ReceiveMsg;
+
+use crate::contract::{execute, instantiate, query};
+use crate::executers::{calculate_split, rotate_fund};
+
+use super::mock_querier::mock_dependencies;
 
 #[test]
 fn proper_initialization() {
-    let mut deps = mock_dependencies();
+    let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let registrar_contract = "registrar-account".to_string();
@@ -32,7 +34,7 @@ fn proper_initialization() {
 
 #[test]
 fn only_sc_owner_can_change_owner() {
-    let mut deps = mock_dependencies();
+    let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let registrar_contract = "registrar-account".to_string();
@@ -84,7 +86,7 @@ fn only_sc_owner_can_change_owner() {
 
 #[test]
 fn only_registrar_can_change_registrar_contract() {
-    let mut deps = mock_dependencies();
+    let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let registrar_contract = "registrar-account".to_string();
@@ -138,28 +140,8 @@ fn only_registrar_can_change_registrar_contract() {
 }
 
 #[test]
-fn migrate_contract() {
-    let mut deps = mock_dependencies();
-    // meet the cast of characters
-    let ap_team = "angelprotocolteamdano".to_string();
-    let registrar_contract = "registrar-contract".to_string();
-    let _pleb = "pleb-account".to_string();
-
-    let instantiate_msg = InstantiateMsg {
-        registrar_contract: registrar_contract.clone(),
-        fund_rotation: Some(Some(1000000u64)),
-        fund_member_limit: Some(20),
-        funding_goal: None,
-    };
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
-    let env = mock_env();
-    let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
-}
-
-#[test]
 fn sc_owner_can_add_remove_funds() {
-    let mut deps = mock_dependencies();
+    let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let registrar_contract = "registrar-account".to_string();
@@ -259,7 +241,7 @@ fn sc_owner_can_add_remove_funds() {
 
 #[test]
 fn sc_owner_can_update_fund_members() {
-    let mut deps = mock_dependencies();
+    let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
     let charity_addr = "charity-address".to_string();
@@ -316,6 +298,60 @@ fn sc_owner_can_update_fund_members() {
     let value: FundDetailsResponse = from_binary(&res).unwrap();
     let f = value.fund.unwrap();
     assert_eq!(2, f.members.len());
+}
+
+#[test]
+fn test_receive_cw20() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angelprotocolteamdano".to_string();
+    let registrar_contract = "registrar-account".to_string();
+    let _pleb = "pleb-account".to_string();
+
+    let msg = InstantiateMsg {
+        registrar_contract: registrar_contract.clone(),
+        fund_rotation: Some(Some(1000000u64)),
+        fund_member_limit: Some(20),
+        funding_goal: None,
+    };
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+
+    // we can just call .unwrap() to assert this was a success
+    let _ = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // First, create fund
+    let create_fund_msg = ExecuteMsg::CreateFund {
+        name: "test fund".to_string(),
+        description: "test fund desc".to_string(),
+        members: vec![ap_team.clone()],
+        rotating_fund: None,
+        split_to_liquid: None,
+        expiry_time: None,
+        expiry_height: None,
+    };
+    let info = mock_info(&ap_team.clone(), &[]);
+    let _ = execute(deps.as_mut(), mock_env(), info, create_fund_msg).unwrap();
+
+    // Deposit cw20 token
+    let deposit_msg = DepositMsg {
+        fund_id: Some(1),
+        split: None,
+    };
+    let real_deposit_msg = Cw20ReceiveMsg {
+        sender: ap_team.clone(),
+        amount: Uint128::from(100_u128),
+        msg: to_binary(&ReceiveMsg::Deposit(deposit_msg)).unwrap(),
+    };
+    let info = mock_info("test-cw20", &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Receive(real_deposit_msg),
+    )
+    .unwrap();
+
+    assert_eq!(res.messages.len(), 1);
 }
 
 #[test]
@@ -427,6 +463,7 @@ fn test_tca_without_split() {
     let sc_split = SplitDetails::default();
     assert_eq!(calculate_split(true, sc_split, None, None), Decimal::zero());
 }
+
 #[test]
 fn test_tca_with_split() {
     let sc_split = SplitDetails::default();
@@ -435,6 +472,7 @@ fn test_tca_with_split() {
         Decimal::zero()
     );
 }
+
 #[test]
 fn test_non_tca_with_split() {
     let sc_split = SplitDetails::default();
@@ -443,6 +481,7 @@ fn test_non_tca_with_split() {
         Decimal::percent(23)
     );
 }
+
 #[test]
 fn test_non_tca_without_split() {
     let sc_split = SplitDetails::default();
