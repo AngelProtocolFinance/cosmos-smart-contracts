@@ -41,10 +41,11 @@ export async function testRejectUnapprovedDonations(
             liquid_percentage: "0",
           },
         },
-        { uusd: amount }
+        { uluna:  amount }
       ),
     ])
-  ); //.to.be.rejectedWith("Request failed with status code 400");
+  // ); //.to.be.rejectedWith("Request failed with status code 400");
+  ).to.be.rejected;
   console.log(chalk.green(" Passed!"));
 }
 
@@ -65,7 +66,7 @@ export async function testSingleDonationAmountToManyEndowments(
           liquid_percentage: "0",
         },
       },
-      { uusd: amount }
+      { uluna:  amount }
     );
   });
   await sendTransaction(terra, apTeam, msgs);
@@ -96,6 +97,9 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
         withdraw: {
           sources: [{ vault, locked: "500000", liquid: "1000000" }],
           beneficiary,
+          asset_info: {
+            native: "uluna"
+          }
         },
       }),
     ])
@@ -142,8 +146,8 @@ export async function testCharityCanUpdateStrategies(
       new MsgExecuteContract(charity1.key.accAddress, endowment, {
         update_strategies: {
           strategies: [
-            { vault: anchorVault1, locked_percentage: "0.5", liquid_percentage: "0.5" },
-            { vault: anchorVault2, locked_percentage: "0.5", liquid_percentage: "0.5" },
+            { vault: anchorVault1, percentage: "0.5"},
+            { vault: anchorVault2, percentage: "0.5"},
           ],
         },
       }),
@@ -185,7 +189,7 @@ export async function testApTeamChangesAccountsEndowmentOwner(
 export async function testChangeManyAccountsEndowmentOwners(
   terra: LocalTerra | LCDClient,
   apTeam: Wallet,
-  endowments: any[] // [ { address: <string>, owner: <string> }, ... ]
+  endowments: any[] // [ { address: <string>, owner: <string>, kyc_donors_only: <bool> }, ... ]
 ): Promise<void> {
   process.stdout.write("Test - Contract Owner can set new owner of an Endowment");
   let msgs: Msg[] = [];
@@ -194,7 +198,7 @@ export async function testChangeManyAccountsEndowmentOwners(
       new MsgExecuteContract(apTeam.key.accAddress, e.address, {
         update_endowment_settings: {
           owner: e.owner,
-          beneficiary: e.owner,
+          kyc_donors_only: e.kyc_donors_only,
         },
       })
     );

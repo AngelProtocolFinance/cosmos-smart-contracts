@@ -4,6 +4,7 @@ import chalk from "chalk";
 import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import { sendTransaction, storeCode, instantiateContract } from "../../../utils/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
+import { NONAME } from "dns";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -127,21 +128,22 @@ async function setup(
   const cw4Group = await storeCode(terra, apTeam, `${wasm_path.core}/cw4_group.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw4Group}`);
 
-  process.stdout.write("Uploading Guardian Angels MultiSig Wasm");
-  const guardianAngelMultiSig = await storeCode(
+  process.stdout.write("Uploading CW3 MultiSig Wasm");
+  const cw3MultiSig = await storeCode(
     terra,
     apTeam,
-    `${wasm_path.core}/guardian_angels_multisig.wasm`
+    `${wasm_path.core}/cw3_multisig.wasm`
   );
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${guardianAngelMultiSig}`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSig}`);
 
   process.stdout.write("Uploading AP Team MultiSig Wasm");
   const apTeamMultiSig = await storeCode(
     terra,
     apTeam,
-    `${wasm_path.core}/ap_team_multisig.wasm`
+    `${wasm_path.core}/cw3_multisig.wasm`
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${apTeamMultiSig}`);
+
 
   // Step 2. Instantiate the key contracts
   // Registrar
@@ -156,16 +158,37 @@ async function setup(
       treasury: treasury_address,
       tax_rate: tax_rate,
       default_vault: undefined,
+      split_to_liquid: undefined,
+      accepted_tokens: {
+        native: ["ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4", "uluna"],
+        cw20: [],
+      }
     }
   );
   registrar = registrarResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${registrar}`);
+
+  // Index Fund
+  process.stdout.write("Instantiating Index Fund contract");
+  const fundResult = await instantiateContract(terra, apTeam, apTeam, fundCodeId, {
+    registrar_contract: registrar,
+    fund_rotation: fund_rotation,
+    funding_goal: funding_goal,
+  });
+  indexFund = fundResult.logs[0].events
+    .find((event) => {
+      return event.type == "instantiate";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "_contract_address";
+    })?.value as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
 
   // CW4 AP Team Group
   process.stdout.write("Instantiating CW4 AP Team Group contract");
@@ -178,10 +201,10 @@ async function setup(
   });
   cw4GrpApTeam = cw4GrpApTeamResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpApTeam}`);
 
@@ -196,15 +219,14 @@ async function setup(
       group_addr: cw4GrpApTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
-      registrar_contract: registrar,
     }
   );
   cw3ApTeam = cw3ApTeamResult.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw3ApTeam}`);
 
@@ -221,80 +243,6 @@ async function setup(
     }),
   ]);
   console.log(chalk.green(" Done!"));
-
-  // CW4 Endowment Owners Group
-  // Registrar SC is the Admin & no members in the group to start
-  process.stdout.write("Instantiating CW4 Endowment Owners Group contract");
-  const cw4GrpOwnersResult = await instantiateContract(terra, apTeam, apTeam, cw4Group, {
-    admin: registrar,
-    members: [],
-  });
-  cw4GrpOwners = cw4GrpOwnersResult.logs[0].events
-    .find((event) => {
-      return event.type == "instantiate_contract";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
-    })?.value as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpOwners}`);
-
-  // CW3 Guardian Angels MultiSig
-  process.stdout.write("Instantiating CW3 Guardian Angels MultiSig contract");
-  const cw3Result = await instantiateContract(
-    terra,
-    apTeam,
-    apTeam,
-    guardianAngelMultiSig,
-    {
-      ap_team_group: cw4GrpApTeam,
-      endowment_owners_group: cw4GrpOwners,
-      registrar_contract: registrar,
-      threshold: { absolute_percentage: { percentage: "0.50" } },
-      max_voting_period: { height: max_voting_period_height },
-      max_voting_period_guardians: { height: max_voting_period_guardians_height },
-    }
-  );
-  cw3GuardianAngels = cw3Result.logs[0].events
-    .find((event) => {
-      return event.type == "instantiate_contract";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
-    })?.value as string;
-  console.log(
-    chalk.green(" Done!"),
-    `${chalk.blue("contractAddress")}=${cw3GuardianAngels}`
-  );
-
-  // Update the Registrar with newly created Endowment Owners Group & Guardians Multisig address
-  process.stdout.write(
-    "Update Registrar with the Address of the CW4 Endowment Owners Group contract"
-  );
-  await sendTransaction(terra, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_config: {
-        endowment_owners_group_addr: cw4GrpOwners,
-        guardians_multisig_addr: cw3GuardianAngels,
-      },
-    }),
-  ]);
-  console.log(chalk.green(" Done!"));
-
-  // Index Fund
-  process.stdout.write("Instantiating Index Fund contract");
-  const fundResult = await instantiateContract(terra, apTeam, apTeam, fundCodeId, {
-    registrar_contract: registrar,
-    fund_rotation: fund_rotation,
-    funding_goal: funding_goal,
-  });
-  indexFund = fundResult.logs[0].events
-    .find((event) => {
-      return event.type == "instantiate_contract";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
-    })?.value as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
 
   // Add confirmed TCA Members to the Index Fund SCs approved list
   process.stdout.write("Add confirmed TCA Member to allowed list");
@@ -346,8 +294,8 @@ async function createEndowments(): Promise<void> {
           overview: "A wonderful charity endowment that aims to test all the things",
           un_sdg: undefined,
           tier: undefined,
-          logo: undefined,
-          image: undefined,
+          logo: "logo1",
+          image: "image1",
           url: undefined,
           registration_number: undefined,
           country_city_origin: undefined,
@@ -363,15 +311,17 @@ async function createEndowments(): Promise<void> {
           charity_navigator_rating: undefined,
           endow_type: "Charity",
         },
+        cw4_members: [],
+        kyc_donors_only: false,
       },
     }),
   ]);
   endowmentContract1 = charityResult1.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -393,8 +343,8 @@ async function createEndowments(): Promise<void> {
           overview: "An even better endowment full of butterflies and rainbows",
           un_sdg: undefined,
           tier: undefined,
-          logo: undefined,
-          image: undefined,
+          logo: "logo2",
+          image: "image2",
           url: undefined,
           registration_number: undefined,
           country_city_origin: undefined,
@@ -410,15 +360,17 @@ async function createEndowments(): Promise<void> {
           charity_navigator_rating: undefined,
           endow_type: "Charity",
         },
+        cw4_members: [],
+        kyc_donors_only: false,
       },
     }),
   ]);
   endowmentContract2 = charityResult2.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -440,8 +392,8 @@ async function createEndowments(): Promise<void> {
           overview: "Shady endowment that will never be approved",
           un_sdg: undefined,
           tier: undefined,
-          logo: undefined,
-          image: undefined,
+          logo: "logo3",
+          image: "image3",
           url: undefined,
           registration_number: undefined,
           country_city_origin: undefined,
@@ -457,15 +409,17 @@ async function createEndowments(): Promise<void> {
           charity_navigator_rating: undefined,
           endow_type: "Charity",
         },
+        cw4_members: [],
+        kyc_donors_only: false,
       },
     }),
   ]);
   endowmentContract3 = charityResult3.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -487,8 +441,8 @@ async function createEndowments(): Promise<void> {
           overview: "Global endowment that spreads good vibes",
           un_sdg: undefined,
           tier: undefined,
-          logo: undefined,
-          image: undefined,
+          logo: "logo4",
+          image: "image4",
           url: undefined,
           registration_number: undefined,
           country_city_origin: undefined,
@@ -504,15 +458,17 @@ async function createEndowments(): Promise<void> {
           charity_navigator_rating: undefined,
           endow_type: "Charity",
         },
+        cw4_members: [],
+        kyc_donors_only: false,
       },
     }),
   ]);
   endowmentContract4 = charityResult4.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(
     chalk.green(" Done!"),
@@ -601,10 +557,10 @@ async function createVaults(
   });
   anchorVault1 = vaultResult1.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault1}`);
 
@@ -621,10 +577,10 @@ async function createVaults(
   });
   anchorVault2 = vaultResult2.logs[0].events
     .find((event) => {
-      return event.type == "instantiate_contract";
+      return event.type == "instantiate";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "contract_address";
+      return attribute.key == "_contract_address";
     })?.value as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault2}`);
 

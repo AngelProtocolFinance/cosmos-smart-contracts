@@ -39,7 +39,7 @@ export async function migrateCore(
   // await migrateCw3Multisig(terra, apTeam, cw3ApTeam);
   // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
   // await migrateIndexFund(terra, apTeam, indexFund);
-  // await migrateExistingAccounts(terra, apTeam, registrar, undefined, []);
+  // await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
   // await migrateVaults(terra, apTeam, vaultContracts);
 }
 
@@ -125,34 +125,6 @@ async function migrateCw3Multisig(
 
   process.stdout.write("Migrate CW3 MultiSig contract");
   const result1 = await migrateContract(terra, apTeam, apTeam, contract, codeId, {});
-  console.log(chalk.green(" Done!"));
-}
-
-// -------------------------------------------------
-//  Migrate guardian angels multisig
-//--------------------------------------------------
-async function migrateGuardianAngelsMultisig(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  cw3GuardianAngels: string
-): Promise<void> {
-  process.stdout.write("Uploading Guardian Angels MultiSig Wasm");
-  const codeId = await storeCode(
-    terra,
-    apTeam,
-    path.resolve(__dirname, `${wasm_path.core}/guardian_angels_multisig.wasm`)
-  );
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
-
-  process.stdout.write("Migrate Guardian Angels MultiSig contract");
-  const result1 = await migrateContract(
-    terra,
-    apTeam,
-    apTeam,
-    cw3GuardianAngels,
-    codeId,
-    {}
-  );
   console.log(chalk.green(" Done!"));
 }
 

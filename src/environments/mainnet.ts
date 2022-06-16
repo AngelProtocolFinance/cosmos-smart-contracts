@@ -78,7 +78,7 @@ function initialize() {
   terra = new LCDClient({
     URL: config.networkInfo.url,
     chainID: config.networkInfo.chainId,
-    gasPrices: { uusd: 0.15 },
+    gasPrices: { uluna: 0.15 },
     gasAdjustment: 1.2,
   });
   apTeam = terra.wallet(new MnemonicKey({ mnemonic: config.mnemonicKeys.apTeam }));
@@ -227,7 +227,7 @@ export async function startSetupLbp(): Promise<void> {
     terraswapHaloTokenContract,
     haloTokenAmount,
     nativeTokenAmount,
-    "uusd",
+    "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
     datetimeStringToUTC(lbp_start_time),
     datetimeStringToUTC(lbp_end_time),
     token_start_weight,
