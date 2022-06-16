@@ -293,11 +293,7 @@ pub fn deposit_to_vaults(
 /// Check if the given "token"(denom or contract address) is in "accepted_tokens" list.  
 ///     "token":              native token denom or cw20 token contract address   
 ///     "registrar_contract": address of `registrar` contract  
-pub fn is_accepted_token(
-    deps: Deps,
-    token: &str,
-    registrar_contract: &str,
-) -> StdResult<bool> {
+pub fn is_accepted_token(deps: Deps, token: &str, registrar_contract: &str) -> StdResult<bool> {
     let config_response: RegistrarConfigResponse = deps
         .querier
         .query_wasm_smart(registrar_contract.to_string(), &RegistrarQuerier::Config {})?;
