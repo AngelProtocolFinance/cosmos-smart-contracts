@@ -4,6 +4,7 @@ use angel_core::structs::BalanceResponse;
 use angel_core::{messages::vault::QueryMsg as VaultQuerier, structs::TransactionRecord};
 use cosmwasm_std::{to_binary, Addr, Deps, Env, QueryRequest, StdError, StdResult, WasmQuery};
 use cw2::get_contract_version;
+use cw_asset::AssetInfoBase;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
@@ -96,7 +97,7 @@ pub fn query_transactions(
     deps: Deps,
     sender: Option<String>,
     recipient: Option<String>,
-    denom: Option<String>,
+    asset_info: AssetInfoBase<Addr>,
 ) -> StdResult<TxRecordsResponse> {
     let txs = STATE.load(deps.storage)?.transactions;
 
@@ -133,13 +134,10 @@ pub fn query_transactions(
         None => txs,
     };
 
-    let txs = match denom {
-        Some(denom) => txs
-            .into_iter()
-            .filter(|tx| tx.denom == denom)
-            .collect::<Vec<TransactionRecord>>(),
-        None => txs,
-    };
+    let txs = txs
+        .into_iter()
+        .filter(|tx| tx.asset_info == asset_info)
+        .collect::<Vec<TransactionRecord>>();
 
     Ok(TxRecordsResponse { txs })
 }

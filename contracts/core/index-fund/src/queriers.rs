@@ -69,7 +69,10 @@ pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
                 .may_load(deps.storage, member.to_string())
                 .unwrap()
                 .unwrap_or_default()
-                .get_usd()
+                .get_denom_amount(
+                    "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                        .to_string(),
+                )
                 .amount,
         });
     }

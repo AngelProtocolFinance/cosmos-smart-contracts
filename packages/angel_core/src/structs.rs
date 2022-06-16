@@ -1,5 +1,6 @@
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
+use cw_asset::{Asset, AssetInfoBase};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -288,16 +289,17 @@ impl GenericBalance {
             }
         };
     }
-    pub fn get_usd(&self) -> Coin {
-        match self.native.iter().find(|t| {
-            t.denom == *"ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
-        }) {
+    pub fn get_denom_amount(&self, denom: String) -> Asset {
+        let coin = match self.native.iter().find(|t| t.denom == *denom) {
             Some(coin) => coin.clone(),
             None => Coin {
                 amount: Uint128::zero(),
-                denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
-                    .to_string(),
+                denom: denom.to_string(),
             },
+        };
+        Asset {
+            info: AssetInfoBase::Native(coin.denom),
+            amount: coin.amount,
         }
     }
     pub fn cw20_list(&self) -> Vec<Cw20Coin> {
@@ -310,8 +312,9 @@ impl GenericBalance {
             })
             .collect()
     }
-    pub fn get_token_amount(&self, token_address: Addr) -> Uint128 {
-        self.cw20_list()
+    pub fn get_token_amount(&self, token_address: Addr) -> Asset {
+        let amount = self
+            .cw20_list()
             .iter()
             .find(|token| token.address == token_address)
             .unwrap_or(&Cw20Coin {
@@ -319,7 +322,12 @@ impl GenericBalance {
                 address: token_address.to_string(),
             })
             .clone()
-            .amount
+            .amount;
+
+        Asset {
+            info: AssetInfoBase::Cw20(token_address),
+            amount,
+        }
     }
     pub fn add_tokens(&mut self, add: Balance) {
         match add {
@@ -408,7 +416,7 @@ pub struct TransactionRecord {
     pub sender: Addr,
     pub recipient: Option<Addr>,
     pub amount: Uint128,
-    pub denom: String,
+    pub asset_info: AssetInfoBase<Addr>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

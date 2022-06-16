@@ -4,10 +4,12 @@ use crate::state::{Config, State, CONFIG, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
-    Uint128,
+    entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
+    StdError, StdResult, Uint128,
 };
 use cw2::{get_contract_version, set_contract_version};
+use cw20::Cw20ReceiveMsg;
+use cw_asset::{Asset, AssetInfoBase};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "index-fund";
@@ -91,11 +93,45 @@ pub fn execute(
             add,
             remove,
         } => executers::update_fund_members(deps, env, info, fund_id, add, remove),
-        ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
+        ExecuteMsg::Deposit(msg) => {
+            if info.funds.len() != 1 {
+                return Err(ContractError::InvalidCoinsDeposited {});
+            }
+            let native_fund = Asset {
+                info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
+                amount: info.funds[0].amount,
+            };
+            executers::deposit(deps, env, info.clone(), info.sender, msg, native_fund)
+        }
         // ExecuteMsg::Receive(msg) => executers::receive(deps, env, info, msg),
         ExecuteMsg::UpdateAllianceMember { address, member } => {
             executers::update_alliance_member(deps, env, info, address, member)
         }
+        ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
+    }
+}
+
+pub fn receive_cw20(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    cw20_msg: Cw20ReceiveMsg,
+) -> Result<Response, ContractError> {
+    let api = deps.api;
+    let cw20_fund = Asset {
+        info: AssetInfoBase::Cw20(info.sender.clone()),
+        amount: cw20_msg.amount,
+    };
+    match from_binary(&cw20_msg.msg) {
+        Ok(ReceiveMsg::Deposit(msg)) => executers::deposit(
+            deps,
+            env,
+            info,
+            api.addr_validate(&cw20_msg.sender)?,
+            msg,
+            cw20_fund,
+        ),
+        _ => Err(ContractError::InvalidInputs {}),
     }
 }
 

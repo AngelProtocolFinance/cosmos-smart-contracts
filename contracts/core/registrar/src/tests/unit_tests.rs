@@ -248,6 +248,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         maturity_height: None,
         profile: profile,
         cw4_members: vec![],
+        kyc_donors_only: false,
     };
 
     // anyone can create Accounts

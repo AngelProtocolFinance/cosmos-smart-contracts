@@ -4,12 +4,13 @@ use angel_core::messages::index_fund::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{AllianceMember, IndexFund, SplitDetails};
-use angel_core::utils::{is_accepted_token, percentage_checks};
+use angel_core::utils::{percentage_checks, validate_deposit_fund};
 use cosmwasm_std::{
     attr, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
     Response, StdError, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::Balance;
+use cw20::{Balance, Cw20CoinVerified};
+use cw_asset::{Asset, AssetInfoBase};
 
 pub fn update_owner(
     deps: DepsMut,
@@ -342,41 +343,17 @@ pub fn update_alliance_member(
 pub fn deposit(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     sender_addr: Addr,
     msg: DepositMsg,
+    fund: Asset,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut state = STATE.load(deps.storage)?;
 
-    // only accept max of 1 deposit coin/token per donation
-    if info.funds.len() != 1 {
-        return Err(ContractError::InvalidCoinsDeposited {});
-    }
-    // Check the token with "accepted_tokens"
-    let deposit_token_denom = &info.funds[0].denom;
-    if !is_accepted_token(
-        deps.as_ref(),
-        deposit_token_denom,
-        "native",
-        config.registrar_contract.as_str(),
-    )? {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: format!("Not accepted token: {}", deposit_token_denom),
-        }));
-    }
-
-    let mut deposit_amount: Uint128 = info
-        .funds
-        .iter()
-        .find(|c| c.denom == *deposit_token_denom)
-        .map(|c| c.amount)
-        .unwrap_or_else(Uint128::zero);
-
-    // Cannot deposit zero amount
-    if deposit_amount.is_zero() {
-        return Err(ContractError::InvalidZeroAmount {});
-    }
+    let deposit_fund =
+        validate_deposit_fund(deps.as_ref(), config.registrar_contract.as_str(), fund)?;
+    let mut deposit_amount = deposit_fund.amount;
 
     // check each of the currenly allowed Alliance member addr
     let mut alliance_member = false;
@@ -387,10 +364,18 @@ pub fn deposit(
         let mut tca_donor = TCA_DONATIONS
             .may_load(deps.storage, sender_addr.to_string())?
             .unwrap_or_default();
-        tca_donor.add_tokens(Balance::from(vec![Coin {
-            denom: deposit_token_denom.to_string(),
-            amount: deposit_amount,
-        }]));
+
+        let balance = match deposit_fund.info {
+            AssetInfoBase::Native(ref denom) => Balance::from(vec![Coin {
+                denom: denom.to_string(),
+                amount: deposit_amount,
+            }]),
+            AssetInfoBase::Cw20(ref contract_addr) => Balance::from(Cw20CoinVerified {
+                address: contract_addr.clone(),
+                amount: deposit_amount,
+            }),
+        };
+        tca_donor.add_tokens(balance);
         TCA_DONATIONS.save(deps.storage, sender_addr.to_string(), &tca_donor)?;
     }
 
@@ -531,7 +516,7 @@ pub fn deposit(
         .add_submessages(build_donation_messages(
             deps.as_ref(),
             donation_messages,
-            &deposit_token_denom,
+            deposit_fund.info.clone(),
         ))
         .add_attribute("action", "deposit"))
 }
@@ -571,24 +556,44 @@ pub fn calculate_split(
 pub fn build_donation_messages(
     _deps: Deps,
     donation_messages: Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))>,
-    deposit_token_denom: &str,
+    deposit_fund_info: AssetInfoBase<Addr>,
 ) -> Vec<SubMsg> {
     let mut messages = vec![];
     for member in donation_messages.iter() {
-        messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: member.0.to_string(),
-            msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
-                angel_core::messages::accounts::DepositMsg {
-                    locked_percentage: member.1 .1,
-                    liquid_percentage: member.2 .1,
-                },
-            ))
-            .unwrap(),
-            funds: vec![Coin {
-                denom: deposit_token_denom.to_string(),
-                amount: member.1 .0 + member.2 .0,
-            }],
-        })));
+        match deposit_fund_info {
+            AssetInfoBase::Native(ref denom) => {
+                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: member.0.to_string(),
+                    msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
+                        angel_core::messages::accounts::DepositMsg {
+                            locked_percentage: member.1 .1,
+                            liquid_percentage: member.2 .1,
+                        },
+                    ))
+                    .unwrap(),
+                    funds: vec![Coin {
+                        denom: denom.to_string(),
+                        amount: member.1 .0 + member.2 .0,
+                    }],
+                })));
+            }
+            AssetInfoBase::Cw20(ref contract_addr) => {
+                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: contract_addr.to_string(),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                        contract: member.0.to_string(),
+                        amount: member.1 .0 + member.2 .0,
+                        msg: to_binary(&angel_core::messages::accounts::DepositMsg {
+                            locked_percentage: member.1 .1,
+                            liquid_percentage: member.2 .1,
+                        })
+                        .unwrap(),
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                })));
+            }
+        }
     }
     messages
 }
@@ -666,144 +671,5 @@ pub fn rotate_fund(
                 active_funds[0].id
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn rotate_funds() {
-        let index_fund_1 = IndexFund {
-            id: 1,
-            name: "Fund #1".to_string(),
-            description: "Fund number 1 test rotation".to_string(),
-            members: vec![],
-            split_to_liquid: None,
-            expiry_time: None,
-            expiry_height: None,
-            rotating_fund: Some(true),
-        };
-        let index_fund_2 = IndexFund {
-            id: 2,
-            name: "Fund #2".to_string(),
-            description: "Fund number 2 test rotation".to_string(),
-            members: vec![],
-            split_to_liquid: None,
-            expiry_time: None,
-            expiry_height: None,
-            rotating_fund: Some(true),
-        };
-
-        let new_fund_1 = rotate_fund(
-            vec![index_fund_1.clone()],
-            1,
-            10,
-            Timestamp::from_seconds(100),
-        );
-        assert_eq!(new_fund_1, 1);
-        let new_fund_2 = rotate_fund(
-            vec![index_fund_1.clone(), index_fund_2.clone()],
-            1,
-            10,
-            Timestamp::from_seconds(100),
-        );
-        assert_eq!(new_fund_2, 2);
-        let new_fund_3 = rotate_fund(
-            vec![index_fund_1, index_fund_2],
-            2,
-            10,
-            Timestamp::from_seconds(100),
-        );
-        assert_eq!(new_fund_3, 1);
-    }
-
-    #[test]
-    fn rotate_funds_with_expired_funds() {
-        let index_fund_1 = IndexFund {
-            id: 1,
-            name: "Fund #1".to_string(),
-            description: "Fund number 1 test rotation".to_string(),
-            members: vec![],
-            split_to_liquid: None,
-            expiry_time: None,
-            expiry_height: None,
-            rotating_fund: Some(true),
-        };
-        let index_fund_2 = IndexFund {
-            id: 2,
-            name: "Fund #2".to_string(),
-            description: "Fund number 2 test rotation".to_string(),
-            members: vec![],
-            split_to_liquid: None,
-            expiry_time: None,
-            expiry_height: Some(10),
-            rotating_fund: Some(false),
-        };
-        let index_fund_3 = IndexFund {
-            id: 3,
-            name: "Fund #3".to_string(),
-            description: "Fund number 3 test rotation".to_string(),
-            members: vec![],
-            split_to_liquid: None,
-            expiry_time: Some(1000),
-            expiry_height: Some(1000),
-            rotating_fund: Some(true),
-        };
-
-        let new_fund_1 = rotate_fund(
-            vec![index_fund_1.clone()],
-            1,
-            100,
-            Timestamp::from_seconds(10000),
-        );
-        assert_eq!(new_fund_1, 1);
-
-        let new_fund_2 = rotate_fund(
-            vec![index_fund_2.clone(), index_fund_1.clone()],
-            1,
-            100,
-            Timestamp::from_seconds(10000),
-        );
-        assert_eq!(new_fund_2, 1);
-
-        let new_fund_3 = rotate_fund(
-            vec![index_fund_3, index_fund_1, index_fund_2],
-            1,
-            100,
-            Timestamp::from_seconds(10000),
-        );
-        assert_eq!(new_fund_3, 1);
-    }
-
-    #[test]
-    fn test_tca_without_split() {
-        let sc_split = SplitDetails::default();
-        assert_eq!(calculate_split(true, sc_split, None, None), Decimal::zero());
-    }
-    #[test]
-    fn test_tca_with_split() {
-        let sc_split = SplitDetails::default();
-        assert_eq!(
-            calculate_split(true, sc_split, None, Some(Decimal::percent(42))),
-            Decimal::zero()
-        );
-    }
-    #[test]
-    fn test_non_tca_with_split() {
-        let sc_split = SplitDetails::default();
-        assert_eq!(
-            calculate_split(false, sc_split, None, Some(Decimal::percent(23))),
-            Decimal::percent(23)
-        );
-    }
-    #[test]
-    fn test_non_tca_without_split() {
-        let sc_split = SplitDetails::default();
-        assert_eq!(
-            calculate_split(false, sc_split.clone(), None, None),
-            sc_split.default
-        );
     }
 }

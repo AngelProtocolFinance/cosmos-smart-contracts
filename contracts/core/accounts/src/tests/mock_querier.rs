@@ -244,7 +244,7 @@ impl WasmMockQuerier {
                         cw4_code: Some(3),
                         accepted_tokens: AcceptedTokens {
                             native: vec!["uluna".to_string()],
-                            cw20: vec![],
+                            cw20: vec!["test-cw20".to_string()],
                         },
                     })
                     .unwrap(),

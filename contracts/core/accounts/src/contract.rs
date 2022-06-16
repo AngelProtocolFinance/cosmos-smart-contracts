@@ -9,11 +9,13 @@ use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::{BalanceInfo, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{
-    attr, entry_point, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
-    WasmQuery,
+    attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
+    MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
+    WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
+use cw20::Cw20ReceiveMsg;
+use cw_asset::{Asset, AssetInfoBase};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";
@@ -127,24 +129,42 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
             executers::update_endowment_settings(deps, env, info, msg)
         }
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
             executers::update_endowment_status(deps, env, info, msg)
         }
-        ExecuteMsg::Deposit(msg) => executers::deposit(deps, env, info.clone(), info.sender, msg),
+        ExecuteMsg::Deposit(msg) => {
+            if info.funds.len() != 1 {
+                return Err(ContractError::InvalidCoinsDeposited {});
+            }
+            let native_fund = Asset {
+                info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
+                amount: info.funds[0].amount,
+            };
+            executers::deposit(deps, env, info.clone(), info.sender, msg, native_fund)
+        }
         ExecuteMsg::Withdraw {
             sources,
             beneficiary,
-            token_denom,
-        } => executers::withdraw(deps, env, info, sources, beneficiary, token_denom),
+            asset_info,
+        } => executers::withdraw(deps, env, info, sources, beneficiary, asset_info),
         ExecuteMsg::WithdrawLiquid {
             liquid_amount,
             beneficiary,
-        } => executers::withdraw_liquid(deps, env, info, liquid_amount, beneficiary),
+            asset_info,
+        } => executers::withdraw_liquid(deps, env, info, liquid_amount, beneficiary, asset_info),
         ExecuteMsg::VaultReceipt {} => {
-            executers::vault_receipt(deps, env, info.clone(), info.sender)
+            if info.funds.len() != 1 {
+                return Err(ContractError::InvalidCoinsDeposited {});
+            }
+            let native_fund = Asset {
+                info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
+                amount: info.funds[0].amount,
+            };
+            executers::vault_receipt(deps, env, info.clone(), info.sender, native_fund)
         }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
@@ -159,6 +179,37 @@ pub fn execute(
             executers::close_endowment(deps, env, info, beneficiary)
         }
         ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
+    }
+}
+
+pub fn receive_cw20(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    cw20_msg: Cw20ReceiveMsg,
+) -> Result<Response, ContractError> {
+    let api = deps.api;
+    let cw20_fund = Asset {
+        info: AssetInfoBase::Cw20(deps.api.addr_validate(info.sender.as_str())?),
+        amount: cw20_msg.amount,
+    };
+    match from_binary(&cw20_msg.msg) {
+        Ok(ReceiveMsg::VaultReceipt {}) => executers::vault_receipt(
+            deps,
+            env,
+            info.clone(),
+            api.addr_validate(&cw20_msg.sender)?,
+            cw20_fund,
+        ),
+        Ok(ReceiveMsg::Deposit(msg)) => executers::deposit(
+            deps,
+            env,
+            info.clone(),
+            api.addr_validate(&cw20_msg.sender)?,
+            msg,
+            cw20_fund,
+        ),
+        _ => Err(ContractError::InvalidInputs {}),
     }
 }
 
@@ -185,9 +236,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::GetTxRecords {
             sender,
             recipient,
-            denom,
+            asset_info,
         } => to_binary(&queriers::query_transactions(
-            deps, sender, recipient, denom,
+            deps, sender, recipient, asset_info,
         )?),
     }
 }
