@@ -25,6 +25,7 @@ import {
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
   testQueryIndexFundTcaList,
+  testQueryIndexFundInvolvedAddress,
 } from "./core/indexFunds";
 import {
   testAddMemberToC4Group,
@@ -33,8 +34,8 @@ import {
 } from "./core/multisig";
 import {
   testAngelTeamCanTriggerVaultsHarvest,
-  testClosingEndpoint,
   testMigrateAllAccounts,
+  testUpdateEndowmentsStatus,
   testUpdatingRegistrarConfigs,
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarApprovedVaultRateList,
@@ -188,7 +189,7 @@ export async function testExecute(
   //   terra,
   //   apTeam,
   //   indexFund,
-  //   21,
+  //   23,
   //   [
   //     "terra1uegpp7nuxazgf20medwy4dwdhvkzvdztmrj8jx", // PEPA
   //   ],
@@ -216,6 +217,15 @@ export async function testExecute(
   // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 1, [], ["",""]);
   // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, ["",""], []);
+
+  // await testUpdateEndowmentsStatus(terra, apTeam, registrar, [
+  //   {
+  //     address: "terra1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2",
+  //     status: 3,
+  //     beneficiary: "terra1suxqzxtzztxvakvucc6u4s9833n4u0cyk9pmv8",
+  //   },
+  // ]);
+
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);
@@ -230,11 +240,16 @@ export async function testExecute(
   // await testQueryIndexFundConfig(terra, indexFund);
   // await testQueryIndexFundState(terra, indexFund);
   // await testQueryIndexFundTcaList(terra, indexFund);
-  // await testQueryIndexFundFundsList(terra, indexFund);
-  // await testQueryIndexFundFundDetails(terra, indexFund, 21);
+  // await testQueryIndexFundFundsList(terra, indexFund, 10, 20);
+  // await testQueryIndexFundFundDetails(terra, indexFund, 23);
   // await testQueryIndexFundActiveFundDetails(terra, indexFund);
   // await testQueryIndexFundActiveFundDonations(terra, indexFund);
   // await testQueryIndexFundDeposit(terra, indexFund);
+  // await testQueryIndexFundInvolvedAddress(
+  //   terra,
+  //   indexFund,
+  //   "terra1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2"
+  // );
 
   // HALO gov Tests
   // await testGovUpdateConfig(

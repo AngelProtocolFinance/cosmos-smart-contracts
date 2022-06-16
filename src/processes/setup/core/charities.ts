@@ -10,9 +10,30 @@ import fs from "fs";
 chai.use(chaiAsPromised);
 
 type Charity = {
-  address: string;
-  name: string;
-  description: string;
+  endowment_address: string;
+  charity_name: string;
+  charity_owner: string;
+  tier: number;
+  charity_overview: string;
+  url: string;
+  un_sdg: number;
+  charity_logo: string;
+  charity_image: string;
+  total_lock: number;
+  total_liq: number;
+  overall: number;
+  chain: string;
+  charity_email: string;
+  twitter_handle: string;
+  facebook_page: string;
+  linkedin_page: string;
+  number_of_employees: number;
+  charity_registration_number: string;
+  country_of_origin: string;
+  street_address: string;
+  charity_navigator_rating: string;
+  annual_revenue: string;
+  average_annual_budget: string;
 };
 
 let terra: LCDClient;
@@ -36,12 +57,8 @@ export function initializeCharities(
   charities = [];
   endowmentContracts = [];
   jsonData.data.forEach((el) => {
-    const item: Charity = {
-      address: el.address,
-      name: el.name,
-      description: el.description,
-    };
-    charities.push(item);
+    const item: Charity = el;
+    charities.push(el);
   });
 }
 
@@ -70,18 +87,39 @@ export async function setupEndowments(): Promise<void> {
 // Create Endowment base on charity and registrar
 async function createEndowment(charity: Charity): Promise<void> {
   process.stdout.write(
-    `Charity Endowment ##${charity.name}## created from the Registrar by the AP Team`
+    `Charity Endowment ##${charity.charity_name}## created from the Registrar by the AP Team`
   );
   const charityResult = await sendTransaction(terra, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       create_endowment: {
-        owner: charity.address,
-        beneficiary: charity.address,
-        name: charity.name,
-        description: charity.description,
+        owner: charity.charity_owner,
+        beneficiary: charity.charity_owner,
         withdraw_before_maturity: false,
         maturity_time: undefined,
         maturity_height: undefined,
+        guardians_multisig_addr: undefined,
+        profile: {
+          name: charity.charity_name,
+          overview: charity.charity_overview,
+          un_sdg: charity.un_sdg,
+          tier: charity.tier,
+          logo: charity.charity_logo,
+          image: charity.charity_image,
+          url: charity.url,
+          registration_number: charity.charity_registration_number,
+          country_city_origin: charity.country_of_origin,
+          contact_email: charity.charity_email,
+          social_media_urls: {
+            facebook: charity.facebook_page,
+            twitter: charity.twitter_handle,
+            linkedin: charity.linkedin_page,
+          },
+          number_of_employees: charity.number_of_employees,
+          average_annual_budget: charity.average_annual_budget,
+          annual_revenue: charity.annual_revenue,
+          charity_navigator_rating: charity.charity_navigator_rating,
+          endow_type: "Charity",
+        },
       },
     }),
   ]);

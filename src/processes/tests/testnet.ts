@@ -42,10 +42,9 @@ import {
   testQueryGroupMembersList,
 } from "./core/multisig";
 import {
-  testApproveEndowments,
+  testUpdateEndowmentsStatus,
   testCreateEndowmentViaRegistrar,
   testAngelTeamCanTriggerVaultsHarvest,
-  testClosingEndpoint,
   testMigrateAllAccounts,
   testUpdatingRegistrarConfigs,
   testQueryRegistrarApprovedVaultList,
@@ -55,6 +54,7 @@ import {
   testQueryRegistrarEndowmentDetails,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
+  testUpdateEndowmentsEntry,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -326,7 +326,7 @@ export async function testExecute(
   // Test query
   // await testQueryRegistrarConfig(terra, registrar);
   // await testQueryRegistrarEndowmentList(terra, registrar);
-  // await testQueryRegistrarEndowmentDetails(terra, registrar, endowmentContract1);
+  // await testQueryRegistrarEndowmentDetails(terra, registrar, endowmentContract3);
   // await testQueryRegistrarApprovedVaultList(terra, registrar);
   // await testQueryRegistrarApprovedVaultRateList(terra, registrar);
   // await testQueryRegistrarVaultList(terra, registrar);
