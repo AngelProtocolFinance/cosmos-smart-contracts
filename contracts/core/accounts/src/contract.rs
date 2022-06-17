@@ -95,6 +95,14 @@ pub fn instantiate(
             "endow_image",
             msg.profile.image.unwrap_or_else(|| "".to_string()),
         ),
+        attr(
+            "endow_tier",
+            msg.profile.tier.unwrap_or_else(|| 0).to_string(),
+        ),
+        attr(
+            "endow_un_sdg",
+            msg.profile.un_sdg.unwrap_or_else(|| 0).to_string(),
+        ),
     ]);
 
     // check if CW3/CW4 codes were passed to setup a multisig/group
