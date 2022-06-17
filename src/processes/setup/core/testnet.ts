@@ -82,6 +82,7 @@ export async function setupCore(
     config.funding_goal,
     config.is_localterra
   );
+  // NOTE: Atm, the `vault` logic is missing. That's why omit "vault" creation process.
   // if (!config.is_localterra && anchorMoneyMarket) {
   //   await createVaults(config.harvest_to_liquid, config.tax_per_block);
   // }
@@ -89,7 +90,8 @@ export async function setupCore(
   await approveEndowments();
   await createIndexFunds();
   if (config.turnover_to_multisig) {
-    await turnOverApTeamMultisig(config.is_localterra);
+    // await turnOverApTeamMultisig(config.is_localterra);
+    await turnOverApTeamMultisig(true);  // NOTE: Atm, the `vault` logic is missing. That's why send "true" as param.
   }
 }
 
@@ -261,21 +263,36 @@ async function setup(
   ]);
   console.log(chalk.green(" Done!"));
 
-  if (is_localterra) {
+  // NOTE: Atm, the `vault` logic is missing. That's why ...
+  // if (is_localterra) {
     process.stdout.write(
       "Set default vault in Registrar as a placeholder for account creation on localterra & update Index Fund"
     );
     await sendTransaction(terra, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, registrar, {
         update_config: {
-          default_vault: apTeam.key.accAddress,
+          default_vault: undefined,
           index_fund_contract: indexFund,
+          accounts_code_id: undefined,
+          treasury: undefined,
+          tax_rate: undefined,
+          approved_charities: undefined,
+          split_max: undefined,
+          split_min: undefined,
+          split_default: undefined,
+          halo_token: undefined,
+          gov_contract: undefined,
+          charity_shares_contract: undefined,
+          cw3_code: undefined,
+          cw4_code: undefined,
+          accepted_tokens_native: undefined,
+          accepted_tokens_cw20: undefined,
         },
       }),
     ]);
     console.log(chalk.green(" Done!"));
   }
-}
+// }
 
 // Step 4: Create Endowments via the Registrar contract
 async function createEndowments(): Promise<void> {
