@@ -5,7 +5,7 @@ use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
 use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info};
-use cosmwasm_std::{attr, coins, from_binary, Addr, Decimal, to_binary, Uint128};
+use cosmwasm_std::{attr, coins, from_binary, to_binary, Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfoBase;
 use std::vec;
@@ -761,7 +761,7 @@ fn test_deposit_cw20() {
     let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
         sender: depositor.to_string(),
         amount: Uint128::from(donation_amt),
-        msg: to_binary(&deposit_msg).unwrap()
+        msg: to_binary(&deposit_msg).unwrap(),
     });
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 

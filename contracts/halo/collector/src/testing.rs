@@ -84,11 +84,6 @@ fn test_sweep() {
         amount: Uint128::from(100u128),
     }]);
 
-    deps.querier.with_tax(
-        Decimal::percent(1),
-        &[(&"uusd".to_string(), &Uint128::from(1000000u128))],
-    );
-
     deps.querier
         .with_terraswap_pairs(&[(&"uusdtoken-halo".to_string(), &"pairANC".to_string())]);
 
