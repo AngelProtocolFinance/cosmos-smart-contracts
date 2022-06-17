@@ -82,9 +82,9 @@ export async function setupCore(
     config.funding_goal,
     config.is_localterra
   );
-  if (!config.is_localterra && anchorMoneyMarket) {
-    await createVaults(config.harvest_to_liquid, config.tax_per_block);
-  }
+  // if (!config.is_localterra && anchorMoneyMarket) {
+  //   await createVaults(config.harvest_to_liquid, config.tax_per_block);
+  // }
   await createEndowments();
   await approveEndowments();
   await createIndexFunds();
@@ -311,7 +311,7 @@ async function createEndowments(): Promise<void> {
           charity_navigator_rating: undefined,
           endow_type: "Charity",
         },
-        cw4_members: [charity1.key.accAddress],
+        cw4_members: [{ addr: charity1.key.accAddress, weight: 1 }],
         kyc_donors_only: false,
       },
     }),
@@ -360,7 +360,7 @@ async function createEndowments(): Promise<void> {
           charity_navigator_rating: undefined,
           endow_type: "Charity",
         },
-        cw4_members: [charity2.key.accAddress],
+        cw4_members: [{ addr: charity2.key.accAddress, weight: 1 }],
         kyc_donors_only: false,
       },
     }),
@@ -409,7 +409,7 @@ async function createEndowments(): Promise<void> {
           charity_navigator_rating: undefined,
           endow_type: "Charity",
         },
-        cw4_members: [charity3.key.accAddress],
+        cw4_members: [{ addr: charity3.key.accAddress, weight: 1 }],
         kyc_donors_only: false,
       },
     }),
@@ -458,7 +458,7 @@ async function createEndowments(): Promise<void> {
           charity_navigator_rating: undefined,
           endow_type: "Charity",
         },
-        cw4_members: [charity4.key.accAddress],
+        cw4_members: [{ addr: charity1.key.accAddress, weight: 1 }],
         kyc_donors_only: false,
       },
     }),
