@@ -3,7 +3,7 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
-    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault,
+    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, Tier, YieldVault,
 };
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
@@ -358,6 +358,8 @@ pub fn new_accounts_reply(
             let mut endowment_type = String::from("");
             let mut endowment_logo = String::from("");
             let mut endowment_image = String::from("");
+            let mut endowment_tier: u64 = 0;
+            let mut endowment_un_sdg: u64 = 0;
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
@@ -379,6 +381,12 @@ pub fn new_accounts_reply(
                         if attrb.key == "endow_image" {
                             endowment_image = attrb.value.clone();
                         }
+                        if attrb.key == "endow_tier" {
+                            endowment_tier = attrb.value.clone().parse().unwrap_or(0);
+                        }
+                        if attrb.key == "endow_un_sdg" {
+                            endowment_un_sdg = attrb.value.clone().parse().unwrap_or(0);
+                        }
                     }
                 }
             }
@@ -392,8 +400,13 @@ pub fn new_accounts_reply(
                     name: Some(endowment_name.clone()),
                     owner: Some(endowment_owner.clone()),
                     status: EndowmentStatus::Inactive,
-                    tier: None,
-                    un_sdg: None,
+                    tier: match endowment_tier {
+                        1 => Some(Tier::Level1),
+                        2 => Some(Tier::Level2),
+                        3 => Some(Tier::Level3),
+                        _ => None,
+                    },
+                    un_sdg: Some(endowment_un_sdg.clone()),
                     endow_type: match endowment_type.as_str() {
                         "charity" => Some(EndowmentType::Charity),
                         "normal" => Some(EndowmentType::Normal),
@@ -406,10 +419,7 @@ pub fn new_accounts_reply(
             Ok(Response::default().add_attributes(vec![
                 attr("reply", "instantiate_endowment"),
                 attr("addr", endowment_addr),
-                attr("name", endowment_name),
                 attr("owner", endowment_owner),
-                attr("logo", endowment_logo),
-                attr("image", endowment_image),
             ]))
         }
         SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
