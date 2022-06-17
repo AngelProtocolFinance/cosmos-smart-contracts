@@ -194,35 +194,3 @@ export async function queryTokenBalance(
   });
   return balanceResponse.balance;
 }
-
-/**
- * @notice Given a total amount of UST, find the deviverable amount, after tax, if we
- * transfer this amount.
- * @param amount The total amount
- * @dev Assumes a tax rate of 0.001 and cap of 1000000 uusd.
- * @dev Assumes transferring UST. Transferring LUNA does not incur tax.
- */
-export function deductTax(amount: number): number {
-  const DECIMAL_FRACTION = new BN("1000000000000000000");
-  const tax = Math.min(
-    amount -
-      new BN(amount)
-        .mul(DECIMAL_FRACTION)
-        .div(DECIMAL_FRACTION.div(new BN(1000)).add(DECIMAL_FRACTION))
-        .toNumber(),
-    1000000
-  );
-  return amount - tax;
-}
-
-/**
- * @notice Given a intended deliverable amount, find the total amount, including tax,
- * necessary for deliver this amount. Opposite operation of `deductTax`.
- * @param amount The intended deliverable amount
- * @dev Assumes a tax rate of 0.001 and cap of 1000000 uusd.
- * @dev Assumes transferring UST. Transferring LUNA does not incur tax.
- */
-export function addTax(amount: number): number {
-  const tax = Math.min(new BN(amount).div(new BN(1000)).toNumber(), 1000000);
-  return amount + tax;
-}
