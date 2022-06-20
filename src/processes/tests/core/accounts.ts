@@ -3,12 +3,11 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {
-  LCDClient,
-  LocalTerra,
+  LcdClient,
   Msg,
   MsgExecuteContract,
   Wallet,
-} from "@terra-money/terra.js";
+} from "@cosmjs/launchpad";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -23,7 +22,7 @@ const { expect } = chai;
 //----------------------------------------------------------------------------------------
 
 export async function testRejectUnapprovedDonations(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   endowmentContract: string,
   amount: string
@@ -31,7 +30,7 @@ export async function testRejectUnapprovedDonations(
   process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(
         apTeam.key.accAddress,
         endowmentContract,
@@ -41,7 +40,7 @@ export async function testRejectUnapprovedDonations(
             liquid_percentage: "0",
           },
         },
-        { uluna:  amount }
+        { ujuno:  amount }
       ),
     ])
   // ); //.to.be.rejectedWith("Request failed with status code 400");
@@ -50,7 +49,7 @@ export async function testRejectUnapprovedDonations(
 }
 
 export async function testSingleDonationAmountToManyEndowments(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   endowments: string[],
   amount: string
@@ -66,10 +65,10 @@ export async function testSingleDonationAmountToManyEndowments(
           liquid_percentage: "0",
         },
       },
-      { uluna:  amount }
+      { ujuno:  amount }
     );
   });
-  await sendTransaction(terra, apTeam, msgs);
+  await sendTransaction(juno, apTeam, msgs);
   console.log(chalk.green(" Passed!"));
 }
 
@@ -82,7 +81,7 @@ export async function testSingleDonationAmountToManyEndowments(
 //
 //----------------------------------------------------------------------------------------
 export async function testBeneficiaryCanWithdrawFromLiquid(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   charityOwner: Wallet,
   endowment: string,
   vault: string,
@@ -92,13 +91,13 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
     "Test - Charity Owner cannot withdraw from the Endowment locked amount"
   );
   await expect(
-    sendTransaction(terra, charityOwner, [
+    sendTransaction(juno, charityOwner, [
       new MsgExecuteContract(charityOwner.key.accAddress, endowment, {
         withdraw: {
           sources: [{ vault, locked: "500000", liquid: "1000000" }],
           beneficiary,
           asset_info: {
-            native: "uluna"
+            native: "ujuno"
           }
         },
       }),
@@ -110,7 +109,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
     "Test - Charity Owner can withdraw from the Endowment availalble amount (liquid)"
   );
   await expect(
-    sendTransaction(terra, charityOwner, [
+    sendTransaction(juno, charityOwner, [
       new MsgExecuteContract(charityOwner.key.accAddress, endowment, {
         withdraw: {
           sources: [{ vault, locked: "0", liquid: "30000000" }],
@@ -133,21 +132,21 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
 //----------------------------------------------------------------------------------------
 
 export async function testCharityCanUpdateStrategies(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   charity1: Wallet,
   endowment: string,
-  anchorVault1: string,
-  anchorVault2: string
+  Vault1: string,
+  Vault2: string
 ): Promise<void> {
   process.stdout.write("Test - Charity can update their Endowment's strategies");
 
   await expect(
-    sendTransaction(terra, charity1, [
+    sendTransaction(juno, charity1, [
       new MsgExecuteContract(charity1.key.accAddress, endowment, {
         update_strategies: {
           strategies: [
-            { vault: anchorVault1, percentage: "0.5"},
-            { vault: anchorVault2, percentage: "0.5"},
+            { vault: Vault1, percentage: "0.5"},
+            { vault: Vault2, percentage: "0.5"},
           ],
         },
       }),
@@ -165,7 +164,7 @@ export async function testCharityCanUpdateStrategies(
 //----------------------------------------------------------------------------------------
 
 export async function testApTeamChangesAccountsEndowmentOwner(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   endowment: string,
   owner: string,
@@ -174,7 +173,7 @@ export async function testApTeamChangesAccountsEndowmentOwner(
   process.stdout.write("Test - Contract Owner can set new owner of an Endowment");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, endowment, {
         update_endowment_settings: {
           owner,
@@ -187,7 +186,7 @@ export async function testApTeamChangesAccountsEndowmentOwner(
 }
 
 export async function testChangeManyAccountsEndowmentOwners(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   endowments: any[] // [ { address: <string>, owner: <string>, kyc_donors_only: <bool> }, ... ]
 ): Promise<void> {
@@ -203,7 +202,7 @@ export async function testChangeManyAccountsEndowmentOwners(
       })
     );
   });
-  await expect(sendTransaction(terra, apTeam, msgs));
+  await expect(sendTransaction(juno, apTeam, msgs));
   console.log(chalk.green(" Passed!"));
 }
 
@@ -211,7 +210,7 @@ export async function testChangeManyAccountsEndowmentOwners(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryAccountsState(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts State");
@@ -224,7 +223,7 @@ export async function testQueryAccountsState(
 }
 
 export async function testQueryAccountsTransactions(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   endowmentContract: string,
   sender: string | undefined,
   recipient: string | undefined,
@@ -244,7 +243,7 @@ export async function testQueryAccountsTransactions(
 }
 
 export async function testQueryAccountsBalance(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Balance");
@@ -257,7 +256,7 @@ export async function testQueryAccountsBalance(
 }
 
 export async function testQueryAccountsConfig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Config");
@@ -270,7 +269,7 @@ export async function testQueryAccountsConfig(
 }
 
 export async function testQueryAccountsEndowment(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Endowment");
@@ -283,7 +282,7 @@ export async function testQueryAccountsEndowment(
 }
 
 export async function testQueryAccountsProfile(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Profile");

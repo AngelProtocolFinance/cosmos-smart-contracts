@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { LcdClient,  MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -16,7 +16,7 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testCollectorUpdateConfig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   collectorContract: string,
   reward_factor: string | undefined,
@@ -25,7 +25,7 @@ export async function testCollectorUpdateConfig(
 ): Promise<void> {
   process.stdout.write("Test - Gov contract update collector config");
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, collectorContract, {
         update_config: {
           reward_factor,
@@ -48,13 +48,13 @@ export async function testCollectorUpdateConfig(
 //
 //----------------------------------------------------------------------------------------
 export async function testCollectorSweep(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   collectorContract: string
 ): Promise<void> {
   process.stdout.write("Test - Anyone can sweep asset token => HALO token");
 
-  let result = await sendTransaction(terra, apTeam, [
+  let result = await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, collectorContract, {
       sweep: { denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4" },
     }),
@@ -78,7 +78,7 @@ export async function testCollectorSweep(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryCollectorConfig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   collectorContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Collector Config");
@@ -91,7 +91,7 @@ export async function testQueryCollectorConfig(
 }
 
 export async function testQueryCollectorPair(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   collectorContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Collector pair");

@@ -1,16 +1,26 @@
 // ---------------------------------------------------------------------------------------------------
-// LocalTerra information
+// LocalJuno information
 // ---------------------------------------------------------------------------------------------------
-export const localterra = {
-  // LocalTerra
+export const localjuno = {
+  // LocalJuno
   networkInfo: {
     url: "http://localhost:1317",
-    chainId: "localterra",
+    chainId: "localjuno",
   },
-  // LocalTerra AP / DANO Treasury wallet
-  apTreasury: "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly",
 
-  // Should be updated contract addresses after deploying wasms in the LocalTerra
+  mnemonicKeys: {
+    apTeam: "",
+    apTeam2: "",
+    apTeam3: "",
+    apTreasury: "",
+    charity1: "",
+    charity2: "",
+    charity3: "",
+    pleb: "",
+    tca: "",
+  },
+
+  // Should be updated contract addresses after deploying wasms in the LocalJuno
   contracts: {
     registrar: "",
     indexFund: "",
@@ -26,30 +36,10 @@ export const localterra = {
     cw4Grp: "",
   },
 
-  // LBP contracts
-  lbp: {
-    factory_contract: "",
-    router_contract: "",
-    pair_contract: "",
-    lp_token_contract: "",
-    // HALO/UST Pair token supply amount
-    halo_token_amount: "80000000000000",
-    native_token_amount: "1300000000000",
-    // HALO/UST Pair start/end times
-    lbp_start_time: "2021-12-14T02:02:00.000Z",
-    lbp_end_time: "2021-12-17T02:02:00.000Z",
-    // HALO/UST Pair start/end weights
-    token_start_weight: "96",
-    token_end_weight: "50",
-    native_start_weight: "4",
-    native_end_weight: "50",
-    slippage_tolerance: "0.01",
-  },
-
-  // TerraSwap contracts
-  terraswap: {
-    terraswap_token_code: 0,
-    terraswap_factory: "",
+  // JunoSwap contracts
+  junoswap: {
+    junoswap_token_code: 0,
+    junoswap_factory: "",
     halo_token_contract: "",
     halo_ust_pair_contract: "",
     halo_ust_pair_lp_token: "",

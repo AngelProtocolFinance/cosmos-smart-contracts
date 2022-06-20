@@ -3,7 +3,7 @@ import * as path from "path";
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { LcdClient,  MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
 import { sendTransaction } from "../../../utils/helpers";
 import { Airdrop } from "./airdrop/airdrop";
 import { readFileSync } from 'fs';
@@ -19,7 +19,7 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testAirdropUpdateConfig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   apTeam2: Wallet,
   pleb: Wallet,
@@ -28,7 +28,7 @@ export async function testAirdropUpdateConfig(
   process.stdout.write("Test - Pleb cannot update airdrop config");
 
   await expect(
-    sendTransaction(terra, pleb, [
+    sendTransaction(juno, pleb, [
       new MsgExecuteContract(
         pleb.key.accAddress,
         airdropContract,
@@ -45,7 +45,7 @@ export async function testAirdropUpdateConfig(
   process.stdout.write("Test - Only owner can update airdrop config");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(
         apTeam.key.accAddress,
         airdropContract,
@@ -68,7 +68,7 @@ export async function testAirdropUpdateConfig(
 //
 //----------------------------------------------------------------------------------------
 export async function testAirdropRegisterNewMerkleRoot(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   airdropContract: string,
 ): Promise<void> {
@@ -76,7 +76,7 @@ export async function testAirdropRegisterNewMerkleRoot(
 
   const merkle_root = await generateMerkleRoot();
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(
         apTeam.key.accAddress,
         airdropContract,
@@ -97,14 +97,14 @@ export async function testAirdropRegisterNewMerkleRoot(
 //
 //----------------------------------------------------------------------------------------
 export async function testAirdropClaim(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   airdropContract: string
 ): Promise<void> {
   process.stdout.write("Test - Airdrop claim");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(
         apTeam.key.accAddress,
         airdropContract,
@@ -128,7 +128,7 @@ export async function testAirdropClaim(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryAirdropConfig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   airdropContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Airdrop Config");
@@ -141,7 +141,7 @@ export async function testQueryAirdropConfig(
 }
 
 export async function testQueryAirdropMerkleRoot(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   airdropContract: string,
   stage: number
 ): Promise<void> {
@@ -155,7 +155,7 @@ export async function testQueryAirdropMerkleRoot(
 }
 
 export async function testQueryAirdropLatestStage(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   airdropContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Airdrop Latest Stage");
@@ -168,7 +168,7 @@ export async function testQueryAirdropLatestStage(
 }
 
 export async function testQueryAirdropIsClaimed(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   airdropContract: string,
   stage: number,
   address: string

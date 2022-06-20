@@ -3,7 +3,7 @@ import * as path from "path";
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { LcdClient, MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
 import { sendTransaction, storeCode, instantiateContract } from "../../../utils/helpers";
 import * as mainNet from "./charities";
 import { wasm_path } from "../../../config/wasmPaths";
@@ -19,7 +19,7 @@ export type Member = {
 // Variables
 // -------------------------------------------------------------------------------------
 
-let terra: LCDClient;
+let terra: LcdClient;
 let apTeam: Wallet;
 
 let registrar: string;
@@ -29,13 +29,12 @@ let cw3GuardianAngels: string;
 let cw3ApTeam: string;
 let indexFund: string;
 let anchorVault: string;
-let anchorMoneyMarket: string;
 //----------------------------------------------------------------------------------------
 // Setup Contracts for MainNet
 //----------------------------------------------------------------------------------------
 
 export async function setupCore(
-  _terra: LCDClient,
+  _juno: LcdClient,
   _apTeam: Wallet,
   _anchorMoneyMarket: string,
   treasury_address: string,
@@ -48,7 +47,7 @@ export async function setupCore(
     max_voting_period_guardians_height: number;
     fund_rotation: number | undefined;
     turnover_to_multisig: boolean;
-    is_localterra: boolean;
+    is_localjuno: boolean;
     harvest_to_liquid: string;
     tax_per_block: string;
     funding_goal: string | undefined;
@@ -72,7 +71,7 @@ export async function setupCore(
     config.tax_per_block,
     config.funding_goal
   );
-  await mainNet.initializeCharities(terra, apTeam, registrar, indexFund);
+  await mainNet.initializeCharities(juno, apTeam, registrar, indexFund);
   await mainNet.setupEndowments();
   await mainNet.approveEndowments();
   await mainNet.createIndexFunds();
@@ -101,11 +100,11 @@ async function setup(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${registrarCodeId}`);
 
   process.stdout.write("Uploading Anchor Vault Wasm");
-  const vaultCodeId = await storeCode(terra, apTeam, `${wasm_path.core}/anchor.wasm`);
+  const vaultCodeId = await storeCode(juno, apTeam, `${wasm_path.core}/anchor.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
 
   process.stdout.write("Uploading Index Fund Wasm");
-  const fundCodeId = await storeCode(terra, apTeam, `${wasm_path.core}/index_fund.wasm`);
+  const fundCodeId = await storeCode(juno, apTeam, `${wasm_path.core}/index_fund.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${fundCodeId}`);
 
   process.stdout.write("Uploading Accounts Wasm");
@@ -117,7 +116,7 @@ async function setup(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${accountsCodeId}`);
 
   process.stdout.write("Uploading CW4 Group Wasm");
-  const cw4Group = await storeCode(terra, apTeam, `${wasm_path.core}/cw4_group.wasm`);
+  const cw4Group = await storeCode(juno, apTeam, `${wasm_path.core}/cw4_group.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw4Group}`);
 
   process.stdout.write("Uploading CW3 MultiSig Wasm");
@@ -162,7 +161,7 @@ async function setup(
 
   // CW4 AP Team Group
   process.stdout.write("Instantiating CW4 AP Team Group contract");
-  const cw4GrpApTeamResult = await instantiateContract(terra, apTeam, apTeam, cw4Group, {
+  const cw4GrpApTeamResult = await instantiateContract(juno, apTeam, apTeam, cw4Group, {
     admin: apTeam.key.accAddress,
     members: members,
   });
@@ -201,7 +200,7 @@ async function setup(
   process.stdout.write(
     "AddHook & UpdateAdmin on AP Team CW4 Group to point to AP Team C3"
   );
-  await sendTransaction(terra, apTeam, [
+  await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, cw4GrpApTeam, {
       add_hook: { addr: cw3ApTeam },
     }),
@@ -213,7 +212,7 @@ async function setup(
 
   // Index Fund
   process.stdout.write("Instantiating Index Fund contract");
-  const fundResult = await instantiateContract(terra, apTeam, apTeam, fundCodeId, {
+  const fundResult = await instantiateContract(juno, apTeam, apTeam, fundCodeId, {
     registrar_contract: registrar,
     fund_rotation: fund_rotation,
     funding_goal: funding_goal,
@@ -229,9 +228,9 @@ async function setup(
 
   // Anchor Vault
   process.stdout.write("Instantiating Anchor Vault contract");
-  const vaultResult1 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
+  const vaultResult1 = await instantiateContract(juno, apTeam, apTeam, vaultCodeId, {
     registrar_contract: registrar,
-    moneymarket: anchorMoneyMarket ? anchorMoneyMarket : registrar, // placeholder addr for now
+    moneymarket: registrar, // placeholder addr for now
     tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP Deposit Token - Anchor",
     symbol: "apANC",
@@ -253,7 +252,7 @@ async function setup(
     "Set default vault in Registrar (for newly created Endowments) as Anchor Vault"
   );
   process.stdout.write("Update Registrar with the Address of the Index Fund contract");
-  await sendTransaction(terra, apTeam, [
+  await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_config: {
         default_vault: anchorVault,
@@ -271,7 +270,7 @@ async function setup(
 
   // Add confirmed TCA Members to the Index Fund SCs approved list
   process.stdout.write("Add confirmed TCA Member to allowed list");
-  await sendTransaction(terra, apTeam, [
+  await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       update_tca_list: { new_list: tca_members },
     }),

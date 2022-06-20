@@ -3,13 +3,13 @@
 import * as path from "path";
 import chalk from "chalk";
 import {
-  LCDClient,
-  LocalTerra,
+  LcdClient,
+  
   Msg,
   MsgExecuteContract,
   MsgMigrateContract,
   Wallet,
-} from "@terra-money/terra.js";
+} from "@cosmjs/launchpad";
 import {
   sendTransaction,
   storeCode,
@@ -22,7 +22,7 @@ import { wasm_path } from "../../config/wasmPaths";
 // Base functions to migrate contracts with
 // -----------------------------
 export async function migrateCore(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   registrar: string,
   indexFund: string,
@@ -34,20 +34,20 @@ export async function migrateCore(
   endowmentContracts: string[]
 ): Promise<void> {
   // run the migrations desired
-  // await migrateRegistrar(terra, apTeam, registrar);
-  // await migrateCw4Group(terra, apTeam, cw4GrpApTeam, cw4GrpOwners);
-  // await migrateCw3Multisig(terra, apTeam, cw3ApTeam);
-  // await migrateGuardianAngelsMultisig(terra, apTeam, cw3GuardianAngels);
-  // await migrateIndexFund(terra, apTeam, indexFund);
-  // await migrateExistingAccounts(terra, apTeam, registrar, endowmentContracts);
-  // await migrateVaults(terra, apTeam, vaultContracts);
+  // await migrateRegistrar(juno, apTeam, registrar);
+  // await migrateCw4Group(juno, apTeam, cw4GrpApTeam, cw4GrpOwners);
+  // await migrateCw3Multisig(juno, apTeam, cw3ApTeam);
+  // await migrateGuardianAngelsMultisig(juno, apTeam, cw3GuardianAngels);
+  // await migrateIndexFund(juno, apTeam, indexFund);
+  // await migrateExistingAccounts(juno, apTeam, registrar, endowmentContracts);
+  // await migrateVaults(juno, apTeam, vaultContracts);
 }
 
 // -------------------------------------------------
 //  Migrate registrar
 //--------------------------------------------------
 async function migrateRegistrar(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   registrar: string
 ): Promise<void> {
@@ -60,7 +60,7 @@ async function migrateRegistrar(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate Registrar contract");
-  const result1 = await migrateContract(terra, apTeam, apTeam, registrar, codeId, {});
+  const result1 = await migrateContract(juno, apTeam, apTeam, registrar, codeId, {});
   console.log(chalk.green(" Done!"));
 }
 
@@ -68,7 +68,7 @@ async function migrateRegistrar(
 //  Migrate index fund
 //--------------------------------------------------
 async function migrateIndexFund(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   indexFund: string
 ): Promise<void> {
@@ -81,7 +81,7 @@ async function migrateIndexFund(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate Index Fund contract");
-  const result1 = await migrateContract(terra, apTeam, apTeam, indexFund, codeId, {});
+  const result1 = await migrateContract(juno, apTeam, apTeam, indexFund, codeId, {});
   console.log(chalk.green(" Done!"));
 }
 
@@ -89,7 +89,7 @@ async function migrateIndexFund(
 //  Migrate CW4 group
 //--------------------------------------------------
 async function migrateCw4Group(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   cw4GrpApTeam: string,
   cw4GrpOwners: string
@@ -103,7 +103,7 @@ async function migrateCw4Group(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate CW4 Group contract");
-  const result1 = await migrateContract(terra, apTeam, apTeam, cw4GrpApTeam, codeId, {});
+  const result1 = await migrateContract(juno, apTeam, apTeam, cw4GrpApTeam, codeId, {});
   console.log(chalk.green(" Done!"));
 }
 
@@ -111,7 +111,7 @@ async function migrateCw4Group(
 //  Migrate AP Team multisig
 //--------------------------------------------------
 async function migrateCw3Multisig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   contract: string
 ): Promise<void> {
@@ -124,7 +124,7 @@ async function migrateCw3Multisig(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate CW3 MultiSig contract");
-  const result1 = await migrateContract(terra, apTeam, apTeam, contract, codeId, {});
+  const result1 = await migrateContract(juno, apTeam, apTeam, contract, codeId, {});
   console.log(chalk.green(" Done!"));
 }
 
@@ -132,7 +132,7 @@ async function migrateCw3Multisig(
 //  Migrate vaults
 //--------------------------------------------------
 async function migrateVaults(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   anchorVaults: string[]
 ): Promise<void> {
@@ -153,7 +153,7 @@ async function migrateVaults(
       () =>
         new Promise(async (resolve, reject) => {
           try {
-            await migrateContract(terra, apTeam, apTeam, vault, codeId, {});
+            await migrateContract(juno, apTeam, apTeam, vault, codeId, {});
             console.log(chalk.green(`anchorVault #${id++} - Done!`));
             resolve();
           } catch (e) {
@@ -171,7 +171,7 @@ async function migrateVaults(
 //  Migrate a list of existing Endowment contracts
 //--------------------------------------------------
 async function migrateExistingAccounts(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   registrar: string,
   accounts_wasm: number | undefined,
@@ -189,7 +189,7 @@ async function migrateExistingAccounts(
 
     // Update registrar accounts code ID value
     process.stdout.write("Update Registrar's Account Code ID stored in configs");
-    const result0 = await sendTransaction(terra, apTeam, [
+    const result0 = await sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, registrar, {
         update_config: { accounts_code_id: codeId },
       }),
@@ -208,7 +208,7 @@ async function migrateExistingAccounts(
       () =>
         new Promise(async (resolve, reject) => {
           try {
-            await migrateContract(terra, apTeam, apTeam, endow[0], codeId, endow[1]);
+            await migrateContract(juno, apTeam, apTeam, endow[0], codeId, endow[1]);
             console.log(chalk.green(`Endowment ${endow[0]}`));
             resolve();
           } catch (e) {

@@ -3,12 +3,12 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {
-  LCDClient,
-  LocalTerra,
+  LcdClient,
+  
   Msg,
   MsgExecuteContract,
   Wallet,
-} from "@terra-money/terra.js";
+} from "@cosmjs/launchpad";
 import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -27,7 +27,7 @@ export enum VoteOption {
 //
 //----------------------------------------------------------------------------------------
 export async function testGovUpdateConfig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   govContract: string,
   owner: string | undefined,
@@ -43,7 +43,7 @@ export async function testGovUpdateConfig(
   process.stdout.write("Test - Only owner can update gov config");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, govContract, {
         update_config: {
           owner,
@@ -66,7 +66,7 @@ export async function testGovUpdateConfig(
 // TEST: Update the configs of the Gov Hodler Contract
 //----------------------------------------------------------------------------------------
 export async function testGovHodlerUpdateConfig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   gov_hodler: string,
   owner: string | undefined,
@@ -75,7 +75,7 @@ export async function testGovHodlerUpdateConfig(
   process.stdout.write("Test - Only owner can update gov hodler config");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, gov_hodler, {
         update_config: {
           owner,
@@ -91,7 +91,7 @@ export async function testGovHodlerUpdateConfig(
 // TEST: Transfer Stake from Old to New Gov Contract
 //----------------------------------------------------------------------------------------
 export async function testTransferStake(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   oldGov: string,
   newGov: string,
@@ -111,7 +111,7 @@ export async function testTransferStake(
     );
   });
 
-  await expect(sendTransaction(terra, apTeam, msgs));
+  await expect(sendTransaction(juno, apTeam, msgs));
   console.log(chalk.green(" Passed!"));
 }
 
@@ -123,7 +123,7 @@ export async function testTransferStake(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovEndPoll(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   govContract: string,
   poll_id: number
@@ -131,7 +131,7 @@ export async function testGovEndPoll(
   process.stdout.write("Test - Execute a msgs of poll");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, govContract, {
         end_poll: { poll_id },
       }),
@@ -149,7 +149,7 @@ export async function testGovEndPoll(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovExecutePoll(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   govContract: string,
   poll_id: number
@@ -157,7 +157,7 @@ export async function testGovExecutePoll(
   process.stdout.write("Test - Execute a poll");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, govContract, {
         execute_poll: { poll_id },
       }),
@@ -174,7 +174,7 @@ export async function testGovExecutePoll(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovSnapshotPoll(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   govContract: string,
   poll_id: number
@@ -182,7 +182,7 @@ export async function testGovSnapshotPoll(
   process.stdout.write("Test - Execute a poll");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       // TODO: replace apTeam to govContract(Wallet)
       new MsgExecuteContract(govContract, govContract, {
         snapshot_poll: { poll_id },
@@ -200,7 +200,7 @@ export async function testGovSnapshotPoll(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovRegisterContracts(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   govContract: string,
   halo_token: string
@@ -208,7 +208,7 @@ export async function testGovRegisterContracts(
   process.stdout.write("Test - Gov register staking token contract");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, govContract, {
         register_contracts: { halo_token },
       }),
@@ -225,7 +225,7 @@ export async function testGovRegisterContracts(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovStakeVotingTokens(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   haloToken: string,
   govContract: string,
@@ -234,7 +234,7 @@ export async function testGovStakeVotingTokens(
   process.stdout.write("Test - Stake voting tokens");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, haloToken, {
         send: {
           amount: amount,
@@ -256,7 +256,7 @@ export async function testGovStakeVotingTokens(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovWithdrawVotingTokens(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   govContract: string,
   amount: string | undefined
@@ -264,7 +264,7 @@ export async function testGovWithdrawVotingTokens(
   process.stdout.write("Test - Withdraw voting tokens");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, govContract, {
         withdraw_voting_tokens: { amount },
       }),
@@ -274,14 +274,14 @@ export async function testGovWithdrawVotingTokens(
 }
 
 export async function testGovClaimVotingTokens(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   govContract: string
 ): Promise<void> {
   process.stdout.write("Test - Claim all eligable withdrawn voting tokens");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, govContract, {
         claim_voting_tokens: {},
       }),
@@ -291,7 +291,7 @@ export async function testGovClaimVotingTokens(
 }
 
 export async function testGovResetClaims(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   govContract: string,
   addresses: string[]
@@ -299,7 +299,7 @@ export async function testGovResetClaims(
   process.stdout.write("Test - Reset claims for all addresses passed");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, govContract, {
         reset_claims: { claim_addrs: addresses },
       }),
@@ -316,7 +316,7 @@ export async function testGovResetClaims(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovCastVote(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   govContract: string,
   poll_id: number,
@@ -326,7 +326,7 @@ export async function testGovCastVote(
   process.stdout.write("Test - Cast vote");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, govContract, {
         cast_vote: { poll_id, vote, amount },
       }),
@@ -343,7 +343,7 @@ export async function testGovCastVote(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovExecutePollForRegistrarSettings(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   govContract: string,
   halo_token: string,
@@ -355,7 +355,7 @@ export async function testGovExecutePollForRegistrarSettings(
   process.stdout.write("Test - Execute a poll");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       // TODO: replace apTeam to HALO Token(Wallet)
       new MsgExecuteContract(apTeam.key.accAddress, govContract, {
         receive: {
@@ -388,7 +388,7 @@ export async function testGovExecutePollForRegistrarSettings(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryGovConfig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   govContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Gov Config");
@@ -401,7 +401,7 @@ export async function testQueryGovConfig(
 }
 
 export async function testQueryGovState(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   govContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Gov State");
@@ -414,7 +414,7 @@ export async function testQueryGovState(
 }
 
 export async function testQueryGovStaker(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   govContract: string,
   address: string
 ): Promise<void> {
@@ -428,7 +428,7 @@ export async function testQueryGovStaker(
 }
 
 export async function testQueryGovClaims(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   govContract: string,
   address: string
 ): Promise<void> {
@@ -443,7 +443,7 @@ export async function testQueryGovClaims(
 }
 
 export async function testQueryGovPoll(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   govContract: string,
   poll_id: number
 ): Promise<void> {
@@ -457,7 +457,7 @@ export async function testQueryGovPoll(
 }
 
 export async function testQueryGovPolls(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   govContract: string,
   filter: any | undefined,
   start_after: string | undefined,
@@ -473,7 +473,7 @@ export async function testQueryGovPolls(
 }
 
 export async function testQueryGovVoters(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   govContract: string,
   poll_id: number,
   start_after: string | undefined,

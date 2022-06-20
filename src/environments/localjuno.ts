@@ -1,12 +1,12 @@
 // -------------------------------------------------------------------------------------
-// TestNet(Bombay-12) test-suite
+// LocalJuno test-suite
 // -------------------------------------------------------------------------------------
 import { GasPrice } from "@cosmjs/stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
 import chalk from "chalk";
-import { testnet as config } from "../config/constants";
+import { localjuno as config } from "../config/localjunoConstants";
 import { datetimeStringToUTC, getWalletAddress } from "../utils/helpers";
 
 // import { migrateCore } from "../processes/migrate/core";
@@ -37,8 +37,6 @@ let registrar: string;
 let cw4GrpApTeam: string;
 let cw3ApTeam: string;
 let indexFund: string;
-let vault1: string;
-let vault2: string;
 let endowmentContract1: string;
 let endowmentContract2: string;
 let endowmentContract3: string;
@@ -98,7 +96,6 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(plebAccount)} as Pleb`);
   console.log(`Using ${chalk.cyan(tcaAccount)} as TCA member`);
 
-
   registrar = config.contracts.registrar;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
@@ -154,12 +151,11 @@ async function initialize() {
   juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString("0.1ujuno") });
 }
 
-
 // -------------------------------------------------------------------------------------
-// setup contracts
+// setup core contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupCore(): Promise<void> {
-  console.log(chalk.blue("\nTestNet"));
+  console.log(chalk.blue("\nLocalJuno"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -168,7 +164,7 @@ export async function startSetupCore(): Promise<void> {
   // Setup contracts
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   await setupCore(
-    juno,
+    juno,     
     // wallets
     {
       apTeam,
@@ -186,36 +182,36 @@ export async function startSetupCore(): Promise<void> {
       threshold_absolute_percentage: "0.50", // threshold absolute percentage
       max_voting_period_height: 1000, // max voting period height
       max_voting_period_guardians_height: 100, // max voting period guardians height
-      fund_rotation: 10, // index fund rotation
+      fund_rotation: undefined, // index fund rotation
       turnover_to_multisig: false, // turn over to AP Team multisig
-      is_localjuno: false, // is LocalJuno
+      is_localjuno: true, // is LocalJuno
       harvest_to_liquid: "0.75", // harvest to liquid percentage
       tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
-      funding_goal: "50000000", // funding goal
+      funding_goal: "500000000", // funding goal
     }
   );
 }
 
 // -------------------------------------------------------------------------------------
-// setup TerraSwap contracts
+// setup JunoSwap contracts
 // -------------------------------------------------------------------------------------
-// export async function startSetupTerraSwap(): Promise<void> {
-//   console.log(chalk.blue("\nTestNet"));
+// export async function startSetupJunoSwap(): Promise<void> {
+//   console.log(chalk.blue("\nLocalJuno"));
 
 //   // Initialize environment information
 //   console.log(chalk.yellow("\nStep 1. Environment Info"));
 //   initialize();
 
-//   // Setup TerraSwap contracts
-//   console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
-//   await setupTerraSwap(
-//     terra,
+//   // Setup JunoSwap contracts
+//   console.log(chalk.yellow("\nStep 2a. JunoSwap Contracts"));
+//   await setupJunoSwap(
+//     juno,
 //     apTeam,
-//     terraswapTokenCode,
-//     terraswapFactory,
-//     terraswapInitialHaloSupply,
-//     terraswapHaloLiquidity,
-//     terraswapNativeLiquidity
+//     apTeam2,
+//     apTeam3,
+//     junoswapInitialHaloSupply,
+//     junoswapHaloLiquidity,
+//     junoswapNativeLiquidity
 //   );
 // }
 
@@ -223,7 +219,7 @@ export async function startSetupCore(): Promise<void> {
 // setup HALO contracts
 // -------------------------------------------------------------------------------------
 // export async function startSetupHalo(): Promise<void> {
-//   console.log(chalk.blue("\nTestnet"));
+//   console.log(chalk.blue("\nLocalJuno"));
 
 //   // Initialize environment information
 //   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -232,22 +228,22 @@ export async function startSetupCore(): Promise<void> {
 //   // Setup HALO contracts
 //   console.log(chalk.yellow("\nStep2. Halo Contracts"));
 //   await setupHalo(
-//     terra,
+//     juno,
 //     apTeam,
 //     registrar,
-//     terraswapHaloTokenContract, // halo terraswap token contract
-//     terraswapFactory,
-//     terraswapHaloJunoPairLpToken, // staking_token: LP token of HALO-JUNO pair contract
+//     junoswapHaloTokenContract, // halo junoswap token contract
+//     junoswapFactory,
+//     junoswapHaloJunoPairLpToken, // staking_token: HALO-JUNO pair LP Token contract
 //     30, // quorum
 //     50, // threshold,
 //     2000, // voting_period,
 //     1000, // timelock_period,
 //     "10000000000", // proposal_deposit,
 //     10, // snapshot_period,
-//     360, // unbonding_period in seconds
+//     120, // unbonding_period in seconds
 //     [], // whitelist
 //     "10000000000", // spend_limit
-//     "1.0", // reward_factor
+//     "0.2", // reward_factor
 //     [[100, 200, "1000000"]], // distribution_schedule
 //     12345 // genesis_time
 //   );
@@ -257,16 +253,16 @@ export async function startSetupCore(): Promise<void> {
 // migrate Angel Protocol core contracts
 // -------------------------------------------------------------------------------------
 // export async function startMigrateCore(): Promise<void> {
-//   console.log(chalk.blue("\nTestNet"));
+//   console.log(chalk.blue("\nLocalJuno"));
 
 //   // Initialize environment information
 //   console.log(chalk.yellow("\nStep 1. Environment Info"));
 //   initialize();
 
-//   // Migrate contracts
+//   // Migrate Contracts
 //   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
 //   await migrateCore(
-//     terra,
+//     juno,
 //     apTeam,
 //     registrar,
 //     indexFund,
@@ -274,7 +270,7 @@ export async function startSetupCore(): Promise<void> {
 //     cw4GrpOwners,
 //     cw3ApTeam,
 //     cw3GuardianAngels,
-//     [Vault1, Vault2],
+//     [],
 //     [endowmentContract1, endowmentContract2, endowmentContract3, endowmentContract4]
 //   );
 // }
@@ -292,7 +288,7 @@ export async function startSetupCore(): Promise<void> {
 //   // Migrate Contracts
 //   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
 //   await migrateHalo(
-//     terra,
+//     juno,
 //     apTeam,
 //     haloAirdrop,
 //     haloCollector,
@@ -309,7 +305,7 @@ export async function startSetupCore(): Promise<void> {
 // start test
 // -------------------------------------------------------------------------------------
 // export async function startTests(): Promise<void> {
-//   console.log(chalk.blue("\nTestNet"));
+//   console.log(chalk.blue("\nLocalJuno"));
 
 //   // Initialize environment information
 //   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -317,7 +313,7 @@ export async function startSetupCore(): Promise<void> {
 
 //   // Test queries
 //   await testExecute(
-//     terra,
+//     juno,
 //     apTeam,
 //     apTeam2,
 //     apTeam3,
@@ -328,8 +324,8 @@ export async function startSetupCore(): Promise<void> {
 //     tca,
 //     registrar,
 //     indexFund,
-//     Vault1,
-//     Vault2,
+//     "undefined",
+//     "undefined",
 //     endowmentContract1,
 //     endowmentContract2,
 //     endowmentContract3,
@@ -338,9 +334,9 @@ export async function startSetupCore(): Promise<void> {
 //     cw4GrpOwners,
 //     cw3ApTeam,
 //     cw3GuardianAngels,
-//     terraswapFactory,
-//     terraswapHaloTokenContract,
-//     terraswapHaloJunoPairContract,
+//     junoswapFactory,
+//     junoswapHaloTokenContract,
+//     junoswapHaloJunoPairContract,
 //     haloAirdrop,
 //     haloCollector,
 //     haloCommunity,

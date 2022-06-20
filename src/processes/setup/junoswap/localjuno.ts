@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as path from "path";
 import chalk from "chalk";
-import { LocalTerra, Wallet, MsgExecuteContract } from "@terra-money/terra.js";
+import {  Wallet, MsgExecuteContract } from "@cosmjs/launchpad";
 import { instantiateContract, sendTransaction, storeCode } from "../../../utils/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
 
-// Deploy HALO Token and HALO/LUNA pair contracts to the LocalTerra
-export async function setupTerraSwap(
-  terra: LocalTerra,
+// Deploy HALO Token and HALO/JUNO pair contracts to the LocalJuno
+export async function setupJunoSwap(
+  terra: 
   apTeam: Wallet,
   apTeam2: Wallet,
   apTeam3: Wallet,
@@ -15,7 +15,7 @@ export async function setupTerraSwap(
   halo_liquidity: string,
   native_liquidity: string
 ): Promise<void> {
-  process.stdout.write("Uploading TerraSwap factory Wasm");
+  process.stdout.write("Uploading JunoSwap factory Wasm");
   const factoryCodeId = await storeCode(
     terra,
     apTeam,
@@ -23,7 +23,7 @@ export async function setupTerraSwap(
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${factoryCodeId}`);
 
-  process.stdout.write("Uploading TerraSwap pair Wasm");
+  process.stdout.write("Uploading JunoSwap pair Wasm");
   const pairCodeId = await storeCode(
     terra,
     apTeam,
@@ -31,7 +31,7 @@ export async function setupTerraSwap(
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${pairCodeId}`);
 
-  process.stdout.write("Uploading TerraSwap token Wasm");
+  process.stdout.write("Uploading JunoSwap token Wasm");
   const tokenCodeId = await storeCode(
     terra,
     apTeam,
@@ -39,7 +39,7 @@ export async function setupTerraSwap(
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${tokenCodeId}`);
 
-  process.stdout.write("Uploading TerraSwap router Wasm");
+  process.stdout.write("Uploading JunoSwap router Wasm");
   const routerCodeId = await storeCode(
     terra,
     apTeam,
@@ -49,7 +49,7 @@ export async function setupTerraSwap(
 
   // Factory contract
   process.stdout.write("Instantiating Factory contract");
-  const factoryResult = await instantiateContract(terra, apTeam, apTeam, factoryCodeId, {
+  const factoryResult = await instantiateContract(juno, apTeam, apTeam, factoryCodeId, {
     pair_code_id: pairCodeId,
     token_code_id: tokenCodeId,
   });
@@ -67,7 +67,7 @@ export async function setupTerraSwap(
 
   // HALO token contract
   process.stdout.write("Instantiating HALO Token contract");
-  const tokenResult = await instantiateContract(terra, apTeam, apTeam, tokenCodeId, {
+  const tokenResult = await instantiateContract(juno, apTeam, apTeam, tokenCodeId, {
     name: "Angel Protocol",
     symbol: "HALO",
     decimals: 6,
@@ -97,7 +97,7 @@ export async function setupTerraSwap(
 
   // Pair contract
   process.stdout.write("Creating Pair contract from Token Factory");
-  const pairResult = await sendTransaction(terra, apTeam, [
+  const pairResult = await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, factoryContract, {
       create_pair: {
         asset_infos: [
@@ -109,13 +109,13 @@ export async function setupTerraSwap(
           {
             native_token: {
               // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
-              denom: "uluna",
+              denom: "ujuno",
             },
           },
         ],
       }
     // }, { "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4": "100" },
-    }, { "uluna": 1000 },
+    }, { "ujuno": 1000 },
     ),
   ]);
 
@@ -140,9 +140,9 @@ export async function setupTerraSwap(
 
   // send liquidity to the new Pair contract for swaps
   process.stdout.write(
-    "Provide liquidity to the new Pair contract @ ratio of 0.05 LUNA per HALO"
+    "Provide liquidity to the new Pair contract @ ratio of 0.05 JUNO per HALO"
   );
-  const liqResult = await sendTransaction(terra, apTeam, [
+  const liqResult = await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
       increase_allowance: {
         amount: halo_liquidity,
@@ -167,7 +167,7 @@ export async function setupTerraSwap(
               info: {
                 native_token: {
                   // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
-                  denom: "uluna",
+                  denom: "ujuno",
                 },
               },
               amount: native_liquidity,
@@ -176,7 +176,7 @@ export async function setupTerraSwap(
         },
       },
       {
-        uluna: native_liquidity,
+        ujuno: native_liquidity,
       }
     ),
   ]);

@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { LcdClient,  MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -12,12 +12,12 @@ const { expect } = chai;
 // TEST: Normal Donor cannot send funds to the Index Fund
 //
 // SCENARIO:
-// Normal user sends LUNA funds to an Index Fund SC fund to have it split
+// Normal user sends JUNO funds to an Index Fund SC fund to have it split
 // up amonst the fund's charity members.
 //
 //----------------------------------------------------------------------------------------
 export async function testDonorSendsToIndexFund(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   pleb: Wallet,
   indexFund: string,
   fund_id: number,
@@ -25,11 +25,11 @@ export async function testDonorSendsToIndexFund(
   amount: string
 ): Promise<void> {
   process.stdout.write(
-    "Test - Donor (normal pleb) can send a LUNA donation to an Index Fund fund"
+    "Test - Donor (normal pleb) can send a JUNO donation to an Index Fund fund"
   );
 
   await expect(
-    sendTransaction(terra, pleb, [
+    sendTransaction(juno, pleb, [
       new MsgExecuteContract(
         pleb.key.accAddress,
         indexFund,
@@ -39,7 +39,7 @@ export async function testDonorSendsToIndexFund(
             split,
           },
         },
-        { uluna: amount }
+        { ujuno: amount }
       ),
     ])
   );
@@ -50,35 +50,35 @@ export async function testDonorSendsToIndexFund(
 // TEST: TCA Member can send donations to the Index Fund
 //
 // SCENARIO:
-// TCA Member sends LUNA funds to an Index Fund SC fund to have it split
+// TCA Member sends JUNO funds to an Index Fund SC fund to have it split
 // up amonst the active fund's charity members.
 //
 //----------------------------------------------------------------------------------------
 export async function testTcaMemberSendsToIndexFund(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   tca: Wallet,
   indexFund: string
 ): Promise<void> {
-  process.stdout.write("Test - TCA Member can send a LUNA donation to an Index Fund");
+  process.stdout.write("Test - TCA Member can send a JUNO donation to an Index Fund");
   await expect(
-    sendTransaction(terra, tca, [
+    sendTransaction(juno, tca, [
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
         { deposit: { fund_id: undefined, split: undefined } },
-        { uluna: "30000000" }
+        { ujuno: "30000000" }
       ),
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
         { deposit: { fund_id: 3, split: undefined } },
-        { uluna: "40000000" }
+        { ujuno: "40000000" }
       ),
       new MsgExecuteContract(
         tca.key.accAddress,
         indexFund,
         { deposit: { fund_id: 3, split: "0.76" } },
-        { uluna: "40000000" }
+        { ujuno: "40000000" }
       ),
     ])
   );
@@ -86,12 +86,12 @@ export async function testTcaMemberSendsToIndexFund(
 }
 
 export async function testUpdatingIndexFundConfigs(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("AP Team updates Index Fund configs - funding goal");
-  await sendTransaction(terra, apTeam, [
+  await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       update_config: {
         funding_goal: "10000000000",
@@ -103,7 +103,7 @@ export async function testUpdatingIndexFundConfigs(
 }
 
 export async function testUpdateAllianceMembersList(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   indexFund: string,
   address: string,
@@ -111,7 +111,7 @@ export async function testUpdateAllianceMembersList(
   action: string
 ): Promise<void> {
   process.stdout.write("AP Team updates Angel Alliance members list");
-  await sendTransaction(terra, apTeam, [
+  await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       update_alliance_member_list: { address, member, action },
     }),
@@ -127,7 +127,7 @@ export async function testUpdateAllianceMembersList(
 //
 //----------------------------------------------------------------------------------------
 export async function testUpdateFundMembers(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   indexFund: string,
   fundId: number,
@@ -136,7 +136,7 @@ export async function testUpdateFundMembers(
 ): Promise<void> {
   process.stdout.write("Test - SC owner can update fund members");
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
         update_members: { fund_id: fundId, add: add, remove: remove },
       }),
@@ -152,7 +152,7 @@ export async function testUpdateFundMembers(
 // Create index fund
 //----------------------------------------------------------------------------------------
 export async function testCreateIndexFund(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   indexFund: string,
   name: string,
@@ -162,7 +162,7 @@ export async function testCreateIndexFund(
 ): Promise<void> {
   process.stdout.write("Test - SC owner can create index fund");
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
         create_fund: {
           name: name,
@@ -184,14 +184,14 @@ export async function testCreateIndexFund(
 // Check if this index fund is active fund update the active fund by calling fund_rotate
 //----------------------------------------------------------------------------------------
 export async function testRemoveIndexFund(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   indexFund: string,
   fundId: number
 ): Promise<void> {
   process.stdout.write("Test - SC owner can remove index fund");
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
         remove_fund: { fund_id: fundId },
       }),
@@ -205,7 +205,7 @@ export async function testRemoveIndexFund(
 //----------------------------------------------------------------------------------------
 
 export async function testQueryIndexFundConfig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund Config");
@@ -217,7 +217,7 @@ export async function testQueryIndexFundConfig(
 }
 
 export async function testQueryIndexFundState(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund State");
@@ -230,7 +230,7 @@ export async function testQueryIndexFundState(
 }
 
 export async function testQueryIndexFundTcaList(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund TcaList");
@@ -243,7 +243,7 @@ export async function testQueryIndexFundTcaList(
 }
 
 export async function testQueryIndexFundFundsList(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   indexFund: string,
   start_after: number | undefined,
   limit: number | undefined
@@ -261,7 +261,7 @@ export async function testQueryIndexFundFundsList(
 }
 
 export async function testQueryIndexFundFundDetails(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   indexFund: string,
   fund_id: number
 ): Promise<void> {
@@ -275,7 +275,7 @@ export async function testQueryIndexFundFundDetails(
 }
 
 export async function testQueryIndexFundActiveFundDetails(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund ActiveFundDetails");
@@ -288,7 +288,7 @@ export async function testQueryIndexFundActiveFundDetails(
 }
 
 export async function testQueryIndexFundActiveFundDonations(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund ActiveFundDonations");
@@ -301,7 +301,7 @@ export async function testQueryIndexFundActiveFundDonations(
 }
 
 export async function testQueryIndexFundDeposit(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund Deposit msg builder");
@@ -317,7 +317,7 @@ export async function testQueryIndexFundDeposit(
 }
 
 export async function testQueryIndexFundInvolvedAddress(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   indexFund: string,
   address: string
 ): Promise<void> {

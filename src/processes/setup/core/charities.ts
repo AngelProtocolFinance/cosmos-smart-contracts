@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, Msg, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { LcdClient, Msg, MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
 import { sendTransaction } from "../../../utils/helpers";
 import jsonData from "./charity_list.json";
 import fs from "fs";
@@ -36,7 +36,7 @@ type Charity = {
   average_annual_budget: string;
 };
 
-let terra: LCDClient;
+let terra: LcdClient;
 let apTeam: Wallet;
 let registrar: string;
 let indexFund: string;
@@ -44,7 +44,7 @@ let charities: Charity[];
 let endowmentContracts: string[];
 
 export function initializeCharities(
-  lcdClient: LCDClient,
+  lcdClient: LcdClient,
   ap_team: Wallet,
   registrarAddr: string,
   index_fund: string
@@ -89,7 +89,7 @@ async function createEndowment(charity: Charity): Promise<void> {
   process.stdout.write(
     `Charity Endowment ##${charity.charity_name}## created from the Registrar by the AP Team`
   );
-  const charityResult = await sendTransaction(terra, apTeam, [
+  const charityResult = await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       create_endowment: {
         owner: charity.charity_owner,
@@ -149,7 +149,7 @@ export async function approveEndowments(): Promise<void> {
       },
     });
   });
-  await sendTransaction(terra, apTeam, msgs);
+  await sendTransaction(juno, apTeam, msgs);
   console.log(chalk.green(" Done!"));
 }
 
@@ -180,7 +180,7 @@ export async function createIndexFunds(): Promise<void> {
 async function createIndexFundWithMembers(id: number, members: string[]): Promise<void> {
   // Create an initial "Fund" with the charities
   process.stdout.write(`Create Fund ID#${id} with ${members.length} endowments`);
-  await sendTransaction(terra, apTeam, [
+  await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
       create_fund: {
         fund: {

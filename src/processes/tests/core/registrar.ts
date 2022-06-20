@@ -3,12 +3,12 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import {
-  LCDClient,
-  LocalTerra,
+  LcdClient,
+  
   Msg,
   MsgExecuteContract,
   Wallet,
-} from "@terra-money/terra.js";
+} from "@cosmjs/launchpad";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -22,13 +22,13 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testUpdatingRegistrarConfigs(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   registrar: string,
   config: any
 ): Promise<void> {
   process.stdout.write("AP Team updates Registrar Config");
-  await sendTransaction(terra, apTeam, [
+  await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       update_config: config,
     }),
@@ -44,13 +44,13 @@ export async function testUpdatingRegistrarConfigs(
 //
 //----------------------------------------------------------------------------------------
 export async function testCreateEndowmentViaRegistrar(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   registrar: string,
   msg: any
 ): Promise<void> {
   process.stdout.write("Create a new endowment via the Registrar");
-  const result = await sendTransaction(terra, apTeam, [
+  const result = await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, registrar, {
       create_endowment: msg,
     }),
@@ -74,7 +74,7 @@ export async function testCreateEndowmentViaRegistrar(
 //
 //----------------------------------------------------------------------------------------
 export async function testCronWalletCanDirectlyHarvestVault(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   cron: Wallet,
   vault: string,
   collector_address: string,
@@ -84,7 +84,7 @@ export async function testCronWalletCanDirectlyHarvestVault(
     "Test - Cron wallet triggers harvest of single Vault (Locked to Liquid Account)"
   );
   await expect(
-    sendTransaction(terra, cron, [
+    sendTransaction(juno, cron, [
       new MsgExecuteContract(cron.key.accAddress, vault, {
         harvest: {
           collector_address,
@@ -97,7 +97,7 @@ export async function testCronWalletCanDirectlyHarvestVault(
 }
 
 export async function testAngelTeamCanTriggerVaultsHarvest(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   charity1: Wallet,
   registrar: string,
@@ -108,7 +108,7 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
     "Test - Charity1 cannot trigger harvest of all Vaults (Locked to Liquid Account)"
   );
   await expect(
-    sendTransaction(terra, charity1, [
+    sendTransaction(juno, charity1, [
       new MsgExecuteContract(charity1.key.accAddress, registrar, {
         harvest: {
           collector_address,
@@ -123,7 +123,7 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
     "Test - AP Team can trigger harvest of all Vaults (Locked to Liquid Account)"
   );
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, registrar, {
         harvest: {
           collector_address,
@@ -145,7 +145,7 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
 //                ELSE: sent to fund members
 //----------------------------------------------------------------------------------------
 export async function testUpdateEndowmentsStatus(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   registrar: string,
   endowments: any[] // [ { address: "terra1....", status: 0|1|2|3, benficiary: "terra1.." | undefined }, ... ]
@@ -163,7 +163,7 @@ export async function testUpdateEndowmentsStatus(
       })
     );
   });
-  await sendTransaction(terra, apTeam, msgs);
+  await sendTransaction(juno, apTeam, msgs);
   console.log(chalk.green(" Done!"));
 }
 
@@ -180,7 +180,7 @@ export async function testUpdateEndowmentsStatus(
 //      "endow_type": endowment `EndowmentType` | undefined
 //----------------------------------------------------------------------------------------
 export async function testUpdateEndowmentsEntry(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   registrar: string,
   endowments: any[] // [{ address: "terra...", name: "...", owner: "...", tier: "", un_sdg: "", endow_type: "...", logo: "...", image: "..." }]
@@ -203,7 +203,7 @@ export async function testUpdateEndowmentsEntry(
       })
     );
   });
-  await sendTransaction(terra, apTeam, msgs);
+  await sendTransaction(juno, apTeam, msgs);
   console.log(chalk.green(" Done!"));
 }
 
@@ -212,7 +212,7 @@ export async function testUpdateEndowmentsEntry(
 //----------------------------------------------------------------------------------------
 
 export async function testMigrateAllAccounts(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   registrar: string
 ): Promise<void> {
@@ -220,7 +220,7 @@ export async function testMigrateAllAccounts(
     "Test - AP Team can trigger migration of all Account SC Endowments from Registrar"
   );
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(apTeam.key.accAddress, registrar, {
         migrate_accounts: {},
       }),
@@ -234,7 +234,7 @@ export async function testMigrateAllAccounts(
 //----------------------------------------------------------------------------------------
 
 export async function testQueryRegistrarConfig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar config and get proper result");
@@ -247,7 +247,7 @@ export async function testQueryRegistrarConfig(
 }
 
 export async function testQueryRegistrarEndowmentDetails(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   registrar: string,
   endowment: string
 ): Promise<void> {
@@ -261,7 +261,7 @@ export async function testQueryRegistrarEndowmentDetails(
 }
 
 export async function testQueryRegistrarEndowmentList(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar EndowmentList");
@@ -274,7 +274,7 @@ export async function testQueryRegistrarEndowmentList(
 }
 
 export async function testQueryRegistrarApprovedVaultList(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar ApprovedVaultList");
@@ -287,7 +287,7 @@ export async function testQueryRegistrarApprovedVaultList(
 }
 
 export async function testQueryRegistrarApprovedVaultRateList(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar Approved Vault Exchange Rate List");
@@ -300,7 +300,7 @@ export async function testQueryRegistrarApprovedVaultRateList(
 }
 
 export async function testQueryRegistrarVaultList(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar VaultList");
@@ -313,14 +313,14 @@ export async function testQueryRegistrarVaultList(
 }
 
 export async function testQueryRegistrarVault(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   registrar: string,
-  anchorVault1: string
+  Vault1: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar Vault");
   const result: any = await terra.wasm.contractQuery(registrar, {
     vault: {
-      vault_addr: anchorVault1,
+      vault_addr: Vault1,
     },
   });
 

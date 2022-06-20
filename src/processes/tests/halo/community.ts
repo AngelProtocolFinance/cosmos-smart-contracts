@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { LcdClient,  MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -16,7 +16,7 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testCommunityUpdateConfig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   pleb: Wallet,
   govContract: string,
@@ -27,7 +27,7 @@ export async function testCommunityUpdateConfig(
   process.stdout.write("Test - Pleb cannot update community config");
 
   await expect(
-    sendTransaction(terra, pleb, [
+    sendTransaction(juno, pleb, [
       new MsgExecuteContract(
         pleb.key.accAddress,
         communityContract,
@@ -42,7 +42,7 @@ export async function testCommunityUpdateConfig(
   process.stdout.write("Test - Only gov contract can update community config");
 
   await expect(
-    sendTransaction(terra, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
+    sendTransaction(juno, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
       new MsgExecuteContract(
         govContract,
         communityContract,
@@ -64,7 +64,7 @@ export async function testCommunityUpdateConfig(
 //
 //----------------------------------------------------------------------------------------
 export async function testCommunitySpend(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   govContract: string,
   communityContract: string,
@@ -74,7 +74,7 @@ export async function testCommunitySpend(
   process.stdout.write("Test - Send `amount` of HALO token to `receipient` for community purpose");
 
   await expect(
-    sendTransaction(terra, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
+    sendTransaction(juno, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
       new MsgExecuteContract(
         govContract,
         communityContract,
@@ -91,7 +91,7 @@ export async function testCommunitySpend(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryCommunityConfig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   communityContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Community Config");

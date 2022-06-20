@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { LcdClient,  MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
 import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -18,7 +18,7 @@ const { expect } = chai;
 //----------------------------------------------------------------------------------------
 
 export async function testAddMemberToC4Group(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   cw3: string,
   cw4Grp: string,
@@ -27,7 +27,7 @@ export async function testAddMemberToC4Group(
   process.stdout.write("Test - Propose adding a new member to AP Team C4 Group");
 
   // proposal to add new member
-  const proposal = await sendTransaction(terra, apTeam, [
+  const proposal = await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, cw3, {
       propose: {
         title: "New CW4 member",
@@ -63,7 +63,7 @@ export async function testAddMemberToC4Group(
 }
 
 export async function testUpdateCw3Config(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   cw3: string,
   threshold: number,
@@ -71,7 +71,7 @@ export async function testUpdateCw3Config(
 ): Promise<void> {
   process.stdout.write("Test - Endowment Member Proposes changing the CW3 configs");
 
-  const proposal = await sendTransaction(terra, apTeam, [
+  const proposal = await sendTransaction(juno, apTeam, [
     new MsgExecuteContract(apTeam.key.accAddress, cw3, {
       propose: {
         title: "Update CW3 Configurations",
@@ -99,7 +99,7 @@ export async function testUpdateCw3Config(
 }
 
 export async function testAddGuardiansToEndowment(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam3: Wallet,
   charity1: Wallet,
   charity2: Wallet,
@@ -113,7 +113,7 @@ export async function testAddGuardiansToEndowment(
   );
 
   // proposal to add new Guardians
-  const proposal = await sendTransaction(terra, charity1, [
+  const proposal = await sendTransaction(juno, charity1, [
     new MsgExecuteContract(charity1.key.accAddress, cw3GuardianAngels, {
       propose_guardian_change: {
         endowment_addr: endowmentContract1,
@@ -137,14 +137,14 @@ export async function testAddGuardiansToEndowment(
 }
 
 // // execute the proposal (anyone can do this for passed proposals)
-// await sendTransaction(terra, pleb, [
+// await sendTransaction(juno, pleb, [
 //   new MsgExecuteContract(pleb.key.accAddress, cw3GuardianAngels, {
 //     execute: { proposal_id: proposal_id },
 //   }),
 // ]);
 
 export async function testGuardiansChangeEndowmentOwner(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   charity2: Wallet,
   charity3: Wallet,
   pleb: Wallet,
@@ -156,7 +156,7 @@ export async function testGuardiansChangeEndowmentOwner(
   );
 
   // proposal to add new Guardians
-  const proposal = await sendTransaction(terra, charity2, [
+  const proposal = await sendTransaction(juno, charity2, [
     new MsgExecuteContract(charity2.key.accAddress, cw3GuardianAngels, {
       propose_owner_change: {
         endowment_addr: endowmentContract1,
@@ -176,7 +176,7 @@ export async function testGuardiansChangeEndowmentOwner(
   );
 
   // Guardians vote on the open proposal until threshold reached
-  await sendTransaction(terra, charity3, [
+  await sendTransaction(juno, charity3, [
     new MsgExecuteContract(charity3.key.accAddress, cw3GuardianAngels, {
       vote_guardian: {
         proposal_id: proposal_id,
@@ -193,7 +193,7 @@ export async function testGuardiansChangeEndowmentOwner(
 }
 
 export async function testQueryMultisigVoters(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   multisig: string
 ): Promise<void> {
   process.stdout.write("Test - Query a multisig voters list");
@@ -206,7 +206,7 @@ export async function testQueryMultisigVoters(
 }
 
 export async function testQueryMultisigThreshold(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   multisig: string
 ): Promise<void> {
   process.stdout.write("Test - Query a multisig threshold");
@@ -219,7 +219,7 @@ export async function testQueryMultisigThreshold(
 }
 
 export async function testQueryGroupMembersList(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   multisig: string
 ): Promise<void> {
   process.stdout.write("Test - Query a multisig group members list");

@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { LcdClient,  MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -16,7 +16,7 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testStakingUnbond(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   stakingContract: string,
   amount: string
@@ -24,7 +24,7 @@ export async function testStakingUnbond(
   process.stdout.write("Test - Unbond less than bond amount");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(
         apTeam.key.accAddress,
         stakingContract,
@@ -45,14 +45,14 @@ export async function testStakingUnbond(
 //
 //----------------------------------------------------------------------------------------
 export async function testStakingWithdraw(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   stakingContract: string
 ): Promise<void> {
   process.stdout.write("Test - Withdraw rewards to executor");
 
   await expect(
-    sendTransaction(terra, apTeam, [
+    sendTransaction(juno, apTeam, [
       new MsgExecuteContract(
         apTeam.key.accAddress,
         stakingContract,
@@ -69,7 +69,7 @@ export async function testStakingWithdraw(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryStakingConfig(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   stakingContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Staking Config");
@@ -82,7 +82,7 @@ export async function testQueryStakingConfig(
 }
 
 export async function testQueryStakingState(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   stakingContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Staking State");
@@ -95,7 +95,7 @@ export async function testQueryStakingState(
 }
 
 export async function testQueryStakingStakerInfo(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   stakingContract: string,
   staker: string,
   block_height: number | undefined
