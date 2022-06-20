@@ -23,15 +23,18 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cw20 = "0.13.2"
-cw20-base = "0.13.2" 
-cosmwasm-std = "1.0.0"
-cosmwasm-storage = "1.0.0"
-cw-storage-plus = "0.13.2"
-cw-asset = "2.0.0"
 halo-token = { path = "../../../packages/halo_token" }
 angel-core = { path = "../../../packages/angel_core" }
+
+cosmwasm-std = "1.0.0"
+cosmwasm-storage = "1.0.0"
+cosmwasm-schema = "1.0.0"
+cw-storage-plus = "0.13.4"
+
+cw20 = "0.13.2"
+cw20-base = "0.13.2" 
+cw-asset = "2.0.0"
+
 schemars = "0.8.10"
 serde = "1.0.137"
-terraswap = "2.6.0"
-cosmwasm-schema = "1.0.0"
+

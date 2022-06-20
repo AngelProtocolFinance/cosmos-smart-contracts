@@ -197,7 +197,7 @@ pub fn list_members(
         .map(|item| {
             let (key, weight) = item?;
             Ok(Member {
-                addr: key.to_string(),
+                addr: String::from_utf8(key.as_bytes().to_vec())?,
                 weight,
             })
         })

@@ -2,8 +2,8 @@ use crate::contract::{execute, instantiate, query_config, reply};
 use crate::mock_querier::mock_dependencies;
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    to_binary, Coin, ContractResult, CosmosMsg, Decimal, Reply, ReplyOn, StdError, SubMsg,
-    SubMsgResponse, SubMsgResult, Uint128, WasmMsg,
+    to_binary, Coin, CosmosMsg, Decimal, Reply, ReplyOn, StdError, SubMsg, SubMsgResponse,
+    SubMsgResult, Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
 use halo_token::collector::{ConfigResponse, ExecuteMsg, InstantiateMsg};
@@ -17,7 +17,7 @@ fn proper_initialization() {
     let msg = InstantiateMsg {
         swap_factory: "swapfactory".to_string(),
         gov_contract: "gov".to_string(),
-        halo_token: "halo-token".to_string(),
+        halo_token: "token-halo".to_string(),
         distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
@@ -39,7 +39,7 @@ fn update_config() {
     let msg = InstantiateMsg {
         swap_factory: "swapfactory".to_string(),
         gov_contract: "gov".to_string(),
-        halo_token: "halo-token".to_string(),
+        halo_token: "token-halo".to_string(),
         distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
@@ -84,18 +84,13 @@ fn test_sweep() {
         amount: Uint128::from(100u128),
     }]);
 
-    deps.querier.with_tax(
-        Decimal::percent(1),
-        &[(&"uusd".to_string(), &Uint128::from(1000000u128))],
-    );
-
     deps.querier
-        .with_terraswap_pairs(&[(&"uusdhalo-token".to_string(), &"pairANC".to_string())]);
+        .with_terraswap_pairs(&[(&"uusdtoken-halo".to_string(), &"pairANC".to_string())]);
 
     let msg = InstantiateMsg {
         swap_factory: "swapfactory".to_string(),
         gov_contract: "gov".to_string(),
-        halo_token: "halo-token".to_string(),
+        halo_token: "token-halo".to_string(),
         distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
@@ -109,7 +104,7 @@ fn test_sweep() {
     };
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    // tax deduct 100 => 99
+    // No tax deduct
     assert_eq!(
         res.messages,
         vec![SubMsg {
@@ -145,14 +140,14 @@ fn test_distribute() {
     let mut deps = mock_dependencies(&[]);
 
     deps.querier.with_token_balances(&[(
-        &"halo-token".to_string(),
+        &"token-halo".to_string(),
         &[(&MOCK_CONTRACT_ADDR.to_string(), &Uint128::from(100u128))],
     )]);
 
     let msg = InstantiateMsg {
         swap_factory: "swapfactory".to_string(),
         gov_contract: "gov".to_string(),
-        halo_token: "halo-token".to_string(),
+        halo_token: "token-halo".to_string(),
         distributor_contract: "distributor".to_string(),
         reward_factor: Decimal::percent(90),
     };
@@ -173,7 +168,7 @@ fn test_distribute() {
         res.messages,
         vec![
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: "halo-token".to_string(),
+                contract_addr: "token-halo".to_string(),
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: "gov".to_string(),
                     amount: Uint128::from(90u128),
@@ -182,7 +177,7 @@ fn test_distribute() {
                 funds: vec![],
             })),
             SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: "halo-token".to_string(),
+                contract_addr: "token-halo".to_string(),
                 msg: to_binary(&Cw20ExecuteMsg::Transfer {
                     recipient: "distributor".to_string(),
                     amount: Uint128::from(10u128),

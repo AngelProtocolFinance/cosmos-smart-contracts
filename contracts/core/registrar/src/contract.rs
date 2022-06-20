@@ -3,15 +3,14 @@ use crate::queriers;
 use crate::state::{Config, OldConfig, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::{EndowmentType, SplitDetails};
+use angel_core::structs::{EndowmentType, SplitDetails, AcceptedTokens};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
     entry_point, from_slice, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
     Reply, Response, StdError, StdResult,
 };
+use angel_core::utils::{percentage_checks, split_checks};
 use cw2::{get_contract_version, set_contract_version};
-use cw_storage_plus::Path;
-use std::ops::Deref;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -53,6 +52,8 @@ pub fn instantiate(
         donation_match_charites_contract: None,
         collector_addr: None,
         collector_share: Decimal::percent(50_u64),
+        charity_shares_contract: None,
+        accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
     };
 
     CONFIG.save(deps.storage, &configs)?;

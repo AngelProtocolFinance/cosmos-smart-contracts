@@ -1,6 +1,6 @@
-use crate::structs::{AcceptedTokens, AllianceMember};
+use crate::structs::AllianceMember;
 use cosmwasm_std::{Addr, Decimal, Uint128};
-// use cw20::Cw20ReceiveMsg;
+use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -10,12 +10,12 @@ pub struct InstantiateMsg {
     pub fund_rotation: Option<Option<u64>>, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: Option<u32>,     // limit to number of members an IndexFund can have
     pub funding_goal: Option<Option<Uint128>>, // donation funding limit to trigger early cycle of the Active IndexFund
-    pub accepted_tokens: Option<AcceptedTokens>, // list of approved native and CW20 coins can accept inward
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    Receive(Cw20ReceiveMsg),
     // updates the owner of the contract
     UpdateOwner {
         new_owner: String,
@@ -82,16 +82,14 @@ pub struct UpdateConfigMsg {
     pub fund_rotation: Option<u64>,
     pub fund_member_limit: Option<u32>,
     pub funding_goal: Option<Uint128>,
-    pub accepted_tokens_native: Option<Vec<String>>,
-    pub accepted_tokens_cw20: Option<Vec<String>>,
 }
 
-// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-// #[serde(rename_all = "snake_case")]
-// pub enum ReceiveMsg {
-//     // Donor deposits tokens sent for an Index Fund
-//     Deposit(DepositMsg),
-// }
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ReceiveMsg {
+    // Donor deposits tokens sent for an Index Fund
+    Deposit(DepositMsg),
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct DepositMsg {
@@ -103,7 +101,11 @@ pub struct DepositMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // builds and returns a Deposit CosmosMsg based on query inputs
+    // NOTE: Here, we assume that the user wants to deposit "native token"
+    //       Hence, it receives the "token_denom" for building message.
+    //       This part is prone to future change so that it can also handle "cw20 token".
     Deposit {
+        token_denom: String,
         amount: Uint128,
         fund_id: Option<u64>,
         split: Option<Decimal>,

@@ -5,10 +5,12 @@ use angel_core::messages::accounts::QueryMsg as EndowmentQueryMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{AccountTransferMsg, AccountWithdrawMsg, UpdateConfigMsg};
 use angel_core::responses::accounts::EndowmentFeesResponse;
+use angel_core::messages::vault::{AccountWithdrawMsg, UpdateConfigMsg};
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, EndowmentDetailResponse, EndowmentListResponse,
 };
 use angel_core::structs::{BalanceInfo, EndowmentEntry, EndowmentStatus};
+use angel_core::structs::{BalanceInfo, EndowmentEntry};
 use cosmwasm_std::{
     to_binary, Addr, Attribute, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, DepsMut, Env,
     Fraction, MessageInfo, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg,
@@ -86,7 +88,6 @@ pub fn deposit_stable(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: AccountTransferMsg,
     _balance: Balance,
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
@@ -97,11 +98,13 @@ pub fn deposit_stable(
     }
 
     let deposit_amount: Coin = Coin {
-        denom: "uusd".to_string(),
+        denom: DEPOSIT_TOKEN_DENOM.to_string(),
         amount: info
             .funds
             .iter()
-            .find(|c| c.denom == *"uusd")
+            .find(|c| {
+                c.denom == *DEPOSIT_TOKEN_DENOM
+            })
             .map(|c| c.amount)
             .unwrap_or_else(Uint128::zero),
     };
@@ -151,6 +154,7 @@ pub fn deposit_stable(
             liquid: after_taxes_liquid,
             payout_address: None,
             fee_amount: None,
+            amount: deposit_amount.amount,
         },
     )?;
     config.next_pending_id += 1;
@@ -162,14 +166,18 @@ pub fn deposit_stable(
         .add_attribute("deposit_amount", deposit_amount.amount)
         .add_submessage(SubMsg {
             id: submessage_id,
-            msg: anchor::deposit_stable_msg(&config.moneymarket, "uusd", after_taxes)?,
+            msg: deposit_stable_msg(
+                &config.moneymarket,
+                DEPOSIT_TOKEN_DENOM,
+                deposit_amount.amount,
+            )?,
             reply_on: ReplyOn::Always,
             gas_limit: None,
         }))
 }
 
 /// Redeem Stable: Take in an amount of locked/liquid deposit tokens
-/// to redeem from the vault for UST to send back to the the Accounts SC
+/// to redeem from the vault for stablecoins to send back to the the Accounts SC
 pub fn redeem_stable(
     deps: DepsMut,
     env: Env,
@@ -208,14 +216,7 @@ pub fn redeem_stable(
         .unwrap_or_else(|_| BalanceInfo::default());
 
     // grab total tokens for locked and liquid balances
-    let locked_deposit_tokens = investment
-        .locked_balance
-        .get_token_amount(env.contract.address.clone());
-    let liquid_deposit_tokens = investment
-        .liquid_balance
-        .get_token_amount(env.contract.address.clone());
-
-    let total_redemption = locked_deposit_tokens + liquid_deposit_tokens;
+    let total_redemption = investment.get_token_amount(env.contract.address.clone());
 
     // reduce the total supply of CW20 deposit tokens by redemption amount
     let mut token_info = config::TOKEN_INFO.load(deps.storage)?;
@@ -223,16 +224,10 @@ pub fn redeem_stable(
     config::TOKEN_INFO.save(deps.storage, &token_info)?;
 
     // update investment holdings balances to zero
-    let zero_tokens = Cw20CoinVerified {
+    investment.set_token_balances(Balance::Cw20(Cw20CoinVerified {
         amount: Uint128::zero(),
         address: env.contract.address,
-    };
-    investment
-        .locked_balance
-        .set_token_balances(Balance::Cw20(zero_tokens.clone()));
-    investment
-        .liquid_balance
-        .set_token_balances(Balance::Cw20(zero_tokens));
+    }));
 
     config::BALANCES.save(deps.storage, &account_addr, &investment)?;
 
@@ -249,6 +244,7 @@ pub fn redeem_stable(
             liquid: liquid_deposit_tokens,
             payout_address: None,
             fee_amount: None,
+            amount: total_redemption,
         },
     )?;
     config.next_pending_id += 1;
@@ -295,8 +291,8 @@ pub fn withdraw_stable(
         .map_err(|_| ContractError::Unauthorized {})?;
 
     // reduce the total supply of CW20 deposit tokens
-    let withdraw_total = msg.locked + msg.liquid;
-    let mut token_info = config::TOKEN_INFO.load(deps.storage)?;
+    let withdraw_total = msg.amount;
+    let mut token_info = TOKEN_INFO.load(deps.storage)?;
     token_info.total_supply -= withdraw_total;
     config::TOKEN_INFO.save(deps.storage, &token_info)?;
 
@@ -305,48 +301,17 @@ pub fn withdraw_stable(
         .unwrap_or_else(|_| BalanceInfo::default());
 
     // check the account has enough balance to cover the withdraw
-    let locked_balance = investment
-        .locked_balance
-        .get_token_amount(env.contract.address.clone());
-    let liquid_balance = investment
-        .liquid_balance
-        .get_token_amount(env.contract.address.clone());
-    if locked_balance < msg.locked || liquid_balance < msg.liquid {
+    let balance = investment.get_token_amount(env.contract.address.clone());
+    if balance < msg.amount {
         return Err(ContractError::CannotExceedCap {});
     }
 
     // update investment holdings balances
-    investment
-        .locked_balance
-        .deduct_tokens(Balance::Cw20(Cw20CoinVerified {
-            amount: msg.locked,
-            address: env.contract.address.clone(),
-        }));
-    investment
-        .liquid_balance
-        .deduct_tokens(Balance::Cw20(Cw20CoinVerified {
-            amount: msg.liquid,
-            address: env.contract.address,
-        }));
-    config::BALANCES.save(deps.storage, &info.sender, &investment)?;
-
-    // check the "withdraw_fee" info
-    let mut payout_address: Option<Addr> = None;
-    let mut fee_amount: Option<Uint128> = None;
-    let endow_fees_resp: EndowmentFeesResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: info.sender.to_string(),
-            msg: to_binary(&EndowmentQueryMsg::GetEndowmentFees {})?,
-        }))?;
-    if let Some(fee_info) = endow_fees_resp.withdraw_fee {
-        if fee_info.active {
-            payout_address = Some(fee_info.payout_address);
-            fee_amount = Some(withdraw_total.multiply_ratio(
-                fee_info.fee_percentage.numerator(),
-                fee_info.fee_percentage.denominator(),
-            ));
-        }
-    }
+    investment.deduct_tokens(Balance::Cw20(Cw20CoinVerified {
+        amount: msg.amount,
+        address: env.contract.address.clone(),
+    }));
+    BALANCES.save(deps.storage, &info.sender, &investment)?;
 
     let submessage_id = config.next_pending_id;
     config::PENDING.save(
@@ -361,6 +326,7 @@ pub fn withdraw_stable(
             liquid: msg.liquid,
             payout_address,
             fee_amount,
+            amount: msg.amount,
         },
     )?;
     config.next_pending_id += 1;
@@ -427,63 +393,42 @@ pub fn harvest(
 
     // shuffle DP tokens from Locked to Liquid
     // set aside a small amount for treasury
-    let account_address = deps.api.addr_validate(info.sender.as_str())?;
-    let mut balances = config::BALANCES
-        .load(deps.storage, &account_address)
-        .unwrap_or_else(|_| BalanceInfo::default());
+    let accounts: Result<Vec<_>, _> = BALANCES
+        .keys(deps.storage, None, None, Order::Ascending)
+        .map(String::from_utf8)
+        .collect();
+    for account in accounts.unwrap().iter() {
+        let account_address = deps.api.addr_validate(account)?;
+        let mut balances = BALANCES
+            .load(deps.storage, &account_address)
+            .unwrap_or_else(|_| BalanceInfo::default());
 
-    // CALCULATE ALL AMOUNTS TO BE COLLECTED FOR TAXES AND TO BE TRANSFERED
-    // UPFRONT BEFORE PERFORMING ANY ACTUAL BALANCE SHUFFLES
-    // calculate harvest taxes owed on liquid balance earnings
-    let liquid_taxes_owed = balances
-        .liquid_balance
-        .get_token_amount(env.contract.address.clone())
-        * harvest_earn_rate
-        * registrar_config.tax_rate;
+        // CALCULATE ALL AMOUNTS TO BE COLLECTED FOR TAXES AND TO BE TRANSFERED
+        // UPFRONT BEFORE PERFORMING ANY ACTUAL BALANCE SHUFFLES
+        // calculate harvest taxes owed on liquid balance earnings
+        let taxes_owed = balances.get_token_amount(env.contract.address.clone())
+            * harvest_earn_rate
+            * registrar_config.tax_rate;
 
-    // calculate harvest taxes owed on locked balance earnings
-    let locked_taxes_owed = balances
-        .locked_balance
-        .get_token_amount(env.contract.address.clone())
-        * harvest_earn_rate
-        * registrar_config.tax_rate;
+        // calulate amount of earnings to be harvested from locked >> liquid balance
+        // reduce harvest amount by any locked taxes owed on those earnings
+        let transfer_amt = balances.get_token_amount(env.contract.address.clone())
+            * harvest_earn_rate
+            * config.harvest_to_liquid
+            - taxes_owed;
 
-    // calulate amount of earnings to be harvested from locked >> liquid balance
-    // reduce harvest amount by any locked taxes owed on those earnings
-    let transfer_amt = balances
-        .locked_balance
-        .get_token_amount(env.contract.address.clone())
-        * harvest_earn_rate
-        * config.harvest_to_liquid
-        - locked_taxes_owed;
+        // deduct liquid taxes if we have a non-zero amount
+        if taxes_owed > Uint128::zero() {
+            let deposit_token = Cw20CoinVerified {
+                address: env.contract.address.clone(),
+                amount: taxes_owed,
+            };
+            // lower liquid balance
+            balances.deduct_tokens(Balance::Cw20(deposit_token.clone()));
 
-    // deduct liquid taxes if we have a non-zero amount
-    if liquid_taxes_owed > Uint128::zero() {
-        let deposit_token = Cw20CoinVerified {
-            address: env.contract.address.clone(),
-            amount: liquid_taxes_owed,
-        };
-        // lower liquid balance
-        balances
-            .liquid_balance
-            .deduct_tokens(Balance::Cw20(deposit_token.clone()));
-
-        // add taxes collected to the liquid balance of the Collector
-        harvest_account
-            .liquid_balance
-            .add_tokens(Balance::Cw20(deposit_token.clone()));
-    }
-
-    // deduct locked taxes if we have a non-zero amount
-    if locked_taxes_owed > Uint128::zero() {
-        let deposit_token = Cw20CoinVerified {
-            address: env.contract.address.clone(),
-            amount: locked_taxes_owed,
-        };
-        // lower locked balance
-        balances
-            .locked_balance
-            .deduct_tokens(Balance::Cw20(deposit_token.clone()));
+            // add taxes collected to the liquid balance of the Collector
+            harvest_account.add_tokens(Balance::Cw20(deposit_token.clone()));
+        }
 
         // add taxes collected to the liquid balance of the Collector
         harvest_account
@@ -498,28 +443,15 @@ pub fn harvest(
             amount: transfer_amt,
         };
 
-        // lower locked balance
-        balances
-            .locked_balance
-            .deduct_tokens(Balance::Cw20(deposit_token.clone()));
-
-        // add to liquid balance
-        balances
-            .liquid_balance
-            .add_tokens(Balance::Cw20(deposit_token.clone()));
+        // lower balance
+        balances.deduct_tokens(Balance::Cw20(deposit_token.clone()));
     }
 
     config::BALANCES.save(deps.storage, &account_address, &balances)?;
-
-    if harvest_account
-        .liquid_balance
-        .get_token_amount(env.contract.address.clone())
-        > Uint128::zero()
-    {
+    
+    if harvest_account.get_token_amount(env.contract.address.clone()) > Uint128::zero() {
         // Withdraw all DP Tokens from Treasury and send to Collector Contract and/or the AP Treasury Wallet
-        let withdraw_total = harvest_account
-            .liquid_balance
-            .get_token_amount(env.contract.address);
+        let withdraw_total = harvest_account.get_token_amount(env.contract.address);
         let mut withdraw_leftover = withdraw_total;
 
         let mut res = Response::new()
@@ -542,6 +474,7 @@ pub fn harvest(
                     liquid: withdraw_total * collector_share,
                     payout_address: None,
                     fee_amount: None,
+                    amount: withdraw_total * collector_share,
                 },
             )?;
             withdraw_leftover = withdraw_total - (withdraw_total * collector_share);
@@ -590,6 +523,7 @@ pub fn harvest(
                     liquid: withdraw_leftover,
                     payout_address,
                     fee_amount,
+                    amount: withdraw_leftover,
                 },
             )?;
             config.next_pending_id += 1;
@@ -627,8 +561,7 @@ pub fn process_anchor_reply(
     result: SubMsgResult,
 ) -> Result<Response, ContractError> {
     // pull up the pending transaction details from storage
-    let transaction = config::PENDING.load(deps.storage, &id.to_be_bytes())?;
-    let transaction_total = transaction.locked + transaction.liquid;
+    let transaction = PENDING.load(deps.storage, &id.to_be_bytes())?;
 
     // remove this pending transaction
     config::PENDING.remove(deps.storage, &id.to_be_bytes());
@@ -662,36 +595,22 @@ pub fn process_anchor_reply(
             }
 
             // Get the correct Anchor returned amount split by Locked/Liquid ratio in the transaction
-            let anchor_locked = anchor_amount
-                .clone()
-                .multiply_ratio(transaction.locked, transaction_total);
-            let anchor_liquid = anchor_amount
-                .clone()
-                .multiply_ratio(transaction.liquid, transaction_total);
-
             let res = match transaction.typ.as_str() {
                 "deposit" => {
                     // Increase the Account's Deposit token balances by the correct amounts of aUST
                     let mut investment = config::BALANCES
                         .load(deps.storage, &transaction.accounts_address.clone())
                         .unwrap_or_else(|_| BalanceInfo::default());
-                    investment
-                        .locked_balance
-                        .add_tokens(Balance::Cw20(Cw20CoinVerified {
-                            amount: anchor_locked,
-                            address: env.contract.address.clone(),
-                        }));
-                    investment
-                        .liquid_balance
-                        .add_tokens(Balance::Cw20(Cw20CoinVerified {
-                            amount: anchor_liquid,
-                            address: env.contract.address,
-                        }));
                     config::BALANCES.save(
                         deps.storage,
                         &transaction.accounts_address,
                         &investment,
                     )?;
+                    investment.add_tokens(Balance::Cw20(Cw20CoinVerified {
+                        amount: anchor_amount,
+                        address: env.contract.address.clone(),
+                    }));
+                    BALANCES.save(deps.storage, &transaction.accounts_address, &investment)?;
 
                     // update total token supply by total aUST returned from deposit
                     let mut token_info = config::TOKEN_INFO.load(deps.storage)?;
@@ -709,16 +628,11 @@ pub fn process_anchor_reply(
                         .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                             contract_addr: transaction.accounts_address.to_string(),
                             msg: to_binary(
-                                &angel_core::messages::accounts::ExecuteMsg::VaultReceipt(
-                                    AccountTransferMsg {
-                                        locked: anchor_locked,
-                                        liquid: anchor_liquid,
-                                    },
-                                ),
+                                &angel_core::messages::accounts::ExecuteMsg::VaultReceipt {},
                             )?,
                             funds: vec![Coin {
-                                amount: anchor_locked + anchor_liquid,
-                                denom: "uusd".to_string(),
+                                amount: anchor_amount,
+                                denom: DEPOSIT_TOKEN_DENOM.to_string(),
                             }],
                         }))
                 }
@@ -747,7 +661,14 @@ pub fn process_anchor_reply(
 
                     Response::new()
                         .add_attribute("action", "anchor_reply_processing")
-                        .add_messages(msgs)
+                        // Send UST to the Beneficiary via BankMsg::Send
+                        .add_message(BankMsg::Send {
+                            to_address: transaction.beneficiary.unwrap().to_string(),
+                            amount: vec![Coin {
+                                amount: anchor_amount,
+                                denom: DEPOSIT_TOKEN_DENOM.to_string(),
+                            }],
+                        })
                 }
                 &_ => Response::new().add_attribute("action", "anchor_reply_processing"),
             };

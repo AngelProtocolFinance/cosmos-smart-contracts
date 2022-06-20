@@ -23,11 +23,16 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cw20 = "0.13.2" 
+halo-token = { path = "../../../packages/halo_token" }
+
 cosmwasm-std = "1.0.0"
 cosmwasm-storage = "1.0.0"
-cw-storage-plus = "0.13.2"
-halo-token = { path = "../../../packages/halo_token" }
+cw-storage-plus = "0.13.4"
+
 schemars = "0.8.10"
 serde = "1.0.137"
+cw20 = "0.13.4"
+
+
+[dev-dependencies]
 cosmwasm-schema = "1.0.0"

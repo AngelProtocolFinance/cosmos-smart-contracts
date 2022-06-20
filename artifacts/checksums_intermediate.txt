@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 0f016e22bd222acb9b98bd531bb780d31ab4b91d2dd0aa258e444f786c4eb539  target/wasm32-unknown-unknown/release/accounts.wasm
 0f7598a82dc316261d86a611d34a8f3a6084e106cbea11343e66617072cdea07  target/wasm32-unknown-unknown/release/cw3_multisig.wasm
 093bdbd228c7c372cd07144397ff2c331a484b522f2a70be16365f2a239e9347  target/wasm32-unknown-unknown/release/cw4_group.wasm
@@ -16,3 +17,18 @@ c005a0395227e3bba1ca0825cbf176ba6a6089b0c0dff471028896a390c45da2  target/wasm32-
 0d09f2246c20958e64b446b7d81271bd26d7942578889df08187b23e8108e434  target/wasm32-unknown-unknown/release/registrar.wasm
 5c713f3e432ffaf831dfba66220d7a420a536b1ab3b8411aeae44562b71e6813  target/wasm32-unknown-unknown/release/subdao_token.wasm
 a6604df093662ab7fe793bde2ee0287861da82c722eb5f5cbb1026fd9bf18d3c  target/wasm32-unknown-unknown/release/ve_token.wasm
+=======
+7568ac28bc148657a65125a4c1af661d9aa800958da670d76953bf5c9197902c  target/wasm32-unknown-unknown/release/accounts.wasm
+dc8a0e8c1e10df52f149db23b2baa65796c7d6e34e9e059f467891bfcb07a993  target/wasm32-unknown-unknown/release/cw3_multisig.wasm
+6188d9fa9f8530bbb501af3157b2d6e7cd53ac89baa4d98b159c2809ba014212  target/wasm32-unknown-unknown/release/cw4_group.wasm
+8921b56d486fc4e14ed02d2f84d2e48285ad6da750b32c0d869740a5f54d57ba  target/wasm32-unknown-unknown/release/halo_airdrop.wasm
+56f61f12345267d27969e2aabc8ca52741e808183dabb536b9ec4e338415fce7  target/wasm32-unknown-unknown/release/halo_collector.wasm
+d84faefb21ef35559d0cb56820259047ab2c0692543e4fd61f71c5b11401f23b  target/wasm32-unknown-unknown/release/halo_community.wasm
+669870c42bd4aafedc3a316c901bf8137c252fd2eaf2e5eaf27095a693cd8038  target/wasm32-unknown-unknown/release/halo_distributor.wasm
+71a04733fd26dff92ce0b7da447e57bc66a8b95b4ce28d34167ea07b5b426b48  target/wasm32-unknown-unknown/release/halo_gov.wasm
+0db721ffd3819b6d71ad9dade2d93bfe204df976e8fcdecf03cb1fb488367077  target/wasm32-unknown-unknown/release/halo_gov_hodler.wasm
+bb9ce734a91625f3656062a3ba218b50e07a4293d70f18b0e5ddeb0c62595160  target/wasm32-unknown-unknown/release/halo_staking.wasm
+8471c54a25e3a9d4520909819d51ebca3ec603e65e82f08f2a57c6258c250b06  target/wasm32-unknown-unknown/release/halo_vesting.wasm
+1ec9cf6d703c9fc05dda74fbd8568e4d92660064107a3d7d2271c8443bfd1ae7  target/wasm32-unknown-unknown/release/index_fund.wasm
+939bf8f44ae6c473a65e257dc09feb146835325be0ef7f155a3960ff200af30a  target/wasm32-unknown-unknown/release/registrar.wasm
+>>>>>>> main

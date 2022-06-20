@@ -23,7 +23,7 @@ pub enum ExecuteMsg {
         new_registrar: Addr,
     },
     UpdateConfig(UpdateConfigMsg),
-    Deposit(AccountTransferMsg),
+    Deposit {},
     Redeem {
         account_addr: Addr,
     },
@@ -45,16 +45,9 @@ pub struct UpdateConfigMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct AccountTransferMsg {
-    pub locked: Uint128,
-    pub liquid: Uint128,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct AccountWithdrawMsg {
     pub beneficiary: Addr,
-    pub locked: Uint128,
-    pub liquid: Uint128,
+    pub amount: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

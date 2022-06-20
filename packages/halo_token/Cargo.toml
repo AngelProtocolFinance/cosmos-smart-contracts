@@ -13,14 +13,12 @@ metadata = {}
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cw-utils = "0.13.2"
-cw20 = "0.13.2"
+cw-utils = "0.13.4"
+cw20 = "0.13.4"
 cw-asset = "2.0.0"
 cosmwasm-std = "1.0.0"
 cosmwasm-storage = "1.0.0"
-cw-controllers = "0.13.2"
+cw-controllers = "0.13.4"
 schemars = "0.8.10"
 serde = "1.0.137"
-
-[dev-dependencies]
-cosmwasm-schema = { version = "1.0.0" }
+cosmwasm-schema = "1.0.0"

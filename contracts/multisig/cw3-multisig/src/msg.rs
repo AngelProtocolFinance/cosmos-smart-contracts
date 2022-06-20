@@ -1,7 +1,6 @@
 use angel_core::messages::cw3_multisig::Threshold;
 use cosmwasm_std::{CosmosMsg, Empty};
-use cw3::Status;
-use cw3::Vote;
+use cw3::{Status, Vote};
 use cw4::MemberChangedHookMsg;
 use cw_utils::{Duration, Expiration, ThresholdResponse};
 use schemars::JsonSchema;

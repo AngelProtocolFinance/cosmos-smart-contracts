@@ -17,12 +17,11 @@ const DEFAULT_LIMIT: u64 = 10;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub owner: Addr,                     // DANO Address
-    pub registrar_contract: Addr,        // Address of Registrar SC
+    pub owner: Addr,                   // DANO Address
+    pub registrar_contract: Addr,      // Address of Registrar SC
     pub fund_rotation: Option<u64>, // how many blocks are in a rotation cycle for the active IndexFund
     pub fund_member_limit: u32,     // limit to number of members an IndexFund can have
     pub funding_goal: Option<Uint128>, // donation funding limit (in UUSD) to trigger early cycle of the Active IndexFund
-    pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -58,13 +57,21 @@ pub fn read_alliance_members(
 ) -> StdResult<Vec<AllianceMemberResponse>> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start = start_after.map(|v| Bound::exclusive(v));
+    // let start: Option<Vec<u8>> = calc_range_start_addr(start_after);
+    // let end: Option<Vec<u8>> = None;
+    let end_before: Option<Addr> = None;
     ALLIANCE_MEMBERS
-        .range(storage, start, None, Order::Ascending)
+        .range(
+            storage,
+            start_after.map(|v| Bound::inclusive(v)),
+            end_before.map(|v| Bound::inclusive(v)),
+            Order::Ascending,
+        )
         .take(limit)
         .map(|member| {
             let (addr, mem) = member?;
             Ok(AllianceMemberResponse {
-                wallet: addr.to_string(),
+                wallet: std::str::from_utf8(&addr.as_bytes()).unwrap().to_string(),
                 name: mem.name,
                 logo: mem.logo,
                 website: mem.website,

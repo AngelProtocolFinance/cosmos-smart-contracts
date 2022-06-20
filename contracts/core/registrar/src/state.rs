@@ -1,4 +1,4 @@
-use angel_core::structs::{EndowmentEntry, EndowmentType, SplitDetails, YieldVault};
+use angel_core::structs::{AcceptedTokens, EndowmentEntry, EndowmentType, SplitDetails, YieldVault};
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
@@ -31,6 +31,7 @@ pub struct Config {
     pub donation_match_charites_contract: Option<Addr>, // donation matching contract address for "Charities" endowments
     pub collector_addr: Option<Addr>,                   // Collector address for new fee
     pub collector_share: Decimal,
+    pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
 // This struct is temporary for the `new-fee-setups`.
@@ -55,6 +56,8 @@ pub struct OldConfig {
     pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
     pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
     pub gov_contract: Option<Addr>,    // AP governance contract
+    pub charity_shares_contract: Option<Addr>, // Charity Shares staking contract
+    pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
 pub const PREFIX_REGISTRY: Map<&[u8], EndowmentEntry> = Map::new("registry");

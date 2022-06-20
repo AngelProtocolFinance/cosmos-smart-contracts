@@ -3,8 +3,10 @@ use crate::messages::vault::AccountTransferMsg;
 use crate::structs::{
     EndowmentFee, FundingSource, Profile, RebalanceDetails, SettingsController, StrategyComponent,
 };
-use cosmwasm_std::{Addr, Decimal};
+use cosmwasm_std::{Addr, Decimal, Uint128};
+use cw20::Cw20ReceiveMsg;
 use cw4::Member;
+use cw_asset::AssetInfoBase;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -45,20 +47,30 @@ pub struct InstantiateMsg {
     pub user_reserve_ust_lp_pair_contract: Option<String>, // Address of lp pair contract(cw20 token above - UST)
     pub settings_controller: Option<SettingsController>,
     pub parent: Option<Addr>,
+    pub kyc_donors_only: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
+    Receive(Cw20ReceiveMsg),
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
-    // Pull funds from investment vault(s) to the Endowment Beneficiary as UST
+    // Pull funds from investment vault(s) to the Endowment Beneficiary as <asset_info>
+    // NOTE: Atm, the "vault" logic is not fixed.
+    //       Hence, it SHOULD be updated when the "vault" logic is implemented.
     Withdraw {
         sources: Vec<FundingSource>,
         beneficiary: String,
+        asset_info: AssetInfoBase<Addr>,
+    },
+    WithdrawLiquid {
+        liquid_amount: Uint128,
+        beneficiary: String,
+        asset_info: AssetInfoBase<Addr>,
     },
     // Tokens are sent back to an Account from an Asset Vault
-    VaultReceipt(AccountTransferMsg),
+    VaultReceipt {},
     // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.
     // If not provided, looks up the Index Fund an Endowment is tied to to donates the funds to it.
     CloseEndowment {
@@ -72,7 +84,6 @@ pub enum ExecuteMsg {
     UpdateRegistrar {
         new_registrar: String,
     },
-    UpdateConfig(UpdateConfigMsg),
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
     // Update an Endowment ability to receive/send funds
@@ -102,9 +113,8 @@ pub struct UpdateConfigMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Strategy {
-    pub vault: String,              // Vault SC Address
-    pub locked_percentage: Decimal, // percentage of funds to invest
-    pub liquid_percentage: Decimal, // percentage of funds to invest
+    pub vault: String,       // Vault SC Address
+    pub percentage: Decimal, // percentage of funds to invest
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -120,6 +130,7 @@ pub struct UpdateEndowmentSettingsMsg {
     pub strategies: Option<Vec<StrategyComponent>>, // list of vaults and percentage for locked/liquid accounts
     pub locked_endowment_configs: Option<Vec<String>>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: Option<RebalanceDetails>,
+    pub kyc_donors_only: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -128,14 +139,14 @@ pub struct UpdateEndowmentStatusMsg {
     pub withdraw_approved: bool,
 }
 
-// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-// #[serde(rename_all = "snake_case")]
-// pub enum ReceiveMsg {
-//     // Add tokens sent for a specific account
-//     Deposit(DepositMsg),
-//     // Tokens are sent back to an Account from a Vault
-//     VaultReceipt(AccountTransferMsg),
-// }
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ReceiveMsg {
+    // Add tokens sent for a specific account
+    Deposit(DepositMsg),
+    // Tokens are sent back to an Account from a Vault
+    VaultReceipt {},
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct DepositMsg {
@@ -203,7 +214,7 @@ pub enum QueryMsg {
     GetTxRecords {
         sender: Option<String>,
         recipient: Option<String>,
-        denom: Option<String>,
+        asset_info: AssetInfoBase<Addr>,
     },
     // Get all "EndowmentFee"s
     GetEndowmentFees {},
