@@ -18,6 +18,7 @@ pub struct Config {
     pub last_earnings_harvest: u64,
     pub last_harvest_fx: Option<Decimal256>,
     pub settings_controller: SettingsController,
+    pub accepted_tokens: AcceptedTokens,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

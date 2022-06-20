@@ -1,5 +1,5 @@
 use angel_core::responses::index_fund::AllianceMemberResponse;
-use angel_core::structs::{AcceptedTokens, AllianceMember, GenericBalance, IndexFund};
+use angel_core::structs::{AllianceMember, GenericBalance, IndexFund};
 use cosmwasm_std::{Addr, Order, StdResult, Storage, Uint128};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
@@ -56,9 +56,6 @@ pub fn read_alliance_members(
     limit: Option<u64>,
 ) -> StdResult<Vec<AllianceMemberResponse>> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
-    let start = start_after.map(|v| Bound::exclusive(v));
-    // let start: Option<Vec<u8>> = calc_range_start_addr(start_after);
-    // let end: Option<Vec<u8>> = None;
     let end_before: Option<Addr> = None;
     ALLIANCE_MEMBERS
         .range(

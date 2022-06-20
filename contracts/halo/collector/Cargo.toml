@@ -38,3 +38,4 @@ cw-asset = "2.0.0"
 schemars = "0.8.10"
 serde = "1.0.137"
 
+terraswap = "2.6.0"

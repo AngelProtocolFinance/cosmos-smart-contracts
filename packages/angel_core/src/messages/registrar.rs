@@ -113,7 +113,6 @@ pub struct UpdateConfigMsg {
     pub donation_match_charites_contract: Option<String>,
     pub collector_addr: Option<String>,
     pub collector_share: Option<Decimal>,
-    pub default_vault: Option<Option<String>>,
     pub charity_shares_contract: Option<String>,
     pub accepted_tokens_native: Option<Vec<String>>,
     pub accepted_tokens_cw20: Option<Vec<String>>,

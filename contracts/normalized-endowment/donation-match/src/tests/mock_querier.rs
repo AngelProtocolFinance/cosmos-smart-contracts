@@ -3,7 +3,9 @@
 use angel_core::errors::core::ContractError;
 use angel_core::responses::registrar::EndowmentListResponse;
 use angel_core::responses::registrar::{ConfigResponse, EndowmentDetailResponse};
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier};
+use angel_core::structs::{
+    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier,
+};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, Coin, ContractResult, Decimal, Empty, OwnedDeps,
@@ -311,6 +313,14 @@ impl WasmMockQuerier {
                         donation_match_charites_contract: Some(MOCK_CONTRACT_ADDR.to_string()),
                         collector_addr: "collector-addr".to_string(),
                         collector_share: Decimal::percent(50),
+                        charity_shares_contract: None,
+                        accepted_tokens: AcceptedTokens {
+                            native: vec![
+                                "uluna".to_string(),
+                                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+                            ],
+                            cw20: vec![],
+                        }
                     })
                     .unwrap(),
                 )),

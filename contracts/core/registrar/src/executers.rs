@@ -1,6 +1,6 @@
 use crate::state::{
-    endow_type_fees_write, read_registry_entries, registry_read, registry_store, vault_read,
-    vault_store, CONFIG,
+    endow_type_fees_write, read_registry_entries, read_vaults, registry_read, registry_store,
+    vault_read, vault_store, CONFIG,
 };
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
@@ -10,10 +10,9 @@ use angel_core::structs::{
 };
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    attr, to_binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError,
-    StdResult, SubMsg, SubMsgResult, WasmMsg,
+    attr, to_binary, Addr, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response,
+    StdError, StdResult, SubMsg, SubMsgResult, WasmMsg,
 };
-
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
@@ -185,10 +184,7 @@ pub fn update_config(
         None => config.charity_shares_contract,
     };
     config.default_vault = match msg.default_vault {
-        Some(addr) => match addr {
-            Some(a) => Some(deps.api.addr_validate(&a)?),
-            None => None,
-        },
+        Some(addr) => Some(deps.api.addr_validate(addr.as_str())?),
         None => config.default_vault,
     };
     config.index_fund_contract = match msg.index_fund_contract {
@@ -513,12 +509,18 @@ pub fn harvest(
         .add_attribute("action", "harvest"))
 }
 
-fn harvest_msg(account: String, collector_address: String, collector_share: Decimal) -> SubMsg {
+fn harvest_msg(account: String, _collector_address: String, _collector_share: Decimal) -> SubMsg {
+    // IMPORTANT: This part should be updated only after
+    //            "vault" contract logic is confirmed &
+    //            resolve the conflict of "harvest_msg" logic
+    //             between `main(v1.7)` and `RC-v2(this)` version.
+    let last_earnings_harvest = 0;
+    let last_harvest_fx = None;
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account,
         msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {
-            collector_address,
-            collector_share,
+            last_earnings_harvest,
+            last_harvest_fx,
         })
         .unwrap(),
         funds: vec![],

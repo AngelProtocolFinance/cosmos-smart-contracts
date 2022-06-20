@@ -1,5 +1,4 @@
 use crate::messages::dao_token::CurveType;
-use crate::messages::vault::AccountTransferMsg;
 use crate::structs::{
     EndowmentFee, FundingSource, Profile, RebalanceDetails, SettingsController, StrategyComponent,
 };
@@ -80,6 +79,8 @@ pub enum ExecuteMsg {
     UpdateOwner {
         new_owner: String,
     },
+    // update config
+    UpdateConfig(UpdateConfigMsg),
     // Allows the SC owner (only!) to change ownership
     UpdateRegistrar {
         new_registrar: String,
