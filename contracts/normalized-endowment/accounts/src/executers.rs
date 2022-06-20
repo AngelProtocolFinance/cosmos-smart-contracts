@@ -247,7 +247,7 @@ pub fn update_registrar(
 
 pub fn update_endowment_settings(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
@@ -360,6 +360,30 @@ pub fn update_endowment_settings(
 
     // validate address strings passed
     endowment.kyc_donors_only = msg.kyc_donors_only;
+
+    if let Some(whitelist) = msg.maturity_whitelist {
+        let endow_mature_height = endowment
+            .maturity_height
+            .expect("Cannot get maturity height");
+        let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+        if endow_mature_height < env.block.height && endow_mature_time < env.block.time.seconds() {
+            let UpdateMaturityWhitelist { add, remove } = whitelist;
+            for addr in add {
+                let validated_addr = deps.api.addr_validate(&addr)?;
+                endowment.maturity_whitelist.push(validated_addr);
+            }
+            for addr in remove {
+                let validated_addr = deps.api.addr_validate(&addr)?;
+                let id = endowment
+                    .maturity_whitelist
+                    .iter()
+                    .position(|v| *v == validated_addr);
+                if let Some(id) = id {
+                    endowment.maturity_whitelist.swap_remove(id);
+                }
+            }
+        }
+    }
 
     ENDOWMENT.save(deps.storage, &endowment)?;
 
@@ -903,8 +927,14 @@ pub fn withdraw(
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
 
+    // check that sender is one of "maturity_whitelist" (if exist)
+    let mut sender_not_whitelisted = true;
+    if endowment.maturity_whitelist.len() > 0 {
+        sender_not_whitelisted = !endowment.maturity_whitelist.contains(&info.sender);
+    }
+
     // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner {
+    if info.sender != endowment.owner && sender_not_whitelisted {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -964,8 +994,14 @@ pub fn withdraw_liquid(
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
 
+    // check that sender is one of "maturity_whitelist" (if exist)
+    let mut sender_not_whitelisted = true;
+    if endowment.maturity_whitelist.len() > 0 {
+        sender_not_whitelisted = !endowment.maturity_whitelist.contains(&info.sender);
+    }
+
     // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner {
+    if info.sender != endowment.owner && sender_not_whitelisted {
         return Err(ContractError::Unauthorized {});
     }
 

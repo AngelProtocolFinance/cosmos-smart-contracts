@@ -119,6 +119,12 @@ pub struct Strategy {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateMaturityWhitelist {
+    pub add: Vec<String>,
+    pub remove: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentSettingsMsg {
     pub owner: Option<String>,
     pub whitelisted_beneficiaries: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
@@ -132,6 +138,7 @@ pub struct UpdateEndowmentSettingsMsg {
     pub locked_endowment_configs: Option<Vec<String>>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: Option<RebalanceDetails>,
     pub kyc_donors_only: bool,
+    pub maturity_whitelist: Option<UpdateMaturityWhitelist>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

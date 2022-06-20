@@ -93,6 +93,7 @@ pub fn instantiate(
             aum_fee: msg.aum_fee,
             parent: msg.parent,
             kyc_donors_only: false,
+            maturity_whitelist: vec![],
         },
     )?;
 

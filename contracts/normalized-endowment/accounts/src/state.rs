@@ -56,6 +56,7 @@ pub struct Endowment {
     pub donation_matching_contract: Option<Addr>, // donation matching contract address
     pub parent: Option<Addr>,        // Address of the Parent Endowment contract
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
+    pub maturity_whitelist: Vec<Addr>, // list of addresses, which can withdraw after maturity date is reached (if any)
 }
 
 impl Endowment {
