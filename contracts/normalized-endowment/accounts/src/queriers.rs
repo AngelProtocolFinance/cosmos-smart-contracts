@@ -79,6 +79,11 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
             .map(|addr| addr.to_string())
             .unwrap_or_else(|| "".to_string()),
         kyc_donors_only: endowment.kyc_donors_only,
+        maturity_whitelist: endowment
+            .maturity_whitelist
+            .iter()
+            .map(|v| v.to_string())
+            .collect::<Vec<String>>(),
     })
 }
 

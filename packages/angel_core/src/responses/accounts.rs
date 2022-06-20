@@ -35,6 +35,7 @@ pub struct EndowmentDetailsResponse {
     pub rebalance: RebalanceDetails,
     pub donation_match_contract_addr: String,
     pub kyc_donors_only: bool,
+    pub maturity_whitelist: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
