@@ -366,7 +366,7 @@ pub fn update_endowment_settings(
             .maturity_height
             .expect("Cannot get maturity height");
         let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
-        if endow_mature_height < env.block.height && endow_mature_time < env.block.time.seconds() {
+        if endow_mature_height < env.block.height || endow_mature_time < env.block.time.seconds() {
             let UpdateMaturityWhitelist { add, remove } = whitelist;
             for addr in add {
                 let validated_addr = deps.api.addr_validate(&addr)?;
@@ -927,15 +927,23 @@ pub fn withdraw(
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
 
-    // check that sender is one of "maturity_whitelist" (if exist)
-    let mut sender_not_whitelisted = true;
-    if endowment.maturity_whitelist.len() > 0 {
-        sender_not_whitelisted = !endowment.maturity_whitelist.contains(&info.sender);
-    }
-
-    // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner && sender_not_whitelisted {
-        return Err(ContractError::Unauthorized {});
+    // Check that sender is able to "withdraw"
+    let endow_mature_height = endowment
+        .maturity_height
+        .expect("Cannot get maturity height");
+    let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+    if endow_mature_height < env.block.height || endow_mature_time < env.block.time.seconds() {
+        // check that sender is the owner or the beneficiary
+        if info.sender != endowment.owner {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        // check that sender is one of "maturity_whitelist" (if exist)
+        if endowment.maturity_whitelist.len() > 0
+            && !endowment.maturity_whitelist.contains(&info.sender)
+        {
+            return Err(ContractError::Unauthorized {});
+        }
     }
 
     // check that the Endowment has been approved to withdraw deposits
@@ -994,15 +1002,23 @@ pub fn withdraw_liquid(
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
 
-    // check that sender is one of "maturity_whitelist" (if exist)
-    let mut sender_not_whitelisted = true;
-    if endowment.maturity_whitelist.len() > 0 {
-        sender_not_whitelisted = !endowment.maturity_whitelist.contains(&info.sender);
-    }
-
-    // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner && sender_not_whitelisted {
-        return Err(ContractError::Unauthorized {});
+    // Check that sender is able to "withdraw"
+    let endow_mature_height = endowment
+        .maturity_height
+        .expect("Cannot get maturity height");
+    let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+    if endow_mature_height < env.block.height || endow_mature_time < env.block.time.seconds() {
+        // check that sender is the owner or the beneficiary
+        if info.sender != endowment.owner {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        // check that sender is one of "maturity_whitelist" (if exist)
+        if endowment.maturity_whitelist.len() > 0
+            && !endowment.maturity_whitelist.contains(&info.sender)
+        {
+            return Err(ContractError::Unauthorized {});
+        }
     }
 
     // check that the Endowment has been approved to withdraw deposits
