@@ -5,7 +5,7 @@
 - Mac or Linux computer with x86 processors
 - docker
 - [rust-optimizer](https://github.com/CosmWasm/rust-optimizer)
-- [LocalJuno](https://github.com/terra-money/LocalJuno)
+- [LocalJuno](https://github.com/CosmosContracts/juno)
 - nodejs
 
 Notes:
@@ -16,69 +16,31 @@ Notes:
 ## Procedures
 
 ### Spin up LocalJuno
-
+1. Clone the junod repo: 
 ```bash
-git clone https://github.com/terra-money/LocalJuno.git
-cd LocalJuno
-git checkout v0.5.0  # important to get the right version!
+git clone https://github.com/CosmosContracts/juno.git
+```
+2. Copy the file named `junod_docker-compose.yml` in this `test-suite` repo over to the base folder of the junod repo, replacing the existing default `docker-compose.yml` file. 
+```bash
+cp ./junod_docker-compose.yml <juno_repo_path>/docker-compose.yml`
+```
+3. In the jundo repo base folder run the following to build junod container:
+```bash
+docker-compose build
 ```
 
-Edit `LocalJuno/config/config.toml` as follows. This speeds up LocalJuno's blocktime which improves our productivity.
-
-```diff
-##### consensus configuration options #####
-[consensus]
-
-wal_file = "data/cs.wal/wal"
-- timeout_propose = "3s"
-- timeout_propose_delta = "500ms"
-- timeout_prevote = "1s"
-- timeout_prevote_delta = "500ms"
-- timeout_precommit_delta = "500ms"
-- timeout_commit = "5s"
-+ timeout_propose = "500ms"
-+ timeout_propose_delta = "500ms"
-+ timeout_prevote = "500ms"
-+ timeout_prevote_delta = "500ms"
-+ timeout_precommit_delta = "500ms"
-+ timeout_commit = "500ms"
-```
-
-Edit `LocalJuno/config/genesis.json` as follows. This fixes the stability fee ("tax") on Terra stablecoin transfers to a constant value (0.1%) so that our test transactions give reproducible results.
-
-```diff
-"app_state": {
-  "treasury": {
-    "params": {
-      "tax_policy": {
--       "rate_min": "0.000500000000000000",
--       "rate_max": "0.010000000000000000",
-+       "rate_min": "0.001000000000000000",
-+       "rate_max": "0.001000000000000000",
-      },
--     "change_rate_max": "0.000250000000000000"
-+     "change_rate_max": "0.000000000000000000"
-    }
-  }
-}
-```
-
-Once done, start LocalJuno by
-
+Once the build is done, you can start your LocalJuno by running
 ```bash
 docker-compose up  # Ctrl + C to quit
 ```
 
-From time to time, you may need to revert LocalJuno to its initial state. Do this by
-
+From time to time, you may need to revert LocalJuno to its initial state. Do this by running
 ```bash
 docker-compose rm
 ```
 
-How to know if LocalJuno is working properly:
-
-1. **Go to [https://localhost:1317/swagger/](http://localhost:1317/swagger/).** You should see a page with some APIs which can be used to send transactions or query blockchain state. However, we will be using [terra.js]() library to do this instead of from the swagger page
-2. **Go to [this Terra Finder page](https://finder.terra.money/localjuno/address/terra1x46rqay4d3cssq8gxxvqz8xt6nwlz4td20k38v).** Don't forget to select "LocalJuno" from the network selector on top right of the page. You should see an account with huge amounts of Juno and stablecoins. This is one of the accounts we will be using for the tests
+How to know if LocalJuno is working properly?
+**Go to [https://localhost:1317](http://localhost:1317).** You should see a page with some APIs which can be used to send transactions or query blockchain state.
 
 ### Compile contracts
 
