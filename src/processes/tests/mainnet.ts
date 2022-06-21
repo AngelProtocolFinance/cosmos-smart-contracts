@@ -110,7 +110,7 @@ import {
 } from "./halo/vesting";
 
 export async function testExecute(
-  terra: SigningCosmWasmClient,
+  juno: SigningCosmWasmClient,
   apTeam: DirectSecp256k1HdWallet,
   registrar: string,
   indexFund: string,
@@ -118,9 +118,9 @@ export async function testExecute(
   endowmentContract: string,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
-  terraswapFactory: string,
-  terraswapToken: string,
-  terraswapPair: string,
+  junoswapFactory: string,
+  junoswapToken: string,
+  junoswapPair: string,
   haloAirdrop: string,
   haloCollector: string,
   haloCommunity: string,
@@ -142,14 +142,14 @@ export async function testExecute(
   //   juno,
   //   apTeam,
   //   [
-  //     "terra1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r", // Coalition for Engaged Education
+  //     "juno1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r", // Coalition for Engaged Education
   //   ],
   //   "1000000000"
   // );
   // await testRejectUnapprovedDonations(
   //   juno,
   //   apTeam,
-  //   "terra16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke", // AP Endowment
+  //   "juno16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke", // AP Endowment
   //   "000000"
   // );
   // await testUpdatingIndexFundConfigs(juno, apTeam, indexFund);
@@ -159,7 +159,7 @@ export async function testExecute(
   //   indexFund,
   //   23,
   //   [
-  //     "terra1uegpp7nuxazgf20medwy4dwdhvkzvdztmrj8jx", // PEPA
+  //     "juno1uegpp7nuxazgf20medwy4dwdhvkzvdztmrj8jx", // PEPA
   //   ],
   //   []
   // );
@@ -171,14 +171,14 @@ export async function testExecute(
   //   "Fund collection for MVP",
   //   true,
   //   [
-  //     "terra14hmdpqwr49j7vyeqmjmp9zxsym0fczp66kuz0g", // Mauti Cancer
+  //     "juno14hmdpqwr49j7vyeqmjmp9zxsym0fczp66kuz0g", // Mauti Cancer
   //   ]
   // );
   // await testUpdateAngelAllianceMembers(
   //   juno,
   //   apTeam,
   //   indexFund,
-  //   ["terra1gmxefcqt8sfckw0w44tpkuaz0p27eddq76elzx"],
+  //   ["juno1gmxefcqt8sfckw0w44tpkuaz0p27eddq76elzx"],
   //   []
   // );
   // await testRemoveIndexFund(juno, apTeam, indexFund, 5);
@@ -188,9 +188,9 @@ export async function testExecute(
 
   // await testUpdateEndowmentsStatus(juno, apTeam, registrar, [
   //   {
-  //     address: "terra1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2",
+  //     address: "juno1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2",
   //     status: 3,
-  //     beneficiary: "terra1suxqzxtzztxvakvucc6u4s9833n4u0cyk9pmv8",
+  //     beneficiary: "juno1suxqzxtzztxvakvucc6u4s9833n4u0cyk9pmv8",
   //   },
   // ]);
 
@@ -216,7 +216,7 @@ export async function testExecute(
   // await testQueryIndexFundInvolvedAddress(
   //   juno,
   //   indexFund,
-  //   "terra1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2"
+  //   "juno1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2"
   // );
 
   // HALO gov Tests
@@ -250,17 +250,17 @@ export async function testExecute(
   //   haloCollector,
   //   "1.0",
   //   undefined,
-  //   "terra16hdjuvghcumu6prg22cdjl96ptuay6r0hc6yns"
+  //   "juno16hdjuvghcumu6prg22cdjl96ptuay6r0hc6yns"
   // );
 
   // Test Loop Pair
   // await testPairProvideLiquidity(
   //   juno,
   //   apTeam,
-  //   terraswapToken,
-  //   "terra1yjg0tuhc6kzwz9jl8yqgxnf2ctwlfumnvscupp", // LOOP PAIR
+  //   junoswapToken,
+  //   "juno1yjg0tuhc6kzwz9jl8yqgxnf2ctwlfumnvscupp", // LOOP PAIR
   //   "13334400000000", //HALO
-  //   "1000000000000" //UST
+  //   "1000000000000" //axlUSDC
   // );
 
   // await testPairWithdrawLiquidity(
@@ -272,9 +272,9 @@ export async function testExecute(
   // );
 
   // Test query for LBP Token
-  // await testQueryTokenBalance(juno, terraswapToken, apTeam.key.accAddress);
+  // await testQueryTokenBalance(juno, junoswapToken, apTeam.key.accAddress);
 
-  // await testSendTokenBalance(juno, terraswapToken, apTeam);
+  // await testSendTokenBalance(juno, junoswapToken, apTeam);
 
   // await testCollectorSweep(juno, apTeam, haloCollector);
 }

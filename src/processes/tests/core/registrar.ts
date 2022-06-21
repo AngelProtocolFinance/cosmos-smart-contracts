@@ -132,7 +132,7 @@ export async function testUpdateEndowmentsStatus(
   juno: SigningCosmWasmClient,
   apTeam: string,
   registrar: string,
-  endowments: any[] // [ { address: "terra1....", status: 0|1|2|3, benficiary: "terra1.." | undefined }, ... ]
+  endowments: any[] // [ { address: "juno1....", status: 0|1|2|3, benficiary: "juno1.." | undefined }, ... ]
 ): Promise<void> {
   process.stdout.write("AP Team updates endowments statuses");
   let msgs: Msg[] = [];
@@ -167,7 +167,7 @@ export async function testUpdateEndowmentsEntry(
   juno: SigningCosmWasmClient,
   apTeam: string,
   registrar: string,
-  endowments: any[] // [{ address: "terra...", name: "...", owner: "...", tier: "", un_sdg: "", endow_type: "...", logo: "...", image: "..." }]
+  endowments: any[] // [{ address: "juno...", name: "...", owner: "...", tier: "", un_sdg: "", endow_type: "...", logo: "...", image: "..." }]
 ): Promise<void> {
   process.stdout.write("AP Team updates endowments type(EndowmentEntry info)");
   let msgs: Msg[] = [];
@@ -218,7 +218,7 @@ export async function testQueryRegistrarConfig(
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar config and get proper result");
-  const result: any = await terra.wasm.contractQuery(registrar, {
+  const result: any = await juno.wasm.contractQuery(registrar, {
     config: {},
   });
 
@@ -232,7 +232,7 @@ export async function testQueryRegistrarEndowmentDetails(
   endowment: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar Endowment Details/Status");
-  const result: any = await terra.wasm.contractQuery(registrar, {
+  const result: any = await juno.wasm.contractQuery(registrar, {
     endowment: { endowment_addr: endowment },
   });
 
@@ -245,7 +245,7 @@ export async function testQueryRegistrarEndowmentList(
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar EndowmentList");
-  const result: any = await terra.wasm.contractQuery(registrar, {
+  const result: any = await juno.wasm.contractQuery(registrar, {
     endowment_list: {},
   });
 
@@ -258,7 +258,7 @@ export async function testQueryRegistrarApprovedVaultList(
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar ApprovedVaultList");
-  const result: any = await terra.wasm.contractQuery(registrar, {
+  const result: any = await juno.wasm.contractQuery(registrar, {
     approved_vault_list: {},
   });
 
@@ -271,7 +271,7 @@ export async function testQueryRegistrarApprovedVaultRateList(
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar Approved Vault Exchange Rate List");
-  const result: any = await terra.wasm.contractQuery(registrar, {
+  const result: any = await juno.wasm.contractQuery(registrar, {
     approved_vault_rate_list: {},
   });
 
@@ -284,7 +284,7 @@ export async function testQueryRegistrarVaultList(
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar VaultList");
-  const result: any = await terra.wasm.contractQuery(registrar, {
+  const result: any = await juno.wasm.contractQuery(registrar, {
     vault_list: {},
   });
 
@@ -298,7 +298,7 @@ export async function testQueryRegistrarVault(
   Vault1: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar Vault");
-  const result: any = await terra.wasm.contractQuery(registrar, {
+  const result: any = await juno.wasm.contractQuery(registrar, {
     vault: {
       vault_addr: Vault1,
     },

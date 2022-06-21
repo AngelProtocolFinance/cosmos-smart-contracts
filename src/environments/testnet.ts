@@ -128,9 +128,7 @@ async function initialize() {
 
   console.log(`Using ${chalk.cyan(junoswapFactory)} as JunoSwap Factory`);
   console.log(`Using ${chalk.cyan(junoswapHaloTokenContract)} as JunoSwap HALO Token`);
-  console.log(
-    `Using ${chalk.cyan(junoswapHaloJunoPairContract)} as JunoSwap HALO/JUNO Pair`
-  );
+  console.log(`Using ${chalk.cyan(junoswapHaloJunoPairContract)} as JunoSwap HALO/JUNO Pair`);
 
   haloAirdrop = config.halo.airdrop_contract;
   haloCollector = config.halo.collector_contract;
@@ -159,7 +157,7 @@ async function initialize() {
 // setup contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupCore(): Promise<void> {
-  console.log(chalk.blue("\nTestNet"));
+  console.log(chalk.blue("\nTestNet uno-3"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -197,19 +195,19 @@ export async function startSetupCore(): Promise<void> {
 }
 
 // -------------------------------------------------------------------------------------
-// setup TerraSwap contracts
+// setup JunoSwap contracts
 // -------------------------------------------------------------------------------------
-// export async function startSetupTerraSwap(): Promise<void> {
+// export async function startSetupJunoSwap(): Promise<void> {
 //   console.log(chalk.blue("\nTestNet"));
 
 //   // Initialize environment information
 //   console.log(chalk.yellow("\nStep 1. Environment Info"));
 //   initialize();
 
-//   // Setup TerraSwap contracts
-//   console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
+//   // Setup JunoSwap contracts
+//   console.log(chalk.yellow("\nStep 2a. JunoSwap Contracts"));
 //   const apTeamAccount = await getWalletAddress(apTeam);
-//   await setupTerraSwap(
+//   await setupJunoSwap(
 //     juno,
 //     apTeamAccount,
 //     junoswapTokenCode,

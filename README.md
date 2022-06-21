@@ -100,7 +100,7 @@ Action options:
 Module options:
 
 - `core`: Registrar, Accounts, Index Fund, Multisigs, Vaults, etc
-- `terraswap`: TerraSwap HALO CW20 token, HALO/axlUSDC Pair, & HALO/axlUSDC Pair LP Token
+- `junoswap`: JunoSwap HALO CW20 token, HALO/axlUSDC Pair, & HALO/axlUSDC Pair LP Token
 - `halo`: All "support" contracts for HALO Token (gov, collector, distributor, vesting, etc)
 
 #### Complete steps for the setup of AP contracts ecosystem & running test (ex. using LocalJuno)
@@ -108,7 +108,7 @@ Module options:
 ```bash
 npm install
 npm run test:localjuno-setup-core
-npm run test:localjuno-setup-terraswap
+npm run test:localjuno-setup-junoswap
 npm run test:localjuno-setup-halo
 npm run test:localjuno-tests
 ```

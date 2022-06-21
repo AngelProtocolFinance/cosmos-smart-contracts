@@ -77,7 +77,7 @@ export async function testQueryCommunityConfig(
   communityContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Community Config");
-  const result: any = await terra.wasm.contractQuery(communityContract, {
+  const result: any = await juno.wasm.contractQuery(communityContract, {
     config: {},
   });
 

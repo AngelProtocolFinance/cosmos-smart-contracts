@@ -19,7 +19,7 @@ export type Member = {
 // Variables
 // -------------------------------------------------------------------------------------
 
-let terra: LcdClient;
+let juno: LcdClient;
 let apTeam: Wallet;
 let registrar: string;
 let cw4GrpOwners: string;
@@ -53,7 +53,7 @@ export async function setupCore(
   }
 ): Promise<void> {
   // Initialize variables
-  terra = _terra;
+  juno = _juno;
   apTeam = _apTeam;
   anchorMoneyMarket = _anchorMoneyMarket;
 
@@ -92,7 +92,7 @@ async function setup(
   // Step 1. Upload all local wasm files and capture the codes for each....
   process.stdout.write("Uploading Registrar Wasm");
   const registrarCodeId = await storeCode(
-    terra,
+    juno,
     apTeam,
     `${wasm_path.core}/registrar.wasm`
   );
@@ -108,7 +108,7 @@ async function setup(
 
   process.stdout.write("Uploading Accounts Wasm");
   const accountsCodeId = await storeCode(
-    terra,
+    juno,
     apTeam,
     `${wasm_path.core}/accounts.wasm`
   );
@@ -120,7 +120,7 @@ async function setup(
 
   process.stdout.write("Uploading CW3 MultiSig Wasm");
   const cw3MultiSig = await storeCode(
-    terra,
+    juno,
     apTeam,
     `${wasm_path.core}/cw3_multisig.wasm`
   );
@@ -128,7 +128,7 @@ async function setup(
 
   process.stdout.write("Uploading AP Team MultiSig Wasm");
   const apTeamMultiSig = await storeCode(
-    terra,
+    juno,
     apTeam,
     `${wasm_path.core}/cw3_multisig.wasm`
   );
@@ -138,7 +138,7 @@ async function setup(
   // Registrar
   process.stdout.write("Instantiating Registrar contract");
   const registrarResult = await instantiateContract(
-    terra,
+    juno,
     apTeam,
     apTeam,
     registrarCodeId,
@@ -176,7 +176,7 @@ async function setup(
   // CW3 AP Team MultiSig
   process.stdout.write("Instantiating CW3 AP Team MultiSig contract");
   const cw3ApTeamResult = await instantiateContract(
-    terra,
+    juno,
     apTeam,
     apTeam,
     apTeamMultiSig,

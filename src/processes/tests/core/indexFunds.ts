@@ -191,7 +191,7 @@ export async function testQueryIndexFundConfig(
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund Config");
-  const result: any = await terra.wasm.contractQuery(indexFund, {
+  const result: any = await juno.wasm.contractQuery(indexFund, {
     config: {},
   });
   console.log(result);
@@ -203,7 +203,7 @@ export async function testQueryIndexFundState(
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund State");
-  const result: any = await terra.wasm.contractQuery(indexFund, {
+  const result: any = await juno.wasm.contractQuery(indexFund, {
     state: {},
   });
 
@@ -216,7 +216,7 @@ export async function testQueryIndexFundTcaList(
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund TcaList");
-  const result: any = await terra.wasm.contractQuery(indexFund, {
+  const result: any = await juno.wasm.contractQuery(indexFund, {
     alliance_members: {},
   });
 
@@ -231,7 +231,7 @@ export async function testQueryIndexFundFundsList(
   limit: number | undefined
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund FundsList");
-  const result: any = await terra.wasm.contractQuery(indexFund, {
+  const result: any = await juno.wasm.contractQuery(indexFund, {
     funds_list: {
       limit,
       start_after,
@@ -248,7 +248,7 @@ export async function testQueryIndexFundFundDetails(
   fund_id: number
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund FundDetails");
-  const result: any = await terra.wasm.contractQuery(indexFund, {
+  const result: any = await juno.wasm.contractQuery(indexFund, {
     fund_details: { fund_id: fund_id },
   });
 
@@ -261,7 +261,7 @@ export async function testQueryIndexFundActiveFundDetails(
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund ActiveFundDetails");
-  const result: any = await terra.wasm.contractQuery(indexFund, {
+  const result: any = await juno.wasm.contractQuery(indexFund, {
     active_fund_details: {},
   });
 
@@ -274,7 +274,7 @@ export async function testQueryIndexFundActiveFundDonations(
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund ActiveFundDonations");
-  const result: any = await terra.wasm.contractQuery(indexFund, {
+  const result: any = await juno.wasm.contractQuery(indexFund, {
     active_fund_donations: {},
   });
 
@@ -287,7 +287,7 @@ export async function testQueryIndexFundDeposit(
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund Deposit msg builder");
-  const result: any = await terra.wasm.contractQuery(indexFund, {
+  const result: any = await juno.wasm.contractQuery(indexFund, {
     deposit: {
       amount: "100000000",
       fund_id: 6,
@@ -306,7 +306,7 @@ export async function testQueryIndexFundInvolvedAddress(
   process.stdout.write(
     "Test - Query IndexFund for all funds an Address is involoved with"
   );
-  const result: any = await terra.wasm.contractQuery(indexFund, {
+  const result: any = await juno.wasm.contractQuery(indexFund, {
     involved_funds: { address },
   });
 

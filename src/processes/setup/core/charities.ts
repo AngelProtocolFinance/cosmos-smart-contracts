@@ -36,7 +36,7 @@ type Charity = {
   average_annual_budget: string;
 };
 
-let terra: SigningCosmWasmClient;
+let juno: SigningCosmWasmClient;
 let apTeam: Wallet;
 let registrar: string;
 let indexFund: string;
@@ -49,7 +49,7 @@ export function initializeCharities(
   registrarAddr: string,
   index_fund: string
 ): void {
-  terra = lcdClient;
+  juno = lcdClient;
   apTeam = ap_team;
   registrar = registrarAddr;
   indexFund = index_fund;

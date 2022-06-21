@@ -61,7 +61,7 @@ export async function testQueryStakingConfig(
   stakingContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Staking Config");
-  const result: any = await terra.wasm.contractQuery(stakingContract, {
+  const result: any = await juno.wasm.contractQuery(stakingContract, {
     config: {},
   });
 
@@ -74,7 +74,7 @@ export async function testQueryStakingState(
   stakingContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Staking State");
-  const result: any = await terra.wasm.contractQuery(stakingContract, {
+  const result: any = await juno.wasm.contractQuery(stakingContract, {
     state: {},
   });
 
@@ -89,7 +89,7 @@ export async function testQueryStakingStakerInfo(
   block_height: number | undefined
 ): Promise<void> {
   process.stdout.write("Test - Query Airdrop Latest Stage");
-  const result: any = await terra.wasm.contractQuery(stakingContract, {
+  const result: any = await juno.wasm.contractQuery(stakingContract, {
     staker_info: { staker, block_height },
   });
 

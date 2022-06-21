@@ -8,57 +8,57 @@ import * as MainNet from "./environments/mainnet";
 (async () => {
 	const mode = process.env.npm_config_mode || "";
 	switch (mode) {
-		// case "localjuno_tests":
-		// 	await LocalNet.startTests();
-		// 	break;
+		case "localjuno_tests":
+			await LocalNet.startTests();
+			break;
 		case "localjuno_setup_core":
 			await LocalNet.startSetupCore();
 			break;
 		// case "localjuno_setup_halo":
 		// 	await LocalNet.startSetupHalo();
 		// 	break;
-		// case "localjuno_setup_terraswap":
+		// case "localjuno_setup_junoswap":
 		// 	await LocalNet.startSetupJunoSwap();
 		// 	break;
-		// case "localjuno_migrate_core":
-		// 	await LocalNet.startMigrateCore();
-		// 	break;
+		case "localjuno_migrate_core":
+			await LocalNet.startMigrateCore();
+			break;
 		// case "localjuno_migrate_halo":
 		// 	await LocalNet.startMigrateHalo();
 		// 	break;
-		// case "testnet_tests":
-		// 	await TestNet.startTests();
-		// 	break;
+		case "testnet_tests":
+			await TestNet.startTests();
+			break;
 		case "testnet_setup_core":
 			await TestNet.startSetupCore();
 			break;
 		// case "testnet_setup_halo":
 		// 	await TestNet.startSetupHalo();
 		// 	break;
-		// case "testnet_setup_terraswap":
-		// 	await TestNet.startSetupTerraSwap();
+		// case "testnet_setup_junoswap":
+		// 	await TestNet.startSetupJunoSwap();
 		// 	break;
-		// case "testnet_migrate_core":
-		// 	await TestNet.startMigrateCore();
-		// 	break;
+		case "testnet_migrate_core":
+			await TestNet.startMigrateCore();
+			break;
 		// case "testnet_migrate_halo":
 		// 	await TestNet.startMigrateHalo();
 		// 	break;
-		// case "mainnet_tests":
-		// 	await MainNet.startTests();
-		// 	break;
-		// case "mainnet_setup_core":
-		// 	await MainNet.startSetupCore();
-		// 	break;
+		case "mainnet_tests":
+			await MainNet.startTests();
+			break;
+		case "mainnet_setup_core":
+			await MainNet.startSetupCore();
+			break;
 		// case "mainnet_setup_halo":
 		// 	await MainNet.startSetupHalo();
 		// 	break;
-		// case "mainnet_setup_terraswap":
-		// 	await MainNet.startSetupTerraSwap();
+		// case "mainnet_setup_junoswap":
+		// 	await MainNet.startSetupJunoSwap();
 		// 	break;
-		// case "mainnet_migrate_core":
-		// 	await MainNet.startMigrateCore();
-		// 	break;
+		case "mainnet_migrate_core":
+			await MainNet.startMigrateCore();
+			break;
 		// case "mainnet_migrate_halo":
 		// 	await MainNet.startMigrateHalo();
 		// 	break;

@@ -195,7 +195,7 @@ export async function testQueryAccountsState(
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts State");
-  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+  const result: any = await juno.wasm.contractQuery(endowmentContract, {
     state: {},
   });
 
@@ -211,7 +211,7 @@ export async function testQueryAccountsTransactions(
   denom: string | undefined
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Transactions");
-  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+  const result: any = await juno.wasm.contractQuery(endowmentContract, {
     get_tx_records: {
       sender,
       recipient,
@@ -228,7 +228,7 @@ export async function testQueryAccountsBalance(
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Balance");
-  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+  const result: any = await juno.wasm.contractQuery(endowmentContract, {
     balance: {},
   });
 
@@ -241,7 +241,7 @@ export async function testQueryAccountsConfig(
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Config");
-  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+  const result: any = await juno.wasm.contractQuery(endowmentContract, {
     config: {},
   });
 
@@ -254,7 +254,7 @@ export async function testQueryAccountsEndowment(
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Endowment");
-  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+  const result: any = await juno.wasm.contractQuery(endowmentContract, {
     endowment: {},
   });
 
@@ -267,7 +267,7 @@ export async function testQueryAccountsProfile(
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Profile");
-  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+  const result: any = await juno.wasm.contractQuery(endowmentContract, {
     get_profile: {},
   });
 

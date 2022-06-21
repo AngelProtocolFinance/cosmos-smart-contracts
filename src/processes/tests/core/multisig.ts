@@ -187,7 +187,7 @@ export async function testQueryMultisigVoters(
   multisig: string
 ): Promise<void> {
   process.stdout.write("Test - Query a multisig voters list");
-  const result: any = await terra.wasm.contractQuery(multisig, {
+  const result: any = await juno.wasm.contractQuery(multisig, {
     list_voters: {},
   });
 
@@ -200,7 +200,7 @@ export async function testQueryMultisigThreshold(
   multisig: string
 ): Promise<void> {
   process.stdout.write("Test - Query a multisig threshold");
-  const result: any = await terra.wasm.contractQuery(multisig, {
+  const result: any = await juno.wasm.contractQuery(multisig, {
     threshold: {},
   });
 
@@ -213,7 +213,7 @@ export async function testQueryGroupMembersList(
   multisig: string
 ): Promise<void> {
   process.stdout.write("Test - Query a multisig group members list");
-  const result: any = await terra.wasm.contractQuery(multisig, {
+  const result: any = await juno.wasm.contractQuery(multisig, {
     list_members: {},
   });
 

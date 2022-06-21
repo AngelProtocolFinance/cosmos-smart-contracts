@@ -31,7 +31,7 @@ export const testnet = {
     cw3ApTeam: "",
   },
 
-  // TerraSwap contracts
+  // JunoSwap contracts
   junoswap: {
     junoswap_token_code: 83,
     junoswap_factory: "",
@@ -86,7 +86,7 @@ export const mainnet = {
     { addr: "", weight: 1 },
   ],
 
-  // TerraSwap contracts
+  // JunoSwap contracts
   junoswap: {
     junoswap_token_code: 4,
     junoswap_factory: "",

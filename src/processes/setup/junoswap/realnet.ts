@@ -8,7 +8,7 @@ import {
 } from "../../../utils/helpers";
 
 // Deploy HALO Token and HALO/JUNO pair contracts to the TestNet/MainNet
-export async function setupTerraSwap(
+export async function setupJunoSwap(
   juno: SigningCosmWasmClient,
   apTeam: string,
   token_code_id: number,

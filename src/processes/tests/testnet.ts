@@ -145,9 +145,9 @@ export async function testExecute(
   endowmentContract4: string,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
-  terraswapFactory: string,
-  terraswapToken: string,
-  terraswapPair: string,
+  junoswapFactory: string,
+  junoswapToken: string,
+  junoswapPair: string,
   haloAirdrop: string,
   haloCollector: string,
   haloCommunity: string,
@@ -162,14 +162,14 @@ export async function testExecute(
   //   juno,
   //   apTeam,
   //   indexFund,
-  //   "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // address #1
+  //   "juno1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // address #1
   //   {
   //     name: "Testnet Charity #2",
   //     website:
-  //       "http://angelprotocol.io/app/charity/terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+  //       "http://angelprotocol.io/app/charity/juno1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
   //     logo: "https://angelprotocol.io/favicon.ico",
   //   }, // member #1`
-  //   // "terra178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // address #2
+  //   // "juno178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // address #2
   //   // { name: "Testnet Admin", webiste: "http://angelprotocol.io", logo: "" }, // member #2
   //   "add" // action
   // );
@@ -186,7 +186,7 @@ export async function testExecute(
   // await testUpdateFundMembers(juno, apTeam, indexFund, 2, [], []);
   // await testChangeManyAccountsEndowmentOwners(juno, apTeam, [
   //   {
-  //     "address": "terra16zj5dw97sk7q3rvakzu76uyfv6zrxkvsln0yjz2wa5s58mq67vhs5wdv7l", // Current one is localjuno endow1.
+  //     "address": "juno16zj5dw97sk7q3rvakzu76uyfv6zrxkvsln0yjz2wa5s58mq67vhs5wdv7l", // Current one is localjuno endow1.
   //     "owner": apTeam, 
   //     "kyc_donors_only": false,
   //   }
@@ -325,7 +325,7 @@ export async function testExecute(
   // await testAirdropClaim(juno, apTeam, haloAirdrop);
   // await testQueryAirdropConfig(juno, haloAirdrop);
   // await testQueryAirdropMerkleRoot(juno, haloAirdrop, 1);
-  // await testQueryAirdropIsClaimed(juno, haloAirdrop, 1, "terra1qfqa2eu9wp272ha93lj4yhcenrc6ymng079nu8");
+  // await testQueryAirdropIsClaimed(juno, haloAirdrop, 1, "juno1qfqa2eu9wp272ha93lj4yhcenrc6ymng079nu8");
   // await testQueryAirdropLatestStage(juno, haloAirdrop);
 
   // Test query for HALO collector
@@ -394,20 +394,20 @@ export async function testExecute(
   // await testGovExecutePoll(juno, apTeam, haloGov, 1);
   // await testGovEndPoll(juno, apTeam, haloGov, 1);
   // await testGovSnapshotPoll(juno, apTeam, haloGov, 1);
-  // await testGovStakeVotingTokens(juno, apTeam, terraswapToken, haloGov, "20000000000");
-  // await testGovStakeVotingTokens(juno, apTeam2, terraswapToken, haloGov, "10000000000");
-  // await testGovStakeVotingTokens(juno, apTeam3, terraswapToken, haloGov, "5000000000");
+  // await testGovStakeVotingTokens(juno, apTeam, junoswapToken, haloGov, "20000000000");
+  // await testGovStakeVotingTokens(juno, apTeam2, junoswapToken, haloGov, "10000000000");
+  // await testGovStakeVotingTokens(juno, apTeam3, junoswapToken, haloGov, "5000000000");
   // await testGovWithdrawVotingTokens(juno, apTeam, haloGov, "1000000000");
   // await testGovWithdrawVotingTokens(juno, apTeam2, haloGov, "10000000000");
   // await testGovWithdrawVotingTokens(juno, apTeam3, haloGov, "10000000000");
   // await testGovClaimVotingTokens(juno, apTeam, haloGov);
   // await testGovCastVote(juno, apTeam, haloGov, 1, VoteOption.YES, "1");
-  // await testGovRegisterContracts(juno, apTeam, haloGov, terraswapToken);
+  // await testGovRegisterContracts(juno, apTeam, haloGov, junoswapToken);
   // await testGovExecutePollForRegistrarSettings(
   //   juno,
   //   apTeam,
   //   haloGov,
-  //   terraswapToken,
+  //   junoswapToken,
   //   "1000000",
   //   100,
   //   "0.5",
@@ -452,7 +452,7 @@ export async function testExecute(
   //   juno,
   //   apTeam,
   //   lbpFactoryContract,
-  //   terraswapToken,
+  //   junoswapToken,
   //   "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
   //   datetimeStringToUTC("12/16/2021 00:00:00Z"),
   //   datetimeStringToUTC("12/17/2021 00:00:00Z"),
@@ -460,12 +460,12 @@ export async function testExecute(
   //   "50",
   //   "4",
   //   "50",
-  //   "HALO <-> UST Pair"
+  //   "HALO <-> axlUSDC Pair"
   // );
   // await getPairContractLpToken(juno, lbpPairContract);
-  // await testFactoryUnregister(juno, apTeam, lbpFactoryContract, terraswapToken, "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4");
+  // await testFactoryUnregister(juno, apTeam, lbpFactoryContract, junoswapToken, "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4");
   // await testQueryFactoryConfig(juno, lbpFactoryContract);
-  // await testQueryFactoryPair(juno, lbpFactoryContract, terraswapToken);
+  // await testQueryFactoryPair(juno, lbpFactoryContract, junoswapToken);
   // await testQueryFactoryPairs(juno, lbpFactoryContract);
 
   // await testPairSwapNativeToHalo(juno, apTeam, lbpPairContract, "100000000");
@@ -473,18 +473,18 @@ export async function testExecute(
   //   juno,
   //   apTeam,
   //   lbpPairContract,
-  //   terraswapToken,
+  //   junoswapToken,
   //   "100000000"
   // );
   // await testQueryPairPair(juno, lbpPairContract);
   // await testQueryPairPool(juno, lbpPairContract);
   // await testQueryPairSimulationNativeToHalo(juno, lbpPairContract);
-  // await testQueryPairSimulationHaloToNative(juno, lbpPairContract, terraswapToken);
+  // await testQueryPairSimulationHaloToNative(juno, lbpPairContract, junoswapToken);
   // await testQueryPairReverseSimulationNativeToHalo(juno, lbpPairContract);
   // await testQueryPairReverseSimulationHaloToNative(
   //   juno,
   //   lbpPairContract,
-  //   terraswapToken
+  //   junoswapToken
   // );
 
   // Test query for LBP Router
@@ -494,10 +494,10 @@ export async function testExecute(
   // await testPairProvideLiquidity(
   //   juno,
   //   apTeam,
-  //   terraswapToken,
-  //   "terra1yjg0tuhc6kzwz9jl8yqgxnf2ctwlfumnvscupp", // LOOP PAIR
+  //   junoswapToken,
+  //   "juno1yjg0tuhc6kzwz9jl8yqgxnf2ctwlfumnvscupp", // LOOP PAIR
   //   "80000000000000", //HALO
-  //   "1300000000000", //UST
+  //   "1300000000000", //axlUSDC
   // );
 
   // await testPairWithdrawLiquidity(
@@ -509,14 +509,14 @@ export async function testExecute(
   // );
 
   // Test query for LBP Token
-  // await testQueryTokenBalance(juno, terraswapToken, apTeam.key.accAddress);
-  // await testQueryTokenInfo(juno, terraswapToken);
-  // await testQueryTokenMinter(juno, terraswapToken);
+  // await testQueryTokenBalance(juno, junoswapToken, apTeam.key.accAddress);
+  // await testQueryTokenInfo(juno, junoswapToken);
+  // await testQueryTokenMinter(juno, junoswapToken);
 
   // await testTransferTokenBalance(
   //   juno,
   //   apTeam,
-  //   terraswapToken,
+  //   junoswapToken,
   //   apTeam2.key.accAddress,
   //   "420000000"
   // );
