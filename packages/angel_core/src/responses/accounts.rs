@@ -30,11 +30,11 @@ pub struct EndowmentDetailsResponse {
     pub description: String,
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
-    pub maturity_height: Option<u64>,
     pub strategies: Vec<StrategyComponent>,
     pub rebalance: RebalanceDetails,
     pub donation_match_contract_addr: String,
     pub kyc_donors_only: bool,
+    pub maturity_whitelist: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

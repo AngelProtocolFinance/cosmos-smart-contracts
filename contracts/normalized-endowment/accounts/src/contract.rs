@@ -37,6 +37,13 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
+    // check that the "maturity_time" is not empty
+    if msg.maturity_time.is_none() {
+        return Err(ContractError::Std(StdError::NotFound {
+            kind: "maturity_time".to_string(),
+        }));
+    }
+
     // apply the initial configs passed
     CONFIG.save(
         deps.storage,
@@ -74,7 +81,6 @@ pub fn instantiate(
             description: msg.description.clone(),
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
             maturity_time: msg.maturity_time,                       // Option<u64>
-            maturity_height: msg.maturity_height,                   // Option<u64>
             strategies: vec![StrategyComponent {
                 vault: deps.api.addr_validate(&default_vault)?,
                 percentage: Decimal::one(),
@@ -93,6 +99,7 @@ pub fn instantiate(
             aum_fee: msg.aum_fee,
             parent: msg.parent,
             kyc_donors_only: false,
+            maturity_whitelist: vec![],
         },
     )?;
 

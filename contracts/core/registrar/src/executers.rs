@@ -282,7 +282,6 @@ pub fn create_endowment(
             description: msg.description,
             withdraw_before_maturity: msg.withdraw_before_maturity,
             maturity_time: msg.maturity_time,
-            maturity_height: msg.maturity_height,
             locked_endowment_configs: msg.locked_endowment_configs,
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries,
             whitelisted_contributors: msg.whitelisted_contributors,

@@ -71,7 +71,6 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
         description: endowment.description,
         withdraw_before_maturity: endowment.withdraw_before_maturity,
         maturity_time: endowment.maturity_time,
-        maturity_height: endowment.maturity_height,
         strategies: endowment.strategies,
         rebalance: endowment.rebalance,
         donation_match_contract_addr: endowment
@@ -79,6 +78,11 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
             .map(|addr| addr.to_string())
             .unwrap_or_else(|| "".to_string()),
         kyc_donors_only: endowment.kyc_donors_only,
+        maturity_whitelist: endowment
+            .maturity_whitelist
+            .iter()
+            .map(|v| v.to_string())
+            .collect::<Vec<String>>(),
     })
 }
 

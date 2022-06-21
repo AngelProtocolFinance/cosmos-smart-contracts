@@ -44,8 +44,7 @@ pub struct Endowment {
     pub name: String,                          // name of the Charity Endowment
     pub description: String,                   // description of the Charity Endowment
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
-    pub maturity_time: Option<u64>,     // datetime int of endowment maturity
-    pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
+    pub maturity_time: Option<u64>,     // datetime int of endowment maturity (unit: seconds)
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
     pub locked_endowment_configs: Vec<String>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
@@ -56,15 +55,11 @@ pub struct Endowment {
     pub donation_matching_contract: Option<Addr>, // donation matching contract address
     pub parent: Option<Addr>,        // Address of the Parent Endowment contract
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
+    pub maturity_whitelist: Vec<Addr>, // list of addresses, which can withdraw after maturity date is reached (if any)
 }
 
 impl Endowment {
     pub fn is_expired(&self, env: &Env) -> bool {
-        if let Some(maturity_height) = self.maturity_height {
-            if env.block.height > maturity_height {
-                return true;
-            }
-        }
         if let Some(maturity_time) = self.maturity_time {
             if env.block.time > Timestamp::from_seconds(maturity_time) {
                 return true;

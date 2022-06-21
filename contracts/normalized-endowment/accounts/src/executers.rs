@@ -247,7 +247,7 @@ pub fn update_registrar(
 
 pub fn update_endowment_settings(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
@@ -330,16 +330,6 @@ pub fn update_endowment_settings(
 
     if !endowment
         .locked_endowment_configs
-        .contains(&"maturity_height".to_string())
-    {
-        endowment.maturity_height = match msg.maturity_height {
-            Some(i) => i,
-            None => endowment.maturity_height,
-        };
-    }
-
-    if !endowment
-        .locked_endowment_configs
         .contains(&"strategies".to_string())
     {
         endowment.strategies = match msg.strategies {
@@ -360,6 +350,27 @@ pub fn update_endowment_settings(
 
     // validate address strings passed
     endowment.kyc_donors_only = msg.kyc_donors_only;
+
+    if let Some(whitelist) = msg.maturity_whitelist {
+        let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+        if endow_mature_time < env.block.time.seconds() {
+            let UpdateMaturityWhitelist { add, remove } = whitelist;
+            for addr in add {
+                let validated_addr = deps.api.addr_validate(&addr)?;
+                endowment.maturity_whitelist.push(validated_addr);
+            }
+            for addr in remove {
+                let validated_addr = deps.api.addr_validate(&addr)?;
+                let id = endowment
+                    .maturity_whitelist
+                    .iter()
+                    .position(|v| *v == validated_addr);
+                if let Some(id) = id {
+                    endowment.maturity_whitelist.swap_remove(id);
+                }
+            }
+        }
+    }
 
     ENDOWMENT.save(deps.storage, &endowment)?;
 
@@ -903,9 +914,20 @@ pub fn withdraw(
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
 
-    // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner {
-        return Err(ContractError::Unauthorized {});
+    // Check that sender is able to "withdraw"
+    let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+    if endow_mature_time < env.block.time.seconds() {
+        // check that sender is the owner or the beneficiary
+        if info.sender != endowment.owner {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        // check that sender is one of "maturity_whitelist" (if exist)
+        if endowment.maturity_whitelist.len() > 0
+            && !endowment.maturity_whitelist.contains(&info.sender)
+        {
+            return Err(ContractError::Unauthorized {});
+        }
     }
 
     // check that the Endowment has been approved to withdraw deposits
@@ -964,9 +986,20 @@ pub fn withdraw_liquid(
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
 
-    // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner {
-        return Err(ContractError::Unauthorized {});
+    // Check that sender is able to "withdraw"
+    let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+    if endow_mature_time < env.block.time.seconds() {
+        // check that sender is the owner or the beneficiary
+        if info.sender != endowment.owner {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        // check that sender is one of "maturity_whitelist" (if exist)
+        if endowment.maturity_whitelist.len() > 0
+            && !endowment.maturity_whitelist.contains(&info.sender)
+        {
+            return Err(ContractError::Unauthorized {});
+        }
     }
 
     // check that the Endowment has been approved to withdraw deposits
