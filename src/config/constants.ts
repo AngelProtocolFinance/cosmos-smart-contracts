@@ -4,7 +4,7 @@
 export const testnet = {
   networkInfo: {
     url: "https://rpc.uni.juno.deuslabs.fi",
-    chainId: "juno-1",
+    chainId: "uni-3",
   },
   mnemonicKeys: {
     apTeam: "pact fancy rough prison twenty dismiss mushroom rival page ship quantum deer rookie system cargo",
