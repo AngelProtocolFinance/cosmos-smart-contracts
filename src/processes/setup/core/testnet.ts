@@ -71,9 +71,9 @@ export async function setupCore(
   charity3 = wallets.charity3;
   tca = wallets.tca;
 
-  const apTeamAddr = await getWalletAddress(apTeam);
-  const apTeam2Addr = await getWalletAddress(apTeam2);
-  const apTreasuryAddr = await getWalletAddress(apTreasury);
+  apTeamAddr = await getWalletAddress(apTeam);
+  apTeam2Addr = await getWalletAddress(apTeam2);
+  apTreasuryAddr = await getWalletAddress(apTreasury);
 
   await setup(
     config.tax_rate,
@@ -148,6 +148,7 @@ async function setup(
     apTeamAddr,
     registrarCodeId,
     {
+      tax_rate,
       accounts_code_id: accountsCodeId,
       treasury: treasury_address,
       default_vault: undefined,
