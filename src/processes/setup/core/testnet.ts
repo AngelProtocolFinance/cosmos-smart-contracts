@@ -110,19 +110,19 @@ async function setup(
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each....
   process.stdout.write("Uploading Registrar Wasm");
-  const registrarCodeId = 483; // await storeCode(juno, apTeamAddr, `${wasm_path.core}/registrar.wasm`);
+  const registrarCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/registrar.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${registrarCodeId}`);
 
   process.stdout.write("Uploading Index Fund Wasm");
-  const fundCodeId = 484; // await storeCode(juno, apTeamAddr, `${wasm_path.core}/index_fund.wasm`);
+  const fundCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/index_fund.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${fundCodeId}`);
 
   process.stdout.write("Uploading Accounts Wasm");
-  const accountsCodeId = 485; // await storeCode(juno, apTeamAddr, `${wasm_path.core}/accounts.wasm`);
+  const accountsCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/accounts.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${accountsCodeId}`);
 
   process.stdout.write("Uploading CW4 Group Wasm");
-  const cw4Group = 486; // await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw4_group.wasm`);
+  const cw4Group = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw4_group.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw4Group}`);
 
   process.stdout.write("Uploading CW3 MultiSig Wasm");
