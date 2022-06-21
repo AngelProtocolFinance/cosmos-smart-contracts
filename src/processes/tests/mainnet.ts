@@ -1,4 +1,5 @@
-import { LcdClient,  Wallet } from "@cosmjs/launchpad";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import chalk from "chalk";
 import {
   testBeneficiaryCanWithdrawFromLiquid,
@@ -109,8 +110,8 @@ import {
 } from "./halo/vesting";
 
 export async function testExecute(
-  terra: LcdClient,
-  apTeam: Wallet,
+  terra: SigningCosmWasmClient,
+  apTeam: DirectSecp256k1HdWallet,
   registrar: string,
   indexFund: string,
   anchorVault: string,

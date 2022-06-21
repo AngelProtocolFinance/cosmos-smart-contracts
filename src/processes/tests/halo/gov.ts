@@ -2,13 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {
-  LcdClient,
-  
-  Msg,
-  MsgExecuteContract,
-  Wallet,
-} from "@cosmjs/launchpad";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -27,8 +21,8 @@ export enum VoteOption {
 //
 //----------------------------------------------------------------------------------------
 export async function testGovUpdateConfig(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   govContract: string,
   owner: string | undefined,
   quorum: number | undefined,
@@ -43,21 +37,19 @@ export async function testGovUpdateConfig(
   process.stdout.write("Test - Only owner can update gov config");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
-        update_config: {
-          owner,
-          quorum,
-          threshold,
-          voting_period,
-          timelock_period,
-          proposal_deposit,
-          snapshot_period,
-          unbonding_period,
-          gov_hodler,
-        },
-      }),
-    ])
+    sendTransaction(juno, apTeam, govContract, {
+      update_config: {
+        owner,
+        quorum,
+        threshold,
+        voting_period,
+        timelock_period,
+        proposal_deposit,
+        snapshot_period,
+        unbonding_period,
+        gov_hodler,
+      },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -66,8 +58,8 @@ export async function testGovUpdateConfig(
 // TEST: Update the configs of the Gov Hodler Contract
 //----------------------------------------------------------------------------------------
 export async function testGovHodlerUpdateConfig(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   gov_hodler: string,
   owner: string | undefined,
   govContract: string | undefined
@@ -75,14 +67,12 @@ export async function testGovHodlerUpdateConfig(
   process.stdout.write("Test - Only owner can update gov hodler config");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, gov_hodler, {
-        update_config: {
-          owner,
-          gov_contract: govContract,
-        },
-      }),
-    ])
+    sendTransaction(juno, apTeam, gov_hodler, {
+      update_config: {
+        owner,
+        gov_contract: govContract,
+      },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -91,8 +81,8 @@ export async function testGovHodlerUpdateConfig(
 // TEST: Transfer Stake from Old to New Gov Contract
 //----------------------------------------------------------------------------------------
 export async function testTransferStake(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   oldGov: string,
   newGov: string,
   staker_info: string[][]
@@ -101,7 +91,7 @@ export async function testTransferStake(
   let msgs: Msg[] = [];
   staker_info.forEach((info) => {
     msgs.push(
-      new MsgExecuteContract(apTeam.key.accAddress, oldGov, {
+      new MsgExecuteContract(apTeam, oldGov, {
         transfer_stake: {
           new_gov_contract: newGov,
           address: info[0],
@@ -123,19 +113,17 @@ export async function testTransferStake(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovEndPoll(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   govContract: string,
   poll_id: number
 ): Promise<void> {
   process.stdout.write("Test - Execute a msgs of poll");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
-        end_poll: { poll_id },
-      }),
-    ])
+    sendTransaction(juno, apTeam, govContract, {
+      end_poll: { poll_id },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -149,19 +137,17 @@ export async function testGovEndPoll(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovExecutePoll(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   govContract: string,
   poll_id: number
 ): Promise<void> {
   process.stdout.write("Test - Execute a poll");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
-        execute_poll: { poll_id },
-      }),
-    ])
+    sendTransaction(juno, apTeam, govContract, {
+      execute_poll: { poll_id },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -174,20 +160,17 @@ export async function testGovExecutePoll(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovSnapshotPoll(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   govContract: string,
   poll_id: number
 ): Promise<void> {
   process.stdout.write("Test - Execute a poll");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      // TODO: replace apTeam to govContract(Wallet)
-      new MsgExecuteContract(govContract, govContract, {
-        snapshot_poll: { poll_id },
-      }),
-    ])
+    sendTransaction(juno, apTeam, govContract, {
+      snapshot_poll: { poll_id },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -200,19 +183,17 @@ export async function testGovSnapshotPoll(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovRegisterContracts(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   govContract: string,
   halo_token: string
 ): Promise<void> {
   process.stdout.write("Test - Gov register staking token contract");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
-        register_contracts: { halo_token },
-      }),
-    ])
+    sendTransaction(juno, apTeam, govContract, {
+      register_contracts: { halo_token },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -225,8 +206,8 @@ export async function testGovRegisterContracts(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovStakeVotingTokens(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   haloToken: string,
   govContract: string,
   amount: string
@@ -234,15 +215,13 @@ export async function testGovStakeVotingTokens(
   process.stdout.write("Test - Stake voting tokens");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, haloToken, {
-        send: {
-          amount: amount,
-          contract: govContract,
-          msg: toEncodedBinary({ stake_voting_tokens: {} }),
-        },
-      }),
-    ])
+    sendTransaction(juno, apTeam, haloToken, {
+      send: {
+        amount: amount,
+        contract: govContract,
+        msg: toEncodedBinary({ stake_voting_tokens: {} }),
+      },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -256,54 +235,48 @@ export async function testGovStakeVotingTokens(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovWithdrawVotingTokens(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   govContract: string,
   amount: string | undefined
 ): Promise<void> {
   process.stdout.write("Test - Withdraw voting tokens");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
-        withdraw_voting_tokens: { amount },
-      }),
-    ])
+    sendTransaction(juno, apTeam, govContract, {
+      withdraw_voting_tokens: { amount },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
 
 export async function testGovClaimVotingTokens(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   govContract: string
 ): Promise<void> {
   process.stdout.write("Test - Claim all eligable withdrawn voting tokens");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
-        claim_voting_tokens: {},
-      }),
-    ])
+    sendTransaction(juno, apTeam, govContract, {
+      claim_voting_tokens: {},
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
 
 export async function testGovResetClaims(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   govContract: string,
   addresses: string[]
 ): Promise<void> {
   process.stdout.write("Test - Reset claims for all addresses passed");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
-        reset_claims: { claim_addrs: addresses },
-      }),
-    ])
+    sendTransaction(juno, apTeam, govContract, {
+      reset_claims: { claim_addrs: addresses },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -316,8 +289,8 @@ export async function testGovResetClaims(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovCastVote(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   govContract: string,
   poll_id: number,
   vote: VoteOption,
@@ -326,11 +299,9 @@ export async function testGovCastVote(
   process.stdout.write("Test - Cast vote");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
-        cast_vote: { poll_id, vote, amount },
-      }),
-    ])
+    sendTransaction(juno, apTeam, govContract, {
+      cast_vote: { poll_id, vote, amount },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -343,8 +314,8 @@ export async function testGovCastVote(
 //
 //----------------------------------------------------------------------------------------
 export async function testGovExecutePollForRegistrarSettings(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   govContract: string,
   halo_token: string,
   funding_goal: string | undefined,
@@ -355,31 +326,28 @@ export async function testGovExecutePollForRegistrarSettings(
   process.stdout.write("Test - Execute a poll");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      // TODO: replace apTeam to HALO Token(Wallet)
-      new MsgExecuteContract(apTeam.key.accAddress, govContract, {
-        receive: {
-          sender: apTeam.key.accAddress,
-          amount: "123",
-          msg: toEncodedBinary({
-            title: "title",
-            description: "description",
-            link: undefined,
-            proposal_type: "registrar",
-            options: [
-              {
-                order: 1,
-                funding_goal,
-                fund_rotation,
-                split_to_liquid,
-                treasury_tax_rate,
-                msg: toEncodedBinary({ amount: "123" }),
-              },
-            ],
-          }),
-        },
-      }),
-    ])
+    sendTransaction(juno, apTeam, govContract, {
+      receive: {
+        sender: apTeam,
+        amount: "123",
+        msg: toEncodedBinary({
+          title: "title",
+          description: "description",
+          link: undefined,
+          proposal_type: "registrar",
+          options: [
+            {
+              order: 1,
+              funding_goal,
+              fund_rotation,
+              split_to_liquid,
+              treasury_tax_rate,
+              msg: toEncodedBinary({ amount: "123" }),
+            },
+          ],
+        }),
+      },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -388,7 +356,7 @@ export async function testGovExecutePollForRegistrarSettings(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryGovConfig(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   govContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Gov Config");
@@ -401,7 +369,7 @@ export async function testQueryGovConfig(
 }
 
 export async function testQueryGovState(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   govContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Gov State");
@@ -414,7 +382,7 @@ export async function testQueryGovState(
 }
 
 export async function testQueryGovStaker(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   govContract: string,
   address: string
 ): Promise<void> {
@@ -428,7 +396,7 @@ export async function testQueryGovStaker(
 }
 
 export async function testQueryGovClaims(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   govContract: string,
   address: string
 ): Promise<void> {
@@ -443,7 +411,7 @@ export async function testQueryGovClaims(
 }
 
 export async function testQueryGovPoll(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   govContract: string,
   poll_id: number
 ): Promise<void> {
@@ -457,7 +425,7 @@ export async function testQueryGovPoll(
 }
 
 export async function testQueryGovPolls(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   govContract: string,
   filter: any | undefined,
   start_after: string | undefined,
@@ -473,7 +441,7 @@ export async function testQueryGovPolls(
 }
 
 export async function testQueryGovVoters(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   govContract: string,
   poll_id: number,
   start_after: string | undefined,

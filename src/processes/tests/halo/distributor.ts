@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LcdClient,  MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -16,8 +16,8 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testDistributorUpdateConfig(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   distributorContract: string,
   spend_limit: string | undefined,
   gov_contract: string | undefined
@@ -25,11 +25,9 @@ export async function testDistributorUpdateConfig(
   process.stdout.write("Test - Only gov contract can update distributor config");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, distributorContract, {
-        update_config: { spend_limit, gov_contract },
-      }),
-    ])
+    sendTransaction(juno, apTeam, distributorContract, {
+      update_config: { spend_limit, gov_contract },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -43,8 +41,8 @@ export async function testDistributorUpdateConfig(
 //
 //----------------------------------------------------------------------------------------
 export async function testDistributorSpend(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   distributorContract: string,
   receipient: string,
   amount: string
@@ -54,11 +52,9 @@ export async function testDistributorSpend(
   );
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, distributorContract, {
-        spend: { receipient, amount },
-      }),
-    ])
+    sendTransaction(juno, apTeam, distributorContract, {
+      spend: { receipient, amount },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -71,8 +67,8 @@ export async function testDistributorSpend(
 //
 //----------------------------------------------------------------------------------------
 export async function testDistributorAdd(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   govContract: string,
   distributorContract: string,
   distributor: string
@@ -80,12 +76,9 @@ export async function testDistributorAdd(
   process.stdout.write("Test - Only gov contract can add new distributor");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      // TODO: replace apTeam to govContract(Wallet)
-      new MsgExecuteContract(govContract, distributorContract, {
-        add_distributor: { distributor },
-      }),
-    ])
+    sendTransaction(juno, govContract, distributorContract, {
+      add_distributor: { distributor },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -98,8 +91,8 @@ export async function testDistributorAdd(
 //
 //----------------------------------------------------------------------------------------
 export async function testDistributorRemove(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   govContract: string,
   distributorContract: string,
   distributor: string
@@ -107,12 +100,9 @@ export async function testDistributorRemove(
   process.stdout.write("Test - Only gov contract can remove new distributor");
 
   await expect(
-    sendTransaction(juno, apTeam, [
-      // TODO: replace apTeam to govContract(Wallet)
-      new MsgExecuteContract(govContract, distributorContract, {
-        remove_distributor: { distributor },
-      }),
-    ])
+    sendTransaction(juno, govContract, distributorContract, {
+      remove_distributor: { distributor },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -121,7 +111,7 @@ export async function testDistributorRemove(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryDistributorConfig(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   distributorContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Distributor Config");

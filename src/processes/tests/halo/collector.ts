@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LcdClient,  MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -16,8 +16,8 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testCollectorUpdateConfig(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   collectorContract: string,
   reward_factor: string | undefined,
   gov_contract: string | undefined,
@@ -25,15 +25,13 @@ export async function testCollectorUpdateConfig(
 ): Promise<void> {
   process.stdout.write("Test - Gov contract update collector config");
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, collectorContract, {
-        update_config: {
-          reward_factor,
-          gov_contract,
-          swap_factory,
-        },
-      }),
-    ])
+    sendTransaction(juno, apTeam, collectorContract, {
+      update_config: {
+        reward_factor,
+        gov_contract,
+        swap_factory,
+      },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -48,17 +46,15 @@ export async function testCollectorUpdateConfig(
 //
 //----------------------------------------------------------------------------------------
 export async function testCollectorSweep(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   collectorContract: string
 ): Promise<void> {
   process.stdout.write("Test - Anyone can sweep asset token => HALO token");
 
-  let result = await sendTransaction(juno, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, collectorContract, {
-      sweep: { denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4" },
-    }),
-  ]);
+  let result = await sendTransaction(juno, apTeam, collectorContract, {
+    sweep: { denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4" },
+  });
 
   let distribution_amount = result.logs[0].events
     .find((event) => {
@@ -78,7 +74,7 @@ export async function testCollectorSweep(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryCollectorConfig(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   collectorContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Collector Config");
@@ -91,7 +87,7 @@ export async function testQueryCollectorConfig(
 }
 
 export async function testQueryCollectorPair(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   collectorContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Collector pair");

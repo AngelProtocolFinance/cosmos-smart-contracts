@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LcdClient,  MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -16,9 +16,9 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testCommunityUpdateConfig(
-  juno: LcdClient,
-  apTeam: Wallet,
-  pleb: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  pleb: string,
   govContract: string,
   communityContract: string,
   spend_limit: string | undefined,
@@ -27,30 +27,18 @@ export async function testCommunityUpdateConfig(
   process.stdout.write("Test - Pleb cannot update community config");
 
   await expect(
-    sendTransaction(juno, pleb, [
-      new MsgExecuteContract(
-        pleb.key.accAddress,
-        communityContract,
-        {
-          update_config: { spend_limit, gov_contract: new_gov_contract },
-        },
-      ),
-    ])
+    sendTransaction(juno, pleb, communityContract, {
+      update_config: { spend_limit, gov_contract: new_gov_contract },
+    })
   ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Failed!"));
 
   process.stdout.write("Test - Only gov contract can update community config");
 
   await expect(
-    sendTransaction(juno, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
-      new MsgExecuteContract(
-        govContract,
-        communityContract,
-        {
-          update_config: { spend_limit, gov_contract: new_gov_contract },
-        },
-      ),
-    ])
+    sendTransaction(juno, govContract, communityContract, {
+      update_config: { spend_limit, gov_contract: new_gov_contract },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -64,8 +52,8 @@ export async function testCommunityUpdateConfig(
 //
 //----------------------------------------------------------------------------------------
 export async function testCommunitySpend(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   govContract: string,
   communityContract: string,
   receipient: string,
@@ -74,15 +62,9 @@ export async function testCommunitySpend(
   process.stdout.write("Test - Send `amount` of HALO token to `receipient` for community purpose");
 
   await expect(
-    sendTransaction(juno, apTeam, [ // TODO: replace apTeam to govContract(Wallet)
-      new MsgExecuteContract(
-        govContract,
-        communityContract,
-        {
-          spend: { receipient, amount },
-        },
-      ),
-    ])
+    sendTransaction(juno, govContract, communityContract, {
+      spend: { receipient, amount },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -91,7 +73,7 @@ export async function testCommunitySpend(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryCommunityConfig(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   communityContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Community Config");

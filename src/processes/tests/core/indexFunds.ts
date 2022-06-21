@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LcdClient,  MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -17,8 +17,8 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testDonorSendsToIndexFund(
-  juno: LcdClient,
-  pleb: Wallet,
+  juno: SigningCosmWasmClient,
+  pleb: string,
   indexFund: string,
   fund_id: number,
   split: string,
@@ -29,19 +29,14 @@ export async function testDonorSendsToIndexFund(
   );
 
   await expect(
-    sendTransaction(juno, pleb, [
-      new MsgExecuteContract(
-        pleb.key.accAddress,
-        indexFund,
-        {
-          deposit: {
-            fund_id,
-            split,
-          },
+    sendTransaction(juno, pleb, indexFund, {
+        deposit: {
+          fund_id,
+          split,
         },
-        { ujuno: amount }
-      ),
-    ])
+      },
+      { ujuno: amount }
+    )
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -55,67 +50,60 @@ export async function testDonorSendsToIndexFund(
 //
 //----------------------------------------------------------------------------------------
 export async function testTcaMemberSendsToIndexFund(
-  juno: LcdClient,
-  tca: Wallet,
+  juno: SigningCosmWasmClient,
+  tca: string,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - TCA Member can send a JUNO donation to an Index Fund");
   await expect(
-    sendTransaction(juno, tca, [
-      new MsgExecuteContract(
-        tca.key.accAddress,
-        indexFund,
-        { deposit: { fund_id: undefined, split: undefined } },
-        { ujuno: "30000000" }
-      ),
-      new MsgExecuteContract(
-        tca.key.accAddress,
-        indexFund,
-        { deposit: { fund_id: 3, split: undefined } },
+    sendTransaction(juno, tca, indexFund, { 
+        deposit: { fund_id: undefined, split: undefined } 
+      },
+      { ujuno: "30000000" }
+    )
+  );
+  await expect(
+    sendTransaction(juno, tca, indexFund, { 
+      deposit: { fund_id: 3, split: undefined } },
+      { ujuno: "40000000" }
+    )
+  );
+  await expect(
+    sendTransaction(juno, tca, indexFund, { 
+        deposit: { fund_id: 3, split: "0.76" } },
         { ujuno: "40000000" }
-      ),
-      new MsgExecuteContract(
-        tca.key.accAddress,
-        indexFund,
-        { deposit: { fund_id: 3, split: "0.76" } },
-        { ujuno: "40000000" }
-      ),
-    ])
+    )
   );
   console.log(chalk.green(" Passed!"));
 }
 
 export async function testUpdatingIndexFundConfigs(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("AP Team updates Index Fund configs - funding goal");
-  await sendTransaction(juno, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      update_config: {
-        funding_goal: "10000000000",
-        fund_rotation: undefined,
-      },
-    }),
-  ]);
+  await sendTransaction(juno, apTeam, indexFund, {
+    update_config: {
+      funding_goal: "10000000000",
+      fund_rotation: undefined,
+    },
+  });
   console.log(chalk.green(" Done!"));
 }
 
 export async function testUpdateAllianceMembersList(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   indexFund: string,
   address: string,
   member: any,
   action: string
 ): Promise<void> {
   process.stdout.write("AP Team updates Angel Alliance members list");
-  await sendTransaction(juno, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      update_alliance_member_list: { address, member, action },
-    }),
-  ]);
+  await sendTransaction(juno, apTeam, indexFund, {
+    update_alliance_member_list: { address, member, action },
+  });
   console.log(chalk.green(" Done!"));
 }
 
@@ -127,8 +115,8 @@ export async function testUpdateAllianceMembersList(
 //
 //----------------------------------------------------------------------------------------
 export async function testUpdateFundMembers(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   indexFund: string,
   fundId: number,
   add: string[],
@@ -136,11 +124,9 @@ export async function testUpdateFundMembers(
 ): Promise<void> {
   process.stdout.write("Test - SC owner can update fund members");
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-        update_members: { fund_id: fundId, add: add, remove: remove },
-      }),
-    ])
+    sendTransaction(juno, apTeam, indexFund, {
+      update_members: { fund_id: fundId, add: add, remove: remove },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -152,8 +138,8 @@ export async function testUpdateFundMembers(
 // Create index fund
 //----------------------------------------------------------------------------------------
 export async function testCreateIndexFund(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   indexFund: string,
   name: string,
   description: string,
@@ -162,16 +148,14 @@ export async function testCreateIndexFund(
 ): Promise<void> {
   process.stdout.write("Test - SC owner can create index fund");
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-        create_fund: {
-          name: name,
-          description: description,
-          members: members,
-          rotating_fund: rotating_fund,
-        },
-      }),
-    ])
+    sendTransaction(juno, apTeam, indexFund, {
+      create_fund: {
+        name: name,
+        description: description,
+        members: members,
+        rotating_fund: rotating_fund,
+      },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -184,18 +168,16 @@ export async function testCreateIndexFund(
 // Check if this index fund is active fund update the active fund by calling fund_rotate
 //----------------------------------------------------------------------------------------
 export async function testRemoveIndexFund(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   indexFund: string,
   fundId: number
 ): Promise<void> {
   process.stdout.write("Test - SC owner can remove index fund");
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-        remove_fund: { fund_id: fundId },
-      }),
-    ])
+    sendTransaction(juno, apTeam, indexFund, {
+      remove_fund: { fund_id: fundId },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -205,7 +187,7 @@ export async function testRemoveIndexFund(
 //----------------------------------------------------------------------------------------
 
 export async function testQueryIndexFundConfig(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund Config");
@@ -217,7 +199,7 @@ export async function testQueryIndexFundConfig(
 }
 
 export async function testQueryIndexFundState(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund State");
@@ -230,7 +212,7 @@ export async function testQueryIndexFundState(
 }
 
 export async function testQueryIndexFundTcaList(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund TcaList");
@@ -243,7 +225,7 @@ export async function testQueryIndexFundTcaList(
 }
 
 export async function testQueryIndexFundFundsList(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   indexFund: string,
   start_after: number | undefined,
   limit: number | undefined
@@ -261,7 +243,7 @@ export async function testQueryIndexFundFundsList(
 }
 
 export async function testQueryIndexFundFundDetails(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   indexFund: string,
   fund_id: number
 ): Promise<void> {
@@ -275,7 +257,7 @@ export async function testQueryIndexFundFundDetails(
 }
 
 export async function testQueryIndexFundActiveFundDetails(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund ActiveFundDetails");
@@ -288,7 +270,7 @@ export async function testQueryIndexFundActiveFundDetails(
 }
 
 export async function testQueryIndexFundActiveFundDonations(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund ActiveFundDonations");
@@ -301,7 +283,7 @@ export async function testQueryIndexFundActiveFundDonations(
 }
 
 export async function testQueryIndexFundDeposit(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund Deposit msg builder");
@@ -317,7 +299,7 @@ export async function testQueryIndexFundDeposit(
 }
 
 export async function testQueryIndexFundInvolvedAddress(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   indexFund: string,
   address: string
 ): Promise<void> {

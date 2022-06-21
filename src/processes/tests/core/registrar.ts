@@ -2,13 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {
-  LcdClient,
-  
-  Msg,
-  MsgExecuteContract,
-  Wallet,
-} from "@cosmjs/launchpad";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -18,21 +12,19 @@ const { expect } = chai;
 // TEST: Update registrar configs
 //
 // SCENARIO:
-// AP Team Wallet needs to update registrar config
+// AP Team string needs to update registrar config
 //
 //----------------------------------------------------------------------------------------
 export async function testUpdatingRegistrarConfigs(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   registrar: string,
   config: any
 ): Promise<void> {
   process.stdout.write("AP Team updates Registrar Config");
-  await sendTransaction(juno, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_config: config,
-    }),
-  ]);
+  await sendTransaction(juno, apTeam, registrar, {
+    update_config: config,
+  });
   console.log(chalk.green(" Done!"));
 }
 
@@ -44,17 +36,15 @@ export async function testUpdatingRegistrarConfigs(
 //
 //----------------------------------------------------------------------------------------
 export async function testCreateEndowmentViaRegistrar(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   registrar: string,
   msg: any
 ): Promise<void> {
   process.stdout.write("Create a new endowment via the Registrar");
-  const result = await sendTransaction(juno, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      create_endowment: msg,
-    }),
-  ]);
+  const result = await sendTransaction(juno, apTeam, registrar, {
+    create_endowment: msg,
+  });
   const acct = result.logs[0].events
     .find((event) => {
       return event.type == "instantiate";
@@ -73,9 +63,9 @@ export async function testCreateEndowmentViaRegistrar(
 // moving money from their Locked to Liquid & taking a small tax of DP Tokens as well.
 //
 //----------------------------------------------------------------------------------------
-export async function testCronWalletCanDirectlyHarvestVault(
-  juno: LcdClient,
-  cron: Wallet,
+export async function testCronstringCanDirectlyHarvestVault(
+  juno: SigningCosmWasmClient,
+  cron: string,
   vault: string,
   collector_address: string,
   collector_share: string
@@ -84,22 +74,20 @@ export async function testCronWalletCanDirectlyHarvestVault(
     "Test - Cron wallet triggers harvest of single Vault (Locked to Liquid Account)"
   );
   await expect(
-    sendTransaction(juno, cron, [
-      new MsgExecuteContract(cron.key.accAddress, vault, {
-        harvest: {
-          collector_address,
-          collector_share,
-        },
-      }),
-    ])
+    sendTransaction(juno, cron, vault, {
+      harvest: {
+        collector_address,
+        collector_share,
+      },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
 
 export async function testAngelTeamCanTriggerVaultsHarvest(
-  juno: LcdClient,
-  apTeam: Wallet,
-  charity1: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  charity1: string,
   registrar: string,
   collector_address: string,
   collector_share: string
@@ -108,14 +96,12 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
     "Test - Charity1 cannot trigger harvest of all Vaults (Locked to Liquid Account)"
   );
   await expect(
-    sendTransaction(juno, charity1, [
-      new MsgExecuteContract(charity1.key.accAddress, registrar, {
-        harvest: {
-          collector_address,
-          collector_share,
-        },
-      }),
-    ])
+    sendTransaction(juno, charity1, registrar, {
+      harvest: {
+        collector_address,
+        collector_share,
+      },
+    })
   ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Failed!"));
 
@@ -123,14 +109,12 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
     "Test - AP Team can trigger harvest of all Vaults (Locked to Liquid Account)"
   );
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-        harvest: {
-          collector_address,
-          collector_share,
-        },
-      }),
-    ])
+    sendTransaction(juno, apTeam, registrar, {
+      harvest: {
+        collector_address,
+        collector_share,
+      },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -145,8 +129,8 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
 //                ELSE: sent to fund members
 //----------------------------------------------------------------------------------------
 export async function testUpdateEndowmentsStatus(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   registrar: string,
   endowments: any[] // [ { address: "terra1....", status: 0|1|2|3, benficiary: "terra1.." | undefined }, ... ]
 ): Promise<void> {
@@ -154,7 +138,7 @@ export async function testUpdateEndowmentsStatus(
   let msgs: Msg[] = [];
   endowments.forEach((endow) => {
     msgs.push(
-      new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      new MsgExecuteContract(apTeam, registrar, {
         update_endowment_status: {
           endowment_addr: endow.address,
           status: endow.status,
@@ -180,8 +164,8 @@ export async function testUpdateEndowmentsStatus(
 //      "endow_type": endowment `EndowmentType` | undefined
 //----------------------------------------------------------------------------------------
 export async function testUpdateEndowmentsEntry(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   registrar: string,
   endowments: any[] // [{ address: "terra...", name: "...", owner: "...", tier: "", un_sdg: "", endow_type: "...", logo: "...", image: "..." }]
 ): Promise<void> {
@@ -189,7 +173,7 @@ export async function testUpdateEndowmentsEntry(
   let msgs: Msg[] = [];
   endowments.forEach((endow) => {
     msgs.push(
-      new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+      new MsgExecuteContract(apTeam, registrar, {
         update_endowment_entry: {
           endowment_addr: endow.address,
           name: endow.name,
@@ -212,19 +196,15 @@ export async function testUpdateEndowmentsEntry(
 //----------------------------------------------------------------------------------------
 
 export async function testMigrateAllAccounts(
-  juno: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   registrar: string
 ): Promise<void> {
   process.stdout.write(
     "Test - AP Team can trigger migration of all Account SC Endowments from Registrar"
   );
   await expect(
-    sendTransaction(juno, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-        migrate_accounts: {},
-      }),
-    ])
+    sendTransaction(juno, apTeam, registrar, { migrate_accounts: {} })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -234,7 +214,7 @@ export async function testMigrateAllAccounts(
 //----------------------------------------------------------------------------------------
 
 export async function testQueryRegistrarConfig(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar config and get proper result");
@@ -247,7 +227,7 @@ export async function testQueryRegistrarConfig(
 }
 
 export async function testQueryRegistrarEndowmentDetails(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   registrar: string,
   endowment: string
 ): Promise<void> {
@@ -261,7 +241,7 @@ export async function testQueryRegistrarEndowmentDetails(
 }
 
 export async function testQueryRegistrarEndowmentList(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar EndowmentList");
@@ -274,7 +254,7 @@ export async function testQueryRegistrarEndowmentList(
 }
 
 export async function testQueryRegistrarApprovedVaultList(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar ApprovedVaultList");
@@ -287,7 +267,7 @@ export async function testQueryRegistrarApprovedVaultList(
 }
 
 export async function testQueryRegistrarApprovedVaultRateList(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar Approved Vault Exchange Rate List");
@@ -300,7 +280,7 @@ export async function testQueryRegistrarApprovedVaultRateList(
 }
 
 export async function testQueryRegistrarVaultList(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar VaultList");
@@ -313,7 +293,7 @@ export async function testQueryRegistrarVaultList(
 }
 
 export async function testQueryRegistrarVault(
-  juno: LcdClient,
+  juno: SigningCosmWasmClient,
   registrar: string,
   Vault1: string
 ): Promise<void> {

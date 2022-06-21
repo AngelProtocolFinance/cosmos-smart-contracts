@@ -62,7 +62,7 @@ export const testnet = {
 export const mainnet = {
   // MainNet phoenix-1
   networkInfo: {
-    url: "rpc-juno.itastakers.com",
+    url: "https://rpc-juno.itastakers.com",
     chainId: "juno-1",
   },
   mnemonicKeys: {

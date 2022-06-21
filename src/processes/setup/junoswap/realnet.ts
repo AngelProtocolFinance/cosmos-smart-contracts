@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import chalk from "chalk";
-import { LcdClient, Wallet, MsgExecuteContract } from "@cosmjs/launchpad";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import {
   instantiateContract,
   sendTransaction,
@@ -9,8 +9,8 @@ import {
 
 // Deploy HALO Token and HALO/JUNO pair contracts to the TestNet/MainNet
 export async function setupTerraSwap(
-  terra: LcdClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   token_code_id: number,
   factory_contract: string,
   initial_halo_supply: string,
@@ -41,25 +41,23 @@ export async function setupTerraSwap(
 
   // Pair contract
   process.stdout.write("Creating Pair contract from Token Factory");
-  const pairResult = await sendTransaction(juno, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, factory_contract, {
-      create_pair: {
-        asset_infos: [
-          {
-            token: {
-              contract_addr: tokenContract,
-            },
+  const pairResult = await sendTransaction(juno, apTeam, factory_contract, {
+    create_pair: {
+      asset_infos: [
+        {
+          token: {
+            contract_addr: tokenContract,
           },
-          {
-            native_token: {
-              // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
-              denom: "ujuno", // only for testnet
-            },
+        },
+        {
+          native_token: {
+            // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+            denom: "ujuno", // only for testnet
           },
-        ],
-      },
-    }),
-  ]);
+        },
+      ],
+    },
+  });
 
   const pairContract = pairResult.logs[0].events
     .find((event) => {
@@ -72,7 +70,7 @@ export async function setupTerraSwap(
 
   // Get the LP Token address of newly created pair
   process.stdout.write("Query new Pair's LP Token contract");
-  const result: any = await terra.wasm.contractQuery(pairContract, {
+  const result: any = await juno.wasm.contractQuery(pairContract, {
     pair: {},
   });
   console.log(
@@ -80,60 +78,42 @@ export async function setupTerraSwap(
     `${chalk.blue("contractAddress")}=${result.liquidity_token}`
   );
 
+  process.stdout.write("Increase the allowance for the Pair Contract");
+  const allowResult = await sendTransaction(juno, apTeam, tokenContract, {
+    increase_allowance: {
+      amount: halo_liquidity,
+      spender: pairContract,
+    },
+  });
+  console.log(chalk.green(" Done!"));
+
   process.stdout.write(
     "Provide liquidity to the new Pair contract @ ratio of 0.05 JUNO per HALO"
   );
-  const liqResult = await sendTransaction(juno, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
-      increase_allowance: {
-        amount: halo_liquidity,
-        spender: pairContract,
-      },
-    }),
-    new MsgExecuteContract(
-      apTeam.key.accAddress,
-      pairContract,
-      {
+  const liqResult = await sendTransaction(juno, apTeam, pairContract, {
         provide_liquidity: {
-          assets: [
-            {
-              info: {
-                token: {
-                  contract_addr: tokenContract,
-                },
+        assets: [
+          {
+            info: {
+              token: {
+                contract_addr: tokenContract,
               },
-              amount: halo_liquidity,
             },
-            {
-              info: {
-                native_token: {
-                  // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
-                  denom: "ujuno", // only for testnet
-                },
+            amount: halo_liquidity,
+          },
+          {
+            info: {
+              native_token: {
+                // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+                denom: "ujuno", // only for testnet
               },
-              amount: native_liquidity,
             },
-          ],
-        },
+            amount: native_liquidity,
+          },
+        ],
       },
-      {
-        ujuno: native_liquidity,
-      }
-    ),
-  ]);
+    },
+    { ujuno: native_liquidity }
+  );
   console.log(chalk.green(" Done!"));
-
-  // process.stdout.write("Perform simple swap of 1 HALO for JUNO on Pair contract");
-  // const swapResult = await sendTransaction(juno, apTeam, [
-  //   new MsgExecuteContract(apTeam.key.accAddress, tokenContract, {
-  //     send: {
-  //       amount: "1000000",
-  //       contract: pairContract,
-  //       msg: toEncodedBinary({
-  //         swap: {},
-  //       }),
-  //     },
-  //   })
-  // ]);
-  // console.log(chalk.green(" Done!"));
 }

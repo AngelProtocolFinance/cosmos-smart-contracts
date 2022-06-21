@@ -151,7 +151,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(haloVesting)} as HALO vesting`);
 
   // setup client connection to the JUNO network
-  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString("0.1ujunox") });
+  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString("0.025ujunox") });
 }
 
 
