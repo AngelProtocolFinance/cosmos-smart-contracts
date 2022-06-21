@@ -30,10 +30,6 @@ export const localjuno = {
     endowmentContract4: "",
     cw4GrpApTeam: "",
     cw3ApTeam: "",
-    cw4GrpOwners: "",
-    cw3GuardianAngels: "",
-    cw3MultiSig: "",
-    cw4Grp: "",
   },
 
   // JunoSwap contracts

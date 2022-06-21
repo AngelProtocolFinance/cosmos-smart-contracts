@@ -21,7 +21,6 @@ export type Member = {
 
 let terra: LcdClient;
 let apTeam: Wallet;
-
 let registrar: string;
 let cw4GrpOwners: string;
 let cw4GrpApTeam: string;

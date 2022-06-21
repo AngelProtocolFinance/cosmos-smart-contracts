@@ -38,6 +38,10 @@ export async function sendTransaction(
 ) {
   try { 
     const result = await juno.execute(sender, contract, msg, "auto", undefined, []);
+    if (verbose) {
+      console.log(chalk.yellow("\n~~~ TX HASH: ", result.transactionHash, "~~~~"));
+      console.log(chalk.yellow(JSON.stringify(result.logs)));
+    }
     return result;
   } catch (err: any) {
     throw new Error(`An error occured! | ${err.toString()}`);
@@ -86,27 +90,3 @@ export async function migrateContract(
   const result = await juno.migrate(sender, contract, new_code_id, migrateMsg, "auto");
   return result;
 }
-
-/**
- * @notice Instantiate a contract from an existing code ID. Return contract address.
- */
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-// export async function migrateContracts(
-//   juno: LcdClient,
-//   sender: string,
-//   contracts: string[],
-//   new_code_id: number,
-//   migrateMsg: Record<string, unknown>
-// ) {
-//   let msgs: Msg[] = [];
-//   contracts.forEach((contract) => {
-//     msgs.push(
-//       new MsgMigrateContract(sender, contract, new_code_id, migrateMsg)
-//     );
-//     console.log(`Endmowment ${contract} - ${chalk.green("Msg built")}`);
-//   });
-
-//   const result = await sendTransaction(juno, sender, msgs);
-//   console.log(result);
-//   return result;
-// }

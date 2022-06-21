@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LcdClient, Msg, MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { sendTransaction } from "../../../utils/helpers";
 import jsonData from "./charity_list.json";
 import fs from "fs";
@@ -36,7 +36,7 @@ type Charity = {
   average_annual_budget: string;
 };
 
-let terra: LcdClient;
+let terra: SigningCosmWasmClient;
 let apTeam: Wallet;
 let registrar: string;
 let indexFund: string;
@@ -44,8 +44,8 @@ let charities: Charity[];
 let endowmentContracts: string[];
 
 export function initializeCharities(
-  lcdClient: LcdClient,
-  ap_team: Wallet,
+  lcdClient: SigningCosmWasmClient,
+  ap_team: string,
   registrarAddr: string,
   index_fund: string
 ): void {
@@ -89,37 +89,35 @@ async function createEndowment(charity: Charity): Promise<void> {
   process.stdout.write(
     `Charity Endowment ##${charity.charity_name}## created from the Registrar by the AP Team`
   );
-  const charityResult = await sendTransaction(juno, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      create_endowment: {
-        owner: charity.charity_owner,
-        beneficiary: charity.charity_owner,
-        withdraw_before_maturity: false,
-        maturity_time: undefined,
-        maturity_height: undefined,
-        guardians_multisig_addr: undefined,
-        profile: {
-          name: charity.charity_name,
-          overview: charity.charity_overview,
-          un_sdg: charity.un_sdg,
-          tier: charity.tier,
-          logo: charity.charity_logo,
-          image: charity.charity_image,
-          url: charity.url,
-          registration_number: charity.charity_registration_number,
-          country_city_origin: charity.country_of_origin,
-          contact_email: charity.charity_email,
-          social_media_urls: {
-            facebook: charity.facebook_page,
-            twitter: charity.twitter_handle,
-            linkedin: charity.linkedin_page,
-          },
-          number_of_employees: charity.number_of_employees,
-          average_annual_budget: charity.average_annual_budget,
-          annual_revenue: charity.annual_revenue,
-          charity_navigator_rating: charity.charity_navigator_rating,
-          endow_type: "Charity",
+  const charityResult = await sendTransaction(juno, apTeam, registrar, {
+    create_endowment: {
+      owner: charity.charity_owner,
+      beneficiary: charity.charity_owner,
+      withdraw_before_maturity: false,
+      maturity_time: undefined,
+      maturity_height: undefined,
+      guardians_multisig_addr: undefined,
+      profile: {
+        name: charity.charity_name,
+        overview: charity.charity_overview,
+        un_sdg: charity.un_sdg,
+        tier: charity.tier,
+        logo: charity.charity_logo,
+        image: charity.charity_image,
+        url: charity.url,
+        registration_number: charity.charity_registration_number,
+        country_city_origin: charity.country_of_origin,
+        contact_email: charity.charity_email,
+        social_media_urls: {
+          facebook: charity.facebook_page,
+          twitter: charity.twitter_handle,
+          linkedin: charity.linkedin_page,
         },
+        number_of_employees: charity.number_of_employees,
+        average_annual_budget: charity.average_annual_budget,
+        annual_revenue: charity.annual_revenue,
+        charity_navigator_rating: charity.charity_navigator_rating,
+        endow_type: "Charity",
       },
     }),
   ]);
@@ -141,15 +139,13 @@ export async function approveEndowments(): Promise<void> {
   // AP Team approves newly created endowments
   process.stdout.write("AP Team approves all verified endowments");
   const msgs: Msg[] = endowmentContracts.map((endowment) => {
-    return new MsgExecuteContract(apTeam.key.accAddress, registrar, {
+    return await sendTransaction(juno, apTeam, registrar, {
       update_endowment_status: {
         endowment_addr: endowment,
         status: 1,
         beneficiary: undefined,
       },
     });
-  });
-  await sendTransaction(juno, apTeam, msgs);
   console.log(chalk.green(" Done!"));
 }
 
@@ -180,25 +176,22 @@ export async function createIndexFunds(): Promise<void> {
 async function createIndexFundWithMembers(id: number, members: string[]): Promise<void> {
   // Create an initial "Fund" with the charities
   process.stdout.write(`Create Fund ID#${id} with ${members.length} endowments`);
-  await sendTransaction(juno, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      create_fund: {
-        fund: {
-          id: id,
-          name: `Index Fund #${id}`,
-          description: "",
-          members: members,
-        },
+  await sendTransaction(juno, apTeam, indexFund, {
+    create_fund: {
+      fund: {
+        id: id,
+        name: `Index Fund #${id}`,
+        description: "",
+        members: members,
       },
-    }),
-  ]);
+    },
+  });
   console.log(chalk.green(" Done!"));
 }
 
-const file = "endowment_list.txt";
 function saveEndowments(): void {
   const data = endowmentContracts.join(",\n");
-  fs.writeFile(file, data, (err) => {
+  fs.writeFile("endowment_list.txt", data, (err) => {
     if (err) {
       return console.error(err);
     }
@@ -207,7 +200,7 @@ function saveEndowments(): void {
 }
 
 function readEndowments(): void {
-  fs.readFile(file, (err, data) => {
+  fs.readFile("endowment_list.txt", (err, data) => {
     if (err) {
       return console.error(err);
     }

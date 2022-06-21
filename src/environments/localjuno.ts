@@ -9,14 +9,14 @@ import chalk from "chalk";
 import { localjuno as config } from "../config/localjunoConstants";
 import { datetimeStringToUTC, getWalletAddress } from "../utils/helpers";
 
-// import { migrateCore } from "../processes/migrate/core";
+import { migrateCore } from "../processes/migrate/core";
 // import { migrateHalo } from "../processes/migrate/halo";
 
 import { setupCore } from "../processes/setup/core/testnet";
 // import { setupJunoSwap } from "../processes/setup/junoswap/localjuno";
 // import { setupHalo } from "../processes/setup/halo";
 
-// import { testExecute } from "../processes/tests/testnet";
+import { testExecute } from "../processes/tests/testnet";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -200,15 +200,18 @@ export async function startSetupCore(): Promise<void> {
 
 //   // Initialize environment information
 //   console.log(chalk.yellow("\nStep 1. Environment Info"));
-//   initialize();
+//   await initialize();
 
 //   // Setup JunoSwap contracts
 //   console.log(chalk.yellow("\nStep 2a. JunoSwap Contracts"));
+//   const apTeamAccount = await getWalletAddress(apTeam);
+//   const apTeam2Account = await getWalletAddress(apTeam2);
+//   const apTeam3Account = await getWalletAddress(apTeam3);
 //   await setupJunoSwap(
 //     juno,
-//     apTeam,
-//     apTeam2,
-//     apTeam3,
+//     apTeamAccount,
+//     apTeam2Account,
+//     apTeam3Account,
 //     junoswapInitialHaloSupply,
 //     junoswapHaloLiquidity,
 //     junoswapNativeLiquidity
@@ -223,13 +226,14 @@ export async function startSetupCore(): Promise<void> {
 
 //   // Initialize environment information
 //   console.log(chalk.yellow("\nStep 1. Environment Info"));
-//   initialize();
+//   await initialize();
 
 //   // Setup HALO contracts
 //   console.log(chalk.yellow("\nStep2. Halo Contracts"));
+//   const apTeamAccount = await getWalletAddress(apTeam);
 //   await setupHalo(
 //     juno,
-//     apTeam,
+//     apTeamAccount,
 //     registrar,
 //     junoswapHaloTokenContract, // halo junoswap token contract
 //     junoswapFactory,
@@ -252,28 +256,27 @@ export async function startSetupCore(): Promise<void> {
 // -------------------------------------------------------------------------------------
 // migrate Angel Protocol core contracts
 // -------------------------------------------------------------------------------------
-// export async function startMigrateCore(): Promise<void> {
-//   console.log(chalk.blue("\nLocalJuno"));
+export async function startMigrateCore(): Promise<void> {
+  console.log(chalk.blue("\nLocalJuno"));
 
-//   // Initialize environment information
-//   console.log(chalk.yellow("\nStep 1. Environment Info"));
-//   initialize();
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  await initialize();
 
-//   // Migrate Contracts
-//   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
-//   await migrateCore(
-//     juno,
-//     apTeam,
-//     registrar,
-//     indexFund,
-//     cw4GrpApTeam,
-//     cw4GrpOwners,
-//     cw3ApTeam,
-//     cw3GuardianAngels,
-//     [],
-//     [endowmentContract1, endowmentContract2, endowmentContract3, endowmentContract4]
-//   );
-// }
+  // Migrate Contracts
+  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  const apTeamAccount = await getWalletAddress(apTeam);
+  await migrateCore(
+    juno,
+    apTeamAccount,
+    registrar,
+    indexFund,
+    cw4GrpApTeam,
+    cw3ApTeam,
+    [],
+    [endowmentContract1, endowmentContract2, endowmentContract3, endowmentContract4]
+  );
+}
 
 // -------------------------------------------------------------------------------------
 // migrate HALO contracts
@@ -283,13 +286,14 @@ export async function startSetupCore(): Promise<void> {
 
 //   // Initialize environment information
 //   console.log(chalk.yellow("\nStep 1. Environment Info"));
-//   initialize();
+//   await initialize();
 
 //   // Migrate Contracts
 //   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+//   const apTeamAccount = await getWalletAddress(apTeam);
 //   await migrateHalo(
 //     juno,
-//     apTeam,
+//     apTeamAccount,
 //     haloAirdrop,
 //     haloCollector,
 //     haloCommunity,
@@ -304,45 +308,43 @@ export async function startSetupCore(): Promise<void> {
 // -------------------------------------------------------------------------------------
 // start test
 // -------------------------------------------------------------------------------------
-// export async function startTests(): Promise<void> {
-//   console.log(chalk.blue("\nLocalJuno"));
+export async function startTests(): Promise<void> {
+  console.log(chalk.blue("\nLocalJuno"));
 
-//   // Initialize environment information
-//   console.log(chalk.yellow("\nStep 1. Environment Info"));
-//   initialize();
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
 
-//   // Test queries
-//   await testExecute(
-//     juno,
-//     apTeam,
-//     apTeam2,
-//     apTeam3,
-//     charity1,
-//     charity2,
-//     charity3,
-//     pleb,
-//     tca,
-//     registrar,
-//     indexFund,
-//     "undefined",
-//     "undefined",
-//     endowmentContract1,
-//     endowmentContract2,
-//     endowmentContract3,
-//     endowmentContract4,
-//     cw4GrpApTeam,
-//     cw4GrpOwners,
-//     cw3ApTeam,
-//     cw3GuardianAngels,
-//     junoswapFactory,
-//     junoswapHaloTokenContract,
-//     junoswapHaloJunoPairContract,
-//     haloAirdrop,
-//     haloCollector,
-//     haloCommunity,
-//     haloDistributor,
-//     haloGov,
-//     haloStaking,
-//     haloVesting,
-//   );
-// }
+  // Test queries
+  await testExecute(
+    juno,
+    apTeam,
+    apTeam2,
+    apTeam3,
+    charity1,
+    charity2,
+    charity3,
+    pleb,
+    tca,
+    registrar,
+    indexFund,
+    "undefined",
+    "undefined",
+    endowmentContract1,
+    endowmentContract2,
+    endowmentContract3,
+    endowmentContract4,
+    cw4GrpApTeam,
+    cw3ApTeam,
+    junoswapFactory,
+    junoswapHaloTokenContract,
+    junoswapHaloJunoPairContract,
+    haloAirdrop,
+    haloCollector,
+    haloCommunity,
+    haloDistributor,
+    haloGov,
+    haloStaking,
+    haloVesting,
+  );
+}

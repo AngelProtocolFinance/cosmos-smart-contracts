@@ -9,14 +9,14 @@ import chalk from "chalk";
 import { testnet as config } from "../config/constants";
 import { datetimeStringToUTC, getWalletAddress } from "../utils/helpers";
 
-// import { migrateCore } from "../processes/migrate/core";
+import { migrateCore } from "../processes/migrate/core";
 // import { migrateHalo } from "../processes/migrate/halo";
 
 import { setupCore } from "../processes/setup/core/testnet";
 // import { setupJunoSwap } from "../processes/setup/junoswap/localjuno";
 // import { setupHalo } from "../processes/setup/halo";
 
-// import { testExecute } from "../processes/tests/testnet";
+import { testExecute } from "../processes/tests/testnet";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -151,7 +151,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(haloVesting)} as HALO vesting`);
 
   // setup client connection to the JUNO network
-  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString("0.1ujuno") });
+  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString("0.1ujunox") });
 }
 
 
@@ -208,14 +208,15 @@ export async function startSetupCore(): Promise<void> {
 
 //   // Setup TerraSwap contracts
 //   console.log(chalk.yellow("\nStep 2a. TerraSwap Contracts"));
+//   const apTeamAccount = await getWalletAddress(apTeam);
 //   await setupTerraSwap(
-//     terra,
-//     apTeam,
-//     terraswapTokenCode,
-//     terraswapFactory,
-//     terraswapInitialHaloSupply,
-//     terraswapHaloLiquidity,
-//     terraswapNativeLiquidity
+//     juno,
+//     apTeamAccount,
+//     junoswapTokenCode,
+//     junoswapFactory,
+//     junoswapInitialHaloSupply,
+//     junoswapHaloLiquidity,
+//     junoswapNativeLiquidity
 //   );
 // }
 
@@ -231,13 +232,14 @@ export async function startSetupCore(): Promise<void> {
 
 //   // Setup HALO contracts
 //   console.log(chalk.yellow("\nStep2. Halo Contracts"));
+//   const apTeamAccount = await getWalletAddress(apTeam);
 //   await setupHalo(
-//     terra,
-//     apTeam,
+//     juno,
+//     apTeamAccount,
 //     registrar,
-//     terraswapHaloTokenContract, // halo terraswap token contract
-//     terraswapFactory,
-//     terraswapHaloJunoPairLpToken, // staking_token: LP token of HALO-JUNO pair contract
+//     junoswapHaloTokenContract, // halo junoswap token contract
+//     junoswapFactory,
+//     junoswapHaloJunoPairLpToken, // staking_token: LP token of HALO-JUNO pair contract
 //     30, // quorum
 //     50, // threshold,
 //     2000, // voting_period,
@@ -256,28 +258,27 @@ export async function startSetupCore(): Promise<void> {
 // -------------------------------------------------------------------------------------
 // migrate Angel Protocol core contracts
 // -------------------------------------------------------------------------------------
-// export async function startMigrateCore(): Promise<void> {
-//   console.log(chalk.blue("\nTestNet"));
+export async function startMigrateCore(): Promise<void> {
+  console.log(chalk.blue("\nTestNet"));
 
-//   // Initialize environment information
-//   console.log(chalk.yellow("\nStep 1. Environment Info"));
-//   initialize();
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
 
-//   // Migrate contracts
-//   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
-//   await migrateCore(
-//     terra,
-//     apTeam,
-//     registrar,
-//     indexFund,
-//     cw4GrpApTeam,
-//     cw4GrpOwners,
-//     cw3ApTeam,
-//     cw3GuardianAngels,
-//     [Vault1, Vault2],
-//     [endowmentContract1, endowmentContract2, endowmentContract3, endowmentContract4]
-//   );
-// }
+  // Migrate contracts
+  console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+  const apTeamAccount = await getWalletAddress(apTeam);
+  await migrateCore(
+    juno,
+    apTeamAccount,
+    registrar,
+    indexFund,
+    cw4GrpApTeam,
+    cw3ApTeam,
+    [vault1, vault2],
+    [endowmentContract1, endowmentContract2, endowmentContract3, endowmentContract4]
+  );
+}
 
 // -------------------------------------------------------------------------------------
 // migrate HALO contracts
@@ -292,7 +293,7 @@ export async function startSetupCore(): Promise<void> {
 //   // Migrate Contracts
 //   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
 //   await migrateHalo(
-//     terra,
+//     juno,
 //     apTeam,
 //     haloAirdrop,
 //     haloCollector,
@@ -308,45 +309,43 @@ export async function startSetupCore(): Promise<void> {
 // -------------------------------------------------------------------------------------
 // start test
 // -------------------------------------------------------------------------------------
-// export async function startTests(): Promise<void> {
-//   console.log(chalk.blue("\nTestNet"));
+export async function startTests(): Promise<void> {
+  console.log(chalk.blue("\nTestNet"));
 
-//   // Initialize environment information
-//   console.log(chalk.yellow("\nStep 1. Environment Info"));
-//   initialize();
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  initialize();
 
-//   // Test queries
-//   await testExecute(
-//     terra,
-//     apTeam,
-//     apTeam2,
-//     apTeam3,
-//     charity1,
-//     charity2,
-//     charity3,
-//     pleb,
-//     tca,
-//     registrar,
-//     indexFund,
-//     Vault1,
-//     Vault2,
-//     endowmentContract1,
-//     endowmentContract2,
-//     endowmentContract3,
-//     endowmentContract4,
-//     cw4GrpApTeam,
-//     cw4GrpOwners,
-//     cw3ApTeam,
-//     cw3GuardianAngels,
-//     terraswapFactory,
-//     terraswapHaloTokenContract,
-//     terraswapHaloJunoPairContract,
-//     haloAirdrop,
-//     haloCollector,
-//     haloCommunity,
-//     haloDistributor,
-//     haloGov,
-//     haloStaking,
-//     haloVesting,
-//   );
-// }
+  // Test queries
+  await testExecute(
+    juno,
+    apTeam,
+    apTeam2,
+    apTeam3,
+    charity1,
+    charity2,
+    charity3,
+    pleb,
+    tca,
+    registrar,
+    indexFund,
+    vault1,
+    vault2,
+    endowmentContract1,
+    endowmentContract2,
+    endowmentContract3,
+    endowmentContract4,
+    cw4GrpApTeam,
+    cw3ApTeam,
+    junoswapFactory,
+    junoswapHaloTokenContract,
+    junoswapHaloJunoPairContract,
+    haloAirdrop,
+    haloCollector,
+    haloCommunity,
+    haloDistributor,
+    haloGov,
+    haloStaking,
+    haloVesting,
+  );
+}

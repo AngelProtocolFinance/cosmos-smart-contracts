@@ -1,4 +1,5 @@
-import { LcdClient,  Wallet } from "@cosmjs/launchpad";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import chalk from "chalk";
 import { localjuno } from "../../config/localjunoConstants";
 import { datetimeStringToUTC } from "../../utils/helpers";
@@ -125,15 +126,15 @@ import {
 } from "./halo/vesting";
 
 export async function testExecute(
-  juno: LcdClient,
-  apTeam: Wallet,
-  apTeam2: Wallet,
-  apTeam3: Wallet,
-  charity1: Wallet,
-  charity2: Wallet,
-  charity3: Wallet,
-  pleb: Wallet,
-  tca: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: DirectSecp256k1HdWallet,
+  apTeam2: DirectSecp256k1HdWallet,
+  apTeam3: DirectSecp256k1HdWallet,
+  charity1: DirectSecp256k1HdWallet,
+  charity2: DirectSecp256k1HdWallet,
+  charity3: DirectSecp256k1HdWallet,
+  pleb: DirectSecp256k1HdWallet,
+  tca: DirectSecp256k1HdWallet,
   registrar: string,
   indexFund: string,
   Vault1: string,
@@ -143,9 +144,7 @@ export async function testExecute(
   endowmentContract3: string,
   endowmentContract4: string,
   cw4GrpApTeam: string,
-  cw4GrpOwners: string,
   cw3ApTeam: string,
-  cw3GuardianAngels: string,
   terraswapFactory: string,
   terraswapToken: string,
   terraswapPair: string,

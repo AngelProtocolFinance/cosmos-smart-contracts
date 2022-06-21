@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------------------------------
 export const testnet = {
   networkInfo: {
-    url: "rpc.uni.junomint.com:443",
+    url: "https://rpc.uni.juno.deuslabs.fi",
     chainId: "juno-1",
   },
   mnemonicKeys: {
@@ -21,8 +21,8 @@ export const testnet = {
   contracts: {
     registrar: "",
     indexFund: "",
-    Vault1: "",
-    Vault2: "",
+    vault1: "",
+    vault2: "",
     endowmentContract1: "",
     endowmentContract2: "",
     endowmentContract3: "",
