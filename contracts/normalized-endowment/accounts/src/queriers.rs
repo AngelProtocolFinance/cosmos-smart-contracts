@@ -71,7 +71,6 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
         description: endowment.description,
         withdraw_before_maturity: endowment.withdraw_before_maturity,
         maturity_time: endowment.maturity_time,
-        maturity_height: endowment.maturity_height,
         strategies: endowment.strategies,
         rebalance: endowment.rebalance,
         donation_match_contract_addr: endowment

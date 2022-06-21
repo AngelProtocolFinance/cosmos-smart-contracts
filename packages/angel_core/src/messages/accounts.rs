@@ -27,8 +27,7 @@ pub struct InstantiateMsg {
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
-    pub maturity_time: Option<u64>,     // datetime int of endowment maturity
-    pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
+    pub maturity_time: Option<u64>,     // datetime int of endowment maturity(unit: seconds)
     pub locked_endowment_configs: Vec<String>, // list of endowment configs that cannot be changed/altered once set at creation
     pub split_max: Decimal,
     pub split_min: Decimal,

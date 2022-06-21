@@ -330,16 +330,6 @@ pub fn update_endowment_settings(
 
     if !endowment
         .locked_endowment_configs
-        .contains(&"maturity_height".to_string())
-    {
-        endowment.maturity_height = match msg.maturity_height {
-            Some(i) => i,
-            None => endowment.maturity_height,
-        };
-    }
-
-    if !endowment
-        .locked_endowment_configs
         .contains(&"strategies".to_string())
     {
         endowment.strategies = match msg.strategies {
@@ -362,11 +352,8 @@ pub fn update_endowment_settings(
     endowment.kyc_donors_only = msg.kyc_donors_only;
 
     if let Some(whitelist) = msg.maturity_whitelist {
-        let endow_mature_height = endowment
-            .maturity_height
-            .expect("Cannot get maturity height");
         let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
-        if endow_mature_height < env.block.height || endow_mature_time < env.block.time.seconds() {
+        if endow_mature_time < env.block.time.seconds() {
             let UpdateMaturityWhitelist { add, remove } = whitelist;
             for addr in add {
                 let validated_addr = deps.api.addr_validate(&addr)?;
@@ -928,11 +915,8 @@ pub fn withdraw(
     let endowment = ENDOWMENT.load(deps.storage)?;
 
     // Check that sender is able to "withdraw"
-    let endow_mature_height = endowment
-        .maturity_height
-        .expect("Cannot get maturity height");
     let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
-    if endow_mature_height < env.block.height || endow_mature_time < env.block.time.seconds() {
+    if endow_mature_time < env.block.time.seconds() {
         // check that sender is the owner or the beneficiary
         if info.sender != endowment.owner {
             return Err(ContractError::Unauthorized {});
@@ -1003,11 +987,8 @@ pub fn withdraw_liquid(
     let endowment = ENDOWMENT.load(deps.storage)?;
 
     // Check that sender is able to "withdraw"
-    let endow_mature_height = endowment
-        .maturity_height
-        .expect("Cannot get maturity height");
     let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
-    if endow_mature_height < env.block.height || endow_mature_time < env.block.time.seconds() {
+    if endow_mature_time < env.block.time.seconds() {
         // check that sender is the owner or the beneficiary
         if info.sender != endowment.owner {
             return Err(ContractError::Unauthorized {});
