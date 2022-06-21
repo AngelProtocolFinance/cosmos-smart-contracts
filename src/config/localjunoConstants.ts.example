@@ -4,7 +4,7 @@
 export const localjuno = {
   // LocalJuno
   networkInfo: {
-    url: "http://localhost:1317",
+    url: "localhost:26657",
     chainId: "localjuno",
   },
 
