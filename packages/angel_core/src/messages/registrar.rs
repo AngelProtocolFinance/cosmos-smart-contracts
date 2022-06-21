@@ -78,6 +78,7 @@ pub struct CreateEndowmentMsg {
     pub whitelisted_contributors: Vec<String>,
     pub cw4_members: Vec<Member>,
     pub dao: bool,
+    pub dao_token_addr: Option<String>,
     pub donation_match: bool,
     pub curve_type: Option<CurveType>,
     pub beneficiary: String,

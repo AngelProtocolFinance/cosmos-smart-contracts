@@ -19,6 +19,7 @@ pub struct InstantiateMsg {
     pub owner_sc: String,
     pub registrar_contract: String,
     pub dao: bool,
+    pub dao_token_addr: Option<String>,
     pub donation_match: bool,
     pub curve_type: Option<CurveType>,
     pub owner: String,       // address that originally setup the endowment account

@@ -263,10 +263,19 @@ pub fn create_endowment(
             .filter(|e| e.status.to_string() == "Approved")
             .collect();
 
-        if endowments.len() > 0 {
+        if !endowments.is_empty() {
             parent = Some(info.sender);
         }
     };
+
+    if let Some(ref dao_token_addr) = msg.dao_token_addr {
+        if !config
+            .accepted_tokens
+            .cw20_valid(dao_token_addr.to_string())
+        {
+            return Err(ContractError::NotInApprovedCoins {});
+        }
+    }
 
     let wasm_msg = WasmMsg::Instantiate {
         code_id: config.accounts_code_id,
@@ -276,6 +285,7 @@ pub fn create_endowment(
             owner_sc: config.owner.to_string(),
             registrar_contract: env.contract.address.to_string(),
             dao: msg.dao,
+            dao_token_addr: msg.dao_token_addr,
             donation_match: msg.donation_match,
             owner: msg.owner,
             name: msg.name,
@@ -456,14 +466,14 @@ pub fn new_accounts_reply(
                         3 => Some(Tier::Level3),
                         _ => None,
                     },
-                    un_sdg: Some(endowment_un_sdg.clone()),
+                    un_sdg: Some(endowment_un_sdg),
                     endow_type: match endowment_type.as_str() {
                         "charity" => Some(EndowmentType::Charity),
                         "normal" => Some(EndowmentType::Normal),
                         _ => unimplemented!(),
                     },
-                    logo: Some(endowment_logo.clone()),
-                    image: Some(endowment_image.clone()),
+                    logo: Some(endowment_logo),
+                    image: Some(endowment_image),
                 },
             )?;
             Ok(Response::default().add_attributes(vec![
