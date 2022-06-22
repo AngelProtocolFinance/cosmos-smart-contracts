@@ -269,12 +269,6 @@ pub fn create_endowment(
         }
     };
 
-    if let DaoSetupOption::ExistingCw20Token(ref addr) = msg.dao_setup_option {
-        if !config.accepted_tokens.cw20_valid(addr.to_string()) {
-            return Err(ContractError::NotInApprovedCoins {});
-        }
-    }
-
     let wasm_msg = WasmMsg::Instantiate {
         code_id: config.accounts_code_id,
         admin: Some(config.owner.to_string()),

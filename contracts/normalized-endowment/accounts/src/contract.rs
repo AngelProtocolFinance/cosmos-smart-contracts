@@ -158,7 +158,14 @@ pub fn instantiate(
         match msg.dao_setup_option {
             // Option #1. User can set an existing CW20 token as the DAO's Token
             DaoSetupOption::ExistingCw20Token(contract_addr) => {
-                // Validation is already done in "registrar" level
+                // Validation
+                if !registrar_config
+                    .accepted_tokens
+                    .cw20_valid(contract_addr.to_string())
+                {
+                    return Err(ContractError::NotInApprovedCoins {});
+                }
+
                 let contract_addr = deps.api.addr_validate(&contract_addr)?;
                 ENDOWMENT.update(deps.storage, |mut endow| -> StdResult<_> {
                     endow.dao_token = Some(contract_addr);
