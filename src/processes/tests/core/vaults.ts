@@ -15,7 +15,7 @@ export async function testQueryVaultConfig(
   vault: string
 ): Promise<void> {
   process.stdout.write("Test - Query Vault Config");
-  const result: any = await juno.wasm.contractQuery(vault, {
+  const result: any = await juno.queryContractSmart(vault, {
     vault_config: {},
   });
 

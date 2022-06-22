@@ -313,7 +313,7 @@ export async function startTests(): Promise<void> {
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
-  initialize();
+  await initialize();
 
   // Test queries
   await testExecute(

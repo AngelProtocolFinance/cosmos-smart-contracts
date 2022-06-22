@@ -360,7 +360,7 @@ export async function testQueryGovConfig(
   govContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Gov Config");
-  const result: any = await juno.wasm.contractQuery(govContract, {
+  const result: any = await juno.queryContractSmart(govContract, {
     config: {},
   });
 
@@ -373,7 +373,7 @@ export async function testQueryGovState(
   govContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Gov State");
-  const result: any = await juno.wasm.contractQuery(govContract, {
+  const result: any = await juno.queryContractSmart(govContract, {
     state: {},
   });
 
@@ -387,7 +387,7 @@ export async function testQueryGovStaker(
   address: string
 ): Promise<void> {
   process.stdout.write("Test - Query for getting gov staker");
-  const result: any = await juno.wasm.contractQuery(govContract, {
+  const result: any = await juno.queryContractSmart(govContract, {
     staker: { address },
   });
 
@@ -401,7 +401,7 @@ export async function testQueryGovClaims(
   address: string
 ): Promise<void> {
   process.stdout.write("Test - Query Gov Claims for an addr");
-  const result: any = await juno.wasm.contractQuery(govContract, {
+  const result: any = await juno.queryContractSmart(govContract, {
     claims: { address },
   });
 
@@ -416,7 +416,7 @@ export async function testQueryGovPoll(
   poll_id: number
 ): Promise<void> {
   process.stdout.write("Test - Query for getting poll by poll_id");
-  const result: any = await juno.wasm.contractQuery(govContract, {
+  const result: any = await juno.queryContractSmart(govContract, {
     poll: { poll_id },
   });
 
@@ -432,7 +432,7 @@ export async function testQueryGovPolls(
   limit: number | undefined
 ): Promise<void> {
   process.stdout.write("Test - Query for getting poll by poll_id");
-  const result: any = await juno.wasm.contractQuery(govContract, {
+  const result: any = await juno.queryContractSmart(govContract, {
     polls: { filter, start_after, limit, undefined },
   });
 
@@ -448,7 +448,7 @@ export async function testQueryGovVoters(
   limit: number | undefined
 ): Promise<void> {
   process.stdout.write("Test - Query gov voters");
-  const result: any = await juno.wasm.contractQuery(govContract, {
+  const result: any = await juno.queryContractSmart(govContract, {
     voters: { poll_id, start_after, limit, undefined },
   });
 

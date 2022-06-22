@@ -2,6 +2,7 @@ import * as fs from "fs";
 import chalk from "chalk";
 import BN from "bn.js";
 import axios from "axios";
+import { Coin } from "@cosmjs/amino";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
@@ -34,10 +35,37 @@ export async function sendTransaction(
   sender: string,
   contract: string,
   msg: Record<string, unknown>,
+  memo = undefined,
   verbose = false
 ) {
   try { 
-    const result = await juno.execute(sender, contract, msg, "auto", undefined, []);
+    const result = await juno.execute(sender, contract, msg, "auto", memo, []);
+    if (verbose) {
+      console.log(chalk.yellow("\n~~~ TX HASH: ", result.transactionHash, "~~~~"));
+      console.log(chalk.yellow(JSON.stringify(result.logs)));
+    }
+    return result;
+  } catch (err: any) {
+    throw new Error(`An error occured! | ${err.toString()}`);
+  }
+}
+
+/**
+ * @notice Send a transaction along with some amount of funds [Coin, ... ]. 
+ * Returns result if successful, throw error if failed.
+ */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export async function sendTransactionWithFunds(
+  juno: SigningCosmWasmClient,
+  sender: string,
+  contract: string,
+  msg: Record<string, unknown>,
+  funds: Coin[],
+  memo = undefined,
+  verbose = false
+) {
+  try { 
+    const result = await juno.execute(sender, contract, msg, "auto", memo, funds);
     if (verbose) {
       console.log(chalk.yellow("\n~~~ TX HASH: ", result.transactionHash, "~~~~"));
       console.log(chalk.yellow(JSON.stringify(result.logs)));
@@ -89,4 +117,25 @@ export async function migrateContract(
 ) {
   const result = await juno.migrate(sender, contract, new_code_id, migrateMsg, "auto");
   return result;
+}
+
+// --------------------------------------------------
+// Wrapper Function:
+// Stores wasm, gets new code, and migrates contract 
+//---------------------------------------------------
+async function storeAndMigrateContract(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  contract: string,
+  wasmFilename: string,
+  msg = {}
+): Promise<void> {
+  process.stdout.write(`Uploading ${wasmFilename} Wasm`);
+  const path = path.resolve(__dirname, `${wasm_path.core}/${wasmFilename}`);
+  const codeId = await storeCode(juno, apTeam, path);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
+
+  process.stdout.write(`Migrate ${wasmFilename} contract`);
+  const result = await migrate(juno, apTeam, contract, codeId, msg);
+  console.log(chalk.green(" Done!"));
 }

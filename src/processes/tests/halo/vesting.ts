@@ -121,7 +121,7 @@ export async function testQueryVestingConfig(
   vestingContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Vesting Config");
-  const result: any = await juno.wasm.contractQuery(vestingContract, {
+  const result: any = await juno.queryContractSmart(vestingContract, {
     config: {},
   });
 
@@ -135,7 +135,7 @@ export async function testQueryVestingAccount(
   address: string
 ): Promise<void> {
   process.stdout.write("Test - Query get vesting account by address");
-  const result: any = await juno.wasm.contractQuery(vestingContract, {
+  const result: any = await juno.queryContractSmart(vestingContract, {
     vesting_account: { address },
   });
 
@@ -150,7 +150,7 @@ export async function testQueryVestingAccounts(
   limit: number | undefined
 ): Promise<void> {
   process.stdout.write("Test - Query vesting accounts");
-  const result: any = await juno.wasm.contractQuery(vestingContract, {
+  const result: any = await juno.queryContractSmart(vestingContract, {
     vesting_accounts: {
       start_after,
       limit,

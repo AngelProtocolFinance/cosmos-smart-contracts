@@ -8,7 +8,7 @@ import {
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
-  testSingleDonationAmountToManyEndowments,
+  testSingleDonationToEndowment,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -36,7 +36,7 @@ import {
 import {
   testAngelTeamCanTriggerVaultsHarvest,
   testMigrateAllAccounts,
-  testUpdateEndowmentsStatus,
+  testUpdateEndowmentStatus,
   testUpdatingRegistrarConfigs,
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarApprovedVaultRateList,

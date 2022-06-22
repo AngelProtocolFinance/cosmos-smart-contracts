@@ -128,26 +128,22 @@ export async function testAngelTeamCanTriggerVaultsHarvest(
 //    3. Closed - NO Deposits | NO Withdraws - IF beneficiary address given: funds go to that wallet
 //                ELSE: sent to fund members
 //----------------------------------------------------------------------------------------
-export async function testUpdateEndowmentsStatus(
+export async function testUpdateEndowmentStatus(
   juno: SigningCosmWasmClient,
   apTeam: string,
   registrar: string,
-  endowments: any[] // [ { address: "juno1....", status: 0|1|2|3, benficiary: "juno1.." | undefined }, ... ]
+  endowmentStatus: any, // [ { address: "juno1....", status: 0|1|2|3, benficiary: "juno1.." | undefined }, ... ]
 ): Promise<void> {
-  process.stdout.write("AP Team updates endowments statuses");
-  let msgs: Msg[] = [];
-  endowments.forEach((endow) => {
-    msgs.push(
-      new MsgExecuteContract(apTeam, registrar, {
-        update_endowment_status: {
-          endowment_addr: endow.address,
-          status: endow.status,
-          beneficiary: endow.beneficiary,
-        },
-      })
-    );
-  });
-  await sendTransaction(juno, apTeam, msgs);
+  process.stdout.write("AP Team updates endowment's status");
+  expect(
+    await sendTransaction(juno, apTeam, registrar, {
+      update_endowment_status: {
+        endowment_addr: endowmentStatus.address,
+        status: endowmentStatus.status,
+        beneficiary: endowmentStatus.beneficiary,
+      },
+    })
+  );
   console.log(chalk.green(" Done!"));
 }
 
@@ -163,31 +159,27 @@ export async function testUpdateEndowmentsStatus(
 //      "un_sdg":  endowment "un_sdg" number (u64) | undefined
 //      "endow_type": endowment `EndowmentType` | undefined
 //----------------------------------------------------------------------------------------
-export async function testUpdateEndowmentsEntry(
+export async function testUpdateEndowmentEntry(
   juno: SigningCosmWasmClient,
   apTeam: string,
   registrar: string,
-  endowments: any[] // [{ address: "juno...", name: "...", owner: "...", tier: "", un_sdg: "", endow_type: "...", logo: "...", image: "..." }]
+  endowmentEntry: any, // [{ address: "juno...", name: "...", owner: "...", tier: "", un_sdg: "", endow_type: "...", logo: "...", image: "..." }]
 ): Promise<void> {
-  process.stdout.write("AP Team updates endowments type(EndowmentEntry info)");
-  let msgs: Msg[] = [];
-  endowments.forEach((endow) => {
-    msgs.push(
-      new MsgExecuteContract(apTeam, registrar, {
-        update_endowment_entry: {
-          endowment_addr: endow.address,
-          name: endow.name,
-          logo: endow.logo,
-          image: endow.image,
-          owner: endow.owner,
-          tier: endow.tier,
-          un_sdg: endow.un_sdg,
-          endow_type: endow.endow_type,
-        },
-      })
-    );
-  });
-  await sendTransaction(juno, apTeam, msgs);
+  process.stdout.write("AP Team updates endowment's EndowmentEntry info");
+  expect(
+    await sendTransaction(juno, apTeam, registrar, {
+      update_endowment_entry: {
+        endowment_addr: endowmentEntry.address,
+        name: endowmentEntry.name,
+        logo: endowmentEntry.logo,
+        image: endowmentEntry.image,
+        owner: endowmentEntry.owner,
+        tier: endowmentEntry.tier,
+        un_sdg: endowmentEntry.un_sdg,
+        endow_type: endowmentEntry.endow_type,
+      },
+    })
+  );
   console.log(chalk.green(" Done!"));
 }
 
@@ -218,7 +210,7 @@ export async function testQueryRegistrarConfig(
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar config and get proper result");
-  const result: any = await juno.wasm.contractQuery(registrar, {
+  const result: any = await juno.queryContractSmart(registrar, {
     config: {},
   });
 
@@ -232,7 +224,7 @@ export async function testQueryRegistrarEndowmentDetails(
   endowment: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar Endowment Details/Status");
-  const result: any = await juno.wasm.contractQuery(registrar, {
+  const result: any = await juno.queryContractSmart(registrar, {
     endowment: { endowment_addr: endowment },
   });
 
@@ -245,7 +237,7 @@ export async function testQueryRegistrarEndowmentList(
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar EndowmentList");
-  const result: any = await juno.wasm.contractQuery(registrar, {
+  const result: any = await juno.queryContractSmart(registrar, {
     endowment_list: {},
   });
 
@@ -258,7 +250,7 @@ export async function testQueryRegistrarApprovedVaultList(
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar ApprovedVaultList");
-  const result: any = await juno.wasm.contractQuery(registrar, {
+  const result: any = await juno.queryContractSmart(registrar, {
     approved_vault_list: {},
   });
 
@@ -271,7 +263,7 @@ export async function testQueryRegistrarApprovedVaultRateList(
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar Approved Vault Exchange Rate List");
-  const result: any = await juno.wasm.contractQuery(registrar, {
+  const result: any = await juno.queryContractSmart(registrar, {
     approved_vault_rate_list: {},
   });
 
@@ -284,7 +276,7 @@ export async function testQueryRegistrarVaultList(
   registrar: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar VaultList");
-  const result: any = await juno.wasm.contractQuery(registrar, {
+  const result: any = await juno.queryContractSmart(registrar, {
     vault_list: {},
   });
 
@@ -298,7 +290,7 @@ export async function testQueryRegistrarVault(
   Vault1: string
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar Vault");
-  const result: any = await juno.wasm.contractQuery(registrar, {
+  const result: any = await juno.queryContractSmart(registrar, {
     vault: {
       vault_addr: Vault1,
     },

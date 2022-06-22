@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction } from "../../../utils/helpers";
+import { sendTransaction, sendTransactionWithFunds } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -29,13 +29,13 @@ export async function testDonorSendsToIndexFund(
   );
 
   await expect(
-    sendTransaction(juno, pleb, indexFund, {
+    sendTransactionWithFunds(juno, pleb, indexFund, {
         deposit: {
           fund_id,
           split,
         },
       },
-      { ujuno: amount }
+      [{ denom: "ujuno", amount }]
     )
   );
   console.log(chalk.green(" Passed!"));
@@ -56,22 +56,22 @@ export async function testTcaMemberSendsToIndexFund(
 ): Promise<void> {
   process.stdout.write("Test - TCA Member can send a JUNO donation to an Index Fund");
   await expect(
-    sendTransaction(juno, tca, indexFund, { 
+    sendTransactionWithFunds(juno, tca, indexFund, { 
         deposit: { fund_id: undefined, split: undefined } 
       },
-      { ujuno: "30000000" }
+      [{ denom: "ujuno", amount: "300000" }]
     )
   );
   await expect(
-    sendTransaction(juno, tca, indexFund, { 
+    sendTransactionWithFunds(juno, tca, indexFund, { 
       deposit: { fund_id: 3, split: undefined } },
-      { ujuno: "40000000" }
+      [{ denom: "ujuno", amount: "400000" }]
     )
   );
   await expect(
-    sendTransaction(juno, tca, indexFund, { 
+    sendTransactionWithFunds(juno, tca, indexFund, { 
         deposit: { fund_id: 3, split: "0.76" } },
-        { ujuno: "40000000" }
+        [{ denom: "ujuno", amount: "400000" }]
     )
   );
   console.log(chalk.green(" Passed!"));
@@ -191,7 +191,7 @@ export async function testQueryIndexFundConfig(
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund Config");
-  const result: any = await juno.wasm.contractQuery(indexFund, {
+  const result: any = await juno.queryContractSmart(indexFund, {
     config: {},
   });
   console.log(result);
@@ -203,7 +203,7 @@ export async function testQueryIndexFundState(
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund State");
-  const result: any = await juno.wasm.contractQuery(indexFund, {
+  const result: any = await juno.queryContractSmart(indexFund, {
     state: {},
   });
 
@@ -216,7 +216,7 @@ export async function testQueryIndexFundTcaList(
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund TcaList");
-  const result: any = await juno.wasm.contractQuery(indexFund, {
+  const result: any = await juno.queryContractSmart(indexFund, {
     alliance_members: {},
   });
 
@@ -231,7 +231,7 @@ export async function testQueryIndexFundFundsList(
   limit: number | undefined
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund FundsList");
-  const result: any = await juno.wasm.contractQuery(indexFund, {
+  const result: any = await juno.queryContractSmart(indexFund, {
     funds_list: {
       limit,
       start_after,
@@ -248,7 +248,7 @@ export async function testQueryIndexFundFundDetails(
   fund_id: number
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund FundDetails");
-  const result: any = await juno.wasm.contractQuery(indexFund, {
+  const result: any = await juno.queryContractSmart(indexFund, {
     fund_details: { fund_id: fund_id },
   });
 
@@ -261,7 +261,7 @@ export async function testQueryIndexFundActiveFundDetails(
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund ActiveFundDetails");
-  const result: any = await juno.wasm.contractQuery(indexFund, {
+  const result: any = await juno.queryContractSmart(indexFund, {
     active_fund_details: {},
   });
 
@@ -274,7 +274,7 @@ export async function testQueryIndexFundActiveFundDonations(
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund ActiveFundDonations");
-  const result: any = await juno.wasm.contractQuery(indexFund, {
+  const result: any = await juno.queryContractSmart(indexFund, {
     active_fund_donations: {},
   });
 
@@ -287,7 +287,7 @@ export async function testQueryIndexFundDeposit(
   indexFund: string
 ): Promise<void> {
   process.stdout.write("Test - Query IndexFund Deposit msg builder");
-  const result: any = await juno.wasm.contractQuery(indexFund, {
+  const result: any = await juno.queryContractSmart(indexFund, {
     deposit: {
       amount: "100000000",
       fund_id: 6,
@@ -306,7 +306,7 @@ export async function testQueryIndexFundInvolvedAddress(
   process.stdout.write(
     "Test - Query IndexFund for all funds an Address is involoved with"
   );
-  const result: any = await juno.wasm.contractQuery(indexFund, {
+  const result: any = await juno.queryContractSmart(indexFund, {
     involved_funds: { address },
   });
 

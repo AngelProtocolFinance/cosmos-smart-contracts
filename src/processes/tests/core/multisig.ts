@@ -94,100 +94,12 @@ export async function testUpdateCw3Config(
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testAddGuardiansToEndowment(
-  juno: SigningCosmWasmClient,
-  apTeam3: string,
-  charity1: string,
-  charity2: string,
-  charity3: string,
-  pleb: string,
-  cw3GuardianAngels: string,
-  endowmentContract1: string
-): Promise<void> {
-  process.stdout.write(
-    "Test - Endowment Owner Proposes adding 3 Guardians to their Endowment"
-  );
-
-  // proposal to add new Guardians
-  const proposal = await sendTransaction(juno, charity1, cw3GuardianAngels, {
-    propose_guardian_change: {
-      endowment_addr: endowmentContract1,
-      add: [charity3, apTeam3, charity2],
-      remove: [],
-    },
-  });
-
-  const proposal_id = parseInt(
-    proposal.logs[0].events
-      .find((event) => {
-        return event.type == "wasm";
-      })
-      ?.attributes.find((attribute) => {
-        return attribute.key == "proposal_id";
-      })?.value as string
-  );
-
-  console.log(chalk.green(" Passed!"));
-}
-
-// // execute the proposal (anyone can do this for passed proposals)
-// await sendTransaction(juno, pleb, [
-//   new MsgExecuteContract(pleb, cw3GuardianAngels, {
-//     execute: { proposal_id: proposal_id },
-//   }),
-// ]);
-
-export async function testGuardiansChangeEndowmentOwner(
-  juno: SigningCosmWasmClient,
-  charity2: string,
-  charity3: string,
-  pleb: string,
-  endowmentContract1: string,
-  cw3GuardianAngels: string
-): Promise<void> {
-  process.stdout.write(
-    "Test - Endowment Owner loses wallet! :( Guardians Propose, vote and execute a change to new wallet"
-  );
-
-  // proposal to add new Guardians
-  const proposal = await sendTransaction(juno, charity2, cw3GuardianAngels, {
-    propose_owner_change: {
-      endowment_addr: endowmentContract1,
-      new_owner_addr: pleb,
-    },
-  });
-
-  const proposal_id = parseInt(
-    proposal.logs[0].events
-      .find((event) => {
-        return event.type == "wasm";
-      })
-      ?.attributes.find((attribute) => {
-        return attribute.key == "proposal_id";
-      })?.value as string
-  );
-
-  // Guardians vote on the open proposal until threshold reached
-  await sendTransaction(juno, charity3, cw3GuardianAngels, {
-    vote_guardian: {
-      proposal_id: proposal_id,
-      vote: "yes",
-    },
-  });
-  // execute the proposal (anyone can do this for passed proposals)
-  await sendTransaction(juno, charity3, cw3GuardianAngels, {
-    execute: { proposal_id: proposal_id },
-  });
-
-  console.log(chalk.green(" Passed!"));
-}
-
 export async function testQueryMultisigVoters(
   juno: SigningCosmWasmClient,
   multisig: string
 ): Promise<void> {
   process.stdout.write("Test - Query a multisig voters list");
-  const result: any = await juno.wasm.contractQuery(multisig, {
+  const result: any = await juno.queryContractSmart(multisig, {
     list_voters: {},
   });
 
@@ -200,7 +112,7 @@ export async function testQueryMultisigThreshold(
   multisig: string
 ): Promise<void> {
   process.stdout.write("Test - Query a multisig threshold");
-  const result: any = await juno.wasm.contractQuery(multisig, {
+  const result: any = await juno.queryContractSmart(multisig, {
     threshold: {},
   });
 
@@ -213,7 +125,7 @@ export async function testQueryGroupMembersList(
   multisig: string
 ): Promise<void> {
   process.stdout.write("Test - Query a multisig group members list");
-  const result: any = await juno.wasm.contractQuery(multisig, {
+  const result: any = await juno.queryContractSmart(multisig, {
     list_members: {},
   });
 

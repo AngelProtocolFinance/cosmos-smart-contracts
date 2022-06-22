@@ -78,7 +78,7 @@ export async function testQueryCollectorConfig(
   collectorContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Collector Config");
-  const result: any = await juno.wasm.contractQuery(collectorContract, {
+  const result: any = await juno.queryContractSmart(collectorContract, {
     config: {},
   });
 
@@ -91,7 +91,7 @@ export async function testQueryCollectorPair(
   collectorContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Collector pair");
-  const result: any = await juno.wasm.contractQuery(collectorContract, {
+  const result: any = await juno.queryContractSmart(collectorContract, {
     pair: { denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4" },
   });
 

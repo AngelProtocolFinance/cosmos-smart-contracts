@@ -77,22 +77,22 @@ export async function setupCore(
   apTeam2Addr = await getWalletAddress(apTeam2);
   apTreasuryAddr = await getWalletAddress(apTreasury);
 
-  await setup(
-    config.tax_rate,
-    apTreasuryAddr,
-    config.threshold_absolute_percentage,
-    config.max_voting_period_height,
-    config.max_voting_period_guardians_height,
-    config.fund_rotation,
-    config.funding_goal,
-    config.is_localjuno
-  );
-  if (!config.is_localjuno) {
-    await createVaults(config.harvest_to_liquid, config.tax_per_block);
-  }
-  await createEndowments();
-  await approveEndowments();
-  await createIndexFunds();
+  // await setup(
+  //   config.tax_rate,
+  //   apTreasuryAddr,
+  //   config.threshold_absolute_percentage,
+  //   config.max_voting_period_height,
+  //   config.max_voting_period_guardians_height,
+  //   config.fund_rotation,
+  //   config.funding_goal,
+  //   config.is_localjuno
+  // );
+  // if (!config.is_localjuno) {
+  //   await createVaults(config.harvest_to_liquid, config.tax_per_block);
+  // }
+  // await createEndowments();
+  // await approveEndowments();
+  // await createIndexFunds();
   if (config.turnover_to_multisig) {
     await turnOverApTeamMultisig(config.is_localjuno);
   }
@@ -110,19 +110,19 @@ async function setup(
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each....
   process.stdout.write("Uploading Registrar Wasm");
-  const registrarCodeId = 483; // await storeCode(juno, apTeamAddr, `${wasm_path.core}/registrar.wasm`);
+  const registrarCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/registrar.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${registrarCodeId}`);
 
   process.stdout.write("Uploading Index Fund Wasm");
-  const fundCodeId = 484; // await storeCode(juno, apTeamAddr, `${wasm_path.core}/index_fund.wasm`);
+  const fundCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/index_fund.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${fundCodeId}`);
 
   process.stdout.write("Uploading Accounts Wasm");
-  const accountsCodeId = 485; // await storeCode(juno, apTeamAddr, `${wasm_path.core}/accounts.wasm`);
+  const accountsCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/accounts.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${accountsCodeId}`);
 
   process.stdout.write("Uploading CW4 Group Wasm");
-  const cw4Group = 486; // await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw4_group.wasm`);
+  const cw4Group = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw4_group.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw4Group}`);
 
   process.stdout.write("Uploading CW3 MultiSig Wasm");
@@ -541,28 +541,45 @@ async function turnOverApTeamMultisig(is_localjuno: boolean): Promise<void> {
   process.stdout.write(
     "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract"
   );
-  await sendTransaction(juno, apTeamAddr, registrar, {
-    update_owner: { new_owner: cw3ApTeam }
+  await sendTransaction(juno, apTeamAddr, "juno1qsn67fzym4hak4aly07wvcjxyzcld0n4s726r2fs9km2tlahlc5qg2drvn", {
+    update_owner: { new_owner: "juno1ms29h3vhvrfpa6mnf2ck3eh6dtrcpg628sudj5pucctmadqdqkjqkdrjdj" }
   });
-  await sendTransaction(juno, apTeamAddr, indexFund, {
-    update_owner: { new_owner: cw3ApTeam }
+  process.stdout.write(chalk.green("\t- Registrar is turned over"));
+  
+  await sendTransaction(juno, apTeamAddr, "juno1cwd6uktz66fky8ky2ufzvqve858uxvj84345cfeg7adalyamdy2qaurgm0", {
+    update_owner: { new_owner: "juno1ms29h3vhvrfpa6mnf2ck3eh6dtrcpg628sudj5pucctmadqdqkjqkdrjdj" }
   });
-  await sendTransaction(juno, apTeamAddr, endowmentContract1, {
-    update_owner: { new_owner: cw3ApTeam }
+  process.stdout.write(chalk.green("\t- Index Fund is turned over"));
+  
+  await sendTransaction(juno, apTeamAddr, "juno1cfhtddxm3u2nj3culvgrdk9jur8qqdfcjqn6uue4xynlxuvug3aq0ahckt", {
+    update_owner: { new_owner: "juno1ms29h3vhvrfpa6mnf2ck3eh6dtrcpg628sudj5pucctmadqdqkjqkdrjdj" }
   });
-  await sendTransaction(juno, apTeamAddr, endowmentContract2, {
-    update_owner: { new_owner: cw3ApTeam }
+  process.stdout.write(chalk.green("\t- Endowment 1 is turned over"));
+
+  await sendTransaction(juno, apTeamAddr, "juno1qfl7vzhj49ekjf5gvmlmqhfe3tk3dl8ng7h2q2rule8sltu7nmfslawplr", {
+    update_owner: { new_owner: "juno1ms29h3vhvrfpa6mnf2ck3eh6dtrcpg628sudj5pucctmadqdqkjqkdrjdj" }
   });
-  await sendTransaction(juno, apTeamAddr, endowmentContract3, {
-    update_owner: { new_owner: cw3ApTeam }
+  process.stdout.write(chalk.green("\t- Endowment 2 is turned over"));
+  
+  await sendTransaction(juno, apTeamAddr, "juno1t2q8x7z4pflnp0d0ewr2qytyl2lwc85ptmhvufzgj63ja88xp22q9q2z9x", {
+    update_owner: { new_owner: "juno1ms29h3vhvrfpa6mnf2ck3eh6dtrcpg628sudj5pucctmadqdqkjqkdrjdj" }
   });
-  if (!is_localjuno) {
-    await sendTransaction(juno, apTeamAddr, vault1, {
-      update_owner: { new_owner: cw3ApTeam }
-    });
-    await sendTransaction(juno, apTeamAddr, vault2, {
-      update_owner: { new_owner: cw3ApTeam }
-    });
-  }
+  process.stdout.write(chalk.green("\t- Endowment 3 is turned over"));
+  
+  await sendTransaction(juno, apTeamAddr, "juno1lf50ne6yzkpn8lz0kk9jsu6a4dvkrsc45l4qpv053w4g7q4alqgqj3t8qj", {
+    update_owner: { new_owner: "juno1ms29h3vhvrfpa6mnf2ck3eh6dtrcpg628sudj5pucctmadqdqkjqkdrjdj" }
+  });
+  process.stdout.write(chalk.green("\t- Endowment 4 is turned over"));
+  
+  // if (!is_localjuno) {
+  //   await sendTransaction(juno, apTeamAddr, vault1, {
+  //     update_owner: { new_owner: "juno1ms29h3vhvrfpa6mnf2ck3eh6dtrcpg628sudj5pucctmadqdqkjqkdrjdj" }
+  //   });
+  //   process.stdout.write(chalk.green("\t- Vault 1 is turned over"));
+  //   await sendTransaction(juno, apTeamAddr, vault2, {
+  //     update_owner: { new_owner: "juno1ms29h3vhvrfpa6mnf2ck3eh6dtrcpg628sudj5pucctmadqdqkjqkdrjdj" }
+  //   });
+  //   process.stdout.write(chalk.green("\t- Vault 2 is turned over"));
+  // }
   console.log(chalk.green(" Done!"));
 }

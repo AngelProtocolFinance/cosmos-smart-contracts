@@ -1,6 +1,6 @@
+import chalk from "chalk";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
-import chalk from "chalk";
 import { localjuno } from "../../config/localjunoConstants";
 import { datetimeStringToUTC } from "../../utils/helpers";
 import {
@@ -8,7 +8,6 @@ import {
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
   testApTeamChangesAccountsEndowmentOwner,
-  testChangeManyAccountsEndowmentOwners,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
@@ -36,14 +35,12 @@ import {
 import {
   testUpdateCw3Config,
   testAddMemberToC4Group,
-  testAddGuardiansToEndowment,
-  testGuardiansChangeEndowmentOwner,
   testQueryMultisigVoters,
   testQueryMultisigThreshold,
   testQueryGroupMembersList,
 } from "./core/multisig";
 import {
-  testUpdateEndowmentsStatus,
+  testUpdateEndowmentStatus,
   testCreateEndowmentViaRegistrar,
   testAngelTeamCanTriggerVaultsHarvest,
   testMigrateAllAccounts,
@@ -55,7 +52,7 @@ import {
   testQueryRegistrarEndowmentDetails,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
-  testUpdateEndowmentsEntry,
+  testUpdateEndowmentEntry,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -290,31 +287,31 @@ export async function testExecute(
   // );
   // await testRemoveIndexFund(juno, apTeam, indexFund, 1);
   // Test query
-  // await testQueryRegistrarConfig(juno, registrar);
-  // await testQueryRegistrarEndowmentList(juno, registrar);
-  // await testQueryRegistrarEndowmentDetails(juno, registrar, endowmentContract3);
+  await testQueryRegistrarConfig(juno, registrar);
+  await testQueryRegistrarEndowmentList(juno, registrar);
+  await testQueryRegistrarEndowmentDetails(juno, registrar, endowmentContract1);
   // await testQueryRegistrarApprovedVaultList(juno, registrar);
   // await testQueryRegistrarApprovedVaultRateList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVault(juno, registrar, Vault1);
   // await testQueryVaultConfig(juno, Vault1);
   // await testQueryAccountsBalance(juno, endowmentContract4);
-  // await testQueryAccountsConfig(juno, endowmentContract4);
-  // await testQueryAccountsEndowment(juno, endowmentContract4);
-  // await testQueryAccountsProfile(juno, endowmentContract4);
-  // await testQueryAccountsState(juno, endowmentContract4);
+  await testQueryAccountsConfig(juno, endowmentContract1);
+  await testQueryAccountsEndowment(juno, endowmentContract1);
+  await testQueryAccountsProfile(juno, endowmentContract1);
+  await testQueryAccountsState(juno, endowmentContract1);
   // await testQueryAccountsTransactions(
   //   juno,
-  //   endowmentContract4,
+  //   endowmentContract1,
   //   undefined,
   //   undefined,
   //   undefined
   // );
-  // await testQueryIndexFundConfig(juno, indexFund);
-  // await testQueryIndexFundState(juno, indexFund);
-  // await testQueryIndexFundTcaList(juno, indexFund);
-  // await testQueryIndexFundFundsList(juno, indexFund);
-  // await testQueryIndexFundFundDetails(juno, indexFund, 4);
+  await testQueryIndexFundConfig(juno, indexFund);
+  await testQueryIndexFundState(juno, indexFund);
+  await testQueryIndexFundTcaList(juno, indexFund);
+  await testQueryIndexFundFundsList(juno, indexFund, undefined, undefined);
+  await testQueryIndexFundFundDetails(juno, indexFund, 1);
   // await testQueryIndexFundActiveFundDetails(juno, indexFund);
   // await testQueryIndexFundActiveFundDonations(juno, indexFund);
   // await testQueryIndexFundDeposit(juno, indexFund);

@@ -151,7 +151,7 @@ export async function startSetupCore(): Promise<void> {
 
 //   // Initialize environment information
 //   console.log(chalk.yellow("\nStep 1. Environment Info"));
-//   initialize();
+//   await initialize();
 
 //   // Setup contracts
 //   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
@@ -174,7 +174,7 @@ export async function startSetupCore(): Promise<void> {
 
 //   // Initialize environment information
 //   console.log(chalk.yellow("\nStep 1. Environment Info"));
-//   initialize();
+//   await initialize();
 
 //   // Setup HALO contracts
 //   console.log(chalk.yellow("\nStep2. Halo Contracts"));
@@ -208,7 +208,7 @@ export async function startMigrateCore(): Promise<void> {
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
-  initialize();
+  await initialize();
 
   // Migrate contracts
   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
@@ -234,7 +234,7 @@ export async function startMigrateCore(): Promise<void> {
 
 //   // Initialize environment information
 //   console.log(chalk.yellow("\nStep 1. Environment Info"));
-//   initialize();
+//   await initialize();
 
 //   // Migrate Contracts
 //   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
@@ -260,7 +260,7 @@ export async function startTests(): Promise<void> {
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
-  initialize();
+  await initialize();
 
   // Test query
   await testExecute(

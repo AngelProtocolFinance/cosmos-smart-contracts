@@ -115,7 +115,7 @@ export async function testQueryDistributorConfig(
   distributorContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Distributor Config");
-  const result: any = await juno.wasm.contractQuery(distributorContract, {
+  const result: any = await juno.queryContractSmart(distributorContract, {
     config: {},
   });
 

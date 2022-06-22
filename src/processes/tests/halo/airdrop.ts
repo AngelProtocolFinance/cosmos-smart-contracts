@@ -108,7 +108,7 @@ export async function testQueryAirdropConfig(
   airdropContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Airdrop Config");
-  const result: any = await juno.wasm.contractQuery(airdropContract, {
+  const result: any = await juno.queryContractSmart(airdropContract, {
     config: {},
   });
 
@@ -122,7 +122,7 @@ export async function testQueryAirdropMerkleRoot(
   stage: number
 ): Promise<void> {
   process.stdout.write("Test - Query Merkle Root");
-  const result: any = await juno.wasm.contractQuery(airdropContract, {
+  const result: any = await juno.queryContractSmart(airdropContract, {
     merkle_root: { stage },
   });
 
@@ -135,7 +135,7 @@ export async function testQueryAirdropLatestStage(
   airdropContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Airdrop Latest Stage");
-  const result: any = await juno.wasm.contractQuery(airdropContract, {
+  const result: any = await juno.queryContractSmart(airdropContract, {
     latest_stage: {},
   });
 
@@ -150,7 +150,7 @@ export async function testQueryAirdropIsClaimed(
   address: string
 ): Promise<void> {
   process.stdout.write("Test - Query Airdrop Is Claimed");
-  const result: any = await juno.wasm.contractQuery(airdropContract, {
+  const result: any = await juno.queryContractSmart(airdropContract, {
     is_claimed: { stage, address },
   });
 
