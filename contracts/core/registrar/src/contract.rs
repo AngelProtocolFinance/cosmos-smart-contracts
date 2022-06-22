@@ -56,6 +56,7 @@ pub fn instantiate(
         collector_share: Decimal::percent(50_u64),
         charity_shares_contract: None,
         accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
+        swap_factory: msg.swap_factory.map(|v| deps.api.addr_validate(&v).unwrap()),
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -198,6 +199,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         collector_share: Decimal::percent(50_u64),
         charity_shares_contract: None,
         accepted_tokens: AcceptedTokens::default(),
+        swap_factory: None,
     };
     deps.storage.set(CONFIG_KEY, &to_vec(&config)?);
 

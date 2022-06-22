@@ -233,6 +233,12 @@ pub fn update_config(
         Some(share) => share,
         None => config.collector_share,
     };
+
+    config.swap_factory = match msg.swap_factory {
+        Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
+        None => config.swap_factory,
+    };
+
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))

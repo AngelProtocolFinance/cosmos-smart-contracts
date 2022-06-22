@@ -47,6 +47,7 @@ pub struct ConfigResponse {
     pub collector_share: Decimal,
     pub charity_shares_contract: Option<String>,
     pub accepted_tokens: AcceptedTokens,
+    pub swap_factory: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

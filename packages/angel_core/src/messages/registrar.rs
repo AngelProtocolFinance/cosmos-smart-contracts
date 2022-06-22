@@ -44,6 +44,7 @@ pub struct InstantiateMsg {
     pub default_vault: Option<Addr>,
     pub split_to_liquid: Option<SplitDetails>, // default %s to split off into liquid account, if donor provided split is not present
     pub accepted_tokens: Option<AcceptedTokens>, // list of approved native and CW20 coins can accept inward
+    pub swap_factory: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -119,6 +120,7 @@ pub struct UpdateConfigMsg {
     pub charity_shares_contract: Option<String>,
     pub accepted_tokens_native: Option<Vec<String>>,
     pub accepted_tokens_cw20: Option<Vec<String>>,
+    pub swap_factory: Option<String>,
 }
 
 impl UpdateConfigMsg {

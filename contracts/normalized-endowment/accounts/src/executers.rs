@@ -173,8 +173,18 @@ pub fn new_dao_cw20_token_reply(
             endowment.dao_token = Some(deps.api.addr_validate(&dao_cw20_token_addr)?);
             ENDOWMENT.save(deps.storage, &endowment)?;
 
-            // NOTE: After some discussion, it should add the logic of instantiating
-            //       new "'dao_cw20_token' - axlUSDC" pair contract right HERE.
+            let config = CONFIG.load(deps.storage)?;
+            let registrar_config: RegistrarConfigResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: config.registrar_contract.to_string(),
+                    msg: to_binary(&RegistrarQuerier::Config {})?,
+                }))?;
+
+            if let Some(swap_factory) = registrar_config.swap_factory {
+                // NOTE: Add "create_pair/swap" message here
+            } else {
+                return Err(ContractError::ContractNotConfigured {});
+            }
 
             Ok(Response::default())
         }
