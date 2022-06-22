@@ -1,10 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import chalk from "chalk";
-import { NONAME } from "dns";
-import * as path from "path";
 
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { coin, DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
+import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
 import { sendTransaction, storeCode, instantiateContract, getWalletAddress } from "../../../utils/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
@@ -261,7 +259,7 @@ async function createEndowments(): Promise<void> {
         charity_navigator_rating: undefined,
         endow_type: "Charity",
       },
-      cw4_members: [charity1_wallet],
+      cw4_members: [{ addr: charity1_wallet, weight: 1 }],
       kyc_donors_only: false,
     },
   });
@@ -309,7 +307,7 @@ async function createEndowments(): Promise<void> {
         charity_navigator_rating: undefined,
         endow_type: "Charity",
       },
-      cw4_members: [charity2_wallet],
+      cw4_members: [{ addr: charity2_wallet, weight: 1 }],
       kyc_donors_only: false,
     },
   });
@@ -357,7 +355,7 @@ async function createEndowments(): Promise<void> {
         charity_navigator_rating: undefined,
         endow_type: "Charity",
       },
-      cw4_members: [charity3_wallet],
+      cw4_members: [{ addr: charity3_wallet, weight: 1 }],
       kyc_donors_only: false,
     },
   });
@@ -404,7 +402,7 @@ async function createEndowments(): Promise<void> {
         charity_navigator_rating: undefined,
         endow_type: "Charity",
       },
-      cw4_members: [charity3_wallet],
+      cw4_members: [{ addr: charity3_wallet, weight: 1 }],
       kyc_donors_only: false,
     }
   });

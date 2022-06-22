@@ -8,13 +8,12 @@ import {
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
-  testSingleDonationToEndowment,
+  testSendDonationToEndowment,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
   testUpdateFundMembers,
-  // testUpdateAngelAllianceMembers,
   testUpdatingIndexFundConfigs,
   testCreateIndexFund,
   testRemoveIndexFund,
@@ -30,8 +29,6 @@ import {
 } from "./core/indexFunds";
 import {
   testAddMemberToC4Group,
-  testAddGuardiansToEndowment,
-  testGuardiansChangeEndowmentOwner,
 } from "./core/multisig";
 import {
   testAngelTeamCanTriggerVaultsHarvest,
@@ -112,6 +109,7 @@ import {
 export async function testExecute(
   juno: SigningCosmWasmClient,
   apTeam: DirectSecp256k1HdWallet,
+  apTeamAddr: string,
   registrar: string,
   indexFund: string,
   anchorVault: string,
@@ -132,30 +130,28 @@ export async function testExecute(
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testAngelTeamCanTriggerVaultsHarvest(
   //   juno,
-  //   apTeam,
+  //   apTeamAddr,
   //   charity1,
   //   registrar,
   //   haloCollector,
   //   "0.5"
   // );
-  // await testSingleDonationAmountToManyEndowments(
+  // await testSendDonationToEndowment(
   //   juno,
-  //   apTeam,
-  //   [
-  //     "juno1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r", // Coalition for Engaged Education
-  //   ],
+  //   apTeamAddr,
+  //   "juno1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r", // Coalition for Engaged Education
   //   "1000000000"
   // );
   // await testRejectUnapprovedDonations(
   //   juno,
-  //   apTeam,
+  //   apTeamAddr,
   //   "juno16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke", // AP Endowment
   //   "000000"
   // );
-  // await testUpdatingIndexFundConfigs(juno, apTeam, indexFund);
+  // await testUpdatingIndexFundConfigs(juno, apTeamAddr, indexFund);
   // await testUpdateFundMembers(
   //   juno,
-  //   apTeam,
+  //   apTeamAddr,
   //   indexFund,
   //   23,
   //   [
@@ -165,7 +161,7 @@ export async function testExecute(
   // );
   // await testCreateIndexFund(
   //   juno,
-  //   apTeam,
+  //   apTeamAddr,
   //   indexFund,
   //   "MVP Rotation #14",
   //   "Fund collection for MVP",
@@ -176,17 +172,17 @@ export async function testExecute(
   // );
   // await testUpdateAngelAllianceMembers(
   //   juno,
-  //   apTeam,
+  //   apTeamAddr,
   //   indexFund,
   //   ["juno1gmxefcqt8sfckw0w44tpkuaz0p27eddq76elzx"],
   //   []
   // );
-  // await testRemoveIndexFund(juno, apTeam, indexFund, 5);
-  // await testUpdatingIndexFundConfigs(juno, apTeam, indexFund);
-  // await testUpdateFundMembers(juno, apTeam, pleb, indexFund, 1, [], ["",""]);
-  // await testUpdateFundMembers(juno, apTeam, pleb, indexFund, 2, ["",""], []);
+  // await testRemoveIndexFund(juno, apTeamAddr, indexFund, 5);
+  // await testUpdatingIndexFundConfigs(juno, apTeamAddr, indexFund);
+  // await testUpdateFundMembers(juno, apTeamAddr, pleb, indexFund, 1, [], ["",""]);
+  // await testUpdateFundMembers(juno, apTeamAddr, pleb, indexFund, 2, ["",""], []);
 
-  // await testUpdateEndowmentsStatus(juno, apTeam, registrar, [
+  // await testUpdateEndowmentsStatus(juno, apTeamAddr, registrar, [
   //   {
   //     address: "juno1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2",
   //     status: 3,
@@ -222,7 +218,7 @@ export async function testExecute(
   // HALO gov Tests
   // await testGovUpdateConfig(
   //   juno,
-  //   apTeam,
+  //   apTeamAddr,
   //   haloGov,
   //   undefined,
   //   15, // quorum
@@ -234,11 +230,11 @@ export async function testExecute(
   //   undefined, // unbonding period
   //   undefined // gov_hodler
   // );
-  // await testGovResetClaims(juno, apTeam, haloGov, [apTeam.key.accAddress]);
+  // await testGovResetClaims(juno, apTeamAddr, haloGov, [apTeamAddr]);
   // await testQueryGovConfig(juno, haloGov);
   // await testQueryGovState(juno, haloGov);
-  // await testQueryGovClaims(juno, haloGov, apTeam.key.accAddress);
-  // await testQueryGovStaker(juno, haloGov, apTeam.key.accAddress);
+  // await testQueryGovClaims(juno, haloGov, apTeamAddr);
+  // await testQueryGovStaker(juno, haloGov, apTeamAddr);
   // await testQueryGovPoll(juno, haloGov, 1);
   // await testQueryGovPolls(juno, haloGov, undefined, undefined, undefined);
   // await testQueryGovVoters(juno, haloGov, 1, undefined, undefined);
@@ -246,7 +242,7 @@ export async function testExecute(
   // Test query for HALO collector
   // await testCollectorUpdateConfig(
   //   juno,
-  //   apTeam,
+  //   apTeamAddr,
   //   haloCollector,
   //   "1.0",
   //   undefined,
@@ -256,7 +252,7 @@ export async function testExecute(
   // Test Loop Pair
   // await testPairProvideLiquidity(
   //   juno,
-  //   apTeam,
+  //   apTeamAddr,
   //   junoswapToken,
   //   "juno1yjg0tuhc6kzwz9jl8yqgxnf2ctwlfumnvscupp", // LOOP PAIR
   //   "13334400000000", //HALO
@@ -265,16 +261,16 @@ export async function testExecute(
 
   // await testPairWithdrawLiquidity(
   //   juno,
-  //   apTeam,
+  //   apTeamAddr,
   //   lbpPairContract,
   //   lbpLpTokenContract,
   //   "10198039027185"
   // );
 
   // Test query for LBP Token
-  // await testQueryTokenBalance(juno, junoswapToken, apTeam.key.accAddress);
+  // await testQueryTokenBalance(juno, junoswapToken, apTeamAddr);
 
-  // await testSendTokenBalance(juno, junoswapToken, apTeam);
+  // await testSendTokenBalance(juno, junoswapToken, apTeamAddr);
 
-  // await testCollectorSweep(juno, apTeam, haloCollector);
+  // await testCollectorSweep(juno, apTeamAddr, haloCollector);
 }

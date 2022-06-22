@@ -5,6 +5,18 @@ import axios from "axios";
 import { Coin } from "@cosmjs/amino";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
+import { wasm_path } from "../config/wasmPaths";
+
+export type Member = {
+  addr: string;
+  weight: number;
+};
+
+export type Actor = {
+  addr: string;
+  client: SigningCosmWasmClient;
+  wallet: DirectSecp256k1HdWallet;
+};
 
 export async function getWalletAddress(wallet: DirectSecp256k1HdWallet) {
   let [account] = await wallet.getAccounts();
@@ -123,7 +135,7 @@ export async function migrateContract(
 // Wrapper Function:
 // Stores wasm, gets new code, and migrates contract 
 //---------------------------------------------------
-async function storeAndMigrateContract(
+export async function storeAndMigrateContract(
   juno: SigningCosmWasmClient,
   apTeam: string,
   contract: string,
@@ -131,11 +143,10 @@ async function storeAndMigrateContract(
   msg = {}
 ): Promise<void> {
   process.stdout.write(`Uploading ${wasmFilename} Wasm`);
-  const path = path.resolve(__dirname, `${wasm_path.core}/${wasmFilename}`);
-  const codeId = await storeCode(juno, apTeam, path);
+  const codeId = await storeCode(juno, apTeam, `${wasm_path.core}/${wasmFilename}`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write(`Migrate ${wasmFilename} contract`);
-  const result = await migrate(juno, apTeam, contract, codeId, msg);
+  const result = await migrateContract(juno, apTeam, contract, codeId, msg);
   console.log(chalk.green(" Done!"));
 }

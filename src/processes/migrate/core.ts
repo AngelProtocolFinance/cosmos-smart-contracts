@@ -53,7 +53,7 @@ async function migrateVaults(
       () =>
         new Promise(async (resolve, reject) => {
           try {
-            await migrate(juno, apTeam, vault, codeId, {});
+            await migrateContract(juno, apTeam, vault, codeId, {});
             console.log(chalk.green(`anchorVault #${id++} - Done!`));
             resolve();
           } catch (e) {
@@ -106,7 +106,7 @@ async function migrateExistingAccounts(
       () =>
         new Promise(async (resolve, reject) => {
           try {
-            await migrate(juno, apTeam, endow[0], codeId, endow[1]);
+            await migrateContract(juno, apTeam, endow[0], codeId, endow[1]);
             console.log(chalk.green(`Endowment ${endow[0]}`));
             resolve();
           } catch (e) {

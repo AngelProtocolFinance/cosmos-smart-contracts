@@ -24,7 +24,8 @@
       "street_address": "Portland",
       "charity_navigator_rating": "",
       "annual_revenue": "Under $100k",
-      "average_annual_budget": ""
+      "average_annual_budget": "",
+      "kyc_donors_only": false
     }
   ]
 }

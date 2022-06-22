@@ -1,5 +1,5 @@
 // -------------------------------------------------------------------------------------
-// TestNet(Bombay-12) test-suite
+// TestNet test-suite
 // -------------------------------------------------------------------------------------
 import { GasPrice } from "@cosmjs/stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
@@ -31,6 +31,17 @@ let charity2: DirectSecp256k1HdWallet;
 let charity3: DirectSecp256k1HdWallet;
 let pleb: DirectSecp256k1HdWallet;
 let tca: DirectSecp256k1HdWallet;
+
+// wallet addresses
+let apTeamAccount: string;
+let apTeam2Account: string;
+let apTeam3Account: string;
+let apTreasuryAccount: string;
+let charity1Account: string;
+let charity2Account: string;
+let charity3Account: string;
+let plebAccount: string;
+let tcaAccount: string;
 
 // Core contracts
 let registrar: string;
@@ -78,15 +89,15 @@ async function initialize() {
   pleb = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.pleb, { prefix: "juno" });
   tca = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.tca, { prefix: "juno" });
 
-  const apTeamAccount = await getWalletAddress(apTeam);
-  const apTeam2Account = await getWalletAddress(apTeam2);
-  const apTeam3Account = await getWalletAddress(apTeam3);
-  const apTreasuryAccount = await getWalletAddress(apTreasury);
-  const charity1Account = await getWalletAddress(charity1);
-  const charity2Account = await getWalletAddress(charity2);
-  const charity3Account = await getWalletAddress(charity3);
-  const plebAccount = await getWalletAddress(pleb);
-  const tcaAccount = await getWalletAddress(tca);
+  apTeamAccount = await getWalletAddress(apTeam);
+  apTeam2Account = await getWalletAddress(apTeam2);
+  apTeam3Account = await getWalletAddress(apTeam3);
+  apTreasuryAccount = await getWalletAddress(apTreasury);
+  charity1Account = await getWalletAddress(charity1);
+  charity2Account = await getWalletAddress(charity2);
+  charity3Account = await getWalletAddress(charity3);
+  plebAccount = await getWalletAddress(pleb);
+  tcaAccount = await getWalletAddress(tca);
 
   console.log(`Using ${chalk.cyan(apTeamAccount)} as Angel Team`);
   console.log(`Using ${chalk.cyan(apTeam2Account)} as Angel Team #2`);
@@ -157,7 +168,7 @@ async function initialize() {
 // setup contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupCore(): Promise<void> {
-  console.log(chalk.blue("\nTestNet uno-3"));
+  console.log(chalk.blue(`\nTestNet ${config.networkInfo.chainId}`));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -316,7 +327,7 @@ export async function startTests(): Promise<void> {
 
   // Test queries
   await testExecute(
-    juno,
+    config,
     apTeam,
     apTeam2,
     apTeam3,
@@ -325,6 +336,15 @@ export async function startTests(): Promise<void> {
     charity3,
     pleb,
     tca,
+    apTeamAccount,
+    apTeam2Account,
+    apTeam3Account,
+    apTreasuryAccount,
+    charity1Account,
+    charity2Account,
+    charity3Account,
+    plebAccount,
+    tcaAccount,
     registrar,
     indexFund,
     vault1,

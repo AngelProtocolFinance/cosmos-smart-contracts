@@ -1,26 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import * as path from "path";
 import chalk from "chalk";
-import * as chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { LcdClient, MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
-import { sendTransaction, storeCode, instantiateContract } from "../../../utils/helpers";
+
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
+
 import * as mainNet from "./charities";
+import { 
+  sendTransaction, 
+  storeCode, 
+  instantiateContract, 
+  getWalletAddress, 
+  Member 
+} from "../../../utils/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
-
-chai.use(chaiAsPromised);
-
-export type Member = {
-  addr: string;
-  weight: number;
-};
 
 // -------------------------------------------------------------------------------------
 // Variables
 // -------------------------------------------------------------------------------------
 
-let juno: LcdClient;
-let apTeam: Wallet;
+let juno: SigningCosmWasmClient;
+let apTeam: string;
 let registrar: string;
 let cw4GrpOwners: string;
 let cw4GrpApTeam: string;
@@ -28,14 +27,14 @@ let cw3GuardianAngels: string;
 let cw3ApTeam: string;
 let indexFund: string;
 let anchorVault: string;
+
 //----------------------------------------------------------------------------------------
 // Setup Contracts for MainNet
 //----------------------------------------------------------------------------------------
 
 export async function setupCore(
-  _juno: LcdClient,
-  _apTeam: Wallet,
-  _anchorMoneyMarket: string,
+  _juno: SigningCosmWasmClient,
+  _apTeam: string,
   treasury_address: string,
   members: Member[],
   tca_members: string[],
@@ -55,7 +54,6 @@ export async function setupCore(
   // Initialize variables
   juno = _juno;
   apTeam = _apTeam;
-  anchorMoneyMarket = _anchorMoneyMarket;
 
   await setup(
     treasury_address,
@@ -149,28 +147,16 @@ async function setup(
       default_vault: undefined,
     }
   );
-  registrar = registrarResult.logs[0].events
-    .find((event) => {
-      return event.type == "instantiate";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "_contract_address";
-    })?.value as string;
+  registrar = registrarResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${registrar}`);
 
   // CW4 AP Team Group
   process.stdout.write("Instantiating CW4 AP Team Group contract");
   const cw4GrpApTeamResult = await instantiateContract(juno, apTeam, apTeam, cw4Group, {
-    admin: apTeam.key.accAddress,
+    admin: apTeam,
     members: members,
   });
-  cw4GrpApTeam = cw4GrpApTeamResult.logs[0].events
-    .find((event) => {
-      return event.type == "instantiate";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "_contract_address";
-    })?.value as string;
+  cw4GrpApTeam = cw4GrpApTeamResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpApTeam}`);
 
   // CW3 AP Team MultiSig
@@ -186,27 +172,19 @@ async function setup(
       max_voting_period: { height: max_voting_period_height },
     }
   );
-  cw3ApTeam = cw3ApTeamResult.logs[0].events
-    .find((event) => {
-      return event.type == "instantiate";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "_contract_address";
-    })?.value as string;
+  cw3ApTeam = cw3ApTeamResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw3ApTeam}`);
 
   // Setup AP Team C3 to be the admin to it's C4 Group
   process.stdout.write(
     "AddHook & UpdateAdmin on AP Team CW4 Group to point to AP Team C3"
   );
-  await sendTransaction(juno, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, cw4GrpApTeam, {
-      add_hook: { addr: cw3ApTeam },
-    }),
-    new MsgExecuteContract(apTeam.key.accAddress, cw4GrpApTeam, {
-      update_admin: { admin: cw3ApTeam },
-    }),
-  ]);
+  await sendTransaction(juno, apTeam, cw4GrpApTeam, {
+    add_hook: { addr: cw3ApTeam },
+  });
+  await sendTransaction(juno, apTeam, cw4GrpApTeam, {
+    update_admin: { admin: cw3ApTeam },
+  });
   console.log(chalk.green(" Done!"));
 
   // Index Fund
@@ -216,13 +194,7 @@ async function setup(
     fund_rotation: fund_rotation,
     funding_goal: funding_goal,
   });
-  indexFund = fundResult.logs[0].events
-    .find((event) => {
-      return event.type == "instantiate";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "_contract_address";
-    })?.value as string;
+  indexFund = fundResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
 
   // Anchor Vault
@@ -236,13 +208,7 @@ async function setup(
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
   });
-  anchorVault = vaultResult1.logs[0].events
-    .find((event) => {
-      return event.type == "instantiate";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "_contract_address";
-    })?.value as string;
+  anchorVault = vaultResult1.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault}`);
 
   // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
@@ -251,28 +217,24 @@ async function setup(
     "Set default vault in Registrar (for newly created Endowments) as Anchor Vault"
   );
   process.stdout.write("Update Registrar with the Address of the Index Fund contract");
-  await sendTransaction(juno, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      update_config: {
-        default_vault: anchorVault,
-        index_fund_contract: indexFund,
-      },
-    }),
-    new MsgExecuteContract(apTeam.key.accAddress, registrar, {
-      vault_update_status: {
-        vault_addr: anchorVault,
-        approved: true,
-      },
-    }),
-  ]);
+  await sendTransaction(juno, apTeam, registrar, {
+    update_config: {
+      default_vault: anchorVault,
+      index_fund_contract: indexFund,
+    },
+  });
+  await sendTransaction(juno, apTeam, registrar, {
+    vault_update_status: {
+      vault_addr: anchorVault,
+      approved: true,
+    },
+  });
   console.log(chalk.green(" Done!"));
 
   // Add confirmed TCA Members to the Index Fund SCs approved list
   process.stdout.write("Add confirmed TCA Member to allowed list");
-  await sendTransaction(juno, apTeam, [
-    new MsgExecuteContract(apTeam.key.accAddress, indexFund, {
-      update_tca_list: { new_list: tca_members },
-    }),
-  ]);
+  await sendTransaction(juno, apTeam, indexFund, {
+    update_tca_list: { new_list: tca_members },
+  });
   console.log(chalk.green(" Done!"));
 }

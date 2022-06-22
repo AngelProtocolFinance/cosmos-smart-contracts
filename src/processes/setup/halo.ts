@@ -198,7 +198,7 @@ async function setupAirdrop(
 
   process.stdout.write("Instantiating airdrop contract");
   const airdropResult = await instantiateContract(juno, apTeam, apTeam, airdropCodeId, {
-    owner: apTeam.key.accAddress,
+    owner: apTeam,
     halo_token: haloTokenContract,
   });
   const airdropContractAddr = airdropResult.logs[0].events
@@ -397,7 +397,7 @@ async function setupVesting(
 
   process.stdout.write("Instantiating vesting contract");
   const vestingResult = await instantiateContract(juno, apTeam, apTeam, vestingCodeId, {
-    owner: apTeam.key.accAddress,
+    owner: apTeam,
     halo_token: haloTokenContract,
     genesis_time,
   });

@@ -30,10 +30,7 @@ export async function testDonorSendsToIndexFund(
 
   await expect(
     sendTransactionWithFunds(juno, pleb, indexFund, {
-        deposit: {
-          fund_id,
-          split,
-        },
+        deposit: { fund_id, split },
       },
       [{ denom: "ujuno", amount }]
     )

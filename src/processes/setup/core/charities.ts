@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import chalk from "chalk";
-import * as chai from "chai";
-import chaiAsPromised from "chai-as-promised";
-import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction } from "../../../utils/helpers";
-import jsonData from "./charity_list.json";
 import fs from "fs";
 
-chai.use(chaiAsPromised);
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+
+import { sendTransaction } from "../../../utils/helpers";
+import jsonData from "./charity_list.json";
 
 type Charity = {
   endowment_address: string;
@@ -34,10 +32,11 @@ type Charity = {
   charity_navigator_rating: string;
   annual_revenue: string;
   average_annual_budget: string;
+  kyc_donors_only: boolean;
 };
 
 let juno: SigningCosmWasmClient;
-let apTeam: Wallet;
+let apTeam: string;
 let registrar: string;
 let indexFund: string;
 let charities: Charity[];
@@ -118,9 +117,11 @@ async function createEndowment(charity: Charity): Promise<void> {
         annual_revenue: charity.annual_revenue,
         charity_navigator_rating: charity.charity_navigator_rating,
         endow_type: "Charity",
+        cw4_members: [{ addr: charity.charity_owner, weight: 1 }],
+        kyc_donors_only: charity.kyc_donors_only,
       },
-    }),
-  ]);
+    }
+  });
   const endowmentContract = charityResult.logs[0].events
     .find((event) => {
       return event.type == "instantiate";
@@ -138,14 +139,32 @@ async function createEndowment(charity: Charity): Promise<void> {
 export async function approveEndowments(): Promise<void> {
   // AP Team approves newly created endowments
   process.stdout.write("AP Team approves all verified endowments");
-  const msgs: Msg[] = endowmentContracts.map((endowment) => {
-    return await sendTransaction(juno, apTeam, registrar, {
-      update_endowment_status: {
-        endowment_addr: endowment,
-        status: 1,
-        beneficiary: undefined,
-      },
-    });
+  let prom = Promise.resolve();
+  for (let i = 0; i < endowmentContracts.length; i++) {
+    prom = prom.then(
+      () => 
+        new Promise(async (resolve, reject) => {
+          try {
+            await approveEndowment(endowmentContracts[i]);
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        })
+    );
+  }
+  await prom;
+}
+
+async function approveEndowment(endowment: string): Promise<void> {
+  process.stdout.write(`Approving Endowment: ${endowment}`);
+  await sendTransaction(juno, apTeam, registrar, {
+    update_endowment_status: {
+      endowment_addr: endowment,
+      status: 1,
+      beneficiary: undefined,
+    },
+  });
   console.log(chalk.green(" Done!"));
 }
 

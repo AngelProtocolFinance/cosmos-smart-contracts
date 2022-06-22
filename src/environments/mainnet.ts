@@ -1,5 +1,5 @@
 // -------------------------------------------------------------------------------------
-// MainNet(Columbus-5) test-suite
+// MainNet test-suite
 // -------------------------------------------------------------------------------------
 import { GasPrice } from "@cosmjs/stargate";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
@@ -7,14 +7,14 @@ import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
 import chalk from "chalk";
 import { mainnet as config } from "../config/constants";
-import { datetimeStringToUTC, getWalletAddress } from "../utils/helpers";
+import { datetimeStringToUTC, getWalletAddress, Member } from "../utils/helpers";
 
-import { migrateHalo } from "../processes/migrate/halo";
 import { migrateCore } from "../processes/migrate/core";
+// import { migrateHalo } from "../processes/migrate/halo";
 
-import { setupCore, Member } from "../processes/setup/core/mainnet";
-import { setupJunoSwap } from "../processes/setup/junoswap/realnet";
-import { setupHalo } from "../processes/setup/halo";
+import { setupCore } from "../processes/setup/core/mainnet";
+// import { setupJunoSwap } from "../processes/setup/junoswap/realnet";
+// import { setupHalo } from "../processes/setup/halo";
 
 import { testExecute } from "../processes/tests/mainnet";
 
@@ -23,6 +23,10 @@ import { testExecute } from "../processes/tests/mainnet";
 // -------------------------------------------------------------------------------------
 let juno: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;
+
+// wallet addresses
+let apTeamAccount: string;
+let apTreasuryAccount: string;
 
 let registrar: string;
 let cw4GrpOwners: string;
@@ -61,11 +65,10 @@ let haloVesting: string;
 // -------------------------------------------------------------------------------------
 async function initialize() {
   apTeam = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTeam, { prefix: "juno" });
-  apTreasury = config.mnemonicKeys.apTeam;
+  apTeamAccount = await getWalletAddress(apTeam);
+  // mainnet config for AP Treasury should hold the wallet address (not seed phrase)
+  apTreasuryAccount = config.mnemonicKeys.apTeam;
 
-  const apTeamAccount = await getWalletAddress(apTeam);
-  const apTreasuryAccount = await getWalletAddress(apTreasury);
-  
   console.log(`Using ${chalk.cyan(apTeamAccount)} as Angel Team`);
   console.log(`Using ${chalk.cyan(apTreasuryAccount)} as Angel Protocol Treasury`);
 
@@ -115,6 +118,9 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(haloGovHodler)} as HALO gov hodler`);
   console.log(`Using ${chalk.cyan(haloStaking)} as HALO staking`);
   console.log(`Using ${chalk.cyan(haloVesting)} as HALO vesting`);
+
+  // setup client connection to the JUNO network
+  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString("0.025ujunox") });
 }
 
 // -------------------------------------------------------------------------------------
@@ -129,7 +135,7 @@ export async function startSetupCore(): Promise<void> {
 
   // Setup contracts
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
-  await setupCore(juno, apTeam, apTreasury, members, tcaMembers, {
+  await setupCore(juno, apTeamAccount, apTreasuryAccount, members, tcaMembers, {
     tax_rate: "0.2", // tax rate
     threshold_absolute_percentage: "0.50", // threshold absolute percentage
     max_voting_period_height: 1000, // max voting period height
@@ -157,7 +163,7 @@ export async function startSetupCore(): Promise<void> {
 //   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
 //   await setupJunoSwap(
 //     juno,
-//     apTeam,
+//     apTeamAccount,
 //     junoswapTokenCode,
 //     junoswapFactory,
 //     junoswapInitialHaloSupply,
@@ -180,7 +186,7 @@ export async function startSetupCore(): Promise<void> {
 //   console.log(chalk.yellow("\nStep2. Halo Contracts"));
 //   await setupHalo(
 //     juno,
-//     apTeam,
+//     apTeamAccount,
 //     registrar,
 //     junoswapHaloTokenContract, // halo junoswap token contract
 //     junoswapFactory,
@@ -218,9 +224,7 @@ export async function startMigrateCore(): Promise<void> {
     registrar,
     indexFund,
     cw4GrpApTeam,
-    cw4GrpOwners,
     cw3ApTeam,
-    cw3GuardianAngels,
     [anchorVault],
     endowmentContracts
   );
@@ -240,7 +244,7 @@ export async function startMigrateCore(): Promise<void> {
 //   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
 //   await migrateHalo(
 //     juno,
-//     apTeam,
+//     apTeamAccount,
 //     haloAirdrop,
 //     haloCollector,
 //     haloCommunity,
@@ -256,7 +260,7 @@ export async function startMigrateCore(): Promise<void> {
 // start test
 // -------------------------------------------------------------------------------------
 export async function startTests(): Promise<void> {
-  console.log(chalk.blue("\nMainNet Columbus-5"));
+  console.log(chalk.blue(`\nMainNet ${config.networkInfo.chainId}`));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -266,6 +270,7 @@ export async function startTests(): Promise<void> {
   await testExecute(
     juno,
     apTeam,
+    apTeamAccount,
     registrar,
     indexFund,
     anchorVault,

@@ -25,7 +25,7 @@ export async function setupJunoSwap(
     decimals: 6,
     initial_balances: [
       {
-        address: apTeam.key.accAddress,
+        address: apTeam,
         amount: initial_halo_supply,
       },
     ],
