@@ -3,6 +3,7 @@ use crate::state::{
     vault_read, vault_store, CONFIG,
 };
 use angel_core::errors::core::ContractError;
+use angel_core::messages::accounts::{DaoCw20TokenConfig, DaoSetupOption};
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
@@ -232,6 +233,12 @@ pub fn update_config(
         Some(share) => share,
         None => config.collector_share,
     };
+
+    config.swap_factory = match msg.swap_factory {
+        Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
+        None => config.swap_factory,
+    };
+
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::new().add_attribute("action", "update_config"))
@@ -263,7 +270,7 @@ pub fn create_endowment(
             .filter(|e| e.status.to_string() == "Approved")
             .collect();
 
-        if endowments.len() > 0 {
+        if !endowments.is_empty() {
             parent = Some(info.sender);
         }
     };
@@ -276,6 +283,7 @@ pub fn create_endowment(
             owner_sc: config.owner.to_string(),
             registrar_contract: env.contract.address.to_string(),
             dao: msg.dao,
+            dao_setup_option: msg.dao_setup_option,
             donation_match: msg.donation_match,
             owner: msg.owner,
             name: msg.name,
@@ -288,7 +296,6 @@ pub fn create_endowment(
             split_max: msg.split_max.unwrap_or(config.split_to_liquid.max),
             split_min: msg.split_min.unwrap_or(config.split_to_liquid.min),
             split_default: msg.split_default.unwrap_or(config.split_to_liquid.default),
-            curve_type: msg.curve_type,
             beneficiary: msg.beneficiary,
             profile: msg.profile,
             cw4_members: msg.cw4_members,
@@ -456,14 +463,14 @@ pub fn new_accounts_reply(
                         3 => Some(Tier::Level3),
                         _ => None,
                     },
-                    un_sdg: Some(endowment_un_sdg.clone()),
+                    un_sdg: Some(endowment_un_sdg),
                     endow_type: match endowment_type.as_str() {
                         "charity" => Some(EndowmentType::Charity),
                         "normal" => Some(EndowmentType::Normal),
                         _ => unimplemented!(),
                     },
-                    logo: Some(endowment_logo.clone()),
-                    image: Some(endowment_image.clone()),
+                    logo: Some(endowment_logo),
+                    image: Some(endowment_image),
                 },
             )?;
             Ok(Response::default().add_attributes(vec![

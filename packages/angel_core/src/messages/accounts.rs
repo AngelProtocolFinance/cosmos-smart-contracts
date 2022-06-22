@@ -19,8 +19,8 @@ pub struct InstantiateMsg {
     pub owner_sc: String,
     pub registrar_contract: String,
     pub dao: bool,
+    pub dao_setup_option: DaoSetupOption,
     pub donation_match: bool,
-    pub curve_type: Option<CurveType>,
     pub owner: String,       // address that originally setup the endowment account
     pub name: String,        // name of the Charity Endowment
     pub description: String, // description of the Charity Endowment
@@ -46,6 +46,20 @@ pub struct InstantiateMsg {
     pub settings_controller: Option<SettingsController>,
     pub parent: Option<Addr>,
     pub kyc_donors_only: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DaoSetupOption {
+    ExistingCw20Token(String),          // Option1: Existing cw20 token
+    SetupCw20Token(DaoCw20TokenConfig), // Option2: Create new "cw20-base" token with "initial-supply"
+    SetupBondCurveToken(CurveType),     // Option3: Create new "bonding-curve" token
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct DaoCw20TokenConfig {
+    pub code_id: u64,
+    pub initial_supply: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -102,6 +116,10 @@ pub enum ExecuteMsg {
     },
     // AUM harvest
     HarvestAum {},
+    // Set up dao token for "Endowment"
+    SetupDaoToken {
+        option: DaoSetupOption,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

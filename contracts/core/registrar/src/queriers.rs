@@ -37,6 +37,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         collector_share: config.collector_share,
         charity_shares_contract: config.charity_shares_contract.map(|addr| addr.to_string()),
         accepted_tokens: config.accepted_tokens,
+        swap_factory: config.swap_factory.map(|addr| addr.to_string()),
     })
 }
 
