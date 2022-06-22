@@ -12,15 +12,17 @@ import { wasm_path } from "../../../config/wasmPaths";
 // -------------------------------------------------------------------------------------
 let juno: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;
-let apTeamAddr: string;
 let apTeam2: DirectSecp256k1HdWallet;
-let apTeam2Addr: string;
 let apTreasury: DirectSecp256k1HdWallet;
-let apTreasuryAddr: string;
 let charity1: DirectSecp256k1HdWallet;
 let charity2: DirectSecp256k1HdWallet;
 let charity3: DirectSecp256k1HdWallet;
 let tca: DirectSecp256k1HdWallet;
+
+// wallet addresses
+let apTeamAddr: string;
+let apTeam2Addr: string;
+let apTreasuryAddr: string;
 
 let registrar: string;
 let cw4GrpApTeam: string;
