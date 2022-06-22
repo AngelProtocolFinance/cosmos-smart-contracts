@@ -1,4 +1,6 @@
 use crate::executers;
+use crate::executers::setup_dao_token;
+use crate::executers::setup_dao_token_messages;
 use crate::queriers;
 use crate::state::OldConfig;
 use crate::state::PROFILE;
@@ -31,7 +33,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[entry_point]
 pub fn instantiate(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
@@ -71,7 +73,7 @@ pub fn instantiate(
         }))?;
 
     let default_vault = match registrar_config.default_vault {
-        Some(addr) => addr,
+        Some(ref addr) => addr.to_string(),
         None => return Err(ContractError::ContractNotConfigured {}),
     };
     ENDOWMENT.save(
@@ -155,86 +157,14 @@ pub fn instantiate(
 
     // check if a dao needs to be setup along with subdao token contract
     if msg.dao {
-        match msg.dao_setup_option {
-            // Option #1. User can set an existing CW20 token as the DAO's Token
-            DaoSetupOption::ExistingCw20Token(contract_addr) => {
-                // Validation
-                if !registrar_config
-                    .accepted_tokens
-                    .cw20_valid(contract_addr.to_string())
-                {
-                    return Err(ContractError::NotInApprovedCoins {});
-                }
-
-                let contract_addr = deps.api.addr_validate(&contract_addr)?;
-                ENDOWMENT.update(deps.storage, |mut endow| -> StdResult<_> {
-                    endow.dao_token = Some(contract_addr);
-                    Ok(endow)
-                })?;
-            }
-
-            // Option #2. Create a basic CW20 token contract with a fixed supply
-            DaoSetupOption::SetupCw20Token(config) => {
-                // setup DAO token contract
-                res = res.add_submessage(SubMsg {
-                    id: 6,
-                    msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                        code_id: config.code_id,
-                        admin: None,
-                        label: "new endowment dao token(cw20) contract".to_string(),
-                        msg: to_binary(&cw20_base::msg::InstantiateMsg {
-                            name: "AP Endowment Dao Token".to_string(),
-                            symbol: "APEDT".to_string(),
-                            decimals: 6,
-                            initial_balances: vec![Cw20Coin {
-                                address: msg.owner.to_string(),
-                                amount: config.initial_supply,
-                            }],
-                            mint: None,
-                            marketing: None,
-                        })?,
-                        funds: vec![],
-                    }),
-                    gas_limit: None,
-                    reply_on: ReplyOn::Success,
-                })
-            }
-            // Option #3. Create a CW20 token with supply controlled by a bonding curve
-            DaoSetupOption::SetupBondCurveToken => {
-                if msg.curve_type.ne(&None) {
-                    // setup DAO token contract
-                    let halo_token = match registrar_config.halo_token.clone() {
-                        Some(addr) => addr,
-                        None => {
-                            return Err(ContractError::Std(StdError::GenericErr {
-                                msg: "HALO token address is empty".to_string(),
-                            }))
-                        }
-                    };
-                    res = res.add_submessage(SubMsg {
-                        id: 3,
-                        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                            code_id: registrar_config.subdao_token_code.unwrap(),
-                            admin: None,
-                            label: "new endowment dao token contract".to_string(),
-                            msg: to_binary(&DaoTokenInstantiateMsg {
-                                name: "AP Endowment Dao Token".to_string(), // need dynamic name
-                                symbol: "APEDT".to_string(),                // need dynamic symbol
-                                decimals: 6,
-                                reserve_denom: halo_token.to_string(),
-                                reserve_decimals: 6,
-                                curve_type: msg.curve_type.unwrap(),
-                                halo_token,
-                                unbonding_period: 7,
-                            })?,
-                            funds: vec![],
-                        }),
-                        gas_limit: None,
-                        reply_on: ReplyOn::Success,
-                    })
-                }
-            }
-        }
+        let endowment_owner = deps.api.addr_validate(&msg.owner)?;
+        let submsgs = setup_dao_token_messages(
+            deps.branch(),
+            msg.dao_setup_option,
+            &registrar_config,
+            endowment_owner,
+        )?;
+        res = res.add_submessages(submsgs);
     }
 
     // check if donation_matching_contract needs to be instantiated
@@ -391,6 +321,8 @@ pub fn execute(
         // Allows the DANO/AP Team to harvest all active vaults
         ExecuteMsg::Harvest { vault_addr } => executers::harvest(deps, env, info, vault_addr),
         ExecuteMsg::HarvestAum {} => executers::harvest_aum(deps, env, info),
+
+        ExecuteMsg::SetupDaoToken { option } => executers::setup_dao_token(deps, env, info, option),
     }
 }
 

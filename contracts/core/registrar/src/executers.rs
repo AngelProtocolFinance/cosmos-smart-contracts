@@ -290,7 +290,6 @@ pub fn create_endowment(
             split_max: msg.split_max.unwrap_or(config.split_to_liquid.max),
             split_min: msg.split_min.unwrap_or(config.split_to_liquid.min),
             split_default: msg.split_default.unwrap_or(config.split_to_liquid.default),
-            curve_type: msg.curve_type,
             beneficiary: msg.beneficiary,
             profile: msg.profile,
             cw4_members: msg.cw4_members,
