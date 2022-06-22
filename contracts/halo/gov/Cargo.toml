@@ -23,13 +23,15 @@ backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
 angel-core = { path = "../../../packages/angel_core", feature=["utils"]}
+halo-token = { path = "../../../packages/halo_token" }
+
 cosmwasm-std = "1.0.0"
 cosmwasm-storage = "1.0.0"
-cw-controllers = "0.13.2"
-cw-storage-plus = "0.13.2"
-cw-utils = "0.13.2"
+cw-controllers = "0.13.4"
+cw-storage-plus = "0.13.4"
+cw-utils = "0.13.4"
+
 cw20 = "0.13.2"
-halo-token = { path = "../../../packages/halo_token" }
 hex = "0.4"
 schemars = "0.8.10"
 serde = "1.0.137"

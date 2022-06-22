@@ -1,14 +1,17 @@
 use crate::state::{
-    endow_type_fees_write, read_registry_entries, registry_read, registry_store, vault_read,
-    vault_store, CONFIG,
+    endow_type_fees_write, read_registry_entries, read_vaults, registry_read, registry_store,
+    vault_read, vault_store, CONFIG,
 };
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentStatus, EndowmentType, YieldVault};
+use angel_core::responses::registrar::*;
+use angel_core::structs::{
+    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, Tier, YieldVault,
+};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    attr, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
-    SubMsg, SubMsgResult, WasmMsg,
+    attr, to_binary, Addr, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response,
+    StdError, StdResult, SubMsg, SubMsgResult, WasmMsg,
 };
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
@@ -176,8 +179,12 @@ pub fn update_config(
         Some(v) => Some(v),
         None => config.cw4_code,
     };
+    config.charity_shares_contract = match msg.charity_shares_contract {
+        Some(contract_addr) => Some(deps.api.addr_validate(&contract_addr)?),
+        None => config.charity_shares_contract,
+    };
     config.default_vault = match msg.default_vault {
-        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        Some(addr) => Some(deps.api.addr_validate(addr.as_str())?),
         None => config.default_vault,
     };
     config.index_fund_contract = match msg.index_fund_contract {
@@ -208,6 +215,14 @@ pub fn update_config(
     config.donation_match_charites_contract = match msg.donation_match_charites_contract {
         Some(v) => Some(deps.api.addr_validate(v.as_str())?),
         None => config.donation_match_charites_contract,
+    };
+    config.accepted_tokens = AcceptedTokens {
+        native: msg
+            .accepted_tokens_native
+            .unwrap_or(config.accepted_tokens.native),
+        cw20: msg
+            .accepted_tokens_cw20
+            .unwrap_or(config.accepted_tokens.cw20),
     };
 
     config.collector_addr = msg
@@ -267,7 +282,6 @@ pub fn create_endowment(
             description: msg.description,
             withdraw_before_maturity: msg.withdraw_before_maturity,
             maturity_time: msg.maturity_time,
-            maturity_height: msg.maturity_height,
             locked_endowment_configs: msg.locked_endowment_configs,
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries,
             whitelisted_contributors: msg.whitelisted_contributors,
@@ -288,6 +302,7 @@ pub fn create_endowment(
             aum_fee: msg.aum_fee,
             settings_controller: msg.settings_controller,
             parent,
+            kyc_donors_only: msg.kyc_donors_only,
         })?,
         funds: vec![],
     };
@@ -393,10 +408,12 @@ pub fn new_accounts_reply(
             let mut endowment_type = String::from("");
             let mut endowment_logo = String::from("");
             let mut endowment_image = String::from("");
+            let mut endowment_tier: u64 = 0;
+            let mut endowment_un_sdg: u64 = 0;
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
-                        if attrb.key == "contract_address" {
+                        if attrb.key == "_contract_address" {
                             endowment_addr = attrb.value.clone();
                         }
                         if attrb.key == "endow_name" {
@@ -414,6 +431,12 @@ pub fn new_accounts_reply(
                         if attrb.key == "endow_image" {
                             endowment_image = attrb.value.clone();
                         }
+                        if attrb.key == "endow_tier" {
+                            endowment_tier = attrb.value.clone().parse().unwrap_or(0);
+                        }
+                        if attrb.key == "endow_un_sdg" {
+                            endowment_un_sdg = attrb.value.clone().parse().unwrap_or(0);
+                        }
                     }
                 }
             }
@@ -427,8 +450,13 @@ pub fn new_accounts_reply(
                     name: Some(endowment_name.clone()),
                     owner: Some(endowment_owner.clone()),
                     status: EndowmentStatus::Inactive,
-                    tier: None,
-                    un_sdg: None,
+                    tier: match endowment_tier {
+                        1 => Some(Tier::Level1),
+                        2 => Some(Tier::Level2),
+                        3 => Some(Tier::Level3),
+                        _ => None,
+                    },
+                    un_sdg: Some(endowment_un_sdg.clone()),
                     endow_type: match endowment_type.as_str() {
                         "charity" => Some(EndowmentType::Charity),
                         "normal" => Some(EndowmentType::Normal),
@@ -441,10 +469,7 @@ pub fn new_accounts_reply(
             Ok(Response::default().add_attributes(vec![
                 attr("reply", "instantiate_endowment"),
                 attr("addr", endowment_addr),
-                attr("name", endowment_name),
                 attr("owner", endowment_owner),
-                attr("logo", endowment_logo),
-                attr("image", endowment_image),
             ]))
         }
         SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),

@@ -69,8 +69,8 @@ pub fn execute(
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         // -UST (Account) --> +Deposit Token/Yield Token (Vault)
-        ExecuteMsg::Deposit(msg) => {
-            executers::deposit_stable(deps, env, info.clone(), msg, Balance::from(info.funds))
+        ExecuteMsg::Deposit {} => {
+            executers::deposit_stable(deps, env, info.clone(), Balance::from(info.funds))
         }
         // Redeem is only called by the SC when setting up new strategies.
         // Pulls all existing strategy amounts back to Account in UST.

@@ -1,4 +1,4 @@
-use crate::structs::{EndowmentEntry, SplitDetails, VaultRate, YieldVault};
+use crate::structs::{AcceptedTokens, EndowmentEntry, SplitDetails, VaultRate, YieldVault};
 use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -25,8 +25,8 @@ pub struct EndowmentListResponse {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub version: String,
     pub owner: String,
+    pub version: String,
     pub accounts_code_id: u64,
     pub cw3_code: Option<u64>,
     pub cw4_code: Option<u64>,
@@ -45,6 +45,8 @@ pub struct ConfigResponse {
     pub donation_match_charites_contract: Option<String>,
     pub collector_addr: String,
     pub collector_share: Decimal,
+    pub charity_shares_contract: Option<String>,
+    pub accepted_tokens: AcceptedTokens,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -57,4 +59,8 @@ pub struct FeesResponse {
     pub tax_rate: Decimal,
     pub endowtype_charity: Option<Decimal>,
     pub endowtype_normal: Option<Decimal>,
+}
+
+pub struct AccTokensListResponse {
+    pub tokens: Vec<String>,
 }

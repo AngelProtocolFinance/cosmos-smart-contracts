@@ -35,6 +35,8 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
             .map(|addr| addr.to_string())
             .unwrap_or_else(|| "".to_string()),
         collector_share: config.collector_share,
+        charity_shares_contract: config.charity_shares_contract.map(|addr| addr.to_string()),
+        accepted_tokens: config.accepted_tokens,
     })
 }
 

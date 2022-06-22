@@ -1,5 +1,6 @@
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
+use cw_asset::{Asset, AssetInfoBase};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -115,16 +116,14 @@ pub struct VaultRate {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct StrategyComponent {
-    pub vault: Addr,                // Vault SC Address
-    pub locked_percentage: Decimal, // percentage of funds to invest
-    pub liquid_percentage: Decimal, // percentage of funds to invest
+    pub vault: Addr,         // Vault SC Address
+    pub percentage: Decimal, // percentage of funds to invest
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct FundingSource {
     pub vault: String,
-    pub locked: Uint128,
-    pub liquid: Uint128,
+    pub amount: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
@@ -288,7 +287,9 @@ pub struct AcceptedTokens {
 impl AcceptedTokens {
     pub fn default() -> Self {
         AcceptedTokens {
-            native: vec!["uusd".to_string()],
+            native: vec![
+                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+            ],
             cw20: vec![],
         }
     }
@@ -361,13 +362,17 @@ impl GenericBalance {
             }
         };
     }
-    pub fn get_ust(&self) -> Coin {
-        match self.native.iter().find(|t| t.denom == *"uusd") {
+    pub fn get_denom_amount(&self, denom: String) -> Asset {
+        let coin = match self.native.iter().find(|t| t.denom == *denom) {
             Some(coin) => coin.clone(),
             None => Coin {
                 amount: Uint128::zero(),
-                denom: "uusd".to_string(),
+                denom: denom.to_string(),
             },
+        };
+        Asset {
+            info: AssetInfoBase::Native(coin.denom),
+            amount: coin.amount,
         }
     }
     pub fn cw20_list(&self) -> Vec<Cw20Coin> {
@@ -380,8 +385,9 @@ impl GenericBalance {
             })
             .collect()
     }
-    pub fn get_token_amount(&self, token_address: Addr) -> Uint128 {
-        self.cw20_list()
+    pub fn get_token_amount(&self, token_address: Addr) -> Asset {
+        let amount = self
+            .cw20_list()
             .iter()
             .find(|token| token.address == token_address)
             .unwrap_or(&Cw20Coin {
@@ -389,7 +395,12 @@ impl GenericBalance {
                 address: token_address.to_string(),
             })
             .clone()
-            .amount
+            .amount;
+
+        Asset {
+            info: AssetInfoBase::Cw20(token_address),
+            amount,
+        }
     }
     pub fn add_tokens(&mut self, add: Balance) {
         match add {
@@ -478,7 +489,7 @@ pub struct TransactionRecord {
     pub sender: Addr,
     pub recipient: Option<Addr>,
     pub amount: Uint128,
-    pub denom: String,
+    pub asset_info: AssetInfoBase<Addr>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

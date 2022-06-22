@@ -1,21 +1,19 @@
 use std::str::FromStr;
 
-use crate::state::PROFILE;
-use crate::state::{CONFIG, ENDOWMENT, STATE};
+use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::cw3_multisig::InstantiateMsg as Cw3MultisigInstantiateMsg;
-use angel_core::messages::cw3_multisig::Threshold;
+use angel_core::messages::cw3_multisig::{InstantiateMsg as Cw3MultisigInstantiateMsg, Threshold};
 use angel_core::messages::donation_match::ExecuteMsg as DonationMatchExecMsg;
-use angel_core::messages::index_fund::DepositMsg as IndexFundDepositMsg;
-use angel_core::messages::index_fund::ExecuteMsg as IndexFundExecuter;
-use angel_core::messages::index_fund::QueryMsg as IndexFundQuerier;
+use angel_core::messages::index_fund::{
+    DepositMsg as IndexFundDepositMsg, ExecuteMsg as IndexFundExecuter,
+    QueryMsg as IndexFundQuerier,
+};
 use angel_core::messages::registrar::{
     ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentEntryMsg,
 };
 use angel_core::messages::vault::{
-    AccountTransferMsg, AccountWithdrawMsg, ExecuteMsg as VaultExecuteMsg,
-    QueryMsg as VaultQueryMsg,
+    AccountWithdrawMsg, ExecuteMsg as VaultExecuteMsg, QueryMsg as VaultQueryMsg,
 };
 use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
@@ -26,15 +24,16 @@ use angel_core::structs::{
     SplitDetails, StrategyComponent, Tier, TransactionRecord,
 };
 use angel_core::utils::{
-    check_splits, deposit_to_vaults, ratio_adjusted_balance, redeem_from_vaults,
+    check_splits, deposit_to_vaults, redeem_from_vaults, validate_deposit_fund,
     withdraw_from_vaults,
 };
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, DepsMut, Env, Fraction,
+    coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, DepsMut, Env, Fraction,
     MessageInfo, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult,
     Uint128, WasmMsg, WasmQuery,
 };
-use cw20::Balance;
+use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg};
+use cw_asset::{Asset, AssetInfoBase};
 use cw_utils::Duration;
 
 pub fn new_cw4_group_reply(
@@ -248,7 +247,7 @@ pub fn update_registrar(
 
 pub fn update_endowment_settings(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
@@ -331,16 +330,6 @@ pub fn update_endowment_settings(
 
     if !endowment
         .locked_endowment_configs
-        .contains(&"maturity_height".to_string())
-    {
-        endowment.maturity_height = match msg.maturity_height {
-            Some(i) => i,
-            None => endowment.maturity_height,
-        };
-    }
-
-    if !endowment
-        .locked_endowment_configs
         .contains(&"strategies".to_string())
     {
         endowment.strategies = match msg.strategies {
@@ -358,6 +347,31 @@ pub fn update_endowment_settings(
             None => endowment.rebalance,
         };
     }
+
+    // validate address strings passed
+    endowment.kyc_donors_only = msg.kyc_donors_only;
+
+    if let Some(whitelist) = msg.maturity_whitelist {
+        let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+        if endow_mature_time < env.block.time.seconds() {
+            let UpdateMaturityWhitelist { add, remove } = whitelist;
+            for addr in add {
+                let validated_addr = deps.api.addr_validate(&addr)?;
+                endowment.maturity_whitelist.push(validated_addr);
+            }
+            for addr in remove {
+                let validated_addr = deps.api.addr_validate(&addr)?;
+                let id = endowment
+                    .maturity_whitelist
+                    .iter()
+                    .position(|v| *v == validated_addr);
+                if let Some(id) = id {
+                    endowment.maturity_whitelist.swap_remove(id);
+                }
+            }
+        }
+    }
+
     ENDOWMENT.save(deps.storage, &endowment)?;
 
     Ok(Response::default())
@@ -416,9 +430,7 @@ pub fn update_strategies(
         return Err(ContractError::StrategyComponentsNotUnique {});
     };
 
-    let mut locked_percentages_sum = Decimal::zero();
-    let mut liquid_percentages_sum = Decimal::zero();
-
+    let mut percentages_sum = Decimal::zero();
     for strategy in strategies.iter() {
         let vault_config: VaultDetailResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
@@ -430,12 +442,10 @@ pub fn update_strategies(
         if !vault_config.vault.approved {
             return Err(ContractError::InvalidInputs {});
         }
-
-        locked_percentages_sum += strategy.locked_percentage;
-        liquid_percentages_sum += strategy.liquid_percentage;
+        percentages_sum += strategy.percentage;
     }
 
-    if locked_percentages_sum != Decimal::one() || liquid_percentages_sum != Decimal::one() {
+    if percentages_sum != Decimal::one() {
         return Err(ContractError::InvalidStrategyAllocation {});
     }
 
@@ -456,8 +466,7 @@ pub fn update_strategies(
     for strategy in strategies {
         new_strategies.push(StrategyComponent {
             vault: deps.api.addr_validate(&strategy.vault.clone())?,
-            locked_percentage: strategy.locked_percentage,
-            liquid_percentage: strategy.liquid_percentage,
+            percentage: strategy.percentage,
         });
     }
     endowment.strategies = new_strategies;
@@ -473,30 +482,15 @@ pub fn vault_receipt(
     env: Env,
     info: MessageInfo,
     sender_addr: Addr,
-    msg: AccountTransferMsg,
+    fund: Asset,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
     let mut state = STATE.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
 
-    // only accept max of 1 deposit coin/token per donation
-    if info.funds.len() != 1 {
-        return Err(ContractError::InvalidCoinsDeposited {});
-    }
-
-    let returned_amount: Coin = Coin {
-        denom: "uusd".to_string(),
-        amount: info
-            .funds
-            .iter()
-            .find(|c| c.denom == *"uusd")
-            .map(|c| c.amount)
-            .unwrap_or_else(Uint128::zero),
-    };
-
-    if returned_amount.amount.is_zero() {
-        return Err(ContractError::EmptyBalance {});
-    }
+    let returned_token =
+        validate_deposit_fund(deps.as_ref(), config.registrar_contract.as_str(), fund)?;
+    let returned_amount = returned_token.amount;
 
     // check that the deposit token came from an approved Vault SC
     let _vaults_rsp: VaultDetailResponse =
@@ -507,29 +501,6 @@ pub fn vault_receipt(
             })?,
         }))?;
 
-    // funds go into state balances (locked/liquid)
-    let total = msg.locked + msg.liquid;
-    if !msg.locked.is_zero() {
-        state
-            .balances
-            .locked_balance
-            .add_tokens(ratio_adjusted_balance(
-                Balance::from(vec![returned_amount.clone()]),
-                msg.locked,
-                total,
-            ));
-    }
-    if !msg.liquid.is_zero() {
-        state
-            .balances
-            .liquid_balance
-            .add_tokens(ratio_adjusted_balance(
-                Balance::from(vec![returned_amount]),
-                msg.liquid,
-                total,
-            ));
-    }
-
     let mut submessages: Vec<SubMsg> = vec![];
     match config.pending_redemptions {
         // last redemption, remove pending u64, and build deposit submsgs
@@ -537,41 +508,84 @@ pub fn vault_receipt(
             config.pending_redemptions = None;
             // normal vault receipt if closing_endowment has not been set to TRUE
             if !state.closing_endowment {
+                let asset = match returned_token.info {
+                    AssetInfoBase::Native(ref denom) => state
+                        .balances
+                        .locked_balance
+                        .get_denom_amount(denom.to_string()),
+                    AssetInfoBase::Cw20(ref contract_addr) => state
+                        .balances
+                        .locked_balance
+                        .get_token_amount(deps.api.addr_validate(&contract_addr.to_string())?),
+                };
                 submessages = deposit_to_vaults(
                     deps.as_ref(),
                     config.registrar_contract.to_string(),
-                    state.balances.locked_balance.get_ust(),
-                    state.balances.liquid_balance.get_ust(),
+                    asset,
                     &endowment.strategies,
                 )?;
-                // set UST balances available to zero
-                state
-                    .balances
-                    .locked_balance
-                    .set_token_balances(Balance::from(vec![Coin {
+
+                // set token balances available to zero for locked
+                let balance = match returned_token.info {
+                    AssetInfoBase::Native(ref denom) => Balance::from(vec![Coin {
                         amount: Uint128::zero(),
-                        denom: "uusd".to_string(),
-                    }]));
-                state
-                    .balances
-                    .liquid_balance
-                    .set_token_balances(Balance::from(vec![Coin {
+                        denom: denom.to_string(),
+                    }]),
+                    AssetInfoBase::Cw20(ref contract_addr) => Balance::Cw20(Cw20CoinVerified {
+                        address: contract_addr.clone(),
                         amount: Uint128::zero(),
-                        denom: "uusd".to_string(),
-                    }]));
+                    }),
+                };
+                state.balances.locked_balance.set_token_balances(balance);
             } else {
                 // this is a vault receipt triggered by closing an Endowment
                 // need to handle beneficiary vs index fund submsg actions taken
-                let balance_after_tax = Coin {
-                    amount: state.balances.locked_balance.get_ust().amount
-                        + state.balances.liquid_balance.get_ust().amount,
-                    denom: "uusd".to_string(),
+                let asset = match returned_token.info {
+                    AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
+                        amount: state
+                            .balances
+                            .locked_balance
+                            .get_denom_amount(denom.to_string())
+                            .amount
+                            + state
+                                .balances
+                                .liquid_balance
+                                .get_denom_amount(denom.to_string())
+                                .amount,
+                        denom: denom.to_string(),
+                    }]),
+                    AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
+                        address: contract_addr.clone(),
+                        amount: state
+                            .balances
+                            .locked_balance
+                            .get_token_amount(contract_addr.clone())
+                            .amount
+                            + state
+                                .balances
+                                .liquid_balance
+                                .get_token_amount(contract_addr)
+                                .amount,
+                    }),
                 };
                 match state.closing_beneficiary {
-                    Some(ref addr) => submessages.push(SubMsg::new(BankMsg::Send {
-                        to_address: deps.api.addr_validate(addr)?.to_string(),
-                        amount: vec![balance_after_tax],
-                    })),
+                    Some(ref addr) => match asset {
+                        Balance::Native(v) => submessages.push(SubMsg::new(BankMsg::Send {
+                            to_address: deps.api.addr_validate(addr)?.to_string(),
+                            amount: v.0,
+                        })),
+                        Balance::Cw20(v) => {
+                            submessages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                                contract_addr: v.address.to_string(),
+                                msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                                    recipient: addr.to_string(),
+                                    amount: v.amount,
+                                })
+                                .unwrap(),
+                                funds: vec![],
+                            })));
+                        }
+                    },
                     None => {
                         // Get the Index Fund SC address from the Registrar SC
                         let registrar_config: RegistrarConfigResponse =
@@ -594,21 +608,60 @@ pub fn vault_receipt(
                             }))?;
                         if !fund_list.funds.is_empty() {
                             // send funds to the first index fund in list
-                            submessages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                                contract_addr: index_fund,
-                                msg: to_binary(&IndexFundExecuter::Deposit(IndexFundDepositMsg {
-                                    fund_id: Some(fund_list.funds[0].id),
-                                    split: None,
-                                }))?,
-                                funds: vec![balance_after_tax],
-                            })))
+                            match asset {
+                                Balance::Native(v) => submessages.push(SubMsg::new(
+                                    CosmosMsg::Wasm(WasmMsg::Execute {
+                                        contract_addr: index_fund,
+                                        msg: to_binary(&IndexFundExecuter::Deposit(
+                                            IndexFundDepositMsg {
+                                                fund_id: Some(fund_list.funds[0].id),
+                                                split: None,
+                                            },
+                                        ))?,
+                                        funds: v.0,
+                                    }),
+                                )),
+                                Balance::Cw20(v) => submessages.push(SubMsg::new(CosmosMsg::Wasm(
+                                    WasmMsg::Execute {
+                                        contract_addr: v.address.to_string(),
+                                        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                                            contract: index_fund,
+                                            amount: v.amount,
+                                            msg: to_binary(&IndexFundExecuter::Deposit(
+                                                IndexFundDepositMsg {
+                                                    fund_id: Some(fund_list.funds[0].id),
+                                                    split: None,
+                                                },
+                                            ))
+                                            .unwrap(),
+                                        })
+                                        .unwrap(),
+                                        funds: vec![],
+                                    },
+                                ))),
+                            }
                         } else {
                             // Orphaned Endowment (ie. no parent index fund)
                             // send funds to the DANO treasury
-                            submessages.push(SubMsg::new(BankMsg::Send {
-                                to_address: registrar_config.treasury,
-                                amount: vec![balance_after_tax],
-                            }))
+                            match asset {
+                                Balance::Native(v) => {
+                                    submessages.push(SubMsg::new(BankMsg::Send {
+                                        to_address: registrar_config.treasury,
+                                        amount: v.0,
+                                    }))
+                                }
+                                Balance::Cw20(v) => submessages.push(SubMsg::new(CosmosMsg::Wasm(
+                                    WasmMsg::Execute {
+                                        contract_addr: v.address.to_string(),
+                                        msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                                            recipient: registrar_config.treasury,
+                                            amount: v.amount,
+                                        })
+                                        .unwrap(),
+                                        funds: vec![],
+                                    },
+                                ))),
+                            }
                         }
                     }
                 }
@@ -631,9 +684,10 @@ pub fn vault_receipt(
 pub fn deposit(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     sender_addr: Addr,
     msg: DepositMsg,
+    fund: Asset,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
@@ -652,24 +706,10 @@ pub fn deposit(
         return Err(ContractError::InvalidSplit {});
     }
 
-    // only accept max of 1 deposit coin/token per donation
-    if info.funds.len() != 1 {
-        return Err(ContractError::InvalidCoinsDeposited {});
-    }
-
-    let mut deposit_amount: Coin = Coin {
-        denom: "uusd".to_string(),
-        amount: info
-            .funds
-            .iter()
-            .find(|c| c.denom == *"uusd")
-            .map(|c| c.amount)
-            .unwrap_or_else(Uint128::zero),
-    };
-
-    if deposit_amount.amount.is_zero() {
-        return Err(ContractError::EmptyBalance {});
-    }
+    // Check the token with "accepted_tokens"
+    let mut deposit_token =
+        validate_deposit_fund(deps.as_ref(), config.registrar_contract.as_str(), fund)?;
+    let mut deposit_amount = deposit_token.amount;
 
     // Deduct the `deposit_fee` from `deposit_amount` if configured.
     // Send the `deposit_fee` to `payout_address` if any.
@@ -680,23 +720,37 @@ pub fn deposit(
             active,
         } = endowment.deposit_fee.unwrap();
         if active {
-            let deposit_fee: Coin = Coin {
-                denom: "uusd".to_string(),
-                amount: deposit_amount
-                    .amount
-                    .multiply_ratio(fee_percentage.numerator(), fee_percentage.denominator()),
-            };
-            deposit_amount.amount -= deposit_fee.amount;
+            let deposit_fee_amount = deposit_amount
+                .multiply_ratio(fee_percentage.numerator(), fee_percentage.denominator());
 
-            res = res.add_message(CosmosMsg::Bank(BankMsg::Send {
-                to_address: payout_address.to_string(),
-                amount: vec![deposit_fee],
-            }));
+            deposit_amount -= deposit_fee_amount;
+            deposit_token.amount -= deposit_fee_amount;
+
+            match deposit_token.info {
+                AssetInfoBase::Native(ref token) => {
+                    let deposit_fee: Coin = Coin {
+                        denom: token.to_string(),
+                        amount: deposit_fee_amount,
+                    };
+                    res = res.add_message(CosmosMsg::Bank(BankMsg::Send {
+                        to_address: payout_address.to_string(),
+                        amount: vec![deposit_fee],
+                    }));
+                }
+                AssetInfoBase::Cw20(ref contract_addr) => {
+                    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: contract_addr.to_string(),
+                        msg: to_binary(&Cw20ExecuteMsg::Transfer {
+                            recipient: payout_address.to_string(),
+                            amount: deposit_fee_amount,
+                        })
+                        .unwrap(),
+                        funds: vec![],
+                    }));
+                }
+            }
         }
     }
-
-    let mut locked_split = msg.locked_percentage;
-    let mut liquid_split = msg.liquid_percentage;
 
     // Get the split to liquid parameters set in the Registrar SC
     let registrar_config: RegistrarConfigResponse =
@@ -704,46 +758,60 @@ pub fn deposit(
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
-    let registrar_split_configs: SplitDetails = registrar_config.split_to_liquid;
 
+    let mut locked_split = msg.locked_percentage;
+    let mut liquid_split = msg.liquid_percentage;
+
+    let registrar_split_configs: SplitDetails = registrar_config.split_to_liquid;
     // check split passed by the donor against the Registrar SC split params
     let index_fund = match registrar_config.index_fund {
         Some(addr) => addr,
         None => return Err(ContractError::ContractNotConfigured {}),
     };
-    if sender_addr != index_fund {
+    if sender_addr.to_string() != index_fund {
         let new_splits = check_splits(registrar_split_configs, locked_split, liquid_split);
         locked_split = new_splits.0;
         liquid_split = new_splits.1;
     }
 
-    let mut ust_locked = Coin {
-        amount: deposit_amount.amount * locked_split,
-        denom: "uusd".to_string(),
+    let mut locked_amount = Asset {
+        info: deposit_token.info.clone(),
+        amount: deposit_amount * locked_split,
     };
-    let ust_liquid = Coin {
-        amount: deposit_amount.amount * liquid_split,
-        denom: "uusd".to_string(),
+    let liquid_amount = Asset {
+        info: deposit_token.info.clone(),
+        amount: deposit_amount * liquid_split,
     };
 
     // update total donations recieved for a charity
     let mut state = STATE.load(deps.storage)?;
-    let endowment = ENDOWMENT.load(deps.storage)?;
-    state.donations_received += deposit_amount.amount;
-
+    state.donations_received += deposit_amount;
+    // note the tx in records
     let tx_record = TransactionRecord {
         block: env.block.height,
         sender: sender_addr.clone(),
         recipient: None,
-        amount: deposit_amount.amount,
-        denom: deposit_amount.denom,
+        amount: deposit_amount,
+        asset_info: deposit_token.info,
     };
     state.transactions.push(tx_record);
-    STATE.save(deps.storage, &state)?;
+    // increase the liquid balance by donation (liquid) amount
+    let liquid_balance = match liquid_amount.info {
+        AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
+            denom: denom.to_string(),
+            amount: liquid_amount.amount,
+        }]),
+        AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
+            address: contract_addr.clone(),
+            amount: liquid_amount.amount,
+        }),
+    };
+    state.balances.liquid_balance.add_tokens(liquid_balance);
 
     // check if the donation matching is possible
     let mut donor_match_messages: Vec<SubMsg> = vec![];
-    if !ust_locked.amount.is_zero() && endowment.donation_match && endowment.dao_token.is_some() {
+    if !locked_amount.amount.is_zero() && endowment.donation_match && endowment.dao_token.is_some()
+    {
         // get the correct donation match contract to use
         let donation_match_contract = match profile.endow_type {
             EndowmentType::Normal => match endowment.donation_matching_contract {
@@ -755,43 +823,84 @@ pub fn deposit(
                 None => return Err(ContractError::AccountDoesNotExist {}),
             },
         };
-        // 10% of "ust_locked" amount
-        let donation_match_amount = ust_locked.amount.multiply_ratio(100_u128, 1000_u128);
-        ust_locked = Coin {
-            amount: ust_locked.amount - donation_match_amount,
-            denom: "uusd".to_string(),
-        };
+        // 10% of "locked_amount" amount
+        let donation_match_amount = locked_amount.amount.multiply_ratio(100_u128, 1000_u128);
+        locked_amount.amount -= donation_match_amount;
 
         // build "donor_match" message for donation matching
-        donor_match_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: donation_match_contract.to_string(),
-            msg: to_binary(&DonationMatchExecMsg::DonorMatch {
-                amount: donation_match_amount,
-                donor: sender_addr,
-                token: endowment.dao_token.unwrap(),
-            })?,
-            funds: vec![Coin {
-                amount: donation_match_amount,
-                denom: "uusd".to_string(),
-            }],
-        })));
+        match locked_amount.info {
+            AssetInfoBase::Native(ref token) => {
+                donor_match_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: donation_match_contract.to_string(),
+                    msg: to_binary(&DonationMatchExecMsg::DonorMatch {
+                        amount: donation_match_amount,
+                        donor: sender_addr.clone(),
+                        token: endowment.dao_token.unwrap(),
+                    })?,
+                    funds: vec![Coin {
+                        amount: donation_match_amount,
+                        denom: token.to_string(),
+                    }],
+                })));
+            }
+            AssetInfoBase::Cw20(ref contract_addr) => {
+                // IMPORTANT: This part should be done after the
+                //            "donation-match" contract implements the `receive_cw20`
+                //            The reason is that we should use the `Send/Receive` entry
+                //            of CW20 token to send the token & trigger the action in target contract
+
+                // donor_match_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                //     contract_addr: donation_match_contract.to_string(),
+                //     msg: to_binary(&DonationMatchExecMsg::DonorMatch {
+                //         amount: donation_match_amount,
+                //         donor: sender_addr,
+                //         token: endowment.dao_token.unwrap(),
+                //     })?,
+                //     funds: vec![Coin {
+                //         amount: donation_match_amount,
+                //         denom: token.to_string(),
+                //     }],
+                // })));
+            }
+        }
     };
 
-    // build deposit messages for each of the sources/amounts
-    let deposit_messages = deposit_to_vaults(
-        deps.as_ref(),
-        config.registrar_contract.to_string(),
-        ust_locked,
-        ust_liquid,
-        &endowment.strategies,
-    )?;
+    let deposit_messages;
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    // check endowment strategies set.
+    // if empty: hold locked funds until a vault is set
+    if endowment.strategies.is_empty() {
+        deposit_messages = vec![];
+        // increase the liquid balance by donation (liquid) amount
+        let locked_balance = match locked_amount.info {
+            AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
+                denom: denom.to_string(),
+                amount: locked_amount.amount,
+            }]),
+            AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
+                address: contract_addr.clone(),
+                amount: locked_amount.amount,
+            }),
+        };
+        state.balances.locked_balance.add_tokens(locked_balance);
+    } else {
+        // if not empty: build deposit messages for each of the sources/amounts
+        deposit_messages = deposit_to_vaults(
+            deps.as_ref(),
+            config.registrar_contract.to_string(),
+            locked_amount,
+            &endowment.strategies,
+        )?;
+    }
+
+    STATE.save(deps.storage, &state)?;
 
     Ok(res
         .add_submessages(deposit_messages)
         .add_submessages(donor_match_messages)
         .add_attribute("action", "account_deposit")
-        .add_attribute("sender", info.sender.to_string())
-        .add_attribute("deposit_amount", deposit_amount.amount.to_string()))
+        .add_attribute("sender", sender_addr)
+        .add_attribute("deposit_amount", deposit_amount.to_string()))
 }
 
 pub fn withdraw(
@@ -800,13 +909,25 @@ pub fn withdraw(
     info: MessageInfo,
     sources: Vec<FundingSource>,
     beneficiary: String,
+    asset_info: AssetInfoBase<Addr>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
 
-    // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner {
-        return Err(ContractError::Unauthorized {});
+    // Check that sender is able to "withdraw"
+    let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+    if endow_mature_time < env.block.time.seconds() {
+        // check that sender is the owner or the beneficiary
+        if info.sender != endowment.owner {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        // check that sender is one of "maturity_whitelist" (if exist)
+        if endowment.maturity_whitelist.len() > 0
+            && !endowment.maturity_whitelist.contains(&info.sender)
+        {
+            return Err(ContractError::Unauthorized {});
+        }
     }
 
     // check that the Endowment has been approved to withdraw deposits
@@ -819,7 +940,7 @@ pub fn withdraw(
     // check if locked tokens are requested and
     // reject if endowment cannot withdraw from locked before maturity
     for source in sources.iter() {
-        if source.locked > Uint128::zero()
+        if source.amount > Uint128::zero()
             && (!endowment.withdraw_before_maturity || !endowment.is_expired(&env))
         {
             return Err(ContractError::InaccessableLockedBalance {});
@@ -832,6 +953,7 @@ pub fn withdraw(
         config.registrar_contract.to_string(),
         &deps.api.addr_validate(&beneficiary)?,
         sources,
+        asset_info.clone(),
     )?;
 
     // Save the tx record in STATE
@@ -841,13 +963,111 @@ pub fn withdraw(
         sender: env.contract.address.clone(),
         recipient: Some(Addr::unchecked(beneficiary.clone())),
         amount: tx_amounts,
-        denom: "uusd".to_string(),
+        asset_info,
     };
     state.transactions.push(tx_record);
     STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
         .add_submessages(withdraw_messages)
+        .add_attribute("action", "withdrawal")
+        .add_attribute("sender", env.contract.address.to_string())
+        .add_attribute("beneficiary", beneficiary))
+}
+
+pub fn withdraw_liquid(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    liquid_amount: Uint128,
+    beneficiary: String,
+    asset_info: AssetInfoBase<Addr>,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let endowment = ENDOWMENT.load(deps.storage)?;
+
+    // Check that sender is able to "withdraw"
+    let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+    if endow_mature_time < env.block.time.seconds() {
+        // check that sender is the owner or the beneficiary
+        if info.sender != endowment.owner {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        // check that sender is one of "maturity_whitelist" (if exist)
+        if endowment.maturity_whitelist.len() > 0
+            && !endowment.maturity_whitelist.contains(&info.sender)
+        {
+            return Err(ContractError::Unauthorized {});
+        }
+    }
+
+    // check that the Endowment has been approved to withdraw deposits
+    if !config.withdraw_approved {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Withdraws are not approved for this endowment".to_string(),
+        }));
+    }
+
+    let mut state = STATE.load(deps.storage)?;
+    // check that the amount in liquid balance is sufficient to cover request
+    let amount = match asset_info {
+        AssetInfoBase::Native(ref denom) => {
+            state
+                .balances
+                .liquid_balance
+                .get_denom_amount(denom.to_string())
+                .amount
+        }
+        AssetInfoBase::Cw20(ref contract_addr) => {
+            state
+                .balances
+                .liquid_balance
+                .get_token_amount(contract_addr.clone())
+                .amount
+        }
+    };
+    if amount < liquid_amount {
+        return Err(ContractError::InsufficientFunds {});
+    }
+
+    // Update the Liquid Balance in STATE
+    let balance = match asset_info {
+        AssetInfoBase::Native(ref denom) => Balance::from(vec![Coin {
+            denom: denom.to_string(),
+            amount: liquid_amount,
+        }]),
+        AssetInfoBase::Cw20(ref contract_addr) => Balance::Cw20(Cw20CoinVerified {
+            address: deps.api.addr_validate(&contract_addr.to_string())?,
+            amount: liquid_amount,
+        }),
+    };
+    state.balances.liquid_balance.deduct_tokens(balance);
+    STATE.save(deps.storage, &state)?;
+
+    // Send "asset" to the Beneficiary via BankMsg::Send
+    let mut messages: Vec<SubMsg> = vec![];
+    match asset_info {
+        AssetInfoBase::Native(ref denom) => {
+            messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+                to_address: beneficiary.to_string(),
+                amount: coins(liquid_amount.u128(), denom.to_string()),
+            })))
+        }
+        AssetInfoBase::Cw20(ref contract_addr) => {
+            messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: contract_addr.to_string(),
+                msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                    recipient: beneficiary.to_string(),
+                    amount: liquid_amount,
+                })
+                .unwrap(),
+                funds: vec![],
+            })))
+        }
+    };
+    Ok(Response::new()
+        .add_submessages(messages)
         .add_attribute("action", "withdrawal")
         .add_attribute("sender", env.contract.address.to_string())
         .add_attribute("beneficiary", beneficiary))
@@ -1126,8 +1346,7 @@ pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
                 contract_addr: vault.to_string(),
                 msg: to_binary(&VaultExecuteMsg::Withdraw(AccountWithdrawMsg {
                     beneficiary: payout_address.clone(),
-                    locked: aum_harvest_withdraw.multiply_ratio(1_u128, 2_u128),
-                    liquid: aum_harvest_withdraw.multiply_ratio(1_u128, 2_u128),
+                    amount: aum_harvest_withdraw,
                 }))
                 .unwrap(),
                 funds: vec![],

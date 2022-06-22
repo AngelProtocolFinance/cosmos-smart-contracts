@@ -1,4 +1,6 @@
-use angel_core::structs::{EndowmentEntry, EndowmentType, SplitDetails, YieldVault};
+use angel_core::structs::{
+    AcceptedTokens, EndowmentEntry, EndowmentType, SplitDetails, YieldVault,
+};
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
@@ -31,6 +33,8 @@ pub struct Config {
     pub donation_match_charites_contract: Option<Addr>, // donation matching contract address for "Charities" endowments
     pub collector_addr: Option<Addr>,                   // Collector address for new fee
     pub collector_share: Decimal,
+    pub charity_shares_contract: Option<Addr>,
+    pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
 // This struct is temporary for the `new-fee-setups`.
@@ -45,16 +49,18 @@ pub struct OldConfig {
     pub treasury: Addr,
     pub tax_rate: Decimal,
     pub default_vault: Option<Addr>,
-    pub cw3_code: Option<u64>,                // multisig wasm code
-    pub cw4_code: Option<u64>,                // multisig wasm code
-    pub subdao_gov_code: Option<u64>,         // subdao gov wasm code
-    pub subdao_token_code: Option<u64>,       // subdao gov token (w/ bonding-curve) wasm code
+    pub cw3_code: Option<u64>,                 // multisig wasm code
+    pub cw4_code: Option<u64>,                 // multisig wasm code
+    pub subdao_gov_code: Option<u64>,          // subdao gov wasm code
+    pub subdao_token_code: Option<u64>,        // subdao gov token (w/ bonding-curve) wasm code
     pub subdao_cw900_code: Option<u64>, // subdao gov ve-CURVE contract for locked token voting
     pub subdao_distributor_code: Option<u64>, // subdao gov fee distributor wasm code
     pub donation_match_code: Option<u64>, // donation matching contract wasm code
     pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
     pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
     pub gov_contract: Option<Addr>,    // AP governance contract
+    pub charity_shares_contract: Option<Addr>, // Charity Shares staking contract
+    pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
 pub const PREFIX_REGISTRY: Map<&[u8], EndowmentEntry> = Map::new("registry");

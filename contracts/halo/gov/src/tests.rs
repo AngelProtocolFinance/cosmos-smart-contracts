@@ -574,20 +574,20 @@ fn query_polls() {
         response.polls,
         vec![
             PollResponse {
-                id: 2,
-                creator: "creator".to_string(),
+                id: 2u64,
+                creator: TEST_CREATOR.to_string(),
                 status: PollStatus::InProgress,
-                end_height: 20000,
+                end_height: 20000u64,
                 title: "test2".to_string(),
                 description: "test2".to_string(),
                 link: None,
                 proposal_type: None,
-                deposit_amount: Uint128::new(10000000000),
+                deposit_amount: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
                 execute_data: None,
-                yes_votes: Uint128::new(0),
-                no_votes: Uint128::new(0),
-                staked_amount: Some(Uint128::new(0)),
-                total_balance_at_end_poll: None
+                yes_votes: Uint128::zero(),
+                no_votes: Uint128::zero(),
+                staked_amount: Some(Uint128::zero()),
+                total_balance_at_end_poll: None,
             },
             PollResponse {
                 id: 1u64,
