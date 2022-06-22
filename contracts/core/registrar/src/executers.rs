@@ -3,6 +3,7 @@ use crate::state::{
     vault_read, vault_store, CONFIG,
 };
 use angel_core::errors::core::ContractError;
+use angel_core::messages::accounts::{DaoCw20TokenConfig, DaoSetupOption};
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
@@ -268,11 +269,8 @@ pub fn create_endowment(
         }
     };
 
-    if let Some(ref dao_token_addr) = msg.dao_token_addr {
-        if !config
-            .accepted_tokens
-            .cw20_valid(dao_token_addr.to_string())
-        {
+    if let DaoSetupOption::ExistingCw20Token(ref addr) = msg.dao_setup_option {
+        if !config.accepted_tokens.cw20_valid(addr.to_string()) {
             return Err(ContractError::NotInApprovedCoins {});
         }
     }
@@ -285,7 +283,7 @@ pub fn create_endowment(
             owner_sc: config.owner.to_string(),
             registrar_contract: env.contract.address.to_string(),
             dao: msg.dao,
-            dao_token_addr: msg.dao_token_addr,
+            dao_setup_option: msg.dao_setup_option,
             donation_match: msg.donation_match,
             owner: msg.owner,
             name: msg.name,

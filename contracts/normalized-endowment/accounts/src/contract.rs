@@ -21,6 +21,7 @@ use cosmwasm_std::{
     WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
+use cw20::Cw20Coin;
 use cw20::Cw20ReceiveMsg;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 
@@ -119,7 +120,7 @@ pub fn instantiate(
     // initial default Response to add submessages to
     let mut res: Response = Response::new().add_attributes(vec![
         attr("endow_name", msg.name),
-        attr("endow_owner", msg.owner),
+        attr("endow_owner", msg.owner.to_string()),
         attr("endow_type", msg.profile.endow_type.to_string()),
         attr(
             "endow_logo",
@@ -154,50 +155,78 @@ pub fn instantiate(
 
     // check if a dao needs to be setup along with subdao token contract
     if msg.dao {
-        // Option #1. User can set an existing CW20 token as the DAO's Token
-        if let Some(token_addr) = msg.dao_token_addr {
-            // Validation is already done in "registrar" level
-            let token_addr = deps.api.addr_validate(&token_addr)?;
-            ENDOWMENT.update(deps.storage, |mut endow| -> StdResult<_> {
-                endow.dao_token = Some(token_addr);
-                Ok(endow)
-            })?;
-        }
+        match msg.dao_setup_option {
+            // Option #1. User can set an existing CW20 token as the DAO's Token
+            DaoSetupOption::ExistingCw20Token(contract_addr) => {
+                // Validation is already done in "registrar" level
+                let contract_addr = deps.api.addr_validate(&contract_addr)?;
+                ENDOWMENT.update(deps.storage, |mut endow| -> StdResult<_> {
+                    endow.dao_token = Some(contract_addr);
+                    Ok(endow)
+                })?;
+            }
 
-        // Option #2. Create a basic CW20 token contract with a fixed supply
-
-        // Option #3. Create a CW20 token with supply controlled by a bonding curve
-        if msg.curve_type.ne(&None) {
-            // setup DAO token contract
-            let halo_token = match registrar_config.halo_token.clone() {
-                Some(addr) => addr,
-                None => {
-                    return Err(ContractError::Std(StdError::GenericErr {
-                        msg: "HALO token address is empty".to_string(),
-                    }))
+            // Option #2. Create a basic CW20 token contract with a fixed supply
+            DaoSetupOption::SetupCw20Token(config) => {
+                // setup DAO token contract
+                res = res.add_submessage(SubMsg {
+                    id: 6,
+                    msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                        code_id: config.code_id,
+                        admin: None,
+                        label: "new endowment dao token(cw20) contract".to_string(),
+                        msg: to_binary(&cw20_base::msg::InstantiateMsg {
+                            name: "AP Endowment Dao Token".to_string(),
+                            symbol: "APEDT".to_string(),
+                            decimals: 6,
+                            initial_balances: vec![Cw20Coin {
+                                address: msg.owner.to_string(),
+                                amount: config.initial_supply,
+                            }],
+                            mint: None,
+                            marketing: None,
+                        })?,
+                        funds: vec![],
+                    }),
+                    gas_limit: None,
+                    reply_on: ReplyOn::Success,
+                })
+            }
+            // Option #3. Create a CW20 token with supply controlled by a bonding curve
+            DaoSetupOption::SetupBondCurveToken => {
+                if msg.curve_type.ne(&None) {
+                    // setup DAO token contract
+                    let halo_token = match registrar_config.halo_token.clone() {
+                        Some(addr) => addr,
+                        None => {
+                            return Err(ContractError::Std(StdError::GenericErr {
+                                msg: "HALO token address is empty".to_string(),
+                            }))
+                        }
+                    };
+                    res = res.add_submessage(SubMsg {
+                        id: 3,
+                        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                            code_id: registrar_config.subdao_token_code.unwrap(),
+                            admin: None,
+                            label: "new endowment dao token contract".to_string(),
+                            msg: to_binary(&DaoTokenInstantiateMsg {
+                                name: "AP Endowment Dao Token".to_string(), // need dynamic name
+                                symbol: "APEDT".to_string(),                // need dynamic symbol
+                                decimals: 6,
+                                reserve_denom: halo_token.to_string(),
+                                reserve_decimals: 6,
+                                curve_type: msg.curve_type.unwrap(),
+                                halo_token,
+                                unbonding_period: 7,
+                            })?,
+                            funds: vec![],
+                        }),
+                        gas_limit: None,
+                        reply_on: ReplyOn::Success,
+                    })
                 }
-            };
-            res = res.add_submessage(SubMsg {
-                id: 3,
-                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: registrar_config.subdao_token_code.unwrap(),
-                    admin: None,
-                    label: "new endowment dao token contract".to_string(),
-                    msg: to_binary(&DaoTokenInstantiateMsg {
-                        name: "AP Endowment Dao Token".to_string(), // need dynamic name
-                        symbol: "APEDT".to_string(),                // need dynamic symbol
-                        decimals: 6,
-                        reserve_denom: halo_token.to_string(),
-                        reserve_decimals: 6,
-                        curve_type: msg.curve_type.unwrap(),
-                        halo_token,
-                        unbonding_period: 7,
-                    })?,
-                    funds: vec![],
-                }),
-                gas_limit: None,
-                reply_on: ReplyOn::Success,
-            })
+            }
         }
     }
 
@@ -400,6 +429,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
         3 => executers::new_dao_token_reply(deps, env, msg.result),
         4 => executers::new_donation_match_reply(deps, env, msg.result),
         5 => executers::harvest_reply(deps, env, msg.result),
+        6 => executers::new_dao_cw20_token_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }

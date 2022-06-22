@@ -100,9 +100,9 @@ pub fn new_cw3_multisig_reply(
         SubMsgResult::Ok(subcall) => {
             let mut multisig_addr = String::from("");
             for event in subcall.events {
-                if event.ty == *"instantiate_contract" {
+                if event.ty == *"instantiate" {
                     for attrb in event.attributes {
-                        if attrb.key == "contract_address" {
+                        if attrb.key == "_contract_address" {
                             multisig_addr = attrb.value;
                         }
                     }
@@ -129,9 +129,9 @@ pub fn new_dao_token_reply(
         SubMsgResult::Ok(subcall) => {
             let mut dao_token_addr = String::from("");
             for event in subcall.events {
-                if event.ty == *"instantiate_contract" {
+                if event.ty == *"instantiate" {
                     for attrb in event.attributes {
-                        if attrb.key == "contract_address" {
+                        if attrb.key == "_contract_address" {
                             dao_token_addr = attrb.value;
                         }
                     }
@@ -149,6 +149,38 @@ pub fn new_dao_token_reply(
     }
 }
 
+pub fn new_dao_cw20_token_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: SubMsgResult,
+) -> Result<Response, ContractError> {
+    match msg {
+        SubMsgResult::Ok(subcall) => {
+            let mut dao_cw20_token_addr = String::from("");
+            for event in subcall.events {
+                if event.ty == *"instantiate" {
+                    for attrb in event.attributes {
+                        if attrb.key == "_contract_address" {
+                            dao_cw20_token_addr = attrb.value;
+                        }
+                    }
+                }
+            }
+
+            // update the endowment "dao_token" to be the new contract
+            let mut endowment = ENDOWMENT.load(deps.storage)?;
+            endowment.dao_token = Some(deps.api.addr_validate(&dao_cw20_token_addr)?);
+            ENDOWMENT.save(deps.storage, &endowment)?;
+
+            // NOTE: After some discussion, it should add the logic of instantiating
+            //       new "'dao_cw20_token' - axlUSDC" pair contract right HERE.
+
+            Ok(Response::default())
+        }
+        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+    }
+}
+
 pub fn new_donation_match_reply(
     deps: DepsMut,
     _env: Env,
@@ -158,9 +190,9 @@ pub fn new_donation_match_reply(
         SubMsgResult::Ok(subcall) => {
             let mut donation_match_contract_addr = String::from("");
             for event in subcall.events {
-                if event.ty == *"instantiate_contract" {
+                if event.ty == *"instantiate" {
                     for attrb in event.attributes {
-                        if attrb.key == "contract_address" {
+                        if attrb.key == "_contract_address" {
                             donation_match_contract_addr = attrb.value;
                         }
                     }

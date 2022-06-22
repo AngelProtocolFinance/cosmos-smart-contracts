@@ -7,6 +7,8 @@ use cw4::Member;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use super::accounts::DaoSetupOption;
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 
 pub struct MigrateMsg {
@@ -78,7 +80,7 @@ pub struct CreateEndowmentMsg {
     pub whitelisted_contributors: Vec<String>,
     pub cw4_members: Vec<Member>,
     pub dao: bool,
-    pub dao_token_addr: Option<String>,
+    pub dao_setup_option: DaoSetupOption,
     pub donation_match: bool,
     pub curve_type: Option<CurveType>,
     pub beneficiary: String,
