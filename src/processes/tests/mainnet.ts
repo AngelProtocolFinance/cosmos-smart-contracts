@@ -1,4 +1,5 @@
-import { LCDClient, LocalTerra, Wallet } from "@terra-money/terra.js";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import chalk from "chalk";
 import {
   testBeneficiaryCanWithdrawFromLiquid,
@@ -7,13 +8,12 @@ import {
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
-  testSingleDonationAmountToManyEndowments,
+  testSendDonationToEndowment,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
   testTcaMemberSendsToIndexFund,
   testUpdateFundMembers,
-  // testUpdateAngelAllianceMembers,
   testUpdatingIndexFundConfigs,
   testCreateIndexFund,
   testRemoveIndexFund,
@@ -29,13 +29,11 @@ import {
 } from "./core/indexFunds";
 import {
   testAddMemberToC4Group,
-  testAddGuardiansToEndowment,
-  testGuardiansChangeEndowmentOwner,
 } from "./core/multisig";
 import {
   testAngelTeamCanTriggerVaultsHarvest,
   testMigrateAllAccounts,
-  testUpdateEndowmentsStatus,
+  testUpdateEndowmentStatus,
   testUpdatingRegistrarConfigs,
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarApprovedVaultRateList,
@@ -107,48 +105,20 @@ import {
   testQueryVestingAccount,
   testQueryVestingAccounts,
 } from "./halo/vesting";
-import {
-  testFactoryUpdateConfig,
-  testFactoryCreatePair,
-  testFactoryUnregister,
-  testQueryFactoryConfig,
-  testQueryFactoryPair,
-  testQueryFactoryPairs,
-} from "./lbp/factory";
-import {
-  testQueryPairPair,
-  testQueryPairPool,
-  testQueryPairReverseSimulationNativeToHalo,
-  testQueryPairReverseSimulationHaloToNative,
-  testQueryPairSimulationNativeToHalo,
-  testQueryPairSimulationHaloToNative,
-  testPairProvideLiquidity,
-  testPairSwapHaloToNative,
-  testPairSwapNativeToHalo,
-} from "./lbp/pair";
-import { testQueryRouterConfig } from "./lbp/router";
-import {
-  testTransferTokenBalance,
-  testQueryTokenInfo,
-  testQueryTokenMinter,
-  testPairWithdrawLiquidity,
-  testQueryTokenBalance,
-} from "./lbp/token";
 
 export async function testExecute(
-  terra: LCDClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: DirectSecp256k1HdWallet,
+  apTeamAddr: string,
   registrar: string,
   indexFund: string,
   anchorVault: string,
   endowmentContract: string,
   cw4GrpApTeam: string,
-  cw4GrpOwners: string,
   cw3ApTeam: string,
-  cw3GuardianAngels: string,
-  terraswapFactory: string,
-  terraswapToken: string,
-  terraswapPair: string,
+  junoswapFactory: string,
+  junoswapToken: string,
+  junoswapPair: string,
   haloAirdrop: string,
   haloCollector: string,
   haloCommunity: string,
@@ -156,105 +126,99 @@ export async function testExecute(
   haloGov: string,
   haloStaking: string,
   haloVesting: string,
-  lbpFactoryContract: string,
-  lbpPairContract: string,
-  lbpRouterContract: string,
-  lbpLpTokenContract: string
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testAngelTeamCanTriggerVaultsHarvest(
-  //   terra,
-  //   apTeam,
+  //   juno,
+  //   apTeamAddr,
   //   charity1,
   //   registrar,
   //   haloCollector,
   //   "0.5"
   // );
-  // await testSingleDonationAmountToManyEndowments(
-  //   terra,
-  //   apTeam,
-  //   [
-  //     "terra1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r", // Coalition for Engaged Education
-  //   ],
+  // await testSendDonationToEndowment(
+  //   juno,
+  //   apTeamAddr,
+  //   "juno1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r", // Coalition for Engaged Education
   //   "1000000000"
   // );
   // await testRejectUnapprovedDonations(
-  //   terra,
-  //   apTeam,
-  //   "terra16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke", // AP Endowment
+  //   juno,
+  //   apTeamAddr,
+  //   "juno16jm9vflz8ltw9yrrnarcuwt623ampadhhhyxke", // AP Endowment
   //   "000000"
   // );
-  // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
+  // await testUpdatingIndexFundConfigs(juno, apTeamAddr, indexFund);
   // await testUpdateFundMembers(
-  //   terra,
-  //   apTeam,
+  //   juno,
+  //   apTeamAddr,
   //   indexFund,
   //   23,
   //   [
-  //     "terra1uegpp7nuxazgf20medwy4dwdhvkzvdztmrj8jx", // PEPA
+  //     "juno1uegpp7nuxazgf20medwy4dwdhvkzvdztmrj8jx", // PEPA
   //   ],
   //   []
   // );
   // await testCreateIndexFund(
-  //   terra,
-  //   apTeam,
+  //   juno,
+  //   apTeamAddr,
   //   indexFund,
   //   "MVP Rotation #14",
   //   "Fund collection for MVP",
   //   true,
   //   [
-  //     "terra14hmdpqwr49j7vyeqmjmp9zxsym0fczp66kuz0g", // Mauti Cancer
+  //     "juno14hmdpqwr49j7vyeqmjmp9zxsym0fczp66kuz0g", // Mauti Cancer
   //   ]
   // );
   // await testUpdateAngelAllianceMembers(
-  //   terra,
-  //   apTeam,
+  //   juno,
+  //   apTeamAddr,
   //   indexFund,
-  //   ["terra1gmxefcqt8sfckw0w44tpkuaz0p27eddq76elzx"],
+  //   ["juno1gmxefcqt8sfckw0w44tpkuaz0p27eddq76elzx"],
   //   []
   // );
-  // await testRemoveIndexFund(terra, apTeam, indexFund, 5);
-  // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
-  // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 1, [], ["",""]);
-  // await testUpdateFundMembers(terra, apTeam, pleb, indexFund, 2, ["",""], []);
+  // await testRemoveIndexFund(juno, apTeamAddr, indexFund, 5);
+  // await testUpdatingIndexFundConfigs(juno, apTeamAddr, indexFund);
+  // await testUpdateFundMembers(juno, apTeamAddr, pleb, indexFund, 1, [], ["",""]);
+  // await testUpdateFundMembers(juno, apTeamAddr, pleb, indexFund, 2, ["",""], []);
 
-  // await testUpdateEndowmentsStatus(terra, apTeam, registrar, [
+  // await testUpdateEndowmentsStatus(juno, apTeamAddr, registrar, [
   //   {
-  //     address: "terra1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2",
+  //     address: "juno1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2",
   //     status: 3,
-  //     beneficiary: "terra1suxqzxtzztxvakvucc6u4s9833n4u0cyk9pmv8",
+  //     beneficiary: "juno1suxqzxtzztxvakvucc6u4s9833n4u0cyk9pmv8",
   //   },
   // ]);
 
   // Test query
-  // await testQueryRegistrarConfig(terra, registrar);
-  // await testQueryRegistrarEndowmentList(terra, registrar);
-  // await testQueryRegistrarEndowmentDetails(terra, registrar, endowmentContract1);
-  // await testQueryRegistrarApprovedVaultList(terra, registrar);
-  // await testQueryRegistrarApprovedVaultRateList(terra, registrar);
-  // await testQueryRegistrarVaultList(terra, registrar);
-  // await testQueryRegistrarVault(terra, registrar, anchorVault);
-  // await testQueryAccountsBalance(terra, endowmentContract);
-  // await testQueryVaultConfig(terra, anchorVault);
-  // await testQueryAccountsConfig(terra, endowmentContract);
-  // await testQueryIndexFundConfig(terra, indexFund);
-  // await testQueryIndexFundState(terra, indexFund);
-  // await testQueryIndexFundTcaList(terra, indexFund);
-  // await testQueryIndexFundFundsList(terra, indexFund, 10, 20);
-  // await testQueryIndexFundFundDetails(terra, indexFund, 23);
-  // await testQueryIndexFundActiveFundDetails(terra, indexFund);
-  // await testQueryIndexFundActiveFundDonations(terra, indexFund);
-  // await testQueryIndexFundDeposit(terra, indexFund);
+  // await testQueryRegistrarConfig(juno, registrar);
+  // await testQueryRegistrarEndowmentList(juno, registrar);
+  // await testQueryRegistrarEndowmentDetails(juno, registrar, endowmentContract1);
+  // await testQueryRegistrarApprovedVaultList(juno, registrar);
+  // await testQueryRegistrarApprovedVaultRateList(juno, registrar);
+  // await testQueryRegistrarVaultList(juno, registrar);
+  // await testQueryRegistrarVault(juno, registrar, anchorVault);
+  // await testQueryAccountsBalance(juno, endowmentContract);
+  // await testQueryVaultConfig(juno, anchorVault);
+  // await testQueryAccountsConfig(juno, endowmentContract);
+  // await testQueryIndexFundConfig(juno, indexFund);
+  // await testQueryIndexFundState(juno, indexFund);
+  // await testQueryIndexFundTcaList(juno, indexFund);
+  // await testQueryIndexFundFundsList(juno, indexFund, 10, 20);
+  // await testQueryIndexFundFundDetails(juno, indexFund, 23);
+  // await testQueryIndexFundActiveFundDetails(juno, indexFund);
+  // await testQueryIndexFundActiveFundDonations(juno, indexFund);
+  // await testQueryIndexFundDeposit(juno, indexFund);
   // await testQueryIndexFundInvolvedAddress(
-  //   terra,
+  //   juno,
   //   indexFund,
-  //   "terra1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2"
+  //   "juno1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2"
   // );
 
   // HALO gov Tests
   // await testGovUpdateConfig(
-  //   terra,
-  //   apTeam,
+  //   juno,
+  //   apTeamAddr,
   //   haloGov,
   //   undefined,
   //   15, // quorum
@@ -266,47 +230,47 @@ export async function testExecute(
   //   undefined, // unbonding period
   //   undefined // gov_hodler
   // );
-  // await testGovResetClaims(terra, apTeam, haloGov, [apTeam.key.accAddress]);
-  // await testQueryGovConfig(terra, haloGov);
-  // await testQueryGovState(terra, haloGov);
-  // await testQueryGovClaims(terra, haloGov, apTeam.key.accAddress);
-  // await testQueryGovStaker(terra, haloGov, apTeam.key.accAddress);
-  // await testQueryGovPoll(terra, haloGov, 1);
-  // await testQueryGovPolls(terra, haloGov, undefined, undefined, undefined);
-  // await testQueryGovVoters(terra, haloGov, 1, undefined, undefined);
+  // await testGovResetClaims(juno, apTeamAddr, haloGov, [apTeamAddr]);
+  // await testQueryGovConfig(juno, haloGov);
+  // await testQueryGovState(juno, haloGov);
+  // await testQueryGovClaims(juno, haloGov, apTeamAddr);
+  // await testQueryGovStaker(juno, haloGov, apTeamAddr);
+  // await testQueryGovPoll(juno, haloGov, 1);
+  // await testQueryGovPolls(juno, haloGov, undefined, undefined, undefined);
+  // await testQueryGovVoters(juno, haloGov, 1, undefined, undefined);
 
   // Test query for HALO collector
   // await testCollectorUpdateConfig(
-  //   terra,
-  //   apTeam,
+  //   juno,
+  //   apTeamAddr,
   //   haloCollector,
   //   "1.0",
   //   undefined,
-  //   "terra16hdjuvghcumu6prg22cdjl96ptuay6r0hc6yns"
+  //   "juno16hdjuvghcumu6prg22cdjl96ptuay6r0hc6yns"
   // );
 
   // Test Loop Pair
   // await testPairProvideLiquidity(
-  //   terra,
-  //   apTeam,
-  //   terraswapToken,
-  //   "terra1yjg0tuhc6kzwz9jl8yqgxnf2ctwlfumnvscupp", // LOOP PAIR
+  //   juno,
+  //   apTeamAddr,
+  //   junoswapToken,
+  //   "juno1yjg0tuhc6kzwz9jl8yqgxnf2ctwlfumnvscupp", // LOOP PAIR
   //   "13334400000000", //HALO
-  //   "1000000000000" //UST
+  //   "1000000000000" //axlUSDC
   // );
 
   // await testPairWithdrawLiquidity(
-  //   terra,
-  //   apTeam,
+  //   juno,
+  //   apTeamAddr,
   //   lbpPairContract,
   //   lbpLpTokenContract,
   //   "10198039027185"
   // );
 
   // Test query for LBP Token
-  // await testQueryTokenBalance(terra, terraswapToken, apTeam.key.accAddress);
+  // await testQueryTokenBalance(juno, junoswapToken, apTeamAddr);
 
-  // await testSendTokenBalance(terra, terraswapToken, apTeam);
+  // await testSendTokenBalance(juno, junoswapToken, apTeamAddr);
 
-  // await testCollectorSweep(terra, apTeam, haloCollector);
+  // await testCollectorSweep(juno, apTeamAddr, haloCollector);
 }

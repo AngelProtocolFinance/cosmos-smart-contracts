@@ -3,7 +3,7 @@ import * as path from "path";
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { SigningCosmWasmClient,  MsgExecuteContract, Wallet } from "@cosmjs/launchpad";
 import { sendTransaction } from "../../../utils/helpers";
 import { Airdrop } from "./airdrop/airdrop";
 import { readFileSync } from 'fs';
@@ -19,43 +19,31 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testAirdropUpdateConfig(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  apTeam2: Wallet,
-  pleb: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  apTeam2: string,
+  pleb: string,
   airdropContract: string
 ): Promise<void> {
   process.stdout.write("Test - Pleb cannot update airdrop config");
 
   await expect(
-    sendTransaction(terra, pleb, [
-      new MsgExecuteContract(
-        pleb.key.accAddress,
-        airdropContract,
-        {
-          update_config: {
-            owner: apTeam2.key.accAddress
-          },
-        },
-      ),
-    ])
+    sendTransaction(juno, pleb, airdropContract, {
+      update_config: {
+        owner: apTeam2
+      },
+    }),
   ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Failed!"));
 
   process.stdout.write("Test - Only owner can update airdrop config");
 
   await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        airdropContract,
-        {
-          update_config: {
-            owner: apTeam2.key.accAddress
-          },
-        },
-      ),
-    ])
+    sendTransaction(juno, apTeam, airdropContract, {
+      update_config: {
+        owner: apTeam2
+      }
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -68,23 +56,17 @@ export async function testAirdropUpdateConfig(
 //
 //----------------------------------------------------------------------------------------
 export async function testAirdropRegisterNewMerkleRoot(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   airdropContract: string,
 ): Promise<void> {
   process.stdout.write("Test - Register new merkle root");
 
   const merkle_root = await generateMerkleRoot();
   await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        airdropContract,
-        {
-          register_merkle_root: { merkle_root },
-        },
-      ),
-    ])
+    sendTransaction(juno, apTeam, airdropContract, {
+      register_merkle_root: { merkle_root },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -97,29 +79,23 @@ export async function testAirdropRegisterNewMerkleRoot(
 //
 //----------------------------------------------------------------------------------------
 export async function testAirdropClaim(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   airdropContract: string
 ): Promise<void> {
   process.stdout.write("Test - Airdrop claim");
 
   await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        airdropContract,
-        {
-          claim: {
-            stage: 1,
-            amount: "1000001",
-            proof: [
-              "eb0422c52c8afe5bf78f199fcbff0e87eb1a8e5713a9e0b992b575035510b3d9",
-              "9d5a269ba089bafdced3d362b80c516854a1c450b45b386fa186f80af5020021",
-            ],
-          },
-        },
-      ),
-    ])
+    sendTransaction(juno, apTeam, airdropContract, {
+      claim: {
+        stage: 1,
+        amount: "1000001",
+        proof: [
+          "eb0422c52c8afe5bf78f199fcbff0e87eb1a8e5713a9e0b992b575035510b3d9",
+          "9d5a269ba089bafdced3d362b80c516854a1c450b45b386fa186f80af5020021",
+        ],
+      },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -128,11 +104,11 @@ export async function testAirdropClaim(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryAirdropConfig(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   airdropContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Airdrop Config");
-  const result: any = await terra.wasm.contractQuery(airdropContract, {
+  const result: any = await juno.queryContractSmart(airdropContract, {
     config: {},
   });
 
@@ -141,12 +117,12 @@ export async function testQueryAirdropConfig(
 }
 
 export async function testQueryAirdropMerkleRoot(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   airdropContract: string,
   stage: number
 ): Promise<void> {
   process.stdout.write("Test - Query Merkle Root");
-  const result: any = await terra.wasm.contractQuery(airdropContract, {
+  const result: any = await juno.queryContractSmart(airdropContract, {
     merkle_root: { stage },
   });
 
@@ -155,11 +131,11 @@ export async function testQueryAirdropMerkleRoot(
 }
 
 export async function testQueryAirdropLatestStage(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   airdropContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Airdrop Latest Stage");
-  const result: any = await terra.wasm.contractQuery(airdropContract, {
+  const result: any = await juno.queryContractSmart(airdropContract, {
     latest_stage: {},
   });
 
@@ -168,13 +144,13 @@ export async function testQueryAirdropLatestStage(
 }
 
 export async function testQueryAirdropIsClaimed(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   airdropContract: string,
   stage: number,
   address: string
 ): Promise<void> {
   process.stdout.write("Test - Query Airdrop Is Claimed");
-  const result: any = await terra.wasm.contractQuery(airdropContract, {
+  const result: any = await juno.queryContractSmart(airdropContract, {
     is_claimed: { stage, address },
   });
 

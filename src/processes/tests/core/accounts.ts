@@ -2,14 +2,8 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import {
-  LCDClient,
-  LocalTerra,
-  Msg,
-  MsgExecuteContract,
-  Wallet,
-} from "@terra-money/terra.js";
-import { sendTransaction } from "../../../utils/helpers";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { sendTransaction, sendTransactionWithFunds } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -23,53 +17,43 @@ const { expect } = chai;
 //----------------------------------------------------------------------------------------
 
 export async function testRejectUnapprovedDonations(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   endowmentContract: string,
   amount: string
 ): Promise<void> {
   process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
 
   await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        endowmentContract,
-        {
-          deposit: {
-            locked_percentage: "1",
-            liquid_percentage: "0",
-          },
-        },
-        { uluna:  amount }
-      ),
-    ])
-  // ); //.to.be.rejectedWith("Request failed with status code 400");
-  ).to.be.rejected;
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testSingleDonationAmountToManyEndowments(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  endowments: string[],
-  amount: string
-): Promise<void> {
-  process.stdout.write("Test - Send single amount to many Endowment Accounts");
-  const msgs: Msg[] = endowments.map((endowment) => {
-    return new MsgExecuteContract(
-      apTeam.key.accAddress,
-      endowment,
-      {
+    sendTransactionWithFunds(juno, apTeam, endowmentContract, {
         deposit: {
           locked_percentage: "1",
           liquid_percentage: "0",
         },
       },
-      { uluna:  amount }
-    );
-  });
-  await sendTransaction(terra, apTeam, msgs);
+      [{ denom: "ujuno", amount: amount }]
+    )
+  ).to.be.rejected;
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testSendDonationToEndowment(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  endowment: string,
+  amount: string
+): Promise<void> {
+  process.stdout.write("Test - Send single amount to an Endowment Account");
+  await expect(
+    sendTransactionWithFunds(juno, apTeam, endowment, {
+        deposit: {
+          locked_percentage: "1",
+          liquid_percentage: "0",
+        },
+      },
+      [{ denom: "ujuno", amount }]
+    )
+  );
   console.log(chalk.green(" Passed!"));
 }
 
@@ -82,8 +66,8 @@ export async function testSingleDonationAmountToManyEndowments(
 //
 //----------------------------------------------------------------------------------------
 export async function testBeneficiaryCanWithdrawFromLiquid(
-  terra: LocalTerra | LCDClient,
-  charityOwner: Wallet,
+  juno: SigningCosmWasmClient,
+  charityOwner: string,
   endowment: string,
   vault: string,
   beneficiary: string
@@ -92,17 +76,15 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
     "Test - Charity Owner cannot withdraw from the Endowment locked amount"
   );
   await expect(
-    sendTransaction(terra, charityOwner, [
-      new MsgExecuteContract(charityOwner.key.accAddress, endowment, {
-        withdraw: {
-          sources: [{ vault, locked: "500000", liquid: "1000000" }],
-          beneficiary,
-          asset_info: {
-            native: "uluna"
-          }
-        },
-      }),
-    ])
+    sendTransaction(juno, charityOwner, endowment, {
+      withdraw: {
+        sources: [{ vault, locked: "500000", liquid: "1000000" }],
+        beneficiary,
+        asset_info: {
+          native: "ujuno"
+        }
+      }
+    })
   ).to.be.rejectedWith("Request failed with status code 400");
   console.log(chalk.green(" Passed!"));
 
@@ -110,14 +92,12 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
     "Test - Charity Owner can withdraw from the Endowment availalble amount (liquid)"
   );
   await expect(
-    sendTransaction(terra, charityOwner, [
-      new MsgExecuteContract(charityOwner.key.accAddress, endowment, {
-        withdraw: {
-          sources: [{ vault, locked: "0", liquid: "30000000" }],
-          beneficiary,
-        },
-      }),
-    ])
+    sendTransaction(juno, charityOwner, endowment, {
+      withdraw: {
+        sources: [{ vault, locked: "0", liquid: "30000000" }],
+        beneficiary,
+      },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -133,25 +113,23 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
 //----------------------------------------------------------------------------------------
 
 export async function testCharityCanUpdateStrategies(
-  terra: LocalTerra | LCDClient,
-  charity1: Wallet,
+  juno: SigningCosmWasmClient,
+  charity1: string,
   endowment: string,
-  anchorVault1: string,
-  anchorVault2: string
+  Vault1: string,
+  Vault2: string
 ): Promise<void> {
   process.stdout.write("Test - Charity can update their Endowment's strategies");
 
   await expect(
-    sendTransaction(terra, charity1, [
-      new MsgExecuteContract(charity1.key.accAddress, endowment, {
-        update_strategies: {
-          strategies: [
-            { vault: anchorVault1, percentage: "0.5"},
-            { vault: anchorVault2, percentage: "0.5"},
-          ],
-        },
-      }),
-    ])
+    sendTransaction(juno, charity1, endowment, {
+      update_strategies: {
+        strategies: [
+          { vault: Vault1, percentage: "0.5"},
+          { vault: Vault2, percentage: "0.5"},
+        ],
+      },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -165,45 +143,24 @@ export async function testCharityCanUpdateStrategies(
 //----------------------------------------------------------------------------------------
 
 export async function testApTeamChangesAccountsEndowmentOwner(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   endowment: string,
   owner: string,
-  beneficiary: string
+  beneficiary: string,
+  kyc_donors_only: boolean,
 ): Promise<void> {
   process.stdout.write("Test - Contract Owner can set new owner of an Endowment");
 
   await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, endowment, {
-        update_endowment_settings: {
-          owner,
-          beneficiary,
-        },
-      }),
-    ])
+    sendTransaction(juno, apTeam, endowment, {
+      update_endowment_settings: {
+        owner,
+        beneficiary,
+        kyc_donors_only,
+      },
+    })
   );
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testChangeManyAccountsEndowmentOwners(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  endowments: any[] // [ { address: <string>, owner: <string>, kyc_donors_only: <bool> }, ... ]
-): Promise<void> {
-  process.stdout.write("Test - Contract Owner can set new owner of an Endowment");
-  let msgs: Msg[] = [];
-  endowments.forEach((e) => {
-    msgs.push(
-      new MsgExecuteContract(apTeam.key.accAddress, e.address, {
-        update_endowment_settings: {
-          owner: e.owner,
-          kyc_donors_only: e.kyc_donors_only,
-        },
-      })
-    );
-  });
-  await expect(sendTransaction(terra, apTeam, msgs));
   console.log(chalk.green(" Passed!"));
 }
 
@@ -211,11 +168,11 @@ export async function testChangeManyAccountsEndowmentOwners(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryAccountsState(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts State");
-  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+  const result = await juno.queryContractSmart(endowmentContract, {
     state: {},
   });
 
@@ -224,14 +181,14 @@ export async function testQueryAccountsState(
 }
 
 export async function testQueryAccountsTransactions(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   endowmentContract: string,
   sender: string | undefined,
   recipient: string | undefined,
   denom: string | undefined
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Transactions");
-  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+  const result = await juno.queryContractSmart(endowmentContract, {
     get_tx_records: {
       sender,
       recipient,
@@ -244,11 +201,11 @@ export async function testQueryAccountsTransactions(
 }
 
 export async function testQueryAccountsBalance(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Balance");
-  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+  const result = await juno.queryContractSmart(endowmentContract, {
     balance: {},
   });
 
@@ -257,11 +214,11 @@ export async function testQueryAccountsBalance(
 }
 
 export async function testQueryAccountsConfig(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Config");
-  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+  const result = await juno.queryContractSmart(endowmentContract, {
     config: {},
   });
 
@@ -270,11 +227,11 @@ export async function testQueryAccountsConfig(
 }
 
 export async function testQueryAccountsEndowment(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Endowment");
-  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+  const result = await juno.queryContractSmart(endowmentContract, {
     endowment: {},
   });
 
@@ -283,11 +240,11 @@ export async function testQueryAccountsEndowment(
 }
 
 export async function testQueryAccountsProfile(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   endowmentContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Profile");
-  const result: any = await terra.wasm.contractQuery(endowmentContract, {
+  const result = await juno.queryContractSmart(endowmentContract, {
     get_profile: {},
   });
 

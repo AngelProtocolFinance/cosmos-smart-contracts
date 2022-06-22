@@ -1,13 +1,15 @@
-import { LCDClient, LocalTerra, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
-import { localterra } from "../../config/localterraConstants";
+
+import { GasPrice } from "@cosmjs/stargate";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
+
 import { datetimeStringToUTC } from "../../utils/helpers";
 import {
   testBeneficiaryCanWithdrawFromLiquid,
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
   testApTeamChangesAccountsEndowmentOwner,
-  testChangeManyAccountsEndowmentOwners,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
@@ -35,14 +37,12 @@ import {
 import {
   testUpdateCw3Config,
   testAddMemberToC4Group,
-  testAddGuardiansToEndowment,
-  testGuardiansChangeEndowmentOwner,
   testQueryMultisigVoters,
   testQueryMultisigThreshold,
   testQueryGroupMembersList,
 } from "./core/multisig";
 import {
-  testUpdateEndowmentsStatus,
+  testUpdateEndowmentStatus,
   testCreateEndowmentViaRegistrar,
   testAngelTeamCanTriggerVaultsHarvest,
   testMigrateAllAccounts,
@@ -54,7 +54,7 @@ import {
   testQueryRegistrarEndowmentDetails,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
-  testUpdateEndowmentsEntry,
+  testUpdateEndowmentEntry,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -123,60 +123,44 @@ import {
   testQueryVestingAccount,
   testQueryVestingAccounts,
 } from "./halo/vesting";
-import {
-  testFactoryUpdateConfig,
-  testFactoryCreatePair,
-  testFactoryUnregister,
-  testQueryFactoryConfig,
-  testQueryFactoryPair,
-  testQueryFactoryPairs,
-} from "./lbp/factory";
-import {
-  testQueryPairPair,
-  testQueryPairPool,
-  testQueryPairReverseSimulationNativeToHalo,
-  testQueryPairReverseSimulationHaloToNative,
-  testQueryPairSimulationNativeToHalo,
-  testQueryPairSimulationHaloToNative,
-  testPairProvideLiquidity,
-  testPairSwapHaloToNative,
-  testPairSwapNativeToHalo,
-  getPairContractLpToken,
-} from "./lbp/pair";
-import { testQueryRouterConfig } from "./lbp/router";
-import {
-  testQueryTokenBalance,
-  testQueryTokenInfo,
-  testQueryTokenMinter,
-  testPairWithdrawLiquidity,
-  testTransferTokenBalance,
-} from "./lbp/token";
+
+async function clientSetup(wallet: DirectSecp256k1HdWallet, networkUrl: string) {
+  let client = await SigningCosmWasmClient.connectWithSigner(networkUrl, wallet, { gasPrice: GasPrice.fromString("0.025ujunox") })
+  return client;
+}
 
 export async function testExecute(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  apTeam2: Wallet,
-  apTeam3: Wallet,
-  charity1: Wallet,
-  charity2: Wallet,
-  charity3: Wallet,
-  pleb: Wallet,
-  tca: Wallet,
+  config: any, // environment config object 
+  apTeam: DirectSecp256k1HdWallet,
+  apTeam2: DirectSecp256k1HdWallet,
+  apTeam3: DirectSecp256k1HdWallet,
+  charity1: DirectSecp256k1HdWallet,
+  charity2: DirectSecp256k1HdWallet,
+  charity3: DirectSecp256k1HdWallet,
+  pleb: DirectSecp256k1HdWallet,
+  tca: DirectSecp256k1HdWallet,
+  apTeamAddr: string,
+  apTeam2Addr: string,
+  apTeam3Addr: string,
+  apTreasuryAddr: string,
+  charity1Addr: string,
+  charity2Addr: string,
+  charity3Addr: string,
+  plebAddr: string,
+  tcaAddr: string,
   registrar: string,
   indexFund: string,
-  anchorVault1: string,
-  anchorVault2: string,
+  Vault1: string,
+  Vault2: string,
   endowmentContract1: string,
   endowmentContract2: string,
   endowmentContract3: string,
   endowmentContract4: string,
   cw4GrpApTeam: string,
-  cw4GrpOwners: string,
   cw3ApTeam: string,
-  cw3GuardianAngels: string,
-  terraswapFactory: string,
-  terraswapToken: string,
-  terraswapPair: string,
+  junoswapFactory: string,
+  junoswapToken: string,
+  junoswapPair: string,
   haloAirdrop: string,
   haloCollector: string,
   haloCommunity: string,
@@ -184,56 +168,65 @@ export async function testExecute(
   haloGov: string,
   haloStaking: string,
   haloVesting: string,
-  lbpFactoryContract: string,
-  lbpPairContract: string,
-  lbpRouterContract: string,
-  lbpLpTokenContract: string,
-  slippageTolerance: string | undefined
 ): Promise<void> {
+  console.log(chalk.yellow("\nStep 2. Setting up signing clients for all possible actors"));
+  const networkUrl = config.networkInfo.url;
+  const actors = {
+    apTeam: { client: await clientSetup(apTeam, networkUrl), wallet: apTeam, addr: apTeamAddr },
+    apTeam2: { client: await clientSetup(apTeam2, networkUrl), wallet: apTeam2, addr: apTeam2Addr },
+    apTeam3: { client: await clientSetup(apTeam3, networkUrl), wallet: apTeam3, addr: apTeam3Addr },
+    charity1: { client: await clientSetup(charity1, networkUrl), wallet: charity1, addr: charity1Addr },
+    charity2: { client: await clientSetup(charity2, networkUrl), wallet: charity2, addr: charity2Addr },
+    charity3: { client: await clientSetup(charity3, networkUrl), wallet: charity3, addr: charity3Addr },
+    pleb: { client: await clientSetup(pleb, networkUrl), wallet: pleb, addr: plebAddr },
+    tca: { client: await clientSetup(tca, networkUrl), wallet: tca, addr: charity3Addr },
+  };
+  console.log(chalk.green(" Done!"));
+
   console.log(chalk.yellow("\nStep 3. Running Tests"));
-  // await testUpdatingIndexFundConfigs(terra, apTeam, indexFund);
+  // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, indexFund);
   // await testUpdateAllianceMembersList(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   indexFund,
-  //   "terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // address #1
+  //   "juno1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // address #1
   //   {
   //     name: "Testnet Charity #2",
   //     website:
-  //       "http://angelprotocol.io/app/charity/terra1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+  //       "http://angelprotocol.io/app/charity/juno1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
   //     logo: "https://angelprotocol.io/favicon.ico",
   //   }, // member #1`
-  //   // "terra178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // address #2
+  //   // "juno178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // address #2
   //   // { name: "Testnet Admin", webiste: "http://angelprotocol.io", logo: "" }, // member #2
   //   "add" // action
   // );
-  // await testRemoveIndexFund(terra, apTeam, indexFund, 5);
+  // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 5);
   // await testCreateIndexFund(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   indexFund,
   //   "Test Index Fund Name",
   //   "Test Index Fund desc",
   //   false,
   //   []
   // );
-  // await testUpdateFundMembers(terra, apTeam, indexFund, 2, [], []);
-  // await testChangeManyAccountsEndowmentOwners(terra, apTeam, [
+  // await testUpdateFundMembers(actors.apTeam.client, actors.apTeam.addr, indexFund, 2, [], []);
+  // await testChangeManyAccountsEndowmentOwners(actors.apTeam.client, actors.apTeam.addr, [
   //   {
-  //     "address": "terra16zj5dw97sk7q3rvakzu76uyfv6zrxkvsln0yjz2wa5s58mq67vhs5wdv7l", // Current one is localterra endow1.
-  //     "owner": apTeam, 
+  //     "address": "juno16zj5dw97sk7q3rvakzu76uyfv6zrxkvsln0yjz2wa5s58mq67vhs5wdv7l", // Current one is localjuno endow1.
+  //     "owner": apTeamAddr, 
   //     "kyc_donors_only": false,
   //   }
   // ]);
 
-  // await testCreateEndowmentViaRegistrar(terra, apTeam, registrar, {
-  //   owner: charity1.key.accAddress,
-  //   beneficiary: charity1.key.accAddress,
+  // await testCreateEndowmentViaRegistrar(actors.apTeam.client, actors.apTeam.addr, registrar, {
+  //   owner: charity1Addr,
+  //   beneficiary: charity1Addr,
   //   withdraw_before_maturity: false,
   //   maturity_time: undefined,
   //   maturity_height: undefined,
   //   guardians_multisig_addr: undefined,
-  //   cw4_members: [{ addr: charity1.key.accAddress, weight: 1 }],
+  //   cw4_members: [{ addr: charity1Addr, weight: 1 }],
   //   kyc_donors_only: false,
   //   profile: {
   //     name: "Test-Suite Endowment",
@@ -259,161 +252,161 @@ export async function testExecute(
   //   },
   // });
   // Multisig test
-  // await testAddMemberToC4Group(terra, apTeam, cw3ApTeam, cw4GrpApTeam, apTeam.key.accAddress);
-  // await testUpdateCw3Config(terra, apTeam, cw3ApTeam, 50, 25000);
+  // await testAddMemberToC4Group(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, cw4GrpApTeam, apTeamAddr);
+  // await testUpdateCw3Config(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 50, 25000);
 
-  // await testQueryMultisigVoters(terra, cw3ApTeam);
-  // await testQueryMultisigThreshold(terra, cw3ApTeam);
-  // await testQueryGroupMembersList(terra, cw4GrpApTeam);
+  // await testQueryMultisigVoters(actors.apTeam.client, cw3ApTeam);
+  // await testQueryMultisigThreshold(actors.apTeam.client, cw3ApTeam);
+  // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
 
   // Test execute
-  // await testRejectUnapprovedDonations(terra, pleb, endowmentContract1, "10000000"); // possible query registrar error
-  // await testDonorSendsToIndexFund(terra, pleb, indexFund, 1, "0.5", "4200000"); // possible query registrar error
-  // await testTcaMemberSendsToIndexFund(terra, tca, indexFund); // possible query registrar error
+  // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, endowmentContract1, "10000000"); // possible query registrar error
+  // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0.5", "4200000"); // possible query registrar error
+  // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund); // possible query registrar error
   // await testAngelTeamCanTriggerVaultsHarvest(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   charity1,
   //   registrar,
   //   haloCollector,
   //   "0.5"
   // );  // vault-related
   // await testCharityCanUpdateStrategies(
-  //   terra,
-  //   charity1,
+  //   actors.charity1.client,
+  //   actors.charity1.addr,
   //   endowmentContract1,
-  //   anchorVault1,
-  //   anchorVault2
+  //   Vault1,
+  //   Vault2
   // );  // vault-related
   // await testBeneficiaryCanWithdrawFromLiquid(
-  //   terra,
-  //   charity3,
+  //   actors.charity3.client,
+  //   actors.charity3.addr,
   //   endowmentContract3,
-  //   anchorVault1,
-  //   pleb.key.accAddress
+  //   Vault1,
+  //   plebAddr
   // );  // vault-related
-  // await testUpdatingRegistrarConfigs(terra, apTeam, registrar, {
+  // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, registrar, {
   //   cw3_code: 102,
   //   cw4_code: 104,
   //   accounts_code_id: 102,
   // });
-  // await testApproveEndowments(terra, apTeam, registrar, endowmentContract1, 1);
+  // await testApproveEndowments(actors.apTeam.client, actors.apTeam.addr, registrar, endowmentContract1, 1);
   // await testClosingEndpoint(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   registrar,
   //   endowmentContract3,
   //   endowmentContract4
   // );
   // await testUpdateFundMembers(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   indexFund,
   //   2,
   //   [endowmentContract2],
   //   [endowmentContract4]
   // );
   // await testCreateIndexFund(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   indexFund,
   //   "Test fund for Ukraine Portal",
   //   "Another portal test fund",
   //   false,
   //   [endowmentContract2, endowmentContract3, endowmentContract4]
   // );
-  // await testRemoveIndexFund(terra, apTeam, indexFund, 1);
+  // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
   // Test query
-  // await testQueryRegistrarConfig(terra, registrar);
-  // await testQueryRegistrarEndowmentList(terra, registrar);
-  // await testQueryRegistrarEndowmentDetails(terra, registrar, endowmentContract3);
-  // await testQueryRegistrarApprovedVaultList(terra, registrar);
-  // await testQueryRegistrarApprovedVaultRateList(terra, registrar);
-  // await testQueryRegistrarVaultList(terra, registrar);
-  // await testQueryRegistrarVault(terra, registrar, anchorVault1);
-  // await testQueryVaultConfig(terra, anchorVault1);
-  // await testQueryAccountsBalance(terra, endowmentContract4);
-  // await testQueryAccountsConfig(terra, endowmentContract4);
-  // await testQueryAccountsEndowment(terra, endowmentContract4);
-  // await testQueryAccountsProfile(terra, endowmentContract4);
-  // await testQueryAccountsState(terra, endowmentContract4);
+  await testQueryRegistrarConfig(actors.apTeam.client, registrar);
+  await testQueryRegistrarEndowmentList(actors.apTeam.client, registrar);
+  await testQueryRegistrarEndowmentDetails(actors.apTeam.client, registrar, endowmentContract1);
+  // await testQueryRegistrarApprovedVaultList(actors.apTeam.client, registrar);
+  // await testQueryRegistrarApprovedVaultRateList(actors.apTeam.client, registrar);
+  // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
+  // await testQueryRegistrarVault(actors.apTeam.client, registrar, Vault1);
+  // await testQueryVaultConfig(actors.apTeam.client, Vault1);
+  // await testQueryAccountsBalance(actors.apTeam.client, endowmentContract4);
+  await testQueryAccountsConfig(actors.apTeam.client, endowmentContract1);
+  await testQueryAccountsEndowment(actors.apTeam.client, endowmentContract1);
+  await testQueryAccountsProfile(actors.apTeam.client, endowmentContract1);
+  await testQueryAccountsState(actors.apTeam.client, endowmentContract1);
   // await testQueryAccountsTransactions(
-  //   terra,
-  //   endowmentContract4,
+  //   actors.apTeam.client,
+  //   endowmentContract1,
   //   undefined,
   //   undefined,
   //   undefined
   // );
-  // await testQueryIndexFundConfig(terra, indexFund);
-  // await testQueryIndexFundState(terra, indexFund);
-  // await testQueryIndexFundTcaList(terra, indexFund);
-  // await testQueryIndexFundFundsList(terra, indexFund);
-  // await testQueryIndexFundFundDetails(terra, indexFund, 4);
-  // await testQueryIndexFundActiveFundDetails(terra, indexFund);
-  // await testQueryIndexFundActiveFundDonations(terra, indexFund);
-  // await testQueryIndexFundDeposit(terra, indexFund);
+  await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
+  await testQueryIndexFundState(actors.apTeam.client, indexFund);
+  await testQueryIndexFundTcaList(actors.apTeam.client, indexFund);
+  await testQueryIndexFundFundsList(actors.apTeam.client, indexFund, undefined, undefined);
+  await testQueryIndexFundFundDetails(actors.apTeam.client, indexFund, 1);
+  // await testQueryIndexFundActiveFundDetails(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundActiveFundDonations(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundDeposit(actors.apTeam.client, indexFund);
 
   // Test query for HALO airdrop
-  // await testAirdropUpdateConfig(terra, apTeam, apTeam2, pleb, haloAirdrop);
-  // await testAirdropRegisterNewMerkleRoot(terra, apTeam, haloAirdrop);
-  // await testAirdropClaim(terra, apTeam, haloAirdrop);
-  // await testQueryAirdropConfig(terra, haloAirdrop);
-  // await testQueryAirdropMerkleRoot(terra, haloAirdrop, 1);
-  // await testQueryAirdropIsClaimed(terra, haloAirdrop, 1, "terra1qfqa2eu9wp272ha93lj4yhcenrc6ymng079nu8");
-  // await testQueryAirdropLatestStage(terra, haloAirdrop);
+  // await testAirdropUpdateConfig(actors.apTeam.client, actors.apTeam.addr, apTeam2, pleb, haloAirdrop);
+  // await testAirdropRegisterNewMerkleRoot(actors.apTeam.client, actors.apTeam.addr, haloAirdrop);
+  // await testAirdropClaim(actors.apTeam.client, actors.apTeam.addr, haloAirdrop);
+  // await testQueryAirdropConfig(actors.apTeam.client, haloAirdrop);
+  // await testQueryAirdropMerkleRoot(actors.apTeam.client, haloAirdrop, 1);
+  // await testQueryAirdropIsClaimed(actors.apTeam.client, haloAirdrop, 1, "juno1qfqa2eu9wp272ha93lj4yhcenrc6ymng079nu8");
+  // await testQueryAirdropLatestStage(actors.apTeam.client, haloAirdrop);
 
   // Test query for HALO collector
   // await testCollectorUpdateConfig(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   haloCollector,
   //   "1.0",
   //   haloGov,
   //   undefined
   // );
-  // await testCollectorSweep(terra, apTeam, haloCollector);
-  // await testQueryCollectorConfig(terra, haloCollector);
-  // await testQueryCollectorPair(terra, haloCollector);
+  // await testCollectorSweep(actors.apTeam.client, actors.apTeam.addr, haloCollector);
+  // await testQueryCollectorConfig(actors.apTeam.client, haloCollector);
+  // await testQueryCollectorPair(actors.apTeam.client, haloCollector);
 
   // Test query for HALO community
-  // await testCommunityUpdateConfig(terra, apTeam, pleb, haloGov, haloCommunity, "1000000", undefined);
-  // await testCommunitySpend(terra, apTeam, haloGov, haloCommunity, "addr000", "1000000");
-  // await testQueryCommunityConfig(terra, haloCommunity);
+  // await testCommunityUpdateConfig(actors.apTeam.client, actors.apTeam.addr, pleb, haloGov, haloCommunity, "1000000", undefined);
+  // await testCommunitySpend(actors.apTeam.client, actors.apTeam.addr, haloGov, haloCommunity, "addr000", "1000000");
+  // await testQueryCommunityConfig(actors.apTeam.client, haloCommunity);
 
   // Test query for HALO distributor
-  // await testDistributorUpdateConfig(terra, apTeam, haloDistributor, "1000000", haloGov);
-  // await testDistributorSpend(terra, apTeam, haloDistributor, "addr000", "1000000");
-  // await testDistributorAdd(terra, apTeam, haloGov, haloDistributor, apTeam2.key.accAddress);
-  // await testDistributorRemove(terra, apTeam, haloGov, haloDistributor, apTeam2.key.accAddress);
-  // await testQueryDistributorConfig(terra, haloDistributor);
+  // await testDistributorUpdateConfig(actors.apTeam.client, actors.apTeam.addr, haloDistributor, "1000000", haloGov);
+  // await testDistributorSpend(actors.apTeam.client, actors.apTeam.addr, haloDistributor, "addr000", "1000000");
+  // await testDistributorAdd(actors.apTeam.client, actors.apTeam.addr, haloGov, haloDistributor, apTeam2Addr);
+  // await testDistributorRemove(actors.apTeam.client, actors.apTeam.addr, haloGov, haloDistributor, apTeam2Addr);
+  // await testQueryDistributorConfig(actors.apTeam.client, haloDistributor);
 
   // Tests for HALO vesting
-  // await testVestingUpdateConfig(terra, apTeam, haloVesting, undefined, undefined, undefined);
+  // await testVestingUpdateConfig(actors.apTeam.client, actors.apTeam.addr, haloVesting, undefined, undefined, undefined);
   // await testVestingRegisterVestingAccounts(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   haloVesting,
   //   [
-  //     {address: apTeam3.key.accAddress, schedules: [[100, 101, "100"], [100, 110, "100"], [100, 200, "100"]]},
-  //     {address: apTeam2.key.accAddress, schedules: [[100, 110, "100"]]},
+  //     {address: apTeam3Addr, schedules: [[100, 101, "100"], [100, 110, "100"], [100, 200, "100"]]},
+  //     {address: apTeam2Addr, schedules: [[100, 110, "100"]]},
   //   ]
   // );
   // let new_schedules = [[1000, 2000, "100"]];
   // await testVestingUpdateVestingAccount(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   haloVesting,
-  //   apTeam3.key.accAddress,
+  //   apTeam3Addr,
   //   new_schedules,
   // );
-  // await testUserClaimsVestedTokens(terra, apTeam3, haloVesting);
-  // await testQueryVestingConfig(terra, haloVesting);
-  // await testQueryVestingAccount(terra, haloVesting, "addr0");
-  // await testQueryVestingAccounts(terra, haloVesting, undefined, undefined);
+  // await testUserClaimsVestedTokens(actors.apTeam3.client, actors.apTeam3.addr, haloVesting);
+  // await testQueryVestingConfig(actors.apTeam.client, haloVesting);
+  // await testQueryVestingAccount(actors.apTeam.client, haloVesting, "addr0");
+  // await testQueryVestingAccounts(actors.apTeam.client, haloVesting, undefined, undefined);
 
   // await testGovUpdateConfig(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   haloGov,
   //   undefined,
   //   15, // quorum
@@ -425,57 +418,57 @@ export async function testExecute(
   //   undefined, // unbonding period
   //   undefined // gov_hodler
   // );
-  // await testGovExecutePoll(terra, apTeam, haloGov, 1);
-  // await testGovEndPoll(terra, apTeam, haloGov, 1);
-  // await testGovSnapshotPoll(terra, apTeam, haloGov, 1);
-  // await testGovStakeVotingTokens(terra, apTeam, terraswapToken, haloGov, "20000000000");
-  // await testGovStakeVotingTokens(terra, apTeam2, terraswapToken, haloGov, "10000000000");
-  // await testGovStakeVotingTokens(terra, apTeam3, terraswapToken, haloGov, "5000000000");
-  // await testGovWithdrawVotingTokens(terra, apTeam, haloGov, "1000000000");
-  // await testGovWithdrawVotingTokens(terra, apTeam2, haloGov, "10000000000");
-  // await testGovWithdrawVotingTokens(terra, apTeam3, haloGov, "10000000000");
-  // await testGovClaimVotingTokens(terra, apTeam, haloGov);
-  // await testGovCastVote(terra, apTeam, haloGov, 1, VoteOption.YES, "1");
-  // await testGovRegisterContracts(terra, apTeam, haloGov, terraswapToken);
+  // await testGovExecutePoll(actors.apTeam.client, actors.apTeam.addr, haloGov, 1);
+  // await testGovEndPoll(actors.apTeam.client, actors.apTeam.addr, haloGov, 1);
+  // await testGovSnapshotPoll(actors.apTeam.client, actors.apTeam.addr, haloGov, 1);
+  // await testGovStakeVotingTokens(actors.apTeam.client, actors.apTeam.addr, junoswapToken, haloGov, "20000000000");
+  // await testGovStakeVotingTokens(actors.apTeam2.client, actors.apTeam2.addr, junoswapToken, haloGov, "10000000000");
+  // await testGovStakeVotingTokens(actors.apTeam3.client, actors.apTeam3.addr, junoswapToken, haloGov, "5000000000");
+  // await testGovWithdrawVotingTokens(actors.apTeam.client, actors.apTeam.addr, haloGov, "1000000000");
+  // await testGovWithdrawVotingTokens(actors.apTeam2.client, actors.apTeam2.addr, haloGov, "10000000000");
+  // await testGovWithdrawVotingTokens(actors.apTeam3.client, actors.apTeam3.addr, haloGov, "10000000000");
+  // await testGovClaimVotingTokens(actors.apTeam.client, actors.apTeam.addr, haloGov);
+  // await testGovCastVote(actors.apTeam.client, actors.apTeam.addr, haloGov, 1, VoteOption.YES, "1");
+  // await testGovRegisterContracts(actors.apTeam.client, actors.apTeam.addr, haloGov, junoswapToken);
   // await testGovExecutePollForRegistrarSettings(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   haloGov,
-  //   terraswapToken,
+  //   junoswapToken,
   //   "1000000",
   //   100,
   //   "0.5",
   //   "0.1"
   // );
-  // await testGovResetClaims(terra, apTeam, haloGov, [
-  //   apTeam.key.accAddress,
-  //   apTeam2.key.accAddress,
-  //   apTeam3.key.accAddress,
+  // await testGovResetClaims(actors.apTeam.client, actors.apTeam.addr, haloGov, [
+  //   apTeamAddr,
+  //   apTeam2Addr,
+  //   apTeam3Addr,
   // ]);
-  // await testQueryGovConfig(terra, haloGov);
-  // await testQueryGovState(terra, haloGov);
-  // await testQueryGovClaims(terra, haloGov, apTeam.key.accAddress);
-  // await testQueryGovStaker(terra, haloGov, apTeam.key.accAddress);
-  // await testQueryGovStaker(terra, haloGov, apTeam2.key.accAddress);
-  // await testQueryGovStaker(terra, haloGov, apTeam3.key.accAddress);
-  // await testQueryGovPoll(terra, haloGov, 1);
-  // await testQueryGovPolls(terra, haloGov, undefined, undefined, undefined);
+  // await testQueryGovConfig(actors.apTeam.client, haloGov);
+  // await testQueryGovState(actors.apTeam.client, haloGov);
+  // await testQueryGovClaims(actors.apTeam.client, haloGov, apTeamAddr);
+  // await testQueryGovStaker(actors.apTeam.client, haloGov, apTeamAddr);
+  // await testQueryGovStaker(actors.apTeam.client, haloGov, apTeam2Addr);
+  // await testQueryGovStaker(actors.apTeam.client, haloGov, apTeam3Addr);
+  // await testQueryGovPoll(actors.apTeam.client, haloGov, 1);
+  // await testQueryGovPolls(actors.apTeam.client, haloGov, undefined, undefined, undefined);
 
-  // await testQueryGovVoters(terra, haloGov, 1, undefined, undefined);
+  // await testQueryGovVoters(actors.apTeam.client, haloGov, 1, undefined, undefined);
 
   // Test query for HALO staking
-  // await testStakingUnbond(terra, apTeam, haloStaking, "100");
-  // await testStakingWithdraw(terra, apTeam, haloStaking);
-  // await testQueryStakingConfig(terra, haloStaking);
-  // await testQueryStakingStakerInfo(terra, haloStaking, "addr000", undefined);
-  // await testQueryStakingState(terra, haloStaking);
+  // await testStakingUnbond(actors.apTeam.client, actors.apTeam.addr, haloStaking, "100");
+  // await testStakingWithdraw(actors.apTeam.client, actors.apTeam.addr, haloStaking);
+  // await testQueryStakingConfig(actors.apTeam.client, haloStaking);
+  // await testQueryStakingStakerInfo(actors.apTeam.client, haloStaking, "addr000", undefined);
+  // await testQueryStakingState(actors.apTeam.client, haloStaking);
 
   // Test query for LBP Factory
   // await testFactoryUpdateConfig(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   lbpFactoryContract,
-  // undefined,
+  //   undefined,
   //   undefined,
   //   undefined,
   //   undefined,
@@ -483,10 +476,10 @@ export async function testExecute(
   //   undefined
   // );
   // await testFactoryCreatePair(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   lbpFactoryContract,
-  //   terraswapToken,
+  //   junoswapToken,
   //   "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
   //   datetimeStringToUTC("12/16/2021 00:00:00Z"),
   //   datetimeStringToUTC("12/17/2021 00:00:00Z"),
@@ -494,64 +487,64 @@ export async function testExecute(
   //   "50",
   //   "4",
   //   "50",
-  //   "HALO <-> UST Pair"
+  //   "HALO <-> axlUSDC Pair"
   // );
-  // await getPairContractLpToken(terra, lbpPairContract);
-  // await testFactoryUnregister(terra, apTeam, lbpFactoryContract, terraswapToken, "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4");
-  // await testQueryFactoryConfig(terra, lbpFactoryContract);
-  // await testQueryFactoryPair(terra, lbpFactoryContract, terraswapToken);
-  // await testQueryFactoryPairs(terra, lbpFactoryContract);
+  // await getPairContractLpToken(actors.apTeam.client, lbpPairContract);
+  // await testFactoryUnregister(actors.apTeam.client, actors.apTeam.addr, lbpFactoryContract, junoswapToken, "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4");
+  // await testQueryFactoryConfig(actors.apTeam.client, lbpFactoryContract);
+  // await testQueryFactoryPair(actors.apTeam.client, lbpFactoryContract, junoswapToken);
+  // await testQueryFactoryPairs(actors.apTeam.client, lbpFactoryContract);
 
-  // await testPairSwapNativeToHalo(terra, apTeam, lbpPairContract, "100000000");
+  // await testPairSwapNativeToHalo(actors.apTeam.client, actors.apTeam.addr, lbpPairContract, "100000000");
   // await testPairSwapHaloToNative(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   lbpPairContract,
-  //   terraswapToken,
+  //   junoswapToken,
   //   "100000000"
   // );
-  // await testQueryPairPair(terra, lbpPairContract);
-  // await testQueryPairPool(terra, lbpPairContract);
-  // await testQueryPairSimulationNativeToHalo(terra, lbpPairContract);
-  // await testQueryPairSimulationHaloToNative(terra, lbpPairContract, terraswapToken);
-  // await testQueryPairReverseSimulationNativeToHalo(terra, lbpPairContract);
+  // await testQueryPairPair(actors.apTeam.client, lbpPairContract);
+  // await testQueryPairPool(actors.apTeam.client, lbpPairContract);
+  // await testQueryPairSimulationNativeToHalo(actors.apTeam.client, lbpPairContract);
+  // await testQueryPairSimulationHaloToNative(actors.apTeam.client, lbpPairContract, junoswapToken);
+  // await testQueryPairReverseSimulationNativeToHalo(actors.apTeam.client, lbpPairContract);
   // await testQueryPairReverseSimulationHaloToNative(
-  //   terra,
+  //   actors.apTeam.client,
   //   lbpPairContract,
-  //   terraswapToken
+  //   junoswapToken
   // );
 
   // Test query for LBP Router
-  // await testQueryRouterConfig(terra, lbpRouterContract);
+  // await testQueryRouterConfig(actors.apTeam.client, lbpRouterContract);
 
   // Test Loop Pair
   // await testPairProvideLiquidity(
-  //   terra,
-  //   apTeam,
-  //   terraswapToken,
-  //   "terra1yjg0tuhc6kzwz9jl8yqgxnf2ctwlfumnvscupp", // LOOP PAIR
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   junoswapToken,
+  //   "juno1yjg0tuhc6kzwz9jl8yqgxnf2ctwlfumnvscupp", // LOOP PAIR
   //   "80000000000000", //HALO
-  //   "1300000000000", //UST
+  //   "1300000000000", //axlUSDC
   // );
 
   // await testPairWithdrawLiquidity(
-  //   terra,
-  //   apTeam,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   lbpPairContract,
   //   lbpLpTokenContract,
   //   "100000000"
   // );
 
   // Test query for LBP Token
-  // await testQueryTokenBalance(terra, terraswapToken, apTeam.key.accAddress);
-  // await testQueryTokenInfo(terra, terraswapToken);
-  // await testQueryTokenMinter(terra, terraswapToken);
+  // await testQueryTokenBalance(actors.apTeam.client, junoswapToken, apTeamAddr);
+  // await testQueryTokenInfo(actors.apTeam.client, junoswapToken);
+  // await testQueryTokenMinter(actors.apTeam.client, junoswapToken);
 
   // await testTransferTokenBalance(
-  //   terra,
-  //   apTeam,
-  //   terraswapToken,
-  //   apTeam2.key.accAddress,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   junoswapToken,
+  //   apTeam2Addr,
   //   "420000000"
   // );
 }

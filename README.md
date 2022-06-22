@@ -5,80 +5,42 @@
 - Mac or Linux computer with x86 processors
 - docker
 - [rust-optimizer](https://github.com/CosmWasm/rust-optimizer)
-- [LocalTerra](https://github.com/terra-money/LocalTerra)
+- [LocalJuno](https://github.com/CosmosContracts/juno)
 - nodejs
 
 Notes:
 
 - **Windows users:** Sorry, but Windows is an inferior OS for software developement. I suggest upgrading to a Mac or install Linux on your PC (I used [arch](https://wiki.archlinux.org/title/installation_guide) btw)
-- **M1 Mac users**: Sorry, LocalTerra doesn't run on ARM processors. There is currently no solution to this
+- **M1 Mac users**: Sorry, LocalJuno doesn't run on ARM processors. There is currently no solution to this
 
 ## Procedures
 
-### Spin up LocalTerra
-
+### Spin up LocalJuno
+1. Clone the junod repo: 
 ```bash
-git clone https://github.com/terra-money/LocalTerra.git
-cd LocalTerra
-git checkout v0.5.0  # important to get the right version!
+git clone https://github.com/CosmosContracts/juno.git
+```
+2. Copy the file named `junod_docker-compose.yml` in this `test-suite` repo over to the base folder of the junod repo, replacing the existing default `docker-compose.yml` file. 
+```bash
+cp ./junod_docker-compose.yml <juno_repo_path>/docker-compose.yml`
+```
+3. In the jundo repo base folder run the following to build junod container:
+```bash
+docker-compose build
 ```
 
-Edit `LocalTerra/config/config.toml` as follows. This speeds up LocalTerra's blocktime which improves our productivity.
-
-```diff
-##### consensus configuration options #####
-[consensus]
-
-wal_file = "data/cs.wal/wal"
-- timeout_propose = "3s"
-- timeout_propose_delta = "500ms"
-- timeout_prevote = "1s"
-- timeout_prevote_delta = "500ms"
-- timeout_precommit_delta = "500ms"
-- timeout_commit = "5s"
-+ timeout_propose = "500ms"
-+ timeout_propose_delta = "500ms"
-+ timeout_prevote = "500ms"
-+ timeout_prevote_delta = "500ms"
-+ timeout_precommit_delta = "500ms"
-+ timeout_commit = "500ms"
-```
-
-Edit `LocalTerra/config/genesis.json` as follows. This fixes the stability fee ("tax") on Terra stablecoin transfers to a constant value (0.1%) so that our test transactions give reproducible results.
-
-```diff
-"app_state": {
-  "treasury": {
-    "params": {
-      "tax_policy": {
--       "rate_min": "0.000500000000000000",
--       "rate_max": "0.010000000000000000",
-+       "rate_min": "0.001000000000000000",
-+       "rate_max": "0.001000000000000000",
-      },
--     "change_rate_max": "0.000250000000000000"
-+     "change_rate_max": "0.000000000000000000"
-    }
-  }
-}
-```
-
-Once done, start LocalTerra by
-
+Once the build is done, you can start your LocalJuno by running
 ```bash
 docker-compose up  # Ctrl + C to quit
 ```
 
-From time to time, you may need to revert LocalTerra to its initial state. Do this by
-
+From time to time, you may need to revert LocalJuno to its initial state. Do this by running
 ```bash
 docker-compose rm
 ```
 
-How to know if LocalTerra is working properly:
-
-1. **Go to [https://localhost:1317/swagger/](http://localhost:1317/swagger/).** You should see a page with some APIs which can be used to send transactions or query blockchain state. However, we will be using [terra.js]() library to do this instead of from the swagger page
-2. **Go to [this Terra Finder page](https://finder.terra.money/localterra/address/terra1x46rqay4d3cssq8gxxvqz8xt6nwlz4td20k38v).** Don't forget to select "LocalTerra" from the network selector on top right of the page. You should see an account with huge amounts of Luna and stablecoins. This is one of the accounts we will be using for the tests
+How to know if LocalJuno is working properly?
+**Go to [https://localhost:1317](http://localhost:1317).** You should see a page with some APIs which can be used to send transactions or query blockchain state.
 
 ### Compile contracts
 
@@ -108,14 +70,14 @@ cp ./src/config/wasmPaths.ts.example ./src/config/wasmPaths.ts
 nano ./src/config/wasmPaths.ts
 ```
 
-### Optional: LocalTerra constants file setup
+### Optional: LocalJuno constants file setup
 
-In the `src/config` folder there is an example file for setting the constants for your LocalTerra parameters (contracts, init input settings, wallets, etc): `localterraConstants.ts.example`
-In the newly created file, edit the `wasm_path` object's attributes for the `core` and `lbp` to point to the correct local artifacts folders.
+In the `src/config` folder there is an example file for setting the constants for your LocalJuno parameters (contracts, init input settings, wallets, etc): `localjunoConstants.ts.example`
+In the newly created file, edit the `wasm_path` object's attributes for the `core` to point to the correct local artifacts folders.
 
 ```bash
-cp ./src/config/localterraConstants.ts.example ./src/config/localterraConstants.ts
-nano ./src/config/localterraConstants.ts
+cp ./src/config/localjunoConstants.ts.example ./src/config/localjunoConstants.ts
+nano ./src/config/localjunoConstants.ts
 ```
 
 ### Run full setup of contracts & all tests
@@ -125,7 +87,7 @@ The npm commands follow a formula to help make it easier to remember commands an
 
 Network options:
 
-- `localterra`
+- `localjuno`
 - `testnet`
 - `mainnet`
 
@@ -133,24 +95,22 @@ Action options:
 
 - `setup`: instantiates and configures all contracts for a module
 - `migrate`: migrates all contracts for a module (using wasms in the respective repos)
-- `tests`: runs all tests that are active the main tests file (`/src/tests/<testnet | mainnet>.ts`) [AN: LocalTerra & TestNet share the testnet tests]
+- `tests`: runs all tests that are active the main tests file (`/src/tests/<testnet | mainnet>.ts`) [AN: LocalJuno & TestNet share the testnet tests]
 
 Module options:
 
 - `core`: Registrar, Accounts, Index Fund, Multisigs, Vaults, etc
-- `terraswap`: TerraSwap HALO CW20 token, HALO/UST Pair, & HALO/UST Pair LP Token
+- `junoswap`: JunoSwap HALO CW20 token, HALO/axlUSDC Pair, & HALO/axlUSDC Pair LP Token
 - `halo`: All "support" contracts for HALO Token (gov, collector, distributor, vesting, etc)
-- `lbp`: Astroport LBP contracts (Factory, Pair, LP Token)
 
-#### Complete steps for the setup of AP contracts ecosystem & running test (ex. using LocalTerra)
+#### Complete steps for the setup of AP contracts ecosystem & running test (ex. using LocalJuno)
 
 ```bash
 npm install
-npm run test:localterra-setup-core
-npm run test:localterra-setup-terraswap
-npm run test:localterra-setup-halo
-npm run test:localterra-setup-lbp
-npm run test:localterra-tests
+npm run test:localjuno-setup-core
+npm run test:localjuno-setup-junoswap
+npm run test:localjuno-setup-halo
+npm run test:localjuno-tests
 ```
 
 **NOTE:** After each of the setup commands, you may see key contract addresses or wasm codes that will need to updated in your constants file before proceeding to run the next command. These commands build upon on another.

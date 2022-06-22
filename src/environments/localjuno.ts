@@ -1,12 +1,12 @@
 // -------------------------------------------------------------------------------------
-// TestNet test-suite
+// LocalJuno test-suite
 // -------------------------------------------------------------------------------------
 import { GasPrice } from "@cosmjs/stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
 import chalk from "chalk";
-import { testnet as config } from "../config/constants";
+import { localjuno as config } from "../config/localjunoConstants";
 import { datetimeStringToUTC, getWalletAddress } from "../utils/helpers";
 
 import { migrateCore } from "../processes/migrate/core";
@@ -48,8 +48,6 @@ let registrar: string;
 let cw4GrpApTeam: string;
 let cw3ApTeam: string;
 let indexFund: string;
-let vault1: string;
-let vault2: string;
 let endowmentContract1: string;
 let endowmentContract2: string;
 let endowmentContract3: string;
@@ -109,7 +107,6 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(plebAccount)} as Pleb`);
   console.log(`Using ${chalk.cyan(tcaAccount)} as TCA member`);
 
-
   registrar = config.contracts.registrar;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
@@ -139,7 +136,9 @@ async function initialize() {
 
   console.log(`Using ${chalk.cyan(junoswapFactory)} as JunoSwap Factory`);
   console.log(`Using ${chalk.cyan(junoswapHaloTokenContract)} as JunoSwap HALO Token`);
-  console.log(`Using ${chalk.cyan(junoswapHaloJunoPairContract)} as JunoSwap HALO/JUNO Pair`);
+  console.log(
+    `Using ${chalk.cyan(junoswapHaloJunoPairContract)} as JunoSwap HALO/JUNO Pair`
+  );
 
   haloAirdrop = config.halo.airdrop_contract;
   haloCollector = config.halo.collector_contract;
@@ -160,15 +159,14 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(haloVesting)} as HALO vesting`);
 
   // setup client connection to the JUNO network
-  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString("0.025ujunox") });
+  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString("0.1ujuno") });
 }
 
-
 // -------------------------------------------------------------------------------------
-// setup contracts
+// setup core contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupCore(): Promise<void> {
-  console.log(chalk.blue(`\nTestNet ${config.networkInfo.chainId}`));
+  console.log(chalk.blue("\nLocalJuno"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -177,7 +175,7 @@ export async function startSetupCore(): Promise<void> {
   // Setup contracts
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   await setupCore(
-    juno,
+    juno,     
     // wallets
     {
       apTeam,
@@ -195,12 +193,12 @@ export async function startSetupCore(): Promise<void> {
       threshold_absolute_percentage: "0.50", // threshold absolute percentage
       max_voting_period_height: 1000, // max voting period height
       max_voting_period_guardians_height: 100, // max voting period guardians height
-      fund_rotation: 10, // index fund rotation
-      turnover_to_multisig: true, // turn over to AP Team multisig
-      is_localjuno: false, // is LocalJuno
+      fund_rotation: undefined, // index fund rotation
+      turnover_to_multisig: false, // turn over to AP Team multisig
+      is_localjuno: true, // is LocalJuno
       harvest_to_liquid: "0.75", // harvest to liquid percentage
       tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
-      funding_goal: "50000000", // funding goal
+      funding_goal: "500000000", // funding goal
     }
   );
 }
@@ -209,7 +207,7 @@ export async function startSetupCore(): Promise<void> {
 // setup JunoSwap contracts
 // -------------------------------------------------------------------------------------
 // export async function startSetupJunoSwap(): Promise<void> {
-//   console.log(chalk.blue("\nTestNet"));
+//   console.log(chalk.blue("\nLocalJuno"));
 
 //   // Initialize environment information
 //   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -218,11 +216,13 @@ export async function startSetupCore(): Promise<void> {
 //   // Setup JunoSwap contracts
 //   console.log(chalk.yellow("\nStep 2a. JunoSwap Contracts"));
 //   const apTeamAccount = await getWalletAddress(apTeam);
+//   const apTeam2Account = await getWalletAddress(apTeam2);
+//   const apTeam3Account = await getWalletAddress(apTeam3);
 //   await setupJunoSwap(
 //     juno,
 //     apTeamAccount,
-//     junoswapTokenCode,
-//     junoswapFactory,
+//     apTeam2Account,
+//     apTeam3Account,
 //     junoswapInitialHaloSupply,
 //     junoswapHaloLiquidity,
 //     junoswapNativeLiquidity
@@ -233,7 +233,7 @@ export async function startSetupCore(): Promise<void> {
 // setup HALO contracts
 // -------------------------------------------------------------------------------------
 // export async function startSetupHalo(): Promise<void> {
-//   console.log(chalk.blue("\nTestnet"));
+//   console.log(chalk.blue("\nLocalJuno"));
 
 //   // Initialize environment information
 //   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -248,17 +248,17 @@ export async function startSetupCore(): Promise<void> {
 //     registrar,
 //     junoswapHaloTokenContract, // halo junoswap token contract
 //     junoswapFactory,
-//     junoswapHaloJunoPairLpToken, // staking_token: LP token of HALO-JUNO pair contract
+//     junoswapHaloJunoPairLpToken, // staking_token: HALO-JUNO pair LP Token contract
 //     30, // quorum
 //     50, // threshold,
 //     2000, // voting_period,
 //     1000, // timelock_period,
 //     "10000000000", // proposal_deposit,
 //     10, // snapshot_period,
-//     360, // unbonding_period in seconds
+//     120, // unbonding_period in seconds
 //     [], // whitelist
 //     "10000000000", // spend_limit
-//     "1.0", // reward_factor
+//     "0.2", // reward_factor
 //     [[100, 200, "1000000"]], // distribution_schedule
 //     12345 // genesis_time
 //   );
@@ -268,13 +268,13 @@ export async function startSetupCore(): Promise<void> {
 // migrate Angel Protocol core contracts
 // -------------------------------------------------------------------------------------
 export async function startMigrateCore(): Promise<void> {
-  console.log(chalk.blue("\nTestNet"));
+  console.log(chalk.blue("\nLocalJuno"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
   await initialize();
 
-  // Migrate contracts
+  // Migrate Contracts
   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
   const apTeamAccount = await getWalletAddress(apTeam);
   await migrateCore(
@@ -284,7 +284,7 @@ export async function startMigrateCore(): Promise<void> {
     indexFund,
     cw4GrpApTeam,
     cw3ApTeam,
-    [vault1, vault2],
+    [],
     [endowmentContract1, endowmentContract2, endowmentContract3, endowmentContract4]
   );
 }
@@ -301,9 +301,10 @@ export async function startMigrateCore(): Promise<void> {
 
 //   // Migrate Contracts
 //   console.log(chalk.yellow("\nStep 2a. Migrate Contracts"));
+//   const apTeamAccount = await getWalletAddress(apTeam);
 //   await migrateHalo(
 //     juno,
-//     apTeam,
+//     apTeamAccount,
 //     haloAirdrop,
 //     haloCollector,
 //     haloCommunity,
@@ -319,7 +320,7 @@ export async function startMigrateCore(): Promise<void> {
 // start test
 // -------------------------------------------------------------------------------------
 export async function startTests(): Promise<void> {
-  console.log(chalk.blue("\nTestNet"));
+  console.log(chalk.blue("\nLocalJuno"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -347,8 +348,8 @@ export async function startTests(): Promise<void> {
     tcaAccount,
     registrar,
     indexFund,
-    vault1,
-    vault2,
+    "undefined",
+    "undefined",
     endowmentContract1,
     endowmentContract2,
     endowmentContract3,

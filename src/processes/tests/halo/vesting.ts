@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -21,8 +21,8 @@ type VestingAccount = {
 //
 //----------------------------------------------------------------------------------------
 export async function testVestingUpdateConfig(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   vestingContract: string,
   owner: string | undefined,
   halo_token: string | undefined,
@@ -31,15 +31,13 @@ export async function testVestingUpdateConfig(
   process.stdout.write("Test - Owner can update vesting config");
 
   await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, vestingContract, {
-        update_config: {
-          owner,
-          halo_token,
-          genesis_time,
-        },
-      }),
-    ])
+    sendTransaction(juno, apTeam, vestingContract, {
+      update_config: {
+        owner,
+        halo_token,
+        genesis_time,
+      },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -52,19 +50,17 @@ export async function testVestingUpdateConfig(
 //
 //----------------------------------------------------------------------------------------
 export async function testVestingRegisterVestingAccounts(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   vestingContract: string,
   vesting_accounts: VestingAccount[]
 ): Promise<void> {
   process.stdout.write("Test - Register vesting account");
 
   await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, vestingContract, {
-        register_vesting_accounts: { vesting_accounts },
-      }),
-    ])
+    sendTransaction(juno, apTeam, vestingContract, {
+      register_vesting_accounts: { vesting_accounts },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -77,22 +73,20 @@ export async function testVestingRegisterVestingAccounts(
 //
 //----------------------------------------------------------------------------------------
 export async function testAddSchedulesToVestingAccount(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   address: string,
   newSchedules: [number, number, string][]
 ): Promise<void> {
   process.stdout.write("Test - Add new schedules to existing vesting account");
 
   await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, vestingContract, {
-        add_schedules_to_vesting_account: {
-          address,
-          new_schedules: newSchedules,
-        },
-      }),
-    ])
+    sendTransaction(juno, apTeam, vestingContract, {
+      add_schedules_to_vesting_account: {
+        address,
+        new_schedules: newSchedules,
+      },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -105,18 +99,16 @@ export async function testAddSchedulesToVestingAccount(
 //
 //----------------------------------------------------------------------------------------
 export async function testUserClaimsVestedTokens(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   vestingContract: string
 ): Promise<void> {
   process.stdout.write("Test - User can claim available tokens from the vesting account");
 
   await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(apTeam.key.accAddress, vestingContract, {
-        claim: {},
-      }),
-    ])
+    sendTransaction(juno, apTeam, vestingContract, {
+      claim: {},
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -125,11 +117,11 @@ export async function testUserClaimsVestedTokens(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryVestingConfig(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   vestingContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Vesting Config");
-  const result: any = await terra.wasm.contractQuery(vestingContract, {
+  const result: any = await juno.queryContractSmart(vestingContract, {
     config: {},
   });
 
@@ -138,12 +130,12 @@ export async function testQueryVestingConfig(
 }
 
 export async function testQueryVestingAccount(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   vestingContract: string,
   address: string
 ): Promise<void> {
   process.stdout.write("Test - Query get vesting account by address");
-  const result: any = await terra.wasm.contractQuery(vestingContract, {
+  const result: any = await juno.queryContractSmart(vestingContract, {
     vesting_account: { address },
   });
 
@@ -152,13 +144,13 @@ export async function testQueryVestingAccount(
 }
 
 export async function testQueryVestingAccounts(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   vestingContract: string,
   start_after: string | undefined,
   limit: number | undefined
 ): Promise<void> {
   process.stdout.write("Test - Query vesting accounts");
-  const result: any = await terra.wasm.contractQuery(vestingContract, {
+  const result: any = await juno.queryContractSmart(vestingContract, {
     vesting_accounts: {
       start_after,
       limit,

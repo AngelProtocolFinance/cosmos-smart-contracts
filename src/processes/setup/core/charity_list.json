@@ -3,7 +3,7 @@
     {
       "endowment_address": "",
       "charity_name": "American Kratom Services",
-      "charity_owner": "terra1t8nhje5548gj2s25c828j2zrsekmesq5dhyyr4",
+      "charity_owner": "juno1t8nhje5548gj2s25c828j2zrsekmesq5dhyyr4",
       "tier": 2,
       "charity_overview": "We are an holistic health and addiction service provider focusing on Eastern Philosophy for wellness, infused with Western addiction protocols. We utilize Certified Recovery Mentorship/Certified Peer Mentorship to teach harm reduction and assist with detox, titration, and maintenance of harmful substances. We offer vocational training as well as personal council.",
       "url": "https://americankratomservices.com/",
@@ -24,7 +24,8 @@
       "street_address": "Portland",
       "charity_navigator_rating": "",
       "annual_revenue": "Under $100k",
-      "average_annual_budget": ""
+      "average_annual_budget": "",
+      "kyc_donors_only": false
     }
   ]
 }

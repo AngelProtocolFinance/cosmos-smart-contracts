@@ -1,17 +1,27 @@
 import * as fs from "fs";
 import chalk from "chalk";
 import BN from "bn.js";
-import {
-  isTxError,
-  LocalTerra,
-  Msg,
-  MsgInstantiateContract,
-  MsgMigrateContract,
-  MsgStoreCode,
-  Wallet,
-  LCDClient,
-} from "@terra-money/terra.js";
 import axios from "axios";
+import { Coin } from "@cosmjs/amino";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
+import { wasm_path } from "../config/wasmPaths";
+
+export type Member = {
+  addr: string;
+  weight: number;
+};
+
+export type Actor = {
+  addr: string;
+  client: SigningCosmWasmClient;
+  wallet: DirectSecp256k1HdWallet;
+};
+
+export async function getWalletAddress(wallet: DirectSecp256k1HdWallet) {
+  let [account] = await wallet.getAccounts();
+  return account.address;
+}
 
 /**
  * @notice Encode a JSON object to base64 binary
@@ -33,69 +43,62 @@ export function datetimeStringToUTC(date: string): number {
  */
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function sendTransaction(
-  terra: LocalTerra | LCDClient,
-  sender: Wallet,
-  msgs: Msg[],
+  juno: SigningCosmWasmClient,
+  sender: string,
+  contract: string,
+  msg: Record<string, unknown>,
+  memo = undefined,
   verbose = false
 ) {
-  let fee;
-  try {
-    let sequence = await sender.sequence();
-    fee = await terra.tx.estimateFee([{ sequenceNumber: sequence }], { msgs });
-  } catch (error) {
-    console.error(error);
-    if (axios.isAxiosError(error)) {
-      throw new Error(
-        chalk.red("Transaction failed!") +
-          `\n${chalk.yellow("code")}: ${error.code}` +
-          `\n${chalk.yellow("message")}: ${error.message}` +
-          `\n${chalk.yellow("error")}: ${error.response?.data["error"]}`
-      );
-    } else {
-      throw error;
+  try { 
+    const result = await juno.execute(sender, contract, msg, "auto", memo, []);
+    if (verbose) {
+      console.log(chalk.yellow("\n~~~ TX HASH: ", result.transactionHash, "~~~~"));
+      console.log(chalk.yellow(JSON.stringify(result.logs)));
     }
+    return result;
+  } catch (err: any) {
+    throw new Error(`An error occured! | ${err.toString()}`);
   }
-  const tx = await sender.createAndSignTx({ msgs, fee });
-  const result = await terra.tx.broadcast(tx);
-
-  // Print the log info
-  if (verbose) {
-    console.log(chalk.magenta("\nTxHash:"), result.txhash);
-    try {
-      console.log(
-        chalk.magenta("Raw log:"),
-        JSON.stringify(JSON.parse(result.raw_log), null, 2)
-      );
-    } catch {
-      console.log(chalk.magenta("Failed to parse log! Raw log:"), result.raw_log);
-    }
-  }
-
-  if (isTxError(result)) {
-    throw new Error(
-      chalk.red("Transaction failed!") +
-        `\n${chalk.yellow("code")}: ${result.code}` +
-        `\n${chalk.yellow("codespace")}: ${result.codespace}` +
-        `\n${chalk.yellow("raw_log")}: ${result.raw_log}`
-    );
-  }
-
-  return result;
 }
 
 /**
- * @notice Upload contract code to LocalTerra. Return code ID.
+ * @notice Send a transaction along with some amount of funds [Coin, ... ]. 
+ * Returns result if successful, throw error if failed.
+ */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export async function sendTransactionWithFunds(
+  juno: SigningCosmWasmClient,
+  sender: string,
+  contract: string,
+  msg: Record<string, unknown>,
+  funds: Coin[],
+  memo = undefined,
+  verbose = false
+) {
+  try { 
+    const result = await juno.execute(sender, contract, msg, "auto", memo, funds);
+    if (verbose) {
+      console.log(chalk.yellow("\n~~~ TX HASH: ", result.transactionHash, "~~~~"));
+      console.log(chalk.yellow(JSON.stringify(result.logs)));
+    }
+    return result;
+  } catch (err: any) {
+    throw new Error(`An error occured! | ${err.toString()}`);
+  }
+}
+
+/**
+ * @notice Upload contract code to LocalJuno. Return code ID.
  */
 export async function storeCode(
-  terra: LocalTerra | LCDClient,
-  deployer: Wallet,
+  juno: SigningCosmWasmClient,
+  deployer: string,
   filepath: string
 ): Promise<number> {
-  const code = fs.readFileSync(filepath).toString("base64");
-  const result = await sendTransaction(terra, deployer, [
-    new MsgStoreCode(deployer.key.accAddress, code),
-  ]);
-  return parseInt(result.logs[0].eventsByType.store_code.code_id[0]);
+  const code = fs.readFileSync(filepath);
+  const result = await juno.upload(deployer, code, "auto");
+  return result.codeId;
 }
 
 /**
@@ -103,22 +106,13 @@ export async function storeCode(
  */
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function instantiateContract(
-  terra: LocalTerra | LCDClient,
-  deployer: Wallet,
-  admin: Wallet, // leave this emtpy then contract is not migratable
+  juno: SigningCosmWasmClient,
+  deployer: string,
+  admin: string, // leave this emtpy then contract is not migratable
   codeId: number,
   instantiateMsg: Record<string, unknown>
 ) {
-  const result = await sendTransaction(terra, deployer, [
-    new MsgInstantiateContract(
-      deployer.key.accAddress,
-      admin.key.accAddress,
-      codeId,
-      instantiateMsg,
-      undefined,
-      "instantiate_contract",
-    ),
-  ]);
+  const result = await juno.instantiate(deployer, codeId, instantiateMsg, "instantiate", "auto", { admin: admin });
   return result;
 }
 
@@ -127,70 +121,32 @@ export async function instantiateContract(
  */
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export async function migrateContract(
-  terra: LocalTerra | LCDClient,
-  sender: Wallet,
-  admin: Wallet,
+  juno: SigningCosmWasmClient,
+  sender: string,
   contract: string,
   new_code_id: number,
   migrateMsg: Record<string, unknown>
 ) {
-  const result = await sendTransaction(terra, sender, [
-    new MsgMigrateContract(admin.key.accAddress, contract, new_code_id, migrateMsg),
-  ]);
+  const result = await juno.migrate(sender, contract, new_code_id, migrateMsg, "auto");
   return result;
 }
 
-/**
- * @notice Instantiate a contract from an existing code ID. Return contract address.
- */
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export async function migrateContracts(
-  terra: LocalTerra | LCDClient,
-  sender: Wallet,
-  admin: Wallet,
-  contracts: string[],
-  new_code_id: number,
-  migrateMsg: Record<string, unknown>
-) {
-  let msgs: Msg[] = [];
-  contracts.forEach((contract) => {
-    msgs.push(
-      new MsgMigrateContract(admin.key.accAddress, contract, new_code_id, migrateMsg)
-    );
-    console.log(`Endmowment ${contract} - ${chalk.green("Msg built")}`);
-  });
+// --------------------------------------------------
+// Wrapper Function:
+// Stores wasm, gets new code, and migrates contract 
+//---------------------------------------------------
+export async function storeAndMigrateContract(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  contract: string,
+  wasmFilename: string,
+  msg = {}
+): Promise<void> {
+  process.stdout.write(`Uploading ${wasmFilename} Wasm`);
+  const codeId = await storeCode(juno, apTeam, `${wasm_path.core}/${wasmFilename}`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
-  const result = await sendTransaction(terra, sender, msgs);
-  console.log(result);
-  return result;
-}
-
-/**
- * @notice Return the native token balance of the specified account
- */
-// export async function queryNativeTokenBalance(
-//   terra: LocalTerra | LCDClient,
-//   account: string,
-//   denom = "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
-// ): Promise<string> {
-//   const balance = (await terra.bank.balance(account)).get(denom)?.amount.toString();
-//   if (balance) {
-//     return balance;
-//   } else {
-//     return "0";
-//   }
-// }
-
-/**
- * @notice Return CW20 token balance of the specified account
- */
-export async function queryTokenBalance(
-  terra: LocalTerra | LCDClient,
-  account: string,
-  contract: string
-): Promise<string> {
-  const balanceResponse = await terra.wasm.contractQuery<{ balance: string }>(contract, {
-    balance: { address: account },
-  });
-  return balanceResponse.balance;
+  process.stdout.write(`Migrate ${wasmFilename} contract`);
+  const result = await migrateContract(juno, apTeam, contract, codeId, msg);
+  console.log(chalk.green(" Done!"));
 }
