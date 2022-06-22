@@ -9,15 +9,15 @@ export const localjuno = {
   },
 
   mnemonicKeys: {
-    apTeam: "",
-    apTeam2: "",
-    apTeam3: "",
-    apTreasury: "",
-    charity1: "",
-    charity2: "",
-    charity3: "",
-    pleb: "",
-    tca: "",
+    apTeam: "pact fancy rough prison twenty dismiss mushroom rival page ship quantum deer rookie system cargo",
+    apTeam2: "knee verify salmon erosion brand ten term three cake help certain bus phrase biology cruel",
+    apTeam3: "move example spice hint gym liberty weasel drink midnight snow forest vital accident glove dignity",
+    apTreasury: "truck vacuum tunnel buzz wealth save come short fit kite poverty fork blade venue sword",
+    charity1: "eager warrior prison into alarm motion annual giggle project silver fabric hover garlic satisfy beach",
+    charity2: "add buzz humor jump float rotate test rural jazz cave armor pattern update casino undo",
+    charity3: "lobster worry angry spoil milk cash asthma unhappy number cave object fortune lens uniform simple",
+    pleb: "announce reflect cinnamon regular address copper below funny lens draft gain wage inhale gold loyal",
+    tca: "camp mom loud claim grass kick tail into cake wear mistake box grunt stand runway",
   },
 
   // Should be updated contract addresses after deploying wasms in the LocalJuno
