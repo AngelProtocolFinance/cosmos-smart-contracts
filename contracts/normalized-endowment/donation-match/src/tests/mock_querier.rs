@@ -320,7 +320,8 @@ impl WasmMockQuerier {
                                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
                             ],
                             cw20: vec![],
-                        }
+                        },
+                        swap_factory: Some("swap-factory".to_string()),
                     })
                     .unwrap(),
                 )),
