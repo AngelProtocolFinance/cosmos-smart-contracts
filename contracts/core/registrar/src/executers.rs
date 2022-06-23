@@ -453,7 +453,7 @@ pub fn new_accounts_reply(
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,
-                    name: Some(endowment_name.clone()),
+                    name: Some(endowment_name),
                     owner: Some(endowment_owner.clone()),
                     status: EndowmentStatus::Inactive,
                     tier: match endowment_tier {
