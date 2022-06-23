@@ -1,9 +1,9 @@
 use angel_core::errors::core::*;
 use angel_core::messages::index_fund::*;
 use angel_core::responses::index_fund::*;
-use angel_core::structs::{IndexFund, SplitDetails};
+use angel_core::structs::{AllianceMember, IndexFund, SplitDetails};
 use cosmwasm_std::testing::{mock_env, mock_info};
-use cosmwasm_std::{coins, from_binary, to_binary, Decimal, Timestamp, Uint128};
+use cosmwasm_std::{coins, from_binary, to_binary, Addr, Decimal, Timestamp, Uint128};
 use cw20::Cw20ReceiveMsg;
 
 use crate::contract::{execute, instantiate, query};
@@ -137,6 +137,158 @@ fn only_registrar_can_change_registrar_contract() {
         String::from("some-legit-registrar"),
         value.registrar_contract
     );
+}
+
+#[test]
+fn only_owner_can_change_config() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angelprotocolteamdano".to_string();
+    let registrar_contract = "registrar-account".to_string();
+    let pleb = "pleb-account".to_string();
+
+    let msg = InstantiateMsg {
+        registrar_contract: registrar_contract.clone(),
+        fund_rotation: Some(Some(1000000u64)),
+        fund_member_limit: Some(20),
+        funding_goal: None,
+    };
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // Query the config
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config.fund_rotation, Some(1000000u64));
+    assert_eq!(config.fund_member_limit, 20u32);
+    assert_eq!(config.funding_goal, None);
+
+    let update_config_msg = ExecuteMsg::UpdateConfig(UpdateConfigMsg {
+        fund_rotation: Some(1),
+        fund_member_limit: Some(5),
+        funding_goal: Some(Uint128::from(100_u128)),
+    });
+
+    // non-registrar cannot change the registrar SC addr
+    let info = mock_info(pleb.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let err = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        update_config_msg.clone(),
+    )
+    .unwrap_err();
+    assert_eq!(ContractError::Unauthorized {}, err);
+
+    // update the config
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let _ = execute(deps.as_mut(), env.clone(), info.clone(), update_config_msg).unwrap();
+
+    // check that the configs are set in query
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config.fund_rotation, Some(1));
+    assert_eq!(config.fund_member_limit, 5);
+    assert_eq!(config.funding_goal, Some(Uint128::from(100_u128)));
+}
+
+#[test]
+fn only_owner_can_update_alliance_member_list() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angelprotocolteamdano".to_string();
+    let registrar_contract = "registrar-account".to_string();
+    let pleb = "pleb-account".to_string();
+
+    let msg = InstantiateMsg {
+        registrar_contract: registrar_contract.clone(),
+        fund_rotation: Some(Some(1000000u64)),
+        fund_member_limit: Some(20),
+        funding_goal: None,
+    };
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // Query the AllianceMembers
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::AllianceMembers {
+            start_after: None,
+            limit: None,
+        },
+    )
+    .unwrap();
+    let alliance_member_list: AllianceMemberListResponse = from_binary(&res).unwrap();
+    assert_eq!(alliance_member_list.alliance_members.len(), 0);
+
+    let update_alliance_member_list_msg = ExecuteMsg::UpdateAllianceMemberList {
+        address: Addr::unchecked("new-alliance-member"),
+        member: AllianceMember {
+            name: "alliance".to_string(),
+            logo: None,
+            website: None,
+        },
+        action: "add".to_string(),
+    };
+
+    // non-config_owner cannot add "AllianceMember"
+    let info = mock_info(pleb.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let err = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        update_alliance_member_list_msg.clone(),
+    )
+    .unwrap_err();
+    assert_eq!(ContractError::Unauthorized {}, err);
+
+    // update the AllianceMemberList
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let _ = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        update_alliance_member_list_msg,
+    )
+    .unwrap();
+
+    // Query the AllianceMembers
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::AllianceMembers {
+            start_after: None,
+            limit: None,
+        },
+    )
+    .unwrap();
+    let alliance_member_list: AllianceMemberListResponse = from_binary(&res).unwrap();
+    assert_eq!(alliance_member_list.alliance_members.len(), 1); // Query the AllianceMembers
+
+    // Query the AllianceMember
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::AllianceMember {
+            address: Addr::unchecked("new-alliance-member"),
+        },
+    )
+    .unwrap();
+    let alliance_member: AllianceMemberResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        alliance_member.wallet,
+        Addr::unchecked("new-alliance-member")
+    );
+    assert_eq!(alliance_member.name, "alliance".to_string());
+    assert_eq!(alliance_member.logo, None);
+    assert_eq!(alliance_member.website, None);
 }
 
 #[test]
