@@ -116,7 +116,7 @@ pub fn instantiate(
         msg.cw4_members
     };
 
-    if registrar_config.cw3_code.eq(&None) && registrar_config.cw4_code.eq(&None) {
+    if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {
         return Err(ContractError::Std(StdError::generic_err(
             "cw3_code & cw4_code must exist",
         )));
