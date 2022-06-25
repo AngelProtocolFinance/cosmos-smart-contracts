@@ -15,6 +15,7 @@ use cosmwasm_std::{
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
+use cw4::Member;
 use cw_asset::{Asset, AssetInfoBase};
 
 // version info for future migration info
@@ -85,7 +86,7 @@ pub fn instantiate(
     // initial default Response to add submessages to
     let mut res = Response::new().add_attributes(vec![
         attr("endow_name", msg.profile.name),
-        attr("endow_owner", msg.owner),
+        attr("endow_owner", msg.owner.to_string()),
         attr("endow_type", msg.profile.endow_type.to_string()),
         attr(
             "endow_logo",
@@ -106,25 +107,35 @@ pub fn instantiate(
     ]);
 
     // check if CW3/CW4 codes were passed to setup a multisig/group
-    if msg.cw4_members.ne(&vec![])
-        && (registrar_config.cw3_code.ne(&None) && registrar_config.cw4_code.ne(&None))
-    {
-        res = res.add_submessage(SubMsg {
-            id: 1,
-            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                code_id: registrar_config.cw4_code.unwrap(),
-                admin: None,
-                label: "new endowment cw4 group".to_string(),
-                msg: to_binary(&Cw4GroupInstantiateMsg {
-                    admin: Some(info.sender.to_string()),
-                    members: msg.cw4_members,
-                })?,
-                funds: vec![],
-            }),
-            gas_limit: None,
-            reply_on: ReplyOn::Success,
-        })
+    let cw4_members = if msg.cw4_members.is_empty() {
+        vec![Member {
+            addr: msg.owner.to_string(),
+            weight: 1,
+        }]
+    } else {
+        msg.cw4_members
+    };
+
+    if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {
+        return Err(ContractError::Std(StdError::generic_err(
+            "cw3_code & cw4_code must exist",
+        )));
     }
+    res = res.add_submessage(SubMsg {
+        id: 1,
+        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+            code_id: registrar_config.cw4_code.unwrap(),
+            admin: None,
+            label: "new endowment cw4 group".to_string(),
+            msg: to_binary(&Cw4GroupInstantiateMsg {
+                admin: Some(info.sender.to_string()),
+                members: cw4_members,
+            })?,
+            funds: vec![],
+        }),
+        gas_limit: None,
+        reply_on: ReplyOn::Success,
+    });
 
     Ok(res)
 }
