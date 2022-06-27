@@ -218,10 +218,12 @@ async function setup(
   });
   console.log(chalk.green(" Done!"));
 
-  process.stdout.write("Update Registrar's config Index Fund");
+  process.stdout.write("Update Registrar's config Index Fund, CW3_code_Id, CW4_code_Id");
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_config: {
       index_fund_contract: indexFund,
+      cw3_code: cw3MultiSig,
+      cw4_code: cw4Group,
     },
   });
   console.log(chalk.green(" Done!"));
