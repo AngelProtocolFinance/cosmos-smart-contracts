@@ -262,7 +262,7 @@ pub fn update_strategies(
     let mut new_strategies = vec![];
     for strategy in strategies {
         new_strategies.push(StrategyComponent {
-            vault: deps.api.addr_validate(&strategy.vault.clone())?,
+            vault: deps.api.addr_validate(&strategy.vault.clone())?.to_string(),
             percentage: strategy.percentage,
         });
     }

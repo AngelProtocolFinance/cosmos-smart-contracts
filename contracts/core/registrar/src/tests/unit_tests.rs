@@ -3,7 +3,7 @@ use angel_core::errors::core::*;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{AcceptedTokens, SplitDetails};
-use angel_core::structs::{EndowmentStatus, EndowmentType, Profile, SocialMedialUrls};
+use angel_core::structs::{EndowmentStatus, EndowmentType, NetworkInfo, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
     coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply, SubMsgResponse, SubMsgResult,
@@ -455,6 +455,7 @@ fn test_add_update_and_remove_vault() {
     // add vault
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let add_vault_message = VaultAddMsg {
+        network: None,
         vault_addr: vault_addr.clone(),
         input_denom: String::from("input_denom"),
         yield_token: String::from("yield_token"),
@@ -557,4 +558,120 @@ fn test_add_update_and_remove_accepted_tokens() {
     let config_response: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(config_response.accepted_tokens.native.len(), 2);
     assert_eq!(config_response.accepted_tokens.cw20.len(), 1);
+}
+
+#[test]
+fn test_add_update_and_remove_network_infos() {
+    let mock_network_info = NetworkInfo {
+        name: "juno mainnet".to_string(),
+        chain: "juno-1".to_string(),
+        ibc_channel: None,
+        gas_limit: None,
+    };
+
+    let mut deps = mock_dependencies();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let instantiate_msg = InstantiateMsg {
+        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
+        treasury: ap_team.clone(),
+        default_vault: None,
+        tax_rate: Decimal::percent(20),
+        split_to_liquid: Some(SplitDetails::default()),
+        accepted_tokens: Some(AcceptedTokens {
+            native: vec![
+                "uluna".to_string(),
+                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+            ],
+            cw20: vec![],
+        }),
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // Should fail since NETWORK_CONNECTIONS is empty
+    let _err = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::NetworkInfo {
+            network: mock_network_info.chain.to_string(),
+        },
+    )
+    .unwrap_err();
+
+    // Add new network_info
+
+    // Should fail since invalid action mode
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let add_network_info_msg = ExecuteMsg::UpdateNetworkConnections {
+        network_info: mock_network_info.clone(),
+        action: "blahblah".to_string(),
+    };
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info.clone(),
+        add_network_info_msg.clone(),
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Succeed to add the network_info
+    let add_network_info_msg = ExecuteMsg::UpdateNetworkConnections {
+        network_info: mock_network_info.clone(),
+        action: "add".to_string(),
+    };
+    let res = execute(deps.as_mut(), mock_env(), info, add_network_info_msg).unwrap();
+    assert_eq!(1, res.attributes.len());
+
+    // check the added network info
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::NetworkInfo {
+            network: mock_network_info.chain.to_string(),
+        },
+    )
+    .unwrap();
+    let network_info_response: NetworkInfoResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        network_info_response.network_info,
+        mock_network_info.clone()
+    );
+
+    // Remove the network_info
+
+    // Should fail since invalid action mode
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let add_network_info_msg = ExecuteMsg::UpdateNetworkConnections {
+        network_info: mock_network_info.clone(),
+        action: "wowo".to_string(),
+    };
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info.clone(),
+        add_network_info_msg.clone(),
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Succeed to remove the network_info
+    let add_network_info_msg = ExecuteMsg::UpdateNetworkConnections {
+        network_info: mock_network_info.clone(),
+        action: "remove".to_string(),
+    };
+    let res = execute(deps.as_mut(), mock_env(), info, add_network_info_msg).unwrap();
+    assert_eq!(1, res.attributes.len());
+
+    // check the added network info
+    // should fail since removed
+    let _err = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::NetworkInfo {
+            network: mock_network_info.chain.to_string(),
+        },
+    )
+    .unwrap_err();
 }

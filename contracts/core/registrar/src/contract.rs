@@ -85,6 +85,10 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentEntry(msg) => {
             executers::update_endowment_entry(deps, env, info, msg)
         }
+        ExecuteMsg::UpdateNetworkConnections {
+            network_info,
+            action,
+        } => executers::update_network_connections(deps, env, info, network_info, action),
     }
 }
 
@@ -127,6 +131,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::ApprovedVaultRateList {} => {
             to_binary(&queriers::query_approved_vaults_fx_rate(deps)?)
+        }
+        QueryMsg::NetworkInfo { network } => {
+            to_binary(&queriers::query_network_info(deps, network)?)
         }
     }
 }

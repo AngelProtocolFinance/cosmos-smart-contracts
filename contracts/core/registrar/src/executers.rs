@@ -1,9 +1,12 @@
-use crate::state::{read_vaults, registry_read, registry_store, vault_read, vault_store, CONFIG};
+use crate::state::{
+    read_vaults, registry_read, registry_store, vault_read, vault_store, CONFIG,
+    NETWORK_CONNECTIONS,
+};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
-    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, Tier, YieldVault,
+    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, NetworkInfo, Tier, YieldVault,
 };
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
@@ -271,7 +274,7 @@ pub fn create_endowment(
 
 pub fn vault_add(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: VaultAddMsg,
 ) -> Result<Response, ContractError> {
@@ -294,9 +297,10 @@ pub fn vault_add(
         deps.storage,
         addr.as_bytes(),
         &YieldVault {
-            address: addr.clone(),
+            network: msg.network.unwrap_or(env.block.chain_id),
+            address: addr.to_string(),
             input_denom: msg.input_denom,
-            yield_token: deps.api.addr_validate(&msg.yield_token)?,
+            yield_token: deps.api.addr_validate(&msg.yield_token)?.to_string(),
             approved: false,
         },
     )?;
@@ -507,4 +511,30 @@ pub fn update_endowment_entry(
     registry_store(deps.storage, endowment_addr, &endowment_entry)?;
 
     Ok(Response::new().add_attribute("action", "update_endowment_entry"))
+}
+
+pub fn update_network_connections(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    network_info: NetworkInfo,
+    action: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender.ne(&config.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    if action == *"add" {
+        // Add the network_info to NETWORK_CONNECTIONS
+        NETWORK_CONNECTIONS.save(deps.storage, &network_info.chain, &network_info)?;
+    } else if action == *"remove" {
+        // Remove the network_info from NETWORK_CONNECTIONS
+        NETWORK_CONNECTIONS.remove(deps.storage, &network_info.chain);
+    } else {
+        return Err(ContractError::InvalidInputs {});
+    }
+
+    Ok(Response::default().add_attribute("action", "update_network_connections"))
 }

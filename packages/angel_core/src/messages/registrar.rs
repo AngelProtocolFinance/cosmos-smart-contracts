@@ -1,4 +1,4 @@
-use crate::structs::{AcceptedTokens, EndowmentType, Profile, SplitDetails, Tier};
+use crate::structs::{AcceptedTokens, EndowmentType, NetworkInfo, Profile, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
 use schemars::JsonSchema;
@@ -43,6 +43,11 @@ pub enum ExecuteMsg {
     },
     // Allows the DANO/AP Team to update the EndowmentEntry
     UpdateEndowmentEntry(UpdateEndowmentEntryMsg),
+    // Updates the NETWORK_CONNECTIONS
+    UpdateNetworkConnections {
+        network_info: NetworkInfo,
+        action: String,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -95,6 +100,7 @@ pub struct UpdateEndowmentStatusMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct VaultAddMsg {
+    pub network: Option<String>,
     pub vault_addr: String,
     pub input_denom: String,
     pub yield_token: String,
@@ -146,4 +152,8 @@ pub enum QueryMsg {
     Config {},
     // Get a list of all approved Vaults exchange rates
     ApprovedVaultRateList {},
+    // Get a network info
+    NetworkInfo {
+        network: String, // In fact, this is `chain_id`
+    },
 }
