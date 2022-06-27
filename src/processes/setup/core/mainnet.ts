@@ -216,11 +216,13 @@ async function setup(
   process.stdout.write(
     "Set default vault in Registrar (for newly created Endowments) as Anchor Vault"
   );
-  process.stdout.write("Update Registrar with the Address of the Index Fund contract");
+  process.stdout.write("Update Registrar with the Address of the Index Fund contract,  CW3_code_Id, CW4_code_Id");
   await sendTransaction(juno, apTeam, registrar, {
     update_config: {
       default_vault: anchorVault,
       index_fund_contract: indexFund,
+      cw3_code: cw3MultiSig,
+      cw4_code: cw4Group,
     },
   });
   await sendTransaction(juno, apTeam, registrar, {
