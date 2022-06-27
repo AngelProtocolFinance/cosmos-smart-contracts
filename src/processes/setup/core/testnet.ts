@@ -543,13 +543,13 @@ async function turnOverApTeamMultisig(is_localjuno: boolean): Promise<void> {
   process.stdout.write(
     "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract"
   );
-  process.stdout.write(chalk.yellow("\n- Turning over Registrar"));
+  process.stdout.write(chalk.yellow("- Turning over Registrar"));
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_owner: { new_owner: cw3ApTeam }
   });
   console.log(chalk.green(" Done!"));
   
-  process.stdout.write(chalk.yellow("\n- Turning over Index Fund"));
+  process.stdout.write(chalk.yellow("- Turning over Index Fund"));
   await sendTransaction(juno, apTeamAddr, indexFund, {
     update_owner: { new_owner: cw3ApTeam }
   });
