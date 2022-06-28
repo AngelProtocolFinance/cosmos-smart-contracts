@@ -886,23 +886,21 @@ pub fn deposit(
                 })));
             }
             AssetInfoBase::Cw20(ref contract_addr) => {
-                // IMPORTANT: This part should be done after the
-                //            "donation-match" contract implements the `receive_cw20`
-                //            The reason is that we should use the `Send/Receive` entry
-                //            of CW20 token to send the token & trigger the action in target contract
-
-                // donor_match_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                //     contract_addr: donation_match_contract.to_string(),
-                //     msg: to_binary(&DonationMatchExecMsg::DonorMatch {
-                //         amount: donation_match_amount,
-                //         donor: sender_addr,
-                //         token: endowment.dao_token.unwrap(),
-                //     })?,
-                //     funds: vec![Coin {
-                //         amount: donation_match_amount,
-                //         denom: token.to_string(),
-                //     }],
-                // })));
+                donor_match_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: contract_addr.to_string(),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                        contract: donation_match_contract.to_string(),
+                        amount: donation_match_amount,
+                        msg: to_binary(&DonationMatchExecMsg::DonorMatch {
+                            amount: donation_match_amount,
+                            donor: sender_addr.clone(),
+                            token: endowment.dao_token.unwrap(),
+                        })
+                        .unwrap(),
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                })))
             }
         }
     };
