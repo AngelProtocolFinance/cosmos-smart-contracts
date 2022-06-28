@@ -235,9 +235,10 @@ impl WasmMockQuerier {
                 QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&VaultDetailResponse {
                         vault: YieldVault {
-                            address: Addr::unchecked("vault"),
+                            network: "juno".to_string(),
+                            address: Addr::unchecked("vault").to_string(),
                             input_denom: "input-denom".to_string(),
-                            yield_token: Addr::unchecked("yield-token"),
+                            yield_token: Addr::unchecked("yield-token").to_string(),
                             approved: true,
                         },
                     })

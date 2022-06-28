@@ -51,7 +51,7 @@ pub fn instantiate(
 
     let default_strategy: Vec<StrategyComponent> = match registrar_config.default_vault {
         Some(addr) => vec![StrategyComponent {
-            vault: deps.api.addr_validate(&addr)?,
+            vault: deps.api.addr_validate(&addr)?.to_string(),
             percentage: Decimal::one(),
         }],
         None => vec![],

@@ -1,6 +1,8 @@
-use crate::state::{read_registry_entries, read_vaults, registry_read, vault_read, CONFIG};
+use crate::state::{
+    read_registry_entries, read_vaults, registry_read, vault_read, CONFIG, NETWORK_CONNECTIONS,
+};
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentType, Tier, VaultRate};
+use angel_core::structs::{EndowmentEntry, EndowmentType, NetworkInfo, Tier, VaultRate};
 use angel_core::utils::vault_fx_rate;
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
@@ -152,4 +154,12 @@ pub fn query_approved_vaults_fx_rate(deps: Deps) -> StdResult<VaultRateResponse>
         });
     }
     Ok(VaultRateResponse { vaults_rate })
+}
+
+pub fn query_network_connection(
+    deps: Deps,
+    chain_id: String,
+) -> StdResult<NetworkConnectionResponse> {
+    let network_connection = NETWORK_CONNECTIONS.load(deps.storage, &chain_id)?;
+    Ok(NetworkConnectionResponse { network_connection })
 }

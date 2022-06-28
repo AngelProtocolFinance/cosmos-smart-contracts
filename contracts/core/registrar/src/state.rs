@@ -1,4 +1,4 @@
-use angel_core::structs::{AcceptedTokens, EndowmentEntry, SplitDetails, YieldVault};
+use angel_core::structs::{AcceptedTokens, EndowmentEntry, NetworkInfo, SplitDetails, YieldVault};
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
@@ -79,3 +79,5 @@ pub fn read_vaults(
         })
         .collect()
 }
+
+pub const NETWORK_CONNECTIONS: Map<&str, NetworkInfo> = Map::new("network_connections");
