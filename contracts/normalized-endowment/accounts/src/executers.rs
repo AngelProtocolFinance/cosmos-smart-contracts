@@ -180,7 +180,7 @@ pub fn new_dao_cw20_token_reply(
                     msg: to_binary(&RegistrarQuerier::Config {})?,
                 }))?;
 
-            if let Some(swap_factory) = registrar_config.swap_factory {
+            if let Some(_swap_factory) = registrar_config.swap_factory {
                 // NOTE: Add "create_pair/swap" message here
             } else {
                 return Err(ContractError::ContractNotConfigured {});
@@ -533,7 +533,6 @@ pub fn vault_receipt(
 
     let returned_token =
         validate_deposit_fund(deps.as_ref(), config.registrar_contract.as_str(), fund)?;
-    let returned_amount = returned_token.amount;
 
     // check that the deposit token came from an approved Vault SC
     let _vaults_rsp: VaultDetailResponse =

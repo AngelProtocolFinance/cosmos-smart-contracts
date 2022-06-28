@@ -1,18 +1,18 @@
 use crate::state::{
-    endow_type_fees_write, read_registry_entries, read_vaults, registry_read, registry_store,
-    vault_read, vault_store, CONFIG,
+    endow_type_fees_write, read_registry_entries, registry_read, registry_store, vault_read,
+    vault_store, CONFIG,
 };
+
 use angel_core::errors::core::ContractError;
-use angel_core::messages::accounts::{DaoCw20TokenConfig, DaoSetupOption};
 use angel_core::messages::registrar::*;
-use angel_core::responses::registrar::*;
 use angel_core::structs::{
     AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, Tier, YieldVault,
 };
 use angel_core::utils::{percentage_checks, split_checks};
+
 use cosmwasm_std::{
-    attr, to_binary, Addr, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response,
-    StdError, StdResult, SubMsg, SubMsgResult, WasmMsg,
+    attr, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
+    SubMsg, SubMsgResult, WasmMsg,
 };
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {

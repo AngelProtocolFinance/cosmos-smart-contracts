@@ -1,14 +1,10 @@
 use crate::executers;
-use crate::executers::setup_dao_token;
 use crate::executers::setup_dao_token_messages;
 use crate::queriers;
-use crate::state::OldConfig;
-use crate::state::PROFILE;
-use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
+use crate::state::{Config, Endowment, OldConfig, State, CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
-use angel_core::messages::dao_token::InstantiateMsg as DaoTokenInstantiateMsg;
 use angel_core::messages::donation_match::InstantiateMsg as DonationMatchInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
@@ -23,8 +19,8 @@ use cosmwasm_std::{
     WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
-use cw20::Cw20Coin;
 use cw20::Cw20ReceiveMsg;
+use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 
 // version info for future migration info
@@ -135,25 +131,35 @@ pub fn instantiate(
     ]);
 
     // check if CW3/CW4 codes were passed to setup a multisig/group
-    if msg.cw4_members.ne(&vec![])
-        && (registrar_config.cw3_code.ne(&None) && registrar_config.cw4_code.ne(&None))
-    {
-        res = res.add_submessage(SubMsg {
-            id: 1,
-            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                code_id: registrar_config.cw4_code.unwrap(),
-                admin: None,
-                label: "new endowment cw4 group".to_string(),
-                msg: to_binary(&Cw4GroupInstantiateMsg {
-                    admin: Some(info.sender.to_string()),
-                    members: msg.cw4_members,
-                })?,
-                funds: vec![],
-            }),
-            gas_limit: None,
-            reply_on: ReplyOn::Success,
-        })
+    let cw4_members = if msg.cw4_members.is_empty() {
+        vec![Member {
+            addr: msg.owner.to_string(),
+            weight: 1,
+        }]
+    } else {
+        msg.cw4_members
+    };
+
+    if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {
+        return Err(ContractError::Std(StdError::generic_err(
+            "cw3_code & cw4_code must exist",
+        )));
     }
+    res = res.add_submessage(SubMsg {
+        id: 1,
+        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+            code_id: registrar_config.cw4_code.unwrap(),
+            admin: None,
+            label: "new endowment cw4 group".to_string(),
+            msg: to_binary(&Cw4GroupInstantiateMsg {
+                admin: Some(info.sender.to_string()),
+                members: cw4_members,
+            })?,
+            funds: vec![],
+        }),
+        gas_limit: None,
+        reply_on: ReplyOn::Success,
+    });
 
     // check if a dao needs to be setup along with subdao token contract
     if msg.dao {
