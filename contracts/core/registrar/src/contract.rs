@@ -132,8 +132,8 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::ApprovedVaultRateList {} => {
             to_binary(&queriers::query_approved_vaults_fx_rate(deps)?)
         }
-        QueryMsg::NetworkInfo { network } => {
-            to_binary(&queriers::query_network_info(deps, network)?)
+        QueryMsg::NetworkConnection { chain_id } => {
+            to_binary(&queriers::query_network_connection(deps, chain_id)?)
         }
     }
 }

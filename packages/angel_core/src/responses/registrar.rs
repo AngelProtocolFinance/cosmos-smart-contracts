@@ -54,6 +54,6 @@ pub struct AccTokensListResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
-pub struct NetworkInfoResponse {
-    pub network_info: NetworkInfo,
+pub struct NetworkConnectionResponse {
+    pub network_connection: NetworkInfo,
 }

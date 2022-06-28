@@ -156,7 +156,10 @@ pub fn query_approved_vaults_fx_rate(deps: Deps) -> StdResult<VaultRateResponse>
     Ok(VaultRateResponse { vaults_rate })
 }
 
-pub fn query_network_info(deps: Deps, network: String) -> StdResult<NetworkInfoResponse> {
-    let network_info = NETWORK_CONNECTIONS.load(deps.storage, &network)?;
-    Ok(NetworkInfoResponse { network_info })
+pub fn query_network_connection(
+    deps: Deps,
+    chain_id: String,
+) -> StdResult<NetworkConnectionResponse> {
+    let network_connection = NETWORK_CONNECTIONS.load(deps.storage, &chain_id)?;
+    Ok(NetworkConnectionResponse { network_connection })
 }

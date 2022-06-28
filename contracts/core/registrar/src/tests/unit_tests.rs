@@ -564,7 +564,7 @@ fn test_add_update_and_remove_accepted_tokens() {
 fn test_add_update_and_remove_network_infos() {
     let mock_network_info = NetworkInfo {
         name: "juno mainnet".to_string(),
-        chain: "juno-1".to_string(),
+        chain_id: "juno-1".to_string(),
         ibc_channel: None,
         gas_limit: None,
     };
@@ -593,8 +593,8 @@ fn test_add_update_and_remove_network_infos() {
     let _err = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::NetworkInfo {
-            network: mock_network_info.chain.to_string(),
+        QueryMsg::NetworkConnection {
+            chain_id: mock_network_info.chain_id.to_string(),
         },
     )
     .unwrap_err();
@@ -628,14 +628,14 @@ fn test_add_update_and_remove_network_infos() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::NetworkInfo {
-            network: mock_network_info.chain.to_string(),
+        QueryMsg::NetworkConnection {
+            chain_id: mock_network_info.chain_id.to_string(),
         },
     )
     .unwrap();
-    let network_info_response: NetworkInfoResponse = from_binary(&res).unwrap();
+    let network_info_response: NetworkConnectionResponse = from_binary(&res).unwrap();
     assert_eq!(
-        network_info_response.network_info,
+        network_info_response.network_connection,
         mock_network_info.clone()
     );
 
@@ -669,8 +669,8 @@ fn test_add_update_and_remove_network_infos() {
     let _err = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::NetworkInfo {
-            network: mock_network_info.chain.to_string(),
+        QueryMsg::NetworkConnection {
+            chain_id: mock_network_info.chain_id.to_string(),
         },
     )
     .unwrap_err();

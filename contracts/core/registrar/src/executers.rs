@@ -528,10 +528,10 @@ pub fn update_network_connections(
 
     if action == *"add" {
         // Add the network_info to NETWORK_CONNECTIONS
-        NETWORK_CONNECTIONS.save(deps.storage, &network_info.chain, &network_info)?;
+        NETWORK_CONNECTIONS.save(deps.storage, &network_info.chain_id, &network_info)?;
     } else if action == *"remove" {
         // Remove the network_info from NETWORK_CONNECTIONS
-        NETWORK_CONNECTIONS.remove(deps.storage, &network_info.chain);
+        NETWORK_CONNECTIONS.remove(deps.storage, &network_info.chain_id);
     } else {
         return Err(ContractError::InvalidInputs {});
     }

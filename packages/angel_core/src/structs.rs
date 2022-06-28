@@ -474,7 +474,7 @@ impl Default for Profile {
 #[serde(rename_all = "snake_case")]
 pub struct NetworkInfo {
     pub name: String,
-    pub chain: String,
+    pub chain_id: String,
     pub ibc_channel: Option<String>,
     pub gas_limit: Option<u64>,
 }
