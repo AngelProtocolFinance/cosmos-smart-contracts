@@ -3,7 +3,7 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::index_fund::*;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
-use angel_core::structs::{AcceptedTokens, AllianceMember, IndexFund, SplitDetails};
+use angel_core::structs::{AllianceMember, IndexFund, SplitDetails};
 use angel_core::utils::{percentage_checks, validate_deposit_fund};
 use cosmwasm_std::{
     attr, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo, QueryRequest,
