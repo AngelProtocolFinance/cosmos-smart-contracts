@@ -1,10 +1,10 @@
 // Contains mock functionality to test multi-contract scenarios
-
 use angel_core::errors::core::ContractError;
-use angel_core::responses::registrar::EndowmentListResponse;
-use angel_core::responses::registrar::{ConfigResponse, EndowmentDetailResponse};
+use angel_core::responses::registrar::{
+    ConfigResponse, EndowmentDetailResponse, EndowmentListResponse, VaultDetailResponse,
+};
 use angel_core::structs::{
-    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier,
+    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier, YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -18,12 +18,8 @@ use terraswap::pair::SimulationResponse;
 
 use std::collections::HashMap;
 use std::marker::PhantomData;
-// use terra_cosmwasm::{
-//     ExchangeRateItem, ExchangeRatesResponse, TaxCapResponse, TaxRateResponse, TerraQuery,
-//     Empty, TerraRoute,
-// };
+use terraswap::asset::Asset;
 
-use terraswap::asset::{Asset, AssetInfo, PairInfo};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
@@ -46,6 +42,9 @@ pub enum QueryMsg {
     },
     // Mock the `registrar` config
     Config {},
+    Vault {
+        vault_addr: String,
+    },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -230,11 +229,11 @@ impl WasmMockQuerier {
                 msg,
             }) => match from_binary(&msg).unwrap() {
                 QueryMsg::EndowmentList {
-                    name,
-                    owner,
-                    status,
-                    tier,
-                    endow_type,
+                    name: _,
+                    owner: _,
+                    status: _,
+                    tier: _,
+                    endow_type: _,
                 } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&EndowmentListResponse {
                         endowments: vec![EndowmentEntry {
