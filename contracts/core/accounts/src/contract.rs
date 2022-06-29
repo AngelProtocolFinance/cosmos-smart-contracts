@@ -25,7 +25,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -85,6 +85,7 @@ pub fn instantiate(
 
     // initial default Response to add submessages to
     let mut res = Response::new().add_attributes(vec![
+        attr("endow_addr", env.contract.address),
         attr("endow_name", msg.profile.name),
         attr("endow_owner", msg.owner.to_string()),
         attr("endow_type", msg.profile.endow_type.to_string()),
