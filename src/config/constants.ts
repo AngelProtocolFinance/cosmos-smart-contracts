@@ -19,16 +19,16 @@ export const testnet = {
   },
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
-    registrar: "juno1qsn67fzym4hak4aly07wvcjxyzcld0n4s726r2fs9km2tlahlc5qg2drvn",
-    indexFund: "juno1cwd6uktz66fky8ky2ufzvqve858uxvj84345cfeg7adalyamdy2qaurgm0",
+    registrar: "juno124648ratat7z54emjvguaw5gr7ymvayh3quu5cs0hvx0l8rlzj7sazzpu8",
+    indexFund: "juno1yy70zt3muyg5rdvfkg37ap229527n59fw8vxlsvpjq0z9tpa3plswwrcsy",
     vault1: "",
     vault2: "",
-    endowmentContract1: "juno1mlaklf9xsvvhsp74x3esd4dssuc9u4y2shcvkcfsgshxl48tzrpsrkt4cw",
-    endowmentContract2: "juno1cmnkven6xt2czu9k5fnrmc9ne3xh70pqvvxlawy80l9m9uh4rueq76h664",
-    endowmentContract3: "juno19y3evkfkc5yq68556lqa6e7z247anv5ssrvrqddmjumh7fxq4lestjy8q5",
-    endowmentContract4: "juno16g02rq8r3su83rnmsjuccwgh3lanq04dq4r5zujwwjdxnhuamxpscvyp9x",
-    cw4GrpApTeam: "juno15s4l8jnh5n9ehvay9v4l3vu9s2fn963r3wqu43dnkqjy8qyrm37sfk74s5",
-    cw3ApTeam: "juno1ms29h3vhvrfpa6mnf2ck3eh6dtrcpg628sudj5pucctmadqdqkjqkdrjdj",
+    endowmentContract1: "juno1508tsy468258gj85c9dkkn0tewc6qcpeuw39a5asafl8u48kxdrqge8tcz",
+    endowmentContract2: "juno1ljc94c7ldrdwz9f6csvzc94khn4f4el9f6ktmdzq0l07e9qgexns83pfed",
+    endowmentContract3: "juno1jpry3zrs0zwys4unh236qcxcm4ssfg0gyxylryjeyyqjjzj9fcuqw4ma6l",
+    endowmentContract4: "juno1dylsk4mx8fsdkr6zx5c05l3sc6kp4k2kq4h7kum9vjexlxqt9xgsr0kprv",
+    cw4GrpApTeam: "juno13dk3d9l4g8qd3h03uup26vaf5zf6tmxksefkx7x9unawsnnjmu0q9d5su2",
+    cw3ApTeam: "juno1ej0ehw089sn6u92e69x27l7rdtxetzt394jq3t0gvdlw8v520j3shq9e6h",
   },
 
   // JunoSwap contracts
