@@ -201,7 +201,7 @@ pub fn withdraw_from_vaults(
     registrar_contract: String,
     beneficiary: &Addr,
     sources: Vec<FundingSource>,
-    asset_info: AssetInfoBase<Addr>,
+    _asset_info: AssetInfoBase<Addr>,
 ) -> Result<(Vec<SubMsg>, Uint128), ContractError> {
     let mut withdraw_messages = vec![];
     let mut tx_amounts = Uint128::zero();

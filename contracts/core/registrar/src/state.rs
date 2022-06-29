@@ -28,19 +28,12 @@ pub struct Config {
     pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
-pub const PREFIX_REGISTRY: Map<&[u8], EndowmentEntry> = Map::new("registry");
-
-// REGISTRY Read/Write
-pub fn registry_store(storage: &mut dyn Storage, k: &[u8], data: &EndowmentEntry) -> StdResult<()> {
-    PREFIX_REGISTRY.save(storage, k, data)
-}
-
-pub fn registry_read(storage: &dyn Storage, k: &[u8]) -> StdResult<EndowmentEntry> {
-    PREFIX_REGISTRY.load(storage, k)
-}
+pub const REGISTRY: Map<&[u8], EndowmentEntry> = Map::new("registry");
+pub const VAULTS: Map<&[u8], YieldVault> = Map::new("vault");
+pub const NETWORK_CONNECTIONS: Map<&str, NetworkInfo> = Map::new("network_connections");
 
 pub fn read_registry_entries(storage: &dyn Storage) -> StdResult<Vec<EndowmentEntry>> {
-    PREFIX_REGISTRY
+    REGISTRY
         .range(storage, None, None, Order::Ascending)
         .map(|item| {
             let (_, v) = item?;
@@ -49,28 +42,13 @@ pub fn read_registry_entries(storage: &dyn Storage) -> StdResult<Vec<EndowmentEn
         .collect()
 }
 
-pub const PREFIX_PORTAL: Map<&[u8], YieldVault> = Map::new("vault");
-
-// PORTAL Read/Write
-pub fn vault_store(storage: &mut dyn Storage, k: &[u8], data: &YieldVault) -> StdResult<()> {
-    PREFIX_PORTAL.save(storage, k, data)
-}
-
-pub fn vault_read(storage: &dyn Storage, k: &[u8]) -> StdResult<YieldVault> {
-    PREFIX_PORTAL.load(storage, k)
-}
-
-pub fn vault_remove(storage: &mut dyn Storage, k: &[u8]) {
-    PREFIX_PORTAL.remove(storage, k)
-}
-
 pub fn read_vaults(
     storage: &dyn Storage,
     start_after: Option<Addr>,
     limit: Option<u64>,
 ) -> StdResult<Vec<YieldVault>> {
     let start = start_after.map(|s| Bound::ExclusiveRaw(s.as_bytes().to_vec()));
-    PREFIX_PORTAL
+    VAULTS
         .range(storage, start, None, Order::Ascending)
         .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
         .map(|item| {
@@ -79,5 +57,3 @@ pub fn read_vaults(
         })
         .collect()
 }
-
-pub const NETWORK_CONNECTIONS: Map<&str, NetworkInfo> = Map::new("network_connections");
