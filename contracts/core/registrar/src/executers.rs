@@ -419,7 +419,7 @@ pub fn new_accounts_reply(
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
-                        if attrb.key == "_contract_address" {
+                        if attrb.key == "endow_addr" {
                             endowment_addr = attrb.value.clone();
                         }
                         if attrb.key == "endow_name" {
