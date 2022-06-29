@@ -14,6 +14,7 @@ backtraces = ["cosmwasm-std/backtraces"]
 cosmwasm-std = "1.0.0"
 cw-utils = "0.13.4"
 cw-asset = "2.0.0"
+cw20-base = "0.13.4"
 cw0 = "0.10.3"
 cw20 = "0.13.4"
 cw3 = "0.13.4"

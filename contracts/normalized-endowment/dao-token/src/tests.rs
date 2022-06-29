@@ -22,7 +22,6 @@ fn test_proper_initialization() {
             value: Uint128::from(10_u128),
             scale: 1,
         },
-        halo_token: "halo-token".to_string(),
         unbonding_period: 100_u64,
     };
 
@@ -56,7 +55,6 @@ fn test_claim_tokens() {
             value: Uint128::from(10_u128),
             scale: 1,
         },
-        halo_token: "halo-token".to_string(),
         unbonding_period: 100_u64,
     };
 
@@ -133,7 +131,6 @@ fn test_buy() {
             value: Uint128::from(10_u128),
             scale: 1,
         },
-        halo_token: "halo-token".to_string(),
         unbonding_period: 100_u64,
     };
 
@@ -215,7 +212,6 @@ fn test_sell() {
             value: Uint128::from(10_u128),
             scale: 1,
         },
-        halo_token: "halo-token".to_string(),
         unbonding_period: 100_u64,
     };
 
@@ -295,7 +291,6 @@ fn test_transfer() {
             value: Uint128::from(10_u128),
             scale: 1,
         },
-        halo_token: "halo-token".to_string(),
         unbonding_period: 100_u64,
     };
 
@@ -353,7 +348,6 @@ fn test_donor_match() {
             value: Uint128::from(10_u128),
             scale: 1,
         },
-        halo_token: "halo-token".to_string(),
         unbonding_period: 100_u64,
     };
 

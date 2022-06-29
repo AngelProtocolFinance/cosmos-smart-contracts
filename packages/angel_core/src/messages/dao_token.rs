@@ -1,6 +1,7 @@
 use crate::curves::{decimal, Constant, Curve, DecimalPlaces, Linear, SquareRoot};
 use cosmwasm_std::{Binary, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
+use cw_utils::Expiration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -14,6 +15,7 @@ pub struct InstantiateMsg {
     /// If it is eg. HALO, where a balance of 10^6 means 1 HALO, then use 6 here.
     pub decimals: u8,
     /// this is the cw20 reserve token address
+    /// For Charity Shares, this is the address of the HALO CW20 Contract
     pub reserve_denom: String,
     /// number of decimal places for the reserve token, needed for proper curve math.
     /// Same format as decimals above, eg. if it is uatom, where 1 unit is 10^-6 ATOM, use 6 here
@@ -23,8 +25,6 @@ pub struct InstantiateMsg {
     /// write a custom `instantiate`, and then dispatch `your::execute` -> `cw20_bonding::do_execute`
     /// with your custom curve as a parameter (and same with `query` -> `do_query`)
     pub curve_type: CurveType,
-    /// Address of the HALO CW20 Contract
-    pub halo_token: String,
     // days of unbonding
     pub unbonding_period: u64,
 }
@@ -112,6 +112,39 @@ pub enum ExecuteMsg {
         amount: Uint128,
         msg: Binary,
     },
+    /// Implements CW20 "approval" extension. Allows spender to access an additional amount tokens
+    /// from the owner's (env.sender) account. If expires is Some(), overwrites current allowance
+    /// expiration with this one.
+    IncreaseAllowance {
+        spender: String,
+        amount: Uint128,
+        expires: Option<Expiration>,
+    },
+    /// Implements CW20 "approval" extension. Lowers the spender's access of tokens
+    /// from the owner's (env.sender) account by amount. If expires is Some(), overwrites current
+    /// allowance expiration with this one.
+    DecreaseAllowance {
+        spender: String,
+        amount: Uint128,
+        expires: Option<Expiration>,
+    },
+    /// Implements CW20 "approval" extension. Transfers amount tokens from owner -> recipient
+    /// if `env.sender` has sufficient pre-approval.
+    TransferFrom {
+        owner: String,
+        recipient: String,
+        amount: Uint128,
+    },
+    /// Implements CW20 "approval" extension. Sends amount tokens from owner -> contract
+    /// if `env.sender` has sufficient pre-approval.
+    SendFrom {
+        owner: String,
+        contract: String,
+        amount: Uint128,
+        msg: Binary,
+    },
+    /// Implements CW20 "approval" extension. Destroys tokens forever
+    BurnFrom { owner: String, amount: Uint128 },
     /// Claim all tokens available for the message sender
     ClaimTokens {},
     // Implements CW20. Receive is a base message to receive tokens to a this contract and trigger an action
@@ -128,6 +161,9 @@ pub enum QueryMsg {
     Balance { address: String },
     /// Implements CW20. Returns metadata on the contract - name, decimals, supply, etc.
     TokenInfo {},
+    /// Implements CW20 "allowance" extension.
+    /// Returns how much spender can use from owner account, 0 if unset.
+    Allowance { owner: String, spender: String },
     /// Returns claims for an address
     Claims { address: String },
 }
