@@ -1,8 +1,8 @@
 use crate::state::{
-    read_registry_entries, read_vaults, registry_read, vault_read, CONFIG, NETWORK_CONNECTIONS,
+    read_registry_entries, read_vaults, CONFIG, NETWORK_CONNECTIONS, REGISTRY, VAULTS,
 };
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentType, NetworkInfo, Tier, VaultRate};
+use angel_core::structs::{EndowmentEntry, EndowmentType, Tier, VaultRate};
 use angel_core::utils::vault_fx_rate;
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
@@ -59,7 +59,7 @@ pub fn query_endowment_details(
     deps: Deps,
     endowment_addr: String,
 ) -> StdResult<EndowmentDetailResponse> {
-    let endowment = registry_read(deps.storage, endowment_addr.as_bytes())?;
+    let endowment = REGISTRY.load(deps.storage, endowment_addr.as_bytes())?;
     Ok(EndowmentDetailResponse { endowment })
 }
 
@@ -138,7 +138,7 @@ pub fn query_endowment_list(
 pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDetailResponse> {
     // this fails if no vault is found
     let addr = deps.api.addr_validate(&vault_addr)?;
-    let vault = vault_read(deps.storage, addr.as_bytes())?;
+    let vault = VAULTS.load(deps.storage, addr.as_bytes())?;
     Ok(VaultDetailResponse { vault })
 }
 

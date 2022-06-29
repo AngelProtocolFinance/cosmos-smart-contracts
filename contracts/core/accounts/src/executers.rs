@@ -287,7 +287,6 @@ pub fn vault_receipt(
 
     let returned_token =
         validate_deposit_fund(deps.as_ref(), config.registrar_contract.as_str(), fund)?;
-    let returned_amount = returned_token.amount;
 
     // check that the deposit token came from an approved Vault SC
     let _vaults_rsp: VaultDetailResponse =

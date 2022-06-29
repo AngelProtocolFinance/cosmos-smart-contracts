@@ -1,7 +1,4 @@
-use crate::state::{
-    read_vaults, registry_read, registry_store, vault_read, vault_store, CONFIG,
-    NETWORK_CONNECTIONS,
-};
+use crate::state::{read_vaults, CONFIG, NETWORK_CONNECTIONS, REGISTRY, VAULTS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
@@ -10,8 +7,8 @@ use angel_core::structs::{
 };
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    attr, to_binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError,
-    StdResult, SubMsg, SubMsgResult, WasmMsg,
+    attr, to_binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
+    SubMsg, SubMsgResult, WasmMsg,
 };
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
@@ -51,7 +48,7 @@ pub fn update_endowment_status(
 
     // look up the endowment in the Registry. Will fail if doesn't exist
     let endowment_addr = msg.endowment_addr.as_bytes();
-    let mut endowment_entry = registry_read(deps.storage, endowment_addr)?;
+    let mut endowment_entry = REGISTRY.load(deps.storage, endowment_addr)?;
 
     let msg_endowment_status = match msg.status {
         0 => EndowmentStatus::Inactive,
@@ -73,7 +70,7 @@ pub fn update_endowment_status(
 
     // update entry status & save to the Registry
     endowment_entry.status = msg_endowment_status.clone();
-    registry_store(deps.storage, endowment_addr, &endowment_entry)?;
+    REGISTRY.save(deps.storage, endowment_addr, &endowment_entry)?;
 
     // Take different actions on the affected Accounts SC, based on the status passed
     // Build out list of SubMsgs to send to the Account SC and/or Index Fund SC
@@ -288,12 +285,12 @@ pub fn vault_add(
     let addr = deps.api.addr_validate(&msg.vault_addr)?;
 
     // check that the vault does not already exist for a given address in storage
-    if vault_read(deps.storage, addr.as_bytes()).is_ok() {
+    if VAULTS.load(deps.storage, addr.as_bytes()).is_ok() {
         return Err(ContractError::VaultAlreadyExists {});
     }
 
     // save the new vault to storage
-    vault_store(
+    VAULTS.save(
         deps.storage,
         addr.as_bytes(),
         &YieldVault {
@@ -322,7 +319,7 @@ pub fn vault_remove(
     let _addr = deps.api.addr_validate(&vault_addr)?;
 
     // remove the vault from storage
-    crate::state::vault_remove(deps.storage, vault_addr.as_bytes());
+    VAULTS.remove(deps.storage, vault_addr.as_bytes());
     Ok(Response::default())
 }
 
@@ -340,11 +337,11 @@ pub fn vault_update_status(
     }
     // try to look up the given vault in Storage
     let addr = deps.api.addr_validate(&vault_addr)?;
-    let mut vault = vault_read(deps.storage, addr.as_bytes())?;
+    let mut vault = VAULTS.load(deps.storage, addr.as_bytes())?;
 
     // update new vault approval status attribute from passed arg
     vault.approved = approved;
-    vault_store(deps.storage, addr.as_bytes(), &vault)?;
+    VAULTS.save(deps.storage, addr.as_bytes(), &vault)?;
 
     Ok(Response::default())
 }
@@ -396,7 +393,7 @@ pub fn new_accounts_reply(
             }
             // Register the new Endowment on success Reply
             let addr = deps.api.addr_validate(&endowment_addr)?;
-            registry_store(
+            REGISTRY.save(
                 deps.storage,
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
@@ -488,15 +485,18 @@ pub fn update_endowment_entry(
     msg: UpdateEndowmentEntryMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let endow_addr = deps.api.addr_validate(&msg.endowment_addr)?;
 
-    if info.sender.ne(&config.owner) && info.sender.ne(&endow_addr) {
+    if info.sender.ne(&config.owner)
+        && info
+            .sender
+            .ne(&deps.api.addr_validate(&msg.endowment_addr)?)
+    {
         return Err(ContractError::Unauthorized {});
     }
 
     // look up the endowment in the Registry. Will fail if doesn't exist
     let endowment_addr = msg.endowment_addr.as_bytes();
-    let mut endowment_entry = registry_read(deps.storage, endowment_addr)?;
+    let mut endowment_entry = REGISTRY.load(deps.storage, endowment_addr)?;
 
     endowment_entry.name = msg.name;
     endowment_entry.owner = msg.owner;
@@ -508,7 +508,7 @@ pub fn update_endowment_entry(
         endowment_entry.tier = tier;
     }
 
-    registry_store(deps.storage, endowment_addr, &endowment_entry)?;
+    REGISTRY.save(deps.storage, endowment_addr, &endowment_entry)?;
 
     Ok(Response::new().add_attribute("action", "update_endowment_entry"))
 }
