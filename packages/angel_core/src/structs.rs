@@ -100,23 +100,24 @@ impl BalanceResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct YieldVault {
-    pub address: Addr,
+    pub address: String,
+    pub network: String, // Points to key in NetworkConnections storage map
     pub input_denom: String,
-    pub yield_token: Addr,
+    pub yield_token: String,
     pub approved: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct VaultRate {
-    pub vault_addr: Addr,
+    pub vault_addr: String,
     pub fx_rate: Decimal256,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct StrategyComponent {
-    pub vault: Addr,         // Vault SC Address
+    pub vault: String,       // Vault SC Address
     pub percentage: Decimal, // percentage of funds to invest
 }
 
@@ -548,4 +549,13 @@ pub struct EndowmentFee {
     pub payout_address: Addr,
     pub fee_percentage: Decimal,
     pub active: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct NetworkInfo {
+    pub name: String,
+    pub chain_id: String,
+    pub ibc_channel: Option<String>,
+    pub gas_limit: Option<u64>,
 }

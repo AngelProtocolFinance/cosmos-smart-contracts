@@ -1,6 +1,7 @@
 use crate::messages::dao_token::CurveType;
 use crate::structs::{
-    AcceptedTokens, EndowmentFee, EndowmentType, Profile, SettingsController, SplitDetails, Tier,
+    AcceptedTokens, EndowmentFee, EndowmentType, NetworkInfo, Profile, SettingsController,
+    SplitDetails, Tier,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
@@ -53,16 +54,28 @@ pub enum ExecuteMsg {
     CreateEndowment(CreateEndowmentMsg),
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     VaultAdd(VaultAddMsg),
-    VaultRemove { vault_addr: String },
-    VaultUpdateStatus { vault_addr: String, approved: bool },
+    VaultRemove {
+        vault_addr: String,
+    },
+    VaultUpdateStatus {
+        vault_addr: String,
+        approved: bool,
+    },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
     // Allows the SC owner to change ownership
-    UpdateOwner { new_owner: String },
+    UpdateOwner {
+        new_owner: String,
+    },
     // Set/Update/Nullify the EndowmentTypeFees
     UpdateEndowTypeFees(UpdateEndowTypeFeesMsg),
     // Allows the DANO/AP Team to update the EndowmentEntry
     UpdateEndowmentEntry(UpdateEndowmentEntryMsg),
+    // Updates the NETWORK_CONNECTIONS
+    UpdateNetworkConnections {
+        network_info: NetworkInfo,
+        action: String,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -141,6 +154,7 @@ pub struct UpdateEndowmentStatusMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct VaultAddMsg {
+    pub network: Option<String>,
     pub vault_addr: String,
     pub input_denom: String,
     pub yield_token: String,
@@ -200,4 +214,8 @@ pub enum QueryMsg {
     ApprovedVaultRateList {},
     // Get all Fees(both BaseFee & all of the EndowmentTypeFees)
     Fees {},
+    // Get a network connection info
+    NetworkConnection {
+        chain_id: String,
+    },
 }
