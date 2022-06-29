@@ -78,7 +78,7 @@ fn test_proper_initialization() {
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
-    assert_eq!(1, res.messages.len()); // no news is good news! :)
+    assert_eq!(2, res.messages.len()); // no news is good news! :)
 }
 
 #[test]
@@ -150,7 +150,7 @@ fn test_get_config() {
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
-    assert_eq!(1, res.messages.len());
+    assert_eq!(2, res.messages.len());
 }
 
 #[test]
@@ -224,7 +224,7 @@ fn test_change_registrar_contract() {
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-    assert_eq!(1, res.messages.len());
+    assert_eq!(2, res.messages.len());
 
     // change the owner to some pleb
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -327,7 +327,7 @@ fn test_change_admin() {
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-    assert_eq!(1, res.messages.len());
+    assert_eq!(2, res.messages.len());
 
     // change the admin to some pleb
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -430,7 +430,7 @@ fn test_update_strategy() {
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
-    assert_eq!(1, res.messages.len());
+    assert_eq!(2, res.messages.len());
 
     // sum of the invested strategy components percentages is not equal 100%
     let msg = ExecuteMsg::UpdateStrategies {
