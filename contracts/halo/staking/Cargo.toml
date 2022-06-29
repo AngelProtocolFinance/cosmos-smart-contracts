@@ -1,9 +1,8 @@
 [package]
 name = "halo-staking"
-version = "1.6.0"
+version = "2.0.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
-description = "A Staking contract for Angel Protocol - distribute rewards to stakers"
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -28,7 +27,6 @@ cw20 = "0.13.4"
 cosmwasm-std = "1.0.0"
 cosmwasm-storage = "1.0.0"
 cw-storage-plus = "0.13.4"
-
 schemars = "0.8.10"
 serde = "1.0.137"
 

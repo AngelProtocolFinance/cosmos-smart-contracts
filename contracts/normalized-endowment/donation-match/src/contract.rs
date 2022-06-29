@@ -1,7 +1,7 @@
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::donation_match::{
-    ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg,
+    ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, RecieveMsg,
 };
 
 use angel_core::messages::accounts::QueryMsg as AccountQueryMsg;
@@ -13,12 +13,12 @@ use angel_core::responses::registrar::{
 };
 use angel_core::structs::{EndowmentStatus, EndowmentType};
 use cosmwasm_std::{
-    attr, entry_point, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    Response, StdError, StdResult, Uint128, WasmMsg,
+    attr, entry_point, from_binary, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, Response, StdError, StdResult, Uint128, WasmMsg,
 };
 
 use cw2::set_contract_version;
-use cw20::{BalanceResponse, Cw20ExecuteMsg, Cw20QueryMsg};
+use cw20::{BalanceResponse, Cw20ExecuteMsg, Cw20QueryMsg, Cw20ReceiveMsg};
 use terraswap::asset::{Asset, AssetInfo};
 use terraswap::pair::QueryMsg as PairQueryMsg;
 use terraswap::pair::SimulationResponse;
@@ -52,6 +52,25 @@ pub fn instantiate(
     )?;
 
     Ok(Response::new().add_attributes(vec![attr("instantiate", "donation-match")]))
+}
+
+pub fn receive_cw20(
+    deps: DepsMut,
+    env: Env,
+    mut info: MessageInfo,
+    cw20_msg: Cw20ReceiveMsg,
+) -> Result<Response, ContractError> {
+    let api = deps.api;
+    match from_binary(&cw20_msg.msg) {
+        Ok(RecieveMsg::DonorMatch {}) => {
+            let contract_addr = api.addr_validate(info.sender.clone().as_str())?;
+            let msg_sender = api.addr_validate(&cw20_msg.sender)?;
+            // update the info.sender to be the message sender
+            info.sender = msg_sender.clone();
+            execute_donor_match(deps, env, info, cw20_msg.amount, msg_sender, contract_addr)
+        }
+        _ => Err(ContractError::InvalidInputs {}),
+    }
 }
 
 #[entry_point]

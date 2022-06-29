@@ -1,9 +1,8 @@
 [package]
 name = "halo-distributor"
-version = "1.6.0"
+version = "2.0.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
-description = "A Faucet contract for Angel Protocol - provides claim interface only from the whitelisted contract"
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -22,7 +21,7 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-angel-core = { path = "../../../packages/angel_core", feature=["utils"]}
+angel-core = { path = "../../../packages/angel_core" }
 halo-token = { path = "../../../packages/halo_token" }
 
 cosmwasm-std = "1.0.0"
