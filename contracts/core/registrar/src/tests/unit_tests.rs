@@ -1,13 +1,17 @@
-use crate::contract::{execute, instantiate, migrate, query, reply};
+use crate::contract::{execute, instantiate, query, reply};
 use angel_core::errors::core::*;
+use angel_core::messages::accounts::DaoSetupOption;
+use angel_core::messages::dao_token::CurveType;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
-use angel_core::structs::{AcceptedTokens, SplitDetails};
-use angel_core::structs::{EndowmentStatus, EndowmentType, NetworkInfo, Profile, SocialMedialUrls};
+use angel_core::structs::{
+    AcceptedTokens, EndowmentStatus, EndowmentType, NetworkInfo, Profile, SocialMedialUrls,
+    SplitDetails,
+};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
-    coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply, SubMsgResponse, SubMsgResult,
-    WasmMsg,
+    coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply, StdError, SubMsgResponse,
+    SubMsgResult, Uint128, WasmMsg,
 };
 
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
@@ -31,6 +35,7 @@ fn proper_initialization() {
             ],
             cw20: vec![],
         }),
+        swap_factory: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -60,6 +65,7 @@ fn update_owner() {
             ],
             cw20: vec![],
         }),
+        swap_factory: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -97,6 +103,7 @@ fn update_config() {
             ],
             cw20: vec![],
         }),
+        swap_factory: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let _res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -119,6 +126,10 @@ fn update_config() {
         cw4_code: Some(MOCK_CW4_CODE_ID),
         accepted_tokens_cw20: None,
         accepted_tokens_native: None,
+        donation_match_charites_contract: None,
+        collector_addr: None,
+        collector_share: None,
+        swap_factory: None,
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -133,32 +144,6 @@ fn update_config() {
     assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
     assert_eq!(MOCK_CW3_CODE_ID, config_response.cw3_code.unwrap());
     assert_eq!(MOCK_CW4_CODE_ID, config_response.cw4_code.unwrap());
-}
-
-#[test]
-fn test_owner_can_add_remove_approved_charities() {
-    let mut deps = mock_dependencies();
-    // meet the cast of characters
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
-    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
-    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
-    let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
-        treasury: ap_team.clone(),
-        default_vault: None,
-        tax_rate: Decimal::percent(20),
-        split_to_liquid: Some(SplitDetails::default()),
-        accepted_tokens: Some(AcceptedTokens {
-            native: vec![
-                "uluna".to_string(),
-                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
-            ],
-            cw20: vec![],
-        }),
-    };
-    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
-    let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
 }
 
 #[test]
@@ -183,6 +168,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
             ],
             cw20: vec![],
         }),
+        swap_factory: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -206,6 +192,10 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         cw4_code: None,
         accepted_tokens_cw20: None,
         accepted_tokens_native: None,
+        donation_match_charites_contract: None,
+        collector_addr: None,
+        collector_share: None,
+        swap_factory: None,
     };
     let info = mock_info(ap_team.as_ref(), &[]);
     let _ = execute(
@@ -241,6 +231,31 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     };
 
     let create_endowment_msg = CreateEndowmentMsg {
+        name: "Endowment".to_string(),
+        description: "New Endowment Creation".to_string(),
+        split_max: None,
+        split_min: None,
+        split_default: None,
+        locked_endowment_configs: vec![],
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        curve_type: None,
+        dao: true,
+        dao_setup_option: DaoSetupOption::SetupBondCurveToken(CurveType::Constant {
+            value: Uint128::zero(),
+            scale: 2u32,
+        }),
+        donation_match: false,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
+        donation_match_setup_option: 2,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
+        settings_controller: None,
+        parent: false,
         owner: good_charity_addr.clone(),
         beneficiary: good_charity_addr.clone(),
         withdraw_before_maturity: false,
@@ -447,6 +462,7 @@ fn test_add_update_and_remove_vault() {
             ],
             cw20: vec![],
         }),
+        swap_factory: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -496,6 +512,29 @@ fn test_add_update_and_remove_vault() {
     let vault_detail_response: VaultDetailResponse = from_binary(&res).unwrap();
     assert_eq!(vault_addr.clone(), vault_detail_response.vault.address);
     assert_eq!(true, vault_detail_response.vault.approved);
+
+    // remove vault
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let msg = ExecuteMsg::VaultRemove {
+        vault_addr: vault_addr.clone(),
+    };
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    let err = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Vault {
+            vault_addr: vault_addr.clone(),
+        },
+    )
+    .unwrap_err();
+    assert_ne!(
+        err,
+        StdError::NotFound {
+            kind: "YieldVault".to_string()
+        }
+    );
 }
 
 #[test]
@@ -515,6 +554,7 @@ fn test_add_update_and_remove_accepted_tokens() {
             ],
             cw20: vec![],
         }),
+        swap_factory: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -544,6 +584,10 @@ fn test_add_update_and_remove_accepted_tokens() {
         cw4_code: None,
         accepted_tokens_cw20: Some(vec!["new_token".to_string()]),
         accepted_tokens_native: None,
+        donation_match_charites_contract: None,
+        collector_addr: None,
+        collector_share: None,
+        swap_factory: None,
     };
     let res = execute(
         deps.as_mut(),
@@ -584,6 +628,7 @@ fn test_add_update_and_remove_network_infos() {
             ],
             cw20: vec![],
         }),
+        swap_factory: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -674,4 +719,60 @@ fn test_add_update_and_remove_network_infos() {
         },
     )
     .unwrap_err();
+}
+
+#[test]
+fn test_update_endow_type_fees() {
+    let mut deps = mock_dependencies();
+    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let instantiate_msg = InstantiateMsg {
+        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
+        treasury: ap_team.clone(),
+        default_vault: None,
+        tax_rate: Decimal::percent(20),
+        split_to_liquid: Some(SplitDetails::default()),
+        accepted_tokens: Some(AcceptedTokens {
+            native: vec![
+                "uluna".to_string(),
+                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+            ],
+            cw20: vec![],
+        }),
+        swap_factory: None,
+    };
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    let update_endow_type_fees_msg = UpdateEndowTypeFeesMsg {
+        endowtype_charity: Some(Decimal::MAX),
+        endowtype_normal: Some(Decimal::one()),
+    };
+
+    // non-config_owner failes to update endowment_type_fees
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateEndowTypeFees(update_endow_type_fees_msg.clone()),
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // config_owner succeeds to update endowment type fees
+    let info = mock_info(&ap_team, &[]);
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateEndowTypeFees(update_endow_type_fees_msg),
+    )
+    .unwrap();
+
+    // Query the "endow_type_fees"
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Fees {}).unwrap();
+    let fees: FeesResponse = from_binary(&res).unwrap();
+    assert_eq!(fees.endowtype_charity, Some(Decimal::MAX));
+    assert_eq!(fees.endowtype_normal, Some(Decimal::one()));
 }

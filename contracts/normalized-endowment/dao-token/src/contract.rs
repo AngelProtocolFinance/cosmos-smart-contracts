@@ -207,21 +207,21 @@ fn execute_donor_match(
     let burn_amount = amount.multiply_ratio(20_u128, 100_u128);
 
     // Burn the 20%
+    // This action is just needed for calculation, not for real action.
+
     let sub_info = MessageInfo {
         sender: env.contract.address.clone(),
         funds: vec![],
     };
-    execute_burn(deps.branch(), env.clone(), sub_info.clone(), burn_amount)?;
-
     // Send the remainders to "donor" & "endowment" contract
-    execute_transfer(
+    execute_mint(
         deps.branch(),
         env.clone(),
         sub_info.clone(),
         donor,
         donor_amount,
     )?;
-    execute_transfer(
+    execute_mint(
         deps.branch(),
         env,
         sub_info,
