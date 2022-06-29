@@ -1,12 +1,10 @@
 use crate::state::{
-    endow_type_fees_write, read_registry_entries, registry_read, registry_store, vault_read,
-    vault_store, CONFIG,
+    read_registry_entries, CONFIG, ENDOWTYPE_FEES, NETWORK_CONNECTIONS, REGISTRY, VAULTS,
 };
-
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{
-    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, Tier, YieldVault,
+    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, NetworkInfo, Tier, YieldVault,
 };
 use angel_core::utils::{percentage_checks, split_checks};
 
@@ -52,7 +50,7 @@ pub fn update_endowment_status(
 
     // look up the endowment in the Registry. Will fail if doesn't exist
     let endowment_addr = msg.endowment_addr.as_bytes();
-    let mut endowment_entry = registry_read(deps.storage, endowment_addr)?;
+    let mut endowment_entry = REGISTRY.load(deps.storage, endowment_addr)?;
 
     let msg_endowment_status = match msg.status {
         0 => EndowmentStatus::Inactive,
@@ -74,7 +72,7 @@ pub fn update_endowment_status(
 
     // update entry status & save to the Registry
     endowment_entry.status = msg_endowment_status.clone();
-    registry_store(deps.storage, endowment_addr, &endowment_entry)?;
+    REGISTRY.save(deps.storage, endowment_addr, &endowment_entry)?;
 
     // Take different actions on the affected Accounts SC, based on the status passed
     // Build out list of SubMsgs to send to the Account SC and/or Index Fund SC
@@ -328,7 +326,7 @@ pub fn create_endowment(
 
 pub fn vault_add(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: VaultAddMsg,
 ) -> Result<Response, ContractError> {
@@ -342,18 +340,19 @@ pub fn vault_add(
     let addr = deps.api.addr_validate(&msg.vault_addr)?;
 
     // check that the vault does not already exist for a given address in storage
-    if vault_read(deps.storage, addr.as_bytes()).is_ok() {
+    if VAULTS.load(deps.storage, addr.as_bytes()).is_ok() {
         return Err(ContractError::VaultAlreadyExists {});
     }
 
     // save the new vault to storage
-    vault_store(
+    VAULTS.save(
         deps.storage,
         addr.as_bytes(),
         &YieldVault {
-            address: addr.clone(),
+            network: msg.network.unwrap_or(env.block.chain_id),
+            address: addr.to_string(),
             input_denom: msg.input_denom,
-            yield_token: deps.api.addr_validate(&msg.yield_token)?,
+            yield_token: deps.api.addr_validate(&msg.yield_token)?.to_string(),
             approved: false,
         },
     )?;
@@ -375,7 +374,7 @@ pub fn vault_remove(
     let _addr = deps.api.addr_validate(&vault_addr)?;
 
     // remove the vault from storage
-    crate::state::vault_remove(deps.storage, vault_addr.as_bytes());
+    VAULTS.remove(deps.storage, vault_addr.as_bytes());
     Ok(Response::default())
 }
 
@@ -393,11 +392,11 @@ pub fn vault_update_status(
     }
     // try to look up the given vault in Storage
     let addr = deps.api.addr_validate(&vault_addr)?;
-    let mut vault = vault_read(deps.storage, addr.as_bytes())?;
+    let mut vault = VAULTS.load(deps.storage, addr.as_bytes())?;
 
     // update new vault approval status attribute from passed arg
     vault.approved = approved;
-    vault_store(deps.storage, addr.as_bytes(), &vault)?;
+    VAULTS.save(deps.storage, addr.as_bytes(), &vault)?;
 
     Ok(Response::default())
 }
@@ -449,7 +448,7 @@ pub fn new_accounts_reply(
             }
             // Register the new Endowment on success Reply
             let addr = deps.api.addr_validate(&endowment_addr)?;
-            registry_store(
+            REGISTRY.save(
                 deps.storage,
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
@@ -490,15 +489,18 @@ pub fn update_endowment_entry(
     msg: UpdateEndowmentEntryMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let endow_addr = deps.api.addr_validate(&msg.endowment_addr)?;
 
-    if info.sender.ne(&config.owner) && info.sender.ne(&endow_addr) {
+    if info.sender.ne(&config.owner)
+        && info
+            .sender
+            .ne(&deps.api.addr_validate(&msg.endowment_addr)?)
+    {
         return Err(ContractError::Unauthorized {});
     }
 
     // look up the endowment in the Registry. Will fail if doesn't exist
     let endowment_addr = msg.endowment_addr.as_bytes();
-    let mut endowment_entry = registry_read(deps.storage, endowment_addr)?;
+    let mut endowment_entry = REGISTRY.load(deps.storage, endowment_addr)?;
 
     endowment_entry.name = msg.name;
     endowment_entry.owner = msg.owner;
@@ -510,7 +512,7 @@ pub fn update_endowment_entry(
         endowment_entry.tier = tier;
     }
 
-    registry_store(deps.storage, endowment_addr, &endowment_entry)?;
+    REGISTRY.save(deps.storage, endowment_addr, &endowment_entry)?;
 
     Ok(Response::new().add_attribute("action", "update_endowment_entry"))
 }
@@ -526,10 +528,35 @@ pub fn update_endowtype_fees(
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
-
     // Update the "fees"
-    endow_type_fees_write(deps.storage, EndowmentType::Charity, msg.endowtype_charity)?;
-    endow_type_fees_write(deps.storage, EndowmentType::Normal, msg.endowtype_normal)?;
+    ENDOWTYPE_FEES.save(deps.storage, "charity".to_string(), &msg.endowtype_charity)?;
+    ENDOWTYPE_FEES.save(deps.storage, "normal".to_string(), &msg.endowtype_normal)?;
 
     Ok(Response::new().add_attribute("action", "update_endowtype_fees"))
+}
+
+pub fn update_network_connections(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    network_info: NetworkInfo,
+    action: String,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender.ne(&config.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    if action == *"add" {
+        // Add the network_info to NETWORK_CONNECTIONS
+        NETWORK_CONNECTIONS.save(deps.storage, &network_info.chain_id, &network_info)?;
+    } else if action == *"remove" {
+        // Remove the network_info from NETWORK_CONNECTIONS
+        NETWORK_CONNECTIONS.remove(deps.storage, &network_info.chain_id);
+    } else {
+        return Err(ContractError::InvalidInputs {});
+    }
+
+    Ok(Response::default().add_attribute("action", "update_network_connections"))
 }

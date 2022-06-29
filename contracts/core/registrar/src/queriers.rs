@@ -1,5 +1,6 @@
 use crate::state::{
-    endow_type_fees_read, read_registry_entries, read_vaults, registry_read, vault_read, CONFIG,
+    read_registry_entries, read_vaults, CONFIG, ENDOWTYPE_FEES, NETWORK_CONNECTIONS, REGISTRY,
+    VAULTS,
 };
 use angel_core::responses::registrar::*;
 use angel_core::structs::{EndowmentEntry, EndowmentType, Tier, VaultRate};
@@ -73,7 +74,7 @@ pub fn query_endowment_details(
     deps: Deps,
     endowment_addr: String,
 ) -> StdResult<EndowmentDetailResponse> {
-    let endowment = registry_read(deps.storage, endowment_addr.as_bytes())?;
+    let endowment = REGISTRY.load(deps.storage, endowment_addr.as_bytes())?;
     Ok(EndowmentDetailResponse { endowment })
 }
 
@@ -152,7 +153,7 @@ pub fn query_endowment_list(
 pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDetailResponse> {
     // this fails if no vault is found
     let addr = deps.api.addr_validate(&vault_addr)?;
-    let vault = vault_read(deps.storage, addr.as_bytes())?;
+    let vault = VAULTS.load(deps.storage, addr.as_bytes())?;
     Ok(VaultDetailResponse { vault })
 }
 
@@ -173,13 +174,23 @@ pub fn query_approved_vaults_fx_rate(deps: Deps) -> StdResult<VaultRateResponse>
 pub fn query_fees(deps: Deps) -> StdResult<FeesResponse> {
     // returns all Fees(both BaseFee & all of the EndowmentTypeFees)
     let tax_rate = CONFIG.load(deps.storage)?.tax_rate;
-    let endowtype_charity =
-        endow_type_fees_read(deps.storage, EndowmentType::Charity).unwrap_or(None);
-    let endowtype_normal =
-        endow_type_fees_read(deps.storage, EndowmentType::Normal).unwrap_or(None);
+    let endowtype_charity = ENDOWTYPE_FEES
+        .load(deps.storage, "charity".to_string())
+        .unwrap_or(None);
+    let endowtype_normal = ENDOWTYPE_FEES
+        .load(deps.storage, "normal".to_string())
+        .unwrap_or(None);
     Ok(FeesResponse {
         tax_rate,
         endowtype_charity,
         endowtype_normal,
     })
+}
+
+pub fn query_network_connection(
+    deps: Deps,
+    chain_id: String,
+) -> StdResult<NetworkConnectionResponse> {
+    let network_connection = NETWORK_CONNECTIONS.load(deps.storage, &chain_id)?;
+    Ok(NetworkConnectionResponse { network_connection })
 }

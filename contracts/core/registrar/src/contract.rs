@@ -96,6 +96,10 @@ pub fn execute(
         ExecuteMsg::UpdateEndowTypeFees(msg) => {
             executers::update_endowtype_fees(deps, env, info, msg)
         }
+        ExecuteMsg::UpdateNetworkConnections {
+            network_info,
+            action,
+        } => executers::update_network_connections(deps, env, info, network_info, action),
     }
 }
 
@@ -140,6 +144,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&queriers::query_approved_vaults_fx_rate(deps)?)
         }
         QueryMsg::Fees {} => to_binary(&queriers::query_fees(deps)?),
+        QueryMsg::NetworkConnection { chain_id } => {
+            to_binary(&queriers::query_network_connection(deps, chain_id)?)
+        }
     }
 }
 

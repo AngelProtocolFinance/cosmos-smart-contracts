@@ -81,7 +81,7 @@ pub fn instantiate(
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
             maturity_time: msg.maturity_time,                       // Option<u64>
             strategies: vec![StrategyComponent {
-                vault: deps.api.addr_validate(&default_vault)?,
+                vault: deps.api.addr_validate(&default_vault)?.to_string(),
                 percentage: Decimal::one(),
             }],
             rebalance: RebalanceDetails::default(),

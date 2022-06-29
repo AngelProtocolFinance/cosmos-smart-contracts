@@ -508,7 +508,7 @@ pub fn update_strategies(
     let mut new_strategies = vec![];
     for strategy in strategies {
         new_strategies.push(StrategyComponent {
-            vault: deps.api.addr_validate(&strategy.vault.clone())?,
+            vault: deps.api.addr_validate(&strategy.vault.clone())?.to_string(),
             percentage: strategy.percentage,
         });
     }
@@ -1360,16 +1360,16 @@ pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
 
     // Calc the total AUM & aum_harvest_withdraw from vaults balances
     let mut msgs: Vec<CosmosMsg> = vec![];
-    let vaults: Vec<Addr> = endowment
+    let vaults: Vec<String> = endowment
         .strategies
         .iter()
         .map(|s| s.vault.clone())
         .collect();
     for vault in vaults {
         let vault_balances: BalanceResponse = deps.querier.query_wasm_smart(
-            vault.to_string(),
+            vault.clone(),
             &VaultQueryMsg::Balance {
-                address: vault.to_string(),
+                address: vault.clone(),
             },
         )?;
         // Here, we assume that only one native coin -

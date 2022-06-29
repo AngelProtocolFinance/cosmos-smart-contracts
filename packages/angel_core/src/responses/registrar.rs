@@ -1,4 +1,6 @@
-use crate::structs::{AcceptedTokens, EndowmentEntry, SplitDetails, VaultRate, YieldVault};
+use crate::structs::{
+    AcceptedTokens, EndowmentEntry, NetworkInfo, SplitDetails, VaultRate, YieldVault,
+};
 use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -64,4 +66,9 @@ pub struct FeesResponse {
 
 pub struct AccTokensListResponse {
     pub tokens: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+pub struct NetworkConnectionResponse {
+    pub network_connection: NetworkInfo,
 }
