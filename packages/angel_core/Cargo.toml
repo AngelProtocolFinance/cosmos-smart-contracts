@@ -9,6 +9,8 @@ metadata = {}
 # for quicker tests, cargo test --lib
 # for more explicit tests, cargo test --features=backtraces
 backtraces = ["cosmwasm-std/backtraces"]
+# use library feature to disable all instantiate/execute/query exports
+library = []
 
 [dependencies]
 cosmwasm-schema = { version = "1.0.0" }
