@@ -1,3 +1,16 @@
+use cosmwasm_std::{
+    attr, entry_point, from_binary, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env,
+    MessageInfo, Response, StdError, StdResult, Uint128, WasmMsg,
+};
+use cw2::set_contract_version;
+use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
+use cw20_base::allowances::{
+    deduct_allowance, execute_decrease_allowance, execute_increase_allowance, execute_send_from,
+    execute_transfer_from, query_allowance,
+};
+use cw20_base::contract::{query_balance, query_token_info};
+use cw_utils::Duration;
+
 use crate::state::{
     Config, CurveState, MinterData, TokenInfo, BALANCES, CLAIMS, CONFIG, CURVE_STATE, CURVE_TYPE,
     TOKEN_INFO,
@@ -8,13 +21,6 @@ use angel_core::messages::dao_token::{
     CurveFn, CurveInfoResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
 use angel_core::utils::{must_pay, nonpayable};
-use cosmwasm_std::{
-    attr, entry_point, from_binary, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env,
-    MessageInfo, Response, StdError, StdResult, Uint128, WasmMsg,
-};
-use cw2::set_contract_version;
-use cw20::{BalanceResponse, Cw20ExecuteMsg, Cw20ReceiveMsg, TokenInfoResponse};
-use cw_utils::Duration;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "dao-token";
@@ -49,7 +55,6 @@ pub fn instantiate(
     CONFIG.save(
         deps.storage,
         &Config {
-            halo_token: deps.api.addr_validate(&msg.halo_token)?,
             unbonding_period: Duration::Time(msg.unbonding_period), // secconds of unbonding
         },
     )?;
@@ -78,8 +83,6 @@ pub fn receive_cw20(
         return Err(ContractError::InvalidZeroAmount {});
     }
 
-    let curve_type = CURVE_TYPE.load(deps.storage)?;
-    let curve_fn = curve_type.to_curve_fn();
     let token_holder_address = deps.api.addr_validate(&cw20_msg.sender)?;
     match from_binary(&cw20_msg.msg) {
         Ok(Cw20HookMsg::Buy {}) => execute_buy_cw20(
@@ -87,7 +90,6 @@ pub fn receive_cw20(
             env,
             token_holder_address, // addr of HALO holder who's purchasing
             cw20_msg.amount,      // how much HALO sending
-            curve_fn,             // some curve
         ),
         Ok(Cw20HookMsg::DonorMatch {
             amount,
@@ -122,7 +124,7 @@ pub fn execute(
 
 /// We pull out logic here, so we can import this from another contract and set a different Curve.
 /// This contacts sets a curve with an enum in InstantiateMsg and stored in state, but you may want
-/// to use custom math not included - make this easily reusable
+/// to use custom math not included - mexecute_burnake this easily reusable
 pub fn do_execute(
     deps: DepsMut,
     env: Env,
@@ -131,10 +133,18 @@ pub fn do_execute(
     curve_fn: CurveFn,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::ClaimTokens {} => Ok(claim_tokens(deps, env, info)?),
-        // We only accept CW20 tokens for reseve asset curve at this time (see receive_cw20 > Buy above).
+        ExecuteMsg::Receive(cw20_receive_msg) => {
+            Ok(receive_cw20(deps, env, info, cw20_receive_msg)?)
+        }
+        // We only accept CW20 tokens for reseve asset curve at this time (see receive_cw20 > ExecuteMsg::Buy).
         // ExecuteMsg::Buy {} => execute_buy(deps, env, info, curve_fn),
         ExecuteMsg::Burn { amount } => Ok(execute_sell(deps, env, info, curve_fn, amount)?),
+        ExecuteMsg::BurnFrom { owner, amount } => {
+            Ok(execute_sell_from(deps, env, info, curve_fn, owner, amount)?)
+        }
+        ExecuteMsg::ClaimTokens {} => Ok(claim_tokens(deps, env, info)?),
+
+        // these all come from cw20-base to implement the cw20 standard
         ExecuteMsg::Transfer { recipient, amount } => {
             Ok(execute_transfer(deps, env, info, recipient, amount)?)
         }
@@ -143,9 +153,35 @@ pub fn do_execute(
             amount,
             msg,
         } => Ok(execute_send(deps, env, info, contract, amount, msg)?),
-        ExecuteMsg::Receive(cw20_receive_msg) => {
-            Ok(receive_cw20(deps, env, info, cw20_receive_msg)?)
-        }
+        ExecuteMsg::IncreaseAllowance {
+            spender,
+            amount,
+            expires,
+        } => Ok(execute_increase_allowance(
+            deps, env, info, spender, amount, expires,
+        )?),
+        ExecuteMsg::DecreaseAllowance {
+            spender,
+            amount,
+            expires,
+        } => Ok(execute_decrease_allowance(
+            deps, env, info, spender, amount, expires,
+        )?),
+        ExecuteMsg::TransferFrom {
+            owner,
+            recipient,
+            amount,
+        } => Ok(execute_transfer_from(
+            deps, env, info, owner, recipient, amount,
+        )?),
+        ExecuteMsg::SendFrom {
+            owner,
+            contract,
+            amount,
+            msg,
+        } => Ok(execute_send_from(
+            deps, env, info, owner, contract, amount, msg,
+        )?),
     }
 }
 
@@ -154,8 +190,9 @@ pub fn execute_buy_cw20(
     env: Env,
     buyer_addr: Addr,
     buyer_amount: Uint128,
-    curve_fn: CurveFn,
 ) -> Result<Response, ContractError> {
+    let curve_type = CURVE_TYPE.load(deps.storage)?;
+    let curve_fn = curve_type.to_curve_fn();
     let mut state = CURVE_STATE.load(deps.storage)?;
 
     // calculate how many tokens can be purchased with this and mint them
@@ -184,7 +221,7 @@ pub fn execute_buy_cw20(
     Ok(res)
 }
 
-fn execute_donor_match(
+pub fn execute_donor_match(
     mut deps: DepsMut,
     env: Env,
     _info: MessageInfo,
@@ -198,10 +235,10 @@ fn execute_donor_match(
         return Err(ContractError::InsufficientFunds {});
     }
 
-    // Calculate the amounts of dao-token to be sent
+    // Calculate the amounts of dao-token to be sent and burned
     // "donor": 40%
     // "endowment_contract": 40%
-    // Burn: 20%
+    // burn: 20%
     let donor_amount = amount.multiply_ratio(40_u128, 100_u128);
     let endowment_amount = amount.multiply_ratio(40_u128, 100_u128);
     let burn_amount = amount.multiply_ratio(20_u128, 100_u128);
@@ -213,15 +250,19 @@ fn execute_donor_match(
         sender: env.contract.address.clone(),
         funds: vec![],
     };
-    // Send the remainders to "donor" & "endowment" contract
-    execute_mint(
+
+    // Burn amount: 20%
+    execute_burn(deps.branch(), env.clone(), sub_info.clone(), burn_amount)?;
+    // Transfer to "donor": 40%
+    execute_transfer(
         deps.branch(),
         env.clone(),
         sub_info.clone(),
         donor,
         donor_amount,
     )?;
-    execute_mint(
+    // Transfer to "endowment_contract": 40%
+    execute_transfer(
         deps.branch(),
         env,
         sub_info,
@@ -237,7 +278,6 @@ fn execute_donor_match(
     ]))
 }
 
-//
 pub fn execute_buy(
     deps: DepsMut,
     env: Env,
@@ -291,18 +331,55 @@ pub fn execute_sell(
     Ok(res)
 }
 
+pub fn execute_sell_from(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    curve_fn: CurveFn,
+    owner: String,
+    amount: Uint128,
+) -> Result<Response, ContractError> {
+    nonpayable(&info)?;
+    let owner_addr = deps.api.addr_validate(&owner)?;
+    let spender_addr = info.sender.clone();
+
+    // deduct allowance before doing anything else have enough allowance
+    deduct_allowance(deps.storage, &owner_addr, &spender_addr, &env.block, amount)?;
+
+    // do all the work in do_sell
+    let receiver_addr = info.sender;
+    let owner_info = MessageInfo {
+        sender: owner_addr,
+        funds: info.funds,
+    };
+    let mut res = do_sell(
+        deps,
+        env,
+        owner_info,
+        curve_fn,
+        receiver_addr.clone(),
+        amount,
+    )?;
+
+    // add our custom attributes
+    res.attributes.push(attr("action", "burn_from"));
+    res.attributes.push(attr("by", receiver_addr));
+    Ok(res)
+}
+
 fn do_sell(
     mut deps: DepsMut,
     env: Env,
-    info: MessageInfo, // info.sender is the one burning tokens
+    // info.sender is the one burning tokens
+    info: MessageInfo,
     curve_fn: CurveFn,
-    _receiver: Addr, // receiver is the one who gains (same for execute_sell, diff for execute_sell_from)
+    // receiver is the one who gains (same for execute_sell, diff for execute_sell_from)
+    _receiver: Addr,
     amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
+    let block = env.clone().block;
     // burn from the caller, this ensures there are tokens to cover this
-    execute_burn(deps.branch(), env.clone(), info.clone(), amount)?;
+    execute_burn(deps.branch(), env, info.clone(), amount)?;
 
     // calculate how many tokens can be purchased with this and mint them
     let mut state = CURVE_STATE.load(deps.storage)?;
@@ -319,25 +396,24 @@ fn do_sell(
     state.reserve = new_reserve;
     CURVE_STATE.save(deps.storage, &state)?;
 
-    // create a new claim for the released HALO Amount
+    // create a new claim for the released reserve Amount
+    let config = CONFIG.load(deps.storage)?;
     CLAIMS.create_claim(
         deps.storage,
-        &info.sender,
+        &info.sender.clone(),
         amount,
-        config.unbonding_period.after(&env.block),
+        config.unbonding_period.after(&block),
     )?;
 
     let res = Response::new()
         .add_attribute("from", info.sender)
         .add_attribute("supply", amount)
-        .add_attribute("claim", released);
+        .add_attribute("reserve", released);
     Ok(res)
 }
 
-// Claim all CS tokens that are past the unbonding period for a user.
+// Claim all reserve tokens that are past the unbonding period for a user.
 pub fn claim_tokens(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
     // check how much to send - min(balance, claims[sender]), and reduce the claim
     // Ensure we have enough balance to cover this and only send some claims if that is all we can cover
     let to_send = CLAIMS.claim_tokens(deps.storage, &info.sender, &env.block, None)?;
@@ -345,10 +421,12 @@ pub fn claim_tokens(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Respon
         return Err(ContractError::NothingToClaim {});
     }
 
+    let state = CURVE_STATE.load(deps.storage)?;
+
     // now send the HALO tokens to the sender
     let res = Response::new()
         .add_messages(vec![CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.halo_token.to_string(),
+            contract_addr: state.reserve_denom,
             msg: to_binary(&Cw20ExecuteMsg::Transfer {
                 recipient: info.sender.into(),
                 amount: to_send,
@@ -533,6 +611,9 @@ pub fn do_query(deps: Deps, _env: Env, msg: QueryMsg, curve_fn: CurveFn) -> StdR
         // inherited from cw20-base
         QueryMsg::TokenInfo {} => to_binary(&query_token_info(deps)?),
         QueryMsg::Balance { address } => to_binary(&query_balance(deps, address)?),
+        QueryMsg::Allowance { owner, spender } => {
+            to_binary(&query_allowance(deps, owner, spender)?)
+        }
     }
 }
 
@@ -554,23 +635,4 @@ pub fn query_curve_info(deps: Deps, curve_fn: CurveFn) -> StdResult<CurveInfoRes
         spot_price,
         reserve_denom,
     })
-}
-
-pub fn query_balance(deps: Deps, address: String) -> StdResult<BalanceResponse> {
-    let address = deps.api.addr_validate(&address)?;
-    let balance = BALANCES
-        .may_load(deps.storage, &address)?
-        .unwrap_or_default();
-    Ok(BalanceResponse { balance })
-}
-
-pub fn query_token_info(deps: Deps) -> StdResult<TokenInfoResponse> {
-    let info = TOKEN_INFO.load(deps.storage)?;
-    let res = TokenInfoResponse {
-        name: info.name,
-        symbol: info.symbol,
-        decimals: info.decimals,
-        total_supply: info.total_supply,
-    };
-    Ok(res)
 }

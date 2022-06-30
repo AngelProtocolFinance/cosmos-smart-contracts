@@ -21,14 +21,14 @@ backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
 angel-core = { path = "../../../packages/angel_core" }
-cw-utils = "0.13.2"
-cw2 = "0.13.2"
-cw20 = "0.13.2"
-cw4 = "0.13.2"
-cw-controllers = "0.13.2"
-cw20-base = "0.13.2"
+cw-utils = "0.13.4"
+cw2 = "0.13.4"
+cw20 = "0.13.4"
+cw4 = "0.13.4"
+cw-controllers = "0.13.4"
+cw20-base = { version = "0.13.4", features = ["library"] }
 cosmwasm-std = "1.0.0"
-cw-storage-plus = "0.13.2"
+cw-storage-plus = "0.13.4"
 schemars = "0.8.10"
 serde = "1.0.137"
 thiserror = "1.0.24"

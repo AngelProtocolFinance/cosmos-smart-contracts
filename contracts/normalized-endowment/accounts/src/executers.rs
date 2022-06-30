@@ -1538,7 +1538,6 @@ pub fn setup_dao_token_messages(
                         reserve_denom: halo_token.to_string(),
                         reserve_decimals: 6,
                         curve_type,
-                        halo_token,
                         unbonding_period: 7,
                     })?,
                     funds: vec![],

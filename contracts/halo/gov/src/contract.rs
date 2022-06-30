@@ -30,7 +30,6 @@ const POLL_EXECUTE_REPLY_ID: u64 = 1;
 const MIN_LINK_LENGTH: usize = 12;
 const MAX_LINK_LENGTH: usize = 128;
 
-#[entry_point]
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
@@ -68,7 +67,6 @@ pub fn instantiate(
     Ok(Response::default())
 }
 
-#[entry_point]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -646,7 +644,6 @@ pub fn cast_vote(
     ]))
 }
 
-#[entry_point]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> Result<Binary, ContractError> {
     match msg {
         QueryMsg::Config {} => Ok(to_binary(&query_config(deps)?)?),

@@ -56,7 +56,6 @@ impl TokenInfo {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
-    pub halo_token: Addr,
     /// This is the unbonding period of CS tokens
     /// We need this to only allow claims to be redeemed after this period
     pub unbonding_period: Duration,
