@@ -235,40 +235,29 @@ pub fn execute_donor_match(
         return Err(ContractError::InsufficientFunds {});
     }
 
-    // Calculate the amounts of dao-token to be sent and burned
-    // "donor": 40%
-    // "endowment_contract": 40%
-    // burn: 20%
+    // Calculate the amounts of dao-token to be minted and burned
+    // Minted for the "donor": 40%
+    // Minted for the "endowment_contract": 40%
+    // Burned: 20% (This action is just needed for calculation purposes, no real action is needed.)
     let donor_amount = amount.multiply_ratio(40_u128, 100_u128);
     let endowment_amount = amount.multiply_ratio(40_u128, 100_u128);
     let burn_amount = amount.multiply_ratio(20_u128, 100_u128);
-
-    // Burn the 20%
-    // This action is just needed for calculation, not for real action.
 
     let sub_info = MessageInfo {
         sender: env.contract.address.clone(),
         funds: vec![],
     };
 
-    // Burn amount: 20%
-    execute_burn(deps.branch(), env.clone(), sub_info.clone(), burn_amount)?;
-    // Transfer to "donor": 40%
-    execute_transfer(
+    // Mint to "donor": 40%
+    execute_mint(
         deps.branch(),
         env.clone(),
         sub_info.clone(),
         donor,
         donor_amount,
     )?;
-    // Transfer to "endowment_contract": 40%
-    execute_transfer(
-        deps.branch(),
-        env,
-        sub_info,
-        endowment_contract,
-        endowment_amount,
-    )?;
+    // Mint to "endowment_contract": 40%
+    execute_mint(deps, env, sub_info, endowment_contract, endowment_amount)?;
 
     Ok(Response::default().add_attributes(vec![
         attr("method", "donor_match"),
