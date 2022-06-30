@@ -25,7 +25,7 @@ angel-core = { path = "../../../packages/angel_core" }
 cw-utils = "0.13.4"
 cw2 = "0.13.4"
 cw20 = "0.13.4"
-cw20-base = "0.13.4"
+cw20-base = { version = "0.13.4", features = ["library"] }
 cw-controllers = "0.13.4"  
 cw-storage-plus = "0.13.4"
 cosmwasm-std = "1.0.0"

@@ -16,7 +16,7 @@ cosmwasm-std = "1.0.0"
 cw-asset = "2.0.0"
 cw-utils = "0.13.4"
 cw20 = "0.13.4"
-cw20-base = "0.13.4"
+cw20-base = { version = "0.13.4", features = ["library"] }
 cw3 = "0.13.4"
 cw4 = "0.13.4"
 integer-cbrt = { version = "0.1.2" }
