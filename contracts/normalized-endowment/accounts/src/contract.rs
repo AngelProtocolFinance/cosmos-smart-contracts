@@ -27,6 +27,7 @@ use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 const CONTRACT_NAME: &str = "accounts";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[entry_point]
 pub fn instantiate(
     mut deps: DepsMut,
     env: Env,
@@ -261,6 +262,7 @@ pub fn instantiate(
     Ok(res)
 }
 
+#[entry_point]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -377,6 +379,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
     }
 }
 
+#[entry_point]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Balance {} => to_binary(&queriers::query_account_balance(deps, env)?),

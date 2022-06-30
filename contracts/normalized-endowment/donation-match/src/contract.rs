@@ -27,6 +27,7 @@ use terraswap::pair::SimulationResponse;
 const CONTRACT_NAME: &str = "donation-match";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[entry_point]
 pub fn instantiate(
     deps: DepsMut,
     _env: Env,
@@ -72,6 +73,7 @@ pub fn receive_cw20(
     }
 }
 
+#[entry_point]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -199,6 +201,7 @@ fn execute_donor_match(
     ]))
 }
 
+#[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&query_config(deps)?),

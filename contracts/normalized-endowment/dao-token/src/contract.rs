@@ -26,6 +26,7 @@ use angel_core::utils::{must_pay, nonpayable};
 const CONTRACT_NAME: &str = "dao-token";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+#[entry_point]
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
@@ -107,6 +108,7 @@ pub fn receive_cw20(
     }
 }
 
+#[entry_point]
 pub fn execute(
     deps: DepsMut,
     env: Env,
@@ -587,6 +589,7 @@ pub fn execute_send(
     Ok(res)
 }
 
+#[entry_point]
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     // default implementation stores curve info as enum, you can do something else in a derived
     // contract and just pass in your custom curve to do_execute

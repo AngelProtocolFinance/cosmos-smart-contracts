@@ -11,18 +11,17 @@ metadata = {}
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
+cosmwasm-schema = { version = "1.0.0" }
 cosmwasm-std = "1.0.0"
-cw-utils = "0.13.4"
 cw-asset = "2.0.0"
-cw20-base = "0.13.4"
-cw0 = "0.10.3"
+cw-utils = "0.13.4"
 cw20 = "0.13.4"
+cw20-base = "0.13.4"
 cw3 = "0.13.4"
 cw4 = "0.13.4"
+integer-cbrt = { version = "0.1.2" }
+integer-sqrt = { version = "0.1.5" }
+rust_decimal = { version = "1.14.3" }
 schemars = "0.8.10"
 serde = "1.0.137"
 thiserror = "1.0.24"
-rust_decimal = { version = "1.14.3" }
-integer-sqrt = { version = "0.1.5" }
-integer-cbrt = { version = "0.1.2" }
-cosmwasm-schema = { version = "1.0.0" }
