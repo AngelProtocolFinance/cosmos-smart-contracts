@@ -1,4 +1,4 @@
-use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
+use crate::state::{CONFIG, CW3MULTISIGCONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::{InstantiateMsg as Cw3MultisigInstantiateMsg, Threshold};
@@ -28,7 +28,6 @@ use cosmwasm_std::{
 };
 use cw20::{Balance, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfoBase};
-use cw_utils::Duration;
 
 pub fn new_cw4_group_reply(
     deps: DepsMut,
@@ -60,6 +59,9 @@ pub fn new_cw4_group_reply(
                     msg: to_binary(&RegistrarQuerier::Config {})?,
                 }))?;
 
+            let cw3_multisig_config = CW3MULTISIGCONFIG.load(deps.storage)?;
+            CW3MULTISIGCONFIG.remove(deps.storage);
+
             // Fire the creation of new multisig linked to new group
             Ok(Response::new().add_submessage(SubMsg {
                 id: 2,
@@ -69,11 +71,8 @@ pub fn new_cw4_group_reply(
                     label: "new endowment guardians multisig".to_string(),
                     msg: to_binary(&Cw3MultisigInstantiateMsg {
                         group_addr,
-                        threshold: Threshold::ThresholdQuorum {
-                            threshold: Decimal::percent(30),
-                            quorum: Decimal::percent(50),
-                        },
-                        max_voting_period: Duration::Time(600),
+                        threshold: cw3_multisig_config.threshold,
+                        max_voting_period: cw3_multisig_config.max_voting_period,
                     })?,
                     funds: vec![],
                 }),

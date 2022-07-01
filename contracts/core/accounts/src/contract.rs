@@ -1,5 +1,7 @@
 use crate::executers;
 use crate::queriers;
+use crate::state::Cw3MultiSigConfig;
+use crate::state::CW3MULTISIGCONFIG;
 use crate::state::PROFILE;
 use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
 use angel_core::errors::core::ContractError;
@@ -82,6 +84,14 @@ pub fn instantiate(
     )?;
 
     PROFILE.save(deps.storage, &msg.profile)?;
+
+    CW3MULTISIGCONFIG.save(
+        deps.storage,
+        &Cw3MultiSigConfig {
+            threshold: msg.cw3_multisig_threshold,
+            max_voting_period: msg.cw3_multisig_max_vote_period,
+        },
+    )?;
 
     // initial default Response to add submessages to
     let mut res = Response::new().add_attributes(vec![

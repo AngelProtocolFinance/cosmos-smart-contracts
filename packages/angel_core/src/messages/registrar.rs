@@ -4,6 +4,8 @@ use cw4::Member;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use super::cw3_multisig::Threshold;
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {}
 
@@ -60,6 +62,8 @@ pub struct CreateEndowmentMsg {
     pub profile: Profile,
     pub cw4_members: Vec<Member>,
     pub kyc_donors_only: bool,
+    pub cw3_multisig_threshold: Threshold,
+    pub cw3_multisig_max_vote_period: u64,  // Time in seconds
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
