@@ -62,7 +62,10 @@ export function initializeCharities(
 }
 
 // setup charity endowments
-export async function setupEndowments(): Promise<void> {
+export async function setupEndowments(
+  charity_cw3_multisig_threshold_abs_perc: string,
+  charity_cw3_multisig_max_voting_period: number,
+): Promise<void> {
   let prom = Promise.resolve();
   charities.forEach((item) => {
     // eslint-disable-next-line no-async-promise-executor
@@ -70,7 +73,7 @@ export async function setupEndowments(): Promise<void> {
       () =>
         new Promise(async (resolve, reject) => {
           try {
-            await createEndowment(item);
+            await createEndowment(item, charity_cw3_multisig_threshold_abs_perc, charity_cw3_multisig_max_voting_period);
             resolve();
           } catch (e) {
             reject(e);
@@ -84,7 +87,11 @@ export async function setupEndowments(): Promise<void> {
 }
 
 // Create Endowment base on charity and registrar
-async function createEndowment(charity: Charity): Promise<void> {
+async function createEndowment(
+  charity: Charity,
+  charity_cw3_multisig_threshold_abs_perc: string,
+  charity_cw3_multisig_max_voting_period: number,
+): Promise<void> {
   process.stdout.write(
     `Charity Endowment ##${charity.charity_name}## created from the Registrar by the AP Team`
   );
@@ -119,6 +126,8 @@ async function createEndowment(charity: Charity): Promise<void> {
         endow_type: "Charity",
         cw4_members: [{ addr: charity.charity_owner, weight: 1 }],
         kyc_donors_only: charity.kyc_donors_only,
+        cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
+        cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
       },
     }
   });
