@@ -40,18 +40,12 @@ pub struct SettingsController {
     pub whitelisted_contributors: SettingsPermissions,
     pub withdraw_before_maturity: SettingsPermissions,
     pub maturity_time: SettingsPermissions,
-    pub maturity_height: SettingsPermissions,
-    pub locked_endowment_configs: SettingsPermissions,
-    pub split_max: SettingsPermissions,
-    pub split_min: SettingsPermissions,
-    pub split_default: SettingsPermissions,
-    pub beneficiary: SettingsPermissions,
     pub profile: SettingsPermissions,
-    pub cw4_members: SettingsPermissions,
     pub earnings_fee: SettingsPermissions,
     pub withdraw_fee: SettingsPermissions,
     pub deposit_fee: SettingsPermissions,
     pub aum_fee: SettingsPermissions,
+    pub kyc_donors_only: SettingsPermissions,
 }
 
 impl SettingsController {
@@ -62,18 +56,12 @@ impl SettingsController {
             whitelisted_contributors: SettingsPermissions::default(),
             withdraw_before_maturity: SettingsPermissions::default(),
             maturity_time: SettingsPermissions::default(),
-            maturity_height: SettingsPermissions::default(),
-            locked_endowment_configs: SettingsPermissions::default(),
-            split_max: SettingsPermissions::default(),
-            split_min: SettingsPermissions::default(),
-            split_default: SettingsPermissions::default(),
-            beneficiary: SettingsPermissions::default(),
             profile: SettingsPermissions::default(),
-            cw4_members: SettingsPermissions::default(),
             earnings_fee: SettingsPermissions::default(),
             withdraw_fee: SettingsPermissions::default(),
             deposit_fee: SettingsPermissions::default(),
             aum_fee: SettingsPermissions::default(),
+            kyc_donors_only: SettingsPermissions::default(),
         }
     }
 }
