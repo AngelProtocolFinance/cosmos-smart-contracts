@@ -3,8 +3,11 @@ use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::AssetInfoBase;
+use cw_utils::Duration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
+use super::cw3_multisig::Threshold;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {}
@@ -21,6 +24,8 @@ pub struct InstantiateMsg {
     pub profile: Profile,               // struct holding the Endowment info
     pub cw4_members: Vec<Member>,
     pub kyc_donors_only: bool,
+    pub cw3_multisig_threshold: Threshold,
+    pub cw3_multisig_max_vote_period: Duration,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

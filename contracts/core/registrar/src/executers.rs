@@ -10,6 +10,7 @@ use cosmwasm_std::{
     attr, to_binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
     SubMsg, SubMsgResult, WasmMsg,
 };
+use cw_utils::Duration;
 
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
@@ -253,6 +254,8 @@ pub fn create_endowment(
             profile: msg.profile,
             cw4_members: msg.cw4_members,
             kyc_donors_only: msg.kyc_donors_only,
+            cw3_multisig_threshold: msg.cw3_multisig_threshold,
+            cw3_multisig_max_vote_period: Duration::Time(msg.cw3_multisig_max_vote_period),
         })?,
         funds: vec![],
     };

@@ -1,5 +1,6 @@
 use crate::contract::{execute, instantiate, migrate, query, reply};
 use angel_core::errors::core::*;
+use angel_core::messages::cw3_multisig::Threshold;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{AcceptedTokens, SplitDetails};
@@ -249,6 +250,10 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: false,
+        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_multisig_max_vote_period: 60,
     };
 
     // anyone can create Accounts

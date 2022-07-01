@@ -1,8 +1,10 @@
-use angel_core::structs::{
-    BalanceInfo, Profile, RebalanceDetails, StrategyComponent, TransactionRecord,
+use angel_core::{
+    messages::cw3_multisig::Threshold,
+    structs::{BalanceInfo, Profile, RebalanceDetails, StrategyComponent, TransactionRecord},
 };
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
+use cw_utils::Duration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -55,7 +57,15 @@ pub struct State {
     pub transactions: Vec<TransactionRecord>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct Cw3MultiSigConfig {
+    pub threshold: Threshold,
+    pub max_voting_period: Duration,
+}
+
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");
 pub const PROFILE: Item<Profile> = Item::new("profile");
+pub const CW3MULTISIGCONFIG: Item<Cw3MultiSigConfig> = Item::new("cw3_multisig_config");

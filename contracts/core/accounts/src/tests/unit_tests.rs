@@ -2,12 +2,14 @@ use super::mock_querier::mock_dependencies;
 use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
+use angel_core::messages::cw3_multisig::Threshold;
 use angel_core::responses::accounts::*;
 use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{attr, coins, from_binary, to_binary, Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfoBase;
+use cw_utils::Duration;
 use std::vec;
 
 #[test]
@@ -52,6 +54,10 @@ fn test_proper_initialization() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
+        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_multisig_max_vote_period: Duration::Time(60),
     };
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();
@@ -101,6 +107,10 @@ fn test_get_config() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
+        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_multisig_max_vote_period: Duration::Time(60),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -152,6 +162,10 @@ fn test_update_endowment_settings() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: false,
+        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_multisig_max_vote_period: Duration::Time(60),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -236,6 +250,10 @@ fn test_change_registrar_contract() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
+        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_multisig_max_vote_period: Duration::Time(60),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -316,6 +334,10 @@ fn test_change_admin() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
+        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_multisig_max_vote_period: Duration::Time(60),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -396,6 +418,10 @@ fn test_update_strategy() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
+        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_multisig_max_vote_period: Duration::Time(60),
     };
 
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
@@ -518,6 +544,10 @@ fn test_update_endowment_profile() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
+        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_multisig_max_vote_period: Duration::Time(60),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -650,6 +680,10 @@ fn test_donate() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
+        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_multisig_max_vote_period: Duration::Time(60),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -738,6 +772,10 @@ fn test_deposit_cw20() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
+        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_multisig_max_vote_period: Duration::Time(60),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
@@ -831,6 +869,10 @@ fn test_withdraw() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
+        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_multisig_max_vote_period: Duration::Time(60),
     };
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
