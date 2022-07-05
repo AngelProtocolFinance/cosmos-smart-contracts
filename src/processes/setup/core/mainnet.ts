@@ -150,6 +150,10 @@ async function setup(
       treasury: treasury_address,
       tax_rate: tax_rate,
       default_vault: undefined,
+      accepted_tokens: {
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
+        cw20: [],
+      }
     }
   );
   registrar = registrarResult.contractAddress as string;

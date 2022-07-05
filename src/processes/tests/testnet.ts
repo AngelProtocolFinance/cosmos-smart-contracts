@@ -317,19 +317,19 @@ export async function testExecute(
   // );
   // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
   // Test query
-  await testQueryRegistrarConfig(actors.apTeam.client, registrar);
-  await testQueryRegistrarEndowmentList(actors.apTeam.client, registrar);
-  await testQueryRegistrarEndowmentDetails(actors.apTeam.client, registrar, endowmentContract1);
+  // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
+  // await testQueryRegistrarEndowmentList(actors.apTeam.client, registrar);
+  // await testQueryRegistrarEndowmentDetails(actors.apTeam.client, registrar, endowmentContract1);
   // await testQueryRegistrarApprovedVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarApprovedVaultRateList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, Vault1);
   // await testQueryVaultConfig(actors.apTeam.client, Vault1);
   // await testQueryAccountsBalance(actors.apTeam.client, endowmentContract4);
-  await testQueryAccountsConfig(actors.apTeam.client, endowmentContract1);
-  await testQueryAccountsEndowment(actors.apTeam.client, endowmentContract1);
-  await testQueryAccountsProfile(actors.apTeam.client, endowmentContract1);
-  await testQueryAccountsState(actors.apTeam.client, endowmentContract1);
+  // await testQueryAccountsConfig(actors.apTeam.client, endowmentContract1);
+  // await testQueryAccountsEndowment(actors.apTeam.client, endowmentContract1);
+  // await testQueryAccountsProfile(actors.apTeam.client, endowmentContract1);
+  // await testQueryAccountsState(actors.apTeam.client, endowmentContract1);
   // await testQueryAccountsTransactions(
   //   actors.apTeam.client,
   //   endowmentContract1,
@@ -337,11 +337,11 @@ export async function testExecute(
   //   undefined,
   //   undefined
   // );
-  await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
-  await testQueryIndexFundState(actors.apTeam.client, indexFund);
-  await testQueryIndexFundTcaList(actors.apTeam.client, indexFund);
-  await testQueryIndexFundFundsList(actors.apTeam.client, indexFund, undefined, undefined);
-  await testQueryIndexFundFundDetails(actors.apTeam.client, indexFund, 1);
+  // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundState(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundTcaList(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundFundsList(actors.apTeam.client, indexFund, undefined, undefined);
+  // await testQueryIndexFundFundDetails(actors.apTeam.client, indexFund, 1);
   // await testQueryIndexFundActiveFundDetails(actors.apTeam.client, indexFund);
   // await testQueryIndexFundActiveFundDonations(actors.apTeam.client, indexFund);
   // await testQueryIndexFundDeposit(actors.apTeam.client, indexFund);

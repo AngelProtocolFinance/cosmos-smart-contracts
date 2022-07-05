@@ -149,7 +149,7 @@ async function setup(
       default_vault: undefined,
       split_to_liquid: undefined,
       accepted_tokens: {
-        native: ["ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4", "ujuno"],
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
         cw20: [],
       }
     }
