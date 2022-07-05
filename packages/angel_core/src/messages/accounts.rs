@@ -28,12 +28,10 @@ pub struct InstantiateMsg {
     pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity(unit: seconds)
-    pub locked_endowment_configs: Vec<String>, // list of endowment configs that cannot be changed/altered once set at creation
     pub split_max: Decimal,
     pub split_min: Decimal,
     pub split_default: Decimal,
-    pub beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
-    pub profile: Profile,    // struct holding the Endowment info
+    pub profile: Profile, // struct holding the Endowment info
     pub cw4_members: Vec<Member>,
     pub earnings_fee: Option<EndowmentFee>,
     pub withdraw_fee: Option<EndowmentFee>,
@@ -150,7 +148,6 @@ pub struct UpdateEndowmentSettingsMsg {
     pub description: Option<String>,                   // description of the Charity Endowment
     pub withdraw_before_maturity: Option<bool>, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<Option<u64>>,     // datetime int of endowment maturity
-    pub maturity_height: Option<Option<u64>>,   // block equiv of the maturity_datetime
     pub strategies: Option<Vec<StrategyComponent>>, // list of vaults and percentage for locked/liquid accounts
     pub locked_endowment_configs: Option<Vec<String>>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: Option<RebalanceDetails>,

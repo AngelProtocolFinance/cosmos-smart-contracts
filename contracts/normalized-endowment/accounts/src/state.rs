@@ -46,7 +46,6 @@ pub struct Endowment {
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity (unit: seconds)
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
-    pub locked_endowment_configs: Vec<String>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
     pub earnings_fee: Option<EndowmentFee>, // Earnings Fee
     pub withdraw_fee: Option<EndowmentFee>, // Withdraw Fee

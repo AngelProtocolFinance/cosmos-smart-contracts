@@ -90,7 +90,6 @@ pub fn instantiate(
             donation_match: msg.donation_match,
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries, // Vec<String>
             whitelisted_contributors: msg.whitelisted_contributors,   // Vec<String>
-            locked_endowment_configs: msg.locked_endowment_configs,   // vec<String>
             donation_matching_contract: None,
             earnings_fee: msg.earnings_fee,
             withdraw_fee: msg.withdraw_fee,
