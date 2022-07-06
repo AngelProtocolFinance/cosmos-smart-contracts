@@ -6,6 +6,7 @@ use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::AssetInfoBase;
+use cw_utils::{Duration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -44,6 +45,8 @@ pub struct InstantiateMsg {
     pub settings_controller: Option<SettingsController>,
     pub parent: Option<Addr>,
     pub kyc_donors_only: bool,
+    pub cw3_multisig_threshold: Threshold,
+    pub cw3_multisig_max_vote_period: Duration,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

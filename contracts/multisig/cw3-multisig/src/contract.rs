@@ -4,7 +4,7 @@ use crate::msg::{
 };
 use crate::state::{next_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS};
 use angel_core::errors::multisig::ContractError;
-use angel_core::messages::cw3_multisig::{InstantiateMsg, Threshold};
+use angel_core::messages::cw3_multisig::InstantiateMsg;
 use cosmwasm_std::{
     attr, entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env,
     MessageInfo, Order, Response, StdError, StdResult,
@@ -16,7 +16,7 @@ use cw3::{
 };
 use cw4::{Cw4Contract, MemberChangedHookMsg, MemberDiff};
 use cw_storage_plus::Bound;
-use cw_utils::{Duration, Expiration, ThresholdResponse};
+use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
 use std::cmp::Ordering;
 
 // version info for migration info

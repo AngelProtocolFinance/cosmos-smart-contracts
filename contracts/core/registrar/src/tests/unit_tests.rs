@@ -13,6 +13,7 @@ use cosmwasm_std::{
     coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply, StdError, SubMsgResponse,
     SubMsgResult, Uint128, WasmMsg,
 };
+use cw_utils::Threshold;
 
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
 const MOCK_CW3_CODE_ID: u64 = 18;
@@ -236,7 +237,6 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         split_max: None,
         split_min: None,
         split_default: None,
-        locked_endowment_configs: vec![],
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
         curve_type: None,
@@ -257,13 +257,15 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         settings_controller: None,
         parent: false,
         owner: good_charity_addr.clone(),
-        beneficiary: good_charity_addr.clone(),
         withdraw_before_maturity: false,
         maturity_time: None,
-        maturity_height: None,
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: false,
+        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_multisig_max_vote_period: 60,
     };
 
     // anyone can create Accounts
