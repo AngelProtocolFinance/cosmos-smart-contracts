@@ -1,7 +1,6 @@
 use crate::contract::{execute, instantiate, query, reply};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::DaoSetupOption;
-use angel_core::messages::cw3_multisig::Threshold;
 use angel_core::messages::dao_token::CurveType;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
@@ -14,6 +13,7 @@ use cosmwasm_std::{
     coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply, StdError, SubMsgResponse,
     SubMsgResult, Uint128, WasmMsg,
 };
+use cw_utils::Threshold;
 
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
 const MOCK_CW3_CODE_ID: u64 = 18;
@@ -237,7 +237,6 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         split_max: None,
         split_min: None,
         split_default: None,
-        locked_endowment_configs: vec![],
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
         curve_type: None,
@@ -258,10 +257,8 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         settings_controller: None,
         parent: false,
         owner: good_charity_addr.clone(),
-        beneficiary: good_charity_addr.clone(),
         withdraw_before_maturity: false,
         maturity_time: None,
-        maturity_height: None,
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: false,

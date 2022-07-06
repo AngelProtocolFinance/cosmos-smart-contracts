@@ -2,15 +2,14 @@ use super::mock_querier::mock_dependencies;
 use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
-use angel_core::messages::cw3_multisig::Threshold;
 use angel_core::messages::dao_token::CurveType;
 use angel_core::responses::accounts::*;
 use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info};
-use cosmwasm_std::{attr, coins, from_binary, from_binary, to_binary, Addr, Decimal, Uint128};
+use cosmwasm_std::{attr, coins, from_binary, to_binary, Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfoBase;
-use cw_utils::Duration;
+use cw_utils::{Duration, Threshold};
 use std::vec;
 
 #[test]
@@ -158,7 +157,7 @@ fn test_get_config() {
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
-    assert_eq!(1, res.messages.len());
+    assert_eq!(2, res.messages.len());
 }
 
 #[test]
@@ -198,13 +197,34 @@ fn test_update_endowment_settings() {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
         owner: charity_addr.clone(),
-        beneficiary: charity_addr.clone(),
+        name: "Endowment".to_string(),
+        description: "New Endowment Creation".to_string(),
+        split_max: Decimal::one(),
+        split_min: Decimal::one(),
+        split_default: Decimal::one(),
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        dao: true,
+        dao_setup_option: DaoSetupOption::SetupBondCurveToken(CurveType::Constant {
+            value: Uint128::zero(),
+            scale: 2u32,
+        }),
+        donation_match: false,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
+        donation_match_setup_option: 2,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
+        settings_controller: None,
+        parent: None,
         withdraw_before_maturity: false,
-        maturity_time: None,
-        maturity_height: None,
+        maturity_time: Some(1000_u64),
         profile: profile,
         cw4_members: vec![],
-        kyc_donors_only: false,
+        kyc_donors_only: true,
         cw3_multisig_threshold: Threshold::AbsolutePercentage {
             percentage: Decimal::percent(10),
         },
@@ -213,12 +233,22 @@ fn test_update_endowment_settings() {
     let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
-    assert_eq!(1, res.messages.len());
+    assert_eq!(2, res.messages.len());
 
     // update the endowment owner and beneficiary
     let msg = UpdateEndowmentSettingsMsg {
-        owner: charity_addr.clone(),
+        owner: Some(charity_addr.clone()),
+        whitelisted_beneficiaries: None,
+        whitelisted_contributors: None,
+        name: None,
+        description: None,
+        withdraw_before_maturity: None,
+        maturity_time: None,
+        strategies: None,
+        locked_endowment_configs: None,
+        rebalance: None,
         kyc_donors_only: true,
+        maturity_whitelist: None,
     };
     let info = mock_info(charity_addr.as_ref(), &coins(100000, "earth "));
     let env = mock_env();
@@ -229,12 +259,22 @@ fn test_update_endowment_settings() {
         ExecuteMsg::UpdateEndowmentSettings(msg),
     )
     .unwrap();
-    assert_eq!(0, res.messages.len());
+    assert_eq!(1, res.messages.len());
 
     // Not just anyone can update the Endowment's settings! Only Endowment owner can.
     let msg = UpdateEndowmentSettingsMsg {
-        owner: charity_addr.clone(),
+        owner: Some(charity_addr.clone()),
+        whitelisted_beneficiaries: None,
+        whitelisted_contributors: None,
+        name: None,
+        description: None,
+        withdraw_before_maturity: None,
+        maturity_time: None,
+        strategies: None,
+        locked_endowment_configs: None,
+        rebalance: None,
         kyc_donors_only: true,
+        maturity_whitelist: None,
     };
     let info = mock_info(pleb.as_ref(), &coins(100000, "earth "));
     let env = mock_env();
@@ -913,10 +953,31 @@ fn test_deposit_cw20() {
         owner_sc: ap_team.clone(),
         registrar_contract: registrar_contract.clone(),
         owner: charity_addr.clone(),
-        beneficiary: charity_addr.clone(),
+        name: "Endowment".to_string(),
+        description: "New Endowment Creation".to_string(),
+        split_max: Decimal::one(),
+        split_min: Decimal::one(),
+        split_default: Decimal::one(),
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        dao: true,
+        dao_setup_option: DaoSetupOption::SetupBondCurveToken(CurveType::Constant {
+            value: Uint128::zero(),
+            scale: 2u32,
+        }),
+        donation_match: false,
+        earnings_fee: None,
+        deposit_fee: None,
+        withdraw_fee: None,
+        aum_fee: None,
+        donation_match_setup_option: 2,
+        halo_ust_lp_pair_contract: None,
+        user_reserve_token: None,
+        user_reserve_ust_lp_pair_contract: None,
+        settings_controller: None,
+        parent: None,
         withdraw_before_maturity: false,
-        maturity_time: None,
-        maturity_height: None,
+        maturity_time: Some(1000_u64),
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
