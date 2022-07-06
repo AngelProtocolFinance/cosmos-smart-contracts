@@ -63,7 +63,7 @@ pub struct CreateEndowmentMsg {
     pub cw4_members: Vec<Member>,
     pub kyc_donors_only: bool,
     pub cw3_multisig_threshold: Threshold,
-    pub cw3_multisig_max_vote_period: u64,  // Time in seconds
+    pub cw3_multisig_max_vote_period: u64, // Time in seconds
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
