@@ -1,7 +1,7 @@
 use crate::state::{CONFIG, CW3MULTISIGCONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::cw3_multisig::{InstantiateMsg as Cw3MultisigInstantiateMsg, Threshold};
+use angel_core::messages::cw3_multisig::InstantiateMsg as Cw3MultisigInstantiateMsg;
 use angel_core::messages::index_fund::{
     DepositMsg as IndexFundDepositMsg, ExecuteMsg as IndexFundExecuter,
     QueryMsg as IndexFundQuerier,
@@ -158,10 +158,11 @@ pub fn update_registrar(
 
 pub fn update_endowment_settings(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENT.load(deps.storage)?;
 
     if info.sender != endowment.owner {
@@ -173,7 +174,36 @@ pub fn update_endowment_settings(
     endowment.owner = deps.api.addr_validate(&msg.owner)?;
     ENDOWMENT.save(deps.storage, &endowment)?;
 
-    Ok(Response::default())
+    let profile = PROFILE.load(deps.storage)?;
+
+    // send the new owner informtion back to the registrar
+    Ok(
+        Response::new().add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarExecuter::UpdateEndowmentEntry(
+                UpdateEndowmentEntryMsg {
+                    endowment_addr: env.contract.address.to_string(),
+                    owner: Some(msg.owner),
+                    name: Some(profile.name),
+                    logo: profile.logo,
+                    image: profile.image,
+                    endow_type: Some(profile.endow_type),
+                    tier: match profile.tier {
+                        Some(1) => Some(Some(Tier::Level1)),
+                        Some(2) => Some(Some(Tier::Level2)),
+                        Some(3) => Some(Some(Tier::Level3)),
+                        None => Some(None),
+                        _ => return Err(ContractError::InvalidInputs {}),
+                    },
+                    un_sdg: match profile.un_sdg {
+                        Some(i) => Some(Some(i)),
+                        None => Some(None),
+                    },
+                },
+            ))?,
+            funds: vec![],
+        }))),
+    )
 }
 
 pub fn update_endowment_status(

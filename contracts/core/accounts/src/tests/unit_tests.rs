@@ -186,7 +186,7 @@ fn test_update_endowment_settings() {
         ExecuteMsg::UpdateEndowmentSettings(msg),
     )
     .unwrap();
-    assert_eq!(0, res.messages.len());
+    assert_eq!(1, res.messages.len());
 
     // Not just anyone can update the Endowment's settings! Only Endowment owner can.
     let msg = UpdateEndowmentSettingsMsg {
