@@ -9,6 +9,7 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use super::accounts::DaoSetupOption;
+use cw_utils::Threshold;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 
@@ -89,6 +90,8 @@ pub struct CreateEndowmentMsg {
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
     pub cw4_members: Vec<Member>,
+    pub cw3_multisig_threshold: Threshold,
+    pub cw3_multisig_max_vote_period: u64, // Time in seconds
     pub profile: Profile,
     pub kyc_donors_only: bool,
     pub whitelisted_beneficiaries: Vec<String>,

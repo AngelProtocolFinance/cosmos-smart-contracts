@@ -6,6 +6,9 @@ pub enum ContractError {
     #[error("{0}")]
     Std(#[from] StdError),
 
+    #[error("Threshold is invalid")]
+    InvalidThreshold {},
+
     #[error("Required threshold cannot be zero")]
     ZeroThreshold {},
 
@@ -38,4 +41,21 @@ pub enum ContractError {
 
     #[error("Cannot close completed or passed proposals")]
     WrongCloseStatus {},
+}
+
+impl From<cw_utils::ThresholdError> for ContractError {
+    fn from(err: cw_utils::ThresholdError) -> Self {
+        match err {
+            cw_utils::ThresholdError::Std(std_error) => ContractError::Std(std_error),
+            cw_utils::ThresholdError::InvalidThreshold {} => ContractError::InvalidThreshold {},
+            cw_utils::ThresholdError::ZeroQuorumThreshold {} => ContractError::ZeroThreshold {},
+            cw_utils::ThresholdError::UnreachableQuorumThreshold {} => {
+                ContractError::UnreachableThreshold {}
+            }
+            cw_utils::ThresholdError::ZeroWeight {} => ContractError::UnreachableThreshold {},
+            cw_utils::ThresholdError::UnreachableWeight {} => {
+                ContractError::UnreachableThreshold {}
+            }
+        }
+    }
 }

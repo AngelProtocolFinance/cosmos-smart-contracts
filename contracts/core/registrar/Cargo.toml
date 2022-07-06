@@ -30,6 +30,7 @@ cw2 = "0.13.4"
 cw20 = "0.13.4"
 cw20-base = { version = "0.13.4", features = ["library"] }
 cw4 = "0.13.4"
+cw-utils = "0.13.4"
 cw4-group = "0.13.4"
 schemars = "0.8.1"
 serde = { version = "1.0.125", default-features = false, features = ["derive"] }

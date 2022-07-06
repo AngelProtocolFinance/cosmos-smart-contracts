@@ -1,9 +1,9 @@
 use std::str::FromStr;
 
-use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
+use crate::state::{CONFIG, CW3MULTISIGCONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::cw3_multisig::{InstantiateMsg as Cw3MultisigInstantiateMsg, Threshold};
+use angel_core::messages::cw3_multisig::InstantiateMsg as Cw3MultisigInstantiateMsg;
 use angel_core::messages::dao_token::InstantiateMsg as DaoTokenInstantiateMsg;
 use angel_core::messages::donation_match::ExecuteMsg as DonationMatchExecMsg;
 use angel_core::messages::index_fund::{
@@ -35,7 +35,6 @@ use cosmwasm_std::{
 };
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw_asset::{Asset, AssetInfoBase};
-use cw_utils::Duration;
 
 pub fn new_cw4_group_reply(
     deps: DepsMut,
@@ -67,6 +66,9 @@ pub fn new_cw4_group_reply(
                     msg: to_binary(&RegistrarQuerier::Config {})?,
                 }))?;
 
+            let cw3_multisig_config = CW3MULTISIGCONFIG.load(deps.storage)?;
+            CW3MULTISIGCONFIG.remove(deps.storage);
+
             // Fire the creation of new multisig linked to new group
             Ok(Response::new().add_submessage(SubMsg {
                 id: 2,
@@ -76,11 +78,8 @@ pub fn new_cw4_group_reply(
                     label: "new endowment guardians multisig".to_string(),
                     msg: to_binary(&Cw3MultisigInstantiateMsg {
                         group_addr,
-                        threshold: Threshold::ThresholdQuorum {
-                            threshold: Decimal::percent(30),
-                            quorum: Decimal::percent(50),
-                        },
-                        max_voting_period: Duration::Time(600),
+                        threshold: cw3_multisig_config.threshold,
+                        max_voting_period: cw3_multisig_config.max_voting_period,
                     })?,
                     funds: vec![],
                 }),
@@ -414,7 +413,35 @@ pub fn update_endowment_settings(
 
     ENDOWMENT.save(deps.storage, &endowment)?;
 
-    Ok(Response::default())
+    let profile = PROFILE.load(deps.storage)?;
+    // send the new owner informtion back to the registrar
+    Ok(
+        Response::new().add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarExecuter::UpdateEndowmentEntry(
+                UpdateEndowmentEntryMsg {
+                    endowment_addr: env.contract.address.to_string(),
+                    owner: Some(endowment.owner.to_string()),
+                    name: Some(profile.name),
+                    logo: profile.logo,
+                    image: profile.image,
+                    endow_type: Some(profile.endow_type),
+                    tier: match profile.tier {
+                        Some(1) => Some(Some(Tier::Level1)),
+                        Some(2) => Some(Some(Tier::Level2)),
+                        Some(3) => Some(Some(Tier::Level3)),
+                        None => Some(None),
+                        _ => return Err(ContractError::InvalidInputs {}),
+                    },
+                    un_sdg: match profile.un_sdg {
+                        Some(i) => Some(Some(i)),
+                        None => Some(None),
+                    },
+                },
+            ))?,
+            funds: vec![],
+        }))),
+    )
 }
 
 pub fn update_endowment_status(

@@ -1,7 +1,10 @@
 use crate::executers;
 use crate::executers::setup_dao_token_messages;
 use crate::queriers;
-use crate::state::{Config, Endowment, OldConfig, State, CONFIG, ENDOWMENT, PROFILE, STATE};
+use crate::state::{
+    Config, Cw3MultiSigConfig, Endowment, OldConfig, State, CONFIG, CW3MULTISIGCONFIG, ENDOWMENT,
+    PROFILE, STATE,
+};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
@@ -12,13 +15,12 @@ use angel_core::structs::EndowmentType;
 use angel_core::structs::{
     AcceptedTokens, BalanceInfo, RebalanceDetails, SettingsController, StrategyComponent,
 };
-use cosmwasm_std::from_binary;
 use cosmwasm_std::{
-    attr, entry_point, from_slice, to_binary, to_vec, Binary, CosmosMsg, Decimal, Deps, DepsMut,
-    Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
-    WasmMsg, WasmQuery,
+    attr, entry_point, from_binary, from_slice, to_binary, to_vec, Binary, CosmosMsg, Decimal,
+    Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult,
+    SubMsg, Uint128, WasmMsg, WasmQuery,
 };
-use cw2::set_contract_version;
+use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
@@ -113,6 +115,14 @@ pub fn instantiate(
     )?;
 
     PROFILE.save(deps.storage, &msg.profile)?;
+
+    CW3MULTISIGCONFIG.save(
+        deps.storage,
+        &Cw3MultiSigConfig {
+            threshold: msg.cw3_multisig_threshold,
+            max_voting_period: msg.cw3_multisig_max_vote_period,
+        },
+    )?;
 
     // initial default Response to add submessages to
     let mut res: Response = Response::new().add_attributes(vec![
@@ -399,6 +409,23 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 
 #[entry_point]
 pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+    let ver = get_contract_version(deps.storage)?;
+    // ensure we are migrating from an allowed contract
+    if ver.contract != CONTRACT_NAME {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Can only upgrade from same type".to_string(),
+        }));
+    }
+    // note: better to do proper semver compare, but string compare *usually* works
+    if ver.version >= CONTRACT_VERSION.to_string() {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Cannot upgrade from a newer version".to_string(),
+        }));
+    }
+
+    // set the new version
+    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
     const CONFIG_KEY: &[u8] = b"config";
     let data = deps
         .storage
