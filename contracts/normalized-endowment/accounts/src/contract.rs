@@ -356,14 +356,14 @@ pub fn receive_cw20(
         Ok(ReceiveMsg::VaultReceipt {}) => executers::vault_receipt(
             deps,
             env,
-            info.clone(),
+            info,
             api.addr_validate(&cw20_msg.sender)?,
             cw20_fund,
         ),
         Ok(ReceiveMsg::Deposit(msg)) => executers::deposit(
             deps,
             env,
-            info.clone(),
+            info,
             api.addr_validate(&cw20_msg.sender)?,
             msg,
             cw20_fund,

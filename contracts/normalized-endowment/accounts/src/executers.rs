@@ -618,7 +618,7 @@ pub fn vault_receipt(
                                 .liquid_balance
                                 .get_denom_amount(denom.to_string())
                                 .amount,
-                        denom: denom.to_string(),
+                        denom,
                     }]),
                     AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
                         address: contract_addr.clone(),
@@ -834,7 +834,7 @@ pub fn deposit(
         Some(addr) => addr,
         None => return Err(ContractError::ContractNotConfigured {}),
     };
-    if sender_addr.to_string() != index_fund {
+    if sender_addr != index_fund {
         let new_splits = check_splits(registrar_split_configs, locked_split, liquid_split);
         locked_split = new_splits.0;
         liquid_split = new_splits.1;
@@ -864,11 +864,11 @@ pub fn deposit(
     // increase the liquid balance by donation (liquid) amount
     let liquid_balance = match liquid_amount.info {
         AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
-            denom: denom.to_string(),
+            denom,
             amount: liquid_amount.amount,
         }]),
         AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
-            address: contract_addr.clone(),
+            address: contract_addr,
             amount: liquid_amount.amount,
         }),
     };
@@ -938,11 +938,11 @@ pub fn deposit(
         // increase the liquid balance by donation (liquid) amount
         let locked_balance = match locked_amount.info {
             AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
-                denom: denom.to_string(),
+                denom,
                 amount: locked_amount.amount,
             }]),
             AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
-                address: contract_addr.clone(),
+                address: contract_addr,
                 amount: locked_amount.amount,
             }),
         };
@@ -987,7 +987,7 @@ pub fn withdraw(
         }
     } else {
         // check that sender is one of "maturity_whitelist" (if exist)
-        if endowment.maturity_whitelist.len() > 0
+        if !endowment.maturity_whitelist.is_empty()
             && !endowment.maturity_whitelist.contains(&info.sender)
         {
             return Err(ContractError::Unauthorized {});
@@ -1059,7 +1059,7 @@ pub fn withdraw_liquid(
         }
     } else {
         // check that sender is one of "maturity_whitelist" (if exist)
-        if endowment.maturity_whitelist.len() > 0
+        if !endowment.maturity_whitelist.is_empty()
             && !endowment.maturity_whitelist.contains(&info.sender)
         {
             return Err(ContractError::Unauthorized {});
@@ -1590,7 +1590,7 @@ pub fn setup_dao_token_messages(
                         name: "AP Endowment Dao Token".to_string(), // need dynamic name
                         symbol: "APEDT".to_string(),                // need dynamic symbol
                         decimals: 6,
-                        reserve_denom: halo_token.to_string(),
+                        reserve_denom: halo_token,
                         reserve_decimals: 6,
                         curve_type,
                         unbonding_period: 7,
