@@ -8,6 +8,11 @@ import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
+export enum VoteOption {
+  YES,
+  NO,
+}
+
 //----------------------------------------------------------------------------------------
 // TEST: Add a new AP Team Member to the C4 AP Team Group
 //
@@ -57,6 +62,98 @@ export async function testAddMemberToC4Group(
       return attribute.key == "proposal_id";
     })?.value as string;
 
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testProposalApprovingEndowment(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  cw3: string,
+  registrar: string,
+  endowment: string,
+): Promise<void> {
+  process.stdout.write("Test - CW3 Member Proposes to Approve an Endowment");
+
+  const proposal = await sendTransaction(juno, apTeam, cw3, {
+    propose: {
+      title: "Approve an Endowment",
+      description: "Proposal to change the status of an endowment to APPROVED",
+      msgs: [
+        {
+          wasm: {
+            execute: {
+              contract_addr: registrar,
+              funds: [],
+              msg: toEncodedBinary({
+                update_endowment_status: {
+                  endowment_addr: endowment,
+                  status: 1,
+                  beneficiary: undefined,
+                },
+              }),
+            },
+          },
+        },
+      ],
+    },
+  });
+  const proposal_id = proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "proposal_id";
+    })?.value as string;
+
+  console.log(chalk.green(` Proposal ID: ${proposal_id}`));
+  console.log(chalk.green(" Done!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Cast vote on poll
+//
+// SCENARIO:
+// AP Team CW3 member can vote on the open poll
+//
+//----------------------------------------------------------------------------------------
+export async function testCw3CastVote(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  cw3: string,
+  poll_id: number,
+  vote: VoteOption,
+): Promise<void> {
+  process.stdout.write("Test - Cast vote");
+
+  await expect(
+    sendTransaction(juno, apTeam, cw3, {
+      vote: { poll_id, vote },
+    })
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+
+//----------------------------------------------------------------------------------------
+// TEST: Execute a poll
+//
+// SCENARIO:
+// AP Team CW3 member can execute a passed poll
+//
+//----------------------------------------------------------------------------------------
+export async function testCw3ExecutePoll(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  cw3: string,
+  poll_id: number,
+): Promise<void> {
+  process.stdout.write("Test - Execute Poll");
+
+  await expect(
+    sendTransaction(juno, apTeam, cw3, {
+      execute: { proposal_id: poll_id }
+    })
+  );
   console.log(chalk.green(" Passed!"));
 }
 
