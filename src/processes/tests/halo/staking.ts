@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
@@ -16,23 +16,17 @@ const { expect } = chai;
 //
 //----------------------------------------------------------------------------------------
 export async function testStakingUnbond(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   stakingContract: string,
   amount: string
 ): Promise<void> {
   process.stdout.write("Test - Unbond less than bond amount");
 
   await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        stakingContract,
-        {
-          unbond: { amount },
-        },
-      ),
-    ])
+    sendTransaction(juno, apTeam, stakingContract, {
+      unbond: { amount },
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -45,22 +39,16 @@ export async function testStakingUnbond(
 //
 //----------------------------------------------------------------------------------------
 export async function testStakingWithdraw(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
+  juno: SigningCosmWasmClient,
+  apTeam: string,
   stakingContract: string
 ): Promise<void> {
   process.stdout.write("Test - Withdraw rewards to executor");
 
   await expect(
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        stakingContract,
-        {
-          withdraw: {},
-        },
-      ),
-    ])
+    sendTransaction(juno, apTeam, stakingContract, {
+      withdraw: {},
+    })
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -69,11 +57,11 @@ export async function testStakingWithdraw(
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryStakingConfig(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   stakingContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Staking Config");
-  const result: any = await terra.wasm.contractQuery(stakingContract, {
+  const result: any = await juno.queryContractSmart(stakingContract, {
     config: {},
   });
 
@@ -82,11 +70,11 @@ export async function testQueryStakingConfig(
 }
 
 export async function testQueryStakingState(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   stakingContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Staking State");
-  const result: any = await terra.wasm.contractQuery(stakingContract, {
+  const result: any = await juno.queryContractSmart(stakingContract, {
     state: {},
   });
 
@@ -95,13 +83,13 @@ export async function testQueryStakingState(
 }
 
 export async function testQueryStakingStakerInfo(
-  terra: LocalTerra | LCDClient,
+  juno: SigningCosmWasmClient,
   stakingContract: string,
   staker: string,
   block_height: number | undefined
 ): Promise<void> {
   process.stdout.write("Test - Query Airdrop Latest Stage");
-  const result: any = await terra.wasm.contractQuery(stakingContract, {
+  const result: any = await juno.queryContractSmart(stakingContract, {
     staker_info: { staker, block_height },
   });
 

@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { LCDClient, LocalTerra } from "@terra-money/terra.js";
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
 chai.use(chaiAsPromised);
 
@@ -11,11 +11,11 @@ chai.use(chaiAsPromised);
 //----------------------------------------------------------------------------------------
 
 export async function testQueryVaultConfig(
-  terra: LocalTerra | LCDClient,
-  anchorVault1: string
+  juno: SigningCosmWasmClient,
+  vault: string
 ): Promise<void> {
   process.stdout.write("Test - Query Vault Config");
-  const result: any = await terra.wasm.contractQuery(anchorVault1, {
+  const result: any = await juno.queryContractSmart(vault, {
     vault_config: {},
   });
 

@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as path from "path";
 import chalk from "chalk";
-import { LCDClient, LocalTerra, Wallet } from "@terra-money/terra.js";
+import { LcdClient,  Wallet } from "@cosmjs/launchpad";
 import { storeCode, instantiateContract } from "../../utils/helpers";
 import { wasm_path } from "../../config/wasmPaths";
 
 // Deploy HALO/DANO contracts
 export async function setupHalo(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   registrar_contract: string,
-  terraswapHaloToken: string,
-  terraswapFactory: string,
-  terraswapHaloLpToken: string,
+  junoswapHaloToken: string,
+  junoswapFactory: string,
+  junoswapHaloLpToken: string,
   quorum: number,
   threshold: number,
   voting_period: number,
@@ -28,10 +28,10 @@ export async function setupHalo(
 ): Promise<void> {
   // Setup Governance contract
   const govContract = await setupGov(
-    terra,
+    juno,
     apTeam,
     registrar_contract,
-    terraswapHaloToken,
+    junoswapHaloToken,
     quorum,
     threshold,
     voting_period,
@@ -39,22 +39,22 @@ export async function setupHalo(
     proposal_deposit,
     snapshot_period,
     unbonding_period,
-    "terra1vn8ycrkmm8llqcu82qe3sg5ktn6hajs6tkpnx0"
+    "juno1vn8ycrkmm8llqcu82qe3sg5ktn6hajs6tkpnx0"
   );
 
   // Setup Gov Hodler contract
   const govHodlerContract = await setupGovHodler(
-    terra,
+    juno,
     apTeam,
-    terraswapHaloToken,
+    junoswapHaloToken,
     govContract
   );
 
   // Setup Distributor contract
   const distributorContract = await setupDistributor(
-    terra,
+    juno,
     apTeam,
-    terraswapHaloToken,
+    junoswapHaloToken,
     govContract,
     whitelist,
     spend_limit
@@ -62,37 +62,37 @@ export async function setupHalo(
 
   // Setup Collector contract
   await setupCollector(
-    terra,
+    juno,
     apTeam,
-    terraswapHaloToken,
+    junoswapHaloToken,
     distributorContract,
-    terraswapFactory,
+    junoswapFactory,
     govContract,
     reward_factor
   );
 
   // Setup Community contract
-  await setupCommunity(terra, apTeam, terraswapHaloToken, govContract, spend_limit);
+  await setupCommunity(juno, apTeam, junoswapHaloToken, govContract, spend_limit);
 
   // Setup Staking contract
   await setupStaking(
-    terra,
+    juno,
     apTeam,
-    terraswapHaloToken,
-    terraswapHaloLpToken,
+    junoswapHaloToken,
+    junoswapHaloLpToken,
     distribution_schedule
   );
 
   // Setup Airdrop contract
-  await setupAirdrop(terra, apTeam, terraswapHaloToken);
+  await setupAirdrop(juno, apTeam, junoswapHaloToken);
 
   // Setup Vesting contract
-  await setupVesting(terra, apTeam, terraswapHaloToken, genesis_time);
+  await setupVesting(juno, apTeam, junoswapHaloToken, genesis_time);
 }
 
 // gov contract
 async function setupGov(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   registrar_contract: string,
   halo_token: string,
@@ -107,14 +107,14 @@ async function setupGov(
 ): Promise<string> {
   process.stdout.write("Uploading gov contract Wasm");
   const govCodeId = await storeCode(
-    terra,
+    juno,
     apTeam,
     path.resolve(__dirname, `${wasm_path.core}/halo_gov.wasm`)
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${govCodeId}`);
 
   process.stdout.write("Instantiating gov contract");
-  const govResult = await instantiateContract(terra, apTeam, apTeam, govCodeId, {
+  const govResult = await instantiateContract(juno, apTeam, apTeam, govCodeId, {
     quorum,
     threshold,
     voting_period,
@@ -143,14 +143,14 @@ async function setupGov(
 
 // gov contract
 async function setupGovHodler(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   halo_token: string,
   govContract: string
 ): Promise<string> {
   process.stdout.write("Uploading gov hodler contract Wasm");
   const govHodlerCodeId = await storeCode(
-    terra,
+    juno,
     apTeam,
     path.resolve(__dirname, `${wasm_path.core}/halo_gov_hodler.wasm`)
   );
@@ -158,7 +158,7 @@ async function setupGovHodler(
 
   process.stdout.write("Instantiating gov hodler contract");
   const govHodlerResult = await instantiateContract(
-    terra,
+    juno,
     apTeam,
     apTeam,
     govHodlerCodeId,
@@ -184,21 +184,21 @@ async function setupGovHodler(
 
 // airdrop contract
 async function setupAirdrop(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   haloTokenContract: string
 ): Promise<void> {
   process.stdout.write("Uploading airdrop contract Wasm");
   const airdropCodeId = await storeCode(
-    terra,
+    juno,
     apTeam,
     path.resolve(__dirname, `${wasm_path.core}/halo_airdrop.wasm`)
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${airdropCodeId}`);
 
   process.stdout.write("Instantiating airdrop contract");
-  const airdropResult = await instantiateContract(terra, apTeam, apTeam, airdropCodeId, {
-    owner: apTeam.key.accAddress,
+  const airdropResult = await instantiateContract(juno, apTeam, apTeam, airdropCodeId, {
+    owner: apTeam,
     halo_token: haloTokenContract,
   });
   const airdropContractAddr = airdropResult.logs[0].events
@@ -216,17 +216,17 @@ async function setupAirdrop(
 
 // collector contract
 async function setupCollector(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   haloTokenContract: string,
   distributorContract: string,
-  terraswapFactory: string,
+  junoswapFactory: string,
   govContract: string,
   rewardFactor: string
 ): Promise<void> {
   process.stdout.write("Uploading collector contract Wasm");
   const collectorCodeId = await storeCode(
-    terra,
+    juno,
     apTeam,
     path.resolve(__dirname, `${wasm_path.core}/halo_collector.wasm`)
   );
@@ -234,13 +234,13 @@ async function setupCollector(
 
   process.stdout.write("Instantiating collector contract");
   const collectorResult = await instantiateContract(
-    terra,
+    juno,
     apTeam,
     apTeam,
     collectorCodeId,
     {
       gov_contract: govContract,
-      swap_factory: terraswapFactory,
+      swap_factory: junoswapFactory,
       halo_token: haloTokenContract,
       distributor_contract: distributorContract,
       reward_factor: rewardFactor,
@@ -261,7 +261,7 @@ async function setupCollector(
 
 // community contract
 async function setupCommunity(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   haloTokenContract: string,
   govContract: string,
@@ -269,7 +269,7 @@ async function setupCommunity(
 ): Promise<void> {
   process.stdout.write("Uploading community contract Wasm");
   const communityCodeId = await storeCode(
-    terra,
+    juno,
     apTeam,
     path.resolve(__dirname, `${wasm_path.core}/halo_community.wasm`)
   );
@@ -277,7 +277,7 @@ async function setupCommunity(
 
   process.stdout.write("Instantiating community contract");
   const communityResult = await instantiateContract(
-    terra,
+    juno,
     apTeam,
     apTeam,
     communityCodeId,
@@ -302,7 +302,7 @@ async function setupCommunity(
 
 // distributor contract
 async function setupDistributor(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   haloTokenContract: string,
   govContract: string,
@@ -311,7 +311,7 @@ async function setupDistributor(
 ): Promise<string> {
   process.stdout.write("Uploading distributor contract Wasm");
   const distributorCodeId = await storeCode(
-    terra,
+    juno,
     apTeam,
     path.resolve(__dirname, `${wasm_path.core}/halo_distributor.wasm`)
   );
@@ -319,7 +319,7 @@ async function setupDistributor(
 
   process.stdout.write("Instantiating distributor contract");
   const distributorResult = await instantiateContract(
-    terra,
+    juno,
     apTeam,
     apTeam,
     distributorCodeId,
@@ -347,24 +347,24 @@ async function setupDistributor(
 
 // staking contract
 async function setupStaking(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   haloTokenContract: string,
-  terraswapHaloLpToken: string,
+  junoswapHaloLpToken: string,
   distribution_schedule: [number, number, string][]
 ): Promise<void> {
   process.stdout.write("Uploading staking contract Wasm");
   const stakingCodeId = await storeCode(
-    terra,
+    juno,
     apTeam,
     path.resolve(__dirname, `${wasm_path.core}/halo_staking.wasm`)
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${stakingCodeId}`);
 
   process.stdout.write("Instantiating staking contract");
-  const stakingResult = await instantiateContract(terra, apTeam, apTeam, stakingCodeId, {
+  const stakingResult = await instantiateContract(juno, apTeam, apTeam, stakingCodeId, {
     halo_token: haloTokenContract,
-    staking_token: terraswapHaloLpToken, // LP token of TerraSwap HALO-UST pair contract
+    staking_token: junoswapHaloLpToken, // LP token of JunoSwap HALO-axlUSDC pair contract
     distribution_schedule,
   });
   const stakingContractAddr = stakingResult.logs[0].events
@@ -382,22 +382,22 @@ async function setupStaking(
 
 // vesting contract
 async function setupVesting(
-  terra: LocalTerra | LCDClient,
+  juno: LcdClient,
   apTeam: Wallet,
   haloTokenContract: string,
   genesis_time: number
 ): Promise<void> {
   process.stdout.write("Uploading vesting contract Wasm");
   const vestingCodeId = await storeCode(
-    terra,
+    juno,
     apTeam,
     path.resolve(__dirname, `${wasm_path.core}/halo_vesting.wasm`)
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vestingCodeId}`);
 
   process.stdout.write("Instantiating vesting contract");
-  const vestingResult = await instantiateContract(terra, apTeam, apTeam, vestingCodeId, {
-    owner: apTeam.key.accAddress,
+  const vestingResult = await instantiateContract(juno, apTeam, apTeam, vestingCodeId, {
+    owner: apTeam,
     halo_token: haloTokenContract,
     genesis_time,
   });
