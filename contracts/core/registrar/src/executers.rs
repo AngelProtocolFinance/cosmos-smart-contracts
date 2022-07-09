@@ -237,6 +237,10 @@ pub fn update_config(
         Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
         None => config.swap_factory,
     };
+    config.halo_token = match msg.halo_token {
+        Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
+        None => config.halo_token,
+    };
 
     CONFIG.save(deps.storage, &config)?;
 
