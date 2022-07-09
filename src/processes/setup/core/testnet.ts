@@ -146,7 +146,7 @@ async function setup(
       tax_rate,
       accounts_code_id: accountsCodeId,
       treasury: treasury_address,
-      default_vault: undefined,
+      default_vault: apTeamAddr, // Fake vault address from apTeam
       split_to_liquid: undefined,
       accepted_tokens: {
         native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
@@ -223,12 +223,14 @@ async function setup(
   });
   console.log(chalk.green(" Done!"));
 
-  process.stdout.write("Update Registrar's config Index Fund, CW3_code_Id, CW4_code_Id");
+  process.stdout.write("Update Registrar's config(Account_code_id, Index Fund, CW3_code_Id, CW4_code_Id)");
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_config: {
+      accounts_code_id: accountsCodeId,
       index_fund_contract: indexFund,
       cw3_code: cw3MultiSig,
       cw4_code: cw4Group,
+      halo_token: apTeamAddr, // Fake halo_token addr: Need to be handled
     },
   });
   console.log(chalk.green(" Done!"));
@@ -245,10 +247,16 @@ async function createEndowments(
   const charityResult1 = await sendTransaction(juno, apTeamAddr, registrar, {
     create_endowment: {
       owner: charity1_wallet,
-      beneficiary: charity1_wallet,
+      name: "Test Endowment #1",
+      description: "A wonderful charity endowment that aims to test all the things",
       withdraw_before_maturity: false,
-      maturity_time: undefined,
-      maturity_height: undefined,
+      maturity_time: 300,
+      split_max: undefined,
+      split_min: undefined,
+      split_default: undefined,
+      cw4_members: [{ addr: charity1_wallet, weight: 1 }],
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
       profile: {
         name: "Test Endowment #1",
         overview: "A wonderful charity endowment that aims to test all the things",
@@ -271,10 +279,29 @@ async function createEndowments(
         charity_navigator_rating: undefined,
         endow_type: "Charity",
       },
-      cw4_members: [{ addr: charity1_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      whitelisted_beneficiaries: [charity1_wallet], 
+      whitelisted_contributors: [],
+      dao: false,
+      dao_setup_option: {
+        setup_bond_curve_token: {
+          constant: {
+            value: "10",
+            scale: 1,
+          }
+        }
+      },
+      curveType: undefined, // Useless, need to remove from contract
+      user_reserve_token: undefined,
+      user_reserve_ust_lp_pair_contract: undefined,
+      donation_match: false,
+      donation_match_setup_option: 0,
+      earnings_fee: undefined,
+      deposit_fee: undefined,
+      withdraw_fee: undefined,
+      aum_fee: undefined,
+      settings_controller: undefined,
+      parent: false,
     },
   });
   endowmentContract1 = charityResult1.logs[0].events
@@ -295,10 +322,16 @@ async function createEndowments(
   const charityResult2 = await sendTransaction(juno, apTeamAddr, registrar, {
     create_endowment: {
       owner: charity2_wallet,
-      beneficiary: charity2_wallet,
+      name: "Test Endowment #2",
+      description: "An even better endowment full of butterflies and rainbows",
       withdraw_before_maturity: false,
-      maturity_time: undefined,
-      maturity_height: undefined,
+      maturity_time: 300,
+      split_max: undefined,
+      split_min: undefined,
+      split_default: undefined,
+      cw4_members: [{ addr: charity2_wallet, weight: 1 }],
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
       profile: {
         name: "Test Endowment #2",
         overview: "An even better endowment full of butterflies and rainbows",
@@ -321,10 +354,29 @@ async function createEndowments(
         charity_navigator_rating: undefined,
         endow_type: "Charity",
       },
-      cw4_members: [{ addr: charity2_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      whitelisted_beneficiaries: [charity2_wallet], 
+      whitelisted_contributors: [],
+      dao: false,
+      dao_setup_option: {
+        setup_bond_curve_token: {
+          constant: {
+            value: "10",
+            scale: 1,
+          }
+        }
+      },
+      curveType: undefined, // Useless, need to remove from contract
+      user_reserve_token: undefined,
+      user_reserve_ust_lp_pair_contract: undefined,
+      donation_match: false,
+      donation_match_setup_option: 0,
+      earnings_fee: undefined,
+      deposit_fee: undefined,
+      withdraw_fee: undefined,
+      aum_fee: undefined,
+      settings_controller: undefined,
+      parent: false,
     },
   });
   endowmentContract2 = charityResult2.logs[0].events
@@ -345,10 +397,16 @@ async function createEndowments(
   const charityResult3 = await sendTransaction(juno, apTeamAddr, registrar, {
     create_endowment: {
       owner: charity3_wallet,
-      beneficiary: charity3_wallet,
+      name: "Test Endowment #3",
+      description: "Shady endowment that will never be approved",
       withdraw_before_maturity: false,
-      maturity_time: undefined,
-      maturity_height: undefined,
+      maturity_time: 300,
+      split_max: undefined,
+      split_min: undefined,
+      split_default: undefined,
+      cw4_members: [{ addr: charity3_wallet, weight: 1 }],
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
       profile: {
         name: "Test Endowment #3",
         overview: "Shady endowment that will never be approved",
@@ -371,10 +429,29 @@ async function createEndowments(
         charity_navigator_rating: undefined,
         endow_type: "Charity",
       },
-      cw4_members: [{ addr: charity3_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      whitelisted_beneficiaries: [charity1_wallet], 
+      whitelisted_contributors: [],
+      dao: false,
+      dao_setup_option: {
+        setup_bond_curve_token: {
+          constant: {
+            value: "10",
+            scale: 1,
+          }
+        }
+      },
+      curveType: undefined, // Useless, need to remove from contract
+      user_reserve_token: undefined,
+      user_reserve_ust_lp_pair_contract: undefined,
+      donation_match: false,
+      donation_match_setup_option: 0,
+      earnings_fee: undefined,
+      deposit_fee: undefined,
+      withdraw_fee: undefined,
+      aum_fee: undefined,
+      settings_controller: undefined,
+      parent: false,
     },
   });
   endowmentContract3 = charityResult3.logs[0].events
@@ -394,10 +471,16 @@ async function createEndowments(
   const charityResult4 = await sendTransaction(juno, apTeamAddr, registrar, {
     create_endowment: {
       owner: charity3_wallet,
-      beneficiary: charity3_wallet,
+      name: "Vibin' Endowment #4",
+      description: "Global endowment that spreads good vibes",
       withdraw_before_maturity: false,
-      maturity_time: undefined,
-      maturity_height: undefined,
+      maturity_time: 300,
+      split_max: undefined,
+      split_min: undefined,
+      split_default: undefined,
+      cw4_members: [{ addr: charity3_wallet, weight: 1 }],
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
       profile: {
         name: "Vibin' Endowment #4",
         overview: "Global endowment that spreads good vibes",
@@ -420,10 +503,29 @@ async function createEndowments(
         charity_navigator_rating: undefined,
         endow_type: "Charity",
       },
-      cw4_members: [{ addr: charity3_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      whitelisted_beneficiaries: [charity1_wallet], 
+      whitelisted_contributors: [],
+      dao: false,
+      dao_setup_option: {
+        setup_bond_curve_token: {
+          constant: {
+            value: "10",
+            scale: 1,
+          }
+        }
+      },
+      curveType: undefined, // Useless, need to remove from contract
+      user_reserve_token: undefined,
+      user_reserve_ust_lp_pair_contract: undefined,
+      donation_match: false,
+      donation_match_setup_option: 0,
+      earnings_fee: undefined,
+      deposit_fee: undefined,
+      withdraw_fee: undefined,
+      aum_fee: undefined,
+      settings_controller: undefined,
+      parent: false,
     }
   });
   endowmentContract4 = charityResult4.logs[0].events
