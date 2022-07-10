@@ -126,6 +126,7 @@ pub fn instantiate(
 
     // initial default Response to add submessages to
     let mut res: Response = Response::new().add_attributes(vec![
+        attr("endow_addr", env.contract.address.to_string()),
         attr("endow_name", msg.name),
         attr("endow_owner", msg.owner.to_string()),
         attr("endow_type", msg.profile.endow_type.to_string()),

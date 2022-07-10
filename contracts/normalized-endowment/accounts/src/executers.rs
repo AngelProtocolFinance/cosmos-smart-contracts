@@ -98,11 +98,11 @@ pub fn new_cw3_multisig_reply(
 ) -> Result<Response, ContractError> {
     match msg {
         SubMsgResult::Ok(subcall) => {
-            let mut multisig_addr = String::from("");
+            let mut multisig_addr = String::from("asdf-ASDF-ASDF");
             for event in subcall.events {
-                if event.ty == *"instantiate" {
+                if event.ty == *"wasm" {
                     for attrb in event.attributes {
-                        if attrb.key == "_contract_address" {
+                        if attrb.key == "multisig_addr" {
                             multisig_addr = attrb.value;
                         }
                     }
