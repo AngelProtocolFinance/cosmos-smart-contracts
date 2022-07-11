@@ -1,9 +1,9 @@
 use angel_core::errors::core::*;
 use angel_core::messages::index_fund::*;
 use angel_core::responses::index_fund::*;
-use angel_core::structs::{IndexFund, SplitDetails};
+use angel_core::structs::{AllianceMember, IndexFund, SplitDetails};
 use cosmwasm_std::testing::{mock_env, mock_info};
-use cosmwasm_std::{coins, from_binary, to_binary, Decimal, Timestamp, Uint128};
+use cosmwasm_std::{coins, from_binary, to_binary, Addr, Decimal, Timestamp, Uint128};
 use cw20::Cw20ReceiveMsg;
 
 use crate::contract::{execute, instantiate, query};
@@ -137,6 +137,188 @@ fn only_registrar_can_change_registrar_contract() {
         String::from("some-legit-registrar"),
         value.registrar_contract
     );
+}
+
+#[test]
+fn only_owner_can_update_config() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angelprotocolteamdano".to_string();
+    let registrar_contract = "registrar-account".to_string();
+    let pleb = "pleb-account".to_string();
+
+    let msg = InstantiateMsg {
+        registrar_contract: registrar_contract.clone(),
+        fund_rotation: Some(Some(1000000u64)),
+        fund_member_limit: Some(20),
+        funding_goal: None,
+    };
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // non-owner cannot update the config
+    let info = mock_info(pleb.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let err = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::UpdateConfig(UpdateConfigMsg {
+            fund_member_limit: None,
+            fund_rotation: None,
+            funding_goal: None,
+        }),
+    )
+    .unwrap_err();
+    assert_eq!(ContractError::Unauthorized {}, err);
+
+    // only owner can update the config
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let res = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::UpdateConfig(UpdateConfigMsg {
+            fund_member_limit: Some(40),
+            fund_rotation: Some(100_u64),
+            funding_goal: Some(Uint128::from(123_u128)),
+        }),
+    )
+    .unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // check that the configs are set in query
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(40, config.fund_member_limit);
+    assert_eq!(Some(100_u64), config.fund_rotation);
+    assert_eq!(Some(Uint128::from(123_u128)), config.funding_goal);
+}
+
+#[test]
+fn only_owner_can_update_alliance_member_list() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angelprotocolteamdano".to_string();
+    let registrar_contract = "registrar-account".to_string();
+    let pleb = "pleb-account".to_string();
+
+    let msg = InstantiateMsg {
+        registrar_contract: registrar_contract.clone(),
+        fund_rotation: Some(Some(1000000u64)),
+        fund_member_limit: Some(20),
+        funding_goal: None,
+    };
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // non-owner cannot update the alliance member list
+    let info = mock_info(pleb.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let err = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::UpdateAllianceMemberList {
+            address: Addr::unchecked("address"),
+            member: AllianceMember {
+                name: "new alliance member".to_string(),
+                logo: None,
+                website: None,
+            },
+            action: "add".to_string(),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(ContractError::Unauthorized {}, err);
+
+    // only owner can add the alliance member list
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let res = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::UpdateAllianceMemberList {
+            address: Addr::unchecked("address"),
+            member: AllianceMember {
+                name: "new alliance member".to_string(),
+                logo: None,
+                website: None,
+            },
+            action: "add".to_string(),
+        },
+    )
+    .unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // check the result of update
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::AllianceMembers {
+            start_after: None,
+            limit: None,
+        },
+    )
+    .unwrap();
+    let alliance_members: AllianceMemberListResponse = from_binary(&res).unwrap();
+    assert_eq!(alliance_members.alliance_members.len(), 1);
+
+    // Cannot update since invalid action
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let _err = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::UpdateAllianceMemberList {
+            address: Addr::unchecked("address"),
+            member: AllianceMember {
+                name: "new alliance member".to_string(),
+                logo: None,
+                website: None,
+            },
+            action: "remvoe".to_string(),
+        },
+    )
+    .unwrap_err();
+
+    // only owner can remove the alliance member list
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let env = mock_env();
+    let res = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::UpdateAllianceMemberList {
+            address: Addr::unchecked("address"),
+            member: AllianceMember {
+                name: "new alliance member".to_string(),
+                logo: None,
+                website: None,
+            },
+            action: "remove".to_string(),
+        },
+    )
+    .unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // check the result of update
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::AllianceMembers {
+            start_after: None,
+            limit: None,
+        },
+    )
+    .unwrap();
+    let alliance_members: AllianceMemberListResponse = from_binary(&res).unwrap();
+    assert_eq!(alliance_members.alliance_members.len(), 0);
 }
 
 #[test]
@@ -298,6 +480,158 @@ fn sc_owner_can_update_fund_members() {
     let value: FundDetailsResponse = from_binary(&res).unwrap();
     let f = value.fund.unwrap();
     assert_eq!(2, f.members.len());
+}
+
+#[test]
+fn sc_owner_can_update_alliance_member() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angelprotocolteamdano".to_string();
+    let registrar_contract = "registrar-account".to_string();
+
+    let msg = InstantiateMsg {
+        registrar_contract: registrar_contract.clone(),
+        fund_rotation: Some(Some(1000000u64)),
+        fund_member_limit: Some(20),
+        funding_goal: None,
+    };
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // Try to update the alliance member
+    // Fails since non-owner calls the entry
+    let info = mock_info("anyone", &[]);
+    let update_alliance_member_msg = ExecuteMsg::UpdateAllianceMember {
+        address: Addr::unchecked("address"),
+        member: AllianceMember {
+            name: "new alliance member".to_string(),
+            logo: None,
+            website: None,
+        },
+    };
+    let err = execute(deps.as_mut(), mock_env(), info, update_alliance_member_msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Succeed to update the alliance member
+    let info = mock_info(ap_team.as_ref(), &[]);
+    let update_alliance_member_msg = ExecuteMsg::UpdateAllianceMember {
+        address: Addr::unchecked("address"),
+        member: AllianceMember {
+            name: "new alliance member".to_string(),
+            logo: None,
+            website: None,
+        },
+    };
+    let res = execute(deps.as_mut(), mock_env(), info, update_alliance_member_msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // Check the added alliance member
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::AllianceMember {
+            address: Addr::unchecked("address"),
+        },
+    )
+    .unwrap();
+    let alliance_member: AllianceMemberResponse = from_binary(&res).unwrap();
+    assert_eq!(alliance_member.name, "new alliance member");
+    assert_eq!(alliance_member.wallet, "address");
+    assert_eq!(alliance_member.logo, None);
+    assert_eq!(alliance_member.website, None);
+}
+
+#[test]
+fn sc_owner_can_remove_member() {
+    let mut deps = mock_dependencies(&[]);
+    // meet the cast of characters
+    let ap_team = "angelprotocolteamdano".to_string();
+    let charity_addr = "charity-address".to_string();
+    let registrar_contract = "registrar-account".to_string();
+    let pleb = "pleb-account".to_string();
+
+    let msg = InstantiateMsg {
+        registrar_contract: registrar_contract.clone(),
+        fund_rotation: Some(Some(1000000u64)),
+        fund_member_limit: Some(20),
+        funding_goal: None,
+    };
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+    let res = instantiate(deps.as_mut(), mock_env(), info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // Add the fund
+    let new_fund_msg = ExecuteMsg::CreateFund {
+        name: String::from("Ending Hunger"),
+        description: String::from("Some fund of charities"),
+        members: vec![],
+        rotating_fund: Some(true),
+        split_to_liquid: None,
+        expiry_time: None,
+        expiry_height: None,
+    };
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+    let res = execute(deps.as_mut(), mock_env(), info, new_fund_msg.clone()).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // Update the fund members
+    let update_members_msg = ExecuteMsg::UpdateMembers {
+        fund_id: 1,
+        add: vec![charity_addr.clone(), String::from("charity-addr")],
+        remove: vec![pleb.clone()],
+    };
+    let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
+    let res = execute(deps.as_mut(), mock_env(), info, update_members_msg.clone()).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // Check the result of addition
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::FundDetails { fund_id: 1 },
+    )
+    .unwrap();
+    let fund_detail: FundDetailsResponse = from_binary(&res).unwrap();
+    assert_eq!(fund_detail.fund.unwrap().members.len(), 2);
+
+    // Try to remove the member
+    // Fails since non-registrar_contract calls the entry
+    let remove_member_msg = RemoveMemberMsg {
+        member: "charity".to_string(),
+    };
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::RemoveMember(remove_member_msg),
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Succeed to remove the member
+    let remove_member_msg = RemoveMemberMsg {
+        member: "charity-addr".to_string(),
+    };
+    let info = mock_info(registrar_contract.as_ref(), &[]);
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::RemoveMember(remove_member_msg),
+    )
+    .unwrap();
+
+    // Check the result of removal
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::FundDetails { fund_id: 1 },
+    )
+    .unwrap();
+    let fund_detail: FundDetailsResponse = from_binary(&res).unwrap();
+    assert_eq!(fund_detail.fund.unwrap().members.len(), 1);
 }
 
 #[test]
