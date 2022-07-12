@@ -10,8 +10,6 @@ use cw_utils::{Duration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use super::cw3_multisig::Threshold;
-
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {
     pub last_earnings_harvest: u64,

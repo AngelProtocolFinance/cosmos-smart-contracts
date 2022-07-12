@@ -3,7 +3,6 @@ use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::messages::dao_token::CurveType;
-use angel_core::messages::cw3_multisig::Threshold;
 use angel_core::responses::accounts::*;
 use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage};
@@ -48,9 +47,9 @@ fn create_endowment() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
     };
 
     let instantiate_msg = InstantiateMsg {
-        owner_sc: ap_team.clone(),
-        registrar_contract: registrar_contract.clone(),
-        owner: charity_addr.clone(),
+        owner_sc: AP_TEAM.to_string(),
+        registrar_contract: REGISTRAR_CONTRACT.to_string(),
+        owner: CHARITY_ADDR.to_string(),
         name: "Endowment".to_string(),
         description: "New Endowment Creation".to_string(),
         split_max: Decimal::one(),
@@ -119,9 +118,9 @@ fn test_proper_initialization() {
     };
 
     let instantiate_msg = InstantiateMsg {
-        owner_sc: ap_team.clone(),
-        registrar_contract: registrar_contract.clone(),
-        owner: charity_addr.clone(),
+        owner_sc: AP_TEAM.to_string(),
+        registrar_contract: REGISTRAR_CONTRACT.to_string(),
+        owner: CHARITY_ADDR.to_string(),
         name: "Endowment".to_string(),
         description: "New Endowment Creation".to_string(),
         split_max: Decimal::one(),
@@ -167,7 +166,7 @@ fn test_update_endowment_settings() {
 
     // update the endowment owner and beneficiary
     let msg = UpdateEndowmentSettingsMsg {
-        owner: Some(charity_addr.clone()),
+        owner: Some(CHARITY_ADDR.to_string()),
         whitelisted_beneficiaries: None,
         whitelisted_contributors: None,
         name: None,
@@ -193,7 +192,7 @@ fn test_update_endowment_settings() {
 
     // Not just anyone can update the Endowment's settings! Only Endowment owner can.
     let msg = UpdateEndowmentSettingsMsg {
-        owner: Some(charity_addr.clone()),
+        owner: Some(CHARITY_ADDR.to_string()),
         whitelisted_beneficiaries: None,
         whitelisted_contributors: None,
         name: None,
@@ -264,8 +263,8 @@ fn test_update_endowment_status() {
 fn test_change_registrar_contract() {
     let mut deps = create_endowment();
 
-    // change the owner to some pleb
-    let info = mock_info(REGISTRAR_CONTRACT, &coins(100000, "earth"));
+    // change the registrar to some pleb
+    let info = mock_info(AP_TEAM, &coins(100000, "earth"));
     let env = mock_env();
     let res = execute(
         deps.as_mut(),
@@ -287,7 +286,7 @@ fn test_change_registrar_contract() {
     let msg = ExecuteMsg::UpdateRegistrar {
         new_registrar: PLEB.to_string(),
     };
-    let info = mock_info(AP_TEAM, &coins(100000, "earth "));
+    let info = mock_info(PLEB, &coins(100000, "earth "));
     let env = mock_env();
     // This should fail with an error!
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
@@ -328,81 +327,81 @@ fn test_change_admin() {
     assert_eq!(err, ContractError::Unauthorized {});
 }
 
-#[test]
-fn test_update_strategy() {
-    let mut deps = create_endowment();
+// #[test]
+// fn test_update_strategy() {
+//     let mut deps = create_endowment();
 
-    // sum of the invested strategy components percentages is not equal 100%
-    let msg = ExecuteMsg::UpdateStrategies {
-        strategies: vec![
-            Strategy {
-                vault: "cash_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(30),
-            },
-            Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(60),
-            },
-        ],
-    };
+//     // sum of the invested strategy components percentages is not equal 100%
+//     let msg = ExecuteMsg::UpdateStrategies {
+//         strategies: vec![
+//             Strategy {
+//                 vault: "cash_strategy_component_addr".to_string(),
+//                 percentage: Decimal::percent(30),
+//             },
+//             Strategy {
+//                 vault: "tech_strategy_component_addr".to_string(),
+//                 percentage: Decimal::percent(60),
+//             },
+//         ],
+//     };
 
-    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
-    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
+//     let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
+//     let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+//     assert_eq!(err, ContractError::Unauthorized {});
 
-    let msg = ExecuteMsg::UpdateStrategies {
-        strategies: vec![
-            Strategy {
-                vault: "cash_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(40),
-            },
-            Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(20),
-            },
-            Strategy {
-                vault: "cash_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(40),
-            },
-        ],
-    };
+//     let msg = ExecuteMsg::UpdateStrategies {
+//         strategies: vec![
+//             Strategy {
+//                 vault: "cash_strategy_component_addr".to_string(),
+//                 percentage: Decimal::percent(40),
+//             },
+//             Strategy {
+//                 vault: "tech_strategy_component_addr".to_string(),
+//                 percentage: Decimal::percent(20),
+//             },
+//             Strategy {
+//                 vault: "cash_strategy_component_addr".to_string(),
+//                 percentage: Decimal::percent(40),
+//             },
+//         ],
+//     };
 
-    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
-    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-    assert_eq!(err, ContractError::StrategyComponentsNotUnique {});
+//     let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
+//     let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+//     assert_eq!(err, ContractError::StrategyComponentsNotUnique {});
 
-    let msg = ExecuteMsg::UpdateStrategies {
-        strategies: vec![
-            Strategy {
-                vault: "cash_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(40),
-            },
-            Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(60),
-            },
-        ],
-    };
-    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
-    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-    assert_eq!(1, res.messages.len());
+//     let msg = ExecuteMsg::UpdateStrategies {
+//         strategies: vec![
+//             Strategy {
+//                 vault: "cash_strategy_component_addr".to_string(),
+//                 percentage: Decimal::percent(40),
+//             },
+//             Strategy {
+//                 vault: "tech_strategy_component_addr".to_string(),
+//                 percentage: Decimal::percent(60),
+//             },
+//         ],
+//     };
+//     let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
+//     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+//     assert_eq!(1, res.messages.len());
 
-    let msg = ExecuteMsg::UpdateStrategies {
-        strategies: vec![
-            Strategy {
-                vault: "cash_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(40),
-            },
-            Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(60),
-            },
-        ],
-    };
-    let info = mock_info(PLEB, &coins(100000, "earth"));
-    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-    assert_eq!(err, ContractError::RedemptionInProgress {});
-}
+//     let msg = ExecuteMsg::UpdateStrategies {
+//         strategies: vec![
+//             Strategy {
+//                 vault: "cash_strategy_component_addr".to_string(),
+//                 percentage: Decimal::percent(40),
+//             },
+//             Strategy {
+//                 vault: "tech_strategy_component_addr".to_string(),
+//                 percentage: Decimal::percent(60),
+//             },
+//         ],
+//     };
+//     let info = mock_info(PLEB, &coins(100000, "earth"));
+//     let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+//     assert_eq!(err, ContractError::RedemptionInProgress {});
+// }
 
 #[test]
 fn test_update_endowment_profile() {
@@ -653,70 +652,70 @@ fn test_withdraw_liquid() {
     assert_eq!(1, res.messages.len());
 }
 
-#[test]
-fn test_vault_receipt() {
-    let mut deps = create_endowment();
+// #[test]
+// fn test_vault_receipt() {
+//     let mut deps = create_endowment();
 
-    // Update the Endowment status
-    let info = mock_info(REGISTRAR_CONTRACT, &[]);
-    let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
-        deposit_approved: true,
-        withdraw_approved: true,
-    });
-    let _res = execute(deps.as_mut(), mock_env(), info, update_status_msg).unwrap();
+//     // Update the Endowment status
+//     let info = mock_info(REGISTRAR_CONTRACT, &[]);
+//     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
+//         deposit_approved: true,
+//         withdraw_approved: true,
+//     });
+//     let _res = execute(deps.as_mut(), mock_env(), info, update_status_msg).unwrap();
 
-    // Try to run "vault_receipt"
-    // Fails since no funds
-    let info = mock_info("anyone", &[]);
-    let err = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::VaultReceipt {}).unwrap_err();
-    assert_eq!(err, ContractError::InvalidCoinsDeposited {});
+//     // Try to run "vault_receipt"
+//     // Fails since no funds
+//     let info = mock_info("anyone", &[]);
+//     let err = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::VaultReceipt {}).unwrap_err();
+//     assert_eq!(err, ContractError::InvalidCoinsDeposited {});
 
-    // Success, but no messages since "config.pending_redemptions == None"
-    let info = mock_info(
-        "vault",
-        &[Coin {
-            denom: "uluna".to_string(),
-            amount: Uint128::from(100_u128),
-        }],
-    );
-    let res = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::VaultReceipt {}).unwrap();
-    assert_eq!(0, res.messages.len());
+//     // Success, but no messages since "config.pending_redemptions == None"
+//     let info = mock_info(
+//         "vault",
+//         &[Coin {
+//             denom: "uluna".to_string(),
+//             amount: Uint128::from(100_u128),
+//         }],
+//     );
+//     let res = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::VaultReceipt {}).unwrap();
+//     assert_eq!(0, res.messages.len());
 
-    // First, update the "config.pending_redemptions"
-    let msg = ExecuteMsg::UpdateStrategies {
-        strategies: vec![
-            Strategy {
-                vault: "cash_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(40),
-            },
-            Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(60),
-            },
-        ],
-    };
-    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
-    let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+//     // First, update the "config.pending_redemptions"
+//     let msg = ExecuteMsg::UpdateStrategies {
+//         strategies: vec![
+//             Strategy {
+//                 vault: "cash_strategy_component_addr".to_string(),
+//                 percentage: Decimal::percent(40),
+//             },
+//             Strategy {
+//                 vault: "tech_strategy_component_addr".to_string(),
+//                 percentage: Decimal::percent(60),
+//             },
+//         ],
+//     };
+//     let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
+//     let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!("1", config.pending_redemptions);
+//     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+//     let config: ConfigResponse = from_binary(&res).unwrap();
+//     assert_eq!("1", config.pending_redemptions);
 
-    // Success, check if the "config.redemptions" is decreased
-    let info = mock_info(
-        "vault",
-        &[Coin {
-            denom: "uluna".to_string(),
-            amount: Uint128::from(100_u128),
-        }],
-    );
-    let res = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::VaultReceipt {}).unwrap();
-    assert_eq!(2, res.messages.len());
+//     // Success, check if the "config.redemptions" is decreased
+//     let info = mock_info(
+//         "vault",
+//         &[Coin {
+//             denom: "uluna".to_string(),
+//             amount: Uint128::from(100_u128),
+//         }],
+//     );
+//     let res = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::VaultReceipt {}).unwrap();
+//     assert_eq!(2, res.messages.len());
 
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!("", config.pending_redemptions);
-}
+//     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+//     let config: ConfigResponse = from_binary(&res).unwrap();
+//     assert_eq!("", config.pending_redemptions);
+// }
 
 #[test]
 fn test_close_endowment() {

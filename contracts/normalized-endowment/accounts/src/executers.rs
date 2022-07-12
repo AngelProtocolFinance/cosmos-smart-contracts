@@ -1,4 +1,3 @@
-use std::str::FromStr;
 use crate::state::{CONFIG, CW3MULTISIGCONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
@@ -34,6 +33,7 @@ use cosmwasm_std::{
 };
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw_asset::{Asset, AssetInfoBase};
+use std::str::FromStr;
 
 pub fn new_cw4_group_reply(
     deps: DepsMut,
@@ -931,7 +931,7 @@ pub fn deposit(
                     funds: vec![],
                 })))
             }
-            AssetInfoBase::Cw1155(_, _) => unimplemented!()
+            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         }
     };
 

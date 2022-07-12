@@ -2,7 +2,6 @@ use crate::contract::{execute, instantiate, query, reply};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::DaoSetupOption;
 use angel_core::messages::dao_token::CurveType;
-use angel_core::messages::cw3_multisig::Threshold;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
