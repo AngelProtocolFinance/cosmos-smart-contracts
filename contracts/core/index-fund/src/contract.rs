@@ -103,7 +103,6 @@ pub fn execute(
             };
             executers::deposit(deps, env, info.clone(), info.sender, msg, native_fund)
         }
-        // ExecuteMsg::Receive(msg) => executers::receive(deps, env, info, msg),
         ExecuteMsg::UpdateAllianceMember { address, member } => {
             executers::update_alliance_member(deps, env, info, address, member)
         }

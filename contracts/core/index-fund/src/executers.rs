@@ -284,27 +284,6 @@ pub fn remove_member(
     Ok(Response::default())
 }
 
-// pub fn receive(
-//     deps: DepsMut,
-//     env: Env,
-//     info: MessageInfo,
-//     cw20_msg: Cw20ReceiveMsg,
-// ) -> Result<Response, ContractError> {
-//     let config = CONFIG.load(deps.storage)?;
-//     // check that the sending token contract is an Approved Token
-//     if !config.accepted_tokens.cw20_valid(info.sender.to_string()) {
-//         return Err(ContractError::Unauthorized {});
-//     }
-//     if cw20_msg.amount.is_zero() {
-//         return Err(ContractError::EmptyBalance {});
-//     }
-//     let sender_addr = deps.api.addr_validate(&cw20_msg.sender)?;
-//     let msg = from_binary(&cw20_msg.msg)?;
-//     match msg {
-//         ReceiveMsg::Deposit(msg) => deposit(deps, env, info, sender_addr, msg),
-//     }
-// }
-
 pub fn update_alliance_member(
     deps: DepsMut,
     _env: Env,
@@ -374,6 +353,7 @@ pub fn deposit(
                 address: contract_addr.clone(),
                 amount: deposit_amount,
             }),
+            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         };
         tca_donor.add_tokens(balance);
         TCA_DONATIONS.save(deps.storage, sender_addr.to_string(), &tca_donor)?;
@@ -593,6 +573,7 @@ pub fn build_donation_messages(
                     funds: vec![],
                 })));
             }
+            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         }
     }
     messages

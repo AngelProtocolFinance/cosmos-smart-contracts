@@ -21,6 +21,9 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
             .map(|v| v.to_string())
             .unwrap_or_else(|| "".to_string()),
         settings_controller: config.settings_controller,
+        pending_redemptions: config
+            .pending_redemptions
+            .map_or("".to_string(), |v| v.to_string()),
     })
 }
 
@@ -29,6 +32,10 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
 
     Ok(StateResponse {
         donations_received: state.donations_received,
+        closing_endowment: state.closing_endowment,
+        closing_beneficiary: state
+            .closing_beneficiary
+            .map_or("".to_string(), |v| v.to_string()),
     })
 }
 
