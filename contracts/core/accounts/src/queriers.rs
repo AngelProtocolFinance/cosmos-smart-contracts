@@ -15,6 +15,9 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         registrar_contract: config.registrar_contract.to_string(),
         deposit_approved: config.deposit_approved,
         withdraw_approved: config.withdraw_approved,
+        pending_redemptions: config
+            .pending_redemptions
+            .map_or("".to_string(), |v| v.to_string()),
     })
 }
 
@@ -23,6 +26,10 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
 
     Ok(StateResponse {
         donations_received: state.donations_received,
+        closing_endowment: state.closing_endowment,
+        closing_beneficiary: state
+            .closing_beneficiary
+            .map_or("".to_string(), |v| v.to_string()),
     })
 }
 

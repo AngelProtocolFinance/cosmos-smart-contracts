@@ -285,6 +285,7 @@ pub fn deposit_to_vaults(
                     funds: vec![],
                 })));
             }
+            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         }
     }
     Ok(deposit_messages)
@@ -314,6 +315,7 @@ pub fn validate_deposit_fund(
     let token = match fund.info {
         AssetInfoBase::Native(ref denom) => denom.to_string(),
         AssetInfoBase::Cw20(ref contract_addr) => contract_addr.to_string(),
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
     };
 
     if !is_accepted_token(deps, &token, registrar_contract)? {

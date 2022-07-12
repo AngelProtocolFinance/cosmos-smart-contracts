@@ -137,32 +137,6 @@ fn update_config() {
 }
 
 #[test]
-fn test_owner_can_add_remove_approved_charities() {
-    let mut deps = mock_dependencies();
-    // meet the cast of characters
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
-    let charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
-    let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
-    let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
-        treasury: ap_team.clone(),
-        default_vault: None,
-        tax_rate: Decimal::percent(20),
-        split_to_liquid: Some(SplitDetails::default()),
-        accepted_tokens: Some(AcceptedTokens {
-            native: vec![
-                "uluna".to_string(),
-                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
-            ],
-            cw20: vec![],
-        }),
-    };
-    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
-    let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
-    assert_eq!(0, res.messages.len());
-}
-
-#[test]
 fn anyone_can_create_endowment_accounts_and_then_update() {
     let mut deps = mock_dependencies();
     // meet the cast of characters
@@ -501,6 +475,25 @@ fn test_add_update_and_remove_vault() {
     let vault_detail_response: VaultDetailResponse = from_binary(&res).unwrap();
     assert_eq!(vault_addr.clone(), vault_detail_response.vault.address);
     assert_eq!(true, vault_detail_response.vault.approved);
+
+    // remove vault
+    let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
+    let msg = ExecuteMsg::VaultRemove {
+        vault_addr: vault_addr.clone(),
+    };
+    let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+    assert_eq!(0, res.messages.len());
+
+    // Check if the vault is really removed
+    // Should fail to query the vault
+    let _err = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Vault {
+            vault_addr: vault_addr.clone(),
+        },
+    )
+    .unwrap_err();
 }
 
 #[test]

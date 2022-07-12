@@ -342,6 +342,7 @@ pub fn vault_receipt(
                         .balances
                         .locked_balance
                         .get_token_amount(deps.api.addr_validate(&contract_addr.to_string())?),
+                    AssetInfoBase::Cw1155(_, _) => unimplemented!(),
                 };
                 submessages = deposit_to_vaults(
                     deps.as_ref(),
@@ -360,6 +361,7 @@ pub fn vault_receipt(
                         address: contract_addr.clone(),
                         amount: Uint128::zero(),
                     }),
+                    AssetInfoBase::Cw1155(_, _) => unimplemented!(),
                 };
                 state.balances.locked_balance.set_token_balances(balance);
             } else {
@@ -392,6 +394,7 @@ pub fn vault_receipt(
                                 .get_token_amount(contract_addr)
                                 .amount,
                     }),
+                    AssetInfoBase::Cw1155(_, _) => unimplemented!(),
                 };
                 match state.closing_beneficiary {
                     Some(ref addr) => match asset {
@@ -586,6 +589,7 @@ pub fn deposit(
             address: contract_addr.clone(),
             amount: liquid_amount.amount,
         }),
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
     };
     state.balances.liquid_balance.add_tokens(liquid_balance);
 
@@ -605,6 +609,7 @@ pub fn deposit(
                 address: contract_addr.clone(),
                 amount: locked_amount.amount,
             }),
+            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         };
         state.balances.locked_balance.add_tokens(locked_balance);
     } else {
@@ -726,6 +731,7 @@ pub fn withdraw_liquid(
                 .get_token_amount(contract_addr.clone())
                 .amount
         }
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
     };
     if amount < liquid_amount {
         return Err(ContractError::InsufficientFunds {});
@@ -741,6 +747,7 @@ pub fn withdraw_liquid(
             address: deps.api.addr_validate(&contract_addr.to_string())?,
             amount: liquid_amount,
         }),
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
     };
     state.balances.liquid_balance.deduct_tokens(balance);
     STATE.save(deps.storage, &state)?;
@@ -765,6 +772,7 @@ pub fn withdraw_liquid(
                 funds: vec![],
             })))
         }
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
     };
     Ok(Response::new()
         .add_submessages(messages)
