@@ -473,8 +473,7 @@ pub fn update_strategies(
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENT.load(deps.storage)?;
-
-    if config.settings_controller.strategies.can_change(
+    if !config.settings_controller.strategies.can_change(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
@@ -1199,9 +1198,7 @@ pub fn update_profile(
 
     // Check that the info.sender is not one of the usual suspects who are allowed to poke around here.
     if info.sender.ne(&config.owner) && info.sender.ne(&endowment.owner) {
-        if endowment.dao == None {
-            return Err(ContractError::Unauthorized {});
-        } else if endowment.dao != None && info.sender.ne(endowment.dao.as_ref().unwrap()) {
+        if endowment.dao == None || info.sender.ne(endowment.dao.as_ref().unwrap()) {
             return Err(ContractError::Unauthorized {});
         }
     }
