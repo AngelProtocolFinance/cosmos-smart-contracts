@@ -192,7 +192,7 @@ export async function startSetupCore(): Promise<void> {
     // config
     {
       tax_rate: "0.2", // tax rate
-      threshold_absolute_percentage: "0.10", // threshold absolute percentage for "ap-cw3"
+      threshold_absolute_percentage: "0.50", // threshold absolute percentage for "ap-cw3"
       max_voting_period_height: 1000, // max voting period height for "ap-cw3"
       max_voting_period_guardians_height: 100, // max voting period guardians height for "ap-cw3"
       fund_rotation: 10, // index fund rotation

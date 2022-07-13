@@ -202,7 +202,10 @@ export async function startSetupCore(): Promise<void> {
       charity_cw3_multisig_threshold_abs_perc: "0.10", // threshold absolute percentage for "charity-cw3"
       charity_cw3_multisig_max_voting_period: 60,      // max_voting_period time(unit: seconds) for "charity-cw3"
       fund_member_limit: 10,
-      accepted_tokens: undefined,
+      accepted_tokens:  {
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+        cw20: [],
+      },
     }
   );
 }

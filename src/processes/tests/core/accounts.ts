@@ -25,15 +25,14 @@ export async function testRejectUnapprovedDonations(
   process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
 
   await expect(
-    sendTransactionWithFunds(juno, apTeam, endowmentContract, 
-        {
-          deposit: {
-            locked_percentage: "1",
-            liquid_percentage: "0",
-          },
+    sendTransactionWithFunds(juno, apTeam, endowmentContract, {
+        deposit: {
+          locked_percentage: "1",
+          liquid_percentage: "0",
         },
-        [{ denom: "ujuno", amount: amount }]
-      ),
+      },
+      [{ denom: "ujuno", amount: amount }]
+    )
   ).to.be.rejected;
   console.log(chalk.green(" Passed!"));
 }

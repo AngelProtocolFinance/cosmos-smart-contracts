@@ -49,10 +49,10 @@ export async function setupCore(
     harvest_to_liquid: string;
     tax_per_block: string;
     funding_goal: string | undefined;
-    fund_member_limit: undefined, // fund_member_limit
-    accepted_tokens: undefined,  // accepted_tokens for "index_fund"
     charity_cw3_multisig_threshold_abs_perc: string,
     charity_cw3_multisig_max_voting_period: number,
+    fund_member_limit: number | undefined,
+    accepted_tokens: any | undefined,
   }
 ): Promise<void> {
   // Initialize variables
