@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use crate::state::{CONFIG, CW3MULTISIGCONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
@@ -35,6 +33,7 @@ use cosmwasm_std::{
 };
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw_asset::{Asset, AssetInfoBase};
+use std::str::FromStr;
 
 pub fn new_cw4_group_reply(
     deps: DepsMut,
@@ -414,6 +413,7 @@ pub fn update_endowment_settings(
     ENDOWMENT.save(deps.storage, &endowment)?;
 
     let profile = PROFILE.load(deps.storage)?;
+
     // send the new owner informtion back to the registrar
     Ok(
         Response::new().add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -473,8 +473,7 @@ pub fn update_strategies(
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENT.load(deps.storage)?;
-
-    if config.settings_controller.strategies.can_change(
+    if !config.settings_controller.strategies.can_change(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
@@ -583,6 +582,7 @@ pub fn vault_receipt(
                         .balances
                         .locked_balance
                         .get_token_amount(deps.api.addr_validate(&contract_addr.to_string())?),
+                    AssetInfoBase::Cw1155(_, _) => unimplemented!(),
                 };
                 submessages = deposit_to_vaults(
                     deps.as_ref(),
@@ -601,6 +601,7 @@ pub fn vault_receipt(
                         address: contract_addr.clone(),
                         amount: Uint128::zero(),
                     }),
+                    AssetInfoBase::Cw1155(_, _) => unimplemented!(),
                 };
                 state.balances.locked_balance.set_token_balances(balance);
             } else {
@@ -633,6 +634,7 @@ pub fn vault_receipt(
                                 .get_token_amount(contract_addr)
                                 .amount,
                     }),
+                    AssetInfoBase::Cw1155(_, _) => unimplemented!(),
                 };
                 match state.closing_beneficiary {
                     Some(ref addr) => match asset {
@@ -814,6 +816,7 @@ pub fn deposit(
                         funds: vec![],
                     }));
                 }
+                AssetInfoBase::Cw1155(_, _) => unimplemented!(),
             }
         }
     }
@@ -871,6 +874,7 @@ pub fn deposit(
             address: contract_addr,
             amount: liquid_amount.amount,
         }),
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
     };
     state.balances.liquid_balance.add_tokens(liquid_balance);
 
@@ -926,6 +930,7 @@ pub fn deposit(
                     funds: vec![],
                 })))
             }
+            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         }
     };
 
@@ -945,6 +950,7 @@ pub fn deposit(
                 address: contract_addr,
                 amount: locked_amount.amount,
             }),
+            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         };
         state.balances.locked_balance.add_tokens(locked_balance);
     } else {
@@ -1090,6 +1096,7 @@ pub fn withdraw_liquid(
                 .get_token_amount(contract_addr.clone())
                 .amount
         }
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
     };
     if amount < liquid_amount {
         return Err(ContractError::InsufficientFunds {});
@@ -1105,6 +1112,7 @@ pub fn withdraw_liquid(
             address: deps.api.addr_validate(&contract_addr.to_string())?,
             amount: liquid_amount,
         }),
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
     };
     state.balances.liquid_balance.deduct_tokens(balance);
     STATE.save(deps.storage, &state)?;
@@ -1129,6 +1137,7 @@ pub fn withdraw_liquid(
                 funds: vec![],
             })))
         }
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
     };
     Ok(Response::new()
         .add_submessages(messages)
@@ -1189,9 +1198,7 @@ pub fn update_profile(
 
     // Check that the info.sender is not one of the usual suspects who are allowed to poke around here.
     if info.sender.ne(&config.owner) && info.sender.ne(&endowment.owner) {
-        if endowment.dao == None {
-            return Err(ContractError::Unauthorized {});
-        } else if endowment.dao != None && info.sender.ne(endowment.dao.as_ref().unwrap()) {
+        if endowment.dao == None || info.sender.ne(endowment.dao.as_ref().unwrap()) {
             return Err(ContractError::Unauthorized {});
         }
     }

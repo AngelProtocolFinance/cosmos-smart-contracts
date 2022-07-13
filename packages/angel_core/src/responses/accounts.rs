@@ -9,6 +9,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct StateResponse {
     pub donations_received: Uint128,
+    pub closing_endowment: bool,
+    pub closing_beneficiary: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -21,6 +23,7 @@ pub struct ConfigResponse {
     pub last_earnings_harvest: u64,
     pub last_harvest_fx: String,
     pub settings_controller: SettingsController,
+    pub pending_redemptions: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
