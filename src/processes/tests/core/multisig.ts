@@ -120,14 +120,14 @@ export async function testCw3CastVote(
   juno: SigningCosmWasmClient,
   apTeam: string,
   cw3: string,
-  poll_id: number,
+  proposal_id: number,
   vote: VoteOption,
 ): Promise<void> {
   process.stdout.write("Test - Cast vote");
 
   await expect(
     sendTransaction(juno, apTeam, cw3, {
-      vote: { poll_id, vote },
+      vote: { proposal_id, vote: true },
     })
   );
   console.log(chalk.green(" Passed!"));

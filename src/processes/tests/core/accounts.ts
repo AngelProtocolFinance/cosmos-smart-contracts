@@ -215,7 +215,6 @@ export async function testApTeamChangesAccountsEndowmentOwner(
   apTeam: string,
   endowment: string,
   owner: string,
-  beneficiary: string,
   kyc_donors_only: boolean,
 ): Promise<void> {
   process.stdout.write("Test - Contract Owner can set new owner of an Endowment");
@@ -224,7 +223,6 @@ export async function testApTeamChangesAccountsEndowmentOwner(
     sendTransaction(juno, apTeam, endowment, {
       update_endowment_settings: {
         owner,
-        beneficiary,
         kyc_donors_only,
       },
     })

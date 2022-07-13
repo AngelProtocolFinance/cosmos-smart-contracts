@@ -189,20 +189,19 @@ export async function testExecute(
   console.log(chalk.green(" Done!"));
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // Index-fund test
   // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, indexFund);
   // await testUpdateAllianceMembersList(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
   //   indexFund,
-  //   "juno1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // address #1
+  //   actors.pleb.addr, // address #1
   //   {
   //     name: "Testnet Charity #2",
   //     website:
   //       "http://angelprotocol.io/app/charity/juno1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
   //     logo: "https://angelprotocol.io/favicon.ico",
   //   }, // member #1`
-  //   // "juno178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // address #2
-  //   // { name: "Testnet Admin", webiste: "http://angelprotocol.io", logo: "" }, // member #2
   //   "add" // action
   // );
   // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 5);
@@ -216,23 +215,28 @@ export async function testExecute(
   //   []
   // );
   // await testUpdateFundMembers(actors.apTeam.client, actors.apTeam.addr, indexFund, 2, [], []);
-  // await testChangeManyAccountsEndowmentOwners(actors.apTeam.client, actors.apTeam.addr, [
-  //   {
-  //     "address": "juno16zj5dw97sk7q3rvakzu76uyfv6zrxkvsln0yjz2wa5s58mq67vhs5wdv7l", // Current one is localjuno endow1.
-  //     "owner": apTeamAddr, 
-  //     "kyc_donors_only": false,
-  //   }
-  // ]);
+
+  // Accounts test
+  // await testApTeamChangesAccountsEndowmentOwner(
+  //   actors.charity1.client,   // Should be endowment.owner(which is cw3_multisig)
+  //   actors.charity1.addr, 
+  //   endowmentContract1,       // Current one is localjuno endow1. 
+  //   apTeamAddr,  
+  //   false,
+  // ); //NOTWORKING  
 
   // await testCreateEndowmentViaRegistrar(actors.apTeam.client, actors.apTeam.addr, registrar, {
   //   owner: charity1Addr,
-  //   beneficiary: charity1Addr,
+  //   name: "Test Endowment #5",
+  //   description: "A wonderful test endowment #5",
   //   withdraw_before_maturity: false,
-  //   maturity_time: undefined,
-  //   maturity_height: undefined,
-  //   guardians_multisig_addr: undefined,
+  //   maturity_time: 300,
+  //   split_max: undefined,
+  //   split_min: undefined,
+  //   split_default: undefined,
   //   cw4_members: [{ addr: charity1Addr, weight: 1 }],
-  //   kyc_donors_only: false,
+  //   cw3_multisig_threshold: { absolute_percentage: { percentage: "0.50" } },
+  //   cw3_multisig_max_vote_period: 300,
   //   profile: {
   //     name: "Test-Suite Endowment",
   //     overview: "Endowment created from the test-suite integration test",
@@ -255,13 +259,37 @@ export async function testExecute(
   //     charity_navigator_rating: undefined,
   //     endow_type: "Charity",
   //   },
+  //   kyc_donors_only: false,
+  //   whitelisted_beneficiaries: [charity1Addr], 
+  //     whitelisted_contributors: [],
+  //     dao: false,
+  //     dao_setup_option: {
+  //       setup_bond_curve_token: {
+  //         constant: {
+  //           value: "10",
+  //           scale: 1,
+  //         }
+  //       }
+  //     },
+  //     curveType: undefined, // Useless, need to remove from contract
+  //     user_reserve_token: undefined,
+  //     user_reserve_ust_lp_pair_contract: undefined,
+  //     donation_match: false,
+  //     donation_match_setup_option: 0,
+  //     earnings_fee: undefined,
+  //     deposit_fee: undefined,
+  //     withdraw_fee: undefined,
+  //     aum_fee: undefined,
+  //     settings_controller: undefined,
+  //     parent: false,
   // });
+
   // Multisig test
   // await testAddMemberToC4Group(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, cw4GrpApTeam, apTeamAddr);
   // await testUpdateCw3Config(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 50, 25000);
   // await testProposalApprovingEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, endowmentContract1);
-  // await testCw3CastVote(actors.apTeam2.client, actors.apTeam2.addr, cw3ApTeam, 2, VoteOption.YES);
-  // await testCw3ExecutePoll(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 3);
+  // await testCw3CastVote(actors.apTeam2.client, actors.apTeam2.addr, cw3ApTeam, 2, VoteOption.YES); //NOTWORKING
+  // await testCw3ExecutePoll(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 1);
   // await testQueryMultisigVoters(actors.apTeam.client, cw3ApTeam);
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ApTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
