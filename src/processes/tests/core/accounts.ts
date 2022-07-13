@@ -25,49 +25,37 @@ export async function testRejectUnapprovedDonations(
   process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
 
   await expect(
-<<<<<<< HEAD
-    sendTransaction(terra, apTeam, [
-      new MsgExecuteContract(
-        apTeam.key.accAddress,
-        endowmentContract,
+    sendTransactionWithFunds(juno, apTeam, endowmentContract, 
         {
           deposit: {
             locked_percentage: "1",
             liquid_percentage: "0",
           },
         },
-        { uluna:  amount }
+        [{ denom: "ujuno", amount: amount }]
       ),
-    ])
   ).to.be.rejected;
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testSingleDonationAmountToManyEndowments(
-  terra: LocalTerra | LCDClient,
-  apTeam: Wallet,
-  endowments: string[],
-  amount: string
-): Promise<void> {
-  process.stdout.write("Test - Send single amount to many Endowment Accounts");
-  const msgs: Msg[] = endowments.map((endowment) => {
-    return new MsgExecuteContract(
-      apTeam.key.accAddress,
-      endowment,
-      {
-=======
-    sendTransactionWithFunds(juno, apTeam, endowmentContract, {
->>>>>>> main
-        deposit: {
-          locked_percentage: "1",
-          liquid_percentage: "0",
-        },
-      },
-      [{ denom: "ujuno", amount: amount }]
-    )
-  ).to.be.rejected;
-  console.log(chalk.green(" Passed!"));
-}
+// export async function testSingleDonationAmountToManyEndowments(
+//   juno: SigningCosmWasmClient,
+//   apTeam: string,
+//   endowments: string[],
+//   amount: string
+// ): Promise<void> {
+//   process.stdout.write("Test - Send single amount to many Endowment Accounts");
+//   await expect(sendTransactionWithFunds(juno, apTeam, endowmentContract, {
+//         deposit: {
+//           locked_percentage: "1",
+//           liquid_percentage: "0",
+//         },
+//       },
+//       [{ denom: "ujuno", amount: amount }]
+//     )
+//   ).to.be.rejected;
+//   console.log(chalk.green(" Passed!"));
+// }
 
 export async function testSendDonationToEndowment(
   juno: SigningCosmWasmClient,
@@ -124,17 +112,6 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
     "Test - Charity Owner can withdraw from the Endowment availalble amount (liquid)"
   );
   await expect(
-<<<<<<< HEAD
-    sendTransaction(terra, charityOwner, [
-      new MsgExecuteContract(charityOwner.key.accAddress, endowment, {
-        withdraw: {
-          sources: [{ vault, locked: "0", liquid: "30000000" }],
-          beneficiary,
-        },
-      }),
-    ])
-  ).to.be.rejectedWith("Request failed with status code 400"); // this is working for `withdraw_approved: false` endowment
-=======
     sendTransaction(juno, charityOwner, endowment, {
       withdraw: {
         sources: [{ vault, locked: "0", liquid: "30000000" }],
@@ -142,7 +119,6 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
       },
     })
   );
->>>>>>> main
   console.log(chalk.green(" Passed!"));
 }
 
@@ -187,21 +163,19 @@ export async function testCharityCanUpdateStrategies(
 //----------------------------------------------------------------------------------------
 
 export async function testCharityCanHarvestWithdrawFee(
-  terra: LocalTerra | LCDClient,
-  charity1: Wallet,
+  juno: SigningCosmWasmClient,
+  charity1: string,
   endowment: string,
   anchorVault1: string,
 ): Promise<void> {
   process.stdout.write("Test - Charity can harvest withdraw_fee");
 
   await expect(
-    sendTransaction(terra, charity1, [
-      new MsgExecuteContract(charity1.key.accAddress, endowment, {
-        harvest: {
-          vault_addr: anchorVault1,
-        },
-      }),
-    ])
+    sendTransaction(juno, charity1, endowment, {
+      harvest: {
+        vault_addr: anchorVault1,
+      },
+    }),
   );
   console.log(chalk.green(" Passed!"));
 }
@@ -215,18 +189,16 @@ export async function testCharityCanHarvestWithdrawFee(
 //----------------------------------------------------------------------------------------
 
 export async function testCharityCanHarvestAUMFee(
-  terra: LocalTerra | LCDClient,
-  charity1: Wallet,
+  juno: SigningCosmWasmClient,
+  charity1: string,
   endowment: string,
 ): Promise<void> {
   process.stdout.write("Test - Charity can harvest aum_fee");
 
   await expect(
-    sendTransaction(terra, charity1, [
-      new MsgExecuteContract(charity1.key.accAddress, endowment, {
+    sendTransaction(juno, charity1, endowment, {
         harvest_aum: { },
       }),
-    ])
   ).to.be.rejectedWith("AUM_FEE info is not set");
   console.log(chalk.green(" Passed!"));
 }
