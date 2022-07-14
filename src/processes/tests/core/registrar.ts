@@ -202,6 +202,91 @@ export async function testMigrateAllAccounts(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: Only owner can update owner/admin of the Registrar Config.
+//
+// SCENARIO:
+// (config)Owner updates the owner address in registrar config.
+//
+//----------------------------------------------------------------------------------------
+export async function testRegistrarUpdateOwner(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  registrar: string,
+  new_owner: string,
+): Promise<void> {
+  process.stdout.write(
+    "Test - Owner can set new_owner address in Registrar"
+  );
+
+  await expect(
+    sendTransaction(juno, apTeam, registrar, {
+        update_owner: { new_owner },
+      },
+    )
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Only owner can update the "EndowTypeFees"
+//
+// SCENARIO:
+// (config)Owner updates both "EndowTypeFees"
+//
+//----------------------------------------------------------------------------------------
+export async function testUpdateEndowTypeFees(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  registrar: string,
+  fees: any, // { endowtype_charity: string | undefined, endowtype_normal: string | undefined }
+): Promise<void> {
+  process.stdout.write(
+    "Test - Owner can update EndowTypeFees in Registrar"
+  );
+
+  await expect(
+    sendTransaction(juno, apTeam, registrar, {
+        update_endow_type_fees: {
+          endowtype_charity: fees.endowtype_charity,
+          endowtype_normal: fees.endowtype_normal,
+        }
+      },
+    )
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Only owner can update the "NetworkConnection(s)"
+//
+// SCENARIO:
+// (config)Owner updates both "EndowTypeFees"
+//
+//----------------------------------------------------------------------------------------
+export async function testUpdateNetworkConnections(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  registrar: string,
+  info: any, // { network_info: obj, action: "add" | "remove" }
+): Promise<void> {
+  process.stdout.write(
+    "Test - Owner can update network_connections in Registrar"
+  );
+
+  await expect(
+    sendTransaction(juno, apTeam, registrar, {
+        update_network_connections: {
+          network_info: info.network_info,
+          action: info.action,
+        }
+      },
+    )
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+
+//----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
 

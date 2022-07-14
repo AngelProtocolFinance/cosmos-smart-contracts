@@ -9,6 +9,32 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 //----------------------------------------------------------------------------------------
+// TEST: Only owner can update owner/admin of the Index Fund.
+//
+// SCENARIO:
+// (config)Owner updates the owner address in Index Fund.
+//
+//----------------------------------------------------------------------------------------
+export async function testIndexFundUpdateOwner(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  indexFund: string,
+  new_owner: string,
+): Promise<void> {
+  process.stdout.write(
+    "Test - Owner can set new_owner address in an Index Fund"
+  );
+
+  await expect(
+    sendTransaction(juno, apTeam, indexFund, {
+        update_owner: { new_owner },
+      },
+    )
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
 // TEST: Normal Donor cannot send funds to the Index Fund
 //
 // SCENARIO:
@@ -180,6 +206,49 @@ export async function testRemoveIndexFund(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: SC owner can remove a member
+//
+// SCENARIO:
+// Remove the member
+//----------------------------------------------------------------------------------------
+export async function testIndexFundRemoveMember(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  indexFund: string,
+  member: string,
+): Promise<void> {
+  process.stdout.write("Test - SC owner can remove member");
+  await expect(
+    sendTransaction(juno, apTeam, indexFund, {
+      remove_member: { member },
+    })
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: SC owner can update alliance member
+//
+// SCENARIO:
+// Owner updates the alliance member
+//----------------------------------------------------------------------------------------
+export async function testIndexFundUpdateAllianceMember(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  indexFund: string,
+  address: string,
+  member: any,
+): Promise<void> {
+  process.stdout.write("Test - SC owner can update alliance member");
+  await expect(
+    sendTransaction(juno, apTeam, indexFund, {
+      update_alliance_member: { address, member },
+    })
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
 
@@ -286,6 +355,7 @@ export async function testQueryIndexFundDeposit(
   process.stdout.write("Test - Query IndexFund Deposit msg builder");
   const result: any = await juno.queryContractSmart(indexFund, {
     deposit: {
+      token_denom: "ujunox",
       amount: "100000000",
       fund_id: 6,
     },
