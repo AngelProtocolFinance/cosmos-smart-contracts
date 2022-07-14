@@ -35,6 +35,9 @@ import {
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
   testQueryIndexFundTcaList,
+  testIndexFundUpdateOwner,
+  testIndexFundRemoveMember,
+  testIndexFundUpdateAllianceMember,
 } from "./core/indexFunds";
 import {
   testUpdateCw3Config,
@@ -233,6 +236,11 @@ export async function testExecute(
   //   [endowmentContract2, endowmentContract3, endowmentContract4]
   // );
   // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
+  // await testIndexFundUpdateOwner(actors.apTeam.client, actors.apTeam.addr, indexFund, actors.apTeam.addr);
+  // await testIndexFundUpateRegistrar(actors.apTeam.client, actors.apTeam.addr, indexFund, registrar); //SHOULDFIXCONTRACT
+  // await testIndexFundRemoveMember(actors.apTeam.client, actors.apTeam.addr, indexFund, endowmentContract2); //SHOULFIXCONTRACT
+  // await testIndexFundUpdateAllianceMember(actors.apTeam.client, actors.apTeam.addr, indexFund, charity3Addr, { name: "Charity3", logo: undefined, website: undefined });
+  
 
   // Accounts test
   // await testApTeamChangesAccountsEndowmentOwner(
