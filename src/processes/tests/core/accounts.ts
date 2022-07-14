@@ -251,14 +251,14 @@ export async function testQueryAccountsTransactions(
   endowmentContract: string,
   sender: string | undefined,
   recipient: string | undefined,
-  denom: string | undefined
+  asset_info: any,
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Transactions");
   const result = await juno.queryContractSmart(endowmentContract, {
     get_tx_records: {
       sender,
       recipient,
-      denom,
+      asset_info,
     },
   });
 

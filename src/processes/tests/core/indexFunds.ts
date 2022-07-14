@@ -286,6 +286,7 @@ export async function testQueryIndexFundDeposit(
   process.stdout.write("Test - Query IndexFund Deposit msg builder");
   const result: any = await juno.queryContractSmart(indexFund, {
     deposit: {
+      token_denom: "ujunox",
       amount: "100000000",
       fund_id: 6,
     },

@@ -215,6 +215,24 @@ export async function testExecute(
   //   []
   // );
   // await testUpdateFundMembers(actors.apTeam.client, actors.apTeam.addr, indexFund, 2, [], []);
+  // await testUpdateFundMembers(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   indexFund,
+  //   2,
+  //   [endowmentContract2],
+  //   [endowmentContract4]
+  // );
+  // await testCreateIndexFund(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   indexFund,
+  //   "Test fund for Ukraine Portal",
+  //   "Another portal test fund",
+  //   false,
+  //   [endowmentContract2, endowmentContract3, endowmentContract4]
+  // );
+  // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
 
   // Accounts test
   // await testApTeamChangesAccountsEndowmentOwner(
@@ -326,42 +344,17 @@ export async function testExecute(
   //   cw4_code: 104,
   //   accounts_code_id: 102,
   // });
-  // await testApproveEndowments(actors.apTeam.client, actors.apTeam.addr, registrar, endowmentContract1, 1);
-  // await testClosingEndpoint(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   registrar,
-  //   endowmentContract3,
-  //   endowmentContract4
-  // );
-  // await testUpdateFundMembers(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   indexFund,
-  //   2,
-  //   [endowmentContract2],
-  //   [endowmentContract4]
-  // );
-  // await testCreateIndexFund(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   indexFund,
-  //   "Test fund for Ukraine Portal",
-  //   "Another portal test fund",
-  //   false,
-  //   [endowmentContract2, endowmentContract3, endowmentContract4]
-  // );
-  // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
+
   // Test query
   // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
   // await testQueryRegistrarEndowmentList(actors.apTeam.client, registrar);
   // await testQueryRegistrarEndowmentDetails(actors.apTeam.client, registrar, endowmentContract1);
   // await testQueryRegistrarApprovedVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarApprovedVaultRateList(actors.apTeam.client, registrar);
-  // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
-  // await testQueryRegistrarVault(actors.apTeam.client, registrar, Vault1);
-  // await testQueryVaultConfig(actors.apTeam.client, Vault1);
-  // await testQueryAccountsBalance(actors.apTeam.client, endowmentContract4);
+  // await testQueryRegistrarVaultList(actors.apTeam.client, registrar); //NOVAULTS
+  // await testQueryRegistrarVault(actors.apTeam.client, registrar, Vault1); //NOVAULTS
+  // await testQueryVaultConfig(actors.apTeam.client, Vault1); //NOVAULTS
+  // await testQueryAccountsBalance(actors.apTeam.client, endowmentContract4); //UNKNOWNERROR
   // await testQueryAccountsConfig(actors.apTeam.client, endowmentContract1);
   // await testQueryAccountsEndowment(actors.apTeam.client, endowmentContract1);
   // await testQueryAccountsProfile(actors.apTeam.client, endowmentContract1);
@@ -371,7 +364,7 @@ export async function testExecute(
   //   endowmentContract1,
   //   undefined,
   //   undefined,
-  //   undefined
+  //   { native: "ujunox" },
   // );
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);
@@ -499,88 +492,4 @@ export async function testExecute(
   // await testQueryStakingStakerInfo(actors.apTeam.client, haloStaking, "addr000", undefined);
   // await testQueryStakingState(actors.apTeam.client, haloStaking);
 
-  // Test query for LBP Factory
-  // await testFactoryUpdateConfig(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   lbpFactoryContract,
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  //   undefined,
-  //   haloCollector,
-  //   undefined
-  // );
-  // await testFactoryCreatePair(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   lbpFactoryContract,
-  //   junoswapToken,
-  //   "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
-  //   datetimeStringToUTC("12/16/2021 00:00:00Z"),
-  //   datetimeStringToUTC("12/17/2021 00:00:00Z"),
-  //   "96",
-  //   "50",
-  //   "4",
-  //   "50",
-  //   "HALO <-> axlUSDC Pair"
-  // );
-  // await getPairContractLpToken(actors.apTeam.client, lbpPairContract);
-  // await testFactoryUnregister(actors.apTeam.client, actors.apTeam.addr, lbpFactoryContract, junoswapToken, "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4");
-  // await testQueryFactoryConfig(actors.apTeam.client, lbpFactoryContract);
-  // await testQueryFactoryPair(actors.apTeam.client, lbpFactoryContract, junoswapToken);
-  // await testQueryFactoryPairs(actors.apTeam.client, lbpFactoryContract);
-
-  // await testPairSwapNativeToHalo(actors.apTeam.client, actors.apTeam.addr, lbpPairContract, "100000000");
-  // await testPairSwapHaloToNative(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   lbpPairContract,
-  //   junoswapToken,
-  //   "100000000"
-  // );
-  // await testQueryPairPair(actors.apTeam.client, lbpPairContract);
-  // await testQueryPairPool(actors.apTeam.client, lbpPairContract);
-  // await testQueryPairSimulationNativeToHalo(actors.apTeam.client, lbpPairContract);
-  // await testQueryPairSimulationHaloToNative(actors.apTeam.client, lbpPairContract, junoswapToken);
-  // await testQueryPairReverseSimulationNativeToHalo(actors.apTeam.client, lbpPairContract);
-  // await testQueryPairReverseSimulationHaloToNative(
-  //   actors.apTeam.client,
-  //   lbpPairContract,
-  //   junoswapToken
-  // );
-
-  // Test query for LBP Router
-  // await testQueryRouterConfig(actors.apTeam.client, lbpRouterContract);
-
-  // Test Loop Pair
-  // await testPairProvideLiquidity(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   junoswapToken,
-  //   "juno1yjg0tuhc6kzwz9jl8yqgxnf2ctwlfumnvscupp", // LOOP PAIR
-  //   "80000000000000", //HALO
-  //   "1300000000000", //axlUSDC
-  // );
-
-  // await testPairWithdrawLiquidity(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   lbpPairContract,
-  //   lbpLpTokenContract,
-  //   "100000000"
-  // );
-
-  // Test query for LBP Token
-  // await testQueryTokenBalance(actors.apTeam.client, junoswapToken, apTeamAddr);
-  // await testQueryTokenInfo(actors.apTeam.client, junoswapToken);
-  // await testQueryTokenMinter(actors.apTeam.client, junoswapToken);
-
-  // await testTransferTokenBalance(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   junoswapToken,
-  //   apTeam2Addr,
-  //   "420000000"
-  // );
 }
