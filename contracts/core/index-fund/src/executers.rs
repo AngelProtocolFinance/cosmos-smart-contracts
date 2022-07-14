@@ -40,7 +40,7 @@ pub fn update_registrar(
     let config = CONFIG.load(deps.storage)?;
 
     // only the registrar contract can update it's address in the config
-    if info.sender != config.registrar_contract {
+    if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
