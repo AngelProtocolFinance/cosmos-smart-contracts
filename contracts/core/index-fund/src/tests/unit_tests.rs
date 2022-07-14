@@ -117,7 +117,7 @@ fn only_registrar_can_change_registrar_contract() {
     assert_eq!(ContractError::Unauthorized {}, err);
 
     // change the registrar SC to some pleb from the Registrar SC
-    let info = mock_info(registrar_contract.as_ref(), &coins(100000, "earth"));
+    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
     let env = mock_env();
     let res = execute(
         deps.as_mut(),
