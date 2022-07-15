@@ -7,6 +7,11 @@ import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { wasm_path } from "../config/wasmPaths";
 
+export enum VoteOption {
+  YES,
+  NO,
+}
+
 export type Member = {
   addr: string;
   weight: number;
@@ -149,4 +154,68 @@ export async function storeAndMigrateContract(
   process.stdout.write(`Migrate ${wasmFilename} contract`);
   const result = await migrateContract(juno, apTeam, contract, codeId, msg);
   console.log(chalk.green(" Done!"));
+}
+
+//----------------------------------------------------------------------------------------
+// Abstract away steps to send a message to another contract via a CW3 multisig poll:
+// 1. Create a proposal on a CW3 to execute some msg on a target contract
+// 2. Capture the new Proposal's ID
+// 3. Optional: Addtional CW3 member(s) vote on the open poll
+// 4. Proposal needs to be executed
+//----------------------------------------------------------------------------------------
+export async function sendMessageViaCw3Proposal(
+  juno: SigningCosmWasmClient,
+  proposor: string,
+  cw3: string,
+  target_contract: string,
+  msg: Record<string, unknown>,
+  // members: (SigningCosmWasmClient, string)[], // only needed if more votes required than initial proposor
+): Promise<void> {
+  console.log(chalk.yellow("\n> Creating CW3 Proposal"));
+  const info_text = `CW3 Member proposes to send msg to: ${target_contract}`;
+
+  // 1. Create the new proposal
+  const proposal = await sendTransaction(juno, proposor, cw3, {
+    propose: {
+      title: info_text,
+      description: info_text,
+      msgs: [
+        {
+          wasm: {
+            execute: {
+              contract_addr: target_contract,
+              msg: toEncodedBinary(msg),
+              funds: [],
+            },
+          },
+        },
+      ],
+    },
+  });
+
+  // 2. Parse out the proposal ID
+  const proposal_id = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "proposal_id";
+    })?.value as string;
+  console.log(chalk.yellow(`> New Proposal's ID: ${proposal_id}`));
+
+  // // 3. Additional members need to vote on proposal to get to passing threshold
+  // for member in members {
+  //   console.log(chalk.green(`Member votes on proposal: ${proposal_id}`));
+  //   await sendTransaction(juno, proposor, cw3, {
+  //     vote: {
+  //       poll_id: parseInt(proposal_id),
+  //       vote: VoteOption.YES,
+  //     },
+  //   });
+  // }
+
+  console.log(chalk.yellow("> Executing the Poll"));
+  await sendTransaction(juno, proposor, cw3, {
+    execute: { proposal_id: parseInt(proposal_id) }
+  });
 }

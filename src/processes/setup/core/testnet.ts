@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
-import { sendTransaction, storeCode, instantiateContract, getWalletAddress } from "../../../utils/helpers";
+import { sendTransaction, storeCode, instantiateContract, getWalletAddress, sendMessageViaCw3Proposal } from "../../../utils/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
 
 // -------------------------------------------------------------------------------------
@@ -93,9 +93,7 @@ export async function setupCore(
   // if (!config.is_localjuno) {
   //   await createVaults(config.harvest_to_liquid, config.tax_per_block);
   // }
-  if (config.turnover_to_multisig) {
-    await turnOverApTeamMultisig(config.is_localjuno);
-  }
+  await turnOverApTeamMultisig(config.is_localjuno);
   await createEndowments(
     config.charity_cw3_multisig_threshold_abs_perc,
     config.charity_cw3_multisig_max_voting_period,
@@ -548,21 +546,21 @@ async function createEndowments(
 async function approveEndowments(): Promise<void> {
   // AP Team approves 3 of 4 newly created endowments
   process.stdout.write("AP Team approves 3 of 4 endowments");
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_endowment_status: {
       endowment_addr: endowmentContract1,
       status: 1,
       beneficiary: undefined,
     }
   });
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_endowment_status: {
       endowment_addr: endowmentContract2,
       status: 1,
       beneficiary: undefined,
     }
   });
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_endowment_status: {
       endowment_addr: endowmentContract4,
       status: 1,
@@ -576,7 +574,7 @@ async function approveEndowments(): Promise<void> {
 async function createIndexFunds(): Promise<void> {
   // Create an initial "Fund" with the two charities created above
   process.stdout.write("Create two Funds with two endowments each");
-  await sendTransaction(juno, apTeamAddr, indexFund, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
       create_fund: {
         name: "Test Fund",
         description: "My first test fund",
@@ -587,7 +585,7 @@ async function createIndexFunds(): Promise<void> {
         expiry_height: undefined,
       }
     });
-    await sendTransaction(juno, apTeamAddr, indexFund, {
+    await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
       create_fund: {
         name: "Test Fund #2",
         description: "Another fund to test rotations",
@@ -639,13 +637,13 @@ async function createVaults(
 
   // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
   process.stdout.write("Approving Anchor Vault #1 & #2 in Registrar");
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_update_status: {
       vault_addr: vault1,
       approved: true,
     }
   });
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_update_status: {
       vault_addr: vault2,
       approved: true,
@@ -654,7 +652,7 @@ async function createVaults(
   console.log(chalk.green(" Done!"));
 
   process.stdout.write("Set default vault in Registrar as Anchor Vault");
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_config: { default_vault: vault1 }
   });
   console.log(chalk.green(" Done!"));
@@ -665,13 +663,13 @@ async function turnOverApTeamMultisig(is_localjuno: boolean): Promise<void> {
   process.stdout.write(
     "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract"
   );
-  process.stdout.write(chalk.yellow("- Turning over Registrar"));
+  process.stdout.write(chalk.yellow("\n> Turning over Registrar"));
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_owner: { new_owner: cw3ApTeam }
   });
   console.log(chalk.green(" Done!"));
   
-  process.stdout.write(chalk.yellow("- Turning over Index Fund"));
+  process.stdout.write(chalk.yellow("\n> Turning over Index Fund"));
   await sendTransaction(juno, apTeamAddr, indexFund, {
     update_owner: { new_owner: cw3ApTeam }
   });

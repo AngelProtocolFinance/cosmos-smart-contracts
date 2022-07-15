@@ -252,4 +252,20 @@ async function setup(
     update_tca_list: { new_list: tca_members },
   });
   console.log(chalk.green(" Done!"));
+
+  // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
+  process.stdout.write(
+    "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract"
+  );
+  process.stdout.write(chalk.yellow("\n> Turning over Registrar"));
+  await sendTransaction(juno, apTeam, registrar, {
+    update_owner: { new_owner: cw3ApTeam }
+  });
+  console.log(chalk.green(" Done!"));
+
+  process.stdout.write(chalk.yellow("\n> Turning over Index Fund"));
+  await sendTransaction(juno, apTeam, indexFund, {
+    update_owner: { new_owner: cw3ApTeam }
+  });
+  console.log(chalk.green(" Done!"));
 }
