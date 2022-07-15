@@ -171,7 +171,8 @@ pub fn instantiate(
         reply_on: ReplyOn::Success,
     });
 
-    // check if a dao needs to be setup along with subdao token contract
+    // check if a dao needs to be setup along with a dao token contract
+    // optional donation matching contract can be setup as long as a dao is in place
     if msg.dao {
         let endowment_owner = deps.api.addr_validate(&msg.owner)?;
         let submsgs = setup_dao_token_messages(
@@ -181,20 +182,16 @@ pub fn instantiate(
             endowment_owner,
         )?;
         res = res.add_submessages(submsgs);
-    }
 
-    // check if donation_matching_contract needs to be instantiated
-    // `donation_match_setup_option`: Field to determine the various way of setting up "donation_match" contract
-    // Possible values:
-    //   0 => Endowment doesn't want a DAO. No dao, dao token, or donation matching contract are need (obviously!! )
-    //   1 => Endowment wants to have a DAO and they choose to use $HALO as reserve token for their bonding curve from the Endowment Launchpad UI.
-    //   2 => Endowment wants to have a DAO but they want to use an existing Token (other than HALO) as the reserve token for their bonding curve.
-    //        They would then have to supply several contract addresses during their endowment creation:
-    //           - the Token contract address (CW20)
-    //           - a Token / UST LP Pair contract ( this attribute would be updatable should they move supply to a new pool, etc)
-    //   3 =>  Endowment wants to have a DAO but they want to use an brand new CW20 Token that will not be attached to a bonding curve. (coming later)
-    if msg.profile.endow_type == EndowmentType::Normal && msg.donation_match_setup_option != 0 {
-        // setup the donation_matching contract
+        // `donation_match_setup_option`: Field determines the various way of setting up "donation_match" contract
+        // Possible values:
+        //   0 => Endowment doesn't want a donation matching contract setup (for now, can always add it later)
+        //   1 => Endowment wants to have a DAO and they choose to use $HALO as reserve token for their bonding curve from the Endowment Launchpad UI.
+        //   2 => Endowment wants to have a DAO but they want to use an existing Token (other than HALO) as the reserve token for their bonding curve.
+        //        They would then have to supply several contract addresses during their endowment creation:
+        //           - the Token contract address (CW20)
+        //           - a Token / UST LP Pair contract ( this attribute would be updatable should they move supply to a new pool, etc)
+        //   3 =>  Endowment wants to have a DAO but they want to use an brand new CW20 Token that will not be attached to a bonding curve. (coming later)
         let donation_match_code = match registrar_config.donation_match_code {
             Some(id) => id,
             None => {
@@ -203,71 +200,58 @@ pub fn instantiate(
                 }))
             }
         };
+        let endow_type = msg.profile.endow_type;
 
-        let reserve_token = match msg.donation_match_setup_option {
-            1 => match registrar_config.halo_token {
-                Some(addr) => addr,
-                None => {
-                    return Err(ContractError::Std(StdError::GenericErr {
-                        msg: "No reserve token(halo_token) is available".to_string(),
-                    }))
+        if msg.donation_match_setup_option != 0 {
+            let (reserve_token, lp_pair) = match (msg.donation_match_setup_option, endow_type) {
+                (1, EndowmentType::Normal) | (_, EndowmentType::Charity) => {
+                    match (
+                        registrar_config.halo_token,
+                        registrar_config.halo_token_lp_contract,
+                    ) {
+                        (Some(reserve_addr), Some(lp_addr)) => (reserve_addr, lp_addr),
+                        _ => {
+                            return Err(ContractError::Std(StdError::GenericErr {
+                                msg: "HALO Token is setup to be a reserve token".to_string(),
+                            }))
+                        }
+                    }
                 }
-            },
-            2 => match msg.user_reserve_token {
-                Some(addr) => addr,
-                None => {
-                    return Err(ContractError::Std(StdError::GenericErr {
-                        msg: "No reserve token address is given".to_string(),
-                    }))
+                (2, EndowmentType::Normal) => {
+                    match (msg.reserve_token, msg.reserve_token_lp_contract) {
+                        (Some(reserve_addr), Some(lp_addr)) => (reserve_addr, lp_addr),
+                        _ => {
+                            return Err(ContractError::Std(StdError::GenericErr {
+                                msg: "The reserve token or LP address was not given".to_string(),
+                            }))
+                        }
+                    }
                 }
-            },
-            _ => {
-                return Err(ContractError::Std(StdError::GenericErr {
-                    msg: "Invalid donation_match setup option".to_string(),
-                }));
-            }
-        };
+                // Option #3: New CW20 Token to be added here...
+                _ => {
+                    return Err(ContractError::Std(StdError::GenericErr {
+                        msg: "Invalid donation match setup options passed".to_string(),
+                    }));
+                }
+            };
 
-        let reserve_token_ust_lp_pair = match msg.donation_match_setup_option {
-            1 => match msg.halo_ust_lp_pair_contract {
-                Some(addr) => addr,
-                None => {
-                    return Err(ContractError::Std(StdError::GenericErr {
-                        msg: "No halo-ust lp pair contract is given".to_string(),
-                    }))
-                }
-            },
-            2 => match msg.user_reserve_ust_lp_pair_contract {
-                Some(addr) => addr,
-                None => {
-                    return Err(ContractError::Std(StdError::GenericErr {
-                        msg: "No reserve token - ust lp pair contract is given".to_string(),
-                    }))
-                }
-            },
-            _ => {
-                return Err(ContractError::Std(StdError::GenericErr {
-                    msg: "Invalid donation_match setup option".to_string(),
-                }));
-            }
-        };
-
-        res = res.add_submessage(SubMsg {
-            id: 4,
-            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                code_id: donation_match_code,
-                admin: None,
-                label: "new donation match contract".to_string(),
-                msg: to_binary(&DonationMatchInstantiateMsg {
-                    reserve_token,
-                    lp_pair: reserve_token_ust_lp_pair,
-                    registrar_contract: msg.registrar_contract.clone(),
-                })?,
-                funds: vec![],
-            }),
-            gas_limit: None,
-            reply_on: ReplyOn::Success,
-        })
+            res = res.add_submessage(SubMsg {
+                id: 4,
+                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                    code_id: donation_match_code,
+                    admin: None,
+                    label: "new donation match contract".to_string(),
+                    msg: to_binary(&DonationMatchInstantiateMsg {
+                        reserve_token,
+                        lp_pair,
+                        registrar_contract: msg.registrar_contract.clone(),
+                    })?,
+                    funds: vec![],
+                }),
+                gas_limit: None,
+                reply_on: ReplyOn::Success,
+            });
+        }
     }
     Ok(res)
 }
