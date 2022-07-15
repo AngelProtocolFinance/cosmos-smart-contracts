@@ -47,6 +47,8 @@ import {
   testCw3ExecutePoll,
   testQueryMultisigVoters,
   testQueryMultisigThreshold,
+  testQueryProposal,
+  testQueryListProposals,
   testQueryGroupMembersList,
 } from "./core/multisig";
 import {
@@ -388,6 +390,8 @@ export async function testExecute(
   // await testCw3ExecutePoll(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 1);
   // await testQueryMultisigVoters(actors.apTeam.client, cw3ApTeam);
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ApTeam);
+  // await testQueryProposal(actors.apTeam.client, cw3ApTeam, 3);
+  // await testQueryListProposals(actors.apTeam.client, cw3ApTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
 
 
@@ -548,5 +552,4 @@ export async function testExecute(
   // await testQueryStakingConfig(actors.apTeam.client, haloStaking);
   // await testQueryStakingStakerInfo(actors.apTeam.client, haloStaking, "addr000", undefined);
   // await testQueryStakingState(actors.apTeam.client, haloStaking);
-
 }

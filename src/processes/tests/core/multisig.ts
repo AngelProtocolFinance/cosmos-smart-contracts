@@ -3,15 +3,10 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
+import { sendTransaction, toEncodedBinary, VoteOption } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
-
-export enum VoteOption {
-  YES,
-  NO,
-}
 
 //----------------------------------------------------------------------------------------
 // TEST: Add a new AP Team Member to the C4 AP Team Group
@@ -198,6 +193,33 @@ export async function testQueryMultisigVoters(
   process.stdout.write("Test - Query a multisig voters list");
   const result: any = await juno.queryContractSmart(multisig, {
     list_voters: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryProposal(
+  juno: SigningCosmWasmClient,
+  multisig: string,
+  proposal_id: number,
+): Promise<void> {
+  process.stdout.write("Test - Query a proposal by ID");
+  const result: any = await juno.queryContractSmart(multisig, {
+    proposal: { proposal_id },
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryListProposals(
+  juno: SigningCosmWasmClient,
+  multisig: string,
+): Promise<void> {
+  process.stdout.write("Test - Query a list of all proposals");
+  const result: any = await juno.queryContractSmart(multisig, {
+    list_proposals: { start_after: undefined, limit: undefined },
   });
 
   console.log(result);
