@@ -55,9 +55,7 @@ export async function setupCore(
     tax_rate: string;
     threshold_absolute_percentage: string;
     max_voting_period_height: number;
-    max_voting_period_guardians_height: number;
     fund_rotation: number | undefined;
-    turnover_to_multisig: boolean;
     is_localjuno: boolean;
     harvest_to_liquid: string;
     tax_per_block: string;
@@ -86,7 +84,6 @@ export async function setupCore(
     apTreasuryAddr,
     config.threshold_absolute_percentage,
     config.max_voting_period_height,
-    config.max_voting_period_guardians_height,
     config.fund_rotation,
     config.fund_member_limit,
     config.funding_goal,
@@ -112,7 +109,6 @@ async function setup(
   treasury_address: string,
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
-  max_voting_period_guardians_height: number,
   fund_rotation: number | undefined,
   fund_member_limit: number | undefined,
   funding_goal: string | undefined,

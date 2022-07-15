@@ -191,16 +191,14 @@ export async function startSetupCore(): Promise<void> {
     {
       tax_rate: "0.2", // tax rate
       threshold_absolute_percentage: "0.50", // threshold absolute percentage for "ap-cw3"
-      max_voting_period_height: 1000, // max voting period height for "ap-cw3"
-      max_voting_period_guardians_height: 100, // max voting period guardians height for "ap-cw3"
+      max_voting_period_height: 10000, // max voting period height for "ap-cw3"
       fund_rotation: undefined, // index fund rotation
-      turnover_to_multisig: false, // turn over to AP Team multisig
       is_localjuno: true, // is LocalJuno
       harvest_to_liquid: "0.75", // harvest to liquid percentage
       tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
       funding_goal: "500000000", // funding goal
       charity_cw3_multisig_threshold_abs_perc: "0.50", // threshold absolute percentage for "charity-cw3"
-      charity_cw3_multisig_max_voting_period: 60,      // max_voting_period time(unit: seconds) for "charity-cw3"
+      charity_cw3_multisig_max_voting_period: 10000,      // max_voting_period time(unit: seconds) for "charity-cw3"
       fund_member_limit: 10,
       accepted_tokens:  {
         native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
