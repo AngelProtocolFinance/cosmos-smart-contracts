@@ -89,7 +89,7 @@ pub fn instantiate(
             rebalance: RebalanceDetails::default(),
             dao: None,
             dao_token: None,
-            donation_match: msg.donation_match,
+            donation_match_active: msg.donation_match_active,
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries, // Vec<String>
             whitelisted_contributors: msg.whitelisted_contributors,   // Vec<String>
             donation_matching_contract: None,
@@ -183,7 +183,7 @@ pub fn instantiate(
         )?;
         res = res.add_submessages(submsgs);
 
-        // `donation_match_setup_option`: Field determines the various way of setting up "donation_match" contract
+        // `donation_match_setup`: Field determines the various way of setting up "donation_match" contract
         // Possible values:
         //   0 => Endowment doesn't want a donation matching contract setup (for now, can always add it later)
         //   1 => Endowment wants to have a DAO and they choose to use $HALO as reserve token for their bonding curve from the Endowment Launchpad UI.
@@ -192,18 +192,17 @@ pub fn instantiate(
         //           - the Token contract address (CW20)
         //           - a Token / UST LP Pair contract ( this attribute would be updatable should they move supply to a new pool, etc)
         //   3 =>  Endowment wants to have a DAO but they want to use an brand new CW20 Token that will not be attached to a bonding curve. (coming later)
-        let donation_match_code = match registrar_config.donation_match_code {
-            Some(id) => id,
-            None => {
-                return Err(ContractError::Std(StdError::GenericErr {
-                    msg: "No code id for donation matching contract".to_string(),
-                }))
-            }
-        };
-        let endow_type = msg.profile.endow_type;
-
-        if msg.donation_match_setup_option != 0 {
-            let (reserve_token, lp_pair) = match (msg.donation_match_setup_option, endow_type) {
+        if msg.donation_match_setup != 0 {
+            let endow_type = msg.profile.endow_type;
+            let donation_match_code = match registrar_config.donation_match_code {
+                Some(id) => id,
+                None => {
+                    return Err(ContractError::Std(StdError::GenericErr {
+                        msg: "No code id for donation matching contract".to_string(),
+                    }))
+                }
+            };
+            let (reserve_token, lp_pair) = match (msg.donation_match_setup, endow_type) {
                 (1, EndowmentType::Normal) | (_, EndowmentType::Charity) => {
                     match (
                         registrar_config.halo_token,

@@ -246,6 +246,7 @@ impl WasmMockQuerier {
                         collector_addr: "collector-addr".to_string(),
                         collector_share: Decimal::one(),
                         halo_token: Some("halo_token".to_string()),
+                        halo_token_lp_contract: Some("halo_token_lp_contract".to_string()),
                         gov_contract: Some("gov_contract".to_string()),
                         charity_shares_contract: Some("charity_shares".to_string()),
                         cw3_code: Some(2),

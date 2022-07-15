@@ -880,7 +880,9 @@ pub fn deposit(
 
     // check if the donation matching is possible
     let mut donor_match_messages: Vec<SubMsg> = vec![];
-    if !locked_amount.amount.is_zero() && endowment.donation_match && endowment.dao_token.is_some()
+    if !locked_amount.amount.is_zero()
+        && endowment.donation_match_active
+        && endowment.dao_token.is_some()
     {
         // get the correct donation match contract to use
         let donation_match_contract = match profile.endow_type {
