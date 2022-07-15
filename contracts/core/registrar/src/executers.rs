@@ -241,6 +241,10 @@ pub fn update_config(
         Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
         None => config.halo_token,
     };
+    config.halo_token_lp_contract = match msg.halo_token_lp_contract {
+        Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
+        None => config.halo_token_lp_contract,
+    };
 
     CONFIG.save(deps.storage, &config)?;
 
@@ -301,9 +305,8 @@ pub fn create_endowment(
             profile: msg.profile,
             cw4_members: msg.cw4_members,
             donation_match_setup_option: msg.donation_match_setup_option,
-            halo_ust_lp_pair_contract: msg.halo_ust_lp_pair_contract,
-            user_reserve_token: msg.user_reserve_token,
-            user_reserve_ust_lp_pair_contract: msg.user_reserve_ust_lp_pair_contract,
+            reserve_token: msg.reserve_token,
+            reserve_token_lp_contract: msg.reserve_token_lp_contract,
             earnings_fee: msg.earnings_fee,
             deposit_fee: msg.deposit_fee,
             withdraw_fee: msg.withdraw_fee,

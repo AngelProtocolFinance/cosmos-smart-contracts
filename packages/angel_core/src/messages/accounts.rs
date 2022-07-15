@@ -38,10 +38,9 @@ pub struct InstantiateMsg {
     pub withdraw_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub aum_fee: Option<EndowmentFee>,
-    pub halo_ust_lp_pair_contract: Option<String>, // HALO-UST LP pair contract. Necessary when user wants HALO token as reserve token
     pub donation_match_setup_option: u32, // Donation matching setup options(possible values: 0, 1, 2, 3)
-    pub user_reserve_token: Option<String>, // Address of cw20 token, which user wants to use as reserve token in "donation_matching"
-    pub user_reserve_ust_lp_pair_contract: Option<String>, // Address of lp pair contract(cw20 token above - UST)
+    pub reserve_token: Option<String>, // Address of cw20 token, which user wants to use as reserve token in "donation_matching"
+    pub reserve_token_lp_contract: Option<String>, // Address of lp pair contract(cw20 token above - UST)
     pub settings_controller: Option<SettingsController>,
     pub parent: Option<Addr>,
     pub kyc_donors_only: bool,

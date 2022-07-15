@@ -27,7 +27,8 @@ pub struct Config {
     pub donation_match_code: Option<u64>, // donation matching contract wasm code
     pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
     pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
-    pub gov_contract: Option<Addr>,    // AP governance contract
+    pub halo_token_lp_contract: Option<Addr>,
+    pub gov_contract: Option<Addr>, // AP governance contract
     pub donation_match_charites_contract: Option<Addr>, // donation matching contract address for "Charities" endowments
     pub collector_addr: Option<Addr>,                   // Collector address for new fee
     pub collector_share: Decimal,

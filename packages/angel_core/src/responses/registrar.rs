@@ -38,6 +38,7 @@ pub struct ConfigResponse {
     pub subdao_distributor_code: Option<u64>,
     pub donation_match_code: Option<u64>,
     pub halo_token: Option<String>,
+    pub halo_token_lp_contract: Option<String>,
     pub gov_contract: Option<String>,
     pub treasury: String,
     pub tax_rate: Decimal,
