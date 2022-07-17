@@ -427,29 +427,16 @@ pub fn new_accounts_reply(
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
-                        if attrb.key == "endow_addr" {
-                            endowment_addr = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_name" {
-                            endowment_name = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_owner" {
-                            endowment_owner = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_type" {
-                            endowment_type = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_logo" {
-                            endowment_logo = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_image" {
-                            endowment_image = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_tier" {
-                            endowment_tier = attrb.value.clone().parse().unwrap_or(0);
-                        }
-                        if attrb.key == "endow_un_sdg" {
-                            endowment_un_sdg = attrb.value.clone().parse().unwrap_or(0);
+                        match attrb.key.as_str() {
+                            "endow_addr" => endowment_addr = attrb.value,
+                            "endow_name" => endowment_name = attrb.value,
+                            "endow_owner" => endowment_owner = attrb.value,
+                            "endow_type" => endowment_type = attrb.value,
+                            "endow_logo" => endowment_logo = attrb.value,
+                            "endow_image" => endowment_image = attrb.value,
+                            "endow_tier" => endowment_tier = attrb.value.parse().unwrap_or(0),
+                            "endow_un_sdg" => endowment_un_sdg = attrb.value.parse().unwrap_or(0),
+                            &_ => (),
                         }
                     }
                 }
