@@ -303,6 +303,7 @@ impl WasmMockQuerier {
                         subdao_distributor_code: None,
                         donation_match_code: None,
                         halo_token: None,
+                        halo_token_lp_contract: None,
                         gov_contract: None,
                         treasury: "treasury-address".to_string(),
                         tax_rate: Decimal::from_ratio(10_u64, 100_u64),

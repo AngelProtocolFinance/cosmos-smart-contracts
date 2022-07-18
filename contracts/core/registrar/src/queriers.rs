@@ -26,18 +26,37 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         subdao_distributor_code: config.subdao_distributor_code,
         donation_match_code: config.donation_match_code,
         split_to_liquid: config.split_to_liquid,
-        halo_token: config.halo_token.map(|addr| addr.to_string()),
-        gov_contract: config.gov_contract.map(|addr| addr.to_string()),
-        donation_match_charites_contract: config
-            .donation_match_charites_contract
-            .map(|addr| addr.to_string()),
+        halo_token: Some(
+            config
+                .halo_token
+                .map(|addr| addr.to_string())
+                .unwrap_or_else(|| "".to_string()),
+        ),
+        halo_token_lp_contract: Some(
+            config
+                .halo_token_lp_contract
+                .map(|addr| addr.to_string())
+                .unwrap_or_else(|| "".to_string()),
+        ),
+        gov_contract: Some(
+            config
+                .gov_contract
+                .map(|addr| addr.to_string())
+                .unwrap_or_else(|| "".to_string()),
+        ),
+        donation_match_charites_contract: Some(
+            config
+                .donation_match_charites_contract
+                .map(|addr| addr.to_string())
+                .unwrap_or_else(|| "".to_string()),
+        ),
         collector_addr: config
             .collector_addr
             .map(|addr| addr.to_string())
             .unwrap_or_else(|| "".to_string()),
         collector_share: config.collector_share,
-        charity_shares_contract: config.charity_shares_contract.map(|addr| addr.to_string()),
         accepted_tokens: config.accepted_tokens,
+        charity_shares_contract: config.charity_shares_contract.map(|addr| addr.to_string()),
         swap_factory: config.swap_factory.map(|addr| addr.to_string()),
     })
 }

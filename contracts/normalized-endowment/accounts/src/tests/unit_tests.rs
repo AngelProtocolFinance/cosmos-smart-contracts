@@ -4,13 +4,9 @@ use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::messages::dao_token::CurveType;
 use angel_core::responses::accounts::*;
-use angel_core::structs::{
-    EndowmentType, Profile, SettingsController, SettingsPermissions, SocialMedialUrls,
-};
-use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage};
-use cosmwasm_std::{
-    attr, coins, from_binary, to_binary, Addr, Coin, CustomQuery, Decimal, OwnedDeps, Uint128,
-};
+use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
+use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
+use cosmwasm_std::{attr, coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfoBase;
 use cw_utils::{Duration, Threshold};
@@ -64,15 +60,14 @@ fn create_endowment() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
             value: Uint128::zero(),
             scale: 2u32,
         }),
-        donation_match: false,
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
-        donation_match_setup_option: 2,
-        halo_ust_lp_pair_contract: None,
-        user_reserve_token: None,
-        user_reserve_ust_lp_pair_contract: None,
+        donation_match_active: false,
+        donation_match_setup: 0,
+        reserve_token: None,
+        reserve_token_lp_contract: None,
         settings_controller: None,
         parent: None,
         withdraw_before_maturity: false,
@@ -135,15 +130,14 @@ fn test_proper_initialization() {
             value: Uint128::zero(),
             scale: 2u32,
         }),
-        donation_match: false,
+        donation_match_active: false,
+        donation_match_setup: 0,
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
-        donation_match_setup_option: 2,
-        halo_ust_lp_pair_contract: None,
-        user_reserve_token: None,
-        user_reserve_ust_lp_pair_contract: None,
+        reserve_token: None,
+        reserve_token_lp_contract: None,
         settings_controller: None,
         parent: None,
         withdraw_before_maturity: false,

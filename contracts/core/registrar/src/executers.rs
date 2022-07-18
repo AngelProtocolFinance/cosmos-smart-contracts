@@ -241,6 +241,10 @@ pub fn update_config(
         Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
         None => config.halo_token,
     };
+    config.halo_token_lp_contract = match msg.halo_token_lp_contract {
+        Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
+        None => config.halo_token_lp_contract,
+    };
 
     CONFIG.save(deps.storage, &config)?;
 
@@ -287,7 +291,6 @@ pub fn create_endowment(
             registrar_contract: env.contract.address.to_string(),
             dao: msg.dao,
             dao_setup_option: msg.dao_setup_option,
-            donation_match: msg.donation_match,
             owner: msg.owner,
             name: msg.name,
             description: msg.description,
@@ -300,10 +303,10 @@ pub fn create_endowment(
             split_default: msg.split_default.unwrap_or(config.split_to_liquid.default),
             profile: msg.profile,
             cw4_members: msg.cw4_members,
-            donation_match_setup_option: msg.donation_match_setup_option,
-            halo_ust_lp_pair_contract: msg.halo_ust_lp_pair_contract,
-            user_reserve_token: msg.user_reserve_token,
-            user_reserve_ust_lp_pair_contract: msg.user_reserve_ust_lp_pair_contract,
+            donation_match_active: msg.donation_match_active,
+            donation_match_setup: msg.donation_match_setup,
+            reserve_token: msg.reserve_token,
+            reserve_token_lp_contract: msg.reserve_token_lp_contract,
             earnings_fee: msg.earnings_fee,
             deposit_fee: msg.deposit_fee,
             withdraw_fee: msg.withdraw_fee,
@@ -424,29 +427,16 @@ pub fn new_accounts_reply(
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
-                        if attrb.key == "endow_addr" {
-                            endowment_addr = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_name" {
-                            endowment_name = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_owner" {
-                            endowment_owner = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_type" {
-                            endowment_type = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_logo" {
-                            endowment_logo = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_image" {
-                            endowment_image = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_tier" {
-                            endowment_tier = attrb.value.clone().parse().unwrap_or(0);
-                        }
-                        if attrb.key == "endow_un_sdg" {
-                            endowment_un_sdg = attrb.value.clone().parse().unwrap_or(0);
+                        match attrb.key.as_str() {
+                            "endow_addr" => endowment_addr = attrb.value,
+                            "endow_name" => endowment_name = attrb.value,
+                            "endow_owner" => endowment_owner = attrb.value,
+                            "endow_type" => endowment_type = attrb.value,
+                            "endow_logo" => endowment_logo = attrb.value,
+                            "endow_image" => endowment_image = attrb.value,
+                            "endow_tier" => endowment_tier = attrb.value.parse().unwrap_or(0),
+                            "endow_un_sdg" => endowment_un_sdg = attrb.value.parse().unwrap_or(0),
+                            &_ => (),
                         }
                     }
                 }

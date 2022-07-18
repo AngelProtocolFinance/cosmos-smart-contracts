@@ -31,7 +31,7 @@ fn proper_initialization() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
@@ -61,7 +61,7 @@ fn update_owner() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
@@ -99,7 +99,7 @@ fn update_config() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
@@ -123,6 +123,7 @@ fn update_config() {
         charity_shares_contract: None,
         gov_contract: None,
         halo_token: None,
+        halo_token_lp_contract: None,
         cw3_code: Some(MOCK_CW3_CODE_ID),
         cw4_code: Some(MOCK_CW4_CODE_ID),
         accepted_tokens_cw20: None,
@@ -164,7 +165,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
@@ -189,6 +190,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         charity_shares_contract: None,
         gov_contract: None,
         halo_token: None,
+        halo_token_lp_contract: None,
         cw3_code: None,
         cw4_code: None,
         accepted_tokens_cw20: None,
@@ -245,15 +247,14 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
             value: Uint128::zero(),
             scale: 2u32,
         }),
-        donation_match: false,
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
-        donation_match_setup_option: 2,
-        halo_ust_lp_pair_contract: None,
-        user_reserve_token: None,
-        user_reserve_ust_lp_pair_contract: None,
+        donation_match_active: false,
+        donation_match_setup: 0,
+        reserve_token: None,
+        reserve_token_lp_contract: None,
         settings_controller: None,
         parent: false,
         owner: good_charity_addr.clone(),
@@ -459,7 +460,7 @@ fn test_add_update_and_remove_vault() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
@@ -551,7 +552,7 @@ fn test_add_update_and_remove_accepted_tokens() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
@@ -582,6 +583,7 @@ fn test_add_update_and_remove_accepted_tokens() {
         charity_shares_contract: None,
         gov_contract: None,
         halo_token: None,
+        halo_token_lp_contract: None,
         cw3_code: None,
         cw4_code: None,
         accepted_tokens_cw20: Some(vec!["new_token".to_string()]),
@@ -625,7 +627,7 @@ fn test_add_update_and_remove_network_infos() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
@@ -735,7 +737,7 @@ fn test_update_endow_type_fees() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
