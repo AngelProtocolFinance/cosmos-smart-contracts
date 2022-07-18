@@ -232,7 +232,26 @@ pub fn update_config(
         Some(share) => share,
         None => config.collector_share,
     };
-
+    config.subdao_gov_code = match msg.subdao_gov_code {
+        Some(u64) => Some(u64),
+        None => config.subdao_gov_code,
+    };
+    config.subdao_token_code = match msg.subdao_token_code {
+        Some(u64) => Some(u64),
+        None => config.subdao_token_code,
+    };
+    config.subdao_cw900_code = match msg.subdao_cw900_code {
+        Some(u64) => Some(u64),
+        None => config.subdao_cw900_code,
+    };
+    config.subdao_distributor_code = match msg.subdao_distributor_code {
+        Some(u64) => Some(u64),
+        None => config.subdao_distributor_code,
+    };
+    config.donation_match_code = match msg.donation_match_code {
+        Some(u64) => Some(u64),
+        None => config.donation_match_code,
+    };
     config.swap_factory = match msg.swap_factory {
         Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
         None => config.swap_factory,

@@ -127,6 +127,11 @@ pub struct UpdateConfigMsg {
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
+    pub subdao_gov_code: Option<u64>,         // subdao gov wasm code
+    pub subdao_token_code: Option<u64>,       // subdao gov token (w/ bonding-curve) wasm code
+    pub subdao_cw900_code: Option<u64>, // subdao gov ve-CURVE contract for locked token voting
+    pub subdao_distributor_code: Option<u64>, // subdao gov fee distributor wasm code
+    pub donation_match_code: Option<u64>, // donation matching contract wasm code
     pub donation_match_charites_contract: Option<String>,
     pub collector_addr: Option<String>,
     pub collector_share: Option<Decimal>,

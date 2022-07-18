@@ -132,6 +132,11 @@ fn update_config() {
         collector_addr: None,
         collector_share: None,
         swap_factory: None,
+        subdao_gov_code: None,
+        subdao_token_code: None,
+        subdao_cw900_code: None,
+        subdao_distributor_code: None,
+        donation_match_code: None,
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -199,6 +204,11 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         collector_addr: None,
         collector_share: None,
         swap_factory: None,
+        subdao_gov_code: None,
+        subdao_token_code: None,
+        subdao_cw900_code: None,
+        subdao_distributor_code: None,
+        donation_match_code: None,
     };
     let info = mock_info(ap_team.as_ref(), &[]);
     let _ = execute(
@@ -592,6 +602,11 @@ fn test_add_update_and_remove_accepted_tokens() {
         collector_addr: None,
         collector_share: None,
         swap_factory: None,
+        subdao_gov_code: None,
+        subdao_token_code: None,
+        subdao_cw900_code: None,
+        subdao_distributor_code: None,
+        donation_match_code: None,
     };
     let res = execute(
         deps.as_mut(),
