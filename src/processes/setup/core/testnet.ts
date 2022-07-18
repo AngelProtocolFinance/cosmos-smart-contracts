@@ -134,6 +134,18 @@ async function setup(
   const cw3MultiSig = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_multisig.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSig}`);
 
+  process.stdout.write("Uploading Endowment DAO Wasm");
+  const subdao = await storeCode(juno, apTeamAddr, `${wasm_path.core}/dao.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdao}`);
+
+  process.stdout.write("Uploading Endowment DAO Token Wasm");
+  const subdaoToken = await storeCode(juno, apTeamAddr, `${wasm_path.core}/donation_match.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoToken}`);
+
+  process.stdout.write("Uploading Endowment DAO Donation Matching Wasm");
+  const subdaoDonationMatch = await storeCode(juno, apTeamAddr, `${wasm_path.core}/donation_match.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoDonationMatch}`);
+
   // Step 2. Instantiate the key contracts
   // Registrar
   process.stdout.write("Instantiating Registrar contract");
@@ -182,7 +194,7 @@ async function setup(
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpApTeam}`);
 
   // CW3 AP Team MultiSig
-  process.stdout.write("Instantiating CW3 AP Team (cw3-MultiSig) contract");
+  process.stdout.write("Instantiating CW3 AP Team Multisig contract");
   const cw3ApTeamResult = await instantiateContract(
     juno,
     apTeamAddr,
@@ -225,7 +237,7 @@ async function setup(
   });
   console.log(chalk.green(" Done!"));
 
-  process.stdout.write("Update Registrar's config(Account_code_id, Index Fund, CW3_code_Id, CW4_code_Id)");
+  process.stdout.write("Update Registrar's config with various wasm codes & contracts");
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_config: {
       accounts_code_id: accountsCodeId,
@@ -233,6 +245,9 @@ async function setup(
       cw3_code: cw3MultiSig,
       cw4_code: cw4Group,
       halo_token: apTeamAddr, // Fake halo_token addr: Need to be handled
+      subdao_gov_code: subdao,
+      subdao_token_code: subdaoToken,
+      donation_match_code: subdaoDonationMatch,
     },
   });
   console.log(chalk.green(" Done!"));
@@ -284,7 +299,7 @@ async function createEndowments(
       kyc_donors_only: false,
       whitelisted_beneficiaries: [charity1_wallet], 
       whitelisted_contributors: [],
-      dao: false,
+      dao: true,
       dao_setup_option: {
         setup_bond_curve_token: {
           constant: {
@@ -296,8 +311,8 @@ async function createEndowments(
       curveType: undefined, // Useless, need to remove from contract
       user_reserve_token: undefined,
       user_reserve_ust_lp_pair_contract: undefined,
-      donation_match: false,
-      donation_match_setup_option: 0,
+      donation_match_active: false,
+      donation_match_setup: 0,
       earnings_fee: undefined,
       deposit_fee: undefined,
       withdraw_fee: undefined,
@@ -359,7 +374,7 @@ async function createEndowments(
       kyc_donors_only: false,
       whitelisted_beneficiaries: [charity2_wallet], 
       whitelisted_contributors: [],
-      dao: false,
+      dao: true,
       dao_setup_option: {
         setup_bond_curve_token: {
           constant: {
@@ -371,8 +386,8 @@ async function createEndowments(
       curveType: undefined, // Useless, need to remove from contract
       user_reserve_token: undefined,
       user_reserve_ust_lp_pair_contract: undefined,
-      donation_match: false,
-      donation_match_setup_option: 0,
+      donation_match_active: false,
+      donation_match_setup: 0,
       earnings_fee: undefined,
       deposit_fee: undefined,
       withdraw_fee: undefined,
@@ -434,7 +449,7 @@ async function createEndowments(
       kyc_donors_only: false,
       whitelisted_beneficiaries: [charity1_wallet], 
       whitelisted_contributors: [],
-      dao: false,
+      dao: true,
       dao_setup_option: {
         setup_bond_curve_token: {
           constant: {
@@ -446,8 +461,8 @@ async function createEndowments(
       curveType: undefined, // Useless, need to remove from contract
       user_reserve_token: undefined,
       user_reserve_ust_lp_pair_contract: undefined,
-      donation_match: false,
-      donation_match_setup_option: 0,
+      donation_match_active: false,
+      donation_match_setup: 0,
       earnings_fee: undefined,
       deposit_fee: undefined,
       withdraw_fee: undefined,
@@ -508,7 +523,7 @@ async function createEndowments(
       kyc_donors_only: false,
       whitelisted_beneficiaries: [charity1_wallet], 
       whitelisted_contributors: [],
-      dao: false,
+      dao: true,
       dao_setup_option: {
         setup_bond_curve_token: {
           constant: {
@@ -520,8 +535,8 @@ async function createEndowments(
       curveType: undefined, // Useless, need to remove from contract
       user_reserve_token: undefined,
       user_reserve_ust_lp_pair_contract: undefined,
-      donation_match: false,
-      donation_match_setup_option: 0,
+      donation_match_active: false,
+      donation_match_setup: 0,
       earnings_fee: undefined,
       deposit_fee: undefined,
       withdraw_fee: undefined,
