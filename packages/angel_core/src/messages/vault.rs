@@ -1,4 +1,5 @@
 use cosmwasm_std::{Addr, Decimal, Uint128};
+use cw20::Denom;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -36,10 +37,9 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub moneymarket: Option<String>,
-    pub input_denom: Option<String>,
+    pub junoswap_pool: Option<String>,
+    pub input_denom: Option<Denom>,
     pub yield_token: Option<String>,
-    pub tax_per_block: Option<Decimal>,
     pub treasury_withdraw_threshold: Option<Uint128>,
     pub harvest_to_liquid: Option<Decimal>,
 }
@@ -55,15 +55,6 @@ pub struct AccountWithdrawMsg {
 pub enum QueryMsg {
     VaultConfig {},
     Config {},
-    ExchangeRate {
-        input_denom: String,
-    },
-    Deposit {
-        amount: Uint128,
-    }, // some qty of "input_denom"
-    Redeem {
-        amount: Uint128,
-    }, // some qty of "yield_token"
     /// Returns the current balance of the given address, 0 if unset.
     /// Return type: BalanceResponse.
     Balance {
@@ -72,11 +63,4 @@ pub enum QueryMsg {
     /// Returns metadata on the contract - name, decimals, supply, etc.
     /// Return type: TokenInfoResponse.
     TokenInfo {},
-    // Only with "enumerable" extension
-    // Returns all accounts that have balances. Supports pagination.
-    // Return type: AllAccountsResponse.
-    // AllAccounts {
-    //     start_after: Option<String>,
-    //     limit: Option<u32>,
-    // },
 }

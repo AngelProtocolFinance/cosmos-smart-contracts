@@ -1,10 +1,11 @@
 use cosmwasm_std::{Decimal, Decimal256, Uint256};
+use cw20::Denom;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub input_denom: String,
+    pub input_denom: Denom,
     pub yield_token: String,
 }
 
@@ -18,10 +19,9 @@ pub struct ExchangeRateResponse {
 pub struct VaultConfigResponse {
     pub owner: String,
     pub registrar_contract: String,
-    pub moneymarket: String,
-    pub input_denom: String,
+    pub junoswap_pool: String,
+    pub input_denom: Denom,
     pub yield_token: String,
-    pub tax_per_block: Decimal,
     pub last_harvest: u64,
     pub harvest_to_liquid: Decimal,
 }

@@ -8,7 +8,7 @@ use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, Deps, QueryRequest, StdError,
     StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg};
+use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg, Denom};
 use cw_asset::{Asset, AssetInfoBase};
 
 /// The following `calc_range_<???>` functions will set the first key after the provided key, by appending a 1 byte
@@ -134,10 +134,11 @@ pub fn vault_fx_rate(deps: Deps, vault_address: String) -> Decimal256 {
         .querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: vault_address,
-            msg: to_binary(&crate::messages::vault::QueryMsg::ExchangeRate {
-                input_denom: "uusd".to_string(),
-            })
-            .unwrap(),
+            // msg: to_binary(&crate::messages::vault::QueryMsg::ExchangeRate {
+            //     input_denom: Denom::Native("uluna".to_string()),
+            // })
+            // .unwrap(),
+            msg: to_binary("TODO!!!!").unwrap(),
         }))
         .unwrap();
     exchange_rate.exchange_rate

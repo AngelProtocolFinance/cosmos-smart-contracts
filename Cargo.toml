@@ -15,6 +15,7 @@ members = [
     "contracts/halo/gov-hodler",
     "contracts/halo/staking",
     "contracts/halo/vesting",
+    "contracts/vaults/junoswap",
 ]
 
 exclude = [
