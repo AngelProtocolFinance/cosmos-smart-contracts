@@ -19,8 +19,6 @@ pub struct MigrateMsg {
 pub struct InstantiateMsg {
     pub owner_sc: String,
     pub registrar_contract: String,
-    pub dao: bool,
-    pub dao_setup_option: DaoSetupOption,
     pub owner: String,       // address that originally setup the endowment account
     pub name: String,        // name of the Charity Endowment
     pub description: String, // description of the Charity Endowment
@@ -37,8 +35,10 @@ pub struct InstantiateMsg {
     pub withdraw_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub aum_fee: Option<EndowmentFee>,
+    pub dao: bool,
+    pub dao_setup_option: Option<DaoSetupOption>,
     pub donation_match_active: bool,
-    pub donation_match_setup: u8, // Donation matching setup options(possible values: 0, 1, 2, 3)
+    pub donation_match_setup: Option<u8>, // Donation matching setup options(possible values: 0, 1, 2, 3)
     pub reserve_token: Option<String>, // Address of cw20 token, which user wants to use as reserve token in "donation_matching"
     pub reserve_token_lp_contract: Option<String>, // Address of lp pair contract(cw20 token above - UST)
     pub settings_controller: Option<SettingsController>,

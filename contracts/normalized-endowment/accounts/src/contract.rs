@@ -178,7 +178,7 @@ pub fn instantiate(
         let endow_type = msg.profile.endow_type;
         res = res.add_submessages(setup_dao_token_messages(
             deps.branch(),
-            msg.dao_setup_option,
+            msg.dao_setup_option.unwrap(),
             &endow_type,
             &registrar_config,
             endowment_owner,
@@ -193,7 +193,7 @@ pub fn instantiate(
         //           - the Token contract address (CW20)
         //           - a Token / UST LP Pair contract ( this attribute would be updatable should they move supply to a new pool, etc)
         //   3 =>  Endowment wants to have a DAO but they want to use an brand new CW20 Token that will not be attached to a bonding curve. (coming later)
-        if msg.donation_match_setup > 0 {
+        if msg.donation_match_setup != None && msg.donation_match_setup.unwrap() > 0 {
             let donation_match_code = match registrar_config.donation_match_code {
                 Some(id) => id,
                 None => {
@@ -202,7 +202,7 @@ pub fn instantiate(
                     }))
                 }
             };
-            let (reserve_token, lp_pair) = match (msg.donation_match_setup, endow_type) {
+            let (reserve_token, lp_pair) = match (msg.donation_match_setup.unwrap(), endow_type) {
                 (1, EndowmentType::Normal) | (_, EndowmentType::Charity) => {
                     match (
                         registrar_config.halo_token,
