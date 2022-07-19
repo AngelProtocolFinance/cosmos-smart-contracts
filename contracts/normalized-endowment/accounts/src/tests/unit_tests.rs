@@ -56,7 +56,7 @@ fn create_endowment() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
         dao: true,
-        dao_setup_option: DaoSetupOption::SetupBondCurveToken(DaoBondingTokenConfig {
+        dao_setup_option: Some(DaoSetupOption::SetupBondCurveToken(DaoBondingTokenConfig {
             curve_type: CurveType::SquareRoot {
                 slope: Uint128::from(19307000u64),
                 power: Uint128::from(428571429u64),
@@ -68,13 +68,13 @@ fn create_endowment() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
             reserve_decimals: None,
             reserve_denom: None,
             unbonding_period: None,
-        }),
+        })),
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
         donation_match_active: false,
-        donation_match_setup: 0,
+        donation_match_setup: None,
         reserve_token: None,
         reserve_token_lp_contract: None,
         settings_controller: None,
@@ -135,7 +135,7 @@ fn test_proper_initialization() {
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
         dao: true,
-        dao_setup_option: DaoSetupOption::SetupBondCurveToken(DaoBondingTokenConfig {
+        dao_setup_option: Some(DaoSetupOption::SetupBondCurveToken(DaoBondingTokenConfig {
             curve_type: CurveType::SquareRoot {
                 slope: Uint128::from(19307000u64),
                 power: Uint128::from(428571429u64),
@@ -147,9 +147,9 @@ fn test_proper_initialization() {
             reserve_decimals: None,
             reserve_denom: None,
             unbonding_period: None,
-        }),
+        })),
         donation_match_active: false,
-        donation_match_setup: 0,
+        donation_match_setup: None,
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,

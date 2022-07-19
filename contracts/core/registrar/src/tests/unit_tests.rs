@@ -252,7 +252,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
         dao: true,
-        dao_setup_option: DaoSetupOption::SetupBondCurveToken(DaoBondingTokenConfig {
+        dao_setup_option: Some(DaoSetupOption::SetupBondCurveToken(DaoBondingTokenConfig {
             curve_type: CurveType::SquareRoot {
                 slope: Uint128::from(19307000u64),
                 power: Uint128::from(428571429u64),
@@ -264,13 +264,13 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
             reserve_decimals: None,
             reserve_denom: None,
             unbonding_period: None,
-        }),
+        })),
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
-        donation_match_active: false,
-        donation_match_setup: 0,
+        donation_match_active: true,
+        donation_match_setup: Some(1),
         reserve_token: None,
         reserve_token_lp_contract: None,
         settings_controller: None,

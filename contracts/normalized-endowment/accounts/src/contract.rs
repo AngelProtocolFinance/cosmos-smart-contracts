@@ -186,14 +186,13 @@ pub fn instantiate(
 
         // `donation_match_setup`: Field determines the various way of setting up "donation_match" contract
         // Possible values:
-        //   0 => Endowment doesn't want a donation matching contract setup (for now, can always add it later)
         //   1 => Endowment wants to have a DAO and they choose to use $HALO as reserve token for their bonding curve from the Endowment Launchpad UI.
         //   2 => Endowment wants to have a DAO but they want to use an existing Token (other than HALO) as the reserve token for their bonding curve.
         //        They would then have to supply several contract addresses during their endowment creation:
         //           - the Token contract address (CW20)
         //           - a Token / UST LP Pair contract ( this attribute would be updatable should they move supply to a new pool, etc)
         //   3 =>  Endowment wants to have a DAO but they want to use an brand new CW20 Token that will not be attached to a bonding curve. (coming later)
-        if msg.donation_match_setup != None && msg.donation_match_setup.unwrap() > 0 {
+        if msg.donation_match_setup != None {
             let donation_match_code = match registrar_config.donation_match_code {
                 Some(id) => id,
                 None => {
