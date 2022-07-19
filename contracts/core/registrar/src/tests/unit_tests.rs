@@ -1,6 +1,6 @@
 use crate::contract::{execute, instantiate, query, reply};
 use angel_core::errors::core::*;
-use angel_core::messages::accounts::DaoSetupOption;
+use angel_core::messages::accounts::{DaoBondingTokenConfig, DaoSetupOption};
 use angel_core::messages::dao_token::CurveType;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
@@ -251,11 +251,19 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         split_default: None,
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
-        curve_type: None,
         dao: true,
-        dao_setup_option: DaoSetupOption::SetupBondCurveToken(CurveType::Constant {
-            value: Uint128::zero(),
-            scale: 2u32,
+        dao_setup_option: DaoSetupOption::SetupBondCurveToken(DaoBondingTokenConfig {
+            curve_type: CurveType::SquareRoot {
+                slope: Uint128::from(19307000u64),
+                power: Uint128::from(428571429u64),
+                scale: 9,
+            },
+            name: String::from("AP Endowment DAO Token"),
+            symbol: String::from("APEDT"),
+            decimals: None,
+            reserve_decimals: None,
+            reserve_denom: None,
+            unbonding_period: None,
         }),
         earnings_fee: None,
         deposit_fee: None,

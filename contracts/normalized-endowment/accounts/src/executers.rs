@@ -1509,6 +1509,7 @@ pub fn setup_dao_token(
     option: DaoSetupOption,
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENT.load(deps.storage)?;
+    let profile = PROFILE.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
 
     if info.sender != endowment.owner {
@@ -1521,8 +1522,13 @@ pub fn setup_dao_token(
             msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
 
-    let submsgs =
-        setup_dao_token_messages(deps.branch(), option, &registrar_config, endowment.owner)?;
+    let submsgs = setup_dao_token_messages(
+        deps.branch(),
+        option,
+        &profile.endow_type,
+        &registrar_config,
+        endowment.owner,
+    )?;
 
     Ok(Response::new().add_submessages(submsgs))
 }
@@ -1530,13 +1536,14 @@ pub fn setup_dao_token(
 pub fn setup_dao_token_messages(
     deps: DepsMut,
     option: DaoSetupOption,
+    endow_type: &EndowmentType,
     registrar_config: &RegistrarConfigResponse,
     endowment_owner: Addr,
 ) -> Result<Vec<SubMsg>, ContractError> {
     let mut submsgs: Vec<SubMsg> = vec![];
-    match option {
+    match (option, endow_type) {
         // Option #1. User can set an existing CW20 token as the DAO's Token
-        DaoSetupOption::ExistingCw20Token(contract_addr) => {
+        (DaoSetupOption::ExistingCw20Token(contract_addr), EndowmentType::Normal) => {
             // Validation
             if !registrar_config
                 .accepted_tokens
@@ -1553,7 +1560,7 @@ pub fn setup_dao_token_messages(
         }
 
         // Option #2. Create a basic CW20 token contract with a fixed supply
-        DaoSetupOption::SetupCw20Token(config) => {
+        (DaoSetupOption::SetupCw20Token(config), EndowmentType::Normal) => {
             // setup DAO token contract
             submsgs.push(SubMsg {
                 id: 6,
@@ -1562,8 +1569,8 @@ pub fn setup_dao_token_messages(
                     admin: None,
                     label: "new endowment dao token(cw20) contract".to_string(),
                     msg: to_binary(&cw20_base::msg::InstantiateMsg {
-                        name: "AP Endowment Dao Token".to_string(),
-                        symbol: "APEDT".to_string(),
+                        name: config.name,
+                        symbol: config.symbol,
                         decimals: 6,
                         initial_balances: vec![Cw20Coin {
                             address: endowment_owner.to_string(),
@@ -1578,14 +1585,37 @@ pub fn setup_dao_token_messages(
                 reply_on: ReplyOn::Success,
             })
         }
-        // Option #3. Create a CW20 token with supply controlled by a bonding curve
-        DaoSetupOption::SetupBondCurveToken(curve_type) => {
+        // Option #3 (for all Non-Charity Endowments). Create a CW20 token with supply controlled by a bonding curve
+        (DaoSetupOption::SetupBondCurveToken(config), EndowmentType::Normal) => {
+            submsgs.push(SubMsg {
+                id: 3,
+                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                    code_id: registrar_config.subdao_token_code.unwrap(),
+                    admin: None,
+                    label: "new endowment dao token contract".to_string(),
+                    msg: to_binary(&DaoTokenInstantiateMsg {
+                        curve_type: config.curve_type,
+                        name: config.name,
+                        symbol: config.symbol,
+                        decimals: config.decimals.unwrap(),
+                        reserve_denom: config.reserve_denom.unwrap(),
+                        reserve_decimals: config.reserve_decimals.unwrap(),
+                        unbonding_period: config.unbonding_period.unwrap(),
+                    })?,
+                    funds: vec![],
+                }),
+                gas_limit: None,
+                reply_on: ReplyOn::Success,
+            })
+        }
+        // Option #3 (for all Charity Endowments). Create a CW20 token with supply controlled by a bonding curve
+        (DaoSetupOption::SetupBondCurveToken(config), EndowmentType::Charity) => {
             // setup DAO token contract
             let halo_token = match registrar_config.halo_token.clone() {
                 Some(addr) => addr,
                 None => {
                     return Err(ContractError::Std(StdError::GenericErr {
-                        msg: "HALO token address is empty".to_string(),
+                        msg: "Registrar's HALO token address is empty".to_string(),
                     }))
                 }
             };
@@ -1596,13 +1626,13 @@ pub fn setup_dao_token_messages(
                     admin: None,
                     label: "new endowment dao token contract".to_string(),
                     msg: to_binary(&DaoTokenInstantiateMsg {
-                        name: "AP Endowment Dao Token".to_string(), // need dynamic name
-                        symbol: "APEDT".to_string(),                // need dynamic symbol
+                        curve_type: config.curve_type,
+                        name: config.name,
+                        symbol: config.symbol,
                         decimals: 6,
                         reserve_denom: halo_token,
                         reserve_decimals: 6,
-                        curve_type,
-                        unbonding_period: 7,
+                        unbonding_period: 21,
                     })?,
                     funds: vec![],
                 }),
@@ -1610,6 +1640,7 @@ pub fn setup_dao_token_messages(
                 reply_on: ReplyOn::Success,
             })
         }
+        (_, _) => return Err(ContractError::InvalidInputs {}),
     }
 
     Ok(submsgs)

@@ -1,4 +1,3 @@
-use crate::messages::dao_token::CurveType;
 use crate::structs::{
     AcceptedTokens, EndowmentFee, EndowmentType, NetworkInfo, Profile, SettingsController,
     SplitDetails, Tier,
@@ -98,11 +97,10 @@ pub struct CreateEndowmentMsg {
     pub whitelisted_contributors: Vec<String>,
     pub dao: bool,
     pub dao_setup_option: DaoSetupOption,
-    pub curve_type: Option<CurveType>,
     pub reserve_token: Option<String>,
     pub reserve_token_lp_contract: Option<String>,
     pub donation_match_active: bool,
-    pub donation_match_setup: u32,
+    pub donation_match_setup: u8,
     pub earnings_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub withdraw_fee: Option<EndowmentFee>,

@@ -175,13 +175,14 @@ pub fn instantiate(
     // optional donation matching contract can be setup as long as a dao is in place
     if msg.dao {
         let endowment_owner = deps.api.addr_validate(&msg.owner)?;
-        let submsgs = setup_dao_token_messages(
+        let endow_type = msg.profile.endow_type;
+        res = res.add_submessages(setup_dao_token_messages(
             deps.branch(),
             msg.dao_setup_option,
+            &endow_type,
             &registrar_config,
             endowment_owner,
-        )?;
-        res = res.add_submessages(submsgs);
+        )?);
 
         // `donation_match_setup`: Field determines the various way of setting up "donation_match" contract
         // Possible values:
@@ -192,8 +193,7 @@ pub fn instantiate(
         //           - the Token contract address (CW20)
         //           - a Token / UST LP Pair contract ( this attribute would be updatable should they move supply to a new pool, etc)
         //   3 =>  Endowment wants to have a DAO but they want to use an brand new CW20 Token that will not be attached to a bonding curve. (coming later)
-        if msg.donation_match_setup != 0 {
-            let endow_type = msg.profile.endow_type;
+        if msg.donation_match_setup > 0 {
             let donation_match_code = match registrar_config.donation_match_code {
                 Some(id) => id,
                 None => {
@@ -241,9 +241,9 @@ pub fn instantiate(
                     admin: None,
                     label: "new donation match contract".to_string(),
                     msg: to_binary(&DonationMatchInstantiateMsg {
+                        registrar_contract: msg.registrar_contract.clone(),
                         reserve_token,
                         lp_pair,
-                        registrar_contract: msg.registrar_contract.clone(),
                     })?,
                     funds: vec![],
                 }),

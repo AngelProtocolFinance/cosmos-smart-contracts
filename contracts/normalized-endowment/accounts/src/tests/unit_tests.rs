@@ -56,9 +56,18 @@ fn create_endowment() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
         dao: true,
-        dao_setup_option: DaoSetupOption::SetupBondCurveToken(CurveType::Constant {
-            value: Uint128::zero(),
-            scale: 2u32,
+        dao_setup_option: DaoSetupOption::SetupBondCurveToken(DaoBondingTokenConfig {
+            curve_type: CurveType::SquareRoot {
+                slope: Uint128::from(19307000u64),
+                power: Uint128::from(428571429u64),
+                scale: 9,
+            },
+            name: String::from("AP Endowment DAO Token"),
+            symbol: String::from("APEDT"),
+            decimals: None,
+            reserve_decimals: None,
+            reserve_denom: None,
+            unbonding_period: None,
         }),
         earnings_fee: None,
         deposit_fee: None,
@@ -126,9 +135,18 @@ fn test_proper_initialization() {
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
         dao: true,
-        dao_setup_option: DaoSetupOption::SetupBondCurveToken(CurveType::Constant {
-            value: Uint128::zero(),
-            scale: 2u32,
+        dao_setup_option: DaoSetupOption::SetupBondCurveToken(DaoBondingTokenConfig {
+            curve_type: CurveType::SquareRoot {
+                slope: Uint128::from(19307000u64),
+                power: Uint128::from(428571429u64),
+                scale: 9,
+            },
+            name: String::from("AP Endowment DAO Token"),
+            symbol: String::from("APEDT"),
+            decimals: None,
+            reserve_decimals: None,
+            reserve_denom: None,
+            unbonding_period: None,
         }),
         donation_match_active: false,
         donation_match_setup: 0,
