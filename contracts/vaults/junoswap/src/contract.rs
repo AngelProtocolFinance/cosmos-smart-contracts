@@ -6,7 +6,6 @@ use crate::wasmswap;
 use crate::wasmswap::InfoResponse;
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
-use angel_core::responses::vault::ConfigResponse;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
     StdResult, Uint128,
@@ -15,7 +14,7 @@ use cw2::{get_contract_version, set_contract_version};
 use cw20::Balance;
 
 // version info for future migration info
-const CONTRACT_NAME: &str = "anchor";
+const CONTRACT_NAME: &str = "junoswap_vault";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[entry_point]
@@ -27,17 +26,23 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let junoswap_pool = deps.api.addr_validate(&msg.junoswap_pool)?;
+    let swap_pool_addr = deps.api.addr_validate(&msg.swap_pool_addr)?;
     let swap_pool_info: InfoResponse = deps
         .querier
-        .query_wasm_smart(junoswap_pool.to_string(), &wasmswap::QueryMsg::Info {})?;
+        .query_wasm_smart(swap_pool_addr.to_string(), &wasmswap::QueryMsg::Info {})?;
 
     let config = config::Config {
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-        junoswap_pool,
-        input_denom: swap_pool_info.token1_denom,
+
+        target: swap_pool_addr,
+        input_denoms: vec![swap_pool_info.token1_denom, swap_pool_info.token2_denom],
         yield_token: deps.api.addr_validate(&swap_pool_info.lp_token_address)?,
+        routes: vec![],
+
+        total_assets: Uint128::zero(),
+        total_shares: Uint128::zero(),
+
         next_pending_id: 0,
         last_harvest: env.block.height,
         last_harvest_fx: None,
@@ -104,11 +109,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     let config = config::read(deps.storage)?;
 
     match msg {
-        QueryMsg::VaultConfig {} => to_binary(&queriers::query_vault_config(deps)),
-        QueryMsg::Config {} => to_binary(&ConfigResponse {
-            input_denom: config.input_denom.clone(),
-            yield_token: config.yield_token.to_string(),
-        }),
+        QueryMsg::Config {} => to_binary(&queriers::query_config(deps)),
         QueryMsg::Balance { address } => to_binary(&queriers::query_balance(deps, address)),
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
     }

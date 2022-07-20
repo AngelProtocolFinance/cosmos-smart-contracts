@@ -37,11 +37,9 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub junoswap_pool: Option<String>,
-    pub input_denom: Option<Denom>,
-    pub yield_token: Option<String>,
-    pub treasury_withdraw_threshold: Option<Uint128>,
+    pub swap_pool_addr: Option<String>,
     pub harvest_to_liquid: Option<Decimal>,
+    pub routes: RoutesUpdateMsg,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -51,9 +49,14 @@ pub struct AccountWithdrawMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct RoutesUpdateMsg {
+    pub add: Vec<Addr>,
+    pub remove: Vec<Addr>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    VaultConfig {},
     Config {},
     /// Returns the current balance of the given address, 0 if unset.
     /// Return type: BalanceResponse.

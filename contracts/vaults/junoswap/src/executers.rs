@@ -69,17 +69,40 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    config.junoswap_pool = match msg.junoswap_pool {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.junoswap_pool,
+    config.target = match msg.swap_pool_addr {
+        Some(ref addr) => deps.api.addr_validate(&addr)?,
+        None => config.target,
     };
 
     let swap_pool_info: InfoResponse = deps
         .querier
-        .query_wasm_smart(&config.junoswap_pool, &wasmswap::QueryMsg::Info {})?;
+        .query_wasm_smart(&config.target, &wasmswap::QueryMsg::Info {})?;
     config.yield_token = deps.api.addr_validate(&swap_pool_info.lp_token_address)?;
-    config.input_denom = swap_pool_info.token1_denom;
+    config.input_denoms = vec![swap_pool_info.token1_denom, swap_pool_info.token2_denom];
+
     config.harvest_to_liquid = msg.harvest_to_liquid.unwrap_or(config.harvest_to_liquid);
+
+    // Add more addresses to `config.routes`
+    for addr in msg.routes.add {
+        if !config.routes.contains(&addr) {
+            config.routes.push(addr);
+        }
+    }
+
+    // Remove the addresses from `config.routes`
+    for addr in msg.routes.remove {
+        if config.routes.contains(&addr) {
+            let id = config
+                .routes
+                .iter()
+                .enumerate()
+                .find(|(_, v)| **v == addr)
+                .unwrap()
+                .0;
+            config.routes.swap_remove(id);
+        }
+    }
+
     config::store(deps.storage, &config)?;
 
     Ok(Response::default())

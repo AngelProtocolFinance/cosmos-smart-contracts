@@ -11,7 +11,7 @@ fn proper_instantiation() {
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
-        junoswap_pool: "junoswap-pool".to_string(),
+        swap_pool_addr: "junoswap-pool".to_string(),
         registrar_contract: "angelprotocolteamdano".to_string(),
         harvest_to_liquid: Decimal::percent(75),
     };

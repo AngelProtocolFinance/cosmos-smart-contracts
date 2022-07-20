@@ -1,9 +1,9 @@
 use crate::config::{self, CONFIG};
 use crate::config::{BALANCES, TOKEN_INFO};
 use crate::wasmswap::{self, InfoResponse};
-use angel_core::responses::vault::{ExchangeRateResponse, VaultConfigResponse};
+use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
 use angel_core::structs::{BalanceInfo, BalanceResponse};
-use cosmwasm_std::{Decimal256, Deps, Uint256};
+use cosmwasm_std::Deps;
 use cw20::{Denom, TokenInfoResponse};
 
 pub fn query_balance(deps: Deps, address: String) -> BalanceResponse {
@@ -29,13 +29,13 @@ pub fn query_token_info(deps: Deps) -> TokenInfoResponse {
     }
 }
 
-pub fn query_vault_config(deps: Deps) -> VaultConfigResponse {
+pub fn query_config(deps: Deps) -> ConfigResponse {
     let config = config::read(deps.storage).unwrap();
-    VaultConfigResponse {
+    ConfigResponse {
         owner: config.owner.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
-        junoswap_pool: config.junoswap_pool.to_string(),
-        input_denom: config.input_denom,
+        target: config.target.to_string(),
+        input_denoms: config.input_denoms,
         yield_token: config.yield_token.to_string(),
         last_harvest: config.last_harvest,
         harvest_to_liquid: config.harvest_to_liquid,
@@ -46,7 +46,7 @@ pub fn query_exchange_rate(deps: Deps, input_denom: Denom) -> ExchangeRateRespon
     let config = CONFIG.load(deps.storage).unwrap();
     let swap_pool_info: InfoResponse = deps
         .querier
-        .query_wasm_smart(config.junoswap_pool, &wasmswap::QueryMsg::Info {})
+        .query_wasm_smart(config.target, &wasmswap::QueryMsg::Info {})
         .unwrap();
     todo!("Implement the following query response")
     // ExchangeRateResponse {
