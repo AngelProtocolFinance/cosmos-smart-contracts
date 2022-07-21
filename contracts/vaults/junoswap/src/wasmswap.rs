@@ -1,10 +1,13 @@
+use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 /// This file is just the clone of `wasmswap` messages.
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{to_binary, Addr, Coin, CosmosMsg, StdResult, Uint128, WasmMsg};
 
 use cw20::{Denom, Expiration};
+
+use crate::config::Config;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -107,16 +110,62 @@ pub struct Token2ForToken1PriceResponse {
 //     RedeemStable {},
 // }
 
-// pub fn deposit_stable_msg(market: &Addr, denom: &str, amount: Uint128) -> StdResult<CosmosMsg> {
-//     Ok(CosmosMsg::Wasm(WasmMsg::Execute {
-//         contract_addr: market.to_string(),
-//         msg: to_binary(&HandleMsg::DepositStable {})?,
-//         funds: vec![Coin {
-//             denom: denom.to_string(),
-//             amount,
-//         }],
-//     }))
-// }
+pub fn swap_msg(config: &Config, asset: Asset) -> StdResult<Vec<CosmosMsg>> {
+    match asset.info {
+        AssetInfoBase::Native(denom) => {
+            let input_token_string = denom.to_string();
+            let input_token = if input_token_string == config.input_denoms[0] {
+                TokenSelect::Token1
+            } else {
+                TokenSelect::Token2
+            };
+            Ok(vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.target.to_string(),
+                msg: to_binary(&ExecuteMsg::Swap {
+                    input_token,
+                    input_amount: asset.amount,
+                    min_output: Uint128::zero(), // Here, we set the zero temporarily. Need to be fixed afterwards.
+                    expiration: None,
+                })?,
+                funds: vec![Coin {
+                    denom: input_token_string,
+                    amount: asset.amount,
+                }],
+            })])
+        }
+        AssetInfoBase::Cw20(addr) => {
+            let input_token_string = addr.to_string();
+            let input_token = if input_token_string == config.input_denoms[0] {
+                TokenSelect::Token1
+            } else {
+                TokenSelect::Token2
+            };
+            Ok(vec![
+                CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: addr.to_string(),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                        spender: config.target.to_string(),
+                        amount: asset.amount,
+                        expires: None,
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                }),
+                CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: config.target.to_string(),
+                    msg: to_binary(&ExecuteMsg::Swap {
+                        input_token,
+                        input_amount: asset.amount,
+                        min_output: Uint128::zero(), // Here, we set the zero temporarily. Need to be fixed afterwards.
+                        expiration: None,
+                    })?,
+                    funds: vec![],
+                }),
+            ])
+        }
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+    }
+}
 
 // pub fn redeem_stable_msg(market: &Addr, token: &Addr, amount: Uint128) -> StdResult<CosmosMsg> {
 //     Ok(CosmosMsg::Wasm(WasmMsg::Execute {

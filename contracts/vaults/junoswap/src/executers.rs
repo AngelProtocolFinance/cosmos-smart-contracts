@@ -1,9 +1,9 @@
-use crate::config::{PendingInfo, BALANCES, PENDING, TOKEN_INFO};
-use crate::wasmswap::InfoResponse;
+use crate::config::{Config, PendingInfo, BALANCES, PENDING, TOKEN_INFO};
+use crate::wasmswap::{swap_msg, InfoResponse};
 use crate::{config, wasmswap};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
-use angel_core::messages::vault::{AccountWithdrawMsg, UpdateConfigMsg};
+use angel_core::messages::vault::{AccountWithdrawMsg, UpdateConfigMsg, ExecuteMsg};
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, EndowmentListResponse,
 };
@@ -11,9 +11,10 @@ use angel_core::structs::{BalanceInfo, EndowmentEntry};
 use cosmwasm_std::{
     to_binary, Addr, Attribute, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
     Order, QueryRequest, ReplyOn, Response, StdError, SubMsg, SubMsgResult, Uint128, WasmMsg,
-    WasmQuery,
+    WasmQuery, StdResult,
 };
-use cw20::{Balance, Cw20CoinVerified};
+use cw20::{Balance, Denom};
+use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 
 // wallet that we use for regular, automated harvests of vault
 const CRON_WALLET: &str = "terra1janh9rs6pme3tdwhyag2lmsr2xv6wzhcrjz0xx";
@@ -77,8 +78,17 @@ pub fn update_config(
     let swap_pool_info: InfoResponse = deps
         .querier
         .query_wasm_smart(&config.target, &wasmswap::QueryMsg::Info {})?;
+
+    let token1_denom_string = match swap_pool_info.token1_denom {
+        Denom::Native(denom) => denom.to_string(),
+        Denom::Cw20(addr) => addr.to_string(),
+    };
+    let token2_denom_string = match swap_pool_info.token2_denom {
+        Denom::Native(denom) => denom.to_string(),
+        Denom::Cw20(addr) => addr.to_string(),
+    };
     config.yield_token = deps.api.addr_validate(&swap_pool_info.lp_token_address)?;
-    config.input_denoms = vec![swap_pool_info.token1_denom, swap_pool_info.token2_denom];
+    config.input_denoms = vec![token1_denom_string, token2_denom_string];
 
     config.harvest_to_liquid = msg.harvest_to_liquid.unwrap_or(config.harvest_to_liquid);
 
@@ -108,55 +118,46 @@ pub fn update_config(
     Ok(Response::default())
 }
 
-pub fn deposit_stable(
+pub fn deposit(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
-    _balance: Balance,
+    asset: Asset,
 ) -> Result<Response, ContractError> {
-    // let mut config = config::read(deps.storage)?;
+    let mut config = config::read(deps.storage)?;
 
-    // // only accept max of 1 deposit coin/token per donation
-    // if info.funds.len() != 1 {
-    //     return Err(ContractError::InvalidCoinsDeposited {});
-    // }
+    if !validate_asset_info(&config, &asset) {
+        return Err(ContractError::InvalidCoinsDeposited {});
+    }
 
-    // let deposit_amount: Coin = Coin {
-    //     denom: DEPOSIT_TOKEN_DENOM.to_string(),
-    //     amount: info
-    //         .funds
-    //         .iter()
-    //         .find(|c| {
-    //             c.denom == *DEPOSIT_TOKEN_DENOM
-    //         })
-    //         .map(|c| c.amount)
-    //         .unwrap_or_else(Uint128::zero),
-    // };
+    if asset.amount.is_zero() {
+        return Err(ContractError::EmptyBalance {});
+    }
 
-    // if deposit_amount.amount.is_zero() {
-    //     return Err(ContractError::EmptyBalance {});
-    // }
+    // check that the depositor is an Accounts SC
+    let endowments_rsp: EndowmentListResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {
+                name: None,
+                owner: None,
+                status: None,
+                tier: None,
+                un_sdg: None,
+                endow_type: None,
+            })?,
+        }))?;
+    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
+    let pos = endowments.iter().position(|p| p.address == info.sender);
+    // reject if the sender was found in the list of endowments
+    if pos == None {
+        return Err(ContractError::Unauthorized {});
+    }
 
-    // // check that the depositor is an Accounts SC
-    // let endowments_rsp: EndowmentListResponse =
-    //     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-    //         contract_addr: config.registrar_contract.to_string(),
-    //         msg: to_binary(&RegistrarQueryMsg::EndowmentList {
-    //             name: None,
-    //             owner: None,
-    //             status: None,
-    //             tier: None,
-    //             un_sdg: None,
-    //             endow_type: None,
-    //         })?,
-    //     }))?;
-    // let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    // let pos = endowments.iter().position(|p| p.address == info.sender);
-    // // reject if the sender was found in the list of endowments
-    // if pos == None {
-    //     return Err(ContractError::Unauthorized {});
-    // }
-
+    let mut res = Response::new()
+        .add_attribute("action", "deposit")
+        .add_attribute("sender", info.sender.to_string())
+        .add_attribute("deposit_amount", asset.amount);
     // let submessage_id = config.next_pending_id;
     // PENDING.save(
     //     deps.storage,
@@ -166,27 +167,56 @@ pub fn deposit_stable(
     //         accounts_address: info.sender.clone(),
     //         beneficiary: None,
     //         fund: None,
-    //         amount: deposit_amount.amount,
+    //         locked: asset.amount,
+    //         liquid: Uint128::zero(),
     //     },
     // )?;
     // config.next_pending_id += 1;
     // config::store(deps.storage, &config)?;
 
-    // Ok(Response::new()
-    //     .add_attribute("action", "deposit")
-    //     .add_attribute("sender", info.sender)
-    //     .add_attribute("deposit_amount", deposit_amount.amount)
-    //     .add_submessage(SubMsg {
+    // let msgs = swap_msg(&config, asset)?;
+
+    // if msgs.len() == 1 {
+    //     res = res.add_submessage(SubMsg {
     //         id: submessage_id,
-    //         msg: deposit_stable_msg(
-    //             &config.moneymarket,
-    //             DEPOSIT_TOKEN_DENOM,
-    //             deposit_amount.amount,
-    //         )?,
+    //         msg: msgs[0].clone(),
     //         reply_on: ReplyOn::Always,
     //         gas_limit: None,
-    //     }))
-    Ok(Response::default())
+    //     });
+    // } else {
+    //     res = res.add_submessage(SubMsg::new(msgs[0].clone()));
+    //     res = res.add_submessage(SubMsg {
+    //         id: submessage_id,
+    //         msg: msgs[1].clone(),
+    //         reply_on: ReplyOn::Always,
+    //         gas_limit: None,
+    //     });
+    // }
+
+    res = res.add_messages(swap_msg(&config, asset)?);
+
+    // let in_asset_bal_before = query_asset_balance(&deps, asset.info, env.contract.address.to_string());
+    // let out_asset_bal_before = query_asset_balance(&deps, asset.info, env.contract.address.to_string());
+
+    // 2nd message: add_liquidity
+    // res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+    //     contract_addr: env.contract.address.to_string(),
+    //     msg: to_binary(&ExecuteMsg::AddLiquidity { 
+    //         in_asset: asset.info, 
+    //         out_asset: (), 
+    //         in_asset_bal_before: (), 
+    //         out_asset_bal_before: (),
+    //     }).unwrap(),
+    //     funds: vec![],
+    // }));
+
+    // (handle_reply_lp_token)
+
+    // 3rd message: stake_lp_tokens
+    
+    // (handle_reply_stake)
+
+    Ok(res)
 }
 
 /// Redeem Stable: Take in an amount of locked/liquid deposit tokens
@@ -620,4 +650,78 @@ pub fn process_junoswap_pool_reply(
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
+}
+
+fn validate_asset_info(config: &Config, asset: &Asset) -> bool {
+    let target = match asset.info {
+        AssetInfoBase::Native(ref denom) => denom.to_string(),
+        AssetInfoBase::Cw20(ref contract_addr) => contract_addr.to_string(),
+        AssetInfoBase::Cw1155(_, _) => {
+            return false;
+        }
+    };
+
+    for denom_string in config.input_denoms.iter() {
+        if *denom_string == target {
+            return true;
+        }
+    }
+    false
+}
+
+pub fn add_liquidity(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    in_asset: AssetInfo,
+    out_asset: AssetInfo,
+    in_asset_bal_before: Uint128,
+    out_asset_bal_before: Uint128,
+) -> Result<Response, ContractError> {
+
+    Ok(Response::new())
+}
+
+fn query_asset_balance(deps: &DepsMut, asset: AssetInfo, address: String) -> Uint128 {
+    let mut balance: Uint128 = Uint128::zero();
+    match asset {
+        AssetInfoBase::Native(denom) => query_balance(&deps, address, denom).unwrap_or(Uint128::zero()),
+        AssetInfoBase::Cw20(token_addr) => query_token_balance(&deps, token_addr.to_string(), address).unwrap_or(Uint128::zero()),
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+    }
+    
+}
+
+
+/// Returns a native token's balance for a specific account.
+/// ## Params
+/// * **querier** is an object of type [`QuerierWrapper`].
+///
+/// * **account_addr** is an object of type [`Addr`].
+///
+/// * **denom** is an object of type [`String`] used to specify the denomination used to return the balance (e.g uluna).
+pub fn query_balance(
+    deps: &DepsMut,
+    account_addr: String,
+    denom: String,
+) -> StdResult<Uint128> {
+    Ok(deps.querier.query_balance(account_addr, denom).map(|c| c.amount).unwrap_or(Uint128::zero()))
+}
+
+
+/// Returns a token balance for an account.
+/// ## Params
+/// * **querier** is an object of type [`QuerierWrapper`].
+///
+/// * **contract_addr** is an object of type [`Addr`]. This is the token contract for which we return a balance.
+///
+/// * **account_addr** is an object of type [`Addr`] for which we query the token balance for.
+pub fn query_token_balance(
+    deps: &DepsMut,
+    contract_addr: String,
+    account_addr: String,
+) -> StdResult<Uint128> {
+    // load balance from the token contract
+    let res: cw20::BalanceResponse = deps.querier.query_wasm_smart(contract_addr, &cw20::Cw20QueryMsg::Balance { address: account_addr })?;
+    Ok(res.balance)
 }

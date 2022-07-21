@@ -11,7 +11,8 @@ use cosmwasm_std::{
     StdResult, Uint128,
 };
 use cw2::{get_contract_version, set_contract_version};
-use cw20::Balance;
+use cw20::Denom;
+use cw_asset::{Asset, AssetInfoBase};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "junoswap_vault";
@@ -31,12 +32,21 @@ pub fn instantiate(
         .querier
         .query_wasm_smart(swap_pool_addr.to_string(), &wasmswap::QueryMsg::Info {})?;
 
+    let token1_denom_string = match swap_pool_info.token1_denom {
+        Denom::Native(denom) => denom.to_string(),
+        Denom::Cw20(addr) => addr.to_string(),
+    };
+    let token2_denom_string = match swap_pool_info.token2_denom {
+        Denom::Native(denom) => denom.to_string(),
+        Denom::Cw20(addr) => addr.to_string(),
+    };
+
     let config = config::Config {
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
 
         target: swap_pool_addr,
-        input_denoms: vec![swap_pool_info.token1_denom, swap_pool_info.token2_denom],
+        input_denoms: vec![token1_denom_string, token2_denom_string],
         yield_token: deps.api.addr_validate(&swap_pool_info.lp_token_address)?,
         routes: vec![],
 
@@ -77,9 +87,16 @@ pub fn execute(
             executers::update_registrar(deps, env, info, new_registrar)
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
-        // -UST (Account) --> +Deposit Token/Yield Token (Vault)
+        // -Input token(eg. USDC) (Account) --> +Deposit Token/Yield Token (Vault)
         ExecuteMsg::Deposit {} => {
-            executers::deposit_stable(deps, env, info.clone(), Balance::from(info.funds))
+            if info.funds.len() != 1 {
+                return Err(ContractError::InvalidCoinsDeposited {});
+            }
+            let native_fund = Asset {
+                info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
+                amount: info.funds[0].amount,
+            };
+            executers::deposit(deps, env, info.clone(), native_fund)
         }
         // Redeem is only called by the SC when setting up new strategies.
         // Pulls all existing strategy amounts back to Account in UST.
@@ -93,6 +110,20 @@ pub fn execute(
             collector_address,
             collector_share,
         } => executers::harvest(deps, env, info, collector_address, collector_share), // DP -> DP shuffle (taxes collected)
+        ExecuteMsg::AddLiquidity {
+            in_asset,
+            out_asset,
+            in_asset_bal_before,
+            out_asset_bal_before,
+        } => executers::add_liquidity(
+            deps,
+            env,
+            info,
+            in_asset,
+            out_asset,
+            in_asset_bal_before,
+            out_asset_bal_before,
+        ),
     }
 }
 
