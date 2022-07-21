@@ -1,16 +1,19 @@
 use crate::contract::{execute, instantiate, query};
-use crate::error::ContractError;
 use crate::mock_querier::mock_dependencies;
 use crate::state::{config_read, poll_voter_read, state_read, Config, State};
 use angel_core::common::OrderBy;
+use angel_core::errors::dao::ContractError;
+use angel_core::messages::dao_token::CurveType;
 use angel_core::messages::gov::{
-    ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, PollExecuteMsg, PollResponse,
-    PollStatus, PollsResponse, QueryMsg, VoteOption, VoterInfo, VotersResponse, VotersResponseItem,
+    ConfigResponse, Cw20HookMsg, DaoBondingConfig, DaoToken, ExecuteMsg, InstantiateMsg,
+    PollExecuteMsg, PollResponse, PollStatus, PollsResponse, QueryMsg, VoteOption, VoterInfo,
+    VotersResponse, VotersResponseItem,
 };
+use angel_core::structs::EndowmentType;
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    attr, coins, from_binary, to_binary, Addr, Api, CanonicalAddr, CosmosMsg, Decimal, Deps,
-    DepsMut, Env, Response, StdError, SubMsg, Timestamp, Uint128, WasmMsg,
+    attr, coins, from_binary, to_binary, Addr, CosmosMsg, Decimal, Deps, DepsMut, Env, Response,
+    StdError, SubMsg, Timestamp, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 
@@ -38,6 +41,22 @@ fn mock_instantiate(deps: DepsMut) {
         expiration_period: DEFAULT_EXPIRATION_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
+        endow_type: EndowmentType::Charity,
+        endow_owner: TEST_CREATOR.to_string(),
+        registrar_contract: TEST_CREATOR.to_string(),
+        token: DaoToken::NewBondingCurve(DaoBondingConfig {
+            curve_type: CurveType::SquareRoot {
+                slope: Uint128::from(19307000u64),
+                power: Uint128::from(428571429u64),
+                scale: 9,
+            },
+            name: String::from("AP Endowment DAO Token"),
+            symbol: String::from("APEDT"),
+            decimals: None,
+            reserve_decimals: None,
+            reserve_denom: None,
+            unbonding_period: None,
+        }),
     };
 
     let info = mock_info(TEST_CREATOR, &[]);
@@ -48,9 +67,8 @@ fn mock_instantiate(deps: DepsMut) {
 fn mock_register_contracts(deps: DepsMut) {
     let info = mock_info(TEST_CREATOR, &[]);
     let msg = ExecuteMsg::RegisterContracts {
-        dao_token: VOTING_TOKEN.to_string(),
         ve_token: VE_TOKEN.to_string(),
-        terraswap_factory: TERRASWAP_FACTORY.to_string(),
+        swap_factory: TERRASWAP_FACTORY.to_string(),
     };
     let _res = execute(deps, mock_env(), info, msg)
         .expect("contract successfully executes RegisterContracts");
@@ -72,6 +90,22 @@ fn instantiate_msg() -> InstantiateMsg {
         expiration_period: DEFAULT_EXPIRATION_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
+        endow_type: EndowmentType::Charity,
+        endow_owner: TEST_CREATOR.to_string(),
+        registrar_contract: TEST_CREATOR.to_string(),
+        token: DaoToken::NewBondingCurve(DaoBondingConfig {
+            curve_type: CurveType::SquareRoot {
+                slope: Uint128::from(19307000u64),
+                power: Uint128::from(428571429u64),
+                scale: 9,
+            },
+            name: String::from("AP Endowment DAO Token"),
+            symbol: String::from("APEDT"),
+            decimals: None,
+            reserve_decimals: None,
+            reserve_denom: None,
+            unbonding_period: None,
+        }),
     }
 }
 
@@ -90,7 +124,7 @@ fn proper_initialization() {
         Config {
             dao_token: Addr::unchecked(""),
             ve_token: Addr::unchecked(""),
-            terraswap_factory: Addr::unchecked(""),
+            swap_factory: Addr::unchecked(""),
             owner: Addr::unchecked(TEST_CREATOR),
             quorum: Decimal::percent(DEFAULT_QUORUM),
             threshold: Decimal::percent(DEFAULT_THRESHOLD),
@@ -98,14 +132,14 @@ fn proper_initialization() {
             timelock_period: DEFAULT_TIMELOCK_PERIOD,
             expiration_period: DEFAULT_EXPIRATION_PERIOD,
             proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
-            snapshot_period: DEFAULT_FIX_PERIOD
+            snapshot_period: DEFAULT_FIX_PERIOD,
+            registrar_contract: Addr::unchecked(TEST_CREATOR),
         }
     );
 
     let msg = ExecuteMsg::RegisterContracts {
-        dao_token: VOTING_TOKEN.to_string(),
         ve_token: VE_TOKEN.to_string(),
-        terraswap_factory: TERRASWAP_FACTORY.to_string(),
+        swap_factory: TERRASWAP_FACTORY.to_string(),
     };
     let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     let config: Config = config_read(deps.as_ref().storage).load().unwrap();
@@ -150,6 +184,22 @@ fn fails_init_invalid_quorum() {
         expiration_period: DEFAULT_EXPIRATION_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
+        endow_type: EndowmentType::Charity,
+        endow_owner: TEST_CREATOR.to_string(),
+        registrar_contract: TEST_CREATOR.to_string(),
+        token: DaoToken::NewBondingCurve(DaoBondingConfig {
+            curve_type: CurveType::SquareRoot {
+                slope: Uint128::from(19307000u64),
+                power: Uint128::from(428571429u64),
+                scale: 9,
+            },
+            name: String::from("AP Endowment DAO Token"),
+            symbol: String::from("APEDT"),
+            decimals: None,
+            reserve_decimals: None,
+            reserve_denom: None,
+            unbonding_period: None,
+        }),
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -175,6 +225,22 @@ fn fails_init_invalid_threshold() {
         expiration_period: DEFAULT_EXPIRATION_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
+        endow_type: EndowmentType::Charity,
+        endow_owner: TEST_CREATOR.to_string(),
+        registrar_contract: TEST_CREATOR.to_string(),
+        token: DaoToken::NewBondingCurve(DaoBondingConfig {
+            curve_type: CurveType::SquareRoot {
+                slope: Uint128::from(19307000u64),
+                power: Uint128::from(428571429u64),
+                scale: 9,
+            },
+            name: String::from("AP Endowment DAO Token"),
+            symbol: String::from("APEDT"),
+            decimals: None,
+            reserve_decimals: None,
+            reserve_denom: None,
+            unbonding_period: None,
+        }),
     };
 
     let res = instantiate(deps.as_mut(), mock_env(), info, msg);
@@ -200,14 +266,29 @@ fn fails_contract_already_registered() {
         expiration_period: DEFAULT_EXPIRATION_PERIOD,
         proposal_deposit: Uint128::from(DEFAULT_PROPOSAL_DEPOSIT),
         snapshot_period: DEFAULT_FIX_PERIOD,
+        endow_type: EndowmentType::Charity,
+        endow_owner: TEST_CREATOR.to_string(),
+        registrar_contract: TEST_CREATOR.to_string(),
+        token: DaoToken::NewBondingCurve(DaoBondingConfig {
+            curve_type: CurveType::SquareRoot {
+                slope: Uint128::from(19307000u64),
+                power: Uint128::from(428571429u64),
+                scale: 9,
+            },
+            name: String::from("AP Endowment DAO Token"),
+            symbol: String::from("APEDT"),
+            decimals: None,
+            reserve_decimals: None,
+            reserve_denom: None,
+            unbonding_period: None,
+        }),
     };
 
     let _res = instantiate(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
 
     let msg = ExecuteMsg::RegisterContracts {
-        dao_token: VOTING_TOKEN.to_string(),
         ve_token: VE_TOKEN.to_string(),
-        terraswap_factory: TERRASWAP_FACTORY.to_string(),
+        swap_factory: TERRASWAP_FACTORY.to_string(),
     };
     let _res = execute(deps.as_mut(), mock_env(), info.clone(), msg.clone()).unwrap();
     let res = execute(deps.as_mut(), mock_env(), info, msg);

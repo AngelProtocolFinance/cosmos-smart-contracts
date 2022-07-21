@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, query, reply};
 use angel_core::errors::core::*;
-use angel_core::messages::accounts::{DaoBondingTokenConfig, DaoSetupOption};
 use angel_core::messages::dao_token::CurveType;
+use angel_core::messages::gov::{DaoBondingConfig, DaoSetupMsg, DaoToken};
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
@@ -251,20 +251,28 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         split_default: None,
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
-        dao: true,
-        dao_setup_option: Some(DaoSetupOption::SetupBondCurveToken(DaoBondingTokenConfig {
-            curve_type: CurveType::SquareRoot {
-                slope: Uint128::from(19307000u64),
-                power: Uint128::from(428571429u64),
-                scale: 9,
-            },
-            name: String::from("AP Endowment DAO Token"),
-            symbol: String::from("APEDT"),
-            decimals: None,
-            reserve_decimals: None,
-            reserve_denom: None,
-            unbonding_period: None,
-        })),
+        dao: Some(DaoSetupMsg {
+            quorum: Decimal::percent(20),
+            threshold: Decimal::percent(50),
+            voting_period: 1000000_u64,
+            timelock_period: 1000000_u64,
+            expiration_period: 1000000_u64,
+            proposal_deposit: Uint128::from(1000000_u64),
+            snapshot_period: 1000,
+            token: DaoToken::NewBondingCurve(DaoBondingConfig {
+                curve_type: CurveType::SquareRoot {
+                    slope: Uint128::from(19307000u64),
+                    power: Uint128::from(428571429u64),
+                    scale: 9,
+                },
+                name: String::from("AP Endowment DAO Token"),
+                symbol: String::from("APEDT"),
+                decimals: None,
+                reserve_decimals: None,
+                reserve_denom: None,
+                unbonding_period: None,
+            }),
+        }),
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,

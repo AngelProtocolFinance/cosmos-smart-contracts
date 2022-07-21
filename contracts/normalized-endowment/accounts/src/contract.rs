@@ -1,8 +1,8 @@
 use crate::executers;
 use crate::queriers;
 use crate::state::{
-    Config, Cw3MultiSigConfig, Endowment, OldConfig, State, CONFIG, CW3MULTISIGCONFIG, ENDOWMENT,
-    PROFILE, STATE,
+    Config, Cw3MultiSigConfig, Endowment, OldConfig, State, CONFIG, CW3MULTISIGCONFIG, DAOSETUP,
+    ENDOWMENT, PROFILE, STATE,
 };
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
@@ -184,18 +184,12 @@ pub fn instantiate(
             if registrar_config.subdao_token_code != None
                 && registrar_config.subdao_gov_code != None
             {
-                res = res.add_submessage(SubMsg {
-                    id: 3,
-                    msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                        code_id: registrar_config.subdao_gov_code.unwrap(),
-                        admin: None,
-                        label: "new endowment dao contract".to_string(),
-                        msg: to_binary(&dao_setup)?,
-                        funds: vec![],
-                    }),
-                    gas_limit: None,
-                    reply_on: ReplyOn::Success,
-                });
+                DAOSETUP.save(deps.storage, &dao_setup)?;
+            } else {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "DAO settings are not yet configured on the Registrar contract"
+                        .to_string(),
+                }));
             }
         }
         None => (),

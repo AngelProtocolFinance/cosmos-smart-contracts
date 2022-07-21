@@ -1,9 +1,9 @@
-use crate::state::{CONFIG, CW3MULTISIGCONFIG, ENDOWMENT, PROFILE, STATE};
+use crate::state::{CONFIG, CW3MULTISIGCONFIG, DAOSETUP, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::InstantiateMsg as Cw3MultisigInstantiateMsg;
 use angel_core::messages::donation_match::ExecuteMsg as DonationMatchExecMsg;
-use angel_core::messages::gov::InstantiateMsg as DaoSetupMsg;
+use angel_core::messages::gov::{DaoSetupMsg, InstantiateMsg as DaoInstantiateMsg};
 use angel_core::messages::index_fund::{
     DepositMsg as IndexFundDepositMsg, ExecuteMsg as IndexFundExecuter,
     QueryMsg as IndexFundQuerier,
@@ -113,7 +113,46 @@ pub fn cw3_multisig_reply(
             endowment.owner = deps.api.addr_validate(&multisig_addr)?;
             ENDOWMENT.save(deps.storage, &endowment)?;
 
-            Ok(Response::default())
+            let mut res = Response::default();
+            // check if a dao needs to be setup along with a dao token contract
+            match DAOSETUP.may_load(deps.storage)? {
+                Some(dao_setup) => {
+                    let profile = PROFILE.load(deps.storage)?;
+                    let config = CONFIG.load(deps.storage)?;
+                    let registrar_config: RegistrarConfigResponse =
+                        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                            contract_addr: config.registrar_contract.to_string(),
+                            msg: to_binary(&RegistrarQuerier::Config {})?,
+                        }))?;
+
+                    res = res.add_submessage(SubMsg {
+                        id: 3,
+                        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                            code_id: registrar_config.subdao_gov_code.unwrap(),
+                            admin: None,
+                            label: "new endowment dao contract".to_string(),
+                            msg: to_binary(&DaoInstantiateMsg {
+                                quorum: dao_setup.quorum,
+                                threshold: dao_setup.threshold,
+                                voting_period: dao_setup.voting_period,
+                                timelock_period: dao_setup.timelock_period,
+                                expiration_period: dao_setup.expiration_period,
+                                proposal_deposit: dao_setup.proposal_deposit,
+                                snapshot_period: dao_setup.snapshot_period,
+                                endow_type: profile.endow_type,
+                                endow_owner: multisig_addr,
+                                registrar_contract: config.registrar_contract.to_string(),
+                                token: dao_setup.token,
+                            })?,
+                            funds: vec![],
+                        }),
+                        gas_limit: None,
+                        reply_on: ReplyOn::Success,
+                    });
+                }
+                None => (),
+            }
+            Ok(res)
         }
         SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }

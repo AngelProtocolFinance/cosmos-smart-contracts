@@ -1,3 +1,4 @@
+use angel_core::messages::gov::DaoSetupMsg;
 use angel_core::structs::{
     AcceptedTokens, BalanceInfo, EndowmentFee, Profile, RebalanceDetails, SettingsController,
     StrategyComponent, TransactionRecord,
@@ -86,6 +87,7 @@ pub struct Cw3MultiSigConfig {
     pub max_voting_period: Duration,
 }
 
+pub const DAOSETUP: Item<DaoSetupMsg> = Item::new("dao_setup");
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");

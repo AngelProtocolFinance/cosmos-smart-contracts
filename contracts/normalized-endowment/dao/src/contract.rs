@@ -199,6 +199,7 @@ pub fn execute(
             swap_factory,
         } => register_contracts(deps, ve_token, swap_factory),
         ExecuteMsg::UpdateConfig {
+            owner,
             quorum,
             threshold,
             voting_period,
@@ -209,6 +210,7 @@ pub fn execute(
         } => update_config(
             deps,
             info,
+            owner,
             quorum,
             threshold,
             voting_period,
@@ -306,6 +308,7 @@ pub fn register_contracts(
 pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
+    owner: Option<String>,
     quorum: Option<Decimal>,
     threshold: Option<Decimal>,
     voting_period: Option<u64>,
@@ -318,6 +321,10 @@ pub fn update_config(
     config_store(deps.storage).update(|mut config| {
         if config.owner != api.addr_validate(info.sender.as_str())? {
             return Err(ContractError::Unauthorized {});
+        }
+
+        if let Some(owner) = owner {
+            config.owner = api.addr_validate(&owner)?;
         }
 
         if let Some(quorum) = quorum {

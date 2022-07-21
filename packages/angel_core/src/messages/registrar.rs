@@ -1,4 +1,4 @@
-use crate::messages::gov::InstantiateMsg as DaoSetupMsg;
+use crate::messages::gov::DaoSetupMsg;
 use crate::structs::{
     AcceptedTokens, EndowmentFee, EndowmentType, NetworkInfo, Profile, SettingsController,
     SplitDetails, Tier,

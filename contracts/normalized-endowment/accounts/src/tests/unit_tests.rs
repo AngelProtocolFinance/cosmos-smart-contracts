@@ -1,9 +1,14 @@
 use super::mock_querier::{mock_dependencies, WasmMockQuerier};
 use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
-use angel_core::messages::accounts::*;
-use angel_core::messages::dao_token::CurveType;
-use angel_core::responses::accounts::*;
+use angel_core::messages::accounts::UpdateProfileMsg;
+use angel_core::messages::accounts::{
+    DepositMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Strategy, UpdateEndowmentSettingsMsg,
+    UpdateEndowmentStatusMsg,
+};
+use angel_core::responses::accounts::{
+    ConfigResponse, ProfileResponse, StateResponse, TxRecordsResponse,
+};
 use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{attr, coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, Uint128};
@@ -55,20 +60,7 @@ fn create_endowment() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
         split_default: Decimal::one(),
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
-        dao: true,
-        dao_setup_option: Some(DaoSetupOption::SetupBondCurveToken(DaoBondingTokenConfig {
-            curve_type: CurveType::SquareRoot {
-                slope: Uint128::from(19307000u64),
-                power: Uint128::from(428571429u64),
-                scale: 9,
-            },
-            name: String::from("AP Endowment DAO Token"),
-            symbol: String::from("APEDT"),
-            decimals: None,
-            reserve_decimals: None,
-            reserve_denom: None,
-            unbonding_period: None,
-        })),
+        dao: None,
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,
@@ -134,20 +126,7 @@ fn test_proper_initialization() {
         split_default: Decimal::one(),
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
-        dao: true,
-        dao_setup_option: Some(DaoSetupOption::SetupBondCurveToken(DaoBondingTokenConfig {
-            curve_type: CurveType::SquareRoot {
-                slope: Uint128::from(19307000u64),
-                power: Uint128::from(428571429u64),
-                scale: 9,
-            },
-            name: String::from("AP Endowment DAO Token"),
-            symbol: String::from("APEDT"),
-            decimals: None,
-            reserve_decimals: None,
-            reserve_denom: None,
-            unbonding_period: None,
-        })),
+        dao: None,
         donation_match_active: false,
         donation_match_setup: None,
         earnings_fee: None,
@@ -171,7 +150,7 @@ fn test_proper_initialization() {
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
-    assert_eq!(2, res.messages.len());
+    assert_eq!(1, res.messages.len());
 }
 
 #[test]

@@ -23,6 +23,18 @@ pub struct InstantiateMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct DaoSetupMsg {
+    pub quorum: Decimal,
+    pub threshold: Decimal,
+    pub voting_period: u64,
+    pub timelock_period: u64,
+    pub expiration_period: u64,
+    pub proposal_deposit: Uint128,
+    pub snapshot_period: u64,
+    pub token: DaoToken,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
@@ -36,6 +48,7 @@ pub enum ExecuteMsg {
         denom: String,
     },
     UpdateConfig {
+        owner: Option<String>,
         quorum: Option<Decimal>,
         threshold: Option<Decimal>,
         voting_period: Option<u64>,

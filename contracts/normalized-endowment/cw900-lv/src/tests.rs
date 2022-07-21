@@ -1,11 +1,11 @@
 use crate::{
     contract::{execute, instantiate, query},
-    error::ContractError,
     state::{
         UserLockedBalance, MAX_SECONDS, SECONDS_PER_WEEK, STATE, USER_LOCKED_BALANCES,
         VOTING_POWER_CONSTANT_DIVISOR,
     },
 };
+use angel_core::errors::cw900::ContractError;
 use angel_core::messages::ve_token::{
     Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg, StakerResponse, StateResponse,
 };

@@ -1,4 +1,4 @@
-use crate::messages::gov::InstantiateMsg as DaoSetupMsg;
+use crate::messages::gov::DaoSetupMsg;
 use crate::structs::{
     EndowmentFee, FundingSource, Profile, RebalanceDetails, SettingsController, StrategyComponent,
 };
