@@ -1,5 +1,4 @@
 use crate::contract::{execute, instantiate, query};
-use crate::mock_querier::mock_dependencies;
 use crate::state::{config_read, poll_voter_read, state_read, Config, State};
 use angel_core::common::OrderBy;
 use angel_core::errors::dao::ContractError;
@@ -10,7 +9,7 @@ use angel_core::messages::gov::{
     VotersResponse, VotersResponseItem,
 };
 use angel_core::structs::EndowmentType;
-use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
+use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     attr, coins, from_binary, to_binary, Addr, CosmosMsg, Decimal, Deps, DepsMut, Env, Response,
     StdError, SubMsg, Timestamp, Uint128, WasmMsg,
@@ -111,7 +110,7 @@ fn instantiate_msg() -> InstantiateMsg {
 
 #[test]
 fn proper_initialization() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = instantiate_msg();
     let info = mock_info(TEST_CREATOR, &coins(2, VOTING_TOKEN));

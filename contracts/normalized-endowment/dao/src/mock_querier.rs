@@ -1,15 +1,12 @@
-#![allow(dead_code)]
 use angel_core::messages::ve_token::{StakerResponse, StateResponse};
-use schemars::JsonSchema;
-use serde::{Deserialize, Serialize};
-
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Coin, ContractResult, Decimal, Empty, OwnedDeps, Querier,
+    from_binary, from_slice, to_binary, Coin, ContractResult, Empty, OwnedDeps, Querier,
     QuerierResult, QueryRequest, SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cw20::{BalanceResponse as Cw20BalanceResponse, Cw20QueryMsg};
-
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 // use terra_cosmwasm::{TaxCapResponse, TaxRateResponse, TerraQuery, TerraQueryWrapper, TerraRoute};
@@ -34,8 +31,6 @@ pub fn mock_dependencies(
 pub struct WasmMockQuerier {
     base: MockQuerier<Empty>,
     token_querier: TokenQuerier,
-    tax_querier: TaxQuerier,
-    terraswap_factory_querier: TerraswapFactoryQuerier,
 }
 
 #[derive(Clone, Default)]
@@ -65,51 +60,6 @@ pub(crate) fn balances_to_map(
         balances_map.insert(contract_addr.to_string(), contract_balances_map);
     }
     balances_map
-}
-
-#[derive(Clone, Default)]
-pub struct TaxQuerier {
-    rate: Decimal,
-    // this lets us iterate over all pairs that match the first string
-    caps: HashMap<String, Uint128>,
-}
-
-impl TaxQuerier {
-    pub fn new(rate: Decimal, caps: &[(&String, &Uint128)]) -> Self {
-        TaxQuerier {
-            rate,
-            caps: caps_to_map(caps),
-        }
-    }
-}
-
-pub(crate) fn caps_to_map(caps: &[(&String, &Uint128)]) -> HashMap<String, Uint128> {
-    let mut owner_map: HashMap<String, Uint128> = HashMap::new();
-    for (denom, cap) in caps.iter() {
-        owner_map.insert(denom.to_string(), **cap);
-    }
-    owner_map
-}
-
-#[derive(Clone, Default)]
-pub struct TerraswapFactoryQuerier {
-    pairs: HashMap<String, String>,
-}
-
-impl TerraswapFactoryQuerier {
-    pub fn new(pairs: &[(&String, &String)]) -> Self {
-        TerraswapFactoryQuerier {
-            pairs: pairs_to_map(pairs),
-        }
-    }
-}
-
-pub(crate) fn pairs_to_map(pairs: &[(&String, &String)]) -> HashMap<String, String> {
-    let mut pairs_map: HashMap<String, String> = HashMap::new();
-    for (key, pair) in pairs.iter() {
-        pairs_map.insert(key.to_string(), pair.to_string());
-    }
-    pairs_map
 }
 
 impl Querier for WasmMockQuerier {
@@ -297,23 +247,11 @@ impl WasmMockQuerier {
         WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
-            tax_querier: TaxQuerier::default(),
-            terraswap_factory_querier: TerraswapFactoryQuerier::default(),
         }
     }
 
     // configure the mint whitelist mock querier
     pub fn with_token_balances(&mut self, balances: &[(&String, &[(&String, &Uint128)])]) {
         self.token_querier = TokenQuerier::new(balances);
-    }
-
-    // configure the token owner mock querier
-    pub fn with_tax(&mut self, rate: Decimal, caps: &[(&String, &Uint128)]) {
-        self.tax_querier = TaxQuerier::new(rate, caps);
-    }
-
-    // configure the terraswap pair
-    pub fn with_terraswap_pairs(&mut self, pairs: &[(&String, &String)]) {
-        self.terraswap_factory_querier = TerraswapFactoryQuerier::new(pairs);
     }
 }
