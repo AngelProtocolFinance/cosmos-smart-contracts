@@ -1,14 +1,13 @@
+use crate::messages::gov::InstantiateMsg as DaoSetupMsg;
 use crate::structs::{
     AcceptedTokens, EndowmentFee, EndowmentType, NetworkInfo, Profile, SettingsController,
     SplitDetails, Tier,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
+use cw_utils::Threshold;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use super::accounts::DaoSetupOption;
-use cw_utils::Threshold;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 
@@ -95,8 +94,7 @@ pub struct CreateEndowmentMsg {
     pub kyc_donors_only: bool,
     pub whitelisted_beneficiaries: Vec<String>,
     pub whitelisted_contributors: Vec<String>,
-    pub dao: bool,
-    pub dao_setup_option: Option<DaoSetupOption>,
+    pub dao: Option<DaoSetupMsg>,
     pub reserve_token: Option<String>,
     pub reserve_token_lp_contract: Option<String>,
     pub donation_match_active: bool,

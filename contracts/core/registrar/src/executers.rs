@@ -309,7 +309,6 @@ pub fn create_endowment(
             owner_sc: config.owner.to_string(),
             registrar_contract: env.contract.address.to_string(),
             dao: msg.dao,
-            dao_setup_option: msg.dao_setup_option,
             owner: msg.owner,
             name: msg.name,
             description: msg.description,

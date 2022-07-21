@@ -2,6 +2,7 @@ use crate::contract::{execute, instantiate, query, SECONDS_PER_WEEK};
 use crate::error::ContractError;
 use crate::mock_querier::mock_dependencies;
 use crate::state::{Config, State, CONFIG, STATE};
+use angel_core::messages::fee_distributor::{ExecuteMsg, InstantiateMsg, QueryMsg, StakerResponse};
 use cosmwasm_std::testing::{
     mock_dependencies_with_balances, mock_env, mock_info, MOCK_CONTRACT_ADDR,
 };
@@ -10,7 +11,6 @@ use cosmwasm_std::{
     WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
-use cw900::fee_distributor::{ExecuteMsg, InstantiateMsg, QueryMsg, StakerResponse};
 
 const VOTING_TOKEN: &str = "voting_token";
 const VE_TOKEN: &str = "ve_token";

@@ -6,15 +6,15 @@ use crate::{
         VOTING_POWER_CONSTANT_DIVISOR,
     },
 };
+use angel_core::messages::ve_token::{
+    Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg, StakerResponse, StateResponse,
+};
 use cosmwasm_std::{
     from_binary,
     testing::{mock_dependencies, mock_env, mock_info},
     to_binary, Addr, CosmosMsg, DepsMut, Env, SubMsg, Timestamp, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
-use cw900::ve_token::{
-    Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg, StakerResponse, StateResponse,
-};
 
 const TEST_CREATOR: &str = "creator";
 const VOTING_TOKEN: &str = "voting_token";

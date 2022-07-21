@@ -2,17 +2,17 @@ use crate::contract::{execute, instantiate, query};
 use crate::error::ContractError;
 use crate::mock_querier::mock_dependencies;
 use crate::state::{config_read, poll_voter_read, state_read, Config, State};
+use angel_core::common::OrderBy;
+use angel_core::messages::gov::{
+    ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, PollExecuteMsg, PollResponse,
+    PollStatus, PollsResponse, QueryMsg, VoteOption, VoterInfo, VotersResponse, VotersResponseItem,
+};
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     attr, coins, from_binary, to_binary, Addr, Api, CanonicalAddr, CosmosMsg, Decimal, Deps,
     DepsMut, Env, Response, StdError, SubMsg, Timestamp, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
-use cw900::common::OrderBy;
-use cw900::gov::{
-    ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, PollExecuteMsg, PollResponse,
-    PollStatus, PollsResponse, QueryMsg, VoteOption, VoterInfo, VotersResponse, VotersResponseItem,
-};
 
 const VOTING_TOKEN: &str = "voting_token";
 const VE_TOKEN: &str = "ve_token";

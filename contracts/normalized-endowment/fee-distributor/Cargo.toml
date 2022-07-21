@@ -23,7 +23,6 @@ crate-type = ["cdylib", "rlib"]
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
-cw900 = { path = "../../../packages/cw900" }
 angel-core = { path = "../../../packages/angel_core" }
 
 cw20 = "0.13.4"

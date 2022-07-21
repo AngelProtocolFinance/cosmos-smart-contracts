@@ -1,7 +1,7 @@
-use crate::error::ContractError;
 use crate::state::{
     State, UserLockedBalance, COEFFICIENT_CHANGES, SECONDS_PER_WEEK, STATE, USER_LOCKED_BALANCES,
 };
+use angel_core::errors::cw900::ContractError;
 use cosmwasm_std::{to_binary, Addr, CosmosMsg, Response, StdResult, Storage, Uint128, WasmMsg};
 use cw20::Cw20ExecuteMsg;
 

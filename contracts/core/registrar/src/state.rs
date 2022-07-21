@@ -21,16 +21,16 @@ pub struct Config {
     pub cw3_code: Option<u64>,                // multisig wasm code
     pub cw4_code: Option<u64>,                // multisig wasm code
     pub subdao_gov_code: Option<u64>,         // subdao gov wasm code
-    pub subdao_token_code: Option<u64>,       // subdao gov token (w/ bonding-curve) wasm code
+    pub subdao_token_code: Option<u64>,       // subdao gov token wasm code
     pub subdao_cw900_code: Option<u64>, // subdao gov ve-CURVE contract for locked token voting
     pub subdao_distributor_code: Option<u64>, // subdao gov fee distributor wasm code
     pub donation_match_code: Option<u64>, // donation matching contract wasm code
+    pub donation_match_charites_contract: Option<Addr>, // donation matching contract address for "Charities" endowments
     pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
     pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
     pub halo_token_lp_contract: Option<Addr>,
-    pub gov_contract: Option<Addr>, // AP governance contract
-    pub donation_match_charites_contract: Option<Addr>, // donation matching contract address for "Charities" endowments
-    pub collector_addr: Option<Addr>,                   // Collector address for new fee
+    pub gov_contract: Option<Addr>,   // AP governance contract
+    pub collector_addr: Option<Addr>, // Collector address for new fee
     pub collector_share: Decimal,
     pub charity_shares_contract: Option<Addr>,
     pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward

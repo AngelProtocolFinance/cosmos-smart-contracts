@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use cw900::ve_token::{StakerResponse, StateResponse};
+use angel_core::messages::ve_token::{StakerResponse, StateResponse};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

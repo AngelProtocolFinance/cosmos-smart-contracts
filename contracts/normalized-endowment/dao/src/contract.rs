@@ -1,4 +1,3 @@
-use crate::error::ContractError;
 use crate::querier::{
     query_address_voting_balance_at_timestamp, query_total_voting_balance_at_timestamp,
 };
@@ -7,18 +6,24 @@ use crate::state::{
     poll_voter_store, read_poll_voters, read_polls, state_read, state_store, Config, ExecuteData,
     Poll, State,
 };
-use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    from_binary, to_binary, Addr, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
-    Response, StdError, StdResult, Uint128, WasmMsg,
-};
-use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
-use cw900::common::OrderBy;
-use cw900::gov::{
-    ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, PollExecuteMsg,
+use angel_core::common::OrderBy;
+use angel_core::errors::dao::ContractError;
+use angel_core::messages::dao_token::InstantiateMsg as DaoTokenInstantiateMsg;
+use angel_core::messages::gov::{
+    ConfigResponse, Cw20HookMsg, DaoToken, ExecuteMsg, InstantiateMsg, MigrateMsg, PollExecuteMsg,
     PollResponse, PollStatus, PollsResponse, QueryMsg, StateResponse, VoteOption, VoterInfo,
     VotersResponse, VotersResponseItem,
 };
+use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
+use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::structs::EndowmentType;
+use cosmwasm_std::entry_point;
+use cosmwasm_std::{
+    from_binary, to_binary, Addr, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
+    QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg,
+    WasmQuery,
+};
+use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 
 const MIN_TITLE_LENGTH: usize = 4;
 const MAX_TITLE_LENGTH: usize = 64;
@@ -38,10 +43,11 @@ pub fn instantiate(
     validate_threshold(msg.threshold)?;
 
     let config = Config {
-        owner: deps.api.addr_validate(info.sender.as_str())?,
+        registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
+        owner: info.sender,
         dao_token: Addr::unchecked(""),
         ve_token: Addr::unchecked(""),
-        terraswap_factory: Addr::unchecked(""),
+        swap_factory: Addr::unchecked(""),
         quorum: msg.quorum,
         threshold: msg.threshold,
         voting_period: msg.voting_period,
@@ -61,7 +67,122 @@ pub fn instantiate(
     config_store(deps.storage).save(&config)?;
     state_store(deps.storage).save(&state)?;
 
-    Ok(Response::default())
+    Ok(Response::default()
+        .add_attribute("dao_addr", env.contract.address.to_string())
+        .add_submessages(
+            build_dao_token_messages(deps, msg.token, msg.endow_type, msg.endow_owner).unwrap(),
+        ))
+}
+
+pub fn build_dao_token_messages(
+    deps: DepsMut,
+    token: DaoToken,
+    endow_type: EndowmentType,
+    endow_owner: String,
+) -> Result<Vec<SubMsg>, ContractError> {
+    let mut submsgs: Vec<SubMsg> = vec![];
+    let config: Config = config_read(deps.storage).load()?;
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+
+    match (token, endow_type) {
+        // Option #1. User can set an existing CW20 token as the DAO's Token
+        (DaoToken::ExistingCw20(contract_addr), EndowmentType::Normal) => {
+            // Check existing token is valid/accepted
+            if !registrar_config
+                .accepted_tokens
+                .cw20_valid(contract_addr.to_string())
+            {
+                return Err(ContractError::NotInApprovedCoins {});
+            }
+
+            let contract_addr = deps.api.addr_validate(&contract_addr)?;
+            let mut config: Config = config_store(deps.storage).load()?;
+            config.dao_token = contract_addr;
+            config_store(deps.storage).save(&config)?;
+        }
+        // Option #2. Create a basic CW20 token contract with a fixed supply
+        (DaoToken::NewCw20(config), EndowmentType::Normal) => submsgs.push(SubMsg {
+            id: 6,
+            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                code_id: registrar_config.subdao_token_code.unwrap(),
+                admin: None,
+                label: "new endowment dao token(cw20) contract".to_string(),
+                msg: to_binary(&cw20_base::msg::InstantiateMsg {
+                    name: config.name,
+                    symbol: config.symbol,
+                    decimals: 6,
+                    initial_balances: vec![Cw20Coin {
+                        address: endow_owner.to_string(),
+                        amount: config.initial_supply,
+                    }],
+                    mint: None,
+                    marketing: None,
+                })?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        }),
+        // Option #3 (for all Non-Charity Endowments). Create a CW20 token with supply controlled by a bonding curve
+        (DaoToken::NewBondingCurve(config), EndowmentType::Normal) => submsgs.push(SubMsg {
+            id: 6,
+            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                code_id: registrar_config.subdao_token_code.unwrap(),
+                admin: None,
+                label: "new endowment dao token(bonding curve) contract".to_string(),
+                msg: to_binary(&DaoTokenInstantiateMsg {
+                    curve_type: config.curve_type,
+                    name: config.name,
+                    symbol: config.symbol,
+                    decimals: config.decimals.unwrap(),
+                    reserve_denom: config.reserve_denom.unwrap(),
+                    reserve_decimals: config.reserve_decimals.unwrap(),
+                    unbonding_period: config.unbonding_period.unwrap(),
+                })?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        }),
+        // Option #3 (for all Charity Endowments). Create a CW20 token with supply controlled by a bonding curve
+        (DaoToken::NewBondingCurve(config), EndowmentType::Charity) => {
+            // setup DAO token contract
+            let halo_token = match registrar_config.halo_token.clone() {
+                Some(addr) => addr,
+                None => {
+                    return Err(ContractError::Std(StdError::GenericErr {
+                        msg: "Registrar's HALO token address is empty".to_string(),
+                    }))
+                }
+            };
+            submsgs.push(SubMsg {
+                id: 6,
+                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                    code_id: registrar_config.subdao_token_code.unwrap(),
+                    admin: None,
+                    label: "new endowment dao token(bonding curve) contract".to_string(),
+                    msg: to_binary(&DaoTokenInstantiateMsg {
+                        curve_type: config.curve_type,
+                        name: config.name,
+                        symbol: config.symbol,
+                        decimals: 6,
+                        reserve_denom: halo_token,
+                        reserve_decimals: 6,
+                        unbonding_period: 21,
+                    })?,
+                    funds: vec![],
+                }),
+                gas_limit: None,
+                reply_on: ReplyOn::Success,
+            })
+        }
+        (_, _) => return Err(ContractError::InvalidInputs {}),
+    }
+    Ok(submsgs)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -74,12 +195,10 @@ pub fn execute(
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::RegisterContracts {
-            dao_token,
             ve_token,
-            terraswap_factory,
-        } => register_contracts(deps, dao_token, ve_token, terraswap_factory),
+            swap_factory,
+        } => register_contracts(deps, ve_token, swap_factory),
         ExecuteMsg::UpdateConfig {
-            owner,
             quorum,
             threshold,
             voting_period,
@@ -90,7 +209,6 @@ pub fn execute(
         } => update_config(
             deps,
             info,
-            owner,
             quorum,
             threshold,
             voting_period,
@@ -139,20 +257,46 @@ pub fn receive_cw20(
     }
 }
 
+pub fn dao_token_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: SubMsgResult,
+) -> Result<Response, ContractError> {
+    match msg {
+        SubMsgResult::Ok(subcall) => {
+            let mut dao_token_addr = String::from("");
+            for event in subcall.events {
+                if event.ty == *"instantiate" {
+                    for attrb in event.attributes {
+                        if attrb.key == "_contract_address" {
+                            dao_token_addr = attrb.value;
+                        }
+                    }
+                }
+            }
+
+            // update the "dao_token" to be the new contract
+            let mut config: Config = config_read(deps.storage).load()?;
+            config.dao_token = deps.api.addr_validate(&dao_token_addr)?;
+            config_store(deps.storage).save(&config)?;
+            Ok(Response::default().add_attribute("dao_token_addr", dao_token_addr.to_string()))
+        }
+        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+    }
+}
+
 pub fn register_contracts(
     deps: DepsMut,
-    dao_token: String,
     ve_token: String,
-    terraswap_factory: String,
+    swap_factory: String,
 ) -> Result<Response, ContractError> {
     let mut config: Config = config_read(deps.storage).load()?;
     if config.dao_token.to_string().ne(&"".to_string()) {
         return Err(ContractError::Unauthorized {});
     }
 
-    config.dao_token = deps.api.addr_validate(&dao_token)?;
     config.ve_token = deps.api.addr_validate(&ve_token)?;
-    config.terraswap_factory = deps.api.addr_validate(&terraswap_factory)?;
+    config.swap_factory = deps.api.addr_validate(&swap_factory)?;
     config_store(deps.storage).save(&config)?;
 
     Ok(Response::default())
@@ -162,7 +306,6 @@ pub fn register_contracts(
 pub fn update_config(
     deps: DepsMut,
     info: MessageInfo,
-    owner: Option<String>,
     quorum: Option<Decimal>,
     threshold: Option<Decimal>,
     voting_period: Option<u64>,
@@ -175,10 +318,6 @@ pub fn update_config(
     config_store(deps.storage).update(|mut config| {
         if config.owner != api.addr_validate(info.sender.as_str())? {
             return Err(ContractError::Unauthorized {});
-        }
-
-        if let Some(owner) = owner {
-            config.owner = api.addr_validate(&owner)?;
         }
 
         if let Some(quorum) = quorum {
@@ -610,7 +749,7 @@ fn query_config(deps: Deps) -> Result<ConfigResponse, ContractError> {
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
         dao_token: config.dao_token.to_string(),
-        terraswap_factory: config.terraswap_factory.to_string(),
+        swap_factory: config.swap_factory.to_string(),
         quorum: config.quorum,
         threshold: config.threshold,
         voting_period: config.voting_period,

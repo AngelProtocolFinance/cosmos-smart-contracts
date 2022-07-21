@@ -1,3 +1,5 @@
+use angel_core::common::OrderBy;
+use angel_core::messages::gov::{PollStatus, VoterInfo};
 use angel_core::utils::{
     calc_range_end, calc_range_end_addr, calc_range_start, calc_range_start_addr,
 };
@@ -6,8 +8,6 @@ use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, ReadonlySingleton,
     Singleton,
 };
-use cw900::common::OrderBy;
-use cw900::gov::{PollStatus, VoterInfo};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -21,10 +21,11 @@ static PREFIX_POLL: &[u8] = b"poll";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
+    pub registrar_contract: Addr,
     pub owner: Addr,
     pub dao_token: Addr,
     pub ve_token: Addr,
-    pub terraswap_factory: Addr,
+    pub swap_factory: Addr,
     pub quorum: Decimal,
     pub threshold: Decimal,
     pub voting_period: u64,

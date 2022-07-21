@@ -2,7 +2,6 @@
 members = [
     "packages/angel_core",
     "packages/halo_token",
-    "packages/cw900",
     "contracts/core/registrar",
     "contracts/core/index-fund",
     "contracts/normalized-endowment/accounts",

@@ -6,16 +6,16 @@ use crate::querier::{
 use crate::state::{
     Config, State, CONFIG, STATE, USER_LAST_CLAIMED_FEE_TIMESTAMP, WEEKLY_TOKEN_DISTRIBUTION,
 };
+use angel_core::cw900_querier::query_token_balance;
+use angel_core::messages::fee_distributor::{
+    ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, StakerResponse, StateResponse,
+};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     attr, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
     Uint128, WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
-use cw900::fee_distributor::{
-    ConfigResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, StakerResponse, StateResponse,
-};
-use cw900::querier::query_token_balance;
 
 pub const SECONDS_PER_WEEK: u64 = 7 * 24 * 60 * 60;
 pub const DEFAULT_CLAIM_LIMIT: u32 = 20;

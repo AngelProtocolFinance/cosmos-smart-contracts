@@ -1,5 +1,4 @@
 use crate::executers;
-use crate::executers::setup_dao_token_messages;
 use crate::queriers;
 use crate::state::{
     Config, Cw3MultiSigConfig, Endowment, OldConfig, State, CONFIG, CW3MULTISIGCONFIG, ENDOWMENT,
@@ -31,7 +30,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[entry_point]
 pub fn instantiate(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
@@ -92,7 +91,15 @@ pub fn instantiate(
             donation_match_active: msg.donation_match_active,
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries, // Vec<String>
             whitelisted_contributors: msg.whitelisted_contributors,   // Vec<String>
-            donation_matching_contract: None,
+            donation_matching_contract: match &msg.profile.endow_type {
+                &EndowmentType::Charity => {
+                    match &registrar_config.donation_match_charites_contract {
+                        Some(match_contract) => Some(deps.api.addr_validate(&match_contract)?),
+                        None => None,
+                    }
+                }
+                _ => None,
+            },
             earnings_fee: msg.earnings_fee,
             withdraw_fee: msg.withdraw_fee,
             deposit_fee: msg.deposit_fee,
@@ -172,84 +179,110 @@ pub fn instantiate(
     });
 
     // check if a dao needs to be setup along with a dao token contract
-    // optional donation matching contract can be setup as long as a dao is in place
-    if msg.dao {
-        let endowment_owner = deps.api.addr_validate(&msg.owner)?;
-        let endow_type = msg.profile.endow_type;
-        res = res.add_submessages(setup_dao_token_messages(
-            deps.branch(),
-            msg.dao_setup_option.unwrap(),
-            &endow_type,
-            &registrar_config,
-            endowment_owner,
-        )?);
+    match msg.dao {
+        Some(dao_setup) => {
+            if registrar_config.subdao_token_code != None
+                && registrar_config.subdao_gov_code != None
+            {
+                res = res.add_submessage(SubMsg {
+                    id: 3,
+                    msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                        code_id: registrar_config.subdao_gov_code.unwrap(),
+                        admin: None,
+                        label: "new endowment dao contract".to_string(),
+                        msg: to_binary(&dao_setup)?,
+                        funds: vec![],
+                    }),
+                    gas_limit: None,
+                    reply_on: ReplyOn::Success,
+                });
+            }
+        }
+        None => (),
+    }
 
-        // `donation_match_setup`: Field determines the various way of setting up "donation_match" contract
-        // Possible values:
-        //   1 => Endowment wants to have a DAO and they choose to use $HALO as reserve token for their bonding curve from the Endowment Launchpad UI.
-        //   2 => Endowment wants to have a DAO but they want to use an existing Token (other than HALO) as the reserve token for their bonding curve.
-        //        They would then have to supply several contract addresses during their endowment creation:
-        //           - the Token contract address (CW20)
-        //           - a Token / UST LP Pair contract ( this attribute would be updatable should they move supply to a new pool, etc)
-        //   3 =>  Endowment wants to have a DAO but they want to use an brand new CW20 Token that will not be attached to a bonding curve. (coming later)
-        if msg.donation_match_setup != None {
-            let donation_match_code = match registrar_config.donation_match_code {
-                Some(id) => id,
-                None => {
+    // optional donation matching contract can be setup as long as a dao is in place
+    // `donation_match_setup`: Field determines the various way of setting up "donation_match" contract
+    // Possible values:
+    //   1 => Endowment wants to have a DAO and they choose to use $HALO as reserve token for their bonding curve from the Endowment Launchpad UI.
+    //   2 => Endowment wants to have a DAO but they want to use an existing Token (other than HALO) as the reserve token for their bonding curve.
+    //        They would then have to supply several contract addresses during their endowment creation:
+    //           - the Token contract address (CW20)
+    //           - a Token / UST LP Pair contract ( this attribute would be updatable should they move supply to a new pool, etc)
+    //   3 =>  Endowment wants to have a DAO but they want to use an brand new CW20 Token that will not be attached to a bonding curve. (coming later)
+    if msg.profile.endow_type == EndowmentType::Normal {
+        let match_code = match (
+            msg.donation_match_setup,
+            &registrar_config.donation_match_code,
+        ) {
+            (Some(_match_setup), Some(match_code)) => Some(match_code),
+            (Some(_match_setup), None) => {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "No code id for donation matching contract".to_string(),
+                }))
+            }
+            (None, _) => None,
+        };
+        match msg.donation_match_setup {
+            Some(1) => {
+                match (
+                    registrar_config.halo_token,
+                    registrar_config.halo_token_lp_contract,
+                ) {
+                    (Some(reserve_addr), Some(lp_addr)) => {
+                        res = res.add_submessage(SubMsg {
+                            id: 4,
+                            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                                code_id: *match_code.unwrap(),
+                                admin: None,
+                                label: "new donation match contract".to_string(),
+                                msg: to_binary(&DonationMatchInstantiateMsg {
+                                    reserve_token: reserve_addr,
+                                    lp_pair: lp_addr,
+                                    registrar_contract: msg.registrar_contract.clone(),
+                                })?,
+                                funds: vec![],
+                            }),
+                            gas_limit: None,
+                            reply_on: ReplyOn::Success,
+                        });
+                    }
+                    (_, _) => {
+                        return Err(ContractError::Std(StdError::GenericErr {
+                            msg: "HALO Token is not setup to be a reserve token".to_string(),
+                        }))
+                    }
+                }
+            }
+            Some(2) => match (msg.reserve_token, msg.reserve_token_lp_contract) {
+                (Some(reserve_addr), Some(lp_addr)) => {
+                    res = res.add_submessage(SubMsg {
+                        id: 4,
+                        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                            code_id: *match_code.unwrap(),
+                            admin: None,
+                            label: "new donation match contract".to_string(),
+                            msg: to_binary(&DonationMatchInstantiateMsg {
+                                reserve_token: reserve_addr,
+                                lp_pair: lp_addr,
+                                registrar_contract: msg.registrar_contract.clone(),
+                            })?,
+                            funds: vec![],
+                        }),
+                        gas_limit: None,
+                        reply_on: ReplyOn::Success,
+                    });
+                }
+                (_, _) => {
                     return Err(ContractError::Std(StdError::GenericErr {
-                        msg: "No code id for donation matching contract".to_string(),
+                        msg: "Reserve token or LP address was not given".to_string(),
                     }))
                 }
-            };
-            let (reserve_token, lp_pair) = match (msg.donation_match_setup.unwrap(), endow_type) {
-                (1, EndowmentType::Normal) | (_, EndowmentType::Charity) => {
-                    match (
-                        registrar_config.halo_token,
-                        registrar_config.halo_token_lp_contract,
-                    ) {
-                        (Some(reserve_addr), Some(lp_addr)) => (reserve_addr, lp_addr),
-                        _ => {
-                            return Err(ContractError::Std(StdError::GenericErr {
-                                msg: "HALO Token is setup to be a reserve token".to_string(),
-                            }))
-                        }
-                    }
-                }
-                (2, EndowmentType::Normal) => {
-                    match (msg.reserve_token, msg.reserve_token_lp_contract) {
-                        (Some(reserve_addr), Some(lp_addr)) => (reserve_addr, lp_addr),
-                        _ => {
-                            return Err(ContractError::Std(StdError::GenericErr {
-                                msg: "The reserve token or LP address was not given".to_string(),
-                            }))
-                        }
-                    }
-                }
-                // Option #3: New CW20 Token to be added here...
-                _ => {
-                    return Err(ContractError::Std(StdError::GenericErr {
-                        msg: "Invalid donation match setup options passed".to_string(),
-                    }));
-                }
-            };
-
-            res = res.add_submessage(SubMsg {
-                id: 4,
-                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: donation_match_code,
-                    admin: None,
-                    label: "new donation match contract".to_string(),
-                    msg: to_binary(&DonationMatchInstantiateMsg {
-                        registrar_contract: msg.registrar_contract.clone(),
-                        reserve_token,
-                        lp_pair,
-                    })?,
-                    funds: vec![],
-                }),
-                gas_limit: None,
-                reply_on: ReplyOn::Success,
-            });
-        }
+            },
+            // Option #3: New CW20 Token to be added here...
+            // Some(3) => {)
+            _ => (),
+        };
     }
     Ok(res)
 }
@@ -319,8 +352,7 @@ pub fn execute(
         // Allows the DANO/AP Team to harvest all active vaults
         ExecuteMsg::Harvest { vault_addr } => executers::harvest(deps, env, info, vault_addr),
         ExecuteMsg::HarvestAum {} => executers::harvest_aum(deps, env, info),
-
-        ExecuteMsg::SetupDaoToken { option } => executers::setup_dao_token(deps, env, info, option),
+        ExecuteMsg::SetupDao(msg) => executers::setup_dao(deps, env, info, msg),
     }
 }
 
@@ -361,12 +393,11 @@ pub fn receive_cw20(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        1 => executers::new_cw4_group_reply(deps, env, msg.result),
-        2 => executers::new_cw3_multisig_reply(deps, env, msg.result),
-        3 => executers::new_dao_token_reply(deps, env, msg.result),
-        4 => executers::new_donation_match_reply(deps, env, msg.result),
+        1 => executers::cw4_group_reply(deps, env, msg.result),
+        2 => executers::cw3_multisig_reply(deps, env, msg.result),
+        3 => executers::dao_reply(deps, env, msg.result),
+        4 => executers::donation_match_reply(deps, env, msg.result),
         5 => executers::harvest_reply(deps, env, msg.result),
-        6 => executers::new_dao_cw20_token_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }

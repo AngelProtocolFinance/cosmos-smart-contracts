@@ -1,4 +1,4 @@
-use crate::messages::dao_token::CurveType;
+use crate::messages::gov::InstantiateMsg as DaoSetupMsg;
 use crate::structs::{
     EndowmentFee, FundingSource, Profile, RebalanceDetails, SettingsController, StrategyComponent,
 };
@@ -35,10 +35,9 @@ pub struct InstantiateMsg {
     pub withdraw_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub aum_fee: Option<EndowmentFee>,
-    pub dao: bool,
-    pub dao_setup_option: Option<DaoSetupOption>,
+    pub dao: Option<DaoSetupMsg>,
     pub donation_match_active: bool,
-    pub donation_match_setup: Option<u8>, // Donation matching setup options(possible values: 0, 1, 2, 3)
+    pub donation_match_setup: Option<u8>, // Donation matching setup options(possible values: 1, 2, 3)
     pub reserve_token: Option<String>, // Address of cw20 token, which user wants to use as reserve token in "donation_matching"
     pub reserve_token_lp_contract: Option<String>, // Address of lp pair contract(cw20 token above - UST)
     pub settings_controller: Option<SettingsController>,
@@ -46,33 +45,6 @@ pub struct InstantiateMsg {
     pub kyc_donors_only: bool,
     pub cw3_multisig_threshold: Threshold,
     pub cw3_multisig_max_vote_period: Duration,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum DaoSetupOption {
-    ExistingCw20Token(String),                  // Option1: Existing cw20 token
-    SetupCw20Token(DaoCw20TokenConfig), // Option2: Create new "cw20-base" token with "initial-supply"
-    SetupBondCurveToken(DaoBondingTokenConfig), // Option3: Create new "bonding-curve" token
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct DaoBondingTokenConfig {
-    pub curve_type: CurveType,
-    pub name: String,
-    pub symbol: String,
-    pub decimals: Option<u8>,
-    pub reserve_denom: Option<String>,
-    pub reserve_decimals: Option<u8>,
-    pub unbonding_period: Option<u64>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct DaoCw20TokenConfig {
-    pub code_id: u64,
-    pub initial_supply: Uint128,
-    pub name: String,
-    pub symbol: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -130,9 +102,7 @@ pub enum ExecuteMsg {
     // AUM harvest
     HarvestAum {},
     // Set up dao token for "Endowment"
-    SetupDaoToken {
-        option: DaoSetupOption,
-    },
+    SetupDao(DaoSetupMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

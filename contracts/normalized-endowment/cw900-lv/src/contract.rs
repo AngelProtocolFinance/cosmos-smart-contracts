@@ -1,6 +1,3 @@
-#[cfg(not(feature = "library"))]
-use crate::error::ContractError;
-
 use crate::staking::{
     apply_pending_slope_changes_to_state, apply_pending_slope_changes_to_state_and_save_updates,
     send_tokens, update_user_lock,
@@ -9,18 +6,18 @@ use crate::state::{
     Config, State, UserLockedBalance, CONFIG, MAX_SECONDS, MAX_WEEKS, SECONDS_PER_WEEK, STATE,
     USER_LOCKED_BALANCES,
 };
+use angel_core::errors::cw900::ContractError;
 use cosmwasm_std::entry_point;
 
+use angel_core::messages::ve_token::{
+    ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, StakerResponse,
+    StateResponse,
+};
 use cosmwasm_std::{
     from_binary, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdResult,
     Uint128,
 };
 use cw20::Cw20ReceiveMsg;
-
-use cw900::ve_token::{
-    ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, StakerResponse,
-    StateResponse,
-};
 
 pub fn is_contract(_addr: &Addr) -> bool {
     false
