@@ -1,6 +1,5 @@
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Denom;
-use cw_asset::{Asset, AssetInfo};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -35,10 +34,10 @@ pub enum ExecuteMsg {
         collector_share: Decimal,
     },
     AddLiquidity {
-        in_asset: AssetInfo,
-        out_asset: AssetInfo,
-        in_asset_bal_before: Uint128,
-        out_asset_bal_before: Uint128,
+        in_denom: Denom,
+        out_denom: Denom,
+        in_denom_bal_before: Uint128,
+        out_denom_bal_before: Uint128,
     },
 }
 

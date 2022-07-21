@@ -1,5 +1,6 @@
 use angel_core::structs::BalanceInfo;
 use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
+use cw20::Denom;
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -17,7 +18,7 @@ pub struct Config {
     pub harvest_to_liquid: Decimal,
 
     pub target: Addr, // swap pool address(eg. JunoSwap USDC-JUNO pool address)
-    pub input_denoms: Vec<String>, // swap input tokens(denoms) list
+    pub input_denoms: Vec<Denom>, // swap input tokens(denoms) list
     pub yield_token: Addr, // swap lp token address
     pub routes: Vec<Addr>, // list of swap pools(eg. list of junoswap pools)
 

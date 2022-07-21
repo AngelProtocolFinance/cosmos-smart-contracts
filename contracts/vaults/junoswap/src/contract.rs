@@ -32,21 +32,12 @@ pub fn instantiate(
         .querier
         .query_wasm_smart(swap_pool_addr.to_string(), &wasmswap::QueryMsg::Info {})?;
 
-    let token1_denom_string = match swap_pool_info.token1_denom {
-        Denom::Native(denom) => denom.to_string(),
-        Denom::Cw20(addr) => addr.to_string(),
-    };
-    let token2_denom_string = match swap_pool_info.token2_denom {
-        Denom::Native(denom) => denom.to_string(),
-        Denom::Cw20(addr) => addr.to_string(),
-    };
-
     let config = config::Config {
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
 
         target: swap_pool_addr,
-        input_denoms: vec![token1_denom_string, token2_denom_string],
+        input_denoms: vec![swap_pool_info.token1_denom, swap_pool_info.token2_denom],
         yield_token: deps.api.addr_validate(&swap_pool_info.lp_token_address)?,
         routes: vec![],
 
@@ -92,11 +83,9 @@ pub fn execute(
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
             }
-            let native_fund = Asset {
-                info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
-                amount: info.funds[0].amount,
-            };
-            executers::deposit(deps, env, info.clone(), native_fund)
+            let deposit_denom = Denom::Native(info.funds[0].denom.to_string());
+            let deposit_amount = info.funds[0].amount;
+            executers::deposit(deps, env, info.clone(), deposit_denom, deposit_amount)
         }
         // Redeem is only called by the SC when setting up new strategies.
         // Pulls all existing strategy amounts back to Account in UST.
@@ -111,18 +100,18 @@ pub fn execute(
             collector_share,
         } => executers::harvest(deps, env, info, collector_address, collector_share), // DP -> DP shuffle (taxes collected)
         ExecuteMsg::AddLiquidity {
-            in_asset,
-            out_asset,
-            in_asset_bal_before,
-            out_asset_bal_before,
+            in_denom,
+            out_denom,
+            in_denom_bal_before,
+            out_denom_bal_before,
         } => executers::add_liquidity(
             deps,
             env,
             info,
-            in_asset,
-            out_asset,
-            in_asset_bal_before,
-            out_asset_bal_before,
+            in_denom,
+            out_denom,
+            in_denom_bal_before,
+            out_denom_bal_before,
         ),
     }
 }
