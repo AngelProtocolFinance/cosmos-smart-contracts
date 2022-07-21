@@ -45,6 +45,7 @@ import {
   testProposalApprovingEndowment,
   testCw3CastVote,
   testCw3ExecutePoll,
+  testQueryMultisigGroupWeight,
   testQueryMultisigVoters,
   testQueryMultisigThreshold,
   testQueryProposal,
@@ -322,8 +323,8 @@ export async function testExecute(
   //       }
   //     },
   //     curveType: undefined, // Useless, need to remove from contract
-  //     user_reserve_token: undefined,
-  //     user_reserve_ust_lp_pair_contract: undefined,
+  //     reserve_token: undefined,
+  //     reserve_token_lp_contract: undefined,
   //     donation_match: false,
   //     donation_match_setup_option: 0,
   //     earnings_fee: undefined,
@@ -388,6 +389,7 @@ export async function testExecute(
   // await testProposalApprovingEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, endowmentContract1);
   // await testCw3CastVote(actors.apTeam2.client, actors.apTeam2.addr, cw3ApTeam, 2, VoteOption.YES); //NOTWORKING
   // await testCw3ExecutePoll(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 1);
+  // await testQueryMultisigGroupWeight(actors.apTeam.client, cw4GrpApTeam);
   // await testQueryMultisigVoters(actors.apTeam.client, cw3ApTeam);
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ApTeam);
   // await testQueryProposal(actors.apTeam.client, cw3ApTeam, 3);

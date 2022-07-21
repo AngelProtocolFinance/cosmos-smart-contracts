@@ -186,6 +186,20 @@ export async function testUpdateCw3Config(
   console.log(chalk.green(" Passed!"));
 }
 
+export async function testQueryMultisigGroupWeight(
+  juno: SigningCosmWasmClient,
+  multisig_group: string
+): Promise<void> {
+  process.stdout.write("Test - Query a multisig group's total weight");
+  const result: any = await juno.queryContractSmart(multisig_group, {
+    total_weight: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+
 export async function testQueryMultisigVoters(
   juno: SigningCosmWasmClient,
   multisig: string

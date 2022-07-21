@@ -73,10 +73,10 @@ export const mainnet = {
   contracts: {
     registrar: "",
     indexFund: "",
-    anchorVault: "",
     cw4GrpApTeam: "",
     cw3ApTeam: "",
     endowmentContracts: [],
+    anchorVault: "",
   },
   members: [
     { addr: "", weight: 1 },

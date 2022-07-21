@@ -28,6 +28,7 @@ let registrar: string;
 let cw4GrpApTeam: string;
 let cw3ApTeam: string;
 let indexFund: string;
+let donationMatchCharities: string;
 let endowmentContract1: string;
 let endowmentContract2: string;
 let endowmentContract3: string;
@@ -244,10 +245,12 @@ async function setup(
       index_fund_contract: indexFund,
       cw3_code: cw3MultiSig,
       cw4_code: cw4Group,
-      halo_token: apTeamAddr, // Fake halo_token addr: Need to be handled
+      halo_token: apTeamAddr, // Fake halo token addr: Need to be handled
+      halo_token_lp_contract: apTeamAddr, // Fake halo token LP addr: Need to be handled
       subdao_gov_code: subdao,
       subdao_token_code: subdaoToken,
       donation_match_code: subdaoDonationMatch,
+      donation_match_charites_contract: donationMatchCharities,
     },
   });
   console.log(chalk.green(" Done!"));
