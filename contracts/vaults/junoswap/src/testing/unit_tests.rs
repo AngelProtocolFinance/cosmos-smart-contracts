@@ -12,6 +12,7 @@ fn proper_instantiation() {
         symbol: "CASH".to_string(),
         decimals: 6,
         swap_pool_addr: "junoswap-pool".to_string(),
+        staking_addr: "lp-staking-contract".to_string(),
         registrar_contract: "angelprotocolteamdano".to_string(),
         harvest_to_liquid: Decimal::percent(75),
     };
