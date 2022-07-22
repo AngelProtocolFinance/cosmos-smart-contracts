@@ -8,7 +8,6 @@ use crate::state::{
 };
 use angel_core::common::OrderBy;
 use angel_core::errors::dao::ContractError;
-use angel_core::messages::accounts::QueryMsg::GetProfile;
 use angel_core::messages::donation_match::InstantiateMsg as DonationMatchInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::subdao::{
@@ -17,7 +16,6 @@ use angel_core::messages::subdao::{
     VotersResponse, VotersResponseItem,
 };
 use angel_core::messages::subdao_token::InstantiateMsg as DaoTokenInstantiateMsg;
-use angel_core::responses::accounts::ProfileResponse as EndowProfileResponse;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{DaoToken, DonationMatch, EndowmentType};
 use cosmwasm_std::entry_point;
@@ -68,6 +66,11 @@ pub fn instantiate(
 
     config_store(deps.storage).save(&config)?;
     state_store(deps.storage).save(&state)?;
+
+    DONATION_MATCH.save(
+        deps.storage,
+        &(msg.endow_type.clone(), msg.donation_match.unwrap()),
+    )?;
 
     Ok(Response::default()
         .add_attribute("dao_addr", env.contract.address.to_string())
@@ -330,86 +333,76 @@ pub fn dao_token_reply(
                     msg: to_binary(&RegistrarConfig {})?,
                 }))?;
 
-            let endow_profile: EndowProfileResponse =
-                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: config.owner.to_string(),
-                    msg: to_binary(&GetProfile {})?,
-                }))?;
+            match DONATION_MATCH.may_load(deps.storage)? {
+                Some((EndowmentType::Normal, donation_match)) => {
+                    let match_code = match registrar_config.donation_match_code {
+                        Some(match_code) => match_code,
+                        None => {
+                            return Err(ContractError::Std(StdError::GenericErr {
+                                msg: "No code id for donation matching contract".to_string(),
+                            }))
+                        }
+                    };
 
-            let donation_match = DONATION_MATCH.may_load(deps.storage)?;
-
-            // optional donation matching contract can be setup as long as a dao token is in place
-            if endow_profile.endowment_type == EndowmentType::Normal {
-                let match_code = match (&donation_match, registrar_config.donation_match_code) {
-                    (Some(_), Some(match_code)) => Some(match_code),
-                    (Some(_), None) => {
-                        return Err(ContractError::Std(StdError::GenericErr {
-                            msg: "No code id for donation matching contract".to_string(),
-                        }))
-                    }
-                    (None, _) => None,
-                };
-                match donation_match {
-                    Some(DonationMatch::HaloTokenReserve {}) => {
-                        match (
-                            registrar_config.halo_token,
-                            registrar_config.halo_token_lp_contract,
-                        ) {
-                            (Some(reserve_addr), Some(lp_addr)) => {
-                                res = res.add_submessage(SubMsg {
-                                    id: 1,
-                                    msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                                        code_id: match_code.unwrap(),
-                                        admin: None,
-                                        label: "new donation match contract".to_string(),
-                                        msg: to_binary(&DonationMatchInstantiateMsg {
-                                            reserve_token: reserve_addr,
-                                            lp_pair: lp_addr,
-                                            registrar_contract: config
-                                                .registrar_contract
-                                                .to_string(),
-                                        })?,
-                                        funds: vec![],
-                                    }),
-                                    gas_limit: None,
-                                    reply_on: ReplyOn::Success,
-                                });
-                            }
-                            (_, _) => {
-                                return Err(ContractError::Std(StdError::GenericErr {
-                                    msg: "HALO Token is not setup to be a reserve token"
-                                        .to_string(),
-                                }))
+                    match donation_match {
+                        DonationMatch::HaloTokenReserve {} => {
+                            match (
+                                registrar_config.halo_token,
+                                registrar_config.halo_token_lp_contract,
+                            ) {
+                                (Some(reserve_addr), Some(lp_addr)) => {
+                                    res = res.add_submessage(SubMsg {
+                                        id: 1,
+                                        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                                            code_id: match_code,
+                                            admin: None,
+                                            label: "new donation match contract".to_string(),
+                                            msg: to_binary(&DonationMatchInstantiateMsg {
+                                                reserve_token: reserve_addr,
+                                                lp_pair: lp_addr,
+                                                registrar_contract: config
+                                                    .registrar_contract
+                                                    .to_string(),
+                                            })?,
+                                            funds: vec![],
+                                        }),
+                                        gas_limit: None,
+                                        reply_on: ReplyOn::Success,
+                                    });
+                                }
+                                _ => {
+                                    return Err(ContractError::Std(StdError::GenericErr {
+                                        msg: "HALO Token is not setup to be a reserve token"
+                                            .to_string(),
+                                    }))
+                                }
                             }
                         }
+                        DonationMatch::Cw20TokenReserve {
+                            reserve_addr,
+                            lp_addr,
+                        } => {
+                            res = res.add_submessage(SubMsg {
+                                id: 1,
+                                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                                    code_id: match_code,
+                                    admin: None,
+                                    label: "new donation match contract".to_string(),
+                                    msg: to_binary(&DonationMatchInstantiateMsg {
+                                        reserve_token: reserve_addr,
+                                        lp_pair: lp_addr,
+                                        registrar_contract: config.registrar_contract.to_string(),
+                                    })?,
+                                    funds: vec![],
+                                }),
+                                gas_limit: None,
+                                reply_on: ReplyOn::Success,
+                            });
+                        }
                     }
-                    Some(DonationMatch::Cw20TokenReserve {
-                        reserve_addr,
-                        lp_addr,
-                    }) => {
-                        res = res.add_submessage(SubMsg {
-                            id: 1,
-                            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                                code_id: match_code.unwrap(),
-                                admin: None,
-                                label: "new donation match contract".to_string(),
-                                msg: to_binary(&DonationMatchInstantiateMsg {
-                                    reserve_token: reserve_addr,
-                                    lp_pair: lp_addr,
-                                    registrar_contract: config.registrar_contract.to_string(),
-                                })?,
-                                funds: vec![],
-                            }),
-                            gas_limit: None,
-                            reply_on: ReplyOn::Success,
-                        });
-                    }
-                    // Option #3: New CW20 Token to be added here...
-                    // Some(3) => {)
-                    _ => (),
-                };
+                }
+                _ => (),
             }
-
             Ok(res)
         }
         SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
