@@ -13,9 +13,10 @@ pub struct ExchangeRateResponse {
 pub struct ConfigResponse {
     pub owner: String,
     pub registrar_contract: String,
-    pub target: String,
+    pub pool_addr: String,
     pub input_denoms: Vec<Denom>,
-    pub yield_token: String,
+    pub pool_lp_token_addr: String,
+    pub staking_addr: String,
     pub last_harvest: u64,
     pub harvest_to_liquid: Decimal,
 }

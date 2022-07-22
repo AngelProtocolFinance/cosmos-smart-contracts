@@ -34,9 +34,10 @@ pub fn query_config(deps: Deps) -> ConfigResponse {
     ConfigResponse {
         owner: config.owner.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
-        target: config.target.to_string(),
+        pool_addr: config.pool_addr.to_string(),
         input_denoms: config.input_denoms,
-        yield_token: config.yield_token.to_string(),
+        pool_lp_token_addr: config.pool_lp_token_addr.to_string(),
+        staking_addr: config.staking_addr.to_string(),
         last_harvest: config.last_harvest,
         harvest_to_liquid: config.harvest_to_liquid,
     }
@@ -46,7 +47,7 @@ pub fn query_exchange_rate(deps: Deps, input_denom: Denom) -> ExchangeRateRespon
     let config = CONFIG.load(deps.storage).unwrap();
     let swap_pool_info: InfoResponse = deps
         .querier
-        .query_wasm_smart(config.target, &wasmswap::QueryMsg::Info {})
+        .query_wasm_smart(config.pool_addr, &wasmswap::QueryMsg::Info {})
         .unwrap();
     todo!("Implement the following query response")
     // ExchangeRateResponse {

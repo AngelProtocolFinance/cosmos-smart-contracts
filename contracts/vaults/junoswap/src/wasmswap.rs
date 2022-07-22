@@ -1,8 +1,8 @@
+use cosmwasm_std::{to_binary, Coin, CosmosMsg, StdResult, Uint128, WasmMsg};
+use cw20::{Denom, Expiration};
 /// This file is just the clone of `wasmswap` messages.
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use cosmwasm_std::{to_binary, Coin, CosmosMsg, StdResult, Uint128, WasmMsg};
-use cw20::{Denom, Expiration};
 
 use crate::config::Config;
 
