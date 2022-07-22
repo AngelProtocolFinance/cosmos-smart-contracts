@@ -17,7 +17,7 @@ use crate::state::{
 };
 use angel_core::curves::DecimalPlaces;
 use angel_core::errors::core::ContractError;
-use angel_core::messages::dao_token::{
+use angel_core::messages::subdao_token::{
     CurveFn, CurveInfoResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
 use angel_core::utils::{must_pay, nonpayable};

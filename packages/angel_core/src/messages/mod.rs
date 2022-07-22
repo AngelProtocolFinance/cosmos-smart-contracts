@@ -1,11 +1,11 @@
 pub mod accounts;
 pub mod cw3_multisig;
 pub mod cw4_group;
-pub mod dao_token;
 pub mod donation_match;
 pub mod fee_distributor;
-pub mod gov;
 pub mod index_fund;
 pub mod registrar;
+pub mod subdao;
+pub mod subdao_token;
 pub mod vault;
 pub mod ve_token;

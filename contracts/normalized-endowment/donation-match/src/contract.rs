@@ -5,8 +5,8 @@ use angel_core::messages::donation_match::{
 };
 
 use angel_core::messages::accounts::QueryMsg as AccountQueryMsg;
-use angel_core::messages::dao_token::Cw20HookMsg as DaoTokenHookMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
+use angel_core::messages::subdao_token::Cw20HookMsg as DaoTokenHookMsg;
 use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfig, EndowmentDetailResponse,
@@ -134,7 +134,7 @@ fn execute_donor_match(
             let endow: EndowmentDetailsResponse = deps
                 .querier
                 .query_wasm_smart(config.registrar_contract, &AccountQueryMsg::Endowment {})?;
-            if env.contract.address.to_string() != endow.donation_match_contract_addr {
+            if env.contract.address.to_string() != endow.donation_match_contract {
                 return Err(ContractError::Unauthorized {});
             }
         }

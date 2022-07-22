@@ -1,5 +1,6 @@
 use angel_core::common::OrderBy;
-use angel_core::messages::gov::{PollStatus, VoterInfo};
+use angel_core::messages::subdao::{PollStatus, VoterInfo};
+use angel_core::structs::DonationMatch;
 use angel_core::utils::{
     calc_range_end, calc_range_end_addr, calc_range_start, calc_range_start_addr,
 };
@@ -8,6 +9,7 @@ use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, ReadonlySingleton,
     Singleton,
 };
+use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -18,6 +20,8 @@ static KEY_STATE: &[u8] = b"state";
 static PREFIX_POLL_INDEXER: &[u8] = b"poll_indexer";
 static PREFIX_POLL_VOTER: &[u8] = b"poll_voter";
 static PREFIX_POLL: &[u8] = b"poll";
+
+pub const DONATION_MATCH: Item<DonationMatch> = Item::new("donation_match");
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {

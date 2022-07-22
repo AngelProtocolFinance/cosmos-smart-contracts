@@ -1,6 +1,5 @@
 use crate::common::OrderBy;
-use crate::messages::dao_token::CurveType;
-use crate::structs::EndowmentType;
+use crate::structs::{DaoToken, DonationMatch, EndowmentType};
 use cosmwasm_std::{Binary, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
@@ -20,18 +19,7 @@ pub struct InstantiateMsg {
     pub endow_type: EndowmentType,
     pub endow_owner: String,
     pub registrar_contract: String,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct DaoSetupMsg {
-    pub quorum: Decimal,
-    pub threshold: Decimal,
-    pub voting_period: u64,
-    pub timelock_period: u64,
-    pub expiration_period: u64,
-    pub proposal_deposit: Uint128,
-    pub snapshot_period: u64,
-    pub token: DaoToken,
+    pub donation_match: Option<DonationMatch>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -70,32 +58,6 @@ pub enum ExecuteMsg {
     ExpirePoll {
         poll_id: u64,
     },
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum DaoToken {
-    ExistingCw20(String),              // Option1: Existing cw20
-    NewCw20(DaoCw20Config),            // Option2: Create new "cw20-base"  with "initial-supply"
-    NewBondingCurve(DaoBondingConfig), // Option3: Create new "bonding-curve"
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct DaoBondingConfig {
-    pub curve_type: CurveType,
-    pub name: String,
-    pub symbol: String,
-    pub decimals: Option<u8>,
-    pub reserve_denom: Option<String>,
-    pub reserve_decimals: Option<u8>,
-    pub unbonding_period: Option<u64>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct DaoCw20Config {
-    pub initial_supply: Uint128,
-    pub name: String,
-    pub symbol: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

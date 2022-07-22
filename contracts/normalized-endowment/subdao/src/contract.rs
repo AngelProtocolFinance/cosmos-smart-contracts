@@ -4,24 +4,27 @@ use crate::querier::{
 use crate::state::{
     config_read, config_store, poll_indexer_store, poll_read, poll_store, poll_voter_read,
     poll_voter_store, read_poll_voters, read_polls, state_read, state_store, Config, ExecuteData,
-    Poll, State,
+    Poll, State, DONATION_MATCH,
 };
 use angel_core::common::OrderBy;
 use angel_core::errors::dao::ContractError;
-use angel_core::messages::dao_token::InstantiateMsg as DaoTokenInstantiateMsg;
-use angel_core::messages::gov::{
-    ConfigResponse, Cw20HookMsg, DaoToken, ExecuteMsg, InstantiateMsg, MigrateMsg, PollExecuteMsg,
+use angel_core::messages::accounts::QueryMsg::GetProfile;
+use angel_core::messages::donation_match::InstantiateMsg as DonationMatchInstantiateMsg;
+use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
+use angel_core::messages::subdao::{
+    ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, PollExecuteMsg,
     PollResponse, PollStatus, PollsResponse, QueryMsg, StateResponse, VoteOption, VoterInfo,
     VotersResponse, VotersResponseItem,
 };
-use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
+use angel_core::messages::subdao_token::InstantiateMsg as DaoTokenInstantiateMsg;
+use angel_core::responses::accounts::ProfileResponse as EndowProfileResponse;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
-use angel_core::structs::EndowmentType;
+use angel_core::structs::{DaoToken, DonationMatch, EndowmentType};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg,
-    WasmQuery,
+    QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128,
+    WasmMsg, WasmQuery,
 };
 use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 
@@ -85,7 +88,7 @@ pub fn build_dao_token_messages(
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
+            msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
     match (token, endow_type) {
@@ -105,19 +108,26 @@ pub fn build_dao_token_messages(
             config_store(deps.storage).save(&config)?;
         }
         // Option #2. Create a basic CW20 token contract with a fixed supply
-        (DaoToken::NewCw20(config), EndowmentType::Normal) => submsgs.push(SubMsg {
-            id: 6,
+        (
+            DaoToken::NewCw20 {
+                initial_supply,
+                name,
+                symbol,
+            },
+            EndowmentType::Normal,
+        ) => submsgs.push(SubMsg {
+            id: 0,
             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                 code_id: registrar_config.subdao_token_code.unwrap(),
                 admin: None,
                 label: "new endowment dao token(cw20) contract".to_string(),
                 msg: to_binary(&cw20_base::msg::InstantiateMsg {
-                    name: config.name,
-                    symbol: config.symbol,
+                    name,
+                    symbol,
                     decimals: 6,
                     initial_balances: vec![Cw20Coin {
                         address: endow_owner.to_string(),
-                        amount: config.initial_supply,
+                        amount: initial_supply,
                     }],
                     mint: None,
                     marketing: None,
@@ -128,20 +138,31 @@ pub fn build_dao_token_messages(
             reply_on: ReplyOn::Success,
         }),
         // Option #3 (for all Non-Charity Endowments). Create a CW20 token with supply controlled by a bonding curve
-        (DaoToken::NewBondingCurve(config), EndowmentType::Normal) => submsgs.push(SubMsg {
-            id: 6,
+        (
+            DaoToken::BondingCurve {
+                curve_type,
+                name,
+                symbol,
+                decimals,
+                reserve_denom,
+                reserve_decimals,
+                unbonding_period,
+            },
+            EndowmentType::Normal,
+        ) => submsgs.push(SubMsg {
+            id: 0,
             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                 code_id: registrar_config.subdao_token_code.unwrap(),
                 admin: None,
                 label: "new endowment dao token(bonding curve) contract".to_string(),
                 msg: to_binary(&DaoTokenInstantiateMsg {
-                    curve_type: config.curve_type,
-                    name: config.name,
-                    symbol: config.symbol,
-                    decimals: config.decimals.unwrap(),
-                    reserve_denom: config.reserve_denom.unwrap(),
-                    reserve_decimals: config.reserve_decimals.unwrap(),
-                    unbonding_period: config.unbonding_period.unwrap(),
+                    curve_type,
+                    name,
+                    symbol,
+                    decimals,
+                    reserve_denom,
+                    reserve_decimals,
+                    unbonding_period,
                 })?,
                 funds: vec![],
             }),
@@ -149,7 +170,18 @@ pub fn build_dao_token_messages(
             reply_on: ReplyOn::Success,
         }),
         // Option #3 (for all Charity Endowments). Create a CW20 token with supply controlled by a bonding curve
-        (DaoToken::NewBondingCurve(config), EndowmentType::Charity) => {
+        (
+            DaoToken::BondingCurve {
+                curve_type,
+                name,
+                symbol,
+                decimals: _,
+                reserve_denom: _,
+                reserve_decimals: _,
+                unbonding_period: _,
+            },
+            EndowmentType::Charity,
+        ) => {
             // setup DAO token contract
             let halo_token = match registrar_config.halo_token.clone() {
                 Some(addr) => addr,
@@ -160,15 +192,15 @@ pub fn build_dao_token_messages(
                 }
             };
             submsgs.push(SubMsg {
-                id: 6,
+                id: 0,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     code_id: registrar_config.subdao_token_code.unwrap(),
                     admin: None,
                     label: "new endowment dao token(bonding curve) contract".to_string(),
                     msg: to_binary(&DaoTokenInstantiateMsg {
-                        curve_type: config.curve_type,
-                        name: config.name,
-                        symbol: config.symbol,
+                        curve_type,
+                        name,
+                        symbol,
                         decimals: 6,
                         reserve_denom: halo_token,
                         reserve_decimals: 6,
@@ -197,7 +229,7 @@ pub fn execute(
         ExecuteMsg::RegisterContracts {
             ve_token,
             swap_factory,
-        } => register_contracts(deps, ve_token, swap_factory),
+        } => register_contracts(deps, info, ve_token, swap_factory),
         ExecuteMsg::UpdateConfig {
             owner,
             quorum,
@@ -259,6 +291,15 @@ pub fn receive_cw20(
     }
 }
 
+#[entry_point]
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        0 => dao_token_reply(deps, env, msg.result),
+        1 => donation_match_reply(deps, env, msg.result),
+        _ => Err(ContractError::Unauthorized {}),
+    }
+}
+
 pub fn dao_token_reply(
     deps: DepsMut,
     _env: Env,
@@ -281,7 +322,122 @@ pub fn dao_token_reply(
             let mut config: Config = config_read(deps.storage).load()?;
             config.dao_token = deps.api.addr_validate(&dao_token_addr)?;
             config_store(deps.storage).save(&config)?;
-            Ok(Response::default().add_attribute("dao_token_addr", dao_token_addr.to_string()))
+
+            let mut res =
+                Response::default().add_attribute("dao_token_addr", dao_token_addr.to_string());
+
+            let registrar_config: RegistrarConfigResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: config.registrar_contract.to_string(),
+                    msg: to_binary(&RegistrarConfig {})?,
+                }))?;
+
+            let endow_profile: EndowProfileResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: config.owner.to_string(),
+                    msg: to_binary(&GetProfile {})?,
+                }))?;
+
+            let donation_match = DONATION_MATCH.may_load(deps.storage)?;
+
+            // optional donation matching contract can be setup as long as a dao token is in place
+            if endow_profile.endowment_type == EndowmentType::Normal {
+                let match_code = match (&donation_match, registrar_config.donation_match_code) {
+                    (Some(_), Some(match_code)) => Some(match_code),
+                    (Some(_), None) => {
+                        return Err(ContractError::Std(StdError::GenericErr {
+                            msg: "No code id for donation matching contract".to_string(),
+                        }))
+                    }
+                    (None, _) => None,
+                };
+                match donation_match {
+                    Some(DonationMatch::HaloTokenReserve {}) => {
+                        match (
+                            registrar_config.halo_token,
+                            registrar_config.halo_token_lp_contract,
+                        ) {
+                            (Some(reserve_addr), Some(lp_addr)) => {
+                                res = res.add_submessage(SubMsg {
+                                    id: 1,
+                                    msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                                        code_id: match_code.unwrap(),
+                                        admin: None,
+                                        label: "new donation match contract".to_string(),
+                                        msg: to_binary(&DonationMatchInstantiateMsg {
+                                            reserve_token: reserve_addr,
+                                            lp_pair: lp_addr,
+                                            registrar_contract: config
+                                                .registrar_contract
+                                                .to_string(),
+                                        })?,
+                                        funds: vec![],
+                                    }),
+                                    gas_limit: None,
+                                    reply_on: ReplyOn::Success,
+                                });
+                            }
+                            (_, _) => {
+                                return Err(ContractError::Std(StdError::GenericErr {
+                                    msg: "HALO Token is not setup to be a reserve token"
+                                        .to_string(),
+                                }))
+                            }
+                        }
+                    }
+                    Some(DonationMatch::Cw20TokenReserve {
+                        reserve_addr,
+                        lp_addr,
+                    }) => {
+                        res = res.add_submessage(SubMsg {
+                            id: 1,
+                            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                                code_id: match_code.unwrap(),
+                                admin: None,
+                                label: "new donation match contract".to_string(),
+                                msg: to_binary(&DonationMatchInstantiateMsg {
+                                    reserve_token: reserve_addr,
+                                    lp_pair: lp_addr,
+                                    registrar_contract: config.registrar_contract.to_string(),
+                                })?,
+                                funds: vec![],
+                            }),
+                            gas_limit: None,
+                            reply_on: ReplyOn::Success,
+                        });
+                    }
+                    // Option #3: New CW20 Token to be added here...
+                    // Some(3) => {)
+                    _ => (),
+                };
+            }
+
+            Ok(res)
+        }
+        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+    }
+}
+
+pub fn donation_match_reply(
+    _deps: DepsMut,
+    _env: Env,
+    msg: SubMsgResult,
+) -> Result<Response, ContractError> {
+    match msg {
+        SubMsgResult::Ok(subcall) => {
+            let mut donation_match_contract_addr = String::from("");
+            for event in subcall.events {
+                if event.ty == *"instantiate" {
+                    for attrb in event.attributes {
+                        if attrb.key == "_contract_address" {
+                            donation_match_contract_addr = attrb.value;
+                        }
+                    }
+                }
+            }
+
+            Ok(Response::default()
+                .add_attribute("donation_match_contract", donation_match_contract_addr))
         }
         SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
@@ -289,11 +445,13 @@ pub fn dao_token_reply(
 
 pub fn register_contracts(
     deps: DepsMut,
+    info: MessageInfo,
     ve_token: String,
     swap_factory: String,
 ) -> Result<Response, ContractError> {
     let mut config: Config = config_read(deps.storage).load()?;
-    if config.dao_token.to_string().ne(&"".to_string()) {
+
+    if config.owner.ne(&info.sender) {
         return Err(ContractError::Unauthorized {});
     }
 

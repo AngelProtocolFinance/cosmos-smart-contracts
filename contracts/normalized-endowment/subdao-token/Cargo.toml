@@ -1,10 +1,8 @@
 [package]
-name = "dao"
-version = "1.0.0"
+name = "subdao-token"
+version = "2.0.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
-license = "Apache-2.0"
-description = "A Goverance contract for Glow Protocol - allows a user to create poll and do vote"
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.
@@ -18,18 +16,18 @@ exclude = [
 crate-type = ["cdylib", "rlib"]
 
 [features]
-# for quicker tests, cargo test --lib
 # for more explicit tests, cargo test --features=backtraces
 backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
 angel-core = { path = "../../../packages/angel_core" }
-
+cw2 = "0.13.4"
 cw20 = "0.13.4"
 cw20-base = { version = "0.13.4", features = ["library"] }
+cw-controllers = "0.13.4"  
+cw-storage-plus = "0.13.4"
+cw-utils = "0.13.4"
 cosmwasm-std = "1.0.0"
-cosmwasm-storage = "1.0.0"
-cw-asset = "2.0.0"
 schemars = "0.8.10"
 serde = "1.0.137"
 thiserror = "1.0.24"

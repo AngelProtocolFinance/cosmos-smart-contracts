@@ -1,4 +1,3 @@
-use angel_core::messages::gov::DaoSetupMsg;
 use angel_core::structs::{
     AcceptedTokens, BalanceInfo, EndowmentFee, Profile, RebalanceDetails, SettingsController,
     StrategyComponent, TransactionRecord,
@@ -40,7 +39,8 @@ pub struct Endowment {
     pub owner: Addr,             // address that originally setup the endowment account
     pub dao: Option<Addr>,       // subdao governance contract address
     pub dao_token: Option<Addr>, // dao gov token contract address
-    pub donation_match_active: bool, // whether to do donation matching
+    pub donation_match_active: bool, // donation matching contract address (None set for Charity Endowments as they just phone home to Registrar to get the addr)
+    pub donation_match_contract: Option<Addr>, // contract for donation matching
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
     pub name: String,                          // name of the Charity Endowment
@@ -53,7 +53,6 @@ pub struct Endowment {
     pub withdraw_fee: Option<EndowmentFee>, // Withdraw Fee
     pub deposit_fee: Option<EndowmentFee>, // Deposit Fee
     pub aum_fee: Option<EndowmentFee>, // AUM(Assets Under Management) Fee
-    pub donation_matching_contract: Option<Addr>, // donation matching contract address
     pub parent: Option<Addr>,        // Address of the Parent Endowment contract
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
     pub maturity_whitelist: Vec<Addr>, // list of addresses, which can withdraw after maturity date is reached (if any)
@@ -87,7 +86,6 @@ pub struct Cw3MultiSigConfig {
     pub max_voting_period: Duration,
 }
 
-pub const DAOSETUP: Item<DaoSetupMsg> = Item::new("dao_setup");
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");

@@ -1,3 +1,4 @@
+use crate::messages::subdao_token::CurveType;
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfoBase};
@@ -479,6 +480,52 @@ pub struct TransactionRecord {
     pub recipient: Option<Addr>,
     pub amount: Uint128,
     pub asset_info: AssetInfoBase<Addr>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct DaoSetup {
+    pub quorum: Decimal,
+    pub threshold: Decimal,
+    pub voting_period: u64,
+    pub timelock_period: u64,
+    pub expiration_period: u64,
+    pub proposal_deposit: Uint128,
+    pub snapshot_period: u64,
+    pub token: DaoToken,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DaoToken {
+    // Option1: Existing cw20 contract
+    ExistingCw20(String),
+    // Create new cw20 with initial-supply
+    NewCw20 {
+        initial_supply: Uint128,
+        name: String,
+        symbol: String,
+    },
+    // Option3: Create new "bonding-curve"
+    BondingCurve {
+        curve_type: CurveType,
+        name: String,
+        symbol: String,
+        decimals: u8,
+        reserve_denom: String,
+        reserve_decimals: u8,
+        unbonding_period: u64,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum DonationMatch {
+    // Endowment uses HALO Token for their matching reserve (no inputs needed, as we store this info in Registrar)
+    HaloTokenReserve {},
+    // Endowment uses a different CW20 Token for their mtching reserve
+    Cw20TokenReserve {
+        reserve_addr: String, // Address of CW20 token, which user wants to use as reserve token in donation_matching
+        lp_addr: String, // Address of LP contract (assumes to be a wasmswap/junoswap esque contract)
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

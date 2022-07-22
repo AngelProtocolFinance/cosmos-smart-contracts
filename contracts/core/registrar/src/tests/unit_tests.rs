@@ -1,13 +1,13 @@
 use crate::contract::{execute, instantiate, query, reply};
 use angel_core::errors::core::*;
-use angel_core::messages::dao_token::CurveType;
-use angel_core::messages::gov::{DaoBondingConfig, DaoSetupMsg, DaoToken};
 use angel_core::messages::registrar::*;
+use angel_core::messages::subdao_token::CurveType;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
     AcceptedTokens, EndowmentStatus, EndowmentType, NetworkInfo, Profile, SocialMedialUrls,
     SplitDetails,
 };
+use angel_core::structs::{DaoSetup, DaoToken};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
     coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply, StdError, SubMsgResponse,
@@ -251,7 +251,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         split_default: None,
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
-        dao: Some(DaoSetupMsg {
+        dao: Some(DaoSetup {
             quorum: Decimal::percent(20),
             threshold: Decimal::percent(50),
             voting_period: 1000000_u64,
@@ -259,7 +259,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
             expiration_period: 1000000_u64,
             proposal_deposit: Uint128::from(1000000_u64),
             snapshot_period: 1000,
-            token: DaoToken::NewBondingCurve(DaoBondingConfig {
+            token: DaoToken::BondingCurve {
                 curve_type: CurveType::SquareRoot {
                     slope: Uint128::from(19307000u64),
                     power: Uint128::from(428571429u64),
@@ -267,20 +267,17 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
                 },
                 name: String::from("AP Endowment DAO Token"),
                 symbol: String::from("APEDT"),
-                decimals: None,
-                reserve_decimals: None,
-                reserve_denom: None,
-                unbonding_period: None,
-            }),
+                decimals: 6,
+                reserve_decimals: 6,
+                reserve_denom: String::from("Shiba Token"),
+                unbonding_period: 21,
+            },
         }),
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
-        donation_match_active: true,
-        donation_match_setup: Some(1),
-        reserve_token: None,
-        reserve_token_lp_contract: None,
+        donation_match: None,
         settings_controller: None,
         parent: false,
         owner: good_charity_addr.clone(),

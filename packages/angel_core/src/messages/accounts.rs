@@ -1,6 +1,6 @@
-use crate::messages::gov::DaoSetupMsg;
 use crate::structs::{
-    EndowmentFee, FundingSource, Profile, RebalanceDetails, SettingsController, StrategyComponent,
+    DaoSetup, DonationMatch, EndowmentFee, FundingSource, Profile, RebalanceDetails,
+    SettingsController, StrategyComponent,
 };
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
@@ -35,11 +35,8 @@ pub struct InstantiateMsg {
     pub withdraw_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub aum_fee: Option<EndowmentFee>,
-    pub dao: Option<DaoSetupMsg>,
-    pub donation_match_active: bool,
-    pub donation_match_setup: Option<u8>, // Donation matching setup options(possible values: 1, 2, 3)
-    pub reserve_token: Option<String>, // Address of cw20 token, which user wants to use as reserve token in "donation_matching"
-    pub reserve_token_lp_contract: Option<String>, // Address of lp pair contract(cw20 token above - UST)
+    pub dao: Option<DaoSetup>,                 // SubDAO setup options
+    pub donation_match: Option<DonationMatch>, // Donation matching setup options (Charities are automatically setup with CS & HALO matching; Only Normalized Endowments need to provide this field.)
     pub settings_controller: Option<SettingsController>,
     pub parent: Option<Addr>,
     pub kyc_donors_only: bool,
@@ -102,7 +99,7 @@ pub enum ExecuteMsg {
     // AUM harvest
     HarvestAum {},
     // Set up dao token for "Endowment"
-    SetupDao(DaoSetupMsg),
+    SetupDao(DaoSetup),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
