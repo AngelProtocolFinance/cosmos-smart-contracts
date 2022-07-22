@@ -41,7 +41,6 @@ pub struct Config {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct State {
-    pub contract_addr: Addr,
     pub poll_count: u64,
     pub total_share: Uint128,
     pub total_deposit: Uint128,

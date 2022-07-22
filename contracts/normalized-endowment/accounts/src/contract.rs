@@ -179,45 +179,44 @@ pub fn instantiate(
     });
 
     // check if a dao needs to be setup along with a dao token contract
-    match msg.dao {
-        Some(dao_setup) => {
-            if registrar_config.subdao_token_code != None
-                && registrar_config.subdao_gov_code != None
-            {
-                let config = CONFIG.load(deps.storage)?;
-                res = res.add_submessage(SubMsg {
-                    id: 3,
-                    msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                        code_id: registrar_config.subdao_gov_code.unwrap(),
-                        admin: None,
-                        label: "new endowment dao contract".to_string(),
-                        msg: to_binary(&DaoInstantiateMsg {
-                            quorum: dao_setup.quorum,
-                            threshold: dao_setup.threshold,
-                            voting_period: dao_setup.voting_period,
-                            timelock_period: dao_setup.timelock_period,
-                            expiration_period: dao_setup.expiration_period,
-                            proposal_deposit: dao_setup.proposal_deposit,
-                            snapshot_period: dao_setup.snapshot_period,
-                            endow_type: msg.profile.endow_type.clone(),
-                            endow_owner: env.contract.address.to_string(),
-                            registrar_contract: config.registrar_contract.to_string(),
-                            token: dao_setup.token,
-                            donation_match: msg.donation_match,
-                        })?,
-                        funds: vec![],
-                    }),
-                    gas_limit: None,
-                    reply_on: ReplyOn::Success,
-                });
-            } else {
-                return Err(ContractError::Std(StdError::GenericErr {
-                    msg: "DAO settings are not yet configured on the Registrar contract"
-                        .to_string(),
-                }));
-            }
+    match (
+        msg.dao,
+        registrar_config.subdao_token_code,
+        registrar_config.subdao_gov_code,
+    ) {
+        (Some(dao_setup), Some(_token_code), Some(gov_code)) => {
+            res = res.add_submessage(SubMsg {
+                id: 3,
+                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                    code_id: gov_code,
+                    admin: None,
+                    label: "new endowment dao contract".to_string(),
+                    msg: to_binary(&DaoInstantiateMsg {
+                        quorum: dao_setup.quorum,
+                        threshold: dao_setup.threshold,
+                        voting_period: dao_setup.voting_period,
+                        timelock_period: dao_setup.timelock_period,
+                        expiration_period: dao_setup.expiration_period,
+                        proposal_deposit: dao_setup.proposal_deposit,
+                        snapshot_period: dao_setup.snapshot_period,
+                        endow_type: msg.profile.endow_type.clone(),
+                        endow_owner: env.contract.address.to_string(),
+                        registrar_contract: msg.registrar_contract.clone(),
+                        token: dao_setup.token,
+                        donation_match: msg.donation_match,
+                    })?,
+                    funds: vec![],
+                }),
+                gas_limit: None,
+                reply_on: ReplyOn::Success,
+            });
         }
-        None => (),
+        (Some(_dao_setup), _, _) => {
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: "DAO settings are not yet configured on the Registrar contract".to_string(),
+            }));
+        }
+        _ => (),
     }
     Ok(res)
 }

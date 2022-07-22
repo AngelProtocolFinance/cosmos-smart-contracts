@@ -61,7 +61,6 @@ pub fn instantiate(
     };
 
     let state = State {
-        contract_addr: deps.api.addr_validate(env.contract.address.as_str())?,
         poll_count: 0,
         total_share: Uint128::zero(),
         total_deposit: Uint128::zero(),
@@ -93,18 +92,17 @@ pub fn build_dao_token_messages(
 
     match (token, endow_type) {
         // Option #1. User can set an existing CW20 token as the DAO's Token
-        (DaoToken::ExistingCw20(contract_addr), EndowmentType::Normal) => {
+        (DaoToken::ExistingCw20(addr), EndowmentType::Normal) => {
             // Check existing token is valid/accepted
             if !registrar_config
                 .accepted_tokens
-                .cw20_valid(contract_addr.to_string())
+                .cw20_valid(addr.to_string())
             {
                 return Err(ContractError::NotInApprovedCoins {});
             }
 
-            let contract_addr = deps.api.addr_validate(&contract_addr)?;
             let mut config: Config = config_store(deps.storage).load()?;
-            config.dao_token = contract_addr;
+            config.dao_token = deps.api.addr_validate(&addr)?;
             config_store(deps.storage).save(&config)?;
         }
         // Option #2. Create a basic CW20 token contract with a fixed supply
