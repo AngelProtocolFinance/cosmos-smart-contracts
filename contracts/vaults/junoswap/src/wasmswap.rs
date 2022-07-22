@@ -1,21 +1,10 @@
-use std::ops::Div;
-
 /// This file is just the clone of `wasmswap` messages.
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use cosmwasm_std::{to_binary, Addr, Coin, CosmosMsg, StdResult, Uint128, WasmMsg};
-
+use cosmwasm_std::{to_binary, Coin, CosmosMsg, StdResult, Uint128, WasmMsg};
 use cw20::{Denom, Expiration};
 
 use crate::config::Config;
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct InstantiateMsg {
-    pub token1_denom: Denom,
-    pub token2_denom: Denom,
-    pub lp_token_code_id: u64,
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum TokenSelect {
@@ -97,20 +86,6 @@ pub struct Token2ForToken1PriceResponse {
     pub token1_amount: Uint128,
 }
 
-// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-// #[serde(rename_all = "snake_case")]
-// pub enum HandleMsg {
-//     DepositStable {},
-// }
-
-// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-// #[serde(rename_all = "snake_case")]
-// pub enum Cw20HookMsg {
-//     /// Return stable coins to a user
-//     /// according to exchange rate
-//     RedeemStable {},
-// }
-
 pub fn swap_msg(
     config: &Config,
     deposit_denom: &Denom,
@@ -128,7 +103,7 @@ pub fn swap_msg(
         msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: contract_addr.to_string(),
             msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: config.target.to_string(),
+                spender: config.pool_addr.to_string(),
                 amount: input_amount,
                 expires: None,
             })
@@ -150,7 +125,7 @@ pub fn swap_msg(
     };
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.target.to_string(),
+        contract_addr: config.pool_addr.to_string(),
         msg: to_binary(&ExecuteMsg::Swap {
             input_token,
             input_amount,
@@ -162,15 +137,3 @@ pub fn swap_msg(
 
     Ok(msgs)
 }
-
-// pub fn redeem_stable_msg(market: &Addr, token: &Addr, amount: Uint128) -> StdResult<CosmosMsg> {
-//     Ok(CosmosMsg::Wasm(WasmMsg::Execute {
-//         contract_addr: token.into(),
-//         msg: to_binary(&Cw20ExecuteMsg::Send {
-//             contract: market.into(),
-//             amount,
-//             msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
-//         })?,
-//         funds: vec![],
-//     }))
-// }

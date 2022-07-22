@@ -17,10 +17,11 @@ pub struct Config {
     pub last_harvest_fx: Option<Uint128>,
     pub harvest_to_liquid: Decimal,
 
-    pub target: Addr, // swap pool address(eg. JunoSwap USDC-JUNO pool address)
+    pub pool_addr: Addr, // swap pool address(eg. JunoSwap USDC-JUNO pool address)
     pub input_denoms: Vec<Denom>, // swap input tokens(denoms) list
-    pub yield_token: Addr, // swap lp token address
+    pub pool_lp_token_addr: Addr, // swap lp token address
     pub routes: Vec<Addr>, // list of swap pools(eg. list of junoswap pools)
+    pub staking_addr: Addr, // contract address, to where we can stake the LP token
 
     pub total_assets: Uint128, // total value of assets deposited from endowments (in usdc/usd)
     pub total_shares: Uint128, // total amount of minted vault tokens

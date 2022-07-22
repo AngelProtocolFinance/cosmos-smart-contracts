@@ -12,7 +12,6 @@ use cosmwasm_std::{
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Denom;
-use cw_asset::{Asset, AssetInfoBase};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "junoswap_vault";
@@ -36,9 +35,10 @@ pub fn instantiate(
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
 
-        target: swap_pool_addr,
+        pool_addr: swap_pool_addr,
         input_denoms: vec![swap_pool_info.token1_denom, swap_pool_info.token2_denom],
-        yield_token: deps.api.addr_validate(&swap_pool_info.lp_token_address)?,
+        pool_lp_token_addr: deps.api.addr_validate(&swap_pool_info.lp_token_address)?,
+        staking_addr: deps.api.addr_validate(&msg.staking_addr)?,
         routes: vec![],
 
         total_assets: Uint128::zero(),
@@ -113,6 +113,9 @@ pub fn execute(
             in_denom_bal_before,
             out_denom_bal_before,
         ),
+        ExecuteMsg::Stake {
+            lp_token_bal_before,
+        } => executers::stake_lp_token(deps, env, info, lp_token_bal_before),
     }
 }
 

@@ -39,11 +39,15 @@ pub enum ExecuteMsg {
         in_denom_bal_before: Uint128,
         out_denom_bal_before: Uint128,
     },
+    Stake {
+        lp_token_bal_before: Uint128,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
     pub swap_pool_addr: Option<String>,
+    pub staking_addr: Option<String>,
     pub harvest_to_liquid: Option<Decimal>,
     pub routes: RoutesUpdateMsg,
 }

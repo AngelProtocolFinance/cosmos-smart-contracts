@@ -9,7 +9,7 @@ use angel_core::responses::registrar::{
 };
 use angel_core::structs::{BalanceInfo, EndowmentEntry};
 use cosmwasm_std::{
-    to_binary, Addr, Attribute, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
+    attr, to_binary, Addr, Attribute, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
     Order, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128,
     WasmMsg, WasmQuery,
 };
@@ -69,17 +69,21 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    config.target = match msg.swap_pool_addr {
+    config.pool_addr = match msg.swap_pool_addr {
         Some(ref addr) => deps.api.addr_validate(&addr)?,
-        None => config.target,
+        None => config.pool_addr,
     };
 
     let swap_pool_info: InfoResponse = deps
         .querier
-        .query_wasm_smart(&config.target, &wasmswap::QueryMsg::Info {})?;
+        .query_wasm_smart(&config.pool_addr, &wasmswap::QueryMsg::Info {})?;
 
-    config.yield_token = deps.api.addr_validate(&swap_pool_info.lp_token_address)?;
+    config.pool_lp_token_addr = deps.api.addr_validate(&swap_pool_info.lp_token_address)?;
     config.input_denoms = vec![swap_pool_info.token1_denom, swap_pool_info.token2_denom];
+    config.staking_addr = match msg.staking_addr {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.staking_addr,
+    };
 
     config.harvest_to_liquid = msg.harvest_to_liquid.unwrap_or(config.harvest_to_liquid);
 
@@ -185,28 +189,35 @@ pub fn deposit(
     //     });
     // }
 
+    // 1. Add the "swap" message
     res = res.add_messages(swap_msg(&config, &deposit_denom, deposit_amount)?);
 
-    // let in_asset_bal_before = query_asset_balance(&deps, asset.info, env.contract.address.to_string());
-    // let out_asset_bal_before = query_asset_balance(&deps, asset.info, env.contract.address.to_string());
+    // 2. Add the "add_liquidity" message
+    let in_denom = deposit_denom;
+    let out_denom = if in_denom == config.input_denoms[0] {
+        config.input_denoms[1].clone()
+    } else {
+        config.input_denoms[0].clone()
+    };
+    let in_denom_bal_before =
+        query_denom_balance(&deps, &in_denom, env.contract.address.to_string());
+    let out_denom_bal_before =
+        query_denom_balance(&deps, &out_denom, env.contract.address.to_string());
+    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::AddLiquidity {
+            in_denom,
+            out_denom,
+            in_denom_bal_before,
+            out_denom_bal_before,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
 
-    // 2nd message: add_liquidity
-    // res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //     contract_addr: env.contract.address.to_string(),
-    //     msg: to_binary(&ExecuteMsg::AddLiquidity {
-    //         in_asset: asset.info,
-    //         out_asset: (),
-    //         in_asset_bal_before: (),
-    //         out_asset_bal_before: (),
-    //     }).unwrap(),
-    //     funds: vec![],
-    // }));
+    //
 
-    // (handle_reply_lp_token)
-
-    // 3rd message: stake_lp_tokens
-
-    // (handle_reply_stake)
+    // 3rd message: (handle_reply_lp_token) + stake_lp_tokens
 
     Ok(res)
 }
@@ -653,14 +664,139 @@ pub fn add_liquidity(
     in_denom_bal_before: Uint128,
     out_denom_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
-    Ok(Response::new())
+    let config = config::read(deps.storage)?;
+
+    let in_denom_bal = query_denom_balance(&deps, &in_denom, env.contract.address.to_string());
+    let out_denom_bal = query_denom_balance(&deps, &out_denom, env.contract.address.to_string());
+
+    let token1_denom: Denom;
+    let token2_denom: Denom;
+    let token1_amount: Uint128;
+    let token2_amount: Uint128;
+
+    if in_denom == config.input_denoms[0] {
+        token1_denom = in_denom;
+        token2_denom = out_denom;
+        token1_amount = in_denom_bal_before - in_denom_bal;
+        token2_amount = out_denom_bal - out_denom_bal_before;
+    } else {
+        token1_denom = out_denom;
+        token2_denom = in_denom;
+        token1_amount = out_denom_bal - out_denom_bal_before;
+        token2_amount = in_denom_bal_before - in_denom_bal;
+    }
+
+    let mut funds = vec![];
+    let mut msgs = vec![];
+
+    match token1_denom {
+        Denom::Native(denom) => funds.push(Coin {
+            denom,
+            amount: token1_amount,
+        }),
+        Denom::Cw20(contract_addr) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: contract_addr.to_string(),
+            msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                spender: config.pool_addr.to_string(),
+                amount: token1_amount,
+                expires: None,
+            })
+            .unwrap(),
+            funds: vec![],
+        })),
+    }
+
+    match token2_denom {
+        Denom::Native(denom) => funds.push(Coin {
+            denom,
+            amount: token2_amount,
+        }),
+        Denom::Cw20(contract_addr) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: contract_addr.to_string(),
+            msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                spender: config.pool_addr.to_string(),
+                amount: token2_amount,
+                expires: None,
+            })
+            .unwrap(),
+            funds: vec![],
+        })),
+    }
+
+    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.pool_addr.to_string(),
+        msg: to_binary(&crate::wasmswap::ExecuteMsg::AddLiquidity {
+            token1_amount,
+            min_liquidity: Uint128::zero(),
+            max_token2: token2_amount,
+            expiration: None,
+        })
+        .unwrap(),
+        funds,
+    }));
+
+    // Add the "stake" message at last
+    let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        config.pool_lp_token_addr.to_string(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::Stake {
+            lp_token_bal_before: lp_token_bal.balance,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
+
+    Ok(Response::new()
+        .add_messages(msgs)
+        .add_attributes(vec![attr("action", "add_liquidity_to_swap_pool")]))
 }
 
-fn query_asset_balance(deps: &DepsMut, denom: Denom, address: String) -> Uint128 {
+pub fn stake_lp_token(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    lp_token_bal_before: Uint128,
+) -> Result<Response, ContractError> {
+    let config = config::read(deps.storage)?;
+
+    let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        config.pool_lp_token_addr.to_string(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+
+    let stake_amount = lp_token_bal.balance - lp_token_bal_before;
+
+    let msg = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.pool_lp_token_addr.to_string(),
+        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+            contract: config.staking_addr.to_string(),
+            amount: stake_amount,
+            msg: to_binary(&crate::cw20_stake::ReceiveMsg::Stake {}).unwrap(),
+        })
+        .unwrap(),
+        funds: vec![],
+    });
+
+    Ok(Response::new()
+        .add_message(msg)
+        .add_attributes(vec![attr("action", "stake_lp_token")]))
+}
+
+fn query_denom_balance(deps: &DepsMut, denom: &Denom, account_addr: String) -> Uint128 {
     match denom {
-        Denom::Native(denom) => query_balance(&deps, address, denom).unwrap_or(Uint128::zero()),
-        Denom::Cw20(token_addr) => {
-            query_token_balance(&deps, token_addr.to_string(), address).unwrap_or(Uint128::zero())
+        Denom::Native(denom) => {
+            query_balance(&deps, account_addr, denom.to_string()).unwrap_or(Uint128::zero())
+        }
+        Denom::Cw20(contract_addr) => {
+            query_token_balance(&deps, contract_addr.to_string(), account_addr)
+                .unwrap_or(Uint128::zero())
         }
     }
 }
