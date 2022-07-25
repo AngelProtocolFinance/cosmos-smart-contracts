@@ -96,7 +96,7 @@ pub fn swap_msg(
     } else {
         TokenSelect::Token2
     };
-    let input_amount = deposit_amount / Uint128::from(2_u128);
+    let input_amount = deposit_amount.checked_div(Uint128::from(2_u128))?;
 
     let mut msgs: Vec<CosmosMsg> = vec![];
     if let Denom::Cw20(contract_addr) = deposit_denom {

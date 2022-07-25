@@ -72,3 +72,4 @@ pub struct PendingInfo {
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
 pub const BALANCES: Map<&Addr, BalanceInfo> = Map::new("balance");
 pub const PENDING: Map<&[u8], PendingInfo> = Map::new("pending");
+pub const REMNANTS: Map<String, Uint128> = Map::new("remnants");

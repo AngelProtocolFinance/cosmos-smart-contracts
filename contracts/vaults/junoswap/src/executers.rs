@@ -1,5 +1,5 @@
-use crate::config::{Config, PendingInfo, BALANCES, PENDING, TOKEN_INFO};
-use crate::wasmswap::{swap_msg, InfoResponse};
+use crate::config::{Config, PendingInfo, BALANCES, PENDING, REMNANTS, TOKEN_INFO};
+use crate::wasmswap::{swap_msg, InfoResponse, Token2ForToken1PriceResponse};
 use crate::{config, wasmswap};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
@@ -685,6 +685,36 @@ pub fn add_liquidity(
         token1_amount = out_denom_bal - out_denom_bal_before;
         token2_amount = in_denom_bal_before - in_denom_bal;
     }
+
+    let price_query: Token2ForToken1PriceResponse = deps.querier.query_wasm_smart(
+        config.pool_addr.to_string(),
+        &crate::wasmswap::QueryMsg::Token2ForToken1Price { token2_amount },
+    )?;
+
+    if price_query.token1_amount > token1_amount {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Invalid liquidity amount - Needed: {}, Current: {}",
+                price_query.token1_amount, token1_amount
+            ),
+        }));
+    }
+
+    let token1_denom_string = match token1_denom {
+        Denom::Native(ref denom) => denom.to_string(),
+        Denom::Cw20(ref addr) => addr.to_string(),
+    };
+
+    REMNANTS.update(
+        deps.storage,
+        token1_denom_string,
+        |amount| -> Result<Uint128, ContractError> {
+            let amount =
+                amount.unwrap_or(Uint128::zero()) + token1_amount - price_query.token1_amount;
+            Ok(amount)
+        },
+    )?;
+    let token1_amount = price_query.token1_amount;
 
     let mut funds = vec![];
     let mut msgs = vec![];
