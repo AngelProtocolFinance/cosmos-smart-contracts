@@ -135,15 +135,15 @@ async function setup(
   const cw3MultiSig = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_multisig.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSig}`);
 
-  process.stdout.write("Uploading Endowment DAO Wasm");
-  const subdao = await storeCode(juno, apTeamAddr, `${wasm_path.core}/dao.wasm`);
+  process.stdout.write("Uploading Endowment SubDAO Wasm");
+  const subdao = await storeCode(juno, apTeamAddr, `${wasm_path.core}/subdao.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdao}`);
 
-  process.stdout.write("Uploading Endowment DAO Token Wasm");
-  const subdaoToken = await storeCode(juno, apTeamAddr, `${wasm_path.core}/donation_match.wasm`);
+  process.stdout.write("Uploading Endowment SubDAO Token Wasm");
+  const subdaoToken = await storeCode(juno, apTeamAddr, `${wasm_path.core}/subdao_token.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoToken}`);
 
-  process.stdout.write("Uploading Endowment DAO Donation Matching Wasm");
+  process.stdout.write("Uploading Endowment SubDAO Donation Matching Wasm");
   const subdaoDonationMatch = await storeCode(juno, apTeamAddr, `${wasm_path.core}/donation_match.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoDonationMatch}`);
 
@@ -162,7 +162,7 @@ async function setup(
       default_vault: apTeamAddr, // Fake vault address from apTeam
       split_to_liquid: undefined,
       accepted_tokens: {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
         cw20: [],
       }
     }
@@ -238,6 +238,16 @@ async function setup(
   });
   console.log(chalk.green(" Done!"));
 
+  // Charities Donation Matching
+  process.stdout.write("Instantiating Charities Donation Matching contract");
+  const charityDonationMatchResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, subdaoDonationMatch, {
+    registrar_contract: registrar,
+    reserve_token: apTeamAddr, // FAKE! Need to fix.
+    lp_pair: apTeamAddr, // FAKE! Need to fix.
+      });
+  donationMatchCharities = charityDonationMatchResult.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${donationMatchCharities}`);
+  
   process.stdout.write("Update Registrar's config with various wasm codes & contracts");
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_config: {
@@ -267,8 +277,6 @@ async function createEndowments(
   const charityResult1 = await sendTransaction(juno, apTeamAddr, registrar, {
     create_endowment: {
       owner: charity1_wallet,
-      name: "Test Endowment #1",
-      description: "A wonderful charity endowment that aims to test all the things",
       withdraw_before_maturity: false,
       maturity_time: 300,
       split_max: undefined,
@@ -302,27 +310,40 @@ async function createEndowments(
       kyc_donors_only: false,
       whitelisted_beneficiaries: [charity1_wallet], 
       whitelisted_contributors: [],
-      dao: true,
-      dao_setup_option: {
-        setup_bond_curve_token: {
-          constant: {
-            value: "10",
-            scale: 1,
+      dao: {
+        quorum: "0.2",
+        threshold: "0.5",
+        voting_period: 1000000,
+        timelock_period: 1000000,
+        expiration_period: 1000000,
+        proposal_deposit: "1000000",
+        snapshot_period: 1000,
+        token: {
+          bonding_curve: {
+            curve_type: {
+              square_root: {
+                slope: "19307000",
+                power: "428571429",
+                scale: 9,
+              }
+            },
+            name: "AP Endowment DAO Token",
+            symbol: "APEDT",
+            decimals: 6,
+            reserve_decimals: 6,
+            reserve_denom: "ujunox",
+            unbonding_period: 1, 
           }
         }
       },
-      curveType: undefined, // Useless, need to remove from contract
-      user_reserve_token: undefined,
-      user_reserve_ust_lp_pair_contract: undefined,
-      donation_match_active: false,
-      donation_match_setup: 0,
+      donation_match: undefined,
       earnings_fee: undefined,
       deposit_fee: undefined,
       withdraw_fee: undefined,
       aum_fee: undefined,
       settings_controller: undefined,
       parent: false,
-    },
+    }
   });
   endowmentContract1 = charityResult1.logs[0].events
     .find((event) => {
@@ -342,8 +363,6 @@ async function createEndowments(
   const charityResult2 = await sendTransaction(juno, apTeamAddr, registrar, {
     create_endowment: {
       owner: charity2_wallet,
-      name: "Test Endowment #2",
-      description: "An even better endowment full of butterflies and rainbows",
       withdraw_before_maturity: false,
       maturity_time: 300,
       split_max: undefined,
@@ -377,20 +396,8 @@ async function createEndowments(
       kyc_donors_only: false,
       whitelisted_beneficiaries: [charity2_wallet], 
       whitelisted_contributors: [],
-      dao: true,
-      dao_setup_option: {
-        setup_bond_curve_token: {
-          constant: {
-            value: "10",
-            scale: 1,
-          }
-        }
-      },
-      curveType: undefined, // Useless, need to remove from contract
-      user_reserve_token: undefined,
-      user_reserve_ust_lp_pair_contract: undefined,
-      donation_match_active: false,
-      donation_match_setup: 0,
+      dao: undefined,
+      donation_match: undefined,
       earnings_fee: undefined,
       deposit_fee: undefined,
       withdraw_fee: undefined,
@@ -417,8 +424,6 @@ async function createEndowments(
   const charityResult3 = await sendTransaction(juno, apTeamAddr, registrar, {
     create_endowment: {
       owner: charity3_wallet,
-      name: "Test Endowment #3",
-      description: "Shady endowment that will never be approved",
       withdraw_before_maturity: false,
       maturity_time: 300,
       split_max: undefined,
@@ -452,20 +457,8 @@ async function createEndowments(
       kyc_donors_only: false,
       whitelisted_beneficiaries: [charity1_wallet], 
       whitelisted_contributors: [],
-      dao: true,
-      dao_setup_option: {
-        setup_bond_curve_token: {
-          constant: {
-            value: "10",
-            scale: 1,
-          }
-        }
-      },
-      curveType: undefined, // Useless, need to remove from contract
-      user_reserve_token: undefined,
-      user_reserve_ust_lp_pair_contract: undefined,
-      donation_match_active: false,
-      donation_match_setup: 0,
+      dao: undefined,
+      donation_match: undefined,
       earnings_fee: undefined,
       deposit_fee: undefined,
       withdraw_fee: undefined,
@@ -491,8 +484,6 @@ async function createEndowments(
   const charityResult4 = await sendTransaction(juno, apTeamAddr, registrar, {
     create_endowment: {
       owner: charity3_wallet,
-      name: "Vibin' Endowment #4",
-      description: "Global endowment that spreads good vibes",
       withdraw_before_maturity: false,
       maturity_time: 300,
       split_max: undefined,
@@ -526,20 +517,8 @@ async function createEndowments(
       kyc_donors_only: false,
       whitelisted_beneficiaries: [charity1_wallet], 
       whitelisted_contributors: [],
-      dao: true,
-      dao_setup_option: {
-        setup_bond_curve_token: {
-          constant: {
-            value: "10",
-            scale: 1,
-          }
-        }
-      },
-      curveType: undefined, // Useless, need to remove from contract
-      user_reserve_token: undefined,
-      user_reserve_ust_lp_pair_contract: undefined,
-      donation_match_active: false,
-      donation_match_setup: 0,
+      dao: undefined,
+      donation_match: undefined,
       earnings_fee: undefined,
       deposit_fee: undefined,
       withdraw_fee: undefined,

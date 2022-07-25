@@ -137,6 +137,11 @@ import {
   testQueryVestingAccount,
   testQueryVestingAccounts,
 } from "./halo/vesting";
+import {
+  testInstantiateSubDao,
+  testInstantiateSubDaoToken,
+  testInstantiateDonationMatchContract,
+} from "./core/subdao";
 
 async function clientSetup(wallet: DirectSecp256k1HdWallet, networkUrl: string) {
   let client = await SigningCosmWasmClient.connectWithSigner(networkUrl, wallet, { gasPrice: GasPrice.fromString("0.025ujunox") })
@@ -198,6 +203,11 @@ export async function testExecute(
   console.log(chalk.green(" Done!"));
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+
+  // SUBDAO TESTS
+  // await testInstantiateSubDao(actors.apTeam.client, actors.apTeam.addr, 165, registrar);
+  // await testInstantiateSubDaoToken(actors.apTeam.client, actors.apTeam.addr, 166, registrar);
+  // await testInstantiateDonationMatchContract(actors.apTeam.client, actors.apTeam.addr, 167, registrar);
 
   // INDEX-FUND test
   // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, indexFund);
@@ -278,8 +288,6 @@ export async function testExecute(
   // REGISTRAR test
   // await testCreateEndowmentViaRegistrar(actors.apTeam.client, actors.apTeam.addr, registrar, {
   //   owner: charity1Addr,
-  //   name: "Test Endowment #5",
-  //   description: "A wonderful test endowment #5",
   //   withdraw_before_maturity: false,
   //   maturity_time: 300,
   //   split_max: undefined,
@@ -312,27 +320,40 @@ export async function testExecute(
   //   },
   //   kyc_donors_only: false,
   //   whitelisted_beneficiaries: [charity1Addr], 
-  //     whitelisted_contributors: [],
-  //     dao: false,
-  //     dao_setup_option: {
-  //       setup_bond_curve_token: {
-  //         constant: {
-  //           value: "10",
-  //           scale: 1,
-  //         }
+  //   whitelisted_contributors: [],
+  //   dao: {
+  //     quorum: "0.2",
+  //     threshold: "0.5",
+  //     voting_period: 1000000,
+  //     timelock_period: 1000000,
+  //     expiration_period: 1000000,
+  //     proposal_deposit: "1000000",
+  //     snapshot_period: 1000,
+  //     token: {
+  //       bonding_curve: {
+  //         curve_type: {
+  //           square_root: {
+  //             slope: "19307000",
+  //             power: "428571429",
+  //             scale: 9,
+  //           }
+  //         },
+  //         name: "AP Endowment DAO Token",
+  //         symbol: "APEDT",
+  //         decimals: 6,
+  //         reserve_decimals: 6,
+  //         reserve_denom: "ujunox",
+  //         unbonding_period: 1, 
   //       }
-  //     },
-  //     curveType: undefined, // Useless, need to remove from contract
-  //     reserve_token: undefined,
-  //     reserve_token_lp_contract: undefined,
-  //     donation_match: false,
-  //     donation_match_setup_option: 0,
-  //     earnings_fee: undefined,
-  //     deposit_fee: undefined,
-  //     withdraw_fee: undefined,
-  //     aum_fee: undefined,
-  //     settings_controller: undefined,
-  //     parent: false,
+  //     }
+  //   },
+  //   donation_match: undefined,
+  //   earnings_fee: undefined,
+  //   deposit_fee: undefined,
+  //   withdraw_fee: undefined,
+  //   aum_fee: undefined,
+  //   settings_controller: undefined,
+  //   parent: false,
   // });
   // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, registrar, {
   //   cw3_code: 102,
