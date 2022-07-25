@@ -6,9 +6,9 @@ use cosmwasm_std::{
     Empty, OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult,
     Uint128, WasmQuery,
 };
+use cosmwasm_storage::to_length_prefixed;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use cosmwasm_storage::to_length_prefixed;
 
 use std::collections::HashMap;
 use std::marker::PhantomData;
@@ -18,11 +18,12 @@ use angel_core::responses::registrar::{
 };
 use angel_core::structs::{AcceptedTokens, SplitDetails, YieldVault};
 
+use crate::wasmswap::InfoResponse;
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    Config {},
-    Vault { vault_addr: String },
+    Info {},
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -206,41 +207,14 @@ impl WasmMockQuerier {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
-                QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&RegistrarConfigResponse {
-                        owner: "registrar_owner".to_string(),
-                        version: "0.1.0".to_string(),
-                        accounts_code_id: 1,
-                        treasury: "treasury".to_string(),
-                        tax_rate: Decimal::one(),
-                        default_vault: Some("default-vault".to_string()),
-                        index_fund: Some("index_fund".to_string()),
-                        split_to_liquid: SplitDetails {
-                            min: Decimal::zero(),
-                            max: Decimal::one(),
-                            default: Decimal::percent(50),
-                        },
-                        halo_token: Some("halo_token".to_string()),
-                        gov_contract: Some("gov_contract".to_string()),
-                        charity_shares_contract: Some("charity_shares".to_string()),
-                        cw3_code: Some(2),
-                        cw4_code: Some(3),
-                        accepted_tokens: AcceptedTokens {
-                            native: vec!["uluna".to_string()],
-                            cw20: vec!["test-cw20".to_string()],
-                        },
-                    })
-                    .unwrap(),
-                )),
-                QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultDetailResponse {
-                        vault: YieldVault {
-                            network: "juno".to_string(),
-                            address: Addr::unchecked("vault").to_string(),
-                            input_denom: "input-denom".to_string(),
-                            yield_token: Addr::unchecked("yield-token").to_string(),
-                            approved: true,
-                        },
+                QueryMsg::Info {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&InfoResponse {
+                        token1_reserve: Uint128::from(100_u128),
+                        token1_denom: cw20::Denom::Native("ujuno".to_string()),
+                        token2_reserve: Uint128::from(100_u128),
+                        token2_denom: cw20::Denom::Cw20(Addr::unchecked("halo-token-contract")),
+                        lp_token_address: "lp-token-address".to_string(),
+                        lp_token_supply: Uint128::from(100_u128),
                     })
                     .unwrap(),
                 )),
