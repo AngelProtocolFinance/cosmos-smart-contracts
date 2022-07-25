@@ -1,4 +1,5 @@
 use crate::config::{Config, PendingInfo, BALANCES, PENDING, REMNANTS, TOKEN_INFO};
+use crate::util::query_denom_balance;
 use crate::wasmswap::{swap_msg, InfoResponse, Token2ForToken1PriceResponse};
 use crate::{config, wasmswap};
 use angel_core::errors::vault::ContractError;
@@ -214,10 +215,6 @@ pub fn deposit(
         .unwrap(),
         funds: vec![],
     }));
-
-    //
-
-    // 3rd message: (handle_reply_lp_token) + stake_lp_tokens
 
     Ok(res)
 }
@@ -658,7 +655,7 @@ pub fn process_junoswap_pool_reply(
 pub fn add_liquidity(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     in_denom: Denom,
     out_denom: Denom,
     in_denom_bal_before: Uint128,
@@ -789,7 +786,7 @@ pub fn add_liquidity(
 pub fn stake_lp_token(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     lp_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
     let config = config::read(deps.storage)?;
@@ -817,53 +814,4 @@ pub fn stake_lp_token(
     Ok(Response::new()
         .add_message(msg)
         .add_attributes(vec![attr("action", "stake_lp_token")]))
-}
-
-fn query_denom_balance(deps: &DepsMut, denom: &Denom, account_addr: String) -> Uint128 {
-    match denom {
-        Denom::Native(denom) => {
-            query_balance(&deps, account_addr, denom.to_string()).unwrap_or(Uint128::zero())
-        }
-        Denom::Cw20(contract_addr) => {
-            query_token_balance(&deps, contract_addr.to_string(), account_addr)
-                .unwrap_or(Uint128::zero())
-        }
-    }
-}
-
-/// Returns a native token's balance for a specific account.
-/// ## Params
-/// * **querier** is an object of type [`QuerierWrapper`].
-///
-/// * **account_addr** is an object of type [`Addr`].
-///
-/// * **denom** is an object of type [`String`] used to specify the denomination used to return the balance (e.g uluna).
-pub fn query_balance(deps: &DepsMut, account_addr: String, denom: String) -> StdResult<Uint128> {
-    Ok(deps
-        .querier
-        .query_balance(account_addr, denom)
-        .map(|c| c.amount)
-        .unwrap_or(Uint128::zero()))
-}
-
-/// Returns a token balance for an account.
-/// ## Params
-/// * **querier** is an object of type [`QuerierWrapper`].
-///
-/// * **contract_addr** is an object of type [`Addr`]. This is the token contract for which we return a balance.
-///
-/// * **account_addr** is an object of type [`Addr`] for which we query the token balance for.
-pub fn query_token_balance(
-    deps: &DepsMut,
-    contract_addr: String,
-    account_addr: String,
-) -> StdResult<Uint128> {
-    // load balance from the token contract
-    let res: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-        contract_addr,
-        &cw20::Cw20QueryMsg::Balance {
-            address: account_addr,
-        },
-    )?;
-    Ok(res.balance)
 }

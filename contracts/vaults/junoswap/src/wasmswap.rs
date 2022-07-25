@@ -1,6 +1,9 @@
+///
+/// This file is just a clone of `msg` types defined in `wasmswap-contracts`.
+/// Ref: https://github.com/Wasmswap/wasmswap-contracts/blob/main/src/msg.rs
+///
 use cosmwasm_std::{to_binary, Coin, CosmosMsg, StdResult, Uint128, WasmMsg};
 use cw20::{Denom, Expiration};
-/// This file is just the clone of `wasmswap` messages.
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

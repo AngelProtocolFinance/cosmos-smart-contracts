@@ -401,7 +401,7 @@ pub fn new_accounts_reply(
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,
-                    name: Some(endowment_name.clone()),
+                    name: Some(endowment_name),
                     owner: Some(endowment_owner.clone()),
                     status: EndowmentStatus::Inactive,
                     tier: match endowment_tier {
@@ -410,14 +410,14 @@ pub fn new_accounts_reply(
                         3 => Some(Tier::Level3),
                         _ => None,
                     },
-                    un_sdg: Some(endowment_un_sdg.clone()),
+                    un_sdg: Some(endowment_un_sdg),
                     endow_type: match endowment_type.as_str() {
                         "charity" => Some(EndowmentType::Charity),
                         "normal" => Some(EndowmentType::Normal),
                         _ => unimplemented!(),
                     },
-                    logo: Some(endowment_logo.clone()),
-                    image: Some(endowment_image.clone()),
+                    logo: Some(endowment_logo),
+                    image: Some(endowment_image),
                 },
             )?;
             Ok(Response::default().add_attributes(vec![

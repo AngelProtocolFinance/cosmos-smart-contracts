@@ -1,5 +1,8 @@
+///
+/// This file is a clone of some `msg` types defined for `cw20-stake` contract
+/// Ref: https://github.com/DA0-DA0/dao-contracts/blob/main/contracts/cw20-stake/src/msg.rs
+///
 use cosmwasm_std::Uint128;
-
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
