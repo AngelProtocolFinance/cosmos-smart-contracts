@@ -67,10 +67,12 @@ pub fn instantiate(
     config_store(deps.storage).save(&config)?;
     state_store(deps.storage).save(&state)?;
 
-    DONATION_MATCH.save(
-        deps.storage,
-        &(msg.endow_type.clone(), msg.donation_match.unwrap()),
-    )?;
+    match (msg.donation_match, msg.endow_type.clone()) {
+        (_, EndowmentType::Charity) | (None, EndowmentType::Normal) => (),
+        (Some(donation_match), EndowmentType::Normal) => {
+            DONATION_MATCH.save(deps.storage, &(msg.endow_type.clone(), donation_match))?
+        }
+    }
 
     Ok(Response::default()
         .add_attribute("dao_addr", env.contract.address.to_string())
@@ -85,14 +87,14 @@ pub fn build_dao_token_messages(
     endow_type: EndowmentType,
     endow_owner: String,
 ) -> Result<Vec<SubMsg>, ContractError> {
-    let mut submsgs: Vec<SubMsg> = vec![];
-    let config: Config = config_read(deps.storage).load()?;
+    let mut config: Config = config_read(deps.storage).load()?;
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
+    let mut submsgs: Vec<SubMsg> = vec![];
     match (token, endow_type) {
         // Option #1. User can set an existing CW20 token as the DAO's Token
         (DaoToken::ExistingCw20(addr), EndowmentType::Normal) => {
@@ -104,7 +106,6 @@ pub fn build_dao_token_messages(
                 return Err(ContractError::NotInApprovedCoins {});
             }
 
-            let mut config: Config = config_store(deps.storage).load()?;
             config.dao_token = deps.api.addr_validate(&addr)?;
             config_store(deps.storage).save(&config)?;
         }
@@ -117,7 +118,7 @@ pub fn build_dao_token_messages(
             },
             EndowmentType::Normal,
         ) => submsgs.push(SubMsg {
-            id: 0,
+            id: 1,
             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                 code_id: registrar_config.subdao_token_code.unwrap(),
                 admin: None,
@@ -151,7 +152,7 @@ pub fn build_dao_token_messages(
             },
             EndowmentType::Normal,
         ) => submsgs.push(SubMsg {
-            id: 0,
+            id: 1,
             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                 code_id: registrar_config.subdao_token_code.unwrap(),
                 admin: None,
@@ -193,7 +194,7 @@ pub fn build_dao_token_messages(
                 }
             };
             submsgs.push(SubMsg {
-                id: 0,
+                id: 1,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     code_id: registrar_config.subdao_token_code.unwrap(),
                     admin: None,
@@ -295,8 +296,8 @@ pub fn receive_cw20(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        0 => dao_token_reply(deps, env, msg.result),
-        1 => donation_match_reply(deps, env, msg.result),
+        1 => dao_token_reply(deps, env, msg.result),
+        2 => donation_match_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }
@@ -320,6 +321,12 @@ pub fn dao_token_reply(
             }
 
             // update the "dao_token" to be the new contract
+            if dao_token_addr == String::from("") {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "DAO Token contract not found in event logs".to_string(),
+                }));
+            }
+
             let mut config: Config = config_read(deps.storage).load()?;
             config.dao_token = deps.api.addr_validate(&dao_token_addr)?;
             config_store(deps.storage).save(&config)?;
@@ -405,7 +412,7 @@ pub fn dao_token_reply(
             }
             Ok(res)
         }
-        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }
 
@@ -426,11 +433,15 @@ pub fn donation_match_reply(
                     }
                 }
             }
-
+            if donation_match_contract_addr == String::from("") {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "Donation Match contract not found in event logs".to_string(),
+                }));
+            }
             Ok(Response::default()
                 .add_attribute("donation_match_contract", donation_match_contract_addr))
         }
-        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }
 

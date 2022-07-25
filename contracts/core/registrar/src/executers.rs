@@ -306,12 +306,9 @@ pub fn create_endowment(
         admin: Some(config.owner.to_string()),
         label: "new endowment accounts".to_string(),
         msg: to_binary(&angel_core::messages::accounts::InstantiateMsg {
-            owner_sc: config.owner.to_string(),
             registrar_contract: env.contract.address.to_string(),
             dao: msg.dao,
-            owner: msg.owner,
-            name: msg.name,
-            description: msg.description,
+            owner: config.owner.to_string(),
             withdraw_before_maturity: msg.withdraw_before_maturity,
             maturity_time: msg.maturity_time,
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries,

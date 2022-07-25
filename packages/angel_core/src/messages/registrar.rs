@@ -79,8 +79,6 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateEndowmentMsg {
     pub owner: String,
-    pub name: String,
-    pub description: String,
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub split_max: Option<Decimal>,

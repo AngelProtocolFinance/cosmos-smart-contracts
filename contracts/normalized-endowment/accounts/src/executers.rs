@@ -86,7 +86,7 @@ pub fn cw4_group_reply(
                 reply_on: ReplyOn::Success,
             }))
         }
-        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }
 
@@ -115,7 +115,7 @@ pub fn cw3_multisig_reply(
 
             Ok(Response::default().add_attribute("cw3_addr", multisig_addr))
         }
-        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }
 
@@ -142,12 +142,21 @@ pub fn dao_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response
             let mut endowment = ENDOWMENT.load(deps.storage)?;
             endowment.dao = Some(deps.api.addr_validate(&dao_addr)?);
             endowment.dao_token = Some(deps.api.addr_validate(&dao_token_addr)?);
-            endowment.donation_match_contract = Some(deps.api.addr_validate(&donation_match_addr)?);
+
+            // only need to set the donation match contract for non-Charity endowments
+            // and we received a value back from the submessages
+            let profile = PROFILE.load(deps.storage)?;
+            if profile.endow_type != EndowmentType::Charity
+                && donation_match_addr != String::from("")
+            {
+                endowment.donation_match_contract =
+                    Some(deps.api.addr_validate(&donation_match_addr)?);
+            }
             ENDOWMENT.save(deps.storage, &endowment)?;
 
             Ok(Response::default())
         }
-        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }
 
@@ -269,14 +278,6 @@ pub fn update_endowment_settings(
             }
         }
         None => endowment.whitelisted_contributors,
-    };
-    endowment.name = match msg.name {
-        Some(i) => i,
-        None => endowment.name,
-    };
-    endowment.description = match msg.description {
-        Some(i) => i,
-        None => endowment.description,
     };
     endowment.withdraw_before_maturity = match msg.withdraw_before_maturity {
         Some(i) => {
@@ -1431,7 +1432,7 @@ pub fn harvest_reply(
 
             Ok(Response::default())
         }
-        SubMsgResult::Err(_) => Err(ContractError::Std(StdError::generic_err("Harvest failed"))),
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }
 

@@ -43,8 +43,6 @@ pub struct Endowment {
     pub donation_match_contract: Option<Addr>, // contract for donation matching
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
-    pub name: String,                          // name of the Charity Endowment
-    pub description: String,                   // description of the Charity Endowment
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity (unit: seconds)
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts

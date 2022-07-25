@@ -17,11 +17,8 @@ pub struct MigrateMsg {
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
-    pub owner_sc: String,
     pub registrar_contract: String,
-    pub owner: String,       // address that originally setup the endowment account
-    pub name: String,        // name of the Charity Endowment
-    pub description: String, // description of the Charity Endowment
+    pub owner: String, // address that originally setup the endowment account
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
@@ -126,8 +123,6 @@ pub struct UpdateEndowmentSettingsMsg {
     pub owner: Option<String>,
     pub whitelisted_beneficiaries: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
-    pub name: Option<String>,                          // name of the Charity Endowment
-    pub description: Option<String>,                   // description of the Charity Endowment
     pub withdraw_before_maturity: Option<bool>, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<Option<u64>>,     // datetime int of endowment maturity
     pub strategies: Option<Vec<StrategyComponent>>, // list of vaults and percentage for locked/liquid accounts

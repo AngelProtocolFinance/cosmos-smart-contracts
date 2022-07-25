@@ -72,10 +72,11 @@ pub fn query_account_balance(deps: Deps, env: Env) -> StdResult<BalanceResponse>
 pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse> {
     // this fails if no account is found
     let endowment = ENDOWMENT.load(deps.storage)?;
+    let profile = PROFILE.load(deps.storage)?;
     Ok(EndowmentDetailsResponse {
         owner: endowment.owner,
-        name: endowment.name,
-        description: endowment.description,
+        name: profile.name,
+        description: profile.overview,
         withdraw_before_maturity: endowment.withdraw_before_maturity,
         maturity_time: endowment.maturity_time,
         strategies: endowment.strategies,

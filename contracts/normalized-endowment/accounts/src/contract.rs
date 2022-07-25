@@ -48,7 +48,7 @@ pub fn instantiate(
     CONFIG.save(
         deps.storage,
         &Config {
-            owner: deps.api.addr_validate(&msg.owner_sc)?,
+            owner: deps.api.addr_validate(&msg.owner)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
@@ -77,10 +77,8 @@ pub fn instantiate(
         deps.storage,
         &Endowment {
             owner: deps.api.addr_validate(&msg.owner)?, // Addr
-            name: msg.name.clone(),
-            description: msg.description.clone(),
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
-            maturity_time: msg.maturity_time,                       // Option<u64>
+            maturity_time: msg.maturity_time,           // Option<u64>
             strategies: vec![StrategyComponent {
                 vault: deps.api.addr_validate(&default_vault)?.to_string(),
                 percentage: Decimal::one(),
@@ -134,7 +132,7 @@ pub fn instantiate(
     // initial default Response to add submessages to
     let mut res: Response = Response::new().add_attributes(vec![
         attr("endow_addr", env.contract.address.to_string()),
-        attr("endow_name", msg.name),
+        attr("endow_name", msg.profile.name),
         attr("endow_owner", msg.owner.to_string()),
         attr("endow_type", msg.profile.endow_type.to_string()),
         attr(
@@ -211,7 +209,7 @@ pub fn instantiate(
                 reply_on: ReplyOn::Success,
             });
         }
-        (Some(_dao_setup), _, _) => {
+        (Some(_dao_setup), None, _) | (Some(_dao_setup), _, None) => {
             return Err(ContractError::Std(StdError::GenericErr {
                 msg: "DAO settings are not yet configured on the Registrar contract".to_string(),
             }));
@@ -331,7 +329,9 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
         2 => executers::cw3_multisig_reply(deps, env, msg.result),
         3 => executers::dao_reply(deps, env, msg.result),
         4 => executers::harvest_reply(deps, env, msg.result),
-        _ => Err(ContractError::Unauthorized {}),
+        _ => Err(ContractError::Std(StdError::GenericErr {
+            msg: "Invalid Submessage Reply ID!".to_string(),
+        })),
     }
 }
 

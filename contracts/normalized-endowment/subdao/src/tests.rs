@@ -115,7 +115,7 @@ fn proper_initialization() {
     let msg = instantiate_msg();
     let info = mock_info(TEST_CREATOR, &coins(2, VOTING_TOKEN));
     let res = instantiate(deps.as_mut(), mock_env(), info.clone(), msg).unwrap();
-    assert_eq!(0, res.messages.len());
+    assert_eq!(1, res.messages.len());
 
     let config: Config = config_read(deps.as_ref().storage).load().unwrap();
     assert_eq!(
