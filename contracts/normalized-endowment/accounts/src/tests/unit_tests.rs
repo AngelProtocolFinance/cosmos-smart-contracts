@@ -50,11 +50,8 @@ fn create_endowment() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
     };
 
     let instantiate_msg = InstantiateMsg {
-        owner_sc: AP_TEAM.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         owner: CHARITY_ADDR.to_string(),
-        name: "Endowment".to_string(),
-        description: "New Endowment Creation".to_string(),
         split_max: Decimal::one(),
         split_min: Decimal::one(),
         split_default: Decimal::one(),
@@ -113,11 +110,8 @@ fn test_proper_initialization() {
     };
 
     let instantiate_msg = InstantiateMsg {
-        owner_sc: AP_TEAM.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         owner: CHARITY_ADDR.to_string(),
-        name: "Endowment".to_string(),
-        description: "New Endowment Creation".to_string(),
         split_max: Decimal::one(),
         split_min: Decimal::one(),
         split_default: Decimal::one(),
@@ -156,8 +150,6 @@ fn test_update_endowment_settings() {
         owner: Some(CHARITY_ADDR.to_string()),
         whitelisted_beneficiaries: None,
         whitelisted_contributors: None,
-        name: None,
-        description: None,
         withdraw_before_maturity: None,
         maturity_time: None,
         strategies: None,
@@ -182,8 +174,6 @@ fn test_update_endowment_settings() {
         owner: Some(CHARITY_ADDR.to_string()),
         whitelisted_beneficiaries: None,
         whitelisted_contributors: None,
-        name: None,
-        description: None,
         withdraw_before_maturity: None,
         maturity_time: None,
         strategies: None,
@@ -454,8 +444,8 @@ fn test_update_endowment_profile() {
         value.overview,
         "Test Endowment is for just testing".to_string()
     );
-    assert_eq!(value.un_sdg, None);
-    assert_eq!(value.tier, None);
+    assert_eq!(value.un_sdg, Some(1));
+    assert_eq!(value.tier, Some(2));
 
     // Config owner can update certain profile
     let info = mock_info(AP_TEAM, &[]);

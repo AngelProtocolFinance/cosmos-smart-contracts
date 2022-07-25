@@ -244,8 +244,6 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     };
 
     let create_endowment_msg = CreateEndowmentMsg {
-        name: "Endowment".to_string(),
-        description: "New Endowment Creation".to_string(),
         split_max: None,
         split_min: None,
         split_default: None,
@@ -319,7 +317,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
                     assert_eq!(admin.clone(), Some(ap_team.clone()));
                     let accounts_instantiate_msg: angel_core::messages::accounts::InstantiateMsg =
                         from_binary(msg).unwrap();
-                    assert_eq!(accounts_instantiate_msg.owner_sc, ap_team.clone());
+                    assert_eq!(accounts_instantiate_msg.owner, ap_team.clone());
 
                     // let's instantiate account sc with our sub_message
                     let mut deps = mock_dependencies();
