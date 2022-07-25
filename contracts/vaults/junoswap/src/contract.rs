@@ -5,12 +5,15 @@ use crate::queriers;
 use crate::wasmswap;
 use crate::wasmswap::InfoResponse;
 use angel_core::errors::vault::ContractError;
+use angel_core::messages::vault::ReceiveMsg;
 use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
+use cosmwasm_std::from_binary;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
     StdResult, Uint128,
 };
 use cw2::{get_contract_version, set_contract_version};
+use cw20::Cw20ReceiveMsg;
 use cw20::Denom;
 
 // version info for future migration info
@@ -73,6 +76,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
+        ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::UpdateOwner { new_owner } => executers::update_owner(deps, info, new_owner),
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
@@ -83,9 +87,10 @@ pub fn execute(
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
             }
+            let depositor = info.sender.to_string();
             let deposit_denom = Denom::Native(info.funds[0].denom.to_string());
             let deposit_amount = info.funds[0].amount;
-            executers::deposit(deps, env, info.clone(), deposit_denom, deposit_amount)
+            executers::deposit(deps, env, info, depositor, deposit_denom, deposit_amount)
         }
         // Redeem is only called by the SC when setting up new strategies.
         // Pulls all existing strategy amounts back to Account in UST.
@@ -116,6 +121,25 @@ pub fn execute(
         ExecuteMsg::Stake {
             lp_token_bal_before,
         } => executers::stake_lp_token(deps, env, info, lp_token_bal_before),
+    }
+}
+
+fn receive_cw20(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    cw20_msg: Cw20ReceiveMsg,
+) -> Result<Response, ContractError> {
+    match from_binary(&cw20_msg.msg) {
+        Ok(ReceiveMsg::Deposit {}) => {
+            let depositor = cw20_msg.sender;
+            let deposit_denom = Denom::Cw20(info.sender.clone());
+            let deposit_amount = cw20_msg.amount;
+            executers::deposit(deps, env, info, depositor, deposit_denom, deposit_amount)
+        }
+        _ => Err(ContractError::Std(StdError::GenericErr {
+            msg: "Invalid call".to_string(),
+        })),
     }
 }
 

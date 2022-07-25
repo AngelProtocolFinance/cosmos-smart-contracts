@@ -2,9 +2,9 @@
 
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Addr, Api, CanonicalAddr, Coin, ContractResult, Decimal,
-    Empty, OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult,
-    Uint128, WasmQuery,
+    from_binary, from_slice, to_binary, Addr, Api, BalanceResponse, BankQuery, CanonicalAddr, Coin,
+    ContractResult, Decimal, Empty, OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult,
+    SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
 use schemars::JsonSchema;
@@ -14,9 +14,9 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
+    ConfigResponse as RegistrarConfigResponse, EndowmentListResponse, VaultDetailResponse,
 };
-use angel_core::structs::{AcceptedTokens, SplitDetails, YieldVault};
+use angel_core::structs::{AcceptedTokens, EndowmentEntry, SplitDetails, YieldVault};
 
 use crate::wasmswap::InfoResponse;
 
@@ -24,6 +24,17 @@ use crate::wasmswap::InfoResponse;
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Info {},
+    EndowmentList {
+        status: Option<String>,
+        name: Option<Option<String>>,
+        owner: Option<Option<String>>,
+        tier: Option<Option<String>>,
+        un_sdg: Option<Option<u64>>,
+        endow_type: Option<Option<String>>,
+    },
+    Balance {
+        address: String,
+    },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -203,10 +214,22 @@ impl Querier for WasmMockQuerier {
 impl WasmMockQuerier {
     pub fn handle_query(&self, request: &QueryRequest<Empty>) -> QuerierResult {
         match &request {
+            QueryRequest::Bank(BankQuery::Balance { address: _, denom }) => {
+                SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&BalanceResponse {
+                        amount: Coin {
+                            denom: denom.to_string(),
+                            amount: Uint128::from(100_u128),
+                        },
+                    })
+                    .unwrap(),
+                ))
+            }
             QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
+                // Simulating the `junoswap::QueryMsg::Info {}`
                 QueryMsg::Info {} => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&InfoResponse {
                         token1_reserve: Uint128::from(100_u128),
@@ -215,6 +238,37 @@ impl WasmMockQuerier {
                         token2_denom: cw20::Denom::Cw20(Addr::unchecked("halo-token-contract")),
                         lp_token_address: "lp-token-address".to_string(),
                         lp_token_supply: Uint128::from(100_u128),
+                    })
+                    .unwrap(),
+                )),
+                // Simulating the `Registrar::QueryMsg::EndowmentList {...}`
+                QueryMsg::EndowmentList {
+                    status: _,
+                    name: _,
+                    owner: _,
+                    tier: _,
+                    un_sdg: _,
+                    endow_type: _,
+                } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&EndowmentListResponse {
+                        endowments: vec![EndowmentEntry {
+                            address: Addr::unchecked("endowment-1"),
+                            status: angel_core::structs::EndowmentStatus::Approved,
+                            name: None,
+                            logo: None,
+                            image: None,
+                            owner: None,
+                            tier: None,
+                            un_sdg: None,
+                            endow_type: None,
+                        }],
+                    })
+                    .unwrap(),
+                )),
+                // Simulating the `cw20::QueryMsg::Balance { address: [account_address]}`
+                QueryMsg::Balance { address: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&cw20::BalanceResponse {
+                        balance: Uint128::from(100_u128),
                     })
                     .unwrap(),
                 )),

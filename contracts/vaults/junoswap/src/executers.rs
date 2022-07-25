@@ -117,11 +117,12 @@ pub fn update_config(
 pub fn deposit(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
+    depositor: String,
     deposit_denom: Denom,
     deposit_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let mut config = config::read(deps.storage)?;
+    let config = config::read(deps.storage)?;
 
     if !config.input_denoms.contains(&deposit_denom) {
         return Err(ContractError::InvalidCoinsDeposited {});
@@ -145,7 +146,9 @@ pub fn deposit(
             })?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments.iter().position(|p| p.address == info.sender);
+    let pos = endowments
+        .iter()
+        .position(|p| p.address.to_string() == depositor);
     // reject if the sender was found in the list of endowments
     if pos == None {
         return Err(ContractError::Unauthorized {});
@@ -153,7 +156,7 @@ pub fn deposit(
 
     let mut res = Response::new()
         .add_attribute("action", "deposit")
-        .add_attribute("sender", info.sender.to_string())
+        .add_attribute("sender", depositor.to_string())
         .add_attribute("deposit_amount", deposit_amount);
     // let submessage_id = config.next_pending_id;
     // PENDING.save(

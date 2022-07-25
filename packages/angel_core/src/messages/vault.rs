@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, Decimal, Uint128};
-use cw20::Denom;
+use cw20::{Cw20ReceiveMsg, Denom};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -42,6 +42,7 @@ pub enum ExecuteMsg {
     Stake {
         lp_token_bal_before: Uint128,
     },
+    Receive(Cw20ReceiveMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -62,6 +63,12 @@ pub struct AccountWithdrawMsg {
 pub struct RoutesUpdateMsg {
     pub add: Vec<Addr>,
     pub remove: Vec<Addr>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ReceiveMsg {
+    Deposit {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
