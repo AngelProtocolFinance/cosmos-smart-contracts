@@ -33,11 +33,13 @@ export const testnet = {
 
   // JunoSwap contracts
   junoswap: {
+    junoswap_code: 0,
     junoswap_token_code: 83,
-    junoswap_factory: "",
+    junoswap_stake_code: 0,
     halo_token_contract: "",
-    halo_luna_pair_contract: "",
-    halo_luna_pair_lp_token: "",
+    halo_juno_pool_contract: "",
+    halo_juno_pool_lp_token: "",
+    halo_juno_pool_lp_staking_addr: "",
     initial_halo_supply: "1000000000000000",
     halo_liquidity: "2000000",
     native_liquidity: "1000000", // reduced to 1 JUNO due to faucet limitations

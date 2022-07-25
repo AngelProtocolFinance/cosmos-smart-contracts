@@ -13,7 +13,7 @@ import { migrateCore } from "../processes/migrate/core";
 // import { migrateHalo } from "../processes/migrate/halo";
 
 import { setupCore } from "../processes/setup/core/testnet";
-// import { setupJunoSwap } from "../processes/setup/junoswap/localjuno";
+import { setupJunoSwap } from "../processes/setup/junoswap/localjuno";
 // import { setupHalo } from "../processes/setup/halo";
 
 import { testExecute } from "../processes/tests/testnet";
@@ -52,13 +52,15 @@ let endowmentContract1: string;
 let endowmentContract2: string;
 let endowmentContract3: string;
 let endowmentContract4: string;
+let vault1: string;
+let vault2: string;
 
 // JunoSwap Contracts
 let junoswapTokenCode: number;
-let junoswapFactory: string;
 let junoswapHaloTokenContract: string;
 let junoswapHaloJunoPairContract: string;
 let junoswapHaloJunoPairLpToken: string;
+let junoswapHaloJunoPairLpStaking: string;
 let junoswapInitialHaloSupply: string;
 let junoswapHaloLiquidity: string;
 let junoswapNativeLiquidity: string;
@@ -115,6 +117,8 @@ async function initialize() {
   endowmentContract2 = config.contracts.endowmentContract2;
   endowmentContract3 = config.contracts.endowmentContract3;
   endowmentContract4 = config.contracts.endowmentContract4;
+  vault1 = config.contracts.vault1;
+  vault2 = config.contracts.vault2;
 
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
@@ -124,20 +128,27 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(endowmentContract4)} as Endowment Contract #4`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
+  console.log(`Using ${chalk.cyan(vault1)} as Vault1`);
+  console.log(`Using ${chalk.cyan(vault2)} as Vault2`);
 
   junoswapTokenCode = config.junoswap.junoswap_token_code;
-  junoswapFactory = config.junoswap.junoswap_factory;
   junoswapHaloTokenContract = config.junoswap.halo_token_contract;
-  junoswapHaloJunoPairContract = config.junoswap.halo_luna_pair_contract;
-  junoswapHaloJunoPairLpToken = config.junoswap.halo_luna_pair_lp_token;
+  junoswapHaloJunoPairContract = config.junoswap.halo_juno_pool_contract;
+  junoswapHaloJunoPairLpToken = config.junoswap.halo_juno_pool_lp_token;
+  junoswapHaloJunoPairLpStaking = config.junoswap.halo_juno_pool_lp_staking_addr;
   junoswapInitialHaloSupply = config.junoswap.initial_halo_supply;
   junoswapHaloLiquidity = config.junoswap.halo_liquidity;
   junoswapNativeLiquidity = config.junoswap.native_liquidity;
 
-  console.log(`Using ${chalk.cyan(junoswapFactory)} as JunoSwap Factory`);
   console.log(`Using ${chalk.cyan(junoswapHaloTokenContract)} as JunoSwap HALO Token`);
   console.log(
-    `Using ${chalk.cyan(junoswapHaloJunoPairContract)} as JunoSwap HALO/JUNO Pair`
+    `Using ${chalk.cyan(junoswapHaloJunoPairContract)} as JunoSwap HALO/JUNO Swap Pool(Pair)`
+  );
+  console.log(
+    `Using ${chalk.cyan(junoswapHaloJunoPairLpToken)} as JunoSwap HALO/JUNO Swap Pool LP Token`
+  );
+  console.log(
+    `Using ${chalk.cyan(junoswapHaloJunoPairLpStaking)} as JunoSwap HALO/JUNO Swap Pool LP Token Staking contract`
   );
 
   haloAirdrop = config.halo.airdrop_contract;
@@ -201,6 +212,8 @@ export async function startSetupCore(): Promise<void> {
       funding_goal: "500000000", // funding goal
       charity_cw3_multisig_threshold_abs_perc: "0.10", // threshold absolute percentage for "charity-cw3"
       charity_cw3_multisig_max_voting_period: 60,      // max_voting_period time(unit: seconds) for "charity-cw3"
+      junoswap_pool_addr: junoswapHaloJunoPairContract, // Junoswap pool (HALO-JUNO) contract
+      junoswap_pool_staking: junoswapHaloJunoPairLpStaking, // Junoswap pool (HALO-JUNO) LP token staking contract
     }
   );
 }
@@ -208,28 +221,28 @@ export async function startSetupCore(): Promise<void> {
 // -------------------------------------------------------------------------------------
 // setup JunoSwap contracts
 // -------------------------------------------------------------------------------------
-// export async function startSetupJunoSwap(): Promise<void> {
-//   console.log(chalk.blue("\nLocalJuno"));
+export async function startSetupJunoSwap(): Promise<void> {
+  console.log(chalk.blue("\nLocalJuno"));
 
-//   // Initialize environment information
-//   console.log(chalk.yellow("\nStep 1. Environment Info"));
-//   await initialize();
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  await initialize();
 
-//   // Setup JunoSwap contracts
-//   console.log(chalk.yellow("\nStep 2a. JunoSwap Contracts"));
-//   const apTeamAccount = await getWalletAddress(apTeam);
-//   const apTeam2Account = await getWalletAddress(apTeam2);
-//   const apTeam3Account = await getWalletAddress(apTeam3);
-//   await setupJunoSwap(
-//     juno,
-//     apTeamAccount,
-//     apTeam2Account,
-//     apTeam3Account,
-//     junoswapInitialHaloSupply,
-//     junoswapHaloLiquidity,
-//     junoswapNativeLiquidity
-//   );
-// }
+  // Setup JunoSwap contracts
+  console.log(chalk.yellow("\nStep 2a. JunoSwap Contracts"));
+  const apTeamAccount = await getWalletAddress(apTeam);
+  const apTeam2Account = await getWalletAddress(apTeam2);
+  const apTeam3Account = await getWalletAddress(apTeam3);
+  await setupJunoSwap(
+    juno,
+    apTeamAccount,
+    apTeam2Account,
+    apTeam3Account,
+    junoswapInitialHaloSupply,
+    junoswapHaloLiquidity,
+    junoswapNativeLiquidity
+  );
+}
 
 // -------------------------------------------------------------------------------------
 // setup HALO contracts
@@ -350,15 +363,14 @@ export async function startTests(): Promise<void> {
     tcaAccount,
     registrar,
     indexFund,
-    "undefined",
-    "undefined",
+    vault1,
+    vault2,
     endowmentContract1,
     endowmentContract2,
     endowmentContract3,
     endowmentContract4,
     cw4GrpApTeam,
     cw3ApTeam,
-    junoswapFactory,
     junoswapHaloTokenContract,
     junoswapHaloJunoPairContract,
     haloAirdrop,

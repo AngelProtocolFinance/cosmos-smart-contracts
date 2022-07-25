@@ -17,9 +17,9 @@ import * as MainNet from "./environments/mainnet";
 		// case "localjuno_setup_halo":
 		// 	await LocalNet.startSetupHalo();
 		// 	break;
-		// case "localjuno_setup_junoswap":
-		// 	await LocalNet.startSetupJunoSwap();
-		// 	break;
+		case "localjuno_setup_junoswap":
+			await LocalNet.startSetupJunoSwap();
+			break;
 		case "localjuno_migrate_core":
 			await LocalNet.startMigrateCore();
 			break;

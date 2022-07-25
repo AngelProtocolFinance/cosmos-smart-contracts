@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import * as path from "path";
 import chalk from "chalk";
+import { coin } from '@cosmjs/proto-signing';
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { instantiateContract, sendTransaction, storeCode } from "../../../utils/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
@@ -15,49 +16,30 @@ export async function setupJunoSwap(
   halo_liquidity: string,
   native_liquidity: string
 ): Promise<void> {
-  process.stdout.write("Uploading JunoSwap factory Wasm");
-  const factoryCodeId = await storeCode(
+  process.stdout.write("Uploading JunoSwap Wasm");
+  const swapCodeId = await storeCode(
     juno,
     apTeam,
-    `${wasm_path.junoswap}/junoswap_factory.wasm`
+    `${wasm_path.junoswap}/wasmswap.wasm`
   );
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${factoryCodeId}`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${swapCodeId}`);
 
-  process.stdout.write("Uploading JunoSwap pair Wasm");
-  const pairCodeId = await storeCode(
-    juno,
-    apTeam,
-    `${wasm_path.junoswap}/junoswap_pair.wasm`
-  );
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${pairCodeId}`);
-
-  process.stdout.write("Uploading JunoSwap token Wasm");
+  process.stdout.write("Uploading JunoSwap token (cw20_base) Wasm");
   const tokenCodeId = await storeCode(
     juno,
     apTeam,
-    `${wasm_path.junoswap}/junoswap_token.wasm`
+    `${wasm_path.junoswap}/cw20_base.wasm`
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${tokenCodeId}`);
 
-  process.stdout.write("Uploading JunoSwap router Wasm");
-  const routerCodeId = await storeCode(
+  process.stdout.write("Uploading JunoSwap stake Wasm");
+  const stakerCodeId = await storeCode(
     juno,
     apTeam,
-    `${wasm_path.junoswap}/junoswap_router.wasm`
+    `${wasm_path.junoswap}/cw20_stake.wasm`
   );
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${routerCodeId}`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${stakerCodeId}`);
 
-  // Factory contract
-  process.stdout.write("Instantiating Factory contract");
-  const factoryResult = await instantiateContract(juno, apTeam, apTeam, factoryCodeId, {
-    pair_code_id: pairCodeId,
-    token_code_id: tokenCodeId,
-  });
-  const factoryContract = factoryResult.contractAddress as string;
-  console.log(
-    chalk.green(" Done!"),
-    `${chalk.blue("contractAddress")}=${factoryContract}`
-  );
 
   // HALO token contract
   process.stdout.write("Instantiating HALO Token contract");
@@ -83,75 +65,60 @@ export async function setupJunoSwap(
   const tokenContract = tokenResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${tokenContract}`);
 
-  // Pair contract
-  process.stdout.write("Creating Pair contract from Token Factory");
-  const pairResult = await sendTransaction(juno, apTeam, apTeam, factoryContract, {
-    create_pair: {
-      asset_infos: [
-        {
-          token: {
-            contract_addr: tokenContract,
-          },
-        },
-        {
-          native_token: {
-            // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
-            denom: "ujuno",
-          },
-        },
-      ],
-    },
-    // }, { "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4": "100" },
-    }, { "ujuno": 1000 },
-  );
+  // Swap pool contract
+  process.stdout.write("Creating Swap pool contract ");
+  const swapPoolResult = await instantiateContract(juno, apTeam, apTeam, swapCodeId, {
+    "token1_denom": {"native": "ujuno"},
+    "token2_denom": {"cw20": tokenContract },
+    "lp_token_code_id": tokenCodeId,
+  });
 
-  const pairContract = pairResult.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${pairContract}`);
+  const swapPoolContract = swapPoolResult.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${swapPoolContract}`);
 
-  // Get the LP Token address of newly created pair
-  process.stdout.write("Query new Pair's LP Token contract");
-  const result: any = await juno.wasm.contractQuery(pairContract, {
-    pair: {},
+  // Get the LP Token address of newly created swap pool
+  process.stdout.write("Query new Swap pool's LP Token contract");
+  const result: any = await juno.queryContractSmart(swapPoolContract, {
+    info: {},
   });
   console.log(
     chalk.green(" Done!"),
-    `${chalk.blue("contractAddress")}=${result.liquidity_token}`
+    `${chalk.blue("contractAddress")}=${result.lp_token_address}`
   );
 
-  // send liquidity to the new Pair contract for swaps
+  // send liquidity to the new Swap pool contract for swaps
   process.stdout.write(
-    "Provide liquidity to the new Pair contract @ ratio of 0.05 JUNO per HALO"
+    "Add liquidity to the new Swap pool contract @ ratio of 0.05 JUNO per HALO"
   );
   const liqResult = await sendTransaction(juno, apTeam, tokenContract, {
       increase_allowance: {
         amount: halo_liquidity,
-        spender: pairContract,
+        spender: swapPoolContract,
       },
     });
-  await sendTransaction(juno, apTeam, pairContract, {
-    provide_liquidity: {
-      assets: [
-        {
-          info: {
-            token: {
-              contract_addr: tokenContract,
-            },
-          },
-          amount: halo_liquidity,
-        },
-        {
-          info: {
-            native_token: {
-              // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
-              denom: "ujuno",
-            },
-          },
-          amount: native_liquidity,
-        },
-      ]
+  await sendTransaction(juno, apTeam, swapPoolContract, {
+      add_liquidity: {
+        token1_amount: native_liquidity,
+        min_liquidity: "0",
+        max_token2: halo_liquidity,
+        expiration: undefined,
+      }
     },
-    },
-    { ujuno: native_liquidity }
+    [coin(native_liquidity, "ujuno")]
   );
   console.log(chalk.green(" Done!"));
+
+  // Staking contract
+  process.stdout.write("Creating Staking contract for swap pool LP token ");
+  const stakeresult = await instantiateContract(juno, apTeam, apTeam, stakerCodeId, {
+     owner: undefined,
+     // Manager can update all configs except changing the owner. This will generally be an operations multisig for a DAO.
+     manager: undefined,
+     token_address: result.lp_token_address,
+     unstaking_duration: undefined,
+  });
+  console.log(
+    chalk.green(" Done!"),
+    `${chalk.blue("contractAddress")}=${stakeresult.contractAddress}`
+  );
 }

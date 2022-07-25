@@ -57,10 +57,10 @@ let endowmentContract4: string;
 
 // JunoSwap Contracts
 let junoswapTokenCode: number;
-let junoswapFactory: string;
 let junoswapHaloTokenContract: string;
 let junoswapHaloJunoPairContract: string;
 let junoswapHaloJunoPairLpToken: string;
+let junoswapHaloJunoPairLpStaking: string;
 let junoswapInitialHaloSupply: string;
 let junoswapHaloLiquidity: string;
 let junoswapNativeLiquidity: string;
@@ -128,19 +128,26 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
 
+ 
   junoswapTokenCode = config.junoswap.junoswap_token_code;
-  junoswapFactory = config.junoswap.junoswap_factory;
   junoswapHaloTokenContract = config.junoswap.halo_token_contract;
-  junoswapHaloJunoPairContract = config.junoswap.halo_luna_pair_contract;
-  junoswapHaloJunoPairLpToken = config.junoswap.halo_luna_pair_lp_token;
+  junoswapHaloJunoPairContract = config.junoswap.halo_juno_pool_contract;
+  junoswapHaloJunoPairLpToken = config.junoswap.halo_juno_pool_lp_token;
+  junoswapHaloJunoPairLpStaking = config.junoswap.halo_juno_pool_lp_staking_addr;
   junoswapInitialHaloSupply = config.junoswap.initial_halo_supply;
   junoswapHaloLiquidity = config.junoswap.halo_liquidity;
   junoswapNativeLiquidity = config.junoswap.native_liquidity;
 
-  console.log(`Using ${chalk.cyan(junoswapFactory)} as JunoSwap Factory`);
   console.log(`Using ${chalk.cyan(junoswapHaloTokenContract)} as JunoSwap HALO Token`);
-  console.log(`Using ${chalk.cyan(junoswapHaloJunoPairContract)} as JunoSwap HALO/JUNO Pair`);
-
+  console.log(
+    `Using ${chalk.cyan(junoswapHaloJunoPairContract)} as JunoSwap HALO/JUNO Swap Pool(Pair)`
+  );
+  console.log(
+    `Using ${chalk.cyan(junoswapHaloJunoPairLpToken)} as JunoSwap HALO/JUNO Swap Pool LP Token`
+  );
+  console.log(
+    `Using ${chalk.cyan(junoswapHaloJunoPairLpStaking)} as JunoSwap HALO/JUNO Swap Pool LP Token Staking contract`
+  );
   haloAirdrop = config.halo.airdrop_contract;
   haloCollector = config.halo.collector_contract;
   haloCommunity = config.halo.community_contract;
@@ -203,6 +210,8 @@ export async function startSetupCore(): Promise<void> {
       funding_goal: "50000000", // funding goal
       charity_cw3_multisig_threshold_abs_perc: "0.10", // threshold absolute percentage for "charity-cw3"
       charity_cw3_multisig_max_voting_period: 60,      // max_voting_period time(unit: seconds) for "charity-cw3"
+      junoswap_pool_addr: junoswapHaloJunoPairContract, // Junoswap pool (HALO-JUNO) contract
+      junoswap_pool_staking: junoswapHaloJunoPairLpStaking, // Junoswap pool (HALO-JUNO) LP token staking contract
     }
   );
 }
@@ -357,7 +366,6 @@ export async function startTests(): Promise<void> {
     endowmentContract4,
     cw4GrpApTeam,
     cw3ApTeam,
-    junoswapFactory,
     junoswapHaloTokenContract,
     junoswapHaloJunoPairContract,
     haloAirdrop,

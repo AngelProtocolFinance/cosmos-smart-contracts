@@ -64,6 +64,8 @@ export async function setupCore(
     funding_goal: string | undefined;
     charity_cw3_multisig_threshold_abs_perc: string,
     charity_cw3_multisig_max_voting_period: number,
+    junoswap_pool_addr: string,
+    junoswap_pool_staking: string,
   }
 ): Promise<void> {
   juno = _juno;
@@ -92,6 +94,8 @@ export async function setupCore(
   // if (!config.is_localjuno) {
   //   await createVaults(config.harvest_to_liquid, config.tax_per_block);
   // }
+  await createJunoVaults(config.junoswap_pool_addr, config.junoswap_pool_staking, config.harvest_to_liquid);
+
   if (config.turnover_to_multisig) {
     await turnOverApTeamMultisig(config.is_localjuno);
   }
@@ -495,21 +499,22 @@ async function createIndexFunds(): Promise<void> {
    console.log(chalk.green(" Done!"));
 }
 
-async function createVaults(
+async function createJunoVaults(
+  swap_pool_addr: string,
+  staking_addr: string,
   harvest_to_liquid: string,
-  tax_per_block: string
 ): Promise<void> {
-  process.stdout.write("Uploading Anchor Vault Wasm");
-  const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/anchor.wasm`);
+  process.stdout.write("Uploading Junoswap Vault Wasm");
+  const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/junoswap_vault.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
 
-  // Anchor Vault - #1
-  process.stdout.write("Instantiating Anchor Vault (#1) contract");
+  // JunoSwap Vault - #1
+  process.stdout.write("Instantiating JunoSwap Vault (#1) contract");
   const vaultResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
+    swap_pool_addr: swap_pool_addr,
+    staking_addr: staking_addr,
     registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
-    name: "AP DP Token - Anchor #1",
+    name: "AP DP Token - JunoSwap_Vault #1",
     symbol: "apANC1",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
@@ -517,13 +522,13 @@ async function createVaults(
   vault1 = vaultResult1.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault1}`);
 
-  // Anchor Vault - #2 (to better test multistrategy logic)
-  process.stdout.write("Instantiating Anchor Vault (#2) contract");
+  // JunoSwap Vault - #2 (to better test multistrategy logic)
+  process.stdout.write("Instantiating JunoSwap Vault (#2) contract");
   const vaultResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
+    swap_pool_addr: swap_pool_addr,
+    staking_addr: staking_addr,
     registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
-    name: "AP DP Token - Anchor #2",
+    name: "AP DP Token - JunoSwap_Vault #2",
     symbol: "apANC2",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
@@ -531,8 +536,29 @@ async function createVaults(
   vault2 = vaultResult2.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault2}`);
 
-  // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
-  process.stdout.write("Approving Anchor Vault #1 & #2 in Registrar");
+  // Add(register) the vaults to the registrar
+  process.stdout.write("Adding JunoSwap Vault #1 & #2 in Registrar");
+  await sendTransaction(juno, apTeamAddr, registrar, {
+    vault_add: {
+      network: undefined,
+      vault_addr: vault1,
+      input_denom: "ujuno",
+      yield_token: apTeamAddr, // Temporary string value here. Should clarify the meaning.
+    }
+  });
+
+  await sendTransaction(juno, apTeamAddr, registrar, {
+    vault_add: {
+      network: undefined,
+      vault_addr: vault2,
+      input_denom: "ujuno",
+      yield_token: apTeamAddr, // Temporary string value here. Should clarify the meaning.
+    }
+  });
+  console.log(chalk.green(" Done!"));
+
+  // Step 3. AP team must approve the new junoswap vault in registrar & make it the default vault
+  process.stdout.write("Approving JunoSwap Vault #1 & #2 in Registrar");
   await sendTransaction(juno, apTeamAddr, registrar, {
     vault_update_status: {
       vault_addr: vault1,
@@ -547,7 +573,7 @@ async function createVaults(
   });
   console.log(chalk.green(" Done!"));
 
-  process.stdout.write("Set default vault in Registrar as Anchor Vault");
+  process.stdout.write("Set default vault in Registrar as JunoSwap Vault #1");
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_config: { default_vault: vault1 }
   });

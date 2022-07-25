@@ -10,6 +10,7 @@ import {
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
   testApTeamChangesAccountsEndowmentOwner,
+  testSendDonationToEndowment,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
@@ -161,7 +162,6 @@ export async function testExecute(
   endowmentContract4: string,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
-  junoswapFactory: string,
   junoswapToken: string,
   junoswapPair: string,
   haloAirdrop: string,
@@ -187,6 +187,7 @@ export async function testExecute(
   console.log(chalk.green(" Done!"));
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, endowmentContract1, "1000");
   // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, indexFund);
   // await testUpdateAllianceMembersList(
   //   actors.apTeam.client,

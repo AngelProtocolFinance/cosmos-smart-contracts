@@ -53,7 +53,7 @@ export async function testSendDonationToEndowment(
       },
       [{ denom: "ujuno", amount }]
     )
-  );
+  ).to.be.ok;
   console.log(chalk.green(" Passed!"));
 }
 
