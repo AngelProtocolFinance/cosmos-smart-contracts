@@ -26,7 +26,7 @@ let cw4GrpApTeam: string;
 let cw3GuardianAngels: string;
 let cw3ApTeam: string;
 let indexFund: string;
-let anchorVault: string;
+let donationMatchCharities: string;
 
 //----------------------------------------------------------------------------------------
 // Setup Contracts for MainNet
@@ -139,6 +139,19 @@ async function setup(
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${apTeamMultiSig}`);
 
+  process.stdout.write("Uploading Endowment SubDAO Wasm");
+  const subdao = await storeCode(juno, apTeam, `${wasm_path.core}/subdao.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdao}`);
+
+  process.stdout.write("Uploading Endowment SubDAO Token Wasm");
+  const subdaoToken = await storeCode(juno, apTeam, `${wasm_path.core}/subdao_token.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoToken}`);
+
+  process.stdout.write("Uploading Endowment SubDAO Donation Matching Wasm");
+  const subdaoDonationMatch = await storeCode(juno, apTeam, `${wasm_path.core}/donation_match.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoDonationMatch}`);
+
+
   // Step 2. Instantiate the key contracts
   // Registrar
   process.stdout.write("Instantiating Registrar contract");
@@ -210,46 +223,42 @@ async function setup(
   indexFund = fundResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
 
-  // Anchor Vault
-  process.stdout.write("Instantiating Anchor Vault contract");
-  const vaultResult1 = await instantiateContract(juno, apTeam, apTeam, vaultCodeId, {
-    registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
-    name: "AP Deposit Token - Anchor",
-    symbol: "apANC",
-    decimals: 6,
-    harvest_to_liquid: harvest_to_liquid,
-  });
-  anchorVault = vaultResult1.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault}`);
-
-  // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
-  process.stdout.write("Approving Anchor Vault in Registrar");
+    // Setup AP Team C3 to be the admin to it's C4 Group
   process.stdout.write(
-    "Set default vault in Registrar (for newly created Endowments) as Anchor Vault"
+    "AddHook & UpdateAdmin on AP Team CW4 Group to point to AP Team C3"
   );
-  process.stdout.write("Update Registrar with the Address of the Index Fund contract,  CW3_code_Id, CW4_code_Id");
-  await sendTransaction(juno, apTeam, registrar, {
-    update_config: {
-      default_vault: anchorVault,
-      index_fund_contract: indexFund,
-      cw3_code: cw3MultiSig,
-      cw4_code: cw4Group,
-    },
+  await sendTransaction(juno, apTeam, cw4GrpApTeam, {
+    add_hook: { addr: cw3ApTeam },
   });
-  await sendTransaction(juno, apTeam, registrar, {
-    vault_update_status: {
-      vault_addr: anchorVault,
-      approved: true,
-    },
+  await sendTransaction(juno, apTeam, cw4GrpApTeam, {
+    update_admin: { admin: cw3ApTeam },
   });
   console.log(chalk.green(" Done!"));
 
-  // Add confirmed TCA Members to the Index Fund SCs approved list
-  process.stdout.write("Add confirmed TCA Member to allowed list");
-  await sendTransaction(juno, apTeam, indexFund, {
-    update_tca_list: { new_list: tca_members },
+  // Charities Donation Matching
+  process.stdout.write("Instantiating Charities Donation Matching contract");
+  const charityDonationMatchResult = await instantiateContract(juno, apTeam, apTeam, subdaoDonationMatch, {
+    registrar_contract: registrar,
+    reserve_token: apTeam, // FAKE! Need to fix.
+    lp_pair: apTeam, // FAKE! Need to fix.
+      });
+  donationMatchCharities = charityDonationMatchResult.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${donationMatchCharities}`);
+  
+  process.stdout.write("Update Registrar's config with various wasm codes & contracts");
+  await sendTransaction(juno, apTeam, registrar, {
+    update_config: {
+      accounts_code_id: accountsCodeId,
+      index_fund_contract: indexFund,
+      cw3_code: cw3MultiSig,
+      cw4_code: cw4Group,
+      halo_token: apTeam, // Fake halo token addr: Need to be handled
+      halo_token_lp_contract: apTeam, // Fake halo token LP addr: Need to be handled
+      subdao_gov_code: subdao,
+      subdao_token_code: subdaoToken,
+      donation_match_code: subdaoDonationMatch,
+      donation_match_charites_contract: donationMatchCharities,
+    },
   });
   console.log(chalk.green(" Done!"));
 
