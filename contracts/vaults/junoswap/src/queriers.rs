@@ -39,7 +39,6 @@ pub fn query_config(deps: Deps) -> ConfigResponse {
         pool_lp_token_addr: config.pool_lp_token_addr.to_string(),
         staking_addr: config.staking_addr.to_string(),
         last_harvest: config.last_harvest,
-        harvest_to_liquid: config.harvest_to_liquid,
     }
 }
 

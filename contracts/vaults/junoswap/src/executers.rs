@@ -84,8 +84,6 @@ pub fn update_config(
         None => config.staking_addr,
     };
 
-    config.harvest_to_liquid = msg.harvest_to_liquid.unwrap_or(config.harvest_to_liquid);
-
     // Add more addresses to `config.routes`
     for addr in msg.routes.add {
         if !config.routes.contains(&addr) {

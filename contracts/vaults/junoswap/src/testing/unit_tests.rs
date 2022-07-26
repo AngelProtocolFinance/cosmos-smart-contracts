@@ -18,7 +18,6 @@ fn create_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMockQue
         swap_pool_addr: "junoswap-pool".to_string(),
         staking_addr: "lp-staking-contract".to_string(),
         registrar_contract: "angelprotocolteamdano".to_string(),
-        harvest_to_liquid: Decimal::percent(75),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -37,7 +36,6 @@ fn proper_instantiation() {
         swap_pool_addr: "junoswap-pool".to_string(),
         staking_addr: "lp-staking-contract".to_string(),
         registrar_contract: "angelprotocolteamdano".to_string(),
-        harvest_to_liquid: Decimal::percent(75),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -133,7 +131,6 @@ fn test_update_config() {
     let update_config_msg = UpdateConfigMsg {
         swap_pool_addr: Some("new-swap-pool-addr".to_string()),
         staking_addr: Some("new-staking-addr".to_string()),
-        harvest_to_liquid: Some(Decimal::one()),
         routes: RoutesUpdateMsg {
             add: vec![],
             remove: vec![],
@@ -164,7 +161,6 @@ fn test_update_config() {
     // Check the "config" update
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_resp: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config_resp.harvest_to_liquid, Decimal::one());
     assert_eq!(config_resp.staking_addr, "new-staking-addr".to_string());
     assert_eq!(config_resp.pool_addr, "new-swap-pool-addr".to_string());
 }

@@ -10,7 +10,6 @@ pub struct InitMsg {
     pub name: String,
     pub symbol: String,
     pub decimals: u8,
-    pub harvest_to_liquid: Decimal,
 }
 
 /// We currently take no arguments for migrations

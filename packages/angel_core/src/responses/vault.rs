@@ -18,5 +18,4 @@ pub struct ConfigResponse {
     pub pool_lp_token_addr: String,
     pub staking_addr: String,
     pub last_harvest: u64,
-    pub harvest_to_liquid: Decimal,
 }

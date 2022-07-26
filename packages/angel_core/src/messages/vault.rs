@@ -49,7 +49,6 @@ pub enum ExecuteMsg {
 pub struct UpdateConfigMsg {
     pub swap_pool_addr: Option<String>,
     pub staking_addr: Option<String>,
-    pub harvest_to_liquid: Option<Decimal>,
     pub routes: RoutesUpdateMsg,
 }
 

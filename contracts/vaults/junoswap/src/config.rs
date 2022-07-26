@@ -12,10 +12,8 @@ pub struct Config {
     pub owner: Addr,
     pub registrar_contract: Addr,
 
-    pub next_pending_id: u64,
     pub last_harvest: u64,
     pub last_harvest_fx: Option<Uint128>,
-    pub harvest_to_liquid: Decimal,
 
     pub pool_addr: Addr, // swap pool address(eg. JunoSwap USDC-JUNO pool address)
     pub input_denoms: Vec<Denom>, // swap input tokens(denoms) list
@@ -65,8 +63,7 @@ pub struct PendingInfo {
     pub accounts_address: Addr, // Addr of org. sending Accounts SC
     pub beneficiary: Option<Addr>, // return to the beneficiary
     pub fund: Option<u64>, // return to the active fund
-    pub locked: Uint128,
-    pub liquid: Uint128,
+    pub amount: Uint128,
 }
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");

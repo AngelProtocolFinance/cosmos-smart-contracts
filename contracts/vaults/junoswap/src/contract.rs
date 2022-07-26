@@ -47,10 +47,8 @@ pub fn instantiate(
         total_assets: Uint128::zero(),
         total_shares: Uint128::zero(),
 
-        next_pending_id: 0,
         last_harvest: env.block.height,
         last_harvest_fx: None,
-        harvest_to_liquid: msg.harvest_to_liquid,
     };
 
     config::store(deps.storage, &config)?;
