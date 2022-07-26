@@ -13,10 +13,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, EndowmentListResponse, VaultDetailResponse,
-};
-use angel_core::structs::{AcceptedTokens, EndowmentEntry, SplitDetails, YieldVault};
+use angel_core::responses::registrar::EndowmentListResponse;
+use angel_core::structs::EndowmentEntry;
 
 use crate::wasmswap::InfoResponse;
 
@@ -64,9 +62,6 @@ pub fn mock_dependencies(
 pub struct WasmMockQuerier {
     base: MockQuerier<Empty>,
     token_querier: TokenQuerier,
-    terraswap_factory_querier: TerraswapFactoryQuerier,
-    oracle_price_querier: OraclePriceQuerier,
-    oracle_prices_querier: OraclePricesQuerier,
 }
 
 #[derive(Clone, Default)]
@@ -331,9 +326,6 @@ impl WasmMockQuerier {
         WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
-            terraswap_factory_querier: TerraswapFactoryQuerier::default(),
-            oracle_price_querier: OraclePriceQuerier::default(),
-            oracle_prices_querier: OraclePricesQuerier::default(),
         }
     }
 
@@ -342,28 +334,6 @@ impl WasmMockQuerier {
         self.token_querier = TokenQuerier::new(balances);
     }
 
-    // configure the terraswap pair
-    pub fn with_terraswap_pairs(&mut self, pairs: &[(&String, &String)]) {
-        self.terraswap_factory_querier = TerraswapFactoryQuerier::new(pairs);
-    }
-
-    //  Configure oracle price
-    #[allow(dead_code)]
-    pub fn with_oracle_price(
-        &mut self,
-        oracle_price: &[(&(String, String), &(Decimal, u64, u64))],
-    ) {
-        self.oracle_price_querier = OraclePriceQuerier::new(oracle_price);
-    }
-
-    //  Configure oracle prices
-    #[allow(dead_code)]
-    pub fn with_oracle_prices(
-        &mut self,
-        oracle_prices: &[(&(String, String), &(Decimal, u64, u64))],
-    ) {
-        self.oracle_prices_querier = OraclePricesQuerier::new(oracle_prices);
-    }
     pub fn query_all_balances(&mut self, address: String) -> StdResult<Vec<Coin>> {
         let mut res = vec![];
         for contract_addr in self.token_querier.balances.keys() {
