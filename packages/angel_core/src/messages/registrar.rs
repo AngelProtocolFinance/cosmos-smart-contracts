@@ -109,8 +109,7 @@ pub struct UpdateConfigMsg {
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
     pub collector_share: Option<Decimal>,
-    pub accepted_tokens_native: Option<Vec<String>>,
-    pub accepted_tokens_cw20: Option<Vec<String>>,
+    pub accepted_tokens: Option<AcceptedTokens>,
     /// WASM CODES
     pub accounts_code_id: Option<u64>,
     pub cw3_code: Option<u64>,

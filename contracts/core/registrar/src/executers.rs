@@ -4,7 +4,7 @@ use crate::state::{
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{
-    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, NetworkInfo, Tier, YieldVault,
+    EndowmentEntry, EndowmentStatus, EndowmentType, NetworkInfo, Tier, YieldVault,
 };
 use angel_core::utils::{percentage_checks, split_checks};
 
@@ -216,13 +216,9 @@ pub fn update_config(
         Some(v) => Some(deps.api.addr_validate(v.as_str())?),
         None => config.donation_match_charites_contract,
     };
-    config.accepted_tokens = AcceptedTokens {
-        native: msg
-            .accepted_tokens_native
-            .unwrap_or(config.accepted_tokens.native),
-        cw20: msg
-            .accepted_tokens_cw20
-            .unwrap_or(config.accepted_tokens.cw20),
+    config.accepted_tokens = match msg.accepted_tokens {
+        Some(tokens) => tokens,
+        None => config.accepted_tokens,
     };
 
     config.collector_addr = msg
