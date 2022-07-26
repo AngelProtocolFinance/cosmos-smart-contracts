@@ -49,6 +49,7 @@ pub fn instantiate(
         deps.storage,
         &Config {
             owner: deps.api.addr_validate(&msg.owner)?,
+            cw4_group: None,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
@@ -384,6 +385,7 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         CONFIG_KEY,
         &to_vec(&Config {
             owner: old_config.owner,
+            cw4_group: None,
             registrar_contract: old_config.registrar_contract,
             accepted_tokens: old_config.accepted_tokens,
             deposit_approved: old_config.deposit_approved,
