@@ -34,7 +34,6 @@ pub fn new_cw4_group_reply(
     _env: Env,
     msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
     match msg {
         SubMsgResult::Ok(subcall) => {
             let mut group_addr = String::from("");
@@ -50,8 +49,10 @@ pub fn new_cw4_group_reply(
                 }
             }
 
-            // Register the new Endowment on success Reply
-            let _addr = deps.api.addr_validate(&group_addr)?;
+            // Register the new CW4 contract addr on success Reply
+            let mut config = CONFIG.load(deps.storage)?;
+            config.cw4_group = Some(deps.api.addr_validate(&group_addr)?);
+            CONFIG.save(deps.storage, &config)?;
 
             let registrar_config: RegistrarConfigResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
@@ -109,9 +110,30 @@ pub fn new_cw3_multisig_reply(
             endowment.owner = deps.api.addr_validate(&multisig_addr)?;
             ENDOWMENT.save(deps.storage, &endowment)?;
 
-            Ok(Response::default())
+            let config = CONFIG.load(deps.storage)?;
+
+            Ok(Response::default()
+                .add_attribute("cw3_addr", multisig_addr.clone())
+                .add_submessages([
+                    SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: config.cw4_group.as_ref().unwrap().to_string(),
+                        msg: to_binary(&angel_core::messages::cw4_group::ExecuteMsg::AddHook {
+                            addr: multisig_addr.clone(),
+                        })?,
+                        funds: vec![],
+                    })),
+                    SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: config.cw4_group.unwrap().to_string(),
+                        msg: to_binary(
+                            &angel_core::messages::cw4_group::ExecuteMsg::UpdateAdmin {
+                                admin: Some(multisig_addr),
+                            },
+                        )?,
+                        funds: vec![],
+                    })),
+                ]))
         }
-        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }
 
