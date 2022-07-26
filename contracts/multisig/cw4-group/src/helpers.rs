@@ -2,10 +2,9 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
 
+use angel_core::messages::cw4_group::ExecuteMsg;
 use cosmwasm_std::{to_binary, Addr, CosmosMsg, StdResult, WasmMsg};
 use cw4::{Cw4Contract, Member};
-
-use crate::msg::ExecuteMsg;
 
 /// Cw4GroupContract is a wrapper around Cw4Contract that provides a lot of helpers
 /// for working with cw4-group contracts.
