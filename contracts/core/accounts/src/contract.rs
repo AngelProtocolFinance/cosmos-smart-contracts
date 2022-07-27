@@ -38,7 +38,6 @@ pub fn instantiate(
         deps.storage,
         &Config {
             owner: deps.api.addr_validate(&msg.owner_sc)?,
-            cw4_group: None,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
