@@ -1,14 +1,16 @@
 use crate::errors::multisig::ContractError;
 use cosmwasm_std::Decimal;
+use cw4::Member;
 use cw_utils::{Duration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct InstantiateMsg {
-    pub group_addr: String,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
+    pub cw4_code: u64,
+    pub cw4_members: Vec<Member>,
 }
 
 /// Asserts that the 0.0 < percent <= 1.0

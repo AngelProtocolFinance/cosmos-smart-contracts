@@ -224,10 +224,10 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: false,
-        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+        cw3_threshold: Threshold::AbsolutePercentage {
             percentage: Decimal::percent(10),
         },
-        cw3_multisig_max_vote_period: 60,
+        cw3_max_voting_period: 60,
     };
 
     // anyone can create Accounts

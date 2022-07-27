@@ -27,7 +27,7 @@ use cosmwasm_std::{
 use cw20::{Balance, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfoBase};
 
-pub fn new_cw4_group_reply(
+pub fn new_cw3_reply(
     deps: DepsMut,
     _env: Env,
     msg: SubMsgResult,

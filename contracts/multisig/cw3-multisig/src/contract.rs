@@ -2,12 +2,14 @@ use crate::msg::{
     ConfigResponse, ExecuteMsg, MetaProposalListResponse, MetaProposalResponse, MigrateMsg,
     QueryMsg,
 };
-use crate::state::{next_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS};
+use crate::state::{
+    next_id, Ballot, Config, Proposal, TempConfig, Votes, BALLOTS, CONFIG, PROPOSALS, TEMP_CONFIG,
+};
 use angel_core::errors::multisig::ContractError;
 use angel_core::messages::cw3_multisig::InstantiateMsg;
 use cosmwasm_std::{
-    attr, entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env,
-    MessageInfo, Order, Response, StdError, StdResult,
+    entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
+    Order, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, WasmMsg,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
@@ -20,7 +22,7 @@ use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
 use std::cmp::Ordering;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "guardian-angels-multisig";
+const CONTRACT_NAME: &str = "cw3-multisig";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -30,27 +32,96 @@ pub fn instantiate(
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
-    let group_addr = Cw4Contract(deps.api.addr_validate(&msg.group_addr).map_err(|_| {
-        ContractError::InvalidGroup {
-            addr: msg.group_addr.clone(),
-        }
-    })?);
-    let total_weight = group_addr.total_weight(&deps.querier)?;
-    msg.threshold.validate(total_weight)?;
-
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let cfg = Config {
-        threshold: msg.threshold,
-        max_voting_period: msg.max_voting_period,
-        group_addr,
-    };
-    CONFIG.save(deps.storage, &cfg)?;
+    // store config in a temp config item until after CW4 phones home to complete the setup
+    TEMP_CONFIG.save(
+        deps.storage,
+        &TempConfig {
+            threshold: msg.threshold,
+            max_voting_period: msg.max_voting_period,
+        },
+    )?;
 
-    Ok(Response::default().add_attributes(vec![attr(
-        "multisig_addr",
-        env.contract.address.to_string(),
-    )]))
+    Ok(Response::default()
+        .add_attribute("multisig_addr", env.contract.address.to_string())
+        // Fire a submessage to create the CW4 Group to be linked to this CW3 on reply
+        .add_submessage(SubMsg {
+            id: 0,
+            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                code_id: msg.cw4_code,
+                admin: None,
+                label: "new endowment cw4 group".to_string(),
+                msg: to_binary(&angel_core::messages::cw4_group::InstantiateMsg {
+                    admin: Some(env.contract.address.to_string()),
+                    members: msg.cw4_members,
+                })?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        }))
+}
+
+#[entry_point]
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        0 => cw4_group_reply(deps, env, msg.result),
+        _ => Err(ContractError::Std(StdError::GenericErr {
+            msg: "Invalid Submessage Reply ID!".to_string(),
+        })),
+    }
+}
+
+/// This where the init logic is moved so that we can move forward only
+/// with the the newly created CW4 contract's information
+pub fn cw4_group_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: SubMsgResult,
+) -> Result<Response, ContractError> {
+    match msg {
+        SubMsgResult::Ok(subcall) => {
+            let mut cw4_group_addr: Option<String> = None;
+            for event in subcall.events {
+                if event.ty == *"wasm" {
+                    for attrb in event.attributes {
+                        if attrb.key == "group_addr" {
+                            cw4_group_addr = Some(attrb.value);
+                        }
+                    }
+                }
+            }
+
+            // pull the original init msg values from the TempConfig item
+            let temp = TEMP_CONFIG.load(deps.storage)?;
+
+            // set up the CW3 config using the new CW4 group contract
+            let group_addr = Cw4Contract(
+                deps.api
+                    .addr_validate(&cw4_group_addr.clone().unwrap())
+                    .map_err(|_| ContractError::InvalidGroup {
+                        addr: cw4_group_addr.unwrap().clone(),
+                    })?,
+            );
+
+            let total_weight = group_addr.total_weight(&deps.querier)?;
+            temp.threshold.validate(total_weight)?;
+
+            // validated and checked, we can not save the offical CW3 config
+            CONFIG.save(
+                deps.storage,
+                &Config {
+                    threshold: temp.threshold,
+                    max_voting_period: temp.max_voting_period,
+                    group_addr,
+                },
+            )?;
+
+            Ok(Response::default())
+        }
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]

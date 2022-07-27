@@ -83,7 +83,7 @@ pub fn instantiate(
 
     // initial default Response to add submessages to
     let mut res = Response::new().add_attributes(vec![
-        attr("endow_addr", env.contract.address),
+        attr("endow_addr", env.contract.address.clone()),
         attr("endow_name", msg.profile.name),
         attr("endow_owner", msg.owner.to_string()),
         attr("endow_type", msg.profile.endow_type.to_string()),
@@ -120,18 +120,19 @@ pub fn instantiate(
             "cw3_code & cw4_code must exist",
         )));
     }
+
+    // Add submessage to create new CW3 multisig for the endowment
     res = res.add_submessage(SubMsg {
-        id: 1,
+        id: 0,
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-            code_id: registrar_config.cw4_code.unwrap(),
+            code_id: registrar_config.cw3_code.unwrap(),
             admin: None,
-            label: "new endowment cw4 group".to_string(),
-            msg: to_binary(&angel_core::messages::cw4_group::InstantiateMsg {
-                admin: None,
-                members: cw4_members,
-                cw3_code: registrar_config.cw3_code.unwrap(),
-                cw3_threshold: msg.cw3_multisig_threshold,
-                cw3_max_voting_period: msg.cw3_multisig_max_vote_period,
+            label: "new endowment cw3 multisig".to_string(),
+            msg: to_binary(&angel_core::messages::cw3_multisig::InstantiateMsg {
+                threshold: msg.cw3_threshold,
+                max_voting_period: msg.cw3_max_voting_period,
+                cw4_code: registrar_config.cw4_code.unwrap(),
+                cw4_members,
             })?,
             funds: vec![],
         }),
@@ -240,7 +241,7 @@ pub fn receive_cw20(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        1 => executers::new_cw4_group_reply(deps, env, msg.result),
+        0 => executers::new_cw3_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }

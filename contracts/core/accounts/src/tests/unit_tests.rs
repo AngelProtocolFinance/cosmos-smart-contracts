@@ -53,10 +53,10 @@ fn create_endowment() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
-        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+        cw3_threshold: Threshold::AbsolutePercentage {
             percentage: Decimal::percent(10),
         },
-        cw3_multisig_max_vote_period: Duration::Time(60),
+        cw3_max_voting_period: Duration::Time(60),
     };
     let info = mock_info(AP_TEAM, &coins(100000, "earth"));
     let env = mock_env();
@@ -103,10 +103,10 @@ fn test_proper_initialization() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
-        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+        cw3_threshold: Threshold::AbsolutePercentage {
             percentage: Decimal::percent(10),
         },
-        cw3_multisig_max_vote_period: Duration::Time(60),
+        cw3_max_voting_period: Duration::Time(60),
     };
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();
