@@ -63,8 +63,8 @@ export async function setupCore(
     funding_goal: string | undefined;
     fund_member_limit: number | undefined;
     accepted_tokens: any | undefined;
-    charity_cw3_multisig_threshold_abs_perc: string,
-    charity_cw3_multisig_max_voting_period: number,
+    charity_cw3_threshold_abs_perc: string,
+    charity_cw3_max_voting_period: number,
   }
 ): Promise<void> {
   juno = _juno;
@@ -96,8 +96,8 @@ export async function setupCore(
   // }
   await turnOverApTeamMultisig(config.is_localjuno);
   await createEndowments(
-    config.charity_cw3_multisig_threshold_abs_perc,
-    config.charity_cw3_multisig_max_voting_period,
+    config.charity_cw3_threshold_abs_perc,
+    config.charity_cw3_max_voting_period,
   );
   await approveEndowments();
   await createIndexFunds();
@@ -268,8 +268,8 @@ async function setup(
 
 // Step 4: Create Endowments via the Registrar contract
 async function createEndowments(
-  charity_cw3_multisig_threshold_abs_perc: string,
-  charity_cw3_multisig_max_voting_period: number,
+  charity_cw3_threshold_abs_perc: string,
+  charity_cw3_max_voting_period: number,
 ): Promise<void> {
   // endowment #1
   process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
@@ -283,8 +283,8 @@ async function createEndowments(
       split_min: undefined,
       split_default: undefined,
       cw4_members: [{ addr: charity1_wallet, weight: 1 }],
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
       profile: {
         name: "Test Endowment #1",
         overview: "A wonderful charity endowment that aims to test all the things",
@@ -369,8 +369,8 @@ async function createEndowments(
       split_min: undefined,
       split_default: undefined,
       cw4_members: [{ addr: charity2_wallet, weight: 1 }],
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
       profile: {
         name: "Test Endowment #2",
         overview: "An even better endowment full of butterflies and rainbows",
@@ -430,8 +430,8 @@ async function createEndowments(
       split_min: undefined,
       split_default: undefined,
       cw4_members: [{ addr: charity3_wallet, weight: 1 }],
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
       profile: {
         name: "Test Endowment #3",
         overview: "Shady endowment that will never be approved",
@@ -490,8 +490,8 @@ async function createEndowments(
       split_min: undefined,
       split_default: undefined,
       cw4_members: [{ addr: charity3_wallet, weight: 1 }],
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
       profile: {
         name: "Vibin' Endowment #4",
         overview: "Global endowment that spreads good vibes",
