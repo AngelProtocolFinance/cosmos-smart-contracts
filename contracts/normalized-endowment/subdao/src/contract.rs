@@ -1,24 +1,30 @@
-use crate::error::ContractError;
 use crate::querier::{
     query_address_voting_balance_at_timestamp, query_total_voting_balance_at_timestamp,
 };
 use crate::state::{
     config_read, config_store, poll_indexer_store, poll_read, poll_store, poll_voter_read,
     poll_voter_store, read_poll_voters, read_polls, state_read, state_store, Config, ExecuteData,
-    Poll, State,
+    Poll, State, DONATION_MATCH,
 };
-use cosmwasm_std::entry_point;
-use cosmwasm_std::{
-    from_binary, to_binary, Addr, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
-    Response, StdError, StdResult, Uint128, WasmMsg,
-};
-use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
-use cw900::common::OrderBy;
-use cw900::gov::{
+use angel_core::common::OrderBy;
+use angel_core::errors::dao::ContractError;
+use angel_core::messages::donation_match::InstantiateMsg as DonationMatchInstantiateMsg;
+use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
+use angel_core::messages::subdao::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, PollExecuteMsg,
     PollResponse, PollStatus, PollsResponse, QueryMsg, StateResponse, VoteOption, VoterInfo,
     VotersResponse, VotersResponseItem,
 };
+use angel_core::messages::subdao_token::InstantiateMsg as DaoTokenInstantiateMsg;
+use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::structs::{DaoToken, DonationMatch, EndowmentType};
+use cosmwasm_std::entry_point;
+use cosmwasm_std::{
+    from_binary, to_binary, Addr, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
+    QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128,
+    WasmMsg, WasmQuery,
+};
+use cw20::{Cw20Coin, Cw20ExecuteMsg, Cw20ReceiveMsg};
 
 const MIN_TITLE_LENGTH: usize = 4;
 const MAX_TITLE_LENGTH: usize = 64;
@@ -38,10 +44,11 @@ pub fn instantiate(
     validate_threshold(msg.threshold)?;
 
     let config = Config {
-        owner: deps.api.addr_validate(info.sender.as_str())?,
+        registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
+        owner: info.sender,
         dao_token: Addr::unchecked(""),
         ve_token: Addr::unchecked(""),
-        terraswap_factory: Addr::unchecked(""),
+        swap_factory: Addr::unchecked(""),
         quorum: msg.quorum,
         threshold: msg.threshold,
         voting_period: msg.voting_period,
@@ -52,7 +59,6 @@ pub fn instantiate(
     };
 
     let state = State {
-        contract_addr: deps.api.addr_validate(env.contract.address.as_str())?,
         poll_count: 0,
         total_share: Uint128::zero(),
         total_deposit: Uint128::zero(),
@@ -61,7 +67,156 @@ pub fn instantiate(
     config_store(deps.storage).save(&config)?;
     state_store(deps.storage).save(&state)?;
 
-    Ok(Response::default())
+    match (msg.donation_match, msg.endow_type.clone()) {
+        (_, EndowmentType::Charity) | (None, EndowmentType::Normal) => (),
+        (Some(donation_match), EndowmentType::Normal) => {
+            DONATION_MATCH.save(deps.storage, &(msg.endow_type.clone(), donation_match))?
+        }
+    }
+
+    Ok(Response::default()
+        .add_attribute("dao_addr", env.contract.address.to_string())
+        .add_submessages(
+            build_dao_token_messages(deps, msg.token, msg.endow_type, msg.endow_owner).unwrap(),
+        ))
+}
+
+pub fn build_dao_token_messages(
+    deps: DepsMut,
+    token: DaoToken,
+    endow_type: EndowmentType,
+    endow_owner: String,
+) -> Result<Vec<SubMsg>, ContractError> {
+    let mut config: Config = config_read(deps.storage).load()?;
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarConfig {})?,
+        }))?;
+
+    let mut submsgs: Vec<SubMsg> = vec![];
+    match (token, endow_type) {
+        // Option #1. User can set an existing CW20 token as the DAO's Token
+        (DaoToken::ExistingCw20(addr), EndowmentType::Normal) => {
+            // Check existing token is valid/accepted
+            if !registrar_config
+                .accepted_tokens
+                .cw20_valid(addr.to_string())
+            {
+                return Err(ContractError::NotInApprovedCoins {});
+            }
+
+            config.dao_token = deps.api.addr_validate(&addr)?;
+            config_store(deps.storage).save(&config)?;
+        }
+        // Option #2. Create a basic CW20 token contract with a fixed supply
+        (
+            DaoToken::NewCw20 {
+                initial_supply,
+                name,
+                symbol,
+            },
+            EndowmentType::Normal,
+        ) => submsgs.push(SubMsg {
+            id: 1,
+            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                code_id: registrar_config.subdao_token_code.unwrap(),
+                admin: None,
+                label: "new endowment dao token(cw20) contract".to_string(),
+                msg: to_binary(&cw20_base::msg::InstantiateMsg {
+                    name,
+                    symbol,
+                    decimals: 6,
+                    initial_balances: vec![Cw20Coin {
+                        address: endow_owner.to_string(),
+                        amount: initial_supply,
+                    }],
+                    mint: None,
+                    marketing: None,
+                })?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        }),
+        // Option #3 (for all Non-Charity Endowments). Create a CW20 token with supply controlled by a bonding curve
+        (
+            DaoToken::BondingCurve {
+                curve_type,
+                name,
+                symbol,
+                decimals,
+                reserve_denom,
+                reserve_decimals,
+                unbonding_period,
+            },
+            EndowmentType::Normal,
+        ) => submsgs.push(SubMsg {
+            id: 1,
+            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                code_id: registrar_config.subdao_token_code.unwrap(),
+                admin: None,
+                label: "new endowment dao token(bonding curve) contract".to_string(),
+                msg: to_binary(&DaoTokenInstantiateMsg {
+                    curve_type,
+                    name,
+                    symbol,
+                    decimals,
+                    reserve_denom,
+                    reserve_decimals,
+                    unbonding_period,
+                })?,
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
+        }),
+        // Option #3 (for all Charity Endowments). Create a CW20 token with supply controlled by a bonding curve
+        (
+            DaoToken::BondingCurve {
+                curve_type,
+                name,
+                symbol,
+                decimals: _,
+                reserve_denom: _,
+                reserve_decimals: _,
+                unbonding_period: _,
+            },
+            EndowmentType::Charity,
+        ) => {
+            // setup DAO token contract
+            let halo_token = match registrar_config.halo_token.clone() {
+                Some(addr) => addr,
+                None => {
+                    return Err(ContractError::Std(StdError::GenericErr {
+                        msg: "Registrar's HALO token address is empty".to_string(),
+                    }))
+                }
+            };
+            submsgs.push(SubMsg {
+                id: 1,
+                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                    code_id: registrar_config.subdao_token_code.unwrap(),
+                    admin: None,
+                    label: "new endowment dao token(bonding curve) contract".to_string(),
+                    msg: to_binary(&DaoTokenInstantiateMsg {
+                        curve_type,
+                        name,
+                        symbol,
+                        decimals: 6,
+                        reserve_denom: halo_token,
+                        reserve_decimals: 6,
+                        unbonding_period: 21,
+                    })?,
+                    funds: vec![],
+                }),
+                gas_limit: None,
+                reply_on: ReplyOn::Success,
+            })
+        }
+        (_, _) => return Err(ContractError::InvalidInputs {}),
+    }
+    Ok(submsgs)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -74,10 +229,9 @@ pub fn execute(
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::RegisterContracts {
-            dao_token,
             ve_token,
-            terraswap_factory,
-        } => register_contracts(deps, dao_token, ve_token, terraswap_factory),
+            swap_factory,
+        } => register_contracts(deps, info, ve_token, swap_factory),
         ExecuteMsg::UpdateConfig {
             owner,
             quorum,
@@ -139,20 +293,172 @@ pub fn receive_cw20(
     }
 }
 
+#[entry_point]
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        1 => dao_token_reply(deps, env, msg.result),
+        2 => donation_match_reply(deps, env, msg.result),
+        _ => Err(ContractError::Unauthorized {}),
+    }
+}
+
+pub fn dao_token_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: SubMsgResult,
+) -> Result<Response, ContractError> {
+    match msg {
+        SubMsgResult::Ok(subcall) => {
+            let mut dao_token_addr = String::from("");
+            for event in subcall.events {
+                if event.ty == *"instantiate" {
+                    for attrb in event.attributes {
+                        if attrb.key == "_contract_address" {
+                            dao_token_addr = attrb.value;
+                        }
+                    }
+                }
+            }
+
+            // update the "dao_token" to be the new contract
+            if dao_token_addr == String::from("") {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "DAO Token contract not found in event logs".to_string(),
+                }));
+            }
+
+            let mut config: Config = config_read(deps.storage).load()?;
+            config.dao_token = deps.api.addr_validate(&dao_token_addr)?;
+            config_store(deps.storage).save(&config)?;
+
+            let mut res =
+                Response::default().add_attribute("dao_token_addr", dao_token_addr.to_string());
+
+            let registrar_config: RegistrarConfigResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: config.registrar_contract.to_string(),
+                    msg: to_binary(&RegistrarConfig {})?,
+                }))?;
+
+            match DONATION_MATCH.may_load(deps.storage)? {
+                Some((EndowmentType::Normal, donation_match)) => {
+                    let match_code = match registrar_config.donation_match_code {
+                        Some(match_code) => match_code,
+                        None => {
+                            return Err(ContractError::Std(StdError::GenericErr {
+                                msg: "No code id for donation matching contract".to_string(),
+                            }))
+                        }
+                    };
+
+                    match donation_match {
+                        DonationMatch::HaloTokenReserve {} => {
+                            match (
+                                registrar_config.halo_token,
+                                registrar_config.halo_token_lp_contract,
+                            ) {
+                                (Some(reserve_addr), Some(lp_addr)) => {
+                                    res = res.add_submessage(SubMsg {
+                                        id: 1,
+                                        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                                            code_id: match_code,
+                                            admin: None,
+                                            label: "new donation match contract".to_string(),
+                                            msg: to_binary(&DonationMatchInstantiateMsg {
+                                                reserve_token: reserve_addr,
+                                                lp_pair: lp_addr,
+                                                registrar_contract: config
+                                                    .registrar_contract
+                                                    .to_string(),
+                                            })?,
+                                            funds: vec![],
+                                        }),
+                                        gas_limit: None,
+                                        reply_on: ReplyOn::Success,
+                                    });
+                                }
+                                _ => {
+                                    return Err(ContractError::Std(StdError::GenericErr {
+                                        msg: "HALO Token is not setup to be a reserve token"
+                                            .to_string(),
+                                    }))
+                                }
+                            }
+                        }
+                        DonationMatch::Cw20TokenReserve {
+                            reserve_addr,
+                            lp_addr,
+                        } => {
+                            res = res.add_submessage(SubMsg {
+                                id: 1,
+                                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                                    code_id: match_code,
+                                    admin: None,
+                                    label: "new donation match contract".to_string(),
+                                    msg: to_binary(&DonationMatchInstantiateMsg {
+                                        reserve_token: reserve_addr,
+                                        lp_pair: lp_addr,
+                                        registrar_contract: config.registrar_contract.to_string(),
+                                    })?,
+                                    funds: vec![],
+                                }),
+                                gas_limit: None,
+                                reply_on: ReplyOn::Success,
+                            });
+                        }
+                    }
+                }
+                _ => (),
+            }
+            Ok(res)
+        }
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
+    }
+}
+
+pub fn donation_match_reply(
+    _deps: DepsMut,
+    _env: Env,
+    msg: SubMsgResult,
+) -> Result<Response, ContractError> {
+    match msg {
+        SubMsgResult::Ok(subcall) => {
+            let mut donation_match_contract_addr = String::from("");
+            for event in subcall.events {
+                if event.ty == *"instantiate" {
+                    for attrb in event.attributes {
+                        if attrb.key == "_contract_address" {
+                            donation_match_contract_addr = attrb.value;
+                        }
+                    }
+                }
+            }
+            if donation_match_contract_addr == String::from("") {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "Donation Match contract not found in event logs".to_string(),
+                }));
+            }
+            Ok(Response::default()
+                .add_attribute("donation_match_contract", donation_match_contract_addr))
+        }
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
+    }
+}
+
 pub fn register_contracts(
     deps: DepsMut,
-    dao_token: String,
+    info: MessageInfo,
     ve_token: String,
-    terraswap_factory: String,
+    swap_factory: String,
 ) -> Result<Response, ContractError> {
     let mut config: Config = config_read(deps.storage).load()?;
-    if config.dao_token.to_string().ne(&"".to_string()) {
+
+    if config.owner.ne(&info.sender) {
         return Err(ContractError::Unauthorized {});
     }
 
-    config.dao_token = deps.api.addr_validate(&dao_token)?;
     config.ve_token = deps.api.addr_validate(&ve_token)?;
-    config.terraswap_factory = deps.api.addr_validate(&terraswap_factory)?;
+    config.swap_factory = deps.api.addr_validate(&swap_factory)?;
     config_store(deps.storage).save(&config)?;
 
     Ok(Response::default())
@@ -610,7 +916,7 @@ fn query_config(deps: Deps) -> Result<ConfigResponse, ContractError> {
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
         dao_token: config.dao_token.to_string(),
-        terraswap_factory: config.terraswap_factory.to_string(),
+        swap_factory: config.swap_factory.to_string(),
         quorum: config.quorum,
         threshold: config.threshold,
         voting_period: config.voting_period,

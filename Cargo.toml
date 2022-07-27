@@ -2,13 +2,17 @@
 members = [
     "packages/angel_core",
     "packages/halo_token",
-    "packages/cw900",
     "contracts/core/registrar",
     "contracts/core/index-fund",
     "contracts/normalized-endowment/accounts",
-    "contracts/halo/airdrop",
+    "contracts/normalized-endowment/cw900-lv",
+    "contracts/normalized-endowment/subdao",
+    "contracts/normalized-endowment/subdao-token",
+    "contracts/normalized-endowment/donation-match",
+    "contracts/normalized-endowment/fee-distributor",
     "contracts/multisig/cw4-group",
     "contracts/multisig/cw3-multisig",
+    "contracts/halo/airdrop",
     "contracts/halo/collector",
     "contracts/halo/community",
     "contracts/halo/distributor",
@@ -16,11 +20,6 @@ members = [
     "contracts/halo/gov-hodler",
     "contracts/halo/staking",
     "contracts/halo/vesting",
-    "contracts/normalized-endowment/cw900-lv",
-    "contracts/normalized-endowment/dao",
-    "contracts/normalized-endowment/dao-token",
-    "contracts/normalized-endowment/donation-match",
-    "contracts/normalized-endowment/fee-distributor",
 ]
 
 exclude = [

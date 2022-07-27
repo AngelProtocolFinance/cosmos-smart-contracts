@@ -1,15 +1,12 @@
-use crate::messages::dao_token::CurveType;
 use crate::structs::{
-    AcceptedTokens, EndowmentFee, EndowmentType, NetworkInfo, Profile, SettingsController,
-    SplitDetails, Tier,
+    AcceptedTokens, DaoSetup, DonationMatch, EndowmentFee, EndowmentType, NetworkInfo, Profile,
+    SettingsController, SplitDetails, Tier,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
+use cw_utils::Threshold;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use super::accounts::DaoSetupOption;
-use cw_utils::Threshold;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 
@@ -82,8 +79,6 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateEndowmentMsg {
     pub owner: String,
-    pub name: String,
-    pub description: String,
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub split_max: Option<Decimal>,
@@ -96,13 +91,8 @@ pub struct CreateEndowmentMsg {
     pub kyc_donors_only: bool,
     pub whitelisted_beneficiaries: Vec<String>,
     pub whitelisted_contributors: Vec<String>,
-    pub dao: bool,
-    pub dao_setup_option: DaoSetupOption,
-    pub curve_type: Option<CurveType>,
-    pub reserve_token: Option<String>,
-    pub reserve_token_lp_contract: Option<String>,
-    pub donation_match_active: bool,
-    pub donation_match_setup: u32,
+    pub dao: Option<DaoSetup>,
+    pub donation_match: Option<DonationMatch>,
     pub earnings_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub withdraw_fee: Option<EndowmentFee>,
@@ -113,26 +103,32 @@ pub struct CreateEndowmentMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub accounts_code_id: Option<u64>,
-    pub cw3_code: Option<u64>,
-    pub cw4_code: Option<u64>,
-    pub index_fund_contract: Option<String>,
-    pub gov_contract: Option<String>,
-    pub halo_token: Option<String>,
-    pub halo_token_lp_contract: Option<String>,
-    pub treasury: Option<String>,
     pub tax_rate: Option<Decimal>,
     pub approved_charities: Option<Vec<String>>,
-    pub default_vault: Option<String>,
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
-    pub donation_match_charites_contract: Option<String>,
-    pub collector_addr: Option<String>,
     pub collector_share: Option<Decimal>,
+    pub accepted_tokens: Option<AcceptedTokens>,
+    /// WASM CODES
+    pub accounts_code_id: Option<u64>,
+    pub cw3_code: Option<u64>,
+    pub cw4_code: Option<u64>,
+    pub subdao_gov_code: Option<u64>,         // subdao gov wasm code
+    pub subdao_token_code: Option<u64>,       // subdao gov token (w/ bonding-curve) wasm code
+    pub subdao_cw900_code: Option<u64>, // subdao gov ve-CURVE contract for locked token voting
+    pub subdao_distributor_code: Option<u64>, // subdao gov fee distributor wasm code
+    pub donation_match_code: Option<u64>, // donation matching contract wasm code
+    /// CONTRACT ADDRESSES
+    pub index_fund_contract: Option<String>,
+    pub gov_contract: Option<String>,
+    pub treasury: Option<String>,
+    pub default_vault: Option<String>,
+    pub donation_match_charites_contract: Option<String>,
+    pub halo_token: Option<String>,
+    pub halo_token_lp_contract: Option<String>,
     pub charity_shares_contract: Option<String>,
-    pub accepted_tokens_native: Option<Vec<String>>,
-    pub accepted_tokens_cw20: Option<Vec<String>>,
+    pub collector_addr: Option<String>,
     pub swap_factory: Option<String>,
 }
 

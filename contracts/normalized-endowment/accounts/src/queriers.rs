@@ -72,16 +72,17 @@ pub fn query_account_balance(deps: Deps, env: Env) -> StdResult<BalanceResponse>
 pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse> {
     // this fails if no account is found
     let endowment = ENDOWMENT.load(deps.storage)?;
+    let profile = PROFILE.load(deps.storage)?;
     Ok(EndowmentDetailsResponse {
         owner: endowment.owner,
-        name: endowment.name,
-        description: endowment.description,
+        name: profile.name,
+        description: profile.overview,
         withdraw_before_maturity: endowment.withdraw_before_maturity,
         maturity_time: endowment.maturity_time,
         strategies: endowment.strategies,
         rebalance: endowment.rebalance,
-        donation_match_contract_addr: endowment
-            .donation_matching_contract
+        donation_match_contract: endowment
+            .donation_match_contract
             .map(|addr| addr.to_string())
             .unwrap_or_else(|| "".to_string()),
         kyc_donors_only: endowment.kyc_donors_only,
@@ -112,6 +113,7 @@ pub fn query_profile(deps: Deps) -> StdResult<ProfileResponse> {
         average_annual_budget: profile.average_annual_budget,
         annual_revenue: profile.annual_revenue,
         charity_navigator_rating: profile.charity_navigator_rating,
+        endowment_type: profile.endow_type,
     })
 }
 

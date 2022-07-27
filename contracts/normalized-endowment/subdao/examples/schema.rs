@@ -2,7 +2,7 @@ use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use std::env::current_dir;
 use std::fs::create_dir_all;
 
-use cw900::gov::{
+use angel_core::messages::subdao::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, PollResponse, QueryMsg, StateResponse,
 };
 

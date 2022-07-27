@@ -1,16 +1,13 @@
 use crate::contract::{execute, instantiate, query, SECONDS_PER_WEEK};
 use crate::error::ContractError;
-use crate::mock_querier::mock_dependencies;
 use crate::state::{Config, State, CONFIG, STATE};
-use cosmwasm_std::testing::{
-    mock_dependencies_with_balances, mock_env, mock_info, MOCK_CONTRACT_ADDR,
-};
+use angel_core::messages::fee_distributor::{ExecuteMsg, InstantiateMsg, QueryMsg, StakerResponse};
+use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     coins, from_binary, to_binary, Addr, Api, CosmosMsg, DepsMut, Env, SubMsg, Timestamp, Uint128,
     WasmMsg,
 };
 use cw20::Cw20ExecuteMsg;
-use cw900::fee_distributor::{ExecuteMsg, InstantiateMsg, QueryMsg, StakerResponse};
 
 const VOTING_TOKEN: &str = "voting_token";
 const VE_TOKEN: &str = "ve_token";
@@ -57,7 +54,7 @@ fn instantiate_msg() -> InstantiateMsg {
 
 #[test]
 fn proper_initialization() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
 
     let msg = instantiate_msg();
     let info = mock_info(TEST_CREATOR, &coins(2, VOTING_TOKEN));
@@ -99,7 +96,7 @@ fn proper_initialization() {
 
 #[test]
 fn fail_distribute_dao_nothing_staked() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     mock_instantiate(deps.as_mut());
     mock_register_contracts(deps.as_mut());
     let env = mock_env_height(0, 10000);
@@ -115,60 +112,12 @@ fn fail_distribute_dao_nothing_staked() {
 }
 
 #[test]
-fn fail_distribute_dao_nothing_to_distribute() {
-    let mut deps = mock_dependencies(&[]);
-    // let mut deps = mock_dependencies_with_balances(&[
-    //     (
-    //         &VOTING_TOKEN.to_string(),
-    //         &[(&MOCK_CONTRACT_ADDR.to_string(), &Uint128::from(0_u128))],
-    //     ),
-    //     (
-    //         &VE_TOKEN.to_string(),
-    //         &[(&TEST_VOTER.to_string(), &Uint128::from(100_u128))],
-    //     ),
-    // ]);
-    mock_instantiate(deps.as_mut());
-    mock_register_contracts(deps.as_mut());
-    let env = mock_env_height(0, 10000);
-    let info = mock_info(VOTING_TOKEN, &[]);
-
-    deps.querier.with_token_balances(&[
-        (
-            &VOTING_TOKEN.to_string(),
-            &[(&MOCK_CONTRACT_ADDR.to_string(), &Uint128::from(0_u128))],
-        ),
-        (
-            &VE_TOKEN.to_string(),
-            &[(&TEST_VOTER.to_string(), &Uint128::from(100_u128))],
-        ),
-    ]);
-
-    let distribute_msg = ExecuteMsg::DistributeDaoToken {};
-    let execute_res = execute(deps.as_mut(), env, info, distribute_msg);
-
-    match execute_res {
-        Err(ContractError::NothingToDistribute {}) => {}
-        _ => panic!("DO NOT ENTER"),
-    };
-}
-
-#[test]
 fn distribute_dao_to_voter() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     mock_instantiate(deps.as_mut());
     mock_register_contracts(deps.as_mut());
     let mut env = mock_env_height(0, 1000000);
     let info = mock_info(VOTING_TOKEN, &[]);
-    deps.querier.with_token_balances(&[
-        (
-            &VOTING_TOKEN.to_string(),
-            &[(&MOCK_CONTRACT_ADDR.to_string(), &Uint128::from(10u128))],
-        ),
-        (
-            &VE_TOKEN.to_string(),
-            &[(&TEST_VOTER.to_string(), &Uint128::from(100u128))],
-        ),
-    ]);
 
     let distribute_msg = ExecuteMsg::DistributeDaoToken {};
     let _execute_res = execute(deps.as_mut(), env.clone(), info, distribute_msg).unwrap();
@@ -223,7 +172,7 @@ fn distribute_dao_to_voter() {
 
 #[test]
 fn many_distribute_dao_to_voter() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     mock_instantiate(deps.as_mut());
     mock_register_contracts(deps.as_mut());
     let mut env = mock_env_height(0, 1000000);
@@ -236,22 +185,6 @@ fn many_distribute_dao_to_voter() {
         if (i + 1) % 2 == 0 {
             continue;
         }
-
-        // Contract address token
-        // Goes up by 20 everytime
-        deps.querier.with_token_balances(&[
-            (
-                &VOTING_TOKEN.to_string(),
-                &[(&MOCK_CONTRACT_ADDR.to_string(), &Uint128::from(10u128 * i))],
-            ),
-            (
-                &VE_TOKEN.to_string(),
-                &[
-                    (&TEST_VOTER.to_string(), &Uint128::from(100u128)),
-                    (&"others".to_string(), &Uint128::from(100u128)),
-                ],
-            ),
-        ]);
 
         let distribute_msg = ExecuteMsg::DistributeDaoToken {};
         let _execute_res =
@@ -322,7 +255,7 @@ fn many_distribute_dao_to_voter() {
 
 #[test]
 fn many_distribute_dao_to_two_voters() {
-    let mut deps = mock_dependencies(&[]);
+    let mut deps = mock_dependencies();
     mock_instantiate(deps.as_mut());
     mock_register_contracts(deps.as_mut());
     let mut env = mock_env_height(0, 1000000);
@@ -335,23 +268,6 @@ fn many_distribute_dao_to_two_voters() {
         if (i + 1) % 2 == 0 {
             continue;
         }
-
-        // Contract address token
-        // Goes up by 20 everytime
-        deps.querier.with_token_balances(&[
-            (
-                &VOTING_TOKEN.to_string(),
-                &[(&MOCK_CONTRACT_ADDR.to_string(), &Uint128::from(10u128 * i))],
-            ),
-            (
-                &VE_TOKEN.to_string(),
-                &[
-                    (&TEST_VOTER.to_string(), &Uint128::from(100u128)),
-                    (&TEST_VOTER_2.to_string(), &Uint128::from(100u128)),
-                    (&"others".to_string(), &Uint128::from(200u128)),
-                ],
-            ),
-        ]);
 
         let distribute_msg = ExecuteMsg::DistributeDaoToken {};
         let _execute_res =

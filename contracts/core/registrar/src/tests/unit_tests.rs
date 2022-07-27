@@ -1,13 +1,13 @@
 use crate::contract::{execute, instantiate, query, reply};
 use angel_core::errors::core::*;
-use angel_core::messages::accounts::DaoSetupOption;
-use angel_core::messages::dao_token::CurveType;
 use angel_core::messages::registrar::*;
+use angel_core::messages::subdao_token::CurveType;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
     AcceptedTokens, EndowmentStatus, EndowmentType, NetworkInfo, Profile, SocialMedialUrls,
     SplitDetails,
 };
+use angel_core::structs::{DaoSetup, DaoToken};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
     coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply, StdError, SubMsgResponse,
@@ -126,12 +126,16 @@ fn update_config() {
         halo_token_lp_contract: None,
         cw3_code: Some(MOCK_CW3_CODE_ID),
         cw4_code: Some(MOCK_CW4_CODE_ID),
-        accepted_tokens_cw20: None,
-        accepted_tokens_native: None,
+        accepted_tokens: None,
         donation_match_charites_contract: None,
         collector_addr: None,
         collector_share: None,
         swap_factory: None,
+        subdao_gov_code: None,
+        subdao_token_code: None,
+        subdao_cw900_code: None,
+        subdao_distributor_code: None,
+        donation_match_code: None,
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -193,12 +197,16 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         halo_token_lp_contract: None,
         cw3_code: None,
         cw4_code: None,
-        accepted_tokens_cw20: None,
-        accepted_tokens_native: None,
+        accepted_tokens: None,
         donation_match_charites_contract: None,
         collector_addr: None,
         collector_share: None,
         swap_factory: None,
+        subdao_gov_code: None,
+        subdao_token_code: None,
+        subdao_cw900_code: None,
+        subdao_distributor_code: None,
+        donation_match_code: None,
     };
     let info = mock_info(ap_team.as_ref(), &[]);
     let _ = execute(
@@ -234,27 +242,38 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     };
 
     let create_endowment_msg = CreateEndowmentMsg {
-        name: "Endowment".to_string(),
-        description: "New Endowment Creation".to_string(),
         split_max: None,
         split_min: None,
         split_default: None,
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
-        curve_type: None,
-        dao: true,
-        dao_setup_option: DaoSetupOption::SetupBondCurveToken(CurveType::Constant {
-            value: Uint128::zero(),
-            scale: 2u32,
+        dao: Some(DaoSetup {
+            quorum: Decimal::percent(20),
+            threshold: Decimal::percent(50),
+            voting_period: 1000000_u64,
+            timelock_period: 1000000_u64,
+            expiration_period: 1000000_u64,
+            proposal_deposit: Uint128::from(1000000_u64),
+            snapshot_period: 1000,
+            token: DaoToken::BondingCurve {
+                curve_type: CurveType::SquareRoot {
+                    slope: Uint128::from(19307000u64),
+                    power: Uint128::from(428571429u64),
+                    scale: 9,
+                },
+                name: String::from("AP Endowment DAO Token"),
+                symbol: String::from("APEDT"),
+                decimals: 6,
+                reserve_decimals: 6,
+                reserve_denom: String::from("Shiba Token"),
+                unbonding_period: 21,
+            },
         }),
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
-        donation_match_active: false,
-        donation_match_setup: 0,
-        reserve_token: None,
-        reserve_token_lp_contract: None,
+        donation_match: None,
         settings_controller: None,
         parent: false,
         owner: good_charity_addr.clone(),
@@ -296,7 +315,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
                     assert_eq!(admin.clone(), Some(ap_team.clone()));
                     let accounts_instantiate_msg: angel_core::messages::accounts::InstantiateMsg =
                         from_binary(msg).unwrap();
-                    assert_eq!(accounts_instantiate_msg.owner_sc, ap_team.clone());
+                    assert_eq!(accounts_instantiate_msg.owner, ap_team.clone());
 
                     // let's instantiate account sc with our sub_message
                     let mut deps = mock_dependencies();
@@ -586,12 +605,19 @@ fn test_add_update_and_remove_accepted_tokens() {
         halo_token_lp_contract: None,
         cw3_code: None,
         cw4_code: None,
-        accepted_tokens_cw20: Some(vec!["new_token".to_string()]),
-        accepted_tokens_native: None,
+        accepted_tokens: Some(AcceptedTokens {
+            native: vec!["new_token".to_string()],
+            cw20: vec![],
+        }),
         donation_match_charites_contract: None,
         collector_addr: None,
         collector_share: None,
         swap_factory: None,
+        subdao_gov_code: None,
+        subdao_token_code: None,
+        subdao_cw900_code: None,
+        subdao_distributor_code: None,
+        donation_match_code: None,
     };
     let res = execute(
         deps.as_mut(),

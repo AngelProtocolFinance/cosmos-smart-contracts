@@ -1,15 +1,10 @@
 use crate::executers;
-use crate::executers::setup_dao_token_messages;
 use crate::queriers;
-use crate::state::{
-    Config, Cw3MultiSigConfig, Endowment, OldConfig, State, CONFIG, CW3MULTISIGCONFIG, ENDOWMENT,
-    PROFILE, STATE,
-};
+use crate::state::{Config, Endowment, OldConfig, State, CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
-use angel_core::messages::donation_match::InstantiateMsg as DonationMatchInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
+use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::EndowmentType;
 use angel_core::structs::{
@@ -31,9 +26,9 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[entry_point]
 pub fn instantiate(
-    mut deps: DepsMut,
+    deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -49,7 +44,7 @@ pub fn instantiate(
     CONFIG.save(
         deps.storage,
         &Config {
-            owner: deps.api.addr_validate(&msg.owner_sc)?,
+            owner: deps.api.addr_validate(&msg.owner)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
@@ -78,10 +73,8 @@ pub fn instantiate(
         deps.storage,
         &Endowment {
             owner: deps.api.addr_validate(&msg.owner)?, // Addr
-            name: msg.name.clone(),
-            description: msg.description.clone(),
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
-            maturity_time: msg.maturity_time,                       // Option<u64>
+            maturity_time: msg.maturity_time,           // Option<u64>
             strategies: vec![StrategyComponent {
                 vault: deps.api.addr_validate(&default_vault)?.to_string(),
                 percentage: Decimal::one(),
@@ -89,10 +82,18 @@ pub fn instantiate(
             rebalance: RebalanceDetails::default(),
             dao: None,
             dao_token: None,
-            donation_match_active: msg.donation_match_active,
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries, // Vec<String>
             whitelisted_contributors: msg.whitelisted_contributors,   // Vec<String>
-            donation_matching_contract: None,
+            donation_match_active: false,
+            donation_match_contract: match &msg.profile.endow_type {
+                &EndowmentType::Charity => {
+                    match &registrar_config.donation_match_charites_contract {
+                        Some(match_contract) => Some(deps.api.addr_validate(&match_contract)?),
+                        None => None,
+                    }
+                }
+                _ => None,
+            },
             earnings_fee: msg.earnings_fee,
             withdraw_fee: msg.withdraw_fee,
             deposit_fee: msg.deposit_fee,
@@ -116,18 +117,10 @@ pub fn instantiate(
 
     PROFILE.save(deps.storage, &msg.profile)?;
 
-    CW3MULTISIGCONFIG.save(
-        deps.storage,
-        &Cw3MultiSigConfig {
-            threshold: msg.cw3_multisig_threshold,
-            max_voting_period: msg.cw3_multisig_max_vote_period,
-        },
-    )?;
-
     // initial default Response to add submessages to
     let mut res: Response = Response::new().add_attributes(vec![
         attr("endow_addr", env.contract.address.to_string()),
-        attr("endow_name", msg.name),
+        attr("endow_name", msg.profile.name),
         attr("endow_owner", msg.owner.to_string()),
         attr("endow_type", msg.profile.endow_type.to_string()),
         attr(
@@ -161,9 +154,12 @@ pub fn instantiate(
             code_id: registrar_config.cw4_code.unwrap(),
             admin: None,
             label: "new endowment cw4 group".to_string(),
-            msg: to_binary(&Cw4GroupInstantiateMsg {
-                admin: Some(info.sender.to_string()),
+            msg: to_binary(&angel_core::messages::cw4_group::InstantiateMsg {
+                admin: None,
                 members: cw4_members,
+                cw3_code: registrar_config.cw3_code.unwrap(),
+                cw3_threshold: msg.cw3_multisig_threshold,
+                cw3_max_voting_period: msg.cw3_multisig_max_vote_period,
             })?,
             funds: vec![],
         }),
@@ -172,78 +168,31 @@ pub fn instantiate(
     });
 
     // check if a dao needs to be setup along with a dao token contract
-    // optional donation matching contract can be setup as long as a dao is in place
-    if msg.dao {
-        let endowment_owner = deps.api.addr_validate(&msg.owner)?;
-        let submsgs = setup_dao_token_messages(
-            deps.branch(),
-            msg.dao_setup_option,
-            &registrar_config,
-            endowment_owner,
-        )?;
-        res = res.add_submessages(submsgs);
-
-        // `donation_match_setup`: Field determines the various way of setting up "donation_match" contract
-        // Possible values:
-        //   0 => Endowment doesn't want a donation matching contract setup (for now, can always add it later)
-        //   1 => Endowment wants to have a DAO and they choose to use $HALO as reserve token for their bonding curve from the Endowment Launchpad UI.
-        //   2 => Endowment wants to have a DAO but they want to use an existing Token (other than HALO) as the reserve token for their bonding curve.
-        //        They would then have to supply several contract addresses during their endowment creation:
-        //           - the Token contract address (CW20)
-        //           - a Token / UST LP Pair contract ( this attribute would be updatable should they move supply to a new pool, etc)
-        //   3 =>  Endowment wants to have a DAO but they want to use an brand new CW20 Token that will not be attached to a bonding curve. (coming later)
-        if msg.donation_match_setup != 0 {
-            let endow_type = msg.profile.endow_type;
-            let donation_match_code = match registrar_config.donation_match_code {
-                Some(id) => id,
-                None => {
-                    return Err(ContractError::Std(StdError::GenericErr {
-                        msg: "No code id for donation matching contract".to_string(),
-                    }))
-                }
-            };
-            let (reserve_token, lp_pair) = match (msg.donation_match_setup, endow_type) {
-                (1, EndowmentType::Normal) | (_, EndowmentType::Charity) => {
-                    match (
-                        registrar_config.halo_token,
-                        registrar_config.halo_token_lp_contract,
-                    ) {
-                        (Some(reserve_addr), Some(lp_addr)) => (reserve_addr, lp_addr),
-                        _ => {
-                            return Err(ContractError::Std(StdError::GenericErr {
-                                msg: "HALO Token is setup to be a reserve token".to_string(),
-                            }))
-                        }
-                    }
-                }
-                (2, EndowmentType::Normal) => {
-                    match (msg.reserve_token, msg.reserve_token_lp_contract) {
-                        (Some(reserve_addr), Some(lp_addr)) => (reserve_addr, lp_addr),
-                        _ => {
-                            return Err(ContractError::Std(StdError::GenericErr {
-                                msg: "The reserve token or LP address was not given".to_string(),
-                            }))
-                        }
-                    }
-                }
-                // Option #3: New CW20 Token to be added here...
-                _ => {
-                    return Err(ContractError::Std(StdError::GenericErr {
-                        msg: "Invalid donation match setup options passed".to_string(),
-                    }));
-                }
-            };
-
+    match (
+        msg.dao,
+        registrar_config.subdao_token_code,
+        registrar_config.subdao_gov_code,
+    ) {
+        (Some(dao_setup), Some(_token_code), Some(gov_code)) => {
             res = res.add_submessage(SubMsg {
-                id: 4,
+                id: 3,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: donation_match_code,
+                    code_id: gov_code,
                     admin: None,
-                    label: "new donation match contract".to_string(),
-                    msg: to_binary(&DonationMatchInstantiateMsg {
-                        reserve_token,
-                        lp_pair,
+                    label: "new endowment dao contract".to_string(),
+                    msg: to_binary(&DaoInstantiateMsg {
+                        quorum: dao_setup.quorum,
+                        threshold: dao_setup.threshold,
+                        voting_period: dao_setup.voting_period,
+                        timelock_period: dao_setup.timelock_period,
+                        expiration_period: dao_setup.expiration_period,
+                        proposal_deposit: dao_setup.proposal_deposit,
+                        snapshot_period: dao_setup.snapshot_period,
+                        endow_type: msg.profile.endow_type.clone(),
+                        endow_owner: env.contract.address.to_string(),
                         registrar_contract: msg.registrar_contract.clone(),
+                        token: dao_setup.token,
+                        donation_match: msg.donation_match,
                     })?,
                     funds: vec![],
                 }),
@@ -251,6 +200,12 @@ pub fn instantiate(
                 reply_on: ReplyOn::Success,
             });
         }
+        (Some(_dao_setup), None, _) | (Some(_dao_setup), _, None) => {
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: "DAO settings are not yet configured on the Registrar contract".to_string(),
+            }));
+        }
+        _ => (),
     }
     Ok(res)
 }
@@ -320,8 +275,7 @@ pub fn execute(
         // Allows the DANO/AP Team to harvest all active vaults
         ExecuteMsg::Harvest { vault_addr } => executers::harvest(deps, env, info, vault_addr),
         ExecuteMsg::HarvestAum {} => executers::harvest_aum(deps, env, info),
-
-        ExecuteMsg::SetupDaoToken { option } => executers::setup_dao_token(deps, env, info, option),
+        ExecuteMsg::SetupDao(msg) => executers::setup_dao(deps, env, info, msg),
     }
 }
 
@@ -362,13 +316,12 @@ pub fn receive_cw20(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        1 => executers::new_cw4_group_reply(deps, env, msg.result),
-        2 => executers::new_cw3_multisig_reply(deps, env, msg.result),
-        3 => executers::new_dao_token_reply(deps, env, msg.result),
-        4 => executers::new_donation_match_reply(deps, env, msg.result),
-        5 => executers::harvest_reply(deps, env, msg.result),
-        6 => executers::new_dao_cw20_token_reply(deps, env, msg.result),
-        _ => Err(ContractError::Unauthorized {}),
+        1 => executers::cw4_group_reply(deps, env, msg.result),
+        3 => executers::dao_reply(deps, env, msg.result),
+        4 => executers::harvest_reply(deps, env, msg.result),
+        _ => Err(ContractError::Std(StdError::GenericErr {
+            msg: "Invalid Submessage Reply ID!".to_string(),
+        })),
     }
 }
 

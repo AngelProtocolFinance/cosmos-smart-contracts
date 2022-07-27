@@ -1,10 +1,13 @@
 use crate::{
     contract::{execute, instantiate, query},
-    error::ContractError,
     state::{
         UserLockedBalance, MAX_SECONDS, SECONDS_PER_WEEK, STATE, USER_LOCKED_BALANCES,
         VOTING_POWER_CONSTANT_DIVISOR,
     },
+};
+use angel_core::errors::cw900::ContractError;
+use angel_core::messages::ve_token::{
+    Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg, StakerResponse, StateResponse,
 };
 use cosmwasm_std::{
     from_binary,
@@ -12,9 +15,6 @@ use cosmwasm_std::{
     to_binary, Addr, CosmosMsg, DepsMut, Env, SubMsg, Timestamp, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
-use cw900::ve_token::{
-    Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg, StakerResponse, StateResponse,
-};
 
 const TEST_CREATOR: &str = "creator";
 const VOTING_TOKEN: &str = "voting_token";

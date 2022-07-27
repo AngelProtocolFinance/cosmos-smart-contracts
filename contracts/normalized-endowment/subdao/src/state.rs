@@ -1,3 +1,6 @@
+use angel_core::common::OrderBy;
+use angel_core::messages::subdao::{PollStatus, VoterInfo};
+use angel_core::structs::{DonationMatch, EndowmentType};
 use angel_core::utils::{
     calc_range_end, calc_range_end_addr, calc_range_start, calc_range_start_addr,
 };
@@ -6,8 +9,7 @@ use cosmwasm_storage::{
     bucket, bucket_read, singleton, singleton_read, Bucket, ReadonlyBucket, ReadonlySingleton,
     Singleton,
 };
-use cw900::common::OrderBy;
-use cw900::gov::{PollStatus, VoterInfo};
+use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
@@ -19,12 +21,15 @@ static PREFIX_POLL_INDEXER: &[u8] = b"poll_indexer";
 static PREFIX_POLL_VOTER: &[u8] = b"poll_voter";
 static PREFIX_POLL: &[u8] = b"poll";
 
+pub const DONATION_MATCH: Item<(EndowmentType, DonationMatch)> = Item::new("donation_match");
+
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
+    pub registrar_contract: Addr,
     pub owner: Addr,
     pub dao_token: Addr,
     pub ve_token: Addr,
-    pub terraswap_factory: Addr,
+    pub swap_factory: Addr,
     pub quorum: Decimal,
     pub threshold: Decimal,
     pub voting_period: u64,
@@ -36,7 +41,6 @@ pub struct Config {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct State {
-    pub contract_addr: Addr,
     pub poll_count: u64,
     pub total_share: Uint128,
     pub total_deposit: Uint128,

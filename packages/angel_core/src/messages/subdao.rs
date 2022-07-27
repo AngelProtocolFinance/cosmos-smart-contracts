@@ -1,4 +1,5 @@
 use crate::common::OrderBy;
+use crate::structs::{DaoToken, DonationMatch, EndowmentType};
 use cosmwasm_std::{Binary, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
@@ -14,6 +15,11 @@ pub struct InstantiateMsg {
     pub expiration_period: u64,
     pub proposal_deposit: Uint128,
     pub snapshot_period: u64,
+    pub token: DaoToken,
+    pub endow_type: EndowmentType,
+    pub endow_owner: String,
+    pub registrar_contract: String,
+    pub donation_match: Option<DonationMatch>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -21,9 +27,8 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     RegisterContracts {
-        dao_token: String,
         ve_token: String,
-        terraswap_factory: String,
+        swap_factory: String,
     },
     /// Public Message
     /// Sweep all given denom balance to GLOW token
@@ -107,7 +112,7 @@ pub enum QueryMsg {
 pub struct ConfigResponse {
     pub owner: String,
     pub dao_token: String,
-    pub terraswap_factory: String,
+    pub swap_factory: String,
     pub quorum: Decimal,
     pub threshold: Decimal,
     pub voting_period: u64,

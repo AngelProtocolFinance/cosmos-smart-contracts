@@ -68,4 +68,13 @@ pub enum ContractError {
 
     #[error("Voting period has not expired")]
     PollVotingPeriod {},
+
+    #[error("Token was not found in approved coins")]
+    NotInApprovedCoins {},
+
+    #[error("Invalid inputs")]
+    InvalidInputs {},
+
+    #[error("Account creation error")]
+    AccountNotCreated {},
 }

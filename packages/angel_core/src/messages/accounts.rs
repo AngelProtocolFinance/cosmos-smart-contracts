@@ -1,6 +1,6 @@
-use crate::messages::dao_token::CurveType;
 use crate::structs::{
-    EndowmentFee, FundingSource, Profile, RebalanceDetails, SettingsController, StrategyComponent,
+    DaoSetup, DonationMatch, EndowmentFee, FundingSource, Profile, RebalanceDetails,
+    SettingsController, StrategyComponent,
 };
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
@@ -17,13 +17,8 @@ pub struct MigrateMsg {
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
-    pub owner_sc: String,
     pub registrar_contract: String,
-    pub dao: bool,
-    pub dao_setup_option: DaoSetupOption,
-    pub owner: String,       // address that originally setup the endowment account
-    pub name: String,        // name of the Charity Endowment
-    pub description: String, // description of the Charity Endowment
+    pub owner: String, // address that originally setup the endowment account
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
@@ -37,29 +32,13 @@ pub struct InstantiateMsg {
     pub withdraw_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub aum_fee: Option<EndowmentFee>,
-    pub donation_match_active: bool,
-    pub donation_match_setup: u32, // Donation matching setup options(possible values: 0, 1, 2, 3)
-    pub reserve_token: Option<String>, // Address of cw20 token, which user wants to use as reserve token in "donation_matching"
-    pub reserve_token_lp_contract: Option<String>, // Address of lp pair contract(cw20 token above - UST)
+    pub dao: Option<DaoSetup>,                 // SubDAO setup options
+    pub donation_match: Option<DonationMatch>, // Donation matching setup options (Charities are automatically setup with CS & HALO matching; Only Normalized Endowments need to provide this field.)
     pub settings_controller: Option<SettingsController>,
     pub parent: Option<Addr>,
     pub kyc_donors_only: bool,
     pub cw3_multisig_threshold: Threshold,
     pub cw3_multisig_max_vote_period: Duration,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum DaoSetupOption {
-    ExistingCw20Token(String),          // Option1: Existing cw20 token
-    SetupCw20Token(DaoCw20TokenConfig), // Option2: Create new "cw20-base" token with "initial-supply"
-    SetupBondCurveToken(CurveType),     // Option3: Create new "bonding-curve" token
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct DaoCw20TokenConfig {
-    pub code_id: u64,
-    pub initial_supply: Uint128,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -117,9 +96,7 @@ pub enum ExecuteMsg {
     // AUM harvest
     HarvestAum {},
     // Set up dao token for "Endowment"
-    SetupDaoToken {
-        option: DaoSetupOption,
-    },
+    SetupDao(DaoSetup),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -146,8 +123,6 @@ pub struct UpdateEndowmentSettingsMsg {
     pub owner: Option<String>,
     pub whitelisted_beneficiaries: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
-    pub name: Option<String>,                          // name of the Charity Endowment
-    pub description: Option<String>,                   // description of the Charity Endowment
     pub withdraw_before_maturity: Option<bool>, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<Option<u64>>,     // datetime int of endowment maturity
     pub strategies: Option<Vec<StrategyComponent>>, // list of vaults and percentage for locked/liquid accounts

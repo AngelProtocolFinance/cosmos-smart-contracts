@@ -1,9 +1,14 @@
 use super::mock_querier::{mock_dependencies, WasmMockQuerier};
 use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
-use angel_core::messages::accounts::*;
-use angel_core::messages::dao_token::CurveType;
-use angel_core::responses::accounts::*;
+use angel_core::messages::accounts::UpdateProfileMsg;
+use angel_core::messages::accounts::{
+    DepositMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Strategy, UpdateEndowmentSettingsMsg,
+    UpdateEndowmentStatusMsg,
+};
+use angel_core::responses::accounts::{
+    ConfigResponse, ProfileResponse, StateResponse, TxRecordsResponse,
+};
 use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{attr, coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, Uint128};
@@ -45,29 +50,19 @@ fn create_endowment() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
     };
 
     let instantiate_msg = InstantiateMsg {
-        owner_sc: AP_TEAM.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         owner: CHARITY_ADDR.to_string(),
-        name: "Endowment".to_string(),
-        description: "New Endowment Creation".to_string(),
         split_max: Decimal::one(),
         split_min: Decimal::one(),
         split_default: Decimal::one(),
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
-        dao: true,
-        dao_setup_option: DaoSetupOption::SetupBondCurveToken(CurveType::Constant {
-            value: Uint128::zero(),
-            scale: 2u32,
-        }),
+        dao: None,
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
-        donation_match_active: false,
-        donation_match_setup: 0,
-        reserve_token: None,
-        reserve_token_lp_contract: None,
+        donation_match: None,
         settings_controller: None,
         parent: None,
         withdraw_before_maturity: false,
@@ -115,29 +110,19 @@ fn test_proper_initialization() {
     };
 
     let instantiate_msg = InstantiateMsg {
-        owner_sc: AP_TEAM.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         owner: CHARITY_ADDR.to_string(),
-        name: "Endowment".to_string(),
-        description: "New Endowment Creation".to_string(),
         split_max: Decimal::one(),
         split_min: Decimal::one(),
         split_default: Decimal::one(),
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
-        dao: true,
-        dao_setup_option: DaoSetupOption::SetupBondCurveToken(CurveType::Constant {
-            value: Uint128::zero(),
-            scale: 2u32,
-        }),
-        donation_match_active: false,
-        donation_match_setup: 0,
+        dao: None,
+        donation_match: None,
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
-        reserve_token: None,
-        reserve_token_lp_contract: None,
         settings_controller: None,
         parent: None,
         withdraw_before_maturity: false,
@@ -153,7 +138,7 @@ fn test_proper_initialization() {
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
-    assert_eq!(2, res.messages.len());
+    assert_eq!(1, res.messages.len());
 }
 
 #[test]
@@ -165,8 +150,6 @@ fn test_update_endowment_settings() {
         owner: Some(CHARITY_ADDR.to_string()),
         whitelisted_beneficiaries: None,
         whitelisted_contributors: None,
-        name: None,
-        description: None,
         withdraw_before_maturity: None,
         maturity_time: None,
         strategies: None,
@@ -191,8 +174,6 @@ fn test_update_endowment_settings() {
         owner: Some(CHARITY_ADDR.to_string()),
         whitelisted_beneficiaries: None,
         whitelisted_contributors: None,
-        name: None,
-        description: None,
         withdraw_before_maturity: None,
         maturity_time: None,
         strategies: None,
@@ -463,8 +444,8 @@ fn test_update_endowment_profile() {
         value.overview,
         "Test Endowment is for just testing".to_string()
     );
-    assert_eq!(value.un_sdg, None);
-    assert_eq!(value.tier, None);
+    assert_eq!(value.un_sdg, Some(1));
+    assert_eq!(value.tier, Some(2));
 
     // Config owner can update certain profile
     let info = mock_info(AP_TEAM, &[]);

@@ -1,8 +1,6 @@
-use crate::state::{CONFIG, CW3MULTISIGCONFIG, ENDOWMENT, PROFILE, STATE};
+use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::cw3_multisig::InstantiateMsg as Cw3MultisigInstantiateMsg;
-use angel_core::messages::dao_token::InstantiateMsg as DaoTokenInstantiateMsg;
 use angel_core::messages::donation_match::ExecuteMsg as DonationMatchExecMsg;
 use angel_core::messages::index_fund::{
     DepositMsg as IndexFundDepositMsg, ExecuteMsg as IndexFundExecuter,
@@ -18,6 +16,7 @@ use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
+use angel_core::structs::DaoSetup;
 use angel_core::structs::{
     AcceptedTokens, BalanceResponse, EndowmentFee, EndowmentType, FundingSource, SocialMedialUrls,
     SplitDetails, StrategyComponent, Tier, TransactionRecord,
@@ -31,192 +30,78 @@ use cosmwasm_std::{
     MessageInfo, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult,
     Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
+use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw_asset::{Asset, AssetInfoBase};
 use std::str::FromStr;
 
-pub fn new_cw4_group_reply(
+pub fn cw4_group_reply(
     deps: DepsMut,
     _env: Env,
     msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
     match msg {
         SubMsgResult::Ok(subcall) => {
-            let mut group_addr = String::from("");
+            let mut cw3_addr = String::from("");
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
                         // This value comes from the custom attrbiute
-                        // set in "cw4_group" instantiation response.
-                        if attrb.key == "group_addr" {
-                            group_addr = attrb.value;
+                        match attrb.key.as_str() {
+                            "multisig_addr" => cw3_addr = attrb.value,
+                            _ => (),
                         }
                     }
                 }
             }
 
-            // Register the new Endowment on success Reply
-            let _addr = deps.api.addr_validate(&group_addr)?;
+            let mut endowment = ENDOWMENT.load(deps.storage)?;
+            endowment.owner = deps.api.addr_validate(&cw3_addr)?;
+            ENDOWMENT.save(deps.storage, &endowment)?;
 
-            let registrar_config: RegistrarConfigResponse =
-                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: config.registrar_contract.to_string(),
-                    msg: to_binary(&RegistrarQuerier::Config {})?,
-                }))?;
-
-            let cw3_multisig_config = CW3MULTISIGCONFIG.load(deps.storage)?;
-            CW3MULTISIGCONFIG.remove(deps.storage);
-
-            // Fire the creation of new multisig linked to new group
-            Ok(Response::new().add_submessage(SubMsg {
-                id: 2,
-                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: registrar_config.cw3_code.unwrap(),
-                    admin: None,
-                    label: "new endowment guardians multisig".to_string(),
-                    msg: to_binary(&Cw3MultisigInstantiateMsg {
-                        group_addr,
-                        threshold: cw3_multisig_config.threshold,
-                        max_voting_period: cw3_multisig_config.max_voting_period,
-                    })?,
-                    funds: vec![],
-                }),
-                gas_limit: None,
-                reply_on: ReplyOn::Success,
-            }))
+            Ok(Response::default())
         }
-        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }
 
-pub fn new_cw3_multisig_reply(
-    deps: DepsMut,
-    _env: Env,
-    msg: SubMsgResult,
-) -> Result<Response, ContractError> {
+pub fn dao_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
         SubMsgResult::Ok(subcall) => {
-            let mut multisig_addr = String::from("asdf-ASDF-ASDF");
+            let mut dao_addr = String::from("");
+            let mut dao_token_addr = String::from("");
+            let mut donation_match_addr = String::from("");
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
-                        if attrb.key == "multisig_addr" {
-                            multisig_addr = attrb.value;
+                        match attrb.key.as_str() {
+                            "dao_addr" => dao_addr = attrb.value,
+                            "dao_token_addr" => dao_token_addr = attrb.value,
+                            "donation_match_addr" => donation_match_addr = attrb.value,
+                            &_ => (),
                         }
                     }
                 }
             }
 
-            // update the endowment owner to be the new multisig contract
+            // update the endowment DAO Address to be the new contract
             let mut endowment = ENDOWMENT.load(deps.storage)?;
-            endowment.owner = deps.api.addr_validate(&multisig_addr)?;
-            ENDOWMENT.save(deps.storage, &endowment)?;
-
-            Ok(Response::default())
-        }
-        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
-    }
-}
-
-pub fn new_dao_token_reply(
-    deps: DepsMut,
-    _env: Env,
-    msg: SubMsgResult,
-) -> Result<Response, ContractError> {
-    match msg {
-        SubMsgResult::Ok(subcall) => {
-            let mut dao_token_addr = String::from("");
-            for event in subcall.events {
-                if event.ty == *"instantiate" {
-                    for attrb in event.attributes {
-                        if attrb.key == "_contract_address" {
-                            dao_token_addr = attrb.value;
-                        }
-                    }
-                }
-            }
-
-            // update the endowment owner to be the new multisig contract
-            let mut endowment = ENDOWMENT.load(deps.storage)?;
+            endowment.dao = Some(deps.api.addr_validate(&dao_addr)?);
             endowment.dao_token = Some(deps.api.addr_validate(&dao_token_addr)?);
+
+            // only need to set the donation match contract for non-Charity endowments
+            // and we received a value back from the submessages
+            let profile = PROFILE.load(deps.storage)?;
+            if profile.endow_type != EndowmentType::Charity
+                && donation_match_addr != String::from("")
+            {
+                endowment.donation_match_contract =
+                    Some(deps.api.addr_validate(&donation_match_addr)?);
+            }
             ENDOWMENT.save(deps.storage, &endowment)?;
 
             Ok(Response::default())
         }
-        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
-    }
-}
-
-pub fn new_dao_cw20_token_reply(
-    deps: DepsMut,
-    _env: Env,
-    msg: SubMsgResult,
-) -> Result<Response, ContractError> {
-    match msg {
-        SubMsgResult::Ok(subcall) => {
-            let mut dao_cw20_token_addr = String::from("");
-            for event in subcall.events {
-                if event.ty == *"instantiate" {
-                    for attrb in event.attributes {
-                        if attrb.key == "_contract_address" {
-                            dao_cw20_token_addr = attrb.value;
-                        }
-                    }
-                }
-            }
-
-            // update the endowment "dao_token" to be the new contract
-            let mut endowment = ENDOWMENT.load(deps.storage)?;
-            endowment.dao_token = Some(deps.api.addr_validate(&dao_cw20_token_addr)?);
-            ENDOWMENT.save(deps.storage, &endowment)?;
-
-            let config = CONFIG.load(deps.storage)?;
-            let registrar_config: RegistrarConfigResponse =
-                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: config.registrar_contract.to_string(),
-                    msg: to_binary(&RegistrarQuerier::Config {})?,
-                }))?;
-
-            if let Some(_swap_factory) = registrar_config.swap_factory {
-                // NOTE: Add "create_pair/swap" message here
-            } else {
-                return Err(ContractError::ContractNotConfigured {});
-            }
-
-            Ok(Response::default())
-        }
-        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
-    }
-}
-
-pub fn new_donation_match_reply(
-    deps: DepsMut,
-    _env: Env,
-    msg: SubMsgResult,
-) -> Result<Response, ContractError> {
-    match msg {
-        SubMsgResult::Ok(subcall) => {
-            let mut donation_match_contract_addr = String::from("");
-            for event in subcall.events {
-                if event.ty == *"instantiate" {
-                    for attrb in event.attributes {
-                        if attrb.key == "_contract_address" {
-                            donation_match_contract_addr = attrb.value;
-                        }
-                    }
-                }
-            }
-
-            // update the endowment "donation_matching_contract" to be new donation_match_contract_addr
-            let mut endowment = ENDOWMENT.load(deps.storage)?;
-            endowment.donation_matching_contract =
-                Some(deps.api.addr_validate(&donation_match_contract_addr)?);
-            ENDOWMENT.save(deps.storage, &endowment)?;
-
-            Ok(Response::default())
-        }
-        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }
 
@@ -338,14 +223,6 @@ pub fn update_endowment_settings(
             }
         }
         None => endowment.whitelisted_contributors,
-    };
-    endowment.name = match msg.name {
-        Some(i) => i,
-        None => endowment.name,
-    };
-    endowment.description = match msg.description {
-        Some(i) => i,
-        None => endowment.description,
     };
     endowment.withdraw_before_maturity = match msg.withdraw_before_maturity {
         Some(i) => {
@@ -878,23 +755,25 @@ pub fn deposit(
     };
     state.balances.liquid_balance.add_tokens(liquid_balance);
 
+    // get the correct donation match contract to use
+    let donation_match_contract = match (
+        profile.endow_type,
+        endowment.donation_match_contract,
+        registrar_config.donation_match_charites_contract,
+    ) {
+        (EndowmentType::Normal, Some(match_contract), _) => Some(match_contract),
+        (EndowmentType::Charity, _, Some(charity_match_contract)) => {
+            Some(deps.api.addr_validate(&charity_match_contract)?)
+        }
+        (_, _, _) => None,
+    };
+
     // check if the donation matching is possible
     let mut donor_match_messages: Vec<SubMsg> = vec![];
-    if !locked_amount.amount.is_zero()
-        && endowment.donation_match_active
+    if donation_match_contract != None
+        && !locked_amount.amount.is_zero()
         && endowment.dao_token.is_some()
     {
-        // get the correct donation match contract to use
-        let donation_match_contract = match profile.endow_type {
-            EndowmentType::Normal => match endowment.donation_matching_contract {
-                Some(addr) => addr,
-                None => return Err(ContractError::AccountNotCreated {}),
-            },
-            EndowmentType::Charity => match registrar_config.donation_match_charites_contract {
-                Some(addr) => deps.api.addr_validate(&addr)?,
-                None => return Err(ContractError::AccountDoesNotExist {}),
-            },
-        };
         // 10% of "locked_amount" amount
         let donation_match_amount = locked_amount.amount.multiply_ratio(100_u128, 1000_u128);
         locked_amount.amount -= donation_match_amount;
@@ -903,7 +782,7 @@ pub fn deposit(
         match locked_amount.info {
             AssetInfoBase::Native(ref token) => {
                 donor_match_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: donation_match_contract.to_string(),
+                    contract_addr: donation_match_contract.unwrap().to_string(),
                     msg: to_binary(&DonationMatchExecMsg::DonorMatch {
                         amount: donation_match_amount,
                         donor: sender_addr.clone(),
@@ -919,7 +798,7 @@ pub fn deposit(
                 donor_match_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: contract_addr.to_string(),
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                        contract: donation_match_contract.to_string(),
+                        contract: donation_match_contract.unwrap().to_string(),
                         amount: donation_match_amount,
                         msg: to_binary(&DonationMatchExecMsg::DonorMatch {
                             amount: donation_match_amount,
@@ -1390,7 +1269,7 @@ fn harvest_msg(
     });
 
     SubMsg {
-        id: 5,
+        id: 4,
         msg: wasm_msg,
         gas_limit: None,
         reply_on: ReplyOn::Success,
@@ -1498,15 +1377,15 @@ pub fn harvest_reply(
 
             Ok(Response::default())
         }
-        SubMsgResult::Err(_) => Err(ContractError::Std(StdError::generic_err("Harvest failed"))),
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }
 
-pub fn setup_dao_token(
-    mut deps: DepsMut,
+pub fn setup_dao(
+    deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    option: DaoSetupOption,
+    msg: DaoSetup,
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENT.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
@@ -1515,102 +1394,28 @@ pub fn setup_dao_token(
         return Err(ContractError::Unauthorized {});
     }
 
+    if endowment.dao != None {
+        return Err(ContractError::Std(StdError::generic_err(
+            "A DAO already exists for this Endowment",
+        )));
+    }
+
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
 
-    let submsgs =
-        setup_dao_token_messages(deps.branch(), option, &registrar_config, endowment.owner)?;
-
-    Ok(Response::new().add_submessages(submsgs))
-}
-
-pub fn setup_dao_token_messages(
-    deps: DepsMut,
-    option: DaoSetupOption,
-    registrar_config: &RegistrarConfigResponse,
-    endowment_owner: Addr,
-) -> Result<Vec<SubMsg>, ContractError> {
-    let mut submsgs: Vec<SubMsg> = vec![];
-    match option {
-        // Option #1. User can set an existing CW20 token as the DAO's Token
-        DaoSetupOption::ExistingCw20Token(contract_addr) => {
-            // Validation
-            if !registrar_config
-                .accepted_tokens
-                .cw20_valid(contract_addr.to_string())
-            {
-                return Err(ContractError::NotInApprovedCoins {});
-            }
-
-            let contract_addr = deps.api.addr_validate(&contract_addr)?;
-            ENDOWMENT.update(deps.storage, |mut endow| -> StdResult<_> {
-                endow.dao_token = Some(contract_addr);
-                Ok(endow)
-            })?;
-        }
-
-        // Option #2. Create a basic CW20 token contract with a fixed supply
-        DaoSetupOption::SetupCw20Token(config) => {
-            // setup DAO token contract
-            submsgs.push(SubMsg {
-                id: 6,
-                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: config.code_id,
-                    admin: None,
-                    label: "new endowment dao token(cw20) contract".to_string(),
-                    msg: to_binary(&cw20_base::msg::InstantiateMsg {
-                        name: "AP Endowment Dao Token".to_string(),
-                        symbol: "APEDT".to_string(),
-                        decimals: 6,
-                        initial_balances: vec![Cw20Coin {
-                            address: endowment_owner.to_string(),
-                            amount: config.initial_supply,
-                        }],
-                        mint: None,
-                        marketing: None,
-                    })?,
-                    funds: vec![],
-                }),
-                gas_limit: None,
-                reply_on: ReplyOn::Success,
-            })
-        }
-        // Option #3. Create a CW20 token with supply controlled by a bonding curve
-        DaoSetupOption::SetupBondCurveToken(curve_type) => {
-            // setup DAO token contract
-            let halo_token = match registrar_config.halo_token.clone() {
-                Some(addr) => addr,
-                None => {
-                    return Err(ContractError::Std(StdError::GenericErr {
-                        msg: "HALO token address is empty".to_string(),
-                    }))
-                }
-            };
-            submsgs.push(SubMsg {
-                id: 3,
-                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: registrar_config.subdao_token_code.unwrap(),
-                    admin: None,
-                    label: "new endowment dao token contract".to_string(),
-                    msg: to_binary(&DaoTokenInstantiateMsg {
-                        name: "AP Endowment Dao Token".to_string(), // need dynamic name
-                        symbol: "APEDT".to_string(),                // need dynamic symbol
-                        decimals: 6,
-                        reserve_denom: halo_token,
-                        reserve_decimals: 6,
-                        curve_type,
-                        unbonding_period: 7,
-                    })?,
-                    funds: vec![],
-                }),
-                gas_limit: None,
-                reply_on: ReplyOn::Success,
-            })
-        }
-    }
-
-    Ok(submsgs)
+    Ok(Response::new().add_submessage(SubMsg {
+        id: 3,
+        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+            code_id: registrar_config.subdao_gov_code.unwrap(),
+            admin: None,
+            label: "new endowment dao contract".to_string(),
+            msg: to_binary(&msg)?,
+            funds: vec![],
+        }),
+        gas_limit: None,
+        reply_on: ReplyOn::Success,
+    }))
 }

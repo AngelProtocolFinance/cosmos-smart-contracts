@@ -4,7 +4,6 @@ use angel_core::structs::{
 };
 use cosmwasm_std::{Addr, Decimal256, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
-use cw_utils::{Duration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -39,11 +38,10 @@ pub struct Endowment {
     pub owner: Addr,             // address that originally setup the endowment account
     pub dao: Option<Addr>,       // subdao governance contract address
     pub dao_token: Option<Addr>, // dao gov token contract address
-    pub donation_match_active: bool, // whether to do donation matching
+    pub donation_match_active: bool, // donation matching contract address (None set for Charity Endowments as they just phone home to Registrar to get the addr)
+    pub donation_match_contract: Option<Addr>, // contract for donation matching
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
-    pub name: String,                          // name of the Charity Endowment
-    pub description: String,                   // description of the Charity Endowment
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity (unit: seconds)
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
@@ -52,7 +50,6 @@ pub struct Endowment {
     pub withdraw_fee: Option<EndowmentFee>, // Withdraw Fee
     pub deposit_fee: Option<EndowmentFee>, // Deposit Fee
     pub aum_fee: Option<EndowmentFee>, // AUM(Assets Under Management) Fee
-    pub donation_matching_contract: Option<Addr>, // donation matching contract address
     pub parent: Option<Addr>,        // Address of the Parent Endowment contract
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
     pub maturity_whitelist: Vec<Addr>, // list of addresses, which can withdraw after maturity date is reached (if any)
@@ -79,15 +76,7 @@ pub struct State {
     pub transactions: Vec<TransactionRecord>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct Cw3MultiSigConfig {
-    pub threshold: Threshold,
-    pub max_voting_period: Duration,
-}
-
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");
 pub const PROFILE: Item<Profile> = Item::new("profile");
-pub const CW3MULTISIGCONFIG: Item<Cw3MultiSigConfig> = Item::new("cw3_multisig_config");

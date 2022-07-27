@@ -4,7 +4,7 @@ use crate::state::{
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{
-    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, NetworkInfo, Tier, YieldVault,
+    EndowmentEntry, EndowmentStatus, EndowmentType, NetworkInfo, Tier, YieldVault,
 };
 use angel_core::utils::{percentage_checks, split_checks};
 
@@ -216,13 +216,9 @@ pub fn update_config(
         Some(v) => Some(deps.api.addr_validate(v.as_str())?),
         None => config.donation_match_charites_contract,
     };
-    config.accepted_tokens = AcceptedTokens {
-        native: msg
-            .accepted_tokens_native
-            .unwrap_or(config.accepted_tokens.native),
-        cw20: msg
-            .accepted_tokens_cw20
-            .unwrap_or(config.accepted_tokens.cw20),
+    config.accepted_tokens = match msg.accepted_tokens {
+        Some(tokens) => tokens,
+        None => config.accepted_tokens,
     };
 
     config.collector_addr = msg
@@ -232,7 +228,26 @@ pub fn update_config(
         Some(share) => share,
         None => config.collector_share,
     };
-
+    config.subdao_gov_code = match msg.subdao_gov_code {
+        Some(u64) => Some(u64),
+        None => config.subdao_gov_code,
+    };
+    config.subdao_token_code = match msg.subdao_token_code {
+        Some(u64) => Some(u64),
+        None => config.subdao_token_code,
+    };
+    config.subdao_cw900_code = match msg.subdao_cw900_code {
+        Some(u64) => Some(u64),
+        None => config.subdao_cw900_code,
+    };
+    config.subdao_distributor_code = match msg.subdao_distributor_code {
+        Some(u64) => Some(u64),
+        None => config.subdao_distributor_code,
+    };
+    config.donation_match_code = match msg.donation_match_code {
+        Some(u64) => Some(u64),
+        None => config.donation_match_code,
+    };
     config.swap_factory = match msg.swap_factory {
         Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
         None => config.swap_factory,
@@ -287,13 +302,9 @@ pub fn create_endowment(
         admin: Some(config.owner.to_string()),
         label: "new endowment accounts".to_string(),
         msg: to_binary(&angel_core::messages::accounts::InstantiateMsg {
-            owner_sc: config.owner.to_string(),
             registrar_contract: env.contract.address.to_string(),
             dao: msg.dao,
-            dao_setup_option: msg.dao_setup_option,
-            owner: msg.owner,
-            name: msg.name,
-            description: msg.description,
+            owner: config.owner.to_string(),
             withdraw_before_maturity: msg.withdraw_before_maturity,
             maturity_time: msg.maturity_time,
             whitelisted_beneficiaries: msg.whitelisted_beneficiaries,
@@ -303,10 +314,7 @@ pub fn create_endowment(
             split_default: msg.split_default.unwrap_or(config.split_to_liquid.default),
             profile: msg.profile,
             cw4_members: msg.cw4_members,
-            donation_match_active: msg.donation_match_active,
-            donation_match_setup: msg.donation_match_setup,
-            reserve_token: msg.reserve_token,
-            reserve_token_lp_contract: msg.reserve_token_lp_contract,
+            donation_match: msg.donation_match,
             earnings_fee: msg.earnings_fee,
             deposit_fee: msg.deposit_fee,
             withdraw_fee: msg.withdraw_fee,
