@@ -184,27 +184,26 @@ async function setup(
 
   // CW4 AP Team Group
   process.stdout.write("Instantiating CW4 & CW3 AP Team Group contract");
-  const cw4GrpApTeamResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, cw4Group, {
-    admin: apTeamAddr,
-    members: [
+  const cw3ApTeamResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, cw3MultiSig, {
+    cw4_members: [
       { addr: apTeamAddr, weight: 1 },
       { addr: apTeam2Addr, weight: 1 },
     ],
-    cw3_code: cw3MultiSig,
-    cw3_threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
-    charity_cw3_max_voting_period: { height: max_voting_period_height },
+    cw4_code: cw4Group,
+    threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
+    max_voting_period: { height: max_voting_period_height },
   });
-  cw4GrpApTeam = cw4GrpApTeamResult.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpApTeam}`);
+  cw3ApTeam = cw3ApTeamResult.contractAddress as string;
+  console.log(chalk.green(" CW3 Done!"), `${chalk.blue("contractAddress")}=${cw3ApTeam}`);
 
-  cw3ApTeam = cw4GrpApTeamResult.logs[0].events
+  cw4GrpApTeam = cw3ApTeamResult.logs[0].events
     .find((event) => {
       return event.type == "wasm";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "multisig_addr";
+      return attribute.key == "group_addr";
     })?.value as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw3ApTeam}`);
+  console.log(chalk.green(" CW4 Done!"), `${chalk.blue("contractAddress")}=${cw4GrpApTeam}`);
 
   // Charities Donation Matching
   process.stdout.write("Instantiating Charities Donation Matching contract");
@@ -251,8 +250,8 @@ async function createEndowments(
       split_min: undefined,
       split_default: undefined,
       cw4_members: [{ addr: charity1_wallet, weight: 1 }],
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_max_voting_period,
       profile: {
         name: "Test Endowment #1",
         overview: "A wonderful charity endowment that aims to test all the things",
