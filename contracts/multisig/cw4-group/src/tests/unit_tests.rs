@@ -8,6 +8,7 @@ use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{from_slice, Addr, Api, DepsMut, OwnedDeps, Querier, Storage, SubMsg};
 use cw4::{member_key, Member, MemberChangedHookMsg, MemberDiff, TOTAL_KEY};
 use cw_controllers::{AdminError, HookError};
+use cw_utils::{Duration, Threshold};
 
 const INIT_ADMIN: &str = "juan";
 const USER1: &str = "somebody";
@@ -27,6 +28,9 @@ fn do_instantiate(deps: DepsMut) {
                 weight: 6,
             },
         ],
+        cw3_code: 10,
+        cw3_max_voting_period: Duration::Time(1234567),
+        cw3_threshold: Threshold::AbsoluteCount { weight: 1 },
     };
     let info = mock_info("creator", &[]);
     instantiate(deps, mock_env(), info, msg).unwrap();

@@ -1,5 +1,5 @@
 use crate::msg::{ExecuteMsg, QueryMsg};
-use angel_core::messages::cw3_multisig::{InstantiateMsg, Threshold};
+use angel_core::messages::cw3_multisig::InstantiateMsg;
 use cosmwasm_std::{coin, coins, Addr, BankMsg, Coin, Decimal, Timestamp};
 use cosmwasm_std::{BlockInfo, CosmosMsg, Empty};
 use cw2::{query_contract_info, ContractVersion};
@@ -10,7 +10,7 @@ use cw3::{
 use cw4::{Cw4ExecuteMsg, Member, MemberChangedHookMsg, MemberDiff};
 use cw4_group::helpers::Cw4GroupContract;
 use cw_multi_test::{next_block, App, Contract, ContractWrapper, Executor};
-use cw_utils::{Duration, Expiration, ThresholdResponse};
+use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
 
 const CONTRACT_NAME: &str = "guardian-angels-multisig";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -151,7 +151,8 @@ fn setup_test_case(
     if !init_funds.is_empty() {
         app.init_modules(|router, _api, storage| {
             router.bank.init_balance(storage, &flex_addr, init_funds)
-        });
+        })
+        .unwrap();
     }
     (flex_addr, guardian_group, endowment_group)
 }

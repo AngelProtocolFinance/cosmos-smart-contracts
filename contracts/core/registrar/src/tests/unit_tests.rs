@@ -1,6 +1,5 @@
-use crate::contract::{execute, instantiate, migrate, query, reply};
+use crate::contract::{execute, instantiate, query, reply};
 use angel_core::errors::core::*;
-use angel_core::messages::cw3_multisig::Threshold;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{AcceptedTokens, SplitDetails};
@@ -10,6 +9,7 @@ use cosmwasm_std::{
     coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply, SubMsgResponse, SubMsgResult,
     WasmMsg,
 };
+use cw_utils::Threshold;
 
 const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
 const MOCK_CW3_CODE_ID: u64 = 18;
@@ -27,7 +27,7 @@ fn proper_initialization() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
@@ -56,7 +56,7 @@ fn update_owner() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
@@ -93,7 +93,7 @@ fn update_config() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
@@ -153,7 +153,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
@@ -421,7 +421,7 @@ fn test_add_update_and_remove_vault() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
@@ -508,7 +508,7 @@ fn test_add_update_and_remove_accepted_tokens() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
@@ -577,7 +577,7 @@ fn test_add_update_and_remove_network_infos() {
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
-                "uluna".to_string(),
+                "ujuno".to_string(),
                 "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
             ],
             cw20: vec![],
