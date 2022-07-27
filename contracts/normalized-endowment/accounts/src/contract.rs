@@ -1,12 +1,8 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{
-    Config, Cw3MultiSigConfig, Endowment, OldConfig, State, CONFIG, CW3MULTISIGCONFIG, ENDOWMENT,
-    PROFILE, STATE,
-};
+use crate::state::{Config, Endowment, OldConfig, State, CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::responses::registrar::ConfigResponse;
@@ -32,7 +28,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -49,7 +45,6 @@ pub fn instantiate(
         deps.storage,
         &Config {
             owner: deps.api.addr_validate(&msg.owner)?,
-            cw4_group: None,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
@@ -122,14 +117,6 @@ pub fn instantiate(
 
     PROFILE.save(deps.storage, &msg.profile)?;
 
-    CW3MULTISIGCONFIG.save(
-        deps.storage,
-        &Cw3MultiSigConfig {
-            threshold: msg.cw3_multisig_threshold,
-            max_voting_period: msg.cw3_multisig_max_vote_period,
-        },
-    )?;
-
     // initial default Response to add submessages to
     let mut res: Response = Response::new().add_attributes(vec![
         attr("endow_addr", env.contract.address.to_string()),
@@ -167,9 +154,12 @@ pub fn instantiate(
             code_id: registrar_config.cw4_code.unwrap(),
             admin: None,
             label: "new endowment cw4 group".to_string(),
-            msg: to_binary(&Cw4GroupInstantiateMsg {
-                admin: Some(info.sender.to_string()),
+            msg: to_binary(&angel_core::messages::cw4_group::InstantiateMsg {
+                admin: None,
                 members: cw4_members,
+                cw3_code: registrar_config.cw3_code.unwrap(),
+                cw3_threshold: msg.cw3_multisig_threshold,
+                cw3_max_voting_period: msg.cw3_multisig_max_vote_period,
             })?,
             funds: vec![],
         }),
@@ -327,7 +317,6 @@ pub fn receive_cw20(
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         1 => executers::cw4_group_reply(deps, env, msg.result),
-        2 => executers::cw3_multisig_reply(deps, env, msg.result),
         3 => executers::dao_reply(deps, env, msg.result),
         4 => executers::harvest_reply(deps, env, msg.result),
         _ => Err(ContractError::Std(StdError::GenericErr {
@@ -385,7 +374,6 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
         CONFIG_KEY,
         &to_vec(&Config {
             owner: old_config.owner,
-            cw4_group: None,
             registrar_contract: old_config.registrar_contract,
             accepted_tokens: old_config.accepted_tokens,
             deposit_approved: old_config.deposit_approved,

@@ -1,7 +1,6 @@
-use crate::state::{CONFIG, CW3MULTISIGCONFIG, ENDOWMENT, PROFILE, STATE};
+use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::cw3_multisig::InstantiateMsg as Cw3MultisigInstantiateMsg;
 use angel_core::messages::donation_match::ExecuteMsg as DonationMatchExecMsg;
 use angel_core::messages::index_fund::{
     DepositMsg as IndexFundDepositMsg, ExecuteMsg as IndexFundExecuter,
@@ -42,100 +41,24 @@ pub fn cw4_group_reply(
 ) -> Result<Response, ContractError> {
     match msg {
         SubMsgResult::Ok(subcall) => {
-            let mut group_addr = String::from("");
+            let mut cw3_addr = String::from("");
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
                         // This value comes from the custom attrbiute
-                        // set in "cw4_group" instantiation response.
-                        if attrb.key == "group_addr" {
-                            group_addr = attrb.value;
+                        match attrb.key.as_str() {
+                            "multisig_addr" => cw3_addr = attrb.value,
+                            _ => (),
                         }
                     }
                 }
             }
 
-            // Register the new CW4 contract addr on success Reply
-            let mut config = CONFIG.load(deps.storage)?;
-            config.cw4_group = Some(deps.api.addr_validate(&group_addr)?);
-            CONFIG.save(deps.storage, &config)?;
-
-            let registrar_config: RegistrarConfigResponse =
-                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: config.registrar_contract.to_string(),
-                    msg: to_binary(&RegistrarQuerier::Config {})?,
-                }))?;
-
-            let cw3_multisig_config = CW3MULTISIGCONFIG.load(deps.storage)?;
-            CW3MULTISIGCONFIG.remove(deps.storage);
-
-            // Fire the creation of new multisig linked to new group
-            Ok(Response::new().add_submessage(SubMsg {
-                id: 2,
-                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: registrar_config.cw3_code.unwrap(),
-                    admin: None,
-                    label: "new endowment guardians multisig".to_string(),
-                    msg: to_binary(&Cw3MultisigInstantiateMsg {
-                        group_addr,
-                        threshold: cw3_multisig_config.threshold,
-                        max_voting_period: cw3_multisig_config.max_voting_period,
-                    })?,
-                    funds: vec![],
-                }),
-                gas_limit: None,
-                reply_on: ReplyOn::Success,
-            }))
-        }
-        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
-    }
-}
-
-pub fn cw3_multisig_reply(
-    deps: DepsMut,
-    _env: Env,
-    msg: SubMsgResult,
-) -> Result<Response, ContractError> {
-    match msg {
-        SubMsgResult::Ok(subcall) => {
-            let mut multisig_addr = String::from("asdf-ASDF-ASDF");
-            for event in subcall.events {
-                if event.ty == *"wasm" {
-                    for attrb in event.attributes {
-                        if attrb.key == "multisig_addr" {
-                            multisig_addr = attrb.value;
-                        }
-                    }
-                }
-            }
-
-            // update the endowment owner to be the new multisig contract
             let mut endowment = ENDOWMENT.load(deps.storage)?;
-            endowment.owner = deps.api.addr_validate(&multisig_addr)?;
+            endowment.owner = deps.api.addr_validate(&cw3_addr)?;
             ENDOWMENT.save(deps.storage, &endowment)?;
 
-            let config = CONFIG.load(deps.storage)?;
-
-            Ok(Response::default()
-                .add_attribute("cw3_addr", multisig_addr.clone())
-                .add_submessages([
-                    SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: config.cw4_group.as_ref().unwrap().to_string(),
-                        msg: to_binary(&angel_core::messages::cw4_group::ExecuteMsg::AddHook {
-                            addr: multisig_addr.clone(),
-                        })?,
-                        funds: vec![],
-                    })),
-                    SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: config.cw4_group.unwrap().to_string(),
-                        msg: to_binary(
-                            &angel_core::messages::cw4_group::ExecuteMsg::UpdateAdmin {
-                                admin: Some(multisig_addr),
-                            },
-                        )?,
-                        funds: vec![],
-                    })),
-                ]))
+            Ok(Response::default())
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
