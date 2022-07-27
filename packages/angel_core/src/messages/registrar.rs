@@ -1,10 +1,9 @@
 use crate::structs::{AcceptedTokens, EndowmentType, NetworkInfo, Profile, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
+use cw_utils::Threshold;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use super::cw3_multisig::Threshold;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {}

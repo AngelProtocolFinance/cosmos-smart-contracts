@@ -1,7 +1,6 @@
-use crate::state::{CONFIG, CW3MULTISIGCONFIG, ENDOWMENT, PROFILE, STATE};
+use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::cw3_multisig::InstantiateMsg as Cw3MultisigInstantiateMsg;
 use angel_core::messages::index_fund::{
     DepositMsg as IndexFundDepositMsg, ExecuteMsg as IndexFundExecuter,
     QueryMsg as IndexFundQuerier,
@@ -23,8 +22,7 @@ use angel_core::utils::{
 };
 use cosmwasm_std::{
     coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
-    QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg,
-    WasmQuery,
+    QueryRequest, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfoBase};
@@ -34,84 +32,28 @@ pub fn new_cw4_group_reply(
     _env: Env,
     msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
     match msg {
         SubMsgResult::Ok(subcall) => {
-            let mut group_addr = String::from("");
+            let mut cw3_addr = String::from("");
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
                         // This value comes from the custom attrbiute
-                        // set in "cw4_group" instantiation response.
-                        if attrb.key == "group_addr" {
-                            group_addr = attrb.value;
+                        match attrb.key.as_str() {
+                            "multisig_addr" => cw3_addr = attrb.value,
+                            _ => (),
                         }
                     }
                 }
             }
 
-            // Register the new Endowment on success Reply
-            let _addr = deps.api.addr_validate(&group_addr)?;
-
-            let registrar_config: RegistrarConfigResponse =
-                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: config.registrar_contract.to_string(),
-                    msg: to_binary(&RegistrarQuerier::Config {})?,
-                }))?;
-
-            let cw3_multisig_config = CW3MULTISIGCONFIG.load(deps.storage)?;
-            CW3MULTISIGCONFIG.remove(deps.storage);
-
-            // Fire the creation of new multisig linked to new group
-            Ok(Response::new().add_submessage(SubMsg {
-                id: 2,
-                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: registrar_config.cw3_code.unwrap(),
-                    admin: None,
-                    label: "new endowment guardians multisig".to_string(),
-                    msg: to_binary(&Cw3MultisigInstantiateMsg {
-                        group_addr,
-                        threshold: cw3_multisig_config.threshold,
-                        max_voting_period: cw3_multisig_config.max_voting_period,
-                    })?,
-                    funds: vec![],
-                }),
-                gas_limit: None,
-                reply_on: ReplyOn::Success,
-            }))
-        }
-        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
-    }
-}
-
-pub fn new_cw3_multisig_reply(
-    deps: DepsMut,
-    _env: Env,
-    msg: SubMsgResult,
-) -> Result<Response, ContractError> {
-    match msg {
-        SubMsgResult::Ok(subcall) => {
-            let mut multisig_addr = String::from("");
-            for event in subcall.events {
-                if event.ty == *"wasm" {
-                    // This value comes from the custom attrbiute
-                    // set in "cw3_multisig" instantiation response.
-                    for attrb in event.attributes {
-                        if attrb.key == "multisig_addr" {
-                            multisig_addr = attrb.value;
-                        }
-                    }
-                }
-            }
-
-            // update the endowment owner to be the new multisig contract
             let mut endowment = ENDOWMENT.load(deps.storage)?;
-            endowment.owner = deps.api.addr_validate(&multisig_addr)?;
+            endowment.owner = deps.api.addr_validate(&cw3_addr)?;
             ENDOWMENT.save(deps.storage, &endowment)?;
 
             Ok(Response::default())
         }
-        SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }
 

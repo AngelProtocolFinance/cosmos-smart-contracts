@@ -3,11 +3,9 @@ use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::AssetInfoBase;
-use cw_utils::Duration;
+use cw_utils::{Duration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use super::cw3_multisig::Threshold;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {}

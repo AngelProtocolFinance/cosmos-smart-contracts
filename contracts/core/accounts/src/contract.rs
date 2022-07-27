@@ -1,12 +1,8 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::Cw3MultiSigConfig;
-use crate::state::CW3MULTISIGCONFIG;
-use crate::state::PROFILE;
-use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, STATE};
+use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::{BalanceInfo, RebalanceDetails, StrategyComponent};
@@ -28,7 +24,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -85,14 +81,6 @@ pub fn instantiate(
 
     PROFILE.save(deps.storage, &msg.profile)?;
 
-    CW3MULTISIGCONFIG.save(
-        deps.storage,
-        &Cw3MultiSigConfig {
-            threshold: msg.cw3_multisig_threshold,
-            max_voting_period: msg.cw3_multisig_max_vote_period,
-        },
-    )?;
-
     // initial default Response to add submessages to
     let mut res = Response::new().add_attributes(vec![
         attr("endow_addr", env.contract.address),
@@ -138,9 +126,12 @@ pub fn instantiate(
             code_id: registrar_config.cw4_code.unwrap(),
             admin: None,
             label: "new endowment cw4 group".to_string(),
-            msg: to_binary(&Cw4GroupInstantiateMsg {
-                admin: Some(info.sender.to_string()),
+            msg: to_binary(&angel_core::messages::cw4_group::InstantiateMsg {
+                admin: None,
                 members: cw4_members,
+                cw3_code: registrar_config.cw3_code.unwrap(),
+                cw3_threshold: msg.cw3_multisig_threshold,
+                cw3_max_voting_period: msg.cw3_multisig_max_vote_period,
             })?,
             funds: vec![],
         }),
@@ -250,7 +241,6 @@ pub fn receive_cw20(
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         1 => executers::new_cw4_group_reply(deps, env, msg.result),
-        2 => executers::new_cw3_multisig_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }

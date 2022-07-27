@@ -1,11 +1,10 @@
-use angel_core::messages::cw3_multisig::Threshold;
 use cosmwasm_std::{
     Addr, BlockInfo, CosmosMsg, Decimal, Empty, StdError, StdResult, Storage, Uint128,
 };
 use cw3::{Status, Vote};
 use cw4::Cw4Contract;
 use cw_storage_plus::{Item, Map};
-use cw_utils::{Duration, Expiration};
+use cw_utils::{Duration, Expiration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
