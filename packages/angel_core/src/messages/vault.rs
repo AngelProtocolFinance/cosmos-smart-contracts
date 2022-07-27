@@ -1,5 +1,6 @@
-use cosmwasm_std::{Addr, Decimal, Uint128};
+use cosmwasm_std::{Addr, Binary, Decimal, Uint128};
 use cw20::{Cw20ReceiveMsg, Denom};
+use cw_utils::Expiration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -34,15 +35,60 @@ pub enum ExecuteMsg {
         collector_share: Decimal,
     },
     AddLiquidity {
+        depositor: String,
         in_denom: Denom,
         out_denom: Denom,
         in_denom_bal_before: Uint128,
         out_denom_bal_before: Uint128,
     },
     Stake {
+        depositor: String,
         lp_token_bal_before: Uint128,
     },
     Receive(Cw20ReceiveMsg),
+
+    // Cw20_base entries
+    Transfer {
+        recipient: String,
+        amount: Uint128,
+    },
+    Burn {
+        amount: Uint128,
+    },
+    Send {
+        contract: String,
+        amount: Uint128,
+        msg: Binary,
+    },
+    Mint {
+        recipient: String,
+        amount: Uint128,
+    },
+    IncreaseAllowance {
+        spender: String,
+        amount: Uint128,
+        expires: Option<Expiration>,
+    },
+    DecreaseAllowance {
+        spender: String,
+        amount: Uint128,
+        expires: Option<Expiration>,
+    },
+    TransferFrom {
+        owner: String,
+        recipient: String,
+        amount: Uint128,
+    },
+    BurnFrom {
+        owner: String,
+        amount: Uint128,
+    },
+    SendFrom {
+        owner: String,
+        contract: String,
+        amount: Uint128,
+        msg: Binary,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

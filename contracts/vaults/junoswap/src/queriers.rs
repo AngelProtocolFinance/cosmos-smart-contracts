@@ -1,22 +1,14 @@
 use crate::config::{self, CONFIG};
-use crate::config::{BALANCES, TOKEN_INFO};
 use crate::wasmswap::{self, InfoResponse};
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
-use angel_core::structs::{BalanceInfo, BalanceResponse};
-use cosmwasm_std::Deps;
-use cw20::{Denom, TokenInfoResponse};
+use cosmwasm_std::{Deps, Uint128};
+use cw20::{BalanceResponse, Denom, TokenInfoResponse};
+use cw20_base::state::TOKEN_INFO;
 
 pub fn query_balance(deps: Deps, address: String) -> BalanceResponse {
-    let address = deps.api.addr_validate(&address).unwrap();
-    let balances = BALANCES
-        .load(deps.storage, &address)
-        .unwrap_or_else(|_| BalanceInfo::default());
-    BalanceResponse {
-        locked_native: balances.clone().locked_balance.native,
-        liquid_native: balances.clone().liquid_balance.native,
-        locked_cw20: balances.locked_balance.cw20_list(),
-        liquid_cw20: balances.liquid_balance.cw20_list(),
-    }
+    cw20_base::contract::query_balance(deps, address).unwrap_or(BalanceResponse {
+        balance: Uint128::zero(),
+    })
 }
 
 pub fn query_token_info(deps: Deps) -> TokenInfoResponse {

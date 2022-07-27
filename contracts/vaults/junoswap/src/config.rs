@@ -1,5 +1,4 @@
-use angel_core::structs::BalanceInfo;
-use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, StdResult, Storage, Uint128};
 use cw20::Denom;
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -35,29 +34,6 @@ pub fn read(storage: &dyn Storage) -> StdResult<Config> {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
-pub struct TokenInfo {
-    pub name: String,
-    pub symbol: String,
-    pub decimals: u8,
-    pub total_supply: Uint128,
-    pub mint: Option<MinterData>,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct MinterData {
-    pub minter: Addr,
-    /// cap is how many more tokens can be issued by the minter
-    pub cap: Option<Uint128>,
-}
-
-impl TokenInfo {
-    pub fn get_cap(&self) -> Option<Uint128> {
-        self.mint.as_ref().and_then(|v| v.cap)
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-#[serde(rename_all = "snake_case")]
 pub struct PendingInfo {
     pub typ: String, // type of pending transaction ('typ', because 'type' is protected keyword in Rust...)
     pub accounts_address: Addr, // Addr of org. sending Accounts SC
@@ -66,7 +42,5 @@ pub struct PendingInfo {
     pub amount: Uint128,
 }
 
-pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
-pub const BALANCES: Map<&Addr, BalanceInfo> = Map::new("balance");
 pub const PENDING: Map<&[u8], PendingInfo> = Map::new("pending");
 pub const REMNANTS: Map<String, Uint128> = Map::new("remnants");

@@ -15,6 +15,8 @@ use cosmwasm_std::{
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
 use cw20::Denom;
+use cw20_base::state::MinterData;
+use cw20_base::state::{TokenInfo, TOKEN_INFO};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "junoswap_vault";
@@ -54,14 +56,18 @@ pub fn instantiate(
     config::store(deps.storage, &config)?;
 
     // store token info
-    let token_info = config::TokenInfo {
+    let token_info = TokenInfo {
         name: msg.name,
         symbol: msg.symbol,
         decimals: msg.decimals,
-        mint: None,
         total_supply: Uint128::zero(),
+        // set self as minter, so we can properly execute mint and burn
+        mint: Some(MinterData {
+            minter: env.contract.address,
+            cap: None,
+        }),
     };
-    config::TOKEN_INFO.save(deps.storage, &token_info)?;
+    TOKEN_INFO.save(deps.storage, &token_info)?;
 
     Ok(Response::new().add_attribute("register_vault", token_info.symbol))
 }
@@ -103,6 +109,7 @@ pub fn execute(
             collector_share,
         } => executers::harvest(deps, env, info, collector_address, collector_share), // DP -> DP shuffle (taxes collected)
         ExecuteMsg::AddLiquidity {
+            depositor,
             in_denom,
             out_denom,
             in_denom_bal_before,
@@ -111,14 +118,106 @@ pub fn execute(
             deps,
             env,
             info,
+            depositor,
             in_denom,
             out_denom,
             in_denom_bal_before,
             out_denom_bal_before,
         ),
         ExecuteMsg::Stake {
+            depositor,
             lp_token_bal_before,
-        } => executers::stake_lp_token(deps, env, info, lp_token_bal_before),
+        } => executers::stake_lp_token(deps, env, info, depositor, lp_token_bal_before),
+
+        // Cw20_base entries
+        ExecuteMsg::Transfer { recipient, amount } => cw20_base::contract::execute_transfer(
+            deps, env, info, recipient, amount,
+        )
+        .map_err(|_| {
+            ContractError::Std(StdError::GenericErr {
+                msg: "Error in transfer".to_string(),
+            })
+        }),
+        ExecuteMsg::Burn { amount } => cw20_base::contract::execute_burn(deps, env, info, amount)
+            .map_err(|_| {
+                ContractError::Std(StdError::GenericErr {
+                    msg: "Error in burn".to_string(),
+                })
+            }),
+        ExecuteMsg::Send {
+            contract,
+            amount,
+            msg,
+        } => cw20_base::contract::execute_send(deps, env, info, contract, amount, msg).map_err(
+            |_| {
+                ContractError::Std(StdError::GenericErr {
+                    msg: "Error in send".to_string(),
+                })
+            },
+        ),
+        ExecuteMsg::Mint { recipient, amount } => {
+            cw20_base::contract::execute_mint(deps, env, info, recipient, amount).map_err(|_| {
+                ContractError::Std(StdError::GenericErr {
+                    msg: "Error in mint".to_string(),
+                })
+            })
+        }
+        ExecuteMsg::IncreaseAllowance {
+            spender,
+            amount,
+            expires,
+        } => cw20_base::allowances::execute_increase_allowance(
+            deps, env, info, spender, amount, expires,
+        )
+        .map_err(|_| {
+            ContractError::Std(StdError::GenericErr {
+                msg: "Error in increase_allowance".to_string(),
+            })
+        }),
+        ExecuteMsg::DecreaseAllowance {
+            spender,
+            amount,
+            expires,
+        } => cw20_base::allowances::execute_decrease_allowance(
+            deps, env, info, spender, amount, expires,
+        )
+        .map_err(|_| {
+            ContractError::Std(StdError::GenericErr {
+                msg: "Error in decrease_allowance".to_string(),
+            })
+        }),
+        ExecuteMsg::TransferFrom {
+            owner,
+            recipient,
+            amount,
+        } => {
+            cw20_base::allowances::execute_transfer_from(deps, env, info, owner, recipient, amount)
+                .map_err(|_| {
+                    ContractError::Std(StdError::GenericErr {
+                        msg: "Error in transfer_from".to_string(),
+                    })
+                })
+        }
+        ExecuteMsg::BurnFrom { owner, amount } => {
+            cw20_base::allowances::execute_burn_from(deps, env, info, owner, amount).map_err(|_| {
+                ContractError::Std(StdError::GenericErr {
+                    msg: "Error in burn_from".to_string(),
+                })
+            })
+        }
+        ExecuteMsg::SendFrom {
+            owner,
+            contract,
+            amount,
+            msg,
+        } => {
+            cw20_base::allowances::execute_send_from(deps, env, info, owner, contract, amount, msg)
+                .map_err(|_| {
+                    ContractError::Std(StdError::GenericErr {
+                        msg: "Error in send_from".to_string(),
+                    })
+                })
+        }
     }
 }
 

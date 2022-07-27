@@ -1,4 +1,4 @@
-use crate::config::{Config, PendingInfo, BALANCES, PENDING, REMNANTS, TOKEN_INFO};
+use crate::config::{store, Config, PendingInfo, PENDING, REMNANTS};
 use crate::util::query_denom_balance;
 use crate::wasmswap::{swap_msg, InfoResponse, Token2ForToken1PriceResponse};
 use crate::{config, wasmswap};
@@ -12,7 +12,7 @@ use cosmwasm_std::{
     Order, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128,
     WasmMsg, WasmQuery,
 };
-use cw20::{Balance, Denom};
+use cw20::Denom;
 
 // wallet that we use for regular, automated harvests of vault
 const CRON_WALLET: &str = "terra1janh9rs6pme3tdwhyag2lmsr2xv6wzhcrjz0xx";
@@ -172,6 +172,7 @@ pub fn deposit(
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::AddLiquidity {
+            depositor,
             in_denom,
             out_denom,
             in_denom_bal_before,
@@ -244,6 +245,7 @@ pub fn add_liquidity(
     deps: DepsMut,
     env: Env,
     _info: MessageInfo,
+    depositor: String,
     in_denom: Denom,
     out_denom: Denom,
     in_denom_bal_before: Uint128,
@@ -360,6 +362,7 @@ pub fn add_liquidity(
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::Stake {
+            depositor,
             lp_token_bal_before: lp_token_bal.balance,
         })
         .unwrap(),
@@ -374,11 +377,13 @@ pub fn add_liquidity(
 pub fn stake_lp_token(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
+    depositor: String,
     lp_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
+    let mut config = config::read(deps.storage)?;
 
+    // Perform the "staking"
     let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         config.pool_lp_token_addr.to_string(),
         &cw20::Cw20QueryMsg::Balance {
@@ -398,6 +403,20 @@ pub fn stake_lp_token(
         .unwrap(),
         funds: vec![],
     });
+
+    // Mint the `vault_token`
+    config.total_shares += stake_amount;
+    config::store(deps.storage, &config)?;
+
+    cw20_base::contract::execute_mint(deps, env, info, depositor.to_string(), stake_amount)
+        .map_err(|_| {
+            ContractError::Std(StdError::GenericErr {
+                msg: format!(
+                    "Cannot mint the {} vault token for {}",
+                    stake_amount, depositor
+                ),
+            })
+        })?;
 
     Ok(Response::new()
         .add_message(msg)
