@@ -29,29 +29,50 @@ use cw_asset::{Asset, AssetInfoBase};
 
 pub fn new_cw3_reply(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
     match msg {
         SubMsgResult::Ok(subcall) => {
-            let mut cw3_addr = String::from("");
+            let mut endowment = ENDOWMENT.load(deps.storage)?;
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
                         // This value comes from the custom attrbiute
                         match attrb.key.as_str() {
-                            "multisig_addr" => cw3_addr = attrb.value,
+                            "multisig_addr" => {
+                                endowment.owner = deps.api.addr_validate(&attrb.value)?
+                            }
                             _ => (),
                         }
                     }
                 }
             }
 
-            let mut endowment = ENDOWMENT.load(deps.storage)?;
-            endowment.owner = deps.api.addr_validate(&cw3_addr)?;
             ENDOWMENT.save(deps.storage, &endowment)?;
+            let config = CONFIG.load(deps.storage)?;
 
-            Ok(Response::default())
+            Ok(
+                // Add submessage to update the Registrar record with the new CW3 owner
+                Response::default().add_submessage(SubMsg::new(CosmosMsg::Wasm(
+                    WasmMsg::Execute {
+                        contract_addr: config.registrar_contract.to_string(),
+                        msg: to_binary(&RegistrarExecuter::UpdateEndowmentEntry(
+                            UpdateEndowmentEntryMsg {
+                                endowment_addr: env.contract.address.to_string(),
+                                owner: Some(endowment.owner.to_string()),
+                                name: None,
+                                logo: None,
+                                image: None,
+                                tier: None,
+                                un_sdg: None,
+                                endow_type: None,
+                            },
+                        ))?,
+                        funds: vec![],
+                    },
+                ))),
+            )
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
