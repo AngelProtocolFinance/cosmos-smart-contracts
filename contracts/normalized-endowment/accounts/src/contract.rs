@@ -150,11 +150,11 @@ pub fn instantiate(
         )));
     }
     res = res.add_submessage(SubMsg {
-        id: 1,
+        id: 0,
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-            code_id: registrar_config.cw4_code.unwrap(),
+            code_id: registrar_config.cw3_code.unwrap(),
             admin: None,
-            label: "new endowment cw4 group".to_string(),
+            label: "new endowment cw3 multisig".to_string(),
             msg: to_binary(&Cw3InstantiateMsg {
                 cw4_members,
                 cw4_code: registrar_config.cw3_code.unwrap(),
@@ -175,7 +175,7 @@ pub fn instantiate(
     ) {
         (Some(dao_setup), Some(_token_code), Some(gov_code)) => {
             res = res.add_submessage(SubMsg {
-                id: 3,
+                id: 1,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     code_id: gov_code,
                     admin: None,
@@ -316,9 +316,9 @@ pub fn receive_cw20(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        1 => executers::cw4_group_reply(deps, env, msg.result),
-        3 => executers::dao_reply(deps, env, msg.result),
-        4 => executers::harvest_reply(deps, env, msg.result),
+        0 => executers::cw3_reply(deps, env, msg.result),
+        1 => executers::dao_reply(deps, env, msg.result),
+        2 => executers::harvest_reply(deps, env, msg.result),
         _ => Err(ContractError::Std(StdError::GenericErr {
             msg: "Invalid Submessage Reply ID!".to_string(),
         })),

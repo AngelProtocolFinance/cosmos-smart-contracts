@@ -34,31 +34,47 @@ use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw_asset::{Asset, AssetInfoBase};
 use std::str::FromStr;
 
-pub fn cw4_group_reply(
-    deps: DepsMut,
-    _env: Env,
-    msg: SubMsgResult,
-) -> Result<Response, ContractError> {
+pub fn cw3_reply(deps: DepsMut, env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
         SubMsgResult::Ok(subcall) => {
-            let mut cw3_addr = String::from("");
+            let mut endowment = ENDOWMENT.load(deps.storage)?;
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
                         // This value comes from the custom attrbiute
                         match attrb.key.as_str() {
-                            "multisig_addr" => cw3_addr = attrb.value,
+                            "multisig_addr" => {
+                                endowment.owner = deps.api.addr_validate(&attrb.value)?
+                            }
                             _ => (),
                         }
                     }
                 }
             }
-
-            let mut endowment = ENDOWMENT.load(deps.storage)?;
-            endowment.owner = deps.api.addr_validate(&cw3_addr)?;
             ENDOWMENT.save(deps.storage, &endowment)?;
+            let config = CONFIG.load(deps.storage)?;
 
-            Ok(Response::default())
+            Ok(
+                // Add submessage to update the Registrar record with the new CW3 owner
+                Response::default().add_submessage(SubMsg::new(CosmosMsg::Wasm(
+                    WasmMsg::Execute {
+                        contract_addr: config.registrar_contract.to_string(),
+                        msg: to_binary(&RegistrarExecuter::UpdateEndowmentEntry(
+                            UpdateEndowmentEntryMsg {
+                                endowment_addr: env.contract.address.to_string(),
+                                owner: Some(endowment.owner.to_string()),
+                                name: None,
+                                logo: None,
+                                image: None,
+                                tier: None,
+                                un_sdg: None,
+                                endow_type: None,
+                            },
+                        ))?,
+                        funds: vec![],
+                    },
+                ))),
+            )
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
@@ -1234,46 +1250,28 @@ pub fn harvest(
     vault_addr: String,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let endowment = ENDOWMENT.load(deps.storage)?;
-    // harvest can only be valid if it comes from the  (AP Team/DANO) SC Owner
-    if info.sender.ne(&endowment.owner) {
+    // harvest can only be valid if it comes from the (AP Team/DANO) SC Owner
+    if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
     let vault_addr = deps.api.addr_validate(&vault_addr)?;
-
-    let sub_messages: Vec<SubMsg> = vec![harvest_msg(
-        vault_addr.to_string(),
-        config.last_earnings_harvest,
-        config.last_harvest_fx,
-    )];
-
     Ok(Response::new()
-        .add_submessages(sub_messages)
-        .add_attribute("action", "harvest"))
-}
-
-fn harvest_msg(
-    account: String,
-    last_earnings_harvest: u64,
-    last_harvest_fx: Option<Decimal256>,
-) -> SubMsg {
-    let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: account,
-        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {
-            last_earnings_harvest,
-            last_harvest_fx,
+        .add_submessage(SubMsg {
+            id: 2,
+            msg: CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: vault_addr.to_string(),
+                msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {
+                    last_earnings_harvest: config.last_earnings_harvest,
+                    last_harvest_fx: config.last_harvest_fx,
+                })
+                .unwrap(),
+                funds: vec![],
+            }),
+            gas_limit: None,
+            reply_on: ReplyOn::Success,
         })
-        .unwrap(),
-        funds: vec![],
-    });
-
-    SubMsg {
-        id: 4,
-        msg: wasm_msg,
-        gas_limit: None,
-        reply_on: ReplyOn::Success,
-    }
+        .add_attribute("action", "harvest"))
 }
 
 pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
