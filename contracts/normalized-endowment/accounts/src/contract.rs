@@ -44,11 +44,17 @@ pub fn instantiate(
         }));
     }
 
+    let registrar_config: ConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: msg.registrar_contract.clone(),
+            msg: to_binary(&RegistrarConfig {})?,
+        }))?;
+
     // apply the initial configs passed
     CONFIG.save(
         deps.storage,
         &Config {
-            owner: deps.api.addr_validate(&msg.owner)?,
+            owner: deps.api.addr_validate(&registrar_config.owner)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
@@ -62,12 +68,6 @@ pub fn instantiate(
             },
         },
     )?;
-
-    let registrar_config: ConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: msg.registrar_contract.clone(),
-            msg: to_binary(&RegistrarConfig {})?,
-        }))?;
 
     let default_vault = match registrar_config.default_vault {
         Some(ref addr) => addr.to_string(),
