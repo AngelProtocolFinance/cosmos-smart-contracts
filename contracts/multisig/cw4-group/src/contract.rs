@@ -2,16 +2,16 @@ use crate::error::ContractError;
 use crate::state::{ADMIN, HOOKS, MEMBERS, TOTAL};
 use angel_core::messages::cw4_group::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use cosmwasm_std::{
-    attr, entry_point, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Order,
-    Reply, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, WasmMsg,
+    attr, entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response,
+    StdError, StdResult, SubMsg,
 };
+use cw0::maybe_addr;
 use cw2::{get_contract_version, set_contract_version};
 use cw4::{
     Member, MemberChangedHookMsg, MemberDiff, MemberListResponse, MemberResponse,
     TotalWeightResponse,
 };
 use cw_storage_plus::Bound;
-use cw_utils::maybe_addr;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "cw4-group";
@@ -29,24 +29,7 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
     create(deps, msg.admin, msg.members, env.block.height)?;
     Ok(Response::default()
-        .add_attributes(vec![attr("group_addr", env.contract.address.to_string())])
-        // Fire the creation of new CW3 multisig linked to this new CW4 group
-        .add_submessage(SubMsg {
-            id: 0,
-            msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                code_id: msg.cw3_code,
-                admin: None,
-                label: "new endowment cw3 multisig".to_string(),
-                msg: to_binary(&angel_core::messages::cw3_multisig::InstantiateMsg {
-                    group_addr: env.contract.address.to_string(),
-                    threshold: msg.cw3_threshold,
-                    max_voting_period: msg.cw3_max_voting_period,
-                })?,
-                funds: vec![],
-            }),
-            gas_limit: None,
-            reply_on: ReplyOn::Success,
-        }))
+        .add_attributes(vec![attr("group_addr", env.contract.address.to_string())]))
 }
 
 // create is the instantiation logic with set_contract_version removed so it can more
@@ -97,47 +80,6 @@ pub fn execute(
         ExecuteMsg::RemoveHook { addr } => {
             Ok(HOOKS.execute_remove_hook(&ADMIN, deps, info, api.addr_validate(&addr)?)?)
         }
-    }
-}
-
-#[entry_point]
-pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
-    match msg.id {
-        0 => cw3_multisig_reply(deps, env, msg.result),
-        _ => Err(ContractError::Std(StdError::GenericErr {
-            msg: "Invalid Submessage Reply ID!".to_string(),
-        })),
-    }
-}
-
-pub fn cw3_multisig_reply(
-    mut deps: DepsMut,
-    _env: Env,
-    msg: SubMsgResult,
-) -> Result<Response, ContractError> {
-    match msg {
-        SubMsgResult::Ok(subcall) => {
-            let mut multisig_addr: Option<String> = None;
-            for event in subcall.events {
-                if event.ty == *"wasm" {
-                    for attrb in event.attributes {
-                        if attrb.key == "multisig_addr" {
-                            multisig_addr = Some(attrb.value);
-                        }
-                    }
-                }
-            }
-
-            // set the new CW3 multisig contract to be the CW4 Admin
-            let cw3_admin = multisig_addr
-                .clone()
-                .map(|admin| deps.api.addr_validate(&admin))
-                .transpose()?;
-            ADMIN.set(deps.branch(), cw3_admin)?;
-
-            Ok(Response::default())
-        }
-        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }
 

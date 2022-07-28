@@ -1,4 +1,5 @@
-use angel_core::messages::cw3_multisig::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::{ExecuteMsg, QueryMsg};
+use angel_core::messages::cw3_multisig::InstantiateMsg;
 use cosmwasm_std::{coin, coins, Addr, BankMsg, Coin, Decimal, Timestamp};
 use cosmwasm_std::{BlockInfo, CosmosMsg, Empty};
 use cw2::{query_contract_info, ContractVersion};
@@ -72,6 +73,11 @@ fn instantiate_flex(
 ) -> Addr {
     let flex_id = app.store_code(contract_flex());
     let msg = InstantiateMsg {
+        cw4_code: app.store_code(contract_group()),
+        cw4_members: vec![Member {
+            addr: OWNER.to_string(),
+            weight: 1,
+        }],
         group_addr: group_addr.to_string(),
         threshold,
         max_voting_period,
@@ -150,7 +156,8 @@ fn setup_test_case(
     if !init_funds.is_empty() {
         app.init_modules(|router, _api, storage| {
             router.bank.init_balance(storage, &flex_addr, init_funds)
-        });
+        })
+        .unwrap();
     }
     (flex_addr, guardian_group, endowment_group)
 }
@@ -189,6 +196,11 @@ fn test_instantiate_works() {
 
     // Zero required weight fails
     let instantiate_msg = InstantiateMsg {
+        cw4_code: app.store_code(contract_group()),
+        cw4_members: vec![Member {
+            addr: OWNER.to_string(),
+            weight: 1,
+        }],
         group_addr: group_address.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 0 },
         max_voting_period,
@@ -206,6 +218,11 @@ fn test_instantiate_works() {
 
     // Total weight less than required weight not allowed
     let instantiate_msg = InstantiateMsg {
+        cw4_code: app.store_code(contract_group()),
+        cw4_members: vec![Member {
+            addr: OWNER.to_string(),
+            weight: 1,
+        }],
         group_addr: group_address.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 100 },
         max_voting_period,
@@ -223,6 +240,11 @@ fn test_instantiate_works() {
 
     // All valid
     let instantiate_msg = InstantiateMsg {
+        cw4_code: app.store_code(contract_group()),
+        cw4_members: vec![Member {
+            addr: OWNER.to_string(),
+            weight: 1,
+        }],
         group_addr: group_address.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 1 },
         max_voting_period,

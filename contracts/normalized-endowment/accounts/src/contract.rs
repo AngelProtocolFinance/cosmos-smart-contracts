@@ -3,6 +3,7 @@ use crate::queriers;
 use crate::state::{Config, Endowment, OldConfig, State, CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
+use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::responses::registrar::ConfigResponse;
@@ -154,10 +155,9 @@ pub fn instantiate(
             code_id: registrar_config.cw4_code.unwrap(),
             admin: None,
             label: "new endowment cw4 group".to_string(),
-            msg: to_binary(&angel_core::messages::cw4_group::InstantiateMsg {
-                admin: None,
-                members: cw4_members,
-                cw3_code: registrar_config.cw3_code.unwrap(),
+            msg: to_binary(&Cw3InstantiateMsg {
+                cw4_members,
+                cw4_code: registrar_config.cw3_code.unwrap(),
                 cw3_threshold: msg.cw3_multisig_threshold,
                 cw3_max_voting_period: msg.cw3_multisig_max_vote_period,
             })?,
