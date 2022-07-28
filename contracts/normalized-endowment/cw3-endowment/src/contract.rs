@@ -37,8 +37,8 @@ pub fn instantiate(
     TEMP_CONFIG.save(
         deps.storage,
         &TempConfig {
-            threshold: msg.cw3_threshold,
-            max_voting_period: msg.cw3_max_voting_period,
+            threshold: msg.threshold,
+            max_voting_period: msg.max_voting_period,
         },
     )?;
 

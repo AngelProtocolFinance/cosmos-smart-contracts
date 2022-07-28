@@ -1,6 +1,6 @@
 use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, EndowmentFee, Profile, RebalanceDetails, SettingsController,
-    StrategyComponent, TransactionRecord,
+    AcceptedTokens, BalanceInfo, DonationMatch, EndowmentFee, Profile, RebalanceDetails,
+    SettingsController, StrategyComponent, TransactionRecord,
 };
 use cosmwasm_std::{Addr, Decimal256, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
@@ -80,3 +80,4 @@ pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATE: Item<State> = Item::new("state");
 pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");
 pub const PROFILE: Item<Profile> = Item::new("profile");
+pub const DONATION_MATCH: Item<DonationMatch> = Item::new("donation_match");

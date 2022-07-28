@@ -85,8 +85,8 @@ pub struct CreateEndowmentMsg {
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
     pub cw4_members: Vec<Member>,
-    pub cw3_multisig_threshold: Threshold,
-    pub cw3_multisig_max_vote_period: u64, // Time in seconds
+    pub cw3_threshold: Threshold,
+    pub cw3_max_voting_period: u64, // Time in seconds
     pub profile: Profile,
     pub kyc_donors_only: bool,
     pub whitelisted_beneficiaries: Vec<String>,

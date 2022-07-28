@@ -1,6 +1,8 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, Endowment, OldConfig, State, CONFIG, ENDOWMENT, PROFILE, STATE};
+use crate::state::{
+    Config, Endowment, OldConfig, State, CONFIG, DONATION_MATCH, ENDOWMENT, PROFILE, STATE,
+};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -19,6 +21,7 @@ use cosmwasm_std::{
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
+
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 
 // version info for future migration info
@@ -118,6 +121,13 @@ pub fn instantiate(
 
     PROFILE.save(deps.storage, &msg.profile)?;
 
+    match (msg.donation_match, &msg.profile.endow_type) {
+        (_, &EndowmentType::Charity) | (None, &EndowmentType::Normal) => (),
+        (Some(donation_match), &EndowmentType::Normal) => {
+            DONATION_MATCH.save(deps.storage, &donation_match)?
+        }
+    }
+
     // initial default Response to add submessages to
     let mut res: Response = Response::new().add_attributes(vec![
         attr("endow_addr", env.contract.address.to_string()),
@@ -134,21 +144,12 @@ pub fn instantiate(
         ),
     ]);
 
-    // check if CW3/CW4 codes were passed to setup a multisig/group
-    let cw4_members = if msg.cw4_members.is_empty() {
-        vec![Member {
-            addr: msg.owner.to_string(),
-            weight: 1,
-        }]
-    } else {
-        msg.cw4_members
-    };
-
     if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {
         return Err(ContractError::Std(StdError::generic_err(
             "cw3_code & cw4_code must exist",
         )));
     }
+
     res = res.add_submessage(SubMsg {
         id: 0,
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
@@ -156,10 +157,17 @@ pub fn instantiate(
             admin: None,
             label: "new endowment cw3 multisig".to_string(),
             msg: to_binary(&Cw3InstantiateMsg {
-                cw4_members,
+                // check if CW3/CW4 codes were passed to setup a multisig/group
+                cw4_members: match msg.cw4_members.is_empty() {
+                    true => vec![Member {
+                        addr: msg.owner.to_string(),
+                        weight: 1,
+                    }],
+                    false => msg.cw4_members,
+                },
                 cw4_code: registrar_config.cw3_code.unwrap(),
-                cw3_threshold: msg.cw3_multisig_threshold,
-                cw3_max_voting_period: msg.cw3_multisig_max_vote_period,
+                threshold: msg.cw3_threshold,
+                max_voting_period: msg.cw3_max_voting_period,
             })?,
             funds: vec![],
         }),
@@ -192,7 +200,6 @@ pub fn instantiate(
                         endow_owner: env.contract.address.to_string(),
                         registrar_contract: msg.registrar_contract.clone(),
                         token: dao_setup.token,
-                        donation_match: msg.donation_match,
                     })?,
                     funds: vec![],
                 }),
@@ -272,10 +279,13 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentFees(msg) => {
             executers::update_endowment_fees(deps, env, info, msg)
         }
+        ExecuteMsg::SetupDao(msg) => executers::setup_dao(deps, env, info, msg),
+        ExecuteMsg::SetupDonationMatch { setup } => {
+            executers::setup_donation_match(deps, env, info, setup)
+        }
         // Allows the DANO/AP Team to harvest all active vaults
         ExecuteMsg::Harvest { vault_addr } => executers::harvest(deps, env, info, vault_addr),
         ExecuteMsg::HarvestAum {} => executers::harvest_aum(deps, env, info),
-        ExecuteMsg::SetupDao(msg) => executers::setup_dao(deps, env, info, msg),
     }
 }
 

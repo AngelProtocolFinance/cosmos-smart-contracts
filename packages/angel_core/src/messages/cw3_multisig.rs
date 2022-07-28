@@ -18,8 +18,8 @@ pub struct InstantiateMsg {
 pub struct EndowmentInstantiateMsg {
     pub cw4_members: Vec<Member>,
     pub cw4_code: u64,
-    pub cw3_threshold: Threshold,
-    pub cw3_max_voting_period: Duration,
+    pub threshold: Threshold,
+    pub max_voting_period: Duration,
 }
 
 /// We currently take no arguments for migrations

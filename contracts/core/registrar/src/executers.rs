@@ -322,8 +322,8 @@ pub fn create_endowment(
             settings_controller: msg.settings_controller,
             parent,
             kyc_donors_only: msg.kyc_donors_only,
-            cw3_multisig_threshold: msg.cw3_multisig_threshold,
-            cw3_multisig_max_vote_period: Duration::Time(msg.cw3_multisig_max_vote_period),
+            cw3_threshold: msg.cw3_threshold,
+            cw3_max_voting_period: Duration::Time(msg.cw3_max_voting_period),
         })?,
         funds: vec![],
     };
