@@ -386,10 +386,10 @@ pub fn new_accounts_reply(
                             endowment_image = attrb.value.clone();
                         }
                         if attrb.key == "endow_tier" {
-                            endowment_tier = attrb.value.clone().parse().unwrap_or(0);
+                            endowment_tier = attrb.value.clone().parse().unwrap();
                         }
                         if attrb.key == "endow_un_sdg" {
-                            endowment_un_sdg = attrb.value.clone().parse().unwrap_or(0);
+                            endowment_un_sdg = attrb.value.clone().parse().unwrap();
                         }
                     }
                 }

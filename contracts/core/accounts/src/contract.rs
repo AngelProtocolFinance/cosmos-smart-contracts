@@ -85,7 +85,6 @@ pub fn instantiate(
     let mut res = Response::new().add_attributes(vec![
         attr("endow_addr", env.contract.address.clone()),
         attr("endow_name", msg.profile.name),
-        attr("endow_owner", msg.owner.to_string()),
         attr("endow_type", msg.profile.endow_type.to_string()),
         attr(
             "endow_logo",

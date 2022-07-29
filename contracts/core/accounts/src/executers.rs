@@ -29,7 +29,7 @@ use cw_asset::{Asset, AssetInfoBase};
 
 pub fn new_cw3_reply(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
     match msg {
@@ -48,31 +48,10 @@ pub fn new_cw3_reply(
                     }
                 }
             }
-
             ENDOWMENT.save(deps.storage, &endowment)?;
-            let config = CONFIG.load(deps.storage)?;
 
-            Ok(
-                // Add submessage to update the Registrar record with the new CW3 owner
-                Response::default().add_submessage(SubMsg::new(CosmosMsg::Wasm(
-                    WasmMsg::Execute {
-                        contract_addr: config.registrar_contract.to_string(),
-                        msg: to_binary(&RegistrarExecuter::UpdateEndowmentEntry(
-                            UpdateEndowmentEntryMsg {
-                                endowment_addr: env.contract.address.to_string(),
-                                owner: Some(endowment.owner.to_string()),
-                                name: None,
-                                logo: None,
-                                image: None,
-                                tier: None,
-                                un_sdg: None,
-                                endow_type: None,
-                            },
-                        ))?,
-                        funds: vec![],
-                    },
-                ))),
-            )
+            // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
+            Ok(Response::default().add_attribute("endow_owner", endowment.owner.to_string()))
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
