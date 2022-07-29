@@ -136,7 +136,7 @@ async function setup(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSig}`);
 
   process.stdout.write("Uploading Endowment CW3 MultiSig Wasm");
-  const cw3MultiSigEndowment = await storeCode(juno, apTeamAddr, `${wasm_path.core}/endowment_cw3_multisig.wasm`);
+  const cw3MultiSigEndowment = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_endowment.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigEndowment}`);
 
   process.stdout.write("Uploading Endowment SubDAO Wasm");

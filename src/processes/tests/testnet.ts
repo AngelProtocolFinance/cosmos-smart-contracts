@@ -294,8 +294,8 @@ export async function testExecute(
   //   split_min: undefined,
   //   split_default: undefined,
   //   cw4_members: [{ addr: charity1Addr, weight: 1 }],
-  //   cw3_multisig_threshold: { absolute_percentage: { percentage: "0.50" } },
-  //   cw3_multisig_max_vote_period: 300,
+  //   cw3_threshold: { absolute_percentage: { percentage: "0.50" } },
+  //   cw3_max_voting_period: 300,
   //   profile: {
   //     name: "Test-Suite Endowment",
   //     overview: "Endowment created from the test-suite integration test",
@@ -347,7 +347,6 @@ export async function testExecute(
   //       }
   //     }
   //   },
-  //   donation_match: undefined,
   //   earnings_fee: undefined,
   //   deposit_fee: undefined,
   //   withdraw_fee: undefined,
