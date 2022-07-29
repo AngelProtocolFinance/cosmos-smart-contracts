@@ -273,7 +273,6 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
-        donation_match: None,
         settings_controller: None,
         parent: false,
         owner: good_charity_addr.clone(),
