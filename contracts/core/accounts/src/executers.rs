@@ -848,7 +848,7 @@ pub fn update_profile(
                 name: msg.name,
                 logo: msg.logo,
                 image: msg.image,
-                owner: None,
+                owner: Some(endowment.owner.to_string()),
                 tier,
                 un_sdg,
                 endow_type: Some(profile.endow_type),
