@@ -27,11 +27,7 @@ use cosmwasm_std::{
 use cw20::{Balance, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfoBase};
 
-pub fn new_cw3_reply(
-    deps: DepsMut,
-    _env: Env,
-    msg: SubMsgResult,
-) -> Result<Response, ContractError> {
+pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
         SubMsgResult::Ok(subcall) => {
             let mut endowment = ENDOWMENT.load(deps.storage)?;

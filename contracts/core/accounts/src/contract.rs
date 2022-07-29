@@ -3,6 +3,7 @@ use crate::queriers;
 use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
+use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::{BalanceInfo, RebalanceDetails, StrategyComponent};
@@ -104,16 +105,6 @@ pub fn instantiate(
         ),
     ]);
 
-    // check if CW3/CW4 codes were passed to setup a multisig/group
-    let cw4_members = if msg.cw4_members.is_empty() {
-        vec![Member {
-            addr: msg.owner.to_string(),
-            weight: 1,
-        }]
-    } else {
-        msg.cw4_members
-    };
-
     if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {
         return Err(ContractError::Std(StdError::generic_err(
             "cw3_code & cw4_code must exist",
@@ -127,11 +118,18 @@ pub fn instantiate(
             code_id: registrar_config.cw3_code.unwrap(),
             admin: None,
             label: "new endowment cw3 multisig".to_string(),
-            msg: to_binary(&angel_core::messages::cw3_multisig::InstantiateMsg {
+            msg: to_binary(&Cw3InstantiateMsg {
+                // check if CW3/CW4 codes were passed to setup a multisig/group
+                cw4_members: match msg.cw4_members.is_empty() {
+                    true => vec![Member {
+                        addr: msg.owner.to_string(),
+                        weight: 1,
+                    }],
+                    false => msg.cw4_members,
+                },
+                cw4_code: registrar_config.cw4_code.unwrap(),
                 threshold: msg.cw3_threshold,
                 max_voting_period: msg.cw3_max_voting_period,
-                cw4_code: registrar_config.cw4_code.unwrap(),
-                cw4_members,
             })?,
             funds: vec![],
         }),
@@ -240,7 +238,7 @@ pub fn receive_cw20(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        0 => executers::new_cw3_reply(deps, env, msg.result),
+        0 => executers::cw3_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }

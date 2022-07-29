@@ -21,12 +21,6 @@ pub struct Config {
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct TempConfig {
-    pub threshold: Threshold,
-    pub max_voting_period: Duration,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct Proposal {
     pub title: String,
     pub description: String,
@@ -154,7 +148,6 @@ pub struct Ballot {
 // unique items
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const PROPOSAL_COUNT: Item<u64> = Item::new("proposal_count");
-pub const TEMP_CONFIG: Item<TempConfig> = Item::new("temp_config");
 
 // multiple-item map
 pub const BALLOTS: Map<(u64, &Addr), Ballot> = Map::new("votes");
