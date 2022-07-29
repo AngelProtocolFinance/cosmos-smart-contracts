@@ -13,6 +13,7 @@ use cosmwasm_std::{
     WasmMsg, WasmQuery,
 };
 use cw20::Denom;
+use cw_controllers::ClaimsResponse;
 
 // wallet that we use for regular, automated harvests of vault
 const CRON_WALLET: &str = "terra1janh9rs6pme3tdwhyag2lmsr2xv6wzhcrjz0xx";
@@ -185,16 +186,61 @@ pub fn deposit(
     Ok(res)
 }
 
-/// Redeem Stable: Take in an amount of locked/liquid deposit tokens
-/// to redeem from the vault for stablecoins to send back to the the Accounts SC
-pub fn redeem_stable(
+/// Claim: Call the `claim` entry of "staking" contract
+pub fn claim(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    account_addr: Addr,
+    beneficiary: Addr,
 ) -> Result<Response, ContractError> {
-    // TODO
-    Ok(Response::default())
+    let config = config::read(deps.storage)?;
+
+    // check that the depositor is an Accounts SC
+    let endowments_rsp: EndowmentListResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {
+                name: None,
+                owner: None,
+                status: None,
+                tier: None,
+                un_sdg: None,
+                endow_type: None,
+            })?,
+        }))?;
+    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
+    let pos = endowments
+        .iter()
+        .position(|p| p.address.to_string() == info.sender.to_string());
+    // reject if the sender was found in the list of endowments
+    if pos == None {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // First, check if there is any possible claim in "staking" contract
+    let claims_resp: ClaimsResponse = deps.querier.query_wasm_smart(
+        config.staking_addr.to_string(),
+        &cw20_stake::QueryMsg::Claims {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+    if claims_resp.claims.len() == 0 {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Nothing to claim".to_string(),
+        }));
+    }
+
+    // Performs the "claim"
+    let mut res = Response::default();
+    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.staking_addr.to_string(),
+        msg: to_binary(&cw20_stake::ExecuteMsg::Claim {}).unwrap(),
+        funds: vec![],
+    }));
+
+    // Handle the returning lp tokens
+
+    Ok(res)
 }
 
 /// Withdraw: Takes in an amount of vault tokens
@@ -252,6 +298,8 @@ pub fn withdraw(
         msg: to_binary(&cw20_stake::ExecuteMsg::Unstake { amount: msg.amount }).unwrap(),
         funds: vec![],
     }));
+
+    // Handle the returning lp tokens
 
     Ok(res)
 }

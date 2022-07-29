@@ -26,8 +26,8 @@ pub enum ExecuteMsg {
     },
     UpdateConfig(UpdateConfigMsg),
     Deposit {},
-    Redeem {
-        account_addr: Addr,
+    Claim {
+        beneficiary: Addr,
     },
     Withdraw(AccountWithdrawMsg),
     Harvest {

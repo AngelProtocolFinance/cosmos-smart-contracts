@@ -96,18 +96,16 @@ pub fn execute(
             let deposit_amount = info.funds[0].amount;
             executers::deposit(deps, env, info, depositor, deposit_denom, deposit_amount)
         }
-        // Redeem is only called by the SC when setting up new strategies.
-        // Pulls all existing strategy amounts back to Account in UST.
-        // Then re-Deposits according to the Strategies set.
-        // -Deposit Token/Yield Token (Vault) --> +UST (Account) --> -UST (Account) --> +Deposit Token/Yield Token (Vault)
-        ExecuteMsg::Redeem { account_addr } => {
-            executers::redeem_stable(deps, env, info, account_addr)
-        } // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
-        ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
+        // Claim is only called by the SC when setting up new strategies.
+        // Pulls all existing amounts back to Account in USDC or [input_denom].
+        // -Deposit Token/Yield Token (Vault) --> +USDC (Account)
+        ExecuteMsg::Claim { beneficiary } => executers::claim(deps, env, info, beneficiary),
+        // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
+        ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
         ExecuteMsg::Harvest {
             collector_address,
             collector_share,
-        } => executers::harvest(deps, env, info, collector_address, collector_share), // DP -> DP shuffle (taxes collected)
+        } => executers::harvest(deps, env, info, collector_address, collector_share),
         ExecuteMsg::AddLiquidity {
             depositor,
             in_denom,
