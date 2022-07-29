@@ -132,6 +132,14 @@ pub fn instantiate(
             "endow_image",
             msg.profile.image.unwrap_or_else(|| "".to_string()),
         ),
+        attr(
+            "endow_tier",
+            msg.profile.tier.unwrap_or_else(|| 0).to_string(),
+        ),
+        attr(
+            "endow_un_sdg",
+            msg.profile.un_sdg.unwrap_or_else(|| 0).to_string(),
+        ),
     ]);
 
     if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {

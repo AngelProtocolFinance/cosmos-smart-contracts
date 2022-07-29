@@ -9,8 +9,8 @@ use angel_core::structs::{
 use angel_core::utils::{percentage_checks, split_checks};
 
 use cosmwasm_std::{
-    attr, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
-    SubMsg, SubMsgResult, WasmMsg,
+    to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult, SubMsg,
+    SubMsgResult, WasmMsg,
 };
 use cw_utils::Duration;
 
@@ -441,8 +441,8 @@ pub fn new_accounts_reply(
                             "endow_type" => endowment_type = attrb.value,
                             "endow_logo" => endowment_logo = attrb.value,
                             "endow_image" => endowment_image = attrb.value,
-                            "endow_tier" => endowment_tier = attrb.value.parse().unwrap_or(0),
-                            "endow_un_sdg" => endowment_un_sdg = attrb.value.parse().unwrap_or(0),
+                            "endow_tier" => endowment_tier = attrb.value.parse().unwrap(),
+                            "endow_un_sdg" => endowment_un_sdg = attrb.value.parse().unwrap(),
                             &_ => (),
                         }
                     }
