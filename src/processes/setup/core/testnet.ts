@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
-import { sendTransaction, storeCode, instantiateContract, getWalletAddress } from "../../../utils/helpers";
+import { sendTransaction, storeCode, instantiateContract, getWalletAddress, sendMessageViaCw3Proposal } from "../../../utils/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
 
 // -------------------------------------------------------------------------------------
@@ -28,6 +28,7 @@ let registrar: string;
 let cw4GrpApTeam: string;
 let cw3ApTeam: string;
 let indexFund: string;
+let donationMatchCharities: string;
 let endowmentContract1: string;
 let endowmentContract2: string;
 let endowmentContract3: string;
@@ -55,17 +56,15 @@ export async function setupCore(
     tax_rate: string;
     threshold_absolute_percentage: string;
     max_voting_period_height: number;
-    max_voting_period_guardians_height: number;
     fund_rotation: number | undefined;
-    turnover_to_multisig: boolean;
     is_localjuno: boolean;
     harvest_to_liquid: string;
     tax_per_block: string;
     funding_goal: string | undefined;
     fund_member_limit: number | undefined;
     accepted_tokens: any | undefined;
-    charity_cw3_multisig_threshold_abs_perc: string,
-    charity_cw3_multisig_max_voting_period: number,
+    charity_cw3_threshold_abs_perc: string,
+    charity_cw3_max_voting_period: number,
   }
 ): Promise<void> {
   juno = _juno;
@@ -86,7 +85,6 @@ export async function setupCore(
     apTreasuryAddr,
     config.threshold_absolute_percentage,
     config.max_voting_period_height,
-    config.max_voting_period_guardians_height,
     config.fund_rotation,
     config.fund_member_limit,
     config.funding_goal,
@@ -96,12 +94,10 @@ export async function setupCore(
   // if (!config.is_localjuno) {
   //   await createVaults(config.harvest_to_liquid, config.tax_per_block);
   // }
-  if (config.turnover_to_multisig) {
-    await turnOverApTeamMultisig(config.is_localjuno);
-  }
+  await turnOverApTeamMultisig(config.is_localjuno);
   await createEndowments(
-    config.charity_cw3_multisig_threshold_abs_perc,
-    config.charity_cw3_multisig_max_voting_period,
+    config.charity_cw3_threshold_abs_perc,
+    config.charity_cw3_max_voting_period,
   );
   await approveEndowments();
   await createIndexFunds();
@@ -112,7 +108,6 @@ async function setup(
   treasury_address: string,
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
-  max_voting_period_guardians_height: number,
   fund_rotation: number | undefined,
   fund_member_limit: number | undefined,
   funding_goal: string | undefined,
@@ -136,9 +131,25 @@ async function setup(
   const cw4Group = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw4_group.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw4Group}`);
 
-  process.stdout.write("Uploading CW3 MultiSig Wasm");
+  process.stdout.write("Uploading Standard CW3 MultiSig Wasm");
   const cw3MultiSig = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_multisig.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSig}`);
+
+  process.stdout.write("Uploading Endowment CW3 MultiSig Wasm");
+  const cw3MultiSigEndowment = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_endowment.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigEndowment}`);
+
+  process.stdout.write("Uploading Endowment SubDAO Wasm");
+  const subdao = await storeCode(juno, apTeamAddr, `${wasm_path.core}/subdao.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdao}`);
+
+  process.stdout.write("Uploading Endowment SubDAO Token Wasm");
+  const subdaoToken = await storeCode(juno, apTeamAddr, `${wasm_path.core}/subdao_token.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoToken}`);
+
+  process.stdout.write("Uploading Endowment SubDAO Donation Matching Wasm");
+  const subdaoDonationMatch = await storeCode(juno, apTeamAddr, `${wasm_path.core}/donation_match.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoDonationMatch}`);
 
   // Step 2. Instantiate the key contracts
   // Registrar
@@ -155,7 +166,7 @@ async function setup(
       default_vault: apTeamAddr, // Fake vault address from apTeam
       split_to_liquid: undefined,
       accepted_tokens: {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
         cw20: [],
       }
     }
@@ -188,7 +199,7 @@ async function setup(
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpApTeam}`);
 
   // CW3 AP Team MultiSig
-  process.stdout.write("Instantiating CW3 AP Team (cw3-MultiSig) contract");
+  process.stdout.write("Instantiating CW3 AP Team MultiSig contract");
   const cw3ApTeamResult = await instantiateContract(
     juno,
     apTeamAddr,
@@ -198,6 +209,7 @@ async function setup(
       group_addr: cw4GrpApTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
+      // registrar_contract: registrar,
     }
   );
   cw3ApTeam = cw3ApTeamResult.contractAddress as string;
@@ -208,37 +220,36 @@ async function setup(
     "AddHook & UpdateAdmin on AP Team CW4 Group to point to AP Team C3"
   );
   await sendTransaction(juno, apTeamAddr, cw4GrpApTeam, {
-    add_hook: { addr: cw3ApTeam },
+      add_hook: { addr: cw3ApTeam },
   });
   await sendTransaction(juno, apTeamAddr, cw4GrpApTeam, {
-    update_admin: { admin: cw3ApTeam },
+      update_admin: { admin: cw3ApTeam },
   });
   console.log(chalk.green(" Done!"));
-
-  // // Add confirmed TCA Members to the Index Fund SCs approved list
-  process.stdout.write("Add confirmed TCA Member to allowed list");
-  let tca_wallet = await getWalletAddress(tca);
-  await sendTransaction(juno, apTeamAddr, indexFund, {
-    update_alliance_member_list: {
-      address: tca_wallet,
-      member: {
-        name: "TCA Member",
-        logo: undefined,
-        website: "https://angelprotocol.io/app",
-      },
-      action: "add",
-    },
-  });
-  console.log(chalk.green(" Done!"));
-
-  process.stdout.write("Update Registrar's config(Account_code_id, Index Fund, CW3_code_Id, CW4_code_Id)");
+  
+  // Charities Donation Matching
+  process.stdout.write("Instantiating Charities Donation Matching contract");
+  const charityDonationMatchResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, subdaoDonationMatch, {
+    registrar_contract: registrar,
+    reserve_token: apTeamAddr, // FAKE! Need to fix.
+    lp_pair: apTeamAddr, // FAKE! Need to fix.
+      });
+  donationMatchCharities = charityDonationMatchResult.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${donationMatchCharities}`);
+  
+  process.stdout.write("Update Registrar's config with various wasm codes & contracts");
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_config: {
       accounts_code_id: accountsCodeId,
       index_fund_contract: indexFund,
-      cw3_code: cw3MultiSig,
+      cw3_code: cw3MultiSigEndowment,
       cw4_code: cw4Group,
-      halo_token: apTeamAddr, // Fake halo_token addr: Need to be handled
+      halo_token: apTeamAddr, // Fake halo token addr: Need to be handled
+      halo_token_lp_contract: apTeamAddr, // Fake halo token LP addr: Need to be handled
+      subdao_gov_code: subdao,
+      subdao_token_code: subdaoToken,
+      donation_match_code: subdaoDonationMatch,
+      donation_match_charites_contract: donationMatchCharities,
     },
   });
   console.log(chalk.green(" Done!"));
@@ -246,8 +257,8 @@ async function setup(
 
 // Step 4: Create Endowments via the Registrar contract
 async function createEndowments(
-  charity_cw3_multisig_threshold_abs_perc: string,
-  charity_cw3_multisig_max_voting_period: number,
+  charity_cw3_threshold_abs_perc: string,
+  charity_cw3_max_voting_period: number,
 ): Promise<void> {
   // endowment #1
   process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
@@ -255,16 +266,14 @@ async function createEndowments(
   const charityResult1 = await sendTransaction(juno, apTeamAddr, registrar, {
     create_endowment: {
       owner: charity1_wallet,
-      name: "Test Endowment #1",
-      description: "A wonderful charity endowment that aims to test all the things",
       withdraw_before_maturity: false,
       maturity_time: 300,
       split_max: undefined,
       split_min: undefined,
       split_default: undefined,
       cw4_members: [{ addr: charity1_wallet, weight: 1 }],
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_max_voting_period,
       profile: {
         name: "Test Endowment #1",
         overview: "A wonderful charity endowment that aims to test all the things",
@@ -290,27 +299,40 @@ async function createEndowments(
       kyc_donors_only: false,
       whitelisted_beneficiaries: [charity1_wallet], 
       whitelisted_contributors: [],
-      dao: false,
-      dao_setup_option: {
-        setup_bond_curve_token: {
-          constant: {
-            value: "10",
-            scale: 1,
+      dao: {
+        quorum: "0.2",
+        threshold: "0.5",
+        voting_period: 1000000,
+        timelock_period: 1000000,
+        expiration_period: 1000000,
+        proposal_deposit: "1000000",
+        snapshot_period: 1000,
+        token: {
+          bonding_curve: {
+            curve_type: {
+              square_root: {
+                slope: "19307000",
+                power: "428571429",
+                scale: 9,
+              }
+            },
+            name: "AP Endowment DAO Token",
+            symbol: "APEDT",
+            decimals: 6,
+            reserve_decimals: 6,
+            reserve_denom: "ujunox",
+            unbonding_period: 1, 
           }
         }
       },
-      curveType: undefined, // Useless, need to remove from contract
-      user_reserve_token: undefined,
-      user_reserve_ust_lp_pair_contract: undefined,
-      donation_match: false,
-      donation_match_setup_option: 0,
+      donation_match: undefined,
       earnings_fee: undefined,
       deposit_fee: undefined,
       withdraw_fee: undefined,
       aum_fee: undefined,
       settings_controller: undefined,
       parent: false,
-    },
+    }
   });
   endowmentContract1 = charityResult1.logs[0].events
     .find((event) => {
@@ -330,16 +352,14 @@ async function createEndowments(
   const charityResult2 = await sendTransaction(juno, apTeamAddr, registrar, {
     create_endowment: {
       owner: charity2_wallet,
-      name: "Test Endowment #2",
-      description: "An even better endowment full of butterflies and rainbows",
       withdraw_before_maturity: false,
       maturity_time: 300,
       split_max: undefined,
       split_min: undefined,
       split_default: undefined,
       cw4_members: [{ addr: charity2_wallet, weight: 1 }],
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
       profile: {
         name: "Test Endowment #2",
         overview: "An even better endowment full of butterflies and rainbows",
@@ -365,20 +385,8 @@ async function createEndowments(
       kyc_donors_only: false,
       whitelisted_beneficiaries: [charity2_wallet], 
       whitelisted_contributors: [],
-      dao: false,
-      dao_setup_option: {
-        setup_bond_curve_token: {
-          constant: {
-            value: "10",
-            scale: 1,
-          }
-        }
-      },
-      curveType: undefined, // Useless, need to remove from contract
-      user_reserve_token: undefined,
-      user_reserve_ust_lp_pair_contract: undefined,
-      donation_match: false,
-      donation_match_setup_option: 0,
+      dao: undefined,
+      donation_match: undefined,
       earnings_fee: undefined,
       deposit_fee: undefined,
       withdraw_fee: undefined,
@@ -405,16 +413,14 @@ async function createEndowments(
   const charityResult3 = await sendTransaction(juno, apTeamAddr, registrar, {
     create_endowment: {
       owner: charity3_wallet,
-      name: "Test Endowment #3",
-      description: "Shady endowment that will never be approved",
       withdraw_before_maturity: false,
       maturity_time: 300,
       split_max: undefined,
       split_min: undefined,
       split_default: undefined,
       cw4_members: [{ addr: charity3_wallet, weight: 1 }],
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
       profile: {
         name: "Test Endowment #3",
         overview: "Shady endowment that will never be approved",
@@ -440,20 +446,8 @@ async function createEndowments(
       kyc_donors_only: false,
       whitelisted_beneficiaries: [charity1_wallet], 
       whitelisted_contributors: [],
-      dao: false,
-      dao_setup_option: {
-        setup_bond_curve_token: {
-          constant: {
-            value: "10",
-            scale: 1,
-          }
-        }
-      },
-      curveType: undefined, // Useless, need to remove from contract
-      user_reserve_token: undefined,
-      user_reserve_ust_lp_pair_contract: undefined,
-      donation_match: false,
-      donation_match_setup_option: 0,
+      dao: undefined,
+      donation_match: undefined,
       earnings_fee: undefined,
       deposit_fee: undefined,
       withdraw_fee: undefined,
@@ -479,16 +473,14 @@ async function createEndowments(
   const charityResult4 = await sendTransaction(juno, apTeamAddr, registrar, {
     create_endowment: {
       owner: charity3_wallet,
-      name: "Vibin' Endowment #4",
-      description: "Global endowment that spreads good vibes",
       withdraw_before_maturity: false,
       maturity_time: 300,
       split_max: undefined,
       split_min: undefined,
       split_default: undefined,
       cw4_members: [{ addr: charity3_wallet, weight: 1 }],
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
       profile: {
         name: "Vibin' Endowment #4",
         overview: "Global endowment that spreads good vibes",
@@ -514,20 +506,8 @@ async function createEndowments(
       kyc_donors_only: false,
       whitelisted_beneficiaries: [charity1_wallet], 
       whitelisted_contributors: [],
-      dao: false,
-      dao_setup_option: {
-        setup_bond_curve_token: {
-          constant: {
-            value: "10",
-            scale: 1,
-          }
-        }
-      },
-      curveType: undefined, // Useless, need to remove from contract
-      user_reserve_token: undefined,
-      user_reserve_ust_lp_pair_contract: undefined,
-      donation_match: false,
-      donation_match_setup_option: 0,
+      dao: undefined,
+      donation_match: undefined,
       earnings_fee: undefined,
       deposit_fee: undefined,
       withdraw_fee: undefined,
@@ -552,21 +532,21 @@ async function createEndowments(
 async function approveEndowments(): Promise<void> {
   // AP Team approves 3 of 4 newly created endowments
   process.stdout.write("AP Team approves 3 of 4 endowments");
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_endowment_status: {
       endowment_addr: endowmentContract1,
       status: 1,
       beneficiary: undefined,
     }
   });
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_endowment_status: {
       endowment_addr: endowmentContract2,
       status: 1,
       beneficiary: undefined,
     }
   });
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_endowment_status: {
       endowment_addr: endowmentContract4,
       status: 1,
@@ -580,7 +560,7 @@ async function approveEndowments(): Promise<void> {
 async function createIndexFunds(): Promise<void> {
   // Create an initial "Fund" with the two charities created above
   process.stdout.write("Create two Funds with two endowments each");
-  await sendTransaction(juno, apTeamAddr, indexFund, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
       create_fund: {
         name: "Test Fund",
         description: "My first test fund",
@@ -591,7 +571,7 @@ async function createIndexFunds(): Promise<void> {
         expiry_height: undefined,
       }
     });
-    await sendTransaction(juno, apTeamAddr, indexFund, {
+    await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
       create_fund: {
         name: "Test Fund #2",
         description: "Another fund to test rotations",
@@ -643,13 +623,13 @@ async function createVaults(
 
   // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
   process.stdout.write("Approving Anchor Vault #1 & #2 in Registrar");
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_update_status: {
       vault_addr: vault1,
       approved: true,
     }
   });
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_update_status: {
       vault_addr: vault2,
       approved: true,
@@ -658,7 +638,7 @@ async function createVaults(
   console.log(chalk.green(" Done!"));
 
   process.stdout.write("Set default vault in Registrar as Anchor Vault");
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_config: { default_vault: vault1 }
   });
   console.log(chalk.green(" Done!"));
@@ -669,13 +649,13 @@ async function turnOverApTeamMultisig(is_localjuno: boolean): Promise<void> {
   process.stdout.write(
     "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract"
   );
-  process.stdout.write(chalk.yellow("- Turning over Registrar"));
+  process.stdout.write(chalk.yellow("\n> Turning over Registrar"));
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_owner: { new_owner: cw3ApTeam }
   });
   console.log(chalk.green(" Done!"));
   
-  process.stdout.write(chalk.yellow("- Turning over Index Fund"));
+  process.stdout.write(chalk.yellow("\n> Turning over Index Fund"));
   await sendTransaction(juno, apTeamAddr, indexFund, {
     update_owner: { new_owner: cw3ApTeam }
   });

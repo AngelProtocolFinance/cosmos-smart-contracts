@@ -45,8 +45,11 @@ import {
   testProposalApprovingEndowment,
   testCw3CastVote,
   testCw3ExecutePoll,
+  testQueryMultisigGroupWeight,
   testQueryMultisigVoters,
   testQueryMultisigThreshold,
+  testQueryProposal,
+  testQueryListProposals,
   testQueryGroupMembersList,
 } from "./core/multisig";
 import {
@@ -134,6 +137,11 @@ import {
   testQueryVestingAccount,
   testQueryVestingAccounts,
 } from "./halo/vesting";
+import {
+  testInstantiateSubDao,
+  testInstantiateSubDaoToken,
+  testInstantiateDonationMatchContract,
+} from "./core/subdao";
 
 async function clientSetup(wallet: DirectSecp256k1HdWallet, networkUrl: string) {
   let client = await SigningCosmWasmClient.connectWithSigner(networkUrl, wallet, { gasPrice: GasPrice.fromString("0.025ujunox") })
@@ -195,6 +203,11 @@ export async function testExecute(
   console.log(chalk.green(" Done!"));
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+
+  // SUBDAO TESTS
+  // await testInstantiateSubDao(actors.apTeam.client, actors.apTeam.addr, 165, registrar);
+  // await testInstantiateSubDaoToken(actors.apTeam.client, actors.apTeam.addr, 166, registrar);
+  // await testInstantiateDonationMatchContract(actors.apTeam.client, actors.apTeam.addr, 167, registrar);
 
   // INDEX-FUND test
   // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, indexFund);
@@ -275,16 +288,14 @@ export async function testExecute(
   // REGISTRAR test
   // await testCreateEndowmentViaRegistrar(actors.apTeam.client, actors.apTeam.addr, registrar, {
   //   owner: charity1Addr,
-  //   name: "Test Endowment #5",
-  //   description: "A wonderful test endowment #5",
   //   withdraw_before_maturity: false,
   //   maturity_time: 300,
   //   split_max: undefined,
   //   split_min: undefined,
   //   split_default: undefined,
   //   cw4_members: [{ addr: charity1Addr, weight: 1 }],
-  //   cw3_multisig_threshold: { absolute_percentage: { percentage: "0.50" } },
-  //   cw3_multisig_max_vote_period: 300,
+  //   cw3_threshold: { absolute_percentage: { percentage: "0.50" } },
+  //   cw3_max_voting_period: 300,
   //   profile: {
   //     name: "Test-Suite Endowment",
   //     overview: "Endowment created from the test-suite integration test",
@@ -309,27 +320,39 @@ export async function testExecute(
   //   },
   //   kyc_donors_only: false,
   //   whitelisted_beneficiaries: [charity1Addr], 
-  //     whitelisted_contributors: [],
-  //     dao: false,
-  //     dao_setup_option: {
-  //       setup_bond_curve_token: {
-  //         constant: {
-  //           value: "10",
-  //           scale: 1,
-  //         }
+  //   whitelisted_contributors: [],
+  //   dao: {
+  //     quorum: "0.2",
+  //     threshold: "0.5",
+  //     voting_period: 1000000,
+  //     timelock_period: 1000000,
+  //     expiration_period: 1000000,
+  //     proposal_deposit: "1000000",
+  //     snapshot_period: 1000,
+  //     token: {
+  //       bonding_curve: {
+  //         curve_type: {
+  //           square_root: {
+  //             slope: "19307000",
+  //             power: "428571429",
+  //             scale: 9,
+  //           }
+  //         },
+  //         name: "AP Endowment DAO Token",
+  //         symbol: "APEDT",
+  //         decimals: 6,
+  //         reserve_decimals: 6,
+  //         reserve_denom: "ujunox",
+  //         unbonding_period: 1, 
   //       }
-  //     },
-  //     curveType: undefined, // Useless, need to remove from contract
-  //     user_reserve_token: undefined,
-  //     user_reserve_ust_lp_pair_contract: undefined,
-  //     donation_match: false,
-  //     donation_match_setup_option: 0,
-  //     earnings_fee: undefined,
-  //     deposit_fee: undefined,
-  //     withdraw_fee: undefined,
-  //     aum_fee: undefined,
-  //     settings_controller: undefined,
-  //     parent: false,
+  //     }
+  //   },
+  //   earnings_fee: undefined,
+  //   deposit_fee: undefined,
+  //   withdraw_fee: undefined,
+  //   aum_fee: undefined,
+  //   settings_controller: undefined,
+  //   parent: false,
   // });
   // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, registrar, {
   //   cw3_code: 102,
@@ -381,13 +404,16 @@ export async function testExecute(
 
 
   // Multisig test
-  // await testAddMemberToC4Group(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, cw4GrpApTeam, apTeamAddr);
+  // await testAddMemberToC4Group(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, cw4GrpApTeam, apTeam3Addr);
   // await testUpdateCw3Config(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 50, 25000);
   // await testProposalApprovingEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, endowmentContract1);
   // await testCw3CastVote(actors.apTeam2.client, actors.apTeam2.addr, cw3ApTeam, 2, VoteOption.YES); //NOTWORKING
   // await testCw3ExecutePoll(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 1);
+  // await testQueryMultisigGroupWeight(actors.apTeam.client, cw4GrpApTeam);
   // await testQueryMultisigVoters(actors.apTeam.client, cw3ApTeam);
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ApTeam);
+  // await testQueryProposal(actors.apTeam.client, cw3ApTeam, 3);
+  // await testQueryListProposals(actors.apTeam.client, cw3ApTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
 
 
@@ -548,5 +574,4 @@ export async function testExecute(
   // await testQueryStakingConfig(actors.apTeam.client, haloStaking);
   // await testQueryStakingStakerInfo(actors.apTeam.client, haloStaking, "addr000", undefined);
   // await testQueryStakingState(actors.apTeam.client, haloStaking);
-
 }
