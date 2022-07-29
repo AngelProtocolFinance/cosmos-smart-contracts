@@ -33,7 +33,7 @@ use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw_asset::{Asset, AssetInfoBase};
 use std::str::FromStr;
 
-pub fn cw3_reply(deps: DepsMut, env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
+pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
         SubMsgResult::Ok(subcall) => {
             let mut endowment = ENDOWMENT.load(deps.storage)?;
@@ -52,39 +52,8 @@ pub fn cw3_reply(deps: DepsMut, env: Env, msg: SubMsgResult) -> Result<Response,
             }
             ENDOWMENT.save(deps.storage, &endowment)?;
 
-            let profile = PROFILE.load(deps.storage)?;
-            let config = CONFIG.load(deps.storage)?;
-
-            Ok(
-                // Add submessage to update the Registrar record with the new CW3 owner
-                Response::default().add_submessage(SubMsg::new(CosmosMsg::Wasm(
-                    WasmMsg::Execute {
-                        contract_addr: config.registrar_contract.to_string(),
-                        msg: to_binary(&RegistrarExecuter::UpdateEndowmentEntry(
-                            UpdateEndowmentEntryMsg {
-                                endowment_addr: env.contract.address.to_string(),
-                                owner: Some(endowment.owner.to_string()),
-                                name: Some(profile.name),
-                                logo: profile.logo,
-                                image: profile.image,
-                                endow_type: Some(profile.endow_type),
-                                tier: match profile.tier {
-                                    Some(1) => Some(Some(Tier::Level1)),
-                                    Some(2) => Some(Some(Tier::Level2)),
-                                    Some(3) => Some(Some(Tier::Level3)),
-                                    None => Some(None),
-                                    _ => return Err(ContractError::InvalidInputs {}),
-                                },
-                                un_sdg: match profile.un_sdg {
-                                    Some(i) => Some(Some(i)),
-                                    None => Some(None),
-                                },
-                            },
-                        ))?,
-                        funds: vec![],
-                    },
-                ))),
-            )
+            // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
+            Ok(Response::default().add_attribute("endow_owner", endowment.owner.to_string()))
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
@@ -93,35 +62,21 @@ pub fn cw3_reply(deps: DepsMut, env: Env, msg: SubMsgResult) -> Result<Response,
 pub fn dao_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
         SubMsgResult::Ok(subcall) => {
-            let mut dao_addr = String::from("");
-            let mut dao_token_addr = String::from("");
-            let mut donation_match_addr = String::from("");
+            let mut endowment = ENDOWMENT.load(deps.storage)?;
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
                         match attrb.key.as_str() {
-                            "dao_addr" => dao_addr = attrb.value,
-                            "dao_token_addr" => dao_token_addr = attrb.value,
-                            "donation_match_addr" => donation_match_addr = attrb.value,
+                            "dao_addr" => {
+                                endowment.dao = Some(deps.api.addr_validate(&attrb.value)?)
+                            }
+                            "dao_token_addr" => {
+                                endowment.dao_token = Some(deps.api.addr_validate(&attrb.value)?)
+                            }
                             &_ => (),
                         }
                     }
                 }
-            }
-
-            // update the endowment DAO Address to be the new contract
-            let mut endowment = ENDOWMENT.load(deps.storage)?;
-            endowment.dao = Some(deps.api.addr_validate(&dao_addr)?);
-            endowment.dao_token = Some(deps.api.addr_validate(&dao_token_addr)?);
-
-            // only need to set the donation match contract for non-Charity endowments
-            // and we received a value back from the submessages
-            let profile = PROFILE.load(deps.storage)?;
-            if profile.endow_type != EndowmentType::Charity
-                && donation_match_addr != String::from("")
-            {
-                endowment.donation_match_contract =
-                    Some(deps.api.addr_validate(&donation_match_addr)?);
             }
             ENDOWMENT.save(deps.storage, &endowment)?;
 

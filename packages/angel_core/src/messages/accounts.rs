@@ -32,8 +32,7 @@ pub struct InstantiateMsg {
     pub withdraw_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub aum_fee: Option<EndowmentFee>,
-    pub dao: Option<DaoSetup>,                 // SubDAO setup options
-    pub donation_match: Option<DonationMatch>, // Donation matching setup options (Charities are automatically setup with CS & HALO matching; Only Normalized Endowments need to provide this field.)
+    pub dao: Option<DaoSetup>, // SubDAO setup options
     pub settings_controller: Option<SettingsController>,
     pub parent: Option<Addr>,
     pub kyc_donors_only: bool,

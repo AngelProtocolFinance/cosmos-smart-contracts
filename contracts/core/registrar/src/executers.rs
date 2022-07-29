@@ -314,7 +314,6 @@ pub fn create_endowment(
             split_default: msg.split_default.unwrap_or(config.split_to_liquid.default),
             profile: msg.profile,
             cw4_members: msg.cw4_members,
-            donation_match: msg.donation_match,
             earnings_fee: msg.earnings_fee,
             deposit_fee: msg.deposit_fee,
             withdraw_fee: msg.withdraw_fee,
@@ -475,11 +474,7 @@ pub fn new_accounts_reply(
                     image: Some(endowment_image),
                 },
             )?;
-            Ok(Response::default().add_attributes(vec![
-                attr("reply", "instantiate_endowment"),
-                attr("addr", endowment_addr),
-                attr("owner", endowment_owner),
-            ]))
+            Ok(Response::default())
         }
         SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }
