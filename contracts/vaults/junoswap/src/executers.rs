@@ -1,7 +1,7 @@
 use crate::config::{store, Config, PendingInfo, PENDING, REMNANTS};
 use crate::util::query_denom_balance;
 use crate::wasmswap::{swap_msg, InfoResponse, Token2ForToken1PriceResponse};
-use crate::{config, wasmswap};
+use crate::{config, cw20_stake, wasmswap};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{AccountWithdrawMsg, ExecuteMsg, UpdateConfigMsg};
@@ -197,16 +197,63 @@ pub fn redeem_stable(
     Ok(Response::default())
 }
 
-/// Withdraw Stable: Takes in an amount of locked/liquid deposit tokens
-/// to withdraw from the vault for UST to send back to a beneficiary
-pub fn withdraw_stable(
+/// Withdraw: Takes in an amount of vault tokens
+/// to withdraw from the vault for USDC to send back to a beneficiary
+pub fn withdraw(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: AccountWithdrawMsg,
 ) -> Result<Response, ContractError> {
-    // TODO
-    Ok(Response::default())
+    let config = config::read(deps.storage)?;
+
+    // check that the depositor is an Accounts SC
+    let endowments_rsp: EndowmentListResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {
+                name: None,
+                owner: None,
+                status: None,
+                tier: None,
+                un_sdg: None,
+                endow_type: None,
+            })?,
+        }))?;
+    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
+    let pos = endowments
+        .iter()
+        .position(|p| p.address.to_string() == info.sender.to_string());
+    // reject if the sender was found in the list of endowments
+    if pos == None {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // First, burn the vault tokens
+    // cw20_base::allowances::execute_burn_from(deps, env, info, info.sender.to_string(), msg.amount)?;
+    let account_info = MessageInfo {
+        sender: info.sender.clone(),
+        funds: vec![],
+    };
+    cw20_base::contract::execute_burn(deps, env, account_info, msg.amount).map_err(|_| {
+        ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Cannot burn the {} vault tokens from {}",
+                msg.amount,
+                info.sender.to_string()
+            ),
+        })
+    })?;
+
+    // Perform the "unstaking"
+    let mut res = Response::default();
+    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.staking_addr.to_string(),
+        msg: to_binary(&cw20_stake::ExecuteMsg::Unstake { amount: msg.amount }).unwrap(),
+        funds: vec![],
+    }));
+
+    Ok(res)
 }
 
 pub fn harvest(

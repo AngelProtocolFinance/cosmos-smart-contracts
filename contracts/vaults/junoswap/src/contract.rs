@@ -103,7 +103,7 @@ pub fn execute(
         ExecuteMsg::Redeem { account_addr } => {
             executers::redeem_stable(deps, env, info, account_addr)
         } // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
-        ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info, msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
+        ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
         ExecuteMsg::Harvest {
             collector_address,
             collector_share,
