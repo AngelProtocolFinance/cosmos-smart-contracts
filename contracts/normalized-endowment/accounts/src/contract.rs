@@ -1,8 +1,6 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{
-    Config, Endowment, OldConfig, State, CONFIG, DONATION_MATCH, ENDOWMENT, PROFILE, STATE,
-};
+use crate::state::{Config, Endowment, OldConfig, State, CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -121,13 +119,6 @@ pub fn instantiate(
 
     PROFILE.save(deps.storage, &msg.profile)?;
 
-    match (msg.donation_match, &msg.profile.endow_type) {
-        (_, &EndowmentType::Charity) | (None, &EndowmentType::Normal) => (),
-        (Some(donation_match), &EndowmentType::Normal) => {
-            DONATION_MATCH.save(deps.storage, &donation_match)?
-        }
-    }
-
     // initial default Response to add submessages to
     let mut res: Response = Response::new().add_attributes(vec![
         attr("endow_addr", env.contract.address.to_string()),
@@ -165,7 +156,7 @@ pub fn instantiate(
                     }],
                     false => msg.cw4_members,
                 },
-                cw4_code: registrar_config.cw3_code.unwrap(),
+                cw4_code: registrar_config.cw4_code.unwrap(),
                 threshold: msg.cw3_threshold,
                 max_voting_period: msg.cw3_max_voting_period,
             })?,

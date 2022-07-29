@@ -1,4 +1,4 @@
-use crate::state::{CONFIG, DONATION_MATCH, ENDOWMENT, PROFILE, STATE};
+use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::donation_match::ExecuteMsg as DonationMatchExecMsg;
@@ -51,6 +51,8 @@ pub fn cw3_reply(deps: DepsMut, env: Env, msg: SubMsgResult) -> Result<Response,
                 }
             }
             ENDOWMENT.save(deps.storage, &endowment)?;
+
+            let profile = PROFILE.load(deps.storage)?;
             let config = CONFIG.load(deps.storage)?;
 
             Ok(
@@ -62,12 +64,21 @@ pub fn cw3_reply(deps: DepsMut, env: Env, msg: SubMsgResult) -> Result<Response,
                             UpdateEndowmentEntryMsg {
                                 endowment_addr: env.contract.address.to_string(),
                                 owner: Some(endowment.owner.to_string()),
-                                name: None,
-                                logo: None,
-                                image: None,
-                                tier: None,
-                                un_sdg: None,
-                                endow_type: None,
+                                name: Some(profile.name),
+                                logo: profile.logo,
+                                image: profile.image,
+                                endow_type: Some(profile.endow_type),
+                                tier: match profile.tier {
+                                    Some(1) => Some(Some(Tier::Level1)),
+                                    Some(2) => Some(Some(Tier::Level2)),
+                                    Some(3) => Some(Some(Tier::Level3)),
+                                    None => Some(None),
+                                    _ => return Err(ContractError::InvalidInputs {}),
+                                },
+                                un_sdg: match profile.un_sdg {
+                                    Some(i) => Some(Some(i)),
+                                    None => Some(None),
+                                },
                             },
                         ))?,
                         funds: vec![],
@@ -1421,7 +1432,7 @@ pub fn setup_donation_match(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    setup: Option<DonationMatch>,
+    setup: DonationMatch,
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENT.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
@@ -1457,43 +1468,14 @@ pub fn setup_donation_match(
             }))
         }
     };
-    match (DONATION_MATCH.may_load(deps.storage)?, setup) {
-        (Some(donation_match), _) => {
-            res = res.add_submessages(process_donation_match_options(
-                donation_match,
-                registrar_config,
-                config.registrar_contract.to_string(),
-                match_code,
-            )?)
-        }
-        (None, Some(setup)) => {
-            res = res.add_submessages(process_donation_match_options(
-                setup,
-                registrar_config,
-                config.registrar_contract.to_string(),
-                match_code,
-            )?)
-        }
-        _ => (),
-    }
-    Ok(res)
-}
-
-fn process_donation_match_options(
-    donation_match: DonationMatch,
-    registrar_config: RegistrarConfigResponse,
-    registrar_contract: String,
-    match_code: u64,
-) -> Result<Vec<SubMsg>, ContractError> {
-    let mut msgs = vec![];
-    match donation_match {
+    match setup {
         DonationMatch::HaloTokenReserve {} => {
             match (
                 registrar_config.halo_token,
                 registrar_config.halo_token_lp_contract,
             ) {
                 (Some(reserve_addr), Some(lp_addr)) => {
-                    msgs.push(SubMsg {
+                    res = res.add_submessage(SubMsg {
                         id: 1,
                         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                             code_id: match_code,
@@ -1503,7 +1485,7 @@ fn process_donation_match_options(
                                 &angel_core::messages::donation_match::InstantiateMsg {
                                     reserve_token: reserve_addr,
                                     lp_pair: lp_addr,
-                                    registrar_contract,
+                                    registrar_contract: config.registrar_contract.to_string(),
                                 },
                             )?,
                             funds: vec![],
@@ -1523,7 +1505,7 @@ fn process_donation_match_options(
             reserve_addr,
             lp_addr,
         } => {
-            msgs.push(SubMsg {
+            res = res.add_submessage(SubMsg {
                 id: 1,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     code_id: match_code,
@@ -1532,7 +1514,7 @@ fn process_donation_match_options(
                     msg: to_binary(&angel_core::messages::donation_match::InstantiateMsg {
                         reserve_token: reserve_addr,
                         lp_pair: lp_addr,
-                        registrar_contract,
+                        registrar_contract: config.registrar_contract.to_string(),
                     })?,
                     funds: vec![],
                 }),
@@ -1541,5 +1523,6 @@ fn process_donation_match_options(
             });
         }
     }
-    Ok(msgs)
+
+    Ok(res)
 }

@@ -5,12 +5,10 @@ use angel_core::messages::accounts::QueryMsg as EndowmentQueryMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{AccountTransferMsg, AccountWithdrawMsg, UpdateConfigMsg};
 use angel_core::responses::accounts::EndowmentFeesResponse;
-use angel_core::messages::vault::{AccountWithdrawMsg, UpdateConfigMsg};
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, EndowmentDetailResponse, EndowmentListResponse,
 };
 use angel_core::structs::{BalanceInfo, EndowmentEntry, EndowmentStatus};
-use angel_core::structs::{BalanceInfo, EndowmentEntry};
 use cosmwasm_std::{
     to_binary, Addr, Attribute, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, DepsMut, Env,
     Fraction, MessageInfo, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg,
@@ -102,9 +100,7 @@ pub fn deposit_stable(
         amount: info
             .funds
             .iter()
-            .find(|c| {
-                c.denom == *DEPOSIT_TOKEN_DENOM
-            })
+            .find(|c| c.denom == *DEPOSIT_TOKEN_DENOM)
             .map(|c| c.amount)
             .unwrap_or_else(Uint128::zero),
     };
@@ -448,7 +444,7 @@ pub fn harvest(
     }
 
     config::BALANCES.save(deps.storage, &account_address, &balances)?;
-    
+
     if harvest_account.get_token_amount(env.contract.address.clone()) > Uint128::zero() {
         // Withdraw all DP Tokens from Treasury and send to Collector Contract and/or the AP Treasury Wallet
         let withdraw_total = harvest_account.get_token_amount(env.contract.address);

@@ -99,7 +99,7 @@ pub enum ExecuteMsg {
     SetupDao(DaoSetup),
     // Setup Donation match contract for the Endowment
     SetupDonationMatch {
-        setup: Option<DonationMatch>,
+        setup: DonationMatch,
     },
 }
 
