@@ -100,6 +100,7 @@ pub struct UpdateConfigMsg {
     pub swap_pool_addr: Option<String>,
     pub staking_addr: Option<String>,
     pub routes: RoutesUpdateMsg,
+    pub output_token_denom: Option<Denom>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

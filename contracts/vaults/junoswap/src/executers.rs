@@ -108,6 +108,16 @@ pub fn update_config(
         }
     }
 
+    config.output_token_denom = msg.output_token_denom.unwrap_or(config.output_token_denom);
+    if !config.input_denoms.contains(&config.output_token_denom) {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Invalid output token denom: {:?}",
+                config.output_token_denom.clone()
+            ),
+        }));
+    }
+
     config::store(deps.storage, &config)?;
 
     Ok(Response::default())

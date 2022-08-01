@@ -22,6 +22,7 @@ fn create_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMockQue
         swap_pool_addr: "junoswap-pool".to_string(),
         staking_addr: "lp-staking-contract".to_string(),
         registrar_contract: "angelprotocolteamdano".to_string(),
+        output_token_denom: cw20::Denom::Native("ujuno".to_string()),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -40,6 +41,7 @@ fn proper_instantiation() {
         swap_pool_addr: "junoswap-pool".to_string(),
         staking_addr: "lp-staking-contract".to_string(),
         registrar_contract: "angelprotocolteamdano".to_string(),
+        output_token_denom: cw20::Denom::Native("ujuno".to_string()),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -139,6 +141,7 @@ fn test_update_config() {
             add: vec![],
             remove: vec![],
         },
+        output_token_denom: None,
     };
 
     // Only "config.owner" can update the config, otherwise fails

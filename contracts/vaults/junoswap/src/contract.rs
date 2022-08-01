@@ -36,6 +36,17 @@ pub fn instantiate(
         .querier
         .query_wasm_smart(swap_pool_addr.to_string(), &wasmswap::QueryMsg::Info {})?;
 
+    if swap_pool_info.token1_denom != msg.output_token_denom
+        && swap_pool_info.token2_denom != msg.output_token_denom
+    {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Invalid output_token_denom: {:?}",
+                msg.output_token_denom.clone()
+            ),
+        }));
+    }
+
     let config = config::Config {
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
@@ -45,6 +56,7 @@ pub fn instantiate(
         pool_lp_token_addr: deps.api.addr_validate(&swap_pool_info.lp_token_address)?,
         staking_addr: deps.api.addr_validate(&msg.staking_addr)?,
         routes: vec![],
+        output_token_denom: msg.output_token_denom,
 
         total_assets: Uint128::zero(),
         total_shares: Uint128::zero(),
