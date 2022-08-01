@@ -122,6 +122,10 @@ pub fn execute(
             in_denom_bal_before,
             out_denom_bal_before,
         ),
+        ExecuteMsg::RemoveLiquidity {
+            lp_token_bal_before,
+            beneficiary,
+        } => executers::remove_liquidity(deps, env, info, lp_token_bal_before, beneficiary),
         ExecuteMsg::Stake {
             depositor,
             lp_token_bal_before,

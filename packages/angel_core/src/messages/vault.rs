@@ -41,6 +41,10 @@ pub enum ExecuteMsg {
         in_denom_bal_before: Uint128,
         out_denom_bal_before: Uint128,
     },
+    RemoveLiquidity {
+        lp_token_bal_before: Uint128,
+        beneficiary: Addr,
+    },
     Stake {
         depositor: String,
         lp_token_bal_before: Uint128,

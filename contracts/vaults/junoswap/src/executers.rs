@@ -1,3 +1,5 @@
+use std::vec;
+
 use crate::config::{store, Config, PendingInfo, PENDING, REMNANTS};
 use crate::util::query_denom_balance;
 use crate::wasmswap::{swap_msg, InfoResponse, Token2ForToken1PriceResponse};
@@ -239,6 +241,21 @@ pub fn claim(
     }));
 
     // Handle the returning lp tokens
+    let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        config.pool_lp_token_addr,
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::RemoveLiquidity {
+            lp_token_bal_before: lp_token_bal.balance,
+            beneficiary,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
 
     Ok(res)
 }
@@ -251,7 +268,7 @@ pub fn withdraw(
     info: MessageInfo,
     msg: AccountWithdrawMsg,
 ) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
+    let mut config = config::read(deps.storage)?;
 
     // check that the depositor is an Accounts SC
     let endowments_rsp: EndowmentListResponse =
@@ -275,21 +292,33 @@ pub fn withdraw(
         return Err(ContractError::Unauthorized {});
     }
 
+    // Query the "lp_token" balance beforehand in order to resolve the `deps` issue.
+    let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        config.pool_lp_token_addr.to_string(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+
     // First, burn the vault tokens
-    // cw20_base::allowances::execute_burn_from(deps, env, info, info.sender.to_string(), msg.amount)?;
     let account_info = MessageInfo {
         sender: info.sender.clone(),
         funds: vec![],
     };
-    cw20_base::contract::execute_burn(deps, env, account_info, msg.amount).map_err(|_| {
-        ContractError::Std(StdError::GenericErr {
-            msg: format!(
-                "Cannot burn the {} vault tokens from {}",
-                msg.amount,
-                info.sender.to_string()
-            ),
-        })
-    })?;
+    config.total_shares -= msg.amount;
+    config::store(deps.storage, &config)?;
+
+    cw20_base::contract::execute_burn(deps, env.clone(), account_info, msg.amount).map_err(
+        |_| {
+            ContractError::Std(StdError::GenericErr {
+                msg: format!(
+                    "Cannot burn the {} vault tokens from {}",
+                    msg.amount,
+                    info.sender.to_string()
+                ),
+            })
+        },
+    )?;
 
     // Perform the "unstaking"
     let mut res = Response::default();
@@ -300,6 +329,15 @@ pub fn withdraw(
     }));
 
     // Handle the returning lp tokens
+    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::RemoveLiquidity {
+            lp_token_bal_before: lp_token_bal.balance,
+            beneficiary: msg.beneficiary,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
 
     Ok(res)
 }
@@ -516,4 +554,46 @@ pub fn stake_lp_token(
     Ok(Response::new()
         .add_message(msg)
         .add_attributes(vec![attr("action", "stake_lp_token")]))
+}
+
+pub fn remove_liquidity(
+    deps: DepsMut,
+    env: Env,
+    _info: MessageInfo,
+    lp_token_bal_before: Uint128,
+    beneficiary: Addr,
+) -> Result<Response, ContractError> {
+    let config = config::read(deps.storage)?;
+
+    // First, compute the current "lp_token" balance
+    let lp_token_bal_now: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        config.pool_lp_token_addr.to_string(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+
+    // Compute the "lp_token" amount to be used for "remove_liquidity"
+    let lp_token_amt = lp_token_bal_now
+        .balance
+        .checked_sub(lp_token_bal_before)
+        .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
+
+    // Perform the "remove_liquidity"
+    let mut res = Response::default();
+    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.pool_addr.to_string(),
+        msg: to_binary(&wasmswap::ExecuteMsg::RemoveLiquidity {
+            amount: lp_token_amt,
+            min_token1: Uint128::zero(),
+            min_token2: Uint128::zero(),
+            expiration: None,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
+
+    // Handle the returning token pairs
+
+    Ok(res)
 }
