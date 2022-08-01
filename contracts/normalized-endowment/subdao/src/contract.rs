@@ -4,11 +4,10 @@ use crate::querier::{
 use crate::state::{
     config_read, config_store, poll_indexer_store, poll_read, poll_store, poll_voter_read,
     poll_voter_store, read_poll_voters, read_polls, state_read, state_store, Config, ExecuteData,
-    Poll, State, DONATION_MATCH,
+    Poll, State,
 };
 use angel_core::common::OrderBy;
 use angel_core::errors::dao::ContractError;
-use angel_core::messages::donation_match::InstantiateMsg as DonationMatchInstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::subdao::{
     ConfigResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, MigrateMsg, PollExecuteMsg,
@@ -17,7 +16,7 @@ use angel_core::messages::subdao::{
 };
 use angel_core::messages::subdao_token::InstantiateMsg as DaoTokenInstantiateMsg;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
-use angel_core::structs::{DaoToken, DonationMatch, EndowmentType};
+use angel_core::structs::{DaoToken, EndowmentType};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env, MessageInfo,
@@ -66,13 +65,6 @@ pub fn instantiate(
 
     config_store(deps.storage).save(&config)?;
     state_store(deps.storage).save(&state)?;
-
-    match (msg.donation_match, msg.endow_type.clone()) {
-        (_, EndowmentType::Charity) | (None, EndowmentType::Normal) => (),
-        (Some(donation_match), EndowmentType::Normal) => {
-            DONATION_MATCH.save(deps.storage, &(msg.endow_type.clone(), donation_match))?
-        }
-    }
 
     Ok(Response::default()
         .add_attribute("dao_addr", env.contract.address.to_string())
@@ -331,86 +323,7 @@ pub fn dao_token_reply(
             config.dao_token = deps.api.addr_validate(&dao_token_addr)?;
             config_store(deps.storage).save(&config)?;
 
-            let mut res =
-                Response::default().add_attribute("dao_token_addr", dao_token_addr.to_string());
-
-            let registrar_config: RegistrarConfigResponse =
-                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: config.registrar_contract.to_string(),
-                    msg: to_binary(&RegistrarConfig {})?,
-                }))?;
-
-            match DONATION_MATCH.may_load(deps.storage)? {
-                Some((EndowmentType::Normal, donation_match)) => {
-                    let match_code = match registrar_config.donation_match_code {
-                        Some(match_code) => match_code,
-                        None => {
-                            return Err(ContractError::Std(StdError::GenericErr {
-                                msg: "No code id for donation matching contract".to_string(),
-                            }))
-                        }
-                    };
-
-                    match donation_match {
-                        DonationMatch::HaloTokenReserve {} => {
-                            match (
-                                registrar_config.halo_token,
-                                registrar_config.halo_token_lp_contract,
-                            ) {
-                                (Some(reserve_addr), Some(lp_addr)) => {
-                                    res = res.add_submessage(SubMsg {
-                                        id: 1,
-                                        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                                            code_id: match_code,
-                                            admin: None,
-                                            label: "new donation match contract".to_string(),
-                                            msg: to_binary(&DonationMatchInstantiateMsg {
-                                                reserve_token: reserve_addr,
-                                                lp_pair: lp_addr,
-                                                registrar_contract: config
-                                                    .registrar_contract
-                                                    .to_string(),
-                                            })?,
-                                            funds: vec![],
-                                        }),
-                                        gas_limit: None,
-                                        reply_on: ReplyOn::Success,
-                                    });
-                                }
-                                _ => {
-                                    return Err(ContractError::Std(StdError::GenericErr {
-                                        msg: "HALO Token is not setup to be a reserve token"
-                                            .to_string(),
-                                    }))
-                                }
-                            }
-                        }
-                        DonationMatch::Cw20TokenReserve {
-                            reserve_addr,
-                            lp_addr,
-                        } => {
-                            res = res.add_submessage(SubMsg {
-                                id: 1,
-                                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                                    code_id: match_code,
-                                    admin: None,
-                                    label: "new donation match contract".to_string(),
-                                    msg: to_binary(&DonationMatchInstantiateMsg {
-                                        reserve_token: reserve_addr,
-                                        lp_pair: lp_addr,
-                                        registrar_contract: config.registrar_contract.to_string(),
-                                    })?,
-                                    funds: vec![],
-                                }),
-                                gas_limit: None,
-                                reply_on: ReplyOn::Success,
-                            });
-                        }
-                    }
-                }
-                _ => (),
-            }
-            Ok(res)
+            Ok(Response::default().add_attribute("dao_token_addr", dao_token_addr.to_string()))
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }

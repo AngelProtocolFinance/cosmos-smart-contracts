@@ -32,13 +32,12 @@ pub struct InstantiateMsg {
     pub withdraw_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub aum_fee: Option<EndowmentFee>,
-    pub dao: Option<DaoSetup>,                 // SubDAO setup options
-    pub donation_match: Option<DonationMatch>, // Donation matching setup options (Charities are automatically setup with CS & HALO matching; Only Normalized Endowments need to provide this field.)
+    pub dao: Option<DaoSetup>, // SubDAO setup options
     pub settings_controller: Option<SettingsController>,
     pub parent: Option<Addr>,
     pub kyc_donors_only: bool,
-    pub cw3_multisig_threshold: Threshold,
-    pub cw3_multisig_max_vote_period: Duration,
+    pub cw3_threshold: Threshold,
+    pub cw3_max_voting_period: Duration,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -97,6 +96,10 @@ pub enum ExecuteMsg {
     HarvestAum {},
     // Set up dao token for "Endowment"
     SetupDao(DaoSetup),
+    // Setup Donation match contract for the Endowment
+    SetupDonationMatch {
+        setup: DonationMatch,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

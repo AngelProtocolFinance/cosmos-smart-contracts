@@ -273,7 +273,6 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
-        donation_match: None,
         settings_controller: None,
         parent: false,
         owner: good_charity_addr.clone(),
@@ -282,10 +281,10 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: false,
-        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+        cw3_threshold: Threshold::AbsolutePercentage {
             percentage: Decimal::percent(10),
         },
-        cw3_multisig_max_vote_period: 60,
+        cw3_max_voting_period: 60,
     };
 
     // anyone can create Accounts
@@ -607,7 +606,7 @@ fn test_add_update_and_remove_accepted_tokens() {
         cw4_code: None,
         accepted_tokens: Some(AcceptedTokens {
             native: vec!["new_token".to_string()],
-            cw20: vec![],
+            cw20: vec!["terraFloki4Life".to_string()],
         }),
         donation_match_charites_contract: None,
         collector_addr: None,
@@ -630,7 +629,7 @@ fn test_add_update_and_remove_accepted_tokens() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_response: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config_response.accepted_tokens.native.len(), 2);
+    assert_eq!(config_response.accepted_tokens.native.len(), 1);
     assert_eq!(config_response.accepted_tokens.cw20.len(), 1);
 }
 

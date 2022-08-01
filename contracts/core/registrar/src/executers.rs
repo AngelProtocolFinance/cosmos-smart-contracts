@@ -9,8 +9,8 @@ use angel_core::structs::{
 use angel_core::utils::{percentage_checks, split_checks};
 
 use cosmwasm_std::{
-    attr, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
-    SubMsg, SubMsgResult, WasmMsg,
+    to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult, SubMsg,
+    SubMsgResult, WasmMsg,
 };
 use cw_utils::Duration;
 
@@ -314,7 +314,6 @@ pub fn create_endowment(
             split_default: msg.split_default.unwrap_or(config.split_to_liquid.default),
             profile: msg.profile,
             cw4_members: msg.cw4_members,
-            donation_match: msg.donation_match,
             earnings_fee: msg.earnings_fee,
             deposit_fee: msg.deposit_fee,
             withdraw_fee: msg.withdraw_fee,
@@ -322,8 +321,8 @@ pub fn create_endowment(
             settings_controller: msg.settings_controller,
             parent,
             kyc_donors_only: msg.kyc_donors_only,
-            cw3_multisig_threshold: msg.cw3_multisig_threshold,
-            cw3_multisig_max_vote_period: Duration::Time(msg.cw3_multisig_max_vote_period),
+            cw3_threshold: msg.cw3_threshold,
+            cw3_max_voting_period: Duration::Time(msg.cw3_max_voting_period),
         })?,
         funds: vec![],
     };
@@ -442,8 +441,8 @@ pub fn new_accounts_reply(
                             "endow_type" => endowment_type = attrb.value,
                             "endow_logo" => endowment_logo = attrb.value,
                             "endow_image" => endowment_image = attrb.value,
-                            "endow_tier" => endowment_tier = attrb.value.parse().unwrap_or(0),
-                            "endow_un_sdg" => endowment_un_sdg = attrb.value.parse().unwrap_or(0),
+                            "endow_tier" => endowment_tier = attrb.value.parse().unwrap(),
+                            "endow_un_sdg" => endowment_un_sdg = attrb.value.parse().unwrap(),
                             &_ => (),
                         }
                     }
@@ -475,11 +474,7 @@ pub fn new_accounts_reply(
                     image: Some(endowment_image),
                 },
             )?;
-            Ok(Response::default().add_attributes(vec![
-                attr("reply", "instantiate_endowment"),
-                attr("addr", endowment_addr),
-                attr("owner", endowment_owner),
-            ]))
+            Ok(Response::default())
         }
         SubMsgResult::Err(_) => Err(ContractError::AccountNotCreated {}),
     }

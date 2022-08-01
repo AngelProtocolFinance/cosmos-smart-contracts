@@ -23,7 +23,10 @@ const REGISTRAR_CONTRACT: &str = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt";
 const PLEB: &str = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh";
 const DEPOSITOR: &str = "depositor";
 
-fn create_endowment() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
+fn create_endowment() -> (
+    OwnedDeps<MockStorage, MockApi, WasmMockQuerier>,
+    ConfigResponse,
+) {
     let mut deps = mock_dependencies(&[]);
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -62,7 +65,6 @@ fn create_endowment() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
         deposit_fee: None,
         withdraw_fee: None,
         aum_fee: None,
-        donation_match: None,
         settings_controller: None,
         parent: None,
         withdraw_before_maturity: false,
@@ -70,16 +72,19 @@ fn create_endowment() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
-        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+        cw3_threshold: Threshold::AbsolutePercentage {
             percentage: Decimal::percent(10),
         },
-        cw3_multisig_max_vote_period: Duration::Time(60),
+        cw3_max_voting_period: Duration::Time(60),
     };
     let info = mock_info(AP_TEAM, &coins(100000, "earth"));
     let env = mock_env();
     let _ = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
 
-    deps
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let value: ConfigResponse = from_binary(&res).unwrap();
+
+    (deps, value)
 }
 
 #[test]
@@ -118,7 +123,6 @@ fn test_proper_initialization() {
         whitelisted_beneficiaries: vec![],
         whitelisted_contributors: vec![],
         dao: None,
-        donation_match: None,
         earnings_fee: None,
         deposit_fee: None,
         withdraw_fee: None,
@@ -130,10 +134,10 @@ fn test_proper_initialization() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
-        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+        cw3_threshold: Threshold::AbsolutePercentage {
             percentage: Decimal::percent(10),
         },
-        cw3_multisig_max_vote_period: Duration::Time(60),
+        cw3_max_voting_period: Duration::Time(60),
     };
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();
@@ -143,7 +147,7 @@ fn test_proper_initialization() {
 
 #[test]
 fn test_update_endowment_settings() {
-    let mut deps = create_endowment();
+    let (mut deps, _config) = create_endowment();
 
     // update the endowment owner and beneficiary
     let msg = UpdateEndowmentSettingsMsg {
@@ -197,7 +201,7 @@ fn test_update_endowment_settings() {
 
 #[test]
 fn test_update_endowment_status() {
-    let mut deps = create_endowment();
+    let (mut deps, _config) = create_endowment();
 
     // Fail to update the endowment status since caller is not `registrar_contract`
     let update_status_msg = UpdateEndowmentStatusMsg {
@@ -238,10 +242,10 @@ fn test_update_endowment_status() {
 
 #[test]
 fn test_change_registrar_contract() {
-    let mut deps = create_endowment();
+    let (mut deps, config) = create_endowment();
 
     // change the registrar to some pleb
-    let info = mock_info(AP_TEAM, &coins(100000, "earth"));
+    let info = mock_info(&config.owner, &coins(100000, "earth"));
     let env = mock_env();
     let res = execute(
         deps.as_mut(),
@@ -272,10 +276,10 @@ fn test_change_registrar_contract() {
 
 #[test]
 fn test_change_admin() {
-    let mut deps = create_endowment();
+    let (mut deps, config) = create_endowment();
 
     // change the admin to some pleb
-    let info = mock_info(AP_TEAM, &coins(100000, "earth"));
+    let info = mock_info(&config.owner, &coins(100000, "earth"));
     let env = mock_env();
     let res = execute(
         deps.as_mut(),
@@ -306,7 +310,7 @@ fn test_change_admin() {
 
 #[test]
 fn test_update_strategy() {
-    let mut deps = create_endowment();
+    let (mut deps, _config) = create_endowment();
 
     // sum of the invested strategy components percentages is not equal 100%
     let msg = ExecuteMsg::UpdateStrategies {
@@ -382,7 +386,7 @@ fn test_update_strategy() {
 
 #[test]
 fn test_update_endowment_profile() {
-    let mut deps = create_endowment();
+    let (mut deps, config) = create_endowment();
     let msg = UpdateProfileMsg {
         name: None,
         overview: Some("Test Endowment is for just testing".to_string()),
@@ -392,8 +396,8 @@ fn test_update_endowment_profile() {
         image: Some("".to_string()),
         url: None,
         registration_number: None,
-        country_of_origin: None,
-        street_address: None,
+        country_of_origin: Some("UK".to_string()),
+        street_address: Some("Some road".to_string()),
         contact_email: None,
         facebook: None,
         twitter: None,
@@ -444,11 +448,11 @@ fn test_update_endowment_profile() {
         value.overview,
         "Test Endowment is for just testing".to_string()
     );
-    assert_eq!(value.un_sdg, Some(1));
-    assert_eq!(value.tier, Some(2));
+    assert_eq!(value.country_of_origin.unwrap(), "UK".to_string());
+    assert_eq!(value.street_address.unwrap(), "Some road".to_string());
 
     // Config owner can update certain profile
-    let info = mock_info(AP_TEAM, &[]);
+    let info = mock_info(&config.owner, &[]);
     let env = mock_env();
     // This should succeed!
     let _res = execute(
@@ -467,7 +471,7 @@ fn test_update_endowment_profile() {
 
 #[test]
 fn test_donate() {
-    let mut deps = create_endowment();
+    let (mut deps, _config) = create_endowment();
 
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
@@ -509,7 +513,7 @@ fn test_donate() {
 
 #[test]
 fn test_deposit_cw20() {
-    let mut deps = create_endowment();
+    let (mut deps, _config) = create_endowment();
 
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
@@ -556,7 +560,7 @@ fn test_deposit_cw20() {
 
 #[test]
 fn test_withdraw() {
-    let mut deps = create_endowment();
+    let (mut deps, _config) = create_endowment();
 
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
@@ -588,7 +592,7 @@ fn test_withdraw() {
 
 #[test]
 fn test_withdraw_liquid() {
-    let mut deps = create_endowment();
+    let (mut deps, _config) = create_endowment();
 
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
@@ -631,7 +635,7 @@ fn test_withdraw_liquid() {
 
 #[test]
 fn test_vault_receipt() {
-    let mut deps = create_endowment();
+    let (mut deps, _config) = create_endowment();
 
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
@@ -696,7 +700,7 @@ fn test_vault_receipt() {
 
 #[test]
 fn test_close_endowment() {
-    let mut deps = create_endowment();
+    let (mut deps, _config) = create_endowment();
 
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);

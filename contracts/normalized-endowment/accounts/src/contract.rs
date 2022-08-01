@@ -3,6 +3,7 @@ use crate::queriers;
 use crate::state::{Config, Endowment, OldConfig, State, CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
+use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::responses::registrar::ConfigResponse;
@@ -18,6 +19,7 @@ use cosmwasm_std::{
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
+
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 
 // version info for future migration info
@@ -40,11 +42,17 @@ pub fn instantiate(
         }));
     }
 
+    let registrar_config: ConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: msg.registrar_contract.clone(),
+            msg: to_binary(&RegistrarConfig {})?,
+        }))?;
+
     // apply the initial configs passed
     CONFIG.save(
         deps.storage,
         &Config {
-            owner: deps.api.addr_validate(&msg.owner)?,
+            owner: deps.api.addr_validate(&registrar_config.owner)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
@@ -58,12 +66,6 @@ pub fn instantiate(
             },
         },
     )?;
-
-    let registrar_config: ConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: msg.registrar_contract.clone(),
-            msg: to_binary(&RegistrarConfig {})?,
-        }))?;
 
     let default_vault = match registrar_config.default_vault {
         Some(ref addr) => addr.to_string(),
@@ -121,7 +123,6 @@ pub fn instantiate(
     let mut res: Response = Response::new().add_attributes(vec![
         attr("endow_addr", env.contract.address.to_string()),
         attr("endow_name", msg.profile.name),
-        attr("endow_owner", msg.owner.to_string()),
         attr("endow_type", msg.profile.endow_type.to_string()),
         attr(
             "endow_logo",
@@ -131,35 +132,40 @@ pub fn instantiate(
             "endow_image",
             msg.profile.image.unwrap_or_else(|| "".to_string()),
         ),
+        attr(
+            "endow_tier",
+            msg.profile.tier.unwrap_or_else(|| 0).to_string(),
+        ),
+        attr(
+            "endow_un_sdg",
+            msg.profile.un_sdg.unwrap_or_else(|| 0).to_string(),
+        ),
     ]);
-
-    // check if CW3/CW4 codes were passed to setup a multisig/group
-    let cw4_members = if msg.cw4_members.is_empty() {
-        vec![Member {
-            addr: msg.owner.to_string(),
-            weight: 1,
-        }]
-    } else {
-        msg.cw4_members
-    };
 
     if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {
         return Err(ContractError::Std(StdError::generic_err(
             "cw3_code & cw4_code must exist",
         )));
     }
+
     res = res.add_submessage(SubMsg {
-        id: 1,
+        id: 0,
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-            code_id: registrar_config.cw4_code.unwrap(),
+            code_id: registrar_config.cw3_code.unwrap(),
             admin: None,
-            label: "new endowment cw4 group".to_string(),
-            msg: to_binary(&angel_core::messages::cw4_group::InstantiateMsg {
-                admin: None,
-                members: cw4_members,
-                cw3_code: registrar_config.cw3_code.unwrap(),
-                cw3_threshold: msg.cw3_multisig_threshold,
-                cw3_max_voting_period: msg.cw3_multisig_max_vote_period,
+            label: "new endowment cw3 multisig".to_string(),
+            msg: to_binary(&Cw3InstantiateMsg {
+                // check if CW3/CW4 codes were passed to setup a multisig/group
+                cw4_members: match msg.cw4_members.is_empty() {
+                    true => vec![Member {
+                        addr: msg.owner.to_string(),
+                        weight: 1,
+                    }],
+                    false => msg.cw4_members,
+                },
+                cw4_code: registrar_config.cw4_code.unwrap(),
+                threshold: msg.cw3_threshold,
+                max_voting_period: msg.cw3_max_voting_period,
             })?,
             funds: vec![],
         }),
@@ -175,7 +181,7 @@ pub fn instantiate(
     ) {
         (Some(dao_setup), Some(_token_code), Some(gov_code)) => {
             res = res.add_submessage(SubMsg {
-                id: 3,
+                id: 1,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     code_id: gov_code,
                     admin: None,
@@ -192,7 +198,6 @@ pub fn instantiate(
                         endow_owner: env.contract.address.to_string(),
                         registrar_contract: msg.registrar_contract.clone(),
                         token: dao_setup.token,
-                        donation_match: msg.donation_match,
                     })?,
                     funds: vec![],
                 }),
@@ -272,10 +277,13 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentFees(msg) => {
             executers::update_endowment_fees(deps, env, info, msg)
         }
+        ExecuteMsg::SetupDao(msg) => executers::setup_dao(deps, env, info, msg),
+        ExecuteMsg::SetupDonationMatch { setup } => {
+            executers::setup_donation_match(deps, env, info, setup)
+        }
         // Allows the DANO/AP Team to harvest all active vaults
         ExecuteMsg::Harvest { vault_addr } => executers::harvest(deps, env, info, vault_addr),
         ExecuteMsg::HarvestAum {} => executers::harvest_aum(deps, env, info),
-        ExecuteMsg::SetupDao(msg) => executers::setup_dao(deps, env, info, msg),
     }
 }
 
@@ -316,9 +324,9 @@ pub fn receive_cw20(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        1 => executers::cw4_group_reply(deps, env, msg.result),
-        3 => executers::dao_reply(deps, env, msg.result),
-        4 => executers::harvest_reply(deps, env, msg.result),
+        0 => executers::cw3_reply(deps, env, msg.result),
+        1 => executers::dao_reply(deps, env, msg.result),
+        2 => executers::harvest_reply(deps, env, msg.result),
         _ => Err(ContractError::Std(StdError::GenericErr {
             msg: "Invalid Submessage Reply ID!".to_string(),
         })),

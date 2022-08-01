@@ -1,5 +1,5 @@
 use crate::structs::{
-    AcceptedTokens, DaoSetup, DonationMatch, EndowmentFee, EndowmentType, NetworkInfo, Profile,
+    AcceptedTokens, DaoSetup, EndowmentFee, EndowmentType, NetworkInfo, Profile,
     SettingsController, SplitDetails, Tier,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
@@ -85,14 +85,13 @@ pub struct CreateEndowmentMsg {
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,
     pub cw4_members: Vec<Member>,
-    pub cw3_multisig_threshold: Threshold,
-    pub cw3_multisig_max_vote_period: u64, // Time in seconds
+    pub cw3_threshold: Threshold,
+    pub cw3_max_voting_period: u64, // Time in seconds
     pub profile: Profile,
     pub kyc_donors_only: bool,
     pub whitelisted_beneficiaries: Vec<String>,
     pub whitelisted_contributors: Vec<String>,
     pub dao: Option<DaoSetup>,
-    pub donation_match: Option<DonationMatch>,
     pub earnings_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub withdraw_fee: Option<EndowmentFee>,

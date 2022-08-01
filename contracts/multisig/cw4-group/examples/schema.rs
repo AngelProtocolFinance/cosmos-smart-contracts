@@ -1,4 +1,4 @@
-pub use angel_core::messages::cw4_group::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use angel_core::messages::cw4_group::{ExecuteMsg, InstantiateMsg, QueryMsg};
 use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, schema_for};
 pub use cw4::{AdminResponse, MemberListResponse, MemberResponse, TotalWeightResponse};
 use std::env::current_dir;

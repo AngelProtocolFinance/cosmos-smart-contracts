@@ -1,5 +1,5 @@
 use crate::common::OrderBy;
-use crate::structs::{DaoToken, DonationMatch, EndowmentType};
+use crate::structs::{DaoToken, EndowmentType};
 use cosmwasm_std::{Binary, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
@@ -19,7 +19,6 @@ pub struct InstantiateMsg {
     pub endow_type: EndowmentType,
     pub endow_owner: String,
     pub registrar_contract: String,
-    pub donation_match: Option<DonationMatch>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
