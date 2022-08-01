@@ -119,7 +119,7 @@ fn execute_donor_match(
 
     // Validation 2. Check if the correct endowment is calling this entry
     match endow_detail.endowment.endow_type {
-        Some(EndowmentType::Charity) => {
+        EndowmentType::Charity => {
             let registrar_config: RegistrarConfig = deps.querier.query_wasm_smart(
                 config.registrar_contract.clone(),
                 &RegistrarQueryMsg::Config {},
@@ -130,7 +130,7 @@ fn execute_donor_match(
                 return Err(ContractError::Unauthorized {});
             }
         }
-        Some(EndowmentType::Normal) => {
+        EndowmentType::Normal => {
             let endow: EndowmentDetailsResponse = deps
                 .querier
                 .query_wasm_smart(config.registrar_contract, &AccountQueryMsg::Endowment {})?;
@@ -138,7 +138,6 @@ fn execute_donor_match(
                 return Err(ContractError::Unauthorized {});
             }
         }
-        _ => (),
     };
 
     // Validation 2. Check if the correct amount of UST is sent.

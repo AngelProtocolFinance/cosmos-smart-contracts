@@ -29,6 +29,8 @@ pub struct ConfigResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct EndowmentDetailsResponse {
     pub owner: Addr,
+    pub dao: Option<Addr>,
+    pub dao_token: Option<Addr>,
     pub name: String,
     pub description: String,
     pub withdraw_before_maturity: bool,
