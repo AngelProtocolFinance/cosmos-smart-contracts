@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub owner: Addr, // DANO/AP Team Address
     pub registrar_contract: Addr,
-    pub deposit_approved: bool, // DANO has approved to recDOeive donations & transact
+    pub deposit_approved: bool, // DANO has approved to receive donations & transact
     pub withdraw_approved: bool, // DANO has approved to withdraw funds
     pub pending_redemptions: Option<u64>,
     pub last_earnings_harvest: u64,
