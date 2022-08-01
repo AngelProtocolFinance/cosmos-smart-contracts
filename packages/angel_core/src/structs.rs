@@ -104,14 +104,14 @@ impl RebalanceDetails {
 #[serde(rename_all = "snake_case")]
 pub struct EndowmentEntry {
     pub address: Addr,
+    pub owner: String,
     pub status: EndowmentStatus,
+    pub endow_type: EndowmentType,
     pub name: Option<String>,
     pub logo: Option<String>,
     pub image: Option<String>,
-    pub owner: Option<String>,
     pub tier: Option<Tier>,
     pub un_sdg: Option<u64>,
-    pub endow_type: Option<EndowmentType>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
