@@ -27,7 +27,7 @@ fn test_proper_initialization() {
 
     // We call "unwrap" for the success
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
-    assert_eq!(res.attributes, vec![attr("instantiate", "donation-match"),])
+    assert_eq!(res.messages.len(), 0);
 }
 
 #[test]
