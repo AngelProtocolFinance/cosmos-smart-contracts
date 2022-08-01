@@ -288,7 +288,7 @@ pub fn create_endowment(
         let endowments: Vec<EndowmentEntry> = read_registry_entries(deps.storage)
             .unwrap()
             .into_iter()
-            .filter(|e| e.owner == Some(info.sender.to_string()))
+            .filter(|e| e.owner == info.sender.to_string())
             .filter(|e| e.status.to_string() == "Approved")
             .collect();
 
@@ -455,9 +455,14 @@ pub fn new_accounts_reply(
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,
-                    name: Some(endowment_name),
-                    owner: Some(endowment_owner.clone()),
+                    owner: endowment_owner.clone(),
                     status: EndowmentStatus::Inactive,
+                    endow_type: match endowment_type.as_str() {
+                        "charity" => EndowmentType::Charity,
+                        "normal" => EndowmentType::Normal,
+                        _ => unimplemented!(),
+                    },
+                    name: Some(endowment_name),
                     tier: match endowment_tier {
                         1 => Some(Tier::Level1),
                         2 => Some(Tier::Level2),
@@ -465,11 +470,6 @@ pub fn new_accounts_reply(
                         _ => None,
                     },
                     un_sdg: Some(endowment_un_sdg),
-                    endow_type: match endowment_type.as_str() {
-                        "charity" => Some(EndowmentType::Charity),
-                        "normal" => Some(EndowmentType::Normal),
-                        _ => unimplemented!(),
-                    },
                     logo: Some(endowment_logo),
                     image: Some(endowment_image),
                 },
@@ -501,8 +501,8 @@ pub fn update_endowment_entry(
     let mut endowment_entry = REGISTRY.load(deps.storage, endowment_addr)?;
 
     endowment_entry.name = msg.name;
-    endowment_entry.owner = msg.owner;
-    endowment_entry.endow_type = msg.endow_type;
+    endowment_entry.owner = msg.owner.unwrap_or(endowment_entry.owner);
+    endowment_entry.endow_type = msg.endow_type.unwrap_or(endowment_entry.endow_type);
     endowment_entry.logo = msg.logo;
     endowment_entry.image = msg.image;
 
