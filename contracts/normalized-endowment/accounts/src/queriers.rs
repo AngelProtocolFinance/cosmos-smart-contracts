@@ -75,6 +75,8 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
     let profile = PROFILE.load(deps.storage)?;
     Ok(EndowmentDetailsResponse {
         owner: endowment.owner,
+        dao: endowment.dao,
+        dao_token: endowment.dao_token,
         name: profile.name,
         description: profile.overview,
         withdraw_before_maturity: endowment.withdraw_before_maturity,
