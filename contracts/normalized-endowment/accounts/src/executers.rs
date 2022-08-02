@@ -1352,6 +1352,7 @@ pub fn setup_dao(
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENT.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
+    let profile = PROFILE.load(deps.storage)?;
 
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
@@ -1375,7 +1376,19 @@ pub fn setup_dao(
             code_id: registrar_config.subdao_gov_code.unwrap(),
             admin: None,
             label: "new endowment dao contract".to_string(),
-            msg: to_binary(&msg)?,
+            msg: to_binary(&angel_core::messages::subdao::InstantiateMsg {
+                quorum: msg.quorum,
+                threshold: msg.threshold,
+                voting_period: msg.voting_period,
+                timelock_period: msg.timelock_period,
+                expiration_period: msg.expiration_period,
+                proposal_deposit: msg.proposal_deposit,
+                snapshot_period: msg.snapshot_period,
+                token: msg.token,
+                endow_type: profile.endow_type,
+                endow_owner: endowment.owner.to_string(),
+                registrar_contract: config.registrar_contract.to_string(),
+            })?,
             funds: vec![],
         }),
         gas_limit: None,
