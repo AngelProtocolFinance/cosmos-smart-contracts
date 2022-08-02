@@ -70,35 +70,23 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
   charityOwner: string,
   endowment: string,
   vault: string,
+  amount: string,
   beneficiary: string
 ): Promise<void> {
   process.stdout.write(
-    "Test - Charity Owner cannot withdraw from the Endowment locked amount"
+    "Test - Charity Owner cannot withdraw from the Endowment amount"
   );
   await expect(
     sendTransaction(juno, charityOwner, endowment, {
       withdraw: {
-        sources: [{ vault, locked: "500000", liquid: "1000000" }],
+        sources: [{ vault, amount }],
         beneficiary,
         asset_info: {
           native: "ujuno"
         }
-      }
-    })
-  ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Passed!"));
-
-  process.stdout.write(
-    "Test - Charity Owner can withdraw from the Endowment availalble amount (liquid)"
-  );
-  await expect(
-    sendTransaction(juno, charityOwner, endowment, {
-      withdraw: {
-        sources: [{ vault, locked: "0", liquid: "30000000" }],
-        beneficiary,
       },
     })
-  );
+  ).to.be.ok;
   console.log(chalk.green(" Passed!"));
 }
 

@@ -188,6 +188,14 @@ export async function testExecute(
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, endowmentContract1, "1000");
+
+  // const res = await actors.apTeam.client.queryContractSmart(Vault1, {
+  //   balance: {
+  //     address: endowmentContract1
+  //   }
+  // });
+  // console.log(res);
+
   // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, indexFund);
   // await testUpdateAllianceMembersList(
   //   actors.apTeam.client,
@@ -284,13 +292,16 @@ export async function testExecute(
   //   Vault1,
   //   Vault2
   // );  // vault-related
-  // await testBeneficiaryCanWithdrawFromLiquid(
-  //   actors.charity3.client,
-  //   actors.charity3.addr,
-  //   endowmentContract3,
-  //   Vault1,
-  //   plebAddr
-  // );  // vault-related
+
+  await testBeneficiaryCanWithdrawFromLiquid(
+    actors.charity1.client, 
+    actors.charity1.addr, 
+    endowmentContract1, 
+    Vault1, 
+    "100", 
+    actors.charity1.addr,
+  );
+ 
   // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, registrar, {
   //   cw3_code: 102,
   //   cw4_code: 104,
