@@ -142,6 +142,18 @@ pub fn execute(
             depositor,
             lp_token_bal_before,
         } => executers::stake_lp_token(deps, env, info, depositor, lp_token_bal_before),
+        ExecuteMsg::SwapAndSendTo {
+            token1_denom_bal_before,
+            token2_denom_bal_before,
+            beneficiary,
+        } => executers::swap_and_send(
+            deps,
+            env,
+            info,
+            token1_denom_bal_before,
+            token2_denom_bal_before,
+            beneficiary,
+        ),
 
         // Cw20_base entries
         ExecuteMsg::Transfer { recipient, amount } => cw20_base::contract::execute_transfer(

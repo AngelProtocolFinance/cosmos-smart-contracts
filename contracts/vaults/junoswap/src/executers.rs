@@ -1,24 +1,20 @@
 use std::vec;
 
-use crate::config::{store, Config, PendingInfo, PENDING, REMNANTS};
+use crate::config::{PENDING, REMNANTS};
 use crate::util::query_denom_balance;
-use crate::wasmswap::{swap_msg, InfoResponse, Token2ForToken1PriceResponse};
+use crate::wasmswap::{swap_msg, InfoResponse, Token2ForToken1PriceResponse, TokenSelect};
 use crate::{config, cw20_stake, wasmswap};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{AccountWithdrawMsg, ExecuteMsg, UpdateConfigMsg};
 use angel_core::responses::registrar::EndowmentListResponse;
-use angel_core::structs::{BalanceInfo, EndowmentEntry};
+use angel_core::structs::EndowmentEntry;
 use cosmwasm_std::{
-    attr, to_binary, Addr, Attribute, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
-    Order, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128,
-    WasmMsg, WasmQuery,
+    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
+    QueryRequest, Response, StdError, SubMsgResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Denom;
 use cw_controllers::ClaimsResponse;
-
-// wallet that we use for regular, automated harvests of vault
-const CRON_WALLET: &str = "terra1janh9rs6pme3tdwhyag2lmsr2xv6wzhcrjz0xx";
 
 pub fn update_owner(
     deps: DepsMut,
@@ -604,6 +600,148 @@ pub fn remove_liquidity(
     }));
 
     // Handle the returning token pairs
+    let token1_denom_bal = query_denom_balance(
+        &deps,
+        &config.input_denoms[0],
+        env.contract.address.to_string(),
+    );
+    let token2_denom_bal = query_denom_balance(
+        &deps,
+        &config.input_denoms[1],
+        env.contract.address.to_string(),
+    );
+    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::SwapAndSendTo {
+            token1_denom_bal_before: token1_denom_bal,
+            token2_denom_bal_before: token2_denom_bal,
+            beneficiary,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
 
+    Ok(res)
+}
+
+pub fn swap_and_send(
+    deps: DepsMut,
+    env: Env,
+    _info: MessageInfo,
+    token1_denom_bal_before: Uint128,
+    token2_denom_bal_before: Uint128,
+    beneficiary: Addr,
+) -> Result<Response, ContractError> {
+    let config = config::read(deps.storage)?;
+
+    // First, compute the token balances
+    let token1_denom_bal_now = query_denom_balance(
+        &deps,
+        &config.input_denoms[0],
+        env.contract.address.to_string(),
+    );
+    let token2_denom_bal_now = query_denom_balance(
+        &deps,
+        &config.input_denoms[1],
+        env.contract.address.to_string(),
+    );
+    let token1_amt = token1_denom_bal_now
+        .checked_sub(token1_denom_bal_before)
+        .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
+    let token2_amt = token2_denom_bal_now
+        .checked_sub(token2_denom_bal_before)
+        .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
+
+    // Check if `output_token_denom` is `Token1` or `Token2`
+    // Also, determine which token to send directly, which token to `SwapAndSendTo`
+    let direct_send_token_denom = config.output_token_denom;
+    let direct_send_token_amt: Uint128;
+
+    let swap_input_token_denom: Denom;
+    let swap_input_token_amt: Uint128;
+
+    let swap_input_token: TokenSelect;
+
+    if direct_send_token_denom == config.input_denoms[0] {
+        direct_send_token_amt = token1_amt;
+
+        swap_input_token_denom = config.input_denoms[1].clone();
+        swap_input_token_amt = token2_amt;
+
+        swap_input_token = TokenSelect::Token2;
+    } else {
+        direct_send_token_amt = token2_amt;
+
+        swap_input_token_denom = config.input_denoms[0].clone();
+        swap_input_token_amt = token1_amt;
+
+        swap_input_token = TokenSelect::Token1;
+    };
+
+    // Perform the direct send of `output_token_denom`
+    let mut res = Response::default();
+    let mut msgs: Vec<CosmosMsg> = vec![];
+
+    match direct_send_token_denom {
+        Denom::Native(denom) => {
+            msgs.push(CosmosMsg::Bank(BankMsg::Send {
+                to_address: beneficiary.to_string(),
+                amount: coins(direct_send_token_amt.u128(), denom),
+            }));
+        }
+        Denom::Cw20(token_addr) => {
+            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: token_addr.to_string(),
+                msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                    recipient: beneficiary.to_string(),
+                    amount: direct_send_token_amt,
+                })
+                .unwrap(),
+                funds: vec![],
+            }));
+        }
+    }
+
+    // Perform the `SwapAndSendTo` of `juno-swap-pool` contract
+    match swap_input_token_denom {
+        Denom::Native(denom) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: config.pool_addr.to_string(),
+            msg: to_binary(&wasmswap::ExecuteMsg::SwapAndSendTo {
+                input_token: swap_input_token,
+                input_amount: swap_input_token_amt,
+                recipient: beneficiary.to_string(),
+                min_token: Uint128::zero(),
+                expiration: None,
+            })
+            .unwrap(),
+            funds: coins(swap_input_token_amt.u128(), denom),
+        })),
+        Denom::Cw20(token_addr) => {
+            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: token_addr.to_string(),
+                msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                    spender: config.pool_addr.to_string(),
+                    amount: swap_input_token_amt,
+                    expires: None,
+                })
+                .unwrap(),
+                funds: vec![],
+            }));
+            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.pool_addr.to_string(),
+                msg: to_binary(&wasmswap::ExecuteMsg::SwapAndSendTo {
+                    input_token: swap_input_token,
+                    input_amount: swap_input_token_amt,
+                    recipient: beneficiary.to_string(),
+                    min_token: Uint128::zero(),
+                    expiration: None,
+                })
+                .unwrap(),
+                funds: vec![],
+            }))
+        }
+    }
+
+    res = res.add_messages(msgs);
     Ok(res)
 }

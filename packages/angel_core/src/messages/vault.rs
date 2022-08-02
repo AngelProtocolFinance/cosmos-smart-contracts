@@ -49,6 +49,11 @@ pub enum ExecuteMsg {
         depositor: String,
         lp_token_bal_before: Uint128,
     },
+    SwapAndSendTo {
+        token1_denom_bal_before: Uint128,
+        token2_denom_bal_before: Uint128,
+        beneficiary: Addr,
+    },
     Receive(Cw20ReceiveMsg),
 
     // Cw20_base entries
