@@ -1348,7 +1348,7 @@ pub fn setup_dao(
         }))?;
 
     Ok(Response::new().add_submessage(SubMsg {
-        id: 3,
+        id: 0,
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
             code_id: registrar_config.subdao_gov_code.unwrap(),
             admin: None,
