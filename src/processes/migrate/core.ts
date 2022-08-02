@@ -3,7 +3,7 @@
 import * as path from "path";
 import chalk from "chalk";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, storeCode, migrateContract, storeAndMigrateContract } from "../../utils/helpers";
+import { sendTransaction, storeCode, migrateContract, storeAndMigrateContract, sendMessageViaCw3Proposal } from "../../utils/helpers";
 import { wasm_path } from "../../config/wasmPaths";
 
 // -----------------------------
@@ -25,7 +25,7 @@ export async function migrateCore(
   // await storeAndMigrateContract(juno, apTeam, cw3ApTeam, 'cw3_multisig.wasm');
   // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
   // await migrateVaults(juno, apTeam, vaultContracts);
-  // await migrateExistingAccounts(juno, apTeam, registrar, endowmentContracts);
+  await migrateExistingAccounts(juno, apTeam, registrar, cw3ApTeam, undefined, []);
 }
 
 // -------------------------------------------------
@@ -74,6 +74,7 @@ async function migrateExistingAccounts(
   juno: SigningCosmWasmClient,
   apTeam: string,
   registrar: string,
+  cw3ApTeam: string,
   accounts_wasm: number | undefined,
   endowmentContracts: any[] // [ [ endow_address, migrate_msg ], ... ]
 ): Promise<void> {
@@ -89,7 +90,7 @@ async function migrateExistingAccounts(
 
     // Update registrar accounts code ID value
     process.stdout.write("Update Registrar's Account Code ID stored in configs");
-    const result0 = await sendTransaction(juno, apTeam, registrar, {
+    const result0 = await sendMessageViaCw3Proposal(juno, apTeam, cw3ApTeam, registrar, {
       update_config: { accounts_code_id: codeId },
     });
     console.log(chalk.green(" Done!"));
