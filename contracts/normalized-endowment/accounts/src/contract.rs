@@ -181,7 +181,7 @@ pub fn instantiate(
     ) {
         (Some(dao_setup), Some(_token_code), Some(gov_code)) => {
             res = res.add_submessage(SubMsg {
-                id: 1,
+                id: 0,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     code_id: gov_code,
                     admin: None,
@@ -324,9 +324,8 @@ pub fn receive_cw20(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        0 => executers::cw3_reply(deps, env, msg.result),
-        1 => executers::dao_reply(deps, env, msg.result),
-        2 => executers::harvest_reply(deps, env, msg.result),
+        0 => executers::contract_setup_reply(deps, env, msg.result),
+        1 => executers::harvest_reply(deps, env, msg.result),
         _ => Err(ContractError::Std(StdError::GenericErr {
             msg: "Invalid Submessage Reply ID!".to_string(),
         })),

@@ -33,7 +33,11 @@ use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw_asset::{Asset, AssetInfoBase};
 use std::str::FromStr;
 
-pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
+pub fn contract_setup_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: SubMsgResult,
+) -> Result<Response, ContractError> {
     match msg {
         SubMsgResult::Ok(subcall) => {
             let mut endowment = ENDOWMENT.load(deps.storage)?;
@@ -45,28 +49,6 @@ pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response
                             "multisig_addr" => {
                                 endowment.owner = deps.api.addr_validate(&attrb.value)?
                             }
-                            _ => (),
-                        }
-                    }
-                }
-            }
-            ENDOWMENT.save(deps.storage, &endowment)?;
-
-            // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
-            Ok(Response::default().add_attribute("endow_owner", endowment.owner.to_string()))
-        }
-        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
-    }
-}
-
-pub fn dao_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
-    match msg {
-        SubMsgResult::Ok(subcall) => {
-            let mut endowment = ENDOWMENT.load(deps.storage)?;
-            for event in subcall.events {
-                if event.ty == *"wasm" {
-                    for attrb in event.attributes {
-                        match attrb.key.as_str() {
                             "dao_addr" => {
                                 endowment.dao = Some(deps.api.addr_validate(&attrb.value)?)
                             }
@@ -1223,7 +1205,7 @@ pub fn harvest(
     let vault_addr = deps.api.addr_validate(&vault_addr)?;
     Ok(Response::new()
         .add_submessage(SubMsg {
-            id: 2,
+            id: 1,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: vault_addr.to_string(),
                 msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {
@@ -1318,26 +1300,21 @@ pub fn harvest_reply(
 ) -> Result<Response, ContractError> {
     match msg {
         SubMsgResult::Ok(subcall) => {
-            let mut last_earnings_harvest: u64 = 0;
-            let mut last_harvest_fx: Option<Decimal256> = None;
+            let mut config = CONFIG.load(deps.storage)?;
             for event in subcall.events {
                 if event.ty == "wasm" {
                     for attrb in event.attributes {
                         if attrb.key == "last_earnings_harvest" {
-                            last_earnings_harvest = attrb.value.parse::<u64>().unwrap();
+                            config.last_earnings_harvest = attrb.value.parse::<u64>().unwrap();
                         }
                         if attrb.key == "last_harvest_fx" {
-                            last_harvest_fx = Some(Decimal256::from_str(&attrb.value).unwrap());
+                            config.last_harvest_fx =
+                                Some(Decimal256::from_str(&attrb.value).unwrap());
                         }
                     }
                 }
             }
-
-            let mut config = CONFIG.load(deps.storage)?;
-            config.last_earnings_harvest = last_earnings_harvest;
-            config.last_harvest_fx = last_harvest_fx;
             CONFIG.save(deps.storage, &config)?;
-
             Ok(Response::default())
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
@@ -1444,7 +1421,7 @@ pub fn setup_donation_match(
             ) {
                 (Some(reserve_addr), Some(lp_addr)) => {
                     res = res.add_submessage(SubMsg {
-                        id: 1,
+                        id: 0,
                         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                             code_id: match_code,
                             admin: None,
@@ -1474,7 +1451,7 @@ pub fn setup_donation_match(
             lp_addr,
         } => {
             res = res.add_submessage(SubMsg {
-                id: 1,
+                id: 0,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     code_id: match_code,
                     admin: None,
