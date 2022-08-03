@@ -14,9 +14,8 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 use angel_core::responses::registrar::EndowmentListResponse;
+use angel_core::responses::vault::InfoResponse;
 use angel_core::structs::EndowmentEntry;
-
-use crate::wasmswap::InfoResponse;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

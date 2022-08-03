@@ -139,3 +139,67 @@ pub enum QueryMsg {
     /// Return type: TokenInfoResponse.
     TokenInfo {},
 }
+
+///
+/// The following messages are just a clone of `msg` types defined in `wasmswap-contracts`.
+/// Ref: https://github.com/Wasmswap/wasmswap-contracts/blob/main/src/msg.rs
+///
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum TokenSelect {
+    Token1,
+    Token2,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum WasmSwapExecuteMsg {
+    AddLiquidity {
+        token1_amount: Uint128,
+        min_liquidity: Uint128,
+        max_token2: Uint128,
+        expiration: Option<Expiration>,
+    },
+    RemoveLiquidity {
+        amount: Uint128,
+        min_token1: Uint128,
+        min_token2: Uint128,
+        expiration: Option<Expiration>,
+    },
+    Swap {
+        input_token: TokenSelect,
+        input_amount: Uint128,
+        min_output: Uint128,
+        expiration: Option<Expiration>,
+    },
+    /// Chained swap converting A -> B and B -> C by leveraging two swap contracts
+    PassThroughSwap {
+        output_amm_address: String,
+        input_token: TokenSelect,
+        input_token_amount: Uint128,
+        output_min_token: Uint128,
+        expiration: Option<Expiration>,
+    },
+    SwapAndSendTo {
+        input_token: TokenSelect,
+        input_amount: Uint128,
+        recipient: String,
+        min_token: Uint128,
+        expiration: Option<Expiration>,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum WasmSwapQueryMsg {
+    /// Implements CW20. Returns the current balance of the given address, 0 if unset.
+    Balance {
+        address: String,
+    },
+    Info {},
+    Token1ForToken2Price {
+        token1_amount: Uint128,
+    },
+    Token2ForToken1Price {
+        token2_amount: Uint128,
+    },
+}

@@ -1,9 +1,11 @@
-use crate::state::{self, CONFIG};
-use crate::wasmswap::{self, InfoResponse};
-use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
 use cosmwasm_std::{Deps, Uint128};
 use cw20::{BalanceResponse, Denom, TokenInfoResponse};
 use cw20_base::state::TOKEN_INFO;
+
+use angel_core::messages::vault::WasmSwapQueryMsg;
+use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse, InfoResponse};
+
+use crate::state::{self, CONFIG};
 
 pub fn query_balance(deps: Deps, address: String) -> BalanceResponse {
     cw20_base::contract::query_balance(deps, address).unwrap_or(BalanceResponse {
@@ -38,7 +40,7 @@ pub fn query_exchange_rate(deps: Deps, input_denom: Denom) -> ExchangeRateRespon
     let config = CONFIG.load(deps.storage).unwrap();
     let swap_pool_info: InfoResponse = deps
         .querier
-        .query_wasm_smart(config.pool_addr, &wasmswap::QueryMsg::Info {})
+        .query_wasm_smart(config.pool_addr, &WasmSwapQueryMsg::Info {})
         .unwrap();
     todo!("Implement the following query response")
     // ExchangeRateResponse {

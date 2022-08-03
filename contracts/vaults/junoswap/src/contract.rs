@@ -1,11 +1,3 @@
-use crate::executers;
-use crate::queriers;
-use crate::state;
-use crate::wasmswap;
-use crate::wasmswap::InfoResponse;
-use angel_core::errors::vault::ContractError;
-use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
-use angel_core::messages::vault::{InstantiateMsg, MigrateMsg, ReceiveMsg};
 use cosmwasm_std::from_binary;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
@@ -16,6 +8,16 @@ use cw20::Cw20ReceiveMsg;
 use cw20::Denom;
 use cw20_base::state::MinterData;
 use cw20_base::state::{TokenInfo, TOKEN_INFO};
+
+use angel_core::errors::vault::ContractError;
+use angel_core::messages::vault::{
+    ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg, WasmSwapQueryMsg,
+};
+use angel_core::responses::vault::InfoResponse;
+
+use crate::executers;
+use crate::queriers;
+use crate::state;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "junoswap_vault";
@@ -33,7 +35,7 @@ pub fn instantiate(
     let swap_pool_addr = deps.api.addr_validate(&msg.swap_pool_addr)?;
     let swap_pool_info: InfoResponse = deps
         .querier
-        .query_wasm_smart(swap_pool_addr.to_string(), &wasmswap::QueryMsg::Info {})?;
+        .query_wasm_smart(swap_pool_addr.to_string(), &WasmSwapQueryMsg::Info {})?;
 
     if swap_pool_info.token1_denom != msg.output_token_denom
         && swap_pool_info.token2_denom != msg.output_token_denom

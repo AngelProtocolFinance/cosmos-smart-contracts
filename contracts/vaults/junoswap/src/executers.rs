@@ -1,18 +1,22 @@
-use crate::state::REMNANTS;
-use crate::util::query_denom_balance;
-use crate::wasmswap::{swap_msg, InfoResponse, Token2ForToken1PriceResponse, TokenSelect};
-use crate::{state, wasmswap};
-use angel_core::errors::vault::ContractError;
-use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
-use angel_core::messages::vault::{AccountWithdrawMsg, ExecuteMsg, UpdateConfigMsg};
-use angel_core::responses::registrar::EndowmentListResponse;
-use angel_core::structs::EndowmentEntry;
 use cosmwasm_std::{
     attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdError, Uint128, WasmMsg, WasmQuery,
+    QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Denom;
 use cw_controllers::ClaimsResponse;
+
+use angel_core::errors::vault::ContractError;
+use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
+use angel_core::messages::vault::{
+    AccountWithdrawMsg, ExecuteMsg, TokenSelect, UpdateConfigMsg, WasmSwapExecuteMsg,
+    WasmSwapQueryMsg,
+};
+use angel_core::responses::registrar::EndowmentListResponse;
+use angel_core::responses::vault::{InfoResponse, Token2ForToken1PriceResponse};
+use angel_core::structs::EndowmentEntry;
+
+use crate::state::{self, Config, REMNANTS};
+use crate::util::query_denom_balance;
 
 pub fn update_owner(
     deps: DepsMut,
@@ -72,7 +76,7 @@ pub fn update_config(
 
     let swap_pool_info: InfoResponse = deps
         .querier
-        .query_wasm_smart(&config.pool_addr, &wasmswap::QueryMsg::Info {})?;
+        .query_wasm_smart(&config.pool_addr, &WasmSwapQueryMsg::Info {})?;
 
     config.pool_lp_token_addr = deps.api.addr_validate(&swap_pool_info.lp_token_address)?;
     config.input_denoms = vec![swap_pool_info.token1_denom, swap_pool_info.token2_denom];
@@ -380,7 +384,7 @@ pub fn add_liquidity(
 
     let price_query: Token2ForToken1PriceResponse = deps.querier.query_wasm_smart(
         config.pool_addr.to_string(),
-        &crate::wasmswap::QueryMsg::Token2ForToken1Price { token2_amount },
+        &WasmSwapQueryMsg::Token2ForToken1Price { token2_amount },
     )?;
 
     if price_query.token1_amount > token1_amount {
@@ -447,7 +451,7 @@ pub fn add_liquidity(
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.pool_addr.to_string(),
-        msg: to_binary(&crate::wasmswap::ExecuteMsg::AddLiquidity {
+        msg: to_binary(&WasmSwapExecuteMsg::AddLiquidity {
             token1_amount,
             min_liquidity: Uint128::zero(),
             max_token2: token2_amount,
@@ -565,7 +569,7 @@ pub fn remove_liquidity(
     }));
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.pool_addr.to_string(),
-        msg: to_binary(&wasmswap::ExecuteMsg::RemoveLiquidity {
+        msg: to_binary(&WasmSwapExecuteMsg::RemoveLiquidity {
             amount: lp_token_amt,
             min_token1: Uint128::zero(),
             min_token2: Uint128::zero(),
@@ -682,7 +686,7 @@ pub fn swap_and_send(
     match swap_input_token_denom {
         Denom::Native(denom) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: config.pool_addr.to_string(),
-            msg: to_binary(&wasmswap::ExecuteMsg::SwapAndSendTo {
+            msg: to_binary(&WasmSwapExecuteMsg::SwapAndSendTo {
                 input_token: swap_input_token,
                 input_amount: swap_input_token_amt,
                 recipient: beneficiary.to_string(),
@@ -705,7 +709,7 @@ pub fn swap_and_send(
             }));
             msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: config.pool_addr.to_string(),
-                msg: to_binary(&wasmswap::ExecuteMsg::SwapAndSendTo {
+                msg: to_binary(&WasmSwapExecuteMsg::SwapAndSendTo {
                     input_token: swap_input_token,
                     input_amount: swap_input_token_amt,
                     recipient: beneficiary.to_string(),
@@ -720,4 +724,57 @@ pub fn swap_and_send(
 
     res = res.add_messages(msgs);
     Ok(res)
+}
+
+//
+fn swap_msg(
+    config: &Config,
+    deposit_denom: &Denom,
+    deposit_amount: Uint128,
+) -> StdResult<Vec<CosmosMsg>> {
+    let input_token = if deposit_denom == &config.input_denoms[0] {
+        TokenSelect::Token1
+    } else {
+        TokenSelect::Token2
+    };
+    let input_amount = deposit_amount.checked_div(Uint128::from(2_u128))?;
+
+    let mut msgs: Vec<CosmosMsg> = vec![];
+    if let Denom::Cw20(contract_addr) = deposit_denom {
+        msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: contract_addr.to_string(),
+            msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                spender: config.pool_addr.to_string(),
+                amount: input_amount,
+                expires: None,
+            })
+            .unwrap(),
+            funds: vec![],
+        }));
+    }
+
+    let funds = match deposit_denom {
+        Denom::Native(denom) => {
+            vec![Coin {
+                denom: denom.to_string(),
+                amount: input_amount,
+            }]
+        }
+        Denom::Cw20(_) => {
+            vec![]
+        }
+    };
+
+    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.pool_addr.to_string(),
+        msg: to_binary(&WasmSwapExecuteMsg::Swap {
+            input_token,
+            input_amount,
+            min_output: Uint128::zero(), // Here, we set the zero temporarily. Need to be fixed afterwards.
+            expiration: None,
+        })?,
+        funds,
+    }));
+
+    Ok(msgs)
 }
