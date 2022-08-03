@@ -1,7 +1,7 @@
 use std::ops::Sub;
 
-use crate::contract::{execute, instantiate, query};
-use crate::testing::mock_querier::{mock_dependencies, WasmMockQuerier};
+use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
+use cosmwasm_std::{coins, from_binary, to_binary, Addr, Coin, OwnedDeps, StdError, Uint128};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{
@@ -9,10 +9,10 @@ use angel_core::messages::vault::{
 };
 use angel_core::responses::vault::ConfigResponse;
 
-use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
-use cosmwasm_std::{coins, from_binary, to_binary, Addr, Coin, OwnedDeps, StdError, Uint128};
+use crate::contract::{execute, instantiate, query};
+use crate::testing::mock_querier::{mock_dependencies, WasmMockQuerier};
 
-fn create_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
+fn create_mock_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
     let mut deps = mock_dependencies(&coins);
     let instantiate_msg = InstantiateMsg {
         name: "Cash Token".to_string(),
@@ -51,7 +51,7 @@ fn proper_instantiation() {
 #[test]
 fn test_update_owner() {
     // Instantiate the "vault" contract
-    let mut deps = create_vault(vec![]);
+    let mut deps = create_mock_vault(vec![]);
 
     // Try to update the "owner"
     // Fail to update "owner" since non-owner calls the entry
@@ -93,7 +93,7 @@ fn test_update_owner() {
 #[test]
 fn test_update_registrar() {
     // Instantiate the "vault" contract
-    let mut deps = create_vault(vec![]);
+    let mut deps = create_mock_vault(vec![]);
 
     // Try to update the "registrar" contract address
     // Fail to update the "registrar" since non-"registrar" address calls the entry
@@ -130,7 +130,7 @@ fn test_update_registrar() {
 #[test]
 fn test_update_config() {
     // Instantiate the "vault" contract
-    let mut deps = create_vault(vec![]);
+    let mut deps = create_mock_vault(vec![]);
 
     // Try to update the "config"
     let update_config_msg = UpdateConfigMsg {
@@ -174,7 +174,7 @@ fn test_update_config() {
 #[test]
 fn test_deposit_native_token() {
     // Instantiate the vault contract
-    let mut deps = create_vault(vec![]);
+    let mut deps = create_mock_vault(vec![]);
 
     // Try to deposit the `native` token
 
@@ -192,7 +192,7 @@ fn test_deposit_native_token() {
 #[test]
 fn test_deposit_cw20_token() {
     // Instantiate the vault contract
-    let mut deps = create_vault(vec![]);
+    let mut deps = create_mock_vault(vec![]);
 
     // Try to deposit the "HALO"(cw20) token
 
@@ -256,7 +256,7 @@ fn test_withdraw() {
     let beneficiary = Addr::unchecked("beneficiary");
 
     // Instantiate the vault contract
-    let mut deps = create_vault(vec![]);
+    let mut deps = create_mock_vault(vec![]);
 
     // First, fail to "withdraw" since the `endowment` is not valid
     let info = mock_info(fake_endowment, &[]);

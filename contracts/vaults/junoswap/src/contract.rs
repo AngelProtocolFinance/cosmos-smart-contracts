@@ -1,13 +1,10 @@
-use cosmwasm_std::from_binary;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError,
-    StdResult, Uint128,
+    entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
+    StdError, StdResult, Uint128,
 };
 use cw2::{get_contract_version, set_contract_version};
-use cw20::Cw20ReceiveMsg;
-use cw20::Denom;
-use cw20_base::state::MinterData;
-use cw20_base::state::{TokenInfo, TOKEN_INFO};
+use cw20::{Cw20ReceiveMsg, Denom};
+use cw20_base::state::{MinterData, TokenInfo, TOKEN_INFO};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{
