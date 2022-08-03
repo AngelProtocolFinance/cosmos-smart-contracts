@@ -92,40 +92,6 @@ pub(crate) fn balances_to_map(
     balances_map
 }
 
-pub(crate) fn caps_to_map(caps: &[(&String, &Uint128)]) -> HashMap<String, Uint128> {
-    let mut owner_map: HashMap<String, Uint128> = HashMap::new();
-    for (denom, cap) in caps.iter() {
-        owner_map.insert(denom.to_string(), **cap);
-    }
-    owner_map
-}
-
-#[derive(Clone, Default)]
-pub struct OraclePriceQuerier {
-    // this lets us iterate over all pairs that match the first string
-    oracle_price: HashMap<(String, String), (Decimal, u64, u64)>,
-}
-
-impl OraclePriceQuerier {
-    #[allow(dead_code)]
-    pub fn new(oracle_price: &[(&(String, String), &(Decimal, u64, u64))]) -> Self {
-        OraclePriceQuerier {
-            oracle_price: oracle_price_to_map(oracle_price),
-        }
-    }
-}
-#[allow(dead_code)]
-pub(crate) fn oracle_price_to_map(
-    oracle_price: &[(&(String, String), &(Decimal, u64, u64))],
-) -> HashMap<(String, String), (Decimal, u64, u64)> {
-    let mut oracle_price_map: HashMap<(String, String), (Decimal, u64, u64)> = HashMap::new();
-    for (base_quote, oracle_price) in oracle_price.iter() {
-        oracle_price_map.insert((*base_quote).clone(), **oracle_price);
-    }
-
-    oracle_price_map
-}
-
 #[allow(dead_code)]
 #[derive(Clone, Default)]
 pub struct PriceStruct {
@@ -134,59 +100,6 @@ pub struct PriceStruct {
     rate: Decimal,
     last_updated_base: u64,
     last_updated_quote: u64,
-}
-
-#[derive(Clone, Default)]
-pub struct OraclePricesQuerier {
-    // this lets us iterate over all pairs
-    oracle_prices: Vec<PriceStruct>,
-}
-
-impl OraclePricesQuerier {
-    #[allow(dead_code)]
-    pub fn new(oracle_prices: &[(&(String, String), &(Decimal, u64, u64))]) -> Self {
-        OraclePricesQuerier {
-            oracle_prices: oracle_prices_to_map(oracle_prices),
-        }
-    }
-}
-
-pub(crate) fn oracle_prices_to_map(
-    oracle_prices: &[(&(String, String), &(Decimal, u64, u64))],
-) -> Vec<PriceStruct> {
-    let mut oracle_prices_map: Vec<PriceStruct> = vec![];
-    for (base_quote, oracle_prices) in oracle_prices.iter() {
-        oracle_prices_map.push(PriceStruct {
-            base: base_quote.0.clone(),
-            quote: base_quote.1.clone(),
-            rate: oracle_prices.0,
-            last_updated_base: oracle_prices.1,
-            last_updated_quote: oracle_prices.2,
-        });
-    }
-
-    oracle_prices_map
-}
-
-#[derive(Clone, Default)]
-pub struct TerraswapFactoryQuerier {
-    pairs: HashMap<String, String>,
-}
-
-impl TerraswapFactoryQuerier {
-    pub fn new(pairs: &[(&String, &String)]) -> Self {
-        TerraswapFactoryQuerier {
-            pairs: pairs_to_map(pairs),
-        }
-    }
-}
-
-pub(crate) fn pairs_to_map(pairs: &[(&String, &String)]) -> HashMap<String, String> {
-    let mut pairs_map: HashMap<String, String> = HashMap::new();
-    for (key, pair) in pairs.iter() {
-        pairs_map.insert(key.to_string(), pair.to_string());
-    }
-    pairs_map
 }
 
 impl Querier for WasmMockQuerier {

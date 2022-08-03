@@ -1,6 +1,6 @@
 use cosmwasm_std::from_binary;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError,
     StdResult, Uint128,
 };
 use cw2::{get_contract_version, set_contract_version};
@@ -265,8 +265,6 @@ fn receive_cw20(
 
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    let config = state::read(deps.storage)?;
-
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)),
         QueryMsg::Balance { address } => to_binary(&queriers::query_balance(deps, address)),
