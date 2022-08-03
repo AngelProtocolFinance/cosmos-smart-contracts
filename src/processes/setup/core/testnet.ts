@@ -250,8 +250,8 @@ async function createEndowments(
     create_endowment: {
       owner: charity1_wallet,
       beneficiary: charity1_wallet,
-      withdraw_before_maturity: false,
-      maturity_time: undefined,
+      withdraw_before_maturity: true,
+      maturity_time: 100,
       maturity_height: undefined,
       profile: {
         name: "Test Endowment #1",
@@ -300,8 +300,8 @@ async function createEndowments(
     create_endowment: {
       owner: charity2_wallet,
       beneficiary: charity2_wallet,
-      withdraw_before_maturity: false,
-      maturity_time: undefined,
+      withdraw_before_maturity: true,
+      maturity_time: 100,
       maturity_height: undefined,
       profile: {
         name: "Test Endowment #2",
@@ -350,8 +350,8 @@ async function createEndowments(
     create_endowment: {
       owner: charity3_wallet,
       beneficiary: charity3_wallet,
-      withdraw_before_maturity: false,
-      maturity_time: undefined,
+      withdraw_before_maturity: true,
+      maturity_time: 100,
       maturity_height: undefined,
       profile: {
         name: "Test Endowment #3",
@@ -399,8 +399,8 @@ async function createEndowments(
     create_endowment: {
       owner: charity3_wallet,
       beneficiary: charity3_wallet,
-      withdraw_before_maturity: false,
-      maturity_time: undefined,
+      withdraw_before_maturity: true,
+      maturity_time: 100,
       maturity_height: undefined,
       profile: {
         name: "Vibin' Endowment #4",

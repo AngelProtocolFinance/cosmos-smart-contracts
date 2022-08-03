@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, sendTransactionWithFunds } from "../../../utils/helpers";
+import { sendMessageViaCw3Proposal, sendTransaction, sendTransactionWithFunds } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -68,6 +68,7 @@ export async function testSendDonationToEndowment(
 export async function testBeneficiaryCanWithdrawFromLiquid(
   juno: SigningCosmWasmClient,
   charityOwner: string,
+  cw3: string,
   endowment: string,
   vault: string,
   amount: string,
@@ -77,7 +78,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
     "Test - Charity Owner cannot withdraw from the Endowment amount"
   );
   await expect(
-    sendTransaction(juno, charityOwner, endowment, {
+    sendMessageViaCw3Proposal(juno, charityOwner, cw3, endowment, {
       withdraw: {
         sources: [{ vault, amount }],
         beneficiary,
