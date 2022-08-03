@@ -1,11 +1,15 @@
-use cosmwasm_std::{Addr, Binary, Decimal, Uint128};
+use cosmwasm_std::{Addr, Binary, Uint128};
 use cw20::{Cw20ReceiveMsg, Denom};
 use cw_utils::Expiration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
+    pub swap_pool_addr: String,
+    pub staking_addr: String,
+    pub output_token_denom: Denom,
+    pub registrar_contract: String,
     pub name: String,
     pub symbol: String,
     pub decimals: u8,

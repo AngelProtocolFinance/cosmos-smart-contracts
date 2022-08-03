@@ -1,12 +1,11 @@
 use std::ops::Sub;
 
 use crate::contract::{execute, instantiate, query};
-use crate::msg::InitMsg;
 use crate::testing::mock_querier::{mock_dependencies, WasmMockQuerier};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{
-    AccountWithdrawMsg, ExecuteMsg, QueryMsg, RoutesUpdateMsg, UpdateConfigMsg,
+    AccountWithdrawMsg, ExecuteMsg, InstantiateMsg, QueryMsg, RoutesUpdateMsg, UpdateConfigMsg,
 };
 use angel_core::responses::vault::ConfigResponse;
 
@@ -15,7 +14,7 @@ use cosmwasm_std::{coins, from_binary, to_binary, Addr, Coin, OwnedDeps, StdErro
 
 fn create_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
     let mut deps = mock_dependencies(&coins);
-    let instantiate_msg = InitMsg {
+    let instantiate_msg = InstantiateMsg {
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
@@ -34,7 +33,7 @@ fn create_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMockQue
 #[test]
 fn proper_instantiation() {
     let mut deps = mock_dependencies(&[]);
-    let instantiate_msg = InitMsg {
+    let instantiate_msg = InstantiateMsg {
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,

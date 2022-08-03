@@ -1,12 +1,11 @@
 use crate::executers;
-use crate::msg::{InitMsg, MigrateMsg};
 use crate::queriers;
 use crate::state;
 use crate::wasmswap;
 use crate::wasmswap::InfoResponse;
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::vault::ReceiveMsg;
 use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
+use angel_core::messages::vault::{InstantiateMsg, MigrateMsg, ReceiveMsg};
 use cosmwasm_std::from_binary;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
@@ -27,7 +26,7 @@ pub fn instantiate(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    msg: InitMsg,
+    msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
