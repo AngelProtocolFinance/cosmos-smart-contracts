@@ -588,6 +588,16 @@ pub fn remove_liquidity(
     // Perform the "remove_liquidity"
     let mut res = Response::default();
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.pool_lp_token_addr.to_string(),
+        msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+            spender: config.pool_addr.to_string(),
+            amount: lp_token_amt,
+            expires: None,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
+    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.pool_addr.to_string(),
         msg: to_binary(&wasmswap::ExecuteMsg::RemoveLiquidity {
             amount: lp_token_amt,
