@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 use angel_core::structs::BalanceInfo;
 use cosmwasm_bignumber::Decimal256;
+=======
+>>>>>>> f7014790 (balances restructuring; donation match setup reply fix;)
 use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
 use cosmwasm_storage::{ReadonlySingleton, Singleton};
 use cw_storage_plus::{Item, Map};
@@ -65,5 +68,5 @@ pub struct PendingInfo {
 }
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
-pub const BALANCES: Map<&Addr, BalanceInfo> = Map::new("balance");
+pub const BALANCES: Map<&Addr, Uint128> = Map::new("balance");
 pub const PENDING: Map<&[u8], PendingInfo> = Map::new("pending");
