@@ -648,7 +648,7 @@ fn test_vault_receipt() {
         }],
     );
     let res = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::VaultReceipt {}).unwrap();
-    assert_eq!(2, res.messages.len());
+    assert_eq!(0, res.messages.len());
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
