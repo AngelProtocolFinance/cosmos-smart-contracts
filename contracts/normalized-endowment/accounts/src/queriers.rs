@@ -1,9 +1,10 @@
 use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::responses::accounts::*;
-use angel_core::structs::BalanceResponse;
+use angel_core::structs::BalanceInfo;
 use angel_core::{messages::vault::QueryMsg as VaultQuerier, structs::TransactionRecord};
 use cosmwasm_std::{to_binary, Addr, Deps, Env, QueryRequest, StdError, StdResult, WasmQuery};
 use cw2::get_contract_version;
+use cw20::{Balance, Cw20CoinVerified};
 use cw_asset::AssetInfoBase;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -39,31 +40,24 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
     })
 }
 
-pub fn query_account_balance(deps: Deps, env: Env) -> StdResult<BalanceResponse> {
+pub fn query_account_balance(deps: Deps, env: Env) -> StdResult<BalanceInfo> {
     let endowment = ENDOWMENT.load(deps.storage)?;
-    // setup the basic response object w/ accounts' balances
-    let mut balances = BalanceResponse::default();
-    // add stategies' balances to the object
+    let state = STATE.load(deps.storage)?;
+    // setup the basic response object w/ account's balances locked & liquid (held by this contract)
+    let mut balances = state.balances;
+    // add stategies' (locked) balances
     for strategy in endowment.strategies {
-        let mut strategy_balance: BalanceResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: strategy.vault.to_string(),
-                msg: to_binary(&VaultQuerier::Balance {
-                    address: env.contract.address.to_string(),
-                })?,
-            }))?;
         balances
-            .locked_cw20
-            .append(&mut strategy_balance.locked_cw20);
-        balances
-            .liquid_cw20
-            .append(&mut strategy_balance.liquid_cw20);
-        balances
-            .locked_native
-            .append(&mut strategy_balance.locked_native);
-        balances
-            .liquid_native
-            .append(&mut strategy_balance.liquid_native);
+            .locked_balance
+            .add_tokens(Balance::Cw20(Cw20CoinVerified {
+                amount: deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: strategy.vault.to_string(),
+                    msg: to_binary(&VaultQuerier::Balance {
+                        address: env.contract.address.to_string(),
+                    })?,
+                }))?,
+                address: deps.api.addr_validate(&strategy.vault)?,
+            }));
     }
 
     Ok(balances)

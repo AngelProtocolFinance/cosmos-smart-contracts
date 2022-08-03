@@ -8,13 +8,11 @@ use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::EndowmentType;
-use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, RebalanceDetails, SettingsController, StrategyComponent,
-};
+use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, SettingsController};
 use cosmwasm_std::{
-    attr, entry_point, from_binary, from_slice, to_binary, to_vec, Binary, CosmosMsg, Decimal,
-    Deps, DepsMut, Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult,
-    SubMsg, Uint128, WasmMsg, WasmQuery,
+    attr, entry_point, from_binary, from_slice, to_binary, to_vec, Binary, CosmosMsg, Deps,
+    DepsMut, Env, MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
+    Uint128, WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
@@ -67,20 +65,13 @@ pub fn instantiate(
         },
     )?;
 
-    let default_vault = match registrar_config.default_vault {
-        Some(ref addr) => addr.to_string(),
-        None => return Err(ContractError::ContractNotConfigured {}),
-    };
     ENDOWMENT.save(
         deps.storage,
         &Endowment {
             owner: deps.api.addr_validate(&msg.owner)?, // Addr
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
             maturity_time: msg.maturity_time,           // Option<u64>
-            strategies: vec![StrategyComponent {
-                vault: deps.api.addr_validate(&default_vault)?.to_string(),
-                percentage: Decimal::one(),
-            }],
+            strategies: vec![],
             rebalance: RebalanceDetails::default(),
             dao: None,
             dao_token: None,

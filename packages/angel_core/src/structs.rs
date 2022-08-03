@@ -68,25 +68,6 @@ impl SettingsController {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct BalanceResponse {
-    pub locked_native: Vec<Coin>,
-    pub locked_cw20: Vec<Cw20Coin>,
-    pub liquid_native: Vec<Coin>,
-    pub liquid_cw20: Vec<Cw20Coin>,
-}
-
-impl BalanceResponse {
-    pub fn default() -> Self {
-        BalanceResponse {
-            locked_native: vec![],
-            locked_cw20: vec![],
-            liquid_native: vec![],
-            liquid_cw20: vec![],
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct YieldVault {
     pub address: String,

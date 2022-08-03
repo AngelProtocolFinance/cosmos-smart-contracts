@@ -17,8 +17,8 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, BalanceResponse, DaoSetup, DonationMatch, EndowmentFee, EndowmentType,
-    FundingSource, SocialMedialUrls, SplitDetails, StrategyComponent, Tier, TransactionRecord,
+    AcceptedTokens, DaoSetup, DonationMatch, EndowmentFee, EndowmentType, FundingSource,
+    SocialMedialUrls, SplitDetails, StrategyComponent, Tier, TransactionRecord,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, redeem_from_vaults, validate_deposit_fund,
@@ -56,6 +56,10 @@ pub fn contract_setup_reply(
                             }
                             "dao_token_addr" => {
                                 endowment.dao_token = Some(deps.api.addr_validate(&attrb.value)?)
+                            }
+                            "donation_match_addr" => {
+                                endowment.donation_match_contract =
+                                    Some(deps.api.addr_validate(&attrb.value)?)
                             }
                             &_ => (),
                         }
@@ -785,7 +789,7 @@ pub fn deposit(
     // if empty: hold locked funds until a vault is set
     if endowment.strategies.is_empty() {
         deposit_messages = vec![];
-        // increase the liquid balance by donation (liquid) amount
+        // increase the locked balance by locked donation amount
         let locked_balance = match locked_amount.info {
             AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
                 denom,
@@ -1255,7 +1259,7 @@ pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
         .map(|s| s.vault.clone())
         .collect();
     for vault in vaults {
-        let vault_balances: BalanceResponse = deps.querier.query_wasm_smart(
+        let vault_balances: Uint128 = deps.querier.query_wasm_smart(
             vault.clone(),
             &VaultQueryMsg::Balance {
                 address: vault.clone(),
@@ -1264,8 +1268,7 @@ pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
         // Here, we assume that only one native coin -
         // `UST` is used for deposit/withdraw in vault
         let mut total_aum: Uint128 = Uint128::zero();
-        total_aum += vault_balances.locked_native[0].amount;
-        total_aum += vault_balances.liquid_native[0].amount;
+        total_aum += vault_balances;
 
         // Calc the `aum_harvest_withdraw` amount
         if !total_aum.is_zero() {

@@ -30,7 +30,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -51,7 +51,7 @@ pub fn instantiate(
         },
     )?;
 
-    Ok(Response::new().add_attributes(vec![attr("instantiate", "donation-match")]))
+    Ok(Response::new().add_attribute("donation_match_addr", env.contract.address.to_string()))
 }
 
 pub fn receive_cw20(
