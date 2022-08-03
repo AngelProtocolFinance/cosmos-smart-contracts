@@ -6,11 +6,11 @@ use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
-use angel_core::structs::{BalanceInfo, RebalanceDetails, StrategyComponent};
+use angel_core::structs::{BalanceInfo, RebalanceDetails};
 use cosmwasm_std::{
-    attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Decimal, Deps, DepsMut, Env,
-    MessageInfo, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128,
-    WasmMsg, WasmQuery,
+    attr, entry_point, from_binary, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
+    QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, Uint128, WasmMsg,
+    WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
@@ -48,13 +48,6 @@ pub fn instantiate(
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
-    let default_strategy: Vec<StrategyComponent> = match registrar_config.default_vault {
-        Some(addr) => vec![StrategyComponent {
-            vault: deps.api.addr_validate(&addr)?.to_string(),
-            percentage: Decimal::one(),
-        }],
-        None => vec![],
-    };
     ENDOWMENT.save(
         deps.storage,
         &Endowment {
@@ -63,7 +56,7 @@ pub fn instantiate(
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
             maturity_time: msg.maturity_time,           // Option<u64>
             maturity_height: msg.maturity_height,       // Option<u64>
-            strategies: default_strategy,
+            strategies: vec![],
             rebalance: RebalanceDetails::default(),
             kyc_donors_only: msg.kyc_donors_only,
         },

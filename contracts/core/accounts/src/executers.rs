@@ -434,7 +434,10 @@ pub fn vault_receipt(
             }
         }
         // subtract one redemption and hold off on doing deposits
-        Some(_) => config.pending_redemptions = Some(config.pending_redemptions.unwrap() - 1),
+        Some(_) => match config.pending_redemptions.unwrap().checked_sub(1) {
+            Some(n) => config.pending_redemptions = Some(n),
+            None => config.pending_redemptions = None,
+        },
         None => (),
     };
 
@@ -537,7 +540,7 @@ pub fn deposit(
     // if empty: hold locked funds until a vault is set
     if endowment.strategies.is_empty() {
         deposit_messages = vec![];
-        // increase the liquid balance by donation (liquid) amount
+        // increase the locked balance by locked donation amount
         let locked_balance = match locked_amount.info {
             AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
                 denom: denom.to_string(),
