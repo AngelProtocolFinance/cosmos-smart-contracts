@@ -40,6 +40,9 @@ let apTreasury: string;
 let members: Member[];
 let tcaMembers: string[];
 
+let junoswap_USDC_Juno_PairContract = config.junoswap.usdc_juno_pool;
+let junoswap_USDC_Juno_PairLpStaking = config.junoswap.usdc_juno_pool_staking;
+
 // JunoSwap Contracts
 let junoswapTokenCode: number;
 let junoswapFactory: string;
@@ -148,6 +151,8 @@ export async function startSetupCore(): Promise<void> {
     funding_goal: "50000000", // funding goal
     charity_cw3_multisig_threshold_abs_perc: "0.50", // threshold absolute percentage for "charity-cw3"
     charity_cw3_multisig_max_voting_period: 100,      // max_voting_period time(unit: seconds) for "charity-cw3"
+    junoswap_pool_addr: junoswap_USDC_Juno_PairContract, // Junoswap pool (USDC-JUNO) contract
+    junoswap_pool_staking: junoswap_USDC_Juno_PairLpStaking, // Junoswap pool (USDC-JUNO) LP token staking contract
   });
 }
 

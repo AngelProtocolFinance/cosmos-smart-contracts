@@ -26,7 +26,7 @@ let cw4GrpApTeam: string;
 let cw3GuardianAngels: string;
 let cw3ApTeam: string;
 let indexFund: string;
-let anchorVault: string;
+let vault1: string;
 
 //----------------------------------------------------------------------------------------
 // Setup Contracts for MainNet
@@ -51,6 +51,8 @@ export async function setupCore(
     funding_goal: string | undefined;
     charity_cw3_multisig_threshold_abs_perc: string,
     charity_cw3_multisig_max_voting_period: number,
+    junoswap_pool_addr: string,
+    junoswap_pool_staking: string,
   }
 ): Promise<void> {
   // Initialize variables
@@ -68,7 +70,9 @@ export async function setupCore(
     config.fund_rotation,
     config.harvest_to_liquid,
     config.tax_per_block,
-    config.funding_goal
+    config.funding_goal,
+    config.junoswap_pool_addr,
+    config.junoswap_pool_staking,
   );
   await mainNet.initializeCharities(juno, apTeam, registrar, indexFund);
   await mainNet.setupEndowments(
@@ -90,7 +94,9 @@ async function setup(
   fund_rotation: number | undefined,
   harvest_to_liquid: string,
   tax_per_block: string,
-  funding_goal: string | undefined
+  funding_goal: string | undefined,
+  junoswap_pool_addr: string,
+  junoswap_pool_staking_addr: string,
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each....
   process.stdout.write("Uploading Registrar Wasm");
@@ -206,19 +212,20 @@ async function setup(
   indexFund = fundResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
 
-  // Anchor Vault
+  // JunoSwap Vault
   process.stdout.write("Instantiating Anchor Vault contract");
   const vaultResult1 = await instantiateContract(juno, apTeam, apTeam, vaultCodeId, {
+    swap_pool_addr: junoswap_pool_addr,
+    staking_addr: junoswap_pool_staking_addr,
     registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
-    name: "AP Deposit Token - Anchor",
-    symbol: "apANC",
+    output_token_denom: {"native": "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034"},
+    name: "AP DP Token - JunoSwap_Vault #1",
+    symbol: "apANC1",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
   });
-  anchorVault = vaultResult1.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault}`);
+  vault1 = vaultResult1.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault1}`);
 
   // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
   process.stdout.write("Approving Anchor Vault in Registrar");
@@ -228,7 +235,7 @@ async function setup(
   process.stdout.write("Update Registrar with the Address of the Index Fund contract,  CW3_code_Id, CW4_code_Id");
   await sendTransaction(juno, apTeam, registrar, {
     update_config: {
-      default_vault: anchorVault,
+      default_vault: vault1,
       index_fund_contract: indexFund,
       cw3_code: cw3MultiSig,
       cw4_code: cw4Group,
@@ -236,7 +243,7 @@ async function setup(
   });
   await sendTransaction(juno, apTeam, registrar, {
     vault_update_status: {
-      vault_addr: anchorVault,
+      vault_addr: vault1,
       approved: true,
     },
   });

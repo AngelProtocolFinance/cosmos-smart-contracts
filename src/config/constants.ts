@@ -98,6 +98,9 @@ export const mainnet = {
     initial_halo_supply: "1000000000000000",
     halo_liquidity: "",
     native_liquidity: "",
+
+    usdc_juno_pool: "juno1ctsmp54v79x7ea970zejlyws50cj9pkrmw49x46085fn80znjmpqz2n642",
+    usdc_juno_pool_staking: "juno1cuu9qxjqukh9drptk2y50r5tvepes7cy55hffh7quvvawk95lxlq6rzzj0",
   },
 
   // LOOP LP contracts
