@@ -41,13 +41,15 @@ pub fn contract_setup_reply(
     match msg {
         SubMsgResult::Ok(subcall) => {
             let mut endowment = ENDOWMENT.load(deps.storage)?;
+            let mut res = Response::default();
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
                         // This value comes from the custom attrbiute
                         match attrb.key.as_str() {
                             "multisig_addr" => {
-                                endowment.owner = deps.api.addr_validate(&attrb.value)?
+                                endowment.owner = deps.api.addr_validate(&attrb.value)?;
+                                res = res.add_attribute("endow_owner", endowment.owner.to_string())
                             }
                             "dao_addr" => {
                                 endowment.dao = Some(deps.api.addr_validate(&attrb.value)?)
@@ -61,8 +63,7 @@ pub fn contract_setup_reply(
                 }
             }
             ENDOWMENT.save(deps.storage, &endowment)?;
-
-            Ok(Response::default())
+            Ok(res)
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
