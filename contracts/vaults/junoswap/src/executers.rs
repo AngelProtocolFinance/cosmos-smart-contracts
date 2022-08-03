@@ -14,9 +14,9 @@ use angel_core::messages::vault::{
 use angel_core::responses::registrar::EndowmentListResponse;
 use angel_core::responses::vault::{InfoResponse, Token2ForToken1PriceResponse};
 use angel_core::structs::EndowmentEntry;
+use angel_core::utils::query_denom_balance;
 
 use crate::state::{self, Config, REMNANTS};
-use crate::util::query_denom_balance;
 
 pub fn update_owner(
     deps: DepsMut,
