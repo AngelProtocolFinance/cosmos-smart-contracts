@@ -7,7 +7,7 @@ use cw20::{Denom, Expiration};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::config::Config;
+use crate::state::Config;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum TokenSelect {

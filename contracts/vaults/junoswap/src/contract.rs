@@ -1,7 +1,7 @@
-use crate::config;
 use crate::executers;
 use crate::msg::{InitMsg, MigrateMsg};
 use crate::queriers;
+use crate::state;
 use crate::wasmswap;
 use crate::wasmswap::InfoResponse;
 use angel_core::errors::vault::ContractError;
@@ -47,7 +47,7 @@ pub fn instantiate(
         }));
     }
 
-    let config = config::Config {
+    let config = state::Config {
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
 
@@ -65,7 +65,7 @@ pub fn instantiate(
         last_harvest_fx: None,
     };
 
-    config::store(deps.storage, &config)?;
+    state::store(deps.storage, &config)?;
 
     // store token info
     let token_info = TokenInfo {
@@ -264,7 +264,7 @@ fn receive_cw20(
 
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    let config = config::read(deps.storage)?;
+    let config = state::read(deps.storage)?;
 
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)),

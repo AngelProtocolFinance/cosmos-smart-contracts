@@ -1,4 +1,4 @@
-use crate::config::{self, CONFIG};
+use crate::state::{self, CONFIG};
 use crate::wasmswap::{self, InfoResponse};
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
 use cosmwasm_std::{Deps, Uint128};
@@ -22,7 +22,7 @@ pub fn query_token_info(deps: Deps) -> TokenInfoResponse {
 }
 
 pub fn query_config(deps: Deps) -> ConfigResponse {
-    let config = config::read(deps.storage).unwrap();
+    let config = state::read(deps.storage).unwrap();
     ConfigResponse {
         owner: config.owner.to_string(),
         registrar_contract: config.registrar_contract.to_string(),

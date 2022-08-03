@@ -1,9 +1,7 @@
-use std::vec;
-
-use crate::config::{PENDING, REMNANTS};
+use crate::state::REMNANTS;
 use crate::util::query_denom_balance;
 use crate::wasmswap::{swap_msg, InfoResponse, Token2ForToken1PriceResponse, TokenSelect};
-use crate::{config, wasmswap};
+use crate::{state, wasmswap};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{AccountWithdrawMsg, ExecuteMsg, UpdateConfigMsg};
@@ -21,7 +19,7 @@ pub fn update_owner(
     info: MessageInfo,
     new_owner: String,
 ) -> Result<Response, ContractError> {
-    let mut config = config::read(deps.storage)?;
+    let mut config = state::read(deps.storage)?;
 
     // only the owner/admin of the contract can update their address in the configs
     if info.sender != config.owner {
@@ -30,7 +28,7 @@ pub fn update_owner(
     let new_owner = deps.api.addr_validate(&new_owner)?;
     // update config attributes with newly passed args
     config.owner = new_owner;
-    config::store(deps.storage, &config)?;
+    state::store(deps.storage, &config)?;
 
     Ok(Response::default())
 }
@@ -41,7 +39,7 @@ pub fn update_registrar(
     info: MessageInfo,
     new_registrar: Addr,
 ) -> Result<Response, ContractError> {
-    let mut config = config::read(deps.storage)?;
+    let mut config = state::read(deps.storage)?;
 
     // only the registrar contract can update it's address in the config
     if info.sender != config.registrar_contract {
@@ -49,7 +47,7 @@ pub fn update_registrar(
     }
     // update config attributes with newly passed args
     config.registrar_contract = new_registrar;
-    config::store(deps.storage, &config)?;
+    state::store(deps.storage, &config)?;
 
     Ok(Response::default())
 }
@@ -60,7 +58,7 @@ pub fn update_config(
     info: MessageInfo,
     msg: UpdateConfigMsg,
 ) -> Result<Response, ContractError> {
-    let mut config = config::read(deps.storage)?;
+    let mut config = state::read(deps.storage)?;
 
     // only the SC admin can update these configs...for now
     if info.sender != config.owner {
@@ -114,7 +112,7 @@ pub fn update_config(
         }));
     }
 
-    config::store(deps.storage, &config)?;
+    state::store(deps.storage, &config)?;
 
     Ok(Response::default())
 }
@@ -127,7 +125,7 @@ pub fn deposit(
     deposit_denom: Denom,
     deposit_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
+    let config = state::read(deps.storage)?;
 
     if !config.input_denoms.contains(&deposit_denom) {
         return Err(ContractError::InvalidCoinsDeposited {});
@@ -201,7 +199,7 @@ pub fn claim(
     info: MessageInfo,
     beneficiary: Addr,
 ) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
+    let config = state::read(deps.storage)?;
 
     // check that the depositor is an Accounts SC
     let endowments_rsp: EndowmentListResponse =
@@ -274,7 +272,7 @@ pub fn withdraw(
     info: MessageInfo,
     msg: AccountWithdrawMsg,
 ) -> Result<Response, ContractError> {
-    let mut config = config::read(deps.storage)?;
+    let mut config = state::read(deps.storage)?;
 
     // check that the depositor is an Accounts SC
     let endowments_rsp: EndowmentListResponse =
@@ -312,7 +310,7 @@ pub fn withdraw(
         funds: vec![],
     };
     config.total_shares -= msg.amount;
-    config::store(deps.storage, &config)?;
+    state::store(deps.storage, &config)?;
 
     cw20_base::contract::execute_burn(deps, env.clone(), account_info, msg.amount).map_err(
         |_| {
@@ -358,7 +356,7 @@ pub fn add_liquidity(
     in_denom_bal_before: Uint128,
     out_denom_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
+    let config = state::read(deps.storage)?;
 
     let in_denom_bal = query_denom_balance(&deps, &in_denom, env.contract.address.to_string());
     let out_denom_bal = query_denom_balance(&deps, &out_denom, env.contract.address.to_string());
@@ -488,7 +486,7 @@ pub fn stake_lp_token(
     depositor: String,
     lp_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
-    let mut config = config::read(deps.storage)?;
+    let mut config = state::read(deps.storage)?;
 
     // Perform the "staking"
     let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
@@ -513,7 +511,7 @@ pub fn stake_lp_token(
 
     // Mint the `vault_token`
     config.total_shares += stake_amount;
-    config::store(deps.storage, &config)?;
+    state::store(deps.storage, &config)?;
 
     cw20_base::contract::execute_mint(deps, env, info, depositor.to_string(), stake_amount)
         .map_err(|_| {
@@ -537,7 +535,7 @@ pub fn remove_liquidity(
     lp_token_bal_before: Uint128,
     beneficiary: Addr,
 ) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
+    let config = state::read(deps.storage)?;
 
     // First, compute the current "lp_token" balance
     let lp_token_bal_now: cw20::BalanceResponse = deps.querier.query_wasm_smart(
@@ -610,7 +608,7 @@ pub fn swap_and_send(
     token2_denom_bal_before: Uint128,
     beneficiary: Addr,
 ) -> Result<Response, ContractError> {
-    let config = config::read(deps.storage)?;
+    let config = state::read(deps.storage)?;
 
     // First, compute the token balances
     let token1_denom_bal_now = query_denom_balance(

@@ -1,8 +1,8 @@
-pub mod config;
 mod contract;
 mod executers;
 pub mod msg;
 mod queriers;
+mod state;
 mod util;
 mod wasmswap;
 
