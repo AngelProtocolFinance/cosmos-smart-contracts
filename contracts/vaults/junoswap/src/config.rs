@@ -19,6 +19,7 @@ pub struct Config {
     pub pool_lp_token_addr: Addr, // swap lp token address
     pub routes: Vec<Addr>, // list of swap pools(eg. list of junoswap pools)
     pub staking_addr: Addr, // contract address, to where we can stake the LP token
+    pub output_token_denom: Denom, // denom of output token to be used when withdraw/claim
 
     pub total_assets: Uint128, // total value of assets deposited from endowments (in usdc/usd)
     pub total_shares: Uint128, // total amount of minted vault tokens

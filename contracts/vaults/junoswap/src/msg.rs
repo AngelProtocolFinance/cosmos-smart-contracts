@@ -1,4 +1,5 @@
 use cosmwasm_std::Decimal;
+use cw20::Denom;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -6,6 +7,7 @@ use serde::{Deserialize, Serialize};
 pub struct InitMsg {
     pub swap_pool_addr: String,
     pub staking_addr: String,
+    pub output_token_denom: Denom,
     pub registrar_contract: String,
     pub name: String,
     pub symbol: String,

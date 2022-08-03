@@ -1,13 +1,17 @@
+use std::ops::Sub;
+
 use crate::contract::{execute, instantiate, query};
 use crate::msg::InitMsg;
 use crate::testing::mock_querier::{mock_dependencies, WasmMockQuerier};
 
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::vault::{ExecuteMsg, QueryMsg, RoutesUpdateMsg, UpdateConfigMsg};
+use angel_core::messages::vault::{
+    AccountWithdrawMsg, ExecuteMsg, QueryMsg, RoutesUpdateMsg, UpdateConfigMsg,
+};
 use angel_core::responses::vault::ConfigResponse;
 
-use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
-use cosmwasm_std::{coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, Uint128};
+use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
+use cosmwasm_std::{coins, from_binary, to_binary, Addr, Coin, OwnedDeps, StdError, Uint128};
 
 fn create_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
     let mut deps = mock_dependencies(&coins);
@@ -18,6 +22,7 @@ fn create_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMockQue
         swap_pool_addr: "junoswap-pool".to_string(),
         staking_addr: "lp-staking-contract".to_string(),
         registrar_contract: "angelprotocolteamdano".to_string(),
+        output_token_denom: cw20::Denom::Native("ujuno".to_string()),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -36,6 +41,7 @@ fn proper_instantiation() {
         swap_pool_addr: "junoswap-pool".to_string(),
         staking_addr: "lp-staking-contract".to_string(),
         registrar_contract: "angelprotocolteamdano".to_string(),
+        output_token_denom: cw20::Denom::Native("ujuno".to_string()),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -135,6 +141,7 @@ fn test_update_config() {
             add: vec![],
             remove: vec![],
         },
+        output_token_denom: None,
     };
 
     // Only "config.owner" can update the config, otherwise fails
@@ -237,4 +244,88 @@ fn test_deposit_cw20_token() {
     )
     .unwrap();
     assert_eq!(res.messages.len(), 3);
+}
+
+// Comment the following test temporarily.
+// Find a way to mock the "config.total_shares" value in the unit test.
+// #[test]
+fn test_withdraw() {
+    let endowment = "endowment-1";
+    let fake_endowment = "endowment-12";
+    let deposit_amount = Uint128::from(100_u128);
+    let withdraw_amount = Uint128::from(30_u128);
+    let beneficiary = Addr::unchecked("beneficiary");
+
+    // Instantiate the vault contract
+    let mut deps = create_vault(vec![]);
+
+    // First, fail to "withdraw" since the `endowment` is not valid
+    let info = mock_info(fake_endowment, &[]);
+    let withdraw_msg: AccountWithdrawMsg = AccountWithdrawMsg {
+        beneficiary,
+        amount: withdraw_amount,
+    };
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Withdraw(withdraw_msg.clone()),
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Also, fail to "withdraw" since the `vault` does not have any deposit
+    let info = mock_info(endowment, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Withdraw(withdraw_msg.clone()),
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Cannot burn the {} vault tokens from {}",
+                withdraw_amount, endowment
+            )
+        })
+    );
+
+    // Mock "mint"ing the vault tokens to "endowment"
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Mint {
+            recipient: endowment.to_string(),
+            amount: deposit_amount,
+        },
+    )
+    .unwrap();
+
+    // Finally, succeed to "withdraw" tokens
+    let info = mock_info(endowment, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Withdraw(withdraw_msg),
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
+
+    // Check the vault token balance of endowment
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Balance {
+            address: endowment.to_string(),
+        },
+    )
+    .unwrap();
+    let balance_resp: cw20::BalanceResponse = from_binary(&res).unwrap();
+    assert_eq!(balance_resp.balance, deposit_amount.sub(withdraw_amount));
 }

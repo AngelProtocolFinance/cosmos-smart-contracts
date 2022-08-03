@@ -26,8 +26,8 @@ pub enum ExecuteMsg {
     },
     UpdateConfig(UpdateConfigMsg),
     Deposit {},
-    Redeem {
-        account_addr: Addr,
+    Claim {
+        beneficiary: Addr,
     },
     Withdraw(AccountWithdrawMsg),
     Harvest {
@@ -41,9 +41,18 @@ pub enum ExecuteMsg {
         in_denom_bal_before: Uint128,
         out_denom_bal_before: Uint128,
     },
+    RemoveLiquidity {
+        lp_token_bal_before: Uint128,
+        beneficiary: Addr,
+    },
     Stake {
         depositor: String,
         lp_token_bal_before: Uint128,
+    },
+    SwapAndSendTo {
+        token1_denom_bal_before: Uint128,
+        token2_denom_bal_before: Uint128,
+        beneficiary: Addr,
     },
     Receive(Cw20ReceiveMsg),
 
@@ -96,6 +105,7 @@ pub struct UpdateConfigMsg {
     pub swap_pool_addr: Option<String>,
     pub staking_addr: Option<String>,
     pub routes: RoutesUpdateMsg,
+    pub output_token_denom: Option<Denom>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -36,6 +36,17 @@ pub fn instantiate(
         .querier
         .query_wasm_smart(swap_pool_addr.to_string(), &wasmswap::QueryMsg::Info {})?;
 
+    if swap_pool_info.token1_denom != msg.output_token_denom
+        && swap_pool_info.token2_denom != msg.output_token_denom
+    {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Invalid output_token_denom: {:?}",
+                msg.output_token_denom.clone()
+            ),
+        }));
+    }
+
     let config = config::Config {
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
@@ -45,6 +56,7 @@ pub fn instantiate(
         pool_lp_token_addr: deps.api.addr_validate(&swap_pool_info.lp_token_address)?,
         staking_addr: deps.api.addr_validate(&msg.staking_addr)?,
         routes: vec![],
+        output_token_denom: msg.output_token_denom,
 
         total_assets: Uint128::zero(),
         total_shares: Uint128::zero(),
@@ -96,18 +108,16 @@ pub fn execute(
             let deposit_amount = info.funds[0].amount;
             executers::deposit(deps, env, info, depositor, deposit_denom, deposit_amount)
         }
-        // Redeem is only called by the SC when setting up new strategies.
-        // Pulls all existing strategy amounts back to Account in UST.
-        // Then re-Deposits according to the Strategies set.
-        // -Deposit Token/Yield Token (Vault) --> +UST (Account) --> -UST (Account) --> +Deposit Token/Yield Token (Vault)
-        ExecuteMsg::Redeem { account_addr } => {
-            executers::redeem_stable(deps, env, info, account_addr)
-        } // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
-        ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info, msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
+        // Claim is only called by the SC when setting up new strategies.
+        // Pulls all existing amounts back to Account in USDC or [input_denom].
+        // -Deposit Token/Yield Token (Vault) --> +USDC (Account)
+        ExecuteMsg::Claim { beneficiary } => executers::claim(deps, env, info, beneficiary),
+        // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
+        ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
         ExecuteMsg::Harvest {
             collector_address,
             collector_share,
-        } => executers::harvest(deps, env, info, collector_address, collector_share), // DP -> DP shuffle (taxes collected)
+        } => executers::harvest(deps, env, info, collector_address, collector_share),
         ExecuteMsg::AddLiquidity {
             depositor,
             in_denom,
@@ -124,10 +134,26 @@ pub fn execute(
             in_denom_bal_before,
             out_denom_bal_before,
         ),
+        ExecuteMsg::RemoveLiquidity {
+            lp_token_bal_before,
+            beneficiary,
+        } => executers::remove_liquidity(deps, env, info, lp_token_bal_before, beneficiary),
         ExecuteMsg::Stake {
             depositor,
             lp_token_bal_before,
         } => executers::stake_lp_token(deps, env, info, depositor, lp_token_bal_before),
+        ExecuteMsg::SwapAndSendTo {
+            token1_denom_bal_before,
+            token2_denom_bal_before,
+            beneficiary,
+        } => executers::swap_and_send(
+            deps,
+            env,
+            info,
+            token1_denom_bal_before,
+            token2_denom_bal_before,
+            beneficiary,
+        ),
 
         // Cw20_base entries
         ExecuteMsg::Transfer { recipient, amount } => cw20_base::contract::execute_transfer(
