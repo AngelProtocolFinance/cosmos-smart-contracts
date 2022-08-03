@@ -114,10 +114,6 @@ pub fn execute(
         ExecuteMsg::Claim { beneficiary } => executers::claim(deps, env, info, beneficiary),
         // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
         ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
-        ExecuteMsg::Harvest {
-            collector_address,
-            collector_share,
-        } => executers::harvest(deps, env, info, collector_address, collector_share),
         ExecuteMsg::AddLiquidity {
             depositor,
             in_denom,
@@ -264,14 +260,6 @@ fn receive_cw20(
             msg: "Invalid call".to_string(),
         })),
     }
-}
-
-/// Replies back to the Vault from the Junoswap pool contract:
-/// SubMsg IDs are matched back with the PENDING storage to match the
-/// incoming and outgoing funds and any further processing steps performed
-#[entry_point]
-pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
-    executers::process_junoswap_pool_reply(deps, env, msg.id, msg.result)
 }
 
 #[entry_point]

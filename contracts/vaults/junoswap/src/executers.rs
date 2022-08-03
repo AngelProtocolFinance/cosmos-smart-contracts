@@ -3,15 +3,15 @@ use std::vec;
 use crate::config::{PENDING, REMNANTS};
 use crate::util::query_denom_balance;
 use crate::wasmswap::{swap_msg, InfoResponse, Token2ForToken1PriceResponse, TokenSelect};
-use crate::{config, cw20_stake, wasmswap};
+use crate::{config, wasmswap};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{AccountWithdrawMsg, ExecuteMsg, UpdateConfigMsg};
 use angel_core::responses::registrar::EndowmentListResponse;
 use angel_core::structs::EndowmentEntry;
 use cosmwasm_std::{
-    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdError, SubMsgResult, Uint128, WasmMsg, WasmQuery,
+    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo,
+    QueryRequest, Response, StdError, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Denom;
 use cw_controllers::ClaimsResponse;
@@ -228,7 +228,7 @@ pub fn claim(
     // First, check if there is any possible claim in "staking" contract
     let claims_resp: ClaimsResponse = deps.querier.query_wasm_smart(
         config.staking_addr.to_string(),
-        &cw20_stake::QueryMsg::Claims {
+        &stake_cw20::msg::QueryMsg::Claims {
             address: env.contract.address.to_string(),
         },
     )?;
@@ -242,7 +242,7 @@ pub fn claim(
     let mut res = Response::default();
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.staking_addr.to_string(),
-        msg: to_binary(&cw20_stake::ExecuteMsg::Claim {}).unwrap(),
+        msg: to_binary(&stake_cw20::msg::ExecuteMsg::Claim {}).unwrap(),
         funds: vec![],
     }));
 
@@ -330,7 +330,7 @@ pub fn withdraw(
     let mut res = Response::default();
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.staking_addr.to_string(),
-        msg: to_binary(&cw20_stake::ExecuteMsg::Unstake { amount: msg.amount }).unwrap(),
+        msg: to_binary(&stake_cw20::msg::ExecuteMsg::Unstake { amount: msg.amount }).unwrap(),
         funds: vec![],
     }));
 
@@ -346,38 +346,6 @@ pub fn withdraw(
     }));
 
     Ok(res)
-}
-
-pub fn harvest(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    collector_address: String,
-    collector_share: Decimal,
-) -> Result<Response, ContractError> {
-    // TODO
-    Ok(Response::default())
-}
-
-pub fn process_junoswap_pool_reply(
-    deps: DepsMut,
-    env: Env,
-    id: u64,
-    result: SubMsgResult,
-) -> Result<Response, ContractError> {
-    // pull up the pending transaction details from storage
-    let transaction = PENDING.load(deps.storage, &id.to_be_bytes())?;
-
-    // remove this pending transaction
-    PENDING.remove(deps.storage, &id.to_be_bytes());
-
-    match result {
-        SubMsgResult::Ok(subcall) => {
-            // TODO
-            Ok(Response::default())
-        }
-        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
-    }
 }
 
 pub fn add_liquidity(
@@ -537,7 +505,7 @@ pub fn stake_lp_token(
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.staking_addr.to_string(),
             amount: stake_amount,
-            msg: to_binary(&crate::cw20_stake::ReceiveMsg::Stake {}).unwrap(),
+            msg: to_binary(&stake_cw20::msg::ReceiveMsg::Stake {}).unwrap(),
         })
         .unwrap(),
         funds: vec![],

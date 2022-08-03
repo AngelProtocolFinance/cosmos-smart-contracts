@@ -30,10 +30,6 @@ pub enum ExecuteMsg {
         beneficiary: Addr,
     },
     Withdraw(AccountWithdrawMsg),
-    Harvest {
-        collector_address: String,
-        collector_share: Decimal,
-    },
     AddLiquidity {
         depositor: String,
         in_denom: Denom,
