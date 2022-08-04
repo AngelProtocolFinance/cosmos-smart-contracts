@@ -115,6 +115,7 @@ pub fn execute(
         ExecuteMsg::Claim { beneficiary } => executers::claim(deps, env, info, beneficiary),
         // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
         ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
+        ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
         ExecuteMsg::AddLiquidity {
             depositor,
             in_denom,

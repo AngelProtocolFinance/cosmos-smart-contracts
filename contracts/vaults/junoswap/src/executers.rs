@@ -350,6 +350,27 @@ pub fn withdraw(
     Ok(res)
 }
 
+// Here is rough Harvest earnings logic:
+// 1. We should harvest the earnings from the vault's LP staking rewards.
+//    (usually paid out as JUNO & RAW tokens in the case of JunoSwap).
+// 2. All rewards are converted into USDC (ie. reward_usdc)
+// 3. Send taxes owed to Treasury Wallet: reward_usdc * registrar_config.tax_rate
+//      less_taxes = reward_usdc - taxes_owned
+// 4. For each Accounts' BALANCE ratio of the total_supply:
+//      Calculate the amount of harvested rewards owed to N account: acct_owned = (account_balance / total_supply) * less_taxes
+//      Send some back to the Accounts contract to liquid: acct_owned * config.harvest_to_liquid
+// 5. All leftover rewards not taxed or sent to liquid accounts should be converted
+//      into the Vault's underlying LP token (ie, reward_lp_tokens) and staked.
+
+// One other important point:
+// This harvest endpoint should only callable by a single config.keeper address.
+// We should add this to Config and pass it in the Instantiate Message, as well as
+// make sure the config.owner can update that keeper value in the config.
+pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+    // TODO!
+    Ok(Response::default())
+}
+
 pub fn add_liquidity(
     deps: DepsMut,
     env: Env,
