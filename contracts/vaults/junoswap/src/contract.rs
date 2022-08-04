@@ -99,7 +99,10 @@ pub fn execute(
         // -Input token(eg. USDC) (Account) --> +Deposit Token/Yield Token (Vault)
         ExecuteMsg::Deposit {} => {
             if info.funds.len() != 1 {
-                return Err(ContractError::InvalidCoinsDeposited {});
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "Invalid: Multiple coins sent. Only accepts a single token as input."
+                        .to_string(),
+                }));
             }
             let depositor = info.sender.to_string();
             let deposit_denom = Denom::Native(info.funds[0].denom.to_string());
