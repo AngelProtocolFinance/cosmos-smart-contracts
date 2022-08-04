@@ -55,15 +55,15 @@ export async function setupCore(
     tax_rate: string;
     threshold_absolute_percentage: string;
     max_voting_period_height: number;
-    max_voting_period_guardians_height: number;
     fund_rotation: number | undefined;
-    turnover_to_multisig: boolean;
     is_localjuno: boolean;
     harvest_to_liquid: string;
     tax_per_block: string;
     funding_goal: string | undefined;
-    charity_cw3_multisig_threshold_abs_perc: string,
-    charity_cw3_multisig_max_voting_period: number,
+    fund_member_limit: number | undefined;
+    charity_cw3_threshold_abs_perc: string,
+    charity_cw3_max_voting_period: number,
+    accepted_tokens: any | undefined;
   }
 ): Promise<void> {
   juno = _juno;
@@ -84,20 +84,19 @@ export async function setupCore(
     apTreasuryAddr,
     config.threshold_absolute_percentage,
     config.max_voting_period_height,
-    config.max_voting_period_guardians_height,
     config.fund_rotation,
+    config.fund_member_limit,
     config.funding_goal,
+    config.accepted_tokens,
     config.is_localjuno,
   );
   // if (!config.is_localjuno) {
   //   await createVaults(config.harvest_to_liquid, config.tax_per_block);
   // }
-  if (config.turnover_to_multisig) {
-    await turnOverApTeamMultisig(config.is_localjuno);
-  }
+  await turnOverApTeamMultisig(config.is_localjuno);
   await createEndowments(
-    config.charity_cw3_multisig_threshold_abs_perc,
-    config.charity_cw3_multisig_max_voting_period,
+    config.charity_cw3_threshold_abs_perc,
+    config.charity_cw3_max_voting_period,
   );
   await approveEndowments();
   await createIndexFunds();
@@ -108,9 +107,10 @@ async function setup(
   treasury_address: string,
   threshold_absolute_percentage: string,
   max_voting_period_height: number,
-  max_voting_period_guardians_height: number,
   fund_rotation: number | undefined,
+  fund_member_limit: number | undefined,
   funding_goal: string | undefined,
+  accepted_tokens: any | undefined,
   is_localjuno: boolean
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each....
@@ -130,9 +130,13 @@ async function setup(
   const cw4Group = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw4_group.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw4Group}`);
 
-  process.stdout.write("Uploading CW3 MultiSig Wasm");
+  process.stdout.write("Uploading Standard CW3 MultiSig Wasm");
   const cw3MultiSig = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_multisig.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSig}`);
+
+  process.stdout.write("Uploading Endowment CW3 MultiSig Wasm");
+  const cw3MultiSigEndowment = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_endowment.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigEndowment}`);
 
   // Step 2. Instantiate the key contracts
   // Registrar
@@ -146,10 +150,10 @@ async function setup(
       tax_rate,
       accounts_code_id: accountsCodeId,
       treasury: treasury_address,
-      default_vault: undefined,
+      default_vault: apTeamAddr, // Fake vault address from apTeam
       split_to_liquid: undefined,
       accepted_tokens: {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
         cw20: [],
       }
     }
@@ -162,7 +166,9 @@ async function setup(
   const fundResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, fundCodeId, {
     registrar_contract: registrar,
     fund_rotation: fund_rotation,
+    fund_member_limit: fund_member_limit,
     funding_goal: funding_goal,
+    accepted_tokens: accepted_tokens,
   });
   indexFund = fundResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
@@ -190,6 +196,7 @@ async function setup(
       group_addr: cw4GrpApTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
+      // registrar_contract: registrar,
     }
   );
   cw3ApTeam = cw3ApTeamResult.contractAddress as string;
@@ -200,35 +207,22 @@ async function setup(
     "AddHook & UpdateAdmin on AP Team CW4 Group to point to AP Team C3"
   );
   await sendTransaction(juno, apTeamAddr, cw4GrpApTeam, {
-    add_hook: { addr: cw3ApTeam },
+      add_hook: { addr: cw3ApTeam },
   });
   await sendTransaction(juno, apTeamAddr, cw4GrpApTeam, {
-    update_admin: { admin: cw3ApTeam },
+      update_admin: { admin: cw3ApTeam },
   });
   console.log(chalk.green(" Done!"));
 
-  // // Add confirmed TCA Members to the Index Fund SCs approved list
-  process.stdout.write("Add confirmed TCA Member to allowed list");
-  let tca_wallet = await getWalletAddress(tca);
-  await sendTransaction(juno, apTeamAddr, indexFund, {
-    update_alliance_member_list: {
-      address: tca_wallet,
-      member: {
-        name: "TCA Member",
-        logo: undefined,
-        website: "https://angelprotocol.io/app",
-      },
-      action: "add",
-    },
-  });
-  console.log(chalk.green(" Done!"));
-
-  process.stdout.write("Update Registrar's config Index Fund, CW3_code_Id, CW4_code_Id");
+  process.stdout.write("Update Registrar's config with various wasm codes & contracts");
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_config: {
+      accounts_code_id: accountsCodeId,
       index_fund_contract: indexFund,
-      cw3_code: cw3MultiSig,
+      cw3_code: cw3MultiSigEndowment,
       cw4_code: cw4Group,
+      halo_token: apTeamAddr, // Fake halo token addr: Need to be handled
+      halo_token_lp_contract: apTeamAddr, // Fake halo token LP addr: Need to be handled
     },
   });
   console.log(chalk.green(" Done!"));
@@ -236,8 +230,8 @@ async function setup(
 
 // Step 4: Create Endowments via the Registrar contract
 async function createEndowments(
-  charity_cw3_multisig_threshold_abs_perc: string,
-  charity_cw3_multisig_max_voting_period: number,
+  charity_cw3_threshold_abs_perc: string,
+  charity_cw3_max_voting_period: number,
 ): Promise<void> {
   // endowment #1
   process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
@@ -273,8 +267,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity1_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
     },
   });
   endowmentContract1 = charityResult1.logs[0].events
@@ -323,8 +317,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity2_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
     },
   });
   endowmentContract2 = charityResult2.logs[0].events
@@ -373,8 +367,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity3_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
     },
   });
   endowmentContract3 = charityResult3.logs[0].events
@@ -422,8 +416,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity3_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
     }
   });
   endowmentContract4 = charityResult4.logs[0].events
