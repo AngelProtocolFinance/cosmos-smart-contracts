@@ -449,19 +449,6 @@ fn test_donate() {
     let query_res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&query_res).unwrap();
     assert_eq!(state.donations_received.u128(), donation_amt);
-
-    let query_res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetTxRecords {
-            sender: None,
-            recipient: None,
-            asset_info: AssetInfoBase::Native("uluna".to_string()),
-        },
-    )
-    .unwrap();
-    let txs_response: TxRecordsResponse = from_binary(&query_res).unwrap();
-    assert_eq!(txs_response.txs.len(), 1);
 }
 
 #[test]
@@ -491,24 +478,6 @@ fn test_deposit_cw20() {
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     assert_eq!(res.attributes.len(), 3);
-
-    // Check the "STATE" for "transactions" field
-    let query_res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-    let state: StateResponse = from_binary(&query_res).unwrap();
-    assert_eq!(state.donations_received.u128(), donation_amt);
-
-    let query_res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetTxRecords {
-            sender: None,
-            recipient: None,
-            asset_info: AssetInfoBase::Cw20(Addr::unchecked("test-cw20")),
-        },
-    )
-    .unwrap();
-    let txs_response: TxRecordsResponse = from_binary(&query_res).unwrap();
-    assert_eq!(txs_response.txs.len(), 1);
 }
 
 #[test]
@@ -537,7 +506,6 @@ fn test_withdraw() {
     let withdraw_msg = ExecuteMsg::Withdraw {
         sources: vec![],
         beneficiary: "beneficiary".to_string(),
-        asset_info: AssetInfoBase::Native("uluna".to_string()),
     };
     let res = execute(deps.as_mut(), mock_env(), info, withdraw_msg).unwrap();
     assert_eq!(res.messages.len(), 0);
