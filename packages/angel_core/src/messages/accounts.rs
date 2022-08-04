@@ -1,5 +1,5 @@
-use crate::structs::{FundingSource, Profile};
-use cosmwasm_std::{Addr, Decimal, Uint128};
+use crate::structs::{FundingSource, GenericBalance, Profile};
+use cosmwasm_std::{Addr, Decimal};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::AssetInfoBase;
@@ -41,9 +41,8 @@ pub enum ExecuteMsg {
         asset_info: AssetInfoBase<Addr>,
     },
     WithdrawLiquid {
-        liquid_amount: Uint128,
         beneficiary: String,
-        asset_info: AssetInfoBase<Addr>,
+        assets: GenericBalance,
     },
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt {},

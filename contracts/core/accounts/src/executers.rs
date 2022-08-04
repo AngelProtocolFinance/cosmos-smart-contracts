@@ -13,16 +13,16 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
 use angel_core::structs::{
-    EndowmentType, FundingSource, SocialMedialUrls, SplitDetails, StrategyComponent, Tier,
-    TransactionRecord,
+    EndowmentType, FundingSource, GenericBalance, SocialMedialUrls, SplitDetails,
+    StrategyComponent, Tier, TransactionRecord,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, redeem_from_vaults, validate_deposit_fund,
     withdraw_from_vaults,
 };
 use cosmwasm_std::{
-    coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
+    Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfoBase};
@@ -636,9 +636,8 @@ pub fn withdraw_liquid(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    liquid_amount: Uint128,
     beneficiary: String,
-    asset_info: AssetInfoBase<Addr>,
+    assets: GenericBalance,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
@@ -656,68 +655,62 @@ pub fn withdraw_liquid(
     }
 
     let mut state = STATE.load(deps.storage)?;
-    // check that the amount in liquid balance is sufficient to cover request
-    let amount = match asset_info {
-        AssetInfoBase::Native(ref denom) => {
-            state
-                .balances
-                .liquid_balance
-                .get_denom_amount(denom.to_string())
-                .amount
+    let mut messages: Vec<SubMsg> = vec![];
+
+    for asset in assets.native.iter() {
+        let liquid_balance = state
+            .balances
+            .liquid_balance
+            .get_denom_amount(asset.denom.clone())
+            .amount;
+        // check that the amount in liquid balance is sufficient to cover request
+        if asset.amount > liquid_balance {
+            return Err(ContractError::InsufficientFunds {});
         }
-        AssetInfoBase::Cw20(ref contract_addr) => {
-            state
-                .balances
-                .liquid_balance
-                .get_token_amount(contract_addr.clone())
-                .amount
+    }
+    // Build message to send all native tokens to the Beneficiary via BankMsg::Send
+    messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+        to_address: beneficiary.to_string(),
+        amount: assets.native.clone(),
+    })));
+    // Update the native tokens Liquid Balance in STATE
+    state
+        .balances
+        .liquid_balance
+        .deduct_tokens(Balance::from(assets.native));
+
+    for asset in assets.cw20.into_iter() {
+        let liquid_balance = state
+            .balances
+            .liquid_balance
+            .get_token_amount(asset.address.clone())
+            .amount;
+        // check that the amount in liquid balance is sufficient to cover request
+        if asset.amount > liquid_balance {
+            return Err(ContractError::InsufficientFunds {});
         }
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-    };
-    if amount < liquid_amount {
-        return Err(ContractError::InsufficientFunds {});
+        // Build message to send a CW20 tokens to the Beneficiary via CW20::Transfer
+        messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: asset.address.to_string(),
+            msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                recipient: beneficiary.to_string(),
+                amount: asset.amount,
+            })
+            .unwrap(),
+            funds: vec![],
+        })));
+        // Update a CW20 token's Liquid Balance in STATE
+        state
+            .balances
+            .liquid_balance
+            .deduct_tokens(Balance::Cw20(asset));
     }
 
-    // Update the Liquid Balance in STATE
-    let balance = match asset_info {
-        AssetInfoBase::Native(ref denom) => Balance::from(vec![Coin {
-            denom: denom.to_string(),
-            amount: liquid_amount,
-        }]),
-        AssetInfoBase::Cw20(ref contract_addr) => Balance::Cw20(Cw20CoinVerified {
-            address: deps.api.addr_validate(&contract_addr.to_string())?,
-            amount: liquid_amount,
-        }),
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-    };
-    state.balances.liquid_balance.deduct_tokens(balance);
     STATE.save(deps.storage, &state)?;
 
-    // Send "asset" to the Beneficiary via BankMsg::Send
-    let mut messages: Vec<SubMsg> = vec![];
-    match asset_info {
-        AssetInfoBase::Native(ref denom) => {
-            messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-                to_address: beneficiary.to_string(),
-                amount: coins(liquid_amount.u128(), denom.to_string()),
-            })))
-        }
-        AssetInfoBase::Cw20(ref contract_addr) => {
-            messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-                    recipient: beneficiary.to_string(),
-                    amount: liquid_amount,
-                })
-                .unwrap(),
-                funds: vec![],
-            })))
-        }
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-    };
     Ok(Response::new()
         .add_submessages(messages)
-        .add_attribute("action", "withdrawal")
+        .add_attribute("action", "withdraw_liquid")
         .add_attribute("sender", env.contract.address.to_string())
         .add_attribute("beneficiary", beneficiary))
 }
