@@ -2,16 +2,13 @@ use super::mock_querier::{mock_dependencies, WasmMockQuerier};
 use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
-use angel_core::messages::cw3_multisig::Threshold;
 use angel_core::responses::accounts::*;
 use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
-use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockQuerier, MockStorage};
-use cosmwasm_std::{
-    attr, coins, from_binary, to_binary, Addr, Coin, CustomQuery, Decimal, OwnedDeps, Uint128,
-};
+use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
+use cosmwasm_std::{attr, coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfoBase;
-use cw_utils::Duration;
+use cw_utils::{Duration, Threshold};
 
 const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
 const CHARITY_ADDR: &str = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v";
@@ -56,10 +53,10 @@ fn create_endowment() -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
-        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+        cw3_threshold: Threshold::AbsolutePercentage {
             percentage: Decimal::percent(10),
         },
-        cw3_multisig_max_vote_period: Duration::Time(60),
+        cw3_max_voting_period: Duration::Time(60),
     };
     let info = mock_info(AP_TEAM, &coins(100000, "earth"));
     let env = mock_env();
@@ -106,10 +103,10 @@ fn test_proper_initialization() {
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
-        cw3_multisig_threshold: Threshold::AbsolutePercentage {
+        cw3_threshold: Threshold::AbsolutePercentage {
             percentage: Decimal::percent(10),
         },
-        cw3_multisig_max_vote_period: Duration::Time(60),
+        cw3_max_voting_period: Duration::Time(60),
     };
     let info = mock_info("creator", &coins(100000, "earth"));
     let env = mock_env();

@@ -254,8 +254,8 @@ pub fn create_endowment(
             profile: msg.profile,
             cw4_members: msg.cw4_members,
             kyc_donors_only: msg.kyc_donors_only,
-            cw3_multisig_threshold: msg.cw3_multisig_threshold,
-            cw3_multisig_max_vote_period: Duration::Time(msg.cw3_multisig_max_vote_period),
+            cw3_threshold: msg.cw3_threshold,
+            cw3_max_voting_period: Duration::Time(msg.cw3_max_voting_period),
         })?,
         funds: vec![],
     };
@@ -386,10 +386,10 @@ pub fn new_accounts_reply(
                             endowment_image = attrb.value.clone();
                         }
                         if attrb.key == "endow_tier" {
-                            endowment_tier = attrb.value.clone().parse().unwrap_or(0);
+                            endowment_tier = attrb.value.clone().parse().unwrap();
                         }
                         if attrb.key == "endow_un_sdg" {
-                            endowment_un_sdg = attrb.value.clone().parse().unwrap_or(0);
+                            endowment_un_sdg = attrb.value.clone().parse().unwrap();
                         }
                     }
                 }
@@ -401,9 +401,14 @@ pub fn new_accounts_reply(
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
                     address: addr,
-                    name: Some(endowment_name),
-                    owner: Some(endowment_owner.clone()),
+                    owner: endowment_owner.clone(),
                     status: EndowmentStatus::Inactive,
+                    endow_type: match endowment_type.as_str() {
+                        "charity" => EndowmentType::Charity,
+                        "normal" => EndowmentType::Normal,
+                        _ => unimplemented!(),
+                    },
+                    name: Some(endowment_name),
                     tier: match endowment_tier {
                         1 => Some(Tier::Level1),
                         2 => Some(Tier::Level2),
@@ -411,11 +416,6 @@ pub fn new_accounts_reply(
                         _ => None,
                     },
                     un_sdg: Some(endowment_un_sdg),
-                    endow_type: match endowment_type.as_str() {
-                        "charity" => Some(EndowmentType::Charity),
-                        "normal" => Some(EndowmentType::Normal),
-                        _ => unimplemented!(),
-                    },
                     logo: Some(endowment_logo),
                     image: Some(endowment_image),
                 },
@@ -498,8 +498,8 @@ pub fn update_endowment_entry(
     let mut endowment_entry = REGISTRY.load(deps.storage, endowment_addr)?;
 
     endowment_entry.name = msg.name;
-    endowment_entry.owner = msg.owner;
-    endowment_entry.endow_type = msg.endow_type;
+    endowment_entry.owner = msg.owner.unwrap_or(endowment_entry.owner);
+    endowment_entry.endow_type = msg.endow_type.unwrap_or(endowment_entry.endow_type);
     endowment_entry.logo = msg.logo;
     endowment_entry.image = msg.image;
 

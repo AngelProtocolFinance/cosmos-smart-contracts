@@ -1,12 +1,9 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{
-    Config, Cw3MultiSigConfig, Endowment, State, CONFIG, CW3MULTISIGCONFIG, ENDOWMENT, PROFILE,
-    STATE,
-};
+use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::messages::cw4_group::InstantiateMsg as Cw4GroupInstantiateMsg;
+use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::{BalanceInfo, RebalanceDetails};
@@ -28,7 +25,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 pub fn instantiate(
     deps: DepsMut,
     env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
@@ -78,19 +75,10 @@ pub fn instantiate(
 
     PROFILE.save(deps.storage, &msg.profile)?;
 
-    CW3MULTISIGCONFIG.save(
-        deps.storage,
-        &Cw3MultiSigConfig {
-            threshold: msg.cw3_multisig_threshold,
-            max_voting_period: msg.cw3_multisig_max_vote_period,
-        },
-    )?;
-
     // initial default Response to add submessages to
     let mut res = Response::new().add_attributes(vec![
-        attr("endow_addr", env.contract.address),
+        attr("endow_addr", env.contract.address.clone()),
         attr("endow_name", msg.profile.name),
-        attr("endow_owner", msg.owner.to_string()),
         attr("endow_type", msg.profile.endow_type.to_string()),
         attr(
             "endow_logo",
@@ -110,30 +98,31 @@ pub fn instantiate(
         ),
     ]);
 
-    // check if CW3/CW4 codes were passed to setup a multisig/group
-    let cw4_members = if msg.cw4_members.is_empty() {
-        vec![Member {
-            addr: msg.owner.to_string(),
-            weight: 1,
-        }]
-    } else {
-        msg.cw4_members
-    };
-
     if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {
         return Err(ContractError::Std(StdError::generic_err(
             "cw3_code & cw4_code must exist",
         )));
     }
+
+    // Add submessage to create new CW3 multisig for the endowment
     res = res.add_submessage(SubMsg {
-        id: 1,
+        id: 0,
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-            code_id: registrar_config.cw4_code.unwrap(),
+            code_id: registrar_config.cw3_code.unwrap(),
             admin: None,
-            label: "new endowment cw4 group".to_string(),
-            msg: to_binary(&Cw4GroupInstantiateMsg {
-                admin: Some(info.sender.to_string()),
-                members: cw4_members,
+            label: "new endowment cw3 multisig".to_string(),
+            msg: to_binary(&Cw3InstantiateMsg {
+                // check if CW3/CW4 codes were passed to setup a multisig/group
+                cw4_members: match msg.cw4_members.is_empty() {
+                    true => vec![Member {
+                        addr: msg.owner.to_string(),
+                        weight: 1,
+                    }],
+                    false => msg.cw4_members,
+                },
+                cw4_code: registrar_config.cw4_code.unwrap(),
+                threshold: msg.cw3_threshold,
+                max_voting_period: msg.cw3_max_voting_period,
             })?,
             funds: vec![],
         }),
@@ -242,8 +231,7 @@ pub fn receive_cw20(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        1 => executers::new_cw4_group_reply(deps, env, msg.result),
-        2 => executers::new_cw3_multisig_reply(deps, env, msg.result),
+        0 => executers::cw3_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }
