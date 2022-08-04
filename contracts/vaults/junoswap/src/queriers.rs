@@ -5,7 +5,7 @@ use cw20_base::state::TOKEN_INFO;
 use angel_core::messages::vault::WasmSwapQueryMsg;
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse, InfoResponse};
 
-use crate::state::{self, CONFIG};
+use crate::state::{Config, CONFIG};
 
 pub fn query_balance(deps: Deps, address: String) -> BalanceResponse {
     cw20_base::contract::query_balance(deps, address).unwrap_or(BalanceResponse {
@@ -24,10 +24,11 @@ pub fn query_token_info(deps: Deps) -> TokenInfoResponse {
 }
 
 pub fn query_config(deps: Deps) -> ConfigResponse {
-    let config = state::read(deps.storage).unwrap();
+    let config = CONFIG.load(deps.storage).unwrap();
     ConfigResponse {
         owner: config.owner.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
+        keeper: config.keeper.to_string(),
         pool_addr: config.pool_addr.to_string(),
         input_denoms: config.input_denoms,
         pool_lp_token_addr: config.pool_lp_token_addr.to_string(),
@@ -37,7 +38,7 @@ pub fn query_config(deps: Deps) -> ConfigResponse {
 }
 
 pub fn query_total_balance(deps: Deps) -> BalanceResponse {
-    let config = state::read(deps.storage).unwrap();
+    let config = CONFIG.load(deps.storage).unwrap();
     BalanceResponse {
         balance: config.total_shares,
     }

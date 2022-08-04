@@ -14,7 +14,7 @@ use angel_core::responses::vault::InfoResponse;
 
 use crate::executers;
 use crate::queriers;
-use crate::state;
+use crate::state::{Config, CONFIG};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "junoswap_vault";
@@ -45,9 +45,10 @@ pub fn instantiate(
         }));
     }
 
-    let config = state::Config {
+    let config = Config {
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
+        keeper: deps.api.addr_validate(&msg.keeper)?,
 
         pool_addr: swap_pool_addr,
         input_denoms: vec![swap_pool_info.token1_denom, swap_pool_info.token2_denom],
@@ -63,7 +64,7 @@ pub fn instantiate(
         last_harvest_fx: None,
     };
 
-    state::store(deps.storage, &config)?;
+    CONFIG.save(deps.storage, &config)?;
 
     // store token info
     let token_info = TokenInfo {

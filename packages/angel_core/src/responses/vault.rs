@@ -13,6 +13,7 @@ pub struct ExchangeRateResponse {
 pub struct ConfigResponse {
     pub owner: String,
     pub registrar_contract: String,
+    pub keeper: String,
     pub pool_addr: String,
     pub input_denoms: Vec<Denom>,
     pub pool_lp_token_addr: String,

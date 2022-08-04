@@ -10,6 +10,7 @@ pub const CONFIG: Item<Config> = Item::new("config");
 pub struct Config {
     pub owner: Addr,
     pub registrar_contract: Addr,
+    pub keeper: Addr,
 
     pub last_harvest: u64,
     pub last_harvest_fx: Option<Uint128>,

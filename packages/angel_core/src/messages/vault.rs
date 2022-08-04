@@ -9,7 +9,10 @@ pub struct InstantiateMsg {
     pub swap_pool_addr: String,
     pub staking_addr: String,
     pub output_token_denom: Denom,
+
     pub registrar_contract: String,
+    pub keeper: String,
+
     pub name: String,
     pub symbol: String,
     pub decimals: u8,
@@ -100,6 +103,7 @@ pub struct UpdateConfigMsg {
     pub staking_addr: Option<String>,
     pub routes: RoutesUpdateMsg,
     pub output_token_denom: Option<Denom>,
+    pub keeper: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

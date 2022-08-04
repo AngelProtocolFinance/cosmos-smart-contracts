@@ -15,13 +15,16 @@ use crate::testing::mock_querier::{mock_dependencies, WasmMockQuerier};
 fn create_mock_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
     let mut deps = mock_dependencies(&coins);
     let instantiate_msg = InstantiateMsg {
+        registrar_contract: "angelprotocolteamdano".to_string(),
+        keeper: "keeper".to_string(),
+
+        swap_pool_addr: "junoswap-pool".to_string(),
+        staking_addr: "lp-staking-contract".to_string(),
+        output_token_denom: cw20::Denom::Native("ujuno".to_string()),
+
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
-        swap_pool_addr: "junoswap-pool".to_string(),
-        staking_addr: "lp-staking-contract".to_string(),
-        registrar_contract: "angelprotocolteamdano".to_string(),
-        output_token_denom: cw20::Denom::Native("ujuno".to_string()),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -34,13 +37,16 @@ fn create_mock_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMo
 fn proper_instantiation() {
     let mut deps = mock_dependencies(&[]);
     let instantiate_msg = InstantiateMsg {
+        registrar_contract: "angelprotocolteamdano".to_string(),
+        keeper: "keeper".to_string(),
+
+        swap_pool_addr: "junoswap-pool".to_string(),
+        staking_addr: "lp-staking-contract".to_string(),
+        output_token_denom: cw20::Denom::Native("ujuno".to_string()),
+
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
-        swap_pool_addr: "junoswap-pool".to_string(),
-        staking_addr: "lp-staking-contract".to_string(),
-        registrar_contract: "angelprotocolteamdano".to_string(),
-        output_token_denom: cw20::Denom::Native("ujuno".to_string()),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -141,6 +147,7 @@ fn test_update_config() {
             remove: vec![],
         },
         output_token_denom: None,
+        keeper: Some("new-keeper".to_string()),
     };
 
     // Only "config.owner" can update the config, otherwise fails
@@ -169,6 +176,7 @@ fn test_update_config() {
     let config_resp: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(config_resp.staking_addr, "new-staking-addr".to_string());
     assert_eq!(config_resp.pool_addr, "new-swap-pool-addr".to_string());
+    assert_eq!(config_resp.keeper, "new-keeper".to_string());
 }
 
 #[test]
