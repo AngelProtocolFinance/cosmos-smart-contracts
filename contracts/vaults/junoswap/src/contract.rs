@@ -153,25 +153,16 @@ pub fn execute(
         ),
 
         // Cw20_base entries
-        ExecuteMsg::Transfer { recipient, amount } => cw20_base::contract::execute_transfer(
-            deps, env, info, recipient, amount,
-        )
-        .map_err(|_| {
-            ContractError::Std(StdError::GenericErr {
-                msg: "Error in transfer".to_string(),
-            })
-        }),
+        ExecuteMsg::Transfer { recipient, amount } => {
+            cw20_base::contract::execute_transfer(deps, env, info, recipient, amount)
+                .map_err(|e| e.into())
+        }
         ExecuteMsg::Send {
             contract,
             amount,
             msg,
-        } => cw20_base::contract::execute_send(deps, env, info, contract, amount, msg).map_err(
-            |_| {
-                ContractError::Std(StdError::GenericErr {
-                    msg: "Error in send".to_string(),
-                })
-            },
-        ),
+        } => cw20_base::contract::execute_send(deps, env, info, contract, amount, msg)
+            .map_err(|e| e.into()),
         ExecuteMsg::IncreaseAllowance {
             spender,
             amount,
@@ -179,11 +170,7 @@ pub fn execute(
         } => cw20_base::allowances::execute_increase_allowance(
             deps, env, info, spender, amount, expires,
         )
-        .map_err(|_| {
-            ContractError::Std(StdError::GenericErr {
-                msg: "Error in increase_allowance".to_string(),
-            })
-        }),
+        .map_err(|e| e.into()),
         ExecuteMsg::DecreaseAllowance {
             spender,
             amount,
@@ -191,29 +178,18 @@ pub fn execute(
         } => cw20_base::allowances::execute_decrease_allowance(
             deps, env, info, spender, amount, expires,
         )
-        .map_err(|_| {
-            ContractError::Std(StdError::GenericErr {
-                msg: "Error in decrease_allowance".to_string(),
-            })
-        }),
+        .map_err(|e| e.into()),
         ExecuteMsg::TransferFrom {
             owner,
             recipient,
             amount,
         } => {
             cw20_base::allowances::execute_transfer_from(deps, env, info, owner, recipient, amount)
-                .map_err(|_| {
-                    ContractError::Std(StdError::GenericErr {
-                        msg: "Error in transfer_from".to_string(),
-                    })
-                })
+                .map_err(|e| e.into())
         }
         ExecuteMsg::BurnFrom { owner, amount } => {
-            cw20_base::allowances::execute_burn_from(deps, env, info, owner, amount).map_err(|_| {
-                ContractError::Std(StdError::GenericErr {
-                    msg: "Error in burn_from".to_string(),
-                })
-            })
+            cw20_base::allowances::execute_burn_from(deps, env, info, owner, amount)
+                .map_err(|e| e.into())
         }
         ExecuteMsg::SendFrom {
             owner,
@@ -222,11 +198,7 @@ pub fn execute(
             msg,
         } => {
             cw20_base::allowances::execute_send_from(deps, env, info, owner, contract, amount, msg)
-                .map_err(|_| {
-                    ContractError::Std(StdError::GenericErr {
-                        msg: "Error in send_from".to_string(),
-                    })
-                })
+                .map_err(|e| e.into())
         }
     }
 }
