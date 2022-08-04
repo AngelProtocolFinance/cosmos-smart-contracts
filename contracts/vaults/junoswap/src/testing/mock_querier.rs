@@ -159,14 +159,14 @@ impl WasmMockQuerier {
                     to_binary(&EndowmentListResponse {
                         endowments: vec![EndowmentEntry {
                             address: Addr::unchecked("endowment-1"),
+                            owner: "owner".to_string(),
+                            endow_type: angel_core::structs::EndowmentType::Charity,
                             status: angel_core::structs::EndowmentStatus::Approved,
                             name: None,
                             logo: None,
                             image: None,
-                            owner: None,
                             tier: None,
                             un_sdg: None,
-                            endow_type: None,
                         }],
                     })
                     .unwrap(),
