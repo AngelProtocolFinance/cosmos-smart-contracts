@@ -1,6 +1,6 @@
 use crate::structs::{
     EndowmentFee, EndowmentType, RebalanceDetails, SettingsController, SocialMedialUrls,
-    StrategyComponent, TransactionRecord,
+    StrategyComponent,
 };
 use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
@@ -61,11 +61,6 @@ pub struct ProfileResponse {
     pub annual_revenue: Option<String>,
     pub charity_navigator_rating: Option<String>,
     pub endowment_type: EndowmentType,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
-pub struct TxRecordsResponse {
-    pub txs: Vec<TransactionRecord>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

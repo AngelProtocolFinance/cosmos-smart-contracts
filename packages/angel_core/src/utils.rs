@@ -205,10 +205,8 @@ pub fn withdraw_from_vaults(
     registrar_contract: String,
     beneficiary: &Addr,
     sources: Vec<FundingSource>,
-    _asset_info: AssetInfoBase<Addr>,
-) -> Result<(Vec<SubMsg>, Uint128), ContractError> {
+) -> Result<Vec<SubMsg>, ContractError> {
     let mut withdraw_messages = vec![];
-    let mut tx_amounts = Uint128::zero();
 
     // redeem amounts from sources listed
     for source in sources.iter() {
@@ -225,25 +223,22 @@ pub fn withdraw_from_vaults(
             if !yield_vault.approved {
                 return Err(ContractError::InvalidInputs {});
             }
-            let withdraw_msg = AccountWithdrawMsg {
-                beneficiary: beneficiary.clone(),
-                amount: source.amount,
-            };
-
-            tx_amounts += source.amount;
 
             // create a withdraw message for X Vault, noting amounts for Locked / Liquid
             withdraw_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: yield_vault.address.to_string(),
                 msg: to_binary(&crate::messages::vault::ExecuteMsg::Withdraw(
-                    withdraw_msg.clone(),
+                    AccountWithdrawMsg {
+                        beneficiary: beneficiary.clone(),
+                        amount: source.amount,
+                    },
                 ))
                 .unwrap(),
                 funds: vec![],
             })));
         }
     }
-    Ok((withdraw_messages, tx_amounts))
+    Ok(withdraw_messages)
 }
 
 pub fn deposit_to_vaults(
