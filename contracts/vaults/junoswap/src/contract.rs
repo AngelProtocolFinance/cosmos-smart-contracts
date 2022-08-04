@@ -253,6 +253,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)),
         QueryMsg::Balance { address } => to_binary(&queriers::query_balance(deps, address)),
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
+        QueryMsg::TotalBalance {} => to_binary(&queriers::query_total_balance(deps)),
     }
 }
 

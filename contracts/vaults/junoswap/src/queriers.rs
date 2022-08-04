@@ -36,6 +36,13 @@ pub fn query_config(deps: Deps) -> ConfigResponse {
     }
 }
 
+pub fn query_total_balance(deps: Deps) -> BalanceResponse {
+    let config = state::read(deps.storage).unwrap();
+    BalanceResponse {
+        balance: config.total_shares,
+    }
+}
+
 pub fn query_exchange_rate(deps: Deps, input_denom: Denom) -> ExchangeRateResponse {
     let config = CONFIG.load(deps.storage).unwrap();
     let swap_pool_info: InfoResponse = deps

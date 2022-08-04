@@ -122,15 +122,18 @@ pub enum ReceiveMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
+    /// Returns the configuration of the contract
+    /// Return type: ConfigResponse.
     Config {},
     /// Returns the current balance of the given address, 0 if unset.
     /// Return type: BalanceResponse.
-    Balance {
-        address: String,
-    },
+    Balance { address: String },
     /// Returns metadata on the contract - name, decimals, supply, etc.
     /// Return type: TokenInfoResponse.
     TokenInfo {},
+    /// Returns the total balance/total_share of the contract
+    /// Return type: BalanceResponse.
+    TotalBalance {},
 }
 
 ///
