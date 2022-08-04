@@ -158,12 +158,6 @@ pub fn execute(
                 msg: "Error in transfer".to_string(),
             })
         }),
-        ExecuteMsg::Burn { amount } => cw20_base::contract::execute_burn(deps, env, info, amount)
-            .map_err(|_| {
-                ContractError::Std(StdError::GenericErr {
-                    msg: "Error in burn".to_string(),
-                })
-            }),
         ExecuteMsg::Send {
             contract,
             amount,
@@ -175,13 +169,6 @@ pub fn execute(
                 })
             },
         ),
-        ExecuteMsg::Mint { recipient, amount } => {
-            cw20_base::contract::execute_mint(deps, env, info, recipient, amount).map_err(|_| {
-                ContractError::Std(StdError::GenericErr {
-                    msg: "Error in mint".to_string(),
-                })
-            })
-        }
         ExecuteMsg::IncreaseAllowance {
             spender,
             amount,

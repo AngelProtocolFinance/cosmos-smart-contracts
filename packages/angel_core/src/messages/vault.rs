@@ -61,17 +61,10 @@ pub enum ExecuteMsg {
         recipient: String,
         amount: Uint128,
     },
-    Burn {
-        amount: Uint128,
-    },
     Send {
         contract: String,
         amount: Uint128,
         msg: Binary,
-    },
-    Mint {
-        recipient: String,
-        amount: Uint128,
     },
     IncreaseAllowance {
         spender: String,

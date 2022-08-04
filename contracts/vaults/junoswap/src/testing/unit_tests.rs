@@ -292,18 +292,18 @@ fn test_withdraw() {
         })
     );
 
-    // Mock "mint"ing the vault tokens to "endowment"
-    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
-    let _ = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::Mint {
-            recipient: endowment.to_string(),
-            amount: deposit_amount,
-        },
-    )
-    .unwrap();
+    // // Mock "mint"ing the vault tokens to "endowment"
+    // let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    // let _ = execute(
+    //     deps.as_mut(),
+    //     mock_env(),
+    //     info,
+    //     ExecuteMsg::Mint {
+    //         recipient: endowment.to_string(),
+    //         amount: deposit_amount,
+    //     },
+    // )
+    // .unwrap();
 
     // Finally, succeed to "withdraw" tokens
     let info = mock_info(endowment, &[]);
