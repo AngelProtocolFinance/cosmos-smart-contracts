@@ -589,8 +589,7 @@ fn test_withdraw_liquid() {
     assert_eq!(1, res.messages.len());
 }
 
-// FIXME: After "vault" logic is finalized/implemented, this SHOULD be handled
-// #[test]
+#[test]
 fn test_vault_receipt() {
     let mut deps = create_endowment();
 
