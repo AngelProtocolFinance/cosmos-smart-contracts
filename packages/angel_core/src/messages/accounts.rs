@@ -1,8 +1,8 @@
 use crate::structs::{
-    DaoSetup, DonationMatch, EndowmentFee, FundingSource, Profile, RebalanceDetails,
-    SettingsController, StrategyComponent,
+    DaoSetup, DonationMatch, EndowmentFee, FundingSource, GenericBalance, Profile,
+    RebalanceDetails, SettingsController, StrategyComponent,
 };
-use cosmwasm_std::{Addr, Decimal, Uint128};
+use cosmwasm_std::{Addr, Decimal};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::AssetInfoBase;
@@ -55,9 +55,8 @@ pub enum ExecuteMsg {
         asset_info: AssetInfoBase<Addr>,
     },
     WithdrawLiquid {
-        liquid_amount: Uint128,
         beneficiary: String,
-        asset_info: AssetInfoBase<Addr>,
+        assets: GenericBalance,
     },
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt {},

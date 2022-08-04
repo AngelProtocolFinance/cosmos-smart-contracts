@@ -237,10 +237,9 @@ pub fn execute(
             asset_info,
         } => executers::withdraw(deps, env, info, sources, beneficiary, asset_info),
         ExecuteMsg::WithdrawLiquid {
-            liquid_amount,
             beneficiary,
-            asset_info,
-        } => executers::withdraw_liquid(deps, env, info, liquid_amount, beneficiary, asset_info),
+            assets,
+        } => executers::withdraw_liquid(deps, env, info, beneficiary, assets),
         ExecuteMsg::VaultReceipt {} => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
