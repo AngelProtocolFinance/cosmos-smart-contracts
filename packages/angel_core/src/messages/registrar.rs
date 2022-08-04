@@ -1,10 +1,9 @@
 use crate::structs::{AcceptedTokens, EndowmentType, NetworkInfo, Profile, SplitDetails, Tier};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
+use cw_utils::Threshold;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
-use super::cw3_multisig::Threshold;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {}
@@ -62,8 +61,8 @@ pub struct CreateEndowmentMsg {
     pub profile: Profile,
     pub cw4_members: Vec<Member>,
     pub kyc_donors_only: bool,
-    pub cw3_multisig_threshold: Threshold,
-    pub cw3_multisig_max_vote_period: u64, // Time in seconds
+    pub cw3_threshold: Threshold,
+    pub cw3_max_voting_period: u64, // Time in seconds
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -147,10 +146,10 @@ pub enum QueryMsg {
     EndowmentList {
         status: Option<String>,
         name: Option<Option<String>>,
-        owner: Option<Option<String>>,
+        owner: Option<String>,
         tier: Option<Option<String>>,
         un_sdg: Option<Option<u64>>,
-        endow_type: Option<Option<String>>,
+        endow_type: Option<String>,
     },
     // Get all Config details for the contract
     Config {},
