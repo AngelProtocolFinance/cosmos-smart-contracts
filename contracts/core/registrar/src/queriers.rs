@@ -63,6 +63,9 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
 pub fn query_vault_list(
     deps: Deps,
+    network: Option<String>,
+    endowment_type: Option<EndowmentType>,
+    approved: Option<bool>,
     start_after: Option<String>,
     limit: Option<u64>,
 ) -> StdResult<VaultListResponse> {
@@ -71,21 +74,7 @@ pub fn query_vault_list(
         Some(start_after) => Some(deps.api.addr_validate(&start_after)?),
         None => None,
     };
-    let vaults = read_vaults(deps.storage, addr, limit)?;
-    Ok(VaultListResponse { vaults })
-}
-
-pub fn query_approved_vault_list(
-    deps: Deps,
-    start_after: Option<String>,
-    limit: Option<u64>,
-) -> StdResult<VaultListResponse> {
-    // returns a list of approved Vaults
-    let addr = match start_after {
-        Some(start_after) => Some(deps.api.addr_validate(&start_after)?),
-        None => None,
-    };
-    let vaults = read_vaults(deps.storage, addr, limit)?;
+    let vaults = read_vaults(deps.storage, network, endowment_type, approved, addr, limit)?;
     Ok(VaultListResponse { vaults })
 }
 
@@ -178,7 +167,7 @@ pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDet
 
 pub fn query_approved_vaults_fx_rate(deps: Deps) -> StdResult<VaultRateResponse> {
     // returns a list of approved Vaults exchange rate
-    let vaults = read_vaults(deps.storage, None, None)?;
+    let vaults = read_vaults(deps.storage, None, None, Some(true), None, None)?;
     let mut vaults_rate: Vec<VaultRate> = vec![];
     for vault in vaults.iter().filter(|p| p.approved) {
         let fx_rate = vault_fx_rate(deps, vault.address.to_string());

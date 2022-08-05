@@ -369,6 +369,7 @@ pub fn vault_add(
             input_denom: msg.input_denom,
             yield_token: deps.api.addr_validate(&msg.yield_token)?.to_string(),
             approved: false,
+            restricted_from: msg.restricted_from,
         },
     )?;
     Ok(Response::default())
@@ -393,12 +394,13 @@ pub fn vault_remove(
     Ok(Response::default())
 }
 
-pub fn vault_update_status(
+pub fn vault_update(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     vault_addr: String,
     approved: bool,
+    restricted_from: Vec<EndowmentType>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // message can only be valid if it comes from the (AP Team/DANO address) SC Owner
@@ -411,6 +413,8 @@ pub fn vault_update_status(
 
     // update new vault approval status attribute from passed arg
     vault.approved = approved;
+    // set any restricted endowment types
+    vault.restricted_from = restricted_from;
     VAULTS.save(deps.storage, addr.as_bytes(), &vault)?;
 
     Ok(Response::default())
