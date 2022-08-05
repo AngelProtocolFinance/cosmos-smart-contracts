@@ -14,7 +14,7 @@ use angel_core::messages::subdao::{
     PollResponse, PollStatus, PollsResponse, QueryMsg, StateResponse, VoteOption, VoterInfo,
     VotersResponse, VotersResponseItem,
 };
-use angel_core::messages::subdao_token::InstantiateMsg as DaoTokenInstantiateMsg;
+use angel_core::messages::subdao_bonding_token::InstantiateMsg as DaoTokenInstantiateMsg;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{DaoToken, EndowmentType};
 use cosmwasm_std::entry_point;
@@ -101,7 +101,7 @@ pub fn build_dao_token_messages(
             config.dao_token = deps.api.addr_validate(&addr)?;
             config_store(deps.storage).save(&config)?;
         }
-        // Option #2. Create a basic CW20 token contract with a fixed supply
+        // Option #2. Create a new CW20 token contract with a fixed supply
         (
             DaoToken::NewCw20 {
                 initial_supply,
@@ -112,7 +112,7 @@ pub fn build_dao_token_messages(
         ) => submsgs.push(SubMsg {
             id: 1,
             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                code_id: registrar_config.subdao_token_code.unwrap(),
+                code_id: registrar_config.subdao_cw20_token_code.unwrap(),
                 admin: None,
                 label: "new endowment dao token(cw20) contract".to_string(),
                 msg: to_binary(&cw20_base::msg::InstantiateMsg {
@@ -146,7 +146,7 @@ pub fn build_dao_token_messages(
         ) => submsgs.push(SubMsg {
             id: 1,
             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                code_id: registrar_config.subdao_token_code.unwrap(),
+                code_id: registrar_config.subdao_bonding_token_code.unwrap(),
                 admin: None,
                 label: "new endowment dao token(bonding curve) contract".to_string(),
                 msg: to_binary(&DaoTokenInstantiateMsg {
@@ -188,7 +188,7 @@ pub fn build_dao_token_messages(
             submsgs.push(SubMsg {
                 id: 1,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: registrar_config.subdao_token_code.unwrap(),
+                    code_id: registrar_config.subdao_bonding_token_code.unwrap(),
                     admin: None,
                     label: "new endowment dao token(bonding curve) contract".to_string(),
                     msg: to_binary(&DaoTokenInstantiateMsg {

@@ -1,4 +1,6 @@
-use angel_core::messages::subdao_token::{CurveInfoResponse, ExecuteMsg, InstantiateMsg, QueryMsg};
+use angel_core::messages::subdao_bonding_token::{
+    CurveInfoResponse, ExecuteMsg, InstantiateMsg, QueryMsg,
+};
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 use cw20::{AllowanceResponse, BalanceResponse, TokenInfoResponse};
 use std::env::current_dir;

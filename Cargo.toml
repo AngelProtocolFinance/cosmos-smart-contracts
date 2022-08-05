@@ -8,7 +8,7 @@ members = [
     "contracts/normalized-endowment/cw3-endowment",
     "contracts/normalized-endowment/cw900-lv",
     "contracts/normalized-endowment/subdao",
-    "contracts/normalized-endowment/subdao-token",
+    "contracts/normalized-endowment/subdao-bonding-token",
     "contracts/normalized-endowment/donation-match",
     "contracts/normalized-endowment/fee-distributor",
     "contracts/multisig/cw4-group",

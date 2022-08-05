@@ -7,7 +7,7 @@ use angel_core::messages::subdao::{
     PollExecuteMsg, PollResponse, PollStatus, PollsResponse, QueryMsg, VoteOption, VoterInfo,
     VotersResponse, VotersResponseItem,
 };
-use angel_core::messages::subdao_token::CurveType;
+use angel_core::messages::subdao_bonding_token::CurveType;
 use angel_core::structs::EndowmentType;
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{

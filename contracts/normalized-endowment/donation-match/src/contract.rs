@@ -6,7 +6,7 @@ use angel_core::messages::donation_match::{
 
 use angel_core::messages::accounts::QueryMsg as AccountQueryMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
-use angel_core::messages::subdao_token::Cw20HookMsg as DaoTokenHookMsg;
+use angel_core::messages::subdao_bonding_token::Cw20HookMsg as DaoTokenHookMsg;
 use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfig, EndowmentDetailResponse,

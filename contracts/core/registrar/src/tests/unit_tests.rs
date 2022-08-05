@@ -1,7 +1,7 @@
 use crate::contract::{execute, instantiate, query, reply};
 use angel_core::errors::core::*;
 use angel_core::messages::registrar::*;
-use angel_core::messages::subdao_token::CurveType;
+use angel_core::messages::subdao_bonding_token::CurveType;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
     AcceptedTokens, EndowmentStatus, EndowmentType, NetworkInfo, Profile, SocialMedialUrls,
@@ -132,7 +132,8 @@ fn update_config() {
         collector_share: None,
         swap_factory: None,
         subdao_gov_code: None,
-        subdao_token_code: None,
+        subdao_cw20_token_code: None,
+        subdao_bonding_token_code: None,
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,
@@ -203,7 +204,8 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         collector_share: None,
         swap_factory: None,
         subdao_gov_code: None,
-        subdao_token_code: None,
+        subdao_cw20_token_code: None,
+        subdao_bonding_token_code: None,
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,
@@ -615,7 +617,8 @@ fn test_add_update_and_remove_accepted_tokens() {
         collector_share: None,
         swap_factory: None,
         subdao_gov_code: None,
-        subdao_token_code: None,
+        subdao_cw20_token_code: None,
+        subdao_bonding_token_code: None,
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,

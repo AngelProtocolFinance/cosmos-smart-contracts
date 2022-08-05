@@ -1,5 +1,5 @@
 [package]
-name = "subdao-token"
+name = "subdao-bonding-token"
 version = "2.0.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"

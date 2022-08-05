@@ -1,4 +1,4 @@
-use crate::messages::subdao_token::CurveType;
+use crate::messages::subdao_bonding_token::CurveType;
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfoBase};

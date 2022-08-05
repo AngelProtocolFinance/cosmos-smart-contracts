@@ -6,6 +6,6 @@ pub mod fee_distributor;
 pub mod index_fund;
 pub mod registrar;
 pub mod subdao;
-pub mod subdao_token;
+pub mod subdao_bonding_token;
 pub mod vault;
 pub mod ve_token;

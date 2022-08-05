@@ -1,5 +1,5 @@
 use angel_core::curves::DecimalPlaces;
-use angel_core::messages::subdao_token::CurveType;
+use angel_core::messages::subdao_bonding_token::CurveType;
 use cosmwasm_std::{Addr, Uint128};
 use cw_controllers::Claims;
 use cw_storage_plus::{Item, Map};

@@ -232,9 +232,13 @@ pub fn update_config(
         Some(u64) => Some(u64),
         None => config.subdao_gov_code,
     };
-    config.subdao_token_code = match msg.subdao_token_code {
+    config.subdao_bonding_token_code = match msg.subdao_bonding_token_code {
         Some(u64) => Some(u64),
-        None => config.subdao_token_code,
+        None => config.subdao_bonding_token_code,
+    };
+    config.subdao_cw20_token_code = match msg.subdao_cw20_token_code {
+        Some(u64) => Some(u64),
+        None => config.subdao_cw20_token_code,
     };
     config.subdao_cw900_code = match msg.subdao_cw900_code {
         Some(u64) => Some(u64),

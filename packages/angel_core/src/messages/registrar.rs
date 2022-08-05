@@ -114,11 +114,12 @@ pub struct UpdateConfigMsg {
     pub accounts_code_id: Option<u64>,
     pub cw3_code: Option<u64>,
     pub cw4_code: Option<u64>,
-    pub subdao_gov_code: Option<u64>,         // subdao gov wasm code
-    pub subdao_token_code: Option<u64>,       // subdao gov token (w/ bonding-curve) wasm code
-    pub subdao_cw900_code: Option<u64>, // subdao gov ve-CURVE contract for locked token voting
+    pub subdao_gov_code: Option<u64>,        // subdao gov wasm code
+    pub subdao_cw20_token_code: Option<u64>, // subdao gov token (basic CW20) wasm code
+    pub subdao_bonding_token_code: Option<u64>, // subdao gov token (w/ bonding-curve) wasm code
+    pub subdao_cw900_code: Option<u64>,      // subdao gov ve-CURVE contract for locked token voting
     pub subdao_distributor_code: Option<u64>, // subdao gov fee distributor wasm code
-    pub donation_match_code: Option<u64>, // donation matching contract wasm code
+    pub donation_match_code: Option<u64>,    // donation matching contract wasm code
     /// CONTRACT ADDRESSES
     pub index_fund_contract: Option<String>,
     pub gov_contract: Option<String>,

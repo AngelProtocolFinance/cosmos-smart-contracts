@@ -166,7 +166,7 @@ pub fn instantiate(
     // check if a dao needs to be setup along with a dao token contract
     match (
         msg.dao,
-        registrar_config.subdao_token_code,
+        registrar_config.subdao_bonding_token_code,
         registrar_config.subdao_gov_code,
     ) {
         (Some(dao_setup), Some(_token_code), Some(gov_code)) => {
