@@ -14,7 +14,7 @@ use angel_core::responses::registrar::{
 };
 use angel_core::structs::{
     EndowmentType, FundingSource, GenericBalance, SocialMedialUrls, SplitDetails,
-    StrategyComponent, Tier, TransactionRecord,
+    StrategyComponent, Tier,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, redeem_from_vaults, validate_deposit_fund,
@@ -452,7 +452,7 @@ pub fn vault_receipt(
 
 pub fn deposit(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     _info: MessageInfo,
     sender_addr: Addr,
     msg: DepositMsg,
@@ -511,15 +511,7 @@ pub fn deposit(
     // update total donations recieved for a charity
     let mut state = STATE.load(deps.storage)?;
     state.donations_received += deposit_amount;
-    // note the tx in records
-    let tx_record = TransactionRecord {
-        block: env.block.height,
-        sender: sender_addr.clone(),
-        recipient: None,
-        amount: deposit_amount,
-        asset_info: deposit_token.info,
-    };
-    state.transactions.push(tx_record);
+
     // increase the liquid balance by donation (liquid) amount
     let liquid_balance = match liquid_amount.info {
         AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
@@ -575,9 +567,8 @@ pub fn withdraw(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    sources: Vec<FundingSource>,
     beneficiary: String,
-    asset_info: AssetInfoBase<Addr>,
+    sources: Vec<FundingSource>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
@@ -605,25 +596,12 @@ pub fn withdraw(
     }
 
     // build redeem messages for each of the sources/amounts
-    let (withdraw_messages, tx_amounts) = withdraw_from_vaults(
+    let withdraw_messages = withdraw_from_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
         &deps.api.addr_validate(&beneficiary)?,
         sources,
-        asset_info.clone(),
     )?;
-
-    // Save the tx record in STATE
-    let mut state = STATE.load(deps.storage)?;
-    let tx_record = TransactionRecord {
-        block: env.block.height,
-        sender: env.contract.address.clone(),
-        recipient: Some(Addr::unchecked(beneficiary.clone())),
-        amount: tx_amounts,
-        asset_info,
-    };
-    state.transactions.push(tx_record);
-    STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
         .add_submessages(withdraw_messages)

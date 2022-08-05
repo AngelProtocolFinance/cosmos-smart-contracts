@@ -397,8 +397,7 @@ pub struct TransactionRecord {
     pub block: u64,
     pub sender: Addr,
     pub recipient: Option<Addr>,
-    pub amount: Uint128,
-    pub asset_info: AssetInfoBase<Addr>,
+    pub assets: GenericBalance,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

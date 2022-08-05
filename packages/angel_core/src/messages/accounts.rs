@@ -1,8 +1,7 @@
 use crate::structs::{FundingSource, GenericBalance, Profile};
-use cosmwasm_std::{Addr, Decimal};
+use cosmwasm_std::Decimal;
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
-use cw_asset::AssetInfoBase;
 use cw_utils::{Duration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -36,9 +35,8 @@ pub enum ExecuteMsg {
     // NOTE: Atm, the "vault" logic is not fixed.
     //       Hence, it SHOULD be updated when the "vault" logic is implemented.
     Withdraw {
-        sources: Vec<FundingSource>,
         beneficiary: String,
-        asset_info: AssetInfoBase<Addr>,
+        sources: Vec<FundingSource>,
     },
     WithdrawLiquid {
         beneficiary: String,
@@ -155,10 +153,4 @@ pub enum QueryMsg {
     Endowment {},
     // Get the profile info
     GetProfile {},
-    // Get the transaction records
-    GetTxRecords {
-        sender: Option<String>,
-        recipient: Option<String>,
-        asset_info: AssetInfoBase<Addr>,
-    },
 }
