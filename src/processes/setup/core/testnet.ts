@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
-import { sendTransaction, storeCode, instantiateContract, getWalletAddress } from "../../../utils/helpers";
+import { sendTransaction, storeCode, instantiateContract, getWalletAddress, sendMessageViaCw3Proposal } from "../../../utils/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
 
 // -------------------------------------------------------------------------------------
@@ -267,8 +267,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity1_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
   endowmentContract1 = charityResult1.logs[0].events
@@ -317,8 +317,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity2_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
   endowmentContract2 = charityResult2.logs[0].events
@@ -367,8 +367,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity3_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
   endowmentContract3 = charityResult3.logs[0].events
@@ -416,8 +416,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity3_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_max_voting_period,
     }
   });
   endowmentContract4 = charityResult4.logs[0].events
@@ -436,21 +436,21 @@ async function createEndowments(
 async function approveEndowments(): Promise<void> {
   // AP Team approves 3 of 4 newly created endowments
   process.stdout.write("AP Team approves 3 of 4 endowments");
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_endowment_status: {
       endowment_addr: endowmentContract1,
       status: 1,
       beneficiary: undefined,
     }
   });
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_endowment_status: {
       endowment_addr: endowmentContract2,
       status: 1,
       beneficiary: undefined,
     }
   });
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_endowment_status: {
       endowment_addr: endowmentContract4,
       status: 1,
@@ -464,7 +464,7 @@ async function approveEndowments(): Promise<void> {
 async function createIndexFunds(): Promise<void> {
   // Create an initial "Fund" with the two charities created above
   process.stdout.write("Create two Funds with two endowments each");
-  await sendTransaction(juno, apTeamAddr, indexFund, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
       create_fund: {
         name: "Test Fund",
         description: "My first test fund",
@@ -475,7 +475,7 @@ async function createIndexFunds(): Promise<void> {
         expiry_height: undefined,
       }
     });
-    await sendTransaction(juno, apTeamAddr, indexFund, {
+    await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
       create_fund: {
         name: "Test Fund #2",
         description: "Another fund to test rotations",
@@ -493,32 +493,32 @@ async function createVaults(
   harvest_to_liquid: string,
   tax_per_block: string
 ): Promise<void> {
-  process.stdout.write("Uploading Anchor Vault Wasm");
+  process.stdout.write("Uploading Mock Vault Wasm");
   const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/anchor.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
 
-  // Anchor Vault - #1
-  process.stdout.write("Instantiating Anchor Vault (#1) contract");
+  // Mock Vault Vault - #1
+  process.stdout.write("Instantiating Mock Vault (#1) contract");
   const vaultResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     moneymarket: registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
-    name: "AP DP Token - Anchor #1",
-    symbol: "apANC1",
+    tax_per_block: tax_per_block, // 70% of Mock Vault's 19.5% earnings collected per block
+    name: "AP DP Token - Mock Vault #1",
+    symbol: "apMOK1",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
   });
   vault1 = vaultResult1.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault1}`);
 
-  // Anchor Vault - #2 (to better test multistrategy logic)
-  process.stdout.write("Instantiating Anchor Vault (#2) contract");
+  // Mock Vault Vault - #2 (to better test multistrategy logic)
+  process.stdout.write("Instantiating Mock Vault Vault (#2) contract");
   const vaultResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     moneymarket: registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
-    name: "AP DP Token - Anchor #2",
-    symbol: "apANC2",
+    tax_per_block: tax_per_block, // 70% of Mock Vault's 19.5% earnings collected per block
+    name: "AP DP Token - Mock Vault #2",
+    symbol: "apMOK2",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
   });
@@ -526,23 +526,39 @@ async function createVaults(
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault2}`);
 
   // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
-  process.stdout.write("Approving Anchor Vault #1 & #2 in Registrar");
-  await sendTransaction(juno, apTeamAddr, registrar, {
-    vault_update_status: {
+  process.stdout.write("Add & Approve Vault #1 & #2 in Registrar");
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
+    vault_update: {
       vault_addr: vault1,
       approved: true,
+      restricted_from: [],
     }
   });
-  await sendTransaction(juno, apTeamAddr, registrar, {
-    vault_update_status: {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
+    vault_update: {
+      vault_addr: vault1,
+      approved: true,
+      restricted_from: [],
+    }
+  });
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
+    vault_update: {
       vault_addr: vault2,
       approved: true,
+      restricted_from: [],
+    }
+  });
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
+    vault_update: {
+      vault_addr: vault2,
+      approved: true,
+      restricted_from: [],
     }
   });
   console.log(chalk.green(" Done!"));
 
-  process.stdout.write("Set default vault in Registrar as Anchor Vault");
-  await sendTransaction(juno, apTeamAddr, registrar, {
+  process.stdout.write("Set default vault in Registrar as Vault #1");
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_config: { default_vault: vault1 }
   });
   console.log(chalk.green(" Done!"));

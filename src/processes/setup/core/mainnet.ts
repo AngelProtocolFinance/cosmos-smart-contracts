@@ -49,8 +49,8 @@ export async function setupCore(
     harvest_to_liquid: string;
     tax_per_block: string;
     funding_goal: string | undefined;
-    charity_cw3_multisig_threshold_abs_perc: string,
-    charity_cw3_multisig_max_voting_period: number,
+    charity_cw3_threshold_abs_perc: string,
+    charity_cw3_max_voting_period: number,
   }
 ): Promise<void> {
   // Initialize variables
@@ -72,8 +72,8 @@ export async function setupCore(
   );
   await mainNet.initializeCharities(juno, apTeam, registrar, indexFund);
   await mainNet.setupEndowments(
-    config.charity_cw3_multisig_threshold_abs_perc,
-    config.charity_cw3_multisig_max_voting_period,
+    config.charity_cw3_threshold_abs_perc,
+    config.charity_cw3_max_voting_period,
   );
   await mainNet.approveEndowments();
   await mainNet.createIndexFunds();
