@@ -3,7 +3,7 @@ use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
-use angel_core::structs::{EndowmentType, Profile, SocialMedialUrls};
+use angel_core::structs::{EndowmentType, GenericBalance, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{attr, coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, Uint128};
 use cw20::Cw20ReceiveMsg;
@@ -449,19 +449,6 @@ fn test_donate() {
     let query_res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&query_res).unwrap();
     assert_eq!(state.donations_received.u128(), donation_amt);
-
-    let query_res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetTxRecords {
-            sender: None,
-            recipient: None,
-            asset_info: AssetInfoBase::Native("uluna".to_string()),
-        },
-    )
-    .unwrap();
-    let txs_response: TxRecordsResponse = from_binary(&query_res).unwrap();
-    assert_eq!(txs_response.txs.len(), 1);
 }
 
 #[test]
@@ -491,24 +478,6 @@ fn test_deposit_cw20() {
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     assert_eq!(res.attributes.len(), 3);
-
-    // Check the "STATE" for "transactions" field
-    let query_res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-    let state: StateResponse = from_binary(&query_res).unwrap();
-    assert_eq!(state.donations_received.u128(), donation_amt);
-
-    let query_res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetTxRecords {
-            sender: None,
-            recipient: None,
-            asset_info: AssetInfoBase::Cw20(Addr::unchecked("test-cw20")),
-        },
-    )
-    .unwrap();
-    let txs_response: TxRecordsResponse = from_binary(&query_res).unwrap();
-    assert_eq!(txs_response.txs.len(), 1);
 }
 
 #[test]
@@ -537,7 +506,6 @@ fn test_withdraw() {
     let withdraw_msg = ExecuteMsg::Withdraw {
         sources: vec![],
         beneficiary: "beneficiary".to_string(),
-        asset_info: AssetInfoBase::Native("uluna".to_string()),
     };
     let res = execute(deps.as_mut(), mock_env(), info, withdraw_msg).unwrap();
     assert_eq!(res.messages.len(), 0);
@@ -568,9 +536,14 @@ fn test_withdraw_liquid() {
     // Fails since the amount is too big
     let info = mock_info(CHARITY_ADDR, &[]);
     let withdraw_liquid_msg = ExecuteMsg::WithdrawLiquid {
-        liquid_amount: Uint128::from(200_u128),
         beneficiary: "beneficiary".to_string(),
-        asset_info: AssetInfoBase::Native("uluna".to_string()),
+        assets: GenericBalance {
+            native: vec![Coin {
+                denom: "uluna".to_string(),
+                amount: Uint128::from(1000_u128),
+            }],
+            cw20: vec![],
+        },
     };
     let err = execute(deps.as_mut(), mock_env(), info, withdraw_liquid_msg).unwrap_err();
     assert_eq!(err, ContractError::InsufficientFunds {});
@@ -578,9 +551,14 @@ fn test_withdraw_liquid() {
     // Succeed to withdraw liquid amount
     let info = mock_info(CHARITY_ADDR, &[]);
     let withdraw_liquid_msg = ExecuteMsg::WithdrawLiquid {
-        liquid_amount: Uint128::from(100_u128),
         beneficiary: "beneficiary".to_string(),
-        asset_info: AssetInfoBase::Native("uluna".to_string()),
+        assets: GenericBalance {
+            native: vec![Coin {
+                denom: "uluna".to_string(),
+                amount: Uint128::from(10_u128),
+            }],
+            cw20: vec![],
+        },
     };
     let res = execute(deps.as_mut(), mock_env(), info, withdraw_liquid_msg).unwrap();
     assert_eq!(1, res.messages.len());

@@ -14,15 +14,24 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
+    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
-use angel_core::structs::{AcceptedTokens, SplitDetails, YieldVault};
+use angel_core::structs::{AcceptedTokens, EndowmentType, SplitDetails, YieldVault};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     Config {},
-    Vault { vault_addr: String },
+    Vault {
+        vault_addr: String,
+    },
+    VaultList {
+        network: Option<String>,
+        endowment_type: Option<EndowmentType>,
+        approved: Option<bool>,
+        start_after: Option<String>,
+        limit: Option<u64>,
+    },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -240,7 +249,47 @@ impl WasmMockQuerier {
                             input_denom: "input-denom".to_string(),
                             yield_token: Addr::unchecked("yield-token").to_string(),
                             approved: true,
+                            restricted_from: vec![],
                         },
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::VaultList {
+                    network: _,
+                    endowment_type: _,
+                    approved: _,
+                    start_after: _,
+                    limit: _,
+                } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&VaultListResponse {
+                        vaults: vec![
+                            YieldVault {
+                                address: Addr::unchecked("vault").to_string(),
+                                network: "juno-1".to_string(),
+                                input_denom: "input-denom".to_string(),
+                                yield_token: Addr::unchecked("yield-token").to_string(),
+                                approved: true,
+                                restricted_from: vec![],
+                            },
+                            YieldVault {
+                                address: Addr::unchecked("cash_strategy_component_addr")
+                                    .to_string(),
+                                network: "juno-1".to_string(),
+                                input_denom: "input-denom".to_string(),
+                                yield_token: Addr::unchecked("yield-token").to_string(),
+                                approved: true,
+                                restricted_from: vec![],
+                            },
+                            YieldVault {
+                                address: Addr::unchecked("tech_strategy_component_addr")
+                                    .to_string(),
+                                network: "juno-1".to_string(),
+                                input_denom: "input-denom".to_string(),
+                                yield_token: Addr::unchecked("yield-token").to_string(),
+                                approved: true,
+                                restricted_from: vec![],
+                            },
+                        ],
                     })
                     .unwrap(),
                 )),

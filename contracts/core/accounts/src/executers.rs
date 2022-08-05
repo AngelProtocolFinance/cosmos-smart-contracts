@@ -10,19 +10,19 @@ use angel_core::messages::registrar::{
 };
 use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
+    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
 use angel_core::structs::{
-    EndowmentType, FundingSource, SocialMedialUrls, SplitDetails, StrategyComponent, Tier,
-    TransactionRecord,
+    EndowmentType, FundingSource, GenericBalance, SocialMedialUrls, SplitDetails,
+    StrategyComponent, Tier,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, redeem_from_vaults, validate_deposit_fund,
     withdraw_from_vaults,
 };
 use cosmwasm_std::{
-    coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
+    Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20CoinVerified};
 use cw_asset::{Asset, AssetInfoBase};
@@ -173,6 +173,7 @@ pub fn update_strategies(
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENT.load(deps.storage)?;
+    let profile = PROFILE.load(deps.storage)?;
 
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
@@ -193,20 +194,30 @@ pub fn update_strategies(
         return Err(ContractError::StrategyComponentsNotUnique {});
     };
 
-    let mut percentages_sum = Decimal::zero();
-    for strategy in strategies.iter() {
-        let vault_config: VaultDetailResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: config.registrar_contract.to_string(),
-                msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: strategy.vault.to_string(),
-                })?,
-            }))?;
-        if !vault_config.vault.approved {
-            return Err(ContractError::InvalidInputs {});
-        }
+    // Check that all strategies supplied can be invested in by this type of Endowment
+    // ie. There are no restricted or non-approved vaults in the proposed Strategies setup
+    let allowed: VaultListResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: config.registrar_contract.to_string(),
+        msg: to_binary(&RegistrarQuerier::VaultList {
+            approved: Some(true),
+            endowment_type: Some(profile.endow_type),
+            network: None,
+            start_after: None,
+            limit: None,
+        })?,
+    }))?;
 
-        percentages_sum += strategy.percentage;
+    let mut percentages_sum = Decimal::zero();
+
+    for strategy in strategies.iter() {
+        match allowed
+            .vaults
+            .iter()
+            .position(|v| v.address == strategy.vault.to_string())
+        {
+            None => return Err(ContractError::InvalidInputs {}),
+            Some(_) => percentages_sum += strategy.percentage,
+        }
     }
 
     if percentages_sum != Decimal::one() {
@@ -452,7 +463,7 @@ pub fn vault_receipt(
 
 pub fn deposit(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     _info: MessageInfo,
     sender_addr: Addr,
     msg: DepositMsg,
@@ -511,15 +522,7 @@ pub fn deposit(
     // update total donations recieved for a charity
     let mut state = STATE.load(deps.storage)?;
     state.donations_received += deposit_amount;
-    // note the tx in records
-    let tx_record = TransactionRecord {
-        block: env.block.height,
-        sender: sender_addr.clone(),
-        recipient: None,
-        amount: deposit_amount,
-        asset_info: deposit_token.info,
-    };
-    state.transactions.push(tx_record);
+
     // increase the liquid balance by donation (liquid) amount
     let liquid_balance = match liquid_amount.info {
         AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
@@ -575,9 +578,8 @@ pub fn withdraw(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    sources: Vec<FundingSource>,
     beneficiary: String,
-    asset_info: AssetInfoBase<Addr>,
+    sources: Vec<FundingSource>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
@@ -605,25 +607,12 @@ pub fn withdraw(
     }
 
     // build redeem messages for each of the sources/amounts
-    let (withdraw_messages, tx_amounts) = withdraw_from_vaults(
+    let withdraw_messages = withdraw_from_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
         &deps.api.addr_validate(&beneficiary)?,
         sources,
-        asset_info.clone(),
     )?;
-
-    // Save the tx record in STATE
-    let mut state = STATE.load(deps.storage)?;
-    let tx_record = TransactionRecord {
-        block: env.block.height,
-        sender: env.contract.address.clone(),
-        recipient: Some(Addr::unchecked(beneficiary.clone())),
-        amount: tx_amounts,
-        asset_info,
-    };
-    state.transactions.push(tx_record);
-    STATE.save(deps.storage, &state)?;
 
     Ok(Response::new()
         .add_submessages(withdraw_messages)
@@ -636,9 +625,8 @@ pub fn withdraw_liquid(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    liquid_amount: Uint128,
     beneficiary: String,
-    asset_info: AssetInfoBase<Addr>,
+    assets: GenericBalance,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENT.load(deps.storage)?;
@@ -656,68 +644,62 @@ pub fn withdraw_liquid(
     }
 
     let mut state = STATE.load(deps.storage)?;
-    // check that the amount in liquid balance is sufficient to cover request
-    let amount = match asset_info {
-        AssetInfoBase::Native(ref denom) => {
-            state
-                .balances
-                .liquid_balance
-                .get_denom_amount(denom.to_string())
-                .amount
+    let mut messages: Vec<SubMsg> = vec![];
+
+    for asset in assets.native.iter() {
+        let liquid_balance = state
+            .balances
+            .liquid_balance
+            .get_denom_amount(asset.denom.clone())
+            .amount;
+        // check that the amount in liquid balance is sufficient to cover request
+        if asset.amount > liquid_balance {
+            return Err(ContractError::InsufficientFunds {});
         }
-        AssetInfoBase::Cw20(ref contract_addr) => {
-            state
-                .balances
-                .liquid_balance
-                .get_token_amount(contract_addr.clone())
-                .amount
+    }
+    // Build message to send all native tokens to the Beneficiary via BankMsg::Send
+    messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+        to_address: beneficiary.to_string(),
+        amount: assets.native.clone(),
+    })));
+    // Update the native tokens Liquid Balance in STATE
+    state
+        .balances
+        .liquid_balance
+        .deduct_tokens(Balance::from(assets.native));
+
+    for asset in assets.cw20.into_iter() {
+        let liquid_balance = state
+            .balances
+            .liquid_balance
+            .get_token_amount(asset.address.clone())
+            .amount;
+        // check that the amount in liquid balance is sufficient to cover request
+        if asset.amount > liquid_balance {
+            return Err(ContractError::InsufficientFunds {});
         }
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-    };
-    if amount < liquid_amount {
-        return Err(ContractError::InsufficientFunds {});
+        // Build message to send a CW20 tokens to the Beneficiary via CW20::Transfer
+        messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: asset.address.to_string(),
+            msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                recipient: beneficiary.to_string(),
+                amount: asset.amount,
+            })
+            .unwrap(),
+            funds: vec![],
+        })));
+        // Update a CW20 token's Liquid Balance in STATE
+        state
+            .balances
+            .liquid_balance
+            .deduct_tokens(Balance::Cw20(asset));
     }
 
-    // Update the Liquid Balance in STATE
-    let balance = match asset_info {
-        AssetInfoBase::Native(ref denom) => Balance::from(vec![Coin {
-            denom: denom.to_string(),
-            amount: liquid_amount,
-        }]),
-        AssetInfoBase::Cw20(ref contract_addr) => Balance::Cw20(Cw20CoinVerified {
-            address: deps.api.addr_validate(&contract_addr.to_string())?,
-            amount: liquid_amount,
-        }),
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-    };
-    state.balances.liquid_balance.deduct_tokens(balance);
     STATE.save(deps.storage, &state)?;
 
-    // Send "asset" to the Beneficiary via BankMsg::Send
-    let mut messages: Vec<SubMsg> = vec![];
-    match asset_info {
-        AssetInfoBase::Native(ref denom) => {
-            messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-                to_address: beneficiary.to_string(),
-                amount: coins(liquid_amount.u128(), denom.to_string()),
-            })))
-        }
-        AssetInfoBase::Cw20(ref contract_addr) => {
-            messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-                    recipient: beneficiary.to_string(),
-                    amount: liquid_amount,
-                })
-                .unwrap(),
-                funds: vec![],
-            })))
-        }
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-    };
     Ok(Response::new()
         .add_submessages(messages)
-        .add_attribute("action", "withdrawal")
+        .add_attribute("action", "withdraw_liquid")
         .add_attribute("sender", env.contract.address.to_string())
         .add_attribute("beneficiary", beneficiary))
 }
