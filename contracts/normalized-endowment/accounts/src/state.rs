@@ -1,6 +1,6 @@
 use angel_core::structs::{
     AcceptedTokens, BalanceInfo, EndowmentFee, Profile, RebalanceDetails, SettingsController,
-    StrategyComponent, TransactionRecord,
+    StrategyComponent,
 };
 use cosmwasm_std::{Addr, Decimal256, Env, Timestamp, Uint128};
 use cw_storage_plus::Item;
@@ -73,7 +73,6 @@ pub struct State {
     pub balances: BalanceInfo,
     pub closing_endowment: bool,
     pub closing_beneficiary: Option<String>,
-    pub transactions: Vec<TransactionRecord>,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");

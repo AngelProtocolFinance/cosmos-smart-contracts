@@ -104,7 +104,6 @@ pub fn instantiate(
             balances: BalanceInfo::default(),
             closing_endowment: false,
             closing_beneficiary: None,
-            transactions: vec![],
         },
     )?;
 
@@ -232,10 +231,9 @@ pub fn execute(
             executers::deposit(deps, env, info.clone(), info.sender, msg, native_fund)
         }
         ExecuteMsg::Withdraw {
-            sources,
             beneficiary,
-            asset_info,
-        } => executers::withdraw(deps, env, info, sources, beneficiary, asset_info),
+            sources,
+        } => executers::withdraw(deps, env, info, beneficiary, sources),
         ExecuteMsg::WithdrawLiquid {
             beneficiary,
             assets,
@@ -330,13 +328,6 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::State {} => to_binary(&queriers::query_state(deps)?),
         QueryMsg::Endowment {} => to_binary(&queriers::query_endowment_details(deps)?),
         QueryMsg::GetProfile {} => to_binary(&queriers::query_profile(deps)?),
-        QueryMsg::GetTxRecords {
-            sender,
-            recipient,
-            asset_info,
-        } => to_binary(&queriers::query_transactions(
-            deps, sender, recipient, asset_info,
-        )?),
         QueryMsg::GetEndowmentFees {} => to_binary(&queriers::query_endowment_fees(deps)?),
     }
 }
