@@ -455,16 +455,6 @@ pub struct AllianceMember {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct TransactionRecord {
-    pub block: u64,
-    pub sender: Addr,
-    pub recipient: Option<Addr>,
-    pub amount: Uint128,
-    pub asset_info: AssetInfoBase<Addr>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct DaoSetup {
     pub quorum: Decimal,
     pub threshold: Decimal,

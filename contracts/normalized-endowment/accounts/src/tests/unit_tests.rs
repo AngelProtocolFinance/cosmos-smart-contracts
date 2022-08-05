@@ -6,14 +6,11 @@ use angel_core::messages::accounts::{
     DepositMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Strategy, UpdateEndowmentSettingsMsg,
     UpdateEndowmentStatusMsg,
 };
-use angel_core::responses::accounts::{
-    ConfigResponse, ProfileResponse, StateResponse, TxRecordsResponse,
-};
+use angel_core::responses::accounts::{ConfigResponse, ProfileResponse, StateResponse};
 use angel_core::structs::{EndowmentType, GenericBalance, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
-use cosmwasm_std::{attr, coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, Uint128};
+use cosmwasm_std::{attr, coins, from_binary, to_binary, Coin, Decimal, OwnedDeps, Uint128};
 use cw20::Cw20ReceiveMsg;
-use cw_asset::AssetInfoBase;
 use cw_utils::{Duration, Threshold};
 use std::vec;
 
@@ -496,19 +493,6 @@ fn test_donate() {
     let query_res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&query_res).unwrap();
     assert_eq!(state.donations_received.u128(), donation_amt);
-
-    let query_res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetTxRecords {
-            sender: None,
-            recipient: None,
-            asset_info: AssetInfoBase::Native("uluna".to_string()),
-        },
-    )
-    .unwrap();
-    let txs_response: TxRecordsResponse = from_binary(&query_res).unwrap();
-    assert_eq!(txs_response.txs.len(), 1);
 }
 
 #[test]
@@ -543,19 +527,6 @@ fn test_deposit_cw20() {
     let query_res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&query_res).unwrap();
     assert_eq!(state.donations_received.u128(), donation_amt);
-
-    let query_res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::GetTxRecords {
-            sender: None,
-            recipient: None,
-            asset_info: AssetInfoBase::Cw20(Addr::unchecked("test-cw20")),
-        },
-    )
-    .unwrap();
-    let txs_response: TxRecordsResponse = from_binary(&query_res).unwrap();
-    assert_eq!(txs_response.txs.len(), 1);
 }
 
 #[test]
@@ -584,7 +555,6 @@ fn test_withdraw() {
     let withdraw_msg = ExecuteMsg::Withdraw {
         sources: vec![],
         beneficiary: "beneficiary".to_string(),
-        asset_info: cw_asset::AssetInfoBase::Native("uluna".to_string()),
     };
     let res = execute(deps.as_mut(), mock_env(), info, withdraw_msg).unwrap();
     assert_eq!(res.messages.len(), 0);

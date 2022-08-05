@@ -1,11 +1,10 @@
 use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
+use angel_core::messages::vault::QueryMsg as VaultQuerier;
 use angel_core::responses::accounts::*;
 use angel_core::structs::BalanceInfo;
-use angel_core::{messages::vault::QueryMsg as VaultQuerier, structs::TransactionRecord};
-use cosmwasm_std::{to_binary, Addr, Deps, Env, QueryRequest, StdError, StdResult, WasmQuery};
+use cosmwasm_std::{to_binary, Deps, Env, QueryRequest, StdResult, WasmQuery};
 use cw2::get_contract_version;
 use cw20::{Balance, Cw20CoinVerified};
-use cw_asset::AssetInfoBase;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
@@ -111,55 +110,6 @@ pub fn query_profile(deps: Deps) -> StdResult<ProfileResponse> {
         charity_navigator_rating: profile.charity_navigator_rating,
         endowment_type: profile.endow_type,
     })
-}
-
-pub fn query_transactions(
-    deps: Deps,
-    sender: Option<String>,
-    recipient: Option<String>,
-    asset_info: AssetInfoBase<Addr>,
-) -> StdResult<TxRecordsResponse> {
-    let txs = STATE.load(deps.storage)?.transactions;
-
-    let txs = match sender {
-        Some(addr) => {
-            if deps.api.addr_validate(&addr).is_err() {
-                return Err(StdError::GenericErr {
-                    msg: "Invalid sender address".to_string(),
-                });
-            }
-            txs.into_iter()
-                .filter(|tx| tx.sender == addr)
-                .collect::<Vec<TransactionRecord>>()
-        }
-        None => txs,
-    };
-
-    let txs = match recipient {
-        Some(addr) => {
-            if deps.api.addr_validate(&addr).is_err() {
-                return Err(StdError::GenericErr {
-                    msg: "Invalid recipient address".to_string(),
-                });
-            }
-            txs.into_iter()
-                .filter(|tx| {
-                    *tx.recipient
-                        .as_ref()
-                        .unwrap_or(&Addr::unchecked("anonymous"))
-                        == addr
-                })
-                .collect::<Vec<TransactionRecord>>()
-        }
-        None => txs,
-    };
-
-    let txs = txs
-        .into_iter()
-        .filter(|tx| tx.asset_info == asset_info)
-        .collect::<Vec<TransactionRecord>>();
-
-    Ok(TxRecordsResponse { txs })
 }
 
 pub fn query_endowment_fees(deps: Deps) -> StdResult<EndowmentFeesResponse> {
