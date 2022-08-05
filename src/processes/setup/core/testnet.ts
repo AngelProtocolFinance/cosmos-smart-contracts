@@ -143,9 +143,13 @@ async function setup(
   const subdao = await storeCode(juno, apTeamAddr, `${wasm_path.core}/subdao.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdao}`);
 
-  process.stdout.write("Uploading Endowment SubDAO Token Wasm");
-  const subdaoToken = await storeCode(juno, apTeamAddr, `${wasm_path.core}/subdao_token.wasm`);
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoToken}`);
+  process.stdout.write("Uploading Endowment SubDAO Bonding Token Wasm");
+  const subdaoBondingToken = await storeCode(juno, apTeamAddr, `${wasm_path.core}/subdao_bonding_token.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoBondingToken}`);
+
+  process.stdout.write("Uploading Endowment SubDAO CW20 Token Wasm");
+  const subdaoCw20Token = await storeCode(juno, apTeamAddr, `${wasm_path.cw20}`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${subdaoCw20Token}`);
 
   process.stdout.write("Uploading Endowment SubDAO Donation Matching Wasm");
   const subdaoDonationMatch = await storeCode(juno, apTeamAddr, `${wasm_path.core}/donation_match.wasm`);
@@ -247,7 +251,8 @@ async function setup(
       halo_token: apTeamAddr, // Fake halo token addr: Need to be handled
       halo_token_lp_contract: apTeamAddr, // Fake halo token LP addr: Need to be handled
       subdao_gov_code: subdao,
-      subdao_token_code: subdaoToken,
+      subdao_cw20_token_code: subdaoCw20Token,
+      subdao_bonding_token_code: subdaoBondingToken,
       donation_match_code: subdaoDonationMatch,
       donation_match_charites_contract: donationMatchCharities,
     },

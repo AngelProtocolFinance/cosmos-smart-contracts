@@ -316,7 +316,7 @@ export async function testExecute(
   //     average_annual_budget: undefined,
   //     annual_revenue: undefined,
   //     charity_navigator_rating: undefined,
-  //     endow_type: "Charity",
+  //     endow_type: "Normal",
   //   },
   //   kyc_donors_only: false,
   //   whitelisted_beneficiaries: [charity1Addr], 
