@@ -496,6 +496,7 @@ fn test_add_update_and_remove_vault() {
         vault_addr: vault_addr.clone(),
         input_denom: String::from("input_denom"),
         yield_token: String::from("yield_token"),
+        restricted_from: vec![],
     };
     let msg = ExecuteMsg::VaultAdd(add_vault_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -515,9 +516,10 @@ fn test_add_update_and_remove_vault() {
 
     // update vault status
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
-    let msg = ExecuteMsg::VaultUpdateStatus {
+    let msg = ExecuteMsg::VaultUpdate {
         vault_addr: String::from("terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg"),
         approved: true,
+        restricted_from: vec![],
     };
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
     assert_eq!(0, res.messages.len());
