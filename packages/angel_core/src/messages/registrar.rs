@@ -27,9 +27,10 @@ pub enum ExecuteMsg {
     VaultRemove {
         vault_addr: String,
     },
-    VaultUpdateStatus {
+    VaultUpdate {
         vault_addr: String,
         approved: bool,
+        restricted_from: Vec<EndowmentType>,
     },
     // Allows the contract parameter to be updated (only by the owner...for now)
     UpdateConfig(UpdateConfigMsg),
@@ -107,6 +108,7 @@ pub struct VaultAddMsg {
     pub vault_addr: String,
     pub input_denom: String,
     pub yield_token: String,
+    pub restricted_from: Vec<EndowmentType>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -130,11 +132,9 @@ pub enum QueryMsg {
     },
     // Gets list of all Vaults
     VaultList {
-        start_after: Option<String>,
-        limit: Option<u64>,
-    },
-    // Get a list of all approved Vaults
-    ApprovedVaultList {
+        network: Option<String>,
+        endowment_type: Option<EndowmentType>,
+        approved: Option<bool>,
         start_after: Option<String>,
         limit: Option<u64>,
     },

@@ -74,10 +74,11 @@ pub fn execute(
         ExecuteMsg::VaultRemove { vault_addr } => {
             executers::vault_remove(deps, env, info, vault_addr)
         }
-        ExecuteMsg::VaultUpdateStatus {
+        ExecuteMsg::VaultUpdate {
             vault_addr,
             approved,
-        } => executers::vault_update_status(deps, env, info, vault_addr, approved),
+            restricted_from,
+        } => executers::vault_update(deps, env, info, vault_addr, approved, restricted_from),
         ExecuteMsg::Harvest {
             collector_address,
             collector_share,
@@ -120,12 +121,20 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&queriers::query_endowment_list(
             deps, name, owner, status, tier, un_sdg, endow_type,
         )?),
-        QueryMsg::ApprovedVaultList { start_after, limit } => to_binary(
-            &queriers::query_approved_vault_list(deps, start_after, limit)?,
-        ),
-        QueryMsg::VaultList { start_after, limit } => {
-            to_binary(&queriers::query_vault_list(deps, start_after, limit)?)
-        }
+        QueryMsg::VaultList {
+            network,
+            endowment_type,
+            approved,
+            start_after,
+            limit,
+        } => to_binary(&queriers::query_vault_list(
+            deps,
+            network,
+            endowment_type,
+            approved,
+            start_after,
+            limit,
+        )?),
         QueryMsg::Vault { vault_addr } => {
             to_binary(&queriers::query_vault_details(deps, vault_addr)?)
         }

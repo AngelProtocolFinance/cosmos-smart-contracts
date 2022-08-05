@@ -1,5 +1,5 @@
 // Contains mock functionality to test multi-contract scenarios
-
+use crate::anchor::ConfigResponse;
 use cosmwasm_bignumber::Decimal256;
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -10,14 +10,11 @@ use cosmwasm_std::{
 use cosmwasm_storage::to_length_prefixed;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
 use std::collections::HashMap;
 use terra_cosmwasm::{
     ExchangeRateItem, ExchangeRatesResponse, TaxCapResponse, TaxRateResponse, TerraQuery,
     TerraQueryWrapper, TerraRoute,
 };
-
-use crate::anchor::ConfigResponse;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -251,6 +248,19 @@ impl WasmMockQuerier {
                         distributor_contract: "distributor".to_string(),
                         stable_denom: "stable_denom".to_string(),
                         max_borrow_factor: Decimal256::zero(),
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&VaultDetailResponse {
+                        vault: YieldVault {
+                            network: "juno".to_string(),
+                            address: Addr::unchecked("vault").to_string(),
+                            input_denom: "input-denom".to_string(),
+                            yield_token: Addr::unchecked("yield-token").to_string(),
+                            approved: true,
+                            restricted_from: vec![],
+                        },
                     })
                     .unwrap(),
                 )),
