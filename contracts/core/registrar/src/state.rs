@@ -1,4 +1,6 @@
-use angel_core::structs::{AcceptedTokens, EndowmentEntry, NetworkInfo, SplitDetails, YieldVault};
+use angel_core::structs::{
+    AcceptedTokens, EndowmentEntry, EndowmentType, NetworkInfo, SplitDetails, YieldVault,
+};
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
 use schemars::JsonSchema;
@@ -44,6 +46,9 @@ pub fn read_registry_entries(storage: &dyn Storage) -> StdResult<Vec<EndowmentEn
 
 pub fn read_vaults(
     storage: &dyn Storage,
+    network: Option<String>,
+    endowment_type: Option<EndowmentType>,
+    approved: Option<bool>,
     start_after: Option<Addr>,
     limit: Option<u64>,
 ) -> StdResult<Vec<YieldVault>> {
@@ -54,6 +59,31 @@ pub fn read_vaults(
         .map(|item| {
             let (_, v) = item?;
             Ok(v)
+        })
+        .filter(|vault| match vault {
+            Ok(v) => match (approved, v.approved) {
+                (None, _) => true,
+                (Some(true), true) | (Some(false), false) => true,
+                _ => false,
+            },
+            &Err(_) => false,
+        })
+        .filter(|vault| match vault {
+            Ok(v) => match &endowment_type {
+                Some(et) => match v.restricted_from.iter().position(|t| &t == &et) {
+                    Some(_) => false,
+                    None => true,
+                },
+                None => true,
+            },
+            &Err(_) => false,
+        })
+        .filter(|vault| match vault {
+            Ok(v) => match &network {
+                Some(n) => n == &v.network,
+                None => true,
+            },
+            &Err(_) => false,
         })
         .collect()
 }

@@ -10,7 +10,7 @@ use angel_core::messages::registrar::{
 };
 use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
+    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
 use angel_core::structs::{
     EndowmentType, FundingSource, GenericBalance, SocialMedialUrls, SplitDetails,
@@ -173,6 +173,7 @@ pub fn update_strategies(
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENT.load(deps.storage)?;
+    let profile = PROFILE.load(deps.storage)?;
 
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
@@ -193,20 +194,30 @@ pub fn update_strategies(
         return Err(ContractError::StrategyComponentsNotUnique {});
     };
 
-    let mut percentages_sum = Decimal::zero();
-    for strategy in strategies.iter() {
-        let vault_config: VaultDetailResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: config.registrar_contract.to_string(),
-                msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: strategy.vault.to_string(),
-                })?,
-            }))?;
-        if !vault_config.vault.approved {
-            return Err(ContractError::InvalidInputs {});
-        }
+    // Check that all strategies supplied can be invested in by this type of Endowment
+    // ie. There are no restricted or non-approved vaults in the proposed Strategies setup
+    let allowed: VaultListResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: config.registrar_contract.to_string(),
+        msg: to_binary(&RegistrarQuerier::VaultList {
+            approved: Some(true),
+            endowment_type: Some(profile.endow_type),
+            network: None,
+            start_after: None,
+            limit: None,
+        })?,
+    }))?;
 
-        percentages_sum += strategy.percentage;
+    let mut percentages_sum = Decimal::zero();
+
+    for strategy in strategies.iter() {
+        match allowed
+            .vaults
+            .iter()
+            .position(|v| v.address == strategy.vault.to_string())
+        {
+            None => return Err(ContractError::InvalidInputs {}),
+            Some(_) => percentages_sum += strategy.percentage,
+        }
     }
 
     if percentages_sum != Decimal::one() {

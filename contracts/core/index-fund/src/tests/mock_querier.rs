@@ -240,6 +240,7 @@ impl WasmMockQuerier {
                             input_denom: "input-denom".to_string(),
                             yield_token: Addr::unchecked("yield-token").to_string(),
                             approved: true,
+                            restricted_from: vec![],
                         },
                     })
                     .unwrap(),
