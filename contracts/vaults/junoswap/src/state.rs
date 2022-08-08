@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, StdResult, Storage, Uint128};
+use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
 use cw20::Denom;
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -14,6 +14,7 @@ pub struct Config {
 
     pub last_harvest: u64,
     pub last_harvest_fx: Option<Uint128>,
+    pub harvest_to_liquid: Decimal,
 
     pub pool_addr: Addr, // swap pool address(eg. JunoSwap USDC-JUNO pool address)
     pub input_denoms: Vec<Denom>, // swap input tokens(denoms) list

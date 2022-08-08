@@ -62,6 +62,7 @@ pub fn instantiate(
 
         last_harvest: env.block.height,
         last_harvest_fx: None,
+        harvest_to_liquid: msg.harvest_to_liquid,
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -117,6 +118,19 @@ pub fn execute(
         // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
         ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
+        ExecuteMsg::HarvestSwap {
+            token1_denom_bal_before,
+            token2_denom_bal_before,
+        } => executers::harvest_swap(
+            deps,
+            env,
+            info,
+            token1_denom_bal_before,
+            token2_denom_bal_before,
+        ),
+        ExecuteMsg::DistributeHarvest {
+            output_token_bal_before,
+        } => executers::distribute_harvest(deps, env, info, output_token_bal_before),
         ExecuteMsg::AddLiquidity {
             depositor,
             in_denom,

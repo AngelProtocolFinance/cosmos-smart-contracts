@@ -1,7 +1,9 @@
 use std::ops::Sub;
 
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
-use cosmwasm_std::{coins, from_binary, to_binary, Addr, Coin, OwnedDeps, StdError, Uint128};
+use cosmwasm_std::{
+    coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, StdError, Uint128,
+};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{
@@ -25,6 +27,8 @@ fn create_mock_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMo
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
+
+        harvest_to_liquid: Decimal::from_ratio(10_u128, 100_u128),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -47,6 +51,8 @@ fn proper_instantiation() {
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
+
+        harvest_to_liquid: Decimal::from_ratio(10_u128, 100_u128),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();

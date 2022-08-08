@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Binary, Uint128};
+use cosmwasm_std::{Addr, Binary, Decimal, Uint128};
 use cw20::{Cw20ReceiveMsg, Denom};
 use cw_utils::Expiration;
 use schemars::JsonSchema;
@@ -16,6 +16,8 @@ pub struct InstantiateMsg {
     pub name: String,
     pub symbol: String,
     pub decimals: u8,
+
+    pub harvest_to_liquid: Decimal,
 }
 
 /// We currently take no arguments for migrations
@@ -38,6 +40,13 @@ pub enum ExecuteMsg {
     },
     Withdraw(AccountWithdrawMsg),
     Harvest {},
+    HarvestSwap {
+        token1_denom_bal_before: Uint128,
+        token2_denom_bal_before: Uint128,
+    },
+    DistributeHarvest {
+        output_token_bal_before: Uint128,
+    },
     AddLiquidity {
         depositor: String,
         in_denom: Denom,

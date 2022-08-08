@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, MessageInfo,
+    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, Fraction, MessageInfo,
     QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Denom;
@@ -11,7 +11,7 @@ use angel_core::messages::vault::{
     AccountWithdrawMsg, ExecuteMsg, RemoveLiquidAction, TokenSelect, UpdateConfigMsg,
     WasmSwapExecuteMsg, WasmSwapQueryMsg,
 };
-use angel_core::responses::registrar::EndowmentListResponse;
+use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::responses::vault::{InfoResponse, Token2ForToken1PriceResponse};
 use angel_core::structs::EndowmentEntry;
 use angel_core::utils::query_denom_balance;
@@ -402,6 +402,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         funds: vec![],
     }));
 
+    // Call the "remove_liquidity" entry with the reward_lp_tokens &
     // Handle the returning lp tokens
     let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         config.pool_lp_token_addr,
@@ -419,16 +420,187 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         funds: vec![],
     }));
 
-    // Call the "remove_liquidity" entry with the reward_lp_tokens
+    Ok(res)
+}
 
-    // Convert the JUNO or other token to input_token like USDC
+pub fn harvest_swap(
+    deps: DepsMut,
+    env: Env,
+    _info: MessageInfo,
+    token1_denom_bal_before: Uint128,
+    token2_denom_bal_before: Uint128,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    // Compute the token balances
+    let token1_denom_bal_now = query_denom_balance(
+        &deps,
+        &config.input_denoms[0],
+        env.contract.address.to_string(),
+    );
+    let token2_denom_bal_now = query_denom_balance(
+        &deps,
+        &config.input_denoms[1],
+        env.contract.address.to_string(),
+    );
+    let token1_amt = token1_denom_bal_now
+        .checked_sub(token1_denom_bal_before)
+        .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
+    let token2_amt = token2_denom_bal_now
+        .checked_sub(token2_denom_bal_before)
+        .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
+
+    // "Swap"ping into the `config.output_token_denom` token(i.e: USDC)
+
+    // Check if `output_token_denom` is `Token1` or `Token2`
+    // Also, determine which token to send directly, which token to `SwapAndSendTo`
+    let swap_input_token_denom: Denom;
+    let swap_input_token_amt: Uint128;
+
+    let swap_input_token: TokenSelect;
+
+    let output_token_bal_before: Uint128;
+
+    if config.output_token_denom == config.input_denoms[0] {
+        swap_input_token_denom = config.input_denoms[1].clone();
+        swap_input_token_amt = token2_amt;
+
+        swap_input_token = TokenSelect::Token2;
+
+        output_token_bal_before = token1_denom_bal_before;
+    } else {
+        swap_input_token_denom = config.input_denoms[0].clone();
+        swap_input_token_amt = token1_amt;
+
+        swap_input_token = TokenSelect::Token1;
+
+        output_token_bal_before = token2_denom_bal_before;
+    };
+
+    let mut res = Response::default();
+    let mut msgs: Vec<CosmosMsg> = vec![];
+    match swap_input_token_denom {
+        Denom::Native(denom) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: config.pool_addr.to_string(),
+            msg: to_binary(&WasmSwapExecuteMsg::Swap {
+                input_token: swap_input_token,
+                input_amount: swap_input_token_amt,
+                min_output: Uint128::zero(),
+                expiration: None,
+            })
+            .unwrap(),
+            funds: coins(swap_input_token_amt.u128(), denom),
+        })),
+        Denom::Cw20(token_addr) => {
+            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: token_addr.to_string(),
+                msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                    spender: config.pool_addr.to_string(),
+                    amount: swap_input_token_amt,
+                    expires: None,
+                })
+                .unwrap(),
+                funds: vec![],
+            }));
+            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.pool_addr.to_string(),
+                msg: to_binary(&WasmSwapExecuteMsg::Swap {
+                    input_token: swap_input_token,
+                    input_amount: swap_input_token_amt,
+                    min_output: Uint128::zero(),
+                    expiration: None,
+                })
+                .unwrap(),
+                funds: vec![],
+            }))
+        }
+    }
+
+    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::DistributeHarvest {
+            output_token_bal_before,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
+
+    res = res.add_messages(msgs);
+    Ok(res)
+}
+
+pub fn distribute_harvest(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    output_token_bal_before: Uint128,
+) -> Result<Response, ContractError> {
+    let mut res = Response::default();
+
+    let config = CONFIG.load(deps.storage)?;
+    let registrar_config: ConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &RegistrarQueryMsg::Config {},
+    )?;
+
+    // First, compute the token amount
+    let output_token_bal = query_denom_balance(
+        &deps,
+        &config.output_token_denom,
+        env.contract.address.to_string(),
+    );
+    let total_reward_amt = output_token_bal - output_token_bal_before;
 
     // Send taxes owed to Treasury wallet: reward_usdc * registrar_config.tax_rate
+    let tax_amt = (total_reward_amt * registrar_config.tax_rate.numerator())
+        / registrar_config.tax_rate.denominator();
+
+    let less_taxes = total_reward_amt - tax_amt;
 
     // Compute the Accounts' BALANCE ratio of the total_supply
     // Send some back to the Accounts contract to liquid: acct_owned * config.harvest_to_liquid
+    let endowments_rsp: EndowmentListResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {
+                name: None,
+                owner: None,
+                status: None,
+                tier: None,
+                un_sdg: None,
+                endow_type: None,
+            })?,
+        }))?;
+    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
+    for endowment in endowments.iter() {
+        let acct_bal = cw20_base::state::BALANCES
+            .load(deps.storage, &endowment.address)
+            .unwrap_or_default();
+        let acct_owed = less_taxes * acct_bal / config.total_shares;
+        let liquid_amt = acct_owed * config.harvest_to_liquid.numerator()
+            / config.harvest_to_liquid.denominator();
+        match config.output_token_denom {
+            Denom::Native(ref denom) => {
+                res = res.add_message(CosmosMsg::Bank(BankMsg::Send {
+                    to_address: endowment.address.to_string(),
+                    amount: coins(liquid_amt.u128(), denom.to_string()),
+                }));
+            }
+            Denom::Cw20(ref token_addr) => {
+                res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: token_addr.to_string(),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                        recipient: endowment.address.to_string(),
+                        amount: liquid_amt,
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                }))
+            }
+        }
+    }
 
     // All leftover rewards not taxed or liquided would be sent to be staked(convert to lp_token & staked)
+    // TODO! Refactor the `Deposit` entry so that it can share the `stake` logic with this entry.
 
     Ok(res)
 }
@@ -688,7 +860,15 @@ pub fn remove_liquidity(
             }));
         }
         RemoveLiquidAction::Harvest => {
-            todo!("Implement the logic for the harvest entry");
+            res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_binary(&ExecuteMsg::HarvestSwap {
+                    token1_denom_bal_before: token1_denom_bal,
+                    token2_denom_bal_before: token2_denom_bal,
+                })
+                .unwrap(),
+                funds: vec![],
+            }));
         }
     }
 
