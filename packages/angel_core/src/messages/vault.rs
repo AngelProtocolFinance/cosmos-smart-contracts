@@ -47,7 +47,7 @@ pub enum ExecuteMsg {
     },
     RemoveLiquidity {
         lp_token_bal_before: Uint128,
-        beneficiary: Addr,
+        action: RemoveLiquidAction,
     },
     Stake {
         depositor: String,
@@ -203,4 +203,11 @@ pub enum WasmSwapQueryMsg {
     Token2ForToken1Price {
         token2_amount: Uint128,
     },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub enum RemoveLiquidAction {
+    Harvest,
+    Claim { beneficiary: Addr },
+    Withdraw { beneficiary: Addr },
 }

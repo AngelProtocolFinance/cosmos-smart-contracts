@@ -135,8 +135,8 @@ pub fn execute(
         ),
         ExecuteMsg::RemoveLiquidity {
             lp_token_bal_before,
-            beneficiary,
-        } => executers::remove_liquidity(deps, env, info, lp_token_bal_before, beneficiary),
+            action,
+        } => executers::remove_liquidity(deps, env, info, lp_token_bal_before, action),
         ExecuteMsg::Stake {
             depositor,
             lp_token_bal_before,

@@ -8,8 +8,8 @@ use cw_controllers::ClaimsResponse;
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{
-    AccountWithdrawMsg, ExecuteMsg, TokenSelect, UpdateConfigMsg, WasmSwapExecuteMsg,
-    WasmSwapQueryMsg,
+    AccountWithdrawMsg, ExecuteMsg, RemoveLiquidAction, TokenSelect, UpdateConfigMsg,
+    WasmSwapExecuteMsg, WasmSwapQueryMsg,
 };
 use angel_core::responses::registrar::EndowmentListResponse;
 use angel_core::responses::vault::{InfoResponse, Token2ForToken1PriceResponse};
@@ -264,7 +264,7 @@ pub fn claim(
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::RemoveLiquidity {
             lp_token_bal_before: lp_token_bal.balance,
-            beneficiary,
+            action: RemoveLiquidAction::Claim { beneficiary },
         })
         .unwrap(),
         funds: vec![],
@@ -346,7 +346,9 @@ pub fn withdraw(
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::RemoveLiquidity {
             lp_token_bal_before: lp_token_bal.balance,
-            beneficiary: msg.beneficiary,
+            action: RemoveLiquidAction::Withdraw {
+                beneficiary: msg.beneficiary,
+            },
         })
         .unwrap(),
         funds: vec![],
@@ -379,9 +381,56 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         return Err(ContractError::Unauthorized {});
     }
 
-    // TODO! Add the business logic here.
+    // First, check if any staking reward does exist
+    let claims_resp: ClaimsResponse = deps.querier.query_wasm_smart(
+        config.staking_addr.to_string(),
+        &stake_cw20::msg::QueryMsg::Claims {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+    if claims_resp.claims.len() == 0 {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Nothing to claim".to_string(),
+        }));
+    }
 
-    Ok(Response::default())
+    // If any staking reward, ask it for harvest
+    let mut res = Response::default();
+    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.staking_addr.to_string(),
+        msg: to_binary(&stake_cw20::msg::ExecuteMsg::Claim {}).unwrap(),
+        funds: vec![],
+    }));
+
+    // Handle the returning lp tokens
+    let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        config.pool_lp_token_addr,
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::RemoveLiquidity {
+            lp_token_bal_before: lp_token_bal.balance,
+            action: RemoveLiquidAction::Harvest,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
+
+    // Call the "remove_liquidity" entry with the reward_lp_tokens
+
+    // Convert the JUNO or other token to input_token like USDC
+
+    // Send taxes owed to Treasury wallet: reward_usdc * registrar_config.tax_rate
+
+    // Compute the Accounts' BALANCE ratio of the total_supply
+    // Send some back to the Accounts contract to liquid: acct_owned * config.harvest_to_liquid
+
+    // All leftover rewards not taxed or liquided would be sent to be staked(convert to lp_token & staked)
+
+    Ok(res)
 }
 
 pub fn add_liquidity(
@@ -571,7 +620,7 @@ pub fn remove_liquidity(
     env: Env,
     _info: MessageInfo,
     lp_token_bal_before: Uint128,
-    beneficiary: Addr,
+    action: RemoveLiquidAction,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -624,16 +673,24 @@ pub fn remove_liquidity(
         &config.input_denoms[1],
         env.contract.address.to_string(),
     );
-    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::SwapAndSendTo {
-            token1_denom_bal_before: token1_denom_bal,
-            token2_denom_bal_before: token2_denom_bal,
-            beneficiary,
-        })
-        .unwrap(),
-        funds: vec![],
-    }));
+    match action {
+        RemoveLiquidAction::Claim { beneficiary }
+        | RemoveLiquidAction::Withdraw { beneficiary } => {
+            res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_binary(&ExecuteMsg::SwapAndSendTo {
+                    token1_denom_bal_before: token1_denom_bal,
+                    token2_denom_bal_before: token2_denom_bal,
+                    beneficiary,
+                })
+                .unwrap(),
+                funds: vec![],
+            }));
+        }
+        RemoveLiquidAction::Harvest => {
+            todo!("Implement the logic for the harvest entry");
+        }
+    }
 
     Ok(res)
 }
