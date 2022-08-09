@@ -38,6 +38,7 @@ pub struct Config {
     pub charity_shares_contract: Option<Addr>,
     pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
     pub swap_factory: Option<Addr>,
+    pub fundraising_contract: Option<Addr>,
 }
 
 // This struct is temporary for the `new-fee-setups`.

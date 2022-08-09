@@ -4,7 +4,7 @@ version = "1.0.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 license = "Apache-2.0"
-description = "A fee distributor contract for Glow Protocol - allows for glow to be distributed among veGLOW holders proportionally to their veGLOW balances"
+description = "A fee distributor contract for Angel Protocol - allows for HALO to be distributed among veHALO holders proportionally to their veHALO balances"
 
 exclude = [
   # Those files are rust-optimizer artifacts. You might want to commit them for convenience but they should not be part of the source code publication.

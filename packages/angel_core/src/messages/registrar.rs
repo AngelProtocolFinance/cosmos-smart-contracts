@@ -131,6 +131,7 @@ pub struct UpdateConfigMsg {
     pub charity_shares_contract: Option<String>,
     pub collector_addr: Option<String>,
     pub swap_factory: Option<String>,
+    pub fundraising_contract: Option<String>,
 }
 
 impl UpdateConfigMsg {
