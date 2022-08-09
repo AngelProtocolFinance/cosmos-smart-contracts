@@ -5,14 +5,21 @@ create independent escrows. Each escrow has a sender, recipient,
 and arbiter. It also has a unique id (for future calls to reference it)
 and an optional timeout.
 
-The basic function is the sender creates an escrow with funds.
-The arbiter may at any time decide to release the funds to either
-the intended recipient(s) or the original sender (but no one else),
-and if it passes with optional timeout, anyone can refund the locked
-tokens to the original sender.
+The basic function is the sender creates a campaign (in essence, an escrow) with some 
+amount of locked funds to be used as rewards for users that contribute to the campaign.
 
-We also add a function called "top_up", which allows anyone to add more
+We also add a function called `top_up`, which allows a campaign creator to add more
 funds to the contract at any time.
+
+We added a function called `contribute` which allows anyone to contribute valid tokens to 
+a campaign while it is active.
+
+Once a campaign has reached the time limit then the campaign will end.
+
+Once ended: 
+- If the `funding_threshold` is met then contributed funds will be release to the campaign creator and reward funds are claimable by contributors.
+- If the `funding_threshold` is NOT met then all contributed funds will be re-claimable by contributors and the rewards funds returned to the campaign creator.
+ 
 
 ## Token types
 

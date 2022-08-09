@@ -18,6 +18,9 @@ pub enum ContractError {
     #[error("Rewards have already been claimed for this campaign.")]
     CannotClaimRewards {},
 
+    #[error("Contributions have already been refunded for this campaign.")]
+    AlreadyRefunded {},
+
     #[error("Only accepts tokens in the cw20_whitelist")]
     NotInWhitelist {},
 

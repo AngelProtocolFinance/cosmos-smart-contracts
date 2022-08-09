@@ -13,7 +13,7 @@ use angel_core::structs::{EndowmentStatus, GenericBalance};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdResult, SubMsg, WasmMsg, WasmQuery,
+    QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
 use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg, Cw20ReceiveMsg};
@@ -38,6 +38,7 @@ pub fn instantiate(
             next_id: 1,
             campaign_max_days: msg.campaign_max_days,
             tax_rate: msg.tax_rate,
+            accepted_tokens: msg.accepted_tokens,
         },
     )?;
     Ok(Response::default())
@@ -56,21 +57,25 @@ pub fn execute(
         }
         ExecuteMsg::CloseCampaign { id } => execute_close_campaign(deps, env, info, id),
         ExecuteMsg::TopUp { id } => {
-            execute_top_up(deps, &info.sender, id, Balance::from(info.funds))
+            execute_top_up(deps, env, &info.sender, id, Balance::from(info.funds))
         }
         ExecuteMsg::Contribute { id } => {
-            execute_contribute(deps, &info.sender, id, Balance::from(info.funds))
+            execute_contribute(deps, env, &info.sender, id, Balance::from(info.funds))
         }
         ExecuteMsg::UpdateConfig {
             campaign_max_days,
             tax_rate,
-        } => execute_update_config(deps, info, campaign_max_days, tax_rate),
-        ExecuteMsg::Receive(msg) => execute_receive(deps, info, msg),
+            accepted_tokens,
+        } => execute_update_config(deps, info, campaign_max_days, tax_rate, accepted_tokens),
+        ExecuteMsg::ClaimRewards { id } => execute_claim_rewards(deps, env, info, id),
+        ExecuteMsg::RefundContributions { id } => execute_refund_contributions(deps, env, info, id),
+        ExecuteMsg::Receive(msg) => execute_receive(deps, env, info, msg),
     }
 }
 
 pub fn execute_receive(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     wrapper: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
@@ -83,8 +88,8 @@ pub fn execute_receive(
     let sender = &api.addr_validate(&wrapper.sender)?;
     match msg {
         ReceiveMsg::Create(msg) => execute_create(deps, msg, balance, sender),
-        ReceiveMsg::TopUp { id } => execute_top_up(deps, sender, id, balance),
-        ReceiveMsg::Contribute { id } => execute_contribute(deps, sender, id, balance),
+        ReceiveMsg::TopUp { id } => execute_top_up(deps, env, sender, id, balance),
+        ReceiveMsg::Contribute { id } => execute_contribute(deps, env, sender, id, balance),
     }
 }
 
@@ -93,6 +98,7 @@ pub fn execute_update_config(
     info: MessageInfo,
     campaign_max_days: u8,
     tax_rate: Decimal,
+    accepted_tokens: GenericBalance,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
 
@@ -110,6 +116,7 @@ pub fn execute_update_config(
     // and save
     config.campaign_max_days = campaign_max_days;
     config.tax_rate = tax_rate;
+    config.accepted_tokens = accepted_tokens;
     CONFIG.save(deps.storage, &config)?;
 
     let res = Response::new().add_attribute("action", "update_config");
@@ -122,7 +129,9 @@ pub fn execute_create(
     balance: Balance,
     sender: &Addr,
 ) -> Result<Response, ContractError> {
-    if balance.is_empty() {
+    if balance.is_empty()
+        || (msg.funding_goal.native.is_empty() && msg.funding_goal.cw20.is_empty())
+    {
         return Err(ContractError::EmptyBalance {});
     }
 
@@ -149,16 +158,69 @@ pub fn execute_create(
         },
     };
 
+    let mut contributed_balance = GenericBalance::default();
+    let mut funding_threshold = GenericBalance::default();
+    // check we have a single token to use as the desired contribution token for the campaign
+    if msg.funding_goal.native.iter().len() == 1 && msg.funding_goal.cw20.iter().len() == 0 {
+        for coin in msg.funding_goal.native.iter() {
+            let pos = config
+                .accepted_tokens
+                .native
+                .iter()
+                .position(|c| &c.denom == &coin.denom);
+
+            if pos == None {
+                return Err(ContractError::NotInWhitelist {});
+            }
+
+            funding_threshold.set_token_balances(Balance::from(vec![Coin {
+                amount: coin.amount * msg.reward_threshold,
+                denom: coin.denom.clone(),
+            }]));
+
+            contributed_balance.set_token_balances(Balance::from(vec![Coin {
+                amount: Uint128::zero(),
+                denom: coin.denom.clone(),
+            }]));
+        }
+    } else if msg.funding_goal.cw20.iter().len() == 1 && msg.funding_goal.native.iter().len() == 0 {
+        for token in msg.funding_goal.cw20.iter() {
+            let pos = config
+                .accepted_tokens
+                .cw20
+                .iter()
+                .position(|t| &t.address == &token.address);
+
+            if pos == None {
+                return Err(ContractError::NotInWhitelist {});
+            }
+
+            funding_threshold.set_token_balances(Balance::Cw20(Cw20CoinVerified {
+                amount: token.amount * msg.reward_threshold,
+                address: token.address.clone(),
+            }));
+
+            contributed_balance.set_token_balances(Balance::Cw20(Cw20CoinVerified {
+                amount: Uint128::zero(),
+                address: token.address.clone(),
+            }));
+        }
+    } else {
+        return Err(ContractError::NotInWhitelist {});
+    }
+
     let campaign = Campaign {
         open: true,
+        success: false,
         creator: sender.clone(),
         title: msg.title,
         description: msg.description,
         image_url: msg.image_url,
         end_time: msg.end_time,
         funding_goal: msg.funding_goal,
+        funding_threshold,
         locked_balance,
-        contributed_balance: GenericBalance::default(),
+        contributed_balance,
         contributors: vec![],
     };
 
@@ -182,6 +244,7 @@ pub fn execute_create(
 
 pub fn execute_top_up(
     deps: DepsMut,
+    env: Env,
     sender: &Addr,
     id: u64,
     balance: Balance,
@@ -193,10 +256,9 @@ pub fn execute_top_up(
     let mut campaign = CAMPAIGNS.load(deps.storage, id)?;
 
     // top-ups can only be done while the campaign is open
-    if !campaign.open {
+    if !campaign.open || campaign.is_expired(&env) {
         return Err(ContractError::Expired {});
     }
-
     // only the campaign creator can top-up their campaign's locked balance
     if sender != &campaign.creator {
         return Err(ContractError::Unauthorized {});
@@ -225,6 +287,7 @@ pub fn execute_top_up(
 
 pub fn execute_contribute(
     deps: DepsMut,
+    env: Env,
     sender: &Addr,
     id: u64,
     balance: Balance,
@@ -234,6 +297,9 @@ pub fn execute_contribute(
     }
     // this fails is no campaign there
     let mut campaign = CAMPAIGNS.load(deps.storage, id)?;
+    if !campaign.open || campaign.is_expired(&env) {
+        return Err(ContractError::Expired {});
+    }
 
     if let Balance::Cw20(token) = &balance {
         // ensure the token is on the whitelist
@@ -265,6 +331,7 @@ pub fn execute_contribute(
                     campaign: id,
                     balance: default_bal,
                     rewards_claimed: false,
+                    contribution_refunded: false,
                 })
             }
             contributor
@@ -276,12 +343,22 @@ pub fn execute_contribute(
                 campaign: id,
                 balance: default_bal,
                 rewards_claimed: false,
+                contribution_refunded: false,
             }]
         }
     };
 
     // update the campaign's generic "total" contributions balance as well
     campaign.contributed_balance.add_tokens(balance);
+    // make sure the contributor's addr is noted for this campaign
+    match campaign
+        .contributors
+        .iter()
+        .position(|addr| &addr == &sender)
+    {
+        None => campaign.contributors.push(sender.clone()),
+        _ => (),
+    }
 
     // and save
     CAMPAIGNS.save(deps.storage, id, &campaign)?;
@@ -312,15 +389,24 @@ pub fn execute_close_campaign(
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
-    // calculate the amount of withholding tax due to the AP Treasury
-    let (balance_less_tax, withholding_balance) =
-        calculate_witholding(config.tax_rate, &campaign.contributed_balance);
-    // send all contributed tokens, less tax, to the campaign's creator
-    let contributor_messages: Vec<SubMsg> = send_tokens(&campaign.creator, &balance_less_tax)?;
-    let treasury_messages: Vec<SubMsg> = send_tokens(
-        &deps.api.addr_validate(&registrar_config.treasury)?,
-        &withholding_balance,
-    )?;
+    let mut contributor_messages: Vec<SubMsg> = vec![];
+    let mut treasury_messages: Vec<SubMsg> = vec![];
+    // did the campaign meet the threshold funding to release rewards / funds?
+    if threshold_met(
+        campaign.contributed_balance.clone(),
+        campaign.funding_threshold.clone(),
+    ) {
+        campaign.success = true;
+        // calculate the amount of withholding tax due to the AP Treasury
+        let (balance_less_tax, withholding_balance) =
+            calculate_witholding(config.tax_rate, &campaign.contributed_balance);
+        // send all contributed tokens, less tax, to the campaign's creator
+        contributor_messages = send_tokens(&campaign.creator, &balance_less_tax)?;
+        treasury_messages = send_tokens(
+            &deps.api.addr_validate(&registrar_config.treasury)?,
+            &withholding_balance,
+        )?;
+    }
 
     // disable the campaign and it's contributions data
     campaign.open = false;
@@ -333,6 +419,47 @@ pub fn execute_close_campaign(
         .add_submessages(contributor_messages)
         // sends the taxes due on funds raised to AP Treasury
         .add_submessages(treasury_messages))
+}
+
+pub fn execute_refund_contributions(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    id: u64,
+) -> Result<Response, ContractError> {
+    // try to look up given campaign. Will fail if not found.
+    let campaign = CAMPAIGNS.load(deps.storage, id)?;
+
+    // check that the campaign is closed before sending rewards
+    if campaign.open {
+        return Err(ContractError::CampaignIsOpen {});
+    }
+
+    let mut contributor = CONTRIBUTORS.load(deps.storage, &info.sender)?;
+    // check that the msg sender made contributions to given campaign
+    let pos = contributor
+        .iter()
+        .position(|camp_bal| &camp_bal.campaign == &id);
+    if pos == None {
+        return Err(ContractError::InvalidInputs {});
+    }
+    // now we have record of everything the sender contributed to this campaign & status
+    let mut camp_contrib = contributor[pos.unwrap()].clone();
+
+    // check the user has not already been refunded
+    if camp_contrib.contribution_refunded {
+        return Err(ContractError::AlreadyRefunded {});
+    }
+
+    // mark contributions as refunded for this user
+    camp_contrib.contribution_refunded = true;
+    contributor[pos.unwrap()] = camp_contrib.clone();
+    CONTRIBUTORS.save(deps.storage, &info.sender, &contributor)?;
+
+    Ok(Response::default()
+        .add_submessages(send_tokens(&info.sender, &camp_contrib.balance)?)
+        .add_attribute("action", "refund_contributions")
+        .add_attribute("id", &id.to_string()))
 }
 
 pub fn execute_claim_rewards(
@@ -365,16 +492,94 @@ pub fn execute_claim_rewards(
         return Err(ContractError::CannotClaimRewards {});
     }
 
-    // TO DO: FINALIZE THE LOGIC TO PAY OUT REWARD CLAIMS!!
-    // 1. Calculate the amount of rewards a user should get: (their contrib / total contrib) * locked_balance
-    // 2. process reward claims to user using the `send_tokens()` w/ mod'd Locked Bal amnt
+    let mut rewards = GenericBalance::default();
+    // 1. Calculate the amount of rewards a user can claim: (user contrib / total contrib) * locked_balance
+    for coin in campaign.contributed_balance.native.iter() {
+        let user_amnt = campaign
+            .contributed_balance
+            .get_denom_amount(coin.denom.to_string())
+            .amount
+            .checked_div(coin.amount)
+            .unwrap();
+        if user_amnt > Uint128::zero() {
+            // 2. Push valid reward claims into balance to be used w. send_tokens()
+            rewards.set_token_balances(Balance::from(vec![Coin {
+                amount: user_amnt
+                    * campaign
+                        .locked_balance
+                        .get_denom_amount(coin.denom.clone())
+                        .amount,
+                denom: coin.denom.clone(),
+            }]));
+        }
+    }
+    for token in campaign.contributed_balance.cw20.iter() {
+        let user_amnt = campaign
+            .contributed_balance
+            .get_token_amount(token.address.clone())
+            .amount
+            .checked_div(token.amount)
+            .unwrap();
+        if user_amnt > Uint128::zero() {
+            // 2. Push valid reward claims into balance to be used w. send_tokens()
+            rewards.set_token_balances(Balance::Cw20(Cw20CoinVerified {
+                amount: user_amnt
+                    * campaign
+                        .locked_balance
+                        .get_token_amount(token.address.clone())
+                        .amount,
+                address: token.address.clone(),
+            }));
+        }
+    }
 
     // 3. mark rewards as claimed for this user
     camp_contrib.rewards_claimed = true;
     contributor[pos.unwrap()] = camp_contrib;
     CONTRIBUTORS.save(deps.storage, &info.sender, &contributor)?;
 
-    Ok(Response::default())
+    Ok(Response::default()
+        // 4. Append submessages to transfer all rewards due to user
+        .add_submessages(send_tokens(&info.sender, &rewards)?)
+        .add_attribute("action", "claim_rewards")
+        .add_attribute("id", &id.to_string()))
+}
+
+/// Threshold will have a single CW20 or single native token to check against the
+/// Contributed Balance (also a single CW20 or Native token)
+fn threshold_met(contributed: GenericBalance, threshold: GenericBalance) -> bool {
+    let mut result = false;
+    for coin in threshold.native.iter() {
+        let index = contributed
+            .native
+            .iter()
+            .enumerate()
+            .find_map(|(i, exist)| {
+                if exist.denom == coin.denom {
+                    Some(i)
+                } else {
+                    None
+                }
+            });
+        result = match index {
+            None => false,
+            Some(idx) => contributed.native[idx].amount >= coin.amount,
+        }
+    }
+    for token in threshold.cw20.iter() {
+        let index = contributed.cw20.iter().enumerate().find_map(|(i, exist)| {
+            if exist.address == token.address {
+                Some(i)
+            } else {
+                None
+            }
+        });
+        result = match index {
+            None => false,
+            Some(idx) => contributed.cw20[idx].amount >= token.amount,
+        }
+    }
+    result
 }
 
 /// Args: current tax rate and contributed balance as args
@@ -465,6 +670,7 @@ fn query_details(deps: Deps, id: u64) -> StdResult<DetailsResponse> {
         image_url: campaign.image_url,
         end_time: campaign.end_time,
         funding_goal: campaign.funding_goal,
+        funding_threshold: campaign.funding_threshold,
         locked_balance: campaign.locked_balance,
         contributor_count: campaign.contributors.len() as u64,
         contributed_balance: campaign.contributed_balance,
