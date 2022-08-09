@@ -94,7 +94,7 @@ export async function setupCore(
   // if (!config.is_localjuno) {
   //   await createVaults(config.harvest_to_liquid, config.tax_per_block);
   // }
-  await createJunoVaults(config.junoswap_pool_addr, config.junoswap_pool_staking, config.harvest_to_liquid);
+  await createJunoVaults(config.junoswap_pool_addr, config.junoswap_pool_staking, config.harvest_to_liquid, apTeamAddr);
 
   if (config.turnover_to_multisig) {
     await turnOverApTeamMultisig(config.is_localjuno);
@@ -277,8 +277,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity1_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_multisig_max_voting_period,
     },
   });
   endowmentContract1 = charityResult1.logs[0].events
@@ -327,8 +327,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity2_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_multisig_max_voting_period,
     },
   });
   endowmentContract2 = charityResult2.logs[0].events
@@ -377,8 +377,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity3_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_multisig_max_voting_period,
     },
   });
   endowmentContract3 = charityResult3.logs[0].events
@@ -426,8 +426,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity3_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_multisig_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_multisig_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_multisig_max_voting_period,
     }
   });
   endowmentContract4 = charityResult4.logs[0].events
@@ -503,6 +503,7 @@ async function createJunoVaults(
   swap_pool_addr: string,
   staking_addr: string,
   harvest_to_liquid: string,
+  keeper: string,
 ): Promise<void> {
   process.stdout.write("Uploading Junoswap Vault Wasm");
   const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/junoswap_vault.wasm`);
@@ -519,6 +520,7 @@ async function createJunoVaults(
     symbol: "apANC1",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
+    keeper: keeper,
   });
   vault1 = vaultResult1.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault1}`);
@@ -534,6 +536,7 @@ async function createJunoVaults(
     symbol: "apANC2",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
+    keeper: keeper,
   });
   vault2 = vaultResult2.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault2}`);
@@ -546,6 +549,7 @@ async function createJunoVaults(
       vault_addr: vault1,
       input_denom: "ujuno",
       yield_token: apTeamAddr, // Temporary string value here. Should clarify the meaning.
+      restricted_from: [],
     }
   });
 
@@ -555,6 +559,7 @@ async function createJunoVaults(
       vault_addr: vault2,
       input_denom: "ujuno",
       yield_token: apTeamAddr, // Temporary string value here. Should clarify the meaning.
+      restricted_from: [],
     }
   });
   console.log(chalk.green(" Done!"));
@@ -562,15 +567,17 @@ async function createJunoVaults(
   // Step 3. AP team must approve the new junoswap vault in registrar & make it the default vault
   process.stdout.write("Approving JunoSwap Vault #1 & #2 in Registrar");
   await sendTransaction(juno, apTeamAddr, registrar, {
-    vault_update_status: {
+    vault_update: {
       vault_addr: vault1,
       approved: true,
+      restricted_from: [],
     }
   });
   await sendTransaction(juno, apTeamAddr, registrar, {
-    vault_update_status: {
+    vault_update: {
       vault_addr: vault2,
       approved: true,
+      restricted_from: [],
     }
   });
   console.log(chalk.green(" Done!"));

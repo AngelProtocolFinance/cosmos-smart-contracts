@@ -115,7 +115,7 @@ export async function setupJunoSwap(
      // Manager can update all configs except changing the owner. This will generally be an operations multisig for a DAO.
      manager: undefined,
      token_address: result.lp_token_address,
-     unstaking_duration: undefined,
+     unstaking_duration: { time: 60 },
   });
   console.log(
     chalk.green(" Done!"),
