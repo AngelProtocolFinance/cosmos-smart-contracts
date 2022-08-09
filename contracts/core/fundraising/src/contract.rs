@@ -389,7 +389,7 @@ pub fn execute_close_campaign(
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
-    let mut contributor_messages: Vec<SubMsg> = vec![];
+    let contributor_messages: Vec<SubMsg>;
     let mut treasury_messages: Vec<SubMsg> = vec![];
     // did the campaign meet the threshold funding to release rewards / funds?
     if threshold_met(
@@ -406,6 +406,10 @@ pub fn execute_close_campaign(
             &deps.api.addr_validate(&registrar_config.treasury)?,
             &withholding_balance,
         )?;
+    } else {
+        // Send all locked rewards back to the creator.
+        // Users will now be able to get a refund on their contributions after closing.
+        contributor_messages = send_tokens(&campaign.creator, &campaign.locked_balance)?;
     }
 
     // disable the campaign and it's contributions data
@@ -415,9 +419,10 @@ pub fn execute_close_campaign(
     Ok(Response::new()
         .add_attribute("action", "close-campaign")
         .add_attribute("id", &id.to_string())
-        // sends funds raised (less tax) to the creator
+        .add_attribute("campaign_succeeded", campaign.success.to_string())
+        // sends to creator: funds raised (less tax) if passed OR send rewards back if failed
         .add_submessages(contributor_messages)
-        // sends the taxes due on funds raised to AP Treasury
+        // sends to AP Treasury: taxes due on funds raised
         .add_submessages(treasury_messages))
 }
 
