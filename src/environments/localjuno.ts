@@ -209,10 +209,10 @@ export async function startSetupCore(): Promise<void> {
       tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
       funding_goal: "500000000", // funding goal
       fund_member_limit: 10,
-      charity_cw3_multisig_threshold_abs_perc: "0.10", // threshold absolute percentage for "charity-cw3"
+      charity_cw3_multisig_threshold_abs_perc: "0.5", // threshold absolute percentage for "charity-cw3"
       charity_cw3_multisig_max_voting_period: 60,      // max_voting_period time(unit: seconds) for "charity-cw3"
       accepted_tokens:  {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
         cw20: [],
       },
       junoswap_pool_addr: junoswapHaloJunoPairContract, // Junoswap pool (HALO-JUNO) contract

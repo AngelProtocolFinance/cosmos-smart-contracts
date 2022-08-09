@@ -295,10 +295,8 @@ export async function testExecute(
   //   actors.charity1.addr,
   // );
  
-  // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, registrar, {
-  //   cw3_code: 102,
-  //   cw4_code: 104,
-  //   accounts_code_id: 102,
+  // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, {
+  //     accepted_tokens_native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
   // });
   // await testApproveEndowments(actors.apTeam.client, actors.apTeam.addr, registrar, endowmentContract1, 1);
   // await testClosingEndpoint(
@@ -327,7 +325,7 @@ export async function testExecute(
   // );
   // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
   // Test query
-  // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
+  await testQueryRegistrarConfig(actors.apTeam.client, registrar);
   // await testQueryRegistrarEndowmentList(actors.apTeam.client, registrar);
   // await testQueryRegistrarEndowmentDetails(actors.apTeam.client, registrar, endowmentContract1);
   // await testQueryRegistrarApprovedVaultList(actors.apTeam.client, registrar);

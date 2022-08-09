@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction } from "../../../utils/helpers";
+import { sendMessageViaCw3Proposal, sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -18,11 +18,12 @@ const { expect } = chai;
 export async function testUpdatingRegistrarConfigs(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3ApTeam: string,
   registrar: string,
   config: any
 ): Promise<void> {
   process.stdout.write("AP Team updates Registrar Config");
-  await sendTransaction(juno, apTeam, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3ApTeam, registrar, {
     update_config: config,
   });
   console.log(chalk.green(" Done!"));

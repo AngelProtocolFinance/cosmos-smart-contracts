@@ -156,10 +156,7 @@ async function setup(
       treasury: treasury_address,
       default_vault: apTeamAddr, // Fake vault address from apTeam
       split_to_liquid: undefined,
-      accepted_tokens: {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
-        cw20: [],
-      }
+      accepted_tokens: accepted_tokens,
     }
   );
   registrar = registrarResult.contractAddress as string;
@@ -271,8 +268,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity1_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
   endowmentContract1 = charityResult1.logs[0].events
@@ -321,8 +318,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity2_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
   endowmentContract2 = charityResult2.logs[0].events
@@ -371,8 +368,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity3_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
   endowmentContract3 = charityResult3.logs[0].events
@@ -420,8 +417,8 @@ async function createEndowments(
       },
       cw4_members: [{ addr: charity3_wallet, weight: 1 }],
       kyc_donors_only: false,
-      cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
+      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+      cw3_max_voting_period: charity_cw3_max_voting_period,
     }
   });
   endowmentContract4 = charityResult4.logs[0].events
@@ -499,19 +496,18 @@ async function createJunoVaults(
   harvest_to_liquid: string,
   keeper: string,
 ): Promise<void> {
-  process.stdout.write("Uploading Anchor Vault Wasm");
-  const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/anchor.wasm`);
+  process.stdout.write("Uploading JunoSwap Vault Wasm");
+  const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/junoswap_vault.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
 
-  // Anchor Vault - #1
-  process.stdout.write("Instantiating Anchor Vault (#1) contract");
+  // JunoSwap Vault - #1
+  process.stdout.write("Instantiating JunoSwap Vault (#1) contract");
   const vaultResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     swap_pool_addr: swap_pool_addr,
     staking_addr: staking_addr,
     registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
     output_token_denom: {"native": "ujuno"},
-    name: "AP DP Token - Anchor #1",
+    name: "AP DP Token - JunoVault #1",
     symbol: "apANC1",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
@@ -520,15 +516,14 @@ async function createJunoVaults(
   vault1 = vaultResult1.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault1}`);
 
-  // Anchor Vault - #2 (to better test multistrategy logic)
-  process.stdout.write("Instantiating Anchor Vault (#2) contract");
+  // JunoSwap Vault - #2 (to better test multistrategy logic)
+  process.stdout.write("Instantiating JunoSwap Vault (#2) contract");
   const vaultResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     swap_pool_addr: swap_pool_addr,
     staking_addr: staking_addr,
     registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
     output_token_denom: {"native": "ujuno"},
-    name: "AP DP Token - Anchor #2",
+    name: "AP DP Token - JunoVault #2",
     symbol: "apANC2",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
@@ -537,19 +532,43 @@ async function createJunoVaults(
   vault2 = vaultResult2.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault2}`);
 
-  // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
-  process.stdout.write("Approving Anchor Vault #1 & #2 in Registrar");
+  // Add(register) the vaults to the registrar
+  process.stdout.write("Adding JunoSwap Vault #1 & #2 in Registrar");
   await sendTransaction(juno, apTeamAddr, registrar, {
-    vault_update_status: {
+    vault_add: {
+      network: undefined,
+      vault_addr: vault1,
+      input_denom: "ujuno",
+      yield_token: apTeamAddr, // Temporary string value here. Should clarify the meaning.
+      restricted_from: [],
+    }
+  });
+
+  await sendTransaction(juno, apTeamAddr, registrar, {
+    vault_add: {
+      network: undefined,
+      vault_addr: vault2,
+      input_denom: "ujuno",
+      yield_token: apTeamAddr, // Temporary string value here. Should clarify the meaning.
+      restricted_from: [],
+    }
+  });
+  console.log(chalk.green(" Done!"));
+
+  // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
+  process.stdout.write("Approving JunoSwap Vault #1 & #2 in Registrar");
+  await sendTransaction(juno, apTeamAddr, registrar, {
+    vault_update: {
       vault_addr: vault1,
       approved: true,
       restricted_from: [],
     }
   });
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
+  await sendTransaction(juno, apTeamAddr, registrar, {
     vault_update: {
       vault_addr: vault2,
       approved: true,
+      restricted_from: [],
     }
   });
   console.log(chalk.green(" Done!"));
@@ -576,17 +595,5 @@ async function turnOverApTeamMultisig(is_localjuno: boolean): Promise<void> {
   await sendTransaction(juno, apTeamAddr, indexFund, {
     update_owner: { new_owner: cw3ApTeam }
   });
-  console.log(chalk.green(" Done!"));
-  
-  // if (!is_localjuno) {
-  //   await sendTransaction(juno, apTeamAddr, vault1, {
-  //     update_owner: { new_owner: cw3ApTeam }
-  //   });
-  //   process.stdout.write(chalk.yellow("\n- Turning over Vault 1"));
-  //   await sendTransaction(juno, apTeamAddr, vault2, {
-  //     update_owner: { new_owner: cw3ApTeam }
-  //   });
-  //   process.stdout.write(chalk.yellow("\n- Turning over Vault 2"));
-  // }
   console.log(chalk.green(" Done!"));
 }
