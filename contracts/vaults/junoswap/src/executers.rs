@@ -166,13 +166,38 @@ pub fn deposit(
         return Err(ContractError::Unauthorized {});
     }
 
+    // Perform the whole "deposit" action
     let mut res = Response::new()
         .add_attribute("action", "deposit")
         .add_attribute("sender", depositor.to_string())
         .add_attribute("deposit_amount", deposit_amount);
 
-    // 1. Add the "swap" message
-    res = res.add_messages(swap_msg(&config, &deposit_denom, deposit_amount)?);
+    res = res.add_messages(create_deposit_msgs(
+        deps,
+        env,
+        &config,
+        depositor,
+        deposit_denom,
+        deposit_amount,
+    ));
+
+    Ok(res)
+}
+
+fn create_deposit_msgs(
+    deps: DepsMut,
+    env: Env,
+    config: &Config,
+    depositor: String,
+    deposit_denom: Denom,
+    deposit_amount: Uint128,
+) -> Vec<CosmosMsg> {
+    let mut msgs: Vec<CosmosMsg> = vec![];
+
+    // 1. Add the swap msg
+    msgs.append(
+        &mut swap_msg(&config, &deposit_denom, deposit_amount).expect("Cannot create swap msg"),
+    );
 
     // 2. Add the "add_liquidity" message
     let in_denom = deposit_denom;
@@ -185,7 +210,7 @@ pub fn deposit(
         query_denom_balance(&deps, &in_denom, env.contract.address.to_string());
     let out_denom_bal_before =
         query_denom_balance(&deps, &out_denom, env.contract.address.to_string());
-    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::AddLiquidity {
             depositor,
@@ -198,7 +223,7 @@ pub fn deposit(
         funds: vec![],
     }));
 
-    Ok(res)
+    msgs
 }
 
 /// Claim: Call the `claim` entry of "staking" contract
@@ -555,6 +580,7 @@ pub fn distribute_harvest(
         / registrar_config.tax_rate.denominator();
 
     let less_taxes = total_reward_amt - tax_amt;
+    let mut restake_amt = Uint128::zero();
 
     // Compute the Accounts' BALANCE ratio of the total_supply
     // Send some back to the Accounts contract to liquid: acct_owned * config.harvest_to_liquid
@@ -597,10 +623,20 @@ pub fn distribute_harvest(
                 }))
             }
         }
+        restake_amt -= liquid_amt;
     }
 
     // All leftover rewards not taxed or liquided would be sent to be staked(convert to lp_token & staked)
-    // TODO! Refactor the `Deposit` entry so that it can share the `stake` logic with this entry.
+    let depositor = env.contract.address.to_string();
+    let deposit_denom = config.output_token_denom.clone();
+    res = res.add_messages(create_deposit_msgs(
+        deps,
+        env,
+        &config,
+        depositor,
+        deposit_denom,
+        restake_amt,
+    ));
 
     Ok(res)
 }
