@@ -1,5 +1,5 @@
 use angel_core::structs::GenericBalance;
-use cosmwasm_std::Decimal;
+use cosmwasm_std::{Addr, Decimal};
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub registrar_contract: String,
-    pub campaign_max_seconds: u64, // seconds
+    pub campaign_period_seconds: u64, // seconds
     pub tax_rate: Decimal,
     pub accepted_tokens: GenericBalance,
 }
@@ -43,7 +43,7 @@ pub enum ExecuteMsg {
     },
     /// Allow registrar contract's owner to update configs of this contract
     UpdateConfig {
-        campaign_max_seconds: u64,
+        campaign_period_seconds: u64,
         tax_rate: Decimal,
         accepted_tokens: GenericBalance,
     },
@@ -76,7 +76,7 @@ pub struct CreateMsg {
     /// When end time (in seconds since epoch 00:00:00 UTC on 1 January 1970) is set and
     /// block time exceeds this value, the campaign is expired.
     /// Once an campaign is expired, it can be returned to the original funder (via "refund").
-    pub end_time: u64,
+    pub end_time_epoch: u64,
     /// Funding goal is the amount & addr/demon that a campaign is looking to raise in exchange for their reward tokens
     /// For simplicity, we'll only accept a single token as the input for a given campaign (for now)
     pub funding_goal: GenericBalance,
@@ -126,7 +126,7 @@ pub struct DetailsResponse {
     /// When end time (in seconds since epoch 00:00:00 UTC on 1 January 1970) is set and
     /// block time exceeds this value, the campaign is expired.
     /// Once an campaign is expired, it can be returned to the original funder (via "refund").
-    pub end_time: u64,
+    pub end_time_epoch: u64,
     /// amount / tokens that a campaign is looking to raise in exchange for their reward tokens
     pub funding_goal: GenericBalance,
     pub funding_threshold: GenericBalance,

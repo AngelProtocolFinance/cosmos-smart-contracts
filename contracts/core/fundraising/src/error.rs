@@ -21,8 +21,10 @@ pub enum ContractError {
     #[error("Contributions have already been refunded for this campaign.")]
     AlreadyRefunded {},
 
-    #[error("Only accepts tokens in the cw20_whitelist")]
-    NotInWhitelist {},
+    #[error(
+        "Only accepts {token_type} tokens that have been whitelisted. Supplied '{given}' is not approved."
+    )]
+    NotInWhitelist { token_type: String, given: String },
 
     #[error("Campaign is expired")]
     Expired {},

@@ -11,7 +11,7 @@ pub struct Config {
     pub next_id: u64,
     /// max time that a campaign can be open for (in seconds)
     /// don't want to allow contributors funds to be locked up forever
-    pub campaign_max_seconds: u64,
+    pub campaign_period_seconds: u64,
     /// Platform fee charged to AP Treasury
     /// Applied upon successful closing of fundraising
     pub tax_rate: Decimal,
@@ -39,7 +39,7 @@ pub struct Campaign {
     /// When end time (in seconds since epoch 00:00:00 UTC on 1 January 1970) is set and
     /// block time exceeds this value, the campaign is expired.
     /// Once an campaign is expired, it can be returned to the original funder (via "refund").
-    pub end_time: u64,
+    pub end_time_epoch: u64,
     /// amount / tokens that a campaign is looking to raise in exchange for their reward tokens
     pub funding_goal: GenericBalance,
     /// Balance that represents % of funding goal that a campaign must meet in order to
@@ -55,7 +55,7 @@ pub struct Campaign {
 
 impl Campaign {
     pub fn is_expired(&self, env: &Env) -> bool {
-        if env.block.time > Timestamp::from_seconds(self.end_time) {
+        if env.block.time > Timestamp::from_seconds(self.end_time_epoch) {
             return true;
         }
         false

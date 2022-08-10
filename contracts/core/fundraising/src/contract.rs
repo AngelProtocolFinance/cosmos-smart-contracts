@@ -13,7 +13,7 @@ use angel_core::structs::{EndowmentStatus, GenericBalance};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
+    QueryRequest, Response, StdError, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
 use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg, Cw20ReceiveMsg};
@@ -36,7 +36,7 @@ pub fn instantiate(
         &Config {
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             next_id: 1,
-            campaign_max_seconds: msg.campaign_max_seconds,
+            campaign_period_seconds: msg.campaign_period_seconds,
             tax_rate: msg.tax_rate,
             accepted_tokens: msg.accepted_tokens,
         },
@@ -63,10 +63,16 @@ pub fn execute(
             execute_contribute(deps, env, &info.sender, id, Balance::from(info.funds))
         }
         ExecuteMsg::UpdateConfig {
-            campaign_max_seconds,
+            campaign_period_seconds,
             tax_rate,
             accepted_tokens,
-        } => execute_update_config(deps, info, campaign_max_seconds, tax_rate, accepted_tokens),
+        } => execute_update_config(
+            deps,
+            info,
+            campaign_period_seconds,
+            tax_rate,
+            accepted_tokens,
+        ),
         ExecuteMsg::ClaimRewards { id } => execute_claim_rewards(deps, env, info, id),
         ExecuteMsg::RefundContributions { id } => execute_refund_contributions(deps, env, info, id),
         ExecuteMsg::Receive(msg) => execute_receive(deps, env, info, msg),
@@ -96,7 +102,7 @@ pub fn execute_receive(
 pub fn execute_update_config(
     deps: DepsMut,
     info: MessageInfo,
-    campaign_max_seconds: u64,
+    campaign_period_seconds: u64,
     tax_rate: Decimal,
     accepted_tokens: GenericBalance,
 ) -> Result<Response, ContractError> {
@@ -114,13 +120,12 @@ pub fn execute_update_config(
     }
 
     // and save
-    config.campaign_max_seconds = campaign_max_seconds;
+    config.campaign_period_seconds = campaign_period_seconds;
     config.tax_rate = tax_rate;
     config.accepted_tokens = accepted_tokens;
     CONFIG.save(deps.storage, &config)?;
 
-    let res = Response::new().add_attribute("action", "update_config");
-    Ok(res)
+    Ok(Response::new().add_attribute("action", "update_config"))
 }
 
 pub fn execute_create(
@@ -151,7 +156,9 @@ pub fn execute_create(
     // check that the user supplied campaign end time less
     // the max campaign length is less than or equal to the
     // current block time
-    if Timestamp::from_seconds(msg.end_time - config.campaign_max_seconds) <= env.block.time {
+    if Timestamp::from_seconds(msg.end_time_epoch - config.campaign_period_seconds)
+        <= env.block.time
+    {
         return Err(ContractError::InvalidInputs {});
     }
 
@@ -178,7 +185,10 @@ pub fn execute_create(
                 .position(|c| &c.denom == &coin.denom);
 
             if pos == None {
-                return Err(ContractError::NotInWhitelist {});
+                return Err(ContractError::NotInWhitelist {
+                    token_type: "native".to_string(),
+                    given: coin.denom.clone(),
+                });
             }
 
             funding_threshold.set_token_balances(Balance::from(vec![Coin {
@@ -200,7 +210,10 @@ pub fn execute_create(
                 .position(|t| &t.address == &token.address);
 
             if pos == None {
-                return Err(ContractError::NotInWhitelist {});
+                return Err(ContractError::NotInWhitelist {
+                    token_type: "CW20".to_string(),
+                    given: token.address.to_string(),
+                });
             }
 
             funding_threshold.set_token_balances(Balance::Cw20(Cw20CoinVerified {
@@ -214,7 +227,10 @@ pub fn execute_create(
             }));
         }
     } else {
-        return Err(ContractError::NotInWhitelist {});
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Contract only accepts a single CW20 or Native Token at a time for funding goal"
+                .to_string(),
+        }));
     }
 
     let campaign = Campaign {
@@ -224,7 +240,7 @@ pub fn execute_create(
         title: msg.title,
         description: msg.description,
         image_url: msg.image_url,
-        end_time: msg.end_time,
+        end_time_epoch: msg.end_time_epoch,
         funding_goal: msg.funding_goal,
         funding_threshold,
         locked_balance,
@@ -243,11 +259,10 @@ pub fn execute_create(
     config.next_id += 1;
     CONFIG.save(deps.storage, &config)?;
 
-    let res = Response::new().add_attributes(vec![
+    Ok(Response::new().add_attributes(vec![
         ("action", "create"),
         ("id", &(config.next_id - 1).to_string()),
-    ]);
-    Ok(res)
+    ]))
 }
 
 pub fn execute_top_up(
@@ -280,7 +295,10 @@ pub fn execute_top_up(
             .iter()
             .any(|t| &t.address == &token.address)
         {
-            return Err(ContractError::NotInWhitelist {});
+            return Err(ContractError::NotInWhitelist {
+                token_type: "CW20".to_string(),
+                given: "tokens".to_string(),
+            });
         }
     };
 
@@ -289,8 +307,7 @@ pub fn execute_top_up(
     // and save
     CAMPAIGNS.save(deps.storage, id, &campaign)?;
 
-    let res = Response::new().add_attributes(vec![("action", "top_up"), ("id", &id.to_string())]);
-    Ok(res)
+    Ok(Response::new().add_attributes(vec![("action", "top_up"), ("id", &id.to_string())]))
 }
 
 pub fn execute_contribute(
@@ -317,7 +334,10 @@ pub fn execute_contribute(
             .iter()
             .any(|t| &t.address == &token.address)
         {
-            return Err(ContractError::NotInWhitelist {});
+            return Err(ContractError::NotInWhitelist {
+                token_type: "CW20".to_string(),
+                given: "tokens".to_string(),
+            });
         }
     };
 
@@ -372,9 +392,7 @@ pub fn execute_contribute(
     CAMPAIGNS.save(deps.storage, id, &campaign)?;
     CONTRIBUTORS.save(deps.storage, sender, &contributions)?;
 
-    let res =
-        Response::new().add_attributes(vec![("action", "contribute"), ("id", &id.to_string())]);
-    Ok(res)
+    Ok(Response::new().add_attributes(vec![("action", "contribute"), ("id", &id.to_string())]))
 }
 
 pub fn execute_close_campaign(
@@ -681,7 +699,7 @@ fn query_details(deps: Deps, id: u64) -> StdResult<DetailsResponse> {
         title: campaign.title,
         description: campaign.description,
         image_url: campaign.image_url,
-        end_time: campaign.end_time,
+        end_time_epoch: campaign.end_time_epoch,
         funding_goal: campaign.funding_goal,
         funding_threshold: campaign.funding_threshold,
         locked_balance: campaign.locked_balance,
