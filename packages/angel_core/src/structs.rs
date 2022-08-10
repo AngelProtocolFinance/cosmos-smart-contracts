@@ -85,6 +85,7 @@ impl RebalanceDetails {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct EndowmentEntry {
+    pub id: String,
     pub owner: String,
     pub status: EndowmentStatus,
     pub endow_type: EndowmentType,

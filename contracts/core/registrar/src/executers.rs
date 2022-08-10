@@ -387,7 +387,7 @@ pub fn new_accounts_reply(
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
-                        if attrb.key == "endow_addr" {
+                        if attrb.key == "endow_id" {
                             endowment_id = attrb.value.clone();
                         }
                         if attrb.key == "endow_name" {
@@ -419,6 +419,7 @@ pub fn new_accounts_reply(
                 deps.storage,
                 &endowment_id,
                 &EndowmentEntry {
+                    id: endowment_id.clone(),
                     owner: endowment_owner.clone(),
                     status: EndowmentStatus::Inactive,
                     endow_type: match endowment_type.as_str() {
@@ -440,7 +441,7 @@ pub fn new_accounts_reply(
             )?;
             Ok(Response::default().add_attributes(vec![
                 attr("reply", "instantiate_endowment"),
-                attr("addr", endowment_id),
+                attr("addr", endowment_id.clone()),
                 attr("owner", endowment_owner),
             ]))
         }

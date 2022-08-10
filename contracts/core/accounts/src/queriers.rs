@@ -1,4 +1,4 @@
-use crate::state::{CONFIG, ENDOWMENTS, STATES};
+use crate::state::{CONFIG, ENDOWMENTS, REDEMPTIONS, STATES};
 use angel_core::messages::vault::QueryMsg as VaultQuerier;
 use angel_core::responses::accounts::*;
 use angel_core::structs::BalanceInfo;
@@ -54,6 +54,7 @@ pub fn query_account_balance(deps: Deps, env: Env, id: String) -> StdResult<Bala
 pub fn query_endowment_details(deps: Deps, id: String) -> StdResult<EndowmentDetailsResponse> {
     // this fails if no account is found
     let endowment = ENDOWMENTS.load(deps.storage, &id)?;
+    let redemptions = REDEMPTIONS.load(deps.storage, &id)?;
     Ok(EndowmentDetailsResponse {
         owner: endowment.owner,
         beneficiary: endowment.beneficiary,
@@ -65,6 +66,7 @@ pub fn query_endowment_details(deps: Deps, id: String) -> StdResult<EndowmentDet
         kyc_donors_only: endowment.kyc_donors_only,
         deposit_approved: endowment.deposit_approved,
         withdraw_approved: endowment.withdraw_approved,
+        pending_redemptions: redemptions,
     })
 }
 

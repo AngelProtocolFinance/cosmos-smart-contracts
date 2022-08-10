@@ -29,6 +29,7 @@ pub struct EndowmentDetailsResponse {
     pub kyc_donors_only: bool,
     pub deposit_approved: bool,
     pub withdraw_approved: bool,
+    pub pending_redemptions: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
