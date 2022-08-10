@@ -169,4 +169,6 @@ pub enum QueryMsg {
     Endowment { id: String },
     // Get the profile info
     GetProfile { id: String },
+    // Get a list of all endowments IDs
+    GetAllIds {},
 }
