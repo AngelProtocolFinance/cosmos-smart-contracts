@@ -36,7 +36,7 @@ pub fn instantiate(
         owner: info.sender,
         guardian_angels: None,
         index_fund_contract: None,
-        accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
+        accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
         tax_rate,
         default_vault: msg.default_vault,
@@ -108,8 +108,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
-        QueryMsg::Endowment { endowment_addr } => {
-            to_binary(&queriers::query_endowment_details(deps, endowment_addr)?)
+        QueryMsg::Endowment { endowment_id } => {
+            to_binary(&queriers::query_endowment_details(deps, endowment_id)?)
         }
         QueryMsg::EndowmentList {
             name,

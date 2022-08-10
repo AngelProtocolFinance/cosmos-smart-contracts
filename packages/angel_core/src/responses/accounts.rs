@@ -15,9 +15,6 @@ pub struct ConfigResponse {
     pub owner: String,
     pub version: String,
     pub registrar_contract: String,
-    pub deposit_approved: bool,
-    pub withdraw_approved: bool,
-    pub pending_redemptions: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -30,6 +27,8 @@ pub struct EndowmentDetailsResponse {
     pub strategies: Vec<StrategyComponent>,
     pub rebalance: RebalanceDetails,
     pub kyc_donors_only: bool,
+    pub deposit_approved: bool,
+    pub withdraw_approved: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
