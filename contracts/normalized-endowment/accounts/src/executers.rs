@@ -147,6 +147,7 @@ pub fn update_endowment_settings(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENT.load(deps.storage)?;
+    let profile = PROFILE.load(deps.storage)?;
 
     if info.sender.ne(&endowment.owner)
         && (endowment.dao != None && info.sender != *endowment.dao.as_ref().unwrap())
@@ -164,66 +165,69 @@ pub fn update_endowment_settings(
         }
         None => endowment.owner,
     };
-    endowment.whitelisted_beneficiaries = match msg.whitelisted_beneficiaries {
-        Some(i) => {
-            if config
-                .settings_controller
-                .whitelisted_beneficiaries
-                .can_change(&info.sender, &endowment.owner, endowment.dao.as_ref())
-            {
-                i
-            } else {
-                endowment.whitelisted_beneficiaries
+    // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
+    if profile.endow_type != EndowmentType::Charity {
+        endowment.whitelisted_beneficiaries = match msg.whitelisted_beneficiaries {
+            Some(i) => {
+                if config
+                    .settings_controller
+                    .whitelisted_beneficiaries
+                    .can_change(&info.sender, &endowment.owner, endowment.dao.as_ref())
+                {
+                    i
+                } else {
+                    endowment.whitelisted_beneficiaries
+                }
             }
-        }
-        None => endowment.whitelisted_beneficiaries,
-    };
-    endowment.whitelisted_contributors = match msg.whitelisted_contributors {
-        Some(i) => {
-            if config
-                .settings_controller
-                .whitelisted_contributors
-                .can_change(&info.sender, &endowment.owner, endowment.dao.as_ref())
-            {
-                i
-            } else {
-                endowment.whitelisted_contributors
+            None => endowment.whitelisted_beneficiaries,
+        };
+        endowment.whitelisted_contributors = match msg.whitelisted_contributors {
+            Some(i) => {
+                if config
+                    .settings_controller
+                    .whitelisted_contributors
+                    .can_change(&info.sender, &endowment.owner, endowment.dao.as_ref())
+                {
+                    i
+                } else {
+                    endowment.whitelisted_contributors
+                }
             }
-        }
-        None => endowment.whitelisted_contributors,
-    };
-    endowment.withdraw_before_maturity = match msg.withdraw_before_maturity {
-        Some(i) => {
-            if config
-                .settings_controller
-                .whitelisted_contributors
-                .can_change(&info.sender, &endowment.owner, endowment.dao.as_ref())
-            {
-                i
-            } else {
-                endowment.withdraw_before_maturity
+            None => endowment.whitelisted_contributors,
+        };
+        endowment.withdraw_before_maturity = match msg.withdraw_before_maturity {
+            Some(i) => {
+                if config
+                    .settings_controller
+                    .whitelisted_contributors
+                    .can_change(&info.sender, &endowment.owner, endowment.dao.as_ref())
+                {
+                    i
+                } else {
+                    endowment.withdraw_before_maturity
+                }
             }
-        }
-        None => endowment.withdraw_before_maturity,
-    };
-    endowment.maturity_time = match msg.maturity_time {
-        Some(i) => {
-            if config.settings_controller.maturity_time.can_change(
-                &info.sender,
-                &endowment.owner,
-                endowment.dao.as_ref(),
-            ) {
-                i
-            } else {
-                endowment.maturity_time
+            None => endowment.withdraw_before_maturity,
+        };
+        endowment.maturity_time = match msg.maturity_time {
+            Some(i) => {
+                if config.settings_controller.maturity_time.can_change(
+                    &info.sender,
+                    &endowment.owner,
+                    endowment.dao.as_ref(),
+                ) {
+                    i
+                } else {
+                    endowment.maturity_time
+                }
             }
-        }
-        None => endowment.maturity_time,
-    };
-    endowment.rebalance = match msg.rebalance {
-        Some(i) => i,
-        None => endowment.rebalance,
-    };
+            None => endowment.maturity_time,
+        };
+        endowment.rebalance = match msg.rebalance {
+            Some(i) => i,
+            None => endowment.rebalance,
+        };
+    }
 
     // validate address strings passed
     if config.settings_controller.kyc_donors_only.can_change(
@@ -1129,7 +1133,15 @@ pub fn update_endowment_fees(
     msg: UpdateEndowmentFeesMsg,
 ) -> Result<Response, ContractError> {
     let mut endowment = ENDOWMENT.load(deps.storage)?;
+    let profile = PROFILE.load(deps.storage)?;
     let config = CONFIG.load(deps.storage)?;
+
+    // only normalized endowments can update the additional fees
+    if profile.endow_type != EndowmentType::Charity {
+        return Err(ContractError::Std(StdError::generic_err(
+            "Charity Endowments may not change endowment fees",
+        )));
+    }
 
     // Update the "EndowmentFee"s
     if config.settings_controller.earnings_fee.can_change(
@@ -1203,9 +1215,16 @@ pub fn harvest(
 }
 
 pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    let endowment = ENDOWMENT.load(deps.storage)?;
+    // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
+    let profile = PROFILE.load(deps.storage)?;
+    if profile.endow_type != EndowmentType::Charity {
+        return Err(ContractError::Std(StdError::generic_err(
+            "Charity Endowments do not have AUM fees to harvest",
+        )));
+    }
 
     // Validations
+    let endowment = ENDOWMENT.load(deps.storage)?;
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
     }
