@@ -13,7 +13,7 @@ use angel_core::structs::{EndowmentStatus, GenericBalance};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
     from_binary, to_binary, Addr, BankMsg, Binary, Coin, Decimal, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    QueryRequest, Response, StdResult, SubMsg, Timestamp, Uint128, WasmMsg, WasmQuery,
 };
 use cw2::set_contract_version;
 use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg, Cw20ReceiveMsg};
@@ -36,7 +36,7 @@ pub fn instantiate(
         &Config {
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             next_id: 1,
-            campaign_max_days: msg.campaign_max_days,
+            campaign_max_seconds: msg.campaign_max_seconds,
             tax_rate: msg.tax_rate,
             accepted_tokens: msg.accepted_tokens,
         },
@@ -53,7 +53,7 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Create(msg) => {
-            execute_create(deps, msg, Balance::from(info.funds), &info.sender)
+            execute_create(deps, env, msg, Balance::from(info.funds), &info.sender)
         }
         ExecuteMsg::CloseCampaign { id } => execute_close_campaign(deps, env, info, id),
         ExecuteMsg::TopUp { id } => {
@@ -63,10 +63,10 @@ pub fn execute(
             execute_contribute(deps, env, &info.sender, id, Balance::from(info.funds))
         }
         ExecuteMsg::UpdateConfig {
-            campaign_max_days,
+            campaign_max_seconds,
             tax_rate,
             accepted_tokens,
-        } => execute_update_config(deps, info, campaign_max_days, tax_rate, accepted_tokens),
+        } => execute_update_config(deps, info, campaign_max_seconds, tax_rate, accepted_tokens),
         ExecuteMsg::ClaimRewards { id } => execute_claim_rewards(deps, env, info, id),
         ExecuteMsg::RefundContributions { id } => execute_refund_contributions(deps, env, info, id),
         ExecuteMsg::Receive(msg) => execute_receive(deps, env, info, msg),
@@ -87,7 +87,7 @@ pub fn execute_receive(
     let api = deps.api;
     let sender = &api.addr_validate(&wrapper.sender)?;
     match msg {
-        ReceiveMsg::Create(msg) => execute_create(deps, msg, balance, sender),
+        ReceiveMsg::Create(msg) => execute_create(deps, env, msg, balance, sender),
         ReceiveMsg::TopUp { id } => execute_top_up(deps, env, sender, id, balance),
         ReceiveMsg::Contribute { id } => execute_contribute(deps, env, sender, id, balance),
     }
@@ -96,7 +96,7 @@ pub fn execute_receive(
 pub fn execute_update_config(
     deps: DepsMut,
     info: MessageInfo,
-    campaign_max_days: u8,
+    campaign_max_seconds: u64,
     tax_rate: Decimal,
     accepted_tokens: GenericBalance,
 ) -> Result<Response, ContractError> {
@@ -114,7 +114,7 @@ pub fn execute_update_config(
     }
 
     // and save
-    config.campaign_max_days = campaign_max_days;
+    config.campaign_max_seconds = campaign_max_seconds;
     config.tax_rate = tax_rate;
     config.accepted_tokens = accepted_tokens;
     CONFIG.save(deps.storage, &config)?;
@@ -125,6 +125,7 @@ pub fn execute_update_config(
 
 pub fn execute_create(
     deps: DepsMut,
+    env: Env,
     msg: CreateMsg,
     balance: Balance,
     sender: &Addr,
@@ -145,6 +146,13 @@ pub fn execute_create(
     )?;
     if endow_detail.endowment.status != EndowmentStatus::Approved {
         return Err(ContractError::Unauthorized {});
+    }
+
+    // check that the user supplied campaign end time less
+    // the max campaign length is less than or equal to the
+    // current block time
+    if Timestamp::from_seconds(msg.end_time - config.campaign_max_seconds) <= env.block.time {
+        return Err(ContractError::InvalidInputs {});
     }
 
     let locked_balance = match balance {

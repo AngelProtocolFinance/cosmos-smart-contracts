@@ -9,10 +9,9 @@ pub struct Config {
     pub registrar_contract: Addr,
     /// auto-incrememnted campaign ID (default to 1 at init)
     pub next_id: u64,
-    /// max number of days that a campaign can be open for
-    /// don't want to allow contributors funds to be locked
-    /// up forever
-    pub campaign_max_days: u8,
+    /// max time that a campaign can be open for (in seconds)
+    /// don't want to allow contributors funds to be locked up forever
+    pub campaign_max_seconds: u64,
     /// Platform fee charged to AP Treasury
     /// Applied upon successful closing of fundraising
     pub tax_rate: Decimal,

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub registrar_contract: String,
-    pub campaign_max_days: u8,
+    pub campaign_max_seconds: u64, // seconds
     pub tax_rate: Decimal,
     pub accepted_tokens: GenericBalance,
 }
@@ -43,7 +43,7 @@ pub enum ExecuteMsg {
     },
     /// Allow registrar contract's owner to update configs of this contract
     UpdateConfig {
-        campaign_max_days: u8,
+        campaign_max_seconds: u64,
         tax_rate: Decimal,
         accepted_tokens: GenericBalance,
     },
