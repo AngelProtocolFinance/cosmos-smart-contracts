@@ -440,7 +440,7 @@ pub fn new_accounts_reply(
                 },
             )?;
             Ok(Response::default().add_attributes(vec![
-                attr("reply", "instantiate_endowment"),
+                attr("reply", "create_endowment"),
                 attr("addr", endowment_id.clone()),
                 attr("owner", endowment_owner),
             ]))
