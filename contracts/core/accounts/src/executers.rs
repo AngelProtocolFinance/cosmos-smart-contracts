@@ -76,6 +76,11 @@ pub fn create_endowment(
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
+    // check that the Endowment ID is of resonable length (lte 25 chars)
+    if &msg.id.chars().count() >= &registrar_config.account_id_char_limit {
+        return Err(ContractError::InvalidInputs {});
+    }
+
     let owner = deps.api.addr_validate(&msg.owner)?;
     let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
     // try to store the endowment, fail if the ID is already in use

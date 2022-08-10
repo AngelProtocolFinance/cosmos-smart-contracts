@@ -229,6 +229,7 @@ impl WasmMockQuerier {
                             native: vec!["uluna".to_string()],
                             cw20: vec!["test-cw20".to_string()],
                         },
+                        account_id_char_limit: 20,
                     })
                     .unwrap(),
                 )),

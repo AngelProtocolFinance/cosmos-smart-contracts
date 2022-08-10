@@ -239,6 +239,9 @@ pub fn update_config(
             .accepted_tokens_cw20
             .unwrap_or(config.accepted_tokens.cw20),
     };
+    config.account_id_char_limit = msg
+        .account_id_char_limit
+        .unwrap_or(config.account_id_char_limit);
 
     CONFIG.save(deps.storage, &config)?;
 
