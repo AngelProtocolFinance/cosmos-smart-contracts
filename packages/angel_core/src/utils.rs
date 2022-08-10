@@ -164,7 +164,7 @@ pub fn vault_account_balance(
 
 pub fn redeem_from_vaults(
     deps: Deps,
-    account_addr: Addr,
+    endowment_id: Addr,
     registrar_contract: String,
     strategies: Vec<StrategyComponent>,
 ) -> Result<Vec<SubMsg>, ContractError> {
@@ -187,7 +187,7 @@ pub fn redeem_from_vaults(
         redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: yield_vault.address.to_string(),
             msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem {
-                account_addr: account_addr.clone(),
+                endowment_id: endowment_id.to_string(),
             })
             .unwrap(),
             funds: vec![],
@@ -199,6 +199,7 @@ pub fn redeem_from_vaults(
 pub fn withdraw_from_vaults(
     deps: Deps,
     registrar_contract: String,
+    endowment_id: String,
     beneficiary: &Addr,
     sources: Vec<FundingSource>,
 ) -> Result<Vec<SubMsg>, ContractError> {
@@ -226,6 +227,7 @@ pub fn withdraw_from_vaults(
                 contract_addr: yield_vault.address.to_string(),
                 msg: to_binary(&crate::messages::vault::ExecuteMsg::Withdraw(
                     AccountWithdrawMsg {
+                        endowment_id: endowment_id.clone(),
                         beneficiary: beneficiary.clone(),
                         amount: source.amount,
                     },
@@ -241,6 +243,7 @@ pub fn withdraw_from_vaults(
 pub fn deposit_to_vaults(
     deps: Deps,
     registrar_contract: String,
+    endowment_id: String,
     fund: Asset,
     strategies: &[StrategyComponent],
 ) -> Result<Vec<SubMsg>, ContractError> {
@@ -262,7 +265,10 @@ pub fn deposit_to_vaults(
             AssetInfoBase::Native(ref denom) => {
                 deposit_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: yield_vault.address.to_string(),
-                    msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {}).unwrap(),
+                    msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {
+                        endowment_id: endowment_id.clone(),
+                    })
+                    .unwrap(),
                     funds: vec![Coin {
                         denom: denom.clone(),
                         amount: fund.amount * strategy.percentage,
@@ -275,7 +281,10 @@ pub fn deposit_to_vaults(
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                         contract: yield_vault.address.to_string(),
                         amount: fund.amount * strategy.percentage,
-                        msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {}).unwrap(),
+                        msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {
+                            endowment_id: endowment_id.clone(),
+                        })
+                        .unwrap(),
                     })
                     .unwrap(),
                     funds: vec![],

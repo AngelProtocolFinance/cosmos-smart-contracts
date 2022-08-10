@@ -80,23 +80,25 @@ pub fn create_endowment(
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
-    ENDOWMENTS.save(
-        deps.storage,
-        &msg.id,
-        &Endowment {
+    let owner = deps.api.addr_validate(&msg.owner)?;
+    let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
+    // try to store the endowment, fail if the ID is already in use
+    ENDOWMENTS.update(deps.storage, &msg.id, |existing| match existing {
+        Some(_) => Err(ContractError::AlreadyInUse {}),
+        None => Ok(Endowment {
             deposit_approved: false,
             withdraw_approved: false,
-            owner: deps.api.addr_validate(&msg.owner)?, // Addr
-            beneficiary: deps.api.addr_validate(&msg.beneficiary)?, // Addr
+            owner,                                                  // Addr
+            beneficiary,                                            // Addr
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
-            maturity_time: msg.maturity_time,           // Option<u64>
-            maturity_height: msg.maturity_height,       // Option<u64>
+            maturity_time: msg.maturity_time,                       // Option<u64>
+            maturity_height: msg.maturity_height,                   // Option<u64>
             strategies: vec![],
             rebalance: RebalanceDetails::default(),
             kyc_donors_only: msg.kyc_donors_only,
             profile: msg.profile.clone(),
-        },
-    )?;
+        }),
+    })?;
     REDEMPTIONS.save(deps.storage, &msg.id, &None)?;
     STATES.save(
         deps.storage,
@@ -413,6 +415,7 @@ pub fn vault_receipt(
                 submessages = deposit_to_vaults(
                     deps.as_ref(),
                     config.registrar_contract.to_string(),
+                    id.clone(),
                     asset,
                     &endowment.strategies,
                 )?;
@@ -678,6 +681,7 @@ pub fn deposit(
         deposit_messages = deposit_to_vaults(
             deps.as_ref(),
             config.registrar_contract.to_string(),
+            msg.id.clone(),
             locked_amount,
             &endowment.strategies,
         )?;
@@ -728,6 +732,7 @@ pub fn withdraw(
     let withdraw_messages = withdraw_from_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
+        id.clone(),
         &deps.api.addr_validate(&beneficiary)?,
         sources,
     )?;
