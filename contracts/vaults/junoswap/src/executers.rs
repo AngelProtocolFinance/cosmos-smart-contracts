@@ -192,12 +192,13 @@ fn create_deposit_msgs(
     deposit_denom: Denom,
     deposit_amount: Uint128,
 ) -> Vec<CosmosMsg> {
-    let mut msgs: Vec<CosmosMsg> = vec![];
+    let mut res: Vec<CosmosMsg> = vec![];
 
     // 1. Add the swap msg
-    msgs.append(
-        &mut swap_msg(&config, &deposit_denom, deposit_amount).expect("Cannot create swap msg"),
-    );
+    swap_msg(&config, &deposit_denom, deposit_amount)
+        .expect("Cannot create swap msg")
+        .into_iter()
+        .for_each(|msg| res.push(msg));
 
     // 2. Add the "add_liquidity" message
     let in_denom = deposit_denom;
@@ -210,7 +211,7 @@ fn create_deposit_msgs(
         query_denom_balance(&deps, &in_denom, env.contract.address.to_string());
     let out_denom_bal_before =
         query_denom_balance(&deps, &out_denom, env.contract.address.to_string());
-    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+    res.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::AddLiquidity {
             depositor,
@@ -223,7 +224,7 @@ fn create_deposit_msgs(
         funds: vec![],
     }));
 
-    msgs
+    res
 }
 
 /// Claim: Call the `claim` entry of "staking" contract
@@ -301,7 +302,7 @@ pub fn claim(
 /// Withdraw: Takes in an amount of vault tokens
 /// to withdraw from the vault for USDC to send back to a beneficiary
 pub fn withdraw(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     msg: AccountWithdrawMsg,
@@ -343,11 +344,8 @@ pub fn withdraw(
         sender: info.sender.clone(),
         funds: vec![],
     };
-    config.total_shares -= msg.amount;
-    CONFIG.save(deps.storage, &config)?;
-
-    cw20_base::contract::execute_burn(deps, env.clone(), account_info, msg.amount).map_err(
-        |_| {
+    cw20_base::contract::execute_burn(deps.branch(), env.clone(), account_info, msg.amount)
+        .map_err(|_| {
             ContractError::Std(StdError::GenericErr {
                 msg: format!(
                     "Cannot burn the {} vault tokens from {}",
@@ -355,8 +353,11 @@ pub fn withdraw(
                     info.sender.to_string()
                 ),
             })
-        },
-    )?;
+        })?;
+
+    // Update the "total_shares" value
+    config.total_shares -= msg.amount;
+    CONFIG.save(deps.storage, &config)?;
 
     // Perform the "unstaking"
     let mut res = Response::default();
@@ -366,18 +367,27 @@ pub fn withdraw(
         funds: vec![],
     }));
 
-    // Handle the returning lp tokens
-    res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::RemoveLiquidity {
-            lp_token_bal_before: lp_token_bal.balance,
-            action: RemoveLiquidAction::Withdraw {
-                beneficiary: msg.beneficiary,
-            },
-        })
-        .unwrap(),
-        funds: vec![],
-    }));
+    // Handle the returning lp tokens if exists
+    let staking_contract_config: stake_cw20::msg::GetConfigResponse =
+        deps.querier.query_wasm_smart(
+            config.staking_addr,
+            &stake_cw20::msg::QueryMsg::GetConfig {},
+        )?;
+    if staking_contract_config.unstaking_duration.is_none() {
+        res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::RemoveLiquidity {
+                lp_token_bal_before: lp_token_bal.balance,
+                action: RemoveLiquidAction::Withdraw {
+                    beneficiary: msg.beneficiary,
+                },
+            })
+            .unwrap(),
+            funds: vec![],
+        }));
+    }
+
+    // TODO: Add the withdraw information into the `PENDING` map
 
     Ok(res)
 }
