@@ -43,6 +43,7 @@ pub fn instantiate(
     )?;
 
     Ok(Response::default()
+        .add_attribute("endow_id", msg.id)
         .add_attribute("multisig_addr", env.contract.address.to_string())
         // Fire a submessage to create the CW4 Group to be linked to this CW3 on reply
         .add_submessage(SubMsg {

@@ -85,7 +85,7 @@ impl RebalanceDetails {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct EndowmentEntry {
-    pub address: Addr,
+    pub id: String,
     pub owner: String,
     pub status: EndowmentStatus,
     pub endow_type: EndowmentType,
@@ -166,7 +166,7 @@ pub struct IndexFund {
     pub id: u64,
     pub name: String,
     pub description: String,
-    pub members: Vec<Addr>,
+    pub members: Vec<String>,
     pub rotating_fund: Option<bool>, // set a fund as a rotating fund
     // Fund Specific: over-riding SC level setting to handle a fixed split value
     // Defines the % to split off into liquid account, and if defined overrides all other splits
