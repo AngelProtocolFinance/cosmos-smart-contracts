@@ -76,8 +76,9 @@ pub fn create_endowment(
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
-    // check that the Endowment ID is of resonable length (lte 25 chars)
-    if &msg.id.chars().count() >= &registrar_config.account_id_char_limit {
+    // check that the Endowment ID is of resonable length
+    let chars = msg.id.chars().count();
+    if chars < 5_usize || chars >= registrar_config.account_id_char_limit {
         return Err(ContractError::InvalidInputs {});
     }
 
