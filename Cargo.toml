@@ -4,6 +4,7 @@ members = [
     "packages/halo_token",
     "contracts/core/registrar",
     "contracts/core/index-fund",
+    "contracts/core/fundraising",
     "contracts/normalized-endowment/accounts",
     "contracts/normalized-endowment/cw3-endowment",
     "contracts/normalized-endowment/cw900-lv",

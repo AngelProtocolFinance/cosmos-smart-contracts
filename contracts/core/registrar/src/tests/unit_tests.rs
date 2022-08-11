@@ -113,6 +113,7 @@ fn update_config() {
     let update_config_message = UpdateConfigMsg {
         accounts_code_id: None,
         index_fund_contract: Some(index_fund_contract.clone()),
+        fundraising_contract: None,
         approved_charities: None,
         treasury: Some(ap_team.clone()),
         tax_rate: None,
@@ -185,6 +186,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     let update_config_msg = UpdateConfigMsg {
         accounts_code_id: None,
         index_fund_contract: Some(index_fund_contract.clone()),
+        fundraising_contract: None,
         approved_charities: None,
         treasury: None,
         tax_rate: None,
@@ -595,6 +597,7 @@ fn test_add_update_and_remove_accepted_tokens() {
     let update_config_msg = UpdateConfigMsg {
         accounts_code_id: None,
         index_fund_contract: None,
+        fundraising_contract: None,
         approved_charities: None,
         treasury: None,
         tax_rate: None,

@@ -220,7 +220,10 @@ pub fn update_config(
         Some(tokens) => tokens,
         None => config.accepted_tokens,
     };
-
+    config.fundraising_contract = match msg.fundraising_contract {
+        Some(addr) => Some(deps.api.addr_validate(&addr).unwrap()),
+        None => config.fundraising_contract,
+    };
     config.collector_addr = msg
         .collector_addr
         .map(|addr| deps.api.addr_validate(&addr).unwrap());
