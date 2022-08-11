@@ -1,3 +1,4 @@
+use crate::state::Campaign;
 use angel_core::structs::GenericBalance;
 use cosmwasm_std::{Addr, Decimal};
 use cw20::Cw20ReceiveMsg;
@@ -97,8 +98,16 @@ pub fn is_valid_name(name: &str) -> bool {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    /// Show all open campaigns. Return type is ListResponse.
-    List {},
+    /// Show campaigns that meet optional filter criteria.
+    /// Return type: ListResponse.
+    List {
+        creator: Option<Addr>,
+        open: Option<bool>,
+        success: Option<bool>,
+    },
+    /// Show campaigns that a given address has contributed to
+    /// Return type: ListResponse.
+    ContributorCampaigns { contributor: String },
     /// Returns the details of the named campaign, error if not created
     /// Return type: DetailsResponse.
     Details { id: u64 },
@@ -107,7 +116,7 @@ pub enum QueryMsg {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct ListResponse {
     /// list all registered ids
-    pub campaigns: Vec<u64>,
+    pub campaigns: Vec<Campaign>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]

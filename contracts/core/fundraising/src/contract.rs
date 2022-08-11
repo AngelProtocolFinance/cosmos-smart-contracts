@@ -3,7 +3,7 @@ use crate::msg::{
     CreateMsg, DetailsResponse, ExecuteMsg, InstantiateMsg, ListResponse, QueryMsg, ReceiveMsg,
 };
 use crate::state::{
-    all_campaign_ids, Campaign, Config, ContributorInfo, CAMPAIGNS, CONFIG, CONTRIBUTORS,
+    all_campaigns, Campaign, Config, ContributorInfo, CAMPAIGNS, CONFIG, CONTRIBUTORS,
 };
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::{
@@ -686,8 +686,15 @@ fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<SubMsg>> {
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
-        QueryMsg::List {} => to_binary(&query_list(deps)?),
+        QueryMsg::List {
+            creator,
+            open,
+            success,
+        } => to_binary(&query_list(deps, creator, open, success)?),
         QueryMsg::Details { id } => to_binary(&query_details(deps, id)?),
+        QueryMsg::ContributorCampaigns { contributor } => {
+            to_binary(&query_list_by_contributor(deps, contributor)?)
+        }
     }
 }
 
@@ -709,8 +716,39 @@ fn query_details(deps: Deps, id: u64) -> StdResult<DetailsResponse> {
     Ok(details)
 }
 
-fn query_list(deps: Deps) -> StdResult<ListResponse> {
-    Ok(ListResponse {
-        campaigns: all_campaign_ids(deps.storage)?,
-    })
+fn query_list(
+    deps: Deps,
+    creator: Option<Addr>,
+    open: Option<bool>,
+    success: Option<bool>,
+) -> StdResult<ListResponse> {
+    let campaigns: Vec<Campaign> = all_campaigns(deps.storage)
+        .unwrap_or(vec![])
+        .into_iter()
+        .filter(|c| &c.creator.as_ref() == &creator.as_ref().unwrap_or(&c.creator).as_ref())
+        .filter(|c| c.open == open.unwrap_or(c.open))
+        .filter(|c| c.success == success.unwrap_or(c.success))
+        .collect::<Vec<Campaign>>();
+
+    Ok(ListResponse { campaigns })
+}
+
+fn query_list_by_contributor(deps: Deps, contributor: String) -> StdResult<ListResponse> {
+    let contrib_addr = deps.api.addr_validate(&contributor)?;
+    let campaigns: Vec<Campaign> = all_campaigns(deps.storage)
+        .unwrap_or(vec![])
+        .into_iter()
+        .filter(|campaign| {
+            match &campaign
+                .contributors
+                .iter()
+                .position(|c| c == &contrib_addr)
+            {
+                Some(_) => true,
+                None => false,
+            }
+        })
+        .collect::<Vec<Campaign>>();
+
+    Ok(ListResponse { campaigns })
 }

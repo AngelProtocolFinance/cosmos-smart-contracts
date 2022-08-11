@@ -82,9 +82,13 @@ pub const CONFIG: Item<Config> = Item::new("config");
 pub const CAMPAIGNS: Map<u64, Campaign> = Map::new("campaign");
 pub const CONTRIBUTORS: Map<&Addr, Vec<ContributorInfo>> = Map::new("contributions");
 
-/// This returns the list of ids for all registered campaigns
-pub fn all_campaign_ids(storage: &dyn Storage) -> StdResult<Vec<u64>> {
+/// This returns the list of all campaigns
+pub fn all_campaigns(storage: &dyn Storage) -> StdResult<Vec<Campaign>> {
     CAMPAIGNS
-        .keys(storage, None, None, Order::Ascending)
+        .range(storage, None, None, Order::Ascending)
+        .map(|item| {
+            let (_, v) = item?;
+            Ok(v)
+        })
         .collect()
 }
