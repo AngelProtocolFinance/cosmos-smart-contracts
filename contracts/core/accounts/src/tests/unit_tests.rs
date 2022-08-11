@@ -104,6 +104,85 @@ fn test_proper_initialization() {
 }
 
 #[test]
+fn test_fail_creation_with_bad_id() {
+    let mut deps = mock_dependencies(&[]);
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        un_sdg: Some(2),
+        tier: Some(3),
+        logo: Some("Some fancy logo".to_string()),
+        image: Some("Nice banner image".to_string()),
+        url: Some("nice-charity.org".to_string()),
+        registration_number: Some("1234567".to_string()),
+        country_of_origin: Some("GB".to_string()),
+        street_address: Some("10 Downing St".to_string()),
+        contact_email: Some("admin@nice-charity.org".to_string()),
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: Some("https://twitter.com/nice-charity".to_string()),
+            linkedin: None,
+        },
+        number_of_employees: Some(10),
+        average_annual_budget: Some("1 Million Pounds".to_string()),
+        annual_revenue: Some("Not enough".to_string()),
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Charity,
+    };
+    let instantiate_msg = InstantiateMsg {
+        owner_sc: AP_TEAM.to_string(),
+        registrar_contract: REGISTRAR_CONTRACT.to_string(),
+    };
+    let info = mock_info(AP_TEAM, &coins(100000, "earth"));
+    let env = mock_env();
+    let _init = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
+
+    // too short!!
+    let mut create_endowment_msg = CreateEndowmentMsg {
+        id: "D2".to_string(),
+        owner: CHARITY_ADDR.to_string(),
+        beneficiary: CHARITY_ADDR.to_string(),
+        withdraw_before_maturity: false,
+        maturity_time: None,
+        maturity_height: None,
+        profile: profile,
+        cw4_members: vec![],
+        kyc_donors_only: true,
+        cw3_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_max_voting_period: Duration::Time(60),
+    };
+    let _short = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::CreateEndowment(create_endowment_msg.clone()),
+    )
+    .unwrap_err();
+
+    // too long!!
+    create_endowment_msg.id = "D22D232D232D232D232D232D232D22".to_string();
+    let _long = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::CreateEndowment(create_endowment_msg.clone()),
+    )
+    .unwrap_err();
+
+    // bad symbols!!
+    create_endowment_msg.id = "D22#D23-232D232D22".to_string();
+    let _symbols = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::CreateEndowment(create_endowment_msg.clone()),
+    )
+    .unwrap_err();
+}
+
+#[test]
 fn test_update_endowment_settings() {
     let (mut deps, endow_details) = create_endowment();
 

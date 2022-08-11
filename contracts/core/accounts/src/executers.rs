@@ -30,6 +30,7 @@ use cosmwasm_std::{
 use cw20::{Balance, Cw20CoinVerified};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfoBase};
+use regex::Regex;
 
 pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
@@ -76,16 +77,22 @@ pub fn create_endowment(
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
 
-    // check that the Endowment ID is of resonable length
-    let chars = msg.id.chars().count();
-    if chars < 5_usize || chars >= registrar_config.account_id_char_limit {
-        return Err(ContractError::InvalidInputs {});
+    // check that the Endowment ID is of resonable length and that it
+    // contains only accepted character set: numbers, lowercase letters, and `-` char
+    let id = msg.id.to_lowercase();
+    if id.chars().count() > registrar_config.account_id_char_limit
+        || !Regex::new(r"^[a-z\d-]{3,}+$").unwrap().is_match(&id)
+    {
+        return Err(ContractError::Std(StdError::generic_err(format!(
+            "ID must be between 3 and {} chars. Must consist of: numbers, lowercase letters and hyphens.",
+            registrar_config.account_id_char_limit
+        ))));
     }
 
     let owner = deps.api.addr_validate(&msg.owner)?;
     let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
     // try to store the endowment, fail if the ID is already in use
-    ENDOWMENTS.update(deps.storage, &msg.id, |existing| match existing {
+    ENDOWMENTS.update(deps.storage, &id, |existing| match existing {
         Some(_) => Err(ContractError::AlreadyInUse {}),
         None => Ok(Endowment {
             deposit_approved: false,
@@ -101,10 +108,10 @@ pub fn create_endowment(
             profile: msg.profile.clone(),
         }),
     })?;
-    REDEMPTIONS.save(deps.storage, &msg.id, &None)?;
+    REDEMPTIONS.save(deps.storage, &id, &None)?;
     STATES.save(
         deps.storage,
-        &msg.id,
+        &id,
         &State {
             donations_received: Uint128::zero(),
             balances: BalanceInfo::default(),
@@ -115,7 +122,7 @@ pub fn create_endowment(
 
     // initial default Response to add submessages to
     let mut res = Response::new().add_attributes(vec![
-        attr("endow_id", msg.id.clone()),
+        attr("endow_id", id.clone()),
         attr("endow_name", msg.profile.name),
         attr("endow_type", msg.profile.endow_type.to_string()),
         attr(
