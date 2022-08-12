@@ -16,7 +16,7 @@ use angel_core::responses::vault::{InfoResponse, Token2ForToken1PriceResponse};
 use angel_core::structs::EndowmentEntry;
 use angel_core::utils::query_denom_balance;
 
-use crate::state::{Config, CONFIG, REMNANTS};
+use crate::state::{Config, PendingInfo, CONFIG, PENDING, REMNANTS};
 
 pub fn update_owner(
     deps: DepsMut,
@@ -294,14 +294,6 @@ pub fn withdraw(
         msg.endowment_id.clone(),
     )?;
 
-    // Query the "lp_token" balance beforehand in order to resolve the `deps` issue.
-    let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-        config.pool_lp_token_addr.to_string(),
-        &cw20::Cw20QueryMsg::Balance {
-            address: env.contract.address.to_string(),
-        },
-    )?;
-
     // First, burn the vault tokens
     let account_info = MessageInfo {
         sender: deps.api.addr_validate(&msg.endowment_id)?,
@@ -313,7 +305,7 @@ pub fn withdraw(
                 msg: format!(
                     "Cannot burn the {} vault tokens from {}",
                     msg.amount,
-                    info.sender.to_string()
+                    msg.endowment_id.to_string()
                 ),
             })
         })?;
@@ -337,6 +329,13 @@ pub fn withdraw(
             &stake_cw20::msg::QueryMsg::GetConfig {},
         )?;
     if staking_contract_config.unstaking_duration.is_none() {
+        // Query the "lp_token" balance
+        let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+            config.pool_lp_token_addr.to_string(),
+            &cw20::Cw20QueryMsg::Balance {
+                address: env.contract.address.to_string(),
+            },
+        )?;
         res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: env.contract.address.to_string(),
             msg: to_binary(&ExecuteMsg::RemoveLiquidity {
@@ -348,9 +347,20 @@ pub fn withdraw(
             .unwrap(),
             funds: vec![],
         }));
+    } else {
+        // Save the pending_info in the PENDING map
+        let pending_info = PendingInfo {
+            typ: "withdraw".to_string(),
+            endowment_id: msg.endowment_id.to_string(), // ID of org. sending Accounts SC
+            beneficiary: msg.beneficiary,               // return to the beneficiary
+            amount: msg.amount,
+        };
+        PENDING.save(
+            deps.storage,
+            (msg.endowment_id.as_str(), env.block.height),
+            &pending_info,
+        )?;
     }
-
-    // TODO: Add the withdraw information into the `PENDING` map
 
     Ok(res)
 }
