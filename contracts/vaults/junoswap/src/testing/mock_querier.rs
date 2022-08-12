@@ -12,9 +12,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use angel_core::responses::registrar::EndowmentListResponse;
+use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::responses::vault::InfoResponse;
-use angel_core::structs::EndowmentEntry;
+use angel_core::structs::{AcceptedTokens, EndowmentEntry, SplitDetails};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -31,6 +31,7 @@ pub enum QueryMsg {
     Balance {
         address: String,
     },
+    Config {},
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -158,7 +159,7 @@ impl WasmMockQuerier {
                 } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&EndowmentListResponse {
                         endowments: vec![EndowmentEntry {
-                            id: "endowment_1".to_string(),
+                            id: "endowment-1".to_string(),
                             owner: "owner".to_string(),
                             endow_type: angel_core::structs::EndowmentType::Charity,
                             status: angel_core::structs::EndowmentStatus::Approved,
@@ -175,6 +176,34 @@ impl WasmMockQuerier {
                 QueryMsg::Balance { address: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&cw20::BalanceResponse {
                         balance: Uint128::from(100_u128),
+                    })
+                    .unwrap(),
+                )),
+                // Simulating the `registrar::QueryMsg::Config {}`
+                QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&ConfigResponse {
+                        owner: "registrar-owner".to_string(),
+                        version: "1.0.0".to_string(),
+                        accounts_contract: Some("accounts-contract".to_string()),
+                        treasury: "treasury".to_string(),
+                        tax_rate: Decimal::from_ratio(5_u128, 100_u128),
+                        default_vault: None,
+                        index_fund: None,
+                        split_to_liquid: SplitDetails {
+                            max: Decimal::one(),
+                            min: Decimal::zero(),
+                            default: Decimal::default(),
+                        },
+                        halo_token: None,
+                        gov_contract: None,
+                        charity_shares_contract: None,
+                        cw3_code: Some(3_u64),
+                        cw4_code: Some(4_u64),
+                        accepted_tokens: AcceptedTokens {
+                            native: vec![],
+                            cw20: vec![],
+                        },
+                        account_id_char_limit: 10,
                     })
                     .unwrap(),
                 )),

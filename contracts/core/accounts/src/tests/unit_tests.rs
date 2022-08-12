@@ -543,7 +543,7 @@ fn test_donate() {
     });
     let res = execute(deps.as_mut(), mock_env(), info, deposit_msg).unwrap();
 
-    assert_eq!(res.attributes.len(), 3);
+    assert_eq!(res.attributes.len(), 4);
 
     // Check the "STATE" for "transactions" field
     let query_res = query(
@@ -586,7 +586,7 @@ fn test_deposit_cw20() {
     });
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    assert_eq!(res.attributes.len(), 3);
+    assert_eq!(res.attributes.len(), 4);
 }
 
 #[test]

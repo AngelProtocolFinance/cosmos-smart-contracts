@@ -130,22 +130,38 @@ pub fn deposit(
     deps: DepsMut,
     env: Env,
     _info: MessageInfo,
-    depositor: String,
+    msg_sender: String,
     endowment_id: String,
     deposit_denom: Denom,
     deposit_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
+    // Validations
+    // Check if sender address is the "accounts_contract"
+    let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &RegistrarQueryMsg::Config {},
+    )?;
+    if let Some(accounts_contract) = registar_config.accounts_contract {
+        if msg_sender.to_string() != accounts_contract {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Check if the "deposit_denom" is valid
     if !config.input_denoms.contains(&deposit_denom) {
         return Err(ContractError::InvalidCoinsDeposited {});
     }
 
+    // Check if the "deposit_amount" is zero or not
     if deposit_amount.is_zero() {
         return Err(ContractError::EmptyBalance {});
     }
 
-    // check that the depositor is an Accounts SC
+    // Check that the "deposit-endowment-id" is an Accounts SC
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
@@ -161,8 +177,8 @@ pub fn deposit(
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments
         .iter()
-        .position(|p| p.id.to_string() == endowment_id);
-    // reject if the sender was found in the list of endowments
+        .position(|p| p.id.to_string() == endowment_id.to_string());
+    // reject if the "endowment-id" was not found in the list of endowments
     if pos == None {
         return Err(ContractError::Unauthorized {});
     }
@@ -170,14 +186,15 @@ pub fn deposit(
     // Perform the whole "deposit" action
     let mut res = Response::new()
         .add_attribute("action", "deposit")
-        .add_attribute("sender", depositor.to_string())
+        .add_attribute("sender", msg_sender)
+        .add_attribute("endow_id", endowment_id.to_string())
         .add_attribute("deposit_amount", deposit_amount);
 
     res = res.add_messages(create_deposit_msgs(
         deps,
         env,
         &config,
-        depositor,
+        endowment_id,
         deposit_denom,
         deposit_amount,
     ));
@@ -189,7 +206,7 @@ fn create_deposit_msgs(
     deps: DepsMut,
     env: Env,
     config: &Config,
-    depositor: String,
+    endow_id: String,
     deposit_denom: Denom,
     deposit_amount: Uint128,
 ) -> Vec<CosmosMsg> {
@@ -215,7 +232,7 @@ fn create_deposit_msgs(
     res.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::AddLiquidity {
-            depositor,
+            endow_id,
             in_denom,
             out_denom,
             in_denom_bal_before,
@@ -656,7 +673,7 @@ pub fn add_liquidity(
     deps: DepsMut,
     env: Env,
     _info: MessageInfo,
-    depositor: String,
+    endow_id: String,
     in_denom: Denom,
     out_denom: Denom,
     in_denom_bal_before: Uint128,
@@ -773,7 +790,7 @@ pub fn add_liquidity(
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::Stake {
-            depositor,
+            endow_id,
             lp_token_bal_before: lp_token_bal.balance,
         })
         .unwrap(),
@@ -789,7 +806,7 @@ pub fn stake_lp_token(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    depositor: String,
+    endow_id: String,
     lp_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
@@ -819,12 +836,12 @@ pub fn stake_lp_token(
     config.total_shares += stake_amount;
     CONFIG.save(deps.storage, &config)?;
 
-    cw20_base::contract::execute_mint(deps, env, info, depositor.to_string(), stake_amount)
+    cw20_base::contract::execute_mint(deps, env, info, endow_id.to_string(), stake_amount)
         .map_err(|_| {
             ContractError::Std(StdError::GenericErr {
                 msg: format!(
                     "Cannot mint the {} vault token for {}",
-                    stake_amount, depositor
+                    stake_amount, endow_id
                 ),
             })
         })?;

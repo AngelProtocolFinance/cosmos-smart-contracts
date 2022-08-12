@@ -106,14 +106,14 @@ pub fn execute(
                         .to_string(),
                 }));
             }
-            let depositor = info.sender.to_string();
             let deposit_denom = Denom::Native(info.funds[0].denom.to_string());
             let deposit_amount = info.funds[0].amount;
+            let msg_sender = info.sender.to_string();
             executers::deposit(
                 deps,
                 env,
                 info,
-                depositor,
+                msg_sender,
                 endowment_id,
                 deposit_denom,
                 deposit_amount,
@@ -140,7 +140,7 @@ pub fn execute(
             output_token_bal_before,
         } => executers::distribute_harvest(deps, env, info, output_token_bal_before),
         ExecuteMsg::AddLiquidity {
-            depositor,
+            endow_id,
             in_denom,
             out_denom,
             in_denom_bal_before,
@@ -149,7 +149,7 @@ pub fn execute(
             deps,
             env,
             info,
-            depositor,
+            endow_id,
             in_denom,
             out_denom,
             in_denom_bal_before,
@@ -160,9 +160,9 @@ pub fn execute(
             action,
         } => executers::remove_liquidity(deps, env, info, lp_token_bal_before, action),
         ExecuteMsg::Stake {
-            depositor,
+            endow_id,
             lp_token_bal_before,
-        } => executers::stake_lp_token(deps, env, info, depositor, lp_token_bal_before),
+        } => executers::stake_lp_token(deps, env, info, endow_id, lp_token_bal_before),
         ExecuteMsg::SwapAndSendTo {
             token1_denom_bal_before,
             token2_denom_bal_before,
@@ -236,14 +236,14 @@ fn receive_cw20(
 ) -> Result<Response, ContractError> {
     match from_binary(&cw20_msg.msg) {
         Ok(ReceiveMsg::Deposit { endowment_id }) => {
-            let depositor = cw20_msg.sender;
+            let msg_sender = cw20_msg.sender;
             let deposit_denom = Denom::Cw20(info.sender.clone());
             let deposit_amount = cw20_msg.amount;
             executers::deposit(
                 deps,
                 env,
                 info,
-                depositor,
+                msg_sender,
                 endowment_id,
                 deposit_denom,
                 deposit_amount,

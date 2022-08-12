@@ -199,20 +199,20 @@ fn test_deposit_native_token() {
         mock_env(),
         info,
         ExecuteMsg::Deposit {
-            endowment_id: "endowment_10".to_string(),
+            endowment_id: "endowment-10".to_string(),
         },
     )
     .unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
 
     // Succeed to "deposit" JUNO tokens
-    let info = mock_info("endowment-1", &coins(100, "ujuno"));
+    let info = mock_info("accounts-contract", &coins(100, "ujuno"));
     let res = execute(
         deps.as_mut(),
         mock_env(),
         info,
         ExecuteMsg::Deposit {
-            endowment_id: "endowment_1".to_string(),
+            endowment_id: "endowment-1".to_string(),
         },
     )
     .unwrap();
@@ -231,7 +231,7 @@ fn test_deposit_cw20_token() {
         sender: "endowment-100".to_string(),
         amount: Uint128::from(100_u128),
         msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit {
-            endowment_id: "endowment_10".to_string(),
+            endowment_id: "endowment-10".to_string(),
         })
         .unwrap(),
     };
@@ -247,10 +247,10 @@ fn test_deposit_cw20_token() {
 
     // Second, fail to "deposit" since the "token" deposited is not one of "input_denoms"
     let deposit_msg = cw20::Cw20ReceiveMsg {
-        sender: "endowment-100".to_string(),
+        sender: "accounts-contract".to_string(),
         amount: Uint128::from(100_u128),
         msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit {
-            endowment_id: "endowment_1".to_string(),
+            endowment_id: "endowment-1".to_string(),
         })
         .unwrap(),
     };
@@ -266,10 +266,10 @@ fn test_deposit_cw20_token() {
 
     // Succeed to "deposit" HALO tokens
     let deposit_msg = cw20::Cw20ReceiveMsg {
-        sender: "endowment-1".to_string(),
+        sender: "accounts-contract".to_string(),
         amount: Uint128::from(100_u128),
         msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit {
-            endowment_id: "endowment_1".to_string(),
+            endowment_id: "endowment-1".to_string(),
         })
         .unwrap(),
     };
@@ -300,7 +300,7 @@ fn test_withdraw() {
     // First, fail to "withdraw" since the `endowment` is not valid
     let info = mock_info(fake_endowment, &[]);
     let withdraw_msg: AccountWithdrawMsg = AccountWithdrawMsg {
-        endowment_id: "endowment_1".to_string(),
+        endowment_id: "endowment-1".to_string(),
         beneficiary,
         amount: withdraw_amount,
     };

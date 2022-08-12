@@ -53,7 +53,7 @@ pub enum ExecuteMsg {
         output_token_bal_before: Uint128,
     },
     AddLiquidity {
-        depositor: String,
+        endow_id: String,
         in_denom: Denom,
         out_denom: Denom,
         in_denom_bal_before: Uint128,
@@ -64,7 +64,7 @@ pub enum ExecuteMsg {
         action: RemoveLiquidAction,
     },
     Stake {
-        depositor: String,
+        endow_id: String,
         lp_token_bal_before: Uint128,
     },
     SwapAndSendTo {
