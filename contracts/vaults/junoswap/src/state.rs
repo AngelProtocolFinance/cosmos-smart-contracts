@@ -35,7 +35,7 @@ pub fn read(storage: &dyn Storage) -> StdResult<Config> {
     CONFIG.load(storage)
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct PendingInfo {
     pub typ: String, // type of pending transaction ('typ', because 'type' is protected keyword in Rust...)

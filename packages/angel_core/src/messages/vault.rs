@@ -38,6 +38,7 @@ pub enum ExecuteMsg {
         endowment_id: String,
     },
     Claim {
+        endowment_id: String,
         beneficiary: Addr,
     },
     Redeem {
@@ -53,7 +54,7 @@ pub enum ExecuteMsg {
         output_token_bal_before: Uint128,
     },
     AddLiquidity {
-        endow_id: String,
+        endowment_id: String,
         in_denom: Denom,
         out_denom: Denom,
         in_denom_bal_before: Uint128,
@@ -64,7 +65,7 @@ pub enum ExecuteMsg {
         action: RemoveLiquidAction,
     },
     Stake {
-        endow_id: String,
+        endowment_id: String,
         lp_token_bal_before: Uint128,
     },
     SwapAndSendTo {

@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, DepsMut, Env, Fraction, MessageInfo,
-    QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
+    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Fraction,
+    MessageInfo, Querier, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Denom;
 use cw_controllers::ClaimsResponse;
@@ -138,18 +138,12 @@ pub fn deposit(
     let config = CONFIG.load(deps.storage)?;
 
     // Validations
-    // Check if sender address is the "accounts_contract"
-    let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract.to_string(),
-        &RegistrarQueryMsg::Config {},
+    validate_action_caller_n_endow_id(
+        deps.as_ref(),
+        &config,
+        msg_sender.clone(),
+        endowment_id.clone(),
     )?;
-    if let Some(accounts_contract) = registar_config.accounts_contract {
-        if msg_sender.to_string() != accounts_contract {
-            return Err(ContractError::Unauthorized {});
-        }
-    } else {
-        return Err(ContractError::Unauthorized {});
-    }
 
     // Check if the "deposit_denom" is valid
     if !config.input_denoms.contains(&deposit_denom) {
@@ -159,28 +153,6 @@ pub fn deposit(
     // Check if the "deposit_amount" is zero or not
     if deposit_amount.is_zero() {
         return Err(ContractError::EmptyBalance {});
-    }
-
-    // Check that the "deposit-endowment-id" is an Accounts SC
-    let endowments_rsp: EndowmentListResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::EndowmentList {
-                name: None,
-                owner: None,
-                status: None,
-                tier: None,
-                un_sdg: None,
-                endow_type: None,
-            })?,
-        }))?;
-    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments
-        .iter()
-        .position(|p| p.id.to_string() == endowment_id.to_string());
-    // reject if the "endowment-id" was not found in the list of endowments
-    if pos == None {
-        return Err(ContractError::Unauthorized {});
     }
 
     // Perform the whole "deposit" action
@@ -206,7 +178,7 @@ fn create_deposit_msgs(
     deps: DepsMut,
     env: Env,
     config: &Config,
-    endow_id: String,
+    endowment_id: String,
     deposit_denom: Denom,
     deposit_amount: Uint128,
 ) -> Vec<CosmosMsg> {
@@ -232,7 +204,7 @@ fn create_deposit_msgs(
     res.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::AddLiquidity {
-            endow_id,
+            endowment_id,
             in_denom,
             out_denom,
             in_denom_bal_before,
@@ -250,31 +222,18 @@ pub fn claim(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    endowment_id: String,
     beneficiary: Addr,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // check that the depositor is an Accounts SC
-    let endowments_rsp: EndowmentListResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::EndowmentList {
-                name: None,
-                owner: None,
-                status: None,
-                tier: None,
-                un_sdg: None,
-                endow_type: None,
-            })?,
-        }))?;
-    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments
-        .iter()
-        .position(|p| p.id.to_string() == info.sender.to_string());
-    // reject if the sender was found in the list of endowments
-    if pos == None {
-        return Err(ContractError::Unauthorized {});
-    }
+    // Validations
+    validate_action_caller_n_endow_id(
+        deps.as_ref(),
+        &config,
+        info.sender.to_string(),
+        endowment_id.clone(),
+    )?;
 
     // First, check if there is any possible claim in "staking" contract
     let claims_resp: ClaimsResponse = deps.querier.query_wasm_smart(
@@ -327,27 +286,13 @@ pub fn withdraw(
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
 
-    // check that the depositor is an Accounts SC
-    let endowments_rsp: EndowmentListResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::EndowmentList {
-                name: None,
-                owner: None,
-                status: None,
-                tier: None,
-                un_sdg: None,
-                endow_type: None,
-            })?,
-        }))?;
-    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments
-        .iter()
-        .position(|p| p.id.to_string() == info.sender.to_string()); // FIXME!
-                                                                    // reject if the sender was found in the list of endowments
-    if pos == None {
-        return Err(ContractError::Unauthorized {});
-    }
+    // Validations
+    validate_action_caller_n_endow_id(
+        deps.as_ref(),
+        &config,
+        info.sender.to_string(),
+        msg.endowment_id.clone(),
+    )?;
 
     // Query the "lp_token" balance beforehand in order to resolve the `deps` issue.
     let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
@@ -359,7 +304,7 @@ pub fn withdraw(
 
     // First, burn the vault tokens
     let account_info = MessageInfo {
-        sender: info.sender.clone(),
+        sender: deps.api.addr_validate(&msg.endowment_id)?,
         funds: vec![],
     };
     cw20_base::contract::execute_burn(deps.branch(), env.clone(), account_info, msg.amount)
@@ -669,11 +614,12 @@ pub fn distribute_harvest(
     Ok(res)
 }
 
+/// Adds the liquidity to the `config.pool_addr`.
 pub fn add_liquidity(
     deps: DepsMut,
     env: Env,
     _info: MessageInfo,
-    endow_id: String,
+    endowment_id: String,
     in_denom: Denom,
     out_denom: Denom,
     in_denom_bal_before: Uint128,
@@ -790,7 +736,7 @@ pub fn add_liquidity(
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::Stake {
-            endow_id,
+            endowment_id,
             lp_token_bal_before: lp_token_bal.balance,
         })
         .unwrap(),
@@ -806,7 +752,7 @@ pub fn stake_lp_token(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    endow_id: String,
+    endowment_id: String,
     lp_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
@@ -836,12 +782,12 @@ pub fn stake_lp_token(
     config.total_shares += stake_amount;
     CONFIG.save(deps.storage, &config)?;
 
-    cw20_base::contract::execute_mint(deps, env, info, endow_id.to_string(), stake_amount)
+    cw20_base::contract::execute_mint(deps, env, info, endowment_id.to_string(), stake_amount)
         .map_err(|_| {
             ContractError::Std(StdError::GenericErr {
                 msg: format!(
                     "Cannot mint the {} vault token for {}",
-                    stake_amount, endow_id
+                    stake_amount, endowment_id
                 ),
             })
         })?;
@@ -1112,4 +1058,47 @@ fn swap_msg(
     }));
 
     Ok(msgs)
+}
+
+/// Validate the `msg_sender/caller` of the "vault" contract entry & `endowment_id`.
+fn validate_action_caller_n_endow_id(
+    deps: Deps,
+    config: &Config,
+    caller: String,
+    endowment_id: String,
+) -> Result<(), ContractError> {
+    // Check if sender address is the "accounts_contract"
+    let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &RegistrarQueryMsg::Config {},
+    )?;
+    if let Some(accounts_contract) = registar_config.accounts_contract {
+        if caller != accounts_contract {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Check that the "deposit-endowment-id" is an Accounts SC
+    let endowments_rsp: EndowmentListResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQueryMsg::EndowmentList {
+                name: None,
+                owner: None,
+                status: None,
+                tier: None,
+                un_sdg: None,
+                endow_type: None,
+            })?,
+        }))?;
+    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
+    let pos = endowments.iter().position(|endow| endow.id == endowment_id);
+    // reject if the "endowment-id" was not found in the list of endowments
+    if pos == None {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    Ok(())
 }

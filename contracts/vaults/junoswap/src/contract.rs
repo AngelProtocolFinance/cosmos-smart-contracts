@@ -122,7 +122,10 @@ pub fn execute(
         // Claim is only called by the SC when setting up new strategies.
         // Pulls all existing amounts back to Account in USDC or [input_denom].
         // -Deposit Token/Yield Token (Vault) --> +USDC (Account)
-        ExecuteMsg::Claim { beneficiary } => executers::claim(deps, env, info, beneficiary),
+        ExecuteMsg::Claim {
+            endowment_id,
+            beneficiary,
+        } => executers::claim(deps, env, info, endowment_id, beneficiary),
         // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
         ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
@@ -140,7 +143,7 @@ pub fn execute(
             output_token_bal_before,
         } => executers::distribute_harvest(deps, env, info, output_token_bal_before),
         ExecuteMsg::AddLiquidity {
-            endow_id,
+            endowment_id,
             in_denom,
             out_denom,
             in_denom_bal_before,
@@ -149,7 +152,7 @@ pub fn execute(
             deps,
             env,
             info,
-            endow_id,
+            endowment_id,
             in_denom,
             out_denom,
             in_denom_bal_before,
@@ -160,9 +163,9 @@ pub fn execute(
             action,
         } => executers::remove_liquidity(deps, env, info, lp_token_bal_before, action),
         ExecuteMsg::Stake {
-            endow_id,
+            endowment_id,
             lp_token_bal_before,
-        } => executers::stake_lp_token(deps, env, info, endow_id, lp_token_bal_before),
+        } => executers::stake_lp_token(deps, env, info, endowment_id, lp_token_bal_before),
         ExecuteMsg::SwapAndSendTo {
             token1_denom_bal_before,
             token2_denom_bal_before,
