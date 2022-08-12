@@ -34,9 +34,14 @@ pub enum ExecuteMsg {
         new_registrar: Addr,
     },
     UpdateConfig(UpdateConfigMsg),
-    Deposit {},
+    Deposit {
+        endowment_id: String,
+    },
     Claim {
         beneficiary: Addr,
+    },
+    Redeem {
+        endowment_id: String,
     },
     Withdraw(AccountWithdrawMsg),
     Harvest {},
@@ -117,6 +122,7 @@ pub struct UpdateConfigMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct AccountWithdrawMsg {
+    pub endowment_id: String,
     pub beneficiary: Addr,
     pub amount: Uint128,
 }

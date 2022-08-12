@@ -16,6 +16,7 @@ pub struct InstantiateMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct EndowmentInstantiateMsg {
+    pub id: String,
     pub cw4_members: Vec<Member>,
     pub cw4_code: u64,
     pub threshold: Threshold,
