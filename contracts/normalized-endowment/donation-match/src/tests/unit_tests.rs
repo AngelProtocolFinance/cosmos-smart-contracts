@@ -9,7 +9,6 @@ const RESERVE_TOKEN: &str = "reserve-token";
 const LP_PAIR_CONTRACT: &str = "lp-pair-contract";
 const REGISTRAR_CONTRACT: &str = "registrar-contract";
 const ACCOUNTS_CONTRACT: &str = "Test-Accounts-Contract";
-const ACCOUNTS_OWNER: &str = "Test-Endowment-Owner";
 const ENDOWMENT_ID: &str = "test-endowment-id";
 const UST_AMT: u128 = 50_u128;
 const DONOR: &str = "donor";
@@ -89,7 +88,7 @@ fn test_execute_donor_match() {
         donor: Addr::unchecked(DONOR),
         token: Addr::unchecked(DAO_TOKEN),
     };
-    let err = execute(deps.as_mut(), mock_env(), info, donor_match_msg).unwrap_err();
+    let _err = execute(deps.as_mut(), mock_env(), info, donor_match_msg).unwrap_err();
     assert!(
         res.is_err(),
         "This call should fail with \"Unauthorized\" error"
