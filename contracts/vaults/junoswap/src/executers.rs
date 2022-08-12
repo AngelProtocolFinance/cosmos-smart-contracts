@@ -131,6 +131,7 @@ pub fn deposit(
     env: Env,
     _info: MessageInfo,
     depositor: String,
+    endowment_id: String,
     deposit_denom: Denom,
     deposit_amount: Uint128,
 ) -> Result<Response, ContractError> {
@@ -160,7 +161,7 @@ pub fn deposit(
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments
         .iter()
-        .position(|p| p.address.to_string() == depositor);
+        .position(|p| p.id.to_string() == endowment_id);
     // reject if the sender was found in the list of endowments
     if pos == None {
         return Err(ContractError::Unauthorized {});
@@ -252,7 +253,7 @@ pub fn claim(
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments
         .iter()
-        .position(|p| p.address.to_string() == info.sender.to_string());
+        .position(|p| p.id.to_string() == info.sender.to_string());
     // reject if the sender was found in the list of endowments
     if pos == None {
         return Err(ContractError::Unauthorized {});
@@ -325,8 +326,8 @@ pub fn withdraw(
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments
         .iter()
-        .position(|p| p.address.to_string() == info.sender.to_string());
-    // reject if the sender was found in the list of endowments
+        .position(|p| p.id.to_string() == info.sender.to_string()); // FIXME!
+                                                                    // reject if the sender was found in the list of endowments
     if pos == None {
         return Err(ContractError::Unauthorized {});
     }
@@ -609,7 +610,7 @@ pub fn distribute_harvest(
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     for endowment in endowments.iter() {
         let acct_bal = cw20_base::state::BALANCES
-            .load(deps.storage, &endowment.address)
+            .load(deps.storage, &deps.api.addr_validate(&endowment.id)?)
             .unwrap_or_default();
         let acct_owed = less_taxes * acct_bal / config.total_shares;
         let liquid_amt = acct_owed * config.harvest_to_liquid.numerator()
@@ -617,7 +618,7 @@ pub fn distribute_harvest(
         match config.output_token_denom {
             Denom::Native(ref denom) => {
                 res = res.add_message(CosmosMsg::Bank(BankMsg::Send {
-                    to_address: endowment.address.to_string(),
+                    to_address: "fake_recipient".to_string(), // FIXME!
                     amount: coins(liquid_amt.u128(), denom.to_string()),
                 }));
             }
@@ -625,7 +626,7 @@ pub fn distribute_harvest(
                 res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: token_addr.to_string(),
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-                        recipient: endowment.address.to_string(),
+                        recipient: "fake_recipient".to_string(), // FIXME!
                         amount: liquid_amt,
                     })
                     .unwrap(),

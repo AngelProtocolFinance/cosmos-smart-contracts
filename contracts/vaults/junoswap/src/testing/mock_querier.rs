@@ -158,7 +158,7 @@ impl WasmMockQuerier {
                 } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&EndowmentListResponse {
                         endowments: vec![EndowmentEntry {
-                            address: Addr::unchecked("endowment-1"),
+                            id: "endowment_1".to_string(),
                             owner: "owner".to_string(),
                             endow_type: angel_core::structs::EndowmentType::Charity,
                             status: angel_core::structs::EndowmentStatus::Approved,

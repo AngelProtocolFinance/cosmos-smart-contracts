@@ -99,7 +99,7 @@ pub fn execute(
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         // -Input token(eg. USDC) (Account) --> +Deposit Token/Yield Token (Vault)
-        ExecuteMsg::Deposit {} => {
+        ExecuteMsg::Deposit { endowment_id } => {
             if info.funds.len() != 1 {
                 return Err(ContractError::Std(StdError::GenericErr {
                     msg: "Invalid: Multiple coins sent. Only accepts a single token as input."
@@ -109,7 +109,15 @@ pub fn execute(
             let depositor = info.sender.to_string();
             let deposit_denom = Denom::Native(info.funds[0].denom.to_string());
             let deposit_amount = info.funds[0].amount;
-            executers::deposit(deps, env, info, depositor, deposit_denom, deposit_amount)
+            executers::deposit(
+                deps,
+                env,
+                info,
+                depositor,
+                endowment_id,
+                deposit_denom,
+                deposit_amount,
+            )
         }
         // Claim is only called by the SC when setting up new strategies.
         // Pulls all existing amounts back to Account in USDC or [input_denom].
@@ -167,6 +175,7 @@ pub fn execute(
             token2_denom_bal_before,
             beneficiary,
         ),
+        ExecuteMsg::Redeem { endowment_id } => todo!("FIXME!"),
 
         // Cw20_base entries
         ExecuteMsg::Transfer { recipient, amount } => {
@@ -226,11 +235,19 @@ fn receive_cw20(
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
     match from_binary(&cw20_msg.msg) {
-        Ok(ReceiveMsg::Deposit {}) => {
+        Ok(ReceiveMsg::Deposit { endowment_id }) => {
             let depositor = cw20_msg.sender;
             let deposit_denom = Denom::Cw20(info.sender.clone());
             let deposit_amount = cw20_msg.amount;
-            executers::deposit(deps, env, info, depositor, deposit_denom, deposit_amount)
+            executers::deposit(
+                deps,
+                env,
+                info,
+                depositor,
+                endowment_id,
+                deposit_denom,
+                deposit_amount,
+            )
         }
         _ => Err(ContractError::Std(StdError::GenericErr {
             msg: "Invalid call".to_string(),

@@ -194,12 +194,28 @@ fn test_deposit_native_token() {
 
     // First, fail to "deposit" token since non-Endowment calls the entry
     let info = mock_info("endowment-100", &coins(100, "ujuno"));
-    let err = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Deposit {}).unwrap_err();
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Deposit {
+            endowment_id: "endowment_10".to_string(),
+        },
+    )
+    .unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
 
     // Succeed to "deposit" JUNO tokens
     let info = mock_info("endowment-1", &coins(100, "ujuno"));
-    let res = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Deposit {}).unwrap();
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Deposit {
+            endowment_id: "endowment_1".to_string(),
+        },
+    )
+    .unwrap();
     assert_eq!(res.messages.len(), 2);
 }
 
@@ -214,7 +230,10 @@ fn test_deposit_cw20_token() {
     let deposit_msg = cw20::Cw20ReceiveMsg {
         sender: "endowment-100".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit {}).unwrap(),
+        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit {
+            endowment_id: "endowment_10".to_string(),
+        })
+        .unwrap(),
     };
     let info = mock_info("halo-token-contract", &[]);
     let err = execute(
@@ -230,7 +249,10 @@ fn test_deposit_cw20_token() {
     let deposit_msg = cw20::Cw20ReceiveMsg {
         sender: "endowment-100".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit {}).unwrap(),
+        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit {
+            endowment_id: "endowment_1".to_string(),
+        })
+        .unwrap(),
     };
     let info = mock_info("cw20-token-contract", &[]);
     let err = execute(
@@ -246,7 +268,10 @@ fn test_deposit_cw20_token() {
     let deposit_msg = cw20::Cw20ReceiveMsg {
         sender: "endowment-1".to_string(),
         amount: Uint128::from(100_u128),
-        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit {}).unwrap(),
+        msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit {
+            endowment_id: "endowment_1".to_string(),
+        })
+        .unwrap(),
     };
     let info = mock_info("halo-token-contract", &[]);
     let res = execute(
@@ -275,6 +300,7 @@ fn test_withdraw() {
     // First, fail to "withdraw" since the `endowment` is not valid
     let info = mock_info(fake_endowment, &[]);
     let withdraw_msg: AccountWithdrawMsg = AccountWithdrawMsg {
+        endowment_id: "endowment_1".to_string(),
         beneficiary,
         amount: withdraw_amount,
     };
