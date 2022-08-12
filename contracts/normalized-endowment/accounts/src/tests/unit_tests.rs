@@ -1,28 +1,17 @@
 use super::mock_querier::{mock_dependencies, WasmMockQuerier};
 use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-use angel_core::messages::accounts::UpdateProfileMsg;
 use angel_core::messages::accounts::{
-    DepositMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Strategy, UpdateEndowmentSettingsMsg,
-    UpdateEndowmentStatusMsg,
+    CreateEndowmentMsg, DepositMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Strategy,
+    UpdateEndowmentSettingsMsg, UpdateEndowmentStatusMsg, UpdateProfileMsg,
 };
-use angel_core::responses::accounts::{ConfigResponse, ProfileResponse, StateResponse};
-=======
-use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 use angel_core::structs::{EndowmentType, GenericBalance, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{attr, coins, from_binary, to_binary, Coin, Decimal, OwnedDeps, Uint128};
 use cw20::Cw20ReceiveMsg;
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
 use cw_utils::{Duration, Threshold};
 use std::vec;
-=======
-
-use cw_utils::{Duration, Threshold};
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
 const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
 const CHARITY_ID: &str = "good-charity-1";
@@ -33,11 +22,7 @@ const DEPOSITOR: &str = "depositor";
 
 fn create_endowment() -> (
     OwnedDeps<MockStorage, MockApi, WasmMockQuerier>,
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    ConfigResponse,
-=======
     EndowmentDetailsResponse,
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 ) {
     let mut deps = mock_dependencies(&[]);
     let profile: Profile = Profile {
@@ -64,13 +49,8 @@ fn create_endowment() -> (
         endow_type: EndowmentType::Charity,
     };
 
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let instantiate_msg = InstantiateMsg {
-        registrar_contract: REGISTRAR_CONTRACT.to_string(),
-=======
     let create_endowment_msg = CreateEndowmentMsg {
         id: CHARITY_ID.to_string(),
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
         owner: CHARITY_ADDR.to_string(),
         split_max: Decimal::one(),
         split_min: Decimal::one(),
@@ -93,14 +73,12 @@ fn create_endowment() -> (
             percentage: Decimal::percent(10),
         },
         cw3_max_voting_period: Duration::Time(60),
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-=======
+        maturity_whitelist: vec![],
     };
 
     let instantiate_msg = InstantiateMsg {
-        owner_sc: AP_TEAM.to_string(),
+        owner: AP_TEAM.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
     };
     let info = mock_info(AP_TEAM, &coins(100000, "earth"));
     let env = mock_env();
@@ -113,10 +91,6 @@ fn create_endowment() -> (
     )
     .unwrap();
 
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let value: ConfigResponse = from_binary(&res).unwrap();
-=======
     let res = query(
         deps.as_ref(),
         mock_env(),
@@ -126,7 +100,6 @@ fn create_endowment() -> (
     )
     .unwrap();
     let value: EndowmentDetailsResponse = from_binary(&res).unwrap();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
     (deps, value)
 }
@@ -135,6 +108,7 @@ fn create_endowment() -> (
 fn test_proper_initialization() {
     let mut deps = mock_dependencies(&[]);
     let instantiate_msg = InstantiateMsg {
+        owner: CHARITY_ADDR.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
     };
     let info = mock_info(AP_TEAM, &coins(100000, "earth"));
@@ -170,7 +144,7 @@ fn test_fail_creation_with_bad_id() {
         endow_type: EndowmentType::Charity,
     };
     let instantiate_msg = InstantiateMsg {
-        owner_sc: AP_TEAM.to_string(),
+        owner: AP_TEAM.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
     };
     let info = mock_info(AP_TEAM, &coins(100000, "earth"));
@@ -202,13 +176,9 @@ fn test_fail_creation_with_bad_id() {
             percentage: Decimal::percent(10),
         },
         cw3_max_voting_period: Duration::Time(60),
+        maturity_whitelist: vec![],
     };
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let info = mock_info("creator", &coins(100000, "earth"));
-    let env = mock_env();
-    let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
-    assert_eq!(1, res.messages.len());
-=======
+
     let _short = execute(
         deps.as_mut(),
         env.clone(),
@@ -236,35 +206,26 @@ fn test_fail_creation_with_bad_id() {
         ExecuteMsg::CreateEndowment(create_endowment_msg.clone()),
     )
     .unwrap_err();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 }
 
 #[test]
 fn test_update_endowment_settings() {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let (mut deps, _config) = create_endowment();
-
-    // update the endowment owner and beneficiary
-    let msg = UpdateEndowmentSettingsMsg {
-        owner: Some(CHARITY_ADDR.to_string()),
-        whitelisted_beneficiaries: None,
-        whitelisted_contributors: None,
-        withdraw_before_maturity: None,
-        maturity_time: None,
-        strategies: None,
-        locked_endowment_configs: None,
-        rebalance: None,
-=======
     let (mut deps, endow_details) = create_endowment();
 
     let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
     // update the endowment "owner" & "kyc_donors_only"
     let msg = UpdateEndowmentSettingsMsg {
         id: CHARITY_ID.to_string(),
-        owner: CHARITY_ADDR.to_string(),
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
+        owner: Some(CHARITY_ADDR.to_string()),
         kyc_donors_only: true,
         maturity_whitelist: None,
+        maturity_time: None,
+        rebalance: None,
+        locked_endowment_configs: None,
+        whitelisted_beneficiaries: None,
+        whitelisted_contributors: None,
+        strategies: None,
+        withdraw_before_maturity: None,
     };
     let env = mock_env();
     let res = execute(
@@ -278,7 +239,7 @@ fn test_update_endowment_settings() {
 
     // Not just anyone can update the Endowment's settings! Only Endowment owner can.
     let msg = UpdateEndowmentSettingsMsg {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
+        id: CHARITY_ID.to_string(),
         owner: Some(CHARITY_ADDR.to_string()),
         whitelisted_beneficiaries: None,
         whitelisted_contributors: None,
@@ -287,10 +248,6 @@ fn test_update_endowment_settings() {
         strategies: None,
         locked_endowment_configs: None,
         rebalance: None,
-=======
-        id: CHARITY_ID.to_string(),
-        owner: CHARITY_ADDR.to_string(),
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
         kyc_donors_only: true,
         maturity_whitelist: None,
     };
@@ -309,11 +266,7 @@ fn test_update_endowment_settings() {
 
 #[test]
 fn test_update_endowment_status() {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let (mut deps, _config) = create_endowment();
-=======
     let (mut deps, _endow_details) = create_endowment();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
     // Fail to update the endowment status since caller is not `registrar_contract`
     let update_status_msg = UpdateEndowmentStatusMsg {
@@ -363,14 +316,10 @@ fn test_update_endowment_status() {
 
 #[test]
 fn test_change_registrar_contract() {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let (mut deps, config) = create_endowment();
-=======
     let (mut deps, _endow_details) = create_endowment();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
     // change the registrar to some pleb
-    let info = mock_info(&config.owner, &coins(100000, "earth"));
+    let info = mock_info(&AP_TEAM.to_string(), &coins(100000, "earth"));
     let env = mock_env();
     let res = execute(
         deps.as_mut(),
@@ -401,14 +350,10 @@ fn test_change_registrar_contract() {
 
 #[test]
 fn test_change_admin() {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let (mut deps, config) = create_endowment();
-=======
     let (mut deps, _endow_details) = create_endowment();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
     // change the admin to some pleb
-    let info = mock_info(&config.owner, &coins(100000, "earth"));
+    let info = mock_info(&AP_TEAM.to_string(), &coins(100000, "earth"));
     let env = mock_env();
     let res = execute(
         deps.as_mut(),
@@ -439,11 +384,7 @@ fn test_change_admin() {
 
 #[test]
 fn test_update_strategy() {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let (mut deps, _config) = create_endowment();
-=======
     let (mut deps, endow_details) = create_endowment();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
     // sum of the invested strategy components percentages is not equal 100%
     let msg = ExecuteMsg::UpdateStrategies {
@@ -523,11 +464,7 @@ fn test_update_strategy() {
 
 #[test]
 fn test_update_endowment_profile() {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let (mut deps, config) = create_endowment();
-=======
     let (mut deps, endow_details) = create_endowment();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
     let msg = UpdateProfileMsg {
         id: CHARITY_ID.to_string(),
         name: None,
@@ -597,16 +534,11 @@ fn test_update_endowment_profile() {
         value.overview,
         "Test Endowment is for just testing".to_string()
     );
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    assert_eq!(value.country_of_origin.unwrap(), "UK".to_string());
-    assert_eq!(value.street_address.unwrap(), "Some road".to_string());
-=======
     assert_eq!(value.un_sdg, Some(2));
     assert_eq!(value.tier, Some(3));
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
-    // Config owner can update certain profile
-    let info = mock_info(&config.owner, &[]);
+    // Accounts Contract owner can update certain profile attributes (tier, UN_SDG, etc)
+    let info = mock_info(&AP_TEAM.to_string(), &[]);
     let env = mock_env();
     // This should succeed!
     let _res = execute(
@@ -632,11 +564,7 @@ fn test_update_endowment_profile() {
 
 #[test]
 fn test_donate() {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let (mut deps, _config) = create_endowment();
-=======
     let (mut deps, _endow_details) = create_endowment();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
@@ -658,31 +586,11 @@ fn test_donate() {
     let res = execute(deps.as_mut(), mock_env(), info, deposit_msg).unwrap();
 
     assert_eq!(res.attributes.len(), 3);
-
-    // Check the "STATE" for "transactions" field
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let query_res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-=======
-    let query_res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::State {
-            id: CHARITY_ID.to_string(),
-        },
-    )
-    .unwrap();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
-    let state: StateResponse = from_binary(&query_res).unwrap();
-    assert_eq!(state.donations_received.u128(), donation_amt);
 }
 
 #[test]
 fn test_deposit_cw20() {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let (mut deps, _config) = create_endowment();
-=======
     let (mut deps, _endow_details) = create_endowment();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
@@ -709,23 +617,11 @@ fn test_deposit_cw20() {
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
     assert_eq!(res.attributes.len(), 3);
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-
-    // Check the "STATE" for "transactions" field
-    let query_res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
-    let state: StateResponse = from_binary(&query_res).unwrap();
-    assert_eq!(state.donations_received.u128(), donation_amt);
-=======
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 }
 
 #[test]
 fn test_withdraw() {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let (mut deps, _config) = create_endowment();
-=======
     let (mut deps, endow_details) = create_endowment();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
@@ -759,11 +655,7 @@ fn test_withdraw() {
 
 #[test]
 fn test_withdraw_liquid() {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let (mut deps, _config) = create_endowment();
-=======
     let (mut deps, endow_details) = create_endowment();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
@@ -788,10 +680,7 @@ fn test_withdraw_liquid() {
     // Fails since the amount is too big
     let info = mock_info(&endow_details.owner.to_string(), &[]);
     let withdraw_liquid_msg = ExecuteMsg::WithdrawLiquid {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-=======
         id: CHARITY_ID.to_string(),
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
         beneficiary: "beneficiary".to_string(),
         assets: GenericBalance {
             native: vec![Coin {
@@ -807,10 +696,7 @@ fn test_withdraw_liquid() {
     // Succeed to withdraw liquid amount
     let info = mock_info(&endow_details.owner.to_string(), &[]);
     let withdraw_liquid_msg = ExecuteMsg::WithdrawLiquid {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-=======
         id: CHARITY_ID.to_string(),
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
         beneficiary: "beneficiary".to_string(),
         assets: GenericBalance {
             native: vec![Coin {
@@ -826,11 +712,7 @@ fn test_withdraw_liquid() {
 
 #[test]
 fn test_vault_receipt() {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let (mut deps, _config) = create_endowment();
-=======
     let (mut deps, endow_details) = create_endowment();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
@@ -890,12 +772,6 @@ fn test_vault_receipt() {
     };
     let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
     let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!("0", config.pending_redemptions);
-=======
     let res = query(
         deps.as_ref(),
         mock_env(),
@@ -906,7 +782,6 @@ fn test_vault_receipt() {
     .unwrap();
     let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
     assert_eq!(2, endow.strategies.len());
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
     // Success, check if the "config.redemptions" is decreased
     let info = mock_info(
@@ -916,9 +791,6 @@ fn test_vault_receipt() {
             amount: Uint128::from(100_u128),
         }],
     );
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let res = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::VaultReceipt {}).unwrap();
-=======
     let res = execute(
         deps.as_mut(),
         mock_env(),
@@ -928,7 +800,6 @@ fn test_vault_receipt() {
         },
     )
     .unwrap();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
     assert_eq!(0, res.messages.len());
 
     let res = query(
@@ -945,11 +816,7 @@ fn test_vault_receipt() {
 
 #[test]
 fn test_close_endowment() {
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let (mut deps, _config) = create_endowment();
-=======
     let (mut deps, endow_details) = create_endowment();
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
@@ -1002,11 +869,6 @@ fn test_close_endowment() {
     assert_eq!(0, res.messages.len());
 
     // Check the config & state
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/unit_tests.rs
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config.pending_redemptions, "0");
-=======
     let res = query(
         deps.as_ref(),
         mock_env(),
@@ -1019,7 +881,6 @@ fn test_close_endowment() {
     assert_eq!(endow.withdraw_approved, true);
     assert_eq!(endow.deposit_approved, true);
     assert_eq!(endow.pending_redemptions, Some(0));
->>>>>>> main:contracts/core/accounts/src/tests/unit_tests.rs
 
     let res = query(
         deps.as_ref(),

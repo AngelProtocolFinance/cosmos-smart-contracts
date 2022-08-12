@@ -98,7 +98,7 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentFees(msg) => {
             executers::update_endowment_fees(deps, env, info, msg)
         }
-        ExecuteMsg::SetupDao(msg) => executers::setup_dao(deps, env, info, msg),
+        ExecuteMsg::SetupDao { id, msg } => executers::setup_dao(deps, env, info, id, msg),
         ExecuteMsg::SetupDonationMatch { id, setup } => {
             executers::setup_donation_match(deps, env, info, id, setup)
         }

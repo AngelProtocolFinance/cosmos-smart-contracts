@@ -1,5 +1,4 @@
 // Contains mock functionality to test multi-contract scenarios
-<<<<<<< HEAD:contracts/normalized-endowment/donation-match/src/tests/mock_querier.rs
 use angel_core::errors::core::ContractError;
 use angel_core::responses::registrar::{
     ConfigResponse, EndowmentDetailResponse, EndowmentListResponse, VaultDetailResponse,
@@ -7,10 +6,6 @@ use angel_core::responses::registrar::{
 use angel_core::structs::{
     AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier, YieldVault,
 };
-=======
-use crate::anchor::ConfigResponse;
-use cosmwasm_bignumber::Decimal256;
->>>>>>> main:contracts/vaults/anchor/src/testing/mock_querier.rs
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, Coin, ContractResult, Decimal, Empty, OwnedDeps,
@@ -19,19 +14,10 @@ use cosmwasm_std::{
 use cw20::BalanceResponse;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-<<<<<<< HEAD:contracts/normalized-endowment/donation-match/src/tests/mock_querier.rs
-use terraswap::pair::SimulationResponse;
-
 use std::collections::HashMap;
 use std::marker::PhantomData;
 use terraswap::asset::Asset;
-=======
-use std::collections::HashMap;
-use terra_cosmwasm::{
-    ExchangeRateItem, ExchangeRatesResponse, TaxCapResponse, TaxRateResponse, TerraQuery,
-    TerraQueryWrapper, TerraRoute,
-};
->>>>>>> main:contracts/vaults/anchor/src/testing/mock_querier.rs
+use terraswap::pair::SimulationResponse;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -250,7 +236,7 @@ impl WasmMockQuerier {
                 } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&EndowmentListResponse {
                         endowments: vec![EndowmentEntry {
-                            address: Addr::unchecked("endowment_contract"),
+                            id: "endowment-test-id".to_string(),
                             name: Some("test-endow".to_string()),
                             logo: Some("test-logo".to_string()),
                             image: Some("test-image".to_string()),
@@ -263,7 +249,6 @@ impl WasmMockQuerier {
                     })
                     .unwrap(),
                 )),
-<<<<<<< HEAD:contracts/normalized-endowment/donation-match/src/tests/mock_querier.rs
                 QueryMsg::Simulation { offer_asset: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&SimulationResponse {
                         return_amount: Uint128::from(100_u128),
@@ -289,7 +274,7 @@ impl WasmMockQuerier {
                         SystemResult::Ok(ContractResult::Ok(
                             to_binary(&EndowmentDetailResponse {
                                 endowment: EndowmentEntry {
-                                    address: Addr::unchecked("Test-Endowment-Address"),
+                                    id: "test-endowment-id".to_string(),
                                     name: Some("Test-Endowment-#1".to_string()),
                                     logo: Some("test-logo".to_string()),
                                     image: Some("test-image".to_string()),
@@ -299,36 +284,7 @@ impl WasmMockQuerier {
                                     endow_type: angel_core::structs::EndowmentType::Charity,
                                     tier: Some(Tier::Level1),
                                 },
-=======
-                QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultDetailResponse {
-                        vault: YieldVault {
-                            network: "juno".to_string(),
-                            address: Addr::unchecked("vault").to_string(),
-                            input_denom: "input-denom".to_string(),
-                            yield_token: Addr::unchecked("yield-token").to_string(),
-                            approved: true,
-                            restricted_from: vec![],
-                        },
-                    })
-                    .unwrap(),
-                )),
-            },
-            QueryRequest::Wasm(WasmQuery::Raw { contract_addr, key }) => {
-                let key: &[u8] = key.as_slice();
-                let prefix_balance = to_length_prefixed(b"balance").to_vec();
 
-                let balances: &HashMap<String, Uint128> =
-                    match self.token_querier.balances.get(contract_addr) {
-                        Some(balances) => balances,
-                        None => {
-                            return SystemResult::Err(SystemError::InvalidRequest {
-                                error: format!(
-                                    "No balance info exists for the contract {}",
-                                    contract_addr
-                                ),
-                                request: key.into(),
->>>>>>> main:contracts/vaults/anchor/src/testing/mock_querier.rs
                             })
                             .unwrap(),
                         ))
@@ -338,7 +294,8 @@ impl WasmMockQuerier {
                     to_binary(&ConfigResponse {
                         version: "1.7.0".to_string(),
                         owner: "Test-Endowment-Owner".to_string(),
-                        accounts_code_id: 123,
+                        accounts_contract: Some("Test-Accounts-Contract".to_string()),
+                        account_id_char_limit: 23,
                         cw3_code: Some(124),
                         cw4_code: Some(125),
                         subdao_gov_code: Some(126),

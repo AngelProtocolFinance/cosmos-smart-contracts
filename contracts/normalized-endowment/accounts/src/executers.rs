@@ -1456,9 +1456,11 @@ pub fn setup_dao(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
+
+    id: String,
     msg: DaoSetup,
 ) -> Result<Response, ContractError> {
-    let endowment = ENDOWMENTS.load(deps.storage, &msg.id)?;
+    let endowment = ENDOWMENTS.load(deps.storage, &id)?;
     let config = CONFIG.load(deps.storage)?;
     let profile = endowment.profile;
 
@@ -1485,6 +1487,7 @@ pub fn setup_dao(
             admin: None,
             label: "new endowment dao contract".to_string(),
             msg: to_binary(&angel_core::messages::subdao::InstantiateMsg {
+                endowment_id: id,
                 quorum: msg.quorum,
                 threshold: msg.threshold,
                 voting_period: msg.voting_period,

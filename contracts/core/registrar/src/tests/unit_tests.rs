@@ -160,7 +160,6 @@ fn anyone_can_create_endowment_accounts() {
     // meet the cast of characters
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let good_charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
-    let good_endowment_addr = "terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9".to_string();
     let default_vault_addr = "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg".to_string();
     let index_fund_contract = "terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d".to_string();
 
@@ -290,7 +289,8 @@ fn anyone_can_create_endowment_accounts() {
         withdraw_fee: None,
         aum_fee: None,
         settings_controller: None,
-        parent: false,
+        parent: None,
+        maturity_whitelist: vec![],
     };
 
     // anyone can create Accounts
@@ -702,7 +702,6 @@ fn test_update_endow_type_fees() {
     let mut deps = mock_dependencies();
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
         tax_rate: Decimal::percent(20),

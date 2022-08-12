@@ -265,11 +265,8 @@ impl WasmMockQuerier {
                             native: vec!["uluna".to_string()],
                             cw20: vec!["test-cw20".to_string()],
                         },
-<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/mock_querier.rs
                         swap_factory: None,
-=======
                         account_id_char_limit: 20,
->>>>>>> main:contracts/core/accounts/src/tests/mock_querier.rs
                     })
                     .unwrap(),
                 )),

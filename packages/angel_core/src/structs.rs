@@ -456,7 +456,6 @@ pub struct AllianceMember {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct DaoSetup {
-    pub id: String,
     pub quorum: Decimal,
     pub threshold: Decimal,
     pub voting_period: u64,

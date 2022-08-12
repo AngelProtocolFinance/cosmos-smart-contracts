@@ -109,8 +109,6 @@ pub struct UpdateConfigMsg {
     pub collector_addr: Option<String>,
     pub swap_factory: Option<String>,
     pub fundraising_contract: Option<String>,
-    pub accepted_tokens_native: Option<Vec<String>>,
-    pub accepted_tokens_cw20: Option<Vec<String>>,
     pub account_id_char_limit: Option<usize>,
 }
 

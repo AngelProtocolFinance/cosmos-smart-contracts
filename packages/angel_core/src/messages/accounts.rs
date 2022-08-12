@@ -79,7 +79,10 @@ pub enum ExecuteMsg {
         id: String,
     },
     // Set up dao token for "Endowment"
-    SetupDao(DaoSetup),
+    SetupDao {
+        id: String,
+        msg: DaoSetup,
+    },
     // Setup Donation match contract for the Endowment
     SetupDonationMatch {
         id: String,

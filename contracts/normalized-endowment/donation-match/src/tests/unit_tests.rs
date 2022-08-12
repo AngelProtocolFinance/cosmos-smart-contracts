@@ -9,6 +9,7 @@ const RESERVE_TOKEN: &str = "reserve-token";
 const LP_PAIR_CONTRACT: &str = "lp-pair-contract";
 const REGISTRAR_CONTRACT: &str = "registrar-contract";
 
+const ENDOWMENT_ID: &str = "endowment-test-id";
 const ENDOWMENT: &str = "endowment_contract";
 const UST_AMT: u128 = 50_u128;
 const DONOR: &str = "donor";
@@ -53,7 +54,6 @@ fn test_get_config() {
     assert_eq!(res.registrar_contract, REGISTRAR_CONTRACT.to_string());
 }
 
-#[test]
 fn test_execute_donor_match() {
     // Instantiate the contract
     let mut deps = mock_dependencies(&[]);
@@ -70,6 +70,7 @@ fn test_execute_donor_match() {
 
     // Fail the "donor_match" since info.sender is not endowment contract
     let donor_match_msg = ExecuteMsg::DonorMatch {
+        id: ENDOWMENT_ID.to_string(),
         amount: Uint128::from(UST_AMT),
         donor: Addr::unchecked(DONOR),
         token: Addr::unchecked(DAO_TOKEN),
@@ -84,6 +85,7 @@ fn test_execute_donor_match() {
 
     // Fail the "donor_match" since did not send enough UST
     let donor_match_msg = ExecuteMsg::DonorMatch {
+        id: ENDOWMENT_ID.to_string(),
         amount: Uint128::from(UST_AMT),
         donor: Addr::unchecked(DONOR),
         token: Addr::unchecked(DAO_TOKEN),
@@ -95,6 +97,7 @@ fn test_execute_donor_match() {
 
     // Succeed the "donor_match" exeuction
     let donor_match_msg = ExecuteMsg::DonorMatch {
+        id: ENDOWMENT_ID.to_string(),
         amount: Uint128::from(UST_AMT),
         donor: Addr::unchecked(DONOR),
         token: Addr::unchecked(DAO_TOKEN),
