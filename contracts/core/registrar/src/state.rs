@@ -39,33 +39,6 @@ pub struct Config {
     pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
     pub swap_factory: Option<Addr>,
     pub fundraising_contract: Option<Addr>,
-}
-
-// This struct is temporary for the `new-fee-setups`.
-// Hence, this should be cleaned after the `registrar`
-// contract is migrated to `v2`.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct OldConfig {
-    pub owner: Addr, // AP TEAM MULTISIG
-    pub index_fund_contract: Option<Addr>,
-    pub accounts_code_id: u64,
-    pub treasury: Addr,
-    pub tax_rate: Decimal,
-    pub default_vault: Option<Addr>,
-    pub cw3_code: Option<u64>,                  // multisig wasm code
-    pub cw4_code: Option<u64>,                  // multisig wasm code
-    pub subdao_gov_code: Option<u64>,           // subdao gov wasm code
-    pub subdao_bonding_token_code: Option<u64>, // subdao gov token (w/ bonding-curve) wasm code
-    pub subdao_cw20_token_code: Option<u64>,    // subdao gov token (new CW20) wasm code
-    pub subdao_cw900_code: Option<u64>, // subdao gov ve-CURVE contract for locked token voting
-    pub subdao_distributor_code: Option<u64>, // subdao gov fee distributor wasm code
-    pub donation_match_code: Option<u64>, // donation matching contract wasm code
-    pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
-    pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
-    pub gov_contract: Option<Addr>,    // AP governance contract
-    pub charity_shares_contract: Option<Addr>, // Charity Shares staking contract
-    pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
     pub account_id_char_limit: usize,
 }
 

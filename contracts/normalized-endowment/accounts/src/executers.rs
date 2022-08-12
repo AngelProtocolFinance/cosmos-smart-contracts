@@ -69,15 +69,27 @@ pub fn contract_setup_reply(
                 }
             }
 
-            if id == "".to_string() || owner == Addr::unchecked("") {
+            if id == "".to_string() {
                 return Err(ContractError::AccountNotCreated {});
             }
             let mut endowment = ENDOWMENTS.load(deps.storage, &id)?;
-            endowment.owner = owner;
+            if owner != Addr::unchecked("") {
+                endowment.owner = owner;
+            }
+            if dao != Addr::unchecked("") {
+                endowment.dao = Some(dao);
+            }
+            if dao_token != Addr::unchecked("") {
+                endowment.dao_token = Some(dao_token);
+            }
+            if donation_match != Addr::unchecked("") {
+                endowment.donation_match_contract = Some(donation_match);
+            }
             ENDOWMENTS.save(deps.storage, &id, &endowment)?;
 
-            // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
-            Ok(Response::default().add_attribute("endow_owner", endowment.owner.to_string()))
+            Ok(Response::default()
+                .add_attribute("endow_owner", endowment.owner.to_string())
+                .add_attribute("endow_id", id))
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
@@ -110,6 +122,12 @@ pub fn create_endowment(
     }
 
     let owner = deps.api.addr_validate(&msg.owner)?;
+    let maturity_whitelist = msg
+        .clone()
+        .maturity_whitelist
+        .iter()
+        .map(|addr| deps.api.addr_validate(&addr).unwrap())
+        .collect::<Vec<Addr>>();
     // try to store the endowment, fail if the ID is already in use
     ENDOWMENTS.update(deps.storage, &id, |existing| match existing {
         Some(_) => Err(ContractError::AlreadyInUse {}),
@@ -123,25 +141,22 @@ pub fn create_endowment(
             dao_token: None,
             donation_match_active: false,
             donation_match_contract: None,
-            whitelisted_beneficiaries: msg.whitelisted_beneficiaries,
-            whitelisted_contributors: msg.whitelisted_contributors,
+            whitelisted_beneficiaries: msg.whitelisted_beneficiaries.clone(),
+            whitelisted_contributors: msg.whitelisted_contributors.clone(),
             withdraw_before_maturity: msg.withdraw_before_maturity,
             maturity_time: msg.maturity_time,
-            earnings_fee: msg.earnings_fee,
-            withdraw_fee: msg.withdraw_fee,
-            deposit_fee: msg.deposit_fee,
-            aum_fee: msg.aum_fee,
-            parent: msg.parent,
+            earnings_fee: msg.earnings_fee.clone(),
+            withdraw_fee: msg.withdraw_fee.clone(),
+            deposit_fee: msg.deposit_fee.clone(),
+            aum_fee: msg.aum_fee.clone(),
+            parent: msg.parent.clone(),
             kyc_donors_only: msg.kyc_donors_only,
             settings_controller: msg
                 .settings_controller
+                .clone()
                 .unwrap_or(SettingsController::default()),
-            maturity_whitelist: msg
-                .maturity_whitelist
-                .iter()
-                .map(|addr| deps.api.addr_validate(&addr).unwrap())
-                .collect::<Vec<Addr>>(),
-            profile: msg.profile,
+            maturity_whitelist,
+            profile: msg.profile.clone(),
         }),
     })?;
     REDEMPTIONS.save(deps.storage, &id, &None)?;
@@ -196,7 +211,7 @@ pub fn create_endowment(
             label: "new endowment cw3 multisig".to_string(),
             msg: to_binary(&Cw3InstantiateMsg {
                 // endowment ID
-                id: msg.id,
+                id: msg.id.clone(),
                 // check if CW3/CW4 codes were passed to setup a multisig/group
                 cw4_members: match msg.cw4_members.is_empty() {
                     true => vec![Member {
@@ -885,7 +900,7 @@ pub fn deposit(
                 donor_match_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: donation_match_contract.unwrap().to_string(),
                     msg: to_binary(&DonationMatchExecMsg::DonorMatch {
-                        id: msg.id,
+                        id: msg.id.clone(),
                         amount: donation_match_amount,
                         donor: sender_addr.clone(),
                         token: endowment.dao_token.unwrap(),
@@ -903,7 +918,7 @@ pub fn deposit(
                         contract: donation_match_contract.unwrap().to_string(),
                         amount: donation_match_amount,
                         msg: to_binary(&DonationMatchExecMsg::DonorMatch {
-                            id: msg.id,
+                            id: msg.id.clone(),
                             amount: donation_match_amount,
                             donor: sender_addr.clone(),
                             token: endowment.dao_token.unwrap(),
@@ -1257,7 +1272,6 @@ pub fn update_endowment_fees(
     msg: UpdateEndowmentFeesMsg,
 ) -> Result<Response, ContractError> {
     let mut endowment = ENDOWMENTS.load(deps.storage, &msg.id)?;
-    let config = CONFIG.load(deps.storage)?;
 
     // only normalized endowments can update the additional fees
     if endowment.profile.endow_type != EndowmentType::Charity {
@@ -1326,7 +1340,6 @@ pub fn harvest_aum(
     }
 
     // Validations
-    let profile = endowment.profile;
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
     }
@@ -1374,7 +1387,7 @@ pub fn harvest_aum(
             msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: vault.to_string(),
                 msg: to_binary(&VaultExecuteMsg::Withdraw(AccountWithdrawMsg {
-                    endowment_id: id,
+                    endowment_id: id.clone(),
                     beneficiary: payout_address.clone(),
                     amount: aum_harvest_withdraw,
                 }))
@@ -1409,14 +1422,15 @@ pub fn harvest_reply(
             for event in subcall.events {
                 if event.ty == "wasm" {
                     for attrb in event.attributes {
-                        if attrb.key == "endow_id" {
-                            endowment_id = attrb.value;
-                        }
-                        if attrb.key == "last_earnings_harvest" {
-                            last_earnings_harvest = attrb.value.parse::<u64>().unwrap();
-                        }
-                        if attrb.key == "last_harvest_fx" {
-                            last_harvest_fx = Some(Decimal256::from_str(&attrb.value).unwrap());
+                        match attrb.key.as_str() {
+                            "endow_id" => endowment_id = attrb.value,
+                            "last_earnings_harvest" => {
+                                last_earnings_harvest = attrb.value.parse::<u64>().unwrap()
+                            }
+                            "last_harvest_fx" => {
+                                last_harvest_fx = Some(Decimal256::from_str(&attrb.value).unwrap())
+                            }
+                            &_ => (),
                         }
                     }
                 }

@@ -2,7 +2,7 @@ use crate::structs::{
     DaoSetup, DonationMatch, EndowmentFee, FundingSource, GenericBalance, Profile,
     RebalanceDetails, SettingsController, StrategyComponent,
 };
-use cosmwasm_std::{Addr, Decimal};
+use cosmwasm_std::Decimal;
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_utils::{Duration, Threshold};
@@ -107,7 +107,7 @@ pub struct CreateEndowmentMsg {
     pub aum_fee: Option<EndowmentFee>,
     pub dao: Option<DaoSetup>, // SubDAO setup options
     pub settings_controller: Option<SettingsController>,
-    pub parent: Option<Addr>,
+    pub parent: Option<String>,
     pub kyc_donors_only: bool,
     pub cw3_threshold: Threshold,
     pub cw3_max_voting_period: Duration,

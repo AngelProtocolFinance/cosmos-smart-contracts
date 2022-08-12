@@ -1,17 +1,15 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, OldConfig, CONFIG};
+use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::{AcceptedTokens, EndowmentType, SplitDetails};
+use angel_core::structs::{AcceptedTokens, SplitDetails};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
-    Reply, Response, StdError, StdResult,
+    entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Reply, Response,
+    StdError, StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
-use cw_storage_plus::Path;
-use std::ops::Deref;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -163,7 +161,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     let ver = get_contract_version(deps.storage)?;
     // ensure we are migrating from an allowed contract
     if ver.contract != CONTRACT_NAME {
@@ -179,74 +177,5 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
     }
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-    // Update the `Config`
-    // NOTE: This block should be removed after the `registrar`
-    //       contract is migrated to `v2`.
-    const CONFIG_KEY: &[u8] = b"config";
-    let old_config_data = deps.storage.get(CONFIG_KEY).ok_or_else(|| {
-        ContractError::Std(StdError::GenericErr {
-            msg: "Not found Config".to_string(),
-        })
-    })?;
-    let old_config: OldConfig = from_slice(&old_config_data)?;
-
-    let default_collector_addr = deps
-        .api
-        .addr_validate("terra1uxqjsgnq30lg5lhlhwd2gmct844vwqcdlv93x5")?;
-    let collector_addr = msg.collector_addr.map_or(default_collector_addr, |addr| {
-        deps.api.addr_validate(&addr).unwrap()
-    });
-
-    let config: Config = Config {
-        owner: old_config.owner,
-        index_fund_contract: old_config.index_fund_contract,
-        accounts_code_id: old_config.accounts_code_id,
-        treasury: old_config.treasury,
-        tax_rate: old_config.tax_rate,
-        default_vault: old_config.default_vault,
-        cw3_code: old_config.cw3_code,
-        cw4_code: old_config.cw4_code,
-        subdao_gov_code: old_config.subdao_gov_code,
-        subdao_bonding_token_code: old_config.subdao_bonding_token_code,
-        subdao_cw20_token_code: old_config.subdao_cw20_token_code,
-        subdao_cw900_code: old_config.subdao_cw900_code,
-        subdao_distributor_code: old_config.subdao_distributor_code,
-        donation_match_code: old_config.donation_match_code,
-        split_to_liquid: old_config.split_to_liquid,
-        halo_token: old_config.halo_token,
-        halo_token_lp_contract: None,
-        gov_contract: old_config.gov_contract,
-        donation_match_charites_contract: None,
-        collector_addr: Some(collector_addr),
-        collector_share: Decimal::percent(50_u64),
-        charity_shares_contract: None,
-        accepted_tokens: AcceptedTokens::default(),
-        swap_factory: None,
-        fundraising_contract: None,
-    };
-    deps.storage.set(CONFIG_KEY, &to_vec(&config)?);
-
-    // Save the values for "EndowTypeFees" map
-    const ENDOWTYPE_FEES_KEY: &[u8] = b"endowment_type_fees";
-
-    let charity_path: Path<String> = Path::new(
-        ENDOWTYPE_FEES_KEY,
-        &[EndowmentType::Charity.to_string().as_bytes()],
-    );
-    let normal_path: Path<String> = Path::new(
-        ENDOWTYPE_FEES_KEY,
-        &[EndowmentType::Normal.to_string().as_bytes()],
-    );
-
-    deps.storage.set(
-        charity_path.deref(),
-        &to_vec(&msg.endowtype_fees.endowtype_charity)?,
-    );
-    deps.storage.set(
-        normal_path.deref(),
-        &to_vec(&msg.endowtype_fees.endowtype_normal)?,
-    );
-
     Ok(Response::default())
 }

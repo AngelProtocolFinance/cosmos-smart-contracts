@@ -2,7 +2,7 @@ use crate::state::{CONFIG, ENDOWMENTS, REDEMPTIONS, STATES};
 use angel_core::messages::vault::QueryMsg as VaultQuerier;
 use angel_core::responses::accounts::*;
 use angel_core::structs::BalanceInfo;
-use cosmwasm_std::{to_binary, Deps, Env, QueryRequest, StdResult, WasmQuery};
+use cosmwasm_std::{to_binary, Deps, Env, Order, QueryRequest, StdResult, WasmQuery};
 use cw2::get_contract_version;
 use cw20::{Balance, Cw20CoinVerified};
 
@@ -118,4 +118,11 @@ pub fn query_endowment_fees(deps: Deps, id: String) -> StdResult<EndowmentFeesRe
         withdraw_fee: endowment.withdraw_fee,
         aum_fee: endowment.aum_fee,
     })
+}
+
+pub fn query_all_ids(deps: Deps) -> StdResult<Vec<String>> {
+    Ok(ENDOWMENTS
+        .keys(deps.storage, None, None, Order::Ascending)
+        .map(|id| String::from(id.unwrap()))
+        .collect::<Vec<String>>())
 }

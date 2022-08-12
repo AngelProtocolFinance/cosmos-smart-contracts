@@ -1,6 +1,4 @@
-use crate::state::{
-    read_registry_entries, CONFIG, ENDOWTYPE_FEES, NETWORK_CONNECTIONS, REGISTRY, VAULTS,
-};
+use crate::state::{CONFIG, ENDOWTYPE_FEES, NETWORK_CONNECTIONS, REGISTRY, VAULTS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{
@@ -9,7 +7,7 @@ use angel_core::structs::{
 use angel_core::utils::{percentage_checks, split_checks};
 
 use cosmwasm_std::{
-    to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult, SubMsg,
+    to_binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult, SubMsg,
     SubMsgResult, WasmMsg,
 };
 use cw_utils::Duration;
@@ -297,7 +295,7 @@ pub fn update_config(
 pub fn create_endowment(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: CreateEndowmentMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -310,34 +308,44 @@ pub fn create_endowment(
             // 1. The owner of an Endowment
             // 2. The Endowment is Approved & a Normal Endowment type (ie. NOT a Charity)
             // If above are satisfied, set parent field as the msg sender (ie. the Endowment MultiSig)
-            let mut parent: Option<Addr> = None;
-            if msg.parent {
-                let endowments: Vec<EndowmentEntry> = read_registry_entries(deps.storage)
-                    .unwrap()
-                    .into_iter()
-                    .filter(|e| e.owner == info.sender.to_string())
-                    .filter(|e| e.status.to_string() == "Approved")
-                    .collect();
-
-                if !endowments.is_empty() {
-                    parent = Some(info.sender);
+            let mut parent: Option<String> = None;
+            match msg.parent {
+                Some(p) => {
+                    let endowment = REGISTRY.load(deps.storage, &p)?;
+                    if endowment.owner == info.sender.to_string()
+                        && endowment.status == EndowmentStatus::Approved
+                        && endowment.endow_type == EndowmentType::Normal
+                    {
+                        parent = Some(p);
+                    }
                 }
-            };
+                None => (),
+            }
             let wasm_msg = WasmMsg::Execute {
                 contract_addr: accounts_contract.to_string(),
                 msg: to_binary(&angel_core::messages::accounts::CreateEndowmentMsg {
                     id: msg.id,
                     owner: msg.owner,
-                    beneficiary: msg.beneficiary,
                     withdraw_before_maturity: msg.withdraw_before_maturity,
                     maturity_time: msg.maturity_time,
-                    maturity_height: msg.maturity_height,
                     profile: msg.profile,
                     cw4_members: msg.cw4_members,
                     kyc_donors_only: msg.kyc_donors_only,
                     cw3_threshold: msg.cw3_threshold,
                     cw3_max_voting_period: Duration::Time(msg.cw3_max_voting_period),
+                    split_max: msg.split_max.unwrap_or(Decimal::one()),
+                    split_min: msg.split_min.unwrap_or(Decimal::zero()),
+                    split_default: msg.split_default.unwrap_or(Decimal::percent(50)),
                     parent,
+                    dao: msg.dao,
+                    whitelisted_beneficiaries: msg.whitelisted_beneficiaries,
+                    whitelisted_contributors: msg.whitelisted_contributors,
+                    earnings_fee: msg.earnings_fee,
+                    withdraw_fee: msg.withdraw_fee,
+                    deposit_fee: msg.deposit_fee,
+                    aum_fee: msg.aum_fee,
+                    settings_controller: msg.settings_controller,
+                    maturity_whitelist: msg.maturity_whitelist,
                 })?,
                 funds: vec![],
             };
@@ -456,7 +464,7 @@ pub fn new_accounts_reply(
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
                         match attrb.key.as_str() {
-                            "endow_id" => endowment_addr = attrb.value,
+                            "endow_id" => endowment_id = attrb.value,
                             "endow_name" => endowment_name = attrb.value,
                             "endow_owner" => endowment_owner = attrb.value,
                             "endow_type" => endowment_type = attrb.value,

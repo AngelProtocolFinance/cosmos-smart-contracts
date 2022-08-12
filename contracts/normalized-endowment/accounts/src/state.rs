@@ -1,6 +1,5 @@
 use angel_core::structs::{
-    AcceptedTokens, BalanceInfo, EndowmentFee, Profile, RebalanceDetails, SettingsController,
-    StrategyComponent,
+    BalanceInfo, EndowmentFee, Profile, RebalanceDetails, SettingsController, StrategyComponent,
 };
 use cosmwasm_std::{Addr, Decimal256, Env, Timestamp, Uint128};
 use cw_storage_plus::{Item, Map};
@@ -34,7 +33,7 @@ pub struct Endowment {
     pub withdraw_fee: Option<EndowmentFee>, // Withdraw Fee
     pub deposit_fee: Option<EndowmentFee>, // Deposit Fee
     pub aum_fee: Option<EndowmentFee>, // AUM(Assets Under Management) Fee
-    pub parent: Option<Addr>,        // Address of the Parent Endowment contract
+    pub parent: Option<String>,      // Uinque ID of the Parent Endowment contract
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
     pub settings_controller: SettingsController,
     pub maturity_whitelist: Vec<Addr>, // list of addresses, which can withdraw after maturity date is reached (if any)

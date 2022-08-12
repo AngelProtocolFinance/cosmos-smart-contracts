@@ -11,24 +11,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct MigrateMsg {}
 
-// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-// pub struct MigrateEndowment {
-//     pub addr: String,
-//     pub status: u64,
-//     pub name: String,
-//     pub owner: String,
-//     pub tier: Option<u64>,
-//     pub un_sdg: Option<u64>,
-//     pub logo: Option<String>,
-//     pub image: Option<String>,
-// }
-
-// #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-// pub struct MigrateEndowTypeFees {
-//     pub endowtype_charity: Option<Decimal>,
-//     pub endowtype_normal: Option<Decimal>,
-// }
-
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
     pub treasury: String,
@@ -92,6 +74,8 @@ pub struct CreateEndowmentMsg {
     pub withdraw_fee: Option<EndowmentFee>,
     pub aum_fee: Option<EndowmentFee>,
     pub settings_controller: Option<SettingsController>,
+    pub maturity_whitelist: Vec<String>,
+    pub parent: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
