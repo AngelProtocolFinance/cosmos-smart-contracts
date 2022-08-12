@@ -29,7 +29,6 @@ pub struct EndowmentListResponse {
 pub struct ConfigResponse {
     pub owner: String,
     pub version: String,
-    pub accounts_code_id: u64,
     pub cw3_code: Option<u64>,
     pub cw4_code: Option<u64>,
     pub subdao_gov_code: Option<u64>,
@@ -41,6 +40,7 @@ pub struct ConfigResponse {
     pub halo_token: Option<String>,
     pub halo_token_lp_contract: Option<String>,
     pub gov_contract: Option<String>,
+    pub accounts_contract: Option<String>,
     pub treasury: String,
     pub tax_rate: Decimal,
     pub default_vault: Option<String>,
@@ -52,6 +52,7 @@ pub struct ConfigResponse {
     pub charity_shares_contract: Option<String>,
     pub accepted_tokens: AcceptedTokens,
     pub swap_factory: Option<String>,
+    pub account_id_char_limit: usize,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

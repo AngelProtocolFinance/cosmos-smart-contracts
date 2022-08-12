@@ -1,4 +1,4 @@
-use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
+use crate::state::{CONFIG, ENDOWMENTS, REDEMPTIONS, STATES};
 use angel_core::messages::vault::QueryMsg as VaultQuerier;
 use angel_core::responses::accounts::*;
 use angel_core::structs::BalanceInfo;
@@ -13,22 +13,11 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         owner: config.owner.to_string(),
         version: get_contract_version(deps.storage)?.contract,
         registrar_contract: config.registrar_contract.to_string(),
-        deposit_approved: config.deposit_approved,
-        withdraw_approved: config.withdraw_approved,
-        last_earnings_harvest: config.last_earnings_harvest,
-        last_harvest_fx: config
-            .last_harvest_fx
-            .map(|v| v.to_string())
-            .unwrap_or_else(|| "".to_string()),
-        settings_controller: config.settings_controller,
-        pending_redemptions: config
-            .pending_redemptions
-            .map_or("".to_string(), |v| v.to_string()),
     })
 }
 
-pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
-    let state = STATE.load(deps.storage)?;
+pub fn query_state(deps: Deps, id: String) -> StdResult<StateResponse> {
+    let state = STATES.load(deps.storage, &id)?;
 
     Ok(StateResponse {
         donations_received: state.donations_received,
@@ -36,12 +25,17 @@ pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
         closing_beneficiary: state
             .closing_beneficiary
             .map_or("".to_string(), |v| v.to_string()),
+        last_earnings_harvest: state.last_earnings_harvest,
+        last_harvest_fx: state
+            .last_harvest_fx
+            .map(|v| v.to_string())
+            .unwrap_or_else(|| "".to_string()),
     })
 }
 
-pub fn query_account_balance(deps: Deps, env: Env) -> StdResult<BalanceInfo> {
-    let endowment = ENDOWMENT.load(deps.storage)?;
-    let state = STATE.load(deps.storage)?;
+pub fn query_account_balance(deps: Deps, env: Env, id: String) -> StdResult<BalanceInfo> {
+    let endowment = ENDOWMENTS.load(deps.storage, &id)?;
+    let state = STATES.load(deps.storage, &id)?;
     // setup the basic response object w/ account's balances locked & liquid (held by this contract)
     let mut balances = state.balances;
     // add stategies' (locked) balances
@@ -62,16 +56,16 @@ pub fn query_account_balance(deps: Deps, env: Env) -> StdResult<BalanceInfo> {
     Ok(balances)
 }
 
-pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse> {
+pub fn query_endowment_details(deps: Deps, id: String) -> StdResult<EndowmentDetailsResponse> {
     // this fails if no account is found
-    let endowment = ENDOWMENT.load(deps.storage)?;
-    let profile = PROFILE.load(deps.storage)?;
+    let endowment = ENDOWMENTS.load(deps.storage, &id)?;
+    let redemptions = REDEMPTIONS.load(deps.storage, &id)?;
     Ok(EndowmentDetailsResponse {
         owner: endowment.owner,
         dao: endowment.dao,
         dao_token: endowment.dao_token,
-        name: profile.name,
-        description: profile.overview,
+        name: endowment.profile.name,
+        description: endowment.profile.overview,
         withdraw_before_maturity: endowment.withdraw_before_maturity,
         maturity_time: endowment.maturity_time,
         strategies: endowment.strategies,
@@ -86,11 +80,15 @@ pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse
             .iter()
             .map(|v| v.to_string())
             .collect::<Vec<String>>(),
+        settings_controller: endowment.settings_controller,
+        pending_redemptions: redemptions,
+        deposit_approved: endowment.deposit_approved,
+        withdraw_approved: endowment.withdraw_approved,
     })
 }
 
-pub fn query_profile(deps: Deps) -> StdResult<ProfileResponse> {
-    let profile = PROFILE.load(deps.storage)?;
+pub fn query_profile(deps: Deps, id: String) -> StdResult<ProfileResponse> {
+    let profile = ENDOWMENTS.load(deps.storage, &id)?.profile;
     Ok(ProfileResponse {
         name: profile.name,
         overview: profile.overview,
@@ -112,8 +110,8 @@ pub fn query_profile(deps: Deps) -> StdResult<ProfileResponse> {
     })
 }
 
-pub fn query_endowment_fees(deps: Deps) -> StdResult<EndowmentFeesResponse> {
-    let endowment = ENDOWMENT.load(deps.storage)?;
+pub fn query_endowment_fees(deps: Deps, id: String) -> StdResult<EndowmentFeesResponse> {
+    let endowment = ENDOWMENTS.load(deps.storage, &id)?;
     Ok(EndowmentFeesResponse {
         earnings_fee: endowment.earnings_fee,
         deposit_fee: endowment.deposit_fee,

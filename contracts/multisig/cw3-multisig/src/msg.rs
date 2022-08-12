@@ -1,27 +1,10 @@
-use crate::errors::multisig::ContractError;
-use cosmwasm_std::{CosmosMsg, Decimal, Empty};
+use cosmwasm_std::{CosmosMsg, Empty};
 use cw3::{Status, Vote};
-use cw4::{Member, MemberChangedHookMsg};
+use cw4::MemberChangedHookMsg;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct InstantiateMsg {
-    pub group_addr: String,
-    pub threshold: Threshold,
-    pub max_voting_period: Duration,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct EndowmentInstantiateMsg {
-    pub id: String,
-    pub cw4_members: Vec<Member>,
-    pub cw4_code: u64,
-    pub threshold: Threshold,
-    pub max_voting_period: Duration,
-}
 
 /// We currently take no arguments for migrations
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -125,15 +108,4 @@ where
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct MetaProposalListResponse {
     pub proposals: Vec<MetaProposalResponse>,
-}
-
-/// Asserts that the 0.0 < percent <= 1.0
-pub fn valid_percentage(percent: &Decimal) -> Result<(), ContractError> {
-    if percent.is_zero() {
-        Err(ContractError::ZeroThreshold {})
-    } else if *percent > Decimal::one() {
-        Err(ContractError::UnreachableThreshold {})
-    } else {
-        Ok(())
-    }
 }

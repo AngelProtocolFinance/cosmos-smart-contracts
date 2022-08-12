@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use crate::executers;
 use crate::queriers;
 use crate::state::{Config, OldConfig, CONFIG};
@@ -13,6 +11,7 @@ use cosmwasm_std::{
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw_storage_plus::Path;
+use std::ops::Deref;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -37,7 +36,7 @@ pub fn instantiate(
     let configs = Config {
         owner: info.sender,
         index_fund_contract: None,
-        accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
+        accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
         tax_rate,
         default_vault: msg.default_vault,
@@ -62,6 +61,7 @@ pub fn instantiate(
         swap_factory: msg
             .swap_factory
             .map(|v| deps.api.addr_validate(&v).unwrap()),
+        account_id_char_limit: 20, // default to a resonable 20 chars limit
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -122,8 +122,8 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
-        QueryMsg::Endowment { endowment_addr } => {
-            to_binary(&queriers::query_endowment_details(deps, endowment_addr)?)
+        QueryMsg::Endowment { endowment_id } => {
+            to_binary(&queriers::query_endowment_details(deps, endowment_id)?)
         }
         QueryMsg::EndowmentList {
             name,

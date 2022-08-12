@@ -236,7 +236,7 @@ impl WasmMockQuerier {
                     to_binary(&RegistrarConfigResponse {
                         owner: "registrar_owner".to_string(),
                         version: "0.1.0".to_string(),
-                        accounts_code_id: 1,
+                        accounts_contract: Some("accounts_contract_addr".to_string()),
                         treasury: "treasury".to_string(),
                         tax_rate: Decimal::one(),
                         default_vault: Some("default-vault".to_string()),
@@ -265,7 +265,11 @@ impl WasmMockQuerier {
                             native: vec!["uluna".to_string()],
                             cw20: vec!["test-cw20".to_string()],
                         },
+<<<<<<< HEAD:contracts/normalized-endowment/accounts/src/tests/mock_querier.rs
                         swap_factory: None,
+=======
+                        account_id_char_limit: 20,
+>>>>>>> main:contracts/core/accounts/src/tests/mock_querier.rs
                     })
                     .unwrap(),
                 )),

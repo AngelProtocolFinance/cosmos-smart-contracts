@@ -4,10 +4,9 @@ use angel_core::messages::registrar::*;
 use angel_core::messages::subdao_bonding_token::CurveType;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
-    AcceptedTokens, EndowmentStatus, EndowmentType, NetworkInfo, Profile, SocialMedialUrls,
-    SplitDetails,
+    AcceptedTokens, DaoSetup, DaoToken, EndowmentStatus, EndowmentType, NetworkInfo, Profile,
+    SocialMedialUrls, SplitDetails, Tier,
 };
-use angel_core::structs::{DaoSetup, DaoToken};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{
     coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply, StdError, SubMsgResponse,
@@ -15,16 +14,15 @@ use cosmwasm_std::{
 };
 use cw_utils::Threshold;
 
-const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
 const MOCK_CW3_CODE_ID: u64 = 18;
 const MOCK_CW4_CODE_ID: u64 = 19;
+const CHARITY_ID: &str = "good-charity-1";
 
 #[test]
 fn proper_initialization() {
     let mut deps = mock_dependencies();
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
         tax_rate: Decimal::percent(20),
@@ -44,7 +42,7 @@ fn proper_initialization() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_response: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
+    assert_eq!(None, config_response.accounts_contract);
     assert_eq!(ap_team.clone(), config_response.owner);
 }
 
@@ -54,7 +52,6 @@ fn update_owner() {
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
         tax_rate: Decimal::percent(20),
@@ -92,7 +89,6 @@ fn update_config() {
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let index_fund_contract = String::from("terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d");
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
         tax_rate: Decimal::percent(0),
@@ -111,7 +107,7 @@ fn update_config() {
 
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let update_config_message = UpdateConfigMsg {
-        accounts_code_id: None,
+        accounts_contract: Some("accounts_contract_addr".to_string()),
         index_fund_contract: Some(index_fund_contract.clone()),
         fundraising_contract: None,
         approved_charities: None,
@@ -138,6 +134,7 @@ fn update_config() {
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,
+        account_id_char_limit: None,
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -149,13 +146,16 @@ fn update_config() {
         index_fund_contract.clone(),
         config_response.index_fund.unwrap()
     );
-    assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
+    assert_eq!(
+        Some("accounts_contract_addr".to_string()),
+        config_response.accounts_contract
+    );
     assert_eq!(MOCK_CW3_CODE_ID, config_response.cw3_code.unwrap());
     assert_eq!(MOCK_CW4_CODE_ID, config_response.cw4_code.unwrap());
 }
 
 #[test]
-fn anyone_can_create_endowment_accounts_and_then_update() {
+fn anyone_can_create_endowment_accounts() {
     let mut deps = mock_dependencies();
     // meet the cast of characters
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
@@ -163,8 +163,8 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     let good_endowment_addr = "terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9".to_string();
     let default_vault_addr = "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg".to_string();
     let index_fund_contract = "terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d".to_string();
+
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: Some(Addr::unchecked(default_vault_addr)),
         tax_rate: Decimal::percent(20),
@@ -182,9 +182,9 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
     assert_eq!(0, res.messages.len());
 
-    // Config the "index_fund_contract" to avoid the "ContractNotConfigured" error.
+    // Config the "index_fund_contract" and "accounts_contract" to avoid the "ContractNotConfigured" error.
     let update_config_msg = UpdateConfigMsg {
-        accounts_code_id: None,
+        accounts_contract: Some("accounts_contract_addr".to_string()),
         index_fund_contract: Some(index_fund_contract.clone()),
         fundraising_contract: None,
         approved_charities: None,
@@ -211,6 +211,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,
+        account_id_char_limit: None,
     };
     let info = mock_info(ap_team.as_ref(), &[]);
     let _ = execute(
@@ -246,6 +247,17 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     };
 
     let create_endowment_msg = CreateEndowmentMsg {
+        id: CHARITY_ID.to_string(),
+        owner: good_charity_addr.clone(),
+        withdraw_before_maturity: false,
+        maturity_time: None,
+        profile: profile,
+        cw4_members: vec![],
+        kyc_donors_only: false,
+        cw3_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_max_voting_period: 60,
         split_max: None,
         split_min: None,
         split_default: None,
@@ -279,16 +291,6 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         aum_fee: None,
         settings_controller: None,
         parent: false,
-        owner: good_charity_addr.clone(),
-        withdraw_before_maturity: false,
-        maturity_time: None,
-        profile: profile,
-        cw4_members: vec![],
-        kyc_donors_only: false,
-        cw3_threshold: Threshold::AbsolutePercentage {
-            percentage: Decimal::percent(10),
-        },
-        cw3_max_voting_period: 60,
     };
 
     // anyone can create Accounts
@@ -303,73 +305,8 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     .unwrap();
     assert_eq!(1, res.messages.len());
 
-    // test that with the submessage we can instantiate account sc
-    let msg: &CosmosMsg = &res.messages[0].msg;
-    match msg {
-        CosmosMsg::Wasm(wasm_msg) => {
-            match wasm_msg {
-                WasmMsg::Instantiate {
-                    admin,
-                    code_id: _,
-                    msg,
-                    funds: _,
-                    label: _,
-                } => {
-                    assert_eq!(admin.clone(), Some(ap_team.clone()));
-                    let accounts_instantiate_msg: angel_core::messages::accounts::InstantiateMsg =
-                        from_binary(msg).unwrap();
-                    assert_eq!(accounts_instantiate_msg.owner, ap_team.clone());
-
-                    // let's instantiate account sc with our sub_message
-                    let mut deps = mock_dependencies();
-                    let info = mock_info("creator", &coins(100000, "earth"));
-                    let env = mock_env();
-
-                    // for now we have instantiation error due to another submsg call
-                    // from the accounts sc instantiate method
-                    // but the instantiation message work well
-                    //
-                    // TODO: fix test when accounts sc instantiate test will be ready
-                    // by removing let err = ... and changing to:
-                    // assert_eq!(0, res.messages.len());
-                    let err = accounts::contract::instantiate(
-                        deps.as_mut(),
-                        env,
-                        info,
-                        accounts_instantiate_msg,
-                    )
-                    .unwrap_err();
-                    match err {
-                        ContractError::Std(err) => match err {
-                            cosmwasm_std::StdError::GenericErr { msg } => {
-                                assert_eq!(
-                                    msg,
-                                    "Querier system error: No such contract: cosmos2contract"
-                                );
-                                ()
-                            }
-                            _ => (),
-                        },
-                        _ => (),
-                    }
-                    ()
-                }
-                _ => {
-                    panic!("Not the Wasm instaniation message");
-                }
-            }
-        }
-        _ => {
-            panic!("Not the Cosmos message");
-        }
-    }
-
-    assert_eq!(1, res.attributes.len());
-    assert_eq!("action", res.attributes[0].key);
-    assert_eq!("create_endowment", res.attributes[0].value);
-
     let events = vec![Event::new("wasm")
-        .add_attribute("endow_addr", good_endowment_addr.clone())
+        .add_attribute("endow_id", CHARITY_ID.to_string())
         .add_attribute("endow_name", "Test Endowment".to_string())
         .add_attribute("endow_owner", good_charity_addr.clone())
         .add_attribute("endow_type", "charity".to_string())
@@ -398,8 +335,8 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     .unwrap();
     let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
     assert_eq!(
-        endowment_list_response.endowments[0].address,
-        Addr::unchecked(good_endowment_addr.clone())
+        endowment_list_response.endowments[0].id,
+        CHARITY_ID.to_string()
     );
     assert_eq!(
         endowment_list_response.endowments[0].status,
@@ -408,10 +345,10 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
 
     // let's test update endowment method by admin
     let update_endowment_entry_msg = UpdateEndowmentEntryMsg {
-        endowment_addr: good_endowment_addr.clone(),
+        endowment_id: CHARITY_ID.to_string(),
         name: None,
         owner: None,
-        tier: None,
+        tier: Some(Some(Tier::Level1)),
         endow_type: None,
         un_sdg: None,
         logo: None,
@@ -429,7 +366,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     assert_eq!(0, res.messages.len());
 
     let update_endowment_status_msg = UpdateEndowmentStatusMsg {
-        endowment_addr: good_endowment_addr.clone(),
+        endowment_id: CHARITY_ID.to_string(),
         status: 1,
         beneficiary: None,
     };
@@ -460,8 +397,12 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     .unwrap();
     let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
     assert_eq!(
-        endowment_list_response.endowments[0].address,
-        Addr::unchecked(good_endowment_addr.clone())
+        endowment_list_response.endowments[0].id,
+        CHARITY_ID.to_string()
+    );
+    assert_eq!(
+        endowment_list_response.endowments[0].tier,
+        Some(Tier::Level1)
     );
     assert_eq!(
         endowment_list_response.endowments[0].status,
@@ -475,7 +416,6 @@ fn test_add_update_and_remove_vault() {
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let vault_addr = "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg".to_string();
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
         tax_rate: Decimal::percent(20),
@@ -569,7 +509,6 @@ fn test_add_update_and_remove_accepted_tokens() {
     let mut deps = mock_dependencies();
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
         tax_rate: Decimal::percent(20),
@@ -595,7 +534,7 @@ fn test_add_update_and_remove_accepted_tokens() {
     // add new token denom "new_token" to "accepted_tokens"
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let update_config_msg = UpdateConfigMsg {
-        accounts_code_id: None,
+        accounts_contract: None,
         index_fund_contract: None,
         fundraising_contract: None,
         approved_charities: None,
@@ -625,6 +564,7 @@ fn test_add_update_and_remove_accepted_tokens() {
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,
+        account_id_char_limit: None,
     };
     let res = execute(
         deps.as_mut(),
@@ -653,7 +593,6 @@ fn test_add_update_and_remove_network_infos() {
     let mut deps = mock_dependencies();
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
         default_vault: None,
         tax_rate: Decimal::percent(20),

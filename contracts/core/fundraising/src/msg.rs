@@ -68,6 +68,8 @@ pub enum ReceiveMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateMsg {
+    /// Endowment unique ID
+    pub id: String,
     /// Title of the campaign
     pub title: String,
     /// Longer description of the campaign, e.g. what conditions should be met

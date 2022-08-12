@@ -13,7 +13,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
         version: get_contract_version(deps.storage)?.contract,
-        accounts_code_id: config.accounts_code_id,
+        accounts_contract: config.accounts_contract.map(|addr| addr.to_string()),
         treasury: config.treasury.to_string(),
         tax_rate: config.tax_rate,
         default_vault: config.default_vault.map(|addr| addr.to_string()),
@@ -59,6 +59,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         accepted_tokens: config.accepted_tokens,
         charity_shares_contract: config.charity_shares_contract.map(|addr| addr.to_string()),
         swap_factory: config.swap_factory.map(|addr| addr.to_string()),
+        account_id_char_limit: config.account_id_char_limit,
     })
 }
 
@@ -81,9 +82,9 @@ pub fn query_vault_list(
 
 pub fn query_endowment_details(
     deps: Deps,
-    endowment_addr: String,
+    endowment_id: String,
 ) -> StdResult<EndowmentDetailResponse> {
-    let endowment = REGISTRY.load(deps.storage, endowment_addr.as_bytes())?;
+    let endowment = REGISTRY.load(deps.storage, &endowment_id)?;
     Ok(EndowmentDetailResponse { endowment })
 }
 

@@ -16,7 +16,7 @@ pub const CONFIG: Item<Config> = Item::new("config");
 pub struct Config {
     pub owner: Addr, // AP TEAM MULTISIG
     pub index_fund_contract: Option<Addr>,
-    pub accounts_code_id: u64,
+    pub accounts_contract: Option<Addr>,
     pub treasury: Addr,
     pub tax_rate: Decimal,
     pub default_vault: Option<Addr>,
@@ -66,9 +66,10 @@ pub struct OldConfig {
     pub gov_contract: Option<Addr>,    // AP governance contract
     pub charity_shares_contract: Option<Addr>, // Charity Shares staking contract
     pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
+    pub account_id_char_limit: usize,
 }
 
-pub const REGISTRY: Map<&[u8], EndowmentEntry> = Map::new("registry");
+pub const REGISTRY: Map<&str, EndowmentEntry> = Map::new("registry");
 pub const VAULTS: Map<&[u8], YieldVault> = Map::new("vault");
 pub const NETWORK_CONNECTIONS: Map<&str, NetworkInfo> = Map::new("network_connections");
 pub const ENDOWTYPE_FEES: Map<String, Option<Decimal>> = Map::new("endowment_type_fees");

@@ -3,7 +3,7 @@ use angel_core::structs::{
     StrategyComponent,
 };
 use cosmwasm_std::{Addr, Decimal256, Env, Timestamp, Uint128};
-use cw_storage_plus::Item;
+use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -12,24 +12,6 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub owner: Addr, // DANO/AP Team Address
     pub registrar_contract: Addr,
-    pub deposit_approved: bool, // DANO has approved to receive donations & transact
-    pub withdraw_approved: bool, // DANO has approved to withdraw funds
-    pub pending_redemptions: Option<u64>,
-    pub last_earnings_harvest: u64,
-    pub last_harvest_fx: Option<Decimal256>,
-    pub settings_controller: SettingsController,
-    pub accepted_tokens: AcceptedTokens,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct OldConfig {
-    pub owner: Addr, // DANO/AP Team Address
-    pub registrar_contract: Addr,
-    pub accepted_tokens: AcceptedTokens,
-    pub deposit_approved: bool, // DANO has approved to receive donations & transact
-    pub withdraw_approved: bool, // DANO has approved to withdraw funds
-    pub pending_redemptions: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -42,6 +24,8 @@ pub struct Endowment {
     pub donation_match_contract: Option<Addr>, // contract for donation matching
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
+    pub deposit_approved: bool,                // DANO has approved to receive donations & transact
+    pub withdraw_approved: bool,               // DANO has approved to withdraw funds
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity (unit: seconds)
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
@@ -52,7 +36,9 @@ pub struct Endowment {
     pub aum_fee: Option<EndowmentFee>, // AUM(Assets Under Management) Fee
     pub parent: Option<Addr>,        // Address of the Parent Endowment contract
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
+    pub settings_controller: SettingsController,
     pub maturity_whitelist: Vec<Addr>, // list of addresses, which can withdraw after maturity date is reached (if any)
+    pub profile: Profile,
 }
 
 impl Endowment {
@@ -73,9 +59,11 @@ pub struct State {
     pub balances: BalanceInfo,
     pub closing_endowment: bool,
     pub closing_beneficiary: Option<String>,
+    pub last_earnings_harvest: u64,
+    pub last_harvest_fx: Option<Decimal256>,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const STATE: Item<State> = Item::new("state");
-pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");
-pub const PROFILE: Item<Profile> = Item::new("profile");
+pub const STATES: Map<&str, State> = Map::new("states");
+pub const ENDOWMENTS: Map<&str, Endowment> = Map::new("endowments");
+pub const REDEMPTIONS: Map<&str, Option<u64>> = Map::new("redemptions");

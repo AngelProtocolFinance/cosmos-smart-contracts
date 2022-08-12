@@ -11,6 +11,8 @@ pub struct StateResponse {
     pub donations_received: Uint128,
     pub closing_endowment: bool,
     pub closing_beneficiary: String,
+    pub last_earnings_harvest: u64,
+    pub last_harvest_fx: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -18,12 +20,6 @@ pub struct ConfigResponse {
     pub owner: String,
     pub version: String,
     pub registrar_contract: String,
-    pub deposit_approved: bool,
-    pub withdraw_approved: bool,
-    pub last_earnings_harvest: u64,
-    pub last_harvest_fx: String,
-    pub settings_controller: SettingsController,
-    pub pending_redemptions: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
@@ -40,6 +36,10 @@ pub struct EndowmentDetailsResponse {
     pub donation_match_contract: String,
     pub kyc_donors_only: bool,
     pub maturity_whitelist: Vec<String>,
+    pub deposit_approved: bool,
+    pub withdraw_approved: bool,
+    pub pending_redemptions: Option<u64>,
+    pub settings_controller: SettingsController,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

@@ -141,15 +141,17 @@ pub fn execute_create(
         return Err(ContractError::EmptyBalance {});
     }
 
-    // check the sender is an approved endowment in the Registrar
+    // check the sender is an approved endowment in the Registrar and the owner matches the sender
     let config = CONFIG.load(deps.storage)?;
     let endow_detail: EndowmentDetailResponse = deps.querier.query_wasm_smart(
         config.registrar_contract.clone(),
         &angel_core::messages::registrar::QueryMsg::Endowment {
-            endowment_addr: sender.to_string(),
+            endowment_id: msg.id,
         },
     )?;
-    if endow_detail.endowment.status != EndowmentStatus::Approved {
+    if endow_detail.endowment.status != EndowmentStatus::Approved
+        && endow_detail.endowment.owner != sender.to_string()
+    {
         return Err(ContractError::Unauthorized {});
     }
 

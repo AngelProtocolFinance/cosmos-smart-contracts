@@ -62,12 +62,20 @@ pub fn receive_cw20(
 ) -> Result<Response, ContractError> {
     let api = deps.api;
     match from_binary(&cw20_msg.msg) {
-        Ok(RecieveMsg::DonorMatch {}) => {
+        Ok(RecieveMsg::DonorMatch { id }) => {
             let contract_addr = api.addr_validate(info.sender.clone().as_str())?;
             let msg_sender = api.addr_validate(&cw20_msg.sender)?;
             // update the info.sender to be the message sender
             info.sender = msg_sender.clone();
-            execute_donor_match(deps, env, info, cw20_msg.amount, msg_sender, contract_addr)
+            execute_donor_match(
+                deps,
+                env,
+                info,
+                id,
+                cw20_msg.amount,
+                msg_sender,
+                contract_addr,
+            )
         }
         _ => Err(ContractError::InvalidInputs {}),
     }
@@ -83,10 +91,11 @@ pub fn execute(
     match msg {
         // TODO
         ExecuteMsg::DonorMatch {
+            id,
             amount,
             donor,
             token,
-        } => execute_donor_match(deps, env, info, amount, donor, token),
+        } => execute_donor_match(deps, env, info, id, amount, donor, token),
     }
 }
 
@@ -94,6 +103,7 @@ fn execute_donor_match(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    endowment_id: String,
     amount: Uint128,
     donor: Addr,
     token: Addr,
@@ -105,11 +115,20 @@ fn execute_donor_match(
 
     let config = CONFIG.load(deps.storage)?;
 
-    // Validation 1. Check if the tx sender is valid endowment contract
+    // Validation 1. Check if the tx sender is the core Accounts contract
+    let registrar_config: RegistrarConfig = deps.querier.query_wasm_smart(
+        config.registrar_contract.clone(),
+        &RegistrarQueryMsg::Config {},
+    )?;
+    if info.sender.to_string() != registrar_config.accounts_contract.unwrap() {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Validation 2. Check if the endowment stated is Approved / Active in Registrar
     let endow_detail: EndowmentDetailResponse = deps.querier.query_wasm_smart(
         config.registrar_contract.clone(),
         &RegistrarQueryMsg::Endowment {
-            endowment_addr: info.sender.to_string(),
+            endowment_id: endowment_id.clone(),
         },
     )?;
 
@@ -117,13 +136,10 @@ fn execute_donor_match(
         return Err(ContractError::Unauthorized {});
     }
 
-    // Validation 2. Check if the correct endowment is calling this entry
+    // Validation 3. Check that this contract's address matches that of the target
+    // Endowment's donation match contract address
     match endow_detail.endowment.endow_type {
         EndowmentType::Charity => {
-            let registrar_config: RegistrarConfig = deps.querier.query_wasm_smart(
-                config.registrar_contract.clone(),
-                &RegistrarQueryMsg::Config {},
-            )?;
             if env.contract.address.to_string()
                 != registrar_config.donation_match_charites_contract.unwrap()
             {
@@ -131,16 +147,17 @@ fn execute_donor_match(
             }
         }
         EndowmentType::Normal => {
-            let endow: EndowmentDetailsResponse = deps
-                .querier
-                .query_wasm_smart(config.registrar_contract, &AccountQueryMsg::Endowment {})?;
+            let endow: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
+                config.registrar_contract,
+                &AccountQueryMsg::Endowment { id: endowment_id },
+            )?;
             if env.contract.address.to_string() != endow.donation_match_contract {
                 return Err(ContractError::Unauthorized {});
             }
         }
     };
 
-    // Validation 2. Check if the correct amount of UST is sent.
+    // Validation 3. Check if the correct amount is sent.
     let received_uusd = match info.funds.into_iter().find(|coin| coin.denom == "uusd") {
         Some(c) => c.amount,
         None => return Err(ContractError::EmptyBalance {}),
