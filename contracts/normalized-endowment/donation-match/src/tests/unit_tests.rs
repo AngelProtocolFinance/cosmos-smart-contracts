@@ -8,9 +8,9 @@ use cosmwasm_std::{attr, coins, from_binary, Addr, Uint128};
 const RESERVE_TOKEN: &str = "reserve-token";
 const LP_PAIR_CONTRACT: &str = "lp-pair-contract";
 const REGISTRAR_CONTRACT: &str = "registrar-contract";
-
-const ENDOWMENT_ID: &str = "endowment-test-id";
-const ENDOWMENT: &str = "endowment_contract";
+const ACCOUNTS_CONTRACT: &str = "Test-Accounts-Contract";
+const ACCOUNTS_OWNER: &str = "Test-Endowment-Owner";
+const ENDOWMENT_ID: &str = "test-endowment-id";
 const UST_AMT: u128 = 50_u128;
 const DONOR: &str = "donor";
 const DAO_TOKEN: &str = "dao-token";
@@ -19,7 +19,7 @@ const DAO_TOKEN: &str = "dao-token";
 fn test_proper_initialization() {
     let mut deps = mock_dependencies(&[]);
 
-    let info = mock_info("anyone", &[]);
+    let info = mock_info(&"anyone", &[]);
     let instantiate_msg = InstantiateMsg {
         reserve_token: RESERVE_TOKEN.to_string(),
         lp_pair: LP_PAIR_CONTRACT.to_string(),
@@ -35,7 +35,7 @@ fn test_proper_initialization() {
 fn test_get_config() {
     let mut deps = mock_dependencies(&[]);
 
-    let info = mock_info("anyone", &[]);
+    let info = mock_info(&"anyone", &[]);
     let instantiate_msg = InstantiateMsg {
         reserve_token: RESERVE_TOKEN.to_string(),
         lp_pair: LP_PAIR_CONTRACT.to_string(),
@@ -54,55 +54,66 @@ fn test_get_config() {
     assert_eq!(res.registrar_contract, REGISTRAR_CONTRACT.to_string());
 }
 
+#[test]
 fn test_execute_donor_match() {
     // Instantiate the contract
     let mut deps = mock_dependencies(&[]);
 
-    let info = mock_info("anyone", &[]);
+    let info = mock_info(&"anyone", &[]);
     let instantiate_msg = InstantiateMsg {
         reserve_token: RESERVE_TOKEN.to_string(),
         lp_pair: LP_PAIR_CONTRACT.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
     };
-
-    // We call "unwrap" for the success
     let _ = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
 
-    // Fail the "donor_match" since info.sender is not endowment contract
+    // Fail the "donor_match" since info.sender is not Accounts contract
+    let info = mock_info(&"not_accounts", &coins(UST_AMT, "uusd"));
     let donor_match_msg = ExecuteMsg::DonorMatch {
         id: ENDOWMENT_ID.to_string(),
         amount: Uint128::from(UST_AMT),
         donor: Addr::unchecked(DONOR),
         token: Addr::unchecked(DAO_TOKEN),
     };
-    let info = mock_info("not_endowment", &coins(UST_AMT, "uusd"));
-
     let res = execute(deps.as_mut(), mock_env(), info, donor_match_msg);
     assert!(
         res.is_err(),
         "This call should fail with \"Unauthorized\" error"
     );
 
+    // Fail the "donor_match" if the Endowment ID is not found or Approved
+    let info = mock_info(ACCOUNTS_CONTRACT, &coins(UST_AMT, "uusd"));
+    let donor_match_msg = ExecuteMsg::DonorMatch {
+        id: "wrong-endowment-id".to_string(),
+        amount: Uint128::from(UST_AMT),
+        donor: Addr::unchecked(DONOR),
+        token: Addr::unchecked(DAO_TOKEN),
+    };
+    let err = execute(deps.as_mut(), mock_env(), info, donor_match_msg).unwrap_err();
+    assert!(
+        res.is_err(),
+        "This call should fail with \"Unauthorized\" error"
+    );
+
     // Fail the "donor_match" since did not send enough UST
+    let info = mock_info(ACCOUNTS_CONTRACT, &coins(30, "uusd"));
     let donor_match_msg = ExecuteMsg::DonorMatch {
         id: ENDOWMENT_ID.to_string(),
         amount: Uint128::from(UST_AMT),
         donor: Addr::unchecked(DONOR),
         token: Addr::unchecked(DAO_TOKEN),
     };
-    let info = mock_info(ENDOWMENT, &coins(30, "uusd"));
-
     let err = execute(deps.as_mut(), mock_env(), info, donor_match_msg).unwrap_err();
     assert_eq!(err, ContractError::InsufficientFunds {});
 
-    // Succeed the "donor_match" exeuction
+    // Happy Path for the "donor_match" exeuction should succeed
+    let info = mock_info(ACCOUNTS_CONTRACT, &coins(UST_AMT, "uusd"));
     let donor_match_msg = ExecuteMsg::DonorMatch {
         id: ENDOWMENT_ID.to_string(),
         amount: Uint128::from(UST_AMT),
         donor: Addr::unchecked(DONOR),
         token: Addr::unchecked(DAO_TOKEN),
     };
-    let info = mock_info(ENDOWMENT, &coins(UST_AMT, "uusd"));
 
     let res = execute(deps.as_mut(), mock_env(), info, donor_match_msg).unwrap();
     assert_eq!(res.messages.len(), 1);

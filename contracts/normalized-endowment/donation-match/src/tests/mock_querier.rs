@@ -37,7 +37,7 @@ pub enum QueryMsg {
     },
     // Mock the `registrar` endowment
     Endowment {
-        endowment_addr: String,
+        endowment_id: String,
     },
     // Mock the `registrar` config
     Config {},
@@ -263,8 +263,8 @@ impl WasmMockQuerier {
                     })
                     .unwrap(),
                 )),
-                QueryMsg::Endowment { endowment_addr } => {
-                    if endowment_addr != "endowment_contract".to_string() {
+                QueryMsg::Endowment { endowment_id } => {
+                    if endowment_id != "test-endowment-id".to_string() {
                         SystemResult::Err(SystemError::InvalidResponse {
                             error: "Query error".to_string(),
                             response: to_binary(&ContractError::Unauthorized {}.to_string())

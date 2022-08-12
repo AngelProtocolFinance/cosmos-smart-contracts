@@ -120,8 +120,11 @@ fn execute_donor_match(
         config.registrar_contract.clone(),
         &RegistrarQueryMsg::Config {},
     )?;
-    if info.sender.to_string() != registrar_config.accounts_contract.unwrap() {
-        return Err(ContractError::Unauthorized {});
+    let accounts_contract = registrar_config.accounts_contract.unwrap();
+    if info.sender.to_string() != accounts_contract {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Message must come from the Accounts Contract!".to_string(),
+        }));
     }
 
     // Validation 2. Check if the endowment stated is Approved / Active in Registrar
@@ -133,7 +136,9 @@ fn execute_donor_match(
     )?;
 
     if endow_detail.endowment.status != EndowmentStatus::Approved {
-        return Err(ContractError::Unauthorized {});
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Endowment is not approved in Registrar".to_string(),
+        }));
     }
 
     // Validation 3. Check that this contract's address matches that of the target
