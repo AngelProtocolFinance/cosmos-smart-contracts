@@ -10,6 +10,7 @@ pub struct MigrateMsg {}
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
+    pub accounts_code_id: Option<u64>,
     pub treasury: String,
     pub tax_rate: Decimal,
     pub default_vault: Option<Addr>,
@@ -53,7 +54,6 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateEndowmentMsg {
-    pub id: String,
     pub owner: String,
     pub beneficiary: String,
     pub withdraw_before_maturity: bool,
@@ -68,7 +68,7 @@ pub struct CreateEndowmentMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub accounts_contract: Option<String>,
+    pub accounts_code_id: Option<u64>,
     pub index_fund_contract: Option<String>,
     pub treasury: Option<String>,
     pub tax_rate: Option<Decimal>,
@@ -84,7 +84,6 @@ pub struct UpdateConfigMsg {
     pub cw4_code: Option<u64>,
     pub accepted_tokens_native: Option<Vec<String>>,
     pub accepted_tokens_cw20: Option<Vec<String>>,
-    pub account_id_char_limit: Option<usize>,
 }
 
 impl UpdateConfigMsg {
@@ -98,7 +97,7 @@ impl UpdateConfigMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentStatusMsg {
-    pub endowment_id: String,
+    pub endowment_addr: String,
     pub status: u8,
     pub beneficiary: Option<String>,
 }
@@ -114,7 +113,7 @@ pub struct VaultAddMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentEntryMsg {
-    pub endowment_id: String,
+    pub endowment_addr: String,
     pub name: Option<String>,
     pub logo: Option<String>,
     pub image: Option<String>,
@@ -141,7 +140,7 @@ pub enum QueryMsg {
     },
     // Get details of single Endowment
     Endowment {
-        endowment_id: String,
+        endowment_addr: String,
     },
     // Gets list of all registered Endowments
     EndowmentList {

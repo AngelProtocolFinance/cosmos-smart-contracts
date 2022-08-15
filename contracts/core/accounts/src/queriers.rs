@@ -1,8 +1,8 @@
-use crate::state::{CONFIG, ENDOWMENTS, REDEMPTIONS, STATES};
+use crate::state::{CONFIG, ENDOWMENT, PROFILE, STATE};
 use angel_core::messages::vault::QueryMsg as VaultQuerier;
 use angel_core::responses::accounts::*;
 use angel_core::structs::BalanceInfo;
-use cosmwasm_std::{to_binary, Deps, Env, Order, QueryRequest, StdResult, WasmQuery};
+use cosmwasm_std::{to_binary, Deps, Env, QueryRequest, StdResult, WasmQuery};
 use cw2::get_contract_version;
 use cw20::{Balance, Cw20CoinVerified};
 
@@ -13,11 +13,16 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         owner: config.owner.to_string(),
         version: get_contract_version(deps.storage)?.contract,
         registrar_contract: config.registrar_contract.to_string(),
+        deposit_approved: config.deposit_approved,
+        withdraw_approved: config.withdraw_approved,
+        pending_redemptions: config
+            .pending_redemptions
+            .map_or("".to_string(), |v| v.to_string()),
     })
 }
 
-pub fn query_state(deps: Deps, id: String) -> StdResult<StateResponse> {
-    let state = STATES.load(deps.storage, &id)?;
+pub fn query_state(deps: Deps) -> StdResult<StateResponse> {
+    let state = STATE.load(deps.storage)?;
 
     Ok(StateResponse {
         donations_received: state.donations_received,
@@ -28,9 +33,9 @@ pub fn query_state(deps: Deps, id: String) -> StdResult<StateResponse> {
     })
 }
 
-pub fn query_account_balance(deps: Deps, env: Env, id: String) -> StdResult<BalanceInfo> {
-    let endowment = ENDOWMENTS.load(deps.storage, &id)?;
-    let state = STATES.load(deps.storage, &id)?;
+pub fn query_account_balance(deps: Deps, env: Env) -> StdResult<BalanceInfo> {
+    let endowment = ENDOWMENT.load(deps.storage)?;
+    let state = STATE.load(deps.storage)?;
     // setup the basic response object w/ account's balances locked & liquid (held by this contract)
     let mut balances = state.balances;
     // add stategies' (locked) balances
@@ -51,10 +56,9 @@ pub fn query_account_balance(deps: Deps, env: Env, id: String) -> StdResult<Bala
     Ok(balances)
 }
 
-pub fn query_endowment_details(deps: Deps, id: String) -> StdResult<EndowmentDetailsResponse> {
+pub fn query_endowment_details(deps: Deps) -> StdResult<EndowmentDetailsResponse> {
     // this fails if no account is found
-    let endowment = ENDOWMENTS.load(deps.storage, &id)?;
-    let redemptions = REDEMPTIONS.load(deps.storage, &id)?;
+    let endowment = ENDOWMENT.load(deps.storage)?;
     Ok(EndowmentDetailsResponse {
         owner: endowment.owner,
         beneficiary: endowment.beneficiary,
@@ -64,14 +68,11 @@ pub fn query_endowment_details(deps: Deps, id: String) -> StdResult<EndowmentDet
         strategies: endowment.strategies,
         rebalance: endowment.rebalance,
         kyc_donors_only: endowment.kyc_donors_only,
-        deposit_approved: endowment.deposit_approved,
-        withdraw_approved: endowment.withdraw_approved,
-        pending_redemptions: redemptions,
     })
 }
 
-pub fn query_profile(deps: Deps, id: String) -> StdResult<ProfileResponse> {
-    let profile = ENDOWMENTS.load(deps.storage, &id)?.profile;
+pub fn query_profile(deps: Deps) -> StdResult<ProfileResponse> {
+    let profile = PROFILE.load(deps.storage)?;
     Ok(ProfileResponse {
         name: profile.name,
         overview: profile.overview,
@@ -90,11 +91,4 @@ pub fn query_profile(deps: Deps, id: String) -> StdResult<ProfileResponse> {
         annual_revenue: profile.annual_revenue,
         charity_navigator_rating: profile.charity_navigator_rating,
     })
-}
-
-pub fn query_all_ids(deps: Deps) -> StdResult<Vec<String>> {
-    Ok(ENDOWMENTS
-        .keys(deps.storage, None, None, Order::Ascending)
-        .map(|id| String::from(id.unwrap()))
-        .collect::<Vec<String>>())
 }

@@ -27,7 +27,7 @@ pub enum ContractError {
     #[error("No Balance for this account")]
     EmptyBalance {},
 
-    #[error("There is already an account for the given ID")]
+    #[error("There is already an account for the given address")]
     AlreadyInUse {},
 
     #[error("Token was not found in approved coins")]

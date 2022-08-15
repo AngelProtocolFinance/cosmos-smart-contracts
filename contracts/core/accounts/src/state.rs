@@ -1,6 +1,6 @@
 use angel_core::structs::{BalanceInfo, Profile, RebalanceDetails, StrategyComponent};
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
-use cw_storage_plus::{Item, Map};
+use cw_storage_plus::Item;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -9,22 +9,22 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub owner: Addr, // DANO/AP Team Address
     pub registrar_contract: Addr,
+    pub deposit_approved: bool, // DANO has approved to receive donations & transact
+    pub withdraw_approved: bool, // DANO has approved to withdraw funds
+    pub pending_redemptions: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Endowment {
-    pub owner: Addr,             // address that originally setup the endowment account
+    pub owner: Addr,       // address that originally setup the endowment account
     pub beneficiary: Addr, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
-    pub deposit_approved: bool, // DANO has approved to receive donations & transact
-    pub withdraw_approved: bool, // DANO has approved to withdraw funds
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
     pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
-    pub profile: Profile,
 }
 
 impl Endowment {
@@ -48,6 +48,6 @@ pub struct State {
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const STATES: Map<&str, State> = Map::new("states");
-pub const ENDOWMENTS: Map<&str, Endowment> = Map::new("endowments");
-pub const REDEMPTIONS: Map<&str, Option<u64>> = Map::new("redemptions");
+pub const STATE: Item<State> = Item::new("state");
+pub const ENDOWMENT: Item<Endowment> = Item::new("endowment");
+pub const PROFILE: Item<Profile> = Item::new("profile");
