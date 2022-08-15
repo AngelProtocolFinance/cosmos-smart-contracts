@@ -1,8 +1,12 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 66a83a6b812f3d9ce4816ee5793e7f218efebe29e193e13ddab5127f06add9b2  target/wasm32-unknown-unknown/release/accounts.wasm
 6f2b3d5664dbf39b477695cc36b6cc9c643af1c3257cc47259409e56fc209c0c  target/wasm32-unknown-unknown/release/cw3_endowment.wasm
 =======
 254dbe6a99b3ab5bffa7d4a4215cabad9a57224bace28987d2f26103af6fadb3  target/wasm32-unknown-unknown/release/accounts.wasm
+=======
+2ec3c788ad4945dbc486e0db19d43454fd375f0dfebccb82f9c544f39ffe47a2  target/wasm32-unknown-unknown/release/accounts.wasm
+>>>>>>> parent of 0916a14d (set fixed lower bound to id chars check)
 352a9ce7d071bff3cabda374056f70e2d098fc6cfb7948024df46a3cfb81460b  target/wasm32-unknown-unknown/release/cw3_endowment.wasm
 >>>>>>> parent of bc578b43 (add regex check for ID min len + char set match & add tests for mal-formed IDs)
 60a0a458e754e413e77840e111f73573d14263bd40d06ae10d6eb417c7051ebf  target/wasm32-unknown-unknown/release/cw3_multisig.wasm
