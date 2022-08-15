@@ -24,7 +24,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         cw3_code: config.cw3_code,
         cw4_code: config.cw4_code,
         accepted_tokens: config.accepted_tokens,
-        account_id_char_limit: config.account_id_char_limit,
     })
 }
 

@@ -47,7 +47,6 @@ pub fn instantiate(
         cw3_code: None,
         cw4_code: None,
         accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
-        account_id_char_limit: 20, // default to a resonable 20 chars limit
     };
 
     CONFIG.save(deps.storage, &configs)?;

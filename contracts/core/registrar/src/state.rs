@@ -28,7 +28,6 @@ pub struct Config {
     pub cw3_code: Option<u64>,
     pub cw4_code: Option<u64>,
     pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
-    pub account_id_char_limit: usize,
 }
 
 pub const REGISTRY: Map<&str, EndowmentEntry> = Map::new("registry");

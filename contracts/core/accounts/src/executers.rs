@@ -66,33 +66,24 @@ pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response
 pub fn create_endowment(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     msg: CreateEndowmentMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
+    if info.sender != config.registrar_contract {
+        return Err(ContractError::Unauthorized {});
+    }
 
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarConfig {})?,
-        }))?;
-
-    // check that the Endowment ID is of resonable length and that it
-    // contains only accepted character set: numbers, lowercase letters, and `-` char
-    let id = msg.id.to_lowercase();
-    if id.chars().count() > registrar_config.account_id_char_limit
-        || !Regex::new(r"^[a-z\d-]{3,}+$").unwrap().is_match(&id)
-    {
-        return Err(ContractError::Std(StdError::generic_err(format!(
-            "ID must be between 3 and {} chars. Must consist of: numbers, lowercase letters and hyphens.",
-            registrar_config.account_id_char_limit
-        ))));
+    // check that the Endowment ID is of resonable length (3 >= chars <= 20)
+    // let id_len = msg.id.chars().count();
+    if !Regex::new(r"^[a-z\d-]{3,25}+$").unwrap().is_match(&msg.id) {
+        return Err(ContractError::InvalidInputs {});
     }
 
     let owner = deps.api.addr_validate(&msg.owner)?;
     let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
     // try to store the endowment, fail if the ID is already in use
-    ENDOWMENTS.update(deps.storage, &id, |existing| match existing {
+    ENDOWMENTS.update(deps.storage, &msg.id, |existing| match existing {
         Some(_) => Err(ContractError::AlreadyInUse {}),
         None => Ok(Endowment {
             deposit_approved: false,
@@ -108,10 +99,10 @@ pub fn create_endowment(
             profile: msg.profile.clone(),
         }),
     })?;
-    REDEMPTIONS.save(deps.storage, &id, &None)?;
+    REDEMPTIONS.save(deps.storage, &msg.id, &None)?;
     STATES.save(
         deps.storage,
-        &id,
+        &msg.id,
         &State {
             donations_received: Uint128::zero(),
             balances: BalanceInfo::default(),
@@ -122,7 +113,7 @@ pub fn create_endowment(
 
     // initial default Response to add submessages to
     let mut res = Response::new().add_attributes(vec![
-        attr("endow_id", id.clone()),
+        attr("endow_id", msg.id.clone()),
         attr("endow_name", msg.profile.name),
         attr("endow_type", msg.profile.endow_type.to_string()),
         attr(
@@ -143,6 +134,11 @@ pub fn create_endowment(
         ),
     ]);
 
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarConfig {})?,
+        }))?;
     if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {
         return Err(ContractError::Std(StdError::generic_err(
             "cw3_code & cw4_code must exist",
