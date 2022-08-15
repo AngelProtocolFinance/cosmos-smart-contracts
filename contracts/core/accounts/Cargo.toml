@@ -33,6 +33,7 @@ schemars = "0.8.1"
 serde = { version = "1.0.125", default-features = false, features = ["derive"] }
 thiserror = "1.0.24"
 cw-asset = "2.2.0"
+regex = "1"
 
 [dev-dependencies]
 cosmwasm-schema = "1.0.0"

@@ -66,7 +66,7 @@ fn create_endowment() -> (
         owner_sc: AP_TEAM.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
     };
-    let info = mock_info(AP_TEAM, &coins(100000, "earth"));
+    let info = mock_info(REGISTRAR_CONTRACT, &coins(100000, "earth"));
     let env = mock_env();
     let _res = instantiate(deps.as_mut(), env.clone(), info.clone(), instantiate_msg).unwrap();
     let _ = execute(
