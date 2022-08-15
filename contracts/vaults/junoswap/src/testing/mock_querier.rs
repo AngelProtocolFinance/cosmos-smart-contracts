@@ -203,7 +203,6 @@ impl WasmMockQuerier {
                             native: vec![],
                             cw20: vec![],
                         },
-                        account_id_char_limit: 10,
                     })
                     .unwrap(),
                 )),

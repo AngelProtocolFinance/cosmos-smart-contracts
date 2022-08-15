@@ -183,7 +183,7 @@ pub fn execute(
         // Cw20_base entries
         ExecuteMsg::Transfer { recipient, amount } => {
             cw20_base::contract::execute_transfer(deps, env, info, recipient, amount)
-                .map_err(|e| e.into())
+                .map_err(|e| ContractError::from(e))
         }
         ExecuteMsg::Send {
             contract,
