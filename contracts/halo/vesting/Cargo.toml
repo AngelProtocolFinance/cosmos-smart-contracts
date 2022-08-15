@@ -13,10 +13,10 @@ backtraces = ["cosmwasm-std/backtraces"]
 library = []
 
 [dependencies]
-cw20 = "0.13.4"
+cw20 = "0.14.0"
 cosmwasm-std = { version = "1.0.0", features = ["iterator"] }
 cosmwasm-storage = { version = "1.0.0", features = ["iterator"] }
-cw-storage-plus = "0.13.4"
+cw-storage-plus = "0.14.0"
 schemars = "0.8.1"
 serde = { version = "1.0.125", default-features = false, features = ["derive"] }
 halo-token = { path = "../../../packages/halo_token" }
