@@ -29,7 +29,7 @@ pub struct EndowmentListResponse {
 pub struct ConfigResponse {
     pub owner: String,
     pub version: String,
-    pub accounts_code_id: u64,
+    pub accounts_contract: Option<String>,
     pub treasury: String,
     pub tax_rate: Decimal,
     pub default_vault: Option<String>,

@@ -13,16 +13,6 @@ pub struct MigrateMsg {}
 pub struct InstantiateMsg {
     pub owner_sc: String,
     pub registrar_contract: String,
-    pub owner: String,       // address that originally setup the endowment account
-    pub beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
-    pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
-    pub maturity_time: Option<u64>,     // datetime int of endowment maturity
-    pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
-    pub profile: Profile,               // struct holding the Endowment info
-    pub cw4_members: Vec<Member>,
-    pub kyc_donors_only: bool,
-    pub cw3_threshold: Threshold,
-    pub cw3_max_voting_period: Duration,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -35,18 +25,25 @@ pub enum ExecuteMsg {
     // NOTE: Atm, the "vault" logic is not fixed.
     //       Hence, it SHOULD be updated when the "vault" logic is implemented.
     Withdraw {
+        id: String,
         beneficiary: String,
         sources: Vec<FundingSource>,
     },
     WithdrawLiquid {
+        id: String,
         beneficiary: String,
         assets: GenericBalance,
     },
     // Tokens are sent back to an Account from an Asset Vault
-    VaultReceipt {},
+    VaultReceipt {
+        id: String,
+    },
+    // create a new endowment
+    CreateEndowment(CreateEndowmentMsg),
     // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.
     // If not provided, looks up the Index Fund an Endowment is tied to to donates the funds to it.
     CloseEndowment {
+        id: String,
         beneficiary: Option<String>, // Optional Addr of the Beneficiary to receive funds
     },
     // update owner addr
@@ -63,6 +60,7 @@ pub enum ExecuteMsg {
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Replace an Account's Strategy with that given.
     UpdateStrategies {
+        id: String,
         strategies: Vec<Strategy>,
     },
     // Update Endowment profile
@@ -70,7 +68,19 @@ pub enum ExecuteMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateConfigMsg {}
+pub struct CreateEndowmentMsg {
+    pub id: String,    // human-readable ID for the endowment (allows for nicer URL slugs!)
+    pub owner: String, // address that originally setup the endowment account
+    pub beneficiary: String, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
+    pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
+    pub maturity_time: Option<u64>,     // datetime int of endowment maturity
+    pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
+    pub profile: Profile,               // struct holding the Endowment info
+    pub cw4_members: Vec<Member>,
+    pub kyc_donors_only: bool,
+    pub cw3_threshold: Threshold,
+    pub cw3_max_voting_period: Duration,
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Strategy {
@@ -80,12 +90,14 @@ pub struct Strategy {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentSettingsMsg {
+    pub id: String,
     pub owner: String,
     pub kyc_donors_only: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentStatusMsg {
+    pub id: String,
     pub deposit_approved: bool,
     pub withdraw_approved: bool,
 }
@@ -96,28 +108,32 @@ pub enum ReceiveMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     // Tokens are sent back to an Account from a Vault
-    VaultReceipt {},
+    VaultReceipt { id: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct DepositMsg {
+    pub id: String,
     pub locked_percentage: Decimal,
     pub liquid_percentage: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct RedeemMsg {
+    pub id: String,
     pub sources: Vec<FundingSource>,
     // pub reinvest: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct WithdrawMsg {
+    pub id: String,
     pub sources: Vec<FundingSource>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateProfileMsg {
+    pub id: String,
     pub name: Option<String>,
     pub overview: Option<String>,
     pub un_sdg: Option<u64>,
@@ -143,14 +159,16 @@ pub struct UpdateProfileMsg {
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get the balance of available UST and the invested portion balances
-    Balance {},
+    Balance { id: String },
     // Get state details (like total donations received so far)
-    State {},
+    State { id: String },
     // Get all Config details for the contract
     // Returns ConfigResponse
     Config {},
     // Get all Endowment details
-    Endowment {},
+    Endowment { id: String },
     // Get the profile info
-    GetProfile {},
+    GetProfile { id: String },
+    // Get a list of all endowments IDs
+    GetAllIds {},
 }
