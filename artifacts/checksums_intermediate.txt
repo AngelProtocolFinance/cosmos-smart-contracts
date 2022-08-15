@@ -1,5 +1,6 @@
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 66a83a6b812f3d9ce4816ee5793e7f218efebe29e193e13ddab5127f06add9b2  target/wasm32-unknown-unknown/release/accounts.wasm
 6f2b3d5664dbf39b477695cc36b6cc9c643af1c3257cc47259409e56fc209c0c  target/wasm32-unknown-unknown/release/cw3_endowment.wasm
 =======
@@ -7,6 +8,9 @@
 =======
 2ec3c788ad4945dbc486e0db19d43454fd375f0dfebccb82f9c544f39ffe47a2  target/wasm32-unknown-unknown/release/accounts.wasm
 >>>>>>> parent of 0916a14d (set fixed lower bound to id chars check)
+=======
+b33ba3e7aade4e5814394d08f035f89f845a72f1d16df2f275c612a9a8c0005f  target/wasm32-unknown-unknown/release/accounts.wasm
+>>>>>>> parent of a5ec4d2e (rebuild wasms)
 352a9ce7d071bff3cabda374056f70e2d098fc6cfb7948024df46a3cfb81460b  target/wasm32-unknown-unknown/release/cw3_endowment.wasm
 >>>>>>> parent of bc578b43 (add regex check for ID min len + char set match & add tests for mal-formed IDs)
 60a0a458e754e413e77840e111f73573d14263bd40d06ae10d6eb417c7051ebf  target/wasm32-unknown-unknown/release/cw3_multisig.wasm
@@ -20,9 +24,14 @@ fa2b7045ea9ad981ed0c4f1061c9d5abcaafd4645a8d9958899505ce37b067ee  target/wasm32-
 69b3004771576312c7a8c22a2544cfccefa3946ac4d6dbc63cde5b1a20f3ce10  target/wasm32-unknown-unknown/release/halo_staking.wasm
 0d8a5378a2e489de9e3a2ed3345f233af358defa843b17994c8aafc8c14fdb18  target/wasm32-unknown-unknown/release/halo_vesting.wasm
 <<<<<<< HEAD
+<<<<<<< HEAD
 bd585f52fafe15174ebc1424c209a5f6f5158102e0866f0d1b9db5e6d24c09f4  target/wasm32-unknown-unknown/release/index_fund.wasm
 a1c58e480a7ecaa5a4c4028b5be40ae6207640b00ccfa14f856656bc46d23620  target/wasm32-unknown-unknown/release/registrar.wasm
 =======
 b320534585aaab3410c227ce31e94c776ecaded288fef55b01841a418eec3dc6  target/wasm32-unknown-unknown/release/index_fund.wasm
 972f6146ab07c61cbcc61cb03a7bddcb2be32f844e0770cf38bb9b5de235ae87  target/wasm32-unknown-unknown/release/registrar.wasm
 >>>>>>> parent of bc578b43 (add regex check for ID min len + char set match & add tests for mal-formed IDs)
+=======
+988f2ce8c4cb3126e8e2f76ff3bfcc30de3a6823c180e83d60eb713da01cc019  target/wasm32-unknown-unknown/release/index_fund.wasm
+b03790d800f6e988ef348f25e3e2514fa6a830ffd62f3dad700ce4bad8e19afe  target/wasm32-unknown-unknown/release/registrar.wasm
+>>>>>>> parent of a5ec4d2e (rebuild wasms)
