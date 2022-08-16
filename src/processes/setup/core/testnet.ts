@@ -284,14 +284,13 @@ async function createEndowments(
       cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
-  let endow_id = charityResult1.logs[0].events
+  endow_1_id = parseInt(charityResult1.logs[0].events
     .find((event) => {
       return event.type == "wasm";
     })
     ?.attributes.find((attribute) => {
       return attribute.key == "endow_id";
-    })?.value as string;
-  endow_1_id = parseInt(endow_id);
+    })?.value as string);
   console.log(
     chalk.green(" Done!"),
     `${chalk.blue("Endowment_ID")}=${endow_1_id}`
@@ -336,14 +335,13 @@ async function createEndowments(
       cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
-  endow_id = charityResult2.logs[0].events
+  endow_2_id = parseInt(charityResult2.logs[0].events
     .find((event) => {
       return event.type == "wasm";
     })
     ?.attributes.find((attribute) => {
       return attribute.key == "endow_id";
-    })?.value as string;
-  endow_2_id = parseInt(endow_id);
+    })?.value as string);
   console.log(
     chalk.green(" Done!"),
     `${chalk.blue("Endowment_ID")}=${endow_2_id}`
@@ -388,14 +386,13 @@ async function createEndowments(
       cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
-  endow_id = charityResult3.logs[0].events
+  endow_3_id = parseInt(charityResult3.logs[0].events
     .find((event) => {
       return event.type == "wasm";
     })
     ?.attributes.find((attribute) => {
       return attribute.key == "endow_id";
-    })?.value as string;
-  endow_3_id = parseInt(endow_id);
+    })?.value as string);
   console.log(
     chalk.green(" Done!"),
     `${chalk.blue("Endowment_ID")}=${endow_3_id}`
@@ -439,14 +436,13 @@ async function createEndowments(
       cw3_max_voting_period: charity_cw3_max_voting_period,
     }
   });
-  endow_id = charityResult4.logs[0].events
+  endow_4_id = parseInt(charityResult4.logs[0].events
     .find((event) => {
       return event.type == "wasm";
     })
     ?.attributes.find((attribute) => {
       return attribute.key == "endow_id";
-    })?.value as string;
-  endow_4_id = parseInt(endow_id);
+    })?.value as string);
   console.log(
     chalk.green(" Done!"),
     `${chalk.blue("Endowment_ID")}=${endow_4_id}`
