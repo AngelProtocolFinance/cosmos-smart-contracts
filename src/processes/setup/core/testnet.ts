@@ -25,15 +25,17 @@ let apTeam2Addr: string;
 let apTreasuryAddr: string;
 
 let registrar: string;
+let accounts: string;
 let cw4GrpApTeam: string;
 let cw3ApTeam: string;
 let indexFund: string;
-let endowmentContract1: string;
-let endowmentContract2: string;
-let endowmentContract3: string;
-let endowmentContract4: string;
 let vault1: string;
 let vault2: string;
+
+let endow_1_id: number;
+let endow_2_id: number;
+let endow_3_id: number;
+let endow_4_id: number;
 
 // -------------------------------------------------------------------------------------
 // setup all contracts for LocalJuno and TestNet
@@ -93,10 +95,10 @@ export async function setupCore(
   // if (!config.is_localjuno) {
   //   await createVaults(config.harvest_to_liquid, config.tax_per_block);
   // }
-  await turnOverApTeamMultisig(config.is_localjuno);
+  await turnOverApTeamMultisig();
   await createEndowments(
-    config.charity_cw3_threshold_abs_perc,
-    config.charity_cw3_max_voting_period,
+    config.threshold_absolute_percentage,
+    config.max_voting_period_height,
   );
   await approveEndowments();
   await createIndexFunds();
@@ -148,14 +150,10 @@ async function setup(
     registrarCodeId,
     {
       tax_rate,
-      accounts_code_id: accountsCodeId,
       treasury: treasury_address,
       default_vault: apTeamAddr, // Fake vault address from apTeam
       split_to_liquid: undefined,
-      accepted_tokens: {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
-        cw20: [],
-      }
+      accepted_tokens: accepted_tokens,
     }
   );
   registrar = registrarResult.contractAddress as string;
@@ -214,10 +212,24 @@ async function setup(
   });
   console.log(chalk.green(" Done!"));
 
+  process.stdout.write("Instantiating the Accounts contract");
+  const accountsResult = await instantiateContract(
+    juno,
+    apTeamAddr,
+    apTeamAddr,
+    accountsCodeId,
+    {
+      owner_sc: apTeamAddr,
+      registrar_contract: registrar,
+    }
+  );
+  accounts = accountsResult.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${accounts}`);
+
   process.stdout.write("Update Registrar's config with various wasm codes & contracts");
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_config: {
-      accounts_code_id: accountsCodeId,
+      accounts_contract: accounts,
       index_fund_contract: indexFund,
       cw3_code: cw3MultiSigEndowment,
       cw4_code: cw4Group,
@@ -252,7 +264,8 @@ async function createEndowments(
         image: "image1",
         url: undefined,
         registration_number: undefined,
-        country_city_origin: undefined,
+        country_of_origin: undefined,
+        street_address: undefined,
         contact_email: undefined,
         social_media_urls: {
           facebook: undefined,
@@ -271,16 +284,17 @@ async function createEndowments(
       cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
-  endowmentContract1 = charityResult1.logs[0].events
+  let endow_id = charityResult1.logs[0].events
     .find((event) => {
-      return event.type == "instantiate";
+      return event.type == "wasm";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "_contract_address";
+      return attribute.key == "endow_id";
     })?.value as string;
+  endow_1_id = parseInt(endow_id);
   console.log(
     chalk.green(" Done!"),
-    `${chalk.blue("contractAddress")}=${endowmentContract1}`
+    `${chalk.blue("Endowment_ID")}=${endow_1_id}`
   );
 
   // endowment #2
@@ -302,7 +316,8 @@ async function createEndowments(
         image: "image2",
         url: undefined,
         registration_number: undefined,
-        country_city_origin: undefined,
+        country_of_origin: undefined,
+        street_address: undefined,
         contact_email: undefined,
         social_media_urls: {
           facebook: undefined,
@@ -321,16 +336,17 @@ async function createEndowments(
       cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
-  endowmentContract2 = charityResult2.logs[0].events
+  endow_id = charityResult2.logs[0].events
     .find((event) => {
-      return event.type == "instantiate";
+      return event.type == "wasm";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "_contract_address";
+      return attribute.key == "endow_id";
     })?.value as string;
+  endow_2_id = parseInt(endow_id);
   console.log(
     chalk.green(" Done!"),
-    `${chalk.blue("contractAddress")}=${endowmentContract2}`
+    `${chalk.blue("Endowment_ID")}=${endow_2_id}`
   );
 
   // endowment #3
@@ -352,7 +368,8 @@ async function createEndowments(
         image: "image3",
         url: undefined,
         registration_number: undefined,
-        country_city_origin: undefined,
+        country_of_origin: undefined,
+        street_address: undefined,
         contact_email: undefined,
         social_media_urls: {
           facebook: undefined,
@@ -371,16 +388,17 @@ async function createEndowments(
       cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
-  endowmentContract3 = charityResult3.logs[0].events
+  endow_id = charityResult3.logs[0].events
     .find((event) => {
-      return event.type == "instantiate";
+      return event.type == "wasm";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "_contract_address";
+      return attribute.key == "endow_id";
     })?.value as string;
+  endow_3_id = parseInt(endow_id);
   console.log(
     chalk.green(" Done!"),
-    `${chalk.blue("contractAddress")}=${endowmentContract3}`
+    `${chalk.blue("Endowment_ID")}=${endow_3_id}`
   );
 
   // endowment #4
@@ -401,7 +419,8 @@ async function createEndowments(
         image: "image4",
         url: undefined,
         registration_number: undefined,
-        country_city_origin: undefined,
+        country_of_origin: undefined,
+        street_address: undefined,
         contact_email: undefined,
         social_media_urls: {
           facebook: undefined,
@@ -420,16 +439,17 @@ async function createEndowments(
       cw3_max_voting_period: charity_cw3_max_voting_period,
     }
   });
-  endowmentContract4 = charityResult4.logs[0].events
+  endow_id = charityResult4.logs[0].events
     .find((event) => {
-      return event.type == "instantiate";
+      return event.type == "wasm";
     })
     ?.attributes.find((attribute) => {
-      return attribute.key == "_contract_address";
+      return attribute.key == "endow_id";
     })?.value as string;
+  endow_4_id = parseInt(endow_id);
   console.log(
     chalk.green(" Done!"),
-    `${chalk.blue("contractAddress")}=${endowmentContract4}`
+    `${chalk.blue("Endowment_ID")}=${endow_4_id}`
   );
 }
 
@@ -438,21 +458,21 @@ async function approveEndowments(): Promise<void> {
   process.stdout.write("AP Team approves 3 of 4 endowments");
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_endowment_status: {
-      endowment_addr: endowmentContract1,
+      endowment_id: endow_1_id,
       status: 1,
       beneficiary: undefined,
     }
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_endowment_status: {
-      endowment_addr: endowmentContract2,
+      endowment_id: endow_2_id,
       status: 1,
       beneficiary: undefined,
     }
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     update_endowment_status: {
-      endowment_addr: endowmentContract4,
+      endowment_id: endow_4_id,
       status: 1,
       beneficiary: undefined,
     }
@@ -468,7 +488,7 @@ async function createIndexFunds(): Promise<void> {
       create_fund: {
         name: "Test Fund",
         description: "My first test fund",
-        members: [endowmentContract1, endowmentContract2],
+        members: [endow_1_id, endow_2_id],
         rotating_fund: true,
         split_to_liquid: undefined,
         expiry_time: undefined,
@@ -479,7 +499,7 @@ async function createIndexFunds(): Promise<void> {
       create_fund: {
         name: "Test Fund #2",
         description: "Another fund to test rotations",
-        members: [endowmentContract1, endowmentContract4],
+        members: [endow_1_id, endow_4_id],
         rotating_fund: true,
         split_to_liquid: undefined,
         expiry_time: undefined,
@@ -565,7 +585,7 @@ async function createVaults(
 }
 
 // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
-async function turnOverApTeamMultisig(is_localjuno: boolean): Promise<void> {
+async function turnOverApTeamMultisig(): Promise<void> {
   process.stdout.write(
     "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract"
   );
@@ -579,17 +599,5 @@ async function turnOverApTeamMultisig(is_localjuno: boolean): Promise<void> {
   await sendTransaction(juno, apTeamAddr, indexFund, {
     update_owner: { new_owner: cw3ApTeam }
   });
-  console.log(chalk.green(" Done!"));
-  
-  // if (!is_localjuno) {
-  //   await sendTransaction(juno, apTeamAddr, vault1, {
-  //     update_owner: { new_owner: cw3ApTeam }
-  //   });
-  //   process.stdout.write(chalk.yellow("\n- Turning over Vault 1"));
-  //   await sendTransaction(juno, apTeamAddr, vault2, {
-  //     update_owner: { new_owner: cw3ApTeam }
-  //   });
-  //   process.stdout.write(chalk.yellow("\n- Turning over Vault 2"));
-  // }
   console.log(chalk.green(" Done!"));
 }
