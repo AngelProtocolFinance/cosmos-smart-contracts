@@ -53,7 +53,6 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateEndowmentMsg {
-    pub id: String,
     pub owner: String,
     pub beneficiary: String,
     pub withdraw_before_maturity: bool,
@@ -97,7 +96,7 @@ impl UpdateConfigMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentStatusMsg {
-    pub endowment_id: String,
+    pub endowment_id: u32,
     pub status: u8,
     pub beneficiary: Option<String>,
 }
@@ -113,13 +112,13 @@ pub struct VaultAddMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentEntryMsg {
-    pub endowment_id: String,
+    pub endowment_id: u32,
     pub name: Option<String>,
     pub logo: Option<String>,
     pub image: Option<String>,
     pub owner: Option<String>,
     pub tier: Option<Option<Tier>>,
-    pub un_sdg: Option<Option<u64>>,
+    pub un_sdg: Option<Option<u8>>,
     pub endow_type: Option<EndowmentType>,
 }
 
@@ -140,7 +139,7 @@ pub enum QueryMsg {
     },
     // Get details of single Endowment
     Endowment {
-        endowment_id: String,
+        endowment_id: u32,
     },
     // Gets list of all registered Endowments
     EndowmentList {
@@ -148,7 +147,7 @@ pub enum QueryMsg {
         name: Option<Option<String>>,
         owner: Option<String>,
         tier: Option<Option<String>>,
-        un_sdg: Option<Option<u64>>,
+        un_sdg: Option<Option<u8>>,
         endow_type: Option<String>,
     },
     // Get all Config details for the contract

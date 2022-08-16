@@ -14,7 +14,7 @@ use cw_utils::Duration;
 
 fn build_account_status_change_msg(
     accounts: String,
-    id: String,
+    id: u32,
     deposit: bool,
     withdraw: bool,
 ) -> SubMsg {
@@ -55,7 +55,7 @@ pub fn update_endowment_status(
 
     // look up the endowment in the Registry. Will fail if doesn't exist
     let endowment_id = msg.endowment_id;
-    let mut endowment_entry = REGISTRY.load(deps.storage, &endowment_id)?;
+    let mut endowment_entry = REGISTRY.load(deps.storage, endowment_id)?;
 
     let msg_endowment_status = match msg.status {
         0 => EndowmentStatus::Inactive,
@@ -77,7 +77,7 @@ pub fn update_endowment_status(
 
     // update entry status & save to the Registry
     endowment_entry.status = msg_endowment_status.clone();
-    REGISTRY.save(deps.storage, &endowment_id, &endowment_entry)?;
+    REGISTRY.save(deps.storage, endowment_id, &endowment_entry)?;
 
     // Take different actions on the affected Accounts SC, based on the status passed
     // Build out list of SubMsgs to send to the Account SC and/or Index Fund SC
@@ -122,7 +122,7 @@ pub fn update_endowment_status(
                 contract_addr: index_fund_contract.to_string(),
                 msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
                     angel_core::messages::index_fund::RemoveMemberMsg {
-                        member: accounts_contract.clone(),
+                        member: msg.endowment_id,
                     },
                 ))
                 .unwrap(),
@@ -258,19 +258,22 @@ pub fn create_endowment(
         Some(accounts_contract) => {
             let wasm_msg = WasmMsg::Execute {
                 contract_addr: accounts_contract.to_string(),
-                msg: to_binary(&angel_core::messages::accounts::CreateEndowmentMsg {
-                    id: msg.id,
-                    owner: msg.owner,
-                    beneficiary: msg.beneficiary,
-                    withdraw_before_maturity: msg.withdraw_before_maturity,
-                    maturity_time: msg.maturity_time,
-                    maturity_height: msg.maturity_height,
-                    profile: msg.profile,
-                    cw4_members: msg.cw4_members,
-                    kyc_donors_only: msg.kyc_donors_only,
-                    cw3_threshold: msg.cw3_threshold,
-                    cw3_max_voting_period: Duration::Time(msg.cw3_max_voting_period),
-                })?,
+                msg: to_binary(
+                    &angel_core::messages::accounts::ExecuteMsg::CreateEndowment(
+                        angel_core::messages::accounts::CreateEndowmentMsg {
+                            owner: msg.owner,
+                            beneficiary: msg.beneficiary,
+                            withdraw_before_maturity: msg.withdraw_before_maturity,
+                            maturity_time: msg.maturity_time,
+                            maturity_height: msg.maturity_height,
+                            profile: msg.profile,
+                            cw4_members: msg.cw4_members,
+                            kyc_donors_only: msg.kyc_donors_only,
+                            cw3_threshold: msg.cw3_threshold,
+                            cw3_max_voting_period: Duration::Time(msg.cw3_max_voting_period),
+                        },
+                    ),
+                )?,
                 funds: vec![],
             };
 
@@ -376,19 +379,19 @@ pub fn new_accounts_reply(
 ) -> Result<Response, ContractError> {
     match msg {
         SubMsgResult::Ok(subcall) => {
-            let mut endowment_id = String::from("");
+            let mut endowment_id: u32 = 0;
             let mut endowment_name = String::from("");
             let mut endowment_owner = String::from("");
             let mut endowment_type = String::from("");
             let mut endowment_logo = String::from("");
             let mut endowment_image = String::from("");
-            let mut endowment_tier: u64 = 0;
-            let mut endowment_un_sdg: u64 = 0;
+            let mut endowment_tier: u8 = 0;
+            let mut endowment_un_sdg: u8 = 0;
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
                         if attrb.key == "endow_id" {
-                            endowment_id = attrb.value.clone();
+                            endowment_id = attrb.value.clone().parse().unwrap();
                         }
                         if attrb.key == "endow_name" {
                             endowment_name = attrb.value.clone();
@@ -417,7 +420,7 @@ pub fn new_accounts_reply(
             // Register the new Endowment on success Reply
             REGISTRY.save(
                 deps.storage,
-                &endowment_id,
+                endowment_id,
                 &EndowmentEntry {
                     id: endowment_id.clone(),
                     owner: endowment_owner.clone(),
@@ -441,7 +444,7 @@ pub fn new_accounts_reply(
             )?;
             Ok(Response::default().add_attributes(vec![
                 attr("reply", "create_endowment"),
-                attr("addr", endowment_id.clone()),
+                attr("endowment_id", endowment_id.to_string()),
                 attr("owner", endowment_owner),
             ]))
         }
@@ -500,17 +503,13 @@ pub fn update_endowment_entry(
     info: MessageInfo,
     msg: UpdateEndowmentEntryMsg,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    // look up the endowment in the Registry. Will fail if doesn't exist
+    let mut endowment_entry = REGISTRY.load(deps.storage, msg.endowment_id)?;
 
-    if info.sender.ne(&config.owner)
-        && info.sender.ne(&deps.api.addr_validate(&msg.endowment_id)?)
-    {
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender.ne(&config.owner) && info.sender.ne(&endowment_entry.owner) {
         return Err(ContractError::Unauthorized {});
     }
-
-    // look up the endowment in the Registry. Will fail if doesn't exist
-    let endowment_id = msg.endowment_id;
-    let mut endowment_entry = REGISTRY.load(deps.storage, &endowment_id)?;
 
     endowment_entry.name = msg.name;
     endowment_entry.owner = msg.owner.unwrap_or(endowment_entry.owner);
@@ -522,7 +521,7 @@ pub fn update_endowment_entry(
         endowment_entry.tier = tier;
     }
 
-    REGISTRY.save(deps.storage, &endowment_id, &endowment_entry)?;
+    REGISTRY.save(deps.storage, msg.endowment_id, &endowment_entry)?;
 
     Ok(Response::new().add_attribute("action", "update_endowment_entry"))
 }

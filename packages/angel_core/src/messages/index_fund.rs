@@ -37,7 +37,7 @@ pub enum ExecuteMsg {
     CreateFund {
         name: String,
         description: String,
-        members: Vec<String>,
+        members: Vec<u32>,
         rotating_fund: Option<bool>,
         split_to_liquid: Option<Decimal>,
         expiry_time: Option<u64>,
@@ -50,8 +50,8 @@ pub enum ExecuteMsg {
     // updates the members in a given index fund
     UpdateMembers {
         fund_id: u64,
-        add: Vec<String>,
-        remove: Vec<String>,
+        add: Vec<u32>,
+        remove: Vec<u32>,
     },
     // directly receive native tokens
     Deposit(DepositMsg),
@@ -67,7 +67,7 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct RemoveMemberMsg {
-    pub member: String,
+    pub member: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -119,9 +119,9 @@ pub enum QueryMsg {
     FundDetails {
         fund_id: u64,
     },
-    // get all funds a given Accounts SC address is involved with
+    // get all funds a given Endowment ID is involved with
     InvolvedFunds {
-        address: String,
+        endowment_id: u32,
     },
     // return details on the currently active fund
     ActiveFundDetails {},

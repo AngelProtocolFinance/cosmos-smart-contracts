@@ -7,15 +7,12 @@ use angel_core::structs::{
     SplitDetails, Tier,
 };
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{
-    coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply, SubMsgResponse, SubMsgResult,
-    WasmMsg,
-};
+use cosmwasm_std::{coins, from_binary, Addr, Decimal, Event, Reply, SubMsgResponse, SubMsgResult};
 use cw_utils::Threshold;
 
 const MOCK_CW3_CODE_ID: u64 = 18;
 const MOCK_CW4_CODE_ID: u64 = 19;
-const CHARITY_ID: &str = "good-charity-1";
+const CHARITY_ID: u32 = 1;
 
 #[test]
 fn proper_initialization() {
@@ -144,7 +141,7 @@ fn anyone_can_create_endowment_accounts() {
     // meet the cast of characters
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let good_charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
-    let good_endowment_addr = "terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9".to_string();
+    let _good_endowment_addr = "terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9".to_string();
     let default_vault_addr = "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg".to_string();
     let index_fund_contract = "terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d".to_string();
 
@@ -218,7 +215,6 @@ fn anyone_can_create_endowment_accounts() {
     };
 
     let create_endowment_msg = CreateEndowmentMsg {
-        id: CHARITY_ID.to_string(),
         owner: good_charity_addr.clone(),
         beneficiary: good_charity_addr.clone(),
         withdraw_before_maturity: false,
@@ -274,10 +270,7 @@ fn anyone_can_create_endowment_accounts() {
     )
     .unwrap();
     let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        endowment_list_response.endowments[0].id,
-        CHARITY_ID.to_string()
-    );
+    assert_eq!(endowment_list_response.endowments[0].id, CHARITY_ID);
     assert_eq!(
         endowment_list_response.endowments[0].status,
         EndowmentStatus::Inactive
@@ -285,7 +278,7 @@ fn anyone_can_create_endowment_accounts() {
 
     // let's test update endowment method by admin
     let update_endowment_entry_msg = UpdateEndowmentEntryMsg {
-        endowment_id: CHARITY_ID.to_string(),
+        endowment_id: CHARITY_ID,
         name: None,
         owner: None,
         tier: Some(Some(Tier::Level1)),
@@ -306,7 +299,7 @@ fn anyone_can_create_endowment_accounts() {
     assert_eq!(0, res.messages.len());
 
     let update_endowment_status_msg = UpdateEndowmentStatusMsg {
-        endowment_id: CHARITY_ID.to_string(),
+        endowment_id: CHARITY_ID,
         status: 1,
         beneficiary: None,
     };
@@ -336,10 +329,7 @@ fn anyone_can_create_endowment_accounts() {
     )
     .unwrap();
     let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        endowment_list_response.endowments[0].id,
-        CHARITY_ID.to_string()
-    );
+    assert_eq!(endowment_list_response.endowments[0].id, CHARITY_ID);
     assert_eq!(
         endowment_list_response.endowments[0].tier,
         Some(Tier::Level1)

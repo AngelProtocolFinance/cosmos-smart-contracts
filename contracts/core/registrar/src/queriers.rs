@@ -46,9 +46,9 @@ pub fn query_vault_list(
 
 pub fn query_endowment_details(
     deps: Deps,
-    endowment_id: String,
+    endowment_id: u32,
 ) -> StdResult<EndowmentDetailResponse> {
-    let endowment = REGISTRY.load(deps.storage, &endowment_id)?;
+    let endowment = REGISTRY.load(deps.storage, endowment_id)?;
     Ok(EndowmentDetailResponse { endowment })
 }
 
@@ -56,10 +56,10 @@ pub fn query_endowment_list(
     deps: Deps,
     name: Option<Option<String>>,
     owner: Option<String>,
-    status: Option<String>,       // String -> EndowmentStatus
-    tier: Option<Option<String>>, // String -> Tier
-    un_sdg: Option<Option<u64>>,  // u64 -> UN SDG
-    endow_type: Option<String>,   // String -> EndowmentType
+    status: Option<String>, // EndowmentStatus
+    tier: Option<Option<String>>,
+    un_sdg: Option<Option<u8>>, // UN SDG
+    endow_type: Option<String>, // EndowmentType
 ) -> StdResult<EndowmentListResponse> {
     let endowments = read_registry_entries(deps.storage)?;
     let endowments = match name {

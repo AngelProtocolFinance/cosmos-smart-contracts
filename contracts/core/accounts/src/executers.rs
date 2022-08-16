@@ -1,4 +1,4 @@
-use crate::state::{Endowment, State, CONFIG, ENDOWMENTS, REDEMPTIONS, STATES};
+use crate::state::{Endowment, State, CONFIG, ENDOWMENTS, STATES};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -30,12 +30,11 @@ use cosmwasm_std::{
 use cw20::{Balance, Cw20CoinVerified};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfoBase};
-use regex::Regex;
 
 pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
         SubMsgResult::Ok(subcall) => {
-            let mut id: String = "".to_string();
+            let mut id: u32 = 0;
             let mut owner: Addr = Addr::unchecked("");
             for event in subcall.events {
                 if event.ty == *"wasm" {
@@ -43,18 +42,18 @@ pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response
                         // This value comes from the custom attrbiute
                         match attrb.key.as_str() {
                             "multisig_addr" => owner = deps.api.addr_validate(&attrb.value)?,
-                            "endow_id" => id = attrb.value,
+                            "endow_id" => id = attrb.value.parse().unwrap(),
                             _ => (),
                         }
                     }
                 }
             }
-            if id == "".to_string() || owner == Addr::unchecked("") {
+            if id == 0 || owner == Addr::unchecked("") {
                 return Err(ContractError::AccountNotCreated {});
             }
-            let mut endowment = ENDOWMENTS.load(deps.storage, &id)?;
+            let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
             endowment.owner = owner;
-            ENDOWMENTS.save(deps.storage, &id, &endowment)?;
+            ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
             // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
             Ok(Response::default().add_attribute("endow_owner", endowment.owner.to_string()))
@@ -69,40 +68,39 @@ pub fn create_endowment(
     info: MessageInfo,
     msg: CreateEndowmentMsg,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let mut config = CONFIG.load(deps.storage)?;
     if info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
-    }
-
-    // check that the Endowment ID is of resonable length (3 >= chars <= 20)
-    // let id_len = msg.id.chars().count();
-    if !Regex::new(r"^[a-z\d-]{3,25}+$").unwrap().is_match(&msg.id) {
-        return Err(ContractError::InvalidInputs {});
     }
 
     let owner = deps.api.addr_validate(&msg.owner)?;
     let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
     // try to store the endowment, fail if the ID is already in use
-    ENDOWMENTS.update(deps.storage, &msg.id, |existing| match existing {
-        Some(_) => Err(ContractError::AlreadyInUse {}),
-        None => Ok(Endowment {
-            deposit_approved: false,
-            withdraw_approved: false,
-            owner,                                                  // Addr
-            beneficiary,                                            // Addr
-            withdraw_before_maturity: msg.withdraw_before_maturity, // bool
-            maturity_time: msg.maturity_time,                       // Option<u64>
-            maturity_height: msg.maturity_height,                   // Option<u64>
-            strategies: vec![],
-            rebalance: RebalanceDetails::default(),
-            kyc_donors_only: msg.kyc_donors_only,
-            profile: msg.profile.clone(),
-        }),
-    })?;
-    REDEMPTIONS.save(deps.storage, &msg.id, &None)?;
+    ENDOWMENTS.update(
+        deps.storage,
+        config.next_account_id,
+        |existing| match existing {
+            Some(_) => Err(ContractError::AlreadyInUse {}),
+            None => Ok(Endowment {
+                deposit_approved: false,
+                withdraw_approved: false,
+                owner,                                                  // Addr
+                beneficiary,                                            // Addr
+                withdraw_before_maturity: msg.withdraw_before_maturity, // bool
+                maturity_time: msg.maturity_time,                       // Option<u64>
+                maturity_height: msg.maturity_height,                   // Option<u64>
+                strategies: vec![],
+                rebalance: RebalanceDetails::default(),
+                kyc_donors_only: msg.kyc_donors_only,
+                profile: msg.profile.clone(),
+                pending_redemptions: 0 as u8,
+            }),
+        },
+    )?;
+
     STATES.save(
         deps.storage,
-        &msg.id,
+        config.next_account_id,
         &State {
             donations_received: Uint128::zero(),
             balances: BalanceInfo::default(),
@@ -113,7 +111,7 @@ pub fn create_endowment(
 
     // initial default Response to add submessages to
     let mut res = Response::new().add_attributes(vec![
-        attr("endow_id", msg.id.clone()),
+        attr("endow_id", config.next_account_id.to_string()),
         attr("endow_name", msg.profile.name),
         attr("endow_type", msg.profile.endow_type.to_string()),
         attr(
@@ -154,7 +152,7 @@ pub fn create_endowment(
             label: "new endowment cw3 multisig".to_string(),
             msg: to_binary(&Cw3InstantiateMsg {
                 // endowment ID
-                id: msg.id,
+                id: config.next_account_id,
                 // check if CW3/CW4 codes were passed to setup a multisig/group
                 cw4_members: match msg.cw4_members.is_empty() {
                     true => vec![Member {
@@ -172,6 +170,10 @@ pub fn create_endowment(
         gas_limit: None,
         reply_on: ReplyOn::Success,
     });
+
+    // bump the next account ID and save
+    config.next_account_id += 1;
+    CONFIG.save(deps.storage, &config)?;
 
     Ok(res)
 }
@@ -224,7 +226,7 @@ pub fn update_endowment_settings(
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let mut endowment = ENDOWMENTS.load(deps.storage, &msg.id)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
 
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
@@ -233,7 +235,7 @@ pub fn update_endowment_settings(
     // validate address strings passed
     endowment.kyc_donors_only = msg.kyc_donors_only;
     endowment.owner = deps.api.addr_validate(&msg.owner)?;
-    ENDOWMENTS.save(deps.storage, &msg.id, &endowment)?;
+    ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
     // send the new owner informtion back to the registrar
     Ok(
@@ -278,30 +280,29 @@ pub fn update_endowment_status(
         return Err(ContractError::Unauthorized {});
     }
 
-    let mut endowment = ENDOWMENTS.load(deps.storage, &msg.id)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     endowment.deposit_approved = msg.deposit_approved;
     endowment.withdraw_approved = msg.withdraw_approved;
-    ENDOWMENTS.save(deps.storage, &msg.id, &endowment)?;
+    ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
     Ok(Response::default())
 }
 
 pub fn update_strategies(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
-    id: String,
+    id: u32,
     strategies: Vec<Strategy>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let mut endowment = ENDOWMENTS.load(deps.storage, &id)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
 
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
     }
 
-    let mut redemptions = REDEMPTIONS.load(deps.storage, &id)?;
-    if redemptions != None {
+    if endowment.pending_redemptions != 0 {
         return Err(ContractError::RedemptionInProgress {});
     }
 
@@ -350,13 +351,11 @@ pub fn update_strategies(
     // before updating endowment with new sources
     let redeem_messages = redeem_from_vaults(
         deps.as_ref(),
-        env.contract.address,
+        id,
         config.registrar_contract.to_string(),
-        endowment.strategies,
+        &endowment.strategies,
     )?;
-
-    redemptions = Some(redeem_messages.len() as u64);
-    REDEMPTIONS.save(deps.storage, &id, &redemptions)?;
+    endowment.pending_redemptions = redeem_messages.len() as u8;
 
     // update endowment strategies attribute with all newly passed strategies
     let mut new_strategies = vec![];
@@ -367,7 +366,7 @@ pub fn update_strategies(
         });
     }
     endowment.strategies = new_strategies;
-    ENDOWMENTS.save(deps.storage, &id, &endowment)?;
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new()
         .add_attribute("action", "update_strategies")
@@ -376,16 +375,15 @@ pub fn update_strategies(
 
 pub fn vault_receipt(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
-    id: String,
+    id: u32,
     sender_addr: Addr,
     fund: Asset,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let mut state = STATES.load(deps.storage, &id)?;
-    let endowment = ENDOWMENTS.load(deps.storage, &id)?;
-    let mut redemptions = REDEMPTIONS.load(deps.storage, &id)?;
+    let mut state = STATES.load(deps.storage, id)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
 
     let returned_token =
         validate_deposit_fund(deps.as_ref(), config.registrar_contract.as_str(), fund)?;
@@ -400,10 +398,12 @@ pub fn vault_receipt(
         }))?;
 
     let mut submessages: Vec<SubMsg> = vec![];
-    match redemptions {
+    match endowment.pending_redemptions {
+        // do nothing if there are zero redemptions pending
+        0 => (),
         // last redemption, remove pending u64, and build deposit submsgs
-        Some(1) => {
-            redemptions = None;
+        1 => {
+            endowment.pending_redemptions = 0;
             // normal vault receipt if closing_endowment has not been set to TRUE
             if !state.closing_endowment {
                 let asset = match returned_token.info {
@@ -505,7 +505,7 @@ pub fn vault_receipt(
                             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                                 contract_addr: index_fund.to_string(),
                                 msg: to_binary(&IndexFundQuerier::InvolvedFunds {
-                                    address: env.contract.address.to_string(),
+                                    endowment_id: id.clone(),
                                 })?,
                             }))?;
                         if !fund_list.funds.is_empty() {
@@ -569,16 +569,12 @@ pub fn vault_receipt(
                 }
             }
         }
-        // subtract one redemption and hold off on doing deposits
-        Some(_) => match redemptions.unwrap().checked_sub(1) {
-            Some(n) => redemptions = Some(n),
-            None => redemptions = None,
-        },
-        None => (),
+        // subtract one redemption and hold off on doing deposits until down to 1
+        _ => endowment.pending_redemptions -= 1,
     };
 
-    STATES.save(deps.storage, &id, &state)?;
-    REDEMPTIONS.save(deps.storage, &id, &redemptions)?;
+    STATES.save(deps.storage, id, &state)?;
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new()
         .add_submessages(submessages)
@@ -595,7 +591,7 @@ pub fn deposit(
     fund: Asset,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let endowment = ENDOWMENTS.load(deps.storage, &msg.id)?;
+    let endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
 
     // check that the Endowment has been approved to receive deposits
     if !endowment.deposit_approved {
@@ -646,7 +642,7 @@ pub fn deposit(
     };
 
     // update total donations recieved for a charity
-    let mut state = STATES.load(deps.storage, &msg.id)?;
+    let mut state = STATES.load(deps.storage, msg.id)?;
     state.donations_received += deposit_amount;
 
     // increase the liquid balance by donation (liquid) amount
@@ -692,7 +688,7 @@ pub fn deposit(
         )?;
     }
 
-    STATES.save(deps.storage, &msg.id, &state)?;
+    STATES.save(deps.storage, msg.id, &state)?;
     Ok(Response::new()
         .add_submessages(deposit_messages)
         .add_attribute("action", "account_deposit")
@@ -705,12 +701,12 @@ pub fn withdraw(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    id: String,
+    id: u32,
     beneficiary: String,
     sources: Vec<FundingSource>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let endowment = ENDOWMENTS.load(deps.storage, &id)?;
+    let endowment = ENDOWMENTS.load(deps.storage, id)?;
 
     // check that sender is the owner or the beneficiary
     if info.sender != endowment.owner {
@@ -754,11 +750,11 @@ pub fn withdraw_liquid(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    id: String,
+    id: u32,
     beneficiary: String,
     assets: GenericBalance,
 ) -> Result<Response, ContractError> {
-    let endowment = ENDOWMENTS.load(deps.storage, &id)?;
+    let endowment = ENDOWMENTS.load(deps.storage, id)?;
 
     // check that sender is the owner or the beneficiary
     if info.sender != endowment.owner {
@@ -772,7 +768,7 @@ pub fn withdraw_liquid(
         }));
     }
 
-    let mut state = STATES.load(deps.storage, &id)?;
+    let mut state = STATES.load(deps.storage, id)?;
     let mut messages: Vec<SubMsg> = vec![];
 
     for asset in assets.native.iter() {
@@ -824,7 +820,7 @@ pub fn withdraw_liquid(
             .deduct_tokens(Balance::Cw20(asset));
     }
 
-    STATES.save(deps.storage, &id, &state)?;
+    STATES.save(deps.storage, id, &state)?;
 
     Ok(Response::new()
         .add_submessages(messages)
@@ -835,9 +831,9 @@ pub fn withdraw_liquid(
 
 pub fn close_endowment(
     deps: DepsMut,
-    env: Env,
+    _env: Env,
     info: MessageInfo,
-    id: String,
+    id: u32,
     beneficiary: Option<String>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -846,28 +842,27 @@ pub fn close_endowment(
         return Err(ContractError::Unauthorized {});
     }
 
-    let mut redemptions = REDEMPTIONS.load(deps.storage, &id)?;
-    if redemptions != None {
+    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
+    if endowment.pending_redemptions != 0 {
         return Err(ContractError::RedemptionInProgress {});
     }
 
     // set the STATE with relevent status and closing beneficiary
-    let mut state = STATES.load(deps.storage, &id)?;
+    let mut state = STATES.load(deps.storage, id)?;
     state.closing_endowment = true;
     state.closing_beneficiary = beneficiary;
-    STATES.save(deps.storage, &id, &state)?;
+    STATES.save(deps.storage, id, &state)?;
 
     // Redeem all UST back from strategies invested in
-    let endowment = ENDOWMENTS.load(deps.storage, &id)?;
     let redeem_messages = redeem_from_vaults(
         deps.as_ref(),
-        env.contract.address,
+        id,
         config.registrar_contract.to_string(),
-        endowment.strategies,
+        &endowment.strategies,
     )?;
 
-    redemptions = Some(redeem_messages.len() as u64);
-    REDEMPTIONS.save(deps.storage, &id, &redemptions)?;
+    endowment.pending_redemptions = redeem_messages.len() as u8;
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new()
         .add_attribute("action", "close_endowment")
@@ -882,7 +877,7 @@ pub fn update_profile(
     msg: UpdateProfileMsg,
 ) -> Result<Response, ContractError> {
     // Validation 1. Only "Endowment.owner" or "Config.owner" is able to execute
-    let mut endowment = ENDOWMENTS.load(deps.storage, &msg.id)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let config = CONFIG.load(deps.storage)?;
 
     if info.sender != endowment.owner && info.sender != config.owner {
@@ -952,7 +947,7 @@ pub fn update_profile(
         endowment.profile.social_media_urls = social_media_urls;
     }
 
-    ENDOWMENTS.save(deps.storage, &msg.id, &endowment)?;
+    ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
     let sub_msgs: Vec<SubMsg> = vec![SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.registrar_contract.to_string(),
