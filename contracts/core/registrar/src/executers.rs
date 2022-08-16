@@ -258,18 +258,22 @@ pub fn create_endowment(
         Some(accounts_contract) => {
             let wasm_msg = WasmMsg::Execute {
                 contract_addr: accounts_contract.to_string(),
-                msg: to_binary(&angel_core::messages::accounts::CreateEndowmentMsg {
-                    owner: msg.owner,
-                    beneficiary: msg.beneficiary,
-                    withdraw_before_maturity: msg.withdraw_before_maturity,
-                    maturity_time: msg.maturity_time,
-                    maturity_height: msg.maturity_height,
-                    profile: msg.profile,
-                    cw4_members: msg.cw4_members,
-                    kyc_donors_only: msg.kyc_donors_only,
-                    cw3_threshold: msg.cw3_threshold,
-                    cw3_max_voting_period: Duration::Time(msg.cw3_max_voting_period),
-                })?,
+                msg: to_binary(
+                    &angel_core::messages::accounts::ExecuteMsg::CreateEndowment(
+                        angel_core::messages::accounts::CreateEndowmentMsg {
+                            owner: msg.owner,
+                            beneficiary: msg.beneficiary,
+                            withdraw_before_maturity: msg.withdraw_before_maturity,
+                            maturity_time: msg.maturity_time,
+                            maturity_height: msg.maturity_height,
+                            profile: msg.profile,
+                            cw4_members: msg.cw4_members,
+                            kyc_donors_only: msg.kyc_donors_only,
+                            cw3_threshold: msg.cw3_threshold,
+                            cw3_max_voting_period: Duration::Time(msg.cw3_max_voting_period),
+                        },
+                    ),
+                )?,
                 funds: vec![],
             };
 
