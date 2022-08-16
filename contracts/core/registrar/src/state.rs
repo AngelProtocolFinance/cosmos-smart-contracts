@@ -30,7 +30,7 @@ pub struct Config {
     pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
-pub const REGISTRY: Map<&str, EndowmentEntry> = Map::new("registry");
+pub const REGISTRY: Map<u32, EndowmentEntry> = Map::new("registry");
 pub const VAULTS: Map<&[u8], YieldVault> = Map::new("vault");
 pub const NETWORK_CONNECTIONS: Map<&str, NetworkInfo> = Map::new("network_connections");
 

@@ -11,7 +11,7 @@ use cw20::Cw20ReceiveMsg;
 use cw_utils::{Duration, Threshold};
 
 const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
-const CHARITY_ID: &str = "good-charity-1";
+const CHARITY_ID: u32 = 1;
 const CHARITY_ADDR: &str = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v";
 const REGISTRAR_CONTRACT: &str = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt";
 const PLEB: &str = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh";
@@ -47,7 +47,6 @@ fn create_endowment() -> (
     };
 
     let create_endowment_msg = CreateEndowmentMsg {
-        id: CHARITY_ID.to_string(),
         owner: CHARITY_ADDR.to_string(),
         beneficiary: CHARITY_ADDR.to_string(),
         withdraw_before_maturity: false,
@@ -80,9 +79,7 @@ fn create_endowment() -> (
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::Endowment {
-            id: CHARITY_ID.to_string(),
-        },
+        QueryMsg::Endowment { id: CHARITY_ID },
     )
     .unwrap();
     let value: EndowmentDetailsResponse = from_binary(&res).unwrap();
@@ -110,7 +107,7 @@ fn test_update_endowment_settings() {
     let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
     // update the endowment "owner" & "kyc_donors_only"
     let msg = UpdateEndowmentSettingsMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         owner: CHARITY_ADDR.to_string(),
         kyc_donors_only: true,
     };
@@ -126,7 +123,7 @@ fn test_update_endowment_settings() {
 
     // Not just anyone can update the Endowment's settings! Only Endowment owner can.
     let msg = UpdateEndowmentSettingsMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         owner: CHARITY_ADDR.to_string(),
         kyc_donors_only: true,
     };
@@ -149,7 +146,7 @@ fn test_update_endowment_status() {
 
     // Fail to update the endowment status since caller is not `registrar_contract`
     let update_status_msg = UpdateEndowmentStatusMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         deposit_approved: false,
         withdraw_approved: true,
     };
@@ -165,7 +162,7 @@ fn test_update_endowment_status() {
 
     // Succeed to update the endowment status
     let update_status_msg = UpdateEndowmentStatusMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         deposit_approved: false,
         withdraw_approved: true,
     };
@@ -183,9 +180,7 @@ fn test_update_endowment_status() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::Endowment {
-            id: CHARITY_ID.to_string(),
-        },
+        QueryMsg::Endowment { id: CHARITY_ID },
     )
     .unwrap();
     let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
@@ -267,7 +262,7 @@ fn test_update_strategy() {
 
     // sum of the invested strategy components percentages is not equal 100%
     let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
@@ -285,7 +280,7 @@ fn test_update_strategy() {
     assert_eq!(err, ContractError::InvalidStrategyAllocation {});
 
     let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
@@ -307,7 +302,7 @@ fn test_update_strategy() {
     assert_eq!(err, ContractError::StrategyComponentsNotUnique {});
 
     let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
@@ -324,7 +319,7 @@ fn test_update_strategy() {
     assert_eq!(0, res.messages.len());
 
     let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
@@ -345,11 +340,11 @@ fn test_update_strategy() {
 fn test_update_endowment_profile() {
     let (mut deps, endow_details) = create_endowment();
     let msg = UpdateProfileMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         name: None,
         overview: Some("Test Endowment is for just testing".to_string()),
-        un_sdg: Some(1_u64),
-        tier: Some(2_u64),
+        un_sdg: Some(1_u8),
+        tier: Some(2_u8),
         logo: Some("".to_string()),
         image: Some("".to_string()),
         url: None,
@@ -403,9 +398,7 @@ fn test_update_endowment_profile() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetProfile {
-            id: CHARITY_ID.to_string(),
-        },
+        QueryMsg::GetProfile { id: CHARITY_ID },
     )
     .unwrap();
     let value: ProfileResponse = from_binary(&res).unwrap();
@@ -431,9 +424,7 @@ fn test_update_endowment_profile() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::GetProfile {
-            id: CHARITY_ID.to_string(),
-        },
+        QueryMsg::GetProfile { id: CHARITY_ID },
     )
     .unwrap();
     let value: ProfileResponse = from_binary(&res).unwrap();
@@ -448,7 +439,7 @@ fn test_donate() {
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         deposit_approved: true,
         withdraw_approved: true,
     });
@@ -458,7 +449,7 @@ fn test_donate() {
     let donation_amt = 200_u128;
     let info = mock_info(DEPOSITOR, &coins(donation_amt, "uluna"));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         locked_percentage: Decimal::percent(50),
         liquid_percentage: Decimal::percent(50),
     });
@@ -470,9 +461,7 @@ fn test_donate() {
     let query_res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::State {
-            id: CHARITY_ID.to_string(),
-        },
+        QueryMsg::State { id: CHARITY_ID },
     )
     .unwrap();
     let state: StateResponse = from_binary(&query_res).unwrap();
@@ -486,7 +475,7 @@ fn test_deposit_cw20() {
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         deposit_approved: true,
         withdraw_approved: true,
     });
@@ -496,7 +485,7 @@ fn test_deposit_cw20() {
     let donation_amt = 200_u128;
     let info = mock_info("test-cw20", &[]);
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         locked_percentage: Decimal::percent(50),
         liquid_percentage: Decimal::percent(50),
     });
@@ -517,7 +506,7 @@ fn test_withdraw() {
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         deposit_approved: true,
         withdraw_approved: true,
     });
@@ -527,7 +516,7 @@ fn test_withdraw() {
     let donation_amt = 200_u128;
     let info = mock_info(DEPOSITOR, &coins(donation_amt, "uluna"));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         locked_percentage: Decimal::percent(50),
         liquid_percentage: Decimal::percent(50),
     });
@@ -536,7 +525,7 @@ fn test_withdraw() {
     // Try the "Withdraw"
     let info = mock_info(&endow_details.owner.to_string(), &[]);
     let withdraw_msg = ExecuteMsg::Withdraw {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         sources: vec![],
         beneficiary: "beneficiary".to_string(),
     };
@@ -551,7 +540,7 @@ fn test_withdraw_liquid() {
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         deposit_approved: true,
         withdraw_approved: true,
     });
@@ -561,7 +550,7 @@ fn test_withdraw_liquid() {
     let donation_amt = 200_u128;
     let info = mock_info(DEPOSITOR, &coins(donation_amt, "uluna"));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         locked_percentage: Decimal::percent(50),
         liquid_percentage: Decimal::percent(50),
     });
@@ -571,7 +560,7 @@ fn test_withdraw_liquid() {
     // Fails since the amount is too big
     let info = mock_info(&endow_details.owner.to_string(), &[]);
     let withdraw_liquid_msg = ExecuteMsg::WithdrawLiquid {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         beneficiary: "beneficiary".to_string(),
         assets: GenericBalance {
             native: vec![Coin {
@@ -587,7 +576,7 @@ fn test_withdraw_liquid() {
     // Succeed to withdraw liquid amount
     let info = mock_info(&endow_details.owner.to_string(), &[]);
     let withdraw_liquid_msg = ExecuteMsg::WithdrawLiquid {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         beneficiary: "beneficiary".to_string(),
         assets: GenericBalance {
             native: vec![Coin {
@@ -608,7 +597,7 @@ fn test_vault_receipt() {
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         deposit_approved: true,
         withdraw_approved: true,
     });
@@ -621,9 +610,7 @@ fn test_vault_receipt() {
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::VaultReceipt {
-            id: CHARITY_ID.to_string(),
-        },
+        ExecuteMsg::VaultReceipt { id: CHARITY_ID },
     )
     .unwrap_err();
     assert_eq!(err, ContractError::InvalidCoinsDeposited {});
@@ -640,16 +627,14 @@ fn test_vault_receipt() {
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::VaultReceipt {
-            id: CHARITY_ID.to_string(),
-        },
+        ExecuteMsg::VaultReceipt { id: CHARITY_ID },
     )
     .unwrap();
     assert_eq!(0, res.messages.len());
 
     // First, update the "config.pending_redemptions"
     let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
@@ -667,9 +652,7 @@ fn test_vault_receipt() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::Endowment {
-            id: CHARITY_ID.to_string(),
-        },
+        QueryMsg::Endowment { id: CHARITY_ID },
     )
     .unwrap();
     let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
@@ -687,9 +670,7 @@ fn test_vault_receipt() {
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::VaultReceipt {
-            id: CHARITY_ID.to_string(),
-        },
+        ExecuteMsg::VaultReceipt { id: CHARITY_ID },
     )
     .unwrap();
     assert_eq!(0, res.messages.len());
@@ -697,13 +678,11 @@ fn test_vault_receipt() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::Endowment {
-            id: CHARITY_ID.to_string(),
-        },
+        QueryMsg::Endowment { id: CHARITY_ID },
     )
     .unwrap();
     let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
-    assert_eq!(None, endow.pending_redemptions);
+    assert_eq!(0, endow.pending_redemptions);
 }
 
 #[test]
@@ -713,7 +692,7 @@ fn test_close_endowment() {
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
-        id: CHARITY_ID.to_string(),
+        id: CHARITY_ID,
         deposit_approved: true,
         withdraw_approved: true,
     });
@@ -723,9 +702,7 @@ fn test_close_endowment() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::Endowment {
-            id: CHARITY_ID.to_string(),
-        },
+        QueryMsg::Endowment { id: CHARITY_ID },
     )
     .unwrap();
     let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
@@ -739,7 +716,7 @@ fn test_close_endowment() {
         mock_env(),
         info,
         ExecuteMsg::CloseEndowment {
-            id: CHARITY_ID.to_string(),
+            id: CHARITY_ID,
             beneficiary: None,
         },
     )
@@ -753,7 +730,7 @@ fn test_close_endowment() {
         mock_env(),
         info,
         ExecuteMsg::CloseEndowment {
-            id: CHARITY_ID.to_string(),
+            id: CHARITY_ID,
             beneficiary: None,
         },
     )
@@ -764,22 +741,18 @@ fn test_close_endowment() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::Endowment {
-            id: CHARITY_ID.to_string(),
-        },
+        QueryMsg::Endowment { id: CHARITY_ID },
     )
     .unwrap();
     let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
     assert_eq!(endow.withdraw_approved, true);
     assert_eq!(endow.deposit_approved, true);
-    assert_eq!(endow.pending_redemptions, Some(0));
+    assert_eq!(endow.pending_redemptions, 0);
 
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::State {
-            id: CHARITY_ID.to_string(),
-        },
+        QueryMsg::State { id: CHARITY_ID },
     )
     .unwrap();
     let state: StateResponse = from_binary(&res).unwrap();

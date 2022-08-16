@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub owner: Addr, // DANO/AP Team Address
     pub registrar_contract: Addr,
+    pub next_account_id: u32,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -25,6 +26,7 @@ pub struct Endowment {
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
     pub profile: Profile,
+    pub pending_redemptions: u8, // number of vault redemptions currently pending for this endowment
 }
 
 impl Endowment {
@@ -48,6 +50,5 @@ pub struct State {
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
-pub const STATES: Map<&str, State> = Map::new("states");
-pub const ENDOWMENTS: Map<&str, Endowment> = Map::new("endowments");
-pub const REDEMPTIONS: Map<&str, Option<u64>> = Map::new("redemptions");
+pub const STATES: Map<u32, State> = Map::new("states");
+pub const ENDOWMENTS: Map<u32, Endowment> = Map::new("endowments");

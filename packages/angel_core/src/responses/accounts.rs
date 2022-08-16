@@ -29,15 +29,15 @@ pub struct EndowmentDetailsResponse {
     pub kyc_donors_only: bool,
     pub deposit_approved: bool,
     pub withdraw_approved: bool,
-    pub pending_redemptions: Option<u64>,
+    pub pending_redemptions: u8,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ProfileResponse {
     pub name: String,
     pub overview: String,
-    pub un_sdg: Option<u64>,
-    pub tier: Option<u64>,
+    pub un_sdg: Option<u8>,
+    pub tier: Option<u8>,
     pub logo: Option<String>,
     pub image: Option<String>,
     pub url: Option<String>,
@@ -46,7 +46,7 @@ pub struct ProfileResponse {
     pub street_address: Option<String>,
     pub contact_email: Option<String>,
     pub social_media_urls: SocialMedialUrls,
-    pub number_of_employees: Option<u64>,
+    pub number_of_employees: Option<u16>,
     pub average_annual_budget: Option<String>,
     pub annual_revenue: Option<String>,
     pub charity_navigator_rating: Option<String>,
