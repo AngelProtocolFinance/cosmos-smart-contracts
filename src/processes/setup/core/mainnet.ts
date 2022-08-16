@@ -45,6 +45,7 @@ export async function setupCore(
     max_voting_period_height: number;
     max_voting_period_guardians_height: number;
     fund_rotation: number | undefined;
+    fund_member_limit: number | undefined,
     turnover_to_multisig: boolean;
     is_localjuno: boolean;
     harvest_to_liquid: string;
@@ -52,6 +53,7 @@ export async function setupCore(
     funding_goal: string | undefined;
     charity_cw3_threshold_abs_perc: string,
     charity_cw3_max_voting_period: number,
+    accepted_tokens: any | undefined,
   }
 ): Promise<void> {
   // Initialize variables
@@ -67,9 +69,11 @@ export async function setupCore(
     config.max_voting_period_height,
     config.max_voting_period_guardians_height,
     config.fund_rotation,
+    config.fund_member_limit,
     config.harvest_to_liquid,
     config.tax_per_block,
-    config.funding_goal
+    config.funding_goal,
+    config.accepted_tokens,
   );
   await mainNet.initializeCharities(juno, apTeam, registrar, indexFund);
   await mainNet.setupEndowments(
@@ -89,9 +93,11 @@ async function setup(
   max_voting_period_height: number,
   max_voting_period_guardians_height: number,
   fund_rotation: number | undefined,
+  fund_member_limit: number | undefined,
   harvest_to_liquid: string,
   tax_per_block: string,
-  funding_goal: string | undefined
+  funding_goal: string | undefined,
+  accepted_tokens: any | undefined,
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each....
   process.stdout.write("Uploading Registrar Wasm");
@@ -151,10 +157,7 @@ async function setup(
       treasury: treasury_address,
       tax_rate: tax_rate,
       default_vault: undefined,
-      accepted_tokens: {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
-        cw20: [],
-      }
+      accepted_tokens: accepted_tokens,
     }
   );
   registrar = registrarResult.contractAddress as string;
@@ -202,7 +205,9 @@ async function setup(
   const fundResult = await instantiateContract(juno, apTeam, apTeam, fundCodeId, {
     registrar_contract: registrar,
     fund_rotation: fund_rotation,
+    fund_member_limit: fund_member_limit,
     funding_goal: funding_goal,
+    accepted_tokens: accepted_tokens,
   });
   indexFund = fundResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
