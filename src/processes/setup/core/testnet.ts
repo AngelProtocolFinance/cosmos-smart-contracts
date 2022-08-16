@@ -25,6 +25,7 @@ let apTeam2Addr: string;
 let apTreasuryAddr: string;
 
 let registrar: string;
+let accounts: string;
 let cw4GrpApTeam: string;
 let cw3ApTeam: string;
 let indexFund: string;
@@ -214,10 +215,24 @@ async function setup(
   });
   console.log(chalk.green(" Done!"));
 
+  process.stdout.write("Instantiating the Accounts contract");
+  const accountsResult = await instantiateContract(
+    juno,
+    apTeamAddr,
+    apTeamAddr,
+    accountsCodeId,
+    {
+      owner_sc: apTeamAddr,
+      registrar_contract: registrar,
+    }
+  );
+  accounts = accountsResult.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${accounts}`);
+
   process.stdout.write("Update Registrar's config with various wasm codes & contracts");
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_config: {
-      accounts_code_id: accountsCodeId,
+      accounts_contract: accounts,
       index_fund_contract: indexFund,
       cw3_code: cw3MultiSigEndowment,
       cw4_code: cw4Group,

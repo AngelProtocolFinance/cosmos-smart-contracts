@@ -21,6 +21,7 @@ import { wasm_path } from "../../../config/wasmPaths";
 let juno: SigningCosmWasmClient;
 let apTeam: string;
 let registrar: string;
+let accounts: string;
 let cw4GrpOwners: string;
 let cw4GrpApTeam: string;
 let cw3GuardianAngels: string;
@@ -206,46 +207,61 @@ async function setup(
   indexFund = fundResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
 
+  process.stdout.write("Instantiating the Accounts contract");
+  const accountsResult = await instantiateContract(
+    juno,
+    apTeam,
+    apTeam,
+    accountsCodeId,
+    {
+      owner_sc: apTeam,
+      registrar_contract: registrar,
+    }
+  );
+  accounts = accountsResult.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${accounts}`);
+
   // Anchor Vault
-  process.stdout.write("Instantiating Anchor Vault contract");
-  const vaultResult1 = await instantiateContract(juno, apTeam, apTeam, vaultCodeId, {
-    registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
-    name: "AP Deposit Token - Anchor",
-    symbol: "apANC",
-    decimals: 6,
-    harvest_to_liquid: harvest_to_liquid,
-  });
-  anchorVault = vaultResult1.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault}`);
+  // process.stdout.write("Instantiating Anchor Vault contract");
+  // const vaultResult1 = await instantiateContract(juno, apTeam, apTeam, vaultCodeId, {
+  //   registrar_contract: registrar,
+  //   moneymarket: registrar, // placeholder addr for now
+  //   tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
+  //   name: "AP Deposit Token - Anchor",
+  //   symbol: "apANC",
+  //   decimals: 6,
+  //   harvest_to_liquid: harvest_to_liquid,
+  // });
+  // anchorVault = vaultResult1.contractAddress as string;
+  // console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault}`);
 
   // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
-  process.stdout.write("Approving Anchor Vault in Registrar");
-  process.stdout.write(
-    "Set default vault in Registrar (for newly created Endowments) as Anchor Vault"
-  );
+  // process.stdout.write("Approving Anchor Vault in Registrar");
+  // process.stdout.write(
+  //   "Set default vault in Registrar (for newly created Endowments) as Anchor Vault"
+  // );
   process.stdout.write("Update Registrar with the Address of the Index Fund contract,  CW3_code_Id, CW4_code_Id");
   await sendTransaction(juno, apTeam, registrar, {
     update_config: {
-      default_vault: anchorVault,
+      // default_vault: anchorVault,
+      accounts_contract: accounts,
       index_fund_contract: indexFund,
       cw3_code: cw3MultiSig,
       cw4_code: cw4Group,
     },
   });
-  await sendTransaction(juno, apTeam, registrar, {
-    vault_update_status: {
-      vault_addr: anchorVault,
-      approved: true,
-    },
-  });
-  console.log(chalk.green(" Done!"));
+  // await sendTransaction(juno, apTeam, registrar, {
+  //   vault_update_status: {
+  //     vault_addr: anchorVault,
+  //     approved: true,
+  //   },
+  // });
+  // console.log(chalk.green(" Done!"));
 
   // Add confirmed TCA Members to the Index Fund SCs approved list
-  process.stdout.write("Add confirmed TCA Member to allowed list");
-  await sendTransaction(juno, apTeam, indexFund, {
-    update_tca_list: { new_list: tca_members },
-  });
-  console.log(chalk.green(" Done!"));
+  // process.stdout.write("Add confirmed TCA Member to allowed list");
+  // await sendTransaction(juno, apTeam, indexFund, {
+  //   update_tca_list: { new_list: tca_members },
+  // });
+  // console.log(chalk.green(" Done!"));
 }

@@ -20,6 +20,7 @@ export const testnet = {
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
     registrar: "juno14p5dep5wnc2576nr3u9kakz0nunh44rncwlkz8jgl8z0umenqe5su2p38a",
+    accounts: "",
     indexFund: "juno18kkuz3ztvtsqcylrcmgezs5awcuftlxyzsgcf9gsunuxfgx8vmnq3mpp60",
     cw4GrpApTeam: "juno1wtztrpxxu6s0delnwtcyqfd590lwyww2uhgqur0uapqjh2njm7wq64udrm",
     cw3ApTeam: "juno1m80n4ykrws0pstwdv7yfefvpvwumm6zeuk4mdy57mqh5cqvhcmcs288edl",
@@ -72,6 +73,7 @@ export const mainnet = {
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {
     registrar: "",
+    accounts: "",
     indexFund: "",
     anchorVault: "",
     cw4GrpApTeam: "",
