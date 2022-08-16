@@ -96,8 +96,8 @@ export async function setupCore(
   // }
   await turnOverApTeamMultisig(config.is_localjuno);
   await createEndowments(
-    config.charity_cw3_threshold_abs_perc,
-    config.charity_cw3_max_voting_period,
+    config.threshold_absolute_percentage,
+    config.max_voting_period_height,
   );
   await approveEndowments();
   await createIndexFunds();
