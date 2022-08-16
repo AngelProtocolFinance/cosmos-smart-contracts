@@ -24,10 +24,10 @@ pub enum ExecuteMsg {
     },
     UpdateConfig(UpdateConfigMsg),
     Deposit {
-        endowment_id: String,
+        endowment_id: u32,
     },
     Redeem {
-        endowment_id: String,
+        endowment_id: u32,
     },
     Withdraw(AccountWithdrawMsg),
     Harvest {
@@ -48,7 +48,7 @@ pub struct UpdateConfigMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct AccountWithdrawMsg {
-    pub endowment_id: String,
+    pub endowment_id: u32,
     pub beneficiary: Addr,
     pub amount: Uint128,
 }

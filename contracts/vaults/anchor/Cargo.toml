@@ -1,6 +1,6 @@
 [package]
 name = "anchor"
-version = "1.6.0"
+version = "1.8.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 
@@ -23,7 +23,6 @@ backtraces = ["cosmwasm-std/backtraces"]
 angel-core = { path = "../../../packages/angel_core" }
 cosmwasm-std = "1.0.0"
 cosmwasm-storage = { version = "1.0.0", features = ["iterator"] }
-cw-controllers = "0.13.4"
 cw-storage-plus = { version = "0.13.4", features = ["iterator"] }
 cw2 = "0.13.4"
 cw20 = "0.13.4"

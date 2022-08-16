@@ -30,6 +30,7 @@ pub fn instantiate(
         &Config {
             owner: deps.api.addr_validate(&msg.owner_sc)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
+            next_account_id: 1 as u32,
         },
     )?;
 
@@ -45,13 +46,6 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
-        ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
-        ExecuteMsg::UpdateEndowmentSettings(msg) => {
-            executers::update_endowment_settings(deps, env, info, msg)
-        }
-        ExecuteMsg::UpdateEndowmentStatus(msg) => {
-            executers::update_endowment_status(deps, env, info, msg)
-        }
         ExecuteMsg::Deposit(msg) => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
@@ -61,6 +55,23 @@ pub fn execute(
                 amount: info.funds[0].amount,
             };
             executers::deposit(deps, env, info.clone(), info.sender, msg, native_fund)
+        }
+        ExecuteMsg::VaultReceipt { id } => {
+            if info.funds.len() != 1 {
+                return Err(ContractError::InvalidCoinsDeposited {});
+            }
+            let native_fund = Asset {
+                info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
+                amount: info.funds[0].amount,
+            };
+            executers::vault_receipt(deps, env, info.clone(), id, info.sender, native_fund)
+        }
+        ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
+        ExecuteMsg::UpdateEndowmentSettings(msg) => {
+            executers::update_endowment_settings(deps, env, info, msg)
+        }
+        ExecuteMsg::UpdateEndowmentStatus(msg) => {
+            executers::update_endowment_status(deps, env, info, msg)
         }
         ExecuteMsg::Withdraw {
             id,
@@ -72,16 +83,6 @@ pub fn execute(
             beneficiary,
             assets,
         } => executers::withdraw_liquid(deps, env, info, id, beneficiary, assets),
-        ExecuteMsg::VaultReceipt { id } => {
-            if info.funds.len() != 1 {
-                return Err(ContractError::InvalidCoinsDeposited {});
-            }
-            let native_fund = Asset {
-                info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
-                amount: info.funds[0].amount,
-            };
-            executers::vault_receipt(deps, env, info.clone(), id, info.sender, native_fund)
-        }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
@@ -145,7 +146,6 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
-        QueryMsg::GetAllIds {} => to_binary(&queriers::query_all_ids(deps)?),
         QueryMsg::Balance { id } => to_binary(&queriers::query_account_balance(deps, env, id)?),
         QueryMsg::State { id } => to_binary(&queriers::query_state(deps, id)?),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),

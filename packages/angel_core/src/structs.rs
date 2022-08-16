@@ -85,7 +85,7 @@ impl RebalanceDetails {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct EndowmentEntry {
-    pub id: String,
+    pub id: u32,
     pub owner: String,
     pub status: EndowmentStatus,
     pub endow_type: EndowmentType,
@@ -93,7 +93,7 @@ pub struct EndowmentEntry {
     pub logo: Option<String>,
     pub image: Option<String>,
     pub tier: Option<Tier>,
-    pub un_sdg: Option<u64>,
+    pub un_sdg: Option<u8>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -166,7 +166,7 @@ pub struct IndexFund {
     pub id: u64,
     pub name: String,
     pub description: String,
-    pub members: Vec<String>,
+    pub members: Vec<u32>,
     pub rotating_fund: Option<bool>, // set a fund as a rotating fund
     // Fund Specific: over-riding SC level setting to handle a fixed split value
     // Defines the % to split off into liquid account, and if defined overrides all other splits
@@ -406,8 +406,8 @@ pub struct TransactionRecord {
 pub struct Profile {
     pub name: String, // name of the Charity Endowment
     pub overview: String,
-    pub un_sdg: Option<u64>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
-    pub tier: Option<u64>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
+    pub un_sdg: Option<u8>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
+    pub tier: Option<u8>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
     pub logo: Option<String>,
     pub image: Option<String>,
     pub url: Option<String>,
@@ -416,7 +416,7 @@ pub struct Profile {
     pub street_address: Option<String>,
     pub contact_email: Option<String>,
     pub social_media_urls: SocialMedialUrls,
-    pub number_of_employees: Option<u64>,
+    pub number_of_employees: Option<u16>,
     pub average_annual_budget: Option<String>,
     pub annual_revenue: Option<String>,
     pub charity_navigator_rating: Option<String>,
