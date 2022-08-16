@@ -19,14 +19,14 @@ export const testnet = {
   },
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
-    registrar: "contractAddress=juno1ea06p4lms9ku2dca9vxnta28nwl5t0z7pr7e50jh0xhm4ujkp35szz7sae",
-    accounts: "contractAddress=juno1mfqqu85m0mvc0ahsrz57c8d4x0x0teyq4jmfq92vuy8fgwv0uepq9uj0kr",
-    indexFund: "contractAddress=juno19l9msl003n0zrnl3xsccr4ypvhxyamaqddv0fqh45lf0dwtyplxqef4xp8",
-    cw4GrpApTeam: "contractAddress=juno1nmetyh7phu89rp8pl8rxdtyzkcan8tp90899er9jnqjf9pylzm8sypfqhq",
-    cw3ApTeam: "contractAddress=juno1ttn32lntds7tk64fcy8ldz30t9frhy3uxg5lzak2ej0jd4md0szqda2nuc",
+    registrar: "juno1ea06p4lms9ku2dca9vxnta28nwl5t0z7pr7e50jh0xhm4ujkp35szz7sae",
+    accounts: "juno1mfqqu85m0mvc0ahsrz57c8d4x0x0teyq4jmfq92vuy8fgwv0uepq9uj0kr",
+    indexFund: "juno19l9msl003n0zrnl3xsccr4ypvhxyamaqddv0fqh45lf0dwtyplxqef4xp8",
+    cw4GrpApTeam: "juno1nmetyh7phu89rp8pl8rxdtyzkcan8tp90899er9jnqjf9pylzm8sypfqhq",
+    cw3ApTeam: "juno1ttn32lntds7tk64fcy8ldz30t9frhy3uxg5lzak2ej0jd4md0szqda2nuc",
     vault1: "",
     vault2: "",
-    
+
     endowId1: 1,
     endowId2: 2,
     endowId3: 3,
