@@ -35,7 +35,8 @@ let cw3GuardianAngels: string;
 let cw3ApTeam: string;
 let indexFund: string;
 let anchorVault: string;
-let endowmentContracts: string[];
+let accounts: string;
+let endowmentIDs: number[];
 let apTreasury: string;
 let members: Member[];
 let tcaMembers: string[];
@@ -77,7 +78,7 @@ async function initialize() {
   cw3ApTeam = config.contracts.cw3ApTeam;
   indexFund = config.contracts.indexFund;
   anchorVault = config.contracts.anchorVault;
-  endowmentContracts = [...config.contracts.endowmentContracts];
+  endowmentIDs = [...config.contracts.endowmentIDs];
   members = [...config.members];
   tcaMembers = [];
 
@@ -86,7 +87,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(anchorVault)} as Anchor Vault`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
-  console.log(`Using ${chalk.cyan(endowmentContracts)} as Endowment Contracts`);
+  console.log(`Using ${chalk.cyan(endowmentIDs)} as Endowment IDs`);
 
   junoswapTokenCode = config.junoswap.junoswap_token_code;
   junoswapFactory = config.junoswap.junoswap_factory;
@@ -225,10 +226,10 @@ export async function startMigrateCore(): Promise<void> {
     apTeamAccount,
     registrar,
     indexFund,
+    accounts,
     cw4GrpApTeam,
     cw3ApTeam,
     [anchorVault],
-    endowmentContracts
   );
 }
 
@@ -276,7 +277,8 @@ export async function startTests(): Promise<void> {
     registrar,
     indexFund,
     anchorVault,
-    endowmentContracts[0],
+    accounts,
+    endowmentIDs[0],
     cw4GrpApTeam,
     cw3ApTeam,
     junoswapFactory,

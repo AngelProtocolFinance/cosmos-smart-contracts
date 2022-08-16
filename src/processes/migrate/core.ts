@@ -14,10 +14,10 @@ export async function migrateCore(
   apTeam: string,
   registrar: string,
   indexFund: string,
+  accounts: string,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
   vaultContracts: string[],
-  endowmentContracts: string[]
 ): Promise<void> {
   // run the migrations desired
   // await storeAndMigrateContract(juno, apTeam, registrar, 'registrar.wasm');

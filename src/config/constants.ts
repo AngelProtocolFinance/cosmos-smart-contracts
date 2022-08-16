@@ -26,10 +26,14 @@ export const testnet = {
     cw3ApTeam: "juno1m80n4ykrws0pstwdv7yfefvpvwumm6zeuk4mdy57mqh5cqvhcmcs288edl",
     vault1: "",
     vault2: "",
-    endowmentContract1: "juno1j78jj784p7j6u6cgahas9rwu2lv29qr50yazula6ep87qaawuwzs3x2ta3",
-    endowmentContract2: "juno1j73lnl4a58kmz5q6hxq8n69x5jaqcdge24fy8uneu57csdzf94rqaflgg6",
-    endowmentContract3: "juno17yz7gah8drcngz0773mjsqme4u45yzgqqexljl6h5grsc7dxnd4sf05jkj",
-    endowmentContract4: "juno1hmj7t7aplee8apk9zxrde0up4w2633j6sypqkcz288e87et22cmsqmajjz",
+    // endowmentContract1: "juno1j78jj784p7j6u6cgahas9rwu2lv29qr50yazula6ep87qaawuwzs3x2ta3",
+    // endowmentContract2: "juno1j73lnl4a58kmz5q6hxq8n69x5jaqcdge24fy8uneu57csdzf94rqaflgg6",
+    // endowmentContract3: "juno17yz7gah8drcngz0773mjsqme4u45yzgqqexljl6h5grsc7dxnd4sf05jkj",
+    // endowmentContract4: "juno1hmj7t7aplee8apk9zxrde0up4w2633j6sypqkcz288e87et22cmsqmajjz",
+    endowId1: 1,
+    endowId2: 2,
+    endowId3: 3,
+    endowId4: 4,
   },
 
   // JunoSwap contracts
@@ -78,7 +82,7 @@ export const mainnet = {
     anchorVault: "",
     cw4GrpApTeam: "",
     cw3ApTeam: "",
-    endowmentContracts: [],
+    endowmentIDs: [],
   },
   members: [
     { addr: "", weight: 1 },

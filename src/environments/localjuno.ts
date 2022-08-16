@@ -48,10 +48,11 @@ let registrar: string;
 let cw4GrpApTeam: string;
 let cw3ApTeam: string;
 let indexFund: string;
-let endowmentContract1: string;
-let endowmentContract2: string;
-let endowmentContract3: string;
-let endowmentContract4: string;
+let accounts: string;
+let endowId1: number;
+let endowId2: number;
+let endowId3: number;
+let endowId4: number;
 
 // JunoSwap Contracts
 let junoswapTokenCode: number;
@@ -59,6 +60,7 @@ let junoswapFactory: string;
 let junoswapHaloTokenContract: string;
 let junoswapHaloJunoPairContract: string;
 let junoswapHaloJunoPairLpToken: string;
+let junoswHaloJunoPairLpStakingContract: string;
 let junoswapInitialHaloSupply: string;
 let junoswapHaloLiquidity: string;
 let junoswapNativeLiquidity: string;
@@ -111,25 +113,23 @@ async function initialize() {
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
   indexFund = config.contracts.indexFund;
-  endowmentContract1 = config.contracts.endowmentContract1;
-  endowmentContract2 = config.contracts.endowmentContract2;
-  endowmentContract3 = config.contracts.endowmentContract3;
-  endowmentContract4 = config.contracts.endowmentContract4;
+  accounts = config.contracts.accountsContract;
 
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
-  console.log(`Using ${chalk.cyan(endowmentContract1)} as Endowment Contract #1`);
-  console.log(`Using ${chalk.cyan(endowmentContract2)} as Endowment Contract #2`);
-  console.log(`Using ${chalk.cyan(endowmentContract3)} as Endowment Contract #3`);
-  console.log(`Using ${chalk.cyan(endowmentContract4)} as Endowment Contract #4`);
+  console.log(`Using ${chalk.cyan(accounts)} as Accounts`);
+  console.log(`Using ${chalk.cyan(endowId1)} as Endowment ID #1`);
+  console.log(`Using ${chalk.cyan(endowId2)} as Endowment ID #2`);
+  console.log(`Using ${chalk.cyan(endowId3)} as Endowment ID #3`);
+  console.log(`Using ${chalk.cyan(endowId4)} as Endowment ID #4`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
 
   junoswapTokenCode = config.junoswap.junoswap_token_code;
-  junoswapFactory = config.junoswap.junoswap_factory;
   junoswapHaloTokenContract = config.junoswap.halo_token_contract;
-  junoswapHaloJunoPairContract = config.junoswap.halo_luna_pair_contract;
-  junoswapHaloJunoPairLpToken = config.junoswap.halo_luna_pair_lp_token;
+  junoswapHaloJunoPairContract = config.junoswap.halo_juno_pool_contract;
+  junoswapHaloJunoPairLpToken = config.junoswap.halo_juno_pool_lp_token;
+  junoswHaloJunoPairLpStakingContract = config.junoswap.halo_juno_pool_lp_staking_addr;
   junoswapInitialHaloSupply = config.junoswap.initial_halo_supply;
   junoswapHaloLiquidity = config.junoswap.halo_liquidity;
   junoswapNativeLiquidity = config.junoswap.native_liquidity;
@@ -198,7 +198,7 @@ export async function startSetupCore(): Promise<void> {
       tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
       funding_goal: "500000000", // funding goal
       fund_member_limit: 10,
-      charity_cw3_threshold_abs_perc: "0.10", // threshold absolute percentage for "charity-cw3"
+      charity_cw3_threshold_abs_perc: "0.5", // threshold absolute percentage for "charity-cw3"
       charity_cw3_max_voting_period: 60,      // max_voting_period time(unit: seconds) for "charity-cw3"
       accepted_tokens:  {
         native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
@@ -287,10 +287,10 @@ export async function startMigrateCore(): Promise<void> {
     apTeamAccount,
     registrar,
     indexFund,
+    accounts,
     cw4GrpApTeam,
     cw3ApTeam,
     [],
-    [endowmentContract1, endowmentContract2, endowmentContract3, endowmentContract4]
   );
 }
 
@@ -355,10 +355,11 @@ export async function startTests(): Promise<void> {
     indexFund,
     "undefined",
     "undefined",
-    endowmentContract1,
-    endowmentContract2,
-    endowmentContract3,
-    endowmentContract4,
+    accounts,
+    endowId1,
+    endowId2,
+    endowId3,
+    endowId4,
     cw4GrpApTeam,
     cw3ApTeam,
     junoswapFactory,
