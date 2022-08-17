@@ -24,8 +24,8 @@ export const testnet = {
     indexFund: "juno1rafegcggtmetfcdfp2umvlmperpu6vdcxwraz59wcgja85mz25fs27yvae",
     cw4GrpApTeam: "juno1k77vksqvhy4r83scmh80gqkfluv5kjtxcxfuw6de323cdpnxgvhqqcq40y",
     cw3ApTeam: "juno1a6grxe4nz2r0p7h048exta4qx6wfj47h7yug0zw44ele6a7faausqqhzcg",
-	cw4GrpReviewTeam: "",
-    cw3ReviewTeam: "",
+	cw4GrpReviewTeam: "juno1sfu6h84vk82zrqac5s72tnh3pujcxgraxgdnamalhsafet7unf8q7stmgz",
+    cw3ReviewTeam: "juno1xe4pewxhddsg3y2rpemjnvdx0ut4dpsze32t0fj47kr4m9ryy02sq35jq0",
     vault1: "",
     vault2: "",
 
