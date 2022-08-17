@@ -116,6 +116,7 @@ fn update_config() {
         cw4_code: Some(MOCK_CW4_CODE_ID),
         accepted_tokens_cw20: None,
         accepted_tokens_native: None,
+        applications_review: None,
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -180,6 +181,7 @@ fn anyone_can_create_endowment_accounts() {
         cw4_code: None,
         accepted_tokens_cw20: None,
         accepted_tokens_native: None,
+        applications_review: None,
     };
     let info = mock_info(ap_team.as_ref(), &[]);
     let _ = execute(
@@ -474,6 +476,7 @@ fn test_add_update_and_remove_accepted_tokens() {
         cw4_code: None,
         accepted_tokens_cw20: Some(vec!["new_token".to_string()]),
         accepted_tokens_native: None,
+        applications_review: None,
     };
     let res = execute(
         deps.as_mut(),

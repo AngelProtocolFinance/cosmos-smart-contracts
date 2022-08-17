@@ -49,7 +49,8 @@ pub fn update_endowment_status(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    if info.sender.ne(&config.owner) || msg.status > 3 {
+    if !(info.sender == config.owner || info.sender == config.applications_review) || msg.status > 3
+    {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -183,6 +184,10 @@ pub fn update_config(
     }
 
     // update config attributes with newly passed configs
+    config.applications_review = match msg.applications_review {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.applications_review,
+    };
     config.accounts_contract = match msg.accounts_contract {
         Some(addr) => Some(deps.api.addr_validate(&addr)?),
         None => config.accounts_contract,

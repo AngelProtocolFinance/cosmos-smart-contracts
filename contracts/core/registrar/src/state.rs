@@ -14,8 +14,8 @@ pub const CONFIG: Item<Config> = Item::new("config");
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
-    pub owner: Addr,                   // AP TEAM MULTISIG
-    pub guardian_angels: Option<Addr>, // GUARDIAN ANGELS MULTISIG
+    pub owner: Addr,               // AP TEAM MULTISIG
+    pub applications_review: Addr, // Endowment application review team's CW3 (set as owner to start). Owner can set and change/revoke.
     pub index_fund_contract: Option<Addr>,
     pub accounts_contract: Option<Addr>,
     pub treasury: Addr,

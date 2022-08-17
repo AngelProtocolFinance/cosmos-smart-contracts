@@ -83,6 +83,7 @@ pub struct UpdateConfigMsg {
     pub cw4_code: Option<u64>,
     pub accepted_tokens_native: Option<Vec<String>>,
     pub accepted_tokens_cw20: Option<Vec<String>>,
+    pub applications_review: Option<String>,
 }
 
 impl UpdateConfigMsg {
