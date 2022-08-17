@@ -113,7 +113,7 @@ async function initialize() {
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
   indexFund = config.contracts.indexFund;
-  accounts = config.contracts.accountsContract;
+  accounts = config.contracts.accounts;
 
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
