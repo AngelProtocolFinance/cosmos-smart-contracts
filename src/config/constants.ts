@@ -24,6 +24,8 @@ export const testnet = {
     indexFund: "juno1rafegcggtmetfcdfp2umvlmperpu6vdcxwraz59wcgja85mz25fs27yvae",
     cw4GrpApTeam: "juno1k77vksqvhy4r83scmh80gqkfluv5kjtxcxfuw6de323cdpnxgvhqqcq40y",
     cw3ApTeam: "juno1a6grxe4nz2r0p7h048exta4qx6wfj47h7yug0zw44ele6a7faausqqhzcg",
+	cw4GrpReviewTeam: "",
+    cw3ReviewTeam: "",
     vault1: "",
     vault2: "",
 
@@ -79,6 +81,8 @@ export const mainnet = {
     anchorVault: "",
     cw4GrpApTeam: "",
     cw3ApTeam: "",
+	cw4GrpReviewTeam: "",
+    cw3ReviewTeam: "",
     endowmentIDs: [],
   },
   members: [
