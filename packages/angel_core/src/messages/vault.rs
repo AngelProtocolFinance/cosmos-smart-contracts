@@ -38,7 +38,7 @@ pub enum ExecuteMsg {
         endowment_id: u32,
     },
     Claim {
-        endowment_id: String,
+        endowment_id: u32,
         beneficiary: Addr,
     },
     Redeem {
@@ -54,7 +54,7 @@ pub enum ExecuteMsg {
         output_token_bal_before: Uint128,
     },
     AddLiquidity {
-        endowment_id: String,
+        endowment_id: u32,
         in_denom: Denom,
         out_denom: Denom,
         in_denom_bal_before: Uint128,
@@ -65,7 +65,7 @@ pub enum ExecuteMsg {
         action: RemoveLiquidAction,
     },
     Stake {
-        endowment_id: String,
+        endowment_id: u32,
         lp_token_bal_before: Uint128,
     },
     SwapAndSendTo {
@@ -137,7 +137,7 @@ pub struct RoutesUpdateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ReceiveMsg {
-    Deposit { endowment_id: String },
+    Deposit { endowment_id: u32 },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

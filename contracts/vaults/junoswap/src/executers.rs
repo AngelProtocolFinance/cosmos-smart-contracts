@@ -131,19 +131,14 @@ pub fn deposit(
     env: Env,
     _info: MessageInfo,
     msg_sender: String,
-    endowment_id: String,
+    endowment_id: u32,
     deposit_denom: Denom,
     deposit_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
     // Validations
-    validate_action_caller_n_endow_id(
-        deps.as_ref(),
-        &config,
-        msg_sender.clone(),
-        endowment_id.clone(),
-    )?;
+    validate_action_caller_n_endow_id(deps.as_ref(), &config, msg_sender.clone(), endowment_id)?;
 
     // Check if the "deposit_denom" is valid
     if !config.input_denoms.contains(&deposit_denom) {
@@ -178,7 +173,7 @@ fn create_deposit_msgs(
     deps: DepsMut,
     env: Env,
     config: &Config,
-    endowment_id: String,
+    endowment_id: u32,
     deposit_denom: Denom,
     deposit_amount: Uint128,
 ) -> Vec<CosmosMsg> {
@@ -222,7 +217,7 @@ pub fn claim(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    endowment_id: String,
+    endowment_id: u32,
     beneficiary: Addr,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -232,7 +227,7 @@ pub fn claim(
         deps.as_ref(),
         &config,
         info.sender.to_string(),
-        endowment_id.clone(),
+        endowment_id,
     )?;
 
     // First, check if there is any possible claim in "staking" contract
@@ -291,12 +286,12 @@ pub fn withdraw(
         deps.as_ref(),
         &config,
         info.sender.to_string(),
-        msg.endowment_id.clone(),
+        msg.endowment_id,
     )?;
 
     // First, burn the vault tokens
     let account_info = MessageInfo {
-        sender: deps.api.addr_validate(&msg.endowment_id)?,
+        sender: deps.api.addr_validate(&msg.endowment_id.to_string())?,
         funds: vec![],
     };
     cw20_base::contract::execute_burn(deps.branch(), env.clone(), account_info, msg.amount)
@@ -357,7 +352,7 @@ pub fn withdraw(
         };
         PENDING.save(
             deps.storage,
-            (msg.endowment_id.as_str(), env.block.height),
+            (msg.endowment_id.to_string().as_str(), env.block.height),
             &pending_info,
         )?;
     }
@@ -582,7 +577,10 @@ pub fn distribute_harvest(
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     for endowment in endowments.iter() {
         let acct_bal = cw20_base::state::BALANCES
-            .load(deps.storage, &deps.api.addr_validate(&endowment.id)?)
+            .load(
+                deps.storage,
+                &deps.api.addr_validate(&endowment.id.to_string())?,
+            )
             .unwrap_or_default();
         let acct_owed = less_taxes * acct_bal / config.total_shares;
         let liquid_amt = acct_owed * config.harvest_to_liquid.numerator()
@@ -616,7 +614,7 @@ pub fn distribute_harvest(
         deps,
         env,
         &config,
-        depositor,
+        0_u32, // Temporary value. Need to be fixed.
         deposit_denom,
         restake_amt,
     ));
@@ -629,7 +627,7 @@ pub fn add_liquidity(
     deps: DepsMut,
     env: Env,
     _info: MessageInfo,
-    endowment_id: String,
+    endowment_id: u32,
     in_denom: Denom,
     out_denom: Denom,
     in_denom_bal_before: Uint128,
@@ -762,7 +760,7 @@ pub fn stake_lp_token(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    endowment_id: String,
+    endowment_id: u32,
     lp_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
@@ -1075,7 +1073,7 @@ fn validate_action_caller_n_endow_id(
     deps: Deps,
     config: &Config,
     caller: String,
-    endowment_id: String,
+    endowment_id: u32,
 ) -> Result<(), ContractError> {
     // Check if sender address is the "accounts_contract"
     let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
