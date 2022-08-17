@@ -41,6 +41,7 @@ pub struct ConfigResponse {
     pub cw3_code: Option<u64>,
     pub cw4_code: Option<u64>,
     pub accepted_tokens: AcceptedTokens,
+    pub applications_review: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
