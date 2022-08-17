@@ -400,29 +400,16 @@ pub fn new_accounts_reply(
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
-                        if attrb.key == "endow_id" {
-                            endowment_id = attrb.value.clone().parse().unwrap();
-                        }
-                        if attrb.key == "endow_name" {
-                            endowment_name = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_owner" {
-                            endowment_owner = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_type" {
-                            endowment_type = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_logo" {
-                            endowment_logo = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_image" {
-                            endowment_image = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_tier" {
-                            endowment_tier = attrb.value.clone().parse().unwrap();
-                        }
-                        if attrb.key == "endow_un_sdg" {
-                            endowment_un_sdg = attrb.value.clone().parse().unwrap();
+                        match attrb.key.as_str() {
+                            "endow_id" => endowment_id = attrb.value.parse().unwrap(),
+                            "endow_name" => endowment_name = attrb.value,
+                            "endow_owner" => endowment_owner = attrb.value,
+                            "endow_type" => endowment_type = attrb.value,
+                            "endow_logo" => endowment_logo = attrb.value,
+                            "endow_image" => endowment_image = attrb.value,
+                            "endow_tier" => endowment_tier = attrb.value.parse().unwrap(),
+                            "endow_un_sdg" => endowment_un_sdg = attrb.value.parse().unwrap(),
+                            &_ => (),
                         }
                     }
                 }
@@ -521,7 +508,7 @@ pub fn update_endowment_entry(
     let mut endowment_entry = REGISTRY.load(deps.storage, msg.endowment_id)?;
 
     let config = CONFIG.load(deps.storage)?;
-    if info.sender.ne(&config.owner) && info.sender.ne(&endowment_entry.owner) {
+    if !(info.sender == config.owner || info.sender == endowment_entry.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
