@@ -115,6 +115,10 @@ async function initialize() {
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
   indexFund = config.contracts.indexFund;
+  accounts = config.contracts.accounts;
+  vault1 = config.contracts.vault1;
+  vault2 = config.contracts.vault2;
+
   endowId1 = config.contracts.endowId1;
   endowId2 = config.contracts.endowId2;
   endowId3 = config.contracts.endowId3;
@@ -122,12 +126,15 @@ async function initialize() {
 
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
+  console.log(`Using ${chalk.cyan(accounts)} as Accounts`);
   console.log(`Using ${chalk.cyan(endowId1)} as Endowment ID #1`);
   console.log(`Using ${chalk.cyan(endowId2)} as Endowment ID #2`);
   console.log(`Using ${chalk.cyan(endowId3)} as Endowment ID #3`);
   console.log(`Using ${chalk.cyan(endowId4)} as Endowment ID #4`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
+  console.log(`Using ${chalk.cyan(vault1)} as Vault1`);
+  console.log(`Using ${chalk.cyan(vault2)} as Vault2`);
 
  
   junoswapTokenCode = config.junoswap.junoswap_token_code;

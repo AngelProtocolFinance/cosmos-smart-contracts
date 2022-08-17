@@ -118,6 +118,11 @@ async function initialize() {
   vault1 = config.contracts.vault1;
   vault2 = config.contracts.vault2;
 
+  endowId1 = config.contracts.endowId1;
+  endowId2 = config.contracts.endowId2;
+  endowId3 = config.contracts.endowId3;
+  endowId4 = config.contracts.endowId4;
+
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
   console.log(`Using ${chalk.cyan(accounts)} as Accounts`);
