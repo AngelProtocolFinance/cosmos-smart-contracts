@@ -879,7 +879,7 @@ pub fn update_profile(
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let config = CONFIG.load(deps.storage)?;
 
-    if info.sender != endowment.owner && info.sender != config.owner {
+    if !(info.sender == endowment.owner || info.sender == config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
