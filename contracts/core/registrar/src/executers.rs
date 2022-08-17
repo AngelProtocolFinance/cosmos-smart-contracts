@@ -48,16 +48,9 @@ pub fn update_endowment_status(
     msg: UpdateEndowmentStatusMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-
-    if !(info.sender == config.owner || info.sender == config.applications_review) || msg.status > 3
-    {
-        return Err(ContractError::Unauthorized {});
-    }
-
     // look up the endowment in the Registry. Will fail if doesn't exist
     let endowment_id = msg.endowment_id;
     let mut endowment_entry = REGISTRY.load(deps.storage, endowment_id)?;
-
     let msg_endowment_status = match msg.status {
         0 => EndowmentStatus::Inactive,
         1 => EndowmentStatus::Approved,
@@ -65,6 +58,18 @@ pub fn update_endowment_status(
         3 => EndowmentStatus::Closed,
         _ => EndowmentStatus::Inactive, // should never be reached due to status check earlier
     };
+
+    // AP Applications Review: Can only handle Endowments that are still INACTIVE.
+    // Can only set a status of either Approved OR Closed.
+    // AP Team CW3 (owner): Can only handle Endowments that are NOT Inactive. Can set any status.
+    if !((info.sender == config.applications_review
+        && msg_endowment_status == EndowmentStatus::Inactive
+        && (msg.status == 1 || msg.status == 3))
+        || (info.sender == config.owner && msg_endowment_status != EndowmentStatus::Inactive))
+        || msg.status > 3
+    {
+        return Err(ContractError::Unauthorized {});
+    }
 
     // check first that the current status is different from the new status sent
     if endowment_entry.status.to_string() == msg_endowment_status.to_string() {
