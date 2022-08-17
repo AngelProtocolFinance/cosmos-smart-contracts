@@ -21,6 +21,7 @@ import { wasm_path } from "../../../config/wasmPaths";
 let juno: SigningCosmWasmClient;
 let apTeam: string;
 let registrar: string;
+let accounts: string;
 let cw4GrpOwners: string;
 let cw4GrpApTeam: string;
 let cw3GuardianAngels: string;
@@ -44,13 +45,15 @@ export async function setupCore(
     max_voting_period_height: number;
     max_voting_period_guardians_height: number;
     fund_rotation: number | undefined;
+    fund_member_limit: number | undefined,
     turnover_to_multisig: boolean;
     is_localjuno: boolean;
     harvest_to_liquid: string;
     tax_per_block: string;
     funding_goal: string | undefined;
-    charity_cw3_multisig_threshold_abs_perc: string,
-    charity_cw3_multisig_max_voting_period: number,
+    charity_cw3_threshold_abs_perc: string,
+    charity_cw3_max_voting_period: number,
+    accepted_tokens: any | undefined,
     junoswap_pool_addr: string,
     junoswap_pool_staking: string,
   }
@@ -68,16 +71,18 @@ export async function setupCore(
     config.max_voting_period_height,
     config.max_voting_period_guardians_height,
     config.fund_rotation,
+    config.fund_member_limit,
     config.harvest_to_liquid,
     config.tax_per_block,
     config.funding_goal,
+    config.accepted_tokens,
     config.junoswap_pool_addr,
     config.junoswap_pool_staking,
   );
   await mainNet.initializeCharities(juno, apTeam, registrar, indexFund);
   await mainNet.setupEndowments(
-    config.charity_cw3_multisig_threshold_abs_perc,
-    config.charity_cw3_multisig_max_voting_period,
+    config.charity_cw3_threshold_abs_perc,
+    config.charity_cw3_max_voting_period,
   );
   await mainNet.approveEndowments();
   await mainNet.createIndexFunds();
@@ -92,9 +97,11 @@ async function setup(
   max_voting_period_height: number,
   max_voting_period_guardians_height: number,
   fund_rotation: number | undefined,
+  fund_member_limit: number | undefined,
   harvest_to_liquid: string,
   tax_per_block: string,
   funding_goal: string | undefined,
+  accepted_tokens: any | undefined,
   junoswap_pool_addr: string,
   junoswap_pool_staking_addr: string,
 ): Promise<void> {
@@ -156,10 +163,7 @@ async function setup(
       treasury: treasury_address,
       tax_rate: tax_rate,
       default_vault: undefined,
-      accepted_tokens: {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
-        cw20: [],
-      }
+      accepted_tokens: accepted_tokens,
     }
   );
   registrar = registrarResult.contractAddress as string;
@@ -207,11 +211,40 @@ async function setup(
   const fundResult = await instantiateContract(juno, apTeam, apTeam, fundCodeId, {
     registrar_contract: registrar,
     fund_rotation: fund_rotation,
+    fund_member_limit: fund_member_limit,
     funding_goal: funding_goal,
+    accepted_tokens: accepted_tokens,
   });
   indexFund = fundResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${indexFund}`);
 
+  process.stdout.write("Instantiating the Accounts contract");
+  const accountsResult = await instantiateContract(
+    juno,
+    apTeam,
+    apTeam,
+    accountsCodeId,
+    {
+      owner_sc: apTeam,
+      registrar_contract: registrar,
+    }
+  );
+  accounts = accountsResult.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${accounts}`);
+
+  // Anchor Vault
+  // process.stdout.write("Instantiating Anchor Vault contract");
+  // const vaultResult1 = await instantiateContract(juno, apTeam, apTeam, vaultCodeId, {
+  //   registrar_contract: registrar,
+  //   moneymarket: registrar, // placeholder addr for now
+  //   tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
+  //   name: "AP Deposit Token - Anchor",
+  //   symbol: "apANC",
+  //   decimals: 6,
+  //   harvest_to_liquid: harvest_to_liquid,
+  // });
+  // anchorVault = vaultResult1.contractAddress as string;
+  // console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${anchorVault}`);
   // JunoSwap Vault
   process.stdout.write("Instantiating Anchor Vault contract");
   const vaultResult1 = await instantiateContract(juno, apTeam, apTeam, vaultCodeId, {
@@ -228,31 +261,31 @@ async function setup(
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault1}`);
 
   // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
-  process.stdout.write("Approving Anchor Vault in Registrar");
-  process.stdout.write(
-    "Set default vault in Registrar (for newly created Endowments) as Anchor Vault"
-  );
+  // process.stdout.write("Approving Anchor Vault in Registrar");
+  // process.stdout.write(
+  //   "Set default vault in Registrar (for newly created Endowments) as Anchor Vault"
+  // );
   process.stdout.write("Update Registrar with the Address of the Index Fund contract,  CW3_code_Id, CW4_code_Id");
   await sendTransaction(juno, apTeam, registrar, {
     update_config: {
-      default_vault: vault1,
+      accounts_contract: accounts,
       index_fund_contract: indexFund,
       cw3_code: cw3MultiSig,
       cw4_code: cw4Group,
     },
   });
-  await sendTransaction(juno, apTeam, registrar, {
-    vault_update_status: {
-      vault_addr: vault1,
-      approved: true,
-    },
-  });
-  console.log(chalk.green(" Done!"));
+  // await sendTransaction(juno, apTeam, registrar, {
+  //   vault_update_status: {
+  //     vault_addr: vault1,
+  //     approved: true,
+  //   },
+  // });
+  // console.log(chalk.green(" Done!"));
 
   // Add confirmed TCA Members to the Index Fund SCs approved list
-  process.stdout.write("Add confirmed TCA Member to allowed list");
-  await sendTransaction(juno, apTeam, indexFund, {
-    update_tca_list: { new_list: tca_members },
-  });
-  console.log(chalk.green(" Done!"));
+  // process.stdout.write("Add confirmed TCA Member to allowed list");
+  // await sendTransaction(juno, apTeam, indexFund, {
+  //   update_tca_list: { new_list: tca_members },
+  // });
+  // console.log(chalk.green(" Done!"));
 }

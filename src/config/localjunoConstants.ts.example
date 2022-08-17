@@ -23,6 +23,7 @@ export const localjuno = {
   // Should be updated contract addresses after deploying wasms in the LocalJuno
   contracts: {
     registrar: "",
+    accounts: "",
     indexFund: "",
     endowmentContract1: "",
     endowmentContract2: "",

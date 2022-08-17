@@ -19,16 +19,18 @@ export const testnet = {
   },
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
-    registrar: "juno14p5dep5wnc2576nr3u9kakz0nunh44rncwlkz8jgl8z0umenqe5su2p38a",
-    indexFund: "juno18kkuz3ztvtsqcylrcmgezs5awcuftlxyzsgcf9gsunuxfgx8vmnq3mpp60",
-    cw4GrpApTeam: "juno1wtztrpxxu6s0delnwtcyqfd590lwyww2uhgqur0uapqjh2njm7wq64udrm",
-    cw3ApTeam: "juno1m80n4ykrws0pstwdv7yfefvpvwumm6zeuk4mdy57mqh5cqvhcmcs288edl",
+    registrar: "juno1ea06p4lms9ku2dca9vxnta28nwl5t0z7pr7e50jh0xhm4ujkp35szz7sae",
+    accounts: "juno1mfqqu85m0mvc0ahsrz57c8d4x0x0teyq4jmfq92vuy8fgwv0uepq9uj0kr",
+    indexFund: "juno19l9msl003n0zrnl3xsccr4ypvhxyamaqddv0fqh45lf0dwtyplxqef4xp8",
+    cw4GrpApTeam: "juno1nmetyh7phu89rp8pl8rxdtyzkcan8tp90899er9jnqjf9pylzm8sypfqhq",
+    cw3ApTeam: "juno1ttn32lntds7tk64fcy8ldz30t9frhy3uxg5lzak2ej0jd4md0szqda2nuc",
     vault1: "",
     vault2: "",
-    endowmentContract1: "juno1j78jj784p7j6u6cgahas9rwu2lv29qr50yazula6ep87qaawuwzs3x2ta3",
-    endowmentContract2: "juno1j73lnl4a58kmz5q6hxq8n69x5jaqcdge24fy8uneu57csdzf94rqaflgg6",
-    endowmentContract3: "juno17yz7gah8drcngz0773mjsqme4u45yzgqqexljl6h5grsc7dxnd4sf05jkj",
-    endowmentContract4: "juno1hmj7t7aplee8apk9zxrde0up4w2633j6sypqkcz288e87et22cmsqmajjz",
+
+    endowId1: 1,
+    endowId2: 2,
+    endowId3: 3,
+    endowId4: 4,
   },
 
   // JunoSwap contracts
@@ -74,11 +76,12 @@ export const mainnet = {
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {
     registrar: "",
+    accounts: "",
     indexFund: "",
     anchorVault: "",
     cw4GrpApTeam: "",
     cw3ApTeam: "",
-    endowmentContracts: [],
+    endowmentIDs: [],
   },
   members: [
     { addr: "", weight: 1 },

@@ -35,7 +35,8 @@ let cw3GuardianAngels: string;
 let cw3ApTeam: string;
 let indexFund: string;
 let anchorVault: string;
-let endowmentContracts: string[];
+let accounts: string;
+let endowmentIDs: number[];
 let apTreasury: string;
 let members: Member[];
 let tcaMembers: string[];
@@ -80,7 +81,7 @@ async function initialize() {
   cw3ApTeam = config.contracts.cw3ApTeam;
   indexFund = config.contracts.indexFund;
   anchorVault = config.contracts.anchorVault;
-  endowmentContracts = [...config.contracts.endowmentContracts];
+  endowmentIDs = [...config.contracts.endowmentIDs];
   members = [...config.members];
   tcaMembers = [];
 
@@ -89,7 +90,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(anchorVault)} as Anchor Vault`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
-  console.log(`Using ${chalk.cyan(endowmentContracts)} as Endowment Contracts`);
+  console.log(`Using ${chalk.cyan(endowmentIDs)} as Endowment IDs`);
 
   junoswapTokenCode = config.junoswap.junoswap_token_code;
   junoswapFactory = config.junoswap.junoswap_factory;
@@ -144,13 +145,18 @@ export async function startSetupCore(): Promise<void> {
     max_voting_period_height: 1000, // max voting period height for "ap-cw3"
     max_voting_period_guardians_height: 100, // max voting period guardians height for "ap-cw3"
     fund_rotation: 10, // index fund rotation
+    fund_member_limit: 10, // fund member limit
     turnover_to_multisig: false, // turn over to AP Team multisig
     is_localjuno: false, // is LocalJuno
     harvest_to_liquid: "0.75", // harvest to liquid percentage
     tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
     funding_goal: "50000000", // funding goal
-    charity_cw3_multisig_threshold_abs_perc: "0.50", // threshold absolute percentage for "charity-cw3"
-    charity_cw3_multisig_max_voting_period: 100,      // max_voting_period time(unit: seconds) for "charity-cw3"
+    charity_cw3_threshold_abs_perc: "0.50", // threshold absolute percentage for "charity-cw3"
+    charity_cw3_max_voting_period: 100,      // max_voting_period time(unit: seconds) for "charity-cw3"
+    accepted_tokens:  {
+      native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+      cw20: [],
+    },
     junoswap_pool_addr: junoswap_USDC_Juno_PairContract, // Junoswap pool (USDC-JUNO) contract
     junoswap_pool_staking: junoswap_USDC_Juno_PairLpStaking, // Junoswap pool (USDC-JUNO) LP token staking contract
   });
@@ -230,10 +236,10 @@ export async function startMigrateCore(): Promise<void> {
     apTeamAccount,
     registrar,
     indexFund,
+    accounts,
     cw4GrpApTeam,
     cw3ApTeam,
     [anchorVault],
-    endowmentContracts
   );
 }
 
@@ -281,7 +287,8 @@ export async function startTests(): Promise<void> {
     registrar,
     indexFund,
     anchorVault,
-    endowmentContracts[0],
+    accounts,
+    endowmentIDs[0],
     cw4GrpApTeam,
     cw3ApTeam,
     junoswapFactory,
