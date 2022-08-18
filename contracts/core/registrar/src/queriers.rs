@@ -23,6 +23,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         cw3_code: config.cw3_code,
         cw4_code: config.cw4_code,
         accepted_tokens: config.accepted_tokens,
+        applications_review: config.applications_review.to_string(),
     })
 }
 
