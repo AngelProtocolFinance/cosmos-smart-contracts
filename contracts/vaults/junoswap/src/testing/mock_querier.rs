@@ -203,6 +203,7 @@ impl WasmMockQuerier {
                             native: vec![],
                             cw20: vec![],
                         },
+                        applications_review: "applications-review".to_string(),
                     })
                     .unwrap(),
                 )),
