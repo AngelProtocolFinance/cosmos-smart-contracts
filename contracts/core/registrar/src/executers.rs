@@ -496,14 +496,14 @@ pub fn update_endowment_entry(
     info: MessageInfo,
     msg: UpdateEndowmentEntryMsg,
 ) -> Result<Response, ContractError> {
-    // look up the endowment in the Registry. Will fail if doesn't exist
-    let mut endowment_entry = REGISTRY.load(deps.storage, msg.endowment_id)?;
-
     let config = CONFIG.load(deps.storage)?;
-    if !(info.sender == config.owner || info.sender == endowment_entry.owner) {
+    // sender should be either the Accounts contract OR the sender is AP Team CW3 contract (ie. Owner)
+    if !(info.sender == config.owner || info.sender == config.accounts_contract.unwrap()) {
         return Err(ContractError::Unauthorized {});
     }
 
+    // look up the endowment in the Registry. Will fail if doesn't exist
+    let mut endowment_entry = REGISTRY.load(deps.storage, msg.endowment_id)?;
     endowment_entry.name = msg.name;
     endowment_entry.owner = msg.owner.unwrap_or(endowment_entry.owner);
     endowment_entry.endow_type = msg.endow_type.unwrap_or(endowment_entry.endow_type);
