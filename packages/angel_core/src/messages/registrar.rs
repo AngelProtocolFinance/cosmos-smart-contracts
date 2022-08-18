@@ -12,7 +12,6 @@ pub struct MigrateMsg {}
 pub struct InstantiateMsg {
     pub treasury: String,
     pub tax_rate: Decimal,
-    pub default_vault: Option<Addr>,
     pub split_to_liquid: Option<SplitDetails>, // default %s to split off into liquid account, if donor provided split is not present
     pub accepted_tokens: Option<AcceptedTokens>, // list of approved native and CW20 coins can accept inward
 }
@@ -72,7 +71,6 @@ pub struct UpdateConfigMsg {
     pub treasury: Option<String>,
     pub tax_rate: Option<Decimal>,
     pub approved_charities: Option<Vec<String>>,
-    pub default_vault: Option<Option<String>>,
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
     pub split_default: Option<Decimal>,

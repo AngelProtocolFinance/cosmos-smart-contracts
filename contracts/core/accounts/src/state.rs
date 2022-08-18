@@ -16,8 +16,7 @@ pub struct Config {
 #[serde(rename_all = "snake_case")]
 pub struct Endowment {
     pub owner: Addr,             // address that originally setup the endowment account
-    pub beneficiary: Addr, // address that funds are disbursed to for withdrawals & in a good-standing liquidation(winding up)
-    pub deposit_approved: bool, // DANO has approved to receive donations & transact
+    pub deposit_approved: bool,  // DANO has approved to receive donations & transact
     pub withdraw_approved: bool, // DANO has approved to withdraw funds
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity

@@ -20,7 +20,6 @@ pub struct ConfigResponse {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct EndowmentDetailsResponse {
     pub owner: Addr,
-    pub beneficiary: Addr,
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,

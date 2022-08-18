@@ -213,7 +213,6 @@ impl WasmMockQuerier {
                         accounts_contract: Some("accounts_contract_addr".to_string()),
                         treasury: "treasury".to_string(),
                         tax_rate: Decimal::one(),
-                        default_vault: Some("default-vault".to_string()),
                         index_fund: Some("index_fund".to_string()),
                         split_to_liquid: SplitDetails {
                             min: Decimal::zero(),

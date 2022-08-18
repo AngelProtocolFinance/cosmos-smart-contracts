@@ -56,7 +56,6 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
     Ok(EndowmentDetailsResponse {
         owner: endowment.owner,
-        beneficiary: endowment.beneficiary,
         withdraw_before_maturity: endowment.withdraw_before_maturity,
         maturity_time: endowment.maturity_time,
         maturity_height: endowment.maturity_height,
