@@ -47,6 +47,8 @@ let tcaAccount: string;
 let registrar: string;
 let cw4GrpApTeam: string;
 let cw3ApTeam: string;
+let cw4GrpReviewTeam: string;
+let cw3ReviewTeam: string;
 let indexFund: string;
 let vault1: string;
 let vault2: string;

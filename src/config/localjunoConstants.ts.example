@@ -25,12 +25,14 @@ export const localjuno = {
     registrar: "",
     accounts: "",
     indexFund: "",
-    endowmentContract1: "",
-    endowmentContract2: "",
-    endowmentContract3: "",
-    endowmentContract4: "",
     cw4GrpApTeam: "",
     cw3ApTeam: "",
+    cw4GrpReviewTeam: "",
+    cw3ReviewTeam: "",
+    endowment1: 1,
+    endowment2: 2,
+    endowment3: 3,
+    endowment4: 4,
   },
 
   // JunoSwap contracts

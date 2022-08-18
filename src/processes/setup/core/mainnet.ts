@@ -22,10 +22,10 @@ let juno: SigningCosmWasmClient;
 let apTeam: string;
 let registrar: string;
 let accounts: string;
-let cw4GrpOwners: string;
 let cw4GrpApTeam: string;
-let cw3GuardianAngels: string;
 let cw3ApTeam: string;
+let cw4GrpReviewTeam: string;
+let cw3ReviewTeam: string;
 let indexFund: string;
 let vault1: string;
 
@@ -206,6 +206,46 @@ async function setup(
   });
   console.log(chalk.green(" Done!"));
 
+  // CW4 Review Team Group
+  process.stdout.write("Instantiating CW4 Review Team Group contract");
+  const cw4GrpReviewTeamResult = await instantiateContract(juno, apTeam, apTeam, cw4Group, {
+    admin: apTeam,
+    members: [
+      { addr: apTeam, weight: 1 },
+    ],
+  });
+  cw4GrpReviewTeam = cw4GrpReviewTeamResult.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpReviewTeam}`);
+
+  // CW3 Review Team MultiSig
+  process.stdout.write("Instantiating CW3 Review Team MultiSig contract");
+  const cw3ReviewTeamResult = await instantiateContract(
+    juno,
+    apTeam,
+    apTeam,
+    cw3MultiSig,
+    {
+      group_addr: cw4GrpReviewTeam,
+      threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
+      max_voting_period: { height: max_voting_period_height },
+      // registrar_contract: registrar,
+    }
+  );
+  cw3ReviewTeam = cw3ReviewTeamResult.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw3ReviewTeam}`);
+
+  // Setup AP Team C3 to be the admin to it's C4 Group
+  process.stdout.write(
+    "AddHook & UpdateAdmin on AP Review Team CW4 Group to point to AP Team C3"
+  );
+  await sendTransaction(juno, apTeam, cw4GrpReviewTeam, {
+      add_hook: { addr: cw3ReviewTeam },
+  });
+  await sendTransaction(juno, apTeam, cw4GrpReviewTeam, {
+      update_admin: { admin: cw3ReviewTeam },
+  });
+  console.log(chalk.green(" Done!"));
+
   // Index Fund
   process.stdout.write("Instantiating Index Fund contract");
   const fundResult = await instantiateContract(juno, apTeam, apTeam, fundCodeId, {
@@ -269,6 +309,7 @@ async function setup(
   await sendTransaction(juno, apTeam, registrar, {
     update_config: {
       accounts_contract: accounts,
+      applications_review: cw3ReviewTeam,
       index_fund_contract: indexFund,
       cw3_code: cw3MultiSig,
       cw4_code: cw4Group,

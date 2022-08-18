@@ -47,6 +47,8 @@ let tcaAccount: string;
 let registrar: string;
 let cw4GrpApTeam: string;
 let cw3ApTeam: string;
+let cw4GrpReviewTeam: string;
+let cw3ReviewTeam: string;
 let indexFund: string;
 let accounts: string;
 let endowId1: number;
@@ -114,7 +116,7 @@ async function initialize() {
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
   indexFund = config.contracts.indexFund;
-  accounts = config.contracts.accountsContract;
+  accounts = config.contracts.accounts
   vault1 = config.contracts.vault1;
   vault2 = config.contracts.vault2;
 
