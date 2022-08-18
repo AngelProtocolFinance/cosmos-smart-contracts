@@ -139,7 +139,6 @@ fn anyone_can_create_endowment_accounts() {
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let good_charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
     let _good_endowment_addr = "terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9".to_string();
-    let default_vault_addr = "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg".to_string();
     let index_fund_contract = "terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d".to_string();
 
     let instantiate_msg = InstantiateMsg {
