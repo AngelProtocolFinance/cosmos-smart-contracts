@@ -85,7 +85,6 @@ pub fn create_endowment(
                 deposit_approved: false,
                 withdraw_approved: false,
                 owner,                                                  // Addr
-                beneficiary,                                            // Addr
                 withdraw_before_maturity: msg.withdraw_before_maturity, // bool
                 maturity_time: msg.maturity_time,                       // Option<u64>
                 maturity_height: msg.maturity_height,                   // Option<u64>

@@ -32,7 +32,6 @@ pub struct ConfigResponse {
     pub accounts_contract: Option<String>,
     pub treasury: String,
     pub tax_rate: Decimal,
-    pub default_vault: Option<String>,
     pub index_fund: Option<String>,
     pub split_to_liquid: SplitDetails,
     pub halo_token: Option<String>,
