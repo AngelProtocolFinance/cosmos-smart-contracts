@@ -47,7 +47,7 @@ let tcaAccount: string;
 let registrar: string;
 let cw4GrpApTeam: string;
 let cw3ApTeam: string;
-let cw4GrpReviewTeam: string;
+let cw4ReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
 let accounts: string;
@@ -117,6 +117,8 @@ async function initialize() {
   cw3ApTeam = config.contracts.cw3ApTeam;
   indexFund = config.contracts.indexFund;
   accounts = config.contracts.accounts
+  cw4ReviewTeam = config.contracts.cw4ReviewTeam;
+  cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   vault1 = config.contracts.vault1;
   vault2 = config.contracts.vault2;
 
@@ -134,6 +136,8 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(endowId4)} as Endowment ID #4`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
+  console.log(`Using ${chalk.cyan(cw4ReviewTeam)} as CW4 Review Group`);
+  console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review MultiSig`);
   console.log(`Using ${chalk.cyan(vault1)} as Vault1`);
   console.log(`Using ${chalk.cyan(vault2)} as Vault2`);
 
@@ -309,7 +313,7 @@ export async function startMigrateCore(): Promise<void> {
     accounts,
     cw4GrpApTeam,
     cw3ApTeam,
-    [],
+    [vault1, vault2],
   );
 }
 

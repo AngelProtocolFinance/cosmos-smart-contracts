@@ -277,16 +277,16 @@ export async function testExecute(
   //   haloCollector,
   //   "0.5"
   // );  // vault-related
-  await testCharityCanUpdateStrategies(
-    actors.charity1.client,
-    actors.charity1.addr,
-    accounts,
-    endowId1,
-    Vault1,
-    Vault2
-  );  // vault-related
+  // await testCharityCanUpdateStrategies(
+  //   actors.charity1.client,
+  //   actors.charity1.addr,
+  //   accounts,
+  //   endowId1,
+  //   Vault1,
+  //   Vault2
+  // );
 
-  // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, endowmentContract1, "1000");
+  await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1, "1000");
   // await testBeneficiaryCanWithdrawFromLiquid(
   //   actors.charity1.client, 
   //   actors.charity1.addr, 

@@ -40,13 +40,15 @@ export async function testRejectUnapprovedDonations(
 export async function testSendDonationToEndowment(
   juno: SigningCosmWasmClient,
   apTeam: string,
-  endowment: string,
+  accounts: string,
+  endowId: number,
   amount: string
 ): Promise<void> {
   process.stdout.write("Test - Send single amount to an Endowment Account");
   await expect(
-    sendTransactionWithFunds(juno, apTeam, endowment, {
+    sendTransactionWithFunds(juno, apTeam, accounts, {
         deposit: {
+          id: endowId,
           locked_percentage: "1",
           liquid_percentage: "0",
         },
