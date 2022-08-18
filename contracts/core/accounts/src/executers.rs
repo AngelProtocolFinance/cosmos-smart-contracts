@@ -74,7 +74,6 @@ pub fn create_endowment(
     }
 
     let owner = deps.api.addr_validate(&msg.owner)?;
-    let beneficiary = deps.api.addr_validate(&msg.beneficiary)?;
     // try to store the endowment, fail if the ID is already in use
     ENDOWMENTS.update(
         deps.storage,

@@ -265,7 +265,6 @@ pub fn create_endowment(
                     &angel_core::messages::accounts::ExecuteMsg::CreateEndowment(
                         angel_core::messages::accounts::CreateEndowmentMsg {
                             owner: msg.owner,
-                            beneficiary: msg.beneficiary,
                             withdraw_before_maturity: msg.withdraw_before_maturity,
                             maturity_time: msg.maturity_time,
                             maturity_height: msg.maturity_height,

@@ -20,7 +20,6 @@ fn proper_initialization() {
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
-        default_vault: None,
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
@@ -48,7 +47,6 @@ fn update_owner() {
     let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
-        default_vault: None,
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
@@ -84,7 +82,6 @@ fn update_config() {
     let index_fund_contract = String::from("terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d");
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
-        default_vault: None,
         tax_rate: Decimal::percent(0),
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
@@ -105,7 +102,6 @@ fn update_config() {
         approved_charities: None,
         treasury: Some(ap_team.clone()),
         tax_rate: None,
-        default_vault: None,
         split_max: Some(Decimal::one()),
         split_min: Some(Decimal::zero()),
         split_default: Some(Decimal::percent(30)),
@@ -148,7 +144,6 @@ fn anyone_can_create_endowment_accounts() {
 
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
-        default_vault: Some(Addr::unchecked(default_vault_addr)),
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
@@ -170,7 +165,6 @@ fn anyone_can_create_endowment_accounts() {
         approved_charities: None,
         treasury: None,
         tax_rate: None,
-        default_vault: None,
         split_max: None,
         split_min: None,
         split_default: None,
@@ -349,7 +343,6 @@ fn test_add_update_and_remove_vault() {
     let vault_addr = "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg".to_string();
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
-        default_vault: None,
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
@@ -437,7 +430,6 @@ fn test_add_update_and_remove_accepted_tokens() {
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
-        default_vault: None,
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
@@ -465,7 +457,6 @@ fn test_add_update_and_remove_accepted_tokens() {
         approved_charities: None,
         treasury: None,
         tax_rate: None,
-        default_vault: None,
         split_max: None,
         split_min: None,
         split_default: None,
@@ -506,7 +497,6 @@ fn test_add_update_and_remove_network_infos() {
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
-        default_vault: None,
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
