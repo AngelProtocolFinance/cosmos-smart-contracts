@@ -48,15 +48,9 @@ pub fn update_endowment_status(
     msg: UpdateEndowmentStatusMsg,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-
-    if info.sender.ne(&config.owner) || msg.status > 3 {
-        return Err(ContractError::Unauthorized {});
-    }
-
     // look up the endowment in the Registry. Will fail if doesn't exist
     let endowment_id = msg.endowment_id;
     let mut endowment_entry = REGISTRY.load(deps.storage, endowment_id)?;
-
     let msg_endowment_status = match msg.status {
         0 => EndowmentStatus::Inactive,
         1 => EndowmentStatus::Approved,
@@ -64,6 +58,18 @@ pub fn update_endowment_status(
         3 => EndowmentStatus::Closed,
         _ => EndowmentStatus::Inactive, // should never be reached due to status check earlier
     };
+
+    // AP Applications Review: Can only handle Endowments that are still INACTIVE.
+    // Can only set a status of either Approved OR Closed.
+    // AP Team CW3 (owner): Can only handle Endowments that are NOT Inactive. Can set any status.
+    if !((info.sender == config.applications_review
+        && msg_endowment_status == EndowmentStatus::Inactive
+        && (msg.status == 1 || msg.status == 3))
+        || (info.sender == config.owner && msg_endowment_status != EndowmentStatus::Inactive))
+        || msg.status > 3
+    {
+        return Err(ContractError::Unauthorized {});
+    }
 
     // check first that the current status is different from the new status sent
     if endowment_entry.status.to_string() == msg_endowment_status.to_string() {
@@ -183,6 +189,10 @@ pub fn update_config(
     }
 
     // update config attributes with newly passed configs
+    config.applications_review = match msg.applications_review {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.applications_review,
+    };
     config.accounts_contract = match msg.accounts_contract {
         Some(addr) => Some(deps.api.addr_validate(&addr)?),
         None => config.accounts_contract,
@@ -390,29 +400,16 @@ pub fn new_accounts_reply(
             for event in subcall.events {
                 if event.ty == *"wasm" {
                     for attrb in event.attributes {
-                        if attrb.key == "endow_id" {
-                            endowment_id = attrb.value.clone().parse().unwrap();
-                        }
-                        if attrb.key == "endow_name" {
-                            endowment_name = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_owner" {
-                            endowment_owner = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_type" {
-                            endowment_type = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_logo" {
-                            endowment_logo = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_image" {
-                            endowment_image = attrb.value.clone();
-                        }
-                        if attrb.key == "endow_tier" {
-                            endowment_tier = attrb.value.clone().parse().unwrap();
-                        }
-                        if attrb.key == "endow_un_sdg" {
-                            endowment_un_sdg = attrb.value.clone().parse().unwrap();
+                        match attrb.key.as_str() {
+                            "endow_id" => endowment_id = attrb.value.parse().unwrap(),
+                            "endow_name" => endowment_name = attrb.value,
+                            "endow_owner" => endowment_owner = attrb.value,
+                            "endow_type" => endowment_type = attrb.value,
+                            "endow_logo" => endowment_logo = attrb.value,
+                            "endow_image" => endowment_image = attrb.value,
+                            "endow_tier" => endowment_tier = attrb.value.parse().unwrap(),
+                            "endow_un_sdg" => endowment_un_sdg = attrb.value.parse().unwrap(),
+                            &_ => (),
                         }
                     }
                 }
@@ -507,7 +504,7 @@ pub fn update_endowment_entry(
     let mut endowment_entry = REGISTRY.load(deps.storage, msg.endowment_id)?;
 
     let config = CONFIG.load(deps.storage)?;
-    if info.sender.ne(&config.owner) && info.sender.ne(&endowment_entry.owner) {
+    if !(info.sender == config.owner || info.sender == endowment_entry.owner) {
         return Err(ContractError::Unauthorized {});
     }
 

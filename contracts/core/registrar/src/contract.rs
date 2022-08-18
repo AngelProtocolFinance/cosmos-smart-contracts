@@ -33,8 +33,8 @@ pub fn instantiate(
     .unwrap();
 
     let configs = Config {
-        owner: info.sender,
-        guardian_angels: None,
+        owner: info.sender.clone(),
+        applications_review: info.sender,
         index_fund_contract: None,
         accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
