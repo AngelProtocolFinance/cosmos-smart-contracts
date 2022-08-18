@@ -295,6 +295,7 @@ pub fn update_strategies(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let mut state = STATES.load(deps.storage, id)?;
 
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
@@ -345,16 +346,6 @@ pub fn update_strategies(
         return Err(ContractError::InvalidStrategyAllocation {});
     }
 
-    // redeem all existing strategies from the Endowment's old sources
-    // before updating endowment with new sources
-    let redeem_messages = redeem_from_vaults(
-        deps.as_ref(),
-        id,
-        config.registrar_contract.to_string(),
-        &endowment.strategies,
-    )?;
-    endowment.pending_redemptions = redeem_messages.len() as u8;
-
     // update endowment strategies attribute with all newly passed strategies
     let mut new_strategies = vec![];
     for strategy in strategies {
@@ -363,12 +354,48 @@ pub fn update_strategies(
             percentage: strategy.percentage,
         });
     }
+
+    // check if the endowment had 0 vaults set before
+    let followup_msgs: Vec<SubMsg>;
+    if endowment.strategies.len() == 0 {
+        // distribute all of locked balance USDC to the new strategies
+        followup_msgs = deposit_to_vaults(
+            deps.as_ref(),
+            config.registrar_contract.to_string(),
+            id.clone(),
+            state.balances.locked_balance.get_denom_amount(
+                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+            ), // axlUSD
+            &endowment.strategies,
+        )?;
+        // zero out the locked balance of USDC
+        state
+            .balances
+            .locked_balance
+            .set_token_balances(Balance::from(vec![Coin {
+                amount: Uint128::zero(),
+                denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                    .to_string(),
+            }]));
+        STATES.save(deps.storage, id, &state)?;
+    } else {
+        // redeem all existing strategies from the Endowment's old sources
+        // before updating endowment with new sources
+        followup_msgs = redeem_from_vaults(
+            deps.as_ref(),
+            id,
+            config.registrar_contract.to_string(),
+            &endowment.strategies,
+        )?;
+        endowment.pending_redemptions = followup_msgs.len() as u8;
+    }
+
     endowment.strategies = new_strategies;
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new()
         .add_attribute("action", "update_strategies")
-        .add_submessages(redeem_messages))
+        .add_submessages(followup_msgs))
 }
 
 pub fn vault_receipt(
