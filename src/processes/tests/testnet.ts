@@ -277,13 +277,14 @@ export async function testExecute(
   //   haloCollector,
   //   "0.5"
   // );  // vault-related
-  // await testCharityCanUpdateStrategies(
-  //   actors.charity1.client,
-  //   actors.charity1.addr,
-  //   endowmentContract1,
-  //   Vault1,
-  //   Vault2
-  // );  // vault-related
+  await testCharityCanUpdateStrategies(
+    actors.charity1.client,
+    actors.charity1.addr,
+    accounts,
+    endowId1,
+    Vault1,
+    Vault2
+  );  // vault-related
 
   // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, endowmentContract1, "1000");
   // await testBeneficiaryCanWithdrawFromLiquid(
@@ -326,7 +327,7 @@ export async function testExecute(
   // );
   // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
   // Test query
-  await testQueryRegistrarConfig(actors.apTeam.client, registrar);
+  // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
   // await testQueryRegistrarEndowmentList(actors.apTeam.client, registrar);
   // await testQueryRegistrarEndowmentDetails(actors.apTeam.client, registrar, endowmentContract1);
   // await testQueryRegistrarApprovedVaultList(actors.apTeam.client, registrar);

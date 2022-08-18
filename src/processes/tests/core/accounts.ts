@@ -104,22 +104,27 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
 export async function testCharityCanUpdateStrategies(
   juno: SigningCosmWasmClient,
   charity1: string,
-  endowment: string,
+  accounts: string,
+  endowId: number,
   Vault1: string,
   Vault2: string
 ): Promise<void> {
   process.stdout.write("Test - Charity can update their Endowment's strategies");
 
+  const res = await juno.queryContractSmart(accounts, { endowment: { id: endowId }});
+  const cw3 = res.owner as string;
+
   await expect(
-    sendTransaction(juno, charity1, endowment, {
+    sendMessageViaCw3Proposal(juno, charity1, cw3, accounts, {
       update_strategies: {
+        id: endowId,
         strategies: [
           { vault: Vault1, percentage: "0.5"},
           { vault: Vault2, percentage: "0.5"},
         ],
       },
     })
-  );
+  ).to.be.ok;
   console.log(chalk.green(" Passed!"));
 }
 
