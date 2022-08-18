@@ -209,13 +209,6 @@ pub fn update_config(
         Some(contract_addr) => Some(deps.api.addr_validate(&contract_addr)?),
         None => config.charity_shares_contract,
     };
-    config.default_vault = match msg.default_vault {
-        Some(addr) => match addr {
-            Some(a) => Some(deps.api.addr_validate(&a)?),
-            None => None,
-        },
-        None => config.default_vault,
-    };
     config.index_fund_contract = match msg.index_fund_contract {
         Some(addr) => Some(deps.api.addr_validate(&addr)?),
         None => config.index_fund_contract,
@@ -272,7 +265,6 @@ pub fn create_endowment(
                     &angel_core::messages::accounts::ExecuteMsg::CreateEndowment(
                         angel_core::messages::accounts::CreateEndowmentMsg {
                             owner: msg.owner,
-                            beneficiary: msg.beneficiary,
                             withdraw_before_maturity: msg.withdraw_before_maturity,
                             maturity_time: msg.maturity_time,
                             maturity_height: msg.maturity_height,
@@ -504,14 +496,14 @@ pub fn update_endowment_entry(
     info: MessageInfo,
     msg: UpdateEndowmentEntryMsg,
 ) -> Result<Response, ContractError> {
-    // look up the endowment in the Registry. Will fail if doesn't exist
-    let mut endowment_entry = REGISTRY.load(deps.storage, msg.endowment_id)?;
-
     let config = CONFIG.load(deps.storage)?;
-    if !(info.sender == config.owner || info.sender == endowment_entry.owner) {
+    // sender should be either the Accounts contract OR the sender is AP Team CW3 contract (ie. Owner)
+    if !(info.sender == config.owner || info.sender == config.accounts_contract.unwrap()) {
         return Err(ContractError::Unauthorized {});
     }
 
+    // look up the endowment in the Registry. Will fail if doesn't exist
+    let mut endowment_entry = REGISTRY.load(deps.storage, msg.endowment_id)?;
     endowment_entry.name = msg.name;
     endowment_entry.owner = msg.owner.unwrap_or(endowment_entry.owner);
     endowment_entry.endow_type = msg.endow_type.unwrap_or(endowment_entry.endow_type);

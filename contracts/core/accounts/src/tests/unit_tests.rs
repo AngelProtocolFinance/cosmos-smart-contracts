@@ -48,7 +48,6 @@ fn create_endowment() -> (
 
     let create_endowment_msg = CreateEndowmentMsg {
         owner: CHARITY_ADDR.to_string(),
-        beneficiary: CHARITY_ADDR.to_string(),
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
