@@ -1157,11 +1157,6 @@ fn execute_burn(
         return Err(ContractError::InvalidZeroAmount {});
     }
 
-    let mut config = TOKEN_INFO.load(deps.storage)?;
-    if config.mint.is_none() || config.mint.as_ref().unwrap().minter != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
-
     // lower balance
     BALANCES.update(
         deps.storage,
