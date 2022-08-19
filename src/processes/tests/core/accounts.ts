@@ -60,6 +60,42 @@ export async function testSendDonationToEndowment(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: Endowment owner can withdraw from available balance in their Accounts
+//
+// SCENARIO:
+// Endowment owner can draw down on the available Liquid Account balance and should
+// not be able to touch the Locked Account's balance.
+//
+//----------------------------------------------------------------------------------------
+export async function testEndowmentCanWithdraw(
+  juno: SigningCosmWasmClient,
+  accountsOwner: string,
+  accounts: string,
+  endowId: number,
+  vault: string,
+  amount: string,
+  beneficiary: string
+): Promise<void> {
+  process.stdout.write(
+    "Test - Charity Owner cannot withdraw from the Endowment amount"
+  );
+
+  const res = await juno.queryContractSmart(accounts, { endowment: { id: endowId }});
+  const cw3 = res.owner as string;
+
+  await expect(
+    sendMessageViaCw3Proposal(juno, accountsOwner, cw3, accounts, {
+      withdraw: {
+        id: endowId,
+        sources: [{ vault, amount }],
+        beneficiary,
+      },
+    })
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
 // TEST: Charity Beneficiary can withdraw from available balance in their Accounts
 //
 // SCENARIO:
@@ -70,18 +106,22 @@ export async function testSendDonationToEndowment(
 export async function testBeneficiaryCanWithdrawFromLiquid(
   juno: SigningCosmWasmClient,
   charityOwner: string,
-  cw3: string,
-  endowment: string,
+  accounts: string,
+  endowId: number,
   vault: string,
   amount: string,
   beneficiary: string
 ): Promise<void> {
   process.stdout.write(
-    "Test - Charity Owner cannot withdraw from the Endowment amount"
+    "Test - Charity Owner cannot withdraw from the Endowment amount liquid"
   );
+
+  const res = await juno.queryContractSmart(accounts, { endowment: { id: endowId }});
+  const cw3 = res.owner as string;
+
   await expect(
-    sendMessageViaCw3Proposal(juno, charityOwner, cw3, endowment, {
-      withdraw: {
+    sendMessageViaCw3Proposal(juno, charityOwner, cw3, accounts, {
+      withdraw_liquid: {
         sources: [{ vault, amount }],
         beneficiary,
         asset_info: {

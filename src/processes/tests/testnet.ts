@@ -17,6 +17,7 @@ import {
   testQueryAccountsProfile,
   testQueryAccountsState,
   testQueryAccountsTransactions,
+  testEndowmentCanWithdraw,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -286,12 +287,12 @@ export async function testExecute(
   //   Vault2
   // );
 
-  await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1, "1000");
-  // await testBeneficiaryCanWithdrawFromLiquid(
+  // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1, "1000");
+  // await testEndowmentCanWithdraw(
   //   actors.charity1.client, 
   //   actors.charity1.addr, 
-  //   "juno1fpqj5299a5w7p4aungnv4pqnrgq7t2668yxwxrgkwcgslhxjhh4s3d9ph4", // cw3 contract
-  //   endowmentContract1, 
+  //   accounts,
+  //   endowId1, 
   //   Vault1, 
   //   "100", 
   //   actors.charity1.addr,
