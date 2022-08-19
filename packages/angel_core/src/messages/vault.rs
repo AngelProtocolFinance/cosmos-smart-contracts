@@ -74,42 +74,41 @@ pub enum ExecuteMsg {
         beneficiary: Addr,
     },
     Receive(Cw20ReceiveMsg),
-
-    // Cw20_base entries
-    Transfer {
-        recipient: String,
-        amount: Uint128,
-    },
-    Send {
-        contract: String,
-        amount: Uint128,
-        msg: Binary,
-    },
-    IncreaseAllowance {
-        spender: String,
-        amount: Uint128,
-        expires: Option<Expiration>,
-    },
-    DecreaseAllowance {
-        spender: String,
-        amount: Uint128,
-        expires: Option<Expiration>,
-    },
-    TransferFrom {
-        owner: String,
-        recipient: String,
-        amount: Uint128,
-    },
-    BurnFrom {
-        owner: String,
-        amount: Uint128,
-    },
-    SendFrom {
-        owner: String,
-        contract: String,
-        amount: Uint128,
-        msg: Binary,
-    },
+    // // Cw20_base entries
+    // Transfer {
+    //     recipient: String,
+    //     amount: Uint128,
+    // },
+    // Send {
+    //     contract: String,
+    //     amount: Uint128,
+    //     msg: Binary,
+    // },
+    // IncreaseAllowance {
+    //     spender: String,
+    //     amount: Uint128,
+    //     expires: Option<Expiration>,
+    // },
+    // DecreaseAllowance {
+    //     spender: String,
+    //     amount: Uint128,
+    //     expires: Option<Expiration>,
+    // },
+    // TransferFrom {
+    //     owner: String,
+    //     recipient: String,
+    //     amount: Uint128,
+    // },
+    // BurnFrom {
+    //     owner: String,
+    //     amount: Uint128,
+    // },
+    // SendFrom {
+    //     owner: String,
+    //     contract: String,
+    //     amount: Uint128,
+    //     msg: Binary,
+    // },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -146,9 +145,9 @@ pub enum QueryMsg {
     /// Returns the configuration of the contract
     /// Return type: ConfigResponse.
     Config {},
-    /// Returns the current balance of the given address, 0 if unset.
+    /// Returns the current balance of the given "Endowment ID", 0 if unset.
     /// Return type: BalanceResponse.
-    Balance { address: String },
+    Balance { id: u32 },
     /// Returns metadata on the contract - name, decimals, supply, etc.
     /// Return type: TokenInfoResponse.
     TokenInfo {},

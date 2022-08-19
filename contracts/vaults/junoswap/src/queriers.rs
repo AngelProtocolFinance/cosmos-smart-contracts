@@ -1,16 +1,14 @@
 use cosmwasm_std::{Deps, Uint128};
 use cw20::{BalanceResponse, Denom, TokenInfoResponse};
-use cw20_base::state::TOKEN_INFO;
 
 use angel_core::messages::vault::WasmSwapQueryMsg;
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse, InfoResponse};
 
-use crate::state::{Config, CONFIG};
+use crate::state::{BALANCES, CONFIG, TOKEN_INFO};
 
-pub fn query_balance(deps: Deps, address: String) -> BalanceResponse {
-    cw20_base::contract::query_balance(deps, address).unwrap_or(BalanceResponse {
-        balance: Uint128::zero(),
-    })
+pub fn query_balance(deps: Deps, id: u32) -> BalanceResponse {
+    let balance = BALANCES.load(deps.storage, id).unwrap_or_default();
+    BalanceResponse { balance }
 }
 
 pub fn query_token_info(deps: Deps) -> TokenInfoResponse {

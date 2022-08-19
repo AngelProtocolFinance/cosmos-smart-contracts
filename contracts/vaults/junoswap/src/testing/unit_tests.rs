@@ -278,8 +278,9 @@ fn test_deposit_cw20_token() {
 // Find a way to mock the "config.total_shares" value in the unit test.
 // #[test]
 fn test_withdraw() {
-    let endowment = "endowment-1";
-    let fake_endowment = "endowment-12";
+    let accounts = "accounts".to_string();
+    let endowment = 1;
+    let fake_endowment = 12;
     let deposit_amount = Uint128::from(100_u128);
     let withdraw_amount = Uint128::from(30_u128);
     let beneficiary = Addr::unchecked("beneficiary");
@@ -288,7 +289,7 @@ fn test_withdraw() {
     let mut deps = create_mock_vault(vec![]);
 
     // First, fail to "withdraw" since the `endowment` is not valid
-    let info = mock_info(fake_endowment, &[]);
+    let info = mock_info(&accounts, &[]);
     let withdraw_msg: AccountWithdrawMsg = AccountWithdrawMsg {
         endowment_id: 1,
         beneficiary,
@@ -304,7 +305,7 @@ fn test_withdraw() {
     assert_eq!(err, ContractError::Unauthorized {});
 
     // Also, fail to "withdraw" since the `vault` does not have any deposit
-    let info = mock_info(endowment, &[]);
+    let info = mock_info(&accounts, &[]);
     let err = execute(
         deps.as_mut(),
         mock_env(),
@@ -336,7 +337,7 @@ fn test_withdraw() {
     // .unwrap();
 
     // Finally, succeed to "withdraw" tokens
-    let info = mock_info(endowment, &[]);
+    let info = mock_info(&accounts, &[]);
     let res = execute(
         deps.as_mut(),
         mock_env(),
@@ -350,9 +351,7 @@ fn test_withdraw() {
     let res = query(
         deps.as_ref(),
         mock_env(),
-        QueryMsg::Balance {
-            address: endowment.to_string(),
-        },
+        QueryMsg::Balance { id: endowment },
     )
     .unwrap();
     let balance_resp: cw20::BalanceResponse = from_binary(&res).unwrap();

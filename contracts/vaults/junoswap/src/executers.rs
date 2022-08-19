@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Fraction,
-    MessageInfo, Querier, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
+    MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Denom;
 use cw_controllers::ClaimsResponse;
@@ -16,7 +16,9 @@ use angel_core::responses::vault::{InfoResponse, Token2ForToken1PriceResponse};
 use angel_core::structs::EndowmentEntry;
 use angel_core::utils::query_denom_balance;
 
-use crate::state::{Config, PendingInfo, CONFIG, PENDING, REMNANTS};
+use crate::state::{
+    Config, PendingInfo, TokenInfo, BALANCES, CONFIG, PENDING, REMNANTS, TOKEN_INFO,
+};
 
 pub fn update_owner(
     deps: DepsMut,
@@ -290,20 +292,22 @@ pub fn withdraw(
     )?;
 
     // First, burn the vault tokens
-    let account_info = MessageInfo {
-        sender: deps.api.addr_validate(&msg.endowment_id.to_string())?,
-        funds: vec![],
-    };
-    cw20_base::contract::execute_burn(deps.branch(), env.clone(), account_info, msg.amount)
-        .map_err(|_| {
-            ContractError::Std(StdError::GenericErr {
-                msg: format!(
-                    "Cannot burn the {} vault tokens from {}",
-                    msg.amount,
-                    msg.endowment_id.to_string()
-                ),
-            })
-        })?;
+    execute_burn(
+        deps.branch(),
+        env.clone(),
+        info,
+        msg.endowment_id,
+        msg.amount,
+    )
+    .map_err(|_| {
+        ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Cannot burn the {} vault tokens from {}",
+                msg.amount,
+                msg.endowment_id.to_string()
+            ),
+        })
+    })?;
 
     // Update the "total_shares" value
     config.total_shares -= msg.amount;
@@ -576,11 +580,8 @@ pub fn distribute_harvest(
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     for endowment in endowments.iter() {
-        let acct_bal = cw20_base::state::BALANCES
-            .load(
-                deps.storage,
-                &deps.api.addr_validate(&endowment.id.to_string())?,
-            )
+        let acct_bal = BALANCES
+            .load(deps.storage, endowment.id)
             .unwrap_or_default();
         let acct_owed = less_taxes * acct_bal / config.total_shares;
         let liquid_amt = acct_owed * config.harvest_to_liquid.numerator()
@@ -790,15 +791,14 @@ pub fn stake_lp_token(
     config.total_shares += stake_amount;
     CONFIG.save(deps.storage, &config)?;
 
-    cw20_base::contract::execute_mint(deps, env, info, endowment_id.to_string(), stake_amount)
-        .map_err(|_| {
-            ContractError::Std(StdError::GenericErr {
-                msg: format!(
-                    "Cannot mint the {} vault token for {}",
-                    stake_amount, endowment_id
-                ),
-            })
-        })?;
+    execute_mint(deps, env, info, endowment_id, stake_amount).map_err(|_| {
+        ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Cannot mint the {} vault token for {}",
+                stake_amount, endowment_id
+            ),
+        })
+    })?;
 
     Ok(Response::new()
         .add_message(msg)
@@ -1107,6 +1107,74 @@ fn validate_action_caller_n_endow_id(
     if pos == None {
         return Err(ContractError::Unauthorized {});
     }
+
+    Ok(())
+}
+
+fn execute_mint(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    endowment_id: u32,
+    amount: Uint128,
+) -> Result<(), ContractError> {
+    if amount == Uint128::zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
+
+    let mut config = TOKEN_INFO.load(deps.storage)?;
+    if config.mint.is_none() || config.mint.as_ref().unwrap().minter != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // update supply and enforce cap
+    config.total_supply += amount;
+    if let Some(limit) = config.get_cap() {
+        if config.total_supply > limit {
+            return Err(ContractError::CannotExceedCap {});
+        }
+    }
+    TOKEN_INFO.save(deps.storage, &config)?;
+
+    // add amount to recipient balance
+    BALANCES.update(
+        deps.storage,
+        endowment_id,
+        |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
+    )?;
+
+    Ok(())
+}
+
+fn execute_burn(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    endowment_id: u32,
+    amount: Uint128,
+) -> Result<(), ContractError> {
+    if amount == Uint128::zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
+
+    let mut config = TOKEN_INFO.load(deps.storage)?;
+    if config.mint.is_none() || config.mint.as_ref().unwrap().minter != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // lower balance
+    BALANCES.update(
+        deps.storage,
+        endowment_id,
+        |balance: Option<Uint128>| -> StdResult<_> {
+            Ok(balance.unwrap_or_default().checked_sub(amount)?)
+        },
+    )?;
+    // reduce total_supply
+    TOKEN_INFO.update(deps.storage, |mut info| -> StdResult<_> {
+        info.total_supply = info.total_supply.checked_sub(amount)?;
+        Ok(info)
+    })?;
 
     Ok(())
 }

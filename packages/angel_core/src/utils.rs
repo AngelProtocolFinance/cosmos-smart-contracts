@@ -144,23 +144,17 @@ pub fn vault_fx_rate(deps: Deps, vault_address: String) -> Decimal256 {
     exchange_rate.exchange_rate
 }
 
-pub fn vault_account_balance(
-    deps: Deps,
-    vault_address: String,
-    account_address: String,
-) -> Uint128 {
-    // get an account's balance held with a vault
-    let account_balance: BalanceResponse = deps
+pub fn vault_endowment_balance(deps: Deps, vault_address: String, endowment_id: u32) -> Uint128 {
+    // get an endowment's balance held with a vault
+    let endow_bal_resp: BalanceResponse = deps
         .querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: vault_address,
-            msg: to_binary(&crate::messages::vault::QueryMsg::Balance {
-                address: account_address,
-            })
-            .unwrap(),
+            msg: to_binary(&crate::messages::vault::QueryMsg::Balance { id: endowment_id })
+                .unwrap(),
         }))
         .unwrap();
-    account_balance.balance
+    endow_bal_resp.balance
 }
 
 pub fn redeem_from_vaults(

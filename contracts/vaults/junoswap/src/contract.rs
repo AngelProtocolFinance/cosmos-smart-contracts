@@ -4,7 +4,6 @@ use cosmwasm_std::{
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::{Cw20ReceiveMsg, Denom};
-use cw20_base::state::{MinterData, TokenInfo, TOKEN_INFO};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{
@@ -14,7 +13,7 @@ use angel_core::responses::vault::InfoResponse;
 
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, CONFIG};
+use crate::state::{Config, MinterData, TokenInfo, CONFIG, TOKEN_INFO};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "junoswap_vault";
@@ -179,55 +178,54 @@ pub fn execute(
             beneficiary,
         ),
         ExecuteMsg::Redeem { endowment_id } => todo!("FIXME!"),
-
-        // Cw20_base entries
-        ExecuteMsg::Transfer { recipient, amount } => {
-            cw20_base::contract::execute_transfer(deps, env, info, recipient, amount)
-                .map_err(|e| ContractError::from(e))
-        }
-        ExecuteMsg::Send {
-            contract,
-            amount,
-            msg,
-        } => cw20_base::contract::execute_send(deps, env, info, contract, amount, msg)
-            .map_err(|e| e.into()),
-        ExecuteMsg::IncreaseAllowance {
-            spender,
-            amount,
-            expires,
-        } => cw20_base::allowances::execute_increase_allowance(
-            deps, env, info, spender, amount, expires,
-        )
-        .map_err(|e| e.into()),
-        ExecuteMsg::DecreaseAllowance {
-            spender,
-            amount,
-            expires,
-        } => cw20_base::allowances::execute_decrease_allowance(
-            deps, env, info, spender, amount, expires,
-        )
-        .map_err(|e| e.into()),
-        ExecuteMsg::TransferFrom {
-            owner,
-            recipient,
-            amount,
-        } => {
-            cw20_base::allowances::execute_transfer_from(deps, env, info, owner, recipient, amount)
-                .map_err(|e| e.into())
-        }
-        ExecuteMsg::BurnFrom { owner, amount } => {
-            cw20_base::allowances::execute_burn_from(deps, env, info, owner, amount)
-                .map_err(|e| e.into())
-        }
-        ExecuteMsg::SendFrom {
-            owner,
-            contract,
-            amount,
-            msg,
-        } => {
-            cw20_base::allowances::execute_send_from(deps, env, info, owner, contract, amount, msg)
-                .map_err(|e| e.into())
-        }
+        // // Cw20_base entries
+        // ExecuteMsg::Transfer { recipient, amount } => {
+        //     cw20_base::contract::execute_transfer(deps, env, info, recipient, amount)
+        //         .map_err(|e| ContractError::from(e))
+        // }
+        // ExecuteMsg::Send {
+        //     contract,
+        //     amount,
+        //     msg,
+        // } => cw20_base::contract::execute_send(deps, env, info, contract, amount, msg)
+        //     .map_err(|e| e.into()),
+        // ExecuteMsg::IncreaseAllowance {
+        //     spender,
+        //     amount,
+        //     expires,
+        // } => cw20_base::allowances::execute_increase_allowance(
+        //     deps, env, info, spender, amount, expires,
+        // )
+        // .map_err(|e| e.into()),
+        // ExecuteMsg::DecreaseAllowance {
+        //     spender,
+        //     amount,
+        //     expires,
+        // } => cw20_base::allowances::execute_decrease_allowance(
+        //     deps, env, info, spender, amount, expires,
+        // )
+        // .map_err(|e| e.into()),
+        // ExecuteMsg::TransferFrom {
+        //     owner,
+        //     recipient,
+        //     amount,
+        // } => {
+        //     cw20_base::allowances::execute_transfer_from(deps, env, info, owner, recipient, amount)
+        //         .map_err(|e| e.into())
+        // }
+        // ExecuteMsg::BurnFrom { owner, amount } => {
+        //     cw20_base::allowances::execute_burn_from(deps, env, info, owner, amount)
+        //         .map_err(|e| e.into())
+        // }
+        // ExecuteMsg::SendFrom {
+        //     owner,
+        //     contract,
+        //     amount,
+        //     msg,
+        // } => {
+        //     cw20_base::allowances::execute_send_from(deps, env, info, owner, contract, amount, msg)
+        //         .map_err(|e| e.into())
+        // }
     }
 }
 
@@ -262,7 +260,7 @@ fn receive_cw20(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)),
-        QueryMsg::Balance { address } => to_binary(&queriers::query_balance(deps, address)),
+        QueryMsg::Balance { id } => to_binary(&queriers::query_balance(deps, id)),
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
         QueryMsg::TotalBalance {} => to_binary(&queriers::query_total_balance(deps)),
     }
