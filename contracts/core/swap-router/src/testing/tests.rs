@@ -22,6 +22,7 @@ fn proper_initialization() {
     let msg = InstantiateMsg {
         accounts_contract: Addr::unchecked("apaccountscontract"),
         registrar_contract: Addr::unchecked("apregistrarcontract"),
+        pairs: vec![],
     };
 
     let env = mock_env();
@@ -42,6 +43,7 @@ fn execute_swap_operations() {
     let msg = InstantiateMsg {
         accounts_contract: Addr::unchecked("apaccountscontract"),
         registrar_contract: Addr::unchecked("apregistrarcontract"),
+        pairs: vec![],
     };
 
     let env = mock_env();
@@ -225,6 +227,7 @@ fn query_buy_with_routes() {
     let msg = InstantiateMsg {
         accounts_contract: Addr::unchecked("apaccountscontract"),
         registrar_contract: Addr::unchecked("apregistrarcontract"),
+        pairs: vec![],
     };
 
     let env = mock_env();

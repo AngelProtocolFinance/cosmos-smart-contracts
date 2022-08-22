@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 pub struct InstantiateMsg {
     pub registrar_contract: Addr,
     pub accounts_contract: Addr,
-    pub pairs: Option<Vec<Pair>>,
+    pub pairs: Vec<Pair>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -42,6 +42,10 @@ pub fn instantiate(
         },
     )?;
 
+    for pair in msg.pairs.iter() {
+        PAIRS.save(deps.storage, &pair_key(&pair.assets), &pair)?;
+    }
+
     Ok(Response::default())
 }
 

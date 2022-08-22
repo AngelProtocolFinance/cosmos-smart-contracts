@@ -229,6 +229,7 @@ impl WasmMockQuerier {
                             cw20: vec!["test-cw20".to_string()],
                         },
                         applications_review: "applications-review".to_string(),
+                        swaps_router: Some("swaps_router_addr".to_string()),
                     })
                     .unwrap(),
                 )),
