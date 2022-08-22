@@ -1,6 +1,6 @@
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::{Cw20ReceiveMsg, Denom};
-use cw_utils::Expiration;
+use cw_utils::{Duration, Expiration};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -225,4 +225,70 @@ pub enum RemoveLiquidAction {
     Harvest,
     Claim { beneficiary: Addr },
     Withdraw { beneficiary: Addr },
+}
+
+// Following msg & response definitions are for "dao-stake-cw20" contract interaction.
+// The reason of using these copy-pasted definitions is that the current "dao-stake-cw20"
+// or "stake-cw20" crate uses the old dependencty("cw-utils": 0.11.1), and it conflicts
+// the crate version(0.13.4) used in existing system.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DaoStakeCw20ExecuteMsg {
+    Receive(Cw20ReceiveMsg),
+    Unstake {
+        amount: Uint128,
+    },
+    Claim {},
+    UpdateConfig {
+        owner: Option<String>,
+        manager: Option<String>,
+        duration: Option<Duration>,
+    },
+    AddHook {
+        addr: String,
+    },
+    RemoveHook {
+        addr: String,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DaoStakeCw20ReceiveMsg {
+    Stake {},
+    Fund {},
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum DaoStakeCw20QueryMsg {
+    StakedBalanceAtHeight {
+        address: String,
+        height: Option<u64>,
+    },
+    TotalStakedAtHeight {
+        height: Option<u64>,
+    },
+    StakedValue {
+        address: String,
+    },
+    TotalValue {},
+    GetConfig {},
+    Claims {
+        address: String,
+    },
+    GetHooks {},
+    ListStakers {
+        start_after: Option<String>,
+        limit: Option<u32>,
+    },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct DaoStakeCw20GetConfigResponse {
+    pub owner: Option<Addr>,
+    pub manager: Option<Addr>,
+    pub token_address: Addr,
+    pub unstaking_duration: Option<Duration>,
 }

@@ -8,8 +8,9 @@ use cw_controllers::ClaimsResponse;
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{
-    AccountWithdrawMsg, ExecuteMsg, RemoveLiquidAction, TokenSelect, UpdateConfigMsg,
-    WasmSwapExecuteMsg, WasmSwapQueryMsg,
+    AccountWithdrawMsg, DaoStakeCw20ExecuteMsg, DaoStakeCw20GetConfigResponse,
+    DaoStakeCw20QueryMsg, DaoStakeCw20ReceiveMsg, ExecuteMsg, RemoveLiquidAction, TokenSelect,
+    UpdateConfigMsg, WasmSwapExecuteMsg, WasmSwapQueryMsg,
 };
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::responses::vault::{InfoResponse, Token2ForToken1PriceResponse};
@@ -235,7 +236,7 @@ pub fn claim(
     // First, check if there is any possible claim in "staking" contract
     let claims_resp: ClaimsResponse = deps.querier.query_wasm_smart(
         config.staking_addr.to_string(),
-        &stake_cw20::msg::QueryMsg::Claims {
+        &DaoStakeCw20QueryMsg::Claims {
             address: env.contract.address.to_string(),
         },
     )?;
@@ -249,7 +250,7 @@ pub fn claim(
     let mut res = Response::default();
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.staking_addr.to_string(),
-        msg: to_binary(&stake_cw20::msg::ExecuteMsg::Claim {}).unwrap(),
+        msg: to_binary(&DaoStakeCw20ExecuteMsg::Claim {}).unwrap(),
         funds: vec![],
     }));
 
@@ -317,16 +318,14 @@ pub fn withdraw(
     let mut res = Response::default();
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.staking_addr.to_string(),
-        msg: to_binary(&stake_cw20::msg::ExecuteMsg::Unstake { amount: msg.amount }).unwrap(),
+        msg: to_binary(&DaoStakeCw20ExecuteMsg::Unstake { amount: msg.amount }).unwrap(),
         funds: vec![],
     }));
 
     // Handle the returning lp tokens if exists
-    let staking_contract_config: stake_cw20::msg::GetConfigResponse =
-        deps.querier.query_wasm_smart(
-            config.staking_addr,
-            &stake_cw20::msg::QueryMsg::GetConfig {},
-        )?;
+    let staking_contract_config: DaoStakeCw20GetConfigResponse = deps
+        .querier
+        .query_wasm_smart(config.staking_addr, &DaoStakeCw20QueryMsg::GetConfig {})?;
     match staking_contract_config.unstaking_duration {
         None => {
             // Query the "lp_token" balance
@@ -397,7 +396,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
     // First, check if any staking reward does exist
     let claims_resp: ClaimsResponse = deps.querier.query_wasm_smart(
         config.staking_addr.to_string(),
-        &stake_cw20::msg::QueryMsg::Claims {
+        &DaoStakeCw20QueryMsg::Claims {
             address: env.contract.address.to_string(),
         },
     )?;
@@ -411,7 +410,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
     let mut res = Response::default();
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.staking_addr.to_string(),
-        msg: to_binary(&stake_cw20::msg::ExecuteMsg::Claim {}).unwrap(),
+        msg: to_binary(&DaoStakeCw20ExecuteMsg::Claim {}).unwrap(),
         funds: vec![],
     }));
 
@@ -787,7 +786,7 @@ pub fn stake_lp_token(
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.staking_addr.to_string(),
             amount: stake_amount,
-            msg: to_binary(&stake_cw20::msg::ReceiveMsg::Stake {}).unwrap(),
+            msg: to_binary(&DaoStakeCw20ReceiveMsg::Stake {}).unwrap(),
         })
         .unwrap(),
         funds: vec![],

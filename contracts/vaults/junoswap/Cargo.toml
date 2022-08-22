@@ -33,7 +33,6 @@ serde_json = "1.0.68"
 thiserror = "1.0.24"
 cw-asset = "2.2.0"
 cw-controllers = "0.13.4"
-stake-cw20 = "0.2.6"
 
 [dev-dependencies]
 cosmwasm-storage = "1.0.0"
