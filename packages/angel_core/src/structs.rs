@@ -1,9 +1,41 @@
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
-use cw_asset::{Asset, AssetInfoBase};
+use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct Pair {
+    pub assets: [AssetInfo; 2],
+    pub contract_address: Addr,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SwapOperation {
+    JunoSwap {
+        offer_asset_info: AssetInfo,
+        ask_asset_info: AssetInfo,
+    },
+}
+
+impl SwapOperation {
+    pub fn get_offer_asset_info(&self) -> AssetInfo {
+        match self {
+            SwapOperation::JunoSwap {
+                offer_asset_info, ..
+            } => offer_asset_info.clone(),
+        }
+    }
+
+    pub fn get_ask_asset_info(&self) -> AssetInfo {
+        match self {
+            SwapOperation::JunoSwap { ask_asset_info, .. } => ask_asset_info.clone(),
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
