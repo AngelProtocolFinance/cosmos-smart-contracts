@@ -327,38 +327,44 @@ pub fn withdraw(
             config.staking_addr,
             &stake_cw20::msg::QueryMsg::GetConfig {},
         )?;
-    if staking_contract_config.unstaking_duration.is_none() {
-        // Query the "lp_token" balance
-        let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-            config.pool_lp_token_addr.to_string(),
-            &cw20::Cw20QueryMsg::Balance {
-                address: env.contract.address.to_string(),
-            },
-        )?;
-        res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: env.contract.address.to_string(),
-            msg: to_binary(&ExecuteMsg::RemoveLiquidity {
-                lp_token_bal_before: lp_token_bal.balance,
-                action: RemoveLiquidAction::Withdraw {
-                    beneficiary: msg.beneficiary,
+    match staking_contract_config.unstaking_duration {
+        None => {
+            // Query the "lp_token" balance
+            let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+                config.pool_lp_token_addr.to_string(),
+                &cw20::Cw20QueryMsg::Balance {
+                    address: env.contract.address.to_string(),
                 },
-            })
-            .unwrap(),
-            funds: vec![],
-        }));
-    } else {
-        // Save the pending_info in the PENDING map
-        let pending_info = PendingInfo {
-            typ: "withdraw".to_string(),
-            endowment_id: msg.endowment_id.to_string(), // ID of org. sending Accounts SC
-            beneficiary: msg.beneficiary,               // return to the beneficiary
-            amount: msg.amount,
-        };
-        PENDING.save(
-            deps.storage,
-            (msg.endowment_id.to_string().as_str(), env.block.height),
-            &pending_info,
-        )?;
+            )?;
+            res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_binary(&ExecuteMsg::RemoveLiquidity {
+                    lp_token_bal_before: lp_token_bal.balance,
+                    action: RemoveLiquidAction::Withdraw {
+                        beneficiary: msg.beneficiary,
+                    },
+                })
+                .unwrap(),
+                funds: vec![],
+            }));
+        }
+        Some(duration) => {
+            // Save the pending_info in the PENDING map
+            let pending_info = PendingInfo {
+                typ: "withdraw".to_string(),
+                endowment_id: msg.endowment_id, // ID of org. sending Accounts SC
+                beneficiary: msg.beneficiary,   // return to the beneficiary
+                amount: msg.amount,
+                release_at: duration.after(&env.block),
+            };
+            PENDING.save(deps.storage, config.next_pending_id, &pending_info)?;
+
+            // Update the "next_pending_id" in CONFIG
+            CONFIG.update(deps.storage, |mut c| -> StdResult<_> {
+                c.next_pending_id += 1;
+                Ok(c)
+            })?;
+        }
     }
 
     Ok(res)

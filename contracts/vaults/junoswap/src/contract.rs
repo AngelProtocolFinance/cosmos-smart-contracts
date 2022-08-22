@@ -62,6 +62,8 @@ pub fn instantiate(
         last_harvest: env.block.height,
         last_harvest_fx: None,
         harvest_to_liquid: msg.harvest_to_liquid,
+
+        next_pending_id: 1_u32,
     };
 
     CONFIG.save(deps.storage, &config)?;

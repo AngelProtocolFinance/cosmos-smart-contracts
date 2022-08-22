@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Binary, Decimal, Uint128};
+use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::{Cw20ReceiveMsg, Denom};
 use cw_utils::Expiration;
 use schemars::JsonSchema;

@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
-use cw20::Denom;
+use cw20::{Denom, Expiration};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -25,14 +25,17 @@ pub struct Config {
 
     pub total_assets: Uint128, // total value of assets deposited from endowments (in usdc/usd)
     pub total_shares: Uint128, // total amount of minted vault tokens
+
+    pub next_pending_id: u32, // (Incrementing) ID used for indexing the PendingInfo
 }
-#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct PendingInfo {
     pub typ: String, // type of pending transaction ('typ', because 'type' is protected keyword in Rust...)
-    pub endowment_id: String, // ID of org. sending Accounts SC
+    pub endowment_id: u32, // ID of org. sending Accounts SC
     pub beneficiary: Addr, // return to the beneficiary
     pub amount: Uint128,
+    pub release_at: Expiration,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
@@ -58,7 +61,7 @@ impl TokenInfo {
     }
 }
 
-pub const PENDING: Map<(&str, u64), PendingInfo> = Map::new("pending");
+pub const PENDING: Map<u32, PendingInfo> = Map::new("pending");
 pub const REMNANTS: Map<String, Uint128> = Map::new("remnants");
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
