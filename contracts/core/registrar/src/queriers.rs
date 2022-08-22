@@ -24,6 +24,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         cw4_code: config.cw4_code,
         accepted_tokens: config.accepted_tokens,
         applications_review: config.applications_review.to_string(),
+        swaps_router: config.swaps_router.map(|addr| addr.to_string()),
     })
 }
 

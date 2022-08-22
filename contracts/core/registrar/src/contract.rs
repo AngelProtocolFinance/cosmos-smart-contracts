@@ -46,6 +46,7 @@ pub fn instantiate(
         cw3_code: None,
         cw4_code: None,
         accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
+        swaps_router: None,
     };
 
     CONFIG.save(deps.storage, &configs)?;
