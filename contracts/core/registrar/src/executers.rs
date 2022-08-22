@@ -7,8 +7,8 @@ use angel_core::structs::{
 };
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    attr, to_binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response, StdResult,
-    SubMsg, SubMsgResult, WasmMsg,
+    attr, to_binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError,
+    StdResult, SubMsg, SubMsgResult, WasmMsg,
 };
 use cw_utils::Duration;
 
@@ -51,13 +51,11 @@ pub fn update_endowment_status(
     // look up the endowment in the Registry. Will fail if doesn't exist
     let endowment_id = msg.endowment_id;
     let mut endowment_entry = REGISTRY.load(deps.storage, endowment_id)?;
-    let msg_endowment_status = match msg.status {
-        0 => EndowmentStatus::Inactive,
-        1 => EndowmentStatus::Approved,
-        2 => EndowmentStatus::Frozen,
-        3 => EndowmentStatus::Closed,
-        _ => EndowmentStatus::Inactive, // should never be reached due to status check earlier
-    };
+
+    // check that the endowment has not been closed (liquidated or terminated) as this is not reversable
+    if endowment_entry.status == EndowmentStatus::Closed {
+        return Err(ContractError::AccountClosed {});
+    }
 
     // AP Applications Review: Can only handle Endowments that are still INACTIVE.
     // Can only set a status of either Approved OR Closed.
@@ -66,19 +64,26 @@ pub fn update_endowment_status(
         && endowment_entry.status == EndowmentStatus::Inactive
         && (msg.status == 1 || msg.status == 3))
         || (info.sender == config.owner && endowment_entry.status != EndowmentStatus::Inactive))
-        || msg.status > 3
     {
         return Err(ContractError::Unauthorized {});
     }
 
+    if msg.status > 3 {
+        return Err(ContractError::Std(StdError::generic_err(
+            "Status not found",
+        )));
+    }
+
+    let msg_endowment_status = match msg.status {
+        0 => EndowmentStatus::Inactive,
+        1 => EndowmentStatus::Approved,
+        2 => EndowmentStatus::Frozen,
+        3 => EndowmentStatus::Closed,
+        _ => EndowmentStatus::Inactive, // should never be reached due to status check earlier
+    };
     // check first that the current status is different from the new status sent
     if endowment_entry.status.to_string() == msg_endowment_status.to_string() {
         return Ok(Response::default());
-    }
-
-    // check that the endowment has not been closed (liquidated or terminated) as this is not reversable
-    if endowment_entry.status == EndowmentStatus::Closed {
-        return Err(ContractError::AccountClosed {});
     }
 
     // update entry status & save to the Registry
@@ -89,12 +94,10 @@ pub fn update_endowment_status(
     // Build out list of SubMsgs to send to the Account SC and/or Index Fund SC
     // 1. INDEX FUND - Update fund members list removing a member if the member can no longer accept deposits
     // 2. ACCOUNTS - Update the Endowment deposit/withdraw approval config settings based on the new status
-
     let index_fund_contract = match config.index_fund_contract {
         Some(addr) => addr,
         None => return Err(ContractError::ContractNotConfigured {}),
     };
-
     let accounts_contract = config.accounts_contract.unwrap().to_string();
     let sub_messages: Vec<SubMsg> = match msg_endowment_status {
         // Allowed to receive donations and process withdrawals
