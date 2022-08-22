@@ -63,9 +63,9 @@ pub fn update_endowment_status(
     // Can only set a status of either Approved OR Closed.
     // AP Team CW3 (owner): Can only handle Endowments that are NOT Inactive. Can set any status.
     if !((info.sender == config.applications_review
-        && msg_endowment_status == EndowmentStatus::Inactive
+        && endowment_entry.status == EndowmentStatus::Inactive
         && (msg.status == 1 || msg.status == 3))
-        || (info.sender == config.owner && msg_endowment_status != EndowmentStatus::Inactive))
+        || !(info.sender == config.owner && endowment_entry.status != EndowmentStatus::Inactive))
         || msg.status > 3
     {
         return Err(ContractError::Unauthorized {});
