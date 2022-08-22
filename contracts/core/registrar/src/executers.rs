@@ -65,7 +65,7 @@ pub fn update_endowment_status(
     if !((info.sender == config.applications_review
         && endowment_entry.status == EndowmentStatus::Inactive
         && (msg.status == 1 || msg.status == 3))
-        || !(info.sender == config.owner && endowment_entry.status != EndowmentStatus::Inactive))
+        || (info.sender == config.owner && endowment_entry.status != EndowmentStatus::Inactive))
         || msg.status > 3
     {
         return Err(ContractError::Unauthorized {});
