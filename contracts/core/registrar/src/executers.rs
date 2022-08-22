@@ -197,6 +197,10 @@ pub fn update_config(
         Some(addr) => Some(deps.api.addr_validate(&addr)?),
         None => config.accounts_contract,
     };
+    config.swaps_router = match msg.swaps_router {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => config.swaps_router,
+    };
     config.cw3_code = match msg.cw3_code {
         Some(v) => Some(v),
         None => config.cw3_code,
