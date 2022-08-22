@@ -17,9 +17,7 @@ use angel_core::responses::vault::{InfoResponse, Token2ForToken1PriceResponse};
 use angel_core::structs::EndowmentEntry;
 use angel_core::utils::query_denom_balance;
 
-use crate::state::{
-    Config, PendingInfo, TokenInfo, BALANCES, CONFIG, PENDING, REMNANTS, TOKEN_INFO,
-};
+use crate::state::{Config, PendingInfo, BALANCES, CONFIG, PENDING, REMNANTS, TOKEN_INFO};
 
 pub fn update_owner(
     deps: DepsMut,
@@ -281,6 +279,11 @@ pub fn distribute_claim(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
+    // Validations
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
+
     // First, compute the "claim"ed LP tokens
     // Query the "lp_token" balance
     let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
@@ -429,7 +432,7 @@ pub fn withdraw(
 pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // Validation
+    // Validations
     if info.sender != config.keeper {
         return Err(ContractError::Unauthorized {});
     }
@@ -479,10 +482,15 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
 pub fn harvest_swap(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     token1_denom_bal_before: Uint128,
     token2_denom_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
+    // Validations
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
+
     let config = CONFIG.load(deps.storage)?;
     // Compute the token balances
     let token1_denom_bal_now = query_denom_balance(
@@ -587,6 +595,11 @@ pub fn distribute_harvest(
     info: MessageInfo,
     output_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
+    // Validations
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
+
     let mut res = Response::default();
 
     let config = CONFIG.load(deps.storage)?;
@@ -673,13 +686,18 @@ pub fn distribute_harvest(
 pub fn add_liquidity(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     endowment_id: u32,
     in_denom: Denom,
     out_denom: Denom,
     in_denom_bal_before: Uint128,
     out_denom_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
+    // Validations
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
+
     let config = CONFIG.load(deps.storage)?;
 
     let in_denom_bal = query_denom_balance(&deps, &in_denom, env.contract.address.to_string());
@@ -810,6 +828,11 @@ pub fn stake_lp_token(
     endowment_id: u32,
     lp_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
+    // Validations
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
+
     let mut config = CONFIG.load(deps.storage)?;
 
     // Perform the "staking"
@@ -854,10 +877,15 @@ pub fn stake_lp_token(
 pub fn remove_liquidity(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     lp_token_bal_before: Uint128,
     action: RemoveLiquidAction,
 ) -> Result<Response, ContractError> {
+    // Validations
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
+
     let config = CONFIG.load(deps.storage)?;
 
     // First, compute the current "lp_token" balance
@@ -944,11 +972,16 @@ pub fn remove_liquidity(
 pub fn swap_and_send(
     deps: DepsMut,
     env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     token1_denom_bal_before: Uint128,
     token2_denom_bal_before: Uint128,
     beneficiary: Addr,
 ) -> Result<Response, ContractError> {
+    // Validations
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
+
     let config = CONFIG.load(deps.storage)?;
 
     // First, compute the token balances
@@ -1063,7 +1096,6 @@ pub fn swap_and_send(
     Ok(res)
 }
 
-//
 fn swap_msg(
     config: &Config,
     deposit_denom: &Denom,
