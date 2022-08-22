@@ -1,6 +1,6 @@
 use cosmwasm_std::{
     attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Fraction,
-    MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
+    MessageInfo, Order, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Denom;
 use cw_controllers::ClaimsResponse;
@@ -216,22 +216,22 @@ fn create_deposit_msgs(
 }
 
 /// Claim: Call the `claim` entry of "staking" contract
-pub fn claim(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    endowment_id: u32,
-    beneficiary: Addr,
-) -> Result<Response, ContractError> {
+pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
     // Validations
-    validate_action_caller_n_endow_id(
-        deps.as_ref(),
-        &config,
-        info.sender.to_string(),
-        endowment_id,
+    // Check if sender address is the "accounts_contract"
+    let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &RegistrarQueryMsg::Config {},
     )?;
+    if let Some(accounts_contract) = registar_config.accounts_contract {
+        if info.sender.to_string() != accounts_contract {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        return Err(ContractError::Unauthorized {});
+    }
 
     // First, check if there is any possible claim in "staking" contract
     let claims_resp: ClaimsResponse = deps.querier.query_wasm_smart(
@@ -263,15 +263,56 @@ pub fn claim(
     )?;
     res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::RemoveLiquidity {
+        msg: to_binary(&ExecuteMsg::DistributeClaim {
             lp_token_bal_before: lp_token_bal.balance,
-            action: RemoveLiquidAction::Claim { beneficiary },
         })
         .unwrap(),
         funds: vec![],
     }));
 
     Ok(res)
+}
+
+pub fn distribute_claim(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    lp_token_bal_before: Uint128,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+
+    // First, compute the "claim"ed LP tokens
+    // Query the "lp_token" balance
+    let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        config.pool_lp_token_addr.to_string(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+    let total_claimed_amount = lp_token_bal
+        .balance
+        .checked_div(lp_token_bal_before)
+        .unwrap();
+
+    // Filter the pending infoes available for claim.
+    let claimable_infoes = PENDING
+        .range(deps.storage, None, None, Order::Ascending)
+        .take_while(|res| {
+            let (_, info) = res.as_ref().unwrap();
+            info.release_at.is_expired(&env.block)
+        })
+        .map(|res| res.unwrap())
+        .collect::<Vec<(u32, PendingInfo)>>();
+
+    let total_expected_amount: Uint128 = claimable_infoes.iter().map(|(_, info)| info.amount).sum();
+
+    let reward_amount = total_claimed_amount
+        .checked_div(total_expected_amount)
+        .unwrap();
+
+    todo!("Add the logic of sending the withdraw amount to own beneficiaries & computing the portion of reward for every endowment and re-staking them");
+
+    Ok(Response::default())
 }
 
 /// Withdraw: Takes in an amount of vault tokens
@@ -869,8 +910,10 @@ pub fn remove_liquidity(
         env.contract.address.to_string(),
     );
     match action {
-        RemoveLiquidAction::Claim { beneficiary }
-        | RemoveLiquidAction::Withdraw { beneficiary } => {
+        RemoveLiquidAction::Claim {} => {
+            todo!("Need to add claim logic")
+        }
+        RemoveLiquidAction::Withdraw { beneficiary } => {
             res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: env.contract.address.to_string(),
                 msg: to_binary(&ExecuteMsg::SwapAndSendTo {

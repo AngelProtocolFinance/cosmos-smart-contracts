@@ -181,7 +181,7 @@ pub fn redeem_from_vaults(
         // create a withdraw message for X Vault, noting amounts for Locked / Liquid
         redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: yield_vault.address.to_string(),
-            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem { endowment_id }).unwrap(),
+            msg: to_binary(&crate::messages::vault::ExecuteMsg::Claim {}).unwrap(),
             funds: vec![],
         })));
         // The "vault" contract now renamed the `redeem` entry to `claim`.

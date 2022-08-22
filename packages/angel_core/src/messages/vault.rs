@@ -37,12 +37,9 @@ pub enum ExecuteMsg {
     Deposit {
         endowment_id: u32,
     },
-    Claim {
-        endowment_id: u32,
-        beneficiary: Addr,
-    },
-    Redeem {
-        endowment_id: u32,
+    Claim {},
+    DistributeClaim {
+        lp_token_bal_before: Uint128,
     },
     Withdraw(AccountWithdrawMsg),
     Harvest {},
@@ -223,7 +220,7 @@ pub enum WasmSwapQueryMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum RemoveLiquidAction {
     Harvest,
-    Claim { beneficiary: Addr },
+    Claim {},
     Withdraw { beneficiary: Addr },
 }
 

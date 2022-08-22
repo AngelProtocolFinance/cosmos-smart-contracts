@@ -123,10 +123,10 @@ pub fn execute(
         // Claim is only called by the SC when setting up new strategies.
         // Pulls all existing amounts back to Account in USDC or [input_denom].
         // -Deposit Token/Yield Token (Vault) --> +USDC (Account)
-        ExecuteMsg::Claim {
-            endowment_id,
-            beneficiary,
-        } => executers::claim(deps, env, info, endowment_id, beneficiary),
+        ExecuteMsg::Claim {} => executers::claim(deps, env, info),
+        ExecuteMsg::DistributeClaim {
+            lp_token_bal_before,
+        } => executers::distribute_claim(deps, env, info, lp_token_bal_before),
         // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
         ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
@@ -179,7 +179,6 @@ pub fn execute(
             token2_denom_bal_before,
             beneficiary,
         ),
-        ExecuteMsg::Redeem { endowment_id } => todo!("FIXME!"),
         // // Cw20_base entries
         // ExecuteMsg::Transfer { recipient, amount } => {
         //     cw20_base::contract::execute_transfer(deps, env, info, recipient, amount)
