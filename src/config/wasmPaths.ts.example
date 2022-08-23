@@ -2,4 +2,5 @@ export const wasm_path = {
   core: "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-smart-contracts/artifacts",
   junoswap:
     "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/artifacts/junoswap",
+  mock_vault: "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/mock-vault/artifacts"
 };

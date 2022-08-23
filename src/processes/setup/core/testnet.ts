@@ -94,9 +94,9 @@ export async function setupCore(
     config.accepted_tokens,
     config.is_localjuno,
   );
-  // if (!config.is_localjuno) {
-  //   await createVaults(config.harvest_to_liquid, config.tax_per_block);
-  // }
+  if (!config.is_localjuno) {
+    await createVaults(config.harvest_to_liquid, config.tax_per_block);
+  }
   await turnOverApTeamMultisig();
   await createEndowments(
     config.threshold_absolute_percentage,
@@ -552,47 +552,63 @@ async function createVaults(
   harvest_to_liquid: string,
   tax_per_block: string
 ): Promise<void> {
-  process.stdout.write("Uploading Mock Vault Wasm");
-  const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/anchor.wasm`);
+  process.stdout.write("Uploading Vault Wasm");
+  const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.mock_vault}/mock_vault.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
 
-  // Mock Vault Vault - #1
-  process.stdout.write("Instantiating Mock Vault (#1) contract");
+  // Anchor Vault - #1
+  process.stdout.write("Instantiating Vault (#1) contract");
   const vaultResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     moneymarket: registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Mock Vault's 19.5% earnings collected per block
-    name: "AP DP Token - Mock Vault #1",
-    symbol: "apMOK1",
+    input_denom: "ujunox", // testnet placeholder
+    yield_token: registrar, // placeholder addr for now
+    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
+    name: "AP DP Token - #1",
+    symbol: "apANC1",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
   });
   vault1 = vaultResult1.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault1}`);
 
-  // Mock Vault Vault - #2 (to better test multistrategy logic)
-  process.stdout.write("Instantiating Mock Vault Vault (#2) contract");
+  // Vault - #2 (to better test multistrategy logic)
+  process.stdout.write("Instantiating Vault (#2) contract");
   const vaultResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     moneymarket: registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Mock Vault's 19.5% earnings collected per block
-    name: "AP DP Token - Mock Vault #2",
-    symbol: "apMOK2",
+    input_denom: "ujunox", // testnet placeholder
+    yield_token: registrar, // placeholder addr for now
+    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
+    name: "AP DP Token - #2",
+    symbol: "apANC2",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
   });
   vault2 = vaultResult2.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault2}`);
 
-  // Step 3. AP team must approve the new anchor vault in registrar & make it the default vault
-  process.stdout.write("Add & Approve Vault #1 & #2 in Registrar");
+  // Step 3. AP team must add & approve the new vaults in registrar & make #1 the default vault
+  process.stdout.write("Add Vault #1 & #2 in Registrar");
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
-    vault_update: {
+    vault_add: {
+      network: "juno-1",
       vault_addr: vault1,
-      approved: true,
+      input_denom: "ujunox",
+      yield_token: registrar,
       restricted_from: [],
     }
   });
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
+    vault_add: {
+      network: "juno-1",
+      vault_addr: vault2,
+      input_denom: "ujunox",
+      yield_token: registrar,
+      restricted_from: [],
+    }
+  });
+  process.stdout.write("Approve Vault #1 & #2 in Registrar");
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_update: {
       vault_addr: vault1,
@@ -606,22 +622,10 @@ async function createVaults(
       approved: true,
       restricted_from: [],
     }
-  });
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
-    vault_update: {
-      vault_addr: vault2,
-      approved: true,
-      restricted_from: [],
-    }
-  });
-  console.log(chalk.green(" Done!"));
-
-  process.stdout.write("Set default vault in Registrar as Vault #1");
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
-    update_config: { default_vault: vault1 }
   });
   console.log(chalk.green(" Done!"));
 }
+
 
 // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
 async function turnOverApTeamMultisig(): Promise<void> {
