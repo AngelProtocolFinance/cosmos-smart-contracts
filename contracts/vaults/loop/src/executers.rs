@@ -14,9 +14,7 @@ use angel_core::messages::vault::{
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::structs::EndowmentEntry;
 use angel_core::utils::query_denom_balance;
-use terraswap::querier::{
-    query_all_balances, query_balance, query_pair_info_from_pair, query_token_balance,
-};
+use terraswap::querier::{query_balance, query_pair_info_from_pair, query_token_balance};
 
 use crate::state::{Config, PendingInfo, BALANCES, CONFIG, PENDING, REMNANTS, TOKEN_INFO};
 
@@ -136,64 +134,6 @@ pub fn deposit(
         .add_attribute("sender", msg_sender)
         .add_attribute("endow_id", endowment_id.to_string())
         .add_attribute("deposit_amount", deposit_amount))
-}
-
-fn prepare_deposit_msgs(
-    deps: DepsMut,
-    env: Env,
-    config: &Config,
-    endowment_id: u32,
-    deposit_asset_info: AssetInfo,
-    deposit_amount: Uint128,
-) -> Result<Vec<CosmosMsg>, StdError> {
-    let mut msgs: Vec<CosmosMsg> = vec![];
-
-    // 1. Add the "loopswap::swap" message
-    let input_amount = deposit_amount.checked_div(Uint128::from(2_u128))?;
-    prepare_swap_msg(&config, &deposit_asset_info, input_amount)?
-        .into_iter()
-        .for_each(|msg| msgs.push(msg));
-
-    // 2. Add the "add_liquidity" message
-    let pair_info_query: terraswap::asset::PairInfo =
-        query_pair_info_from_pair(&deps.querier, config.loop_pair_contract)?;
-
-    let (in_asset_info, out_asset_info) = if deposit_asset_info == pair_info_query.asset_infos[0] {
-        (
-            pair_info_query.asset_infos[0],
-            pair_info_query.asset_infos[1],
-        )
-    } else {
-        (
-            pair_info_query.asset_infos[1],
-            pair_info_query.asset_infos[0],
-        )
-    };
-
-    let in_asset_bal_before = query_asset_balance(
-        deps.as_ref(),
-        env.contract.address.clone(),
-        in_asset_info.clone(),
-    )?;
-    let out_asset_bal_before = query_asset_balance(
-        deps.as_ref(),
-        env.contract.address.clone(),
-        out_asset_info.clone(),
-    )?;
-    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::AddLiquidity {
-            endowment_id,
-            in_asset_info,
-            out_asset_info,
-            in_asset_bal_before,
-            out_asset_bal_before,
-        })
-        .unwrap(),
-        funds: vec![],
-    }));
-
-    Ok(msgs)
 }
 
 /// Claim: Call the `claim` entry of "staking" contract
@@ -1079,9 +1019,72 @@ pub fn swap_and_send(
     Ok(res)
 }
 
-/// Prepare the "swap" message for the loopswap pair contract
-fn prepare_swap_msg(
+/// Prepare the messages for `deposit` operation
+fn prepare_deposit_msgs(
+    deps: DepsMut,
+    env: Env,
     config: &Config,
+    endowment_id: u32,
+    deposit_asset_info: AssetInfo,
+    deposit_amount: Uint128,
+) -> Result<Vec<CosmosMsg>, StdError> {
+    let mut msgs: Vec<CosmosMsg> = vec![];
+
+    // 1. Add the "loopswap::swap" message
+    let input_amount = deposit_amount.checked_div(Uint128::from(2_u128))?;
+    prepare_loop_pair_swap_msg(
+        &config.loop_pair_contract.to_string(),
+        &deposit_asset_info,
+        input_amount,
+    )?
+    .into_iter()
+    .for_each(|msg| msgs.push(msg));
+
+    // 2. Add the "add_liquidity" message
+    let pair_info_query: terraswap::asset::PairInfo =
+        query_pair_info_from_pair(&deps.querier, config.loop_pair_contract)?;
+
+    let (in_asset_info, out_asset_info) = if deposit_asset_info == pair_info_query.asset_infos[0] {
+        (
+            pair_info_query.asset_infos[0],
+            pair_info_query.asset_infos[1],
+        )
+    } else {
+        (
+            pair_info_query.asset_infos[1],
+            pair_info_query.asset_infos[0],
+        )
+    };
+
+    let in_asset_bal_before = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        in_asset_info.clone(),
+    )?;
+    let out_asset_bal_before = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        out_asset_info.clone(),
+    )?;
+    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::AddLiquidity {
+            endowment_id,
+            in_asset_info,
+            out_asset_info,
+            in_asset_bal_before,
+            out_asset_bal_before,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
+
+    Ok(msgs)
+}
+
+/// Prepare the `swap` message for the `loopswap pair` contract
+fn prepare_loop_pair_swap_msg(
+    pair_contract: &str,
     input_asset_info: &AssetInfo,
     input_amount: Uint128,
 ) -> StdResult<Vec<CosmosMsg>> {
@@ -1090,7 +1093,7 @@ fn prepare_swap_msg(
         msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: contract_addr.to_string(),
             msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: config.loop_pair_contract.to_string(),
+                spender: pair_contract.to_string(),
                 amount: input_amount,
                 expires: None,
             })
@@ -1111,7 +1114,7 @@ fn prepare_swap_msg(
     };
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.loop_pair_contract.to_string(),
+        contract_addr: pair_contract.to_string(),
         msg: to_binary(&terraswap::pair::ExecuteMsg::Swap {
             offer_asset: Asset {
                 info: *input_asset_info,
@@ -1127,7 +1130,8 @@ fn prepare_swap_msg(
     Ok(msgs)
 }
 
-/// Validate the `msg_sender/caller` of the "vault" contract entry & `endowment_id`.
+/// Check if the `caller` is the `accounts_contract` address &
+/// `endowment_id` is valid Endowment ID in `accounts_contract`
 fn validate_action_caller_n_endow_id(
     deps: Deps,
     config: &Config,
@@ -1170,6 +1174,7 @@ fn validate_action_caller_n_endow_id(
     Ok(())
 }
 
+/// Custom `mint` function for `vault token`
 fn execute_mint(
     deps: DepsMut,
     _env: Env,
@@ -1205,6 +1210,7 @@ fn execute_mint(
     Ok(())
 }
 
+/// Custom `burn` function for `vault token`
 fn execute_burn(
     deps: DepsMut,
     _env: Env,
@@ -1233,6 +1239,9 @@ fn execute_burn(
     Ok(())
 }
 
+/// Query the `asset` balance of `account_addr`.
+///
+/// `asset_info` is `terraswap::asset::AssetInfo`.
 fn query_asset_balance(
     deps: Deps,
     account_addr: Addr,
