@@ -1,9 +1,10 @@
 use cosmwasm_std::{
     attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Fraction,
-    MessageInfo, Order, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
+    MessageInfo, Order, QuerierWrapper, QueryRequest, Response, StdError, StdResult, Uint128,
+    WasmMsg, WasmQuery,
 };
-use cw20::Denom;
 use cw_controllers::ClaimsResponse;
+use terraswap::asset::{Asset, AssetInfo};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
@@ -13,6 +14,9 @@ use angel_core::messages::vault::{
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::structs::EndowmentEntry;
 use angel_core::utils::query_denom_balance;
+use terraswap::querier::{
+    query_all_balances, query_balance, query_pair_info_from_pair, query_token_balance,
+};
 
 use crate::state::{Config, PendingInfo, BALANCES, CONFIG, PENDING, REMNANTS, TOKEN_INFO};
 
@@ -78,6 +82,11 @@ pub fn update_config(
         None => config.loop_farming_contract,
     };
 
+    config.loop_pair_contract = match msg.loop_pair_contract {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.loop_pair_contract,
+    };
+
     config.keeper = match msg.keeper {
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.keeper,
@@ -94,7 +103,7 @@ pub fn deposit(
     _info: MessageInfo,
     msg_sender: String,
     endowment_id: u32,
-    deposit_denom: Denom,
+    deposit_asset_info: AssetInfo,
     deposit_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -102,76 +111,89 @@ pub fn deposit(
     // Validations
     validate_action_caller_n_endow_id(deps.as_ref(), &config, msg_sender.clone(), endowment_id)?;
 
-    // Check if the "deposit_denom" is valid
-    if !config.input_denoms.contains(&deposit_denom) {
-        return Err(ContractError::InvalidCoinsDeposited {});
-    }
+    // Check if the "deposit_asset_info" is valid
+    let pair_response: terraswap::asset::PairInfo =
+        query_pair_info_from_pair(&deps.querier, config.loop_pair_contract)?;
 
-    // Check if the "deposit_amount" is zero or not
+    // Check if the "deposit_amount" is zero
     if deposit_amount.is_zero() {
         return Err(ContractError::EmptyBalance {});
     }
 
-    // Perform the whole "deposit" action
-    let mut res = Response::new()
-        .add_attribute("action", "deposit")
-        .add_attribute("sender", msg_sender)
-        .add_attribute("endow_id", endowment_id.to_string())
-        .add_attribute("deposit_amount", deposit_amount);
-
-    res = res.add_messages(create_deposit_msgs(
+    // Prepare the messages for whole "deposit" opeartion
+    let deposit_msgs = prepare_deposit_msgs(
         deps,
         env,
         &config,
         endowment_id,
-        deposit_denom,
+        deposit_asset_info,
         deposit_amount,
-    ));
+    )?;
 
-    Ok(res)
+    Ok(Response::default()
+        .add_messages(deposit_msgs)
+        .add_attribute("action", "deposit")
+        .add_attribute("sender", msg_sender)
+        .add_attribute("endow_id", endowment_id.to_string())
+        .add_attribute("deposit_amount", deposit_amount))
 }
 
-fn create_deposit_msgs(
+fn prepare_deposit_msgs(
     deps: DepsMut,
     env: Env,
     config: &Config,
     endowment_id: u32,
-    deposit_denom: Denom,
+    deposit_asset_info: AssetInfo,
     deposit_amount: Uint128,
-) -> Vec<CosmosMsg> {
-    let mut res: Vec<CosmosMsg> = vec![];
+) -> Result<Vec<CosmosMsg>, StdError> {
+    let mut msgs: Vec<CosmosMsg> = vec![];
 
-    // 1. Add the swap msg
-    swap_msg(&config, &deposit_denom, deposit_amount)
-        .expect("Cannot create swap msg")
+    // 1. Add the "loopswap::swap" message
+    let input_amount = deposit_amount.checked_div(Uint128::from(2_u128))?;
+    prepare_swap_msg(&config, &deposit_asset_info, input_amount)?
         .into_iter()
-        .for_each(|msg| res.push(msg));
+        .for_each(|msg| msgs.push(msg));
 
     // 2. Add the "add_liquidity" message
-    let in_denom = deposit_denom;
-    let out_denom = if in_denom == config.input_denoms[0] {
-        config.input_denoms[1].clone()
+    let pair_info_query: terraswap::asset::PairInfo =
+        query_pair_info_from_pair(&deps.querier, config.loop_pair_contract)?;
+
+    let (in_asset_info, out_asset_info) = if deposit_asset_info == pair_info_query.asset_infos[0] {
+        (
+            pair_info_query.asset_infos[0],
+            pair_info_query.asset_infos[1],
+        )
     } else {
-        config.input_denoms[0].clone()
+        (
+            pair_info_query.asset_infos[1],
+            pair_info_query.asset_infos[0],
+        )
     };
-    let in_denom_bal_before =
-        query_denom_balance(&deps, &in_denom, env.contract.address.to_string());
-    let out_denom_bal_before =
-        query_denom_balance(&deps, &out_denom, env.contract.address.to_string());
-    res.push(CosmosMsg::Wasm(WasmMsg::Execute {
+
+    let in_asset_bal_before = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        in_asset_info.clone(),
+    )?;
+    let out_asset_bal_before = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        out_asset_info.clone(),
+    )?;
+    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::AddLiquidity {
             endowment_id,
-            in_denom,
-            out_denom,
-            in_denom_bal_before,
-            out_denom_bal_before,
+            in_asset_info,
+            out_asset_info,
+            in_asset_bal_before,
+            out_asset_bal_before,
         })
         .unwrap(),
         funds: vec![],
     }));
 
-    res
+    Ok(msgs)
 }
 
 /// Claim: Call the `claim` entry of "staking" contract
@@ -649,10 +671,10 @@ pub fn add_liquidity(
     env: Env,
     info: MessageInfo,
     endowment_id: u32,
-    in_denom: Denom,
-    out_denom: Denom,
-    in_denom_bal_before: Uint128,
-    out_denom_bal_before: Uint128,
+    in_asset_info: AssetInfo,
+    out_asset_info: AssetInfo,
+    in_asset_bal_before: Uint128,
+    out_asset_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
     // Validations
     if info.sender != env.contract.address {
@@ -1057,24 +1079,18 @@ pub fn swap_and_send(
     Ok(res)
 }
 
-fn swap_msg(
+/// Prepare the "swap" message for the loopswap pair contract
+fn prepare_swap_msg(
     config: &Config,
-    deposit_denom: &Denom,
-    deposit_amount: Uint128,
+    input_asset_info: &AssetInfo,
+    input_amount: Uint128,
 ) -> StdResult<Vec<CosmosMsg>> {
-    let input_token = if deposit_denom == &config.input_denoms[0] {
-        TokenSelect::Token1
-    } else {
-        TokenSelect::Token2
-    };
-    let input_amount = deposit_amount.checked_div(Uint128::from(2_u128))?;
-
     let mut msgs: Vec<CosmosMsg> = vec![];
-    if let Denom::Cw20(contract_addr) = deposit_denom {
+    if let AssetInfo::Token { contract_addr } = input_asset_info {
         msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: contract_addr.to_string(),
             msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: config.pool_addr.to_string(),
+                spender: config.loop_pair_contract.to_string(),
                 amount: input_amount,
                 expires: None,
             })
@@ -1082,26 +1098,28 @@ fn swap_msg(
             funds: vec![],
         }));
     }
-
-    let funds = match deposit_denom {
-        Denom::Native(denom) => {
+    let funds = match input_asset_info {
+        AssetInfo::NativeToken { denom } => {
             vec![Coin {
                 denom: denom.to_string(),
                 amount: input_amount,
             }]
         }
-        Denom::Cw20(_) => {
+        _ => {
             vec![]
         }
     };
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.pool_addr.to_string(),
-        msg: to_binary(&WasmSwapExecuteMsg::Swap {
-            input_token,
-            input_amount,
-            min_output: Uint128::zero(), // Here, we set the zero temporarily. Need to be fixed afterwards.
-            expiration: None,
+        contract_addr: config.loop_pair_contract.to_string(),
+        msg: to_binary(&terraswap::pair::ExecuteMsg::Swap {
+            offer_asset: Asset {
+                info: *input_asset_info,
+                amount: input_amount,
+            },
+            belief_price: None,
+            max_spread: None,
+            to: None,
         })?,
         funds,
     }));
@@ -1213,4 +1231,19 @@ fn execute_burn(
     })?;
 
     Ok(())
+}
+
+fn query_asset_balance(
+    deps: Deps,
+    account_addr: Addr,
+    asset_info: AssetInfo,
+) -> StdResult<Uint128> {
+    match asset_info {
+        AssetInfo::NativeToken { denom } => query_balance(&deps.querier, account_addr, denom),
+        AssetInfo::Token { contract_addr } => query_token_balance(
+            &deps.querier,
+            deps.api.addr_validate(&contract_addr)?,
+            account_addr,
+        ),
+    }
 }

@@ -3,7 +3,8 @@ use cosmwasm_std::{
     StdError, StdResult, Uint128,
 };
 use cw2::{get_contract_version, set_contract_version};
-use cw20::{Cw20ReceiveMsg, Denom};
+use cw20::Cw20ReceiveMsg;
+use terraswap::asset::AssetInfo;
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
@@ -33,6 +34,7 @@ pub fn instantiate(
 
         loop_factory_contract: deps.api.addr_validate(&msg.loop_factory_contract)?,
         loop_farming_contract: deps.api.addr_validate(&msg.loop_farming_contract)?,
+        loop_pair_contract: deps.api.addr_validate(&msg.loop_pair_contract)?,
 
         total_assets: Uint128::zero(),
         total_shares: Uint128::zero(),
@@ -85,7 +87,9 @@ pub fn execute(
                         .to_string(),
                 }));
             }
-            let deposit_denom = Denom::Native(info.funds[0].denom.to_string());
+            let deposit_asset_info = AssetInfo::NativeToken {
+                denom: info.funds[0].denom.to_string(),
+            };
             let deposit_amount = info.funds[0].amount;
             let msg_sender = info.sender.to_string();
             executers::deposit(
@@ -94,7 +98,7 @@ pub fn execute(
                 info,
                 msg_sender,
                 endowment_id,
-                deposit_denom,
+                deposit_asset_info,
                 deposit_amount,
             )
         }
@@ -123,19 +127,19 @@ pub fn execute(
         } => executers::distribute_harvest(deps, env, info, output_token_bal_before),
         ExecuteMsg::AddLiquidity {
             endowment_id,
-            in_denom,
-            out_denom,
-            in_denom_bal_before,
-            out_denom_bal_before,
+            in_asset_info,
+            out_asset_info,
+            in_asset_bal_before,
+            out_asset_bal_before,
         } => executers::add_liquidity(
             deps,
             env,
             info,
             endowment_id,
-            in_denom,
-            out_denom,
-            in_denom_bal_before,
-            out_denom_bal_before,
+            in_asset_info,
+            out_asset_info,
+            in_asset_bal_before,
+            out_asset_bal_before,
         ),
         ExecuteMsg::RemoveLiquidity {
             lp_token_bal_before,
@@ -169,7 +173,9 @@ fn receive_cw20(
     match from_binary(&cw20_msg.msg) {
         Ok(ReceiveMsg::Deposit { endowment_id }) => {
             let msg_sender = cw20_msg.sender;
-            let deposit_denom = Denom::Cw20(info.sender.clone());
+            let deposit_asset_info = AssetInfo::Token {
+                contract_addr: info.sender.to_string(),
+            };
             let deposit_amount = cw20_msg.amount;
             executers::deposit(
                 deps,
@@ -177,7 +183,7 @@ fn receive_cw20(
                 info,
                 msg_sender,
                 endowment_id,
-                deposit_denom,
+                deposit_asset_info,
                 deposit_amount,
             )
         }

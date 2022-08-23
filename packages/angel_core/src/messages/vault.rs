@@ -1,16 +1,16 @@
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::{Cw20ReceiveMsg, Denom};
-use cw_utils::{Duration, Expiration};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub loop_factory_contract: String,
-    pub loop_farming_contract: String,
-
     pub registrar_contract: String,
     pub keeper: String,
+
+    pub loop_factory_contract: String,
+    pub loop_farming_contract: String,
+    pub loop_pair_contract: String,
 
     pub name: String,
     pub symbol: String,
@@ -51,10 +51,10 @@ pub enum ExecuteMsg {
     },
     AddLiquidity {
         endowment_id: u32,
-        in_denom: Denom,
-        out_denom: Denom,
-        in_denom_bal_before: Uint128,
-        out_denom_bal_before: Uint128,
+        in_asset_info: terraswap::asset::AssetInfo,
+        out_asset_info: terraswap::asset::AssetInfo,
+        in_asset_bal_before: Uint128,
+        out_asset_bal_before: Uint128,
     },
     RemoveLiquidity {
         lp_token_bal_before: Uint128,
@@ -76,6 +76,7 @@ pub enum ExecuteMsg {
 pub struct UpdateConfigMsg {
     pub loop_factory_contract: Option<String>,
     pub loop_farming_contract: Option<String>,
+    pub loop_pair_contract: Option<String>,
     pub keeper: Option<String>,
 }
 

@@ -1,13 +1,13 @@
 use std::ops::Sub;
 
-use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
+use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{
     coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, StdError, Uint128,
 };
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{
-    AccountWithdrawMsg, ExecuteMsg, InstantiateMsg, QueryMsg, RoutesUpdateMsg, UpdateConfigMsg,
+    AccountWithdrawMsg, ExecuteMsg, InstantiateMsg, QueryMsg, UpdateConfigMsg,
 };
 use angel_core::responses::vault::ConfigResponse;
 
@@ -22,6 +22,7 @@ fn create_mock_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMo
 
         loop_factory_contract: "loop-factory".to_string(),
         loop_farming_contract: "loop-farming".to_string(),
+        loop_pair_contract: "loop-pair".to_string(),
 
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
@@ -45,6 +46,7 @@ fn proper_instantiation() {
 
         loop_factory_contract: "loop-factory".to_string(),
         loop_farming_contract: "loop-farming".to_string(),
+        loop_pair_contract: "loop-pair".to_string(),
 
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
@@ -146,6 +148,7 @@ fn test_update_config() {
     let update_config_msg = UpdateConfigMsg {
         loop_factory_contract: Some("new-loop-factory".to_string()),
         loop_farming_contract: Some("new-loop-farming".to_string()),
+        loop_pair_contract: Some("new-loop-pair".to_string()),
         keeper: Some("new-keeper".to_string()),
     };
 
