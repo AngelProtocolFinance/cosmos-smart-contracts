@@ -401,7 +401,6 @@ pub fn update_strategies(
 
 pub fn swap_liquid(
     deps: DepsMut,
-    _env: Env,
     info: MessageInfo,
     id: u32,
     amount: Uint128,
@@ -489,15 +488,44 @@ pub fn swap_liquid(
 
 pub fn swap_receipt(
     deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
     id: u32,
-    _sender_addr: Addr,
-    _fund: Asset,
+    sender_addr: Addr,
+    fund: Asset,
 ) -> Result<Response, ContractError> {
-    let _config = CONFIG.load(deps.storage)?;
-    let _endowment = ENDOWMENTS.load(deps.storage, id)?;
-    let _state = STATES.load(deps.storage, id)?;
+    let config = CONFIG.load(deps.storage)?;
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+
+    if sender_addr != registrar_config.swaps_router.unwrap() {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let mut state = STATES.load(deps.storage, id)?;
+    match fund.info {
+        AssetInfo::Native(denom) => {
+            state
+                .balances
+                .liquid_balance
+                .add_tokens(Balance::from(vec![Coin {
+                    amount: fund.amount,
+                    denom: denom.to_string(),
+                }]))
+        }
+        AssetInfo::Cw20(addr) => {
+            state
+                .balances
+                .liquid_balance
+                .add_tokens(Balance::Cw20(Cw20CoinVerified {
+                    address: addr.clone(),
+                    amount: fund.amount,
+                }))
+        }
+        AssetInfo::Cw1155(_, _) => unimplemented!(),
+    }
+    STATES.save(deps.storage, id, &state)?;
     Ok(Response::new())
 }
 

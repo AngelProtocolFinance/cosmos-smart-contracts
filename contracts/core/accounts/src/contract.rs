@@ -60,7 +60,7 @@ pub fn execute(
             id,
             amount,
             operations,
-        } => executers::swap_liquid(deps, env, info, id, amount, operations),
+        } => executers::swap_liquid(deps, info, id, amount, operations),
         ExecuteMsg::SwapReceipt { id } => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
@@ -69,7 +69,7 @@ pub fn execute(
                 info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
                 amount: info.funds[0].amount,
             };
-            executers::swap_receipt(deps, env, info.clone(), id, info.sender, native_fund)
+            executers::swap_receipt(deps, id, info.sender, native_fund)
         }
         ExecuteMsg::VaultReceipt { id } => {
             if info.funds.len() != 1 {
@@ -142,14 +142,9 @@ pub fn receive_cw20(
             msg,
             cw20_fund,
         ),
-        Ok(ReceiveMsg::SwapReceipt { id }) => executers::swap_receipt(
-            deps,
-            env,
-            info,
-            id,
-            api.addr_validate(&cw20_msg.sender)?,
-            cw20_fund,
-        ),
+        Ok(ReceiveMsg::SwapReceipt { id }) => {
+            executers::swap_receipt(deps, id, api.addr_validate(&cw20_msg.sender)?, cw20_fund)
+        }
         _ => Err(ContractError::InvalidInputs {}),
     }
 }
