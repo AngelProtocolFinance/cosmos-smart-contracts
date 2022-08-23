@@ -1,8 +1,9 @@
 use crate::operations::{assert_minium_receive, execute_swap_operation};
 use crate::state::{pair_key, Config, CONFIG, PAIRS};
 use angel_core::errors::core::ContractError;
-use angel_core::messages::junoswap::{
-    InfoResponse, JunoSwapQueryMsg, Token1ForToken2PriceResponse, Token2ForToken1PriceResponse,
+use angel_core::messages::dexs::{
+    InfoResponse, JunoSwapQueryMsg, LoopQueryMsg, SimulationResponse, Token1ForToken2PriceResponse,
+    Token2ForToken1PriceResponse,
 };
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::router::{
@@ -19,7 +20,7 @@ use cosmwasm_std::{
 };
 use cw2::set_contract_version;
 use cw20::{Cw20ReceiveMsg, Denom};
-use cw_asset::AssetInfo;
+use cw_asset::{Asset, AssetInfo};
 use std::collections::HashMap;
 
 // version info for migration info
@@ -280,6 +281,26 @@ fn simulate_swap_operations(
                         }))?;
                     offer_amount = res.token1_amount;
                 }
+            }
+            SwapOperation::Loop {
+                offer_asset_info,
+                ask_asset_info,
+            } => {
+                let pair: Pair = PAIRS.load(
+                    deps.storage,
+                    &pair_key(&[offer_asset_info.clone(), ask_asset_info]),
+                )?;
+                let res: SimulationResponse =
+                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                        contract_addr: pair.contract_address.to_string(),
+                        msg: to_binary(&LoopQueryMsg::Simulation {
+                            offer_asset: Asset {
+                                info: offer_asset_info,
+                                amount: offer_amount,
+                            },
+                        })?,
+                    }))?;
+                offer_amount = res.return_amount;
             }
         }
     }

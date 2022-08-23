@@ -1,5 +1,6 @@
-use cosmwasm_std::Uint128;
+use cosmwasm_std::{Decimal, Uint128};
 use cw20::Denom;
+use cw_asset::Asset;
 use cw_utils::Expiration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -64,4 +65,39 @@ pub struct Token1ForToken2PriceResponse {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Token2ForToken1PriceResponse {
     pub token1_amount: Uint128,
+}
+
+/// LOOP FINANCE SPECIFIC MESSAGES/RESPONCES/QUERIES
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum LoopExecuteMsg {
+    Swap {
+        offer_asset: Asset,
+        belief_price: Option<Decimal>,
+        max_spread: Option<Decimal>,
+        to: Option<String>,
+    },
+    IncreaseAllowance {
+        amount: Uint128,
+        spender: String,
+    },
+    ProvideLiquidity {},
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum LoopQueryMsg {
+    // Get pool info for a pair
+    Pool {},
+    // Get a Pair's info
+    Pair {},
+    // simulate a swap
+    Simulation { offer_asset: Asset },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct SimulationResponse {
+    pub return_amount: Uint128,
+    pub spread_amount: Uint128,
+    pub commission_amount: Uint128,
 }

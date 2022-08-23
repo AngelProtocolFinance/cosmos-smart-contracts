@@ -19,6 +19,10 @@ pub enum SwapOperation {
         offer_asset_info: AssetInfo,
         ask_asset_info: AssetInfo,
     },
+    Loop {
+        offer_asset_info: AssetInfo,
+        ask_asset_info: AssetInfo,
+    },
 }
 
 impl SwapOperation {
@@ -27,12 +31,16 @@ impl SwapOperation {
             SwapOperation::JunoSwap {
                 offer_asset_info, ..
             } => offer_asset_info.clone(),
+            SwapOperation::Loop {
+                offer_asset_info, ..
+            } => offer_asset_info.clone(),
         }
     }
 
     pub fn get_ask_asset_info(&self) -> AssetInfo {
         match self {
             SwapOperation::JunoSwap { ask_asset_info, .. } => ask_asset_info.clone(),
+            SwapOperation::Loop { ask_asset_info, .. } => ask_asset_info.clone(),
         }
     }
 }

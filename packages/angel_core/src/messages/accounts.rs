@@ -1,5 +1,5 @@
-use crate::structs::{FundingSource, GenericBalance, Profile};
-use cosmwasm_std::Decimal;
+use crate::structs::{FundingSource, GenericBalance, Profile, SwapOperation};
+use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_utils::{Duration, Threshold};
@@ -33,6 +33,14 @@ pub enum ExecuteMsg {
         id: u32,
         beneficiary: String,
         assets: GenericBalance,
+    },
+    SwapLiquid {
+        id: u32,
+        amount: Uint128,
+        operations: Vec<SwapOperation>,
+    },
+    SwapReceipt {
+        id: u32,
     },
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt {
@@ -107,6 +115,8 @@ pub enum ReceiveMsg {
     Deposit(DepositMsg),
     // Tokens are sent back to an Account from a Vault
     VaultReceipt { id: u32 },
+    // CW20 tokens sent back to Accounts from Swap Router
+    SwapReceipt { id: u32 },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

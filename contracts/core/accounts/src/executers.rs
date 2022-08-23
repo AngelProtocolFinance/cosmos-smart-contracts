@@ -10,13 +10,14 @@ use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::registrar::{
     ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentEntryMsg,
 };
+use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::responses::index_fund::FundListResponse;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
 use angel_core::structs::{
     BalanceInfo, EndowmentType, FundingSource, GenericBalance, RebalanceDetails, SocialMedialUrls,
-    SplitDetails, StrategyComponent, Tier,
+    SplitDetails, StrategyComponent, SwapOperation, Tier,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, redeem_from_vaults, validate_deposit_fund,
@@ -29,7 +30,7 @@ use cosmwasm_std::{
 };
 use cw20::{Balance, Cw20CoinVerified};
 use cw4::Member;
-use cw_asset::{Asset, AssetInfoBase};
+use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 
 pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
@@ -396,6 +397,108 @@ pub fn update_strategies(
     Ok(Response::new()
         .add_attribute("action", "update_strategies")
         .add_submessages(followup_msgs))
+}
+
+pub fn swap_liquid(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    id: u32,
+    amount: Uint128,
+    operations: Vec<SwapOperation>,
+) -> Result<Response, ContractError> {
+    let endowment = ENDOWMENTS.load(deps.storage, id)?;
+    if endowment.owner != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    if amount.is_zero() || operations.is_empty() {
+        return Err(ContractError::InvalidInputs {});
+    }
+
+    let config = CONFIG.load(deps.storage)?;
+    let mut state = STATES.load(deps.storage, id)?;
+    let offer_asset = match operations.first().unwrap() {
+        SwapOperation::JunoSwap {
+            offer_asset_info, ..
+        } => offer_asset_info,
+        SwapOperation::Loop {
+            offer_asset_info, ..
+        } => offer_asset_info,
+    };
+
+    match offer_asset {
+        AssetInfo::Native(denom) => {
+            if state
+                .balances
+                .liquid_balance
+                .get_denom_amount(denom.to_string())
+                .amount
+                < amount
+            {
+                return Err(ContractError::BalanceTooSmall {});
+            }
+            state
+                .balances
+                .liquid_balance
+                .deduct_tokens(Balance::from(vec![Coin {
+                    amount,
+                    denom: denom.to_string(),
+                }]))
+        }
+        AssetInfo::Cw20(addr) => {
+            if state
+                .balances
+                .liquid_balance
+                .get_token_amount(addr.clone())
+                .amount
+                < amount
+            {
+                return Err(ContractError::BalanceTooSmall {});
+            }
+            state
+                .balances
+                .liquid_balance
+                .deduct_tokens(Balance::Cw20(Cw20CoinVerified {
+                    address: addr.clone(),
+                    amount,
+                }))
+        }
+        AssetInfo::Cw1155(_, _) => unimplemented!(),
+    }
+    STATES.save(deps.storage, id, &state)?;
+
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+
+    let swap_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: registrar_config.swaps_router.unwrap().to_string(),
+        msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
+            operations,
+            minimum_receive: None,
+            to: None,
+        })
+        .unwrap(),
+        funds: vec![],
+    });
+    Ok(Response::new().add_message(swap_msg))
+}
+
+pub fn swap_receipt(
+    deps: DepsMut,
+    _env: Env,
+    _info: MessageInfo,
+    id: u32,
+    _sender_addr: Addr,
+    _fund: Asset,
+) -> Result<Response, ContractError> {
+    let _config = CONFIG.load(deps.storage)?;
+    let _endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let _state = STATES.load(deps.storage, id)?;
+    Ok(Response::new())
 }
 
 pub fn vault_receipt(
