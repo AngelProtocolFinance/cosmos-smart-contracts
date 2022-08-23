@@ -8,12 +8,9 @@ use cw_controllers::ClaimsResponse;
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{
-    AccountWithdrawMsg, DaoStakeCw20ExecuteMsg, DaoStakeCw20GetConfigResponse,
-    DaoStakeCw20QueryMsg, DaoStakeCw20ReceiveMsg, ExecuteMsg, RemoveLiquidAction, TokenSelect,
-    UpdateConfigMsg, WasmSwapExecuteMsg, WasmSwapQueryMsg,
+    AccountWithdrawMsg, ExecuteMsg, RemoveLiquidAction, UpdateConfigMsg,
 };
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
-use angel_core::responses::vault::Token2ForToken1PriceResponse;
 use angel_core::structs::EndowmentEntry;
 use angel_core::utils::query_denom_balance;
 
@@ -69,6 +66,17 @@ pub fn update_config(
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
+
+    // Update the config
+    config.loop_factory_contract = match msg.loop_factory_contract {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.loop_factory_contract,
+    };
+
+    config.loop_farming_contract = match msg.loop_farming_contract {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.loop_farming_contract,
+    };
 
     config.keeper = match msg.keeper {
         Some(addr) => deps.api.addr_validate(&addr)?,

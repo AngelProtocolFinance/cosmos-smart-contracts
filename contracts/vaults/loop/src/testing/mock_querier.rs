@@ -13,13 +13,11 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
-use angel_core::responses::vault::InfoResponse;
 use angel_core::structs::{AcceptedTokens, EndowmentEntry, SplitDetails};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    Info {},
     EndowmentList {
         status: Option<String>,
         name: Option<Option<String>>,
@@ -136,18 +134,6 @@ impl WasmMockQuerier {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
-                // Simulating the `junoswap::QueryMsg::Info {}`
-                QueryMsg::Info {} => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&InfoResponse {
-                        token1_reserve: Uint128::from(100_u128),
-                        token1_denom: cw20::Denom::Native("ujuno".to_string()),
-                        token2_reserve: Uint128::from(100_u128),
-                        token2_denom: cw20::Denom::Cw20(Addr::unchecked("halo-token-contract")),
-                        lp_token_address: "lp-token-address".to_string(),
-                        lp_token_supply: Uint128::from(100_u128),
-                    })
-                    .unwrap(),
-                )),
                 // Simulating the `Registrar::QueryMsg::EndowmentList {...}`
                 QueryMsg::EndowmentList {
                     status: _,

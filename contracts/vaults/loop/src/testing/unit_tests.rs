@@ -144,13 +144,8 @@ fn test_update_config() {
 
     // Try to update the "config"
     let update_config_msg = UpdateConfigMsg {
-        swap_pool_addr: Some("new-swap-pool-addr".to_string()),
-        staking_addr: Some("new-staking-addr".to_string()),
-        routes: RoutesUpdateMsg {
-            add: vec![],
-            remove: vec![],
-        },
-        output_token_denom: None,
+        loop_factory_contract: Some("new-loop-factory".to_string()),
+        loop_farming_contract: Some("new-loop-farming".to_string()),
         keeper: Some("new-keeper".to_string()),
     };
 
@@ -180,11 +175,11 @@ fn test_update_config() {
     let config_resp: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(
         config_resp.loop_factory_contract,
-        "new-staking-addr".to_string()
+        "new-loop-factory".to_string()
     );
     assert_eq!(
         config_resp.loop_farming_contract,
-        "new-swap-pool-addr".to_string()
+        "new-loop-farming".to_string()
     );
     assert_eq!(config_resp.keeper, "new-keeper".to_string());
 }
