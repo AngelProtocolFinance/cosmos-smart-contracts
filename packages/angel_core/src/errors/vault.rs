@@ -1,4 +1,5 @@
 use cosmwasm_std::StdError;
+use cw20_base::ContractError as cw20ContractError;
 use thiserror::Error;
 
 #[derive(Error, Debug, PartialEq)]
@@ -29,4 +30,38 @@ pub enum ContractError {
 
     #[error("No Balance found")]
     EmptyBalance {},
+}
+
+impl From<cw20ContractError> for ContractError {
+    fn from(error: cw20ContractError) -> Self {
+        match error {
+            cw20ContractError::CannotExceedCap {} => ContractError::CannotExceedCap {},
+            cw20ContractError::CannotSetOwnAccount {} => ContractError::CannotSetOwnAccount {},
+            cw20ContractError::DuplicateInitialBalanceAddresses {} => {
+                ContractError::Std(StdError::GenericErr {
+                    msg: "Duplicate initial balance address".to_string(),
+                })
+            }
+            cw20ContractError::Expired {} => ContractError::Std(StdError::GenericErr {
+                msg: "Expired".to_string(),
+            }),
+            cw20ContractError::InvalidPngHeader {} => ContractError::Std(StdError::GenericErr {
+                msg: "Invalid png header".to_string(),
+            }),
+            cw20ContractError::InvalidXmlPreamble {} => ContractError::Std(StdError::GenericErr {
+                msg: "Invalid xml preamble".to_string(),
+            }),
+            cw20ContractError::InvalidZeroAmount {} => ContractError::Std(StdError::GenericErr {
+                msg: "Invalid zero amount".to_string(),
+            }),
+            cw20ContractError::LogoTooBig {} => ContractError::Std(StdError::GenericErr {
+                msg: "Logo Too Big".to_string(),
+            }),
+            cw20ContractError::NoAllowance {} => ContractError::Std(StdError::GenericErr {
+                msg: "No allowance".to_string(),
+            }),
+            cw20ContractError::Std(e) => ContractError::Std(e),
+            cw20ContractError::Unauthorized {} => ContractError::Unauthorized {},
+        }
+    }
 }

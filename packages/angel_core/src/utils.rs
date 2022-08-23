@@ -5,10 +5,10 @@ use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, Vau
 use crate::responses::vault::ExchangeRateResponse;
 use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, Deps, QueryRequest, StdError,
-    StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, Deps, DepsMut, QueryRequest,
+    StdError, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg};
+use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg, Denom};
 use cw_asset::{Asset, AssetInfoBase};
 
 /// The following `calc_range_<???>` functions will set the first key after the provided key, by appending a 1 byte
@@ -134,32 +134,27 @@ pub fn vault_fx_rate(deps: Deps, vault_address: String) -> Decimal256 {
         .querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: vault_address,
-            msg: to_binary(&crate::messages::vault::QueryMsg::ExchangeRate {
-                input_denom: "uusd".to_string(),
-            })
-            .unwrap(),
+            // msg: to_binary(&crate::messages::vault::QueryMsg::ExchangeRate {
+            //     input_denom: Denom::Native("uluna".to_string()),
+            // })
+            // .unwrap(),
+            msg: to_binary("TODO!!!!").unwrap(),
         }))
         .unwrap();
     exchange_rate.exchange_rate
 }
 
-pub fn vault_account_balance(
-    deps: Deps,
-    vault_address: String,
-    account_address: String,
-) -> Uint128 {
-    // get an account's balance held with a vault
-    let account_balance: BalanceResponse = deps
+pub fn vault_endowment_balance(deps: Deps, vault_address: String, endowment_id: u32) -> Uint128 {
+    // get an endowment's balance held with a vault
+    let endow_bal_resp: BalanceResponse = deps
         .querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: vault_address,
-            msg: to_binary(&crate::messages::vault::QueryMsg::Balance {
-                address: account_address,
-            })
-            .unwrap(),
+            msg: to_binary(&crate::messages::vault::QueryMsg::Balance { id: endowment_id })
+                .unwrap(),
         }))
         .unwrap();
-    account_balance.balance
+    endow_bal_resp.balance
 }
 
 pub fn redeem_from_vaults(
@@ -186,9 +181,12 @@ pub fn redeem_from_vaults(
         // create a withdraw message for X Vault, noting amounts for Locked / Liquid
         redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: yield_vault.address.to_string(),
-            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem { endowment_id }).unwrap(),
+            msg: to_binary(&crate::messages::vault::ExecuteMsg::Claim {}).unwrap(),
             funds: vec![],
         })));
+        // The "vault" contract now renamed the `redeem` entry to `claim`.
+        // New logic is applied for `claim` entry.
+        // Hence, this part should be updated after the `vault` implement completes.
     }
     Ok(redeem_messages)
 }
@@ -332,4 +330,60 @@ pub fn validate_deposit_fund(
     }
 
     Ok(fund)
+}
+
+/// Returns a `Denom` balance for a specific account.
+/// ## Params
+/// * **deps** is an object of type [`DepsMut`].
+///
+/// * **account_addr** is an object of type [`String`].
+///
+/// * **denom** is an object of type [`Denom`] used to specify the denomination used to return the balance.
+pub fn query_denom_balance(deps: &DepsMut, denom: &Denom, account_addr: String) -> Uint128 {
+    match denom {
+        Denom::Native(denom) => {
+            query_balance(&deps, account_addr, denom.to_string()).unwrap_or(Uint128::zero())
+        }
+        Denom::Cw20(contract_addr) => {
+            query_token_balance(&deps, contract_addr.to_string(), account_addr)
+                .unwrap_or(Uint128::zero())
+        }
+    }
+}
+
+/// Returns a native token's balance for a specific account.
+/// ## Params
+/// * **deps** is an object of type [`DepsMut`].
+///
+/// * **account_addr** is an object of type [`String`].
+///
+/// * **denom** is an object of type [`String`] used to specify the denomination used to return the balance (e.g uluna).
+pub fn query_balance(deps: &DepsMut, account_addr: String, denom: String) -> StdResult<Uint128> {
+    Ok(deps
+        .querier
+        .query_balance(account_addr, denom)
+        .map(|c| c.amount)
+        .unwrap_or(Uint128::zero()))
+}
+
+/// Returns a token balance for an account.
+/// ## Params
+/// * **deps** is an object of type [`DepsMut`].
+///
+/// * **contract_addr** is an object of type [`String`]. This is the token contract for which we return a balance.
+///
+/// * **account_addr** is an object of type [`String`] for which we query the token balance for.
+pub fn query_token_balance(
+    deps: &DepsMut,
+    contract_addr: String,
+    account_addr: String,
+) -> StdResult<Uint128> {
+    // load balance from the token contract
+    let res: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        contract_addr,
+        &cw20::Cw20QueryMsg::Balance {
+            address: account_addr,
+        },
+    )?;
+    Ok(res.balance)
 }

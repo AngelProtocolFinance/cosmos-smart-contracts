@@ -28,9 +28,9 @@ pub fn query_state(deps: Deps, id: u32) -> StdResult<StateResponse> {
     })
 }
 
-pub fn query_account_balance(deps: Deps, env: Env, id: u32) -> StdResult<BalanceInfo> {
-    let endowment = ENDOWMENTS.load(deps.storage, id)?;
-    let state = STATES.load(deps.storage, id)?;
+pub fn query_endowment_balance(deps: Deps, _env: Env, endowment_id: u32) -> StdResult<BalanceInfo> {
+    let endowment = ENDOWMENTS.load(deps.storage, endowment_id)?;
+    let state = STATES.load(deps.storage, endowment_id)?;
     // setup the basic response object w/ account's balances locked & liquid (held by this contract)
     let mut balances = state.balances;
     // add stategies' (locked) balances
@@ -40,9 +40,7 @@ pub fn query_account_balance(deps: Deps, env: Env, id: u32) -> StdResult<Balance
             .add_tokens(Balance::Cw20(Cw20CoinVerified {
                 amount: deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: strategy.vault.to_string(),
-                    msg: to_binary(&VaultQuerier::Balance {
-                        address: env.contract.address.to_string(),
-                    })?,
+                    msg: to_binary(&VaultQuerier::Balance { id: endowment_id })?,
                 }))?,
                 address: deps.api.addr_validate(&strategy.vault)?,
             }));

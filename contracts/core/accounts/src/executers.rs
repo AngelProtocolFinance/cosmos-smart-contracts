@@ -718,6 +718,7 @@ pub fn deposit(
         .add_submessages(deposit_messages)
         .add_attribute("action", "account_deposit")
         .add_attribute("sender", sender_addr)
+        .add_attribute("endow_id", msg.id.to_string())
         .add_attribute("deposit_amount", deposit_amount.to_string()))
 }
 

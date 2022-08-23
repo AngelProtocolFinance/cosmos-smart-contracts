@@ -7,3 +7,4 @@ This folder contains the source code for the Vault smart contracts. These contra
 | Contract                                               | Reference                                                                                                      | Description                                                                   |
 | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | [`anchor`](../contracts/vaults/anchor)                        | [doc]()                 | Handles deposits and withdrawals from Anchor Protocol's earn platform |
+| [`junoswap`](../contracts/vaults/junoswap)                        | [doc]()                 | Handles deposits and withdrawals from Junoswap platform |
