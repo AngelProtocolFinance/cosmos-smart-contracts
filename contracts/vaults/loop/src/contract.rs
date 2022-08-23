@@ -6,10 +6,7 @@ use cw2::{get_contract_version, set_contract_version};
 use cw20::{Cw20ReceiveMsg, Denom};
 
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::vault::{
-    ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg, WasmSwapQueryMsg,
-};
-use angel_core::responses::vault::InfoResponse;
+use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
 
 use crate::executers;
 use crate::queriers;
@@ -28,33 +25,14 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    let swap_pool_addr = deps.api.addr_validate(&msg.swap_pool_addr)?;
-    let swap_pool_info: InfoResponse = deps
-        .querier
-        .query_wasm_smart(swap_pool_addr.to_string(), &WasmSwapQueryMsg::Info {})?;
-
-    if swap_pool_info.token1_denom != msg.output_token_denom
-        && swap_pool_info.token2_denom != msg.output_token_denom
-    {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: format!(
-                "Invalid output_token_denom: {:?}",
-                msg.output_token_denom.clone()
-            ),
-        }));
-    }
-
+    // Store the configuration
     let config = Config {
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         keeper: deps.api.addr_validate(&msg.keeper)?,
 
-        pool_addr: swap_pool_addr,
-        input_denoms: vec![swap_pool_info.token1_denom, swap_pool_info.token2_denom],
-        pool_lp_token_addr: deps.api.addr_validate(&swap_pool_info.lp_token_address)?,
-        staking_addr: deps.api.addr_validate(&msg.staking_addr)?,
-        routes: vec![],
-        output_token_denom: msg.output_token_denom,
+        loop_factory_contract: deps.api.addr_validate(&msg.loop_factory_contract)?,
+        loop_farming_contract: deps.api.addr_validate(&msg.loop_farming_contract)?,
 
         total_assets: Uint128::zero(),
         total_shares: Uint128::zero(),
@@ -68,7 +46,7 @@ pub fn instantiate(
 
     CONFIG.save(deps.storage, &config)?;
 
-    // store token info
+    // Store vault token information
     let token_info = TokenInfo {
         name: msg.name,
         symbol: msg.symbol,
@@ -179,54 +157,6 @@ pub fn execute(
             token2_denom_bal_before,
             beneficiary,
         ),
-        // // Cw20_base entries
-        // ExecuteMsg::Transfer { recipient, amount } => {
-        //     cw20_base::contract::execute_transfer(deps, env, info, recipient, amount)
-        //         .map_err(|e| ContractError::from(e))
-        // }
-        // ExecuteMsg::Send {
-        //     contract,
-        //     amount,
-        //     msg,
-        // } => cw20_base::contract::execute_send(deps, env, info, contract, amount, msg)
-        //     .map_err(|e| e.into()),
-        // ExecuteMsg::IncreaseAllowance {
-        //     spender,
-        //     amount,
-        //     expires,
-        // } => cw20_base::allowances::execute_increase_allowance(
-        //     deps, env, info, spender, amount, expires,
-        // )
-        // .map_err(|e| e.into()),
-        // ExecuteMsg::DecreaseAllowance {
-        //     spender,
-        //     amount,
-        //     expires,
-        // } => cw20_base::allowances::execute_decrease_allowance(
-        //     deps, env, info, spender, amount, expires,
-        // )
-        // .map_err(|e| e.into()),
-        // ExecuteMsg::TransferFrom {
-        //     owner,
-        //     recipient,
-        //     amount,
-        // } => {
-        //     cw20_base::allowances::execute_transfer_from(deps, env, info, owner, recipient, amount)
-        //         .map_err(|e| e.into())
-        // }
-        // ExecuteMsg::BurnFrom { owner, amount } => {
-        //     cw20_base::allowances::execute_burn_from(deps, env, info, owner, amount)
-        //         .map_err(|e| e.into())
-        // }
-        // ExecuteMsg::SendFrom {
-        //     owner,
-        //     contract,
-        //     amount,
-        //     msg,
-        // } => {
-        //     cw20_base::allowances::execute_send_from(deps, env, info, owner, contract, amount, msg)
-        //         .map_err(|e| e.into())
-        // }
     }
 }
 

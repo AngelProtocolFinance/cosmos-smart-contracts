@@ -1,5 +1,5 @@
-use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
-use cw20::{Denom, Expiration};
+use cosmwasm_std::{Addr, Decimal, Uint128};
+use cw20::Expiration;
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -16,12 +16,8 @@ pub struct Config {
     pub last_harvest_fx: Option<Uint128>,
     pub harvest_to_liquid: Decimal,
 
-    pub pool_addr: Addr, // swap pool address(eg. JunoSwap USDC-JUNO pool address)
-    pub input_denoms: Vec<Denom>, // swap input tokens(denoms) list
-    pub pool_lp_token_addr: Addr, // swap lp token address
-    pub routes: Vec<Addr>, // list of swap pools(eg. list of junoswap pools)
-    pub staking_addr: Addr, // contract address, to where we can stake the LP token
-    pub output_token_denom: Denom, // denom of output token to be used when withdraw/claim
+    pub loop_factory_contract: Addr, // loopswap factory address
+    pub loop_farming_contract: Addr, // loopswap farming address
 
     pub total_assets: Uint128, // total value of assets deposited from endowments (in usdc/usd)
     pub total_shares: Uint128, // total amount of minted vault tokens

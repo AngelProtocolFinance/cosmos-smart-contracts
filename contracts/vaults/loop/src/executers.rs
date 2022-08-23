@@ -13,7 +13,7 @@ use angel_core::messages::vault::{
     UpdateConfigMsg, WasmSwapExecuteMsg, WasmSwapQueryMsg,
 };
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
-use angel_core::responses::vault::{InfoResponse, Token2ForToken1PriceResponse};
+use angel_core::responses::vault::Token2ForToken1PriceResponse;
 use angel_core::structs::EndowmentEntry;
 use angel_core::utils::query_denom_balance;
 
@@ -68,53 +68,6 @@ pub fn update_config(
     // only the SC admin can update these configs...for now
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
-    }
-
-    config.pool_addr = match msg.swap_pool_addr {
-        Some(ref addr) => deps.api.addr_validate(&addr)?,
-        None => config.pool_addr,
-    };
-
-    let swap_pool_info: InfoResponse = deps
-        .querier
-        .query_wasm_smart(&config.pool_addr, &WasmSwapQueryMsg::Info {})?;
-
-    config.pool_lp_token_addr = deps.api.addr_validate(&swap_pool_info.lp_token_address)?;
-    config.input_denoms = vec![swap_pool_info.token1_denom, swap_pool_info.token2_denom];
-    config.staking_addr = match msg.staking_addr {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.staking_addr,
-    };
-
-    // Add more addresses to `config.routes`
-    for addr in msg.routes.add {
-        if !config.routes.contains(&addr) {
-            config.routes.push(addr);
-        }
-    }
-
-    // Remove the addresses from `config.routes`
-    for addr in msg.routes.remove {
-        if config.routes.contains(&addr) {
-            let id = config
-                .routes
-                .iter()
-                .enumerate()
-                .find(|(_, v)| **v == addr)
-                .unwrap()
-                .0;
-            config.routes.swap_remove(id);
-        }
-    }
-
-    config.output_token_denom = msg.output_token_denom.unwrap_or(config.output_token_denom);
-    if !config.input_denoms.contains(&config.output_token_denom) {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: format!(
-                "Invalid output token denom: {:?}",
-                config.output_token_denom.clone()
-            ),
-        }));
     }
 
     config.keeper = match msg.keeper {

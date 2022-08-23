@@ -1,8 +1,7 @@
-use cosmwasm_std::{Deps, Uint128};
+use cosmwasm_std::Deps;
 use cw20::{BalanceResponse, Denom, TokenInfoResponse};
 
-use angel_core::messages::vault::WasmSwapQueryMsg;
-use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse, InfoResponse};
+use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
 
 use crate::state::{BALANCES, CONFIG, TOKEN_INFO};
 
@@ -27,10 +26,8 @@ pub fn query_config(deps: Deps) -> ConfigResponse {
         owner: config.owner.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
         keeper: config.keeper.to_string(),
-        pool_addr: config.pool_addr.to_string(),
-        input_denoms: config.input_denoms,
-        pool_lp_token_addr: config.pool_lp_token_addr.to_string(),
-        staking_addr: config.staking_addr.to_string(),
+        loop_factory_contract: config.loop_factory_contract.to_string(),
+        loop_farming_contract: config.loop_farming_contract.to_string(),
         last_harvest: config.last_harvest,
     }
 }
@@ -44,10 +41,6 @@ pub fn query_total_balance(deps: Deps) -> BalanceResponse {
 
 pub fn query_exchange_rate(deps: Deps, input_denom: Denom) -> ExchangeRateResponse {
     let config = CONFIG.load(deps.storage).unwrap();
-    let swap_pool_info: InfoResponse = deps
-        .querier
-        .query_wasm_smart(config.pool_addr, &WasmSwapQueryMsg::Info {})
-        .unwrap();
     todo!("Implement the following query response")
     // ExchangeRateResponse {
     //     exchange_rate: Decimal256::zero(),

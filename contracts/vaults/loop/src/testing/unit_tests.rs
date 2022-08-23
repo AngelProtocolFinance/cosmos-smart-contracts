@@ -20,9 +20,8 @@ fn create_mock_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMo
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
 
-        swap_pool_addr: "junoswap-pool".to_string(),
-        staking_addr: "lp-staking-contract".to_string(),
-        output_token_denom: cw20::Denom::Native("ujuno".to_string()),
+        loop_factory_contract: "loop-factory".to_string(),
+        loop_farming_contract: "loop-farming".to_string(),
 
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
@@ -44,9 +43,8 @@ fn proper_instantiation() {
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
 
-        swap_pool_addr: "junoswap-pool".to_string(),
-        staking_addr: "lp-staking-contract".to_string(),
-        output_token_denom: cw20::Denom::Native("ujuno".to_string()),
+        loop_factory_contract: "loop-factory".to_string(),
+        loop_farming_contract: "loop-farming".to_string(),
 
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
@@ -180,8 +178,14 @@ fn test_update_config() {
     // Check the "config" update
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_resp: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config_resp.staking_addr, "new-staking-addr".to_string());
-    assert_eq!(config_resp.pool_addr, "new-swap-pool-addr".to_string());
+    assert_eq!(
+        config_resp.loop_factory_contract,
+        "new-staking-addr".to_string()
+    );
+    assert_eq!(
+        config_resp.loop_farming_contract,
+        "new-swap-pool-addr".to_string()
+    );
     assert_eq!(config_resp.keeper, "new-keeper".to_string());
 }
 
