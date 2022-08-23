@@ -59,7 +59,6 @@ impl TokenInfo {
 }
 
 pub const PENDING: Map<u32, PendingInfo> = Map::new("pending");
-pub const REMNANTS: Map<String, Uint128> = Map::new("remnants");
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
 pub const BALANCES: Map<u32, Uint128> = Map::new("balance");

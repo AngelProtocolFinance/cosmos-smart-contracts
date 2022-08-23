@@ -1,7 +1,6 @@
 use cosmwasm_std::{
     attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Fraction,
-    MessageInfo, Order, QuerierWrapper, QueryRequest, Response, StdError, StdResult, Uint128,
-    WasmMsg, WasmQuery,
+    MessageInfo, Order, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw_controllers::ClaimsResponse;
 use terraswap::asset::{Asset, AssetInfo};
@@ -16,7 +15,7 @@ use angel_core::structs::EndowmentEntry;
 use angel_core::utils::query_denom_balance;
 use terraswap::querier::{query_balance, query_pair_info_from_pair, query_token_balance};
 
-use crate::state::{Config, PendingInfo, BALANCES, CONFIG, PENDING, REMNANTS, TOKEN_INFO};
+use crate::state::{Config, PendingInfo, BALANCES, CONFIG, PENDING, TOKEN_INFO};
 
 pub fn update_owner(
     deps: DepsMut,
@@ -95,6 +94,9 @@ pub fn update_config(
     Ok(Response::default())
 }
 
+/// Contract entry: **deposit**
+///   1. Add the `swap` message of the `loopswap pair` contract
+///   2. Call the `(this contract::)add_liquidity` action afterwards
 pub fn deposit(
     deps: DepsMut,
     env: Env,
@@ -110,16 +112,27 @@ pub fn deposit(
     validate_action_caller_n_endow_id(deps.as_ref(), &config, msg_sender.clone(), endowment_id)?;
 
     // Check if the "deposit_asset_info" is valid
-    let pair_response: terraswap::asset::PairInfo =
+    let pair_info_query: terraswap::asset::PairInfo =
         query_pair_info_from_pair(&deps.querier, config.loop_pair_contract)?;
+    if !pair_info_query.asset_infos.contains(&deposit_asset_info) {
+        return Err(ContractError::InvalidCoinsDeposited {});
+    }
 
     // Check if the "deposit_amount" is zero
     if deposit_amount.is_zero() {
         return Err(ContractError::EmptyBalance {});
     }
 
-    // Prepare the messages for whole "deposit" opeartion
-    let deposit_msgs = prepare_deposit_msgs(
+    // Add the "loopswap::pair::swap" message
+    let input_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
+    let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
+        &config.loop_pair_contract.to_string(),
+        &deposit_asset_info,
+        input_amount,
+    )?;
+
+    // Prepare the messages for "(this contract::)add_liquidity" opeartion
+    let contract_add_liquidity_msgs = prepare_contract_add_liquidity_msgs(
         deps,
         env,
         &config,
@@ -129,7 +142,8 @@ pub fn deposit(
     )?;
 
     Ok(Response::default()
-        .add_messages(deposit_msgs)
+        .add_messages(loop_pair_swap_msgs)
+        .add_messages(contract_add_liquidity_msgs)
         .add_attribute("action", "deposit")
         .add_attribute("sender", msg_sender)
         .add_attribute("endow_id", endowment_id.to_string())
@@ -605,7 +619,9 @@ pub fn distribute_harvest(
     Ok(res)
 }
 
-/// Adds the liquidity to the `config.pool_addr`.
+/// Contract entry: **add_liquidity**
+///   1. Add/Provide the `liquidity` to the `loopswap pair` contract
+///   2. Call the `stake` action afterwards
 pub fn add_liquidity(
     deps: DepsMut,
     env: Env,
@@ -621,70 +637,77 @@ pub fn add_liquidity(
         return Err(ContractError::Unauthorized {});
     }
 
+    // Add the "loopswap::pair::provide_liquidity" message
     let config = CONFIG.load(deps.storage)?;
 
-    let in_denom_bal = query_denom_balance(&deps, &in_denom, env.contract.address.to_string());
-    let out_denom_bal = query_denom_balance(&deps, &out_denom, env.contract.address.to_string());
+    let in_asset_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        in_asset_info.clone(),
+    )?;
+    let out_asset_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        out_asset_info.clone(),
+    )?;
 
-    let token1_denom: Denom;
-    let token2_denom: Denom;
+    let token1_asset_info: AssetInfo;
+    let token2_asset_info: AssetInfo;
     let token1_amount: Uint128;
     let token2_amount: Uint128;
 
-    if in_denom == config.input_denoms[0] {
-        token1_denom = in_denom;
-        token2_denom = out_denom;
-        token1_amount = in_denom_bal_before - in_denom_bal;
-        token2_amount = out_denom_bal - out_denom_bal_before;
+    let asset_infos =
+        query_pair_info_from_pair(&deps.querier, config.loop_pair_contract)?.asset_infos;
+
+    if in_asset_info == asset_infos[0] {
+        token1_asset_info = in_asset_info;
+        token2_asset_info = out_asset_info;
+        token1_amount = in_asset_bal_before - in_asset_bal;
+        token2_amount = out_asset_bal - out_asset_bal_before;
     } else {
-        token1_denom = out_denom;
-        token2_denom = in_denom;
-        token1_amount = out_denom_bal - out_denom_bal_before;
-        token2_amount = in_denom_bal_before - in_denom_bal;
+        token1_asset_info = out_asset_info;
+        token2_asset_info = in_asset_info;
+        token1_amount = out_asset_bal - out_asset_bal_before;
+        token2_amount = in_asset_bal_before - in_asset_bal;
     }
 
-    let price_query: Token2ForToken1PriceResponse = deps.querier.query_wasm_smart(
-        config.pool_addr.to_string(),
-        &WasmSwapQueryMsg::Token2ForToken1Price { token2_amount },
+    let loop_pair_provide_liquidity_msgs = prepare_loop_pair_provide_liquidity_msgs(
+        token1_asset_info,
+        token1_amount,
+        token2_asset_info,
+        token2_amount,
+        config.loop_pair_contract.to_string(),
     )?;
 
-    if price_query.token1_amount > token1_amount {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: format!(
-                "Invalid liquidity amount - Needed: {}, Current: {}",
-                price_query.token1_amount, token1_amount
-            ),
-        }));
-    }
+    // Add the "(this contract::)stake" message
+    let contract_stake_msgs =
+        prepare_contract_stake_msgs(deps.as_ref(), env, endowment_id, config.loop_pair_contract)?;
 
-    let token1_denom_string = match token1_denom {
-        Denom::Native(ref denom) => denom.to_string(),
-        Denom::Cw20(ref addr) => addr.to_string(),
-    };
+    Ok(Response::new()
+        .add_messages(loop_pair_provide_liquidity_msgs)
+        .add_messages(contract_stake_msgs)
+        .add_attributes(vec![attr("action", "add_liquidity_to_loopswap_pair")]))
+}
 
-    REMNANTS.update(
-        deps.storage,
-        token1_denom_string,
-        |amount| -> Result<Uint128, ContractError> {
-            let amount =
-                amount.unwrap_or(Uint128::zero()) + token1_amount - price_query.token1_amount;
-            Ok(amount)
-        },
-    )?;
-    let token1_amount = price_query.token1_amount;
-
+/// Prepare the `loopswap::pair::provide_liquidity` msgs
+fn prepare_loop_pair_provide_liquidity_msgs(
+    token1_asset_info: AssetInfo,
+    token1_amount: Uint128,
+    token2_asset_info: AssetInfo,
+    token2_amount: Uint128,
+    loop_pair_contract: String,
+) -> StdResult<Vec<CosmosMsg>> {
     let mut funds = vec![];
     let mut msgs = vec![];
-
-    match token1_denom {
-        Denom::Native(denom) => funds.push(Coin {
+    match token1_asset_info {
+        AssetInfo::NativeToken { denom } => funds.push(Coin {
             denom,
             amount: token1_amount,
         }),
-        Denom::Cw20(contract_addr) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        AssetInfo::Token { contract_addr } => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: contract_addr.to_string(),
             msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: config.pool_addr.to_string(),
+                spender: loop_pair_contract.to_string(),
                 amount: token1_amount,
                 expires: None,
             })
@@ -693,15 +716,15 @@ pub fn add_liquidity(
         })),
     }
 
-    match token2_denom {
-        Denom::Native(denom) => funds.push(Coin {
+    match token2_asset_info {
+        AssetInfo::NativeToken { denom } => funds.push(Coin {
             denom,
             amount: token2_amount,
         }),
-        Denom::Cw20(contract_addr) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        AssetInfo::Token { contract_addr } => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: contract_addr.to_string(),
             msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: config.pool_addr.to_string(),
+                spender: loop_pair_contract,
                 amount: token2_amount,
                 expires: None,
             })
@@ -711,20 +734,41 @@ pub fn add_liquidity(
     }
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.pool_addr.to_string(),
-        msg: to_binary(&WasmSwapExecuteMsg::AddLiquidity {
-            token1_amount,
-            min_liquidity: Uint128::zero(),
-            max_token2: token2_amount,
-            expiration: None,
+        contract_addr: loop_pair_contract.to_string(),
+        msg: to_binary(&terraswap::pair::ExecuteMsg::ProvideLiquidity {
+            assets: [
+                Asset {
+                    info: token1_asset_info,
+                    amount: token1_amount,
+                },
+                Asset {
+                    info: token2_asset_info,
+                    amount: token2_amount,
+                },
+            ],
+            slippage_tolerance: None,
+            receiver: None,
         })
         .unwrap(),
         funds,
     }));
 
-    // Add the "stake" message at last
+    Ok(msgs)
+}
+
+/// Prepare the `(this contract::)stake` msgs for `endowment_id`
+fn prepare_contract_stake_msgs(
+    deps: Deps,
+    env: Env,
+    endowment_id: u32,
+    loop_pair_contract: Addr,
+) -> StdResult<Vec<CosmosMsg>> {
+    let mut msgs = vec![];
+
+    let lp_token_contract =
+        query_pair_info_from_pair(&deps.querier, loop_pair_contract)?.liquidity_token;
     let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-        config.pool_lp_token_addr.to_string(),
+        lp_token_contract,
         &cw20::Cw20QueryMsg::Balance {
             address: env.contract.address.to_string(),
         },
@@ -739,9 +783,7 @@ pub fn add_liquidity(
         funds: vec![],
     }));
 
-    Ok(Response::new()
-        .add_messages(msgs)
-        .add_attributes(vec![attr("action", "add_liquidity_to_swap_pool")]))
+    Ok(msgs)
 }
 
 pub fn stake_lp_token(
@@ -1019,8 +1061,8 @@ pub fn swap_and_send(
     Ok(res)
 }
 
-/// Prepare the messages for `deposit` operation
-fn prepare_deposit_msgs(
+/// Prepare the messages for `(this contract::)add_liquidity` operation
+fn prepare_contract_add_liquidity_msgs(
     deps: DepsMut,
     env: Env,
     config: &Config,
@@ -1030,17 +1072,6 @@ fn prepare_deposit_msgs(
 ) -> Result<Vec<CosmosMsg>, StdError> {
     let mut msgs: Vec<CosmosMsg> = vec![];
 
-    // 1. Add the "loopswap::swap" message
-    let input_amount = deposit_amount.checked_div(Uint128::from(2_u128))?;
-    prepare_loop_pair_swap_msg(
-        &config.loop_pair_contract.to_string(),
-        &deposit_asset_info,
-        input_amount,
-    )?
-    .into_iter()
-    .for_each(|msg| msgs.push(msg));
-
-    // 2. Add the "add_liquidity" message
     let pair_info_query: terraswap::asset::PairInfo =
         query_pair_info_from_pair(&deps.querier, config.loop_pair_contract)?;
 
@@ -1239,9 +1270,9 @@ fn execute_burn(
     Ok(())
 }
 
-/// Query the `asset` balance of `account_addr`.
+/// Query the `asset` balance of `account_addr`
 ///
-/// `asset_info` is `terraswap::asset::AssetInfo`.
+/// **NOTE**: `asset_info` is `terraswap::asset::AssetInfo`.
 fn query_asset_balance(
     deps: Deps,
     account_addr: Addr,
