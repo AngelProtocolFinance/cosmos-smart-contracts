@@ -61,15 +61,8 @@ pub fn execute(
             amount,
             operations,
         } => executers::swap_liquid(deps, info, id, amount, operations),
-        ExecuteMsg::SwapReceipt { id } => {
-            if info.funds.len() != 1 {
-                return Err(ContractError::InvalidCoinsDeposited {});
-            }
-            let native_fund = Asset {
-                info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
-                amount: info.funds[0].amount,
-            };
-            executers::swap_receipt(deps, id, info.sender, native_fund)
+        ExecuteMsg::SwapReceipt { id, final_asset } => {
+            executers::swap_receipt(deps, id, info.sender, final_asset)
         }
         ExecuteMsg::VaultReceipt { id } => {
             if info.funds.len() != 1 {
@@ -142,9 +135,6 @@ pub fn receive_cw20(
             msg,
             cw20_fund,
         ),
-        Ok(ReceiveMsg::SwapReceipt { id }) => {
-            executers::swap_receipt(deps, id, api.addr_validate(&cw20_msg.sender)?, cw20_fund)
-        }
         _ => Err(ContractError::InvalidInputs {}),
     }
 }
@@ -168,6 +158,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::State { id } => to_binary(&queriers::query_state(deps, id)?),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),
         QueryMsg::GetProfile { id } => to_binary(&queriers::query_profile(deps, id)?),
+        QueryMsg::TokenLiquidAmount { id, asset_info } => {
+            to_binary(&queriers::query_token_liquid_amount(deps, id, asset_info)?)
+        }
     }
 }
 

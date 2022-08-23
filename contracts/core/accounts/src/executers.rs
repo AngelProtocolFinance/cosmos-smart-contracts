@@ -416,6 +416,12 @@ pub fn swap_liquid(
     }
 
     let config = CONFIG.load(deps.storage)?;
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+
     let mut state = STATES.load(deps.storage, id)?;
     let offer_asset = match operations.first().unwrap() {
         SwapOperation::JunoSwap {
@@ -425,7 +431,7 @@ pub fn swap_liquid(
             offer_asset_info, ..
         } => offer_asset_info,
     };
-
+    let swap_msg: CosmosMsg;
     match offer_asset {
         AssetInfo::Native(denom) => {
             if state
@@ -443,7 +449,21 @@ pub fn swap_liquid(
                 .deduct_tokens(Balance::from(vec![Coin {
                     amount,
                     denom: denom.to_string(),
-                }]))
+                }]));
+            swap_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: registrar_config.swaps_router.unwrap().to_string(),
+                msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
+                    endowment_id: id,
+                    operations: operations.clone(),
+                    minimum_receive: None,
+                    to: None,
+                })
+                .unwrap(),
+                funds: vec![Coin {
+                    amount,
+                    denom: denom.to_string(),
+                }],
+            });
         }
         AssetInfo::Cw20(addr) => {
             if state
@@ -461,28 +481,27 @@ pub fn swap_liquid(
                 .deduct_tokens(Balance::Cw20(Cw20CoinVerified {
                     address: addr.clone(),
                     amount,
-                }))
+                }));
+            swap_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: addr.clone().to_string(),
+                msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                    contract: registrar_config.swaps_router.unwrap().to_string(),
+                    amount,
+                    msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
+                        endowment_id: id,
+                        operations,
+                        minimum_receive: None,
+                        to: None,
+                    })
+                    .unwrap(),
+                })
+                .unwrap(),
+                funds: vec![],
+            });
         }
         AssetInfo::Cw1155(_, _) => unimplemented!(),
     }
     STATES.save(deps.storage, id, &state)?;
-
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::Config {})?,
-        }))?;
-
-    let swap_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: registrar_config.swaps_router.unwrap().to_string(),
-        msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
-            operations,
-            minimum_receive: None,
-            to: None,
-        })
-        .unwrap(),
-        funds: vec![],
-    });
     Ok(Response::new().add_message(swap_msg))
 }
 
@@ -490,7 +509,7 @@ pub fn swap_receipt(
     deps: DepsMut,
     id: u32,
     sender_addr: Addr,
-    fund: Asset,
+    final_asset: Asset,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let registrar_config: RegistrarConfigResponse =
@@ -504,13 +523,13 @@ pub fn swap_receipt(
     }
 
     let mut state = STATES.load(deps.storage, id)?;
-    match fund.info {
+    match final_asset.info {
         AssetInfo::Native(denom) => {
             state
                 .balances
                 .liquid_balance
                 .add_tokens(Balance::from(vec![Coin {
-                    amount: fund.amount,
+                    amount: final_asset.amount,
                     denom: denom.to_string(),
                 }]))
         }
@@ -520,7 +539,7 @@ pub fn swap_receipt(
                 .liquid_balance
                 .add_tokens(Balance::Cw20(Cw20CoinVerified {
                     address: addr.clone(),
-                    amount: fund.amount,
+                    amount: final_asset.amount,
                 }))
         }
         AssetInfo::Cw1155(_, _) => unimplemented!(),

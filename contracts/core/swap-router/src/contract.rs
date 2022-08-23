@@ -1,6 +1,7 @@
-use crate::operations::{assert_minium_receive, execute_swap_operation};
+use crate::operations::{assert_minium_receive, execute_swap_operation, send_swap_receipt};
 use crate::state::{pair_key, Config, CONFIG, PAIRS};
 use angel_core::errors::core::ContractError;
+use angel_core::messages::accounts::QueryMsg as AccountsQueryMsg;
 use angel_core::messages::dexs::{
     InfoResponse, JunoSwapQueryMsg, LoopQueryMsg, SimulationResponse, Token1ForToken2PriceResponse,
     Token2ForToken1PriceResponse,
@@ -61,12 +62,21 @@ pub fn execute(
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, msg),
         ExecuteMsg::UpdatePairs { add, remove } => execute_update_pairs(deps, info, add, remove),
         ExecuteMsg::ExecuteSwapOperations {
+            endowment_id,
             operations,
             minimum_receive,
             to,
-        } => execute_swap_operations(deps, env, info.sender, operations, minimum_receive, to),
-        ExecuteMsg::ExecuteSwapOperation { operation, to: _ } => {
-            execute_swap_operation(deps, env, info, operation)
+        } => execute_swap_operations(
+            deps,
+            env,
+            info.sender,
+            endowment_id,
+            operations,
+            minimum_receive,
+            to,
+        ),
+        ExecuteMsg::ExecuteSwapOperation { operation, to } => {
+            execute_swap_operation(deps, env, info, operation, to)
         }
         ExecuteMsg::AssertMinimumReceive {
             asset_info,
@@ -80,6 +90,20 @@ pub fn execute(
             minimum_receive,
             receiver,
         ),
+        ExecuteMsg::SendSwapReceipt {
+            asset_info,
+            prev_balance,
+            receiver,
+            endowment_id,
+        } => send_swap_receipt(
+            deps.as_ref(),
+            env,
+            info,
+            asset_info,
+            prev_balance,
+            receiver,
+            endowment_id,
+        ),
     }
 }
 
@@ -91,6 +115,7 @@ pub fn receive_cw20(
     let sender = deps.api.addr_validate(&cw20_msg.sender)?;
     match from_binary(&cw20_msg.msg)? {
         Cw20HookMsg::ExecuteSwapOperations {
+            endowment_id,
             operations,
             minimum_receive,
             to,
@@ -100,7 +125,15 @@ pub fn receive_cw20(
             } else {
                 None
             };
-            execute_swap_operations(deps, env, sender, operations, minimum_receive, to_addr)
+            execute_swap_operations(
+                deps,
+                env,
+                sender,
+                endowment_id,
+                operations,
+                minimum_receive,
+                to_addr,
+            )
         }
     }
 }
@@ -135,6 +168,7 @@ pub fn execute_swap_operations(
     deps: DepsMut,
     env: Env,
     sender: Addr,
+    endowment_id: u32,
     operations: Vec<SwapOperation>,
     minimum_receive: Option<Uint128>,
     to: Option<Addr>,
@@ -195,10 +229,30 @@ pub fn execute_swap_operations(
                 asset_info: target_asset_info.clone(),
                 prev_balance: target_asset_info.query_balance(&deps.querier, &to)?,
                 minimum_receive,
-                receiver: to,
+                receiver: to.clone(),
             })?,
         }));
     }
+
+    // Send a Swap Receipt message back to sender as the final message
+    let prev_balance: Uint128 = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: config.accounts_contract.to_string(),
+        msg: to_binary(&AccountsQueryMsg::TokenLiquidAmount {
+            id: endowment_id,
+            asset_info: target_asset_info.clone(),
+        })?,
+    }))?;
+    messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        funds: vec![],
+        msg: to_binary(&ExecuteMsg::SendSwapReceipt {
+            asset_info: target_asset_info.clone(),
+            prev_balance,
+            receiver: to,
+            endowment_id,
+        })?,
+    }));
+
     Ok(Response::new().add_messages(messages))
 }
 

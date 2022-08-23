@@ -1,5 +1,7 @@
-use crate::state::{pair_key, PAIRS};
+use crate::state::{pair_key, CONFIG, PAIRS};
 use angel_core::errors::core::ContractError;
+use angel_core::messages::accounts::ExecuteMsg as AccountsExecuteMsg;
+use angel_core::messages::accounts::QueryMsg as AccountsQueryMsg;
 use angel_core::messages::dexs::{
     InfoResponse, JunoSwapExecuteMsg, JunoSwapQueryMsg, LoopExecuteMsg, TokenSelect,
 };
@@ -10,6 +12,42 @@ use cosmwasm_std::{
 };
 use cw20::{Cw20ExecuteMsg, Denom};
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
+
+pub fn send_swap_receipt(
+    deps: Deps,
+    env: Env,
+    info: MessageInfo,
+    asset_info: AssetInfo,
+    prev_balance: Uint128,
+    _receiver: Addr,
+    endowment_id: u32,
+) -> Result<Response, ContractError> {
+    if env.contract.address != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+    let config = CONFIG.load(deps.storage)?;
+    let receiver_balance: Uint128 = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: config.accounts_contract.to_string(),
+        msg: to_binary(&AccountsQueryMsg::TokenLiquidAmount {
+            id: endowment_id,
+            asset_info: asset_info.clone(),
+        })?,
+    }))?;
+    let swap_amount = receiver_balance.checked_sub(prev_balance)?;
+    let message = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.accounts_contract.to_string(),
+        msg: to_binary(&AccountsExecuteMsg::SwapReceipt {
+            id: endowment_id,
+            final_asset: Asset {
+                info: asset_info,
+                amount: swap_amount,
+            },
+        })?,
+        funds: vec![],
+    });
+
+    Ok(Response::new().add_message(message))
+}
 
 pub fn assert_minium_receive(
     deps: Deps,
@@ -38,10 +76,12 @@ pub fn execute_swap_operation(
     env: Env,
     info: MessageInfo,
     operation: SwapOperation,
+    _to: Option<Addr>,
 ) -> Result<Response, ContractError> {
     if env.contract.address != info.sender {
         return Err(ContractError::Unauthorized {});
     }
+
     let offer_asset: Asset;
     let pair: Pair;
     let binary_msg = match operation {

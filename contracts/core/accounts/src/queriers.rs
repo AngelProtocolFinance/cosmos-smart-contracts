@@ -2,9 +2,10 @@ use crate::state::{CONFIG, ENDOWMENTS, STATES};
 use angel_core::messages::vault::QueryMsg as VaultQuerier;
 use angel_core::responses::accounts::*;
 use angel_core::structs::BalanceInfo;
-use cosmwasm_std::{to_binary, Deps, Env, QueryRequest, StdResult, WasmQuery};
+use cosmwasm_std::{to_binary, Deps, Env, QueryRequest, StdResult, Uint128, WasmQuery};
 use cw2::get_contract_version;
 use cw20::{Balance, Cw20CoinVerified};
+use cw_asset::AssetInfo;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let config = CONFIG.load(deps.storage)?;
@@ -49,6 +50,17 @@ pub fn query_account_balance(deps: Deps, env: Env, id: u32) -> StdResult<Balance
     }
 
     Ok(balances)
+}
+
+pub fn query_token_liquid_amount(deps: Deps, id: u32, asset_info: AssetInfo) -> StdResult<Uint128> {
+    let _endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let state = STATES.load(deps.storage, id)?;
+    let balance: Uint128 = match asset_info {
+        AssetInfo::Native(denom) => state.balances.liquid_balance.get_denom_amount(denom).amount,
+        AssetInfo::Cw20(addr) => state.balances.liquid_balance.get_token_amount(addr).amount,
+        AssetInfo::Cw1155(_, _) => todo!(),
+    };
+    Ok(balance)
 }
 
 pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetailsResponse> {

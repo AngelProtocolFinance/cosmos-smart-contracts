@@ -23,6 +23,7 @@ pub enum ExecuteMsg {
     },
     /// Execute multiple BuyOperation
     ExecuteSwapOperations {
+        endowment_id: u32,
         operations: Vec<SwapOperation>,
         minimum_receive: Option<Uint128>,
         to: Option<Addr>,
@@ -41,12 +42,22 @@ pub enum ExecuteMsg {
         minimum_receive: Uint128,
         receiver: Addr,
     },
+    /// Send a Swap Receipt message back to the original sender
+    /// Used by Accounts to properly credit the Endowment with
+    /// it's newly swapped asset in the Liquid Balance
+    SendSwapReceipt {
+        asset_info: AssetInfo,
+        prev_balance: Uint128,
+        receiver: Addr,
+        endowment_id: u32,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Cw20HookMsg {
     ExecuteSwapOperations {
+        endowment_id: u32,
         operations: Vec<SwapOperation>,
         minimum_receive: Option<Uint128>,
         to: Option<Addr>,

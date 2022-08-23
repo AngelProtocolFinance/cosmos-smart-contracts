@@ -2,6 +2,7 @@ use crate::structs::{FundingSource, GenericBalance, Profile, SwapOperation};
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
+use cw_asset::{Asset, AssetInfo};
 use cw_utils::{Duration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -39,8 +40,12 @@ pub enum ExecuteMsg {
         amount: Uint128,
         operations: Vec<SwapOperation>,
     },
+    // Router notifies the Accounts of final tokens from a Swap
+    // Allows Accounts to credit the Endowment's Liquid Balance
+    // with the amount returned to the main Accounts contract
     SwapReceipt {
         id: u32,
+        final_asset: Asset,
     },
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt {
@@ -115,8 +120,6 @@ pub enum ReceiveMsg {
     Deposit(DepositMsg),
     // Tokens are sent back to an Account from a Vault
     VaultReceipt { id: u32 },
-    // CW20 tokens sent back to Accounts from Swap Router
-    SwapReceipt { id: u32 },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -176,4 +179,6 @@ pub enum QueryMsg {
     Endowment { id: u32 },
     // Get the profile info
     GetProfile { id: u32 },
+    // Get endowment token balance
+    TokenLiquidAmount { id: u32, asset_info: AssetInfo },
 }
