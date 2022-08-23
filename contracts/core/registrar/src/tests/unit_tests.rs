@@ -13,11 +13,13 @@ use cw_utils::Threshold;
 const MOCK_CW3_CODE_ID: u64 = 18;
 const MOCK_CW4_CODE_ID: u64 = 19;
 const CHARITY_ID: u32 = 1;
+const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
+const REVIEW_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65xxxx";
 
 #[test]
 fn proper_initialization() {
     let mut deps = mock_dependencies();
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let ap_team = AP_TEAM.to_string();
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
         tax_rate: Decimal::percent(20),
@@ -43,7 +45,7 @@ fn proper_initialization() {
 #[test]
 fn update_owner() {
     let mut deps = mock_dependencies();
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let ap_team = AP_TEAM.to_string();
     let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
@@ -78,7 +80,7 @@ fn update_owner() {
 #[test]
 fn update_config() {
     let mut deps = mock_dependencies();
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let ap_team = AP_TEAM.to_string();
     let index_fund_contract = String::from("terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d");
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
@@ -112,7 +114,7 @@ fn update_config() {
         cw4_code: Some(MOCK_CW4_CODE_ID),
         accepted_tokens_cw20: None,
         accepted_tokens_native: None,
-        applications_review: None,
+        applications_review: Some(REVIEW_TEAM.to_string()),
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -136,7 +138,7 @@ fn update_config() {
 fn anyone_can_create_endowment_accounts() {
     let mut deps = mock_dependencies();
     // meet the cast of characters
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let ap_team = AP_TEAM.to_string();
     let good_charity_addr = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v".to_string();
     let _good_endowment_addr = "terra1glqvyurcm6elnw2wl90kwlhtzrd2zc7q00prc9".to_string();
     let index_fund_contract = "terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d".to_string();
@@ -174,7 +176,7 @@ fn anyone_can_create_endowment_accounts() {
         cw4_code: None,
         accepted_tokens_cw20: None,
         accepted_tokens_native: None,
-        applications_review: None,
+        applications_review: Some(REVIEW_TEAM.to_string()),
     };
     let info = mock_info(ap_team.as_ref(), &[]);
     let _ = execute(
@@ -184,6 +186,11 @@ fn anyone_can_create_endowment_accounts() {
         ExecuteMsg::UpdateConfig(update_config_msg),
     )
     .unwrap();
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config_response: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(AP_TEAM.to_string(), config_response.owner);
+    assert_eq!(REVIEW_TEAM.to_string(), config_response.applications_review);
 
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
@@ -299,7 +306,7 @@ fn anyone_can_create_endowment_accounts() {
         beneficiary: None,
     };
 
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
+    let info = mock_info(REVIEW_TEAM.to_string().as_ref(), &coins(100000, "earth"));
     let res = execute(
         deps.as_mut(),
         env.clone(),
@@ -338,7 +345,7 @@ fn anyone_can_create_endowment_accounts() {
 #[test]
 fn test_add_update_and_remove_vault() {
     let mut deps = mock_dependencies();
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let ap_team = AP_TEAM.to_string();
     let vault_addr = "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg".to_string();
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
@@ -426,7 +433,7 @@ fn test_add_update_and_remove_vault() {
 #[test]
 fn test_add_update_and_remove_accepted_tokens() {
     let mut deps = mock_dependencies();
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let ap_team = AP_TEAM.to_string();
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
         tax_rate: Decimal::percent(20),
@@ -466,7 +473,7 @@ fn test_add_update_and_remove_accepted_tokens() {
         cw4_code: None,
         accepted_tokens_cw20: Some(vec!["new_token".to_string()]),
         accepted_tokens_native: None,
-        applications_review: None,
+        applications_review: Some(REVIEW_TEAM.to_string()),
     };
     let res = execute(
         deps.as_mut(),
@@ -493,7 +500,7 @@ fn test_add_update_and_remove_network_infos() {
     };
 
     let mut deps = mock_dependencies();
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let ap_team = AP_TEAM.to_string();
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
         tax_rate: Decimal::percent(20),

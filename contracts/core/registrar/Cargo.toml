@@ -1,6 +1,6 @@
 [package]
 name = "registrar"
-version = "1.8.2"
+version = "1.8.5"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 
