@@ -56,6 +56,7 @@ fn execute_swap_operations() {
         operations: vec![],
         minimum_receive: None,
         to: None,
+        endowment_id: 1,
     };
 
     let env = mock_env();
@@ -65,12 +66,12 @@ fn execute_swap_operations() {
 
     let msg = ExecuteMsg::ExecuteSwapOperations {
         operations: vec![
-            SwapOperation::JunoSwap {
-                offer_asset_info: AssetInfo::Native("usdc".to_string()),
-                ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
+            SwapOperation::Loop {
+                offer_asset_info: AssetInfo::Native("usdt".to_string()),
+                ask_asset_info: AssetInfo::Cw20(Addr::unchecked("usdc")),
             },
             SwapOperation::JunoSwap {
-                offer_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
+                offer_asset_info: AssetInfo::Cw20(Addr::unchecked("usdc")),
                 ask_asset_info: AssetInfo::Native("ujuno".to_string()),
             },
             SwapOperation::JunoSwap {
@@ -80,6 +81,7 @@ fn execute_swap_operations() {
         ],
         minimum_receive: Some(Uint128::from(1000000u128)),
         to: None,
+        endowment_id: 1,
     };
 
     let env = mock_env();
@@ -163,13 +165,14 @@ fn execute_swap_operations() {
                     offer_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
                     ask_asset_info: AssetInfo::Native("ujuno".to_string()),
                 },
-                SwapOperation::JunoSwap {
+                SwapOperation::Loop {
                     offer_asset_info: AssetInfo::Native("ujuno".to_string()),
-                    ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0002")),
+                    ask_asset_info: AssetInfo::Cw20(Addr::unchecked("loop")),
                 },
             ],
             minimum_receive: None,
             to: Some(Addr::unchecked("addr0002")),
+            endowment_id: 1,
         })
         .unwrap(),
     });
