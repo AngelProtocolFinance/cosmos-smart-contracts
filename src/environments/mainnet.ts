@@ -87,6 +87,8 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(anchorVault)} as Anchor Vault`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
+  console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
+  console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
   console.log(`Using ${chalk.cyan(endowmentIDs)} as Endowment IDs`);
 
   junoswapTokenCode = config.junoswap.junoswap_token_code;

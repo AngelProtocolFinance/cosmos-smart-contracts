@@ -126,6 +126,8 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(endowId4)} as Endowment ID #4`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
+  console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
+  console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
 
   junoswapTokenCode = config.junoswap.junoswap_token_code;
   junoswapHaloTokenContract = config.junoswap.halo_token_contract;

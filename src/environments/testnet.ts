@@ -116,6 +116,8 @@ async function initialize() {
   registrar = config.contracts.registrar;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
+  cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
+  cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   indexFund = config.contracts.indexFund;
   endowId1 = config.contracts.endowId1;
   endowId2 = config.contracts.endowId2;
@@ -130,6 +132,8 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(endowId4)} as Endowment ID #4`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
+  console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
+  console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
 
   junoswapTokenCode = config.junoswap.junoswap_token_code;
   junoswapFactory = config.junoswap.junoswap_factory;
