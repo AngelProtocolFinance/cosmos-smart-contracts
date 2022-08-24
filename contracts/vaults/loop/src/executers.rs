@@ -12,10 +12,9 @@ use angel_core::messages::vault::{
 };
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::structs::EndowmentEntry;
-use angel_core::utils::query_denom_balance;
 use terraswap::querier::{query_balance, query_pair_info_from_pair, query_token_balance};
 
-use crate::state::{Config, PendingInfo, BALANCES, CONFIG, PENDING, TOKEN_INFO};
+use crate::state::{Config, BALANCES, CONFIG, TOKEN_INFO};
 
 pub fn update_owner(
     deps: DepsMut,
@@ -312,7 +311,7 @@ pub fn withdraw(
         funds: vec![],
     }));
 
-    // Handle the returning lp tokens & reward LOOP token
+    // Handle the returning lp tokens & farm reward token(LOOP)
     let lp_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         lp_token_contract,
         &cw20::Cw20QueryMsg::Balance {
@@ -331,7 +330,13 @@ pub fn withdraw(
         funds: vec![],
     }));
 
-    // TODO! Handle the reward LP tokens
+    // Handle the reward LP tokens
+    let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        config.loop_token.to_string(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
 
     Ok(Response::default().add_messages(msgs).add_attributes(vec![
         attr("action", "withdraw"),
@@ -943,135 +948,6 @@ pub fn remove_liquidity(
     //     }
     // }
 
-    // Ok(res)
-
-    Ok(Response::default())
-}
-
-pub fn swap_and_send(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    token1_denom_bal_before: Uint128,
-    token2_denom_bal_before: Uint128,
-    beneficiary: Addr,
-) -> Result<Response, ContractError> {
-    // // Validations
-    // if info.sender != env.contract.address {
-    //     return Err(ContractError::Unauthorized {});
-    // }
-
-    // let config = CONFIG.load(deps.storage)?;
-
-    // // First, compute the token balances
-    // let token1_denom_bal_now = query_denom_balance(
-    //     &deps,
-    //     &config.input_denoms[0],
-    //     env.contract.address.to_string(),
-    // );
-    // let token2_denom_bal_now = query_denom_balance(
-    //     &deps,
-    //     &config.input_denoms[1],
-    //     env.contract.address.to_string(),
-    // );
-    // let token1_amt = token1_denom_bal_now
-    //     .checked_sub(token1_denom_bal_before)
-    //     .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
-    // let token2_amt = token2_denom_bal_now
-    //     .checked_sub(token2_denom_bal_before)
-    //     .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
-
-    // // Check if `output_token_denom` is `Token1` or `Token2`
-    // // Also, determine which token to send directly, which token to `SwapAndSendTo`
-    // let direct_send_token_denom = config.output_token_denom;
-    // let direct_send_token_amt: Uint128;
-
-    // let swap_input_token_denom: Denom;
-    // let swap_input_token_amt: Uint128;
-
-    // let swap_input_token: TokenSelect;
-
-    // if direct_send_token_denom == config.input_denoms[0] {
-    //     direct_send_token_amt = token1_amt;
-
-    //     swap_input_token_denom = config.input_denoms[1].clone();
-    //     swap_input_token_amt = token2_amt;
-
-    //     swap_input_token = TokenSelect::Token2;
-    // } else {
-    //     direct_send_token_amt = token2_amt;
-
-    //     swap_input_token_denom = config.input_denoms[0].clone();
-    //     swap_input_token_amt = token1_amt;
-
-    //     swap_input_token = TokenSelect::Token1;
-    // };
-
-    // // Perform the direct send of `output_token_denom`
-    // let mut res = Response::default();
-    // let mut msgs: Vec<CosmosMsg> = vec![];
-
-    // match direct_send_token_denom {
-    //     Denom::Native(denom) => {
-    //         msgs.push(CosmosMsg::Bank(BankMsg::Send {
-    //             to_address: beneficiary.to_string(),
-    //             amount: coins(direct_send_token_amt.u128(), denom),
-    //         }));
-    //     }
-    //     Denom::Cw20(token_addr) => {
-    //         msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-    //             contract_addr: token_addr.to_string(),
-    //             msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-    //                 recipient: beneficiary.to_string(),
-    //                 amount: direct_send_token_amt,
-    //             })
-    //             .unwrap(),
-    //             funds: vec![],
-    //         }));
-    //     }
-    // }
-
-    // // Perform the `SwapAndSendTo` of `juno-swap-pool` contract
-    // match swap_input_token_denom {
-    //     Denom::Native(denom) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-    //         contract_addr: config.pool_addr.to_string(),
-    //         msg: to_binary(&WasmSwapExecuteMsg::SwapAndSendTo {
-    //             input_token: swap_input_token,
-    //             input_amount: swap_input_token_amt,
-    //             recipient: beneficiary.to_string(),
-    //             min_token: Uint128::zero(),
-    //             expiration: None,
-    //         })
-    //         .unwrap(),
-    //         funds: coins(swap_input_token_amt.u128(), denom),
-    //     })),
-    //     Denom::Cw20(token_addr) => {
-    //         msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-    //             contract_addr: token_addr.to_string(),
-    //             msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-    //                 spender: config.pool_addr.to_string(),
-    //                 amount: swap_input_token_amt,
-    //                 expires: None,
-    //             })
-    //             .unwrap(),
-    //             funds: vec![],
-    //         }));
-    //         msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-    //             contract_addr: config.pool_addr.to_string(),
-    //             msg: to_binary(&WasmSwapExecuteMsg::SwapAndSendTo {
-    //                 input_token: swap_input_token,
-    //                 input_amount: swap_input_token_amt,
-    //                 recipient: beneficiary.to_string(),
-    //                 min_token: Uint128::zero(),
-    //                 expiration: None,
-    //             })
-    //             .unwrap(),
-    //             funds: vec![],
-    //         }))
-    //     }
-    // }
-
-    // res = res.add_messages(msgs);
     // Ok(res)
 
     Ok(Response::default())

@@ -35,6 +35,7 @@ pub fn instantiate(
         loop_factory_contract: deps.api.addr_validate(&msg.loop_factory_contract)?,
         loop_farming_contract: deps.api.addr_validate(&msg.loop_farming_contract)?,
         loop_pair_contract: deps.api.addr_validate(&msg.loop_pair_contract)?,
+        loop_token: deps.api.addr_validate(&msg.loop_token)?,
 
         total_lp_amount: Uint128::zero(),
         total_shares: Uint128::zero(),
@@ -149,18 +150,6 @@ pub fn execute(
             endowment_id,
             lp_token_bal_before,
         } => executers::stake_lp_token(deps, env, info, endowment_id, lp_token_bal_before),
-        ExecuteMsg::SwapAndSendTo {
-            token1_denom_bal_before,
-            token2_denom_bal_before,
-            beneficiary,
-        } => executers::swap_and_send(
-            deps,
-            env,
-            info,
-            token1_denom_bal_before,
-            token2_denom_bal_before,
-            beneficiary,
-        ),
     }
 }
 

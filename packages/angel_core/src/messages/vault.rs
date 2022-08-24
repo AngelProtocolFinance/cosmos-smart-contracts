@@ -11,6 +11,7 @@ pub struct InstantiateMsg {
     pub loop_factory_contract: String,
     pub loop_farming_contract: String,
     pub loop_pair_contract: String,
+    pub loop_token: String,
 
     pub name: String,
     pub symbol: String,
@@ -63,11 +64,6 @@ pub enum ExecuteMsg {
     Stake {
         endowment_id: u32,
         lp_token_bal_before: Uint128,
-    },
-    SwapAndSendTo {
-        token1_denom_bal_before: Uint128,
-        token2_denom_bal_before: Uint128,
-        beneficiary: Addr,
     },
     Receive(Cw20ReceiveMsg),
 }
