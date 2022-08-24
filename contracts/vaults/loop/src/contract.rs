@@ -36,7 +36,7 @@ pub fn instantiate(
         loop_farming_contract: deps.api.addr_validate(&msg.loop_farming_contract)?,
         loop_pair_contract: deps.api.addr_validate(&msg.loop_pair_contract)?,
 
-        total_assets: Uint128::zero(),
+        total_lp_amount: Uint128::zero(),
         total_shares: Uint128::zero(),
 
         last_harvest: env.block.height,

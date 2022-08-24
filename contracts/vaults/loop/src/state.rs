@@ -16,8 +16,8 @@ pub struct Config {
     pub loop_farming_contract: Addr, // loopswap farming address
     pub loop_pair_contract: Addr,    // loopswap pair address
 
-    pub total_assets: Uint128, // total value of assets deposited from endowments (in usdc/usd)
-    pub total_shares: Uint128, // total amount of minted vault tokens
+    pub total_lp_amount: Uint128, // total amount of LP tokens in this `vault`
+    pub total_shares: Uint128,    // total amount of minted vault tokens
 
     pub next_pending_id: u32, // (Incrementing) ID used for indexing the PendingInfo
 

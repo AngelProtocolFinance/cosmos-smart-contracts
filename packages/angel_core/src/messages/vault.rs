@@ -1,5 +1,5 @@
 use cosmwasm_std::{Addr, Decimal, Uint128};
-use cw20::{Cw20ReceiveMsg, Denom};
+use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -121,4 +121,10 @@ pub enum RemoveLiquidAction {
     Harvest,
     Claim {},
     Withdraw { beneficiary: Addr },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum LoopFarmingExecuteMsg {
+    Stake {},
 }
