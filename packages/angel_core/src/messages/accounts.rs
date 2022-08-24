@@ -106,6 +106,7 @@ pub struct UpdateEndowmentSettingsMsg {
     pub id: u32,
     pub owner: String,
     pub kyc_donors_only: bool,
+    pub auto_invest: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

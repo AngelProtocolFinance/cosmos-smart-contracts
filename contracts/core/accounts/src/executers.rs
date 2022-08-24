@@ -1,4 +1,4 @@
-use crate::state::{Endowment, State, CONFIG, ENDOWMENTS, STATES};
+use crate::state::{Endowment, State, CONFIG, COPYCATS, ENDOWMENTS, STATES};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -93,6 +93,8 @@ pub fn create_endowment(
                 kyc_donors_only: msg.kyc_donors_only,
                 profile: msg.profile.clone(),
                 pending_redemptions: 0 as u8,
+                auto_invest: false,
+                copycat_strategy: None,
             }),
         },
     )?;
@@ -231,7 +233,7 @@ pub fn update_endowment_settings(
         return Err(ContractError::Unauthorized {});
     }
 
-    // validate address strings passed
+    endowment.auto_invest = msg.kyc_donors_only;
     endowment.kyc_donors_only = msg.kyc_donors_only;
     endowment.owner = deps.api.addr_validate(&msg.owner)?;
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
@@ -296,7 +298,6 @@ pub fn update_strategies(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
-    let mut state = STATES.load(deps.storage, id)?;
 
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
@@ -355,43 +356,61 @@ pub fn update_strategies(
             percentage: strategy.percentage,
         });
     }
+    endowment.strategies = new_strategies.clone();
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
-    // check if the endowment had 0 vaults set before
-    let followup_msgs: Vec<SubMsg>;
-    if endowment.strategies.len() == 0 {
-        // distribute all of locked balance USDC to the new strategies
-        followup_msgs = deposit_to_vaults(
-            deps.as_ref(),
-            config.registrar_contract.to_string(),
-            id.clone(),
-            state.balances.locked_balance.get_denom_amount(
-                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
-            ), // axlUSD
-            &endowment.strategies,
-        )?;
-        // zero out the locked balance of USDC
-        state
-            .balances
-            .locked_balance
-            .set_token_balances(Balance::from(vec![Coin {
-                amount: Uint128::zero(),
-                denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
-                    .to_string(),
-            }]));
-        STATES.save(deps.storage, id, &state)?;
-    } else {
-        // redeem all existing strategies from the Endowment's old sources
-        // before updating endowment with new sources
-        followup_msgs = redeem_from_vaults(
-            deps.as_ref(),
-            id,
-            config.registrar_contract.to_string(),
-            &endowment.strategies,
-        )?;
-        endowment.pending_redemptions = followup_msgs.len() as u8;
+    // If this Endowment that is changing their strategy is also being "copycatted"
+    // by other endowments, the new strategy needs to be updated on those endowments.
+    let copiers = COPYCATS.load(deps.storage, id).unwrap_or(vec![]);
+    for i in copiers.iter() {
+        let mut e = ENDOWMENTS.load(deps.storage, *i).unwrap();
+        e.strategies = new_strategies.clone();
+        ENDOWMENTS.save(deps.storage, *i, &e).unwrap();
+    }
+    Ok(Response::new().add_attribute("action", "update_strategies"))
+}
+
+pub fn copycat_strategies(
+    deps: DepsMut,
+    info: MessageInfo,
+    id: u32,
+    id_to_copy: u32,
+) -> Result<Response, ContractError> {
+    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
+    if endowment.owner != info.sender {
+        return Err(ContractError::Unauthorized {});
     }
 
-    endowment.strategies = new_strategies;
+    let copied_endowment = ENDOWMENTS.load(deps.storage, id_to_copy)?;
+    if copied_endowment.strategies.is_empty() {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Attempting to copy an endowment with no set strategy".to_string(),
+        }));
+    }
+
+    if endowment.copycat_strategy == Some(id_to_copy) {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Attempting re-set the same copycat endowment ID".to_string(),
+        }));
+    }
+    // if this endowment was already copying another prior to this new one,
+    // first remove it from the old list and add to the new copycat list
+    if endowment.copycat_strategy != None {
+        let old_id = endowment.copycat_strategy.unwrap();
+        let mut old_copiers = COPYCATS.load(deps.storage, old_id)?;
+        if let Some(pos) = old_copiers.iter().position(|i| *i == id) {
+            old_copiers.swap_remove(pos);
+        }
+        COPYCATS.save(deps.storage, old_id, &old_copiers)?;
+    }
+
+    // add this endowment to the new Copycat list
+    let mut copiers = COPYCATS.load(deps.storage, id_to_copy)?;
+    copiers.push(id);
+    COPYCATS.save(deps.storage, id_to_copy, &copiers)?;
+
+    // set new copycat id
+    endowment.copycat_strategy = Some(id_to_copy);
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new()
@@ -895,11 +914,10 @@ pub fn deposit(
     };
     state.balances.liquid_balance.add_tokens(liquid_balance);
 
-    let deposit_messages;
-    // check endowment strategies set.
-    // if empty: hold locked funds until a vault is set
-    if endowment.strategies.is_empty() {
-        deposit_messages = vec![];
+    let mut deposit_messages: Vec<SubMsg> = vec![];
+    // check endowment strategies are setup
+    // hold locked funds until (auto_invest == true && strategy has vaults set)
+    if endowment.auto_invest == false {
         // increase the locked balance by locked donation amount
         let locked_balance = match locked_amount.info {
             AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
@@ -913,7 +931,7 @@ pub fn deposit(
             AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         };
         state.balances.locked_balance.add_tokens(locked_balance);
-    } else {
+    } else if !endowment.strategies.is_empty() {
         // if not empty: build deposit messages for each of the sources/amounts
         deposit_messages = deposit_to_vaults(
             deps.as_ref(),
