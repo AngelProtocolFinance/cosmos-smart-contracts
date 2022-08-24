@@ -16,8 +16,8 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
 use angel_core::structs::{
-    BalanceInfo, EndowmentType, FundingSource, GenericBalance, RebalanceDetails, SocialMedialUrls,
-    SplitDetails, StrategyComponent, SwapOperation, Tier,
+    AccountType, BalanceInfo, EndowmentType, FundingSource, GenericBalance, RebalanceDetails,
+    SocialMedialUrls, SplitDetails, StrategyComponent, SwapOperation, Tier,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, redeem_from_vaults, validate_deposit_fund,
@@ -454,9 +454,9 @@ pub fn swap_liquid(
                 contract_addr: registrar_config.swaps_router.unwrap().to_string(),
                 msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
                     endowment_id: id,
+                    acct_type: AccountType::Liquid,
                     operations: operations.clone(),
                     minimum_receive: None,
-                    to: None,
                 })
                 .unwrap(),
                 funds: vec![Coin {
@@ -489,9 +489,9 @@ pub fn swap_liquid(
                     amount,
                     msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
                         endowment_id: id,
+                        acct_type: AccountType::Liquid,
                         operations,
                         minimum_receive: None,
-                        to: None,
                     })
                     .unwrap(),
                 })
@@ -510,6 +510,7 @@ pub fn swap_receipt(
     id: u32,
     sender_addr: Addr,
     final_asset: Asset,
+    acct_type: AccountType,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let registrar_config: RegistrarConfigResponse =
@@ -523,17 +524,22 @@ pub fn swap_receipt(
     }
 
     let mut state = STATES.load(deps.storage, id)?;
-    match final_asset.info {
-        AssetInfo::Native(denom) => {
-            state
-                .balances
-                .liquid_balance
-                .add_tokens(Balance::from(vec![Coin {
-                    amount: final_asset.amount,
-                    denom: denom.to_string(),
-                }]))
-        }
-        AssetInfo::Cw20(addr) => {
+    match (final_asset.info, acct_type) {
+        (AssetInfo::Native(denom), AccountType::Liquid) => state
+            .balances
+            .liquid_balance
+            .add_tokens(Balance::from(vec![Coin {
+                amount: final_asset.amount,
+                denom: denom.to_string(),
+            }])),
+        (AssetInfo::Native(denom), AccountType::Locked) => state
+            .balances
+            .locked_balance
+            .add_tokens(Balance::from(vec![Coin {
+                amount: final_asset.amount,
+                denom: denom.to_string(),
+            }])),
+        (AssetInfo::Cw20(addr), AccountType::Liquid) => {
             state
                 .balances
                 .liquid_balance
@@ -542,7 +548,16 @@ pub fn swap_receipt(
                     amount: final_asset.amount,
                 }))
         }
-        AssetInfo::Cw1155(_, _) => unimplemented!(),
+        (AssetInfo::Cw20(addr), AccountType::Locked) => {
+            state
+                .balances
+                .locked_balance
+                .add_tokens(Balance::Cw20(Cw20CoinVerified {
+                    address: addr.clone(),
+                    amount: final_asset.amount,
+                }))
+        }
+        (AssetInfo::Cw1155(_, _), _) => unimplemented!(),
     }
     STATES.save(deps.storage, id, &state)?;
     Ok(Response::new())

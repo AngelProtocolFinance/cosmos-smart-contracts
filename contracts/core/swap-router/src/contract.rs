@@ -14,7 +14,7 @@ use angel_core::messages::router::{
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
 };
-use angel_core::structs::{Pair, SwapOperation};
+use angel_core::structs::{AccountType, Pair, SwapOperation};
 use cosmwasm_std::{
     entry_point, from_binary, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
     QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
@@ -63,17 +63,17 @@ pub fn execute(
         ExecuteMsg::UpdatePairs { add, remove } => execute_update_pairs(deps, info, add, remove),
         ExecuteMsg::ExecuteSwapOperations {
             endowment_id,
+            acct_type,
             operations,
             minimum_receive,
-            to,
         } => execute_swap_operations(
             deps,
             env,
             info.sender,
             endowment_id,
+            acct_type,
             operations,
             minimum_receive,
-            to,
         ),
         ExecuteMsg::ExecuteSwapOperation { operation, to } => {
             execute_swap_operation(deps, env, info, operation, to)
@@ -93,16 +93,16 @@ pub fn execute(
         ExecuteMsg::SendSwapReceipt {
             asset_info,
             prev_balance,
-            receiver,
             endowment_id,
+            acct_type,
         } => send_swap_receipt(
             deps.as_ref(),
             env,
             info,
             asset_info,
             prev_balance,
-            receiver,
             endowment_id,
+            acct_type,
         ),
     }
 }
@@ -116,25 +116,18 @@ pub fn receive_cw20(
     match from_binary(&cw20_msg.msg)? {
         Cw20HookMsg::ExecuteSwapOperations {
             endowment_id,
+            acct_type,
             operations,
             minimum_receive,
-            to,
-        } => {
-            let to_addr = if let Some(to_addr) = to {
-                Some(deps.api.addr_validate(to_addr.as_str())?)
-            } else {
-                None
-            };
-            execute_swap_operations(
-                deps,
-                env,
-                sender,
-                endowment_id,
-                operations,
-                minimum_receive,
-                to_addr,
-            )
-        }
+        } => execute_swap_operations(
+            deps,
+            env,
+            sender,
+            endowment_id,
+            acct_type,
+            operations,
+            minimum_receive,
+        ),
     }
 }
 
@@ -169,9 +162,9 @@ pub fn execute_swap_operations(
     env: Env,
     sender: Addr,
     endowment_id: u32,
+    acct_type: AccountType,
     operations: Vec<SwapOperation>,
     minimum_receive: Option<Uint128>,
-    to: Option<Addr>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // Swaps are restricted to the Accounts contract (endowments) & approved Vault contracts
@@ -197,7 +190,6 @@ pub fn execute_swap_operations(
     // Assert the operations are properly set
     assert_operations(&operations)?;
 
-    let to = if let Some(to) = to { to } else { sender };
     let target_asset_info = operations.last().unwrap().get_ask_asset_info();
 
     let mut operation_index = 0;
@@ -210,7 +202,7 @@ pub fn execute_swap_operations(
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
                     operation: op,
                     to: if operation_index == operations_len {
-                        Some(to.clone())
+                        Some(sender.clone())
                     } else {
                         None
                     },
@@ -227,9 +219,9 @@ pub fn execute_swap_operations(
             funds: vec![],
             msg: to_binary(&ExecuteMsg::AssertMinimumReceive {
                 asset_info: target_asset_info.clone(),
-                prev_balance: target_asset_info.query_balance(&deps.querier, &to)?,
+                prev_balance: target_asset_info.query_balance(&deps.querier, &sender)?,
                 minimum_receive,
-                receiver: to.clone(),
+                receiver: sender.clone(),
             })?,
         }));
     }
@@ -237,9 +229,10 @@ pub fn execute_swap_operations(
     // Send a Swap Receipt message back to sender as the final message
     let prev_balance: Uint128 = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: config.accounts_contract.to_string(),
-        msg: to_binary(&AccountsQueryMsg::TokenLiquidAmount {
+        msg: to_binary(&AccountsQueryMsg::TokenAmount {
             id: endowment_id,
             asset_info: target_asset_info.clone(),
+            acct_type: acct_type.clone(),
         })?,
     }))?;
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -248,8 +241,8 @@ pub fn execute_swap_operations(
         msg: to_binary(&ExecuteMsg::SendSwapReceipt {
             asset_info: target_asset_info.clone(),
             prev_balance,
-            receiver: to,
             endowment_id,
+            acct_type,
         })?,
     }));
 

@@ -5,7 +5,7 @@ use angel_core::messages::accounts::QueryMsg as AccountsQueryMsg;
 use angel_core::messages::dexs::{
     InfoResponse, JunoSwapExecuteMsg, JunoSwapQueryMsg, LoopExecuteMsg, TokenSelect,
 };
-use angel_core::structs::{Pair, SwapOperation};
+use angel_core::structs::{AccountType, Pair, SwapOperation};
 use cosmwasm_std::{
     to_binary, Addr, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo, QueryRequest, Response,
     StdError, Uint128, WasmMsg, WasmQuery,
@@ -19,8 +19,8 @@ pub fn send_swap_receipt(
     info: MessageInfo,
     asset_info: AssetInfo,
     prev_balance: Uint128,
-    _receiver: Addr,
     endowment_id: u32,
+    acct_type: AccountType,
 ) -> Result<Response, ContractError> {
     if env.contract.address != info.sender {
         return Err(ContractError::Unauthorized {});
@@ -28,9 +28,10 @@ pub fn send_swap_receipt(
     let config = CONFIG.load(deps.storage)?;
     let receiver_balance: Uint128 = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: config.accounts_contract.to_string(),
-        msg: to_binary(&AccountsQueryMsg::TokenLiquidAmount {
+        msg: to_binary(&AccountsQueryMsg::TokenAmount {
             id: endowment_id,
             asset_info: asset_info.clone(),
+            acct_type: acct_type.clone(),
         })?,
     }))?;
     let swap_amount = receiver_balance.checked_sub(prev_balance)?;
@@ -38,6 +39,7 @@ pub fn send_swap_receipt(
         contract_addr: config.accounts_contract.to_string(),
         msg: to_binary(&AccountsExecuteMsg::SwapReceipt {
             id: endowment_id,
+            acct_type,
             final_asset: Asset {
                 info: asset_info,
                 amount: swap_amount,

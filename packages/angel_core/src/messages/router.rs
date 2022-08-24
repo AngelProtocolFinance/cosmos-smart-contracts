@@ -1,4 +1,4 @@
-use crate::structs::{Pair, SwapOperation};
+use crate::structs::{AccountType, Pair, SwapOperation};
 use cosmwasm_std::{Addr, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfo;
@@ -24,9 +24,9 @@ pub enum ExecuteMsg {
     /// Execute multiple BuyOperation
     ExecuteSwapOperations {
         endowment_id: u32,
+        acct_type: AccountType,
         operations: Vec<SwapOperation>,
         minimum_receive: Option<Uint128>,
-        to: Option<Addr>,
     },
     /// Internal use
     /// Swap all offer tokens to ask token
@@ -42,14 +42,14 @@ pub enum ExecuteMsg {
         minimum_receive: Uint128,
         receiver: Addr,
     },
-    /// Send a Swap Receipt message back to the original sender
+    /// Send a Swap Receipt message back to the original contract
     /// Used by Accounts to properly credit the Endowment with
-    /// it's newly swapped asset in the Liquid Balance
+    /// newly swapped asset in either involved Balance
     SendSwapReceipt {
         asset_info: AssetInfo,
         prev_balance: Uint128,
-        receiver: Addr,
         endowment_id: u32,
+        acct_type: AccountType,
     },
 }
 
@@ -58,9 +58,9 @@ pub enum ExecuteMsg {
 pub enum Cw20HookMsg {
     ExecuteSwapOperations {
         endowment_id: u32,
+        acct_type: AccountType,
         operations: Vec<SwapOperation>,
         minimum_receive: Option<Uint128>,
-        to: Option<Addr>,
     },
 }
 

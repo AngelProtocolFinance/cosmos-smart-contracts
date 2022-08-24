@@ -1,4 +1,4 @@
-use crate::structs::{FundingSource, GenericBalance, Profile, SwapOperation};
+use crate::structs::{AccountType, FundingSource, GenericBalance, Profile, SwapOperation};
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
@@ -41,10 +41,11 @@ pub enum ExecuteMsg {
         operations: Vec<SwapOperation>,
     },
     // Router notifies the Accounts of final tokens from a Swap
-    // Allows Accounts to credit the Endowment's Liquid Balance
+    // Allows Accounts to credit the Endowment's involved Balance
     // with the amount returned to the main Accounts contract
     SwapReceipt {
         id: u32,
+        acct_type: AccountType,
         final_asset: Asset,
     },
     // Tokens are sent back to an Account from an Asset Vault
@@ -172,13 +173,25 @@ pub enum QueryMsg {
     // Get all Config details for the contract
     Config {},
     // Get the balance of available UST and the invested portion balances
-    Balance { id: u32 },
+    Balance {
+        id: u32,
+    },
     // Get state details (like total donations received so far)
-    State { id: u32 },
+    State {
+        id: u32,
+    },
     // Get all Endowment details
-    Endowment { id: u32 },
+    Endowment {
+        id: u32,
+    },
     // Get the profile info
-    GetProfile { id: u32 },
+    GetProfile {
+        id: u32,
+    },
     // Get endowment token balance
-    TokenLiquidAmount { id: u32, asset_info: AssetInfo },
+    TokenAmount {
+        id: u32,
+        asset_info: AssetInfo,
+        acct_type: AccountType,
+    },
 }

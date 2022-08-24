@@ -61,9 +61,11 @@ pub fn execute(
             amount,
             operations,
         } => executers::swap_liquid(deps, info, id, amount, operations),
-        ExecuteMsg::SwapReceipt { id, final_asset } => {
-            executers::swap_receipt(deps, id, info.sender, final_asset)
-        }
+        ExecuteMsg::SwapReceipt {
+            id,
+            final_asset,
+            acct_type,
+        } => executers::swap_receipt(deps, id, info.sender, final_asset, acct_type),
         ExecuteMsg::VaultReceipt { id } => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
@@ -158,9 +160,13 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::State { id } => to_binary(&queriers::query_state(deps, id)?),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),
         QueryMsg::GetProfile { id } => to_binary(&queriers::query_profile(deps, id)?),
-        QueryMsg::TokenLiquidAmount { id, asset_info } => {
-            to_binary(&queriers::query_token_liquid_amount(deps, id, asset_info)?)
-        }
+        QueryMsg::TokenAmount {
+            id,
+            asset_info,
+            acct_type,
+        } => to_binary(&queriers::query_token_amount(
+            deps, id, asset_info, acct_type,
+        )?),
     }
 }
 

@@ -7,6 +7,26 @@ use std::fmt;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub enum AccountType {
+    Locked = 0,
+    Liquid = 1,
+}
+
+impl fmt::Display for AccountType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                AccountType::Locked => "locked",
+                AccountType::Liquid => "liquid",
+            }
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub struct Pair {
     pub assets: [AssetInfo; 2],
     pub contract_address: Addr,
