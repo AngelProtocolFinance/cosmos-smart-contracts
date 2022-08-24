@@ -56,7 +56,7 @@ pub fn execute(
             };
             executers::deposit(deps, env, info.clone(), info.sender, msg, native_fund)
         }
-        ExecuteMsg::SwapLiquid {
+        ExecuteMsg::SwapToken {
             id,
             acct_type,
             amount,

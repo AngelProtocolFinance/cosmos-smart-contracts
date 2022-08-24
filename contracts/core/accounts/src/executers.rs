@@ -432,9 +432,9 @@ pub fn swap_token(
             offer_asset_info, ..
         } => offer_asset_info,
     };
-    let swap_msg: CosmosMsg;
-    match offer_asset {
-        AssetInfo::Native(denom) => {
+
+    match (offer_asset, acct_type.clone()) {
+        (AssetInfo::Native(denom), AccountType::Liquid) => {
             if state
                 .balances
                 .liquid_balance
@@ -451,22 +451,26 @@ pub fn swap_token(
                     amount,
                     denom: denom.to_string(),
                 }]));
-            swap_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: registrar_config.swaps_router.unwrap().to_string(),
-                msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
-                    endowment_id: id,
-                    acct_type: AccountType::Liquid,
-                    operations: operations.clone(),
-                    minimum_receive: None,
-                })
-                .unwrap(),
-                funds: vec![Coin {
+        }
+        (AssetInfo::Native(denom), AccountType::Locked) => {
+            if state
+                .balances
+                .locked_balance
+                .get_denom_amount(denom.to_string())
+                .amount
+                < amount
+            {
+                return Err(ContractError::BalanceTooSmall {});
+            }
+            state
+                .balances
+                .locked_balance
+                .deduct_tokens(Balance::from(vec![Coin {
                     amount,
                     denom: denom.to_string(),
-                }],
-            });
+                }]));
         }
-        AssetInfo::Cw20(addr) => {
+        (AssetInfo::Cw20(addr), AccountType::Liquid) => {
             if state
                 .balances
                 .liquid_balance
@@ -483,6 +487,47 @@ pub fn swap_token(
                     address: addr.clone(),
                     amount,
                 }));
+        }
+        (AssetInfo::Cw20(addr), AccountType::Locked) => {
+            if state
+                .balances
+                .locked_balance
+                .get_token_amount(addr.clone())
+                .amount
+                < amount
+            {
+                return Err(ContractError::BalanceTooSmall {});
+            }
+            state
+                .balances
+                .locked_balance
+                .deduct_tokens(Balance::Cw20(Cw20CoinVerified {
+                    address: addr.clone(),
+                    amount,
+                }));
+        }
+        (AssetInfo::Cw1155(_, _), _) => unimplemented!(),
+    }
+
+    let swap_msg: CosmosMsg;
+    match offer_asset {
+        AssetInfo::Native(denom) => {
+            swap_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: registrar_config.swaps_router.unwrap().to_string(),
+                msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
+                    endowment_id: id,
+                    acct_type,
+                    operations: operations.clone(),
+                    minimum_receive: None,
+                })
+                .unwrap(),
+                funds: vec![Coin {
+                    amount,
+                    denom: denom.to_string(),
+                }],
+            });
+        }
+        AssetInfo::Cw20(addr) => {
             swap_msg = CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: addr.clone().to_string(),
                 msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
@@ -490,7 +535,7 @@ pub fn swap_token(
                     amount,
                     msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
                         endowment_id: id,
-                        acct_type: AccountType::Liquid,
+                        acct_type,
                         operations,
                         minimum_receive: None,
                     })
