@@ -399,10 +399,11 @@ pub fn update_strategies(
         .add_submessages(followup_msgs))
 }
 
-pub fn swap_liquid(
+pub fn swap_token(
     deps: DepsMut,
     info: MessageInfo,
     id: u32,
+    acct_type: AccountType,
     amount: Uint128,
     operations: Vec<SwapOperation>,
 ) -> Result<Response, ContractError> {

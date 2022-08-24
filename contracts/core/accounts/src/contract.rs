@@ -58,9 +58,10 @@ pub fn execute(
         }
         ExecuteMsg::SwapLiquid {
             id,
+            acct_type,
             amount,
             operations,
-        } => executers::swap_liquid(deps, info, id, amount, operations),
+        } => executers::swap_token(deps, info, id, acct_type, amount, operations),
         ExecuteMsg::SwapReceipt {
             id,
             final_asset,

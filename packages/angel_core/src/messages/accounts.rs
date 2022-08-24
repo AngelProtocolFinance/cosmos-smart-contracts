@@ -35,8 +35,9 @@ pub enum ExecuteMsg {
         beneficiary: String,
         assets: GenericBalance,
     },
-    SwapLiquid {
+    SwapToken {
         id: u32,
+        acct_type: AccountType,
         amount: Uint128,
         operations: Vec<SwapOperation>,
     },
