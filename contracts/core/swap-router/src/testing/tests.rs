@@ -9,7 +9,7 @@ use angel_core::messages::router::{
     QueryMsg,
     SimulateSwapOperationsResponse,
 };
-use angel_core::structs::SwapOperation;
+use angel_core::structs::{AccountType, SwapOperation};
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{from_binary, to_binary, Addr, CosmosMsg, StdError, SubMsg, Uint128, WasmMsg};
 use cw20::Cw20ReceiveMsg;
@@ -55,8 +55,8 @@ fn execute_swap_operations() {
     let msg = ExecuteMsg::ExecuteSwapOperations {
         operations: vec![],
         minimum_receive: None,
-        to: None,
         endowment_id: 1,
+        acct_type: AccountType::Locked,
     };
 
     let env = mock_env();
@@ -80,8 +80,8 @@ fn execute_swap_operations() {
             },
         ],
         minimum_receive: Some(Uint128::from(1000000u128)),
-        to: None,
         endowment_id: 1,
+        acct_type: AccountType::Locked,
     };
 
     let env = mock_env();
@@ -171,8 +171,8 @@ fn execute_swap_operations() {
                 },
             ],
             minimum_receive: None,
-            to: Some(Addr::unchecked("addr0002")),
             endowment_id: 1,
+            acct_type: AccountType::Locked,
         })
         .unwrap(),
     });
