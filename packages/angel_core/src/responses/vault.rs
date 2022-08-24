@@ -1,5 +1,4 @@
-use cosmwasm_std::{Decimal256, Uint128, Uint256};
-use cw20::Denom;
+use cosmwasm_std::{Decimal256, Uint256};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 

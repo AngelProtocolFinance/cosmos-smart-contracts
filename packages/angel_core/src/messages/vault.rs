@@ -126,5 +126,7 @@ pub enum RemoveLiquidAction {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum LoopFarmingExecuteMsg {
-    Stake {},
+    Stake {},           // Farm action. Stake LP token.(param: amount in `send` msg)
+    UnstakeAndClaim {}, // Unfarm action. Unstake farmed LP token & rewards.(param: amount in `send` msg)
+    ClaimReward {},     // Claim the reward. Enabled just after `stake`
 }

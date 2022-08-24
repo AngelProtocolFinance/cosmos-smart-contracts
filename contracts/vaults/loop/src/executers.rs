@@ -259,93 +259,85 @@ pub fn withdraw(
     info: MessageInfo,
     msg: AccountWithdrawMsg,
 ) -> Result<Response, ContractError> {
-    // let mut config = CONFIG.load(deps.storage)?;
+    let mut config = CONFIG.load(deps.storage)?;
+    let burn_shares_amount = msg.amount;
 
-    // // Validations
-    // validate_action_caller_n_endow_id(
-    //     deps.as_ref(),
-    //     &config,
-    //     info.sender.to_string(),
-    //     msg.endowment_id,
-    // )?;
+    // Validations
+    validate_action_caller_n_endow_id(
+        deps.as_ref(),
+        &config,
+        info.sender.to_string(),
+        msg.endowment_id,
+    )?;
 
-    // // First, burn the vault tokens
-    // execute_burn(
-    //     deps.branch(),
-    //     env.clone(),
-    //     info,
-    //     msg.endowment_id,
-    //     msg.amount,
-    // )
-    // .map_err(|_| {
-    //     ContractError::Std(StdError::GenericErr {
-    //         msg: format!(
-    //             "Cannot burn the {} vault tokens from {}",
-    //             msg.amount,
-    //             msg.endowment_id.to_string()
-    //         ),
-    //     })
-    // })?;
+    // First, burn the vault tokens
+    execute_burn(
+        deps.branch(),
+        env.clone(),
+        info,
+        msg.endowment_id,
+        burn_shares_amount,
+    )
+    .map_err(|_| {
+        ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Cannot burn the {} vault tokens from {}",
+                burn_shares_amount,
+                msg.endowment_id.to_string()
+            ),
+        })
+    })?;
 
-    // // Update the "total_shares" value
-    // config.total_shares -= msg.amount;
-    // CONFIG.save(deps.storage, &config)?;
+    // Update the config
+    let lp_amount = burn_shares_amount.multiply_ratio(config.total_lp_amount, config.total_shares);
+    config.total_lp_amount -= lp_amount;
+    config.total_shares -= burn_shares_amount;
 
-    // // Perform the "unstaking"
-    // let mut res = Response::default();
-    // res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //     contract_addr: config.staking_addr.to_string(),
-    //     msg: to_binary(&DaoStakeCw20ExecuteMsg::Unstake { amount: msg.amount }).unwrap(),
-    //     funds: vec![],
-    // }));
+    CONFIG.save(deps.storage, &config)?;
 
-    // // Handle the returning lp tokens if exists
-    // let staking_contract_config: DaoStakeCw20GetConfigResponse = deps
-    //     .querier
-    //     .query_wasm_smart(config.staking_addr, &DaoStakeCw20QueryMsg::GetConfig {})?;
-    // match staking_contract_config.unstaking_duration {
-    //     None => {
-    //         // Query the "lp_token" balance
-    //         let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-    //             config.pool_lp_token_addr.to_string(),
-    //             &cw20::Cw20QueryMsg::Balance {
-    //                 address: env.contract.address.to_string(),
-    //             },
-    //         )?;
-    //         res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //             contract_addr: env.contract.address.to_string(),
-    //             msg: to_binary(&ExecuteMsg::RemoveLiquidity {
-    //                 lp_token_bal_before: lp_token_bal.balance,
-    //                 action: RemoveLiquidAction::Withdraw {
-    //                     beneficiary: msg.beneficiary,
-    //                 },
-    //             })
-    //             .unwrap(),
-    //             funds: vec![],
-    //         }));
-    //     }
-    //     Some(duration) => {
-    //         // Save the pending_info in the PENDING map
-    //         let pending_info = PendingInfo {
-    //             typ: "withdraw".to_string(),
-    //             endowment_id: msg.endowment_id, // ID of org. sending Accounts SC
-    //             beneficiary: msg.beneficiary,   // return to the beneficiary
-    //             amount: msg.amount,
-    //             release_at: duration.after(&env.block),
-    //         };
-    //         PENDING.save(deps.storage, config.next_pending_id, &pending_info)?;
+    // Perform the "loopswap::farming::unstake_and_claim(unfarm)" message
+    let mut msgs = vec![];
+    let lp_token_contract =
+        query_pair_info_from_pair(&deps.querier, config.loop_pair_contract.clone())?
+            .liquidity_token;
 
-    //         // Update the "next_pending_id" in CONFIG
-    //         CONFIG.update(deps.storage, |mut c| -> StdResult<_> {
-    //             c.next_pending_id += 1;
-    //             Ok(c)
-    //         })?;
-    //     }
-    // }
+    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: lp_token_contract.to_string(),
+        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+            contract: config.loop_farming_contract.to_string(),
+            amount: lp_amount,
+            msg: to_binary(&LoopFarmingExecuteMsg::UnstakeAndClaim {}).unwrap(),
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
 
-    // Ok(res)
+    // Handle the returning lp tokens & reward LOOP token
+    let lp_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        lp_token_contract,
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::RemoveLiquidity {
+            lp_token_bal_before: lp_bal_query.balance,
+            action: RemoveLiquidAction::Withdraw {
+                beneficiary: msg.beneficiary,
+            },
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
 
-    Ok(Response::default())
+    // TODO! Handle the reward LP tokens
+
+    Ok(Response::default().add_messages(msgs).add_attributes(vec![
+        attr("action", "withdraw"),
+        attr("burn_shares", burn_shares_amount.to_string()),
+        attr("lp_amount", lp_amount.to_string()),
+    ]))
 }
 
 // Here is rough Harvest earnings logic:
