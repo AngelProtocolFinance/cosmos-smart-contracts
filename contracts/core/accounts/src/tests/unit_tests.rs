@@ -108,7 +108,8 @@ fn test_update_endowment_settings() {
     let msg = UpdateEndowmentSettingsMsg {
         id: CHARITY_ID,
         owner: CHARITY_ADDR.to_string(),
-        kyc_donors_only: true,
+        kyc_donors_only: false,
+        auto_invest: false,
     };
     let env = mock_env();
     let res = execute(
@@ -124,7 +125,8 @@ fn test_update_endowment_settings() {
     let msg = UpdateEndowmentSettingsMsg {
         id: CHARITY_ID,
         owner: CHARITY_ADDR.to_string(),
-        kyc_donors_only: true,
+        kyc_donors_only: false,
+        auto_invest: false,
     };
     let info = mock_info(PLEB, &coins(100000, "earth "));
     let env = mock_env();

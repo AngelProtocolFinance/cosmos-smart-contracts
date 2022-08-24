@@ -1,6 +1,7 @@
 use crate::errors::core::ContractError;
 use crate::messages::registrar::QueryMsg as RegistrarQuerier;
 use crate::messages::vault::AccountWithdrawMsg;
+use crate::messages::vault::QueryMsg as VaultQuerier;
 use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
 use crate::responses::vault::ExchangeRateResponse;
 use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
@@ -8,7 +9,7 @@ use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, Deps, QueryRequest, StdError,
     StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg};
+use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw_asset::{Asset, AssetInfoBase};
 
 /// The following `calc_range_<???>` functions will set the first key after the provided key, by appending a 1 byte
@@ -143,26 +144,17 @@ pub fn vault_fx_rate(deps: Deps, vault_address: String) -> Decimal256 {
     exchange_rate.exchange_rate
 }
 
-pub fn vault_account_balance(
-    deps: Deps,
-    vault_address: String,
-    account_address: String,
-) -> Uint128 {
+pub fn vault_endowment_balance(deps: Deps, vault_address: String, endowment_id: u32) -> Uint128 {
     // get an account's balance held with a vault
-    let account_balance: BalanceResponse = deps
-        .querier
+    deps.querier
         .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: vault_address,
-            msg: to_binary(&crate::messages::vault::QueryMsg::Balance {
-                address: account_address,
-            })
-            .unwrap(),
+            contract_addr: deps.api.addr_validate(&vault_address).unwrap().to_string(),
+            msg: to_binary(&VaultQuerier::Balance { endowment_id }).unwrap(),
         }))
-        .unwrap();
-    account_balance.balance
+        .unwrap()
 }
 
-pub fn redeem_from_vaults(
+pub fn redeem_all_vaults(
     deps: Deps,
     endowment_id: u32,
     registrar_contract: String,
@@ -171,22 +163,24 @@ pub fn redeem_from_vaults(
     // redeem all amounts from existing strategies
     let mut redeem_messages = vec![];
     for source in strategies.iter() {
-        // check source vault is in registrar vaults list and is approved
-        let vault_config: VaultDetailResponse =
+        // check source vault is in registrar vaults list
+        let _vault_config: VaultDetailResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: registrar_contract.to_string(),
                 msg: to_binary(&RegistrarQuerier::Vault {
                     vault_addr: source.vault.to_string(),
                 })?,
             }))?;
-        let yield_vault: YieldVault = vault_config.vault;
-        if !yield_vault.approved {
-            return Err(ContractError::InvalidInputs {});
-        }
-        // create a withdraw message for X Vault, noting amounts for Locked / Liquid
+
+        // create a redeem message for Vault, noting amount of tokens
+        let vault_balance = vault_endowment_balance(deps, source.vault.to_string(), endowment_id);
         redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: yield_vault.address.to_string(),
-            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem { endowment_id }).unwrap(),
+            contract_addr: source.vault.to_string(),
+            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem {
+                endowment_id,
+                amount: vault_balance,
+            })
+            .unwrap(),
             funds: vec![],
         })));
     }
@@ -205,8 +199,8 @@ pub fn withdraw_from_vaults(
     // redeem amounts from sources listed
     for source in sources.iter() {
         if source.amount > Uint128::zero() {
-            // check source vault is in registrar vaults list and is approved
-            let vault_config: VaultDetailResponse =
+            // check source vault is in registrar vaults list
+            let _vault_config: VaultDetailResponse =
                 deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                     contract_addr: registrar_contract.to_string(),
                     msg: to_binary(&RegistrarQuerier::Vault {
@@ -214,14 +208,9 @@ pub fn withdraw_from_vaults(
                     })?,
                 }))?;
 
-            let yield_vault: YieldVault = vault_config.vault;
-            if !yield_vault.approved {
-                return Err(ContractError::InvalidInputs {});
-            }
-
             // create a withdraw message for X Vault, noting amounts for Locked / Liquid
             withdraw_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: yield_vault.address.to_string(),
+                contract_addr: source.vault.to_string(),
                 msg: to_binary(&crate::messages::vault::ExecuteMsg::Withdraw(
                     AccountWithdrawMsg {
                         endowment_id: endowment_id.clone(),
@@ -243,10 +232,15 @@ pub fn deposit_to_vaults(
     endowment_id: u32,
     fund: Asset,
     strategies: &[StrategyComponent],
-) -> Result<Vec<SubMsg>, ContractError> {
-    let mut deposit_messages = vec![];
+) -> Result<(Vec<SubMsg>, Asset), ContractError> {
+    // deduct all deposited amounts from the orig amount
+    // tracks how much of the locked funds are leftover
+    let mut leftovers_amt = fund.amount.clone();
+
     // deposit to the strategies set
+    let mut deposit_messages = vec![];
     for strategy in strategies.iter() {
+        leftovers_amt -= fund.amount * strategy.percentage;
         let vault_config: VaultDetailResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: registrar_contract.clone(),
@@ -255,9 +249,15 @@ pub fn deposit_to_vaults(
                 })?,
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
+        if !yield_vault.approved {
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: "Vault is not approved to accept deposits".to_string(),
+            }));
+        }
 
-        // create a deposit message for X Vault, noting amounts for Locked / Liquid
-        // funds payload contains both amounts for locked and liquid accounts
+        // create a deposit message for X Vault
+        // funds payload can contain CW20 | Native token amounts
+        // total to send: payload_amount * strategy.percentage
         match fund.info {
             AssetInfoBase::Native(ref denom) => {
                 deposit_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -290,7 +290,13 @@ pub fn deposit_to_vaults(
             AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         }
     }
-    Ok(deposit_messages)
+    Ok((
+        deposit_messages,
+        Asset {
+            info: fund.info,
+            amount: leftovers_amt,
+        },
+    ))
 }
 
 /// Check if the given "token"(denom or contract address) is in "accepted_tokens" list.  

@@ -53,6 +53,30 @@ pub enum ExecuteMsg {
     VaultReceipt {
         id: u32,
     },
+    // Invest TOH funds to a Vault
+    VaultInvest {
+        id: u32,
+        asset: AssetInfo,
+        amount: Uint128,
+        vault: String,
+    },
+    // Redeem TOH funds from a Vault
+    VaultRedeem {
+        id: u32,
+        amount: Uint128,
+        vault: String,
+    },
+    // set another endowment's strategy to "copycat" as your own
+    CopycatStrategies {
+        id: u32,
+        id_to_copy: u32,
+    },
+    // pull all funds out of an endowment's strategies vaults once all
+    // funds are returned, re-invest the total locked TOH funds back
+    // into the vaults at the current strategies % allocations
+    RebalanceStrategies {
+        id: u32,
+    },
     // create a new endowment
     CreateEndowment(CreateEndowmentMsg),
     // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.

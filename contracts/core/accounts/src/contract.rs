@@ -94,6 +94,15 @@ pub fn execute(
             beneficiary,
             assets,
         } => executers::withdraw_liquid(deps, env, info, id, beneficiary, assets),
+        ExecuteMsg::VaultInvest {
+            id,
+            asset,
+            amount,
+            vault,
+        } => executers::vault_invest(deps, env, info, id, asset, amount, vault),
+        ExecuteMsg::VaultRedeem { id, amount, vault } => {
+            executers::vault_redeem(deps, env, info, id, amount, vault)
+        }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
@@ -102,6 +111,12 @@ pub fn execute(
         }
         ExecuteMsg::UpdateStrategies { id, strategies } => {
             executers::update_strategies(deps, env, info, id, strategies)
+        }
+        ExecuteMsg::RebalanceStrategies { id } => {
+            executers::rebalance_strategies(deps, env, info, id)
+        }
+        ExecuteMsg::CopycatStrategies { id, id_to_copy } => {
+            executers::copycat_strategies(deps, info, id, id_to_copy)
         }
         ExecuteMsg::CloseEndowment { id, beneficiary } => {
             executers::close_endowment(deps, env, info, id, beneficiary)
@@ -154,10 +169,10 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 }
 
 #[entry_point]
-pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
-        QueryMsg::Balance { id } => to_binary(&queriers::query_account_balance(deps, env, id)?),
+        QueryMsg::Balance { id } => to_binary(&queriers::query_account_balance(deps, id)?),
         QueryMsg::State { id } => to_binary(&queriers::query_state(deps, id)?),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),
         QueryMsg::GetProfile { id } => to_binary(&queriers::query_profile(deps, id)?),
