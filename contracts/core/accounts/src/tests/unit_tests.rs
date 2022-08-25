@@ -481,7 +481,7 @@ fn test_donate() {
     });
     let res = execute(deps.as_mut(), mock_env(), info, deposit_msg).unwrap();
 
-    assert_eq!(res.attributes.len(), 1);
+    assert_eq!(0, res.messages.len());
 
     // Check the "STATE" for "transactions" field
     let query_res = query(
@@ -545,7 +545,7 @@ fn test_donate() {
     assert_eq!(2, endow.strategies.locked.len());
     assert_eq!(true, endow.auto_invest);
 
-    // Try the "Deposit" w/ "Auto Invest" turned on. Vault deposits should now take place.
+    // Try the "Deposit" w/ "Auto Invest" turned on. Two Vault deposits should now take place.
     let donation_amt = 200_u128;
     let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
@@ -555,7 +555,7 @@ fn test_donate() {
     });
     let res = execute(deps.as_mut(), mock_env(), info, deposit_msg).unwrap();
 
-    assert_eq!(res.attributes.len(), 2);
+    assert_eq!(res.messages.len(), 2);
 }
 
 #[test]
@@ -586,7 +586,7 @@ fn test_deposit_cw20() {
     });
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    assert_eq!(res.attributes.len(), 1);
+    assert_eq!(0, res.messages.len());
 }
 
 #[test]

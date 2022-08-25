@@ -982,106 +982,108 @@ pub fn deposit(
     let mut state = STATES.load(deps.storage, msg.id)?;
     state.donations_received += deposit_amount;
 
-    // increase the liquid balance by donation (liquid) amount
-    let liquid_balance = match liquid_amount.info {
-        AssetInfoBase::Native(ref denom) => Balance::from(vec![Coin {
-            denom: denom.to_string(),
-            amount: liquid_amount.amount,
-        }]),
-        AssetInfoBase::Cw20(ref contract_addr) => Balance::Cw20(Cw20CoinVerified {
-            address: contract_addr.clone(),
-            amount: liquid_amount.amount,
-        }),
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-    };
-    state.balances.liquid_balance.add_tokens(liquid_balance);
-
     let mut deposit_messages: Vec<SubMsg> = vec![];
     // check endowment strategies are setup
     // hold locked funds until (auto_invest == true && strategy has vaults set)
     if endowment.auto_invest == false {
-        // increase the locked balance by locked donation amount
-        let locked_balance = match locked_amount.info {
-            AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
-                denom: denom.to_string(),
-                amount: locked_amount.amount,
-            }]),
-            AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
-                address: contract_addr.clone(),
-                amount: locked_amount.amount,
-            }),
+        // increase the locked & liquid balance by respective donation amounts
+        match locked_amount.info {
+            AssetInfoBase::Native(ref denom) => {
+                state
+                    .balances
+                    .locked_balance
+                    .add_tokens(Balance::from(vec![Coin {
+                        denom: denom.to_string(),
+                        amount: locked_amount.amount,
+                    }]));
+                state
+                    .balances
+                    .liquid_balance
+                    .add_tokens(Balance::from(vec![Coin {
+                        denom: denom.to_string(),
+                        amount: liquid_amount.amount,
+                    }]));
+            }
+            AssetInfoBase::Cw20(ref contract_addr) => {
+                state
+                    .balances
+                    .locked_balance
+                    .add_tokens(Balance::Cw20(Cw20CoinVerified {
+                        address: contract_addr.clone(),
+                        amount: locked_amount.amount,
+                    }));
+
+                state
+                    .balances
+                    .liquid_balance
+                    .add_tokens(Balance::Cw20(Cw20CoinVerified {
+                        address: contract_addr.clone(),
+                        amount: liquid_amount.amount,
+                    }));
+            }
             AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         };
-        state.balances.locked_balance.add_tokens(locked_balance);
     } else {
         // Process Locked Strategy Deposits
         let locked_strategies = endowment.strategies.get_strategy(AccountType::Locked);
-        if !locked_strategies.is_empty() {
-            // if not empty: build deposit messages for each of the sources/amounts
-            let locked_msg: Vec<SubMsg>;
-            let leftover_amt: Uint128;
-            (locked_msg, leftover_amt) = deposit_to_vaults(
-                deps.as_ref(),
-                config.registrar_contract.to_string(),
-                msg.id.clone(),
-                locked_amount.clone(),
-                &locked_strategies,
-            )?;
-            for m in locked_msg.iter() {
-                deposit_messages.push(m.clone());
-            }
-            // If invested portion of strategies < 100% there will be leftover deposits
-            // Add any remaining deposited tokens to the locked balance "Tokens on Hand"
-            state
-                .balances
-                .locked_balance
-                .add_tokens(match locked_amount.info {
-                    AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
-                        denom: denom.to_string(),
-                        amount: leftover_amt,
-                    }]),
-                    AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
-                        address: contract_addr.clone(),
-                        amount: leftover_amt,
-                    }),
-                    AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-                });
+        // build deposit messages for each of the sources/amounts
+        let (messages, leftover_amt) = deposit_to_vaults(
+            deps.as_ref(),
+            config.registrar_contract.to_string(),
+            msg.id.clone(),
+            locked_amount.clone(),
+            &locked_strategies,
+        )?;
+        for m in messages.iter() {
+            deposit_messages.push(m.clone());
         }
-
-        // Process Liquid Strategy Deposits
-        let liquid_strategies = endowment.strategies.get_strategy(AccountType::Liquid);
-        if !liquid_strategies.is_empty() {
-            // if not empty: build deposit messages for each of the sources/amounts
-            let liquid_msg: Vec<SubMsg>;
-            let leftover_amt: Uint128;
-            (liquid_msg, leftover_amt) = deposit_to_vaults(
-                deps.as_ref(),
-                config.registrar_contract.to_string(),
-                msg.id.clone(),
-                liquid_amount.clone(),
-                &liquid_strategies,
-            )?;
-            for m in liquid_msg.iter() {
-                deposit_messages.push(m.clone());
-            }
-            // If invested portion of strategies < 100% there will be leftover deposits
-            // Add any remaining deposited tokens to the liquid balance "Tokens on Hand"
-            state
-                .balances
-                .liquid_balance
-                .add_tokens(match liquid_amount.info {
-                    AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
-                        denom: denom.to_string(),
-                        amount: leftover_amt,
-                    }]),
-                    AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
-                        address: contract_addr.clone(),
-                        amount: leftover_amt,
-                    }),
-                    AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-                });
-        }
+        // If invested portion of strategies < 100% there will be leftover deposits
+        // Add any remaining deposited tokens to the locked balance "Tokens on Hand"
+        state
+            .balances
+            .locked_balance
+            .add_tokens(match locked_amount.info {
+                AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
+                    denom: denom.to_string(),
+                    amount: leftover_amt,
+                }]),
+                AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
+                    address: contract_addr.clone(),
+                    amount: leftover_amt,
+                }),
+                AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+            });
     }
+
+    // Process Liquid Strategy Deposits
+    let liquid_strategies = endowment.strategies.get_strategy(AccountType::Liquid);
+    // build deposit messages for each of the sources/amounts
+    let (messages, leftover_amt) = deposit_to_vaults(
+        deps.as_ref(),
+        config.registrar_contract.to_string(),
+        msg.id.clone(),
+        liquid_amount.clone(),
+        &liquid_strategies,
+    )?;
+    for m in messages.iter() {
+        deposit_messages.push(m.clone());
+    }
+    // If invested portion of strategies < 100% there will be leftover deposits
+    // Add any remaining deposited tokens to the liquid balance "Tokens on Hand"
+    state
+        .balances
+        .liquid_balance
+        .add_tokens(match liquid_amount.info {
+            AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
+                denom: denom.to_string(),
+                amount: leftover_amt,
+            }]),
+            AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
+                address: contract_addr.clone(),
+                amount: leftover_amt,
+            }),
+            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+        });
 
     STATES.save(deps.storage, msg.id, &state)?;
     Ok(Response::new()
