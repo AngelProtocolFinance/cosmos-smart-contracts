@@ -107,25 +107,9 @@ pub fn execute(
         // Pulls all existing amounts back to Account in USDC or [input_denom].
         // -Deposit Token/Yield Token (Vault) --> +USDC (Account)
         ExecuteMsg::Claim {} => executers::claim(deps, env, info),
-        ExecuteMsg::DistributeClaim {
-            reward_token_bal_before,
-        } => executers::distribute_claim(deps, env, info, reward_token_bal_before),
         // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
         ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
-        ExecuteMsg::HarvestSwap {
-            token1_denom_bal_before,
-            token2_denom_bal_before,
-        } => executers::harvest_swap(
-            deps,
-            env,
-            info,
-            token1_denom_bal_before,
-            token2_denom_bal_before,
-        ),
-        ExecuteMsg::DistributeHarvest {
-            output_token_bal_before,
-        } => executers::distribute_harvest(deps, env, info, output_token_bal_before),
         ExecuteMsg::AddLiquidity {
             endowment_id,
             in_asset_info,
