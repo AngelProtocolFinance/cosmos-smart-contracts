@@ -29,6 +29,7 @@ pub struct EndowmentDetailsResponse {
     pub deposit_approved: bool,
     pub withdraw_approved: bool,
     pub pending_redemptions: u8,
+    pub auto_invest: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

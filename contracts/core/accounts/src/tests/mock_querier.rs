@@ -24,6 +24,7 @@ pub enum QueryMsg {
     VaultList {
         network: Option<String>,
         endowment_type: Option<EndowmentType>,
+        acct_type: Option<AccountType>,
         approved: Option<bool>,
         start_after: Option<String>,
         limit: Option<u64>,
@@ -255,6 +256,61 @@ impl WasmMockQuerier {
                 QueryMsg::VaultList {
                     network: _,
                     endowment_type: _,
+                    acct_type: Some(AccountType::Locked),
+                    approved: _,
+                    start_after: _,
+                    limit: _,
+                } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&VaultListResponse {
+                        vaults: vec![
+                            YieldVault {
+                                address: Addr::unchecked("vault").to_string(),
+                                network: "juno-1".to_string(),
+                                input_denom: "input-denom".to_string(),
+                                yield_token: Addr::unchecked("yield-token").to_string(),
+                                approved: true,
+                                restricted_from: vec![],
+                                acct_type: AccountType::Locked,
+                            },
+                            YieldVault {
+                                address: Addr::unchecked("tech_strategy_component_addr")
+                                    .to_string(),
+                                network: "juno-1".to_string(),
+                                input_denom: "input-denom".to_string(),
+                                yield_token: Addr::unchecked("yield-token").to_string(),
+                                approved: true,
+                                restricted_from: vec![],
+                                acct_type: AccountType::Locked,
+                            },
+                        ],
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::VaultList {
+                    network: _,
+                    endowment_type: _,
+                    acct_type: Some(AccountType::Liquid),
+                    approved: _,
+                    start_after: _,
+                    limit: _,
+                } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&VaultListResponse {
+                        vaults: vec![YieldVault {
+                            address: Addr::unchecked("cash_strategy_component_addr").to_string(),
+                            network: "juno-1".to_string(),
+                            input_denom: "input-denom".to_string(),
+                            yield_token: Addr::unchecked("yield-token").to_string(),
+                            approved: true,
+                            restricted_from: vec![],
+                            acct_type: AccountType::Liquid,
+                        }],
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::VaultList {
+                    network: _,
+                    endowment_type: _,
+                    acct_type: _,
                     approved: _,
                     start_after: _,
                     limit: _,

@@ -1014,25 +1014,20 @@ pub fn deposit(
         };
         state.balances.locked_balance.add_tokens(locked_balance);
     } else {
-        let liquid_strategies = endowment.strategies.get_strategy(AccountType::Liquid);
-        let locked_strategies = endowment.strategies.get_strategy(AccountType::Locked);
-
         // Process Locked Strategy Deposits
+        let locked_strategies = endowment.strategies.get_strategy(AccountType::Locked);
         if !locked_strategies.is_empty() {
             // if not empty: build deposit messages for each of the sources/amounts
-            let leftovers: Asset;
-            let (messages, leftover_amt) = deposit_to_vaults(
+            let locked_msg: Vec<SubMsg>;
+            let leftover_amt: Uint128;
+            (locked_msg, leftover_amt) = deposit_to_vaults(
                 deps.as_ref(),
                 config.registrar_contract.to_string(),
                 msg.id.clone(),
                 locked_amount.clone(),
                 &locked_strategies,
             )?;
-            leftovers = Asset {
-                info: locked_amount.info,
-                amount: leftover_amt,
-            };
-            for m in messages.iter() {
+            for m in locked_msg.iter() {
                 deposit_messages.push(m.clone());
             }
             // If invested portion of strategies < 100% there will be leftover deposits
@@ -1040,35 +1035,33 @@ pub fn deposit(
             state
                 .balances
                 .locked_balance
-                .add_tokens(match leftovers.info {
+                .add_tokens(match locked_amount.info {
                     AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
                         denom: denom.to_string(),
-                        amount: leftovers.amount,
+                        amount: leftover_amt,
                     }]),
                     AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
                         address: contract_addr.clone(),
-                        amount: leftovers.amount,
+                        amount: leftover_amt,
                     }),
                     AssetInfoBase::Cw1155(_, _) => unimplemented!(),
                 });
         }
 
         // Process Liquid Strategy Deposits
+        let liquid_strategies = endowment.strategies.get_strategy(AccountType::Liquid);
         if !liquid_strategies.is_empty() {
             // if not empty: build deposit messages for each of the sources/amounts
-            let leftovers: Asset;
-            let (messages, leftover_amt) = deposit_to_vaults(
+            let liquid_msg: Vec<SubMsg>;
+            let leftover_amt: Uint128;
+            (liquid_msg, leftover_amt) = deposit_to_vaults(
                 deps.as_ref(),
                 config.registrar_contract.to_string(),
                 msg.id.clone(),
                 liquid_amount.clone(),
                 &liquid_strategies,
             )?;
-            leftovers = Asset {
-                info: liquid_amount.info,
-                amount: leftover_amt,
-            };
-            for m in messages.iter() {
+            for m in liquid_msg.iter() {
                 deposit_messages.push(m.clone());
             }
             // If invested portion of strategies < 100% there will be leftover deposits
@@ -1076,14 +1069,14 @@ pub fn deposit(
             state
                 .balances
                 .liquid_balance
-                .add_tokens(match leftovers.info {
+                .add_tokens(match liquid_amount.info {
                     AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
                         denom: denom.to_string(),
-                        amount: leftovers.amount,
+                        amount: leftover_amt,
                     }]),
                     AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
                         address: contract_addr.clone(),
-                        amount: leftovers.amount,
+                        amount: leftover_amt,
                     }),
                     AssetInfoBase::Cw1155(_, _) => unimplemented!(),
                 });

@@ -106,7 +106,7 @@ impl AccountStrategies {
         }
     }
 
-    pub fn set_strategy(&mut self, acct_type: AccountType, strategy: Vec<StrategyComponent>) -> () {
+    pub fn set_strategy(&mut self, acct_type: AccountType, strategy: Vec<StrategyComponent>) {
         match acct_type {
             AccountType::Locked => self.locked = strategy,
             AccountType::Liquid => self.liquid = strategy,

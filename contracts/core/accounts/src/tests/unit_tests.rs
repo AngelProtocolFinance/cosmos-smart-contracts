@@ -272,6 +272,26 @@ fn test_update_strategy() {
             },
             Strategy {
                 vault: "tech_strategy_component_addr".to_string(),
+                percentage: Decimal::percent(50),
+            },
+        ],
+    };
+
+    let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
+    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // sum of the invested strategy components percentages is over 100%
+    let msg = ExecuteMsg::UpdateStrategies {
+        id: CHARITY_ID,
+        acct_type: AccountType::Locked,
+        strategies: vec![
+            Strategy {
+                vault: "vault".to_string(),
+                percentage: Decimal::percent(30),
+            },
+            Strategy {
+                vault: "tech_strategy_component_addr".to_string(),
                 percentage: Decimal::percent(80),
             },
         ],
@@ -281,12 +301,13 @@ fn test_update_strategy() {
     let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
     assert_eq!(err, ContractError::InvalidStrategyAllocation {});
 
+    // duplicated vaults passed
     let msg = ExecuteMsg::UpdateStrategies {
         id: CHARITY_ID,
         acct_type: AccountType::Locked,
         strategies: vec![
             Strategy {
-                vault: "cash_strategy_component_addr".to_string(),
+                vault: "vault".to_string(),
                 percentage: Decimal::percent(40),
             },
             Strategy {
@@ -294,7 +315,7 @@ fn test_update_strategy() {
                 percentage: Decimal::percent(20),
             },
             Strategy {
-                vault: "cash_strategy_component_addr".to_string(),
+                vault: "tech_strategy_component_addr".to_string(),
                 percentage: Decimal::percent(40),
             },
         ],
@@ -309,7 +330,7 @@ fn test_update_strategy() {
         acct_type: AccountType::Locked,
         strategies: vec![
             Strategy {
-                vault: "cash_strategy_component_addr".to_string(),
+                vault: "vault".to_string(),
                 percentage: Decimal::percent(40),
             },
             Strategy {
@@ -498,15 +519,31 @@ fn test_donate() {
         ExecuteMsg::UpdateStrategies {
             id: CHARITY_ID,
             acct_type: AccountType::Locked,
-            strategies: [Strategy {
-                vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(60),
-            }]
+            strategies: [
+                Strategy {
+                    vault: "tech_strategy_component_addr".to_string(),
+                    percentage: Decimal::percent(40),
+                },
+                Strategy {
+                    vault: "vault".to_string(),
+                    percentage: Decimal::percent(40),
+                },
+            ]
             .to_vec(),
         },
     )
     .unwrap();
     assert_eq!(1, res.messages.len());
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Endowment { id: CHARITY_ID },
+    )
+    .unwrap();
+    let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
+    assert_eq!(2, endow.strategies.locked.len());
+    assert_eq!(true, endow.auto_invest);
 
     // Try the "Deposit" w/ "Auto Invest" turned on. Vault deposits should now take place.
     let donation_amt = 200_u128;
@@ -691,13 +728,30 @@ fn test_vault_receipt() {
     .unwrap();
     assert_eq!(0, res.messages.len());
 
-    // First, update the "config.pending_redemptions"
+    // Should fail if we try to assign a vault with an acct_type that is different from the Endow acct_type
     let msg = ExecuteMsg::UpdateStrategies {
         id: CHARITY_ID,
         acct_type: AccountType::Locked,
         strategies: vec![
             Strategy {
-                vault: "cash_strategy_component_addr".to_string(),
+                vault: "cash_strategy_component_addr".to_string(), // THIS IS A LIQUID ACCOUNT VAULT!
+                percentage: Decimal::percent(40),
+            },
+            Strategy {
+                vault: "tech_strategy_component_addr".to_string(),
+                percentage: Decimal::percent(60),
+            },
+        ],
+    };
+    let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
+    let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+
+    let msg = ExecuteMsg::UpdateStrategies {
+        id: CHARITY_ID,
+        acct_type: AccountType::Locked,
+        strategies: vec![
+            Strategy {
+                vault: "vault".to_string(),
                 percentage: Decimal::percent(40),
             },
             Strategy {
@@ -708,7 +762,6 @@ fn test_vault_receipt() {
     };
     let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
     let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
     let res = query(
         deps.as_ref(),
         mock_env(),
