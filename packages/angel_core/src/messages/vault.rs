@@ -40,7 +40,7 @@ pub enum ExecuteMsg {
     },
     Claim {},
     DistributeClaim {
-        lp_token_bal_before: Uint128,
+        reward_token_bal_before: Uint128,
     },
     Withdraw(AccountWithdrawMsg),
     Harvest {},

@@ -1,8 +1,7 @@
 use cosmwasm_std::{
-    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Fraction,
-    MessageInfo, Order, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
+    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
+    QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
-use cw_controllers::ClaimsResponse;
 use terraswap::asset::{Asset, AssetInfo};
 
 use angel_core::errors::vault::ContractError;
@@ -144,115 +143,90 @@ pub fn deposit(
         .add_attribute("deposit_amount", deposit_amount))
 }
 
-/// Claim: Call the `claim` entry of "staking" contract
+/// Contract entry: **claim**
+///   1. Call the `loopswap::farming::claim_reward` entry
+///   2. Handle the reward token(LOOP)
 pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    // let config = CONFIG.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
 
-    // // Validations
-    // // Check if sender address is the "accounts_contract"
-    // let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
-    //     config.registrar_contract.to_string(),
-    //     &RegistrarQueryMsg::Config {},
-    // )?;
-    // if let Some(accounts_contract) = registar_config.accounts_contract {
-    //     if info.sender.to_string() != accounts_contract {
-    //         return Err(ContractError::Unauthorized {});
-    //     }
-    // } else {
-    //     return Err(ContractError::Unauthorized {});
-    // }
+    // Validations
+    let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &RegistrarQueryMsg::Config {},
+    )?;
+    if let Some(accounts_contract) = registar_config.accounts_contract {
+        if info.sender.to_string() != accounts_contract {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        return Err(ContractError::Unauthorized {});
+    }
 
-    // // First, check if there is any possible claim in "staking" contract
-    // let claims_resp: ClaimsResponse = deps.querier.query_wasm_smart(
-    //     config.staking_addr.to_string(),
-    //     &DaoStakeCw20QueryMsg::Claims {
-    //         address: env.contract.address.to_string(),
-    //     },
-    // )?;
-    // if claims_resp.claims.len() == 0 {
-    //     return Err(ContractError::Std(StdError::GenericErr {
-    //         msg: "Nothing to claim".to_string(),
-    //     }));
-    // }
+    // Performs the "claim"
+    let mut msgs = vec![];
+    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.loop_farming_contract.to_string(),
+        msg: to_binary(&LoopFarmingExecuteMsg::ClaimReward {}).unwrap(),
+        funds: vec![],
+    }));
 
-    // // Performs the "claim"
-    // let mut res = Response::default();
-    // res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //     contract_addr: config.staking_addr.to_string(),
-    //     msg: to_binary(&DaoStakeCw20ExecuteMsg::Claim {}).unwrap(),
-    //     funds: vec![],
-    // }));
+    // Handle the returning reward token(LOOP)
+    let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        config.loop_token.to_string(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::DistributeClaim {
+            reward_token_bal_before: reward_token_bal_query.balance,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
 
-    // // Handle the returning lp tokens
-    // let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-    //     config.pool_lp_token_addr,
-    //     &cw20::Cw20QueryMsg::Balance {
-    //         address: env.contract.address.to_string(),
-    //     },
-    // )?;
-    // res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //     contract_addr: env.contract.address.to_string(),
-    //     msg: to_binary(&ExecuteMsg::DistributeClaim {
-    //         lp_token_bal_before: lp_token_bal.balance,
-    //     })
-    //     .unwrap(),
-    //     funds: vec![],
-    // }));
-
-    // Ok(res)
-
-    Ok(Response::default())
+    Ok(Response::default()
+        .add_messages(msgs)
+        .add_attributes(vec![attr("action", "claim")]))
 }
 
+/// Contract entry: **distribute_claim**
+///   1. Compute the receiving reward token(LOOP)
+///   2. Distribute the reward to endowments
 pub fn distribute_claim(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    lp_token_bal_before: Uint128,
+    reward_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
-    // let config = CONFIG.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
 
-    // // Validations
-    // if info.sender != env.contract.address {
-    //     return Err(ContractError::Unauthorized {});
-    // }
+    // Validations
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
 
-    // // First, compute the "claim"ed LP tokens
-    // // Query the "lp_token" balance
-    // let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-    //     config.pool_lp_token_addr.to_string(),
-    //     &cw20::Cw20QueryMsg::Balance {
-    //         address: env.contract.address.to_string(),
-    //     },
-    // )?;
-    // let total_claimed_amount = lp_token_bal
-    //     .balance
-    //     .checked_div(lp_token_bal_before)
-    //     .unwrap();
-
-    // // Filter the pending infoes available for claim.
-    // let claimable_infoes = PENDING
-    //     .range(deps.storage, None, None, Order::Ascending)
-    //     .take_while(|res| {
-    //         let (_, info) = res.as_ref().unwrap();
-    //         info.release_at.is_expired(&env.block)
-    //     })
-    //     .map(|res| res.unwrap())
-    //     .collect::<Vec<(u32, PendingInfo)>>();
-
-    // let total_expected_amount: Uint128 = claimable_infoes.iter().map(|(_, info)| info.amount).sum();
-
-    // let reward_amount = total_claimed_amount
-    //     .checked_div(total_expected_amount)
-    //     .unwrap();
+    // First, compute the amount of "claim"ed reward tokens
+    let reward_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        config.loop_token.to_string(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+    let total_claimed_amount = reward_token_bal
+        .balance
+        .checked_sub(reward_token_bal_before)
+        .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
 
     // todo!("Add the logic of sending the withdraw amount to own beneficiaries & computing the portion of reward for every endowment and re-staking them");
 
     Ok(Response::default())
 }
 
-/// Withdraw: Takes in an amount of vault tokens
-/// to withdraw from the vault for USDC to send back to a beneficiary
+/// Contract entry: **withdraw**
+///   1. Unstake/Unfarm the LP tokens from the `loopswap::farming` contract
+///   2. Handle the receiving LP token & reward token(LOOP)
 pub fn withdraw(
     mut deps: DepsMut,
     env: Env,

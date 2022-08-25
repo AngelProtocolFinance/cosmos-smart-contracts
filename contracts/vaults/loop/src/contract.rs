@@ -108,8 +108,8 @@ pub fn execute(
         // -Deposit Token/Yield Token (Vault) --> +USDC (Account)
         ExecuteMsg::Claim {} => executers::claim(deps, env, info),
         ExecuteMsg::DistributeClaim {
-            lp_token_bal_before,
-        } => executers::distribute_claim(deps, env, info, lp_token_bal_before),
+            reward_token_bal_before,
+        } => executers::distribute_claim(deps, env, info, reward_token_bal_before),
         // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
         ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
