@@ -234,7 +234,7 @@ pub fn update_endowment_settings(
         return Err(ContractError::Unauthorized {});
     }
 
-    endowment.auto_invest = msg.kyc_donors_only;
+    endowment.auto_invest = msg.auto_invest;
     endowment.kyc_donors_only = msg.kyc_donors_only;
     endowment.owner = deps.api.addr_validate(&msg.owner)?;
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
