@@ -52,6 +52,34 @@ pub enum ExecuteMsg {
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt {
         id: u32,
+        acct_type: AccountType,
+    },
+    // Invest TOH funds to a Vault
+    VaultInvest {
+        id: u32,
+        acct_type: AccountType,
+        asset: AssetInfo,
+        amount: Uint128,
+        vault: String,
+    },
+    // Redeem TOH funds from a Vault
+    VaultRedeem {
+        id: u32,
+        amount: Uint128,
+        vault: String,
+    },
+    // set another endowment's strategy to "copycat" as your own
+    CopycatStrategies {
+        id: u32,
+        acct_type: AccountType,
+        id_to_copy: u32,
+    },
+    // pull all funds out of an endowment's strategies vaults once all
+    // funds are returned, re-invest the total locked TOH funds back
+    // into the vaults at the current strategies % allocations
+    RebalanceStrategies {
+        id: u32,
+        acct_type: AccountType,
     },
     // create a new endowment
     CreateEndowment(CreateEndowmentMsg),
@@ -76,6 +104,7 @@ pub enum ExecuteMsg {
     // Replace an Account's Strategy with that given.
     UpdateStrategies {
         id: u32,
+        acct_type: AccountType,
         strategies: Vec<Strategy>,
     },
     // Update Endowment profile
@@ -106,6 +135,7 @@ pub struct UpdateEndowmentSettingsMsg {
     pub id: u32,
     pub owner: String,
     pub kyc_donors_only: bool,
+    pub auto_invest: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -121,7 +151,7 @@ pub enum ReceiveMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     // Tokens are sent back to an Account from a Vault
-    VaultReceipt { id: u32 },
+    VaultReceipt { id: u32, acct_type: AccountType },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

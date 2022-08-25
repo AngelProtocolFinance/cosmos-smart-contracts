@@ -331,6 +331,7 @@ pub fn vault_add(
             yield_token: deps.api.addr_validate(&msg.yield_token)?.to_string(),
             approved: false,
             restricted_from: msg.restricted_from,
+            acct_type: msg.acct_type,
         },
     )?;
     Ok(Response::default())
@@ -461,7 +462,7 @@ pub fn harvest(
         return Err(ContractError::Unauthorized {});
     }
     // gets a list of approved Vaults
-    let vaults = read_vaults(deps.storage, None, None, Some(true), None, None)?;
+    let vaults = read_vaults(deps.storage, None, None, None, Some(true), None, None)?;
     let list = VaultListResponse { vaults };
 
     let mut sub_messages: Vec<SubMsg> = vec![];

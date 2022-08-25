@@ -28,6 +28,7 @@ pub enum ExecuteMsg {
     },
     Redeem {
         endowment_id: u32,
+        amount: Uint128, // vault tokens to be burned
     },
     Withdraw(AccountWithdrawMsg),
     Harvest {
@@ -70,7 +71,7 @@ pub enum QueryMsg {
     /// Returns the current balance of the given address, 0 if unset.
     /// Return type: BalanceResponse.
     Balance {
-        address: String,
+        endowment_id: u32,
     },
     /// Returns metadata on the contract - name, decimals, supply, etc.
     /// Return type: TokenInfoResponse.

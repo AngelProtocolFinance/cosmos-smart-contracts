@@ -67,7 +67,7 @@ pub fn execute(
             final_asset,
             acct_type,
         } => executers::swap_receipt(deps, id, info.sender, final_asset, acct_type),
-        ExecuteMsg::VaultReceipt { id } => {
+        ExecuteMsg::VaultReceipt { id, acct_type } => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
             }
@@ -75,7 +75,15 @@ pub fn execute(
                 info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
                 amount: info.funds[0].amount,
             };
-            executers::vault_receipt(deps, env, info.clone(), id, info.sender, native_fund)
+            executers::vault_receipt(
+                deps,
+                env,
+                info.clone(),
+                id,
+                acct_type,
+                info.sender,
+                native_fund,
+            )
         }
         ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
@@ -94,15 +102,35 @@ pub fn execute(
             beneficiary,
             assets,
         } => executers::withdraw_liquid(deps, env, info, id, beneficiary, assets),
+        ExecuteMsg::VaultInvest {
+            id,
+            acct_type,
+            asset,
+            amount,
+            vault,
+        } => executers::vault_invest(deps, env, info, id, acct_type, asset, amount, vault),
+        ExecuteMsg::VaultRedeem { id, amount, vault } => {
+            executers::vault_redeem(deps, env, info, id, amount, vault)
+        }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
         }
-        ExecuteMsg::UpdateStrategies { id, strategies } => {
-            executers::update_strategies(deps, env, info, id, strategies)
+        ExecuteMsg::UpdateStrategies {
+            id,
+            acct_type,
+            strategies,
+        } => executers::update_strategies(deps, env, info, id, acct_type, strategies),
+        ExecuteMsg::RebalanceStrategies { id, acct_type } => {
+            executers::rebalance_strategies(deps, env, info, id, acct_type)
         }
+        ExecuteMsg::CopycatStrategies {
+            id,
+            acct_type,
+            id_to_copy,
+        } => executers::copycat_strategies(deps, info, id, acct_type, id_to_copy),
         ExecuteMsg::CloseEndowment { id, beneficiary } => {
             executers::close_endowment(deps, env, info, id, beneficiary)
         }
@@ -122,11 +150,12 @@ pub fn receive_cw20(
         amount: cw20_msg.amount,
     };
     match from_binary(&cw20_msg.msg) {
-        Ok(ReceiveMsg::VaultReceipt { id }) => executers::vault_receipt(
+        Ok(ReceiveMsg::VaultReceipt { id, acct_type }) => executers::vault_receipt(
             deps,
             env,
             info.clone(),
             id,
+            acct_type,
             api.addr_validate(&cw20_msg.sender)?,
             cw20_fund,
         ),
@@ -154,10 +183,10 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 }
 
 #[entry_point]
-pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
+pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
-        QueryMsg::Balance { id } => to_binary(&queriers::query_account_balance(deps, env, id)?),
+        QueryMsg::Balance { id } => to_binary(&queriers::query_account_balance(deps, id)?),
         QueryMsg::State { id } => to_binary(&queriers::query_state(deps, id)?),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),
         QueryMsg::GetProfile { id } => to_binary(&queriers::query_profile(deps, id)?),

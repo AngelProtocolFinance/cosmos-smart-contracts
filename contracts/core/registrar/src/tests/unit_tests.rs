@@ -3,11 +3,11 @@ use angel_core::errors::core::*;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
-    AcceptedTokens, EndowmentStatus, EndowmentType, NetworkInfo, Profile, SocialMedialUrls,
-    SplitDetails, Tier,
+    AcceptedTokens, AccountType, EndowmentStatus, EndowmentType, NetworkInfo, Profile,
+    SocialMedialUrls, SplitDetails, Tier,
 };
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{coins, from_binary, Addr, Decimal, Event, Reply, SubMsgResponse, SubMsgResult};
+use cosmwasm_std::{coins, from_binary, Decimal, Event, Reply, SubMsgResponse, SubMsgResult};
 use cw_utils::Threshold;
 
 const MOCK_CW3_CODE_ID: u64 = 18;
@@ -368,6 +368,7 @@ fn test_add_update_and_remove_vault() {
     // add vault
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let add_vault_message = VaultAddMsg {
+        acct_type: AccountType::Locked,
         network: None,
         vault_addr: vault_addr.clone(),
         input_denom: String::from("input_denom"),
