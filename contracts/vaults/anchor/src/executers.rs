@@ -74,6 +74,10 @@ pub fn update_config(
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.moneymarket,
     };
+    config.sibling_vault = match msg.sibling_vault {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.sibling_vault,
+    };
 
     let anchor_config = anchor::config(deps.as_ref(), &config.moneymarket)?;
     config.yield_token = deps.api.addr_validate(&anchor_config.aterra_contract)?;
