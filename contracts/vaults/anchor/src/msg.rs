@@ -1,9 +1,11 @@
+use angel_core::structs::AccountType;
 use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InitMsg {
+    pub acct_type: AccountType,
     pub moneymarket: String,
     pub registrar_contract: String,
     pub tax_per_block: Decimal,
