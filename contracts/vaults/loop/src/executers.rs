@@ -977,8 +977,37 @@ pub fn send_asset(
     asset_info: AssetInfo,
     asset_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
-    // TODO!
-    Ok(Response::default())
+    // Validations
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Send the asset to the `beneficiary`
+    let asset_bal = query_asset_balance(deps.as_ref(), env.contract.address, asset_info.clone())?;
+    let send_amount = asset_bal
+        .checked_sub(asset_bal_before)
+        .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
+
+    let mut msgs = vec![];
+    match asset_info {
+        AssetInfo::NativeToken { denom } => msgs.push(CosmosMsg::Bank(BankMsg::Send {
+            to_address: beneficiary.to_string(),
+            amount: coins(send_amount.u128(), denom),
+        })),
+        AssetInfo::Token { contract_addr } => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr,
+            msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                recipient: beneficiary.to_string(),
+                amount: send_amount,
+            })
+            .unwrap(),
+            funds: vec![],
+        })),
+    };
+
+    Ok(Response::default()
+        .add_messages(msgs)
+        .add_attributes(vec![attr("action", "send_asset")]))
 }
 
 /// Prepare the messages for `(this contract::)add_liquidity` operation
