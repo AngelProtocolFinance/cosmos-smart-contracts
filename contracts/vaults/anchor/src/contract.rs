@@ -29,9 +29,9 @@ pub fn instantiate(
 
     let moneymarket = deps.api.addr_validate(&msg.moneymarket)?;
     let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
-    let sibling_vault = match msg.acct_type {
-        AccountType::Locked => env.contract.address, // Liquid Contract set on reply after instantiation
-        AccountType::Liquid => info.sender, // Locked Contract will setup it's Liquid sibling
+    let sibling_vault = match msg.sibling_vault {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => env.contract.address, // can set later with update_config
     };
     let config = config::Config {
         owner: info.sender,
