@@ -324,7 +324,7 @@ pub fn withdraw(
         msg: to_binary(&ExecuteMsg::RemoveLiquidity {
             lp_token_bal_before: lp_bal_query.balance,
             action: RemoveLiquidAction::Withdraw {
-                beneficiary: msg.beneficiary,
+                beneficiary: msg.beneficiary.clone(),
             },
         })
         .unwrap(),
@@ -332,13 +332,27 @@ pub fn withdraw(
     }));
 
     // Handle the reward LOOP tokens
+    // IMPORTANT: Atm, the reward token of loopswap farming contract is LOOP token
+    // Hence, we assume that the `config.loop_pair_contract` has the token pairs in which
+    // there is LOOP token, like LOOP-USDC, LOOP-JUNO.
     let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         config.loop_token.to_string(),
         &cw20::Cw20QueryMsg::Balance {
             address: env.contract.address.to_string(),
         },
     )?;
-    // TODO: Finsih this part after the `swap` entry completion
+    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::Swap {
+            beneficiary: Some(msg.beneficiary),
+            in_asset_info: terraswap::asset::AssetInfo::Token {
+                contract_addr: config.loop_token.to_string(),
+            },
+            in_asset_bal_before: reward_token_bal_query.balance,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
 
     Ok(Response::default().add_messages(msgs).add_attributes(vec![
         attr("action", "withdraw"),
@@ -1127,6 +1141,10 @@ fn prepare_loop_pair_swap_msg(
 }
 
 /// Contract entry: **swap**
+///
+/// IMPORTANT: Atm, the reward token of loopswap farming contract is LOOP token
+/// Hence, we assume that the `config.loop_pair_contract` has the token pairs
+/// in which there is LOOP token, like LOOP-USDC, LOOP-JUNO.
 pub fn swap(
     deps: DepsMut,
     env: Env,
@@ -1135,7 +1153,58 @@ pub fn swap(
     in_asset_info: AssetInfo,
     in_asset_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
-    Ok(Response::default())
+    // Validations
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let config: Config = CONFIG.load(deps.storage)?;
+    let pair_contract = config.loop_pair_contract.to_string();
+    let pair_info = query_pair_info_from_pair(&deps.querier, config.loop_pair_contract.clone())?;
+    let asset_infos = pair_info.asset_infos;
+    let out_asset_info = if in_asset_info == asset_infos[0] {
+        asset_infos[1].clone()
+    } else {
+        asset_infos[0].clone()
+    };
+    let out_asset_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        out_asset_info.clone(),
+    )?;
+
+    // First, compute the "swap_amount"
+    let asset_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        in_asset_info.clone(),
+    )?;
+    let swap_amount = asset_bal
+        .checked_sub(in_asset_bal_before)
+        .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
+
+    // Prepare the "loopswap::pair::swap" msg
+    let swap_msgs = prepare_loop_pair_swap_msg(&pair_contract, &in_asset_info, swap_amount)?;
+
+    // Handle the "beneficiary" if any
+    let mut send_asset_msg = vec![];
+    if let Some(beneficiary) = beneficiary {
+        send_asset_msg.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::SendAsset {
+                beneficiary,
+                asset_info: out_asset_info,
+                asset_bal_before: out_asset_bal,
+            })
+            .unwrap(),
+            funds: vec![],
+        }));
+    };
+
+    Ok(Response::default()
+        .add_messages(swap_msgs)
+        .add_messages(send_asset_msg)
+        .add_attributes(vec![attr("action", "swap")]))
 }
 
 /// Check if the `caller` is the `accounts_contract` address &
