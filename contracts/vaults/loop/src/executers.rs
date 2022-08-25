@@ -8,7 +8,8 @@ use terraswap::asset::{Asset, AssetInfo};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{
-    AccountWithdrawMsg, ExecuteMsg, LoopFarmingExecuteMsg, RemoveLiquidAction, UpdateConfigMsg,
+    AccountWithdrawMsg, ExecuteMsg, LoopFarmingExecuteMsg, LoopPairExecuteMsg, RemoveLiquidAction,
+    UpdateConfigMsg,
 };
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::structs::EndowmentEntry;
@@ -337,6 +338,7 @@ pub fn withdraw(
             address: env.contract.address.to_string(),
         },
     )?;
+    // TODO: Finsih this part after the `swap` entry completion
 
     Ok(Response::default().add_messages(msgs).add_attributes(vec![
         attr("action", "withdraw"),
@@ -863,93 +865,119 @@ pub fn remove_liquidity(
     lp_token_bal_before: Uint128,
     action: RemoveLiquidAction,
 ) -> Result<Response, ContractError> {
-    // // Validations
-    // if info.sender != env.contract.address {
-    //     return Err(ContractError::Unauthorized {});
-    // }
+    // Validations
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
 
-    // let config = CONFIG.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
+    let pair_info = query_pair_info_from_pair(&deps.querier, config.loop_pair_contract.clone())?;
+    let lp_token_contract = pair_info.liquidity_token;
+    let asset_infos = pair_info.asset_infos;
+    let pair_contract = config.loop_pair_contract;
 
-    // // First, compute the current "lp_token" balance
-    // let lp_token_bal_now: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-    //     config.pool_lp_token_addr.to_string(),
-    //     &cw20::Cw20QueryMsg::Balance {
-    //         address: env.contract.address.to_string(),
-    //     },
-    // )?;
+    // First, compute "unfarm"ed LP token balance for "remove_liquidity"
+    let lp_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        lp_token_contract.to_string(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
 
-    // // Compute the "lp_token" amount to be used for "remove_liquidity"
-    // let lp_token_amt = lp_token_bal_now
-    //     .balance
-    //     .checked_sub(lp_token_bal_before)
-    //     .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
+    let lp_token_amt = lp_token_bal_query
+        .balance
+        .checked_sub(lp_token_bal_before)
+        .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
 
-    // // Perform the "remove_liquidity"
-    // let mut res = Response::default();
-    // res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //     contract_addr: config.pool_lp_token_addr.to_string(),
-    //     msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-    //         spender: config.pool_addr.to_string(),
-    //         amount: lp_token_amt,
-    //         expires: None,
-    //     })
-    //     .unwrap(),
-    //     funds: vec![],
-    // }));
-    // res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //     contract_addr: config.pool_addr.to_string(),
-    //     msg: to_binary(&WasmSwapExecuteMsg::RemoveLiquidity {
-    //         amount: lp_token_amt,
-    //         min_token1: Uint128::zero(),
-    //         min_token2: Uint128::zero(),
-    //         expiration: None,
-    //     })
-    //     .unwrap(),
-    //     funds: vec![],
-    // }));
+    // Prepare the "remove_liquidity" messages
+    let mut withdraw_liquidity_msgs = vec![];
+    withdraw_liquidity_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: lp_token_contract.to_string(),
+        msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+            spender: pair_contract.to_string(),
+            amount: lp_token_amt,
+            expires: None,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
+    withdraw_liquidity_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: lp_token_contract.to_string(),
+        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+            contract: pair_contract.to_string(),
+            amount: lp_token_amt,
+            msg: to_binary(&LoopPairExecuteMsg::WithdrawLiquidity {}).unwrap(),
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
 
-    // // Handle the returning token pairs
-    // let token1_denom_bal = query_denom_balance(
-    //     &deps,
-    //     &config.input_denoms[0],
-    //     env.contract.address.to_string(),
-    // );
-    // let token2_denom_bal = query_denom_balance(
-    //     &deps,
-    //     &config.input_denoms[1],
-    //     env.contract.address.to_string(),
-    // );
-    // match action {
-    //     RemoveLiquidAction::Claim {} => {
-    //         todo!("Need to add claim logic")
-    //     }
-    //     RemoveLiquidAction::Withdraw { beneficiary } => {
-    //         res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //             contract_addr: env.contract.address.to_string(),
-    //             msg: to_binary(&ExecuteMsg::SwapAndSendTo {
-    //                 token1_denom_bal_before: token1_denom_bal,
-    //                 token2_denom_bal_before: token2_denom_bal,
-    //                 beneficiary,
-    //             })
-    //             .unwrap(),
-    //             funds: vec![],
-    //         }));
-    //     }
-    //     RemoveLiquidAction::Harvest => {
-    //         res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //             contract_addr: env.contract.address.to_string(),
-    //             msg: to_binary(&ExecuteMsg::HarvestSwap {
-    //                 token1_denom_bal_before: token1_denom_bal,
-    //                 token2_denom_bal_before: token2_denom_bal,
-    //             })
-    //             .unwrap(),
-    //             funds: vec![],
-    //         }));
-    //     }
-    // }
+    // Handle the returning token pairs
+    let mut consequence_msgs = vec![];
+    let asset_0_bal_before = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        asset_infos[0].clone(),
+    )?;
+    let asset_1_bal_before = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        asset_infos[1].clone(),
+    )?;
+    match action {
+        RemoveLiquidAction::Withdraw { beneficiary } => {
+            consequence_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_binary(&ExecuteMsg::SendAsset {
+                    beneficiary: beneficiary.clone(),
+                    asset_info: asset_infos[0].clone(),
+                    asset_bal_before: asset_0_bal_before,
+                })
+                .unwrap(),
+                funds: vec![],
+            }));
+            consequence_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: env.contract.address.to_string(),
+                msg: to_binary(&ExecuteMsg::SendAsset {
+                    beneficiary,
+                    asset_info: asset_infos[1].clone(),
+                    asset_bal_before: asset_1_bal_before,
+                })
+                .unwrap(),
+                funds: vec![],
+            }));
+        }
+        RemoveLiquidAction::Claim {} => {
+            todo!("Need to add claim logic")
+        }
+        RemoveLiquidAction::Harvest => {
+            // res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+            //     contract_addr: env.contract.address.to_string(),
+            //     msg: to_binary(&ExecuteMsg::HarvestSwap {
+            //         token1_denom_bal_before: token1_denom_bal,
+            //         token2_denom_bal_before: token2_denom_bal,
+            //     })
+            //     .unwrap(),
+            //     funds: vec![],
+            // }));
+        }
+    }
 
-    // Ok(res)
+    Ok(Response::default()
+        .add_messages(withdraw_liquidity_msgs)
+        .add_messages(consequence_msgs)
+        .add_attributes(vec![attr("action", "remove_liquidity")]))
+}
 
+pub fn send_asset(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    beneficiary: Addr,
+    asset_info: AssetInfo,
+    asset_bal_before: Uint128,
+) -> Result<Response, ContractError> {
+    // TODO!
     Ok(Response::default())
 }
 

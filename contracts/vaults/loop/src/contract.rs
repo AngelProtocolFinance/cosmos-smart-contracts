@@ -162,6 +162,11 @@ pub fn execute(
             in_asset_info,
             in_asset_bal_before,
         ),
+        ExecuteMsg::SendAsset {
+            beneficiary,
+            asset_info,
+            asset_bal_before,
+        } => executers::send_asset(deps, env, info, beneficiary, asset_info, asset_bal_before),
     }
 }
 

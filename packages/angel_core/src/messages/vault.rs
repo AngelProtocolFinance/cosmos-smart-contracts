@@ -2,7 +2,7 @@ use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use terraswap::asset::AssetInfo;
+use terraswap::asset::Asset;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -68,8 +68,13 @@ pub enum ExecuteMsg {
     },
     Swap {
         beneficiary: Option<Addr>,
-        in_asset_info: AssetInfo,
+        in_asset_info: terraswap::asset::AssetInfo,
         in_asset_bal_before: Uint128,
+    },
+    SendAsset {
+        beneficiary: Addr,
+        asset_info: terraswap::asset::AssetInfo,
+        asset_bal_before: Uint128,
     },
     Receive(Cw20ReceiveMsg),
 }
@@ -131,4 +136,18 @@ pub enum LoopFarmingExecuteMsg {
     Stake {},           // Farm action. Stake LP token.(param: amount in `send` msg)
     UnstakeAndClaim {}, // Unfarm action. Unstake farmed LP token & rewards.(param: amount in `send` msg)
     ClaimReward {},     // Claim the reward. Enabled just after `stake`
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum LoopPairExecuteMsg {
+    Swap {
+        offer_asset: Asset,
+        belief_price: Option<Decimal>,
+        max_spread: Option<Decimal>,
+    },
+    ProvideLiquidity {
+        assets: [Asset; 2],
+    },
+    WithdrawLiquidity {},
 }
