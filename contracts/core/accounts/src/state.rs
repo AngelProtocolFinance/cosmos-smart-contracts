@@ -1,4 +1,4 @@
-use angel_core::structs::{BalanceInfo, Profile, RebalanceDetails, StrategyComponent};
+use angel_core::structs::{AccountStrategies, BalanceInfo, Profile, RebalanceDetails};
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -21,7 +21,7 @@ pub struct Endowment {
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
-    pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
+    pub strategies: AccountStrategies,  // list of vaults and percentage for locked/liquid accounts
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
     pub profile: Profile,

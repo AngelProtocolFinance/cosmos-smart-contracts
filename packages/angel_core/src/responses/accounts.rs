@@ -1,4 +1,4 @@
-use crate::structs::{RebalanceDetails, SocialMedialUrls, StrategyComponent, TransactionRecord};
+use crate::structs::{AccountStrategies, RebalanceDetails, SocialMedialUrls, TransactionRecord};
 use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -23,7 +23,7 @@ pub struct EndowmentDetailsResponse {
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
-    pub strategies: Vec<StrategyComponent>,
+    pub strategies: AccountStrategies,
     pub rebalance: RebalanceDetails,
     pub kyc_donors_only: bool,
     pub deposit_approved: bool,
