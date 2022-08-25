@@ -698,7 +698,7 @@ pub fn vault_receipt(
             })?,
         }))?;
 
-    let mut submessages: Vec<SubMsg> = vec![];
+    let mut deposit_package: (Vec<SubMsg>, Uint128) = (vec![], Uint128::zero());
     match endowment.pending_redemptions {
         0 => {
             // add returned tokens back to that endowment's locked balance
@@ -732,13 +732,17 @@ pub fn vault_receipt(
                     AssetInfoBase::Cw1155(_, _) => unimplemented!(),
                 };
                 let leftovers: Asset;
-                (submessages, leftovers) = deposit_to_vaults(
+                deposit_package = deposit_to_vaults(
                     deps.as_ref(),
                     config.registrar_contract.to_string(),
                     id.clone(),
-                    asset,
+                    asset.clone(),
                     &endowment.strategies.get_strategy(acct_type),
                 )?;
+                leftovers = Asset {
+                    info: asset.info,
+                    amount: deposit_package.1,
+                };
 
                 // set any remaining tokens to the locked balance "Tokens on Hand"
                 state
@@ -789,20 +793,22 @@ pub fn vault_receipt(
                 };
                 match state.closing_beneficiary {
                     Some(ref addr) => match asset {
-                        Balance::Native(v) => submessages.push(SubMsg::new(BankMsg::Send {
+                        Balance::Native(v) => deposit_package.0.push(SubMsg::new(BankMsg::Send {
                             to_address: deps.api.addr_validate(addr)?.to_string(),
                             amount: v.0,
                         })),
                         Balance::Cw20(v) => {
-                            submessages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                                contract_addr: v.address.to_string(),
-                                msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-                                    recipient: addr.to_string(),
-                                    amount: v.amount,
-                                })
-                                .unwrap(),
-                                funds: vec![],
-                            })));
+                            deposit_package.0.push(SubMsg::new(CosmosMsg::Wasm(
+                                WasmMsg::Execute {
+                                    contract_addr: v.address.to_string(),
+                                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                                        recipient: addr.to_string(),
+                                        amount: v.amount,
+                                    })
+                                    .unwrap(),
+                                    funds: vec![],
+                                },
+                            )));
                         }
                     },
                     None => {
@@ -828,7 +834,7 @@ pub fn vault_receipt(
                         if !fund_list.funds.is_empty() {
                             // send funds to the first index fund in list
                             match asset {
-                                Balance::Native(v) => submessages.push(SubMsg::new(
+                                Balance::Native(v) => deposit_package.0.push(SubMsg::new(
                                     CosmosMsg::Wasm(WasmMsg::Execute {
                                         contract_addr: index_fund,
                                         msg: to_binary(&IndexFundExecuter::Deposit(
@@ -840,8 +846,8 @@ pub fn vault_receipt(
                                         funds: v.0,
                                     }),
                                 )),
-                                Balance::Cw20(v) => submessages.push(SubMsg::new(CosmosMsg::Wasm(
-                                    WasmMsg::Execute {
+                                Balance::Cw20(v) => deposit_package.0.push(SubMsg::new(
+                                    CosmosMsg::Wasm(WasmMsg::Execute {
                                         contract_addr: v.address.to_string(),
                                         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                                             contract: index_fund,
@@ -856,21 +862,21 @@ pub fn vault_receipt(
                                         })
                                         .unwrap(),
                                         funds: vec![],
-                                    },
-                                ))),
+                                    }),
+                                )),
                             }
                         } else {
                             // Orphaned Endowment (ie. no parent index fund)
                             // send funds to the DANO treasury
                             match asset {
                                 Balance::Native(v) => {
-                                    submessages.push(SubMsg::new(BankMsg::Send {
+                                    deposit_package.0.push(SubMsg::new(BankMsg::Send {
                                         to_address: registrar_config.treasury,
                                         amount: v.0,
                                     }))
                                 }
-                                Balance::Cw20(v) => submessages.push(SubMsg::new(CosmosMsg::Wasm(
-                                    WasmMsg::Execute {
+                                Balance::Cw20(v) => deposit_package.0.push(SubMsg::new(
+                                    CosmosMsg::Wasm(WasmMsg::Execute {
                                         contract_addr: v.address.to_string(),
                                         msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
                                             recipient: registrar_config.treasury,
@@ -878,8 +884,8 @@ pub fn vault_receipt(
                                         })
                                         .unwrap(),
                                         funds: vec![],
-                                    },
-                                ))),
+                                    }),
+                                )),
                             }
                         }
                     }
@@ -909,7 +915,7 @@ pub fn vault_receipt(
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new()
-        .add_submessages(submessages)
+        .add_submessages(deposit_package.0)
         .add_attribute("action", "vault_receipt"))
 }
 
@@ -1015,15 +1021,20 @@ pub fn deposit(
         if !locked_strategies.is_empty() {
             // if not empty: build deposit messages for each of the sources/amounts
             let leftovers: Asset;
-            let messages: Vec<SubMsg>;
-            (messages, leftovers) = deposit_to_vaults(
+            let (messages, leftover_amt) = deposit_to_vaults(
                 deps.as_ref(),
                 config.registrar_contract.to_string(),
                 msg.id.clone(),
-                locked_amount,
+                locked_amount.clone(),
                 &locked_strategies,
             )?;
-            messages.iter().map(|m| deposit_messages.push(m.clone()));
+            leftovers = Asset {
+                info: locked_amount.info,
+                amount: leftover_amt,
+            };
+            for m in messages.iter() {
+                deposit_messages.push(m.clone());
+            }
             // If invested portion of strategies < 100% there will be leftover deposits
             // Add any remaining deposited tokens to the locked balance "Tokens on Hand"
             state
@@ -1046,15 +1057,20 @@ pub fn deposit(
         if !liquid_strategies.is_empty() {
             // if not empty: build deposit messages for each of the sources/amounts
             let leftovers: Asset;
-            let messages: Vec<SubMsg>;
-            (messages, leftovers) = deposit_to_vaults(
+            let (messages, leftover_amt) = deposit_to_vaults(
                 deps.as_ref(),
                 config.registrar_contract.to_string(),
                 msg.id.clone(),
-                liquid_amount,
+                liquid_amount.clone(),
                 &liquid_strategies,
             )?;
-            messages.iter().map(|m| deposit_messages.push(m.clone()));
+            leftovers = Asset {
+                info: liquid_amount.info,
+                amount: leftover_amt,
+            };
+            for m in messages.iter() {
+                deposit_messages.push(m.clone());
+            }
             // If invested portion of strategies < 100% there will be leftover deposits
             // Add any remaining deposited tokens to the liquid balance "Tokens on Hand"
             state

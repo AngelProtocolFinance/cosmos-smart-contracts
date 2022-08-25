@@ -290,7 +290,7 @@ pub fn deposit_to_vaults(
     endowment_id: u32,
     fund: Asset,
     strategies: &[StrategyComponent],
-) -> Result<(Vec<SubMsg>, Asset), ContractError> {
+) -> Result<(Vec<SubMsg>, Uint128), ContractError> {
     // deduct all deposited amounts from the orig amount
     // tracks how much of the locked funds are leftover
     let mut leftovers_amt = fund.amount.clone();
@@ -348,13 +348,7 @@ pub fn deposit_to_vaults(
             AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         }
     }
-    Ok((
-        deposit_messages,
-        Asset {
-            info: fund.info,
-            amount: leftovers_amt,
-        },
-    ))
+    Ok((deposit_messages, leftovers_amt))
 }
 
 /// Check if the given "token"(denom or contract address) is in "accepted_tokens" list.  
