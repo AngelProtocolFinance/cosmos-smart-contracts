@@ -726,7 +726,7 @@ fn prepare_loop_pair_provide_liquidity_msgs(
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: loop_pair_contract.to_string(),
-        msg: to_binary(&terraswap::pair::ExecuteMsg::ProvideLiquidity {
+        msg: to_binary(&LoopPairExecuteMsg::ProvideLiquidity {
             assets: [
                 Asset {
                     info: token1_asset_info,
@@ -737,8 +737,6 @@ fn prepare_loop_pair_provide_liquidity_msgs(
                     amount: token2_amount,
                 },
             ],
-            slippage_tolerance: None,
-            receiver: None,
         })
         .unwrap(),
         funds,
@@ -1073,14 +1071,13 @@ fn prepare_loop_pair_swap_msg(
         AssetInfo::NativeToken { denom } => {
             msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: pair_contract.to_string(),
-                msg: to_binary(&terraswap::pair::ExecuteMsg::Swap {
+                msg: to_binary(&LoopPairExecuteMsg::Swap {
                     offer_asset: Asset {
                         info: input_asset_info.clone(),
                         amount: input_amount,
                     },
                     belief_price: None,
                     max_spread: None,
-                    to: None,
                 })?,
                 funds: vec![Coin {
                     denom: denom.to_string(),
@@ -1094,14 +1091,13 @@ fn prepare_loop_pair_swap_msg(
                 msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                     contract: pair_contract.to_string(),
                     amount: input_amount,
-                    msg: to_binary(&terraswap::pair::ExecuteMsg::Swap {
+                    msg: to_binary(&LoopPairExecuteMsg::Swap {
                         offer_asset: Asset {
                             info: input_asset_info.clone(),
                             amount: input_amount,
                         },
                         belief_price: None,
                         max_spread: None,
-                        to: None,
                     })
                     .unwrap(),
                 })
