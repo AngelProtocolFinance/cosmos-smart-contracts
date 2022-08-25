@@ -23,6 +23,7 @@ fn create_mock_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMo
         loop_factory_contract: "loop-factory".to_string(),
         loop_farming_contract: "loop-farming".to_string(),
         loop_pair_contract: "loop-pair".to_string(),
+        loop_token: "loop-token".to_string(),
 
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
@@ -47,6 +48,7 @@ fn proper_instantiation() {
         loop_factory_contract: "loop-factory".to_string(),
         loop_farming_contract: "loop-farming".to_string(),
         loop_pair_contract: "loop-pair".to_string(),
+        loop_token: "loop-token".to_string(),
 
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),

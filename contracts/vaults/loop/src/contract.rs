@@ -150,6 +150,18 @@ pub fn execute(
             endowment_id,
             lp_token_bal_before,
         } => executers::stake_lp_token(deps, env, info, endowment_id, lp_token_bal_before),
+        ExecuteMsg::Swap {
+            beneficiary,
+            in_asset_info,
+            in_asset_bal_before,
+        } => executers::swap(
+            deps,
+            env,
+            info,
+            beneficiary,
+            in_asset_info,
+            in_asset_bal_before,
+        ),
     }
 }
 

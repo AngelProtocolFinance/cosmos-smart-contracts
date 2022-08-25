@@ -330,7 +330,7 @@ pub fn withdraw(
         funds: vec![],
     }));
 
-    // Handle the reward LP tokens
+    // Handle the reward LOOP tokens
     let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         config.loop_token.to_string(),
         &cw20::Cw20QueryMsg::Balance {
@@ -1023,33 +1023,62 @@ fn prepare_loop_pair_swap_msg(
             funds: vec![],
         }));
     }
-    let funds = match input_asset_info {
+
+    match input_asset_info {
         AssetInfo::NativeToken { denom } => {
-            vec![Coin {
-                denom: denom.to_string(),
-                amount: input_amount,
-            }]
+            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: pair_contract.to_string(),
+                msg: to_binary(&terraswap::pair::ExecuteMsg::Swap {
+                    offer_asset: Asset {
+                        info: input_asset_info.clone(),
+                        amount: input_amount,
+                    },
+                    belief_price: None,
+                    max_spread: None,
+                    to: None,
+                })?,
+                funds: vec![Coin {
+                    denom: denom.to_string(),
+                    amount: input_amount,
+                }],
+            }));
         }
-        _ => {
-            vec![]
+        AssetInfo::Token { contract_addr } => {
+            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: contract_addr.to_string(),
+                msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                    contract: pair_contract.to_string(),
+                    amount: input_amount,
+                    msg: to_binary(&terraswap::pair::ExecuteMsg::Swap {
+                        offer_asset: Asset {
+                            info: input_asset_info.clone(),
+                            amount: input_amount,
+                        },
+                        belief_price: None,
+                        max_spread: None,
+                        to: None,
+                    })
+                    .unwrap(),
+                })
+                .unwrap(),
+                funds: vec![],
+            }));
         }
     };
 
-    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: pair_contract.to_string(),
-        msg: to_binary(&terraswap::pair::ExecuteMsg::Swap {
-            offer_asset: Asset {
-                info: input_asset_info.clone(),
-                amount: input_amount,
-            },
-            belief_price: None,
-            max_spread: None,
-            to: None,
-        })?,
-        funds,
-    }));
-
     Ok(msgs)
+}
+
+/// Contract entry: **swap**
+pub fn swap(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    beneficiary: Option<Addr>,
+    in_asset_info: AssetInfo,
+    in_asset_bal_before: Uint128,
+) -> Result<Response, ContractError> {
+    Ok(Response::default())
 }
 
 /// Check if the `caller` is the `accounts_contract` address &

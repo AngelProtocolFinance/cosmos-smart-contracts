@@ -2,6 +2,7 @@ use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use terraswap::asset::AssetInfo;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -64,6 +65,11 @@ pub enum ExecuteMsg {
     Stake {
         endowment_id: u32,
         lp_token_bal_before: Uint128,
+    },
+    Swap {
+        beneficiary: Option<Addr>,
+        in_asset_info: AssetInfo,
+        in_asset_bal_before: Uint128,
     },
     Receive(Cw20ReceiveMsg),
 }
