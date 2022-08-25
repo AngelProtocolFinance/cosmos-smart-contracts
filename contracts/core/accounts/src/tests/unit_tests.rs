@@ -3,7 +3,7 @@ use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
-use angel_core::structs::{EndowmentType, GenericBalance, Profile, SocialMedialUrls};
+use angel_core::structs::{AccountType, EndowmentType, GenericBalance, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{attr, coins, from_binary, to_binary, Coin, Decimal, OwnedDeps, Uint128};
 use cw20::Cw20ReceiveMsg;
@@ -261,9 +261,10 @@ fn test_change_admin() {
 fn test_update_strategy() {
     let (mut deps, endow_details) = create_endowment();
 
-    // sum of the invested strategy components percentages is not equal 100%
+    // sum of the invested strategy components percentages is over 100%
     let msg = ExecuteMsg::UpdateStrategies {
         id: CHARITY_ID,
+        acct_type: AccountType::Locked,
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
@@ -271,7 +272,7 @@ fn test_update_strategy() {
             },
             Strategy {
                 vault: "tech_strategy_component_addr".to_string(),
-                percentage: Decimal::percent(60),
+                percentage: Decimal::percent(80),
             },
         ],
     };
@@ -282,6 +283,7 @@ fn test_update_strategy() {
 
     let msg = ExecuteMsg::UpdateStrategies {
         id: CHARITY_ID,
+        acct_type: AccountType::Locked,
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
@@ -304,6 +306,7 @@ fn test_update_strategy() {
 
     let msg = ExecuteMsg::UpdateStrategies {
         id: CHARITY_ID,
+        acct_type: AccountType::Locked,
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
@@ -321,6 +324,7 @@ fn test_update_strategy() {
 
     let msg = ExecuteMsg::UpdateStrategies {
         id: CHARITY_ID,
+        acct_type: AccountType::Locked,
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
@@ -435,7 +439,7 @@ fn test_update_endowment_profile() {
 
 #[test]
 fn test_donate() {
-    let (mut deps, _endow_details) = create_endowment();
+    let (mut deps, endow_details) = create_endowment();
 
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
@@ -446,9 +450,9 @@ fn test_donate() {
     });
     let _res = execute(deps.as_mut(), mock_env(), info, update_status_msg).unwrap();
 
-    // Try the "Deposit"
+    // Try the "Deposit" w/o "Auto Invest" turned on. No Vault deposits should take place.
     let donation_amt = 200_u128;
-    let info = mock_info(DEPOSITOR, &coins(donation_amt, "uluna"));
+    let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         id: CHARITY_ID,
         locked_percentage: Decimal::percent(50),
@@ -456,7 +460,7 @@ fn test_donate() {
     });
     let res = execute(deps.as_mut(), mock_env(), info, deposit_msg).unwrap();
 
-    assert_eq!(res.attributes.len(), 3);
+    assert_eq!(res.attributes.len(), 1);
 
     // Check the "STATE" for "transactions" field
     let query_res = query(
@@ -467,6 +471,54 @@ fn test_donate() {
     .unwrap();
     let state: StateResponse = from_binary(&query_res).unwrap();
     assert_eq!(state.donations_received.u128(), donation_amt);
+
+    // Update the Endowment status to enable onward vault deposits
+    let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));
+    // update "Auto Invest" to TRUE
+    let msg = UpdateEndowmentSettingsMsg {
+        id: CHARITY_ID,
+        owner: CHARITY_ADDR.to_string(),
+        kyc_donors_only: false,
+        auto_invest: true,
+    };
+    let env = mock_env();
+    let res = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::UpdateEndowmentSettings(msg),
+    )
+    .unwrap();
+    assert_eq!(1, res.messages.len());
+
+    let _vaults_res = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        ExecuteMsg::UpdateStrategies {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            strategies: [Strategy {
+                vault: "tech_strategy_component_addr".to_string(),
+                percentage: Decimal::percent(60),
+            }]
+            .to_vec(),
+        },
+    )
+    .unwrap();
+    assert_eq!(1, res.messages.len());
+
+    // Try the "Deposit" w/ "Auto Invest" turned on. Vault deposits should now take place.
+    let donation_amt = 200_u128;
+    let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));
+    let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
+        id: CHARITY_ID,
+        locked_percentage: Decimal::percent(50),
+        liquid_percentage: Decimal::percent(50),
+    });
+    let res = execute(deps.as_mut(), mock_env(), info, deposit_msg).unwrap();
+
+    assert_eq!(res.attributes.len(), 2);
 }
 
 #[test]
@@ -497,7 +549,7 @@ fn test_deposit_cw20() {
     });
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
 
-    assert_eq!(res.attributes.len(), 3);
+    assert_eq!(res.attributes.len(), 1);
 }
 
 #[test]
@@ -515,7 +567,7 @@ fn test_withdraw() {
 
     // Try the "Deposit"
     let donation_amt = 200_u128;
-    let info = mock_info(DEPOSITOR, &coins(donation_amt, "uluna"));
+    let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         id: CHARITY_ID,
         locked_percentage: Decimal::percent(50),
@@ -549,7 +601,7 @@ fn test_withdraw_liquid() {
 
     // Try the "Deposit"
     let donation_amt = 200_u128;
-    let info = mock_info(DEPOSITOR, &coins(donation_amt, "uluna"));
+    let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));
     let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
         id: CHARITY_ID,
         locked_percentage: Decimal::percent(50),
@@ -565,7 +617,7 @@ fn test_withdraw_liquid() {
         beneficiary: "beneficiary".to_string(),
         assets: GenericBalance {
             native: vec![Coin {
-                denom: "uluna".to_string(),
+                denom: "ujuno".to_string(),
                 amount: Uint128::from(1000_u128),
             }],
             cw20: vec![],
@@ -581,7 +633,7 @@ fn test_withdraw_liquid() {
         beneficiary: "beneficiary".to_string(),
         assets: GenericBalance {
             native: vec![Coin {
-                denom: "uluna".to_string(),
+                denom: "ujuno".to_string(),
                 amount: Uint128::from(10_u128),
             }],
             cw20: vec![],
@@ -611,7 +663,10 @@ fn test_vault_receipt() {
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::VaultReceipt { id: CHARITY_ID },
+        ExecuteMsg::VaultReceipt {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+        },
     )
     .unwrap_err();
     assert_eq!(err, ContractError::InvalidCoinsDeposited {});
@@ -620,7 +675,7 @@ fn test_vault_receipt() {
     let info = mock_info(
         "vault",
         &[Coin {
-            denom: "uluna".to_string(),
+            denom: "ujuno".to_string(),
             amount: Uint128::from(100_u128),
         }],
     );
@@ -628,7 +683,10 @@ fn test_vault_receipt() {
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::VaultReceipt { id: CHARITY_ID },
+        ExecuteMsg::VaultReceipt {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+        },
     )
     .unwrap();
     assert_eq!(0, res.messages.len());
@@ -636,6 +694,7 @@ fn test_vault_receipt() {
     // First, update the "config.pending_redemptions"
     let msg = ExecuteMsg::UpdateStrategies {
         id: CHARITY_ID,
+        acct_type: AccountType::Locked,
         strategies: vec![
             Strategy {
                 vault: "cash_strategy_component_addr".to_string(),
@@ -657,13 +716,13 @@ fn test_vault_receipt() {
     )
     .unwrap();
     let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
-    assert_eq!(2, endow.strategies.len());
+    assert_eq!(2, endow.strategies.locked.len());
 
     // Success, check if the "config.redemptions" is decreased
     let info = mock_info(
         "vault",
         &[Coin {
-            denom: "uluna".to_string(),
+            denom: "ujuno".to_string(),
             amount: Uint128::from(100_u128),
         }],
     );
@@ -671,7 +730,10 @@ fn test_vault_receipt() {
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::VaultReceipt { id: CHARITY_ID },
+        ExecuteMsg::VaultReceipt {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+        },
     )
     .unwrap();
     assert_eq!(0, res.messages.len());
