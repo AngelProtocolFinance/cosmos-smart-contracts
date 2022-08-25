@@ -159,6 +159,14 @@ pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Con
         return Err(ContractError::Unauthorized {});
     }
 
+    let msgs = prepare_claim_harvest_msgs(deps.as_ref(), env, &config)?;
+
+    Ok(Response::default()
+        .add_messages(msgs)
+        .add_attributes(vec![attr("action", "claim")]))
+}
+
+fn prepare_claim_harvest_msgs(deps: Deps, env: Env, config: &Config) -> StdResult<Vec<CosmosMsg>> {
     // Performs the "claim"
     let mut msgs = vec![];
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -176,9 +184,7 @@ pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Con
     )?;
     // TODO! Add the logic of "convert LOOP token to Pair_LP token & re-stake"
 
-    Ok(Response::default()
-        .add_messages(msgs)
-        .add_attributes(vec![attr("action", "claim")]))
+    Ok(msgs)
 }
 
 /// Contract entry: **withdraw**
@@ -297,55 +303,18 @@ pub fn withdraw(
 ///   3. Compute and send the tax(USDC) to AP treasury
 ///   4. Re-stake the leftover by converting it to LP token & `loopswap::farming::stake`
 pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    // let config = CONFIG.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
 
-    // // Validations
-    // if info.sender != config.keeper {
-    //     return Err(ContractError::Unauthorized {});
-    // }
+    // Validations
+    if info.sender != config.keeper {
+        return Err(ContractError::Unauthorized {});
+    }
 
-    // // First, check if any staking reward does exist
-    // let claims_resp: ClaimsResponse = deps.querier.query_wasm_smart(
-    //     config.staking_addr.to_string(),
-    //     &DaoStakeCw20QueryMsg::Claims {
-    //         address: env.contract.address.to_string(),
-    //     },
-    // )?;
-    // if claims_resp.claims.len() == 0 {
-    //     return Err(ContractError::Std(StdError::GenericErr {
-    //         msg: "Nothing to claim".to_string(),
-    //     }));
-    // }
+    let msgs = prepare_claim_harvest_msgs(deps.as_ref(), env, &config)?;
 
-    // // If any staking reward, ask it for harvest
-    // let mut res = Response::default();
-    // res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //     contract_addr: config.staking_addr.to_string(),
-    //     msg: to_binary(&DaoStakeCw20ExecuteMsg::Claim {}).unwrap(),
-    //     funds: vec![],
-    // }));
-
-    // // Call the "remove_liquidity" entry with the reward_lp_tokens &
-    // // Handle the returning lp tokens
-    // let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-    //     config.pool_lp_token_addr,
-    //     &cw20::Cw20QueryMsg::Balance {
-    //         address: env.contract.address.to_string(),
-    //     },
-    // )?;
-    // res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //     contract_addr: env.contract.address.to_string(),
-    //     msg: to_binary(&ExecuteMsg::RemoveLiquidity {
-    //         lp_token_bal_before: lp_token_bal.balance,
-    //         action: RemoveLiquidAction::Harvest,
-    //     })
-    //     .unwrap(),
-    //     funds: vec![],
-    // }));
-
-    // Ok(res)
-
-    Ok(Response::default())
+    Ok(Response::default()
+        .add_messages(msgs)
+        .add_attributes(vec![attr("action", "harvest")]))
 }
 
 /// Contract entry: **add_liquidity**
