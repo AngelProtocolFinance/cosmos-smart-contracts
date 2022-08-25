@@ -56,6 +56,7 @@ pub enum ExecuteMsg {
     // Invest TOH funds to a Vault
     VaultInvest {
         id: u32,
+        acct_type: AccountType,
         asset: AssetInfo,
         amount: Uint128,
         vault: String,
@@ -63,12 +64,14 @@ pub enum ExecuteMsg {
     // Redeem TOH funds from a Vault
     VaultRedeem {
         id: u32,
+        acct_type: AccountType,
         amount: Uint128,
         vault: String,
     },
     // set another endowment's strategy to "copycat" as your own
     CopycatStrategies {
         id: u32,
+        acct_type: AccountType,
         id_to_copy: u32,
     },
     // pull all funds out of an endowment's strategies vaults once all
@@ -76,6 +79,7 @@ pub enum ExecuteMsg {
     // into the vaults at the current strategies % allocations
     RebalanceStrategies {
         id: u32,
+        acct_type: AccountType,
     },
     // create a new endowment
     CreateEndowment(CreateEndowmentMsg),
@@ -100,6 +104,7 @@ pub enum ExecuteMsg {
     // Replace an Account's Strategy with that given.
     UpdateStrategies {
         id: u32,
+        acct_type: AccountType,
         strategies: Vec<Strategy>,
     },
     // Update Endowment profile

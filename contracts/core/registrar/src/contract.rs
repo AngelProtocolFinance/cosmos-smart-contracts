@@ -124,6 +124,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::VaultList {
             network,
             endowment_type,
+            acct_type,
             approved,
             start_after,
             limit,
@@ -131,6 +132,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             deps,
             network,
             endowment_type,
+            acct_type,
             approved,
             start_after,
             limit,

@@ -96,28 +96,36 @@ pub fn execute(
         } => executers::withdraw_liquid(deps, env, info, id, beneficiary, assets),
         ExecuteMsg::VaultInvest {
             id,
+            acct_type,
             asset,
             amount,
             vault,
-        } => executers::vault_invest(deps, env, info, id, asset, amount, vault),
-        ExecuteMsg::VaultRedeem { id, amount, vault } => {
-            executers::vault_redeem(deps, env, info, id, amount, vault)
-        }
+        } => executers::vault_invest(deps, env, info, id, acct_type, asset, amount, vault),
+        ExecuteMsg::VaultRedeem {
+            id,
+            acct_type,
+            amount,
+            vault,
+        } => executers::vault_redeem(deps, env, info, id, acct_type, amount, vault),
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
         }
-        ExecuteMsg::UpdateStrategies { id, strategies } => {
-            executers::update_strategies(deps, env, info, id, strategies)
-        }
-        ExecuteMsg::RebalanceStrategies { id } => {
+        ExecuteMsg::UpdateStrategies {
+            id,
+            acct_type,
+            strategies,
+        } => executers::update_strategies(deps, env, info, id, acct_type, strategies),
+        ExecuteMsg::RebalanceStrategies { id, acct_type } => {
             executers::rebalance_strategies(deps, env, info, id)
         }
-        ExecuteMsg::CopycatStrategies { id, id_to_copy } => {
-            executers::copycat_strategies(deps, info, id, id_to_copy)
-        }
+        ExecuteMsg::CopycatStrategies {
+            id,
+            acct_type,
+            id_to_copy,
+        } => executers::copycat_strategies(deps, info, id, id_to_copy),
         ExecuteMsg::CloseEndowment { id, beneficiary } => {
             executers::close_endowment(deps, env, info, id, beneficiary)
         }

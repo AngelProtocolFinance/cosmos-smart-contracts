@@ -293,6 +293,7 @@ pub fn update_strategies(
     _env: Env,
     info: MessageInfo,
     id: u32,
+    acct_type: AccountType,
     strategies: Vec<Strategy>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
@@ -324,6 +325,7 @@ pub fn update_strategies(
         msg: to_binary(&RegistrarQuerier::VaultList {
             approved: Some(true),
             endowment_type: Some(endowment.profile.endow_type.clone()),
+            acct_type: Some(acct_type),
             network: None,
             start_after: None,
             limit: None,
@@ -1069,7 +1071,7 @@ pub fn withdraw(
         .add_attribute("beneficiary", beneficiary))
 }
 
-/// Allow Endowment owners to invest some amount of their Locked Balance
+/// Allow Endowment owners to invest some amount of their free balance
 /// "Tokens on Hand" holdings into a Vault. Does not have to be a Vault
 /// that exists in their Strategy. One-time/one-off investment.
 pub fn vault_invest(
@@ -1077,6 +1079,7 @@ pub fn vault_invest(
     _env: Env,
     info: MessageInfo,
     id: u32,
+    acct_type: AccountType,
     asset: AssetInfo,
     amount: Uint128,
     vault: String,
@@ -1148,6 +1151,7 @@ pub fn vault_redeem(
     _env: Env,
     info: MessageInfo,
     id: u32,
+    acct_type: AccountType,
     amount: Uint128,
     vault: String,
 ) -> Result<Response, ContractError> {

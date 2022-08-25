@@ -4,7 +4,7 @@ use angel_core::responses::accounts::*;
 use angel_core::responses::registrar::VaultListResponse;
 use angel_core::structs::{AccountType, BalanceInfo};
 use angel_core::utils::vault_endowment_balance;
-use cosmwasm_std::{to_binary, Deps, Env, QueryRequest, StdResult, Uint128, WasmQuery};
+use cosmwasm_std::{to_binary, Deps, QueryRequest, StdResult, Uint128, WasmQuery};
 use cw2::get_contract_version;
 use cw20::{Balance, Cw20CoinVerified};
 use cw_asset::AssetInfo;
@@ -43,6 +43,7 @@ pub fn query_account_balance(deps: Deps, id: u32) -> StdResult<BalanceInfo> {
             msg: to_binary(&RegistrarQuerier::VaultList {
                 network: None,
                 endowment_type: None,
+                acct_type: None,
                 approved: None,
                 start_after: None,
                 limit: None,

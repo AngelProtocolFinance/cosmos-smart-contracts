@@ -28,7 +28,7 @@ pub enum ExecuteMsg {
     },
     Redeem {
         endowment_id: u32,
-        amount: Uint128, // tokens to be redeemed
+        amount: Uint128, // vault tokens to be burned
     },
     Withdraw(AccountWithdrawMsg),
     Harvest {

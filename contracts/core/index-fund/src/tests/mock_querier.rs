@@ -242,6 +242,7 @@ impl WasmMockQuerier {
                             yield_token: Addr::unchecked("yield-token").to_string(),
                             approved: true,
                             restricted_from: vec![],
+                            acct_type: AccountType::Locked,
                         },
                     })
                     .unwrap(),

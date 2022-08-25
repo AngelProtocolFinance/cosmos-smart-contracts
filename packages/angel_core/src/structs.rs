@@ -74,6 +74,7 @@ pub struct YieldVault {
     pub yield_token: String,
     pub approved: bool,
     pub restricted_from: Vec<EndowmentType>,
+    pub acct_type: AccountType,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
