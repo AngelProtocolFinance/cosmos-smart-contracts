@@ -233,7 +233,7 @@ fn test_deposit_cw20_token() {
         msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit { endowment_id: 10 })
             .unwrap(),
     };
-    let info = mock_info("halo-token-contract", &[]);
+    let info = mock_info("halo-token", &[]);
     let err = execute(
         deps.as_mut(),
         mock_env(),
@@ -267,7 +267,7 @@ fn test_deposit_cw20_token() {
         msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit { endowment_id: 1 })
             .unwrap(),
     };
-    let info = mock_info("halo-token-contract", &[]);
+    let info = mock_info("halo-token", &[]);
     let res = execute(
         deps.as_mut(),
         mock_env(),

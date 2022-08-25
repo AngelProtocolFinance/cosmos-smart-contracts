@@ -9,6 +9,8 @@ use cosmwasm_storage::to_length_prefixed;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use terraswap::asset::{AssetInfo, PairInfo};
+
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
@@ -30,6 +32,7 @@ pub enum QueryMsg {
         address: String,
     },
     Config {},
+    Pair {},
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -189,6 +192,23 @@ impl WasmMockQuerier {
                             cw20: vec![],
                         },
                         applications_review: "applications-review".to_string(),
+                    })
+                    .unwrap(),
+                )),
+                // Simulating the `loopswap::pair::Pair {}` query
+                QueryMsg::Pair {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&PairInfo {
+                        asset_infos: [
+                            AssetInfo::NativeToken {
+                                denom: "ujuno".to_string(),
+                            },
+                            AssetInfo::Token {
+                                contract_addr: "halo-token".to_string(),
+                            },
+                        ],
+                        contract_addr: "loop-pair".to_string(),
+                        liquidity_token: "loop-lp-token".to_string(),
+                        asset_decimals: [6_u8, 6_u8],
                     })
                     .unwrap(),
                 )),
