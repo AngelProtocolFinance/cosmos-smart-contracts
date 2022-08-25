@@ -52,6 +52,7 @@ pub enum ExecuteMsg {
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt {
         id: u32,
+        acct_type: AccountType,
     },
     // Invest TOH funds to a Vault
     VaultInvest {
@@ -64,7 +65,6 @@ pub enum ExecuteMsg {
     // Redeem TOH funds from a Vault
     VaultRedeem {
         id: u32,
-        acct_type: AccountType,
         amount: Uint128,
         vault: String,
     },
@@ -151,7 +151,7 @@ pub enum ReceiveMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     // Tokens are sent back to an Account from a Vault
-    VaultReceipt { id: u32 },
+    VaultReceipt { id: u32, acct_type: AccountType },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -16,11 +16,13 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
 use angel_core::structs::{
-    AccountType, BalanceInfo, EndowmentType, FundingSource, GenericBalance, RebalanceDetails,
-    SocialMedialUrls, SplitDetails, StrategyComponent, SwapOperation, Tier, YieldVault,
+    AccountStrategies, AccountType, BalanceInfo, EndowmentType, FundingSource, GenericBalance,
+    RebalanceDetails, SocialMedialUrls, SplitDetails, StrategyComponent, SwapOperation, Tier,
+    YieldVault,
 };
 use angel_core::utils::{
-    check_splits, deposit_to_vaults, redeem_all_vaults, validate_deposit_fund, withdraw_from_vaults,
+    check_splits, deposit_to_vaults, redeem_account_vaults, redeem_all_vaults,
+    validate_deposit_fund, withdraw_from_vaults,
 };
 use cosmwasm_std::{
     attr, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
@@ -87,7 +89,7 @@ pub fn create_endowment(
                 withdraw_before_maturity: msg.withdraw_before_maturity, // bool
                 maturity_time: msg.maturity_time,                       // Option<u64>
                 maturity_height: msg.maturity_height,                   // Option<u64>
-                strategies: vec![],
+                strategies: AccountStrategies::default(),
                 rebalance: RebalanceDetails::default(),
                 kyc_donors_only: msg.kyc_donors_only,
                 profile: msg.profile.clone(),
@@ -232,7 +234,7 @@ pub fn update_endowment_settings(
         return Err(ContractError::Unauthorized {});
     }
 
-    endowment.auto_invest = msg.kyc_donors_only;
+    endowment.auto_invest = msg.auto_invest;
     endowment.kyc_donors_only = msg.kyc_donors_only;
     endowment.owner = deps.api.addr_validate(&msg.owner)?;
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
@@ -325,7 +327,7 @@ pub fn update_strategies(
         msg: to_binary(&RegistrarQuerier::VaultList {
             approved: Some(true),
             endowment_type: Some(endowment.profile.endow_type.clone()),
-            acct_type: Some(acct_type),
+            acct_type: Some(acct_type.clone()),
             network: None,
             start_after: None,
             limit: None,
@@ -359,7 +361,10 @@ pub fn update_strategies(
             percentage: strategy.percentage,
         });
     }
-    endowment.strategies = new_strategies.clone();
+
+    endowment
+        .strategies
+        .set_strategy(acct_type.clone(), new_strategies.clone());
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     // If this Endowment that is changing their strategy is also being "copycatted"
@@ -367,7 +372,8 @@ pub fn update_strategies(
     let copiers = COPYCATS.load(deps.storage, id).unwrap_or(vec![]);
     for i in copiers.iter() {
         let mut e = ENDOWMENTS.load(deps.storage, *i).unwrap();
-        e.strategies = new_strategies.clone();
+        e.strategies
+            .set_strategy(acct_type.clone(), new_strategies.clone());
         ENDOWMENTS.save(deps.storage, *i, &e).unwrap();
     }
     Ok(Response::new().add_attribute("action", "update_strategies"))
@@ -377,6 +383,7 @@ pub fn copycat_strategies(
     deps: DepsMut,
     info: MessageInfo,
     id: u32,
+    acct_type: AccountType,
     id_to_copy: u32,
 ) -> Result<Response, ContractError> {
     let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
@@ -385,9 +392,14 @@ pub fn copycat_strategies(
     }
 
     let copied_endowment = ENDOWMENTS.load(deps.storage, id_to_copy)?;
-    if copied_endowment.strategies.is_empty() {
+    if copied_endowment
+        .strategies
+        .get_strategy(acct_type)
+        .is_empty()
+    {
         return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Attempting to copy an endowment with no set strategy".to_string(),
+            msg: "Attempting to copy an endowment with no set strategy for that account type"
+                .to_string(),
         }));
     }
 
@@ -424,6 +436,7 @@ pub fn rebalance_strategies(
     _env: Env,
     info: MessageInfo,
     id: u32,
+    acct_type: AccountType,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
@@ -432,13 +445,17 @@ pub fn rebalance_strategies(
         return Err(ContractError::Unauthorized {});
     }
 
+    if endowment.pending_redemptions != 0 {
+        return Err(ContractError::RedemptionInProgress {});
+    }
+
     // redeem all existing strategies from the Endowment's existing vault sources before
     // re-investing locked funds into new sources (triggered when last redemption returns)
-    let redemption_msgs: Vec<SubMsg> = redeem_all_vaults(
+    let redemption_msgs: Vec<SubMsg> = redeem_account_vaults(
         deps.as_ref(),
         id,
         config.registrar_contract.to_string(),
-        &endowment.strategies,
+        &endowment.strategies.get_strategy(acct_type),
     )?;
     endowment.pending_redemptions = redemption_msgs.len() as u8;
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
@@ -661,6 +678,7 @@ pub fn vault_receipt(
     _env: Env,
     _info: MessageInfo,
     id: u32,
+    acct_type: AccountType,
     sender_addr: Addr,
     fund: Asset,
 ) -> Result<Response, ContractError> {
@@ -680,7 +698,7 @@ pub fn vault_receipt(
             })?,
         }))?;
 
-    let mut submessages: Vec<SubMsg> = vec![];
+    let mut deposit_package: (Vec<SubMsg>, Uint128) = (vec![], Uint128::zero());
     match endowment.pending_redemptions {
         0 => {
             // add returned tokens back to that endowment's locked balance
@@ -714,13 +732,17 @@ pub fn vault_receipt(
                     AssetInfoBase::Cw1155(_, _) => unimplemented!(),
                 };
                 let leftovers: Asset;
-                (submessages, leftovers) = deposit_to_vaults(
+                deposit_package = deposit_to_vaults(
                     deps.as_ref(),
                     config.registrar_contract.to_string(),
                     id.clone(),
-                    asset,
-                    &endowment.strategies,
+                    asset.clone(),
+                    &endowment.strategies.get_strategy(acct_type),
                 )?;
+                leftovers = Asset {
+                    info: asset.info,
+                    amount: deposit_package.1,
+                };
 
                 // set any remaining tokens to the locked balance "Tokens on Hand"
                 state
@@ -771,20 +793,22 @@ pub fn vault_receipt(
                 };
                 match state.closing_beneficiary {
                     Some(ref addr) => match asset {
-                        Balance::Native(v) => submessages.push(SubMsg::new(BankMsg::Send {
+                        Balance::Native(v) => deposit_package.0.push(SubMsg::new(BankMsg::Send {
                             to_address: deps.api.addr_validate(addr)?.to_string(),
                             amount: v.0,
                         })),
                         Balance::Cw20(v) => {
-                            submessages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                                contract_addr: v.address.to_string(),
-                                msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-                                    recipient: addr.to_string(),
-                                    amount: v.amount,
-                                })
-                                .unwrap(),
-                                funds: vec![],
-                            })));
+                            deposit_package.0.push(SubMsg::new(CosmosMsg::Wasm(
+                                WasmMsg::Execute {
+                                    contract_addr: v.address.to_string(),
+                                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                                        recipient: addr.to_string(),
+                                        amount: v.amount,
+                                    })
+                                    .unwrap(),
+                                    funds: vec![],
+                                },
+                            )));
                         }
                     },
                     None => {
@@ -810,7 +834,7 @@ pub fn vault_receipt(
                         if !fund_list.funds.is_empty() {
                             // send funds to the first index fund in list
                             match asset {
-                                Balance::Native(v) => submessages.push(SubMsg::new(
+                                Balance::Native(v) => deposit_package.0.push(SubMsg::new(
                                     CosmosMsg::Wasm(WasmMsg::Execute {
                                         contract_addr: index_fund,
                                         msg: to_binary(&IndexFundExecuter::Deposit(
@@ -822,8 +846,8 @@ pub fn vault_receipt(
                                         funds: v.0,
                                     }),
                                 )),
-                                Balance::Cw20(v) => submessages.push(SubMsg::new(CosmosMsg::Wasm(
-                                    WasmMsg::Execute {
+                                Balance::Cw20(v) => deposit_package.0.push(SubMsg::new(
+                                    CosmosMsg::Wasm(WasmMsg::Execute {
                                         contract_addr: v.address.to_string(),
                                         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                                             contract: index_fund,
@@ -838,21 +862,21 @@ pub fn vault_receipt(
                                         })
                                         .unwrap(),
                                         funds: vec![],
-                                    },
-                                ))),
+                                    }),
+                                )),
                             }
                         } else {
                             // Orphaned Endowment (ie. no parent index fund)
                             // send funds to the DANO treasury
                             match asset {
                                 Balance::Native(v) => {
-                                    submessages.push(SubMsg::new(BankMsg::Send {
+                                    deposit_package.0.push(SubMsg::new(BankMsg::Send {
                                         to_address: registrar_config.treasury,
                                         amount: v.0,
                                     }))
                                 }
-                                Balance::Cw20(v) => submessages.push(SubMsg::new(CosmosMsg::Wasm(
-                                    WasmMsg::Execute {
+                                Balance::Cw20(v) => deposit_package.0.push(SubMsg::new(
+                                    CosmosMsg::Wasm(WasmMsg::Execute {
                                         contract_addr: v.address.to_string(),
                                         msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
                                             recipient: registrar_config.treasury,
@@ -860,8 +884,8 @@ pub fn vault_receipt(
                                         })
                                         .unwrap(),
                                         funds: vec![],
-                                    },
-                                ))),
+                                    }),
+                                )),
                             }
                         }
                     }
@@ -891,7 +915,7 @@ pub fn vault_receipt(
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new()
-        .add_submessages(submessages)
+        .add_submessages(deposit_package.0)
         .add_attribute("action", "vault_receipt"))
 }
 
@@ -958,64 +982,108 @@ pub fn deposit(
     let mut state = STATES.load(deps.storage, msg.id)?;
     state.donations_received += deposit_amount;
 
-    // increase the liquid balance by donation (liquid) amount
-    let liquid_balance = match liquid_amount.info {
-        AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
-            denom: denom.to_string(),
-            amount: liquid_amount.amount,
-        }]),
-        AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
-            address: contract_addr.clone(),
-            amount: liquid_amount.amount,
-        }),
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-    };
-    state.balances.liquid_balance.add_tokens(liquid_balance);
-
     let mut deposit_messages: Vec<SubMsg> = vec![];
     // check endowment strategies are setup
     // hold locked funds until (auto_invest == true && strategy has vaults set)
     if endowment.auto_invest == false {
-        // increase the locked balance by locked donation amount
-        let locked_balance = match locked_amount.info {
-            AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
-                denom: denom.to_string(),
-                amount: locked_amount.amount,
-            }]),
-            AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
-                address: contract_addr.clone(),
-                amount: locked_amount.amount,
-            }),
+        // increase the locked & liquid balance by respective donation amounts
+        match locked_amount.info {
+            AssetInfoBase::Native(ref denom) => {
+                state
+                    .balances
+                    .locked_balance
+                    .add_tokens(Balance::from(vec![Coin {
+                        denom: denom.to_string(),
+                        amount: locked_amount.amount,
+                    }]));
+                state
+                    .balances
+                    .liquid_balance
+                    .add_tokens(Balance::from(vec![Coin {
+                        denom: denom.to_string(),
+                        amount: liquid_amount.amount,
+                    }]));
+            }
+            AssetInfoBase::Cw20(ref contract_addr) => {
+                state
+                    .balances
+                    .locked_balance
+                    .add_tokens(Balance::Cw20(Cw20CoinVerified {
+                        address: contract_addr.clone(),
+                        amount: locked_amount.amount,
+                    }));
+
+                state
+                    .balances
+                    .liquid_balance
+                    .add_tokens(Balance::Cw20(Cw20CoinVerified {
+                        address: contract_addr.clone(),
+                        amount: liquid_amount.amount,
+                    }));
+            }
             AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         };
-        state.balances.locked_balance.add_tokens(locked_balance);
-    } else if !endowment.strategies.is_empty() {
-        // if not empty: build deposit messages for each of the sources/amounts
-        let leftovers: Asset;
-        (deposit_messages, leftovers) = deposit_to_vaults(
+    } else {
+        // Process Locked Strategy Deposits
+        let locked_strategies = endowment.strategies.get_strategy(AccountType::Locked);
+        // build deposit messages for each of the sources/amounts
+        let (messages, leftover_amt) = deposit_to_vaults(
             deps.as_ref(),
             config.registrar_contract.to_string(),
             msg.id.clone(),
-            locked_amount,
-            &endowment.strategies,
+            locked_amount.clone(),
+            &locked_strategies,
         )?;
+        for m in messages.iter() {
+            deposit_messages.push(m.clone());
+        }
         // If invested portion of strategies < 100% there will be leftover deposits
         // Add any remaining deposited tokens to the locked balance "Tokens on Hand"
         state
             .balances
             .locked_balance
-            .add_tokens(match leftovers.info {
+            .add_tokens(match locked_amount.info {
                 AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
                     denom: denom.to_string(),
-                    amount: leftovers.amount,
+                    amount: leftover_amt,
                 }]),
                 AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
                     address: contract_addr.clone(),
-                    amount: leftovers.amount,
+                    amount: leftover_amt,
                 }),
                 AssetInfoBase::Cw1155(_, _) => unimplemented!(),
             });
     }
+
+    // Process Liquid Strategy Deposits
+    let liquid_strategies = endowment.strategies.get_strategy(AccountType::Liquid);
+    // build deposit messages for each of the sources/amounts
+    let (messages, leftover_amt) = deposit_to_vaults(
+        deps.as_ref(),
+        config.registrar_contract.to_string(),
+        msg.id.clone(),
+        liquid_amount.clone(),
+        &liquid_strategies,
+    )?;
+    for m in messages.iter() {
+        deposit_messages.push(m.clone());
+    }
+    // If invested portion of strategies < 100% there will be leftover deposits
+    // Add any remaining deposited tokens to the liquid balance "Tokens on Hand"
+    state
+        .balances
+        .liquid_balance
+        .add_tokens(match liquid_amount.info {
+            AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
+                denom: denom.to_string(),
+                amount: leftover_amt,
+            }]),
+            AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
+                address: contract_addr.clone(),
+                amount: leftover_amt,
+            }),
+            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+        });
 
     STATES.save(deps.storage, msg.id, &state)?;
     Ok(Response::new()
@@ -1109,6 +1177,12 @@ pub fn vault_invest(
         }));
     }
 
+    if yield_vault.acct_type != acct_type {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: format!("Vault's account type is not: {}", acct_type),
+        }));
+    }
+
     // create a deposit message for the vault
     // funds payload can contain CW20 | Native token amounts
     let deposit_msg = match asset {
@@ -1151,7 +1225,6 @@ pub fn vault_redeem(
     _env: Env,
     info: MessageInfo,
     id: u32,
-    acct_type: AccountType,
     amount: Uint128,
     vault: String,
 ) -> Result<Response, ContractError> {

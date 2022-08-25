@@ -4,7 +4,10 @@ use crate::messages::vault::AccountWithdrawMsg;
 use crate::messages::vault::QueryMsg as VaultQuerier;
 use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
 use crate::responses::vault::ExchangeRateResponse;
-use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
+use crate::structs::{
+    AccountStrategies, AccountType, FundingSource, GenericBalance, SplitDetails, StrategyComponent,
+    YieldVault,
+};
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, Deps, QueryRequest, StdError,
     StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
@@ -154,7 +157,7 @@ pub fn vault_endowment_balance(deps: Deps, vault_address: String, endowment_id: 
         .unwrap()
 }
 
-pub fn redeem_all_vaults(
+pub fn redeem_account_vaults(
     deps: Deps,
     endowment_id: u32,
     registrar_contract: String,
@@ -163,6 +166,61 @@ pub fn redeem_all_vaults(
     // redeem all amounts from existing strategies
     let mut redeem_messages = vec![];
     for source in strategies.iter() {
+        // check source vault is in registrar vaults list
+        let _vault_config: VaultDetailResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: registrar_contract.to_string(),
+                msg: to_binary(&RegistrarQuerier::Vault {
+                    vault_addr: source.vault.to_string(),
+                })?,
+            }))?;
+
+        // create a redeem message for Vault, noting amount of tokens
+        let vault_balance = vault_endowment_balance(deps, source.vault.to_string(), endowment_id);
+        redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: source.vault.to_string(),
+            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem {
+                endowment_id,
+                amount: vault_balance,
+            })
+            .unwrap(),
+            funds: vec![],
+        })));
+    }
+    Ok(redeem_messages)
+}
+
+pub fn redeem_all_vaults(
+    deps: Deps,
+    endowment_id: u32,
+    registrar_contract: String,
+    strategies: &AccountStrategies,
+) -> Result<Vec<SubMsg>, ContractError> {
+    // redeem all amounts from existing strategies
+    let mut redeem_messages = vec![];
+    for source in strategies.get_strategy(AccountType::Locked).iter() {
+        // check source vault is in registrar vaults list
+        let _vault_config: VaultDetailResponse =
+            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: registrar_contract.to_string(),
+                msg: to_binary(&RegistrarQuerier::Vault {
+                    vault_addr: source.vault.to_string(),
+                })?,
+            }))?;
+
+        // create a redeem message for Vault, noting amount of tokens
+        let vault_balance = vault_endowment_balance(deps, source.vault.to_string(), endowment_id);
+        redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: source.vault.to_string(),
+            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem {
+                endowment_id,
+                amount: vault_balance,
+            })
+            .unwrap(),
+            funds: vec![],
+        })));
+    }
+    for source in strategies.get_strategy(AccountType::Liquid).iter() {
         // check source vault is in registrar vaults list
         let _vault_config: VaultDetailResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
@@ -232,7 +290,7 @@ pub fn deposit_to_vaults(
     endowment_id: u32,
     fund: Asset,
     strategies: &[StrategyComponent],
-) -> Result<(Vec<SubMsg>, Asset), ContractError> {
+) -> Result<(Vec<SubMsg>, Uint128), ContractError> {
     // deduct all deposited amounts from the orig amount
     // tracks how much of the locked funds are leftover
     let mut leftovers_amt = fund.amount.clone();
@@ -290,13 +348,7 @@ pub fn deposit_to_vaults(
             AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         }
     }
-    Ok((
-        deposit_messages,
-        Asset {
-            info: fund.info,
-            amount: leftovers_amt,
-        },
-    ))
+    Ok((deposit_messages, leftovers_amt))
 }
 
 /// Check if the given "token"(denom or contract address) is in "accepted_tokens" list.  

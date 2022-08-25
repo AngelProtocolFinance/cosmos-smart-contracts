@@ -1,5 +1,9 @@
 // Contains mock functionality to test multi-contract scenarios
 
+use angel_core::responses::registrar::{
+    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
+};
+use angel_core::structs::{AcceptedTokens, AccountType, SplitDetails, YieldVault};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, CanonicalAddr, Coin, ContractResult, Decimal,
@@ -9,14 +13,8 @@ use cosmwasm_std::{
 use cosmwasm_storage::to_length_prefixed;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-
 use std::collections::HashMap;
 use std::marker::PhantomData;
-
-use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
-};
-use angel_core::structs::{AcceptedTokens, SplitDetails, YieldVault};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

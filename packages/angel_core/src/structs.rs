@@ -86,6 +86,36 @@ pub struct VaultRate {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub struct AccountStrategies {
+    pub locked: Vec<StrategyComponent>,
+    pub liquid: Vec<StrategyComponent>,
+}
+
+impl AccountStrategies {
+    pub fn default() -> Self {
+        AccountStrategies {
+            locked: vec![],
+            liquid: vec![],
+        }
+    }
+
+    pub fn get_strategy(&self, acct_type: AccountType) -> Vec<StrategyComponent> {
+        match acct_type {
+            AccountType::Locked => self.locked.clone(),
+            AccountType::Liquid => self.liquid.clone(),
+        }
+    }
+
+    pub fn set_strategy(&mut self, acct_type: AccountType, strategy: Vec<StrategyComponent>) {
+        match acct_type {
+            AccountType::Locked => self.locked = strategy,
+            AccountType::Liquid => self.liquid = strategy,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub struct StrategyComponent {
     pub vault: String,       // Vault SC Address
     pub percentage: Decimal, // percentage of funds to invest
