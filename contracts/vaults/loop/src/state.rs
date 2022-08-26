@@ -1,4 +1,4 @@
-use cosmwasm_std::{Addr, Decimal, Uint128};
+use cosmwasm_std::{Addr, Uint128};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -16,12 +16,6 @@ pub struct Config {
 
     pub total_lp_amount: Uint128, // total amount of LP tokens in this `vault`
     pub total_shares: Uint128,    // total amount of minted vault tokens
-
-    pub next_pending_id: u32, // (Incrementing) ID used for indexing the PendingInfo
-
-    pub last_harvest: u64,
-    pub last_harvest_fx: Option<Uint128>,
-    pub harvest_to_liquid: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]

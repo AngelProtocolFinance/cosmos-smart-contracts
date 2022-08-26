@@ -28,7 +28,6 @@ pub fn query_config(deps: Deps) -> ConfigResponse {
         keeper: config.keeper.to_string(),
         loop_factory_contract: config.loop_factory_contract.to_string(),
         loop_farming_contract: config.loop_farming_contract.to_string(),
-        last_harvest: config.last_harvest,
     }
 }
 

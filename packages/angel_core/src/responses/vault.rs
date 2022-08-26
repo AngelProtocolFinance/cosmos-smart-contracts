@@ -15,5 +15,4 @@ pub struct ConfigResponse {
     pub keeper: String,
     pub loop_factory_contract: String,
     pub loop_farming_contract: String,
-    pub last_harvest: u64,
 }

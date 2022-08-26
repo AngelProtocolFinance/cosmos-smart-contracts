@@ -14,7 +14,7 @@ use crate::queriers;
 use crate::state::{Config, MinterData, TokenInfo, CONFIG, TOKEN_INFO};
 
 // version info for future migration info
-const CONTRACT_NAME: &str = "junoswap_vault";
+const CONTRACT_NAME: &str = "loopswap_vault";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[entry_point]
@@ -39,12 +39,6 @@ pub fn instantiate(
 
         total_lp_amount: Uint128::zero(),
         total_shares: Uint128::zero(),
-
-        last_harvest: env.block.height,
-        last_harvest_fx: None,
-        harvest_to_liquid: msg.harvest_to_liquid,
-
-        next_pending_id: 1_u32,
     };
 
     CONFIG.save(deps.storage, &config)?;
