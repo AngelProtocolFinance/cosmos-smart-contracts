@@ -325,20 +325,21 @@ export async function testExecute(
   // Test query
   // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
   // await testQueryRegistrarEndowmentList(actors.apTeam.client, registrar);
-  // await testQueryRegistrarEndowmentDetails(actors.apTeam.client, registrar, endowmentContract1);
+  // await testQueryRegistrarEndowmentDetails(actors.apTeam.client, registrar, 1);
   // await testQueryRegistrarApprovedVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarApprovedVaultRateList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, Vault1);
   // await testQueryVaultConfig(actors.apTeam.client, Vault1);
-  // await testQueryAccountsBalance(actors.apTeam.client, endowmentContract4);
-  // await testQueryAccountsConfig(actors.apTeam.client, endowmentContract1);
-  // await testQueryAccountsEndowment(actors.apTeam.client, endowmentContract1);
-  // await testQueryAccountsProfile(actors.apTeam.client, endowmentContract1);
-  // await testQueryAccountsState(actors.apTeam.client, endowmentContract1);
+  // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsConfig(actors.apTeam.client, accounts);
+  // await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsState(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsTransactions(
   //   actors.apTeam.client,
-  //   endowmentContract1,
+  //   accounts,
+  //   1,
   //   undefined,
   //   undefined,
   //   undefined

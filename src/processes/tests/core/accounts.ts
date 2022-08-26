@@ -19,13 +19,13 @@ const { expect } = chai;
 export async function testRejectUnapprovedDonations(
   juno: SigningCosmWasmClient,
   apTeam: string,
-  endowmentContract: string,
+  accountsContract: string,
   amount: string
 ): Promise<void> {
   process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
 
   await expect(
-    sendTransactionWithFunds(juno, apTeam, endowmentContract, {
+    sendTransactionWithFunds(juno, apTeam, accountsContract, {
         deposit: {
           locked_percentage: "1",
           liquid_percentage: "0",
@@ -169,11 +169,12 @@ export async function testApTeamChangesAccountsEndowmentOwner(
 //----------------------------------------------------------------------------------------
 export async function testQueryAccountsState(
   juno: SigningCosmWasmClient,
-  endowmentContract: string
+  accountsContract: string,
+  endowmentId: number,
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts State");
-  const result = await juno.queryContractSmart(endowmentContract, {
-    state: {},
+  const result = await juno.queryContractSmart(accountsContract, {
+    state: { id: endowmentId },
   });
 
   console.log(result);
@@ -182,13 +183,13 @@ export async function testQueryAccountsState(
 
 export async function testQueryAccountsTransactions(
   juno: SigningCosmWasmClient,
-  endowmentContract: string,
+  accountsContract: string,
   sender: string | undefined,
   recipient: string | undefined,
   denom: string | undefined
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Transactions");
-  const result = await juno.queryContractSmart(endowmentContract, {
+  const result = await juno.queryContractSmart(accountsContract, {
     get_tx_records: {
       sender,
       recipient,
@@ -202,23 +203,25 @@ export async function testQueryAccountsTransactions(
 
 export async function testQueryAccountsBalance(
   juno: SigningCosmWasmClient,
-  endowmentContract: string
+  accountsContract: string,
+  endowmentId: number,
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Balance");
-  const result = await juno.queryContractSmart(endowmentContract, {
-    balance: {},
+  const result = await juno.queryContractSmart(accountsContract, {
+    balance: { id: endowmentId },
   });
 
-  console.log(result);
+  console.log(result.locked_balance.native);
+  console.log(result.liquid_balance.native);
   console.log(chalk.green(" Passed!"));
 }
 
 export async function testQueryAccountsConfig(
   juno: SigningCosmWasmClient,
-  endowmentContract: string
+  accountsContract: string
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Config");
-  const result = await juno.queryContractSmart(endowmentContract, {
+  const result = await juno.queryContractSmart(accountsContract, {
     config: {},
   });
 
@@ -228,11 +231,12 @@ export async function testQueryAccountsConfig(
 
 export async function testQueryAccountsEndowment(
   juno: SigningCosmWasmClient,
-  endowmentContract: string
+  accountsContract: string,
+  endowmentId: number,
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Endowment");
-  const result = await juno.queryContractSmart(endowmentContract, {
-    endowment: {},
+  const result = await juno.queryContractSmart(accountsContract, {
+    endowment: { id: endowmentId },
   });
 
   console.log(result);
@@ -241,11 +245,12 @@ export async function testQueryAccountsEndowment(
 
 export async function testQueryAccountsProfile(
   juno: SigningCosmWasmClient,
-  endowmentContract: string
+  accountsContract: string,
+  endowmentId: number,
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Profile");
-  const result = await juno.queryContractSmart(endowmentContract, {
-    get_profile: {},
+  const result = await juno.queryContractSmart(accountsContract, {
+    get_profile: { id: endowmentId },
   });
 
   console.log(result);

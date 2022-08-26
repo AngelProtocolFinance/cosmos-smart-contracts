@@ -74,6 +74,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(apTreasuryAccount)} as Angel Protocol Treasury`);
 
   registrar = config.contracts.registrar;
+  accounts = config.contracts.accounts;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
   indexFund = config.contracts.indexFund;

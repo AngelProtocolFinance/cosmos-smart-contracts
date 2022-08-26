@@ -114,6 +114,7 @@ async function initialize() {
 
 
   registrar = config.contracts.registrar;
+  accounts = config.contracts.accounts;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
   cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
