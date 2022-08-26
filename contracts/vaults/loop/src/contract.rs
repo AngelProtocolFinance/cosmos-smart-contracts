@@ -96,13 +96,16 @@ pub fn execute(
                 deposit_amount,
             )
         }
+        // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
+        ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
+        ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
         // Claim is only called by the SC when setting up new strategies.
         // Pulls all existing amounts back to Account in USDC or [input_denom].
         // -Deposit Token/Yield Token (Vault) --> +USDC (Account)
         ExecuteMsg::Claim {} => executers::claim(deps, env, info),
-        // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
-        ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
-        ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
+        ExecuteMsg::DistributeClaim {
+            reward_token_bal_before,
+        } => executers::distribute_claim(deps, env, info, reward_token_bal_before),
         ExecuteMsg::AddLiquidity {
             endowment_id,
             in_asset_info,

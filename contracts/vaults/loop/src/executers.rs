@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
+    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Fraction,
+    MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use terraswap::asset::{Asset, AssetInfo};
 
@@ -126,8 +126,13 @@ pub fn deposit(
     )?;
 
     // Prepare the messages for "(this contract::)add_liquidity" opeartion
-    let contract_add_liquidity_msgs =
-        prepare_contract_add_liquidity_msgs(deps, env, &config, endowment_id, deposit_asset_info)?;
+    let contract_add_liquidity_msgs = prepare_contract_add_liquidity_msgs(
+        deps,
+        env,
+        &config,
+        Some(endowment_id),
+        deposit_asset_info,
+    )?;
 
     Ok(Response::default()
         .add_messages(loop_pair_swap_msgs)
@@ -166,6 +171,85 @@ pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Con
         .add_attributes(vec![attr("action", "claim")]))
 }
 
+/// Contract entry: **distribute_claim**
+///   1. Compute the amount of reward token(`LOOP`) obtained from `claim/harvest`
+///   2. Compute the `AP tax` & send it to the `AP treasury`
+///   3. Re-stake the left `reward token`s
+pub fn distribute_claim(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    reward_token_bal_before: Uint128,
+) -> Result<Response, ContractError> {
+    // Validations
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let config: Config = CONFIG.load(deps.storage)?;
+
+    // Compute the reward token amount
+    let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        config.loop_token.to_string(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+    let reward_amount = reward_token_bal_query
+        .balance
+        .checked_sub(reward_token_bal_before)
+        .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
+
+    // Handle the `AP tax`
+    let mut tax_send_msgs: Vec<CosmosMsg> = vec![];
+    let registrar_config: ConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &RegistrarQueryMsg::Config {},
+    )?;
+    let tax_rate = registrar_config.tax_rate;
+    let ap_treasury = deps.api.addr_validate(&registrar_config.treasury)?;
+    let tax_amount = reward_amount.multiply_ratio(tax_rate.numerator(), tax_rate.denominator());
+    tax_send_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::Swap {
+            beneficiary: Some(ap_treasury),
+            in_asset_info: AssetInfo::Token {
+                contract_addr: config.loop_token.to_string(),
+            },
+            in_asset_bal_before: reward_token_bal_query.balance - tax_amount,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
+
+    // Re-stake the leftover `reward token`s
+    let less_tax = reward_amount - tax_amount;
+    let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
+        &config.pair_contract.to_string(),
+        &AssetInfo::Token {
+            contract_addr: config.loop_token.to_string(),
+        },
+        less_tax.multiply_ratio(1_u128, 2_u128),
+    )?;
+
+    // Prepare the messages for "(this contract::)add_liquidity" opeartion
+    let contract_add_liquidity_msgs = prepare_contract_add_liquidity_msgs(
+        deps,
+        env,
+        &config,
+        None,
+        AssetInfo::Token {
+            contract_addr: config.loop_token.to_string(),
+        },
+    )?;
+
+    Ok(Response::default()
+        .add_messages(tax_send_msgs)
+        .add_messages(loop_pair_swap_msgs)
+        .add_messages(contract_add_liquidity_msgs)
+        .add_attributes(vec![attr("action", "distribute_claim")]))
+}
+
 fn prepare_claim_harvest_msgs(deps: Deps, env: Env, config: &Config) -> StdResult<Vec<CosmosMsg>> {
     // Performs the "claim"
     let mut msgs = vec![];
@@ -182,7 +266,14 @@ fn prepare_claim_harvest_msgs(deps: Deps, env: Env, config: &Config) -> StdResul
             address: env.contract.address.to_string(),
         },
     )?;
-    // TODO! Add the logic of "convert LOOP token to Pair_LP token & re-stake"
+    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::DistributeClaim {
+            reward_token_bal_before: reward_token_bal_query.balance,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
 
     Ok(msgs)
 }
@@ -324,7 +415,7 @@ pub fn add_liquidity(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    endowment_id: u32,
+    endowment_id: Option<u32>,
     in_asset_info: AssetInfo,
     out_asset_info: AssetInfo,
     in_asset_bal_before: Uint128,
@@ -456,7 +547,7 @@ fn prepare_loop_pair_provide_liquidity_msgs(
 fn prepare_contract_stake_msgs(
     deps: Deps,
     env: Env,
-    endowment_id: u32,
+    endowment_id: Option<u32>,
     pair_contract: Addr,
 ) -> StdResult<Vec<CosmosMsg>> {
     let mut msgs = vec![];
@@ -489,7 +580,7 @@ pub fn stake_lp_token(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    endowment_id: u32,
+    endowment_id: Option<u32>,
     lp_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
     // Validations
@@ -526,24 +617,27 @@ pub fn stake_lp_token(
     // Mint the `vault_token`
     config.total_lp_amount += lp_stake_amount;
 
-    let mint_amount: Uint128;
-    if config.total_shares.is_zero() {
-        mint_amount = lp_stake_amount;
-    } else {
-        mint_amount = lp_stake_amount.multiply_ratio(config.total_shares, config.total_lp_amount);
+    if let Some(endowment_id) = endowment_id {
+        let mint_amount: Uint128;
+        if config.total_shares.is_zero() {
+            mint_amount = Uint128::from(1000000_u128);
+        } else {
+            mint_amount =
+                lp_stake_amount.multiply_ratio(config.total_shares, config.total_lp_amount);
+        }
+        config.total_shares += mint_amount;
+
+        CONFIG.save(deps.storage, &config)?;
+
+        execute_mint(deps, env, info, endowment_id, mint_amount).map_err(|_| {
+            ContractError::Std(StdError::GenericErr {
+                msg: format!(
+                    "Cannot mint the {} vault token for {}",
+                    mint_amount, endowment_id
+                ),
+            })
+        })?;
     }
-    config.total_shares += mint_amount;
-
-    CONFIG.save(deps.storage, &config)?;
-
-    execute_mint(deps, env, info, endowment_id, mint_amount).map_err(|_| {
-        ContractError::Std(StdError::GenericErr {
-            msg: format!(
-                "Cannot mint the {} vault token for {}",
-                mint_amount, endowment_id
-            ),
-        })
-    })?;
 
     Ok(Response::new()
         .add_message(msg)
@@ -707,7 +801,7 @@ fn prepare_contract_add_liquidity_msgs(
     deps: DepsMut,
     env: Env,
     config: &Config,
-    endowment_id: u32,
+    endowment_id: Option<u32>,
     deposit_asset_info: AssetInfo,
 ) -> Result<Vec<CosmosMsg>, StdError> {
     let mut msgs: Vec<CosmosMsg> = vec![];
