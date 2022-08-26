@@ -321,3 +321,33 @@ fn test_withdraw() {
         })
     );
 }
+
+#[test]
+fn test_claim() {
+    let mut deps = create_mock_vault(vec![]);
+
+    // Only "accounts" contract can call the "claim" entry
+    let info = mock_info("non-accounts-contract", &[]);
+    let err = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Claim {}).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // "claim" entry outputs 2 messages
+    let info = mock_info("accounts-contract", &[]);
+    let res = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Claim {}).unwrap();
+    assert_eq!(res.messages.len(), 2);
+}
+
+#[test]
+fn test_harvest() {
+    let mut deps = create_mock_vault(vec![]);
+
+    // Only "config.keeper" address can call the "harvest" entry
+    let info = mock_info("non-keeper", &[]);
+    let err = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Harvest {}).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // "claim" entry outputs 2 messages
+    let info = mock_info("keeper", &[]);
+    let res = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Harvest {}).unwrap();
+    assert_eq!(res.messages.len(), 2);
+}
