@@ -1,6 +1,6 @@
-use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Deps, QueryRequest, StdResult, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, Coin, CosmosMsg, Decimal256, Deps, QueryRequest, StdResult, Uint128, Uint256,
+    WasmMsg, WasmQuery,
 };
 use cw20::Cw20ExecuteMsg;
 use schemars::JsonSchema;

@@ -6,6 +6,7 @@ use crate::queriers;
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{ExecuteMsg, QueryMsg};
 use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
+use angel_core::structs::AccountType;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
     StdResult, Uint128,
@@ -28,10 +29,15 @@ pub fn instantiate(
 
     let moneymarket = deps.api.addr_validate(&msg.moneymarket)?;
     let anchor_config = anchor::config(deps.as_ref(), &moneymarket)?;
-
+    let sibling_vault = match msg.sibling_vault {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => env.contract.address, // can set later with update_config
+    };
     let config = config::Config {
         owner: info.sender,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
+        acct_type: msg.acct_type,
+        sibling_vault,
         moneymarket,
         input_denom: anchor_config.stable_denom.clone(),
         yield_token: deps.api.addr_validate(&anchor_config.aterra_contract)?,
@@ -43,6 +49,9 @@ pub fn instantiate(
     };
 
     config::store(deps.storage, &config)?;
+
+    // init special AP treasury's token balance (separate from Endowments ID based tracking)
+    config::TREASURY_TOKENS.save(deps.storage, &Uint128::zero())?;
 
     // store token info
     let token_info = config::TokenInfo {
@@ -71,16 +80,21 @@ pub fn execute(
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         // -UST (Account) --> +Deposit Token/Yield Token (Vault)
-        ExecuteMsg::Deposit {} => {
-            executers::deposit_stable(deps, env, info.clone(), Balance::from(info.funds))
-        }
+        ExecuteMsg::Deposit { endowment_id } => executers::deposit_stable(
+            deps,
+            env,
+            info.clone(),
+            Balance::from(info.funds),
+            endowment_id,
+        ),
         // Redeem is only called by the SC when setting up new strategies.
         // Pulls all existing strategy amounts back to Account in UST.
         // Then re-Deposits according to the Strategies set.
         // -Deposit Token/Yield Token (Vault) --> +UST (Account) --> -UST (Account) --> +Deposit Token/Yield Token (Vault)
-        ExecuteMsg::Redeem { account_addr } => {
-            executers::redeem_stable(deps, env, info, account_addr)
-        } // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
+        ExecuteMsg::Redeem {
+            endowment_id,
+            amount,
+        } => executers::redeem_stable(deps, env, info, endowment_id, amount), // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
         ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info, msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
         ExecuteMsg::Harvest {
             collector_address,
@@ -107,7 +121,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             input_denom: config.input_denom.clone(),
             yield_token: config.yield_token.to_string(),
         }),
-        QueryMsg::Balance { address } => to_binary(&queriers::query_balance(deps, address)),
+        QueryMsg::Balance { endowment_id } => {
+            to_binary(&queriers::query_balance(deps, endowment_id))
+        }
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
         // ANCHOR-SPECIFIC QUERIES BELOW THIS POINT!
         QueryMsg::ExchangeRate { input_denom: _ } => {

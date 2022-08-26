@@ -45,6 +45,7 @@ pub struct UpdateConfigMsg {
     pub tax_per_block: Option<Decimal>,
     pub treasury_withdraw_threshold: Option<Uint128>,
     pub harvest_to_liquid: Option<Decimal>,
+    pub sibling_vault: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
