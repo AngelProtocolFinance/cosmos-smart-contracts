@@ -1,5 +1,3 @@
-use std::ops::Sub;
-
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{
     coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, StdError, Uint128,
@@ -276,7 +274,7 @@ fn test_deposit_cw20_token() {
 fn test_withdraw() {
     let endowment_id = 1;
     let fake_endowment_id = 12;
-    let deposit_amount = Uint128::from(100_u128);
+    let _deposit_amount = Uint128::from(100_u128);
     let withdraw_amount = Uint128::from(30_u128);
     let beneficiary = Addr::unchecked("beneficiary");
 

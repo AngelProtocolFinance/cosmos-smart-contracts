@@ -2,11 +2,10 @@ use crate::errors::core::ContractError;
 use crate::messages::registrar::QueryMsg as RegistrarQuerier;
 use crate::messages::vault::AccountWithdrawMsg;
 use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
-use crate::responses::vault::ExchangeRateResponse;
 use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, Deps, DepsMut, QueryRequest,
-    StdError, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, DepsMut, QueryRequest, StdError,
+    StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg, Denom};
 use cw_asset::{Asset, AssetInfoBase};
@@ -126,22 +125,6 @@ pub fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<SubMsg>
         .collect();
     msgs.append(&mut cw20_msgs?);
     Ok(msgs)
-}
-
-pub fn vault_fx_rate(deps: Deps, vault_address: String) -> Decimal256 {
-    // get the vault exchange rate
-    let exchange_rate: ExchangeRateResponse = deps
-        .querier
-        .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: vault_address,
-            // msg: to_binary(&crate::messages::vault::QueryMsg::ExchangeRate {
-            //     input_denom: Denom::Native("uluna".to_string()),
-            // })
-            // .unwrap(),
-            msg: to_binary("TODO!!!!").unwrap(),
-        }))
-        .unwrap();
-    exchange_rate.exchange_rate
 }
 
 pub fn vault_endowment_balance(deps: Deps, vault_address: String, endowment_id: u32) -> Uint128 {
