@@ -9,9 +9,8 @@ pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub keeper: String,
 
-    pub loop_factory_contract: String,
-    pub loop_farming_contract: String,
-    pub loop_pair_contract: String,
+    pub lp_staking_contract: String,
+    pub pair_contract: String,
     pub loop_token: String,
 
     pub name: String,
@@ -81,9 +80,8 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub loop_factory_contract: Option<String>,
-    pub loop_farming_contract: Option<String>,
-    pub loop_pair_contract: Option<String>,
+    pub lp_staking_contract: Option<String>,
+    pub pair_contract: Option<String>,
     pub keeper: Option<String>,
 }
 

@@ -68,19 +68,14 @@ pub fn update_config(
     }
 
     // Update the config
-    config.loop_factory_contract = match msg.loop_factory_contract {
+    config.lp_staking_contract = match msg.lp_staking_contract {
         Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.loop_factory_contract,
+        None => config.lp_staking_contract,
     };
 
-    config.loop_farming_contract = match msg.loop_farming_contract {
+    config.pair_contract = match msg.pair_contract {
         Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.loop_farming_contract,
-    };
-
-    config.loop_pair_contract = match msg.loop_pair_contract {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.loop_pair_contract,
+        None => config.pair_contract,
     };
 
     config.keeper = match msg.keeper {
@@ -112,7 +107,7 @@ pub fn deposit(
 
     // Check if the "deposit_asset_info" is valid
     let pair_info_query: terraswap::asset::PairInfo =
-        query_pair_info_from_pair(&deps.querier, config.loop_pair_contract.clone())?;
+        query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?;
     if !pair_info_query.asset_infos.contains(&deposit_asset_info) {
         return Err(ContractError::InvalidCoinsDeposited {});
     }
@@ -125,7 +120,7 @@ pub fn deposit(
     // Add the "loopswap::pair::swap" message
     let input_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
     let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
-        &config.loop_pair_contract.to_string(),
+        &config.pair_contract.to_string(),
         &deposit_asset_info,
         input_amount,
     )?;
@@ -165,7 +160,7 @@ pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Con
     // Performs the "claim"
     let mut msgs = vec![];
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.loop_farming_contract.to_string(),
+        contract_addr: config.lp_staking_contract.to_string(),
         msg: to_binary(&LoopFarmingExecuteMsg::ClaimReward {}).unwrap(),
         funds: vec![],
     }));
@@ -272,13 +267,12 @@ pub fn withdraw(
     // Perform the "loopswap::farming::unstake_and_claim(unfarm)" message
     let mut msgs = vec![];
     let lp_token_contract =
-        query_pair_info_from_pair(&deps.querier, config.loop_pair_contract.clone())?
-            .liquidity_token;
+        query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?.liquidity_token;
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: lp_token_contract.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-            contract: config.loop_farming_contract.to_string(),
+            contract: config.lp_staking_contract.to_string(),
             amount: lp_amount,
             msg: to_binary(&LoopFarmingExecuteMsg::UnstakeAndClaim {}).unwrap(),
         })
@@ -307,7 +301,7 @@ pub fn withdraw(
 
     // Handle the reward LOOP tokens
     // IMPORTANT: Atm, the reward token of loopswap farming contract is LOOP token
-    // Hence, we assume that the `config.loop_pair_contract` has the token pairs in which
+    // Hence, we assume that the `config.pair_contract` has the token pairs in which
     // there is LOOP token, like LOOP-USDC, LOOP-JUNO.
     let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         config.loop_token.to_string(),
@@ -648,7 +642,7 @@ pub fn add_liquidity(
     let token2_amount: Uint128;
 
     let asset_infos =
-        query_pair_info_from_pair(&deps.querier, config.loop_pair_contract.clone())?.asset_infos;
+        query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?.asset_infos;
 
     if in_asset_info == asset_infos[0] {
         token1_asset_info = in_asset_info;
@@ -667,12 +661,12 @@ pub fn add_liquidity(
         token1_amount,
         token2_asset_info,
         token2_amount,
-        config.loop_pair_contract.to_string(),
+        config.pair_contract.to_string(),
     )?;
 
     // Add the "(this contract::)stake" message
     let contract_stake_msgs =
-        prepare_contract_stake_msgs(deps.as_ref(), env, endowment_id, config.loop_pair_contract)?;
+        prepare_contract_stake_msgs(deps.as_ref(), env, endowment_id, config.pair_contract)?;
 
     Ok(Response::new()
         .add_messages(loop_pair_provide_liquidity_msgs)
@@ -686,7 +680,7 @@ fn prepare_loop_pair_provide_liquidity_msgs(
     token1_amount: Uint128,
     token2_asset_info: AssetInfo,
     token2_amount: Uint128,
-    loop_pair_contract: String,
+    pair_contract: String,
 ) -> StdResult<Vec<CosmosMsg>> {
     let mut funds = vec![];
     let mut msgs = vec![];
@@ -698,7 +692,7 @@ fn prepare_loop_pair_provide_liquidity_msgs(
         AssetInfo::Token { ref contract_addr } => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: contract_addr.to_string(),
             msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: loop_pair_contract.to_string(),
+                spender: pair_contract.to_string(),
                 amount: token1_amount,
                 expires: None,
             })
@@ -715,7 +709,7 @@ fn prepare_loop_pair_provide_liquidity_msgs(
         AssetInfo::Token { ref contract_addr } => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: contract_addr.to_string(),
             msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: loop_pair_contract.to_string(),
+                spender: pair_contract.to_string(),
                 amount: token2_amount,
                 expires: None,
             })
@@ -725,7 +719,7 @@ fn prepare_loop_pair_provide_liquidity_msgs(
     }
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: loop_pair_contract.to_string(),
+        contract_addr: pair_contract.to_string(),
         msg: to_binary(&LoopPairExecuteMsg::ProvideLiquidity {
             assets: [
                 Asset {
@@ -750,12 +744,12 @@ fn prepare_contract_stake_msgs(
     deps: Deps,
     env: Env,
     endowment_id: u32,
-    loop_pair_contract: Addr,
+    pair_contract: Addr,
 ) -> StdResult<Vec<CosmosMsg>> {
     let mut msgs = vec![];
 
     let lp_token_contract =
-        query_pair_info_from_pair(&deps.querier, loop_pair_contract)?.liquidity_token;
+        query_pair_info_from_pair(&deps.querier, pair_contract)?.liquidity_token;
     let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         lp_token_contract,
         &cw20::Cw20QueryMsg::Balance {
@@ -793,8 +787,7 @@ pub fn stake_lp_token(
     // Prepare the "loop::farming::stake" msg
     let mut config = CONFIG.load(deps.storage)?;
     let lp_token_contract =
-        query_pair_info_from_pair(&deps.querier, config.loop_pair_contract.clone())?
-            .liquidity_token;
+        query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?.liquidity_token;
     let lp_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         lp_token_contract.to_string(),
         &cw20::Cw20QueryMsg::Balance {
@@ -809,7 +802,7 @@ pub fn stake_lp_token(
     let msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: lp_token_contract.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-            contract: config.loop_farming_contract.to_string(),
+            contract: config.lp_staking_contract.to_string(),
             amount: lp_stake_amount,
             msg: to_binary(&LoopFarmingExecuteMsg::Stake {}).unwrap(),
         })
@@ -857,10 +850,10 @@ pub fn remove_liquidity(
     }
 
     let config = CONFIG.load(deps.storage)?;
-    let pair_info = query_pair_info_from_pair(&deps.querier, config.loop_pair_contract.clone())?;
+    let pair_info = query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?;
     let lp_token_contract = pair_info.liquidity_token;
     let asset_infos = pair_info.asset_infos;
-    let pair_contract = config.loop_pair_contract;
+    let pair_contract = config.pair_contract;
 
     // First, compute "unfarm"ed LP token balance for "remove_liquidity"
     let lp_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
@@ -1007,7 +1000,7 @@ fn prepare_contract_add_liquidity_msgs(
     let mut msgs: Vec<CosmosMsg> = vec![];
 
     let pair_info_query: terraswap::asset::PairInfo =
-        query_pair_info_from_pair(&deps.querier, config.loop_pair_contract.clone())?;
+        query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?;
 
     let (in_asset_info, out_asset_info) = if deposit_asset_info == pair_info_query.asset_infos[0] {
         (
@@ -1113,7 +1106,7 @@ fn prepare_loop_pair_swap_msg(
 /// Contract entry: **swap**
 ///
 /// IMPORTANT: Atm, the reward token of loopswap farming contract is LOOP token
-/// Hence, we assume that the `config.loop_pair_contract` has the token pairs
+/// Hence, we assume that the `config.pair_contract` has the token pairs
 /// in which there is LOOP token, like LOOP-USDC, LOOP-JUNO.
 pub fn swap(
     deps: DepsMut,
@@ -1129,8 +1122,8 @@ pub fn swap(
     }
 
     let config: Config = CONFIG.load(deps.storage)?;
-    let pair_contract = config.loop_pair_contract.to_string();
-    let pair_info = query_pair_info_from_pair(&deps.querier, config.loop_pair_contract.clone())?;
+    let pair_contract = config.pair_contract.to_string();
+    let pair_info = query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?;
     let asset_infos = pair_info.asset_infos;
     let out_asset_info = if in_asset_info == asset_infos[0] {
         asset_infos[1].clone()

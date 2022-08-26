@@ -32,9 +32,8 @@ pub fn instantiate(
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         keeper: deps.api.addr_validate(&msg.keeper)?,
 
-        loop_factory_contract: deps.api.addr_validate(&msg.loop_factory_contract)?,
-        loop_farming_contract: deps.api.addr_validate(&msg.loop_farming_contract)?,
-        loop_pair_contract: deps.api.addr_validate(&msg.loop_pair_contract)?,
+        lp_staking_contract: deps.api.addr_validate(&msg.lp_staking_contract)?,
+        pair_contract: deps.api.addr_validate(&msg.pair_contract)?,
         loop_token: deps.api.addr_validate(&msg.loop_token)?,
 
         total_lp_amount: Uint128::zero(),

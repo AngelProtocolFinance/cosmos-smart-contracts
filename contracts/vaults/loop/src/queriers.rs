@@ -26,8 +26,8 @@ pub fn query_config(deps: Deps) -> ConfigResponse {
         owner: config.owner.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
         keeper: config.keeper.to_string(),
-        loop_factory_contract: config.loop_factory_contract.to_string(),
-        loop_farming_contract: config.loop_farming_contract.to_string(),
+        pair_contract: config.pair_contract.to_string(),
+        lp_staking_contract: config.lp_staking_contract.to_string(),
     }
 }
 
@@ -36,13 +36,4 @@ pub fn query_total_balance(deps: Deps) -> BalanceResponse {
     BalanceResponse {
         balance: config.total_shares,
     }
-}
-
-pub fn query_exchange_rate(deps: Deps, input_denom: Denom) -> ExchangeRateResponse {
-    let config = CONFIG.load(deps.storage).unwrap();
-    todo!("Implement the following query response")
-    // ExchangeRateResponse {
-    //     exchange_rate: Decimal256::zero(),
-    //     yield_token_supply: Uint256::zero(),
-    // }
 }

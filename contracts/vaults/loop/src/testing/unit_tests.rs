@@ -20,9 +20,8 @@ fn create_mock_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMo
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
 
-        loop_factory_contract: "loop-factory".to_string(),
-        loop_farming_contract: "loop-farming".to_string(),
-        loop_pair_contract: "loop-pair".to_string(),
+        lp_staking_contract: "loop-farming".to_string(),
+        pair_contract: "loop-pair".to_string(),
         loop_token: "loop-token".to_string(),
 
         name: "Cash Token".to_string(),
@@ -45,9 +44,8 @@ fn proper_instantiation() {
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
 
-        loop_factory_contract: "loop-factory".to_string(),
-        loop_farming_contract: "loop-farming".to_string(),
-        loop_pair_contract: "loop-pair".to_string(),
+        lp_staking_contract: "loop-farming".to_string(),
+        pair_contract: "loop-pair".to_string(),
         loop_token: "loop-token".to_string(),
 
         name: "Cash Token".to_string(),
@@ -148,9 +146,8 @@ fn test_update_config() {
 
     // Try to update the "config"
     let update_config_msg = UpdateConfigMsg {
-        loop_factory_contract: Some("new-loop-factory".to_string()),
-        loop_farming_contract: Some("new-loop-farming".to_string()),
-        loop_pair_contract: Some("new-loop-pair".to_string()),
+        lp_staking_contract: Some("new-loop-farming".to_string()),
+        pair_contract: Some("new-loop-pair".to_string()),
         keeper: Some("new-keeper".to_string()),
     };
 
@@ -178,12 +175,9 @@ fn test_update_config() {
     // Check the "config" update
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_resp: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config_resp.pair_contract, "new-loop-pair".to_string());
     assert_eq!(
-        config_resp.loop_factory_contract,
-        "new-loop-factory".to_string()
-    );
-    assert_eq!(
-        config_resp.loop_farming_contract,
+        config_resp.lp_staking_contract,
         "new-loop-farming".to_string()
     );
     assert_eq!(config_resp.keeper, "new-keeper".to_string());

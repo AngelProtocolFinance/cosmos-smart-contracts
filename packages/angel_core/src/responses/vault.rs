@@ -13,6 +13,6 @@ pub struct ConfigResponse {
     pub owner: String,
     pub registrar_contract: String,
     pub keeper: String,
-    pub loop_factory_contract: String,
-    pub loop_farming_contract: String,
+    pub pair_contract: String,
+    pub lp_staking_contract: String,
 }
