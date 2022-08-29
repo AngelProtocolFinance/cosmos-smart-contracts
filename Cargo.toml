@@ -5,6 +5,7 @@ members = [
     "contracts/core/accounts",
     "contracts/core/cw3-endowment",
     "contracts/core/index-fund",
+    "contracts/core/swap-router",
     "contracts/core/registrar",
     "contracts/multisig/cw4-group",
     "contracts/multisig/cw3-multisig",

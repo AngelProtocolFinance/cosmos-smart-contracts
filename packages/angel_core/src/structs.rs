@@ -1,9 +1,69 @@
 use cosmwasm_std::{Addr, Coin, Decimal, Decimal256, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
-use cw_asset::{Asset, AssetInfoBase};
+use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum AccountType {
+    Locked = 0,
+    Liquid = 1,
+}
+
+impl fmt::Display for AccountType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                AccountType::Locked => "locked",
+                AccountType::Liquid => "liquid",
+            }
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct Pair {
+    pub assets: [AssetInfo; 2],
+    pub contract_address: Addr,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum SwapOperation {
+    JunoSwap {
+        offer_asset_info: AssetInfo,
+        ask_asset_info: AssetInfo,
+    },
+    Loop {
+        offer_asset_info: AssetInfo,
+        ask_asset_info: AssetInfo,
+    },
+}
+
+impl SwapOperation {
+    pub fn get_offer_asset_info(&self) -> AssetInfo {
+        match self {
+            SwapOperation::JunoSwap {
+                offer_asset_info, ..
+            } => offer_asset_info.clone(),
+            SwapOperation::Loop {
+                offer_asset_info, ..
+            } => offer_asset_info.clone(),
+        }
+    }
+
+    pub fn get_ask_asset_info(&self) -> AssetInfo {
+        match self {
+            SwapOperation::JunoSwap { ask_asset_info, .. } => ask_asset_info.clone(),
+            SwapOperation::Loop { ask_asset_info, .. } => ask_asset_info.clone(),
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -14,6 +74,7 @@ pub struct YieldVault {
     pub yield_token: String,
     pub approved: bool,
     pub restricted_from: Vec<EndowmentType>,
+    pub acct_type: AccountType,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -21,6 +82,36 @@ pub struct YieldVault {
 pub struct VaultRate {
     pub vault_addr: String,
     pub fx_rate: Decimal256,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct AccountStrategies {
+    pub locked: Vec<StrategyComponent>,
+    pub liquid: Vec<StrategyComponent>,
+}
+
+impl AccountStrategies {
+    pub fn default() -> Self {
+        AccountStrategies {
+            locked: vec![],
+            liquid: vec![],
+        }
+    }
+
+    pub fn get_strategy(&self, acct_type: AccountType) -> Vec<StrategyComponent> {
+        match acct_type {
+            AccountType::Locked => self.locked.clone(),
+            AccountType::Liquid => self.liquid.clone(),
+        }
+    }
+
+    pub fn set_strategy(&mut self, acct_type: AccountType, strategy: Vec<StrategyComponent>) {
+        match acct_type {
+            AccountType::Locked => self.locked = strategy,
+            AccountType::Liquid => self.liquid = strategy,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

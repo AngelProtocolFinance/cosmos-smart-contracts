@@ -1,4 +1,6 @@
-use crate::structs::{AcceptedTokens, EndowmentType, NetworkInfo, Profile, SplitDetails, Tier};
+use crate::structs::{
+    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, Profile, SplitDetails, Tier,
+};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
 use cw_utils::Threshold;
@@ -82,6 +84,7 @@ pub struct UpdateConfigMsg {
     pub accepted_tokens_native: Option<Vec<String>>,
     pub accepted_tokens_cw20: Option<Vec<String>>,
     pub applications_review: Option<String>,
+    pub swaps_router: Option<String>,
 }
 
 impl UpdateConfigMsg {
@@ -107,6 +110,7 @@ pub struct VaultAddMsg {
     pub input_denom: String,
     pub yield_token: String,
     pub restricted_from: Vec<EndowmentType>,
+    pub acct_type: AccountType,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -132,6 +136,7 @@ pub enum QueryMsg {
     VaultList {
         network: Option<String>,
         endowment_type: Option<EndowmentType>,
+        acct_type: Option<AccountType>,
         approved: Option<bool>,
         start_after: Option<String>,
         limit: Option<u64>,

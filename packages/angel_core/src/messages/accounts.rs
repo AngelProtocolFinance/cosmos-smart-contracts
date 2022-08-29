@@ -1,7 +1,8 @@
-use crate::structs::{FundingSource, GenericBalance, Profile};
-use cosmwasm_std::Decimal;
+use crate::structs::{AccountType, FundingSource, GenericBalance, Profile, SwapOperation};
+use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
+use cw_asset::{Asset, AssetInfo};
 use cw_utils::{Duration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -21,6 +22,12 @@ pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
+    /// reinvset vault assets from Liquid to Locked
+    ReinvestToLocked {
+        id: u32,
+        amount: Uint128,
+        vault_addr: String,
+    },
     // Pull funds from investment vault(s) to the Endowment Beneficiary as <asset_info>
     // NOTE: Atm, the "vault" logic is not fixed.
     //       Hence, it SHOULD be updated when the "vault" logic is implemented.
@@ -34,9 +41,51 @@ pub enum ExecuteMsg {
         beneficiary: String,
         assets: GenericBalance,
     },
+    SwapToken {
+        id: u32,
+        acct_type: AccountType,
+        amount: Uint128,
+        operations: Vec<SwapOperation>,
+    },
+    // Router notifies the Accounts of final tokens from a Swap
+    // Allows Accounts to credit the Endowment's involved Balance
+    // with the amount returned to the main Accounts contract
+    SwapReceipt {
+        id: u32,
+        acct_type: AccountType,
+        final_asset: Asset,
+    },
     // Tokens are sent back to an Account from an Asset Vault
     VaultReceipt {
         id: u32,
+        acct_type: AccountType,
+    },
+    // Invest TOH funds to a Vault
+    VaultInvest {
+        id: u32,
+        acct_type: AccountType,
+        asset: AssetInfo,
+        amount: Uint128,
+        vault: String,
+    },
+    // Redeem TOH funds from a Vault
+    VaultRedeem {
+        id: u32,
+        amount: Uint128,
+        vault: String,
+    },
+    // set another endowment's strategy to "copycat" as your own
+    CopycatStrategies {
+        id: u32,
+        acct_type: AccountType,
+        id_to_copy: u32,
+    },
+    // pull all funds out of an endowment's strategies vaults once all
+    // funds are returned, re-invest the total locked TOH funds back
+    // into the vaults at the current strategies % allocations
+    RebalanceStrategies {
+        id: u32,
+        acct_type: AccountType,
     },
     // create a new endowment
     CreateEndowment(CreateEndowmentMsg),
@@ -61,6 +110,7 @@ pub enum ExecuteMsg {
     // Replace an Account's Strategy with that given.
     UpdateStrategies {
         id: u32,
+        acct_type: AccountType,
         strategies: Vec<Strategy>,
     },
     // Update Endowment profile
@@ -91,6 +141,7 @@ pub struct UpdateEndowmentSettingsMsg {
     pub id: u32,
     pub owner: String,
     pub kyc_donors_only: bool,
+    pub auto_invest: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -106,7 +157,7 @@ pub enum ReceiveMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     // Tokens are sent back to an Account from a Vault
-    VaultReceipt { id: u32 },
+    VaultReceipt { id: u32, acct_type: AccountType },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -159,11 +210,25 @@ pub enum QueryMsg {
     // Get all Config details for the contract
     Config {},
     // Get the balance of available UST and the invested portion balances
-    Balance { id: u32 },
+    Balance {
+        id: u32,
+    },
     // Get state details (like total donations received so far)
-    State { id: u32 },
+    State {
+        id: u32,
+    },
     // Get all Endowment details
-    Endowment { id: u32 },
+    Endowment {
+        id: u32,
+    },
     // Get the profile info
-    GetProfile { id: u32 },
+    GetProfile {
+        id: u32,
+    },
+    // Get endowment token balance
+    TokenAmount {
+        id: u32,
+        asset_info: AssetInfo,
+        acct_type: AccountType,
+    },
 }

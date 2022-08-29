@@ -2,7 +2,7 @@ use crate::state::{
     read_registry_entries, read_vaults, CONFIG, NETWORK_CONNECTIONS, REGISTRY, VAULTS,
 };
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentType, Tier, VaultRate};
+use angel_core::structs::{AccountType, EndowmentEntry, EndowmentType, Tier, VaultRate};
 use angel_core::utils::vault_fx_rate;
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
@@ -24,6 +24,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         cw4_code: config.cw4_code,
         accepted_tokens: config.accepted_tokens,
         applications_review: config.applications_review.to_string(),
+        swaps_router: config.swaps_router.map(|addr| addr.to_string()),
     })
 }
 
@@ -31,6 +32,7 @@ pub fn query_vault_list(
     deps: Deps,
     network: Option<String>,
     endowment_type: Option<EndowmentType>,
+    acct_type: Option<AccountType>,
     approved: Option<bool>,
     start_after: Option<String>,
     limit: Option<u64>,
@@ -40,7 +42,15 @@ pub fn query_vault_list(
         Some(start_after) => Some(deps.api.addr_validate(&start_after)?),
         None => None,
     };
-    let vaults = read_vaults(deps.storage, network, endowment_type, approved, addr, limit)?;
+    let vaults = read_vaults(
+        deps.storage,
+        network,
+        endowment_type,
+        acct_type,
+        approved,
+        addr,
+        limit,
+    )?;
     Ok(VaultListResponse { vaults })
 }
 
@@ -133,7 +143,7 @@ pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDet
 
 pub fn query_approved_vaults_fx_rate(deps: Deps) -> StdResult<VaultRateResponse> {
     // returns a list of approved Vaults exchange rate
-    let vaults = read_vaults(deps.storage, None, None, Some(true), None, None)?;
+    let vaults = read_vaults(deps.storage, None, None, None, Some(true), None, None)?;
     let mut vaults_rate: Vec<VaultRate> = vec![];
     for vault in vaults.iter().filter(|p| p.approved) {
         let fx_rate = vault_fx_rate(deps, vault.address.to_string());

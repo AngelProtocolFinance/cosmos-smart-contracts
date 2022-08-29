@@ -1,6 +1,6 @@
-use cosmwasm_bignumber::{Decimal256, Uint256};
 use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Deps, QueryRequest, StdResult, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, Coin, CosmosMsg, Decimal256, Deps, QueryRequest, StdResult, Uint128, Uint256,
+    WasmMsg, WasmQuery,
 };
 use cw20::Cw20ExecuteMsg;
 use schemars::JsonSchema;
@@ -76,6 +76,9 @@ pub enum Cw20HookMsg {
     /// Return stable coins to a user
     /// according to exchange rate
     RedeemStable {},
+    /// reinvest vault assets (ex. LPs) from self (if AccountType::Liquid)
+    /// over to it's AccountType::Locked (sibling) vault
+    ReinvestToLocked { endowment_id: u32, amount: Uint128 },
 }
 
 pub fn deposit_stable_msg(market: &Addr, denom: &str, amount: Uint128) -> StdResult<CosmosMsg> {

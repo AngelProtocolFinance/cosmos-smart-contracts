@@ -46,6 +46,7 @@ pub fn instantiate(
         cw3_code: None,
         cw4_code: None,
         accepted_tokens: msg.accepted_tokens.unwrap_or_else(AcceptedTokens::default),
+        swaps_router: None,
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -123,6 +124,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::VaultList {
             network,
             endowment_type,
+            acct_type,
             approved,
             start_after,
             limit,
@@ -130,6 +132,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             deps,
             network,
             endowment_type,
+            acct_type,
             approved,
             start_after,
             limit,
