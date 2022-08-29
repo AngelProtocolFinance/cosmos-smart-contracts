@@ -164,6 +164,38 @@ pub fn deposit_stable(
         }))
 }
 
+pub fn reinvest_to_locked_execute(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    id: u32,
+    amount: Uint128, // vault tokens
+) -> Result<Response, ContractError> {
+    let mut config = config::read(deps.storage)?;
+
+    // 0. Check that the message sender is the Accounts contract
+    // 1. Check that this vault has a sibling set
+    // 2. Check that sender ID has >= amount of vault tokens in it's balance
+    // 3. Burn vault tokens an calculate the LP Tokens equivalent
+    // 4. SEND LP tokens to the Locked Account (using ReinvestToLocked recieve msg)
+
+    Ok(Response::new())
+}
+pub fn reinvest_to_locked_recieve(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    id: u32,
+    amount: Uint128, // asset tokens (ex. LPs)
+) -> Result<Response, ContractError> {
+    let mut config = config::read(deps.storage)?;
+
+    // 0. Check that the message sender is the Sibling vault contract
+    // 1. Treat as a Deposit for the given ID (mint vault tokens for deposited assets)
+
+    Ok(Response::new())
+}
+
 /// Redeem Stable: Take in an amount of locked/liquid deposit tokens
 /// to redeem from the vault for stablecoins to send back to the the Accounts SC
 pub fn redeem_stable(

@@ -76,6 +76,9 @@ pub enum Cw20HookMsg {
     /// Return stable coins to a user
     /// according to exchange rate
     RedeemStable {},
+    /// reinvest vault assets (ex. LPs) from self (if AccountType::Liquid)
+    /// over to it's AccountType::Locked (sibling) vault
+    ReinvestToLocked { id: u32, amount: Uint128 },
 }
 
 pub fn deposit_stable_msg(market: &Addr, denom: &str, amount: Uint128) -> StdResult<CosmosMsg> {

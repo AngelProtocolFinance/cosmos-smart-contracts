@@ -30,6 +30,12 @@ pub enum ExecuteMsg {
         endowment_id: u32,
         amount: Uint128, // vault tokens to be burned
     },
+    /// reinvest vault assets from self (if AccountType::Liquid)
+    /// over to it's AccountType::Locked (sibling) vault
+    ReinvestToLocked {
+        id: u32,
+        amount: Uint128,
+    },
     Withdraw(AccountWithdrawMsg),
     Harvest {
         collector_address: String,
