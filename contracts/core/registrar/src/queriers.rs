@@ -2,8 +2,7 @@ use crate::state::{
     read_registry_entries, read_vaults, CONFIG, NETWORK_CONNECTIONS, REGISTRY, VAULTS,
 };
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentType, Tier, VaultRate};
-use angel_core::utils::vault_fx_rate;
+use angel_core::structs::{EndowmentEntry, EndowmentType, Tier};
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
 
@@ -129,20 +128,6 @@ pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDet
     let addr = deps.api.addr_validate(&vault_addr)?;
     let vault = VAULTS.load(deps.storage, addr.as_bytes())?;
     Ok(VaultDetailResponse { vault })
-}
-
-pub fn query_approved_vaults_fx_rate(deps: Deps) -> StdResult<VaultRateResponse> {
-    // returns a list of approved Vaults exchange rate
-    let vaults = read_vaults(deps.storage, None, None, Some(true), None, None)?;
-    let mut vaults_rate: Vec<VaultRate> = vec![];
-    for vault in vaults.iter().filter(|p| p.approved) {
-        let fx_rate = vault_fx_rate(deps, vault.address.to_string());
-        vaults_rate.push(VaultRate {
-            vault_addr: vault.address.clone(),
-            fx_rate,
-        });
-    }
-    Ok(VaultRateResponse { vaults_rate })
 }
 
 pub fn query_network_connection(

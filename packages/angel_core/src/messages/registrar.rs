@@ -151,8 +151,6 @@ pub enum QueryMsg {
     },
     // Get all Config details for the contract
     Config {},
-    // Get a list of all approved Vaults exchange rates
-    ApprovedVaultRateList {},
     // Get a network connection info
     NetworkConnection {
         chain_id: String,

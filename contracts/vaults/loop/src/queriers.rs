@@ -1,7 +1,7 @@
 use cosmwasm_std::Deps;
-use cw20::{BalanceResponse, Denom, TokenInfoResponse};
+use cw20::{BalanceResponse, TokenInfoResponse};
 
-use angel_core::responses::vault::{ConfigResponse, ExchangeRateResponse};
+use angel_core::responses::vault::ConfigResponse;
 
 use crate::state::{BALANCES, CONFIG, TOKEN_INFO};
 

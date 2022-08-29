@@ -1,5 +1,3 @@
-use std::ops::Sub;
-
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{
     coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, StdError, Uint128,
@@ -272,14 +270,11 @@ fn test_deposit_cw20_token() {
     assert_eq!(res.messages.len(), 3);
 }
 
-// Comment the following test temporarily.
-// Find a way to mock the "config.total_shares" value in the unit test.
-// #[test]
+#[test]
 fn test_withdraw() {
-    let accounts = "accounts".to_string();
-    let endowment = 1;
-    let fake_endowment = 12;
-    let deposit_amount = Uint128::from(100_u128);
+    let endowment_id = 1;
+    let fake_endowment_id = 12;
+    let _deposit_amount = Uint128::from(100_u128);
     let withdraw_amount = Uint128::from(30_u128);
     let beneficiary = Addr::unchecked("beneficiary");
 
@@ -287,10 +282,10 @@ fn test_withdraw() {
     let mut deps = create_mock_vault(vec![]);
 
     // First, fail to "withdraw" since the `endowment` is not valid
-    let info = mock_info(&accounts, &[]);
+    let info = mock_info("accounts-contract", &[]);
     let withdraw_msg: AccountWithdrawMsg = AccountWithdrawMsg {
-        endowment_id: 1,
-        beneficiary,
+        endowment_id: fake_endowment_id,
+        beneficiary: beneficiary.clone(),
         amount: withdraw_amount,
     };
     let err = execute(
@@ -303,7 +298,12 @@ fn test_withdraw() {
     assert_eq!(err, ContractError::Unauthorized {});
 
     // Also, fail to "withdraw" since the `vault` does not have any deposit
-    let info = mock_info(&accounts, &[]);
+    let info = mock_info("accounts-contract", &[]);
+    let withdraw_msg: AccountWithdrawMsg = AccountWithdrawMsg {
+        endowment_id,
+        beneficiary,
+        amount: withdraw_amount,
+    };
     let err = execute(
         deps.as_mut(),
         mock_env(),
@@ -316,42 +316,38 @@ fn test_withdraw() {
         ContractError::Std(StdError::GenericErr {
             msg: format!(
                 "Cannot burn the {} vault tokens from {}",
-                withdraw_amount, endowment
+                withdraw_amount, endowment_id
             )
         })
     );
+}
 
-    // // Mock "mint"ing the vault tokens to "endowment"
-    // let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
-    // let _ = execute(
-    //     deps.as_mut(),
-    //     mock_env(),
-    //     info,
-    //     ExecuteMsg::Mint {
-    //         recipient: endowment.to_string(),
-    //         amount: deposit_amount,
-    //     },
-    // )
-    // .unwrap();
+#[test]
+fn test_claim() {
+    let mut deps = create_mock_vault(vec![]);
 
-    // Finally, succeed to "withdraw" tokens
-    let info = mock_info(&accounts, &[]);
-    let res = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::Withdraw(withdraw_msg),
-    )
-    .unwrap();
-    assert_eq!(res.messages.len(), 1);
+    // Only "accounts" contract can call the "claim" entry
+    let info = mock_info("non-accounts-contract", &[]);
+    let err = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Claim {}).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
 
-    // Check the vault token balance of endowment
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::Balance { id: endowment },
-    )
-    .unwrap();
-    let balance_resp: cw20::BalanceResponse = from_binary(&res).unwrap();
-    assert_eq!(balance_resp.balance, deposit_amount.sub(withdraw_amount));
+    // "claim" entry outputs 2 messages
+    let info = mock_info("accounts-contract", &[]);
+    let res = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Claim {}).unwrap();
+    assert_eq!(res.messages.len(), 2);
+}
+
+#[test]
+fn test_harvest() {
+    let mut deps = create_mock_vault(vec![]);
+
+    // Only "config.keeper" address can call the "harvest" entry
+    let info = mock_info("non-keeper", &[]);
+    let err = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Harvest {}).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // "claim" entry outputs 2 messages
+    let info = mock_info("keeper", &[]);
+    let res = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Harvest {}).unwrap();
+    assert_eq!(res.messages.len(), 2);
 }

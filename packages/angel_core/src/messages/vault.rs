@@ -38,20 +38,13 @@ pub enum ExecuteMsg {
         endowment_id: u32,
     },
     Claim {},
+    Withdraw(AccountWithdrawMsg),
+    Harvest {},
     DistributeClaim {
         reward_token_bal_before: Uint128,
     },
-    Withdraw(AccountWithdrawMsg),
-    Harvest {},
-    HarvestSwap {
-        token1_denom_bal_before: Uint128,
-        token2_denom_bal_before: Uint128,
-    },
-    DistributeHarvest {
-        output_token_bal_before: Uint128,
-    },
     AddLiquidity {
-        endowment_id: u32,
+        endowment_id: Option<u32>,
         in_asset_info: terraswap::asset::AssetInfo,
         out_asset_info: terraswap::asset::AssetInfo,
         in_asset_bal_before: Uint128,
@@ -62,7 +55,7 @@ pub enum ExecuteMsg {
         action: RemoveLiquidAction,
     },
     Stake {
-        endowment_id: u32,
+        endowment_id: Option<u32>,
         lp_token_bal_before: Uint128,
     },
     Swap {

@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, MessageInfo,
-    QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
+    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Fraction,
+    MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use terraswap::asset::{Asset, AssetInfo};
 
@@ -126,8 +126,13 @@ pub fn deposit(
     )?;
 
     // Prepare the messages for "(this contract::)add_liquidity" opeartion
-    let contract_add_liquidity_msgs =
-        prepare_contract_add_liquidity_msgs(deps, env, &config, endowment_id, deposit_asset_info)?;
+    let contract_add_liquidity_msgs = prepare_contract_add_liquidity_msgs(
+        deps,
+        env,
+        &config,
+        Some(endowment_id),
+        deposit_asset_info,
+    )?;
 
     Ok(Response::default()
         .add_messages(loop_pair_swap_msgs)
@@ -138,9 +143,11 @@ pub fn deposit(
         .add_attribute("deposit_amount", deposit_amount))
 }
 
-/// Contract entry: **claim**
-///   1. Call the `loopswap::farming::claim_reward` entry
-///   2. Handle the reward token(LOOP)
+/// Contract entry: **harvest**
+///   1. Only callable by `accounts` contract
+///   2. `Claim` the `reward token` from `loopswap::farming` contract
+///   3. Compute and send the tax(USDC) to AP treasury
+///   4. Re-stake the leftover by converting it to LP token & `loopswap::farming::stake`
 pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -157,6 +164,93 @@ pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Con
         return Err(ContractError::Unauthorized {});
     }
 
+    let msgs = prepare_claim_harvest_msgs(deps.as_ref(), env, &config)?;
+
+    Ok(Response::default()
+        .add_messages(msgs)
+        .add_attributes(vec![attr("action", "claim")]))
+}
+
+/// Contract entry: **distribute_claim**
+///   1. Compute the amount of reward token(`LOOP`) obtained from `claim/harvest`
+///   2. Compute the `AP tax` & send it to the `AP treasury`
+///   3. Re-stake the left `reward token`s
+pub fn distribute_claim(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    reward_token_bal_before: Uint128,
+) -> Result<Response, ContractError> {
+    // Validations
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let config: Config = CONFIG.load(deps.storage)?;
+
+    // Compute the reward token amount
+    let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        config.loop_token.to_string(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+    let reward_amount = reward_token_bal_query
+        .balance
+        .checked_sub(reward_token_bal_before)
+        .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
+
+    // Handle the `AP tax`
+    let mut tax_send_msgs: Vec<CosmosMsg> = vec![];
+    let registrar_config: ConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &RegistrarQueryMsg::Config {},
+    )?;
+    let tax_rate = registrar_config.tax_rate;
+    let ap_treasury = deps.api.addr_validate(&registrar_config.treasury)?;
+    let tax_amount = reward_amount.multiply_ratio(tax_rate.numerator(), tax_rate.denominator());
+    tax_send_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::Swap {
+            beneficiary: Some(ap_treasury),
+            in_asset_info: AssetInfo::Token {
+                contract_addr: config.loop_token.to_string(),
+            },
+            in_asset_bal_before: reward_token_bal_query.balance - tax_amount,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
+
+    // Re-stake the leftover `reward token`s
+    let less_tax = reward_amount - tax_amount;
+    let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
+        &config.pair_contract.to_string(),
+        &AssetInfo::Token {
+            contract_addr: config.loop_token.to_string(),
+        },
+        less_tax.multiply_ratio(1_u128, 2_u128),
+    )?;
+
+    // Prepare the messages for "(this contract::)add_liquidity" opeartion
+    let contract_add_liquidity_msgs = prepare_contract_add_liquidity_msgs(
+        deps,
+        env,
+        &config,
+        None,
+        AssetInfo::Token {
+            contract_addr: config.loop_token.to_string(),
+        },
+    )?;
+
+    Ok(Response::default()
+        .add_messages(tax_send_msgs)
+        .add_messages(loop_pair_swap_msgs)
+        .add_messages(contract_add_liquidity_msgs)
+        .add_attributes(vec![attr("action", "distribute_claim")]))
+}
+
+fn prepare_claim_harvest_msgs(deps: Deps, env: Env, config: &Config) -> StdResult<Vec<CosmosMsg>> {
     // Performs the "claim"
     let mut msgs = vec![];
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -181,42 +275,7 @@ pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, Con
         funds: vec![],
     }));
 
-    Ok(Response::default()
-        .add_messages(msgs)
-        .add_attributes(vec![attr("action", "claim")]))
-}
-
-/// Contract entry: **distribute_claim**
-///   1. Compute the receiving reward token(LOOP)
-///   2. Distribute the reward to endowments
-pub fn distribute_claim(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    reward_token_bal_before: Uint128,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    // Validations
-    if info.sender != env.contract.address {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // First, compute the amount of "claim"ed reward tokens
-    let reward_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-        config.loop_token.to_string(),
-        &cw20::Cw20QueryMsg::Balance {
-            address: env.contract.address.to_string(),
-        },
-    )?;
-    let total_claimed_amount = reward_token_bal
-        .balance
-        .checked_sub(reward_token_bal_before)
-        .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
-
-    // todo!("Add the logic of sending the withdraw amount to own beneficiaries & computing the portion of reward for every endowment and re-staking them");
-
-    Ok(Response::default())
+    Ok(msgs)
 }
 
 /// Contract entry: **withdraw**
@@ -329,279 +388,24 @@ pub fn withdraw(
     ]))
 }
 
-// Here is rough Harvest earnings logic:
-// 1. We should harvest the earnings from the vault's LP staking rewards.
-//    (usually paid out as JUNO & RAW tokens in the case of JunoSwap).
-// 2. All rewards are converted into USDC (ie. reward_usdc)
-// 3. Send taxes owed to Treasury Wallet: reward_usdc * registrar_config.tax_rate
-//      less_taxes = reward_usdc - taxes_owned
-// 4. For each Accounts' BALANCE ratio of the total_supply:
-//      Calculate the amount of harvested rewards owed to N account: acct_owned = (account_balance / total_supply) * less_taxes
-//      Send some back to the Accounts contract to liquid: acct_owned * config.harvest_to_liquid
-// 5. All leftover rewards not taxed or sent to liquid accounts should be converted
-//      into the Vault's underlying LP token (ie, reward_lp_tokens) and staked.
-
-// One other important point:
-// This harvest endpoint should only callable by a single config.keeper address.
-// We should add this to Config and pass it in the Instantiate Message, as well as
-// make sure the config.owner can update that keeper value in the config.
+/// Contract entry: **harvest**
+///   1. Only callable by `config.keeper` address
+///   2. `Claim` the `reward token` from `loopswap::farming` contract
+///   3. Compute and send the tax(USDC) to AP treasury
+///   4. Re-stake the leftover by converting it to LP token & `loopswap::farming::stake`
 pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    // let config = CONFIG.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
 
-    // // Validations
-    // if info.sender != config.keeper {
-    //     return Err(ContractError::Unauthorized {});
-    // }
+    // Validations
+    if info.sender != config.keeper {
+        return Err(ContractError::Unauthorized {});
+    }
 
-    // // First, check if any staking reward does exist
-    // let claims_resp: ClaimsResponse = deps.querier.query_wasm_smart(
-    //     config.staking_addr.to_string(),
-    //     &DaoStakeCw20QueryMsg::Claims {
-    //         address: env.contract.address.to_string(),
-    //     },
-    // )?;
-    // if claims_resp.claims.len() == 0 {
-    //     return Err(ContractError::Std(StdError::GenericErr {
-    //         msg: "Nothing to claim".to_string(),
-    //     }));
-    // }
+    let msgs = prepare_claim_harvest_msgs(deps.as_ref(), env, &config)?;
 
-    // // If any staking reward, ask it for harvest
-    // let mut res = Response::default();
-    // res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //     contract_addr: config.staking_addr.to_string(),
-    //     msg: to_binary(&DaoStakeCw20ExecuteMsg::Claim {}).unwrap(),
-    //     funds: vec![],
-    // }));
-
-    // // Call the "remove_liquidity" entry with the reward_lp_tokens &
-    // // Handle the returning lp tokens
-    // let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-    //     config.pool_lp_token_addr,
-    //     &cw20::Cw20QueryMsg::Balance {
-    //         address: env.contract.address.to_string(),
-    //     },
-    // )?;
-    // res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //     contract_addr: env.contract.address.to_string(),
-    //     msg: to_binary(&ExecuteMsg::RemoveLiquidity {
-    //         lp_token_bal_before: lp_token_bal.balance,
-    //         action: RemoveLiquidAction::Harvest,
-    //     })
-    //     .unwrap(),
-    //     funds: vec![],
-    // }));
-
-    // Ok(res)
-
-    Ok(Response::default())
-}
-
-pub fn harvest_swap(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    token1_denom_bal_before: Uint128,
-    token2_denom_bal_before: Uint128,
-) -> Result<Response, ContractError> {
-    // // Validations
-    // if info.sender != env.contract.address {
-    //     return Err(ContractError::Unauthorized {});
-    // }
-
-    // let config = CONFIG.load(deps.storage)?;
-    // // Compute the token balances
-    // let token1_denom_bal_now = query_denom_balance(
-    //     &deps,
-    //     &config.input_denoms[0],
-    //     env.contract.address.to_string(),
-    // );
-    // let token2_denom_bal_now = query_denom_balance(
-    //     &deps,
-    //     &config.input_denoms[1],
-    //     env.contract.address.to_string(),
-    // );
-    // let token1_amt = token1_denom_bal_now
-    //     .checked_sub(token1_denom_bal_before)
-    //     .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
-    // let token2_amt = token2_denom_bal_now
-    //     .checked_sub(token2_denom_bal_before)
-    //     .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
-
-    // // "Swap"ping into the `config.output_token_denom` token(i.e: USDC)
-
-    // // Check if `output_token_denom` is `Token1` or `Token2`
-    // // Also, determine which token to send directly, which token to `SwapAndSendTo`
-    // let swap_input_token_denom: Denom;
-    // let swap_input_token_amt: Uint128;
-
-    // let swap_input_token: TokenSelect;
-
-    // let output_token_bal_before: Uint128;
-
-    // if config.output_token_denom == config.input_denoms[0] {
-    //     swap_input_token_denom = config.input_denoms[1].clone();
-    //     swap_input_token_amt = token2_amt;
-
-    //     swap_input_token = TokenSelect::Token2;
-
-    //     output_token_bal_before = token1_denom_bal_before;
-    // } else {
-    //     swap_input_token_denom = config.input_denoms[0].clone();
-    //     swap_input_token_amt = token1_amt;
-
-    //     swap_input_token = TokenSelect::Token1;
-
-    //     output_token_bal_before = token2_denom_bal_before;
-    // };
-
-    // let mut res = Response::default();
-    // let mut msgs: Vec<CosmosMsg> = vec![];
-    // match swap_input_token_denom {
-    //     Denom::Native(denom) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-    //         contract_addr: config.pool_addr.to_string(),
-    //         msg: to_binary(&WasmSwapExecuteMsg::Swap {
-    //             input_token: swap_input_token,
-    //             input_amount: swap_input_token_amt,
-    //             min_output: Uint128::zero(),
-    //             expiration: None,
-    //         })
-    //         .unwrap(),
-    //         funds: coins(swap_input_token_amt.u128(), denom),
-    //     })),
-    //     Denom::Cw20(token_addr) => {
-    //         msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-    //             contract_addr: token_addr.to_string(),
-    //             msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-    //                 spender: config.pool_addr.to_string(),
-    //                 amount: swap_input_token_amt,
-    //                 expires: None,
-    //             })
-    //             .unwrap(),
-    //             funds: vec![],
-    //         }));
-    //         msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-    //             contract_addr: config.pool_addr.to_string(),
-    //             msg: to_binary(&WasmSwapExecuteMsg::Swap {
-    //                 input_token: swap_input_token,
-    //                 input_amount: swap_input_token_amt,
-    //                 min_output: Uint128::zero(),
-    //                 expiration: None,
-    //             })
-    //             .unwrap(),
-    //             funds: vec![],
-    //         }))
-    //     }
-    // }
-
-    // msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-    //     contract_addr: env.contract.address.to_string(),
-    //     msg: to_binary(&ExecuteMsg::DistributeHarvest {
-    //         output_token_bal_before,
-    //     })
-    //     .unwrap(),
-    //     funds: vec![],
-    // }));
-
-    // res = res.add_messages(msgs);
-    // Ok(res)
-
-    Ok(Response::default())
-}
-
-pub fn distribute_harvest(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    output_token_bal_before: Uint128,
-) -> Result<Response, ContractError> {
-    // // Validations
-    // if info.sender != env.contract.address {
-    //     return Err(ContractError::Unauthorized {});
-    // }
-
-    // let mut res = Response::default();
-
-    // let config = CONFIG.load(deps.storage)?;
-    // let registrar_config: ConfigResponse = deps.querier.query_wasm_smart(
-    //     config.registrar_contract.to_string(),
-    //     &RegistrarQueryMsg::Config {},
-    // )?;
-
-    // // First, compute the token amount
-    // let output_token_bal = query_denom_balance(
-    //     &deps,
-    //     &config.output_token_denom,
-    //     env.contract.address.to_string(),
-    // );
-    // let total_reward_amt = output_token_bal - output_token_bal_before;
-
-    // // Send taxes owed to Treasury wallet: reward_usdc * registrar_config.tax_rate
-    // let tax_amt = (total_reward_amt * registrar_config.tax_rate.numerator())
-    //     / registrar_config.tax_rate.denominator();
-
-    // let less_taxes = total_reward_amt - tax_amt;
-    // let mut restake_amt = Uint128::zero();
-
-    // // Compute the Accounts' BALANCE ratio of the total_supply
-    // // Send some back to the Accounts contract to liquid: acct_owned * config.harvest_to_liquid
-    // let endowments_rsp: EndowmentListResponse =
-    //     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-    //         contract_addr: config.registrar_contract.to_string(),
-    //         msg: to_binary(&RegistrarQueryMsg::EndowmentList {
-    //             name: None,
-    //             owner: None,
-    //             status: None,
-    //             tier: None,
-    //             un_sdg: None,
-    //             endow_type: None,
-    //         })?,
-    //     }))?;
-    // let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    // for endowment in endowments.iter() {
-    //     let acct_bal = BALANCES
-    //         .load(deps.storage, endowment.id)
-    //         .unwrap_or_default();
-    //     let acct_owed = less_taxes * acct_bal / config.total_shares;
-    //     let liquid_amt = acct_owed * config.harvest_to_liquid.numerator()
-    //         / config.harvest_to_liquid.denominator();
-    //     match config.output_token_denom {
-    //         Denom::Native(ref denom) => {
-    //             res = res.add_message(CosmosMsg::Bank(BankMsg::Send {
-    //                 to_address: "fake_recipient".to_string(), // FIXME!
-    //                 amount: coins(liquid_amt.u128(), denom.to_string()),
-    //             }));
-    //         }
-    //         Denom::Cw20(ref token_addr) => {
-    //             res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-    //                 contract_addr: token_addr.to_string(),
-    //                 msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-    //                     recipient: "fake_recipient".to_string(), // FIXME!
-    //                     amount: liquid_amt,
-    //                 })
-    //                 .unwrap(),
-    //                 funds: vec![],
-    //             }))
-    //         }
-    //     }
-    //     restake_amt -= liquid_amt;
-    // }
-
-    // // All leftover rewards not taxed or liquided would be sent to be staked(convert to lp_token & staked)
-    // let depositor = env.contract.address.to_string();
-    // let deposit_denom = config.output_token_denom.clone();
-    // res = res.add_messages(create_deposit_msgs(
-    //     deps,
-    //     env,
-    //     &config,
-    //     0_u32, // Temporary value. Need to be fixed.
-    //     deposit_denom,
-    //     restake_amt,
-    // ));
-
-    // Ok(res)
-
-    Ok(Response::default())
+    Ok(Response::default()
+        .add_messages(msgs)
+        .add_attributes(vec![attr("action", "harvest")]))
 }
 
 /// Contract entry: **add_liquidity**
@@ -611,7 +415,7 @@ pub fn add_liquidity(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    endowment_id: u32,
+    endowment_id: Option<u32>,
     in_asset_info: AssetInfo,
     out_asset_info: AssetInfo,
     in_asset_bal_before: Uint128,
@@ -743,7 +547,7 @@ fn prepare_loop_pair_provide_liquidity_msgs(
 fn prepare_contract_stake_msgs(
     deps: Deps,
     env: Env,
-    endowment_id: u32,
+    endowment_id: Option<u32>,
     pair_contract: Addr,
 ) -> StdResult<Vec<CosmosMsg>> {
     let mut msgs = vec![];
@@ -776,7 +580,7 @@ pub fn stake_lp_token(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    endowment_id: u32,
+    endowment_id: Option<u32>,
     lp_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
     // Validations
@@ -813,24 +617,27 @@ pub fn stake_lp_token(
     // Mint the `vault_token`
     config.total_lp_amount += lp_stake_amount;
 
-    let mint_amount: Uint128;
-    if config.total_shares.is_zero() {
-        mint_amount = lp_stake_amount;
-    } else {
-        mint_amount = lp_stake_amount.multiply_ratio(config.total_shares, config.total_lp_amount);
+    if let Some(endowment_id) = endowment_id {
+        let mint_amount: Uint128;
+        if config.total_shares.is_zero() {
+            mint_amount = Uint128::from(1000000_u128);
+        } else {
+            mint_amount =
+                lp_stake_amount.multiply_ratio(config.total_shares, config.total_lp_amount);
+        }
+        config.total_shares += mint_amount;
+
+        CONFIG.save(deps.storage, &config)?;
+
+        execute_mint(deps, env, info, endowment_id, mint_amount).map_err(|_| {
+            ContractError::Std(StdError::GenericErr {
+                msg: format!(
+                    "Cannot mint the {} vault token for {}",
+                    mint_amount, endowment_id
+                ),
+            })
+        })?;
     }
-    config.total_shares += mint_amount;
-
-    CONFIG.save(deps.storage, &config)?;
-
-    execute_mint(deps, env, info, endowment_id, mint_amount).map_err(|_| {
-        ContractError::Std(StdError::GenericErr {
-            msg: format!(
-                "Cannot mint the {} vault token for {}",
-                mint_amount, endowment_id
-            ),
-        })
-    })?;
 
     Ok(Response::new()
         .add_message(msg)
@@ -994,7 +801,7 @@ fn prepare_contract_add_liquidity_msgs(
     deps: DepsMut,
     env: Env,
     config: &Config,
-    endowment_id: u32,
+    endowment_id: Option<u32>,
     deposit_asset_info: AssetInfo,
 ) -> Result<Vec<CosmosMsg>, StdError> {
     let mut msgs: Vec<CosmosMsg> = vec![];
