@@ -1290,6 +1290,10 @@ pub fn withdraw(
 
     for asset in assets.native.iter() {
         let liquid_balance = state_bal.get_denom_amount(asset.denom.clone()).amount;
+        // check for zero amounts and ignore if so
+        if asset.amount.is_zero() {
+            return Err(ContractError::InvalidZeroAmount {});
+        }
         // check that the amount in liquid balance is sufficient to cover request
         if asset.amount > liquid_balance {
             return Err(ContractError::InsufficientFunds {});
@@ -1305,6 +1309,10 @@ pub fn withdraw(
 
     for asset in assets.cw20.into_iter() {
         let liquid_balance = state_bal.get_token_amount(asset.address.clone()).amount;
+        // check for zero amounts and ignore if so
+        if asset.amount.is_zero() {
+            return Err(ContractError::InvalidZeroAmount {});
+        }
         // check that the amount in liquid balance is sufficient to cover request
         if asset.amount > liquid_balance {
             return Err(ContractError::InsufficientFunds {});

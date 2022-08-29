@@ -616,11 +616,18 @@ fn test_withdraw() {
     let info = mock_info(&endow_details.owner.to_string(), &[]);
     let withdraw_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
-        sources: vec![],
+        acct_type: AccountType::Liquid,
         beneficiary: "beneficiary".to_string(),
+        assets: GenericBalance {
+            native: vec![Coin {
+                denom: "ujuno".to_string(),
+                amount: Uint128::from(100_u128),
+            }],
+            cw20: vec![],
+        },
     };
     let res = execute(deps.as_mut(), mock_env(), info, withdraw_msg).unwrap();
-    assert_eq!(res.messages.len(), 0);
+    assert_eq!(res.messages.len(), 1);
 }
 
 #[test]
@@ -649,8 +656,9 @@ fn test_withdraw_liquid() {
     // Try the "WithdrawLiquid"
     // Fails since the amount is too big
     let info = mock_info(&endow_details.owner.to_string(), &[]);
-    let withdraw_liquid_msg = ExecuteMsg::WithdrawLiquid {
+    let withdraw_liquid_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
+        acct_type: AccountType::Liquid,
         beneficiary: "beneficiary".to_string(),
         assets: GenericBalance {
             native: vec![Coin {
@@ -665,8 +673,9 @@ fn test_withdraw_liquid() {
 
     // Succeed to withdraw liquid amount
     let info = mock_info(&endow_details.owner.to_string(), &[]);
-    let withdraw_liquid_msg = ExecuteMsg::WithdrawLiquid {
+    let withdraw_liquid_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
+        acct_type: AccountType::Liquid,
         beneficiary: "beneficiary".to_string(),
         assets: GenericBalance {
             native: vec![Coin {
