@@ -28,16 +28,10 @@ pub enum ExecuteMsg {
         amount: Uint128,
         vault_addr: String,
     },
-    // Pull funds from investment vault(s) to the Endowment Beneficiary as <asset_info>
-    // NOTE: Atm, the "vault" logic is not fixed.
-    //       Hence, it SHOULD be updated when the "vault" logic is implemented.
+    // Pull funds from Endowment locked/liquid free balances (TOH) to a Beneficiary address
     Withdraw {
         id: u32,
-        beneficiary: String,
-        sources: Vec<FundingSource>,
-    },
-    WithdrawLiquid {
-        id: u32,
+        acct_type: AccountType,
         beneficiary: String,
         assets: GenericBalance,
     },

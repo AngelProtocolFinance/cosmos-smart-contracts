@@ -99,14 +99,10 @@ pub fn execute(
         } => executers::reinvest_to_locked(deps, env, info, id, amount, vault_addr),
         ExecuteMsg::Withdraw {
             id,
-            beneficiary,
-            sources,
-        } => executers::withdraw(deps, env, info, id, beneficiary, sources),
-        ExecuteMsg::WithdrawLiquid {
-            id,
+            acct_type,
             beneficiary,
             assets,
-        } => executers::withdraw_liquid(deps, env, info, id, beneficiary, assets),
+        } => executers::withdraw(deps, info, id, acct_type, beneficiary, assets),
         ExecuteMsg::VaultInvest {
             id,
             acct_type,

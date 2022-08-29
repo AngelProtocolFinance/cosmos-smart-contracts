@@ -16,13 +16,12 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
 use angel_core::structs::{
-    AccountStrategies, AccountType, BalanceInfo, EndowmentType, FundingSource, GenericBalance,
-    RebalanceDetails, SocialMedialUrls, SplitDetails, StrategyComponent, SwapOperation, Tier,
-    YieldVault,
+    AccountStrategies, AccountType, BalanceInfo, EndowmentType, GenericBalance, RebalanceDetails,
+    SocialMedialUrls, SplitDetails, StrategyComponent, SwapOperation, Tier, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, redeem_account_vaults, redeem_all_vaults,
-    validate_deposit_fund, withdraw_from_vaults,
+    validate_deposit_fund,
 };
 use cosmwasm_std::{
     attr, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
@@ -1131,54 +1130,6 @@ pub fn deposit(
         .add_attribute("action", "account_deposit"))
 }
 
-pub fn withdraw(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    id: u32,
-    beneficiary: String,
-    sources: Vec<FundingSource>,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    let endowment = ENDOWMENTS.load(deps.storage, id)?;
-
-    // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // check that the Endowment has been approved to withdraw deposits
-    if !endowment.withdraw_approved {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Withdraws are not approved for this endowment".to_string(),
-        }));
-    }
-
-    // check if locked tokens are requested and
-    // reject if endowment cannot withdraw from locked before maturity
-    for source in sources.iter() {
-        if source.amount > Uint128::zero()
-            && (!endowment.withdraw_before_maturity || !endowment.is_expired(&env))
-        {
-            return Err(ContractError::InaccessableLockedBalance {});
-        }
-    }
-
-    // build redeem messages for each of the sources/amounts
-    let withdraw_messages = withdraw_from_vaults(
-        deps.as_ref(),
-        config.registrar_contract.to_string(),
-        id.clone(),
-        &deps.api.addr_validate(&beneficiary)?,
-        sources,
-    )?;
-
-    Ok(Response::new()
-        .add_submessages(withdraw_messages)
-        .add_attribute("action", "withdrawal")
-        .add_attribute("beneficiary", beneficiary))
-}
-
 /// Allow Endowment owners to invest some amount of their free balance
 /// "Tokens on Hand" holdings into a Vault. Does not have to be a Vault
 /// that exists in their Strategy. One-time/one-off investment.
@@ -1306,37 +1257,39 @@ pub fn vault_redeem(
         .add_submessage(redeem_msg))
 }
 
-pub fn withdraw_liquid(
+pub fn withdraw(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     id: u32,
+    acct_type: AccountType,
     beneficiary: String,
     assets: GenericBalance,
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let config = CONFIG.load(deps.storage)?;
 
-    // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner {
+    // check that sender is correct based on account types attempting to access
+    if acct_type == AccountType::Locked && info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
-
-    // check that the Endowment has been approved to withdraw deposits
-    if !endowment.withdraw_approved {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Withdraws are not approved for this endowment".to_string(),
-        }));
+    if acct_type == AccountType::Liquid {
+        if info.sender != endowment.owner {
+            return Err(ContractError::Unauthorized {});
+        }
+        // check that the Endowment has been approved to withdraw deposits
+        if !endowment.withdraw_approved {
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: "Withdraws are not approved for this endowment".to_string(),
+            }));
+        }
     }
 
     let mut state = STATES.load(deps.storage, id)?;
+    let mut state_bal: GenericBalance = state.balances.get(&acct_type).clone();
     let mut messages: Vec<SubMsg> = vec![];
 
     for asset in assets.native.iter() {
-        let liquid_balance = state
-            .balances
-            .liquid_balance
-            .get_denom_amount(asset.denom.clone())
-            .amount;
+        let liquid_balance = state_bal.get_denom_amount(asset.denom.clone()).amount;
         // check that the amount in liquid balance is sufficient to cover request
         if asset.amount > liquid_balance {
             return Err(ContractError::InsufficientFunds {});
@@ -1348,17 +1301,10 @@ pub fn withdraw_liquid(
         amount: assets.native.clone(),
     })));
     // Update the native tokens Liquid Balance in STATE
-    state
-        .balances
-        .liquid_balance
-        .deduct_tokens(Balance::from(assets.native));
+    state_bal.deduct_tokens(Balance::from(assets.native));
 
     for asset in assets.cw20.into_iter() {
-        let liquid_balance = state
-            .balances
-            .liquid_balance
-            .get_token_amount(asset.address.clone())
-            .amount;
+        let liquid_balance = state_bal.get_token_amount(asset.address.clone()).amount;
         // check that the amount in liquid balance is sufficient to cover request
         if asset.amount > liquid_balance {
             return Err(ContractError::InsufficientFunds {});
@@ -1374,18 +1320,19 @@ pub fn withdraw_liquid(
             funds: vec![],
         })));
         // Update a CW20 token's Liquid Balance in STATE
-        state
-            .balances
-            .liquid_balance
-            .deduct_tokens(Balance::Cw20(asset));
+        state_bal.deduct_tokens(Balance::Cw20(asset));
     }
 
+    // set the updated balance for the account type
+    match acct_type {
+        AccountType::Locked => state.balances.locked_balance = state_bal,
+        AccountType::Liquid => state.balances.liquid_balance = state_bal,
+    }
     STATES.save(deps.storage, id, &state)?;
 
     Ok(Response::new()
         .add_submessages(messages)
         .add_attribute("action", "withdraw_liquid")
-        .add_attribute("sender", env.contract.address.to_string())
         .add_attribute("beneficiary", beneficiary))
 }
 
