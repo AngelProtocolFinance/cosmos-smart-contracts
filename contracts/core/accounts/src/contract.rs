@@ -92,6 +92,11 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
             executers::update_endowment_status(deps, env, info, msg)
         }
+        ExecuteMsg::ReinvestToLocked {
+            id,
+            amount,
+            vault_addr,
+        } => executers::reinvest_to_locked(deps, env, info, id, amount, vault_addr),
         ExecuteMsg::Withdraw {
             id,
             beneficiary,
