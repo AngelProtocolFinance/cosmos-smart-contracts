@@ -147,6 +147,14 @@ pub fn execute(
             asset_info,
             asset_bal_before,
         } => executers::send_asset(deps, env, info, beneficiary, asset_info, asset_bal_before),
+        ExecuteMsg::Redeem {
+            endowment_id,
+            amount, // vault tokens to be burned
+        } => todo!(),
+        ExecuteMsg::ReinvestToLocked {
+            endowment_id,
+            amount,
+        } => todo!(),
     }
 }
 
@@ -183,7 +191,9 @@ fn receive_cw20(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)),
-        QueryMsg::Balance { id } => to_binary(&queriers::query_balance(deps, id)),
+        QueryMsg::Balance { endowment_id } => {
+            to_binary(&queriers::query_balance(deps, endowment_id))
+        }
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
         QueryMsg::TotalBalance {} => to_binary(&queriers::query_total_balance(deps)),
     }

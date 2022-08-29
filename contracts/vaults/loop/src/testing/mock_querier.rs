@@ -192,6 +192,7 @@ impl WasmMockQuerier {
                             cw20: vec![],
                         },
                         applications_review: "applications-review".to_string(),
+                        swaps_router: None,
                     })
                     .unwrap(),
                 )),

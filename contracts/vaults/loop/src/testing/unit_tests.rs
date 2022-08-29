@@ -147,6 +147,7 @@ fn test_update_config() {
         lp_staking_contract: Some("new-loop-farming".to_string()),
         pair_contract: Some("new-loop-pair".to_string()),
         keeper: Some("new-keeper".to_string()),
+        sibling_vault: None,
     };
 
     // Only "config.owner" can update the config, otherwise fails

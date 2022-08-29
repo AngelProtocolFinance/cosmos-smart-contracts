@@ -2,7 +2,7 @@ use crate::state::{
     read_registry_entries, read_vaults, CONFIG, NETWORK_CONNECTIONS, REGISTRY, VAULTS,
 };
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentType, Tier, VaultRate};
+use angel_core::structs::{AccountType, EndowmentEntry, EndowmentType, Tier, VaultRate};
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
 
