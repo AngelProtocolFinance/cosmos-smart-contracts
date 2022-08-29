@@ -22,6 +22,12 @@ pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
+    /// reinvset vault assets from Liquid to Locked
+    ReinvestToLocked {
+        id: u32,
+        amount: Uint128,
+        vault_addr: String,
+    },
     // Pull funds from investment vault(s) to the Endowment Beneficiary as <asset_info>
     // NOTE: Atm, the "vault" logic is not fixed.
     //       Hence, it SHOULD be updated when the "vault" logic is implemented.
