@@ -117,6 +117,8 @@ export async function testExecute(
   endowmentID: number,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
+  cw4GrpReviewTeam: string,
+  cw3ReviewTeam: string,
   junoswapFactory: string,
   junoswapToken: string,
   junoswapPair: string,

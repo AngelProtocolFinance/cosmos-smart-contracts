@@ -162,6 +162,8 @@ export async function testExecute(
   endowId4: number,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
+  cw4GrpReviewTeam: string,
+  cw3ReviewTeam: string,
   junoswapFactory: string,
   junoswapToken: string,
   junoswapPair: string,
@@ -256,7 +258,7 @@ export async function testExecute(
   //   },
   // });
   // Multisig test
-  // await testAddMemberToC4Group(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, cw4GrpApTeam, apTeamAddr);
+  // await testAddMemberToC4Group(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, cw4GrpApTeam, actors.apTeam2.addr);
   // await testUpdateCw3Config(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 50, 25000);
   // await testProposalApprovingEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, endowmentContract1);
   // await testCw3CastVote(actors.apTeam2.client, actors.apTeam2.addr, cw3ApTeam, 2, VoteOption.YES);

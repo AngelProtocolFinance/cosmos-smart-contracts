@@ -77,6 +77,8 @@ async function initialize() {
   accounts = config.contracts.accounts;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
+  cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
+  cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   indexFund = config.contracts.indexFund;
   anchorVault = config.contracts.anchorVault;
   endowmentIDs = [...config.contracts.endowmentIDs];
@@ -289,6 +291,8 @@ export async function startTests(): Promise<void> {
     endowmentIDs[0],
     cw4GrpApTeam,
     cw3ApTeam,
+    cw4GrpReviewTeam,
+    cw3ReviewTeam,
     junoswapFactory,
     junoswapHaloTokenContract,
     junoswapHaloUstPairContract,

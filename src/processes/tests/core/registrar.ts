@@ -221,11 +221,11 @@ export async function testQueryRegistrarConfig(
 export async function testQueryRegistrarEndowmentDetails(
   juno: SigningCosmWasmClient,
   registrar: string,
-  endowment: string
+  endowment: number
 ): Promise<void> {
   process.stdout.write("Test - Query Registrar Endowment Details/Status");
   const result: any = await juno.queryContractSmart(registrar, {
-    endowment: { endowment_addr: endowment },
+    endowment: { endowment_id: endowment },
   });
 
   console.log(result);

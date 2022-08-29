@@ -114,6 +114,8 @@ async function initialize() {
   registrar = config.contracts.registrar;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
+  cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
+  cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   indexFund = config.contracts.indexFund;
   accounts = config.contracts.accounts;
 
@@ -366,6 +368,8 @@ export async function startTests(): Promise<void> {
     endowId4,
     cw4GrpApTeam,
     cw3ApTeam,
+    cw4GrpReviewTeam,
+    cw3ReviewTeam,
     junoswapFactory,
     junoswapHaloTokenContract,
     junoswapHaloJunoPairContract,

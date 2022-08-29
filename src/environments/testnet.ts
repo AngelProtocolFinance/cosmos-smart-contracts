@@ -369,6 +369,8 @@ export async function startTests(): Promise<void> {
     endowId4,
     cw4GrpApTeam,
     cw3ApTeam,
+    cw4GrpReviewTeam,
+    cw3ReviewTeam,
     junoswapFactory,
     junoswapHaloTokenContract,
     junoswapHaloJunoPairContract,
