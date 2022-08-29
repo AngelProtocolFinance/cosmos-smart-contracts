@@ -21,6 +21,7 @@ members = [
 
 exclude = [
     "contracts/vaults/anchor",
+    "contracts/vaults/junoswap",
 ]
 
 [profile.release]

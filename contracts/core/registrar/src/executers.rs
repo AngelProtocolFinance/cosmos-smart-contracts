@@ -482,11 +482,7 @@ pub fn harvest(
 fn harvest_msg(account: String, collector_address: String, collector_share: Decimal) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account,
-        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {
-            collector_address,
-            collector_share,
-        })
-        .unwrap(),
+        msg: to_binary("TODO").unwrap(), // Temporarily, remove the "harvest" msg. Should be added after `vault` logic fixture.
         funds: vec![],
     });
 
