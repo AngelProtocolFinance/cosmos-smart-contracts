@@ -1,4 +1,4 @@
-use angel_core::structs::{BalanceInfo, Profile, RebalanceDetails, StrategyComponent};
+use angel_core::structs::{AccountStrategies, BalanceInfo, Profile, RebalanceDetails};
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -21,11 +21,13 @@ pub struct Endowment {
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
     pub maturity_time: Option<u64>,     // datetime int of endowment maturity
     pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
-    pub strategies: Vec<StrategyComponent>, // list of vaults and percentage for locked/liquid accounts
+    pub strategies: AccountStrategies,  // list of vaults and percentage for locked/liquid accounts
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
     pub profile: Profile,
     pub pending_redemptions: u8, // number of vault redemptions currently pending for this endowment
+    pub auto_invest: bool, // should donations locked portion get auto invested into the set strategy? (default: FALSE)
+    pub copycat_strategy: Option<u32>, // endowment ID to copy their strategy
 }
 
 impl Endowment {
@@ -51,3 +53,4 @@ pub struct State {
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATES: Map<u32, State> = Map::new("states");
 pub const ENDOWMENTS: Map<u32, Endowment> = Map::new("endowments");
+pub const COPYCATS: Map<u32, Vec<u32>> = Map::new("copycats");

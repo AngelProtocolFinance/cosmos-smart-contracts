@@ -1,5 +1,6 @@
 use angel_core::structs::{
-    AcceptedTokens, EndowmentEntry, EndowmentType, NetworkInfo, SplitDetails, YieldVault,
+    AcceptedTokens, AccountType, EndowmentEntry, EndowmentType, NetworkInfo, SplitDetails,
+    YieldVault,
 };
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
@@ -24,6 +25,7 @@ pub struct Config {
     pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
     pub gov_contract: Option<Addr>,    // AP governance contract
     pub charity_shares_contract: Option<Addr>, // Charity Shares staking contract
+    pub swaps_router: Option<Addr>,    // swaps router contract
     pub cw3_code: Option<u64>,
     pub cw4_code: Option<u64>,
     pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
@@ -47,6 +49,7 @@ pub fn read_vaults(
     storage: &dyn Storage,
     network: Option<String>,
     endowment_type: Option<EndowmentType>,
+    acct_type: Option<AccountType>,
     approved: Option<bool>,
     start_after: Option<Addr>,
     limit: Option<u64>,
@@ -73,6 +76,13 @@ pub fn read_vaults(
                     Some(_) => false,
                     None => true,
                 },
+                None => true,
+            },
+            &Err(_) => false,
+        })
+        .filter(|vault| match vault {
+            Ok(v) => match &acct_type {
+                Some(at) => at == &v.acct_type,
                 None => true,
             },
             &Err(_) => false,

@@ -37,6 +37,16 @@ pub enum ExecuteMsg {
     Deposit {
         endowment_id: u32,
     },
+    Redeem {
+        endowment_id: u32,
+        amount: Uint128, // vault tokens to be burned
+    },
+    /// reinvest vault assets from self (if AccountType::Liquid)
+    /// over to it's AccountType::Locked (sibling) vault
+    ReinvestToLocked {
+        endowment_id: u32,
+        amount: Uint128,
+    },
     Claim {},
     Withdraw(AccountWithdrawMsg),
     Harvest {},
@@ -76,6 +86,7 @@ pub struct UpdateConfigMsg {
     pub lp_staking_contract: Option<String>,
     pub pair_contract: Option<String>,
     pub keeper: Option<String>,
+    pub sibling_vault: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -105,7 +116,7 @@ pub enum QueryMsg {
     Config {},
     /// Returns the current balance of the given "Endowment ID", 0 if unset.
     /// Return type: BalanceResponse.
-    Balance { id: u32 },
+    Balance { endowment_id: u32 },
     /// Returns metadata on the contract - name, decimals, supply, etc.
     /// Return type: TokenInfoResponse.
     TokenInfo {},
