@@ -38,11 +38,6 @@ pub enum ExecuteMsg {
     UpdateOwner {
         new_owner: String,
     },
-    // Allows the DANO/AP Team to harvest all active vaults
-    Harvest {
-        collector_address: String,
-        collector_share: Decimal,
-    },
     // Allows the DANO/AP Team to update the EndowmentEntry
     UpdateEndowmentEntry(UpdateEndowmentEntryMsg),
     // Updates the NETWORK_CONNECTIONS
