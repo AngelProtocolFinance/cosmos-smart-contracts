@@ -949,12 +949,10 @@ pub fn reinvest_to_locked(
     }
     let msg: SubMsg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: vault_addr.clone(),
-        msg: to_binary(
-            &angel_core::messages::vault::ExecuteMsg::RevinvestToLocked {
-                endowment_id: id.clone(),
-                amount,
-            },
-        )
+        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::ReinvestToLocked {
+            endowment_id: id.clone(),
+            amount,
+        })
         .unwrap(),
         funds: vec![],
     }));

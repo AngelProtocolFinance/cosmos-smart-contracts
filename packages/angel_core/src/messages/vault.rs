@@ -33,7 +33,7 @@ pub enum ExecuteMsg {
     /// reinvest vault assets from self (if AccountType::Liquid)
     /// over to it's AccountType::Locked (sibling) vault
     ReinvestToLocked {
-        id: u32,
+        endowment_id: u32,
         amount: Uint128,
     },
     Withdraw(AccountWithdrawMsg),

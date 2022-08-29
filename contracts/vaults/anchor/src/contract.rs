@@ -97,9 +97,10 @@ pub fn execute(
         } => executers::redeem_stable(deps, env, info, endowment_id, amount), // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
         // move N assets for an endowment from a vault (if an AccountType::Liquid)
         // over to it's sibling vault (if set and an AccountType::Locked)
-        ExecuteMsg::ReinvestToLocked { id, amount } => {
-            executers::reinvest_to_locked_execute(deps, env, info, id, amount)
-        }
+        ExecuteMsg::ReinvestToLocked {
+            endowment_id,
+            amount,
+        } => executers::reinvest_to_locked_execute(deps, env, info, endowment_id, amount),
         ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info, msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
         ExecuteMsg::Harvest {
             collector_address,

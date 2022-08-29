@@ -78,7 +78,7 @@ pub enum Cw20HookMsg {
     RedeemStable {},
     /// reinvest vault assets (ex. LPs) from self (if AccountType::Liquid)
     /// over to it's AccountType::Locked (sibling) vault
-    ReinvestToLocked { id: u32, amount: Uint128 },
+    ReinvestToLocked { endowment_id: u32, amount: Uint128 },
 }
 
 pub fn deposit_stable_msg(market: &Addr, denom: &str, amount: Uint128) -> StdResult<CosmosMsg> {
