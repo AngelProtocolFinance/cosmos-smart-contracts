@@ -14,7 +14,7 @@ use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::structs::EndowmentEntry;
 use terraswap::querier::{query_balance, query_pair_info_from_pair, query_token_balance};
 
-use crate::state::{Config, BALANCES, CONFIG, TOKEN_INFO};
+use crate::state::{Config, APTAX, BALANCES, CONFIG, TOKEN_INFO};
 
 pub fn update_owner(
     deps: DepsMut,
@@ -200,36 +200,13 @@ pub fn distribute_claim(
         .checked_sub(reward_token_bal_before)
         .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
 
-    // Handle the `AP tax`
-    let mut tax_send_msgs: Vec<CosmosMsg> = vec![];
-    let registrar_config: ConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract.to_string(),
-        &RegistrarQueryMsg::Config {},
-    )?;
-    let tax_rate = registrar_config.tax_rate;
-    let ap_treasury = deps.api.addr_validate(&registrar_config.treasury)?;
-    let tax_amount = reward_amount.multiply_ratio(tax_rate.numerator(), tax_rate.denominator());
-    tax_send_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::Swap {
-            beneficiary: Some(ap_treasury),
-            in_asset_info: AssetInfo::Token {
-                contract_addr: config.lp_reward_token.to_string(),
-            },
-            in_asset_bal_before: reward_token_bal_query.balance - tax_amount,
-        })
-        .unwrap(),
-        funds: vec![],
-    }));
-
-    // Re-stake the leftover `reward token`s
-    let less_tax = reward_amount - tax_amount;
+    // Re-stake the `reward token`s for more yield
     let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
         &config.pair_contract.to_string(),
         &AssetInfo::Token {
             contract_addr: config.lp_reward_token.to_string(),
         },
-        less_tax.multiply_ratio(1_u128, 2_u128),
+        reward_amount.multiply_ratio(1_u128, 2_u128),
     )?;
 
     // Prepare the messages for "(this contract::)add_liquidity" opeartion
@@ -244,7 +221,6 @@ pub fn distribute_claim(
     )?;
 
     Ok(Response::default()
-        .add_messages(tax_send_msgs)
         .add_messages(loop_pair_swap_msgs)
         .add_messages(contract_add_liquidity_msgs)
         .add_attributes(vec![attr("action", "distribute_claim")]))
@@ -617,18 +593,17 @@ pub fn stake_lp_token(
     // Mint the `vault_token`
     config.total_lp_amount += lp_stake_amount;
 
+    let mint_amount: Uint128;
+    if config.total_shares.is_zero() {
+        mint_amount = Uint128::from(1000000_u128); // Here, the original mint amount should be 1 VT.
+    } else {
+        mint_amount = lp_stake_amount.multiply_ratio(config.total_shares, config.total_lp_amount);
+    }
+
+    config.total_shares += mint_amount;
+    CONFIG.save(deps.storage, &config)?;
+
     if let Some(endowment_id) = endowment_id {
-        let mint_amount: Uint128;
-        if config.total_shares.is_zero() {
-            mint_amount = Uint128::from(1000000_u128);
-        } else {
-            mint_amount =
-                lp_stake_amount.multiply_ratio(config.total_shares, config.total_lp_amount);
-        }
-        config.total_shares += mint_amount;
-
-        CONFIG.save(deps.storage, &config)?;
-
         execute_mint(deps, env, info, endowment_id, mint_amount).map_err(|_| {
             ContractError::Std(StdError::GenericErr {
                 msg: format!(
@@ -636,6 +611,30 @@ pub fn stake_lp_token(
                     mint_amount, endowment_id
                 ),
             })
+        })?;
+    } else {
+        let mut token_info = TOKEN_INFO.load(deps.storage)?;
+        // update supply and enforce cap
+        token_info.total_supply += mint_amount;
+        if let Some(limit) = token_info.get_cap() {
+            if token_info.total_supply > limit {
+                return Err(ContractError::CannotExceedCap {});
+            }
+        }
+        TOKEN_INFO.save(deps.storage, &token_info)?;
+
+        // Compute the `ap_treasury tax portion` & store in APTAX
+        let registrar_config: ConfigResponse = deps.querier.query_wasm_smart(
+            config.registrar_contract.to_string(),
+            &RegistrarQueryMsg::Config {},
+        )?;
+        let tax_rate = registrar_config.tax_rate;
+        let tax_mint_amount =
+            mint_amount.multiply_ratio(tax_rate.numerator(), tax_rate.denominator());
+
+        APTAX.update(deps.storage, |mut balance: Uint128| -> StdResult<Uint128> {
+            balance = balance.checked_add(tax_mint_amount)?;
+            Ok(balance)
         })?;
     }
 

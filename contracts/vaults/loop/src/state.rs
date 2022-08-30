@@ -43,3 +43,4 @@ impl TokenInfo {
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
 pub const BALANCES: Map<u32, Uint128> = Map::new("balance");
+pub const APTAX: Item<Uint128> = Item::new("ap_treasury_tax_balance");

@@ -11,7 +11,7 @@ use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryM
 
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, MinterData, TokenInfo, CONFIG, TOKEN_INFO};
+use crate::state::{Config, MinterData, TokenInfo, APTAX, CONFIG, TOKEN_INFO};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "loopswap_vault";
@@ -41,6 +41,8 @@ pub fn instantiate(
     };
 
     CONFIG.save(deps.storage, &config)?;
+
+    APTAX.save(deps.storage, &Uint128::zero())?;
 
     // Store vault token information
     let token_info = TokenInfo {
