@@ -109,6 +109,7 @@ pub struct RoutesUpdateMsg {
 #[serde(rename_all = "snake_case")]
 pub enum ReceiveMsg {
     Deposit { endowment_id: u32 },
+    ReinvestToLocked { endowment_id: u32, amount: Uint128 },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -1,3 +1,5 @@
+use angel_core::responses::vault::ConfigResponse;
+use angel_core::structs::AccountType;
 use cosmwasm_std::{
     entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
     StdError, StdResult, Uint128,
@@ -162,7 +164,7 @@ pub fn execute(
         ExecuteMsg::ReinvestToLocked {
             endowment_id,
             amount,
-        } => todo!(),
+        } => executers::reinvest_to_locked_execute(deps, env, info, endowment_id, amount),
     }
 }
 
@@ -188,6 +190,12 @@ fn receive_cw20(
                 deposit_asset_info,
                 deposit_amount,
             )
+        }
+        Ok(ReceiveMsg::ReinvestToLocked {
+            endowment_id,
+            amount,
+        }) => {
+            executers::reinvest_to_locked_recieve(deps, env, info, endowment_id, amount, cw20_msg)
         }
         _ => Err(ContractError::Std(StdError::GenericErr {
             msg: "Invalid call".to_string(),

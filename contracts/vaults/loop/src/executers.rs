@@ -2,16 +2,17 @@ use cosmwasm_std::{
     attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Fraction,
     MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
+use cw20::Cw20ReceiveMsg;
 use terraswap::asset::{Asset, AssetInfo};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{
-    AccountWithdrawMsg, ExecuteMsg, LoopFarmingExecuteMsg, LoopPairExecuteMsg, RemoveLiquidAction,
-    UpdateConfigMsg,
+    AccountWithdrawMsg, ExecuteMsg, LoopFarmingExecuteMsg, LoopPairExecuteMsg, ReceiveMsg,
+    RemoveLiquidAction, UpdateConfigMsg,
 };
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
-use angel_core::structs::EndowmentEntry;
+use angel_core::structs::{AccountType, EndowmentEntry};
 use terraswap::querier::{query_balance, query_pair_info_from_pair, query_token_balance};
 
 use crate::state::{Config, APTAX, BALANCES, CONFIG, TOKEN_INFO};
@@ -979,6 +980,138 @@ pub fn swap(
         .add_messages(swap_msgs)
         .add_messages(send_asset_msg)
         .add_attributes(vec![attr("action", "swap")]))
+}
+
+pub fn reinvest_to_locked_execute(
+    mut deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    id: u32,
+    amount: Uint128, // vault tokens
+) -> Result<Response, ContractError> {
+    let mut config: Config = CONFIG.load(deps.storage)?;
+
+    // Check that the vault acct_type is `liquid`
+    if config.acct_type != AccountType::Liquid {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "This is locked vault".to_string(),
+        }));
+    }
+
+    // 0. Check that the message sender is the Accounts contract
+    validate_action_caller_n_endow_id(deps.as_ref(), &config, info.sender.to_string(), id)?;
+    // 1. Check that this vault has a sibling set
+    if config.sibling_vault.to_string() == env.contract.address.to_string() {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Sibling vault not created".to_string(),
+        }));
+    }
+    // 2. Check that sender ID has >= amount of vault tokens in it's balance
+    let endowment_vt_balance = crate::queriers::query_balance(deps.as_ref(), id).balance;
+    if amount > endowment_vt_balance {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Insufficient balance: Needed {}, existing: {}",
+                amount, endowment_vt_balance
+            ),
+        }));
+    }
+    // 3. Burn vault tokens an calculate the LP Tokens equivalent
+    // First, burn the vault tokens
+    execute_burn(deps.branch(), env.clone(), info, id, amount).map_err(|_| {
+        ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Cannot burn the {} vault tokens from {}",
+                amount,
+                id.to_string()
+            ),
+        })
+    })?;
+
+    // Update the config
+    let lp_amount = amount.multiply_ratio(config.total_lp_amount, config.total_shares);
+    config.total_lp_amount -= lp_amount;
+    config.total_shares -= amount;
+
+    CONFIG.save(deps.storage, &config)?;
+    // 4. SEND LP tokens to the Locked Account (using ReinvestToLocked recieve msg)
+    let reinvest_to_locked_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.lp_reward_token.to_string(),
+        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+            contract: config.sibling_vault.to_string(),
+            amount: lp_amount,
+            msg: to_binary(&ReceiveMsg::ReinvestToLocked {
+                endowment_id: id,
+                amount: lp_amount,
+            })
+            .unwrap(),
+        })
+        .unwrap(),
+        funds: vec![],
+    })];
+
+    Ok(Response::new()
+        .add_messages(reinvest_to_locked_msgs)
+        .add_attributes(vec![attr("action", "reinvest_to_locked_vault")]))
+}
+
+pub fn reinvest_to_locked_recieve(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    id: u32,
+    amount: Uint128, // asset tokens (ex. LPs)
+    cw20_msg: Cw20ReceiveMsg,
+) -> Result<Response, ContractError> {
+    let config: Config = CONFIG.load(deps.storage)?;
+
+    // 0. Check that the message sender is the Sibling vault contract
+    // ensure `received token` is `lp_reward_token`
+    if info.sender != config.lp_reward_token {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // ensure `msg_sender` is sibling_vault(liquid)
+    let msg_sender = cw20_msg.sender;
+    if config.acct_type != AccountType::Locked || msg_sender != config.sibling_vault.to_string() {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let sibling_config_resp: angel_core::responses::vault::ConfigResponse =
+        deps.querier.query_wasm_smart(
+            config.sibling_vault.to_string(),
+            &angel_core::messages::vault::QueryMsg::Config {},
+        )?;
+    if sibling_config_resp.acct_type != AccountType::Liquid {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // ensure the `amount` matches `sent_amount`.
+    let sent_amount = cw20_msg.amount;
+    if amount != sent_amount {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Balance does not match: Received: {}, Expected: {}",
+                sent_amount, amount
+            ),
+        }));
+    }
+
+    // 1. Treat as a Deposit for the given ID (mint vault tokens for deposited assets)
+    // Prepare the messages for "(this contract::)add_liquidity" opeartion
+    let contract_add_liquidity_msgs = prepare_contract_add_liquidity_msgs(
+        deps,
+        env,
+        &config,
+        Some(id),
+        AssetInfo::Token {
+            contract_addr: config.lp_reward_token.to_string(),
+        },
+    )?;
+
+    Ok(Response::new()
+        .add_messages(contract_add_liquidity_msgs)
+        .add_attributes(vec![attr("action", "reinvest_to_locked_vault")]))
 }
 
 /// Check if the `caller` is the `accounts_contract` address &
