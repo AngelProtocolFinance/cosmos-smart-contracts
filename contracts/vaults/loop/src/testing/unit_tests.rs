@@ -8,6 +8,7 @@ use angel_core::messages::vault::{
     AccountWithdrawMsg, ExecuteMsg, InstantiateMsg, QueryMsg, UpdateConfigMsg,
 };
 use angel_core::responses::vault::ConfigResponse;
+use angel_core::structs::AccountType;
 
 use crate::contract::{execute, instantiate, query};
 use crate::testing::mock_querier::{mock_dependencies, WasmMockQuerier};
@@ -15,6 +16,8 @@ use crate::testing::mock_querier::{mock_dependencies, WasmMockQuerier};
 fn create_mock_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
     let mut deps = mock_dependencies(&coins);
     let instantiate_msg = InstantiateMsg {
+        acct_type: AccountType::Locked,
+        sibling_vault: Some("sibling-vault".to_string()),
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
 
@@ -39,6 +42,8 @@ fn create_mock_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMo
 fn proper_instantiation() {
     let mut deps = mock_dependencies(&[]);
     let instantiate_msg = InstantiateMsg {
+        acct_type: AccountType::Locked,
+        sibling_vault: Some("sibling-vault".to_string()),
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
 

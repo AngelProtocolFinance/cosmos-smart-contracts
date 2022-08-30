@@ -24,6 +24,8 @@ pub fn query_config(deps: Deps) -> ConfigResponse {
     let config = CONFIG.load(deps.storage).unwrap();
     ConfigResponse {
         owner: config.owner.to_string(),
+        acct_type: config.acct_type,
+        sibling_vault: config.sibling_vault.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
         keeper: config.keeper.to_string(),
         pair_contract: config.pair_contract.to_string(),

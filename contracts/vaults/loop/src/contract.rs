@@ -27,8 +27,14 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     // Store the configuration
+    let sibling_vault = match msg.sibling_vault {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => env.contract.address.clone(), // can set later with update_config
+    };
     let config = Config {
         owner: info.sender,
+        acct_type: msg.acct_type,
+        sibling_vault,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         keeper: deps.api.addr_validate(&msg.keeper)?,
 

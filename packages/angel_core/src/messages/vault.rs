@@ -1,3 +1,4 @@
+use crate::structs::AccountType;
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
@@ -6,6 +7,8 @@ use terraswap::asset::Asset;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
+    pub acct_type: AccountType,
+    pub sibling_vault: Option<String>,
     pub registrar_contract: String,
     pub keeper: String,
 

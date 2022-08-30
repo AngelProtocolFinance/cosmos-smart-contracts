@@ -1,3 +1,4 @@
+use angel_core::structs::AccountType;
 use cosmwasm_std::{Addr, Uint128};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -6,6 +7,8 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
+    pub acct_type: AccountType,
+    pub sibling_vault: Addr,
     pub registrar_contract: Addr,
     pub keeper: Addr,
 

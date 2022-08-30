@@ -68,6 +68,11 @@ pub fn update_config(
     }
 
     // Update the config
+    config.sibling_vault = match msg.sibling_vault {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.sibling_vault,
+    };
+
     config.lp_staking_contract = match msg.lp_staking_contract {
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.lp_staking_contract,
