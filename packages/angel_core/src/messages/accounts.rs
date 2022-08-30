@@ -1,4 +1,4 @@
-use crate::structs::{AccountType, FundingSource, GenericBalance, Profile, SwapOperation};
+use crate::structs::{AccountType, FundingSource, Profile, SwapOperation};
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
@@ -22,24 +22,18 @@ pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
-    /// reinvset vault assets from Liquid to Locked
+    /// reinvest vault assets from Liquid to Locked
     ReinvestToLocked {
         id: u32,
         amount: Uint128,
         vault_addr: String,
     },
-    // Pull funds from investment vault(s) to the Endowment Beneficiary as <asset_info>
-    // NOTE: Atm, the "vault" logic is not fixed.
-    //       Hence, it SHOULD be updated when the "vault" logic is implemented.
+    // Pull funds from Endowment locked/liquid free balances (TOH) to a Beneficiary address
     Withdraw {
         id: u32,
+        acct_type: AccountType,
         beneficiary: String,
-        sources: Vec<FundingSource>,
-    },
-    WithdrawLiquid {
-        id: u32,
-        beneficiary: String,
-        assets: GenericBalance,
+        assets: Vec<Asset>,
     },
     SwapToken {
         id: u32,
