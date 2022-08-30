@@ -75,15 +75,7 @@ pub fn execute(
                 info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
                 amount: info.funds[0].amount,
             };
-            executers::vault_receipt(
-                deps,
-                env,
-                info.clone(),
-                id,
-                acct_type,
-                info.sender,
-                native_fund,
-            )
+            executers::vault_receipt(deps, id, acct_type, info.sender, native_fund)
         }
         ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
@@ -103,16 +95,16 @@ pub fn execute(
             beneficiary,
             assets,
         } => executers::withdraw(deps, info, id, acct_type, beneficiary, assets),
-        ExecuteMsg::VaultInvest {
+        ExecuteMsg::VaultsInvest {
             id,
             acct_type,
-            asset,
-            amount,
-            vault,
-        } => executers::vault_invest(deps, env, info, id, acct_type, asset, amount, vault),
-        ExecuteMsg::VaultRedeem { id, amount, vault } => {
-            executers::vault_redeem(deps, env, info, id, amount, vault)
-        }
+            vaults,
+        } => executers::vaults_invest(deps, info, id, acct_type, vaults),
+        ExecuteMsg::VaultsRedeem {
+            id,
+            acct_type,
+            vaults,
+        } => executers::vaults_redeem(deps, env, info, id, acct_type, vaults),
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
@@ -124,9 +116,6 @@ pub fn execute(
             acct_type,
             strategies,
         } => executers::update_strategies(deps, env, info, id, acct_type, strategies),
-        ExecuteMsg::RebalanceStrategies { id, acct_type } => {
-            executers::rebalance_strategies(deps, env, info, id, acct_type)
-        }
         ExecuteMsg::CopycatStrategies {
             id,
             acct_type,
@@ -153,8 +142,6 @@ pub fn receive_cw20(
     match from_binary(&cw20_msg.msg) {
         Ok(ReceiveMsg::VaultReceipt { id, acct_type }) => executers::vault_receipt(
             deps,
-            env,
-            info.clone(),
             id,
             acct_type,
             api.addr_validate(&cw20_msg.sender)?,

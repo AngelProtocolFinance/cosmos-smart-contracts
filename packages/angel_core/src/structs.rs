@@ -233,6 +233,14 @@ impl fmt::Display for Tier {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum Beneficiary {
+    Endowment { id: u32 },
+    IndexFund { id: u64 },
+    Wallet { address: String },
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub enum EndowmentType {
     Charity,
     Normal,
@@ -317,10 +325,10 @@ impl BalanceInfo {
         }
     }
 
-    pub fn get(&self, acct_type: &AccountType) -> &GenericBalance {
+    pub fn get(&self, acct_type: &AccountType) -> GenericBalance {
         match acct_type {
-            &AccountType::Locked => &self.locked_balance,
-            &AccountType::Liquid => &self.liquid_balance,
+            &AccountType::Locked => self.locked_balance.clone(),
+            &AccountType::Liquid => self.liquid_balance.clone(),
         }
     }
 }

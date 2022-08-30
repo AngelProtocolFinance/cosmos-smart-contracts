@@ -3,7 +3,7 @@ use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
-use angel_core::structs::{AccountType, EndowmentType, Profile, SocialMedialUrls};
+use angel_core::structs::{AccountType, Beneficiary, EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{attr, coins, from_binary, to_binary, Coin, Decimal, OwnedDeps, Uint128};
 use cw20::Cw20ReceiveMsg;
@@ -833,7 +833,9 @@ fn test_close_endowment() {
         info,
         ExecuteMsg::CloseEndowment {
             id: CHARITY_ID,
-            beneficiary: None,
+            beneficiary: Beneficiary::Wallet {
+                address: CHARITY_ADDR.to_string(),
+            },
         },
     )
     .unwrap_err();
@@ -847,7 +849,9 @@ fn test_close_endowment() {
         info,
         ExecuteMsg::CloseEndowment {
             id: CHARITY_ID,
-            beneficiary: None,
+            beneficiary: Beneficiary::Wallet {
+                address: CHARITY_ADDR.to_string(),
+            },
         },
     )
     .unwrap();
@@ -873,5 +877,5 @@ fn test_close_endowment() {
     .unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
     assert_eq!(state.closing_endowment, true);
-    assert_eq!(state.closing_beneficiary, "");
+    assert_eq!(state.closing_beneficiary, Some(Beneficiary::Wallet { address: CHARITY_ADDR.to_string() }));
 }

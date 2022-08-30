@@ -25,9 +25,7 @@ pub fn query_state(deps: Deps, id: u32) -> StdResult<StateResponse> {
     Ok(StateResponse {
         donations_received: state.donations_received,
         closing_endowment: state.closing_endowment,
-        closing_beneficiary: state
-            .closing_beneficiary
-            .map_or("".to_string(), |v| v.to_string()),
+        closing_beneficiary: state.closing_beneficiary,
     })
 }
 

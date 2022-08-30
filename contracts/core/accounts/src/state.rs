@@ -1,4 +1,4 @@
-use angel_core::structs::{AccountStrategies, BalanceInfo, Profile, RebalanceDetails};
+use angel_core::structs::{AccountStrategies, BalanceInfo, Beneficiary, Profile, RebalanceDetails};
 use cosmwasm_std::{Addr, Env, Timestamp, Uint128};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -47,7 +47,7 @@ pub struct State {
     pub donations_received: Uint128,
     pub balances: BalanceInfo,
     pub closing_endowment: bool,
-    pub closing_beneficiary: Option<String>,
+    pub closing_beneficiary: Option<Beneficiary>,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
