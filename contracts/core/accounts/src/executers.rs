@@ -16,13 +16,12 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
 use angel_core::structs::{
-    AccountStrategies, AccountType, BalanceInfo, EndowmentType, FundingSource, GenericBalance,
-    RebalanceDetails, SocialMedialUrls, SplitDetails, StrategyComponent, SwapOperation, Tier,
-    YieldVault,
+    AccountStrategies, AccountType, BalanceInfo, EndowmentType, GenericBalance, RebalanceDetails,
+    SocialMedialUrls, SplitDetails, StrategyComponent, SwapOperation, Tier, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, redeem_account_vaults, redeem_all_vaults,
-    validate_deposit_fund, withdraw_from_vaults,
+    validate_deposit_fund,
 };
 use cosmwasm_std::{
     attr, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
@@ -1131,54 +1130,6 @@ pub fn deposit(
         .add_attribute("action", "account_deposit"))
 }
 
-pub fn withdraw(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    id: u32,
-    beneficiary: String,
-    sources: Vec<FundingSource>,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    let endowment = ENDOWMENTS.load(deps.storage, id)?;
-
-    // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // check that the Endowment has been approved to withdraw deposits
-    if !endowment.withdraw_approved {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Withdraws are not approved for this endowment".to_string(),
-        }));
-    }
-
-    // check if locked tokens are requested and
-    // reject if endowment cannot withdraw from locked before maturity
-    for source in sources.iter() {
-        if source.amount > Uint128::zero()
-            && (!endowment.withdraw_before_maturity || !endowment.is_expired(&env))
-        {
-            return Err(ContractError::InaccessableLockedBalance {});
-        }
-    }
-
-    // build redeem messages for each of the sources/amounts
-    let withdraw_messages = withdraw_from_vaults(
-        deps.as_ref(),
-        config.registrar_contract.to_string(),
-        id.clone(),
-        &deps.api.addr_validate(&beneficiary)?,
-        sources,
-    )?;
-
-    Ok(Response::new()
-        .add_submessages(withdraw_messages)
-        .add_attribute("action", "withdrawal")
-        .add_attribute("beneficiary", beneficiary))
-}
-
 /// Allow Endowment owners to invest some amount of their free balance
 /// "Tokens on Hand" holdings into a Vault. Does not have to be a Vault
 /// that exists in their Strategy. One-time/one-off investment.
@@ -1306,86 +1257,107 @@ pub fn vault_redeem(
         .add_submessage(redeem_msg))
 }
 
-pub fn withdraw_liquid(
+pub fn withdraw(
     deps: DepsMut,
-    env: Env,
     info: MessageInfo,
     id: u32,
+    acct_type: AccountType,
     beneficiary: String,
-    assets: GenericBalance,
+    assets: Vec<Asset>,
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let config = CONFIG.load(deps.storage)?;
+    let mut state = STATES.load(deps.storage, id)?;
+    let mut state_bal: GenericBalance = state.balances.get(&acct_type).clone();
+    let mut messages: Vec<SubMsg> = vec![];
+    let mut native_coins: Vec<Coin> = vec![];
 
-    // check that sender is the owner or the beneficiary
-    if info.sender != endowment.owner {
+    // check that sender is correct based on account type attempting to access
+    // Only config owner can authorize a locked balance withdraw (for now)
+    if acct_type == AccountType::Locked && info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
-
-    // check that the Endowment has been approved to withdraw deposits
-    if !endowment.withdraw_approved {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Withdraws are not approved for this endowment".to_string(),
-        }));
-    }
-
-    let mut state = STATES.load(deps.storage, id)?;
-    let mut messages: Vec<SubMsg> = vec![];
-
-    for asset in assets.native.iter() {
-        let liquid_balance = state
-            .balances
-            .liquid_balance
-            .get_denom_amount(asset.denom.clone())
-            .amount;
-        // check that the amount in liquid balance is sufficient to cover request
-        if asset.amount > liquid_balance {
-            return Err(ContractError::InsufficientFunds {});
+    // Only the owner of an endowment w/ withdraws approved can remove liquid balances
+    if acct_type == AccountType::Liquid {
+        if info.sender != endowment.owner {
+            return Err(ContractError::Unauthorized {});
+        }
+        if !endowment.withdraw_approved {
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: "Withdraws are not approved for this endowment".to_string(),
+            }));
         }
     }
-    // Build message to send all native tokens to the Beneficiary via BankMsg::Send
-    messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-        to_address: beneficiary.to_string(),
-        amount: assets.native.clone(),
-    })));
-    // Update the native tokens Liquid Balance in STATE
-    state
-        .balances
-        .liquid_balance
-        .deduct_tokens(Balance::from(assets.native));
 
-    for asset in assets.cw20.into_iter() {
-        let liquid_balance = state
-            .balances
-            .liquid_balance
-            .get_token_amount(asset.address.clone())
-            .amount;
-        // check that the amount in liquid balance is sufficient to cover request
-        if asset.amount > liquid_balance {
+    for asset in assets.iter() {
+        // check for assets with zero amounts and raise error if found
+        if asset.amount.is_zero() {
+            return Err(ContractError::InvalidZeroAmount {});
+        }
+
+        // fetch the amount of an asset held in the state balance
+        let balance: Uint128 = match asset.info.clone() {
+            AssetInfo::Native(denom) => state_bal.get_denom_amount(denom).amount,
+            AssetInfo::Cw20(addr) => state_bal.get_token_amount(addr).amount,
+            AssetInfo::Cw1155(_, _) => Uint128::zero(),
+        };
+        // check that the amount in state balance is sufficient to cover withdraw request
+        if asset.amount > balance {
             return Err(ContractError::InsufficientFunds {});
         }
-        // Build message to send a CW20 tokens to the Beneficiary via CW20::Transfer
-        messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: asset.address.to_string(),
-            msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-                recipient: beneficiary.to_string(),
-                amount: asset.amount,
-            })
-            .unwrap(),
-            funds: vec![],
+
+        // build message based on asset type and update state balance with deduction
+        match asset.info.clone() {
+            AssetInfo::Native(denom) => {
+                // add Coin to the native coins vector to have a message built
+                // and all deductions against the state balance done at the end
+                native_coins.push(Coin {
+                    denom: denom.clone(),
+                    amount: asset.amount,
+                });
+            }
+            AssetInfo::Cw20(addr) => {
+                // Build message to transfer CW20 tokens to the Beneficiary
+                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: addr.to_string(),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                        recipient: beneficiary.to_string(),
+                        amount: asset.amount,
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                })));
+                // Update a CW20 token's Balance in STATE
+                state_bal.deduct_tokens(Balance::Cw20(Cw20CoinVerified {
+                    amount: asset.amount,
+                    address: addr,
+                }));
+            }
+            AssetInfo::Cw1155(_, _) => unimplemented!(),
+        }
+    }
+
+    // build the native Coin BankMsg if needed
+    if !native_coins.is_empty() {
+        // deduct the native coins withdrawn against balances held in state
+        state_bal.deduct_tokens(Balance::from(native_coins.clone()));
+        // Build message to send all native tokens to the Beneficiary via BankMsg::Send
+        messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+            to_address: beneficiary.to_string(),
+            amount: native_coins,
         })));
-        // Update a CW20 token's Liquid Balance in STATE
-        state
-            .balances
-            .liquid_balance
-            .deduct_tokens(Balance::Cw20(asset));
     }
 
+    // set the updated balance for the account type
+    match acct_type {
+        AccountType::Locked => state.balances.locked_balance = state_bal,
+        AccountType::Liquid => state.balances.liquid_balance = state_bal,
+    }
     STATES.save(deps.storage, id, &state)?;
 
     Ok(Response::new()
         .add_submessages(messages)
         .add_attribute("action", "withdraw_liquid")
-        .add_attribute("sender", env.contract.address.to_string())
         .add_attribute("beneficiary", beneficiary))
 }
 

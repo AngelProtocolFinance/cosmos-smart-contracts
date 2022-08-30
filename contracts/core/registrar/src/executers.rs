@@ -449,51 +449,6 @@ pub fn new_accounts_reply(
     }
 }
 
-pub fn harvest(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    collector_address: String,
-    collector_share: Decimal,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    // harvest can only be valid if it comes from the  (AP Team/DANO) SC Owner
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-    // gets a list of approved Vaults
-    let vaults = read_vaults(deps.storage, None, None, None, Some(true), None, None)?;
-    let list = VaultListResponse { vaults };
-
-    let mut sub_messages: Vec<SubMsg> = vec![];
-    for vault in list.vaults.iter() {
-        sub_messages.push(harvest_msg(
-            vault.address.to_string(),
-            collector_address.clone(),
-            collector_share,
-        ));
-    }
-
-    Ok(Response::new()
-        .add_submessages(sub_messages)
-        .add_attribute("action", "harvest"))
-}
-
-fn harvest_msg(account: String, collector_address: String, collector_share: Decimal) -> SubMsg {
-    let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: account,
-        msg: to_binary("TODO").unwrap(), // Temporarily, remove the "harvest" msg. Should be added after `vault` logic fixture.
-        funds: vec![],
-    });
-
-    SubMsg {
-        id: 0,
-        msg: wasm_msg,
-        gas_limit: None,
-        reply_on: ReplyOn::Never,
-    }
-}
-
 pub fn update_endowment_entry(
     deps: DepsMut,
     _env: Env,

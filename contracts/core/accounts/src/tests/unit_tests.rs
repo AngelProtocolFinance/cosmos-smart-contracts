@@ -3,11 +3,11 @@ use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
-use angel_core::structs::{AccountType, EndowmentType, GenericBalance, Profile, SocialMedialUrls};
+use angel_core::structs::{AccountType, EndowmentType, Profile, SocialMedialUrls};
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{attr, coins, from_binary, to_binary, Coin, Decimal, OwnedDeps, Uint128};
 use cw20::Cw20ReceiveMsg;
-
+use cw_asset::{Asset, AssetInfo};
 use cw_utils::{Duration, Threshold};
 
 const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
@@ -616,11 +616,15 @@ fn test_withdraw() {
     let info = mock_info(&endow_details.owner.to_string(), &[]);
     let withdraw_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
-        sources: vec![],
+        acct_type: AccountType::Liquid,
         beneficiary: "beneficiary".to_string(),
+        assets: vec![Asset {
+            info: AssetInfo::Native("ujuno".to_string()),
+            amount: Uint128::from(100_u128),
+        }],
     };
     let res = execute(deps.as_mut(), mock_env(), info, withdraw_msg).unwrap();
-    assert_eq!(res.messages.len(), 0);
+    assert_eq!(res.messages.len(), 1);
 }
 
 #[test]
@@ -649,32 +653,28 @@ fn test_withdraw_liquid() {
     // Try the "WithdrawLiquid"
     // Fails since the amount is too big
     let info = mock_info(&endow_details.owner.to_string(), &[]);
-    let withdraw_liquid_msg = ExecuteMsg::WithdrawLiquid {
+    let withdraw_liquid_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
+        acct_type: AccountType::Liquid,
         beneficiary: "beneficiary".to_string(),
-        assets: GenericBalance {
-            native: vec![Coin {
-                denom: "ujuno".to_string(),
-                amount: Uint128::from(1000_u128),
-            }],
-            cw20: vec![],
-        },
+        assets: vec![Asset {
+            info: AssetInfo::Native("ujuno".to_string()),
+            amount: Uint128::from(1000_u128),
+        }],
     };
     let err = execute(deps.as_mut(), mock_env(), info, withdraw_liquid_msg).unwrap_err();
     assert_eq!(err, ContractError::InsufficientFunds {});
 
     // Succeed to withdraw liquid amount
     let info = mock_info(&endow_details.owner.to_string(), &[]);
-    let withdraw_liquid_msg = ExecuteMsg::WithdrawLiquid {
+    let withdraw_liquid_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
+        acct_type: AccountType::Liquid,
         beneficiary: "beneficiary".to_string(),
-        assets: GenericBalance {
-            native: vec![Coin {
-                denom: "ujuno".to_string(),
-                amount: Uint128::from(10_u128),
-            }],
-            cw20: vec![],
-        },
+        assets: vec![Asset {
+            info: AssetInfo::Native("ujuno".to_string()),
+            amount: Uint128::from(10_u128),
+        }],
     };
     let res = execute(deps.as_mut(), mock_env(), info, withdraw_liquid_msg).unwrap();
     assert_eq!(1, res.messages.len());

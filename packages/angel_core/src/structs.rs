@@ -316,6 +316,13 @@ impl BalanceInfo {
             liquid_balance: GenericBalance::default(),
         }
     }
+
+    pub fn get(&self, acct_type: &AccountType) -> &GenericBalance {
+        match acct_type {
+            &AccountType::Locked => &self.locked_balance,
+            &AccountType::Liquid => &self.liquid_balance,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
@@ -331,6 +338,7 @@ impl GenericBalance {
             native: vec![],
         }
     }
+
     pub fn set_token_balances(&mut self, tokens: Balance) {
         match tokens {
             Balance::Native(balance) => {

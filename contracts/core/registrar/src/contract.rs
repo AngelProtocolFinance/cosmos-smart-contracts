@@ -79,10 +79,6 @@ pub fn execute(
             approved,
             restricted_from,
         } => executers::vault_update(deps, env, info, vault_addr, approved, restricted_from),
-        ExecuteMsg::Harvest {
-            collector_address,
-            collector_share,
-        } => executers::harvest(deps, env, info, collector_address, collector_share),
         ExecuteMsg::UpdateEndowmentEntry(msg) => {
             executers::update_endowment_entry(deps, env, info, msg)
         }
