@@ -11,7 +11,7 @@ pub struct Config {
 
     pub lp_staking_contract: Addr, // loopswap farming contract address
     pub pair_contract: Addr,       // loopswap pair contract address
-    pub loop_token: Addr,          // LOOP token address(Atm, LOOP is loopswap farming reward token)
+    pub lp_reward_token: Addr,     // LOOP token address(Atm, LOOP is loopswap farming reward token)
 
     pub total_lp_amount: Uint128, // total amount of LP tokens in this `vault`
     pub total_shares: Uint128,    // total amount of minted vault tokens

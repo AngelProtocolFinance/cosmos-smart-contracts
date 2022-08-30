@@ -8,4 +8,5 @@ pub struct ConfigResponse {
     pub keeper: String,
     pub pair_contract: String,
     pub lp_staking_contract: String,
+    pub lp_reward_token: String,
 }

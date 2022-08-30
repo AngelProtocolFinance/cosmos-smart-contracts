@@ -11,7 +11,7 @@ pub struct InstantiateMsg {
 
     pub lp_staking_contract: String,
     pub pair_contract: String,
-    pub loop_token: String,
+    pub lp_reward_token: String,
 
     pub name: String,
     pub symbol: String,

@@ -28,6 +28,7 @@ pub fn query_config(deps: Deps) -> ConfigResponse {
         keeper: config.keeper.to_string(),
         pair_contract: config.pair_contract.to_string(),
         lp_staking_contract: config.lp_staking_contract.to_string(),
+        lp_reward_token: config.lp_reward_token.to_string(),
     }
 }
 

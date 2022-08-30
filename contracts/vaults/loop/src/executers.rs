@@ -143,7 +143,7 @@ pub fn deposit(
         .add_attribute("deposit_amount", deposit_amount))
 }
 
-/// Contract entry: **harvest**
+/// Contract entry: **claim**
 ///   1. Only callable by `accounts` contract
 ///   2. `Claim` the `reward token` from `loopswap::farming` contract
 ///   3. Compute and send the tax(USDC) to AP treasury
@@ -190,7 +190,7 @@ pub fn distribute_claim(
 
     // Compute the reward token amount
     let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-        config.loop_token.to_string(),
+        config.lp_reward_token.to_string(),
         &cw20::Cw20QueryMsg::Balance {
             address: env.contract.address.to_string(),
         },
@@ -214,7 +214,7 @@ pub fn distribute_claim(
         msg: to_binary(&ExecuteMsg::Swap {
             beneficiary: Some(ap_treasury),
             in_asset_info: AssetInfo::Token {
-                contract_addr: config.loop_token.to_string(),
+                contract_addr: config.lp_reward_token.to_string(),
             },
             in_asset_bal_before: reward_token_bal_query.balance - tax_amount,
         })
@@ -227,7 +227,7 @@ pub fn distribute_claim(
     let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
         &config.pair_contract.to_string(),
         &AssetInfo::Token {
-            contract_addr: config.loop_token.to_string(),
+            contract_addr: config.lp_reward_token.to_string(),
         },
         less_tax.multiply_ratio(1_u128, 2_u128),
     )?;
@@ -239,7 +239,7 @@ pub fn distribute_claim(
         &config,
         None,
         AssetInfo::Token {
-            contract_addr: config.loop_token.to_string(),
+            contract_addr: config.lp_reward_token.to_string(),
         },
     )?;
 
@@ -261,7 +261,7 @@ fn prepare_claim_harvest_msgs(deps: Deps, env: Env, config: &Config) -> StdResul
 
     // Handle the returning reward token(LOOP)
     let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-        config.loop_token.to_string(),
+        config.lp_reward_token.to_string(),
         &cw20::Cw20QueryMsg::Balance {
             address: env.contract.address.to_string(),
         },
@@ -363,7 +363,7 @@ pub fn withdraw(
     // Hence, we assume that the `config.pair_contract` has the token pairs in which
     // there is LOOP token, like LOOP-USDC, LOOP-JUNO.
     let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-        config.loop_token.to_string(),
+        config.lp_reward_token.to_string(),
         &cw20::Cw20QueryMsg::Balance {
             address: env.contract.address.to_string(),
         },
@@ -373,7 +373,7 @@ pub fn withdraw(
         msg: to_binary(&ExecuteMsg::Swap {
             beneficiary: Some(msg.beneficiary),
             in_asset_info: terraswap::asset::AssetInfo::Token {
-                contract_addr: config.loop_token.to_string(),
+                contract_addr: config.lp_reward_token.to_string(),
             },
             in_asset_bal_before: reward_token_bal_query.balance,
         })

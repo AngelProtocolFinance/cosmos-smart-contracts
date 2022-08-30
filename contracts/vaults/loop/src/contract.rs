@@ -34,7 +34,7 @@ pub fn instantiate(
 
         lp_staking_contract: deps.api.addr_validate(&msg.lp_staking_contract)?,
         pair_contract: deps.api.addr_validate(&msg.pair_contract)?,
-        loop_token: deps.api.addr_validate(&msg.loop_token)?,
+        lp_reward_token: deps.api.addr_validate(&msg.lp_reward_token)?,
 
         total_lp_amount: Uint128::zero(),
         total_shares: Uint128::zero(),
