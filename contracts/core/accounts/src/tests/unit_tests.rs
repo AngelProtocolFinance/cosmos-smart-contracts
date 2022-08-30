@@ -109,7 +109,6 @@ fn test_update_endowment_settings() {
         id: CHARITY_ID,
         owner: CHARITY_ADDR.to_string(),
         kyc_donors_only: false,
-        auto_invest: false,
     };
     let env = mock_env();
     let res = execute(
@@ -126,7 +125,6 @@ fn test_update_endowment_settings() {
         id: CHARITY_ID,
         owner: CHARITY_ADDR.to_string(),
         kyc_donors_only: false,
-        auto_invest: false,
     };
     let info = mock_info(PLEB, &coins(100000, "earth "));
     let env = mock_env();
@@ -500,7 +498,6 @@ fn test_donate() {
         id: CHARITY_ID,
         owner: CHARITY_ADDR.to_string(),
         kyc_donors_only: false,
-        auto_invest: true,
     };
     let env = mock_env();
     let res = execute(
@@ -543,7 +540,6 @@ fn test_donate() {
     .unwrap();
     let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
     assert_eq!(2, endow.strategies.locked.len());
-    assert_eq!(true, endow.auto_invest);
 
     // Try the "Deposit" w/ "Auto Invest" turned on. Two Vault deposits should now take place.
     let donation_amt = 200_u128;
@@ -866,7 +862,7 @@ fn test_close_endowment() {
     .unwrap();
     let endow: EndowmentDetailsResponse = from_binary(&res).unwrap();
     assert_eq!(endow.withdraw_approved, true);
-    assert_eq!(endow.deposit_approved, true);
+    assert_eq!(endow.deposit_approved, false);
     assert_eq!(endow.pending_redemptions, 0);
 
     let res = query(
@@ -877,5 +873,10 @@ fn test_close_endowment() {
     .unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
     assert_eq!(state.closing_endowment, true);
-    assert_eq!(state.closing_beneficiary, Some(Beneficiary::Wallet { address: CHARITY_ADDR.to_string() }));
+    assert_eq!(
+        state.closing_beneficiary,
+        Some(Beneficiary::Wallet {
+            address: CHARITY_ADDR.to_string()
+        })
+    );
 }
