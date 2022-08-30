@@ -12,8 +12,8 @@ use angel_core::responses::registrar::{
 };
 use angel_core::structs::{
     AccountStrategies, AccountType, BalanceInfo, Beneficiary, EndowmentType, GenericBalance,
-    RebalanceDetails, SocialMedialUrls, SplitDetails, StrategyComponent, SwapOperation, Tier,
-    YieldVault,
+    OneOffVaults, RebalanceDetails, SocialMedialUrls, SplitDetails, StrategyComponent,
+    SwapOperation, Tier, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -84,11 +84,11 @@ pub fn create_endowment(
                 maturity_time: msg.maturity_time,                       // Option<u64>
                 maturity_height: msg.maturity_height,                   // Option<u64>
                 strategies: AccountStrategies::default(),
+                oneoff_vaults: OneOffVaults::default(),
                 rebalance: RebalanceDetails::default(),
                 kyc_donors_only: msg.kyc_donors_only,
                 profile: msg.profile.clone(),
                 pending_redemptions: 0 as u8,
-                auto_invest: false,
                 copycat_strategy: None,
             }),
         },
@@ -228,7 +228,6 @@ pub fn update_endowment_settings(
         return Err(ContractError::Unauthorized {});
     }
 
-    endowment.auto_invest = msg.auto_invest;
     endowment.kyc_donors_only = msg.kyc_donors_only;
     endowment.owner = deps.api.addr_validate(&msg.owner)?;
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
@@ -359,7 +358,7 @@ pub fn update_strategies(
     endowment.copycat_strategy = None;
     endowment
         .strategies
-        .set_strategy(acct_type.clone(), new_strategies.clone());
+        .set(acct_type.clone(), new_strategies.clone());
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     // If this Endowment that is changing their strategy is also being "copycatted"
@@ -367,8 +366,7 @@ pub fn update_strategies(
     let copiers = COPYCATS.load(deps.storage, id).unwrap_or(vec![]);
     for i in copiers.iter() {
         let mut e = ENDOWMENTS.load(deps.storage, *i).unwrap();
-        e.strategies
-            .set_strategy(acct_type.clone(), new_strategies.clone());
+        e.strategies.set(acct_type.clone(), new_strategies.clone());
         ENDOWMENTS.save(deps.storage, *i, &e).unwrap();
     }
     Ok(Response::new().add_attribute("action", "update_strategies"))
@@ -387,11 +385,7 @@ pub fn copycat_strategies(
     }
 
     let copied_endowment = ENDOWMENTS.load(deps.storage, id_to_copy)?;
-    if copied_endowment
-        .strategies
-        .get_strategy(acct_type)
-        .is_empty()
-    {
+    if copied_endowment.strategies.get(acct_type).is_empty() {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: "Attempting to copy an endowment with no set strategy for that account type"
                 .to_string(),
@@ -785,80 +779,39 @@ pub fn deposit(
     state.donations_received += deposit_amount;
 
     let mut deposit_messages: Vec<SubMsg> = vec![];
-    // check endowment strategies are setup
-    // hold locked funds until (auto_invest == true && strategy has vaults set)
-    if endowment.auto_invest == false {
-        // increase the locked & liquid balance by respective donation amounts
-        match locked_amount.info {
-            AssetInfoBase::Native(ref denom) => {
-                state
-                    .balances
-                    .locked_balance
-                    .add_tokens(Balance::from(vec![Coin {
-                        denom: denom.to_string(),
-                        amount: locked_amount.amount,
-                    }]));
-                state
-                    .balances
-                    .liquid_balance
-                    .add_tokens(Balance::from(vec![Coin {
-                        denom: denom.to_string(),
-                        amount: liquid_amount.amount,
-                    }]));
-            }
-            AssetInfoBase::Cw20(ref contract_addr) => {
-                state
-                    .balances
-                    .locked_balance
-                    .add_tokens(Balance::Cw20(Cw20CoinVerified {
-                        address: contract_addr.clone(),
-                        amount: locked_amount.amount,
-                    }));
 
-                state
-                    .balances
-                    .liquid_balance
-                    .add_tokens(Balance::Cw20(Cw20CoinVerified {
-                        address: contract_addr.clone(),
-                        amount: liquid_amount.amount,
-                    }));
-            }
-            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-        };
-    } else {
-        // Process Locked Strategy Deposits
-        let locked_strategies = endowment.strategies.get_strategy(AccountType::Locked);
-        // build deposit messages for each of the sources/amounts
-        let (messages, leftover_amt) = deposit_to_vaults(
-            deps.as_ref(),
-            config.registrar_contract.to_string(),
-            msg.id.clone(),
-            locked_amount.clone(),
-            &locked_strategies,
-        )?;
-        for m in messages.iter() {
-            deposit_messages.push(m.clone());
-        }
-        // If invested portion of strategies < 100% there will be leftover deposits
-        // Add any remaining deposited tokens to the locked balance "Tokens on Hand"
-        state
-            .balances
-            .locked_balance
-            .add_tokens(match locked_amount.info {
-                AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
-                    denom: denom.to_string(),
-                    amount: leftover_amt,
-                }]),
-                AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
-                    address: contract_addr.clone(),
-                    amount: leftover_amt,
-                }),
-                AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-            });
+    // Process Locked Strategy Deposits
+    let locked_strategies = endowment.strategies.get(AccountType::Locked);
+    // build deposit messages for each of the sources/amounts
+    let (messages, leftover_amt) = deposit_to_vaults(
+        deps.as_ref(),
+        config.registrar_contract.to_string(),
+        msg.id.clone(),
+        locked_amount.clone(),
+        &locked_strategies,
+    )?;
+    for m in messages.iter() {
+        deposit_messages.push(m.clone());
     }
+    // If invested portion of strategies < 100% there will be leftover deposits
+    // Add any remaining deposited tokens to the locked balance "Tokens on Hand"
+    state
+        .balances
+        .locked_balance
+        .add_tokens(match locked_amount.info {
+            AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
+                denom: denom.to_string(),
+                amount: leftover_amt,
+            }]),
+            AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
+                address: contract_addr.clone(),
+                amount: leftover_amt,
+            }),
+            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+        });
 
     // Process Liquid Strategy Deposits
-    let liquid_strategies = endowment.strategies.get_strategy(AccountType::Liquid);
+    let liquid_strategies = endowment.strategies.get(AccountType::Liquid);
     // build deposit messages for each of the sources/amounts
     let (messages, leftover_amt) = deposit_to_vaults(
         deps.as_ref(),
@@ -895,7 +848,7 @@ pub fn deposit(
 
 /// Allow Endowment owners to invest some amount of their free balance
 /// "Tokens on Hand" holdings into Vault(s). Does not have to be a Vault
-/// that exists in their Strategy. One-time/one-off investment.
+/// that exists in their donation Strategy. One-time/one-off investment.
 pub fn vaults_invest(
     deps: DepsMut,
     info: MessageInfo,
@@ -904,7 +857,7 @@ pub fn vaults_invest(
     vaults: Vec<(String, Asset)>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
     let mut state = STATES.load(deps.storage, id)?;
     let mut current_bal: GenericBalance = state.balances.get(&acct_type);
 
@@ -923,14 +876,14 @@ pub fn vaults_invest(
     let mut deposit_msgs: Vec<SubMsg> = vec![];
     for (vault, asset) in vaults.iter() {
         // check vault addr passed is valid
-        let vault_addr = deps.api.addr_validate(&vault)?.to_string();
+        let vault_addr = deps.api.addr_validate(&vault)?;
 
         // check vault is in registrar vaults list and is approved
         let vault_config: VaultDetailResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: config.registrar_contract.to_string(),
                 msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: vault_addr.clone(),
+                    vault_addr: vault_addr.clone().to_string(),
                 })?,
             }))?;
 
@@ -956,6 +909,30 @@ pub fn vaults_invest(
             return Err(ContractError::Std(StdError::GenericErr {
                 msg: "Vault and Endowment AccountTypes do not match".to_string(),
             }));
+        }
+
+        // add vault to the one-off-vaults list if a new vault
+        match acct_type {
+            AccountType::Locked => {
+                let pos = endowment
+                    .oneoff_vaults
+                    .locked
+                    .iter()
+                    .position(|v| v == vault);
+                if pos != None {
+                    endowment.oneoff_vaults.locked.push(vault_addr.clone());
+                }
+            }
+            AccountType::Liquid => {
+                let pos = endowment
+                    .oneoff_vaults
+                    .liquid
+                    .iter()
+                    .position(|v| v == vault);
+                if pos != None {
+                    endowment.oneoff_vaults.liquid.push(vault_addr.clone());
+                }
+            }
         }
 
         // check that the token balance on hand is enough to cover the deposit amount
@@ -987,7 +964,7 @@ pub fn vaults_invest(
         // funds payload can contain CW20 | Native token amounts
         deposit_msgs.push(match &asset.info {
             AssetInfoBase::Native(ref denom) => SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: vault_addr.clone(),
+                contract_addr: vault_addr.clone().to_string(),
                 msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Deposit {
                     endowment_id: id.clone(),
                 })
@@ -1000,7 +977,7 @@ pub fn vaults_invest(
             AssetInfo::Cw20(ref contract_addr) => SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: contract_addr.to_string(),
                 msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                    contract: vault_addr,
+                    contract: vault_addr.clone().to_string(),
                     amount: asset.amount,
                     msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Deposit {
                         endowment_id: id,
@@ -1037,7 +1014,7 @@ pub fn vaults_redeem(
     vaults: Vec<(String, Uint128)>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
 
     if vaults.is_empty() {
         return Err(ContractError::InvalidInputs {});
@@ -1074,6 +1051,31 @@ pub fn vaults_redeem(
             }));
         }
 
+        // check if the vault tokens have been depleted and remove one-off-vault from list if so
+        let vault_balance = vault_endowment_balance(deps.as_ref(), vault.to_string(), id);
+        match acct_type {
+            AccountType::Locked => {
+                let pos = endowment
+                    .oneoff_vaults
+                    .locked
+                    .iter()
+                    .position(|v| v == vault);
+                if pos != None && vault_balance == *amount {
+                    endowment.oneoff_vaults.locked.swap_remove(pos.unwrap());
+                }
+            }
+            AccountType::Liquid => {
+                let pos = endowment
+                    .oneoff_vaults
+                    .liquid
+                    .iter()
+                    .position(|v| v == vault);
+                if pos != None && vault_balance == *amount {
+                    endowment.oneoff_vaults.liquid.swap_remove(pos.unwrap());
+                }
+            }
+        }
+
         redeem_msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: vault_addr,
             msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
@@ -1085,6 +1087,7 @@ pub fn vaults_redeem(
         })));
     }
 
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
     Ok(Response::new()
         .add_attribute("action", "redeem_vault")
         .add_submessages(redeem_msgs))
@@ -1219,51 +1222,35 @@ pub fn close_endowment(
     STATES.save(deps.storage, id, &state)?;
 
     // Redeem all funds back from vaults that an Endowment is invested in
+    let mut all_vaults: Vec<String> = [
+        [
+            endowment.oneoff_vaults.get(AccountType::Liquid),
+            endowment.oneoff_vaults.get(AccountType::Locked),
+        ]
+        .concat()
+        .iter()
+        .map(|v| v.to_string())
+        .collect::<Vec<String>>(),
+        [
+            endowment.strategies.get(AccountType::Liquid),
+            endowment.strategies.get(AccountType::Locked),
+        ]
+        .concat()
+        .iter()
+        .map(|s| s.vault.clone())
+        .collect(),
+    ]
+    .concat();
+
+    all_vaults.sort();
+    all_vaults.dedup();
+
     let mut redeem_messages = vec![];
-    for source in endowment
-        .strategies
-        .get_strategy(AccountType::Locked)
-        .iter()
-    {
-        // check source vault is in registrar vaults list
-        let _vault_config: VaultDetailResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: config.registrar_contract.to_string(),
-                msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: source.vault.to_string(),
-                })?,
-            }))?;
-
+    for vault in all_vaults.iter() {
         // create a redeem message for Vault, noting amount of tokens
-        let vault_balance = vault_endowment_balance(deps.as_ref(), source.vault.to_string(), id);
+        let vault_balance = vault_endowment_balance(deps.as_ref(), vault.clone(), id);
         redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: source.vault.to_string(),
-            msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
-                endowment_id: id,
-                amount: vault_balance,
-            })
-            .unwrap(),
-            funds: vec![],
-        })));
-    }
-    for source in endowment
-        .strategies
-        .get_strategy(AccountType::Liquid)
-        .iter()
-    {
-        // check source vault is in registrar vaults list
-        let _vault_config: VaultDetailResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: config.registrar_contract.to_string(),
-                msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: source.vault.to_string(),
-                })?,
-            }))?;
-
-        // create a redeem message for Vault, noting amount of tokens
-        let vault_balance = vault_endowment_balance(deps.as_ref(), source.vault.to_string(), id);
-        redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: source.vault.to_string(),
+            contract_addr: vault.to_string(),
             msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
                 endowment_id: id,
                 amount: vault_balance,
@@ -1274,9 +1261,7 @@ pub fn close_endowment(
     }
 
     endowment.pending_redemptions = redeem_messages.len() as u8;
-    // reset all strategies and auto_invest options to be safe
-    endowment.auto_invest = false;
-    endowment.strategies = AccountStrategies::default();
+    endowment.deposit_approved = false;
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new()

@@ -86,6 +86,29 @@ pub struct VaultRate {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub struct OneOffVaults {
+    pub locked: Vec<Addr>,
+    pub liquid: Vec<Addr>,
+}
+
+impl OneOffVaults {
+    pub fn default() -> Self {
+        OneOffVaults {
+            locked: vec![],
+            liquid: vec![],
+        }
+    }
+
+    pub fn get(&self, acct_type: AccountType) -> Vec<Addr> {
+        match acct_type {
+            AccountType::Locked => self.locked.clone(),
+            AccountType::Liquid => self.liquid.clone(),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub struct AccountStrategies {
     pub locked: Vec<StrategyComponent>,
     pub liquid: Vec<StrategyComponent>,
@@ -99,14 +122,14 @@ impl AccountStrategies {
         }
     }
 
-    pub fn get_strategy(&self, acct_type: AccountType) -> Vec<StrategyComponent> {
+    pub fn get(&self, acct_type: AccountType) -> Vec<StrategyComponent> {
         match acct_type {
             AccountType::Locked => self.locked.clone(),
             AccountType::Liquid => self.liquid.clone(),
         }
     }
 
-    pub fn set_strategy(&mut self, acct_type: AccountType, strategy: Vec<StrategyComponent>) {
+    pub fn set(&mut self, acct_type: AccountType, strategy: Vec<StrategyComponent>) {
         match acct_type {
             AccountType::Locked => self.locked = strategy,
             AccountType::Liquid => self.liquid = strategy,

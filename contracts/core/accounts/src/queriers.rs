@@ -101,7 +101,6 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         deposit_approved: endowment.deposit_approved,
         withdraw_approved: endowment.withdraw_approved,
         pending_redemptions: endowment.pending_redemptions,
-        auto_invest: endowment.auto_invest,
     })
 }
 
