@@ -1,7 +1,7 @@
 // Contains mock functionality to test multi-contract scenarios
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Addr, Api, BalanceResponse, BankQuery, CanonicalAddr, Coin,
+    from_binary, from_slice, to_binary, Api, BalanceResponse, BankQuery, CanonicalAddr, Coin,
     ContractResult, Decimal, Empty, OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult,
     SystemError, SystemResult, Uint128, WasmQuery,
 };

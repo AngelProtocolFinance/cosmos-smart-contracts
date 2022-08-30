@@ -277,44 +277,39 @@ fn test_deposit_cw20_token() {
 }
 
 #[test]
-fn test_withdraw() {
+fn test_redeem() {
     let endowment_id = 1;
     let fake_endowment_id = 12;
     let _deposit_amount = Uint128::from(100_u128);
-    let withdraw_amount = Uint128::from(30_u128);
-    let beneficiary = Addr::unchecked("beneficiary");
+    let redeem_amount = Uint128::from(30_u128);
 
     // Instantiate the vault contract
     let mut deps = create_mock_vault(vec![]);
 
-    // First, fail to "withdraw" since the `endowment` is not valid
+    // First, fail to "redeem" since the `endowment` is not valid
     let info = mock_info("accounts-contract", &[]);
-    let withdraw_msg: AccountWithdrawMsg = AccountWithdrawMsg {
-        endowment_id: fake_endowment_id,
-        beneficiary: beneficiary.clone(),
-        amount: withdraw_amount,
-    };
     let err = execute(
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::Withdraw(withdraw_msg.clone()),
+        ExecuteMsg::Redeem {
+            endowment_id: fake_endowment_id,
+            amount: redeem_amount,
+        },
     )
     .unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
 
-    // Also, fail to "withdraw" since the `vault` does not have any deposit
+    // Also, fail to "redeem" since the `vault` does not have any deposit
     let info = mock_info("accounts-contract", &[]);
-    let withdraw_msg: AccountWithdrawMsg = AccountWithdrawMsg {
-        endowment_id,
-        beneficiary,
-        amount: withdraw_amount,
-    };
     let err = execute(
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::Withdraw(withdraw_msg.clone()),
+        ExecuteMsg::Redeem {
+            endowment_id,
+            amount: redeem_amount,
+        },
     )
     .unwrap_err();
     assert_eq!(
@@ -322,25 +317,10 @@ fn test_withdraw() {
         ContractError::Std(StdError::GenericErr {
             msg: format!(
                 "Cannot burn the {} vault tokens from {}",
-                withdraw_amount, endowment_id
+                redeem_amount, endowment_id
             )
         })
     );
-}
-
-#[test]
-fn test_claim() {
-    let mut deps = create_mock_vault(vec![]);
-
-    // Only "accounts" contract can call the "claim" entry
-    let info = mock_info("non-accounts-contract", &[]);
-    let err = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Claim {}).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    // "claim" entry outputs 2 messages
-    let info = mock_info("accounts-contract", &[]);
-    let res = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Claim {}).unwrap();
-    assert_eq!(res.messages.len(), 2);
 }
 
 #[test]

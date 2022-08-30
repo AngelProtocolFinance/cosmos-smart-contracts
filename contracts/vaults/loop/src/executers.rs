@@ -260,32 +260,41 @@ fn prepare_claim_harvest_msgs(deps: Deps, env: Env, config: &Config) -> StdResul
     Ok(msgs)
 }
 
-/// Contract entry: **withdraw**
+/// Contract entry: **redeem**
 ///   1. Unstake/Unfarm the LP tokens from the `loopswap::farming` contract
-///   2. Handle the receiving LP token & reward token(LOOP)
-pub fn withdraw(
+///   2. Return the receiving LP token & LP reward token(LOOP) to the `accounts` contract
+pub fn redeem(
     mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    msg: AccountWithdrawMsg,
+    endowment_id: u32,
+    amount: Uint128,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
-    let burn_shares_amount = msg.amount;
+    let burn_shares_amount = amount;
 
     // Validations
     validate_action_caller_n_endow_id(
         deps.as_ref(),
         &config,
         info.sender.to_string(),
-        msg.endowment_id,
+        endowment_id,
     )?;
+
+    let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
+        config.registrar_contract.to_string(),
+        &RegistrarQueryMsg::Config {},
+    )?;
+    let accounts_contract = deps
+        .api
+        .addr_validate(&registar_config.accounts_contract.unwrap())?;
 
     // First, burn the vault tokens
     execute_burn(
         deps.branch(),
         env.clone(),
         info,
-        msg.endowment_id,
+        endowment_id,
         burn_shares_amount,
     )
     .map_err(|_| {
@@ -293,7 +302,7 @@ pub fn withdraw(
             msg: format!(
                 "Cannot burn the {} vault tokens from {}",
                 burn_shares_amount,
-                msg.endowment_id.to_string()
+                endowment_id.to_string()
             ),
         })
     })?;
@@ -333,7 +342,7 @@ pub fn withdraw(
         msg: to_binary(&ExecuteMsg::RemoveLiquidity {
             lp_token_bal_before: lp_bal_query.balance,
             action: RemoveLiquidAction::Withdraw {
-                beneficiary: msg.beneficiary.clone(),
+                beneficiary: accounts_contract.clone(), // FIXME! Need to re-think & re-factor this part.
             },
         })
         .unwrap(),
@@ -353,7 +362,7 @@ pub fn withdraw(
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::Swap {
-            beneficiary: Some(msg.beneficiary),
+            beneficiary: Some(accounts_contract),
             in_asset_info: terraswap::asset::AssetInfo::Token {
                 contract_addr: config.lp_reward_token.to_string(),
             },

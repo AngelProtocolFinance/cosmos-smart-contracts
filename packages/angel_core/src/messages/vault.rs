@@ -50,8 +50,6 @@ pub enum ExecuteMsg {
         endowment_id: u32,
         amount: Uint128,
     },
-    Claim {},
-    Withdraw(AccountWithdrawMsg),
     Harvest {},
     DistributeClaim {
         reward_token_bal_before: Uint128,

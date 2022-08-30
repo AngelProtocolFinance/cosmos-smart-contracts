@@ -1,5 +1,3 @@
-use angel_core::responses::vault::ConfigResponse;
-use angel_core::structs::AccountType;
 use cosmwasm_std::{
     entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
     StdError, StdResult, Uint128,
@@ -106,13 +104,7 @@ pub fn execute(
                 deposit_amount,
             )
         }
-        // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
-        ExecuteMsg::Withdraw(msg) => executers::withdraw(deps, env, info, msg),
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
-        // Claim is only called by the SC when setting up new strategies.
-        // Pulls all existing amounts back to Account in USDC or [input_denom].
-        // -Deposit Token/Yield Token (Vault) --> +USDC (Account)
-        ExecuteMsg::Claim {} => executers::claim(deps, env, info),
         ExecuteMsg::DistributeClaim {
             reward_token_bal_before,
         } => executers::distribute_claim(deps, env, info, reward_token_bal_before),
@@ -160,7 +152,7 @@ pub fn execute(
         ExecuteMsg::Redeem {
             endowment_id,
             amount, // vault tokens to be burned
-        } => todo!(),
+        } => executers::redeem(deps, env, info, endowment_id, amount),
         ExecuteMsg::ReinvestToLocked {
             endowment_id,
             amount,

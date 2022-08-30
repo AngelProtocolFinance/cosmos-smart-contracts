@@ -249,19 +249,21 @@ pub fn withdraw_from_vaults(
                     })?,
                 }))?;
 
-            // create a withdraw message for X Vault, noting amounts for Locked / Liquid
-            withdraw_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: source.vault.to_string(),
-                msg: to_binary(&crate::messages::vault::ExecuteMsg::Withdraw(
-                    AccountWithdrawMsg {
-                        endowment_id: endowment_id.clone(),
-                        beneficiary: beneficiary.clone(),
-                        amount: source.amount,
-                    },
-                ))
-                .unwrap(),
-                funds: vec![],
-            })));
+            // // create a withdraw message for X Vault, noting amounts for Locked / Liquid
+            // withdraw_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            //     contract_addr: source.vault.to_string(),
+            //     msg: to_binary(&crate::messages::vault::ExecuteMsg::Withdraw(
+            //         AccountWithdrawMsg {
+            //             endowment_id: endowment_id.clone(),
+            //             beneficiary: beneficiary.clone(),
+            //             amount: source.amount,
+            //         },
+            //     ))
+            //     .unwrap(),
+            //     funds: vec![],
+            // })));
+
+            // No more `withdraw` entry for `vault` contract
         }
     }
     Ok(withdraw_messages)
