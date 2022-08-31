@@ -24,6 +24,9 @@ pub enum ContractError {
     #[error("Allowance is expired")]
     Expired {},
 
+    #[error("Updates are not allowed after endowment has been closed")]
+    UpdatesAfterClosed {},
+
     #[error("Balance for this account is insufficient")]
     BalanceTooSmall {},
 

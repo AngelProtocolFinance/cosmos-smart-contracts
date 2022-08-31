@@ -228,6 +228,11 @@ pub fn update_endowment_settings(
         return Err(ContractError::Unauthorized {});
     }
 
+    let state = STATES.load(deps.storage, msg.id)?;
+    if state.closing_endowment {
+        return Err(ContractError::UpdatesAfterClosed {});
+    }
+
     endowment.kyc_donors_only = msg.kyc_donors_only;
     endowment.owner = deps.api.addr_validate(&msg.owner)?;
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
@@ -296,6 +301,11 @@ pub fn update_strategies(
 
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
+    }
+
+    let state = STATES.load(deps.storage, id)?;
+    if state.closing_endowment {
+        return Err(ContractError::UpdatesAfterClosed {});
     }
 
     if endowment.pending_redemptions != 0 {
@@ -1261,6 +1271,11 @@ pub fn update_profile(
 
     if !(info.sender == endowment.owner || info.sender == config.owner) {
         return Err(ContractError::Unauthorized {});
+    }
+
+    let state = STATES.load(deps.storage, msg.id)?;
+    if state.closing_endowment {
+        return Err(ContractError::UpdatesAfterClosed {});
     }
 
     let un_sdg = if info.sender == config.owner {
