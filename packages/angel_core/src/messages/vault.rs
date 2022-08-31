@@ -85,7 +85,7 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
     pub lp_staking_contract: Option<String>,
-    pub pair_contract: Option<String>,
+    pub lp_pair_contract: Option<String>,
     pub keeper: Option<String>,
     pub sibling_vault: Option<String>,
 }

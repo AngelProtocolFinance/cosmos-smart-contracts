@@ -3,7 +3,7 @@ use cosmwasm_std::{
     MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ReceiveMsg;
-use terraswap::asset::{Asset, AssetInfo, PairInfo};
+use terraswap::asset::{Asset, AssetInfo};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
@@ -61,7 +61,7 @@ pub fn update_config(
     info: MessageInfo,
     msg: UpdateConfigMsg,
 ) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
+    let mut config: Config = CONFIG.load(deps.storage)?;
 
     // only the SC admin can update these configs...for now
     if info.sender != config.owner {
@@ -79,10 +79,14 @@ pub fn update_config(
         None => config.lp_staking_contract,
     };
 
-    config.pair_contract = match msg.pair_contract {
+    config.lp_pair_contract = match msg.lp_pair_contract {
         Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.pair_contract,
+        None => config.lp_pair_contract,
     };
+
+    let pair_info = query_pair_info_from_pair(&deps.querier, config.lp_pair_contract.clone())?;
+    config.lp_pair_asset_infos = pair_info.asset_infos;
+    config.lp_token_contract = deps.api.addr_validate(&pair_info.liquidity_token)?;
 
     config.keeper = match msg.keeper {
         Some(addr) => deps.api.addr_validate(&addr)?,
@@ -112,9 +116,7 @@ pub fn deposit(
     validate_action_caller_n_endow_id(deps.as_ref(), &config, msg_sender.clone(), endowment_id)?;
 
     // Check if the "deposit_asset_info" is valid
-    let pair_info_query: PairInfo =
-        query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?;
-    if !pair_info_query.asset_infos.contains(&deposit_asset_info) {
+    if !config.lp_pair_asset_infos.contains(&deposit_asset_info) {
         return Err(ContractError::InvalidCoinsDeposited {});
     }
 
@@ -126,7 +128,7 @@ pub fn deposit(
     // Add the "loopswap::pair::swap" message
     let input_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
     let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
-        &config.pair_contract.to_string(),
+        &config.lp_pair_contract.to_string(),
         &deposit_asset_info,
         input_amount,
     )?;
@@ -179,7 +181,7 @@ pub fn distribute_claim(
 
     // Re-stake the `reward token`s for more yield
     let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
-        &config.pair_contract.to_string(),
+        &config.lp_pair_contract.to_string(),
         &AssetInfo::Token {
             contract_addr: config.lp_reward_token.to_string(),
         },
@@ -288,7 +290,7 @@ pub fn redeem(
     // Perform the "loopswap::farming::unstake_and_claim(unfarm)" message
     let mut msgs = vec![];
     let lp_token_contract =
-        query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?.liquidity_token;
+        query_pair_info_from_pair(&deps.querier, config.lp_pair_contract.clone())?.liquidity_token;
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: lp_token_contract.to_string(),
@@ -408,7 +410,7 @@ pub fn add_liquidity(
     let token2_amount: Uint128;
 
     let asset_infos =
-        query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?.asset_infos;
+        query_pair_info_from_pair(&deps.querier, config.lp_pair_contract.clone())?.asset_infos;
 
     if in_asset_info == asset_infos[0] {
         token1_asset_info = in_asset_info;
@@ -427,12 +429,12 @@ pub fn add_liquidity(
         token1_amount,
         token2_asset_info,
         token2_amount,
-        config.pair_contract.to_string(),
+        config.lp_pair_contract.to_string(),
     )?;
 
     // Add the "(this contract::)stake" message
     let contract_stake_msgs =
-        prepare_contract_stake_msgs(deps.as_ref(), env, endowment_id, config.pair_contract)?;
+        prepare_contract_stake_msgs(deps.as_ref(), env, endowment_id, config.lp_pair_contract)?;
 
     Ok(Response::new()
         .add_messages(loop_pair_provide_liquidity_msgs)
@@ -555,7 +557,7 @@ pub fn stake_lp_token(
 
     // Prepare the "loop::farming::stake" msg
     let lp_token_contract =
-        query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?.liquidity_token;
+        query_pair_info_from_pair(&deps.querier, config.lp_pair_contract.clone())?.liquidity_token;
     let lp_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         lp_token_contract.to_string(),
         &cw20::Cw20QueryMsg::Balance {
@@ -708,8 +710,7 @@ pub fn harvest_to_liquid(
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
     let mut config: Config = CONFIG.load(deps.storage)?;
-    let lp_token_contract =
-        query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?.liquidity_token;
+    let lp_token_contract = config.lp_token_contract.to_string();
 
     // 0. Check that the message sender is the Sibling vault contract
     // ensure `received token` is `lp_token`
@@ -770,10 +771,9 @@ pub fn remove_liquidity(
     }
 
     let config = CONFIG.load(deps.storage)?;
-    let pair_info = query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?;
-    let lp_token_contract = pair_info.liquidity_token;
-    let asset_infos = pair_info.asset_infos;
-    let pair_contract = config.pair_contract;
+    let lp_token_contract = config.lp_token_contract.to_string();
+    let asset_infos = config.lp_pair_asset_infos;
+    let pair_contract = config.lp_pair_contract;
 
     // First, compute "unfarm"ed LP token balance for "remove_liquidity"
     let lp_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
@@ -919,18 +919,16 @@ fn prepare_contract_add_liquidity_msgs(
 ) -> Result<Vec<CosmosMsg>, StdError> {
     let mut msgs: Vec<CosmosMsg> = vec![];
 
-    let pair_info_query: PairInfo =
-        query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?;
-
-    let (in_asset_info, out_asset_info) = if deposit_asset_info == pair_info_query.asset_infos[0] {
+    let lp_pair_asset_infos = config.lp_pair_asset_infos.clone();
+    let (in_asset_info, out_asset_info) = if deposit_asset_info == lp_pair_asset_infos[0] {
         (
-            pair_info_query.asset_infos[0].clone(),
-            pair_info_query.asset_infos[1].clone(),
+            lp_pair_asset_infos[0].clone(),
+            lp_pair_asset_infos[1].clone(),
         )
     } else {
         (
-            pair_info_query.asset_infos[1].clone(),
-            pair_info_query.asset_infos[0].clone(),
+            lp_pair_asset_infos[1].clone(),
+            lp_pair_asset_infos[0].clone(),
         )
     };
 
@@ -1042,9 +1040,8 @@ pub fn swap(
     }
 
     let config: Config = CONFIG.load(deps.storage)?;
-    let pair_contract = config.pair_contract.to_string();
-    let pair_info = query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?;
-    let asset_infos = pair_info.asset_infos;
+    let pair_contract = config.lp_pair_contract.to_string();
+    let asset_infos = config.lp_pair_asset_infos;
     let out_asset_info = if in_asset_info == asset_infos[0] {
         asset_infos[1].clone()
     } else {

@@ -8,6 +8,7 @@ use terraswap::asset::AssetInfo;
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
+use terraswap::querier::query_pair_info_from_pair;
 
 use crate::executers;
 use crate::queriers;
@@ -31,6 +32,9 @@ pub fn instantiate(
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => env.contract.address.clone(), // can set later with update_config
     };
+    let pair_contract = deps.api.addr_validate(&msg.pair_contract)?;
+    let pair_info = query_pair_info_from_pair(&deps.querier, pair_contract.clone())?;
+
     let config = Config {
         owner: info.sender,
         acct_type: msg.acct_type,
@@ -39,7 +43,9 @@ pub fn instantiate(
         keeper: deps.api.addr_validate(&msg.keeper)?,
 
         lp_staking_contract: deps.api.addr_validate(&msg.lp_staking_contract)?,
-        pair_contract: deps.api.addr_validate(&msg.pair_contract)?,
+        lp_pair_contract: pair_contract,
+        lp_pair_asset_infos: pair_info.asset_infos,
+        lp_token_contract: deps.api.addr_validate(&pair_info.liquidity_token)?,
         lp_reward_token: deps.api.addr_validate(&msg.lp_reward_token)?,
 
         total_lp_amount: Uint128::zero(),

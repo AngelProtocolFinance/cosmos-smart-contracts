@@ -10,7 +10,8 @@ pub struct ConfigResponse {
     pub sibling_vault: String,
     pub registrar_contract: String,
     pub keeper: String,
-    pub pair_contract: String,
+    pub lp_pair_contract: String,
     pub lp_staking_contract: String,
+    pub lp_token_contract: String,
     pub lp_reward_token: String,
 }

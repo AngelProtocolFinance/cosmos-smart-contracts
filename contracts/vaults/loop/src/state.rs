@@ -3,6 +3,7 @@ use cosmwasm_std::{Addr, Uint128};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use terraswap::asset::AssetInfo;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {
@@ -13,7 +14,9 @@ pub struct Config {
     pub keeper: Addr,
 
     pub lp_staking_contract: Addr, // loopswap farming contract address
-    pub pair_contract: Addr,       // loopswap pair contract address
+    pub lp_pair_contract: Addr,    // loopswap pair contract address
+    pub lp_token_contract: Addr,   // loopswap pair liquidity token contract address(LP token)
+    pub lp_pair_asset_infos: [AssetInfo; 2], // loopswap pair asset infos
     pub lp_reward_token: Addr,     // LOOP token address(Atm, LOOP is loopswap farming reward token)
 
     pub total_lp_amount: Uint128, // total amount of LP tokens in this `vault`

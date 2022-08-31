@@ -28,8 +28,9 @@ pub fn query_config(deps: Deps) -> ConfigResponse {
         sibling_vault: config.sibling_vault.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
         keeper: config.keeper.to_string(),
-        pair_contract: config.pair_contract.to_string(),
+        lp_pair_contract: config.lp_pair_contract.to_string(),
         lp_staking_contract: config.lp_staking_contract.to_string(),
+        lp_token_contract: config.lp_token_contract.to_string(),
         lp_reward_token: config.lp_reward_token.to_string(),
     }
 }
