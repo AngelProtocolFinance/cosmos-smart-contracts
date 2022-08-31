@@ -369,7 +369,6 @@ impl GenericBalance {
             native: vec![],
         }
     }
-
     pub fn set_token_balances(&mut self, tokens: Balance) {
         match tokens {
             Balance::Native(balance) => {
@@ -441,6 +440,55 @@ impl GenericBalance {
             info: AssetInfoBase::Cw20(token_address),
             amount,
         }
+    }
+    pub fn receive_generic_balance(&mut self, tokens: GenericBalance) {
+        for token in tokens.native.iter() {
+            let index = self.native.iter().enumerate().find_map(|(i, exist)| {
+                if exist.denom == token.denom {
+                    Some(i)
+                } else {
+                    None
+                }
+            });
+            match index {
+                Some(idx) => self.native[idx].amount += token.amount,
+                None => self.native.push(token.clone()),
+            }
+        }
+        for token in tokens.cw20.iter() {
+            let index = self.cw20.iter().enumerate().find_map(|(i, exist)| {
+                if exist.address == token.address {
+                    Some(i)
+                } else {
+                    None
+                }
+            });
+            match index {
+                Some(idx) => self.cw20[idx].amount += token.amount,
+                None => self.cw20.push(token.clone()),
+            }
+        }
+    }
+    pub fn split_balance(&mut self, split_factor: Uint128) -> GenericBalance {
+        let mut split_bal = self.clone();
+        split_bal.native = split_bal
+            .native
+            .iter()
+            .map(|token| Coin {
+                denom: token.denom.clone(),
+                amount: token.amount.checked_div(split_factor).unwrap(),
+            })
+            .collect();
+        split_bal.cw20 = split_bal
+            .cw20
+            .iter()
+            .enumerate()
+            .map(|(_i, token)| Cw20CoinVerified {
+                address: token.address.clone(),
+                amount: token.amount.checked_div(split_factor).unwrap(),
+            })
+            .collect();
+        split_bal
     }
     pub fn add_tokens(&mut self, add: Balance) {
         match add {
