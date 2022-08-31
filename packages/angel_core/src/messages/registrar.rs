@@ -1,5 +1,6 @@
 use crate::structs::{
-    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, Profile, SplitDetails, Tier,
+    AcceptedTokens, AccountType, Beneficiary, EndowmentType, NetworkInfo, Profile, SplitDetails,
+    Tier,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
@@ -95,7 +96,7 @@ impl UpdateConfigMsg {
 pub struct UpdateEndowmentStatusMsg {
     pub endowment_id: u32,
     pub status: u8,
-    pub beneficiary: Option<String>,
+    pub beneficiary: Option<Beneficiary>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
