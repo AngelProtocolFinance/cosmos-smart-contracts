@@ -4,10 +4,7 @@ use crate::messages::vault::AccountWithdrawMsg;
 use crate::messages::vault::QueryMsg as VaultQuerier;
 use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
 use crate::responses::vault::ExchangeRateResponse;
-use crate::structs::{
-    AccountStrategies, AccountType, FundingSource, GenericBalance, SplitDetails, StrategyComponent,
-    YieldVault,
-};
+use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, Deps, DepsMut, QueryRequest,
     StdError, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
@@ -156,94 +153,6 @@ pub fn vault_endowment_balance(deps: Deps, vault_address: String, endowment_id: 
             msg: to_binary(&VaultQuerier::Balance { endowment_id }).unwrap(),
         }))
         .unwrap()
-}
-
-pub fn redeem_account_vaults(
-    deps: Deps,
-    endowment_id: u32,
-    registrar_contract: String,
-    strategies: &Vec<StrategyComponent>,
-) -> Result<Vec<SubMsg>, ContractError> {
-    // redeem all amounts from existing strategies
-    let mut redeem_messages = vec![];
-    for source in strategies.iter() {
-        // check source vault is in registrar vaults list
-        let _vault_config: VaultDetailResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: registrar_contract.to_string(),
-                msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: source.vault.to_string(),
-                })?,
-            }))?;
-
-        // create a redeem message for Vault, noting amount of tokens
-        let vault_balance = vault_endowment_balance(deps, source.vault.to_string(), endowment_id);
-        redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: source.vault.to_string(),
-            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem {
-                endowment_id,
-                amount: vault_balance,
-            })
-            .unwrap(),
-            funds: vec![],
-        })));
-    }
-    Ok(redeem_messages)
-}
-
-pub fn redeem_all_vaults(
-    deps: Deps,
-    endowment_id: u32,
-    registrar_contract: String,
-    strategies: &AccountStrategies,
-) -> Result<Vec<SubMsg>, ContractError> {
-    // redeem all amounts from existing strategies
-    let mut redeem_messages = vec![];
-    for source in strategies.get_strategy(AccountType::Locked).iter() {
-        // check source vault is in registrar vaults list
-        let _vault_config: VaultDetailResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: registrar_contract.to_string(),
-                msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: source.vault.to_string(),
-                })?,
-            }))?;
-
-        // create a redeem message for Vault, noting amount of tokens
-        let vault_balance = vault_endowment_balance(deps, source.vault.to_string(), endowment_id);
-        redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: source.vault.to_string(),
-            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem {
-                endowment_id,
-                amount: vault_balance,
-            })
-            .unwrap(),
-            funds: vec![],
-        })));
-    }
-    for source in strategies.get_strategy(AccountType::Liquid).iter() {
-        // check source vault is in registrar vaults list
-        let _vault_config: VaultDetailResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: registrar_contract.to_string(),
-                msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: source.vault.to_string(),
-                })?,
-            }))?;
-
-        // create a redeem message for Vault, noting amount of tokens
-        let vault_balance = vault_endowment_balance(deps, source.vault.to_string(), endowment_id);
-        redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: source.vault.to_string(),
-            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem {
-                endowment_id,
-                amount: vault_balance,
-            })
-            .unwrap(),
-            funds: vec![],
-        })));
-    }
-    Ok(redeem_messages)
 }
 
 pub fn withdraw_from_vaults(

@@ -1,14 +1,14 @@
-use crate::state::{read_vaults, CONFIG, NETWORK_CONNECTIONS, REGISTRY, VAULTS};
+use crate::state::{CONFIG, NETWORK_CONNECTIONS, REGISTRY, VAULTS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::responses::registrar::*;
 use angel_core::structs::{
-    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, NetworkInfo, Tier, YieldVault,
+    AcceptedTokens, Beneficiary, EndowmentEntry, EndowmentStatus, EndowmentType, NetworkInfo, Tier,
+    YieldVault,
 };
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    attr, to_binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, ReplyOn, Response, StdError,
-    StdResult, SubMsg, SubMsgResult, WasmMsg,
+    attr, to_binary, CosmosMsg, DepsMut, Env, MessageInfo, QueryRequest, ReplyOn, Response,
+    StdError, StdResult, SubMsg, SubMsgResult, WasmMsg, WasmQuery,
 };
 use cw_utils::Duration;
 
@@ -119,37 +119,67 @@ pub fn update_endowment_status(
             )]
         }
         // Has been liquidated or terminated. Remove from Funds and lockdown money flows
-        EndowmentStatus::Closed => vec![
-            build_account_status_change_msg(
-                accounts_contract.clone(),
-                endowment_id.clone(),
-                false,
-                false,
-            ),
-            // trigger the removal of this endowment from all Index Funds
-            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: index_fund_contract.to_string(),
-                msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
-                    angel_core::messages::index_fund::RemoveMemberMsg {
-                        member: msg.endowment_id,
-                    },
-                ))
-                .unwrap(),
-                funds: vec![],
-            })),
-            // start redemption of Account SC's Vault holdings to final beneficiary/index fund
-            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: accounts_contract,
-                msg: to_binary(
-                    &angel_core::messages::accounts::ExecuteMsg::CloseEndowment {
-                        id: endowment_id,
-                        beneficiary: msg.beneficiary,
-                    },
-                )
-                .unwrap(),
-                funds: vec![],
-            })),
-        ],
+        EndowmentStatus::Closed => {
+            // set a Beneficiary for the newly closed Endowment to send all funds to
+            let beneficiary: Beneficiary;
+            if msg.beneficiary != None {
+                beneficiary = msg.beneficiary.unwrap();
+            } else {
+                // query the Index Fund SC to find the Fund that this Endowment is a member of
+                let fund_list: angel_core::responses::index_fund::FundListResponse =
+                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                        contract_addr: index_fund_contract.clone().to_string(),
+                        msg: to_binary(
+                            &angel_core::messages::index_fund::QueryMsg::InvolvedFunds {
+                                endowment_id: msg.endowment_id.clone(),
+                            },
+                        )?,
+                    }))?;
+                // send funds to the first index fund in list if found
+                if !fund_list.funds.is_empty() {
+                    beneficiary = Beneficiary::IndexFund {
+                        id: fund_list.funds[0].id,
+                    };
+                } else {
+                    // Orphaned Endowment (ie. no index fund)
+                    // send funds to the AP treasury
+                    beneficiary = Beneficiary::Wallet {
+                        address: config.treasury.to_string(),
+                    };
+                }
+            }
+            vec![
+                build_account_status_change_msg(
+                    accounts_contract.clone(),
+                    endowment_id.clone(),
+                    false,
+                    false,
+                ),
+                // trigger the removal of this endowment from all Index Funds
+                SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: index_fund_contract.to_string(),
+                    msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
+                        angel_core::messages::index_fund::RemoveMemberMsg {
+                            member: msg.endowment_id,
+                        },
+                    ))
+                    .unwrap(),
+                    funds: vec![],
+                })),
+                // start redemption of Account SC's Vault holdings to final beneficiary/index fund
+                SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: accounts_contract,
+                    msg: to_binary(
+                        &angel_core::messages::accounts::ExecuteMsg::CloseEndowment {
+                            id: endowment_id,
+                            beneficiary,
+                        },
+                    )
+                    .unwrap(),
+                    funds: vec![],
+                })),
+            ]
+        }
         _ => vec![],
     };
 

@@ -1,4 +1,4 @@
-use crate::structs::{AccountType, FundingSource, Profile, SwapOperation};
+use crate::structs::{AccountType, Beneficiary, FundingSource, Profile, SwapOperation};
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
@@ -54,19 +54,17 @@ pub enum ExecuteMsg {
         id: u32,
         acct_type: AccountType,
     },
-    // Invest TOH funds to a Vault
-    VaultInvest {
+    // Invest TOH funds into Vaults
+    VaultsInvest {
         id: u32,
         acct_type: AccountType,
-        asset: AssetInfo,
-        amount: Uint128,
-        vault: String,
+        vaults: Vec<(String, Asset)>,
     },
-    // Redeem TOH funds from a Vault
-    VaultRedeem {
+    // Redeem TOH funds from Vaults
+    VaultsRedeem {
         id: u32,
-        amount: Uint128,
-        vault: String,
+        acct_type: AccountType,
+        vaults: Vec<(String, Uint128)>,
     },
     // set another endowment's strategy to "copycat" as your own
     CopycatStrategies {
@@ -74,20 +72,16 @@ pub enum ExecuteMsg {
         acct_type: AccountType,
         id_to_copy: u32,
     },
-    // pull all funds out of an endowment's strategies vaults once all
-    // funds are returned, re-invest the total locked TOH funds back
-    // into the vaults at the current strategies % allocations
-    RebalanceStrategies {
-        id: u32,
-        acct_type: AccountType,
-    },
     // create a new endowment
     CreateEndowment(CreateEndowmentMsg),
     // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.
     // If not provided, looks up the Index Fund an Endowment is tied to to donates the funds to it.
     CloseEndowment {
         id: u32,
-        beneficiary: Option<String>, // Optional Addr of the Beneficiary to receive funds
+        beneficiary: Beneficiary,
+    },
+    DistributeToBeneficiary {
+        id: u32,
     },
     // update owner addr
     UpdateOwner {
@@ -135,7 +129,6 @@ pub struct UpdateEndowmentSettingsMsg {
     pub id: u32,
     pub owner: String,
     pub kyc_donors_only: bool,
-    pub auto_invest: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
