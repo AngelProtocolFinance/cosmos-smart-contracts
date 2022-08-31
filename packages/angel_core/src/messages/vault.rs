@@ -164,3 +164,9 @@ pub enum LoopPairExecuteMsg {
     },
     WithdrawLiquidity {},
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum LoopFarmingQueryMsg {
+    QueryFlpTokenFromPoolAddress { pool_address: String },
+}

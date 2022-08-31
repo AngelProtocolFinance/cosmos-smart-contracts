@@ -8,8 +8,8 @@ use terraswap::asset::{Asset, AssetInfo};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{
-    ExecuteMsg, LoopFarmingExecuteMsg, LoopPairExecuteMsg, ReceiveMsg, RemoveLiquidAction,
-    UpdateConfigMsg,
+    ExecuteMsg, LoopFarmingExecuteMsg, LoopFarmingQueryMsg, LoopPairExecuteMsg, ReceiveMsg,
+    RemoveLiquidAction, UpdateConfigMsg,
 };
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::structs::{AccountType, EndowmentEntry};
@@ -385,11 +385,16 @@ pub fn redeem(
 
     // Perform the "loopswap::farming::unstake_and_claim(unfarm)" message
     let mut msgs = vec![];
-    let lp_token_contract =
-        query_pair_info_from_pair(&deps.querier, config.lp_pair_contract.clone())?.liquidity_token;
+    let lp_token_contract = config.lp_token_contract;
+    let flp_token_contract: String = deps.querier.query_wasm_smart(
+        config.lp_staking_contract.to_string(),
+        &LoopFarmingQueryMsg::QueryFlpTokenFromPoolAddress {
+            pool_address: lp_token_contract.to_string(),
+        },
+    )?;
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: lp_token_contract.to_string(),
+        contract_addr: flp_token_contract.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_amount,
@@ -498,8 +503,7 @@ pub fn add_liquidity(
     let token1_amount: Uint128;
     let token2_amount: Uint128;
 
-    let asset_infos =
-        query_pair_info_from_pair(&deps.querier, config.lp_pair_contract.clone())?.asset_infos;
+    let asset_infos = config.lp_pair_asset_infos;
 
     if in_asset_info == asset_infos[0] {
         token1_asset_info = in_asset_info;
@@ -645,8 +649,7 @@ pub fn stake_lp_token(
     let mut harvest_to_liquid_msgs = vec![];
 
     // Prepare the "loop::farming::stake" msg
-    let lp_token_contract =
-        query_pair_info_from_pair(&deps.querier, config.lp_pair_contract.clone())?.liquidity_token;
+    let lp_token_contract = config.lp_token_contract;
     let lp_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         lp_token_contract.to_string(),
         &cw20::Cw20QueryMsg::Balance {
