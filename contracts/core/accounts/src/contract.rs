@@ -84,6 +84,9 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentStatus(msg) => {
             executers::update_endowment_status(deps, env, info, msg)
         }
+        ExecuteMsg::DistributeToBeneficiary { id } => {
+            executers::distribute_to_beneficiary(deps, env, info, id)
+        }
         ExecuteMsg::ReinvestToLocked {
             id,
             amount,

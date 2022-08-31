@@ -80,6 +80,9 @@ pub enum ExecuteMsg {
         id: u32,
         beneficiary: Beneficiary,
     },
+    DistributeToBeneficiary {
+        id: u32,
+    },
     // update owner addr
     UpdateOwner {
         new_owner: String,

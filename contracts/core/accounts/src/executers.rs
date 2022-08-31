@@ -23,7 +23,7 @@ use cosmwasm_std::{
     QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg,
     WasmQuery,
 };
-use cw20::{Balance, Cw20CoinVerified};
+use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 
@@ -624,6 +624,131 @@ pub fn swap_receipt(
         (AssetInfo::Cw1155(_, _), _) => unimplemented!(),
     }
     STATES.save(deps.storage, id, &state)?;
+
+    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let mut msgs: Vec<CosmosMsg> = vec![];
+    match endowment.pending_redemptions {
+        // nothing pending, no action needed
+        0 => (),
+        1 => {
+            // reset pending redemptions
+            endowment.pending_redemptions = 0;
+            // if the endowment is also closing, distribute all funds to beneficiary
+            if state.closing_endowment {
+                msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: env.contract.address.to_string(),
+                    msg: to_binary(&ExecuteMsg::DistributeToBeneficiary { id })?,
+                    funds: vec![],
+                }));
+            }
+        }
+        // deduct pending redemptions as they come in
+        _ => endowment.pending_redemptions -= 1,
+    }
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
+    Ok(Response::new().add_messages(msgs))
+}
+
+pub fn distribute_to_beneficiary(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    id: u32,
+) -> Result<Response, ContractError> {
+    if info.sender != env.contract.address {
+        return Err(ContractError::Unauthorized {});
+    }
+    let config = CONFIG.load(deps.storage)?;
+    let mut state = STATES.load(deps.storage, id)?;
+
+    // Consolidate all locked & liquid assets for the closing endowment if going to a wallet,
+    // otherwise keep the locked & liquid division preserved.
+    let mut msgs: Vec<SubMsg> = vec![];
+    match state.closing_beneficiary {
+        None => (),
+        Some(Beneficiary::Wallet { ref address }) => {
+            // build msg for all native coins
+            let native_coins: Vec<Coin> = [
+                state.balances.liquid.native.clone(),
+                state.balances.locked.native.clone(),
+            ]
+            .concat();
+            msgs.push(SubMsg::new(BankMsg::Send {
+                to_address: address.to_string(),
+                amount: native_coins,
+            }));
+
+            // build list of all CW20 coins
+            let cw20_coins: Vec<Cw20Coin> = [
+                state.balances.liquid.cw20_list(),
+                state.balances.locked.cw20_list(),
+            ]
+            .concat();
+            // create a transfer msg for each CW20 coin
+            for coin in cw20_coins.iter() {
+                msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: coin.address.to_string(),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                        recipient: address.to_string(),
+                        amount: coin.amount,
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                })));
+            }
+        }
+        Some(Beneficiary::Endowment { id }) => {
+            let mut rcv_endow = STATES.load(deps.storage, id)?;
+            rcv_endow
+                .balances
+                .locked
+                .receive_generic_balance(state.balances.locked);
+            rcv_endow
+                .balances
+                .liquid
+                .receive_generic_balance(state.balances.liquid);
+            STATES.save(deps.storage, id, &rcv_endow)?;
+        }
+        Some(Beneficiary::IndexFund { id }) => {
+            // get index fund addr from registrar
+            let registrar_config: RegistrarConfigResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: config.registrar_contract.to_string(),
+                    msg: to_binary(&RegistrarQuerier::Config {})?,
+                }))?;
+            // get index fund members list & count
+            let index_fund: angel_core::responses::index_fund::FundDetailsResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: registrar_config.index_fund.unwrap(),
+                    msg: to_binary(&angel_core::messages::index_fund::QueryMsg::FundDetails {
+                        fund_id: id,
+                    })?,
+                }))?;
+            let members = index_fund.fund.unwrap().members;
+            let members_count = Uint128::from(members.len() as u8);
+            // split up endoment locked/liquid balances based on member count
+            let split_liquid: GenericBalance = state.balances.liquid.split_balance(members_count);
+            let split_locked: GenericBalance = state.balances.locked.split_balance(members_count);
+            // transfer split funds portons to each member
+            for member in members.into_iter() {
+                let mut rcv_endow = STATES.load(deps.storage, member)?;
+                rcv_endow
+                    .balances
+                    .locked
+                    .receive_generic_balance(split_locked.clone());
+                rcv_endow
+                    .balances
+                    .liquid
+                    .receive_generic_balance(split_liquid.clone());
+                STATES.save(deps.storage, member, &rcv_endow)?;
+            }
+        }
+    }
+
+    // zero out the closing endowment's balances
+    state.balances = BalanceInfo::default();
+    STATES.save(deps.storage, id, &state)?;
+
     Ok(Response::new())
 }
 
