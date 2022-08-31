@@ -19,6 +19,7 @@ fn create_mock_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMo
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
 
+        lp_factory_contract: "loop-factory".to_string(),
         lp_staking_contract: "loop-farming".to_string(),
         pair_contract: "loop-pair".to_string(),
         lp_reward_token: "lp-reward-token".to_string(),
@@ -45,6 +46,7 @@ fn proper_instantiation() {
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
 
+        lp_factory_contract: "loop-factory".to_string(),
         lp_staking_contract: "loop-farming".to_string(),
         pair_contract: "loop-pair".to_string(),
         lp_reward_token: "lp-reward-token".to_string(),

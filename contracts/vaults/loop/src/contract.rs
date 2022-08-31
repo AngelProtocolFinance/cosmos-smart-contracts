@@ -42,6 +42,7 @@ pub fn instantiate(
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         keeper: deps.api.addr_validate(&msg.keeper)?,
 
+        lp_factory_contract: deps.api.addr_validate(&msg.lp_factory_contract)?,
         lp_staking_contract: deps.api.addr_validate(&msg.lp_staking_contract)?,
         lp_pair_contract: pair_contract,
         lp_pair_asset_infos: pair_info.asset_infos,
@@ -111,9 +112,9 @@ pub fn execute(
             )
         }
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
-        ExecuteMsg::DistributeClaim {
+        ExecuteMsg::RestakeClaimReward {
             reward_token_bal_before,
-        } => executers::distribute_claim(deps, env, info, reward_token_bal_before),
+        } => executers::restake_claim_reward(deps, env, info, reward_token_bal_before),
         ExecuteMsg::AddLiquidity {
             endowment_id,
             in_asset_info,

@@ -13,6 +13,7 @@ pub struct Config {
     pub registrar_contract: Addr,
     pub keeper: Addr,
 
+    pub lp_factory_contract: Addr, // loopswap factory contract address
     pub lp_staking_contract: Addr, // loopswap farming contract address
     pub lp_pair_contract: Addr,    // loopswap pair contract address
     pub lp_token_contract: Addr,   // loopswap pair liquidity token contract address(LP token)

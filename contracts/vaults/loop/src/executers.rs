@@ -13,7 +13,9 @@ use angel_core::messages::vault::{
 };
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::structs::{AccountType, EndowmentEntry};
-use terraswap::querier::{query_balance, query_pair_info_from_pair, query_token_balance};
+use terraswap::querier::{
+    query_balance, query_pair_info, query_pair_info_from_pair, query_token_balance,
+};
 
 use crate::state::{Config, APTAX, BALANCES, CONFIG, TOKEN_INFO};
 
@@ -151,10 +153,10 @@ pub fn deposit(
         .add_attribute("deposit_amount", deposit_amount))
 }
 
-/// Contract entry: **distribute_claim**
+/// Contract entry: **restake_claim_reward**
 ///   1. Compute the amount of reward token(`LOOP`) obtained from `claim/harvest`
-///   2. Re-stake the `reward token`s
-pub fn distribute_claim(
+///   2. Re-stake the `reward token`s by converting it to LP tokens
+pub fn restake_claim_reward(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
@@ -180,29 +182,123 @@ pub fn distribute_claim(
         .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
 
     // Re-stake the `reward token`s for more yield
-    let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
-        &config.lp_pair_contract.to_string(),
-        &AssetInfo::Token {
-            contract_addr: config.lp_reward_token.to_string(),
-        },
-        reward_amount.multiply_ratio(1_u128, 2_u128),
-    )?;
+    let reward_asset_info = AssetInfo::Token {
+        contract_addr: config.lp_reward_token.to_string(),
+    };
+    let mut loop_pair_swap_msgs = vec![];
+    let mut contract_add_liquidity_msgs = vec![];
+    if config.lp_pair_asset_infos.contains(&reward_asset_info) {
+        loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
+            &config.lp_pair_contract.to_string(),
+            &AssetInfo::Token {
+                contract_addr: config.lp_reward_token.to_string(),
+            },
+            reward_amount.multiply_ratio(1_u128, 2_u128),
+        )?;
 
-    // Prepare the messages for "(this contract::)add_liquidity" opeartion
-    let contract_add_liquidity_msgs = prepare_contract_add_liquidity_msgs(
-        deps,
-        env,
-        &config,
-        None,
-        AssetInfo::Token {
-            contract_addr: config.lp_reward_token.to_string(),
-        },
-    )?;
+        // Prepare the messages for "(this contract::)add_liquidity" opeartion
+        contract_add_liquidity_msgs = prepare_contract_add_liquidity_msgs(
+            deps,
+            env,
+            &config,
+            None,
+            AssetInfo::Token {
+                contract_addr: config.lp_reward_token.to_string(),
+            },
+        )?;
+    } else {
+        let pair_1_contract = query_pair_info(
+            &deps.querier,
+            config.lp_factory_contract.clone(),
+            &[
+                reward_asset_info.clone(),
+                config.lp_pair_asset_infos[0].clone(),
+            ],
+        )?
+        .contract_addr;
+        let pair_2_contract = query_pair_info(
+            &deps.querier,
+            config.lp_factory_contract.clone(),
+            &[
+                reward_asset_info.clone(),
+                config.lp_pair_asset_infos[1].clone(),
+            ],
+        )?
+        .contract_addr;
+
+        loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
+            &pair_1_contract,
+            &AssetInfo::Token {
+                contract_addr: config.lp_reward_token.to_string(),
+            },
+            reward_amount.multiply_ratio(1_u128, 2_u128),
+        )?;
+
+        loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
+            &pair_2_contract,
+            &AssetInfo::Token {
+                contract_addr: config.lp_reward_token.to_string(),
+            },
+            reward_amount.multiply_ratio(1_u128, 2_u128),
+        )?);
+
+        // Prepare the messages for "(this contract::)add_liquidity" opeartion
+        let token1_bal_before = query_asset_balance(
+            deps.as_ref(),
+            env.contract.address.clone(),
+            config.lp_pair_asset_infos[0].clone(),
+        )?;
+        let token2_bal_before = query_asset_balance(
+            deps.as_ref(),
+            env.contract.address.clone(),
+            config.lp_pair_asset_infos[0].clone(),
+        )?;
+        contract_add_liquidity_msgs =
+            prepare_add_liquidity_msgs(deps, env, &config, token1_bal_before, token2_bal_before)?;
+    }
 
     Ok(Response::default()
         .add_messages(loop_pair_swap_msgs)
         .add_messages(contract_add_liquidity_msgs)
-        .add_attributes(vec![attr("action", "distribute_claim")]))
+        .add_attributes(vec![attr("action", "restake_claimed_reward")]))
+}
+
+fn prepare_add_liquidity_msgs(
+    deps: DepsMut,
+    env: Env,
+    config: &Config,
+    token1_bal_before: Uint128,
+    token2_bal_before: Uint128,
+) -> StdResult<Vec<CosmosMsg>> {
+    let mut msgs = vec![];
+    let token1_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        config.lp_pair_asset_infos[0].clone(),
+    )?;
+    let token2_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        config.lp_pair_asset_infos[0].clone(),
+    )?;
+    let token1_amount = token1_bal - token1_bal_before;
+    let token2_amount = token2_bal - token2_bal_before;
+
+    let loop_pair_provide_liquidity_msgs = prepare_loop_pair_provide_liquidity_msgs(
+        config.lp_pair_asset_infos[0].clone(),
+        token1_amount,
+        config.lp_pair_asset_infos[1].clone(),
+        token2_amount,
+        config.lp_pair_contract.to_string(),
+    )?;
+    msgs.extend_from_slice(&loop_pair_provide_liquidity_msgs);
+
+    // Add the "(this contract::)stake" message
+    let contract_stake_msgs =
+        prepare_contract_stake_msgs(deps.as_ref(), env, None, config.lp_pair_contract.clone())?;
+    msgs.extend_from_slice(&contract_stake_msgs);
+
+    Ok(msgs)
 }
 
 fn prepare_claim_harvest_msgs(deps: Deps, env: Env, config: &Config) -> StdResult<Vec<CosmosMsg>> {
@@ -223,7 +319,7 @@ fn prepare_claim_harvest_msgs(deps: Deps, env: Env, config: &Config) -> StdResul
     )?;
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::DistributeClaim {
+        msg: to_binary(&ExecuteMsg::RestakeClaimReward {
             reward_token_bal_before: reward_token_bal_query.balance,
         })
         .unwrap(),
@@ -322,10 +418,7 @@ pub fn redeem(
         funds: vec![],
     }));
 
-    // Handle the reward LOOP tokens
-    // IMPORTANT: Atm, the reward token of loopswap farming contract is LOOP token
-    // Hence, we assume that the `config.pair_contract` has the token pairs in which
-    // there is LOOP token, like LOOP-USDC, LOOP-JUNO.
+    // Handle the reward LOOP tokens(= re-stake the reward tokens)
     let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         config.lp_reward_token.to_string(),
         &cw20::Cw20QueryMsg::Balance {
@@ -334,12 +427,8 @@ pub fn redeem(
     )?;
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::Swap {
-            beneficiary: Some(accounts_contract),
-            in_asset_info: AssetInfo::Token {
-                contract_addr: config.lp_reward_token.to_string(),
-            },
-            in_asset_bal_before: reward_token_bal_query.balance,
+        msg: to_binary(&ExecuteMsg::RestakeClaimReward {
+            reward_token_bal_before: reward_token_bal_query.balance,
         })
         .unwrap(),
         funds: vec![],

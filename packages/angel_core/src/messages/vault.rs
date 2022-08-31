@@ -12,6 +12,7 @@ pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub keeper: String,
 
+    pub lp_factory_contract: String,
     pub lp_staking_contract: String,
     pub pair_contract: String,
     pub lp_reward_token: String,
@@ -51,7 +52,7 @@ pub enum ExecuteMsg {
         amount: Uint128,
     },
     Harvest {},
-    DistributeClaim {
+    RestakeClaimReward {
         reward_token_bal_before: Uint128,
     },
     AddLiquidity {
