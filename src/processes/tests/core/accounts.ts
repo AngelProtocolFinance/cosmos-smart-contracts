@@ -20,6 +20,7 @@ export async function testRejectUnapprovedDonations(
   juno: SigningCosmWasmClient,
   apTeam: string,
   accountsContract: string,
+  endowmentId: number,
   amount: string
 ): Promise<void> {
   process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
@@ -27,6 +28,7 @@ export async function testRejectUnapprovedDonations(
   await expect(
     sendTransactionWithFunds(juno, apTeam, accountsContract, {
         deposit: {
+          id: endowmentId,
           locked_percentage: "1",
           liquid_percentage: "0",
         },
@@ -40,13 +42,15 @@ export async function testRejectUnapprovedDonations(
 export async function testSendDonationToEndowment(
   juno: SigningCosmWasmClient,
   apTeam: string,
-  endowment: string,
+  accountsContract: string,
+  endowmentId: number,
   amount: string
 ): Promise<void> {
   process.stdout.write("Test - Send single amount to an Endowment Account");
   await expect(
-    sendTransactionWithFunds(juno, apTeam, endowment, {
+    sendTransactionWithFunds(juno, apTeam, accountsContract, {
         deposit: {
+          id: endowmentId,
           locked_percentage: "1",
           liquid_percentage: "0",
         },
@@ -68,7 +72,8 @@ export async function testSendDonationToEndowment(
 export async function testBeneficiaryCanWithdrawFromLiquid(
   juno: SigningCosmWasmClient,
   charityOwner: string,
-  endowment: string,
+  accountsContract: string,
+  endowmentId: number,
   vault: string,
   beneficiary: string
 ): Promise<void> {
@@ -76,8 +81,9 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
     "Test - Charity Owner cannot withdraw from the Endowment locked amount"
   );
   await expect(
-    sendTransaction(juno, charityOwner, endowment, {
+    sendTransaction(juno, charityOwner, accountsContract, {
       withdraw: {
+        id: endowmentId,
         sources: [{ vault, locked: "500000", liquid: "1000000" }],
         beneficiary,
         asset_info: {
@@ -92,8 +98,9 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
     "Test - Charity Owner can withdraw from the Endowment availalble amount (liquid)"
   );
   await expect(
-    sendTransaction(juno, charityOwner, endowment, {
+    sendTransaction(juno, charityOwner, accountsContract, {
       withdraw: {
+        id: endowmentId,
         sources: [{ vault, locked: "0", liquid: "30000000" }],
         beneficiary,
       },
@@ -115,15 +122,17 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
 export async function testCharityCanUpdateStrategies(
   juno: SigningCosmWasmClient,
   charity1: string,
-  endowment: string,
+  accountsContract: string,
+  endowmentId: number,
   Vault1: string,
   Vault2: string
 ): Promise<void> {
   process.stdout.write("Test - Charity can update their Endowment's strategies");
 
   await expect(
-    sendTransaction(juno, charity1, endowment, {
+    sendTransaction(juno, charity1, accountsContract, {
       update_strategies: {
+        id: endowmentId,
         strategies: [
           { vault: Vault1, percentage: "0.5"},
           { vault: Vault2, percentage: "0.5"},
@@ -145,7 +154,8 @@ export async function testCharityCanUpdateStrategies(
 export async function testApTeamChangesAccountsEndowmentOwner(
   juno: SigningCosmWasmClient,
   apTeam: string,
-  endowment: string,
+  accountsContract: string,
+  endowmentId: number,
   owner: string,
   beneficiary: string,
   kyc_donors_only: boolean,
@@ -153,8 +163,9 @@ export async function testApTeamChangesAccountsEndowmentOwner(
   process.stdout.write("Test - Contract Owner can set new owner of an Endowment");
 
   await expect(
-    sendTransaction(juno, apTeam, endowment, {
+    sendTransaction(juno, apTeam, accountsContract, {
       update_endowment_settings: {
+        id: endowmentId,
         owner,
         beneficiary,
         kyc_donors_only,
