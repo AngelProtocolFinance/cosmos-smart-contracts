@@ -66,7 +66,7 @@ pub fn execute(
             id,
             final_asset,
             acct_type,
-        } => executers::swap_receipt(deps, id, info.sender, final_asset, acct_type),
+        } => executers::swap_receipt(deps, env, id, info.sender, final_asset, acct_type),
         ExecuteMsg::VaultReceipt { id, acct_type } => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});

@@ -574,6 +574,7 @@ pub fn swap_token(
 
 pub fn swap_receipt(
     deps: DepsMut,
+    env: Env,
     id: u32,
     sender_addr: Addr,
     final_asset: Asset,
@@ -1089,7 +1090,7 @@ pub fn vaults_redeem(
 
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
     Ok(Response::new()
-        .add_attribute("action", "redeem_vault")
+        .add_attribute("action", "vault_redeem")
         .add_submessages(redeem_msgs))
 }
 
@@ -1193,8 +1194,7 @@ pub fn withdraw(
 
     Ok(Response::new()
         .add_submessages(messages)
-        .add_attribute("action", "withdraw_liquid")
-        .add_attribute("beneficiary", beneficiary))
+        .add_attribute("action", "withdraw"))
 }
 
 pub fn close_endowment(
@@ -1266,7 +1266,6 @@ pub fn close_endowment(
 
     Ok(Response::new()
         .add_attribute("action", "close_endowment")
-        .add_attribute("sender", info.sender.to_string())
         .add_submessages(redeem_messages))
 }
 
@@ -1368,6 +1367,5 @@ pub fn update_profile(
 
     Ok(Response::new()
         .add_submessages(sub_msgs)
-        .add_attribute("action", "update_profile")
-        .add_attribute("sender", info.sender.to_string()))
+        .add_attribute("action", "update_profile"))
 }

@@ -410,13 +410,7 @@ fn test_update_endowment_profile() {
         ExecuteMsg::UpdateProfile(msg.clone()),
     )
     .unwrap();
-    assert_eq!(
-        res.attributes,
-        vec![
-            attr("action", "update_profile"),
-            attr("sender", CHARITY_ADDR.to_string())
-        ]
-    );
+    assert_eq!(res.attributes, vec![attr("action", "update_profile"),]);
     assert_eq!(res.messages.len(), 1);
 
     let res = query(
