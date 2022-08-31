@@ -458,7 +458,7 @@ pub fn swap_token(
         (AssetInfo::Native(denom), AccountType::Liquid) => {
             if state
                 .balances
-                .liquid_balance
+                .liquid
                 .get_denom_amount(denom.to_string())
                 .amount
                 < amount
@@ -467,7 +467,7 @@ pub fn swap_token(
             }
             state
                 .balances
-                .liquid_balance
+                .liquid
                 .deduct_tokens(Balance::from(vec![Coin {
                     amount,
                     denom: denom.to_string(),
@@ -476,7 +476,7 @@ pub fn swap_token(
         (AssetInfo::Native(denom), AccountType::Locked) => {
             if state
                 .balances
-                .locked_balance
+                .locked
                 .get_denom_amount(denom.to_string())
                 .amount
                 < amount
@@ -485,43 +485,31 @@ pub fn swap_token(
             }
             state
                 .balances
-                .locked_balance
+                .locked
                 .deduct_tokens(Balance::from(vec![Coin {
                     amount,
                     denom: denom.to_string(),
                 }]));
         }
         (AssetInfo::Cw20(addr), AccountType::Liquid) => {
-            if state
-                .balances
-                .liquid_balance
-                .get_token_amount(addr.clone())
-                .amount
-                < amount
-            {
+            if state.balances.liquid.get_token_amount(addr.clone()).amount < amount {
                 return Err(ContractError::BalanceTooSmall {});
             }
             state
                 .balances
-                .liquid_balance
+                .liquid
                 .deduct_tokens(Balance::Cw20(Cw20CoinVerified {
                     address: addr.clone(),
                     amount,
                 }));
         }
         (AssetInfo::Cw20(addr), AccountType::Locked) => {
-            if state
-                .balances
-                .locked_balance
-                .get_token_amount(addr.clone())
-                .amount
-                < amount
-            {
+            if state.balances.locked.get_token_amount(addr.clone()).amount < amount {
                 return Err(ContractError::BalanceTooSmall {});
             }
             state
                 .balances
-                .locked_balance
+                .locked
                 .deduct_tokens(Balance::Cw20(Cw20CoinVerified {
                     address: addr.clone(),
                     amount,
@@ -593,24 +581,22 @@ pub fn swap_receipt(
 
     let mut state = STATES.load(deps.storage, id)?;
     match (final_asset.info, acct_type) {
-        (AssetInfo::Native(denom), AccountType::Liquid) => state
-            .balances
-            .liquid_balance
-            .add_tokens(Balance::from(vec![Coin {
+        (AssetInfo::Native(denom), AccountType::Liquid) => {
+            state.balances.liquid.add_tokens(Balance::from(vec![Coin {
                 amount: final_asset.amount,
                 denom: denom.to_string(),
-            }])),
-        (AssetInfo::Native(denom), AccountType::Locked) => state
-            .balances
-            .locked_balance
-            .add_tokens(Balance::from(vec![Coin {
+            }]))
+        }
+        (AssetInfo::Native(denom), AccountType::Locked) => {
+            state.balances.locked.add_tokens(Balance::from(vec![Coin {
                 amount: final_asset.amount,
                 denom: denom.to_string(),
-            }])),
+            }]))
+        }
         (AssetInfo::Cw20(addr), AccountType::Liquid) => {
             state
                 .balances
-                .liquid_balance
+                .liquid
                 .add_tokens(Balance::Cw20(Cw20CoinVerified {
                     address: addr.clone(),
                     amount: final_asset.amount,
@@ -619,7 +605,7 @@ pub fn swap_receipt(
         (AssetInfo::Cw20(addr), AccountType::Locked) => {
             state
                 .balances
-                .locked_balance
+                .locked
                 .add_tokens(Balance::Cw20(Cw20CoinVerified {
                     address: addr.clone(),
                     amount: final_asset.amount,
@@ -667,8 +653,8 @@ pub fn vault_receipt(
         AssetInfoBase::Cw1155(_, _) => unimplemented!(),
     };
     match acct_type {
-        AccountType::Locked => state.balances.locked_balance.add_tokens(returned_bal),
-        AccountType::Liquid => state.balances.liquid_balance.add_tokens(returned_bal),
+        AccountType::Locked => state.balances.locked.add_tokens(returned_bal),
+        AccountType::Liquid => state.balances.liquid.add_tokens(returned_bal),
     }
 
     STATES.save(deps.storage, id, &state)?;
@@ -796,20 +782,17 @@ pub fn deposit(
     }
     // If invested portion of strategies < 100% there will be leftover deposits
     // Add any remaining deposited tokens to the locked balance "Tokens on Hand"
-    state
-        .balances
-        .locked_balance
-        .add_tokens(match locked_amount.info {
-            AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
-                denom: denom.to_string(),
-                amount: leftover_amt,
-            }]),
-            AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
-                address: contract_addr.clone(),
-                amount: leftover_amt,
-            }),
-            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-        });
+    state.balances.locked.add_tokens(match locked_amount.info {
+        AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
+            denom: denom.to_string(),
+            amount: leftover_amt,
+        }]),
+        AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
+            address: contract_addr.clone(),
+            amount: leftover_amt,
+        }),
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+    });
 
     // Process Liquid Strategy Deposits
     let liquid_strategies = endowment.strategies.get(AccountType::Liquid);
@@ -826,20 +809,17 @@ pub fn deposit(
     }
     // If invested portion of strategies < 100% there will be leftover deposits
     // Add any remaining deposited tokens to the liquid balance "Tokens on Hand"
-    state
-        .balances
-        .liquid_balance
-        .add_tokens(match liquid_amount.info {
-            AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
-                denom: denom.to_string(),
-                amount: leftover_amt,
-            }]),
-            AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
-                address: contract_addr.clone(),
-                amount: leftover_amt,
-            }),
-            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
-        });
+    state.balances.liquid.add_tokens(match liquid_amount.info {
+        AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
+            denom: denom.to_string(),
+            amount: leftover_amt,
+        }]),
+        AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
+            address: contract_addr.clone(),
+            amount: leftover_amt,
+        }),
+        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+    });
 
     STATES.save(deps.storage, msg.id, &state)?;
     Ok(Response::new()
@@ -994,8 +974,8 @@ pub fn vaults_invest(
 
     // set the final state balance after all assets have been deducted and save
     match &acct_type {
-        AccountType::Locked => state.balances.locked_balance = current_bal.clone(),
-        AccountType::Liquid => state.balances.liquid_balance = current_bal.clone(),
+        AccountType::Locked => state.balances.locked = current_bal.clone(),
+        AccountType::Liquid => state.balances.liquid = current_bal.clone(),
     }
     STATES.save(deps.storage, id, &state)?;
 
@@ -1187,8 +1167,8 @@ pub fn withdraw(
 
     // set the updated balance for the account type
     match acct_type {
-        AccountType::Locked => state.balances.locked_balance = state_bal,
-        AccountType::Liquid => state.balances.liquid_balance = state_bal,
+        AccountType::Locked => state.balances.locked = state_bal,
+        AccountType::Liquid => state.balances.liquid = state_bal,
     }
     STATES.save(deps.storage, id, &state)?;
 

@@ -336,22 +336,22 @@ impl AcceptedTokens {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct BalanceInfo {
-    pub locked_balance: GenericBalance,
-    pub liquid_balance: GenericBalance,
+    pub locked: GenericBalance,
+    pub liquid: GenericBalance,
 }
 
 impl BalanceInfo {
     pub fn default() -> Self {
         BalanceInfo {
-            locked_balance: GenericBalance::default(),
-            liquid_balance: GenericBalance::default(),
+            locked: GenericBalance::default(),
+            liquid: GenericBalance::default(),
         }
     }
 
     pub fn get(&self, acct_type: &AccountType) -> GenericBalance {
         match acct_type {
-            &AccountType::Locked => self.locked_balance.clone(),
-            &AccountType::Liquid => self.liquid_balance.clone(),
+            &AccountType::Locked => self.locked.clone(),
+            &AccountType::Liquid => self.liquid.clone(),
         }
     }
 }

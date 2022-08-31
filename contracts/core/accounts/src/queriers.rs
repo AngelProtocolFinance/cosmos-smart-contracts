@@ -50,12 +50,10 @@ pub fn query_account_balance(deps: Deps, id: u32) -> StdResult<BalanceInfo> {
 
     for vault in vault_list.vaults.iter() {
         let vault_bal = vault_endowment_balance(deps, vault.address.clone(), id);
-        balances
-            .locked_balance
-            .add_tokens(Balance::Cw20(Cw20CoinVerified {
-                amount: vault_bal,
-                address: deps.api.addr_validate(&vault.address).unwrap(),
-            }));
+        balances.locked.add_tokens(Balance::Cw20(Cw20CoinVerified {
+            amount: vault_bal,
+            address: deps.api.addr_validate(&vault.address).unwrap(),
+        }));
     }
 
     Ok(balances)
@@ -71,16 +69,16 @@ pub fn query_token_amount(
     let state = STATES.load(deps.storage, id)?;
     let balance: Uint128 = match (asset_info, acct_type) {
         (AssetInfo::Native(denom), AccountType::Liquid) => {
-            state.balances.liquid_balance.get_denom_amount(denom).amount
+            state.balances.liquid.get_denom_amount(denom).amount
         }
         (AssetInfo::Native(denom), AccountType::Locked) => {
-            state.balances.locked_balance.get_denom_amount(denom).amount
+            state.balances.locked.get_denom_amount(denom).amount
         }
         (AssetInfo::Cw20(addr), AccountType::Liquid) => {
-            state.balances.liquid_balance.get_token_amount(addr).amount
+            state.balances.liquid.get_token_amount(addr).amount
         }
         (AssetInfo::Cw20(addr), AccountType::Locked) => {
-            state.balances.locked_balance.get_token_amount(addr).amount
+            state.balances.locked.get_token_amount(addr).amount
         }
         (AssetInfo::Cw1155(_, _), _) => unimplemented!(),
     };
