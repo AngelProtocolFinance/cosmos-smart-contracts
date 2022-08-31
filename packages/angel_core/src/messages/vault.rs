@@ -106,8 +106,16 @@ pub struct RoutesUpdateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ReceiveMsg {
-    Deposit { endowment_id: u32 },
-    ReinvestToLocked { endowment_id: u32, amount: Uint128 },
+    Deposit {
+        endowment_id: u32,
+    },
+    ReinvestToLocked {
+        endowment_id: u32,
+        amount: Uint128,
+    },
+    /// send the harvest portion from self (if AccountType::Locked)
+    /// over to it's AccountType::Liquid (sibling) vault
+    HarvestToLiquid {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

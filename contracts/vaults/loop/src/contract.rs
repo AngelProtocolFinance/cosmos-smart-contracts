@@ -189,6 +189,9 @@ fn receive_cw20(
         }) => {
             executers::reinvest_to_locked_recieve(deps, env, info, endowment_id, amount, cw20_msg)
         }
+        Ok(ReceiveMsg::HarvestToLiquid {}) => {
+            executers::harvest_to_liquid(deps, env, info, cw20_msg)
+        }
         _ => Err(ContractError::Std(StdError::GenericErr {
             msg: "Invalid call".to_string(),
         })),

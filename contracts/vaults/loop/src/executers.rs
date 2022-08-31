@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Deps, DepsMut, Env, Fraction,
+    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, Fraction,
     MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ReceiveMsg;
@@ -8,8 +8,8 @@ use terraswap::asset::{Asset, AssetInfo};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{
-    AccountWithdrawMsg, ExecuteMsg, LoopFarmingExecuteMsg, LoopPairExecuteMsg, ReceiveMsg,
-    RemoveLiquidAction, UpdateConfigMsg,
+    ExecuteMsg, LoopFarmingExecuteMsg, LoopPairExecuteMsg, ReceiveMsg, RemoveLiquidAction,
+    UpdateConfigMsg,
 };
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::structs::{AccountType, EndowmentEntry};
@@ -149,38 +149,9 @@ pub fn deposit(
         .add_attribute("deposit_amount", deposit_amount))
 }
 
-/// Contract entry: **claim**
-///   1. Only callable by `accounts` contract
-///   2. `Claim` the `reward token` from `loopswap::farming` contract
-///   3. Compute and send the tax(USDC) to AP treasury
-///   4. Re-stake the leftover by converting it to LP token & `loopswap::farming::stake`
-pub fn claim(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    // Validations
-    let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract.to_string(),
-        &RegistrarQueryMsg::Config {},
-    )?;
-    if let Some(accounts_contract) = registar_config.accounts_contract {
-        if info.sender.to_string() != accounts_contract {
-            return Err(ContractError::Unauthorized {});
-        }
-    } else {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let msgs = prepare_claim_harvest_msgs(deps.as_ref(), env, &config)?;
-
-    Ok(Response::default()
-        .add_messages(msgs)
-        .add_attributes(vec![attr("action", "claim")]))
-}
-
 /// Contract entry: **distribute_claim**
 ///   1. Compute the amount of reward token(`LOOP`) obtained from `claim/harvest`
-///   2. Compute the `AP tax` & send it to the `AP treasury`
-///   3. Re-stake the left `reward token`s
+///   2. Re-stake the `reward token`s
 pub fn distribute_claim(
     deps: DepsMut,
     env: Env,
@@ -568,7 +539,7 @@ fn prepare_contract_stake_msgs(
 ///   1. Stake the `LP` tokens received from `provide_liquidity`
 ///   2. Mint the `vault token`s
 pub fn stake_lp_token(
-    deps: DepsMut,
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
     endowment_id: Option<u32>,
@@ -579,8 +550,10 @@ pub fn stake_lp_token(
         return Err(ContractError::Unauthorized {});
     }
 
+    let mut config: Config = CONFIG.load(deps.storage)?;
+    let mut harvest_to_liquid_msgs = vec![];
+
     // Prepare the "loop::farming::stake" msg
-    let mut config = CONFIG.load(deps.storage)?;
     let lp_token_contract =
         query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?.liquidity_token;
     let lp_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
@@ -589,12 +562,129 @@ pub fn stake_lp_token(
             address: env.contract.address.to_string(),
         },
     )?;
-
-    let lp_stake_amount = lp_bal_query.balance - lp_token_bal_before;
-    if lp_stake_amount.is_zero() {
+    let lp_amount = lp_bal_query
+        .balance
+        .checked_sub(lp_token_bal_before)
+        .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
+    if lp_amount.is_zero() {
         return Err(ContractError::InvalidZeroAmount {});
     }
-    let msg = CosmosMsg::Wasm(WasmMsg::Execute {
+
+    let lp_stake_amount: Uint128;
+
+    match endowment_id {
+        // Case of `deposit` from `endowment`
+        Some(endowment_id) => {
+            // Compute the `vault_token` amount
+            config.total_lp_amount += lp_amount;
+            let vt_mint_amount = match config.total_shares.u128() {
+                0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
+                _ => lp_amount.multiply_ratio(config.total_shares, config.total_lp_amount),
+            };
+            config.total_shares += vt_mint_amount;
+
+            // Mint the `vault_token`
+            execute_mint(deps.branch(), env, info, endowment_id, vt_mint_amount).map_err(|_| {
+                ContractError::Std(StdError::GenericErr {
+                    msg: format!(
+                        "Cannot mint the {} vault token for {}",
+                        vt_mint_amount, endowment_id
+                    ),
+                })
+            })?;
+
+            // Stake all the LP tokens
+            lp_stake_amount = lp_amount;
+        }
+        // Case of `harvest` from `keeper` wallet
+        None => {
+            // Compute the `vault_token` amount
+            config.total_lp_amount += lp_amount;
+            let vt_mint_amount = match config.total_shares.u128() {
+                0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
+                _ => lp_amount.multiply_ratio(config.total_shares, config.total_lp_amount),
+            };
+            config.total_shares += vt_mint_amount;
+
+            // Compute the `ap_treasury tax portion` & store in APTAX
+            let registrar_config: ConfigResponse = deps.querier.query_wasm_smart(
+                config.registrar_contract.to_string(),
+                &RegistrarQueryMsg::Config {},
+            )?;
+            let tax_rate = registrar_config.tax_rate;
+            let tax_mint_amount =
+                vt_mint_amount.multiply_ratio(tax_rate.numerator(), tax_rate.denominator());
+
+            APTAX.update(deps.storage, |mut balance: Uint128| -> StdResult<Uint128> {
+                balance = balance.checked_add(tax_mint_amount)?;
+                Ok(balance)
+            })?;
+
+            match config.acct_type {
+                AccountType::Liquid => {
+                    // Mint the `vault token`
+                    // update supply and enforce cap
+                    let mut token_info = TOKEN_INFO.load(deps.storage)?;
+                    token_info.total_supply += vt_mint_amount;
+                    if let Some(limit) = token_info.get_cap() {
+                        if token_info.total_supply > limit {
+                            return Err(ContractError::CannotExceedCap {});
+                        }
+                    }
+                    TOKEN_INFO.save(deps.storage, &token_info)?;
+
+                    // Stake all the LP token
+                    lp_stake_amount = lp_amount;
+                }
+                AccountType::Locked => {
+                    // Send 75% LP token to the sibling(liquid) vault
+                    let lp_tax_amount =
+                        lp_amount.multiply_ratio(tax_rate.numerator(), tax_rate.denominator());
+                    let lp_less_tax = lp_amount - lp_tax_amount;
+                    // FIXME: Replace the hardcoded ratio with config reference
+                    let send_liquid_ratio = Decimal::from_ratio(75_u128, 100_u128);
+                    let send_liquid_lp_amount = lp_less_tax.multiply_ratio(
+                        send_liquid_ratio.numerator(),
+                        send_liquid_ratio.denominator(),
+                    );
+                    let vt_shares_to_burn = (vt_mint_amount - tax_mint_amount).multiply_ratio(
+                        send_liquid_ratio.numerator(),
+                        send_liquid_ratio.denominator(),
+                    );
+                    config.total_shares -= vt_shares_to_burn;
+                    config.total_lp_amount -= send_liquid_lp_amount;
+
+                    // Mint the `vault token` with left LP token
+                    // update supply and enforce cap
+                    let mut token_info = TOKEN_INFO.load(deps.storage)?;
+                    token_info.total_supply += vt_mint_amount - vt_shares_to_burn;
+                    if let Some(limit) = token_info.get_cap() {
+                        if token_info.total_supply > limit {
+                            return Err(ContractError::CannotExceedCap {});
+                        }
+                    }
+                    TOKEN_INFO.save(deps.storage, &token_info)?;
+
+                    // Stake only leftover LP tokens
+                    lp_stake_amount = lp_amount - send_liquid_lp_amount;
+
+                    harvest_to_liquid_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: lp_token_contract.to_string(),
+                        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                            contract: config.sibling_vault.to_string(),
+                            amount: send_liquid_lp_amount,
+                            msg: to_binary(&ReceiveMsg::HarvestToLiquid {}).unwrap(),
+                        })
+                        .unwrap(),
+                        funds: vec![],
+                    }))
+                }
+            }
+        }
+    }
+    CONFIG.save(deps.storage, &config)?;
+
+    let farming_stake_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: lp_token_contract.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
@@ -605,57 +695,66 @@ pub fn stake_lp_token(
         funds: vec![],
     });
 
-    // Mint the `vault_token`
-    config.total_lp_amount += lp_stake_amount;
+    Ok(Response::new()
+        .add_message(farming_stake_msg)
+        .add_messages(harvest_to_liquid_msgs)
+        .add_attributes(vec![attr("action", "stake_lp_token")]))
+}
 
-    let mint_amount: Uint128;
-    if config.total_shares.is_zero() {
-        mint_amount = Uint128::from(1000000_u128); // Here, the original mint amount should be 1 VT.
-    } else {
-        mint_amount = lp_stake_amount.multiply_ratio(config.total_shares, config.total_lp_amount);
+pub fn harvest_to_liquid(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    cw20_msg: Cw20ReceiveMsg,
+) -> Result<Response, ContractError> {
+    let mut config: Config = CONFIG.load(deps.storage)?;
+    let lp_token_contract =
+        query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?.liquidity_token;
+
+    // 0. Check that the message sender is the Sibling vault contract
+    // ensure `received token` is `lp_token`
+    if info.sender.to_string() != lp_token_contract {
+        return Err(ContractError::Unauthorized {});
     }
 
-    config.total_shares += mint_amount;
+    // ensure this vault is "liquid"
+    if config.acct_type != AccountType::Liquid {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // ensure `msg_sender` is sibling_vault(locked)
+    let msg_sender = cw20_msg.sender;
+    let sibling_config_resp: angel_core::responses::vault::ConfigResponse =
+        deps.querier.query_wasm_smart(
+            config.sibling_vault.to_string(),
+            &angel_core::messages::vault::QueryMsg::Config {},
+        )?;
+    if msg_sender != config.sibling_vault.to_string()
+        || sibling_config_resp.acct_type != AccountType::Locked
+    {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // 1. Increase the lp_token amount
+    let lp_stake_amount = cw20_msg.amount;
+    config.total_lp_amount += lp_stake_amount;
     CONFIG.save(deps.storage, &config)?;
 
-    if let Some(endowment_id) = endowment_id {
-        execute_mint(deps, env, info, endowment_id, mint_amount).map_err(|_| {
-            ContractError::Std(StdError::GenericErr {
-                msg: format!(
-                    "Cannot mint the {} vault token for {}",
-                    mint_amount, endowment_id
-                ),
-            })
-        })?;
-    } else {
-        let mut token_info = TOKEN_INFO.load(deps.storage)?;
-        // update supply and enforce cap
-        token_info.total_supply += mint_amount;
-        if let Some(limit) = token_info.get_cap() {
-            if token_info.total_supply > limit {
-                return Err(ContractError::CannotExceedCap {});
-            }
-        }
-        TOKEN_INFO.save(deps.storage, &token_info)?;
+    // 2. Stake the received lp tokens
+    let farming_stake_msg = CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: lp_token_contract.to_string(),
+        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+            contract: config.lp_staking_contract.to_string(),
+            amount: lp_stake_amount,
+            msg: to_binary(&LoopFarmingExecuteMsg::Stake {}).unwrap(),
+        })
+        .unwrap(),
+        funds: vec![],
+    });
 
-        // Compute the `ap_treasury tax portion` & store in APTAX
-        let registrar_config: ConfigResponse = deps.querier.query_wasm_smart(
-            config.registrar_contract.to_string(),
-            &RegistrarQueryMsg::Config {},
-        )?;
-        let tax_rate = registrar_config.tax_rate;
-        let tax_mint_amount =
-            mint_amount.multiply_ratio(tax_rate.numerator(), tax_rate.denominator());
-
-        APTAX.update(deps.storage, |mut balance: Uint128| -> StdResult<Uint128> {
-            balance = balance.checked_add(tax_mint_amount)?;
-            Ok(balance)
-        })?;
-    }
-
-    Ok(Response::new()
-        .add_message(msg)
-        .add_attributes(vec![attr("action", "stake_lp_token")]))
+    Ok(Response::default()
+        .add_message(farming_stake_msg)
+        .add_attributes(vec![attr("action", "harvest_to_liquid")]))
 }
 
 pub fn remove_liquidity(
@@ -1080,18 +1179,21 @@ pub fn reinvest_to_locked_recieve(
         return Err(ContractError::Unauthorized {});
     }
 
-    // ensure `msg_sender` is sibling_vault(liquid)
-    let msg_sender = cw20_msg.sender;
-    if config.acct_type != AccountType::Locked || msg_sender != config.sibling_vault.to_string() {
+    // ensure this vault is "locked"
+    if config.acct_type != AccountType::Locked {
         return Err(ContractError::Unauthorized {});
     }
 
+    // ensure `msg_sender` is sibling_vault(liquid)
+    let msg_sender = cw20_msg.sender;
     let sibling_config_resp: angel_core::responses::vault::ConfigResponse =
         deps.querier.query_wasm_smart(
             config.sibling_vault.to_string(),
             &angel_core::messages::vault::QueryMsg::Config {},
         )?;
-    if sibling_config_resp.acct_type != AccountType::Liquid {
+    if msg_sender != config.sibling_vault.to_string()
+        || sibling_config_resp.acct_type != AccountType::Liquid
+    {
         return Err(ContractError::Unauthorized {});
     }
 
