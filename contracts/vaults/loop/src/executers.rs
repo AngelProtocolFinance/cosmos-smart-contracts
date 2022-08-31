@@ -3,7 +3,7 @@ use cosmwasm_std::{
     MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ReceiveMsg;
-use terraswap::asset::{Asset, AssetInfo};
+use terraswap::asset::{Asset, AssetInfo, PairInfo};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
@@ -112,7 +112,7 @@ pub fn deposit(
     validate_action_caller_n_endow_id(deps.as_ref(), &config, msg_sender.clone(), endowment_id)?;
 
     // Check if the "deposit_asset_info" is valid
-    let pair_info_query: terraswap::asset::PairInfo =
+    let pair_info_query: PairInfo =
         query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?;
     if !pair_info_query.asset_infos.contains(&deposit_asset_info) {
         return Err(ContractError::InvalidCoinsDeposited {});
@@ -334,7 +334,7 @@ pub fn redeem(
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::Swap {
             beneficiary: Some(accounts_contract),
-            in_asset_info: terraswap::asset::AssetInfo::Token {
+            in_asset_info: AssetInfo::Token {
                 contract_addr: config.lp_reward_token.to_string(),
             },
             in_asset_bal_before: reward_token_bal_query.balance,
@@ -919,7 +919,7 @@ fn prepare_contract_add_liquidity_msgs(
 ) -> Result<Vec<CosmosMsg>, StdError> {
     let mut msgs: Vec<CosmosMsg> = vec![];
 
-    let pair_info_query: terraswap::asset::PairInfo =
+    let pair_info_query: PairInfo =
         query_pair_info_from_pair(&deps.querier, config.pair_contract.clone())?;
 
     let (in_asset_info, out_asset_info) = if deposit_asset_info == pair_info_query.asset_infos[0] {
@@ -1335,8 +1335,6 @@ fn execute_burn(
 }
 
 /// Query the `asset` balance of `account_addr`
-///
-/// **NOTE**: `asset_info` is `terraswap::asset::AssetInfo`.
 fn query_asset_balance(
     deps: Deps,
     account_addr: Addr,
