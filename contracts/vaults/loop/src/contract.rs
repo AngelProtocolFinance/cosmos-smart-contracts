@@ -112,6 +112,15 @@ pub fn execute(
             )
         }
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
+        ExecuteMsg::Redeem {
+            endowment_id,
+            amount, // vault tokens to be burned
+        } => executers::redeem(deps, env, info, endowment_id, amount),
+        ExecuteMsg::ReinvestToLocked {
+            endowment_id,
+            amount,
+        } => executers::reinvest_to_locked_execute(deps, env, info, endowment_id, amount),
+
         ExecuteMsg::RestakeClaimReward {
             reward_token_bal_before,
         } => executers::restake_claim_reward(deps, env, info, reward_token_bal_before),
@@ -156,14 +165,6 @@ pub fn execute(
             asset_info,
             asset_bal_before,
         } => executers::send_asset(deps, env, info, beneficiary, asset_info, asset_bal_before),
-        ExecuteMsg::Redeem {
-            endowment_id,
-            amount, // vault tokens to be burned
-        } => executers::redeem(deps, env, info, endowment_id, amount),
-        ExecuteMsg::ReinvestToLocked {
-            endowment_id,
-            amount,
-        } => executers::reinvest_to_locked_execute(deps, env, info, endowment_id, amount),
     }
 }
 

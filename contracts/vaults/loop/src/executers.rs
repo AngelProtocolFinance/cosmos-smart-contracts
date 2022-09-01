@@ -188,16 +188,16 @@ pub fn restake_claim_reward(
     let mut loop_pair_swap_msgs = vec![];
     let mut contract_add_liquidity_msgs = vec![];
     if config.lp_pair_asset_infos.contains(&reward_asset_info) {
-        loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
+        loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
             &config.lp_pair_contract.to_string(),
             &AssetInfo::Token {
                 contract_addr: config.lp_reward_token.to_string(),
             },
             reward_amount.multiply_ratio(1_u128, 2_u128),
-        )?;
+        )?);
 
         // Prepare the messages for "(this contract::)add_liquidity" opeartion
-        contract_add_liquidity_msgs = prepare_contract_add_liquidity_msgs(
+        contract_add_liquidity_msgs.extend_from_slice(&prepare_contract_add_liquidity_msgs(
             deps,
             env,
             &config,
@@ -205,7 +205,7 @@ pub fn restake_claim_reward(
             AssetInfo::Token {
                 contract_addr: config.lp_reward_token.to_string(),
             },
-        )?;
+        )?);
     } else {
         let pair_1_contract = query_pair_info(
             &deps.querier,
@@ -449,8 +449,7 @@ pub fn redeem(
 /// Contract entry: **harvest**
 ///   1. Only callable by `config.keeper` address
 ///   2. `Claim` the `reward token` from `loopswap::farming` contract
-///   3. Compute and send the tax(USDC) to AP treasury
-///   4. Re-stake the leftover by converting it to LP token & `loopswap::farming::stake`
+///   3. Re-stake the `reward token`(LOOP) by converting it to LP token & `loopswap::farming::stake`
 pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -631,7 +630,7 @@ fn prepare_contract_stake_msgs(
 }
 
 /// Contract entry: **Stake**
-///   1. Stake the `LP` tokens received from `provide_liquidity`
+///   1. Stake/Farm the `LP` tokens received from `provide_liquidity`
 ///   2. Mint the `vault token`s
 pub fn stake_lp_token(
     mut deps: DepsMut,
@@ -1232,6 +1231,7 @@ pub fn reinvest_to_locked_execute(
 
     CONFIG.save(deps.storage, &config)?;
 
+    // Unfarm the LP token from "lp_staking_contract"
     let lp_token_contract = config.lp_token_contract.clone();
     let flp_token_contract: String = deps.querier.query_wasm_smart(
         config.lp_staking_contract.to_string(),
@@ -1253,7 +1253,7 @@ pub fn reinvest_to_locked_execute(
 
     // 4. SEND LP tokens to the Locked Account (using ReinvestToLocked recieve msg)
     let reinvest_to_locked_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.lp_reward_token.to_string(),
+        contract_addr: config.lp_token_contract.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.sibling_vault.to_string(),
             amount: lp_amount,
@@ -1298,11 +1298,11 @@ pub fn reinvest_to_locked_recieve(
     amount: Uint128, // asset tokens (ex. LPs)
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
-    let config: Config = CONFIG.load(deps.storage)?;
+    let mut config: Config = CONFIG.load(deps.storage)?;
 
     // 0. Check that the message sender is the Sibling vault contract
-    // ensure `received token` is `lp_reward_token`
-    if info.sender != config.lp_reward_token {
+    // ensure `received token` is `lp_token`
+    if info.sender != config.lp_token_contract {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -1336,19 +1336,37 @@ pub fn reinvest_to_locked_recieve(
     }
 
     // 1. Treat as a Deposit for the given ID (mint vault tokens for deposited assets)
-    // Prepare the messages for "(this contract::)add_liquidity" opeartion
-    let contract_add_liquidity_msgs = prepare_contract_add_liquidity_msgs(
-        deps,
-        env,
-        &config,
-        Some(id),
-        AssetInfo::Token {
-            contract_addr: config.lp_reward_token.to_string(),
-        },
-    )?;
+    // Prepare the messages for "loop::farming::stake" opeartion
+    let lp_stake_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.lp_token_contract.to_string(),
+        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+            contract: config.lp_staking_contract.to_string(),
+            amount,
+            msg: to_binary(&LoopFarmingExecuteMsg::Stake {}).unwrap(),
+        })
+        .unwrap(),
+        funds: vec![],
+    })];
+
+    // 2. Mint the vault tokens
+    // Compute the `vault_token` amount
+    config.total_lp_amount += amount;
+    let vt_mint_amount = match config.total_shares.u128() {
+        0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
+        _ => amount.multiply_ratio(config.total_shares, config.total_lp_amount),
+    };
+    config.total_shares += vt_mint_amount;
+    CONFIG.save(deps.storage, &config)?;
+
+    // Mint the `vault_token`
+    execute_mint(deps, env, info, id, vt_mint_amount).map_err(|_| {
+        ContractError::Std(StdError::GenericErr {
+            msg: format!("Cannot mint the {} vault token for {}", vt_mint_amount, id),
+        })
+    })?;
 
     Ok(Response::new()
-        .add_messages(contract_add_liquidity_msgs)
+        .add_messages(lp_stake_msgs)
         .add_attributes(vec![attr("action", "reinvest_to_locked_vault")]))
 }
 
