@@ -64,19 +64,16 @@ pub enum ExecuteMsg {
     },
     RemoveLiquidity {
         lp_token_bal_before: Uint128,
-        action: RemoveLiquidAction,
+        beneficiary: Addr,
+        id: u32,
     },
     Stake {
         endowment_id: Option<u32>,
         lp_token_bal_before: Uint128,
     },
-    Swap {
-        beneficiary: Option<Addr>,
-        in_asset_info: terraswap::asset::AssetInfo,
-        in_asset_bal_before: Uint128,
-    },
     SendAsset {
         beneficiary: Addr,
+        id: u32,
         asset_info: terraswap::asset::AssetInfo,
         asset_bal_before: Uint128,
     },
@@ -134,13 +131,6 @@ pub enum QueryMsg {
     /// Returns the total balance/total_share of the contract
     /// Return type: BalanceResponse.
     TotalBalance {},
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub enum RemoveLiquidAction {
-    Harvest,
-    Claim {},
-    Withdraw { beneficiary: Addr },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

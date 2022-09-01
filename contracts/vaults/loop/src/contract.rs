@@ -142,29 +142,27 @@ pub fn execute(
         ),
         ExecuteMsg::RemoveLiquidity {
             lp_token_bal_before,
-            action,
-        } => executers::remove_liquidity(deps, env, info, lp_token_bal_before, action),
+            beneficiary,
+            id,
+        } => executers::remove_liquidity(deps, env, info, lp_token_bal_before, beneficiary, id),
         ExecuteMsg::Stake {
             endowment_id,
             lp_token_bal_before,
         } => executers::stake_lp_token(deps, env, info, endowment_id, lp_token_bal_before),
-        ExecuteMsg::Swap {
+        ExecuteMsg::SendAsset {
             beneficiary,
-            in_asset_info,
-            in_asset_bal_before,
-        } => executers::swap(
+            id,
+            asset_info,
+            asset_bal_before,
+        } => executers::send_asset(
             deps,
             env,
             info,
             beneficiary,
-            in_asset_info,
-            in_asset_bal_before,
-        ),
-        ExecuteMsg::SendAsset {
-            beneficiary,
+            id,
             asset_info,
             asset_bal_before,
-        } => executers::send_asset(deps, env, info, beneficiary, asset_info, asset_bal_before),
+        ),
     }
 }
 

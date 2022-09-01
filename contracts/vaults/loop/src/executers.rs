@@ -9,7 +9,7 @@ use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{
     ExecuteMsg, LoopFarmingExecuteMsg, LoopFarmingQueryMsg, LoopPairExecuteMsg, ReceiveMsg,
-    RemoveLiquidAction, UpdateConfigMsg,
+    UpdateConfigMsg,
 };
 use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
 use angel_core::structs::{AccountType, EndowmentEntry};
@@ -404,7 +404,7 @@ pub fn redeem(
         funds: vec![],
     }));
 
-    // Handle the returning lp tokens & farm reward token(LOOP)
+    // Handle the returning lp tokens
     let lp_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         lp_token_contract,
         &cw20::Cw20QueryMsg::Balance {
@@ -415,15 +415,14 @@ pub fn redeem(
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::RemoveLiquidity {
             lp_token_bal_before: lp_bal_query.balance,
-            action: RemoveLiquidAction::Withdraw {
-                beneficiary: accounts_contract.clone(), // FIXME! Need to re-think & re-factor this part.
-            },
+            beneficiary: accounts_contract.clone(),
+            id: endowment_id,
         })
         .unwrap(),
         funds: vec![],
     }));
 
-    // Handle the reward LOOP tokens(= re-stake the reward tokens)
+    // Handle the reward LOOP tokens(Re-stake the reward tokens)
     let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         config.lp_reward_token.to_string(),
         &cw20::Cw20QueryMsg::Balance {
@@ -854,7 +853,8 @@ pub fn remove_liquidity(
     env: Env,
     info: MessageInfo,
     lp_token_bal_before: Uint128,
-    action: RemoveLiquidAction,
+    beneficiary: Addr,
+    id: u32,
 ) -> Result<Response, ContractError> {
     // Validations
     if info.sender != env.contract.address {
@@ -903,7 +903,7 @@ pub fn remove_liquidity(
     }));
 
     // Handle the returning token pairs
-    let mut consequence_msgs = vec![];
+    let mut send_asset_msgs = vec![];
     let asset_0_bal_before = query_asset_balance(
         deps.as_ref(),
         env.contract.address.clone(),
@@ -914,48 +914,33 @@ pub fn remove_liquidity(
         env.contract.address.clone(),
         asset_infos[1].clone(),
     )?;
-    match action {
-        RemoveLiquidAction::Withdraw { beneficiary } => {
-            consequence_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: env.contract.address.to_string(),
-                msg: to_binary(&ExecuteMsg::SendAsset {
-                    beneficiary: beneficiary.clone(),
-                    asset_info: asset_infos[0].clone(),
-                    asset_bal_before: asset_0_bal_before,
-                })
-                .unwrap(),
-                funds: vec![],
-            }));
-            consequence_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: env.contract.address.to_string(),
-                msg: to_binary(&ExecuteMsg::SendAsset {
-                    beneficiary,
-                    asset_info: asset_infos[1].clone(),
-                    asset_bal_before: asset_1_bal_before,
-                })
-                .unwrap(),
-                funds: vec![],
-            }));
-        }
-        RemoveLiquidAction::Claim {} => {
-            todo!("Need to add claim logic")
-        }
-        RemoveLiquidAction::Harvest => {
-            // res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-            //     contract_addr: env.contract.address.to_string(),
-            //     msg: to_binary(&ExecuteMsg::HarvestSwap {
-            //         token1_denom_bal_before: token1_denom_bal,
-            //         token2_denom_bal_before: token2_denom_bal,
-            //     })
-            //     .unwrap(),
-            //     funds: vec![],
-            // }));
-        }
-    }
+
+    send_asset_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::SendAsset {
+            beneficiary: beneficiary.clone(),
+            id,
+            asset_info: asset_infos[0].clone(),
+            asset_bal_before: asset_0_bal_before,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
+    send_asset_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::SendAsset {
+            beneficiary,
+            id,
+            asset_info: asset_infos[1].clone(),
+            asset_bal_before: asset_1_bal_before,
+        })
+        .unwrap(),
+        funds: vec![],
+    }));
 
     Ok(Response::default()
         .add_messages(withdraw_liquidity_msgs)
-        .add_messages(consequence_msgs)
+        .add_messages(send_asset_msgs)
         .add_attributes(vec![attr("action", "remove_liquidity")]))
 }
 
@@ -964,6 +949,7 @@ pub fn send_asset(
     env: Env,
     info: MessageInfo,
     beneficiary: Addr,
+    id: u32,
     asset_info: AssetInfo,
     asset_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
@@ -971,6 +957,8 @@ pub fn send_asset(
     if info.sender != env.contract.address {
         return Err(ContractError::Unauthorized {});
     }
+
+    let config: Config = CONFIG.load(deps.storage)?;
 
     // Send the asset to the `beneficiary`
     let asset_bal = query_asset_balance(deps.as_ref(), env.contract.address, asset_info.clone())?;
@@ -980,19 +968,41 @@ pub fn send_asset(
 
     let mut msgs = vec![];
     match asset_info {
-        AssetInfo::NativeToken { denom } => msgs.push(CosmosMsg::Bank(BankMsg::Send {
-            to_address: beneficiary.to_string(),
-            amount: coins(send_amount.u128(), denom),
-        })),
-        AssetInfo::Token { contract_addr } => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr,
-            msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-                recipient: beneficiary.to_string(),
-                amount: send_amount,
+        AssetInfo::NativeToken { denom } => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: beneficiary.to_string(),
+            msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::VaultReceipt {
+                id,
+                acct_type: config.acct_type,
             })
             .unwrap(),
-            funds: vec![],
+            funds: coins(send_amount.u128(), denom),
         })),
+        AssetInfo::Token { contract_addr } => {
+            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: contract_addr.clone(),
+                msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                    spender: beneficiary.to_string(),
+                    amount: send_amount,
+                    expires: None,
+                })
+                .unwrap(),
+                funds: vec![],
+            }));
+            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr,
+                msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                    contract: beneficiary.to_string(),
+                    amount: send_amount,
+                    msg: to_binary(&angel_core::messages::accounts::ReceiveMsg::VaultReceipt {
+                        id,
+                        acct_type: config.acct_type,
+                    })
+                    .unwrap(),
+                })
+                .unwrap(),
+                funds: vec![],
+            }))
+        }
     };
 
     Ok(Response::default()
@@ -1110,72 +1120,6 @@ fn prepare_loop_pair_swap_msg(
     };
 
     Ok(msgs)
-}
-
-/// Contract entry: **swap**
-///
-/// IMPORTANT: Atm, the reward token of loopswap farming contract is LOOP token
-/// Hence, we assume that the `config.pair_contract` has the token pairs
-/// in which there is LOOP token, like LOOP-USDC, LOOP-JUNO.
-pub fn swap(
-    deps: DepsMut,
-    env: Env,
-    info: MessageInfo,
-    beneficiary: Option<Addr>,
-    in_asset_info: AssetInfo,
-    in_asset_bal_before: Uint128,
-) -> Result<Response, ContractError> {
-    // Validations
-    if info.sender != env.contract.address {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let config: Config = CONFIG.load(deps.storage)?;
-    let pair_contract = config.lp_pair_contract.to_string();
-    let asset_infos = config.lp_pair_asset_infos;
-    let out_asset_info = if in_asset_info == asset_infos[0] {
-        asset_infos[1].clone()
-    } else {
-        asset_infos[0].clone()
-    };
-    let out_asset_bal = query_asset_balance(
-        deps.as_ref(),
-        env.contract.address.clone(),
-        out_asset_info.clone(),
-    )?;
-
-    // First, compute the "swap_amount"
-    let asset_bal = query_asset_balance(
-        deps.as_ref(),
-        env.contract.address.clone(),
-        in_asset_info.clone(),
-    )?;
-    let swap_amount = asset_bal
-        .checked_sub(in_asset_bal_before)
-        .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
-
-    // Prepare the "loopswap::pair::swap" msg
-    let swap_msgs = prepare_loop_pair_swap_msg(&pair_contract, &in_asset_info, swap_amount)?;
-
-    // Handle the "beneficiary" if any
-    let mut send_asset_msg = vec![];
-    if let Some(beneficiary) = beneficiary {
-        send_asset_msg.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: env.contract.address.to_string(),
-            msg: to_binary(&ExecuteMsg::SendAsset {
-                beneficiary,
-                asset_info: out_asset_info,
-                asset_bal_before: out_asset_bal,
-            })
-            .unwrap(),
-            funds: vec![],
-        }));
-    };
-
-    Ok(Response::default()
-        .add_messages(swap_msgs)
-        .add_messages(send_asset_msg)
-        .add_attributes(vec![attr("action", "swap")]))
 }
 
 pub fn reinvest_to_locked_execute(
