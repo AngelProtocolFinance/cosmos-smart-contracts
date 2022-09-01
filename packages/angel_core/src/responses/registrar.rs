@@ -16,16 +16,6 @@ pub struct VaultListResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
-pub struct EndowmentDetailResponse {
-    pub endowment: EndowmentEntry,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct EndowmentListResponse {
-    pub endowments: Vec<EndowmentEntry>,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: String,
     pub version: String,

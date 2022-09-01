@@ -119,6 +119,13 @@ pub struct CreateEndowmentMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateEndowmentStatusMsg {
+    pub endowment_id: u32,
+    pub status: u8,
+    pub beneficiary: Option<Beneficiary>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Strategy {
     pub vault: String,       // Vault SC Address
     pub percentage: Decimal, // percentage of funds to invest
@@ -129,13 +136,6 @@ pub struct UpdateEndowmentSettingsMsg {
     pub id: u32,
     pub owner: String,
     pub kyc_donors_only: bool,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowmentStatusMsg {
-    pub id: u32,
-    pub deposit_approved: bool,
-    pub withdraw_approved: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -207,6 +207,14 @@ pub enum QueryMsg {
     // Get all Endowment details
     Endowment {
         id: u32,
+    },
+    // Gets list of all registered Endowments
+    EndowmentList {
+        status: Option<String>,
+        name: Option<Option<String>>,
+        owner: Option<String>,
+        tier: Option<Option<String>>,
+        endow_type: Option<String>,
     },
     // Get the profile info
     GetProfile {

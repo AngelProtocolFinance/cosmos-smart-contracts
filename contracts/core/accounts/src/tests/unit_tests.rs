@@ -144,33 +144,27 @@ fn test_update_endowment_status() {
     let (mut deps, _endow_details) = create_endowment();
 
     // Fail to update the endowment status since caller is not `registrar_contract`
-    let update_status_msg = UpdateEndowmentStatusMsg {
-        id: CHARITY_ID,
-        deposit_approved: false,
-        withdraw_approved: true,
+    let update_endowment_status_msg = UpdateEndowmentStatusMsg {
+        endowment_id: CHARITY_ID,
+        status: 1,
+        beneficiary: None,
     };
     let info = mock_info("non-registrar", &[]);
     let err = execute(
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::UpdateEndowmentStatus(update_status_msg),
+        ExecuteMsg::UpdateEndowmentStatus(update_endowment_status_msg.clone()),
     )
     .unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
 
-    // Succeed to update the endowment status
-    let update_status_msg = UpdateEndowmentStatusMsg {
-        id: CHARITY_ID,
-        deposit_approved: false,
-        withdraw_approved: true,
-    };
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
     let res = execute(
         deps.as_mut(),
         mock_env(),
         info,
-        ExecuteMsg::UpdateEndowmentStatus(update_status_msg),
+        ExecuteMsg::UpdateEndowmentStatus(update_endowment_status_msg),
     )
     .unwrap();
     assert_eq!(0, res.attributes.len());
@@ -446,7 +440,6 @@ fn test_update_endowment_profile() {
     )
     .unwrap();
     let value: ProfileResponse = from_binary(&res).unwrap();
-    assert_eq!(value.un_sdg.unwrap(), 1);
     assert_eq!(value.tier.unwrap(), 2);
 }
 
@@ -457,9 +450,9 @@ fn test_donate() {
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
-        id: CHARITY_ID,
-        deposit_approved: true,
-        withdraw_approved: true,
+        endowment_id: CHARITY_ID,
+        status: 1,
+        beneficiary: None,
     });
     let _res = execute(deps.as_mut(), mock_env(), info, update_status_msg).unwrap();
 
@@ -555,9 +548,9 @@ fn test_deposit_cw20() {
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
-        id: CHARITY_ID,
-        deposit_approved: true,
-        withdraw_approved: true,
+        endowment_id: CHARITY_ID,
+        status: 1,
+        beneficiary: None,
     });
     let _res = execute(deps.as_mut(), mock_env(), info, update_status_msg).unwrap();
 
@@ -586,9 +579,9 @@ fn test_withdraw() {
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
-        id: CHARITY_ID,
-        deposit_approved: true,
-        withdraw_approved: true,
+        endowment_id: CHARITY_ID,
+        status: 1,
+        beneficiary: None,
     });
     let _res = execute(deps.as_mut(), mock_env(), info, update_status_msg).unwrap();
 
@@ -624,9 +617,9 @@ fn test_withdraw_liquid() {
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
-        id: CHARITY_ID,
-        deposit_approved: true,
-        withdraw_approved: true,
+        endowment_id: CHARITY_ID,
+        status: 1,
+        beneficiary: None,
     });
     let _res = execute(deps.as_mut(), mock_env(), info, update_status_msg).unwrap();
 
@@ -677,9 +670,9 @@ fn test_vault_receipt() {
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
-        id: CHARITY_ID,
-        deposit_approved: true,
-        withdraw_approved: true,
+        endowment_id: CHARITY_ID,
+        status: 1,
+        beneficiary: None,
     });
     let _res = execute(deps.as_mut(), mock_env(), info, update_status_msg).unwrap();
 
@@ -798,9 +791,9 @@ fn test_close_endowment() {
     // Update the Endowment status
     let info = mock_info(REGISTRAR_CONTRACT, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
-        id: CHARITY_ID,
-        deposit_approved: true,
-        withdraw_approved: true,
+        endowment_id: CHARITY_ID,
+        status: 1,
+        beneficiary: None,
     });
     let _res = execute(deps.as_mut(), mock_env(), info, update_status_msg).unwrap();
 

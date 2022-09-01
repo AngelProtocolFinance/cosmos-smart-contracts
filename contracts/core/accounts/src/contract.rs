@@ -179,6 +179,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::Balance { id } => to_binary(&queriers::query_account_balance(deps, id)?),
         QueryMsg::State { id } => to_binary(&queriers::query_state(deps, id)?),
+        QueryMsg::EndowmentList {
+            name,
+            owner,
+            status,
+            tier,
+            endow_type,
+        } => to_binary(&queriers::query_endowment_list(
+            deps, name, owner, status, tier, endow_type,
+        )?),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),
         QueryMsg::GetProfile { id } => to_binary(&queriers::query_profile(deps, id)?),
         QueryMsg::TokenAmount {
