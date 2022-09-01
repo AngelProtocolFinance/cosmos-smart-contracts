@@ -649,7 +649,7 @@ pub fn stake_lp_token(
     let mut harvest_to_liquid_msgs = vec![];
 
     // Prepare the "loop::farming::stake" msg
-    let lp_token_contract = config.lp_token_contract;
+    let lp_token_contract = config.lp_token_contract.clone();
     let lp_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         lp_token_contract.to_string(),
         &cw20::Cw20QueryMsg::Balance {
@@ -1231,6 +1231,26 @@ pub fn reinvest_to_locked_execute(
     config.total_shares -= amount;
 
     CONFIG.save(deps.storage, &config)?;
+
+    let lp_token_contract = config.lp_token_contract.clone();
+    let flp_token_contract: String = deps.querier.query_wasm_smart(
+        config.lp_staking_contract.to_string(),
+        &LoopFarmingQueryMsg::QueryFlpTokenFromPoolAddress {
+            pool_address: lp_token_contract.to_string(),
+        },
+    )?;
+
+    let unstake_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: flp_token_contract.to_string(),
+        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+            contract: config.lp_staking_contract.to_string(),
+            amount: lp_amount,
+            msg: to_binary(&LoopFarmingExecuteMsg::UnstakeAndClaim {}).unwrap(),
+        })
+        .unwrap(),
+        funds: vec![],
+    })];
+
     // 4. SEND LP tokens to the Locked Account (using ReinvestToLocked recieve msg)
     let reinvest_to_locked_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.lp_reward_token.to_string(),
@@ -1247,8 +1267,26 @@ pub fn reinvest_to_locked_execute(
         funds: vec![],
     })];
 
+    // 5. Handle the reward LOOP tokens(= re-stake the reward tokens)
+    let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        config.lp_reward_token.to_string(),
+        &cw20::Cw20QueryMsg::Balance {
+            address: env.contract.address.to_string(),
+        },
+    )?;
+    let restake_reward_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: env.contract.address.to_string(),
+        msg: to_binary(&ExecuteMsg::RestakeClaimReward {
+            reward_token_bal_before: reward_token_bal_query.balance,
+        })
+        .unwrap(),
+        funds: vec![],
+    })];
+
     Ok(Response::new()
+        .add_messages(unstake_msgs)
         .add_messages(reinvest_to_locked_msgs)
+        .add_messages(restake_reward_msgs)
         .add_attributes(vec![attr("action", "reinvest_to_locked_vault")]))
 }
 
