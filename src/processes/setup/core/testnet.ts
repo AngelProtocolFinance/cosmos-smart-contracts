@@ -291,17 +291,16 @@ async function createEndowments(
   // endowment #1
   process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
   let charity1_wallet = await getWalletAddress(charity1);
-  const charityResult1 = await sendTransaction(juno, apTeamAddr, registrar, {
+  const charityResult1 = await sendTransaction(juno, apTeamAddr, accounts, {
     create_endowment: {
       owner: charity1_wallet,
-      beneficiary: charity1_wallet,
       withdraw_before_maturity: false,
       maturity_time: undefined,
       maturity_height: undefined,
       profile: {
         name: "Test Endowment #1",
         overview: "A wonderful charity endowment that aims to test all the things",
-        un_sdg: 1,
+        categories: { sdgs:[1], general: [] },
         tier: 3,
         logo: "logo1",
         image: "image1",
@@ -342,17 +341,16 @@ async function createEndowments(
   // endowment #2
   process.stdout.write("Charity Endowment #2 created from the Registrar by the AP Team");
   let charity2_wallet = await getWalletAddress(charity2);
-  const charityResult2 = await sendTransaction(juno, apTeamAddr, registrar, {
+  const charityResult2 = await sendTransaction(juno, apTeamAddr, accounts, {
     create_endowment: {
       owner: charity2_wallet,
-      beneficiary: charity2_wallet,
       withdraw_before_maturity: false,
       maturity_time: undefined,
       maturity_height: undefined,
       profile: {
         name: "Test Endowment #2",
         overview: "An even better endowment full of butterflies and rainbows",
-        un_sdg: 3,
+        categories: { sdgs:[3], general: [] },
         tier: 2,
         logo: "logo2",
         image: "image2",
@@ -393,17 +391,16 @@ async function createEndowments(
   // endowment #3
   process.stdout.write("Charity Endowment #3 created from the Registrar by the AP Team");
   let charity3_wallet = await getWalletAddress(charity3);
-  const charityResult3 = await sendTransaction(juno, apTeamAddr, registrar, {
+  const charityResult3 = await sendTransaction(juno, apTeamAddr, accounts, {
     create_endowment: {
       owner: charity3_wallet,
-      beneficiary: charity3_wallet,
       withdraw_before_maturity: false,
       maturity_time: undefined,
       maturity_height: undefined,
       profile: {
         name: "Test Endowment #3",
         overview: "Shady endowment that will never be approved",
-        un_sdg: 2,
+        categories: { sdgs:[2], general: [] },
         tier: 1,
         logo: "logo3",
         image: "image3",
@@ -443,17 +440,16 @@ async function createEndowments(
 
   // endowment #4
   process.stdout.write("Charity Endowment #4 created from the Registrar by the AP Team");
-  const charityResult4 = await sendTransaction(juno, apTeamAddr, registrar, {
+  const charityResult4 = await sendTransaction(juno, apTeamAddr, accounts, {
     create_endowment: {
       owner: charity3_wallet,
-      beneficiary: charity3_wallet,
       withdraw_before_maturity: false,
       maturity_time: undefined,
       maturity_height: undefined,
       profile: {
         name: "Vibin' Endowment #4",
         overview: "Global endowment that spreads good vibes",
-        un_sdg: 1,
+        categories: { sdgs:[1], general: [] },
         tier: 3,
         logo: "logo4",
         image: "image4",
@@ -495,21 +491,21 @@ async function createEndowments(
 async function approveEndowments(): Promise<void> {
   // AP Team approves 3 of 4 newly created endowments
   process.stdout.write("AP Team approves 3 of 4 endowments");
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, {
     update_endowment_status: {
       endowment_id: endow_1_id,
       status: 1,
       beneficiary: undefined,
     }
   });
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, {
     update_endowment_status: {
       endowment_id: endow_2_id,
       status: 1,
       beneficiary: undefined,
     }
   });
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, {
     update_endowment_status: {
       endowment_id: endow_4_id,
       status: 1,

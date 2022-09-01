@@ -9,6 +9,8 @@ import {
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
   testSendDonationToEndowment,
+  testUpdateEndowmentStatus,
+  testQueryAccountsEndowmentList,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -31,15 +33,10 @@ import {
   testAddMemberToC4Group,
 } from "./core/multisig";
 import {
-  testAngelTeamCanTriggerVaultsHarvest,
-  testMigrateAllAccounts,
-  testUpdateEndowmentStatus,
   testUpdatingRegistrarConfigs,
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarApprovedVaultRateList,
   testQueryRegistrarConfig,
-  testQueryRegistrarEndowmentList,
-  testQueryRegistrarEndowmentDetails,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
 } from "./core/registrar";
@@ -195,12 +192,12 @@ export async function testExecute(
 
   // Test query
   // await testQueryRegistrarConfig(juno, registrar);
-  // await testQueryRegistrarEndowmentList(juno, registrar);
   // await testQueryRegistrarEndowmentDetails(juno, registrar, endowmentContract1);
   // await testQueryRegistrarApprovedVaultList(juno, registrar);
   // await testQueryRegistrarApprovedVaultRateList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVault(juno, registrar, anchorVault);
+  // await testQueryAccountsEndowmentList(juno, accounts);
   // await testQueryAccountsBalance(juno, endowmentContract);
   // await testQueryVaultConfig(juno, anchorVault);
   // await testQueryAccountsConfig(juno, endowmentContract);

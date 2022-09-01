@@ -16,6 +16,10 @@ import {
   testQueryAccountsProfile,
   testQueryAccountsState,
   testQueryAccountsTransactions,
+  testApproveInactiveEndowment,
+  testUpdateEndowmentStatus,
+  testCreateEndowment,
+  testQueryAccountsEndowmentList,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -45,19 +49,12 @@ import {
   testQueryGroupMembersList,
 } from "./core/multisig";
 import {
-  testUpdateEndowmentStatus,
-  testCreateEndowmentViaRegistrar,
-  testAngelTeamCanTriggerVaultsHarvest,
-  testMigrateAllAccounts,
   testUpdatingRegistrarConfigs,
   testQueryRegistrarApprovedVaultList,
   testQueryRegistrarApprovedVaultRateList,
   testQueryRegistrarConfig,
-  testQueryRegistrarEndowmentList,
-  testQueryRegistrarEndowmentDetails,
   testQueryRegistrarVault,
   testQueryRegistrarVaultList,
-  testUpdateEndowmentEntry,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -225,19 +222,15 @@ export async function testExecute(
   //   }
   // ]);
 
-  // await testCreateEndowmentViaRegistrar(actors.apTeam.client, actors.apTeam.addr, registrar, {
-  //   owner: charity1Addr,
-  //   beneficiary: charity1Addr,
+  // await testCreateEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, {
+  //   owner: actors.charity1.addr,
   //   withdraw_before_maturity: false,
   //   maturity_time: undefined,
   //   maturity_height: undefined,
-  //   guardians_multisig_addr: undefined,
-  //   cw4_members: [{ addr: charity1Addr, weight: 1 }],
-  //   kyc_donors_only: false,
   //   profile: {
   //     name: "Test-Suite Endowment",
   //     overview: "Endowment created from the test-suite integration test",
-  //     un_sdg: 2,
+  //     categories: { sdgs:[2], general: [] },
   //     tier: 3,
   //     logo: "test logo",
   //     image: "test image",
@@ -254,8 +247,12 @@ export async function testExecute(
   //     average_annual_budget: undefined,
   //     annual_revenue: undefined,
   //     charity_navigator_rating: undefined,
-  //     endow_type: "Charity",
+  //     endow_type: "Normal",
   //   },
+  //     cw4_members: [{ addr: actors.charity1.addr, weight: 1 }],
+  //     kyc_donors_only: false,
+  //     cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
+  //     cw3_max_voting_period: 10000,
   // });
   // Multisig test
   // await testAddMemberToC4Group(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, cw4GrpApTeam, actors.apTeam2.addr);
@@ -298,7 +295,8 @@ export async function testExecute(
   //   cw4_code: 104,
   //   accounts_code_id: 102,
   // });
-  // await testApproveEndowments(actors.apTeam.client, actors.apTeam.addr, registrar, endowmentContract1, 1);
+  await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, 1);
+  // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 1, status: 1, benficiary: undefined });
   // await testClosingEndpoint(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
@@ -326,8 +324,6 @@ export async function testExecute(
   // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
   // Test query
   // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
-  // await testQueryRegistrarEndowmentList(actors.apTeam.client, registrar);
-  // await testQueryRegistrarEndowmentDetails(actors.apTeam.client, registrar, 1);
   // await testQueryRegistrarApprovedVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarApprovedVaultRateList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
@@ -335,9 +331,10 @@ export async function testExecute(
   // await testQueryVaultConfig(actors.apTeam.client, Vault1);
   // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
-  // await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
-  // await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
-  // await testQueryAccountsState(actors.apTeam.client, accounts, 1);
+  await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
+  await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
+  await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
+  await testQueryAccountsState(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsTransactions(
   //   actors.apTeam.client,
   //   accounts,
