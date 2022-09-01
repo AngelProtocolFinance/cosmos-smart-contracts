@@ -671,7 +671,6 @@ pub fn swap_token(
 
 pub fn swap_receipt(
     deps: DepsMut,
-    env: Env,
     id: u32,
     sender_addr: Addr,
     final_asset: Asset,
@@ -723,29 +722,7 @@ pub fn swap_receipt(
         (AssetInfo::Cw1155(_, _), _) => unimplemented!(),
     }
     STATES.save(deps.storage, id, &state)?;
-
-    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
-    let mut msgs: Vec<CosmosMsg> = vec![];
-    match endowment.pending_redemptions {
-        // nothing pending, no action needed
-        0 => (),
-        1 => {
-            // reset pending redemptions
-            endowment.pending_redemptions = 0;
-            // if the endowment is also closing, distribute all funds to beneficiary
-            if state.closing_endowment {
-                msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: env.contract.address.to_string(),
-                    msg: to_binary(&ExecuteMsg::DistributeToBeneficiary { id })?,
-                    funds: vec![],
-                }));
-            }
-        }
-        // deduct pending redemptions as they come in
-        _ => endowment.pending_redemptions -= 1,
-    }
-    ENDOWMENTS.save(deps.storage, id, &endowment)?;
-    Ok(Response::new().add_messages(msgs))
+    Ok(Response::new())
 }
 
 pub fn distribute_to_beneficiary(
@@ -853,6 +830,7 @@ pub fn distribute_to_beneficiary(
 
 pub fn vault_receipt(
     deps: DepsMut,
+    env: Env,
     id: u32,
     acct_type: AccountType,
     sender_addr: Addr,
@@ -860,7 +838,7 @@ pub fn vault_receipt(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     let mut state = STATES.load(deps.storage, id)?;
-    let _endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
 
     // check that the returned token came from an Vault contract in our Registrar
     let _vault: VaultDetailResponse =
@@ -892,6 +870,27 @@ pub fn vault_receipt(
     }
 
     STATES.save(deps.storage, id, &state)?;
+
+    let mut msgs: Vec<CosmosMsg> = vec![];
+    match endowment.pending_redemptions {
+        // nothing pending, no action needed
+        0 => (),
+        1 => {
+            // reset pending redemptions
+            endowment.pending_redemptions = 0;
+            // if the endowment is also closing, distribute all funds to beneficiary
+            if state.closing_endowment {
+                msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: env.contract.address.to_string(),
+                    msg: to_binary(&ExecuteMsg::DistributeToBeneficiary { id })?,
+                    funds: vec![],
+                }));
+            }
+        }
+        // deduct pending redemptions as they come in
+        _ => endowment.pending_redemptions -= 1,
+    }
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new().add_attribute("action", "vault_receipt"))
 }

@@ -67,7 +67,7 @@ pub fn execute(
             id,
             final_asset,
             acct_type,
-        } => executers::swap_receipt(deps, env, id, info.sender, final_asset, acct_type),
+        } => executers::swap_receipt(deps, id, info.sender, final_asset, acct_type),
         ExecuteMsg::VaultReceipt { id, acct_type } => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
@@ -76,7 +76,7 @@ pub fn execute(
                 info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
                 amount: info.funds[0].amount,
             };
-            executers::vault_receipt(deps, id, acct_type, info.sender, native_fund)
+            executers::vault_receipt(deps, env, id, acct_type, info.sender, native_fund)
         }
         ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
@@ -147,6 +147,7 @@ pub fn receive_cw20(
     match from_binary(&cw20_msg.msg) {
         Ok(ReceiveMsg::VaultReceipt { id, acct_type }) => executers::vault_receipt(
             deps,
+            env,
             id,
             acct_type,
             api.addr_validate(&cw20_msg.sender)?,
