@@ -1,4 +1,4 @@
-use crate::structs::{AccountType, Beneficiary, FundingSource, Profile, SwapOperation};
+use crate::structs::{AccountType, Beneficiary, Categories, FundingSource, Profile, SwapOperation};
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
@@ -87,9 +87,10 @@ pub enum ExecuteMsg {
     UpdateOwner {
         new_owner: String,
     },
-    // Allows the SC owner (only!) to change ownership
-    UpdateRegistrar {
+    // Allows the SC owner (only!) to change ownership & upper limit of general categories ID allowed
+    UpdateConfig {
         new_registrar: String,
+        max_general_category_id: u8,
     },
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
@@ -172,7 +173,7 @@ pub struct UpdateProfileMsg {
     pub id: u32,
     pub name: Option<String>,
     pub overview: Option<String>,
-    pub un_sdg: Option<u8>,
+    pub categories: Option<Categories>,
     pub tier: Option<u8>,
     pub logo: Option<String>,
     pub image: Option<String>,

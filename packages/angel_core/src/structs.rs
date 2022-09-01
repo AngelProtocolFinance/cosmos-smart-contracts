@@ -207,7 +207,7 @@ pub struct EndowmentEntry {
     pub logo: Option<String>,
     pub image: Option<String>,
     pub tier: Option<Tier>,
-    pub un_sdg: Option<u8>,
+    pub categories: Categories,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -581,10 +581,26 @@ pub struct TransactionRecord {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub struct Categories {
+    pub sdgs: Vec<u8>, // u8 maps one of the 17 UN SDG
+    pub general: Vec<u8>,
+}
+
+impl Categories {
+    fn default() -> Self {
+        Categories {
+            sdgs: vec![],
+            general: vec![],
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub struct Profile {
     pub name: String, // name of the Charity Endowment
     pub overview: String,
-    pub un_sdg: Option<u8>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
+    pub categories: Categories, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
     pub tier: Option<u8>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
     pub logo: Option<String>,
     pub image: Option<String>,
@@ -606,7 +622,7 @@ impl Default for Profile {
         Profile {
             name: "".to_string(),
             overview: "".to_string(),
-            un_sdg: None,
+            categories: Categories::default(),
             tier: None,
             logo: None,
             image: None,

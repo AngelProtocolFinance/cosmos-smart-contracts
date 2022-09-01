@@ -62,9 +62,36 @@ pub fn create_endowment(
     mut msg: CreateEndowmentMsg,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
-    if info.sender != config.registrar_contract {
-        return Err(ContractError::Unauthorized {});
+
+    // check that at least 1 SDG category is set for charity endowments
+    match &msg.profile.endow_type {
+        EndowmentType::Charity => {
+            if msg.profile.categories.sdgs.is_empty() {
+                return Err(ContractError::InvalidInputs {});
+            }
+            msg.profile.categories.general.sort();
+            for item in msg.profile.categories.sdgs.clone().into_iter() {
+                if item > 17 || item == 0 {
+                    return Err(ContractError::InvalidInputs {});
+                }
+            }
+        }
+        _ => (),
     }
+    if !msg.profile.categories.general.is_empty() {
+        msg.profile.categories.general.sort();
+        if msg.profile.categories.general.last().unwrap() > &config.max_general_category_id {
+            return Err(ContractError::InvalidInputs {});
+        }
+    }
+
+    let (status, deposit_approved, withdraw_approved): (EndowmentStatus, bool, bool) =
+        match msg.profile.endow_type {
+            // normalized endowments are approved & active upon creation
+            EndowmentType::Normal => (EndowmentStatus::Approved, true, true),
+            // charity endowments are locked at creations and must undergo a review before being approved
+            EndowmentType::Charity => (EndowmentStatus::Inactive, false, false),
+        };
 
     let owner = deps.api.addr_validate(&msg.owner)?;
     // try to store the endowment, fail if the ID is already in use
@@ -311,11 +338,12 @@ pub fn update_owner(
     Ok(Response::default())
 }
 
-pub fn update_registrar(
+pub fn update_config(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     new_registrar: String,
+    max_general_category_id: u8,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -328,6 +356,7 @@ pub fn update_registrar(
     // update config attributes with newly passed args
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
         config.registrar_contract = new_registrar;
+        config.max_general_category_id = max_general_category_id;
         Ok(config)
     })?;
 
@@ -1444,6 +1473,7 @@ pub fn close_endowment(
     }
 
     endowment.pending_redemptions = redeem_messages.len() as u8;
+    endowment.deposit_approved = false;
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new()
@@ -1490,6 +1520,32 @@ pub fn update_profile(
         }
         if let Some(overview) = msg.overview {
             endowment.profile.overview = overview;
+        }
+        if let Some(categories) = msg.categories {
+            // check that at least 1 SDG category is set for charity endowments
+            match &endowment.profile.endow_type {
+                EndowmentType::Charity => {
+                    if endowment.profile.categories.sdgs.is_empty() {
+                        return Err(ContractError::InvalidInputs {});
+                    }
+                    endowment.profile.categories.sdgs.sort();
+                    for item in endowment.profile.categories.sdgs.clone().into_iter() {
+                        if item > 17 || item == 0 {
+                            return Err(ContractError::InvalidInputs {});
+                        }
+                    }
+                }
+                _ => (),
+            }
+            if !endowment.profile.categories.general.is_empty() {
+                endowment.profile.categories.general.sort();
+                if endowment.profile.categories.general.last().unwrap()
+                    > &config.max_general_category_id
+                {
+                    return Err(ContractError::InvalidInputs {});
+                }
+            }
+            endowment.profile.categories = categories;
         }
         endowment.profile.logo = msg.logo.clone();
         endowment.profile.image = msg.image.clone();

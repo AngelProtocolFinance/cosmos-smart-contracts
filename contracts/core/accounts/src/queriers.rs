@@ -193,7 +193,7 @@ pub fn query_profile(deps: Deps, id: u32) -> StdResult<ProfileResponse> {
     Ok(ProfileResponse {
         name: profile.name,
         overview: profile.overview,
-        un_sdg: profile.un_sdg,
+        categories: profile.categories,
         tier: profile.tier,
         logo: profile.logo,
         image: profile.image,

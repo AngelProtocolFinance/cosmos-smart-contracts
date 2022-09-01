@@ -1,5 +1,5 @@
 use crate::structs::{
-    AccountStrategies, Beneficiary, EndowmentEntry, EndowmentStatus, EndowmentType,
+    AccountStrategies, Beneficiary, Categories, EndowmentEntry, EndowmentStatus, EndowmentType,
     RebalanceDetails, SocialMedialUrls, TransactionRecord,
 };
 use cosmwasm_std::{Addr, Uint128};
@@ -45,7 +45,7 @@ pub struct EndowmentDetailsResponse {
 pub struct ProfileResponse {
     pub name: String,
     pub overview: String,
-    pub un_sdg: Option<u8>,
+    pub categories: Categories,
     pub tier: Option<u8>,
     pub logo: Option<String>,
     pub image: Option<String>,

@@ -31,6 +31,7 @@ pub fn instantiate(
             owner: deps.api.addr_validate(&msg.owner_sc)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             next_account_id: 1 as u32,
+            max_general_category_id: 1 as u8,
         },
     )?;
 
@@ -108,9 +109,10 @@ pub fn execute(
             acct_type,
             vaults,
         } => executers::vaults_redeem(deps, env, info, id, acct_type, vaults),
-        ExecuteMsg::UpdateRegistrar { new_registrar } => {
-            executers::update_registrar(deps, env, info, new_registrar)
-        }
+        ExecuteMsg::UpdateConfig {
+            new_registrar,
+            max_general_category_id,
+        } => executers::update_config(deps, env, info, new_registrar, max_general_category_id),
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
         }

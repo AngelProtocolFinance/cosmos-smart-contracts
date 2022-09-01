@@ -1,6 +1,4 @@
-use crate::structs::{
-    AcceptedTokens, EndowmentEntry, NetworkInfo, SplitDetails, VaultRate, YieldVault,
-};
+use crate::structs::{AcceptedTokens, NetworkInfo, SplitDetails, VaultRate, YieldVault};
 use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

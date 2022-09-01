@@ -175,13 +175,13 @@ fn test_add_update_and_remove_vault() {
     .unwrap();
     let vault_detail_response: VaultDetailResponse = from_binary(&res).unwrap();
     assert_eq!(vault_addr.clone(), vault_detail_response.vault.address);
-    assert_eq!(false, vault_detail_response.vault.approved);
+    assert_eq!(true, vault_detail_response.vault.approved);
 
     // update vault status
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let msg = ExecuteMsg::VaultUpdate {
         vault_addr: String::from("terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg"),
-        approved: true,
+        approved: false,
         restricted_from: vec![],
     };
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -197,7 +197,7 @@ fn test_add_update_and_remove_vault() {
     .unwrap();
     let vault_detail_response: VaultDetailResponse = from_binary(&res).unwrap();
     assert_eq!(vault_addr.clone(), vault_detail_response.vault.address);
-    assert_eq!(true, vault_detail_response.vault.approved);
+    assert_eq!(false, vault_detail_response.vault.approved);
 
     // remove vault
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
