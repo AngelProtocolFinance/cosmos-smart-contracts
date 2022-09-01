@@ -349,9 +349,9 @@ impl BalanceInfo {
     }
 
     pub fn get(&self, acct_type: &AccountType) -> GenericBalance {
-        match acct_type {
-            &AccountType::Locked => self.locked.clone(),
-            &AccountType::Liquid => self.liquid.clone(),
+        match *acct_type {
+            AccountType::Locked => self.locked.clone(),
+            AccountType::Liquid => self.liquid.clone(),
         }
     }
 }

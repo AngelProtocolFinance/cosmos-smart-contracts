@@ -65,19 +65,16 @@ pub fn create_endowment(
     let mut config = CONFIG.load(deps.storage)?;
 
     // check that at least 1 SDG category is set for charity endowments
-    match &msg.profile.endow_type {
-        EndowmentType::Charity => {
-            if msg.profile.categories.sdgs.is_empty() {
+    if msg.profile.endow_type == EndowmentType::Charity {
+        if msg.profile.categories.sdgs.is_empty() {
+            return Err(ContractError::InvalidInputs {});
+        }
+        msg.profile.categories.sdgs.sort();
+        for item in msg.profile.categories.sdgs.clone().into_iter() {
+            if item > 17 || item == 0 {
                 return Err(ContractError::InvalidInputs {});
             }
-            msg.profile.categories.general.sort();
-            for item in msg.profile.categories.sdgs.clone().into_iter() {
-                if item > 17 || item == 0 {
-                    return Err(ContractError::InvalidInputs {});
-                }
-            }
         }
-        _ => (),
     }
     if !msg.profile.categories.general.is_empty() {
         msg.profile.categories.general.sort();
@@ -114,7 +111,7 @@ pub fn create_endowment(
                 rebalance: RebalanceDetails::default(),
                 kyc_donors_only: msg.kyc_donors_only,
                 profile: msg.profile.clone(),
-                pending_redemptions: 0 as u8,
+                pending_redemptions: 0_u8,
                 copycat_strategy: None,
             }),
         },
@@ -255,16 +252,16 @@ pub fn update_endowment_status(
         EndowmentStatus::Closed => {
             // set a Beneficiary for the newly closed Endowment to send all funds to
             let beneficiary: Beneficiary;
-            if msg.beneficiary != None {
+            if msg.beneficiary.is_some() {
                 beneficiary = msg.beneficiary.unwrap();
             } else {
                 // query the Index Fund SC to find the Fund that this Endowment is a member of
                 let fund_list: angel_core::responses::index_fund::FundListResponse =
                     deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                        contract_addr: index_fund_contract.clone().to_string(),
+                        contract_addr: index_fund_contract.clone(),
                         msg: to_binary(
                             &angel_core::messages::index_fund::QueryMsg::InvolvedFunds {
-                                endowment_id: msg.endowment_id.clone(),
+                                endowment_id: msg.endowment_id,
                             },
                         )?,
                     }))?;
@@ -286,7 +283,7 @@ pub fn update_endowment_status(
             vec![
                 // trigger the removal of this endowment from all Index Funds
                 SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: index_fund_contract.to_string(),
+                    contract_addr: index_fund_contract,
                     msg: to_binary(&angel_core::messages::index_fund::ExecuteMsg::RemoveMember(
                         angel_core::messages::index_fund::RemoveMemberMsg {
                             member: msg.endowment_id,
@@ -313,7 +310,7 @@ pub fn update_endowment_status(
     };
 
     // update entry status & save to the Registry
-    endowment.status = msg_endowment_status.clone();
+    endowment.status = msg_endowment_status;
     ENDOWMENTS.save(deps.storage, endowment_id, &endowment)?;
 
     Ok(Response::new()
@@ -443,7 +440,7 @@ pub fn update_strategies(
         match allowed
             .vaults
             .iter()
-            .position(|v| v.address == strategy.vault.to_string())
+            .position(|v| v.address == strategy.vault)
         {
             None => return Err(ContractError::InvalidInputs {}),
             Some(_) => percentages_sum += strategy.percentage,
@@ -473,7 +470,7 @@ pub fn update_strategies(
 
     // If this Endowment that is changing their strategy is also being "copycatted"
     // by other endowments, the new strategy needs to be updated on those endowments.
-    let copiers = COPYCATS.load(deps.storage, id).unwrap_or(vec![]);
+    let copiers = COPYCATS.load(deps.storage, id).unwrap_or_default();
     for i in copiers.iter() {
         let mut e = ENDOWMENTS.load(deps.storage, *i).unwrap();
         e.strategies.set(acct_type.clone(), new_strategies.clone());
@@ -509,7 +506,7 @@ pub fn copycat_strategies(
     }
     // if this endowment was already copying another prior to this new one,
     // first remove it from the old list and add to the new copycat list
-    if endowment.copycat_strategy != None {
+    if endowment.copycat_strategy.is_some() {
         let old_id = endowment.copycat_strategy.unwrap();
         let mut old_copiers = COPYCATS.load(deps.storage, old_id)?;
         if let Some(pos) = old_copiers.iter().position(|i| *i == id) {
@@ -628,44 +625,39 @@ pub fn swap_token(
         (AssetInfo::Cw1155(_, _), _) => unimplemented!(),
     }
 
-    let swap_msg: CosmosMsg;
-    match offer_asset {
-        AssetInfo::Native(denom) => {
-            swap_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: registrar_config.swaps_router.unwrap().to_string(),
+    let swap_msg: CosmosMsg = match offer_asset {
+        AssetInfo::Native(denom) => CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: registrar_config.swaps_router.unwrap(),
+            msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
+                endowment_id: id,
+                acct_type,
+                operations: operations.clone(),
+                minimum_receive: None,
+            })
+            .unwrap(),
+            funds: vec![Coin {
+                amount,
+                denom: denom.to_string(),
+            }],
+        }),
+        AssetInfo::Cw20(addr) => CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: addr.clone().to_string(),
+            msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                contract: registrar_config.swaps_router.unwrap(),
+                amount,
                 msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
                     endowment_id: id,
                     acct_type,
-                    operations: operations.clone(),
+                    operations,
                     minimum_receive: None,
                 })
                 .unwrap(),
-                funds: vec![Coin {
-                    amount,
-                    denom: denom.to_string(),
-                }],
-            });
-        }
-        AssetInfo::Cw20(addr) => {
-            swap_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: addr.clone().to_string(),
-                msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                    contract: registrar_config.swaps_router.unwrap().to_string(),
-                    amount,
-                    msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
-                        endowment_id: id,
-                        acct_type,
-                        operations,
-                        minimum_receive: None,
-                    })
-                    .unwrap(),
-                })
-                .unwrap(),
-                funds: vec![],
-            });
-        }
+            })
+            .unwrap(),
+            funds: vec![],
+        }),
         AssetInfo::Cw1155(_, _) => unimplemented!(),
-    }
+    };
     STATES.save(deps.storage, id, &state)?;
     Ok(Response::new().add_message(swap_msg))
 }
@@ -693,13 +685,13 @@ pub fn swap_receipt(
         (AssetInfo::Native(denom), AccountType::Liquid) => {
             state.balances.liquid.add_tokens(Balance::from(vec![Coin {
                 amount: final_asset.amount,
-                denom: denom.to_string(),
+                denom,
             }]))
         }
         (AssetInfo::Native(denom), AccountType::Locked) => {
             state.balances.locked.add_tokens(Balance::from(vec![Coin {
                 amount: final_asset.amount,
-                denom: denom.to_string(),
+                denom,
             }]))
         }
         (AssetInfo::Cw20(addr), AccountType::Liquid) => {
@@ -707,7 +699,7 @@ pub fn swap_receipt(
                 .balances
                 .liquid
                 .add_tokens(Balance::Cw20(Cw20CoinVerified {
-                    address: addr.clone(),
+                    address: addr,
                     amount: final_asset.amount,
                 }))
         }
@@ -716,7 +708,7 @@ pub fn swap_receipt(
                 .balances
                 .locked
                 .add_tokens(Balance::Cw20(Cw20CoinVerified {
-                    address: addr.clone(),
+                    address: addr,
                     amount: final_asset.amount,
                 }))
         }
@@ -860,7 +852,7 @@ pub fn vault_receipt(
             amount: returned_token.amount,
         }]),
         AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
-            address: contract_addr.clone(),
+            address: contract_addr,
             amount: returned_token.amount,
         }),
         AssetInfoBase::Cw1155(_, _) => unimplemented!(),
@@ -925,9 +917,9 @@ pub fn reinvest_to_locked(
         return Err(ContractError::InvalidInputs {});
     }
     let msg: SubMsg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: vault_addr.clone(),
+        contract_addr: vault_addr,
         msg: to_binary(&angel_core::messages::vault::ExecuteMsg::ReinvestToLocked {
-            endowment_id: id.clone(),
+            endowment_id: id,
             amount,
         })
         .unwrap(),
@@ -980,7 +972,7 @@ pub fn deposit(
         Some(addr) => addr,
         None => return Err(ContractError::ContractNotConfigured {}),
     };
-    if sender_addr.to_string() != index_fund {
+    if sender_addr != index_fund {
         let new_splits = check_splits(registrar_split_configs, locked_split, liquid_split);
         locked_split = new_splits.0;
         liquid_split = new_splits.1;
@@ -991,7 +983,7 @@ pub fn deposit(
         amount: deposit_amount * locked_split,
     };
     let liquid_amount = Asset {
-        info: deposit_token.info.clone(),
+        info: deposit_token.info,
         amount: deposit_amount * liquid_split,
     };
 
@@ -1007,7 +999,7 @@ pub fn deposit(
     let (messages, leftover_amt) = deposit_to_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
-        msg.id.clone(),
+        msg.id,
         locked_amount.clone(),
         &locked_strategies,
     )?;
@@ -1018,11 +1010,11 @@ pub fn deposit(
     // Add any remaining deposited tokens to the locked balance "Tokens on Hand"
     state.balances.locked.add_tokens(match locked_amount.info {
         AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
-            denom: denom.to_string(),
+            denom,
             amount: leftover_amt,
         }]),
         AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
-            address: contract_addr.clone(),
+            address: contract_addr,
             amount: leftover_amt,
         }),
         AssetInfoBase::Cw1155(_, _) => unimplemented!(),
@@ -1034,7 +1026,7 @@ pub fn deposit(
     let (messages, leftover_amt) = deposit_to_vaults(
         deps.as_ref(),
         config.registrar_contract.to_string(),
-        msg.id.clone(),
+        msg.id,
         liquid_amount.clone(),
         &liquid_strategies,
     )?;
@@ -1045,11 +1037,11 @@ pub fn deposit(
     // Add any remaining deposited tokens to the liquid balance "Tokens on Hand"
     state.balances.liquid.add_tokens(match liquid_amount.info {
         AssetInfoBase::Native(denom) => Balance::from(vec![Coin {
-            denom: denom.to_string(),
+            denom,
             amount: leftover_amt,
         }]),
         AssetInfoBase::Cw20(contract_addr) => Balance::Cw20(Cw20CoinVerified {
-            address: contract_addr.clone(),
+            address: contract_addr,
             amount: leftover_amt,
         }),
         AssetInfoBase::Cw1155(_, _) => unimplemented!(),
@@ -1091,7 +1083,7 @@ pub fn vaults_invest(
     let mut deposit_msgs: Vec<SubMsg> = vec![];
     for (vault, asset) in vaults.iter() {
         // check vault addr passed is valid
-        let vault_addr = deps.api.addr_validate(&vault)?;
+        let vault_addr = deps.api.addr_validate(vault)?;
 
         // check vault is in registrar vaults list and is approved
         let vault_config: VaultDetailResponse =
@@ -1134,7 +1126,7 @@ pub fn vaults_invest(
                     .locked
                     .iter()
                     .position(|v| v == vault);
-                if pos != None {
+                if pos.is_some() {
                     endowment.oneoff_vaults.locked.push(vault_addr.clone());
                 }
             }
@@ -1144,7 +1136,7 @@ pub fn vaults_invest(
                     .liquid
                     .iter()
                     .position(|v| v == vault);
-                if pos != None {
+                if pos.is_some() {
                     endowment.oneoff_vaults.liquid.push(vault_addr.clone());
                 }
             }
@@ -1181,7 +1173,7 @@ pub fn vaults_invest(
             AssetInfoBase::Native(ref denom) => SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: vault_addr.clone().to_string(),
                 msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Deposit {
-                    endowment_id: id.clone(),
+                    endowment_id: id,
                 })
                 .unwrap(),
                 funds: vec![Coin {
@@ -1249,7 +1241,7 @@ pub fn vaults_redeem(
     let mut redeem_msgs: Vec<SubMsg> = vec![];
     for (vault, amount) in vaults.iter() {
         // check vault addr passed is valid
-        let vault_addr = deps.api.addr_validate(&vault)?.to_string();
+        let vault_addr = deps.api.addr_validate(vault)?.to_string();
 
         // check vault is in registrar vaults list and is approved
         let vault_config: VaultDetailResponse =
@@ -1275,7 +1267,7 @@ pub fn vaults_redeem(
                     .locked
                     .iter()
                     .position(|v| v == vault);
-                if pos != None && vault_balance == *amount {
+                if pos.is_some() && vault_balance == *amount {
                     endowment.oneoff_vaults.locked.swap_remove(pos.unwrap());
                 }
             }
@@ -1285,7 +1277,7 @@ pub fn vaults_redeem(
                     .liquid
                     .iter()
                     .position(|v| v == vault);
-                if pos != None && vault_balance == *amount {
+                if pos.is_some() && vault_balance == *amount {
                     endowment.oneoff_vaults.liquid.swap_remove(pos.unwrap());
                 }
             }
@@ -1295,7 +1287,7 @@ pub fn vaults_redeem(
             contract_addr: vault_addr,
             msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
                 endowment_id: id,
-                amount: amount.clone(),
+                amount: *amount,
             })
             .unwrap(),
             funds: vec![],
@@ -1319,7 +1311,7 @@ pub fn withdraw(
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
     let config = CONFIG.load(deps.storage)?;
     let mut state = STATES.load(deps.storage, id)?;
-    let mut state_bal: GenericBalance = state.balances.get(&acct_type).clone();
+    let mut state_bal: GenericBalance = state.balances.get(&acct_type);
     let mut messages: Vec<SubMsg> = vec![];
     let mut native_coins: Vec<Coin> = vec![];
 
@@ -1394,7 +1386,7 @@ pub fn withdraw(
         state_bal.deduct_tokens(Balance::from(native_coins.clone()));
         // Build message to send all native tokens to the Beneficiary via BankMsg::Send
         messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
-            to_address: beneficiary.to_string(),
+            to_address: beneficiary,
             amount: native_coins,
         })));
     }
@@ -1523,19 +1515,16 @@ pub fn update_profile(
         }
         if let Some(categories) = msg.categories {
             // check that at least 1 SDG category is set for charity endowments
-            match &endowment.profile.endow_type {
-                EndowmentType::Charity => {
-                    if endowment.profile.categories.sdgs.is_empty() {
+            if endowment.profile.endow_type == EndowmentType::Charity {
+                if endowment.profile.categories.sdgs.is_empty() {
+                    return Err(ContractError::InvalidInputs {});
+                }
+                endowment.profile.categories.sdgs.sort();
+                for item in endowment.profile.categories.sdgs.clone().into_iter() {
+                    if item > 17 || item == 0 {
                         return Err(ContractError::InvalidInputs {});
                     }
-                    endowment.profile.categories.sdgs.sort();
-                    for item in endowment.profile.categories.sdgs.clone().into_iter() {
-                        if item > 17 || item == 0 {
-                            return Err(ContractError::InvalidInputs {});
-                        }
-                    }
                 }
-                _ => (),
             }
             if !endowment.profile.categories.general.is_empty() {
                 endowment.profile.categories.general.sort();

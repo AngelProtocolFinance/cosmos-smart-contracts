@@ -30,8 +30,8 @@ pub fn instantiate(
         &Config {
             owner: deps.api.addr_validate(&msg.owner_sc)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-            next_account_id: 1 as u32,
-            max_general_category_id: 1 as u8,
+            next_account_id: 1_u32,
+            max_general_category_id: 1_u8,
         },
     )?;
 
@@ -156,7 +156,7 @@ pub fn receive_cw20(
         Ok(ReceiveMsg::Deposit(msg)) => executers::deposit(
             deps,
             env,
-            info.clone(),
+            info,
             api.addr_validate(&cw20_msg.sender)?,
             msg,
             cw20_fund,

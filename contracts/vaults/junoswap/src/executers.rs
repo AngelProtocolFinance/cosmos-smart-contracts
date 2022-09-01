@@ -1184,7 +1184,7 @@ fn validate_action_caller_n_endow_id(
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments.iter().position(|endow| endow.id == endowment_id);
     // reject if the "endowment-id" was not found in the list of endowments
-    if pos == None {
+    if pos.is_none() {
         return Err(ContractError::Unauthorized {});
     }
 

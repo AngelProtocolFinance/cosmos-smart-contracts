@@ -45,7 +45,7 @@ pub fn instantiate(
     )?;
 
     for pair in msg.pairs.iter() {
-        PAIRS.save(deps.storage, &pair_key(&pair.assets), &pair)?;
+        PAIRS.save(deps.storage, &pair_key(&pair.assets), pair)?;
     }
 
     Ok(Response::default())
@@ -149,10 +149,10 @@ pub fn execute_update_pairs(
     }
 
     for pair in add.iter() {
-        PAIRS.save(deps.storage, &pair_key(&pair.assets), &pair)?;
+        PAIRS.save(deps.storage, &pair_key(&pair.assets), pair)?;
     }
     for assets in remove.iter() {
-        PAIRS.remove(deps.storage, &pair_key(&assets));
+        PAIRS.remove(deps.storage, &pair_key(assets));
     }
     Ok(Response::new())
 }
@@ -177,7 +177,7 @@ pub fn execute_swap_operations(
                     vault_addr: sender.to_string(),
                 })?,
             }))?;
-        if vault_res.vault.approved == false {
+        if !vault_res.vault.approved {
             return Err(ContractError::Unauthorized {});
         }
     }
@@ -221,7 +221,7 @@ pub fn execute_swap_operations(
                 asset_info: target_asset_info.clone(),
                 prev_balance: target_asset_info.query_balance(&deps.querier, &sender)?,
                 minimum_receive,
-                receiver: sender.clone(),
+                receiver: sender,
             })?,
         }));
     }
@@ -239,7 +239,7 @@ pub fn execute_swap_operations(
         contract_addr: env.contract.address.to_string(),
         funds: vec![],
         msg: to_binary(&ExecuteMsg::SendSwapReceipt {
-            asset_info: target_asset_info.clone(),
+            asset_info: target_asset_info,
             prev_balance,
             endowment_id,
             acct_type,
@@ -273,18 +273,15 @@ fn simulate_swap_operations(
     offer_amount: Uint128,
     operations: Vec<SwapOperation>,
 ) -> StdResult<SimulateSwapOperationsResponse> {
-    if operations.len() == 0 {
+    if operations.is_empty() {
         return Err(StdError::generic_err("must provide operations"));
     }
 
     assert_operations(&operations)?;
     assert_operations_order(&operations)?;
 
-    let mut operation_index = 0;
     let mut offer_amount = offer_amount;
     for operation in operations.into_iter() {
-        operation_index += 1;
-
         match operation {
             SwapOperation::JunoSwap {
                 offer_asset_info,

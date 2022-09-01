@@ -133,7 +133,7 @@ pub fn deposit_stable(
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments.iter().position(|p| p.id == endowment_id);
     // reject if the sender was found in the list of endowments
-    if pos == None {
+    if pos.is_none() {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -225,7 +225,7 @@ pub fn redeem_stable(
 
     // reject if the sender was found not in the list of endowments
     // OR if the sender is not the Registrar SC (ie. we're closing the endowment)
-    if pos == None && info.sender != config.registrar_contract {
+    if pos.is_none() && info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -304,7 +304,7 @@ pub fn withdraw_stable(
     let pos = endowments.iter().position(|p| p.id == msg.endowment_id);
 
     // reject if the sender was found not in the list of endowments
-    if pos == None {
+    if pos.is_none() {
         return Err(ContractError::Unauthorized {});
     }
 

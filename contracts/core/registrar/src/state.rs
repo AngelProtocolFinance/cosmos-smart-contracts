@@ -50,19 +50,15 @@ pub fn read_vaults(
             Ok(v)
         })
         .filter(|vault| match vault {
-            Ok(v) => match (approved, v.approved) {
-                (None, _) => true,
-                (Some(true), true) | (Some(false), false) => true,
-                _ => false,
-            },
+            Ok(v) => matches!(
+                (approved, v.approved),
+                (None, _) | (Some(true), true) | (Some(false), false)
+            ),
             &Err(_) => false,
         })
         .filter(|vault| match vault {
             Ok(v) => match &endowment_type {
-                Some(et) => match v.restricted_from.iter().position(|t| &t == &et) {
-                    Some(_) => false,
-                    None => true,
-                },
+                Some(et) => !v.restricted_from.iter().any(|t| t == et),
                 None => true,
             },
             &Err(_) => false,
