@@ -111,16 +111,20 @@ pub fn execute(
                 deposit_amount,
             )
         }
+        // Harvest from "lp_staking" contract `lp_reward`(LOOP) token --> more LPs
         ExecuteMsg::Harvest {} => executers::harvest(deps, env, info),
+        // -Deposit Token/Yield Token (Vault) --> + tokens of lp pair --> `accounts_contract`
         ExecuteMsg::Redeem {
             endowment_id,
             amount, // vault tokens to be burned
         } => executers::redeem(deps, env, info, endowment_id, amount),
+        // -Deposit Token/Yield Token(Liquid Vault) --> +Deposit Token/Yield Token(Locked Vault)
         ExecuteMsg::ReinvestToLocked {
             endowment_id,
             amount,
         } => executers::reinvest_to_locked_execute(deps, env, info, endowment_id, amount),
 
+        // Entries which are used internally
         ExecuteMsg::RestakeClaimReward {
             reward_token_bal_before,
         } => executers::restake_claim_reward(deps, env, info, reward_token_bal_before),
