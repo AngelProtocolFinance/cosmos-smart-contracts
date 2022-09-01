@@ -65,7 +65,7 @@ fn create_endowment() -> (
         cw3_threshold: Threshold::AbsolutePercentage {
             percentage: Decimal::percent(10),
         },
-        cw3_max_voting_period: Duration::Time(60),
+        cw3_max_voting_period: 60,
     };
 
     let instantiate_msg = InstantiateMsg {

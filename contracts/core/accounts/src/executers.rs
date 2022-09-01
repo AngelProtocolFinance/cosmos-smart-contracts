@@ -23,6 +23,7 @@ use cosmwasm_std::{
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
+use cw_utils::Duration;
 
 pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
@@ -163,7 +164,7 @@ pub fn create_endowment(
                 },
                 cw4_code: registrar_config.cw4_code.unwrap(),
                 threshold: msg.cw3_threshold,
-                max_voting_period: msg.cw3_max_voting_period,
+                max_voting_period: Duration::Time(msg.cw3_max_voting_period),
             })?,
             funds: vec![],
         }),

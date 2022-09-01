@@ -3,7 +3,7 @@ use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo};
-use cw_utils::{Duration, Threshold};
+use cw_utils::Threshold;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -116,7 +116,7 @@ pub struct CreateEndowmentMsg {
     pub cw4_members: Vec<Member>,
     pub kyc_donors_only: bool,
     pub cw3_threshold: Threshold,
-    pub cw3_max_voting_period: Duration,
+    pub cw3_max_voting_period: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
