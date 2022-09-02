@@ -481,7 +481,8 @@ fn test_donate() {
     )
     .unwrap();
     let state: StateResponse = from_binary(&query_res).unwrap();
-    assert_eq!(state.donations_received.u128(), donation_amt);
+    assert_eq!(state.donations_received.locked.u128(), donation_amt / 2);
+    assert_eq!(state.donations_received.liquid.u128(), donation_amt / 2);
 
     // Update the Endowment settings to enable onward vault deposits
     let info = mock_info(&endow_details.owner.to_string(), &coins(100000, "earth"));

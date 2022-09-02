@@ -653,3 +653,10 @@ pub struct NetworkInfo {
     pub ibc_channel: Option<String>,
     pub gas_limit: Option<u64>,
 }
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct DonationsReceived {
+    pub locked: Uint128,
+    pub liquid: Uint128,
+}

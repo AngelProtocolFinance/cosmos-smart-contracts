@@ -1,6 +1,6 @@
 use angel_core::structs::{
-    AccountStrategies, BalanceInfo, Beneficiary, EndowmentStatus, OneOffVaults, Profile,
-    RebalanceDetails,
+    AccountStrategies, BalanceInfo, Beneficiary, DonationsReceived, EndowmentStatus, OneOffVaults,
+    Profile, RebalanceDetails,
 };
 use cosmwasm_std::{Addr, Env, Order, StdResult, Storage, Timestamp, Uint128};
 use cw_storage_plus::{Item, Map};
@@ -59,7 +59,7 @@ pub fn read_endowments(storage: &dyn Storage) -> StdResult<Vec<(u32, Endowment)>
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct State {
-    pub donations_received: Uint128,
+    pub donations_received: DonationsReceived,
     pub balances: BalanceInfo,
     pub closing_endowment: bool,
     pub closing_beneficiary: Option<Beneficiary>,
