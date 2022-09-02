@@ -364,22 +364,29 @@ pub fn redeem(
     }
 
     // First, burn the vault tokens
-    execute_burn(
-        deps.branch(),
-        env.clone(),
-        info,
-        endowment_id,
-        burn_shares_amount,
-    )
-    .map_err(|_| {
-        ContractError::Std(StdError::GenericErr {
-            msg: format!(
-                "Cannot burn the {} vault tokens from {}",
-                burn_shares_amount,
-                endowment_id.to_string()
-            ),
-        })
-    })?;
+    if info.sender == config.tax_collector {
+        APTAX.update(deps.storage, |mut tax_vt_amount| -> StdResult<Uint128> {
+            tax_vt_amount -= amount;
+            Ok(tax_vt_amount)
+        })?;
+    } else {
+        execute_burn(
+            deps.branch(),
+            env.clone(),
+            info,
+            endowment_id,
+            burn_shares_amount,
+        )
+        .map_err(|_| {
+            ContractError::Std(StdError::GenericErr {
+                msg: format!(
+                    "Cannot burn the {} vault tokens from {}",
+                    burn_shares_amount,
+                    endowment_id.to_string()
+                ),
+            })
+        })?;
+    }
 
     // Update the config
     let lp_amount = burn_shares_amount.multiply_ratio(config.total_lp_amount, config.total_shares);
