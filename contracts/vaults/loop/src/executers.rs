@@ -11,7 +11,7 @@ use angel_core::messages::vault::{
     ExecuteMsg, LoopFarmingExecuteMsg, LoopFarmingQueryMsg, LoopPairExecuteMsg, ReceiveMsg,
     UpdateConfigMsg,
 };
-use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
+use angel_core::responses::{accounts::EndowmentListResponse, registrar::ConfigResponse};
 use angel_core::structs::{AccountType, EndowmentEntry};
 use terraswap::querier::{
     query_balance, query_pair_info, query_pair_info_from_pair, query_token_balance,
@@ -1359,12 +1359,11 @@ fn validate_action_caller_n_endow_id(
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQueryMsg::EndowmentList {
+            msg: to_binary(&angel_core::messages::accounts::QueryMsg::EndowmentList {
                 name: None,
                 owner: None,
                 status: None,
                 tier: None,
-                un_sdg: None,
                 endow_type: None,
             })?,
         }))?;

@@ -14,8 +14,8 @@ use terraswap::asset::{AssetInfo, PairInfo};
 use std::collections::HashMap;
 use std::marker::PhantomData;
 
-use angel_core::responses::registrar::{ConfigResponse, EndowmentListResponse};
-use angel_core::structs::{AcceptedTokens, EndowmentEntry, SplitDetails};
+use angel_core::responses::{accounts::EndowmentListResponse, registrar::ConfigResponse};
+use angel_core::structs::{AcceptedTokens, Categories, EndowmentEntry, SplitDetails};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -156,7 +156,10 @@ impl WasmMockQuerier {
                             logo: None,
                             image: None,
                             tier: None,
-                            un_sdg: None,
+                            categories: Categories {
+                                sdgs: vec![],
+                                general: vec![],
+                            },
                         }],
                     })
                     .unwrap(),
