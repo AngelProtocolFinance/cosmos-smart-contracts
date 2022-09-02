@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    attr, coins, to_binary, Addr, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, Fraction,
+    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, Fraction,
     MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ReceiveMsg;
@@ -336,16 +336,6 @@ pub fn redeem(
     amount: Uint128,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
-    let burn_shares_amount = amount;
-
-    // Check if the `caller` is "accounts_contract" & "endowment_id" is valid
-    validate_action_caller_n_endow_id(
-        deps.as_ref(),
-        &config,
-        info.sender.to_string(),
-        endowment_id,
-    )?;
-
     let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
         config.registrar_contract.to_string(),
         &RegistrarQueryMsg::Config {},
@@ -353,6 +343,25 @@ pub fn redeem(
     let accounts_contract = deps
         .api
         .addr_validate(&registar_config.accounts_contract.unwrap())?;
+
+    let burn_shares_amount = amount;
+
+    let beneficiary: Addr;
+    let id: Option<u32>;
+    if info.sender == config.tax_collector {
+        beneficiary = config.tax_collector.clone();
+        id = None;
+    } else {
+        // Check if the `caller` is "accounts_contract" & "endowment_id" is valid
+        validate_action_caller_n_endow_id(
+            deps.as_ref(),
+            &config,
+            info.sender.to_string(),
+            endowment_id,
+        )?;
+        beneficiary = accounts_contract.clone();
+        id = Some(endowment_id);
+    }
 
     // First, burn the vault tokens
     execute_burn(
@@ -411,8 +420,8 @@ pub fn redeem(
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::RemoveLiquidity {
             lp_token_bal_before: lp_bal_query.balance,
-            beneficiary: accounts_contract.clone(),
-            id: endowment_id,
+            beneficiary,
+            id,
         })
         .unwrap(),
         funds: vec![],
@@ -1072,7 +1081,7 @@ pub fn remove_liquidity(
     info: MessageInfo,
     lp_token_bal_before: Uint128,
     beneficiary: Addr,
-    id: u32,
+    id: Option<u32>,
 ) -> Result<Response, ContractError> {
     // Validations
     if info.sender != env.contract.address {
@@ -1167,7 +1176,7 @@ pub fn send_asset(
     env: Env,
     info: MessageInfo,
     beneficiary: Addr,
-    id: u32,
+    id: Option<u32>,
     asset_info: AssetInfo,
     asset_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
@@ -1186,41 +1195,58 @@ pub fn send_asset(
 
     let mut msgs = vec![];
     match asset_info {
-        AssetInfo::NativeToken { denom } => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: beneficiary.to_string(),
-            msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::VaultReceipt {
-                id,
-                acct_type: config.acct_type,
-            })
-            .unwrap(),
-            funds: coins(send_amount.u128(), denom),
-        })),
-        AssetInfo::Token { contract_addr } => {
-            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.clone(),
-                msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                    spender: beneficiary.to_string(),
-                    amount: send_amount,
-                    expires: None,
+        AssetInfo::NativeToken { denom } => match id {
+            Some(id) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: beneficiary.to_string(),
+                msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::VaultReceipt {
+                    id,
+                    acct_type: config.acct_type,
                 })
                 .unwrap(),
-                funds: vec![],
-            }));
-            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr,
-                msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                    contract: beneficiary.to_string(),
-                    amount: send_amount,
-                    msg: to_binary(&angel_core::messages::accounts::ReceiveMsg::VaultReceipt {
-                        id,
-                        acct_type: config.acct_type,
+                funds: coins(send_amount.u128(), denom),
+            })),
+            None => msgs.push(CosmosMsg::Bank(BankMsg::Send {
+                to_address: beneficiary.to_string(),
+                amount: coins(send_amount.u128(), denom),
+            })),
+        },
+        AssetInfo::Token { contract_addr } => match id {
+            Some(id) => {
+                msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: contract_addr.clone(),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                        spender: beneficiary.to_string(),
+                        amount: send_amount,
+                        expires: None,
                     })
                     .unwrap(),
+                    funds: vec![],
+                }));
+                msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr,
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                        contract: beneficiary.to_string(),
+                        amount: send_amount,
+                        msg: to_binary(&angel_core::messages::accounts::ReceiveMsg::VaultReceipt {
+                            id,
+                            acct_type: config.acct_type,
+                        })
+                        .unwrap(),
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                }));
+            }
+            None => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: contract_addr,
+                msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                    recipient: beneficiary.to_string(),
+                    amount: send_amount,
                 })
                 .unwrap(),
                 funds: vec![],
-            }))
-        }
+            })),
+        },
     };
 
     Ok(Response::default()

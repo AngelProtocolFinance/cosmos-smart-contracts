@@ -66,7 +66,7 @@ pub enum ExecuteMsg {
     RemoveLiquidity {
         lp_token_bal_before: Uint128,
         beneficiary: Addr,
-        id: u32,
+        id: Option<u32>,
     },
     Stake {
         endowment_id: Option<u32>,
@@ -74,7 +74,7 @@ pub enum ExecuteMsg {
     },
     SendAsset {
         beneficiary: Addr,
-        id: u32,
+        id: Option<u32>,
         asset_info: terraswap::asset::AssetInfo,
         asset_bal_before: Uint128,
     },
