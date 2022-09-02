@@ -11,6 +11,7 @@ pub struct InstantiateMsg {
     pub sibling_vault: Option<String>,
     pub registrar_contract: String,
     pub keeper: String,
+    pub tax_collector: String,
 
     pub lp_factory_contract: String,
     pub lp_staking_contract: String,
@@ -86,6 +87,7 @@ pub struct UpdateConfigMsg {
     pub lp_pair_contract: Option<String>,
     pub keeper: Option<String>,
     pub sibling_vault: Option<String>,
+    pub tax_collector: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

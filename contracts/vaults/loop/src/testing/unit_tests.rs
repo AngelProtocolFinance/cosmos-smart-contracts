@@ -18,6 +18,7 @@ fn create_mock_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMo
         sibling_vault: Some("sibling-vault".to_string()),
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
+        tax_collector: "tax-collector".to_string(),
 
         lp_factory_contract: "loop-factory".to_string(),
         lp_staking_contract: "loop-farming".to_string(),
@@ -45,6 +46,7 @@ fn proper_instantiation() {
         sibling_vault: Some("sibling-vault".to_string()),
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
+        tax_collector: "tax-collector".to_string(),
 
         lp_factory_contract: "loop-factory".to_string(),
         lp_staking_contract: "loop-farming".to_string(),
@@ -153,6 +155,7 @@ fn test_update_config() {
         lp_pair_contract: Some("new-loop-pair".to_string()),
         keeper: Some("new-keeper".to_string()),
         sibling_vault: None,
+        tax_collector: Some("new-tax-collector".to_string()),
     };
 
     // Only "config.owner" can update the config, otherwise fails
@@ -185,6 +188,7 @@ fn test_update_config() {
         "new-loop-farming".to_string()
     );
     assert_eq!(config_resp.keeper, "new-keeper".to_string());
+    assert_eq!(config_resp.tax_collector, "new-tax-collector".to_string());
 }
 
 #[test]

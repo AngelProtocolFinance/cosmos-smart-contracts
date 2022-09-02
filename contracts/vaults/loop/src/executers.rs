@@ -101,6 +101,10 @@ pub fn update_config(
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.keeper,
     };
+    config.tax_collector = match msg.tax_collector {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.tax_collector,
+    };
 
     CONFIG.save(deps.storage, &config)?;
 

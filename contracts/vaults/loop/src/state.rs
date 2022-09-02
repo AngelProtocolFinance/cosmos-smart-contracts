@@ -12,6 +12,7 @@ pub struct Config {
     pub sibling_vault: Addr,
     pub registrar_contract: Addr,
     pub keeper: Addr,
+    pub tax_collector: Addr,
 
     pub lp_factory_contract: Addr, // loopswap factory contract address
     pub lp_staking_contract: Addr, // loopswap farming contract address

@@ -41,6 +41,7 @@ pub fn instantiate(
         sibling_vault,
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         keeper: deps.api.addr_validate(&msg.keeper)?,
+        tax_collector: deps.api.addr_validate(&msg.tax_collector)?,
 
         lp_factory_contract: deps.api.addr_validate(&msg.lp_factory_contract)?,
         lp_staking_contract: deps.api.addr_validate(&msg.lp_staking_contract)?,
