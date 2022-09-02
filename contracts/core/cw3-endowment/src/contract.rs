@@ -101,7 +101,7 @@ pub fn cw4_group_reply(
                 deps.api
                     .addr_validate(&cw4_group_addr.clone().unwrap())
                     .map_err(|_| ContractError::InvalidGroup {
-                        addr: cw4_group_addr.unwrap().clone(),
+                        addr: cw4_group_addr.unwrap(),
                     })?,
             );
 

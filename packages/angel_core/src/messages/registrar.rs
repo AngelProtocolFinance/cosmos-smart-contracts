@@ -1,10 +1,5 @@
-use crate::structs::{
-    AcceptedTokens, AccountType, Beneficiary, EndowmentType, NetworkInfo, Profile, SplitDetails,
-    Tier,
-};
+use crate::structs::{AcceptedTokens, AccountType, EndowmentType, NetworkInfo, SplitDetails};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
-use cw4::Member;
-use cw_utils::Threshold;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -22,8 +17,6 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    CreateEndowment(CreateEndowmentMsg),
-    UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     VaultAdd(VaultAddMsg),
     VaultRemove {
         vault_addr: String,
@@ -39,27 +32,11 @@ pub enum ExecuteMsg {
     UpdateOwner {
         new_owner: String,
     },
-    // Allows the DANO/AP Team to update the EndowmentEntry
-    UpdateEndowmentEntry(UpdateEndowmentEntryMsg),
     // Updates the NETWORK_CONNECTIONS
     UpdateNetworkConnections {
         network_info: NetworkInfo,
         action: String,
     },
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct CreateEndowmentMsg {
-    pub owner: String,
-    pub beneficiary: String,
-    pub withdraw_before_maturity: bool,
-    pub maturity_time: Option<u64>,
-    pub maturity_height: Option<u64>,
-    pub profile: Profile,
-    pub cw4_members: Vec<Member>,
-    pub kyc_donors_only: bool,
-    pub cw3_threshold: Threshold,
-    pub cw3_max_voting_period: u64, // Time in seconds
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -93,13 +70,6 @@ impl UpdateConfigMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowmentStatusMsg {
-    pub endowment_id: u32,
-    pub status: u8,
-    pub beneficiary: Option<Beneficiary>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct VaultAddMsg {
     pub network: Option<String>,
     pub vault_addr: String,
@@ -107,18 +77,6 @@ pub struct VaultAddMsg {
     pub yield_token: String,
     pub restricted_from: Vec<EndowmentType>,
     pub acct_type: AccountType,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowmentEntryMsg {
-    pub endowment_id: u32,
-    pub name: Option<String>,
-    pub logo: Option<String>,
-    pub image: Option<String>,
-    pub owner: Option<String>,
-    pub tier: Option<Option<Tier>>,
-    pub un_sdg: Option<Option<u8>>,
-    pub endow_type: Option<EndowmentType>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -136,19 +94,6 @@ pub enum QueryMsg {
         approved: Option<bool>,
         start_after: Option<String>,
         limit: Option<u64>,
-    },
-    // Get details of single Endowment
-    Endowment {
-        endowment_id: u32,
-    },
-    // Gets list of all registered Endowments
-    EndowmentList {
-        status: Option<String>,
-        name: Option<Option<String>>,
-        owner: Option<String>,
-        tier: Option<Option<String>>,
-        un_sdg: Option<Option<u8>>,
-        endow_type: Option<String>,
     },
     // Get all Config details for the contract
     Config {},

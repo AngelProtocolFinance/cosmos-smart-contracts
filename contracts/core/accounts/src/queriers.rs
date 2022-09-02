@@ -1,8 +1,8 @@
-use crate::state::{CONFIG, ENDOWMENTS, STATES};
+use crate::state::{read_endowments, Endowment, CONFIG, ENDOWMENTS, STATES};
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::accounts::*;
 use angel_core::responses::registrar::VaultListResponse;
-use angel_core::structs::{AccountType, BalanceInfo};
+use angel_core::structs::{AccountType, BalanceInfo, EndowmentEntry, EndowmentType, Tier};
 use angel_core::utils::vault_endowment_balance;
 use cosmwasm_std::{to_binary, Deps, QueryRequest, StdResult, Uint128, WasmQuery};
 use cw2::get_contract_version;
@@ -85,11 +85,97 @@ pub fn query_token_amount(
     Ok(balance)
 }
 
+pub fn query_endowment_list(
+    deps: Deps,
+    name: Option<Option<String>>,
+    owner: Option<String>,
+    status: Option<String>, // EndowmentStatus
+    tier: Option<Option<String>>,
+    endow_type: Option<String>, // EndowmentType
+) -> StdResult<EndowmentListResponse> {
+    let endowments: Vec<(u32, Endowment)> = read_endowments(deps.storage)?;
+    let entries: Vec<EndowmentEntry> = endowments
+        .iter()
+        .map(|(i, e)| EndowmentEntry {
+            id: *i,
+            owner: e.owner.to_string(),
+            status: e.status.clone(),
+            endow_type: e.profile.endow_type.clone(),
+            name: Some(e.profile.name.clone()),
+            logo: e.profile.logo.clone(),
+            image: e.profile.image.clone(),
+            tier: match e.profile.tier.unwrap() {
+                1 => Some(Tier::Level1),
+                2 => Some(Tier::Level2),
+                3 => Some(Tier::Level3),
+                _ => None,
+            },
+            categories: e.profile.categories.clone(),
+        })
+        .collect();
+    let entries = match name {
+        Some(nm) => entries
+            .into_iter()
+            .filter(|e| e.name == nm)
+            .collect::<Vec<EndowmentEntry>>(),
+        None => entries,
+    };
+
+    let entries = match owner {
+        Some(owner) => entries
+            .into_iter()
+            .filter(|e| e.owner == owner)
+            .collect::<Vec<EndowmentEntry>>(),
+        None => entries,
+    };
+    let entries = match status {
+        Some(status) => entries
+            .into_iter()
+            .filter(|e| e.status.to_string() == status)
+            .collect::<Vec<EndowmentEntry>>(),
+        None => entries,
+    };
+    let entries = match tier {
+        Some(tier) => {
+            let tier = tier.and_then(|v| match v.as_str() {
+                "1" => Some(Tier::Level1),
+                "2" => Some(Tier::Level2),
+                "3" => Some(Tier::Level3),
+                _ => unimplemented!(),
+            });
+            entries
+                .into_iter()
+                .filter(|e| e.tier == tier)
+                .collect::<Vec<EndowmentEntry>>()
+        }
+        None => entries,
+    };
+    let entries = match endow_type {
+        Some(endow_type) => {
+            let end_ty = match endow_type.as_str() {
+                "charity" => EndowmentType::Charity,
+                "normal" => EndowmentType::Normal,
+                _ => unimplemented!(),
+            };
+            entries
+                .into_iter()
+                .filter(|e| e.endow_type == end_ty)
+                .collect::<Vec<EndowmentEntry>>()
+        }
+        None => entries,
+    };
+    Ok(EndowmentListResponse {
+        endowments: entries,
+    })
+}
+
 pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetailsResponse> {
     // this fails if no account is found
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
     Ok(EndowmentDetailsResponse {
         owner: endowment.owner,
+        status: endowment.status,
+        endow_type: endowment.profile.endow_type,
         withdraw_before_maturity: endowment.withdraw_before_maturity,
         maturity_time: endowment.maturity_time,
         maturity_height: endowment.maturity_height,
@@ -107,7 +193,7 @@ pub fn query_profile(deps: Deps, id: u32) -> StdResult<ProfileResponse> {
     Ok(ProfileResponse {
         name: profile.name,
         overview: profile.overview,
-        un_sdg: profile.un_sdg,
+        categories: profile.categories,
         tier: profile.tier,
         logo: profile.logo,
         image: profile.image,

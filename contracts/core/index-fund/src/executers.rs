@@ -228,7 +228,7 @@ pub fn update_fund_members(
     for add in add.into_iter() {
         let pos = fund.members.iter().position(|m| *m == add);
         // ignore if that member was found in the list
-        if pos == None {
+        if pos.is_none() {
             fund.members.push(add);
         }
     }
@@ -485,7 +485,7 @@ pub fn deposit(
             deps.as_ref(),
             registrar_config.accounts_contract.unwrap(),
             donation_messages,
-            deposit_fund.info.clone(),
+            deposit_fund.info,
         ))
         .add_attribute("action", "deposit"))
 }
@@ -555,7 +555,7 @@ pub fn build_donation_messages(
                         contract: accounts_contract.clone(),
                         amount: member.1 .0 + member.2 .0,
                         msg: to_binary(&angel_core::messages::accounts::DepositMsg {
-                            id: member.0.clone(),
+                            id: member.0,
                             locked_percentage: member.1 .1,
                             liquid_percentage: member.2 .1,
                         })
@@ -590,9 +590,9 @@ pub fn update_donation_messages(
             .into_iter()
             .position(|msg| &msg.0 == member);
 
-        if pos != None {
+        if pos.is_some() {
             // member addr already exists in the messages vec. Update values.
-            let mut msg_data = donation_messages[pos.unwrap()].clone();
+            let mut msg_data = donation_messages[pos.unwrap()];
             msg_data.1 .0 += member_portion * lock_split;
             msg_data.1 .1 = lock_split;
             msg_data.2 .0 += member_portion * split;
@@ -601,7 +601,7 @@ pub fn update_donation_messages(
         } else {
             // add new entry for the member
             donation_messages.push((
-                member.clone(), // Addr
+                *member, // Addr
                 (member_portion * lock_split, lock_split),
                 (member_portion * split, split),
             ));

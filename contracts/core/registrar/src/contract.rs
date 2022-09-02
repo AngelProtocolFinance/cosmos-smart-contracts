@@ -7,8 +7,7 @@ use angel_core::structs::AcceptedTokens;
 use angel_core::structs::SplitDetails;
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response, StdError,
-    StdResult,
+    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
 
@@ -62,11 +61,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
-        ExecuteMsg::UpdateEndowmentStatus(msg) => {
-            executers::update_endowment_status(deps, env, info, msg)
-        }
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
         }
@@ -79,9 +74,6 @@ pub fn execute(
             approved,
             restricted_from,
         } => executers::vault_update(deps, env, info, vault_addr, approved, restricted_from),
-        ExecuteMsg::UpdateEndowmentEntry(msg) => {
-            executers::update_endowment_entry(deps, env, info, msg)
-        }
         ExecuteMsg::UpdateNetworkConnections {
             network_info,
             action,
@@ -89,34 +81,10 @@ pub fn execute(
     }
 }
 
-/// Replies back to the registrar from instantiate calls to Accounts SC (@ some code_id)
-/// should be caught and handled to register the Endowment's newly created Accounts SC
-/// in the REGISTRY storage
-#[entry_point]
-pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
-    match msg.id {
-        0 => executers::new_accounts_reply(deps, env, msg.result),
-        _ => Err(ContractError::Unauthorized {}),
-    }
-}
-
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
-        QueryMsg::Endowment { endowment_id } => {
-            to_binary(&queriers::query_endowment_details(deps, endowment_id)?)
-        }
-        QueryMsg::EndowmentList {
-            name,
-            owner,
-            status,
-            tier,
-            un_sdg,
-            endow_type,
-        } => to_binary(&queriers::query_endowment_list(
-            deps, name, owner, status, tier, un_sdg, endow_type,
-        )?),
         QueryMsg::VaultList {
             network,
             endowment_type,

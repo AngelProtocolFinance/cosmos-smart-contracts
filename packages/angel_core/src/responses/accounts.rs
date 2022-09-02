@@ -1,5 +1,6 @@
 use crate::structs::{
-    AccountStrategies, Beneficiary, RebalanceDetails, SocialMedialUrls, TransactionRecord,
+    AccountStrategies, Beneficiary, Categories, EndowmentEntry, EndowmentStatus, EndowmentType,
+    RebalanceDetails, SocialMedialUrls, TransactionRecord,
 };
 use cosmwasm_std::{Addr, Uint128};
 use schemars::JsonSchema;
@@ -19,9 +20,16 @@ pub struct ConfigResponse {
     pub registrar_contract: String,
 }
 
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct EndowmentListResponse {
+    pub endowments: Vec<EndowmentEntry>,
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct EndowmentDetailsResponse {
     pub owner: Addr,
+    pub status: EndowmentStatus,
+    pub endow_type: EndowmentType,
     pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
@@ -37,7 +45,7 @@ pub struct EndowmentDetailsResponse {
 pub struct ProfileResponse {
     pub name: String,
     pub overview: String,
-    pub un_sdg: Option<u8>,
+    pub categories: Categories,
     pub tier: Option<u8>,
     pub logo: Option<String>,
     pub image: Option<String>,
