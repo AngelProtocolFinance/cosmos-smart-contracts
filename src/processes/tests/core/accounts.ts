@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, sendTransactionWithFunds } from "../../../utils/helpers";
+import { sendTransaction, sendTransactionWithFunds, sendMessageViaCw3Proposal } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -176,6 +176,81 @@ export async function testApTeamChangesAccountsEndowmentOwner(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: Endowment created from the Registrar
+//
+// SCENARIO:
+// User sends request to create a new endowment to the Registrar
+//
+//----------------------------------------------------------------------------------------
+export async function testCreateEndowment(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  accounts: string,
+  msg: any
+): Promise<void> {
+  process.stdout.write("Create a new endowment via the Registrar");
+  const result = await sendTransaction(juno, apTeam, accounts, {
+    create_endowment: msg,
+  });
+  const acct = parseInt(result.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "endow_id";
+    })?.value as string);
+  console.log(chalk.green(` ${acct} - Done!`));
+}
+
+export async function testApproveInactiveEndowment(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  cw3ReviewTeam: string,
+  accounts: string,
+  endowment_id: number,
+): Promise<void> {
+  process.stdout.write("AP Review Team approves an inactive Charity endowment");
+  expect(
+    await sendMessageViaCw3Proposal(juno, apTeam, cw3ReviewTeam, accounts, {
+      update_endowment_status: {
+        endowment_id,
+        status: 1,
+        beneficiary: undefined,
+      }
+    })
+  );
+  console.log(chalk.green(" Done!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Can update an Endowment's status from the Accounts
+//    Possible Status Values:
+//    0. Inactive - NO Deposits | NO Withdraws - no beneficiary needed
+//    1. Approved - YES Deposits | YES Withdraws - no beneficiary needed
+//    2. Frozen - YES Deposits | NO Withdraws - no beneficiary needed
+//    3. Closed - NO Deposits | NO Withdraws - IF beneficiary address given: funds go to that wallet
+//                ELSE: sent to fund members
+//----------------------------------------------------------------------------------------
+export async function testUpdateEndowmentStatus(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  accounts: string,
+  endowmentStatus: any, // { address: "juno1....", status: 0|1|2|3, benficiary: "juno1.." | undefined }
+): Promise<void> {
+  process.stdout.write("AP Team updates endowment's status");
+  expect(
+    await sendTransaction(juno, apTeam, accounts, {
+      update_endowment_status: {
+        endowment_id: endowmentStatus.endowment_id,
+        status: endowmentStatus.status,
+        beneficiary: endowmentStatus.beneficiary,
+      },
+    })
+  );
+  console.log(chalk.green(" Done!"));
+}
+
+//----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
 export async function testQueryAccountsState(
@@ -239,6 +314,20 @@ export async function testQueryAccountsConfig(
   console.log(result);
   console.log(chalk.green(" Passed!"));
 }
+
+export async function testQueryAccountsEndowmentList(
+  juno: SigningCosmWasmClient,
+  registrar: string
+): Promise<void> {
+  process.stdout.write("Test - Query Registrar EndowmentList");
+  const result: any = await juno.queryContractSmart(registrar, {
+    endowment_list: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
 
 export async function testQueryAccountsEndowment(
   juno: SigningCosmWasmClient,
