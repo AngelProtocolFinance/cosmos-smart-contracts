@@ -489,7 +489,7 @@ fn test_invalid_operations_order() {
                 ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
             },
             SwapOperation::JunoSwap {
-                offer_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
+                offer_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0002")),
                 ask_asset_info: AssetInfo::Native("ujuno".to_string()),
             }
         ])

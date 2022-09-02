@@ -9,8 +9,8 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
 use angel_core::structs::{
-    AccountStrategies, AccountType, BalanceInfo, Beneficiary, EndowmentStatus, EndowmentType,
-    GenericBalance, OneOffVaults, RebalanceDetails, SocialMedialUrls, SplitDetails,
+    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentStatus,
+    EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails, SocialMedialUrls, SplitDetails,
     StrategyComponent, SwapOperation, YieldVault,
 };
 use angel_core::utils::{
@@ -121,7 +121,10 @@ pub fn create_endowment(
         deps.storage,
         config.next_account_id,
         &State {
-            donations_received: Uint128::zero(),
+            donations_received: DonationsReceived {
+                locked: Uint128::zero(),
+                liquid: Uint128::zero(),
+            },
             balances: BalanceInfo::default(),
             closing_endowment: false,
             closing_beneficiary: None,
@@ -988,8 +991,9 @@ pub fn deposit(
     };
 
     // update total donations recieved for a charity
-    let mut state = STATES.load(deps.storage, msg.id)?;
-    state.donations_received += deposit_amount;
+    let mut state: State = STATES.load(deps.storage, msg.id)?;
+    state.donations_received.locked += locked_amount.amount;
+    state.donations_received.liquid += liquid_amount.amount;
 
     let mut deposit_messages: Vec<SubMsg> = vec![];
 
