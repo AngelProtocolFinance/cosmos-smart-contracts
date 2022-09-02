@@ -2,7 +2,7 @@ use crate::errors::core::ContractError;
 use crate::messages::registrar::QueryMsg as RegistrarQuerier;
 use crate::messages::vault::QueryMsg as VaultQuerier;
 use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
-use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
+use crate::structs::{GenericBalance, SplitDetails, StrategyComponent, YieldVault};
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, DepsMut, QueryRequest, StdError,
     StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
@@ -134,47 +134,6 @@ pub fn vault_endowment_balance(deps: Deps, vault_address: String, endowment_id: 
             msg: to_binary(&VaultQuerier::Balance { endowment_id }).unwrap(),
         }))
         .unwrap()
-}
-
-pub fn withdraw_from_vaults(
-    deps: Deps,
-    registrar_contract: String,
-    endowment_id: u32,
-    beneficiary: &Addr,
-    sources: Vec<FundingSource>,
-) -> Result<Vec<SubMsg>, ContractError> {
-    let mut withdraw_messages = vec![];
-
-    // redeem amounts from sources listed
-    for source in sources.iter() {
-        if source.amount > Uint128::zero() {
-            // check source vault is in registrar vaults list
-            let _vault_config: VaultDetailResponse =
-                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: registrar_contract.to_string(),
-                    msg: to_binary(&RegistrarQuerier::Vault {
-                        vault_addr: source.vault.to_string(),
-                    })?,
-                }))?;
-
-            // // create a withdraw message for X Vault, noting amounts for Locked / Liquid
-            // withdraw_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            //     contract_addr: source.vault.to_string(),
-            //     msg: to_binary(&crate::messages::vault::ExecuteMsg::Withdraw(
-            //         AccountWithdrawMsg {
-            //             endowment_id: endowment_id.clone(),
-            //             beneficiary: beneficiary.clone(),
-            //             amount: source.amount,
-            //         },
-            //     ))
-            //     .unwrap(),
-            //     funds: vec![],
-            // })));
-
-            // No more `withdraw` entry for `vault` contract
-        }
-    }
-    Ok(withdraw_messages)
 }
 
 pub fn deposit_to_vaults(

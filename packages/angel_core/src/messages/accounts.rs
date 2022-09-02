@@ -1,4 +1,4 @@
-use crate::structs::{AccountType, Beneficiary, Categories, FundingSource, Profile, SwapOperation};
+use crate::structs::{AccountType, Beneficiary, Categories, Profile, SwapOperation};
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
@@ -153,19 +153,6 @@ pub struct DepositMsg {
     pub id: u32,
     pub locked_percentage: Decimal,
     pub liquid_percentage: Decimal,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct RedeemMsg {
-    pub id: u32,
-    pub sources: Vec<FundingSource>,
-    // pub reinvest: bool,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct WithdrawMsg {
-    pub id: u32,
-    pub sources: Vec<FundingSource>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

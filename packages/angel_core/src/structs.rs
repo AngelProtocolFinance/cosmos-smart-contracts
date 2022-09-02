@@ -144,12 +144,6 @@ pub struct StrategyComponent {
     pub percentage: Decimal, // percentage of funds to invest
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct FundingSource {
-    pub vault: String,
-    pub amount: Uint128,
-}
-
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug, Default)]
 pub struct RedeemResults {
     pub messages: Vec<SubMsg>,
