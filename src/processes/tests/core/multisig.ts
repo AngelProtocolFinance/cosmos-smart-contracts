@@ -70,7 +70,7 @@ export async function testProposalApprovingEndowment(
   apTeam: string,
   cw3: string,
   registrar: string,
-  endowment: string,
+  endowment: number,
 ): Promise<void> {
   process.stdout.write("Test - CW3 Member Proposes to Approve an Endowment");
 
@@ -86,7 +86,7 @@ export async function testProposalApprovingEndowment(
               funds: [],
               msg: toEncodedBinary({
                 update_endowment_status: {
-                  endowment_addr: endowment,
+                  endowment_id: endowment,
                   status: 1,
                   beneficiary: undefined,
                 },
