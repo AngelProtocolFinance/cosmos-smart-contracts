@@ -4,6 +4,7 @@ use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::AcceptedTokens;
+use angel_core::structs::RebalanceDetails;
 use angel_core::structs::SplitDetails;
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
@@ -38,6 +39,7 @@ pub fn instantiate(
         accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
         tax_rate,
+        rebalance: msg.rebalance.unwrap_or_else(RebalanceDetails::default),
         split_to_liquid: splits,
         halo_token: None,
         gov_contract: None,

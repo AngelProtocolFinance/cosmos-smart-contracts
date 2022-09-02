@@ -108,7 +108,6 @@ pub fn create_endowment(
                 maturity_height: msg.maturity_height,                   // Option<u64>
                 strategies: AccountStrategies::default(),
                 oneoff_vaults: OneOffVaults::default(),
-                rebalance: RebalanceDetails::default(),
                 kyc_donors_only: msg.kyc_donors_only,
                 profile: msg.profile.clone(),
                 pending_redemptions: 0_u8,

@@ -180,7 +180,6 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         maturity_time: endowment.maturity_time,
         maturity_height: endowment.maturity_height,
         strategies: endowment.strategies,
-        rebalance: endowment.rebalance,
         kyc_donors_only: endowment.kyc_donors_only,
         deposit_approved: endowment.deposit_approved,
         withdraw_approved: endowment.withdraw_approved,

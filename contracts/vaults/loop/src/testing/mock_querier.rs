@@ -15,7 +15,9 @@ use std::collections::HashMap;
 use std::marker::PhantomData;
 
 use angel_core::responses::{accounts::EndowmentListResponse, registrar::ConfigResponse};
-use angel_core::structs::{AcceptedTokens, Categories, EndowmentEntry, SplitDetails};
+use angel_core::structs::{
+    AcceptedTokens, Categories, EndowmentEntry, RebalanceDetails, SplitDetails,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -179,6 +181,7 @@ impl WasmMockQuerier {
                         accounts_contract: Some("accounts-contract".to_string()),
                         treasury: "treasury".to_string(),
                         tax_rate: Decimal::from_ratio(5_u128, 100_u128),
+                        rebalance: RebalanceDetails::default(),
                         index_fund: None,
                         split_to_liquid: SplitDetails {
                             max: Decimal::one(),

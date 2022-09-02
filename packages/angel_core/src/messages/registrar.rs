@@ -1,4 +1,6 @@
-use crate::structs::{AcceptedTokens, AccountType, EndowmentType, NetworkInfo, SplitDetails};
+use crate::structs::{
+    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, RebalanceDetails, SplitDetails,
+};
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -10,6 +12,7 @@ pub struct MigrateMsg {}
 pub struct InstantiateMsg {
     pub treasury: String,
     pub tax_rate: Decimal,
+    pub rebalance: Option<RebalanceDetails>,
     pub split_to_liquid: Option<SplitDetails>, // default %s to split off into liquid account, if donor provided split is not present
     pub accepted_tokens: Option<AcceptedTokens>, // list of approved native and CW20 coins can accept inward
 }
@@ -45,6 +48,7 @@ pub struct UpdateConfigMsg {
     pub index_fund_contract: Option<String>,
     pub treasury: Option<String>,
     pub tax_rate: Option<Decimal>,
+    pub rebalance: Option<RebalanceDetails>,
     pub approved_charities: Option<Vec<String>>,
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
