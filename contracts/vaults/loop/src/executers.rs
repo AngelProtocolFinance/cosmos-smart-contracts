@@ -364,29 +364,15 @@ pub fn redeem(
     }
 
     // First, burn the vault tokens
-    if info.sender == config.tax_collector {
-        APTAX.update(deps.storage, |mut tax_vt_amount| -> StdResult<Uint128> {
-            tax_vt_amount -= amount;
-            Ok(tax_vt_amount)
-        })?;
-    } else {
-        execute_burn(
-            deps.branch(),
-            env.clone(),
-            info,
-            endowment_id,
-            burn_shares_amount,
-        )
-        .map_err(|_| {
-            ContractError::Std(StdError::GenericErr {
-                msg: format!(
-                    "Cannot burn the {} vault tokens from {}",
-                    burn_shares_amount,
-                    endowment_id.to_string()
-                ),
-            })
-        })?;
-    }
+    execute_burn(deps.branch(), env.clone(), info, id, burn_shares_amount).map_err(|_| {
+        ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Cannot burn the {} vault tokens from {}",
+                burn_shares_amount,
+                endowment_id.to_string()
+            ),
+        })
+    })?;
 
     // Update the config
     let lp_amount = burn_shares_amount.multiply_ratio(config.total_lp_amount, config.total_shares);
@@ -539,7 +525,7 @@ pub fn reinvest_to_locked_execute(
     }
     // 3. Burn vault tokens an calculate the LP Tokens equivalent
     // First, burn the vault tokens
-    execute_burn(deps.branch(), env.clone(), info, id, amount).map_err(|_| {
+    execute_burn(deps.branch(), env.clone(), info, Some(id), amount).map_err(|_| {
         ContractError::Std(StdError::GenericErr {
             msg: format!(
                 "Cannot burn the {} vault tokens from {}",
@@ -687,7 +673,7 @@ pub fn reinvest_to_locked_recieve(
     CONFIG.save(deps.storage, &config)?;
 
     // Mint the `vault_token`
-    execute_mint(deps, env, info, id, vt_mint_amount).map_err(|_| {
+    execute_mint(deps, env, info, Some(id), vt_mint_amount).map_err(|_| {
         ContractError::Std(StdError::GenericErr {
             msg: format!("Cannot mint the {} vault token for {}", vt_mint_amount, id),
         })
@@ -910,14 +896,16 @@ pub fn stake_lp_token(
             config.total_shares += vt_mint_amount;
 
             // Mint the `vault_token`
-            execute_mint(deps.branch(), env, info, endowment_id, vt_mint_amount).map_err(|_| {
-                ContractError::Std(StdError::GenericErr {
-                    msg: format!(
-                        "Cannot mint the {} vault token for {}",
-                        vt_mint_amount, endowment_id
-                    ),
-                })
-            })?;
+            execute_mint(deps.branch(), env, info, Some(endowment_id), vt_mint_amount).map_err(
+                |_| {
+                    ContractError::Std(StdError::GenericErr {
+                        msg: format!(
+                            "Cannot mint the {} vault token for {}",
+                            vt_mint_amount, endowment_id
+                        ),
+                    })
+                },
+            )?;
 
             // Stake all the LP tokens
             lp_stake_amount = lp_amount;
@@ -1419,7 +1407,7 @@ fn execute_mint(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    endowment_id: u32,
+    endowment_id: Option<u32>,
     amount: Uint128,
 ) -> Result<(), ContractError> {
     if amount == Uint128::zero() {
@@ -1441,11 +1429,16 @@ fn execute_mint(
     TOKEN_INFO.save(deps.storage, &config)?;
 
     // add amount to recipient balance
-    BALANCES.update(
-        deps.storage,
-        endowment_id,
-        |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
-    )?;
+    match endowment_id {
+        Some(id) => BALANCES.update(
+            deps.storage,
+            id,
+            |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
+        )?,
+        None => APTAX.update(deps.storage, |balance: Uint128| -> StdResult<_> {
+            Ok(balance + amount)
+        })?,
+    };
 
     Ok(())
 }
@@ -1454,8 +1447,8 @@ fn execute_mint(
 fn execute_burn(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
-    endowment_id: u32,
+    _info: MessageInfo,
+    endowment_id: Option<u32>,
     amount: Uint128,
 ) -> Result<(), ContractError> {
     if amount == Uint128::zero() {
@@ -1463,13 +1456,18 @@ fn execute_burn(
     }
 
     // lower balance
-    BALANCES.update(
-        deps.storage,
-        endowment_id,
-        |balance: Option<Uint128>| -> StdResult<_> {
-            Ok(balance.unwrap_or_default().checked_sub(amount)?)
-        },
-    )?;
+    match endowment_id {
+        Some(id) => BALANCES.update(
+            deps.storage,
+            id,
+            |balance: Option<Uint128>| -> StdResult<_> {
+                Ok(balance.unwrap_or_default().checked_sub(amount)?)
+            },
+        )?,
+        None => APTAX.update(deps.storage, |balance: Uint128| -> StdResult<_> {
+            Ok(balance.checked_sub(amount)?)
+        })?,
+    };
     // reduce total_supply
     TOKEN_INFO.update(deps.storage, |mut info| -> StdResult<_> {
         info.total_supply = info.total_supply.checked_sub(amount)?;
