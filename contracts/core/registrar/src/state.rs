@@ -1,6 +1,5 @@
 use angel_core::structs::{
-    AcceptedTokens, AccountType, EndowmentEntry, EndowmentType, NetworkInfo, SplitDetails,
-    YieldVault,
+    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, SplitDetails, YieldVault,
 };
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
@@ -9,8 +8,6 @@ use serde::{Deserialize, Serialize};
 
 const MAX_LIMIT: u64 = 30;
 const DEFAULT_LIMIT: u64 = 10;
-
-pub const CONFIG: Item<Config> = Item::new("config");
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -31,19 +28,9 @@ pub struct Config {
     pub accepted_tokens: AcceptedTokens, // list of approved native and CW20 coins can accept inward
 }
 
-pub const REGISTRY: Map<u32, EndowmentEntry> = Map::new("registry");
+pub const CONFIG: Item<Config> = Item::new("config");
 pub const VAULTS: Map<&[u8], YieldVault> = Map::new("vault");
 pub const NETWORK_CONNECTIONS: Map<&str, NetworkInfo> = Map::new("network_connections");
-
-pub fn read_registry_entries(storage: &dyn Storage) -> StdResult<Vec<EndowmentEntry>> {
-    REGISTRY
-        .range(storage, None, None, Order::Ascending)
-        .map(|item| {
-            let (_, v) = item?;
-            Ok(v)
-        })
-        .collect()
-}
 
 pub fn read_vaults(
     storage: &dyn Storage,
@@ -57,25 +44,21 @@ pub fn read_vaults(
     let start = start_after.map(|s| Bound::ExclusiveRaw(s.as_bytes().to_vec()));
     VAULTS
         .range(storage, start, None, Order::Ascending)
-        .take(limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize)
+        .take(limit.unwrap_or(DEFAULT_LIMIT).max(MAX_LIMIT) as usize)
         .map(|item| {
             let (_, v) = item?;
             Ok(v)
         })
         .filter(|vault| match vault {
-            Ok(v) => match (approved, v.approved) {
-                (None, _) => true,
-                (Some(true), true) | (Some(false), false) => true,
-                _ => false,
-            },
+            Ok(v) => matches!(
+                (approved, v.approved),
+                (None, _) | (Some(true), true) | (Some(false), false)
+            ),
             &Err(_) => false,
         })
         .filter(|vault| match vault {
             Ok(v) => match &endowment_type {
-                Some(et) => match v.restricted_from.iter().position(|t| &t == &et) {
-                    Some(_) => false,
-                    None => true,
-                },
+                Some(et) => !v.restricted_from.iter().any(|t| t == et),
                 None => true,
             },
             &Err(_) => false,

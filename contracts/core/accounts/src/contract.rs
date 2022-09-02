@@ -30,7 +30,8 @@ pub fn instantiate(
         &Config {
             owner: deps.api.addr_validate(&msg.owner_sc)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-            next_account_id: 1 as u32,
+            next_account_id: 1_u32,
+            max_general_category_id: 1_u8,
         },
     )?;
 
@@ -66,7 +67,7 @@ pub fn execute(
             id,
             final_asset,
             acct_type,
-        } => executers::swap_receipt(deps, env, id, info.sender, final_asset, acct_type),
+        } => executers::swap_receipt(deps, id, info.sender, final_asset, acct_type),
         ExecuteMsg::VaultReceipt { id, acct_type } => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
@@ -75,7 +76,7 @@ pub fn execute(
                 info: AssetInfoBase::Native(info.funds[0].denom.to_string()),
                 amount: info.funds[0].amount,
             };
-            executers::vault_receipt(deps, id, acct_type, info.sender, native_fund)
+            executers::vault_receipt(deps, env, id, acct_type, info.sender, native_fund)
         }
         ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
         ExecuteMsg::UpdateEndowmentSettings(msg) => {
@@ -108,9 +109,10 @@ pub fn execute(
             acct_type,
             vaults,
         } => executers::vaults_redeem(deps, env, info, id, acct_type, vaults),
-        ExecuteMsg::UpdateRegistrar { new_registrar } => {
-            executers::update_registrar(deps, env, info, new_registrar)
-        }
+        ExecuteMsg::UpdateConfig {
+            new_registrar,
+            max_general_category_id,
+        } => executers::update_config(deps, env, info, new_registrar, max_general_category_id),
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
         }
@@ -145,6 +147,7 @@ pub fn receive_cw20(
     match from_binary(&cw20_msg.msg) {
         Ok(ReceiveMsg::VaultReceipt { id, acct_type }) => executers::vault_receipt(
             deps,
+            env,
             id,
             acct_type,
             api.addr_validate(&cw20_msg.sender)?,
@@ -153,7 +156,7 @@ pub fn receive_cw20(
         Ok(ReceiveMsg::Deposit(msg)) => executers::deposit(
             deps,
             env,
-            info.clone(),
+            info,
             api.addr_validate(&cw20_msg.sender)?,
             msg,
             cw20_fund,
@@ -179,6 +182,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
         QueryMsg::Balance { id } => to_binary(&queriers::query_account_balance(deps, id)?),
         QueryMsg::State { id } => to_binary(&queriers::query_state(deps, id)?),
+        QueryMsg::EndowmentList {
+            name,
+            owner,
+            status,
+            tier,
+            endow_type,
+        } => to_binary(&queriers::query_endowment_list(
+            deps, name, owner, status, tier, endow_type,
+        )?),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),
         QueryMsg::GetProfile { id } => to_binary(&queriers::query_profile(deps, id)?),
         QueryMsg::TokenAmount {

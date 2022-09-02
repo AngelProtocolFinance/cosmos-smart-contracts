@@ -1,9 +1,9 @@
-use crate::structs::{AccountType, Beneficiary, FundingSource, Profile, SwapOperation};
+use crate::structs::{AccountType, Beneficiary, Categories, FundingSource, Profile, SwapOperation};
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo};
-use cw_utils::{Duration, Threshold};
+use cw_utils::Threshold;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -87,9 +87,10 @@ pub enum ExecuteMsg {
     UpdateOwner {
         new_owner: String,
     },
-    // Allows the SC owner (only!) to change ownership
-    UpdateRegistrar {
+    // Allows the SC owner (only!) to change ownership & upper limit of general categories ID allowed
+    UpdateConfig {
         new_registrar: String,
+        max_general_category_id: u8,
     },
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
@@ -115,7 +116,14 @@ pub struct CreateEndowmentMsg {
     pub cw4_members: Vec<Member>,
     pub kyc_donors_only: bool,
     pub cw3_threshold: Threshold,
-    pub cw3_max_voting_period: Duration,
+    pub cw3_max_voting_period: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateEndowmentStatusMsg {
+    pub endowment_id: u32,
+    pub status: u8,
+    pub beneficiary: Option<Beneficiary>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -129,13 +137,6 @@ pub struct UpdateEndowmentSettingsMsg {
     pub id: u32,
     pub owner: String,
     pub kyc_donors_only: bool,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowmentStatusMsg {
-    pub id: u32,
-    pub deposit_approved: bool,
-    pub withdraw_approved: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -172,7 +173,7 @@ pub struct UpdateProfileMsg {
     pub id: u32,
     pub name: Option<String>,
     pub overview: Option<String>,
-    pub un_sdg: Option<u8>,
+    pub categories: Option<Categories>,
     pub tier: Option<u8>,
     pub logo: Option<String>,
     pub image: Option<String>,
@@ -207,6 +208,14 @@ pub enum QueryMsg {
     // Get all Endowment details
     Endowment {
         id: u32,
+    },
+    // Gets list of all registered Endowments
+    EndowmentList {
+        status: Option<String>,
+        name: Option<Option<String>>,
+        owner: Option<String>,
+        tier: Option<Option<String>>,
+        endow_type: Option<String>,
     },
     // Get the profile info
     GetProfile {

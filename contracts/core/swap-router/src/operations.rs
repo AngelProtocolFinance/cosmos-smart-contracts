@@ -167,7 +167,7 @@ pub fn execute_swap_operation(
             )?;
 
             offer_asset = Asset {
-                info: offer_asset_info.clone(),
+                info: offer_asset_info,
                 amount,
             };
 

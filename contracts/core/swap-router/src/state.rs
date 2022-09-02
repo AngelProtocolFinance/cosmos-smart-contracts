@@ -17,7 +17,7 @@ pub const PAIRS: Map<&[u8], Pair> = Map::new("pairs");
 
 pub fn pair_key(asset_infos: &[AssetInfo; 2]) -> Vec<u8> {
     let mut asset_infos = asset_infos.to_vec();
-    asset_infos.sort_by(|a, b| to_binary(a).unwrap().cmp(&to_binary(b).unwrap()));
+    asset_infos.sort_by_key(|a| to_binary(a).unwrap());
     to_binary(&asset_infos).unwrap().to_vec()
 }
 

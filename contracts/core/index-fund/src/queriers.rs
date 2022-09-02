@@ -84,7 +84,7 @@ pub fn involved_funds(deps: Deps, endowment_id: u32) -> StdResult<FundListRespon
     let all_funds = read_funds(deps.storage, None, None)?;
     for fund in all_funds.iter() {
         let pos = fund.members.iter().position(|m| *m == endowment_id);
-        if pos != None {
+        if pos.is_some() {
             involved_funds.push(fund.clone());
         }
     }
