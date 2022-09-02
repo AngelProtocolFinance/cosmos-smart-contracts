@@ -951,12 +951,12 @@ pub fn stake_lp_token(
                     lp_stake_amount = lp_amount;
                 }
                 AccountType::Locked => {
-                    // Send 75% LP token to the sibling(liquid) vault
+                    // Send the portion of LP tokens to the sibling(liquid) vault
                     let lp_tax_amount =
                         lp_amount.multiply_ratio(tax_rate.numerator(), tax_rate.denominator());
                     let lp_less_tax = lp_amount - lp_tax_amount;
-                    // FIXME: Replace the hardcoded ratio with config reference
-                    let send_liquid_ratio = Decimal::from_ratio(75_u128, 100_u128);
+
+                    let send_liquid_ratio = registrar_config.rebalance.interest_distribution;
                     let send_liquid_lp_amount = lp_less_tax.multiply_ratio(
                         send_liquid_ratio.numerator(),
                         send_liquid_ratio.denominator(),

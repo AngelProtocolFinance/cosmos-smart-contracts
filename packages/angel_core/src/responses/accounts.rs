@@ -1,6 +1,6 @@
 use crate::structs::{
     AccountStrategies, Beneficiary, Categories, DonationsReceived, EndowmentEntry, EndowmentStatus,
-    EndowmentType, RebalanceDetails, SocialMedialUrls, TransactionRecord,
+    EndowmentType, SocialMedialUrls, TransactionRecord,
 };
 
 use cosmwasm_std::Addr;
