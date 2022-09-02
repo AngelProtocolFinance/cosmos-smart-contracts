@@ -2,7 +2,7 @@ use angel_core::structs::{
     AccountStrategies, BalanceInfo, Beneficiary, DonationsReceived, EndowmentStatus, OneOffVaults,
     Profile, RebalanceDetails,
 };
-use cosmwasm_std::{Addr, Env, Order, StdResult, Storage, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Env, Order, StdResult, Storage, Timestamp};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
