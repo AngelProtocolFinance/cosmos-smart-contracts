@@ -243,7 +243,7 @@ export async function startSetupCore(): Promise<void> {
   // Setup contracts
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   await setupCore(
-    juno,     
+    juno,
     // wallets
     {
       apTeam,
@@ -268,12 +268,14 @@ export async function startSetupCore(): Promise<void> {
       fund_member_limit: 10,
       charity_cw3_threshold_abs_perc: "0.5", // threshold absolute percentage for "charity-cw3"
       charity_cw3_max_voting_period: 60,      // max_voting_period time(unit: seconds) for "charity-cw3"
-      accepted_tokens:  {
+      accepted_tokens: {
         native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
         cw20: [],
       },
+      loopswap_factory: loopswapFactory, // LoopSwap Factory contract
+      loopswap_farming: loopswapFarming, // LoopSwap Farming contract
       loopswap_loop_juno_pair: loopswapLoopJunoPairContract, // LoopSwap LOOP-JUNO pair contract
-      loopswap_loop_juno_pair_lp: loopswapLoopJunoPairLpToken, // Loopswap LOOP-JUNO pair LP token contract
+      loopswap_lp_reward_token: loopswapLoopTokenContract, // LoopSwap Pair LP Staking reward token (LOOP token)
     }
   );
 }
