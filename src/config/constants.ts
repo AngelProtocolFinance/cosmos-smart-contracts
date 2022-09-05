@@ -48,6 +48,30 @@ export const testnet = {
     native_liquidity: "1000000", // reduced to 1 JUNO due to faucet limitations
   },
 
+
+  // Loopswap contracts
+  loopswap: {
+    loopswap_token_code: 0,
+    loopswap_pair_code: 0,
+
+    loopswap_factory: "",
+    loopswap_farming: "",
+
+    loop_token_contract: "",
+    loop_juno_pair_contract: "",
+    loop_juno_pair_lp_token: "",
+    initial_loop_supply: "1000000000000000",
+    loop_liquidity: "200000000",
+    juno_liquidity: "100000000",
+    
+    halo_token_contract: "",
+    halo_juno_pair_contract: "",
+    halo_juno_pair_lp_token: "",
+    initial_halo_supply: "1000000000000000",
+    halo_liquidity: "200000000",
+    native_liquidity: "100000000",
+  },
+
   // HALO contracts
   halo: {
     airdrop_contract: "",

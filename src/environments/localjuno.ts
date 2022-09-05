@@ -13,7 +13,7 @@ import { migrateCore } from "../processes/migrate/core";
 // import { migrateHalo } from "../processes/migrate/halo";
 
 import { setupCore } from "../processes/setup/core/testnet";
-import { setupJunoSwap } from "../processes/setup/junoswap/localjuno";
+import { setupLoopSwap } from "../processes/setup/loopswap/localjuno";
 // import { setupHalo } from "../processes/setup/halo";
 
 import { testExecute } from "../processes/tests/testnet";
@@ -58,15 +58,25 @@ let endowId4: number;
 let vault1: string;
 let vault2: string;
 
-// JunoSwap Contracts
-let junoswapTokenCode: number;
-let junoswapHaloTokenContract: string;
-let junoswapHaloJunoPairContract: string;
-let junoswapHaloJunoPairLpToken: string;
-let junoswapHaloJunoPairLpStakingContract: string;
-let junoswapInitialHaloSupply: string;
-let junoswapHaloLiquidity: string;
-let junoswapNativeLiquidity: string;
+// LoopSwap Contracts
+let loopswapTokenCode: number;
+let loopswapPairCode: number;
+let loopswapFactory: string;
+let loopswapFarming: string;
+
+let loopswapLoopTokenContract: string;
+let loopswapLoopJunoPairContract: string;
+let loopswapLoopJunoPairLpToken: string;
+let loopswapInitialLoopSupply: string;
+let loopswapLoopLiquidity: string;
+let loopswapJunoLiquidity: string;
+
+let loopswapHaloTokenContract: string;
+let loopswapHaloJunoPairContract: string;
+let loopswapHaloJunoPairLpToken: string;
+let loopswapInitialHaloSupply: string;
+let loopswapHaloLiquidity: string;
+let loopswapNativeLiquidity: string;
 
 // Angel/HALO contracts
 let haloAirdrop: string;
@@ -143,24 +153,59 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(vault1)} as Vault1`);
   console.log(`Using ${chalk.cyan(vault2)} as Vault2`);
 
-  junoswapTokenCode = config.junoswap.junoswap_token_code;
-  junoswapHaloTokenContract = config.junoswap.halo_token_contract;
-  junoswapHaloJunoPairContract = config.junoswap.halo_juno_pool_contract;
-  junoswapHaloJunoPairLpToken = config.junoswap.halo_juno_pool_lp_token;
-  junoswapHaloJunoPairLpStakingContract = config.junoswap.halo_juno_pool_lp_staking_addr;
-  junoswapInitialHaloSupply = config.junoswap.initial_halo_supply;
-  junoswapHaloLiquidity = config.junoswap.halo_liquidity;
-  junoswapNativeLiquidity = config.junoswap.native_liquidity;
+  loopswapTokenCode = config.loopswap.loopswap_token_code;
+  loopswapPairCode = config.loopswap.loopswap_pair_code;
+  loopswapFactory = config.loopswap.loopswap_factory;
+  loopswapFarming = config.loopswap.loopswap_farming;
 
-  console.log(`Using ${chalk.cyan(junoswapHaloTokenContract)} as JunoSwap HALO Token`);
+  loopswapLoopTokenContract = config.loopswap.loop_token_contract;
+  loopswapLoopJunoPairContract = config.loopswap.loop_juno_pair_contract;
+  loopswapLoopJunoPairLpToken = config.loopswap.loop_juno_pair_lp_token;
+  loopswapInitialLoopSupply = config.loopswap.initial_loop_supply;
+  loopswapLoopLiquidity = config.loopswap.loop_liquidity;
+  loopswapJunoLiquidity = config.loopswap.juno_liquidity;
+
+
+  loopswapHaloTokenContract = config.loopswap.halo_token_contract;
+  loopswapHaloJunoPairContract = config.loopswap.halo_juno_pair_contract;
+  loopswapHaloJunoPairLpToken = config.loopswap.halo_juno_pair_lp_token;
+  loopswapInitialHaloSupply = config.loopswap.initial_halo_supply;
+  loopswapHaloLiquidity = config.loopswap.halo_liquidity;
+  loopswapNativeLiquidity = config.loopswap.native_liquidity;
+
+  console.log(`Using ${chalk.cyan(loopswapTokenCode)} as loopSwap (cw20) Token Code`);
+  console.log(`Using ${chalk.cyan(loopswapPairCode)} as loopSwap Pair Code`);
+  console.log(`Using ${chalk.cyan(loopswapFactory)} as loopSwap Factory contract`);
+  console.log(`Using ${chalk.cyan(loopswapFarming)} as loopSwap Farming contract`);
+
+  console.log(`Using ${chalk.cyan(loopswapHaloTokenContract)} as loopSwap LOOP Token`);
   console.log(
-    `Using ${chalk.cyan(junoswapHaloJunoPairContract)} as JunoSwap HALO/JUNO Swap Pool(Pair)`
+    `Using ${chalk.cyan(loopswapLoopJunoPairContract)} as loopSwap LOOP/JUNO Swap Pair`
   );
   console.log(
-    `Using ${chalk.cyan(junoswapHaloJunoPairLpToken)} as JunoSwap HALO/JUNO Swap Pool LP Token`
+    `Using ${chalk.cyan(loopswapLoopJunoPairLpToken)} as loopSwap LOOP/JUNO Swap Pair LP Token`
+  );
+  console.log(`Using ${chalk.cyan(loopswapInitialLoopSupply)} as loopSwap Loop Initial Supply`);
+  console.log(
+    `Using ${chalk.cyan(loopswapLoopLiquidity)} as loopSwap LOOP/JUNO Pair LOOP liquidity`
   );
   console.log(
-    `Using ${chalk.cyan(junoswapHaloJunoPairLpStakingContract)} as JunoSwap HALO/JUNO Swap Pool LP Token Staking contract`
+    `Using ${chalk.cyan(loopswapJunoLiquidity)} as loopSwap LOOP/JUNO Pair JUNO liquidity`
+  );
+
+  console.log(`Using ${chalk.cyan(loopswapHaloTokenContract)} as loopSwap HALO Token`);
+  console.log(
+    `Using ${chalk.cyan(loopswapHaloJunoPairContract)} as loopSwap HALO/JUNO Swap Pair`
+  );
+  console.log(
+    `Using ${chalk.cyan(loopswapHaloJunoPairLpToken)} as loopSwap HALO/JUNO Swap Pair LP Token`
+  );
+  console.log(`Using ${chalk.cyan(loopswapInitialHaloSupply)} as loopSwap HALO Initial Supply`);
+  console.log(
+    `Using ${chalk.cyan(loopswapHaloLiquidity)} as loopSwap HALO/JUNO Pair HALO liquidity`
+  );
+  console.log(
+    `Using ${chalk.cyan(loopswapNativeLiquidity)} as loopSwap HALO/JUNO Pair JUNO liquidity`
   );
 
   haloAirdrop = config.halo.airdrop_contract;
@@ -227,35 +272,39 @@ export async function startSetupCore(): Promise<void> {
         native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
         cw20: [],
       },
-      junoswap_pool_addr: junoswapHaloJunoPairContract, // Junoswap pool (HALO-JUNO) contract
-      junoswap_pool_staking: junoswapHaloJunoPairLpStakingContract, // Junoswap pool (HALO-JUNO) LP token staking contract
+      loopswap_loop_juno_pair: loopswapLoopJunoPairContract, // LoopSwap LOOP-JUNO pair contract
+      loopswap_loop_juno_pair_lp: loopswapLoopJunoPairLpToken, // Loopswap LOOP-JUNO pair LP token contract
     }
   );
 }
 
 // -------------------------------------------------------------------------------------
-// setup JunoSwap contracts
+// setup LoopSwap contracts
 // -------------------------------------------------------------------------------------
-export async function startSetupJunoSwap(): Promise<void> {
+export async function startSetupLoopSwap(): Promise<void> {
   console.log(chalk.blue("\nLocalJuno"));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
   await initialize();
 
-  // Setup JunoSwap contracts
-  console.log(chalk.yellow("\nStep 2a. JunoSwap Contracts"));
+  // Setup LoopSwap contracts
+  console.log(chalk.yellow("\nStep 2a. LoopSwap Contracts"));
   const apTeamAccount = await getWalletAddress(apTeam);
   const apTeam2Account = await getWalletAddress(apTeam2);
   const apTeam3Account = await getWalletAddress(apTeam3);
-  await setupJunoSwap(
+  await setupLoopSwap(
     juno,
     apTeamAccount,
     apTeam2Account,
     apTeam3Account,
-    junoswapInitialHaloSupply,
-    junoswapHaloLiquidity,
-    junoswapNativeLiquidity
+    loopswapInitialLoopSupply,
+    loopswapLoopLiquidity,
+    loopswapJunoLiquidity,
+
+    loopswapInitialHaloSupply,
+    loopswapHaloLiquidity,
+    loopswapNativeLiquidity,
   );
 }
 
@@ -389,9 +438,9 @@ export async function startTests(): Promise<void> {
     cw3ApTeam,
     cw4GrpReviewTeam,
     cw3ReviewTeam,
-    junoswapFactory,
-    junoswapHaloTokenContract,
-    junoswapHaloJunoPairContract,
+    loopswapFactory,
+    loopswapLoopTokenContract,
+    loopswapLoopJunoPairContract,
     haloAirdrop,
     haloCollector,
     haloCommunity,

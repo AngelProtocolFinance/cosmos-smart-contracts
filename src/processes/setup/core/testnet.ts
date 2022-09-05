@@ -68,8 +68,8 @@ export async function setupCore(
     charity_cw3_threshold_abs_perc: string,
     charity_cw3_max_voting_period: number,
     accepted_tokens: any | undefined;
-    junoswap_pool_addr: string,
-    junoswap_pool_staking: string,
+    loopswap_loop_juno_pair: string,
+    loopswap_loop_juno_pair_lp: string,
   }
 ): Promise<void> {
   juno = _juno;
@@ -566,7 +566,6 @@ async function createJunoVaults(
     moneymarket: registrar, // placeholder addr for now
     input_denom: "ujunox", // testnet placeholder
     yield_token: registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - #1",
     symbol: "apANC1",
     decimals: 6,
@@ -585,7 +584,6 @@ async function createJunoVaults(
     moneymarket: registrar, // placeholder addr for now
     input_denom: "ujunox", // testnet placeholder
     yield_token: registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - #2",
     symbol: "apANC2",
     decimals: 6,

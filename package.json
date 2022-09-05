@@ -3,7 +3,7 @@
     "test": "ts-node ./src/index.ts",
     "test:localjuno-tests": "npm run test --mode=localjuno_tests",
     "test:localjuno-setup-core": "npm run test --mode=localjuno_setup_core",
-    "test:localjuno-setup-junoswap": "npm run test --mode=localjuno_setup_junoswap",
+    "test:localjuno-setup-loopswap": "npm run test --mode=localjuno_setup_loopswap",
     "test:localjuno-setup-halo": "npm run test --mode=localjuno_setup_halo",
     "test:localjuno-migrate-core": "npm run test --mode=localjuno_migrate_core",
     "test:localjuno-migrate-halo": "npm run test --mode=localjuno_migrate_halo",
