@@ -15,4 +15,6 @@ pub struct ConfigResponse {
     pub lp_staking_contract: String,
     pub lp_token_contract: String,
     pub lp_reward_token: String,
+    pub total_lp_amount: String,
+    pub total_shares: String,
 }

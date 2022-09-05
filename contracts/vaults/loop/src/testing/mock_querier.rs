@@ -35,6 +35,9 @@ pub enum QueryMsg {
     },
     Config {},
     Pair {},
+    QueryFlpTokenFromPoolAddress {
+        pool_address: String,
+    },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -219,6 +222,10 @@ impl WasmMockQuerier {
                     })
                     .unwrap(),
                 )),
+                // Simulating the `loopswap::farming::QueryFlpTokenFromPoolAddress { pool_address: String }` query
+                QueryMsg::QueryFlpTokenFromPoolAddress { pool_address: _ } => SystemResult::Ok(
+                    ContractResult::Ok(to_binary(&"flp-token-contract").unwrap()),
+                ),
             },
             QueryRequest::Wasm(WasmQuery::Raw { contract_addr, key }) => {
                 let key: &[u8] = key.as_slice();

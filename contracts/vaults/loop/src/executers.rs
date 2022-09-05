@@ -369,7 +369,7 @@ pub fn redeem(
             msg: format!(
                 "Cannot burn the {} vault tokens from {}",
                 burn_shares_amount,
-                endowment_id.to_string()
+                id.map_or_else(|| beneficiary.to_string(), |v| format!("Endowment {}", v))
             ),
         })
     })?;

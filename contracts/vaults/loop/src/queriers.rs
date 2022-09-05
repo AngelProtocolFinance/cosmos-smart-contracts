@@ -33,6 +33,8 @@ pub fn query_config(deps: Deps) -> ConfigResponse {
         lp_staking_contract: config.lp_staking_contract.to_string(),
         lp_token_contract: config.lp_token_contract.to_string(),
         lp_reward_token: config.lp_reward_token.to_string(),
+        total_lp_amount: config.total_lp_amount.to_string(),
+        total_shares: config.total_shares.to_string(),
     }
 }
 

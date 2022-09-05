@@ -1,4 +1,4 @@
-use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
+use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, StdError, Uint128,
 };
@@ -7,14 +7,18 @@ use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, QueryMsg, UpdateConfigMsg};
 use angel_core::responses::vault::ConfigResponse;
 use angel_core::structs::AccountType;
+use cw20::{BalanceResponse, TokenInfoResponse};
 
 use crate::contract::{execute, instantiate, query};
 use crate::testing::mock_querier::{mock_dependencies, WasmMockQuerier};
 
-fn create_mock_vault(coins: Vec<Coin>) -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
+fn create_mock_vault(
+    acct_type: AccountType,
+    coins: Vec<Coin>,
+) -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
     let mut deps = mock_dependencies(&coins);
     let instantiate_msg = InstantiateMsg {
-        acct_type: AccountType::Locked,
+        acct_type,
         sibling_vault: Some("sibling-vault".to_string()),
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
@@ -68,7 +72,7 @@ fn proper_instantiation() {
 #[test]
 fn test_update_owner() {
     // Instantiate the "vault" contract
-    let mut deps = create_mock_vault(vec![]);
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
 
     // Try to update the "owner"
     // Fail to update "owner" since non-owner calls the entry
@@ -110,7 +114,7 @@ fn test_update_owner() {
 #[test]
 fn test_update_registrar() {
     // Instantiate the "vault" contract
-    let mut deps = create_mock_vault(vec![]);
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
 
     // Try to update the "registrar" contract address
     // Fail to update the "registrar" since non-"registrar" address calls the entry
@@ -147,7 +151,7 @@ fn test_update_registrar() {
 #[test]
 fn test_update_config() {
     // Instantiate the "vault" contract
-    let mut deps = create_mock_vault(vec![]);
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
 
     // Try to update the "config"
     let update_config_msg = UpdateConfigMsg {
@@ -194,7 +198,7 @@ fn test_update_config() {
 #[test]
 fn test_deposit_native_token() {
     // Instantiate the vault contract
-    let mut deps = create_mock_vault(vec![]);
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
 
     // Try to deposit the `native` token
 
@@ -224,7 +228,7 @@ fn test_deposit_native_token() {
 #[test]
 fn test_deposit_cw20_token() {
     // Instantiate the vault contract
-    let mut deps = create_mock_vault(vec![]);
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
 
     // Try to deposit the "HALO"(cw20) token
 
@@ -288,7 +292,7 @@ fn test_redeem() {
     let redeem_amount = Uint128::from(30_u128);
 
     // Instantiate the vault contract
-    let mut deps = create_mock_vault(vec![]);
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
 
     // First, fail to "redeem" since the `endowment` is not valid
     let info = mock_info("accounts-contract", &[]);
@@ -320,7 +324,7 @@ fn test_redeem() {
         err,
         ContractError::Std(StdError::GenericErr {
             msg: format!(
-                "Cannot burn the {} vault tokens from {}",
+                "Cannot burn the {} vault tokens from Endowment {}",
                 redeem_amount, endowment_id
             )
         })
@@ -329,7 +333,7 @@ fn test_redeem() {
 
 #[test]
 fn test_harvest() {
-    let mut deps = create_mock_vault(vec![]);
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
 
     // Only "config.keeper" address can call the "harvest" entry
     let info = mock_info("non-keeper", &[]);
@@ -340,4 +344,257 @@ fn test_harvest() {
     let info = mock_info("keeper", &[]);
     let res = execute(deps.as_mut(), mock_env(), info, ExecuteMsg::Harvest {}).unwrap();
     assert_eq!(res.messages.len(), 2);
+}
+
+#[test]
+fn test_stake_lp_token() {
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
+
+    // Fail to stake since zero LP amount to stake
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Stake {
+            endowment_id: Some(1_u32),
+            lp_token_bal_before: Uint128::from(100_u128),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidZeroAmount {});
+
+    // Only the contract itself can call "StakeLpToken" entry
+    let info = mock_info("anyone", &[]);
+
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Stake {
+            endowment_id: Some(1_u32),
+            lp_token_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Succeed to "stake" the LP tokens
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Stake {
+            endowment_id: Some(1_u32),
+            lp_token_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap();
+
+    assert_eq!(res.messages.len(), 1);
+
+    // Check if only 1 VT(vault token) is minted for Endowment 1.
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config_resp: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config_resp.total_lp_amount, "100");
+    assert_eq!(config_resp.total_shares, "1000000");
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Balance { endowment_id: 1 },
+    )
+    .unwrap();
+    let bal_resp: BalanceResponse = from_binary(&res).unwrap();
+    assert_eq!(bal_resp.balance, Uint128::from(1000000_u128));
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::TokenInfo {}).unwrap();
+    let token_info_resp: TokenInfoResponse = from_binary(&res).unwrap();
+    assert_eq!(token_info_resp.total_supply, Uint128::from(1000000_u128));
+
+    // Succeed to 'stake" lp token again
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Stake {
+            endowment_id: Some(1_u32),
+            lp_token_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap();
+
+    assert_eq!(res.messages.len(), 1);
+
+    // Check the VT(vault token) balance
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config_resp: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config_resp.total_lp_amount, (100 + 100).to_string());
+    let expected_total_share: u128 = 1000000 + 100 * 1000000 / 200;
+    assert_eq!(config_resp.total_shares, expected_total_share.to_string());
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Balance { endowment_id: 1 },
+    )
+    .unwrap();
+    let bal_resp: BalanceResponse = from_binary(&res).unwrap();
+    assert_eq!(bal_resp.balance, Uint128::from(expected_total_share));
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::TokenInfo {}).unwrap();
+    let token_info_resp: TokenInfoResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        token_info_resp.total_supply,
+        Uint128::from(expected_total_share)
+    );
+
+    // Mint the VT(vault token) to other endowment
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Stake {
+            endowment_id: Some(2_u32),
+            lp_token_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap();
+
+    assert_eq!(res.messages.len(), 1);
+
+    // Check the VT(vault token) balance
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config_resp: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config_resp.total_lp_amount, (200 + 100).to_string());
+    let minted_amount: u128 = 100 * 1500000 / 300;
+    let expected_total_share: u128 = 1500000 + minted_amount;
+    assert_eq!(config_resp.total_shares, expected_total_share.to_string());
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Balance { endowment_id: 2 },
+    )
+    .unwrap();
+    let bal_resp: BalanceResponse = from_binary(&res).unwrap();
+    assert_eq!(bal_resp.balance, Uint128::from(minted_amount));
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::TokenInfo {}).unwrap();
+    let token_info_resp: TokenInfoResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        token_info_resp.total_supply,
+        Uint128::from(expected_total_share)
+    );
+}
+
+#[test]
+fn test_redeem_lp_token() {
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
+
+    // Mint 1 VT for the Endowment 1.
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Stake {
+            endowment_id: Some(1_u32),
+            lp_token_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap();
+
+    // Fail to redeem since non-accounts contract calls the entry
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Redeem {
+            endowment_id: 1_u32,
+            amount: Uint128::from(1000_u128),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Fail to redeem since the VT amount for Endowment is insufficient
+    let info = mock_info("accounts-contract", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Redeem {
+            endowment_id: 2_u32,
+            amount: Uint128::from(1000_u128),
+        },
+    )
+    .unwrap_err();
+
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Succeed to redeem for Endowment 1.
+    let info = mock_info("accounts-contract", &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Redeem {
+            endowment_id: 1_u32,
+            amount: Uint128::from(100000_u128),
+        },
+    )
+    .unwrap();
+
+    assert_eq!(res.messages.len(), 3);
+
+    // Check the VT(vault token) balance
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config_resp: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        config_resp.total_lp_amount,
+        (100 - 100000 * 100 / 1000000).to_string()
+    );
+    assert_eq!(config_resp.total_shares, (1000000 - 100000).to_string());
+
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Balance { endowment_id: 1 },
+    )
+    .unwrap();
+    let bal_resp: BalanceResponse = from_binary(&res).unwrap();
+    assert_eq!(bal_resp.balance, Uint128::from(900000_u128));
+
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::TokenInfo {}).unwrap();
+    let token_info_resp: TokenInfoResponse = from_binary(&res).unwrap();
+    assert_eq!(token_info_resp.total_supply, Uint128::from(900000_u128));
+
+    // Check the case of "redeem" from config.tax_collector
+    let info = mock_info("tax-collector", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Redeem {
+            endowment_id: 100_u32,
+            amount: Uint128::from(100_u128),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::generic_err(
+            "Cannot burn the 100 vault tokens from tax-collector"
+        ))
+    );
 }
