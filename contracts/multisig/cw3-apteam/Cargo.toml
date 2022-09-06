@@ -1,5 +1,5 @@
 [package]
-name = "cw3-multisig"
+name = "cw3-apteam"
 version = "1.8.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
@@ -28,6 +28,7 @@ cw3 = "0.13.4"
 cw4 = "0.13.4"
 cw-utils = "0.13.4"
 cw-storage-plus = "0.13.4"
+cw-asset = "2.2.0"
 cosmwasm-std = "1.0.0"
 schemars = "0.8.1"
 serde = { version = "1.0.125", default-features = false, features = ["derive"] }

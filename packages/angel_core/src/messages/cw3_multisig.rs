@@ -1,18 +1,11 @@
 use crate::errors::multisig::ContractError;
 use cosmwasm_std::{CosmosMsg, Decimal, Empty};
-use cw3::{Status, Vote};
-use cw4::{Member, MemberChangedHookMsg};
+use cw3::Status;
+use cw4::Member;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct InstantiateMsg {
-    pub group_addr: String,
-    pub threshold: Threshold,
-    pub max_voting_period: Duration,
-}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct EndowmentInstantiateMsg {
@@ -21,40 +14,6 @@ pub struct EndowmentInstantiateMsg {
     pub cw4_code: u64,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
-}
-
-/// We currently take no arguments for migrations
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct MigrateMsg {}
-
-// TODO: add some T variants? Maybe good enough as fixed Empty for now
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum ExecuteMsg {
-    Propose {
-        title: String,
-        description: String,
-        msgs: Vec<CosmosMsg<Empty>>,
-        // note: we ignore API-spec'd earliest if passed, always opens immediately
-        latest: Option<Expiration>,
-        meta: Option<String>,
-    },
-    Vote {
-        proposal_id: u64,
-        vote: Vote,
-    },
-    Execute {
-        proposal_id: u64,
-    },
-    Close {
-        proposal_id: u64,
-    },
-    UpdateConfig {
-        threshold: Threshold,
-        max_voting_period: Duration,
-    },
-    /// Handles update hook messages from the group contract
-    MemberChangedHook(MemberChangedHookMsg),
 }
 
 // We can also add this as a cw3 extension
