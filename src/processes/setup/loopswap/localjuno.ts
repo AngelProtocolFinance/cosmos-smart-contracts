@@ -231,7 +231,7 @@ export async function setupLoopSwap(
   const result: any = await juno.queryContractSmart(haloJunoPairContract, {
     pair: {},
   });
-  const haloJunoPairLP = res.liquidity_token as string;
+  const haloJunoPairLP = result.liquidity_token as string;
   console.log(
     chalk.green(" Done!"),
     `${chalk.blue("contractAddress")}=${haloJunoPairLP}`
