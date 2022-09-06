@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------------------------------
 export const testnet = {
   networkInfo: {
-    url: "https://rpc.uni.juno.deuslabs.fi",
+    url: "https://rpc.uni.junomint.com:443/", // "https://rpc.uni.juno.deuslabs.fi",
     chainId: "uni-3",
   },
   mnemonicKeys: {
@@ -19,15 +19,15 @@ export const testnet = {
   },
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
-    registrar: "juno12z2ju6ez2tth6znk6dyqjqf834ala4nf88mr53csq7g0256nqqnqst6fcv",
-    accounts: "juno1swwdd0m9rxsdswlcwkdzxd9qcrs9vtgl2vgdvmtfjqasynq65xuq3jlrr6",
-    indexFund: "juno13h6n255rnlxg0uu88k5l3h944a3hcpf3cwclyq4q864hqez4v3ss0gg06s",
-    cw4GrpApTeam: "juno124a8f0jyn3y7e7q6sqeg5pppgmm9seq59ctk7fvd9tcqpa63a3asgqat5m",
-    cw3ApTeam: "juno1cld4sc94584c4s2g0t0t3p8wrz9q59z67y9p6c2yyarkppnwazmqzhk9wm",
-    cw4GrpReviewTeam: "juno1j5xs6z40z82fx2s9zzcksl93u49eummzawpp0hzj7sxl4ef4jg5qfxht78",
-    cw3ReviewTeam: "juno1zuh2ed22hyclcgaw70fve3l6q35m28drtckfs9hjrnt32z8jacaqtlq9q2",
-    vault1: "juno1krcjzyqxtws4myjvy03056l4d0v59s25y5h4p253ur8phue09agsejpa0e",
-    vault2: "juno16m026uh2s642pa8yapzrwwnlh9p26w0vp7p8k427q8jwgh4gy30qy3ne5v",
+    registrar: "juno1xdcdynleemkjmlwcz44wnl3px8h4ctueec8segt6dm58g4dzw5uq4ne3cz",
+    accounts: "juno1eudag2gs6q5fgf0gxga5dz468fuj3kwnd72vys8alnn4x62zefhsqxg330",
+    indexFund: "juno17qjnys68aemf9nzncyr7gt8yscquzxm792mc35nklwqyzk7qcvxqwt9l5m",
+    cw4GrpApTeam: "juno10vnq2rpvh7ztyuefzh6dre9pzdyvg7ve8ghev3ufgeyu227wt2fq5e07du",
+    cw3ApTeam: "juno1mcq9sg7y2ms589w7tj63u2ta3g57gnv554z26tdnnjnldklsju7qmxn6zt",
+    cw4GrpReviewTeam: "juno1mlm82v0yascqgsf3sngfvn67w6mqhjw3ysr6eeyndzden6ggsh3qlmne93",
+    cw3ReviewTeam: "juno1whhz5ywu6ff7ghhyt76v0dc586mk5ehncmmfxnf6u0hxu6uxfsdq8arm4p",
+    vault1: "juno1ppd785xpearupc0p46a9fr7rzhjqczwmtsv2nclgrtwdpug9wfys4zr6u5",
+    vault2: "juno1qtrv875q4829aq7dcz4x7awtmxugxq0eqkrysrmq0q3qnmspuywqu4g2ce",
     endowId1: 1,
     endowId2: 2,
     endowId3: 3,
@@ -46,6 +46,30 @@ export const testnet = {
     initial_halo_supply: "1000000000000000",
     halo_liquidity: "2000000",
     native_liquidity: "1000000", // reduced to 1 JUNO due to faucet limitations
+  },
+
+
+  // Loopswap contracts
+  loopswap: {
+    loopswap_token_code: 0,
+    loopswap_pair_code: 0,
+
+    loopswap_factory: "",
+    loopswap_farming: "",
+
+    loop_token_contract: "",
+    loop_juno_pair_contract: "",
+    loop_juno_pair_lp_token: "",
+    initial_loop_supply: "1000000000000000",
+    loop_liquidity: "200000000",
+    juno_liquidity: "100000000",
+    
+    halo_token_contract: "",
+    halo_juno_pair_contract: "",
+    halo_juno_pair_lp_token: "",
+    initial_halo_supply: "1000000000000000",
+    halo_liquidity: "200000000",
+    native_liquidity: "100000000",
   },
 
   // HALO contracts

@@ -68,8 +68,10 @@ export async function setupCore(
     charity_cw3_threshold_abs_perc: string,
     charity_cw3_max_voting_period: number,
     accepted_tokens: any | undefined;
-    junoswap_pool_addr: string,
-    junoswap_pool_staking: string,
+    loopswap_factory: string,
+    loopswap_farming: string,
+    loopswap_loop_juno_pair: string,
+    loopswap_lp_reward_token: string,
   }
 ): Promise<void> {
   juno = _juno;
@@ -94,13 +96,9 @@ export async function setupCore(
     config.fund_member_limit,
     config.funding_goal,
     config.accepted_tokens,
-    config.is_localjuno,
   );
-  // await createJunoVaults(config.junoswap_pool_addr, config.junoswap_pool_staking, config.harvest_to_liquid, apTeamAddr);
-  // if (!config.is_localjuno) {
-  //   await createVaults(config.harvest_to_liquid, config.tax_per_block);
-  // }
   await turnOverApTeamMultisig();
+  await createLoopVaults(config.loopswap_factory, config.loopswap_farming, config.loopswap_loop_juno_pair, config.loopswap_lp_reward_token, apTeamAddr, apTeamAddr, config.harvest_to_liquid);
   await createEndowments(
     config.charity_cw3_threshold_abs_perc,
     config.charity_cw3_max_voting_period,
@@ -118,7 +116,6 @@ async function setup(
   fund_member_limit: number | undefined,
   funding_goal: string | undefined,
   accepted_tokens: any | undefined,
-  is_localjuno: boolean
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each....
   process.stdout.write("Uploading Registrar Wasm");
@@ -137,9 +134,13 @@ async function setup(
   const cw4Group = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw4_group.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw4Group}`);
 
-  process.stdout.write("Uploading Standard CW3 MultiSig Wasm");
-  const cw3MultiSig = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_multisig.wasm`);
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSig}`);
+  process.stdout.write("Uploading AP Team CW3 MultiSig Wasm");
+  const cw3MultiSigApTeam = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_apteam.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigApTeam}`);
+
+  process.stdout.write("Uploading Generic CW3 MultiSig Wasm");
+  const cw3MultiSigGeneric = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_generic.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigGeneric}`);
 
   process.stdout.write("Uploading Endowment CW3 MultiSig Wasm");
   const cw3MultiSigEndowment = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_endowment.wasm`);
@@ -194,8 +195,9 @@ async function setup(
     juno,
     apTeamAddr,
     apTeamAddr,
-    cw3MultiSig,
+    cw3MultiSigApTeam,
     {
+      registrar_contract: registrar,
       group_addr: cw4GrpApTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
@@ -210,10 +212,10 @@ async function setup(
     "AddHook & UpdateAdmin on AP Team CW4 Group to point to AP Team C3"
   );
   await sendTransaction(juno, apTeamAddr, cw4GrpApTeam, {
-      add_hook: { addr: cw3ApTeam },
+    add_hook: { addr: cw3ApTeam },
   });
   await sendTransaction(juno, apTeamAddr, cw4GrpApTeam, {
-      update_admin: { admin: cw3ApTeam },
+    update_admin: { admin: cw3ApTeam },
   });
   console.log(chalk.green(" Done!"));
 
@@ -248,8 +250,9 @@ async function setup(
     juno,
     apTeamAddr,
     apTeamAddr,
-    cw3MultiSig,
+    cw3MultiSigGeneric,
     {
+      registrar_contract: registrar,
       group_addr: cw4GrpReviewTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
@@ -264,10 +267,10 @@ async function setup(
     "AddHook & UpdateAdmin on AP Review Team CW4 Group to point to AP Team C3"
   );
   await sendTransaction(juno, apTeamAddr, cw4GrpReviewTeam, {
-      add_hook: { addr: cw3ReviewTeam },
+    add_hook: { addr: cw3ReviewTeam },
   });
   await sendTransaction(juno, apTeamAddr, cw4GrpReviewTeam, {
-      update_admin: { admin: cw3ReviewTeam },
+    update_admin: { admin: cw3ReviewTeam },
   });
   console.log(chalk.green(" Done!"));
 
@@ -303,7 +306,7 @@ async function createEndowments(
       profile: {
         name: "Test Endowment #1",
         overview: "A wonderful charity endowment that aims to test all the things",
-        categories: { sdgs:[1], general: [] },
+        categories: { sdgs: [1], general: [] },
         tier: 3,
         logo: "logo1",
         image: "image1",
@@ -353,7 +356,7 @@ async function createEndowments(
       profile: {
         name: "Test Endowment #2",
         overview: "An even better endowment full of butterflies and rainbows",
-        categories: { sdgs:[3], general: [] },
+        categories: { sdgs: [3], general: [] },
         tier: 2,
         logo: "logo2",
         image: "image2",
@@ -403,7 +406,7 @@ async function createEndowments(
       profile: {
         name: "Test Endowment #3",
         overview: "Shady endowment that will never be approved",
-        categories: { sdgs:[2], general: [] },
+        categories: { sdgs: [2], general: [] },
         tier: 1,
         logo: "logo3",
         image: "image3",
@@ -452,7 +455,7 @@ async function createEndowments(
       profile: {
         name: "Vibin' Endowment #4",
         overview: "Global endowment that spreads good vibes",
-        categories: { sdgs:[1], general: [] },
+        categories: { sdgs: [1], general: [] },
         tier: 3,
         logo: "logo4",
         image: "image4",
@@ -523,130 +526,146 @@ async function createIndexFunds(): Promise<void> {
   // Create an initial "Fund" with the two charities created above
   process.stdout.write("Create two Funds with two endowments each");
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
-      create_fund: {
-        name: "Test Fund",
-        description: "My first test fund",
-        members: [endow_1_id, endow_2_id],
-        rotating_fund: true,
-        split_to_liquid: undefined,
-        expiry_time: undefined,
-        expiry_height: undefined,
-      }
-    });
-    await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
-      create_fund: {
-        name: "Test Fund #2",
-        description: "Another fund to test rotations",
-        members: [endow_1_id, endow_4_id],
-        rotating_fund: true,
-        split_to_liquid: undefined,
-        expiry_time: undefined,
-        expiry_height: undefined,
-      }
-   });
-   console.log(chalk.green(" Done!"));
-}
-
-async function createJunoVaults(
-  swap_pool_addr: string,
-  staking_addr: string,
-  harvest_to_liquid: string,
-  keeper: string,
-): Promise<void> {
-  process.stdout.write("Uploading Vault Wasm");
-  const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.junoswap}/mock_vault.wasm`);
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
-
-  // Anchor Vault - #1
-  process.stdout.write("Instantiating Vault (#1) contract");
-  const vaultResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
-    swap_pool_addr: swap_pool_addr,
-    staking_addr: staking_addr,
-    registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
-    input_denom: "ujunox", // testnet placeholder
-    yield_token: registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
-    name: "AP DP Token - #1",
-    symbol: "apANC1",
-    decimals: 6,
-    harvest_to_liquid: harvest_to_liquid,
-    keeper: keeper,
-  });
-  vault1 = vaultResult1.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault1}`);
-
-  // Vault - #2 (to better test multistrategy logic)
-  process.stdout.write("Instantiating Vault (#2) contract");
-  const vaultResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
-    swap_pool_addr: swap_pool_addr,
-    staking_addr: staking_addr,
-    registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
-    input_denom: "ujunox", // testnet placeholder
-    yield_token: registrar, // placeholder addr for now
-    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
-    name: "AP DP Token - #2",
-    symbol: "apANC2",
-    decimals: 6,
-    harvest_to_liquid: harvest_to_liquid,
-    keeper: keeper,
-  });
-  vault2 = vaultResult2.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault2}`);
-
-  // Step 3. AP team must add & approve the new vaults in registrar & make #1 the default vault
-  process.stdout.write("Add Vault #1 & #2 in Registrar");
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
-    vault_add: {
-      network: "juno-1",
-      vault_addr: vault1,
-      input_denom: "ujunox",
-      yield_token: registrar,
-      restricted_from: [],
+    create_fund: {
+      name: "Test Fund",
+      description: "My first test fund",
+      members: [endow_1_id, endow_2_id],
+      rotating_fund: true,
+      split_to_liquid: undefined,
+      expiry_time: undefined,
+      expiry_height: undefined,
     }
   });
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
-    vault_add: {
-      network: "juno-1",
-      vault_addr: vault2,
-      input_denom: "ujunox",
-      yield_token: registrar,
-      restricted_from: [],
-    }
-  });
-  process.stdout.write("Approve Vault #1 & #2 in Registrar");
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
-    vault_update: {
-      vault_addr: vault1,
-      approved: true,
-      restricted_from: [],
-    }
-  });
-  await sendTransaction(juno, apTeamAddr, registrar, {
-    vault_update: {
-      vault_addr: vault2,
-      approved: true,
-      restricted_from: [],
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
+    create_fund: {
+      name: "Test Fund #2",
+      description: "Another fund to test rotations",
+      members: [endow_1_id, endow_4_id],
+      rotating_fund: true,
+      split_to_liquid: undefined,
+      expiry_time: undefined,
+      expiry_height: undefined,
     }
   });
   console.log(chalk.green(" Done!"));
 }
 
+async function createLoopVaults(
+  loopFactory: string,
+  loopFarming: string,
+  loopPair: string,
+  loopStakingRewardToken: string,
+
+  keeper: string,
+  tax_collector: string,
+
+  harvest_to_liquid: string,
+): Promise<void> {
+  process.stdout.write("Uploading Vault Wasm");
+  const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/loop.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
+
+  // LOOP Vault - #1
+  process.stdout.write("Instantiating Vault #1 (Locked) contract");
+  const vaultResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
+    acct_type: `locked`, // Locked: 0, Liquid: 1
+    sibling_vault: undefined,
+    registrar_contract: registrar,
+    keeper: keeper,
+    tax_collector: tax_collector,
+
+    lp_factory_contract: loopFactory,
+    lp_staking_contract: loopFarming,
+    pair_contract: loopPair,
+    lp_reward_token: loopStakingRewardToken,
+
+    name: "Vault Token for LOOP-JUNO pair",
+    symbol: "VTLOOPJUNO",
+    decimals: 6,
+
+    harvest_to_liquid: harvest_to_liquid,
+  });
+  vault1 = vaultResult1.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault1}`);
+
+  // Vault - #2
+  process.stdout.write("Instantiating Vault #2 (Liquid) contract");
+  const vaultResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
+    acct_type: `liquid`, // Locked: 0, Liquid: 1
+    sibling_vault: vault1,
+    registrar_contract: registrar,
+    keeper: keeper,
+    tax_collector: tax_collector,
+
+    lp_factory_contract: loopFactory,
+    lp_staking_contract: loopFarming,
+    pair_contract: loopPair,
+    lp_reward_token: loopStakingRewardToken,
+
+    name: "Vault Token for LOOP-JUNO pair",
+    symbol: "VTLOOPJUNO",
+    decimals: 6,
+
+    harvest_to_liquid: harvest_to_liquid,
+  });
+  vault2 = vaultResult2.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault2}`);
+
+  // Update the "sibling_vault" config of "vault1"
+  await sendTransaction(juno, apTeamAddr, vault1, {
+    update_config: {
+      sibling_vault: vault2,
+      lp_staking_contract: undefined,
+      lp_pair_contract: undefined,
+      keeper: undefined,
+      tax_collector: undefined,
+    }
+  });
+
+  // Step 3. AP team must add & approve the new vaults in registrar & make #1 the default vault
+  process.stdout.write("Add Vault #1 & #2 in Registrar");
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
+    vault_add: {
+      network: "uni-3",
+      vault_addr: vault1,
+      input_denom: "ujuno",
+      yield_token: registrar,
+      restricted_from: [],
+      acct_type: `locked`,
+    }
+  });
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
+    vault_add: {
+      network: "uni-3",
+      vault_addr: vault2,
+      input_denom: "ujuno",
+      yield_token: registrar,
+      restricted_from: [],
+      acct_type: `liquid`,
+    }
+  });
+  console.log(chalk.green(" Done!"));
+}
 
 // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
 async function turnOverApTeamMultisig(): Promise<void> {
   process.stdout.write(
-    "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract"
+    "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract\n"
   );
   process.stdout.write(chalk.yellow("- Turning over Registrar"));
   await sendTransaction(juno, apTeamAddr, registrar, {
     update_owner: { new_owner: cw3ApTeam }
   });
   console.log(chalk.green(" Done!"));
-  
+
   process.stdout.write(chalk.yellow("- Turning over Index Fund"));
   await sendTransaction(juno, apTeamAddr, indexFund, {
+    update_owner: { new_owner: cw3ApTeam }
+  });
+  console.log(chalk.green(" Done!"));
+
+  process.stdout.write(chalk.yellow("- Turning over Accounts"));
+  await sendTransaction(juno, apTeamAddr, accounts, {
     update_owner: { new_owner: cw3ApTeam }
   });
   console.log(chalk.green(" Done!"));
