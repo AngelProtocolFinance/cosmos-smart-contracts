@@ -98,7 +98,7 @@ pub fn execute(
             acct_type,
             beneficiary,
             assets,
-        } => executers::withdraw(deps, info, id, acct_type, beneficiary, assets),
+        } => executers::withdraw(deps, env, info, id, acct_type, beneficiary, assets),
         ExecuteMsg::VaultsInvest {
             id,
             acct_type,

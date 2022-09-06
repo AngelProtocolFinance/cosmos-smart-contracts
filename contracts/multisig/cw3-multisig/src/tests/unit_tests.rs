@@ -1,4 +1,5 @@
-use angel_core::messages::cw3_multisig::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use crate::msg::ExecuteMsg;
+use angel_core::messages::cw3_multisig::{InstantiateMsg, QueryMsg};
 use cosmwasm_std::{coin, coins, Addr, BankMsg, Coin, Decimal, Timestamp};
 use cosmwasm_std::{BlockInfo, CosmosMsg, Empty};
 use cw2::{query_contract_info, ContractVersion};
@@ -72,6 +73,7 @@ fn instantiate_flex(
 ) -> Addr {
     let flex_id = app.store_code(contract_flex());
     let msg = InstantiateMsg {
+        registrar_contract: "registrar-contract".to_string(),
         group_addr: group_addr.to_string(),
         threshold,
         max_voting_period,
@@ -192,6 +194,7 @@ fn test_instantiate_works() {
 
     // Zero required weight fails
     let instantiate_msg = InstantiateMsg {
+        registrar_contract: "registrar-contract".to_string(),
         group_addr: group_address.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 0 },
         max_voting_period,
@@ -209,6 +212,7 @@ fn test_instantiate_works() {
 
     // Total weight less than required weight not allowed
     let instantiate_msg = InstantiateMsg {
+        registrar_contract: "registrar-contract".to_string(),
         group_addr: group_address.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 100 },
         max_voting_period,
@@ -226,6 +230,7 @@ fn test_instantiate_works() {
 
     // All valid
     let instantiate_msg = InstantiateMsg {
+        registrar_contract: "registrar-contract".to_string(),
         group_addr: group_address.to_string(),
         threshold: Threshold::AbsoluteCount { weight: 1 },
         max_voting_period,

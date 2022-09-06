@@ -1,9 +1,14 @@
+use crate::msg::{ExecuteMsg, MigrateMsg};
 use crate::state::{next_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS};
 use angel_core::errors::multisig::ContractError;
+use angel_core::messages::accounts::QueryMsg::Endowment as EndowmentDetails;
 use angel_core::messages::cw3_multisig::*;
+use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
+use angel_core::responses::accounts::EndowmentDetailsResponse;
+use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
-    Order, Response, StdError, StdResult,
+    Order, QueryRequest, Response, StdError, StdResult, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
@@ -37,6 +42,7 @@ pub fn instantiate(
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
     let cfg = Config {
+        registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         threshold: msg.threshold,
         max_voting_period: msg.max_voting_period,
         group_addr,
@@ -61,6 +67,22 @@ pub fn execute(
             latest,
             meta,
         } => execute_propose(deps, env, info, title, description, msgs, latest, meta),
+        ExecuteMsg::ProposeLockedWithdraw {
+            endowment_id,
+            description,
+            msgs,
+            latest,
+            meta,
+        } => execute_propose_locked_withdraw(
+            deps,
+            env,
+            info,
+            endowment_id,
+            description,
+            msgs,
+            latest,
+            meta,
+        ),
         ExecuteMsg::Vote { proposal_id, vote } => execute_vote(deps, env, info, proposal_id, vote),
         ExecuteMsg::UpdateConfig {
             threshold,
@@ -92,6 +114,69 @@ pub fn execute_update_config(
 
     CONFIG.save(deps.storage, &cfg)?;
     Ok(Response::default())
+}
+
+pub fn execute_propose_locked_withdraw(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    endowment_id: u32,
+    description: String,
+    msgs: Vec<CosmosMsg>,
+    latest: Option<Expiration>, // we ignore earliest
+    meta: Option<String>,
+) -> Result<Response<Empty>, ContractError> {
+    let cfg = CONFIG.load(deps.storage)?;
+
+    // Only the endowment owner CW3 multisig can create a locked withdraw proposal
+    // 1. Get the CW3 owner of an endowment (for passed ID)
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: cfg.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarConfig {})?,
+        }))?;
+    let endowment_config: EndowmentDetailsResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
+            msg: to_binary(&EndowmentDetails { id: endowment_id })?,
+        }))?;
+    // 2. check that the sender is the Endowment's CW3
+    if info.sender.ne(&endowment_config.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // max expires also used as default
+    let max_expires = cfg.max_voting_period.after(&env.block);
+    let mut expires = latest.unwrap_or(max_expires);
+    let comp = expires.partial_cmp(&max_expires);
+    if let Some(Ordering::Greater) = comp {
+        expires = max_expires;
+    } else if comp.is_none() {
+        return Err(ContractError::WrongExpiration {});
+    }
+
+    // create a proposal
+    let mut prop = Proposal {
+        title: format!("Locked Withdraw Request - Endowment #{}", endowment_id),
+        description: format!("Reason for request:\n{}", description),
+        start_height: env.block.height,
+        expires,
+        msgs,
+        status: Status::Open,
+        votes: Votes::new(0),
+        threshold: cfg.threshold,
+        total_weight: cfg.group_addr.total_weight(&deps.querier)?,
+        meta,
+    };
+    prop.update_status(&env.block);
+    let id = next_id(deps.storage)?;
+    PROPOSALS.save(deps.storage, id, &prop)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "propose")
+        .add_attribute("sender", info.sender)
+        .add_attribute("proposal_id", id.to_string())
+        .add_attribute("status", format!("{:?}", prop.status)))
 }
 
 pub fn execute_propose(

@@ -1,10 +1,11 @@
+use crate::msg::{ExecuteMsg, MigrateMsg};
 use crate::state::{
     next_id, Ballot, Config, Proposal, TempConfig, Votes, BALLOTS, CONFIG, PROPOSALS, TEMP_CONFIG,
 };
 use angel_core::errors::multisig::ContractError;
 use angel_core::messages::cw3_multisig::{
-    ConfigResponse, EndowmentInstantiateMsg as InstantiateMsg, ExecuteMsg,
-    MetaProposalListResponse, MetaProposalResponse, MigrateMsg, QueryMsg,
+    ConfigResponse, EndowmentInstantiateMsg as InstantiateMsg, MetaProposalListResponse,
+    MetaProposalResponse, QueryMsg,
 };
 use cosmwasm_std::{
     entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,

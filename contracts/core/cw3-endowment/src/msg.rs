@@ -21,14 +21,6 @@ pub enum ExecuteMsg {
         latest: Option<Expiration>,
         meta: Option<String>,
     },
-    ProposeLockedWithdraw {
-        endowment_id: u32,
-        description: String,
-        msgs: Vec<CosmosMsg<Empty>>,
-        // note: we ignore API-spec'd earliest if passed, always opens immediately
-        latest: Option<Expiration>,
-        meta: Option<String>,
-    },
     Vote {
         proposal_id: u64,
         vote: Vote,
