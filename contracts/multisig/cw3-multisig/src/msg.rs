@@ -1,6 +1,7 @@
 use cosmwasm_std::{CosmosMsg, Empty};
 use cw3::Vote;
 use cw4::MemberChangedHookMsg;
+use cw_asset::Asset;
 use cw_utils::{Duration, Expiration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -24,7 +25,8 @@ pub enum ExecuteMsg {
     ProposeLockedWithdraw {
         endowment_id: u32,
         description: String,
-        msgs: Vec<CosmosMsg<Empty>>,
+        beneficiary: String,
+        assets: Vec<Asset>,
         // note: we ignore API-spec'd earliest if passed, always opens immediately
         latest: Option<Expiration>,
         meta: Option<String>,

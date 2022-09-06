@@ -6,9 +6,10 @@ use angel_core::messages::cw3_multisig::*;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::structs::AccountType;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
-    Order, QueryRequest, Response, StdError, StdResult, WasmQuery,
+    Order, QueryRequest, Response, StdError, StdResult, WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
@@ -16,12 +17,13 @@ use cw3::{
     VoterResponse,
 };
 use cw4::{Cw4Contract, MemberChangedHookMsg, MemberDiff};
+use cw_asset::Asset;
 use cw_storage_plus::Bound;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
 use std::cmp::Ordering;
 
 // version info for migration info
-const CONTRACT_NAME: &str = "cw3-generic";
+const CONTRACT_NAME: &str = "cw3-apteam";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -70,7 +72,8 @@ pub fn execute(
         ExecuteMsg::ProposeLockedWithdraw {
             endowment_id,
             description,
-            msgs,
+            beneficiary,
+            assets,
             latest,
             meta,
         } => execute_propose_locked_withdraw(
@@ -79,7 +82,8 @@ pub fn execute(
             info,
             endowment_id,
             description,
-            msgs,
+            beneficiary,
+            assets,
             latest,
             meta,
         ),
@@ -122,7 +126,8 @@ pub fn execute_propose_locked_withdraw(
     info: MessageInfo,
     endowment_id: u32,
     description: String,
-    msgs: Vec<CosmosMsg>,
+    beneficiary: String,
+    assets: Vec<Asset>,
     latest: Option<Expiration>, // we ignore earliest
     meta: Option<String>,
 ) -> Result<Response<Empty>, ContractError> {
@@ -135,9 +140,10 @@ pub fn execute_propose_locked_withdraw(
             contract_addr: cfg.registrar_contract.to_string(),
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
+    let accounts_contract = registrar_config.accounts_contract.unwrap().to_string();
     let endowment_config: EndowmentDetailsResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
+            contract_addr: accounts_contract.clone(),
             msg: to_binary(&EndowmentDetails { id: endowment_id })?,
         }))?;
     // 2. check that the sender is the Endowment's CW3
@@ -155,13 +161,23 @@ pub fn execute_propose_locked_withdraw(
         return Err(ContractError::WrongExpiration {});
     }
 
-    // create a proposal
+    // create an early withdraw from LOCKED proposal for the requesting Endowment
     let mut prop = Proposal {
         title: format!("Locked Withdraw Request - Endowment #{}", endowment_id),
         description: format!("Reason for request:\n{}", description),
         start_height: env.block.height,
         expires,
-        msgs,
+        msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: accounts_contract,
+            msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Withdraw {
+                id: endowment_id,
+                acct_type: AccountType::Locked,
+                beneficiary,
+                assets,
+            })
+            .unwrap(),
+            funds: vec![],
+        })],
         status: Status::Open,
         votes: Votes::new(0),
         threshold: cfg.threshold,

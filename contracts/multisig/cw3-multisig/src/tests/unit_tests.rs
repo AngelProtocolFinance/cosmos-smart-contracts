@@ -12,7 +12,7 @@ use cw4_group::helpers::Cw4GroupContract;
 use cw_multi_test::{next_block, App, Contract, ContractWrapper, Executor};
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
 
-const CONTRACT_NAME: &str = "cw3-generic";
+const CONTRACT_NAME: &str = "cw3-apteam";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 const OWNER: &str = "admin0001";
