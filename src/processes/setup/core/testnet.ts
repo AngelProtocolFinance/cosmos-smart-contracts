@@ -94,10 +94,10 @@ export async function setupCore(
     config.accepted_tokens,
     config.is_localjuno,
   );
+  await turnOverApTeamMultisig();
   if (!config.is_localjuno) {
     await createVaults(config.harvest_to_liquid, config.tax_per_block);
   }
-  await turnOverApTeamMultisig();
   await createEndowments(
     config.threshold_absolute_percentage,
     config.max_voting_period_height,
@@ -599,6 +599,7 @@ async function createVaults(
       input_denom: "ujunox",
       yield_token: registrar,
       restricted_from: [],
+      acct_type: `locked`,
     }
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
@@ -608,6 +609,7 @@ async function createVaults(
       input_denom: "ujunox",
       yield_token: registrar,
       restricted_from: [],
+      acct_type: `liquid`,
     }
   });
   process.stdout.write("Approve Vault #1 & #2 in Registrar");
