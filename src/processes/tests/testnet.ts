@@ -203,12 +203,13 @@ export async function testExecute(
 
   // Test execute
   /* --- IndexFund contract --- */
-  // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, indexFund);
+  // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund);
   // await testUpdateAllianceMembersList(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
+  //   cw3ApTeam,
   //   indexFund,
-  //   "juno1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf", // address #1
+  //   actors.apTeam2.addr, // address #1
   //   {
   //     name: "Testnet Charity #2",
   //     website:
@@ -219,38 +220,20 @@ export async function testExecute(
   //   // { name: "Testnet Admin", webiste: "http://angelprotocol.io", logo: "" }, // member #2
   //   "add" // action
   // );
-  // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 5);
   // await testCreateIndexFund(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
+  //   cw3ApTeam,
   //   indexFund,
   //   "Test Index Fund Name",
   //   "Test Index Fund desc",
   //   false,
   //   []
   // );
-  // await testUpdateFundMembers(actors.apTeam.client, actors.apTeam.addr, indexFund, 2, [], []);
-  // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0.5", "4200000"); // possible query registrar error
-  // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund); // possible query registrar error
-  // await testUpdateFundMembers(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   indexFund,
-  //   2,
-  //   [endowmentContract2],
-  //   [endowmentContract4]
-  // );
-  // await testCreateIndexFund(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   indexFund,
-  //   "Test fund for Ukraine Portal",
-  //   "Another portal test fund",
-  //   false,
-  //   [endowmentContract2, endowmentContract3, endowmentContract4]
-  // );
-  // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
-
+  // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, 5);
+  // await testUpdateFundMembers(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, 2, [], []);
+  // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0.5", "4200000");
+  // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund); // Failed to retrieve account from signer error
 
   /* --- Registrar contract --- */
   // await testClosingEndpoint(
