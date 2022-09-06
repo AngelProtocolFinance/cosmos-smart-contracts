@@ -29,10 +29,12 @@ export const localjuno = {
     cw3ApTeam: "",
     cw4GrpReviewTeam: "",
     cw3ReviewTeam: "",
-    endowment1: 1,
-    endowment2: 2,
-    endowment3: 3,
-    endowment4: 4,
+    vault1: "",
+    vault2: "",
+    endowId1: 1,
+    endowId2: 2,
+    endowId3: 3,
+    endowId4: 4,
   },
 
   // JunoSwap contracts
