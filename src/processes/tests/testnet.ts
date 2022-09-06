@@ -164,8 +164,9 @@ export async function testExecute(
   cw4GrpReviewTeam: string,
   cw3ReviewTeam: string,
   loopswapFactory: string,
-  loopswapToken: string,
-  loopswapPair: string,
+  loopswapFarming: string,
+  loopswapLoopJunoPair: string,
+  loopswapLoopToken: string,
   haloAirdrop: string,
   haloCollector: string,
   haloCommunity: string,
@@ -297,11 +298,11 @@ export async function testExecute(
   //   "100", 
   //   actors.charity1.addr,
   // );
- 
+
   // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, {
   //     accepted_tokens_native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
   // });
-  await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, 1);
+  // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, 1);
   // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 1, status: 1, benficiary: undefined });
   // await testClosingEndpoint(
   //   actors.apTeam.client,
@@ -337,10 +338,10 @@ export async function testExecute(
   // await testQueryVaultConfig(actors.apTeam.client, Vault1);
   // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
-  await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
-  await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
-  await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
-  await testQueryAccountsState(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
+  // await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsState(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsTransactions(
   //   actors.apTeam.client,
   //   accounts,
