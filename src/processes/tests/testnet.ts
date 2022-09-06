@@ -236,21 +236,6 @@ export async function testExecute(
   // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund); // Failed to retrieve account from signer error
 
   /* --- Registrar contract --- */
-  // await testClosingEndpoint(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   registrar,
-  //   endowmentContract3,
-  //   endowmentContract4
-  // );
-  // await testAngelTeamCanTriggerVaultsHarvest(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   charity1,
-  //   registrar,
-  //   haloCollector,
-  //   "0.5"
-  // );  // vault-related
   // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, {
   //     accepted_tokens_native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
   // });
