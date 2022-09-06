@@ -8,14 +8,6 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct InstantiateMsg {
-    pub registrar_contract: String,
-    pub group_addr: String,
-    pub threshold: Threshold,
-    pub max_voting_period: Duration,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct EndowmentInstantiateMsg {
     pub id: u32,
     pub cw4_members: Vec<Member>,
