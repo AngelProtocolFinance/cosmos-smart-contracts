@@ -134,9 +134,13 @@ async function setup(
   const cw4Group = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw4_group.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw4Group}`);
 
-  process.stdout.write("Uploading Standard CW3 MultiSig Wasm");
-  const cw3MultiSig = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_multisig.wasm`);
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSig}`);
+  process.stdout.write("Uploading AP Team CW3 MultiSig Wasm");
+  const cw3MultiSigApTeam = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_apteam.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigApTeam}`);
+
+  process.stdout.write("Uploading Generic CW3 MultiSig Wasm");
+  const cw3MultiSigGeneric = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_generic.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigGeneric}`);
 
   process.stdout.write("Uploading Endowment CW3 MultiSig Wasm");
   const cw3MultiSigEndowment = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_endowment.wasm`);
@@ -191,7 +195,7 @@ async function setup(
     juno,
     apTeamAddr,
     apTeamAddr,
-    cw3MultiSig,
+    cw3MultiSigApTeam,
     {
       registrar_contract: registrar,
       group_addr: cw4GrpApTeam,
@@ -246,7 +250,7 @@ async function setup(
     juno,
     apTeamAddr,
     apTeamAddr,
-    cw3MultiSig,
+    cw3MultiSigGeneric,
     {
       registrar_contract: registrar,
       group_addr: cw4GrpReviewTeam,
