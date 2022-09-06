@@ -1306,6 +1306,7 @@ pub fn vaults_redeem(
 
 pub fn withdraw(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     id: u32,
     acct_type: AccountType,
@@ -1319,20 +1320,32 @@ pub fn withdraw(
     let mut messages: Vec<SubMsg> = vec![];
     let mut native_coins: Vec<Coin> = vec![];
 
+    if !endowment.withdraw_approved {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Withdraws are not approved for this endowment".to_string(),
+        }));
+    }
+
     // check that sender is correct based on account type attempting to access
-    // Only config owner can authorize a locked balance withdraw (for now)
-    if acct_type == AccountType::Locked && info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+    // Only config owner can authorize a locked balance withdraw when locks are in place or maturity is not reached
+    // Only the endowment owner can authorize a locked balance withdraw once maturity is reached or if early withdraws are allowed
+    if acct_type == AccountType::Locked {
+        if info.sender != config.owner
+            && (!endowment.withdraw_before_maturity
+                || endowment.maturity_height.unwrap() > env.block.height)
+        {
+            return Err(ContractError::Unauthorized {});
+        } else if info.sender != endowment.owner
+            && (endowment.withdraw_before_maturity
+                || endowment.maturity_height.unwrap() <= env.block.height)
+        {
+            return Err(ContractError::Unauthorized {});
+        }
     }
     // Only the owner of an endowment w/ withdraws approved can remove liquid balances
     if acct_type == AccountType::Liquid {
         if info.sender != endowment.owner {
             return Err(ContractError::Unauthorized {});
-        }
-        if !endowment.withdraw_approved {
-            return Err(ContractError::Std(StdError::GenericErr {
-                msg: "Withdraws are not approved for this endowment".to_string(),
-            }));
         }
     }
 

@@ -1,5 +1,6 @@
-use angel_core::messages::cw3_multisig::{ExecuteMsg, InstantiateMsg, QueryMsg};
+use angel_core::messages::cw3_multisig::{InstantiateMsg, QueryMsg};
 use cosmwasm_schema::{export_schema, export_schema_with_title, remove_schemas, schema_for};
+use cw3_endowment::msg::ExecuteMsg;
 use std::env::current_dir;
 use std::fs::create_dir_all;
 
