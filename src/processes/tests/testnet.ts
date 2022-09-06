@@ -295,7 +295,7 @@ export async function testExecute(
   //   cw4_code: 104,
   //   accounts_code_id: 102,
   // });
-  await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, 1);
+  // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, 1);
   // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 1, status: 1, benficiary: undefined });
   // await testClosingEndpoint(
   //   actors.apTeam.client,
@@ -331,10 +331,10 @@ export async function testExecute(
   // await testQueryVaultConfig(actors.apTeam.client, Vault1);
   // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
-  await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
-  await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
-  await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
-  await testQueryAccountsState(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
+  // await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsState(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsTransactions(
   //   actors.apTeam.client,
   //   accounts,
