@@ -88,20 +88,20 @@ export async function testTransferStake(
   staker_info: string[][]
 ): Promise<void> {
   process.stdout.write("Test - Execute transfer of staker balances to a new contract");
-  let msgs: Msg[] = [];
-  staker_info.forEach((info) => {
-    msgs.push(
-      new MsgExecuteContract(apTeam, oldGov, {
-        transfer_stake: {
-          new_gov_contract: newGov,
-          address: info[0],
-          amount: info[1],
-        },
-      })
-    );
-  });
+  // let msgs: Msg[] = [];
+  // staker_info.forEach((info) => {
+  //   msgs.push(
+  //     new MsgExecuteContract(apTeam, oldGov, {
+  //       transfer_stake: {
+  //         new_gov_contract: newGov,
+  //         address: info[0],
+  //         amount: info[1],
+  //       },
+  //     })
+  //   );
+  // });
 
-  await expect(sendTransaction(juno, apTeam, msgs));
+  // await expect(sendTransaction(juno, apTeam, msgs));
   console.log(chalk.green(" Passed!"));
 }
 
