@@ -193,6 +193,7 @@ async function setup(
     apTeamAddr,
     cw3MultiSig,
     {
+      registrar_contract: registrar,
       group_addr: cw4GrpApTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
@@ -247,6 +248,7 @@ async function setup(
     apTeamAddr,
     cw3MultiSig,
     {
+      registrar_contract: registrar,
       group_addr: cw4GrpReviewTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
