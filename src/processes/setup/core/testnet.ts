@@ -626,9 +626,9 @@ async function createLoopVaults(
   process.stdout.write("Add Vault #1 & #2 in Registrar");
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
-      network: "juno-1",
+      network: "uni-3",
       vault_addr: vault1,
-      input_denom: "ujunox",
+      input_denom: "ujuno",
       yield_token: registrar,
       restricted_from: [],
       acct_type: `locked`,
@@ -636,29 +636,9 @@ async function createLoopVaults(
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
-      network: "juno-1",
-      vault_addr: vault1,
-      input_denom: "ujunox",
-      yield_token: registrar,
-      restricted_from: [],
-      acct_type: `liquid`,
-    }
-  });
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
-    vault_add: {
-      network: "juno-1",
+      network: "uni-3",
       vault_addr: vault2,
-      input_denom: "ujunox",
-      yield_token: registrar,
-      restricted_from: [],
-      acct_type: `locked`,
-    }
-  });
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
-    vault_add: {
-      network: "juno-1",
-      vault_addr: vault2,
-      input_denom: "ujunox",
+      input_denom: "ujuno",
       yield_token: registrar,
       restricted_from: [],
       acct_type: `liquid`,
