@@ -626,7 +626,7 @@ async function createVaults(
 // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
 async function turnOverApTeamMultisig(): Promise<void> {
   process.stdout.write(
-    "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract"
+    "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract\n"
   );
   process.stdout.write(chalk.yellow("- Turning over Registrar"));
   await sendTransaction(juno, apTeamAddr, registrar, {
@@ -636,6 +636,12 @@ async function turnOverApTeamMultisig(): Promise<void> {
   
   process.stdout.write(chalk.yellow("- Turning over Index Fund"));
   await sendTransaction(juno, apTeamAddr, indexFund, {
+    update_owner: { new_owner: cw3ApTeam }
+  });
+  console.log(chalk.green(" Done!"));
+
+  process.stdout.write(chalk.yellow("- Turning over Accounts"));
+  await sendTransaction(juno, apTeamAddr, accounts, {
     update_owner: { new_owner: cw3ApTeam }
   });
   console.log(chalk.green(" Done!"));
