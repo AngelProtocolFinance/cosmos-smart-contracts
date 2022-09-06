@@ -193,6 +193,7 @@ async function setup(
     apTeamAddr,
     cw3MultiSig,
     {
+      registrar_contract: registrar,
       group_addr: cw4GrpApTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
@@ -247,6 +248,7 @@ async function setup(
     apTeamAddr,
     cw3MultiSig,
     {
+      registrar_contract: registrar,
       group_addr: cw4GrpReviewTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
@@ -659,7 +661,7 @@ async function createLoopVaults(
 // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
 async function turnOverApTeamMultisig(): Promise<void> {
   process.stdout.write(
-    "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract"
+    "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract\n"
   );
   process.stdout.write(chalk.yellow("- Turning over Registrar"));
   await sendTransaction(juno, apTeamAddr, registrar, {
