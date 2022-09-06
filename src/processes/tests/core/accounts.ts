@@ -326,8 +326,8 @@ export async function testQueryAccountsBalance(
     balance: { id: endowmentId },
   });
 
-  console.log(result.locked_balance.native);
-  console.log(result.liquid_balance.native);
+  console.log(result.locked.native);
+  console.log(result.liquid.native);
   console.log(chalk.green(" Passed!"));
 }
 
