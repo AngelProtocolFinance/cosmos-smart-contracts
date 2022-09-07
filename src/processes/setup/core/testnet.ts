@@ -85,25 +85,25 @@ export async function setupCore(
   apTeam2Addr = await getWalletAddress(apTeam2);
   apTreasuryAddr = await getWalletAddress(apTreasury);
 
-  await setup(
-    config.tax_rate,
-    apTreasuryAddr,
-    config.threshold_absolute_percentage,
-    config.max_voting_period_height,
-    config.fund_rotation,
-    config.fund_member_limit,
-    config.funding_goal,
-    config.accepted_tokens,
-    config.is_localjuno,
-  );
-  await turnOverApTeamMultisig();
+  // await setup(
+  //   config.tax_rate,
+  //   apTreasuryAddr,
+  //   config.threshold_absolute_percentage,
+  //   config.max_voting_period_height,
+  //   config.fund_rotation,
+  //   config.fund_member_limit,
+  //   config.funding_goal,
+  //   config.accepted_tokens,
+  //   config.is_localjuno,
+  // );
+  // await turnOverApTeamMultisig();
   await createVaults(config.harvest_to_liquid, config.tax_per_block);
-  await createEndowments(
-    config.threshold_absolute_percentage,
-    config.max_voting_period_height,
-  );
-  await approveEndowments();
-  await createIndexFunds();
+  // await createEndowments(
+  //   config.threshold_absolute_percentage,
+  //   config.max_voting_period_height,
+  // );
+  // await approveEndowments();
+  // await createIndexFunds();
 }
 
 async function setup(

@@ -259,7 +259,7 @@ export async function testExecute(
 
   // Test execute
   // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, endowmentContract1, "10000000"); // possible query registrar error
-  // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0.5", "4200000"); // possible query registrar error
+  // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0", "1000000"); // possible query registrar error
   // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund); // possible query registrar error
   // await testAngelTeamCanTriggerVaultsHarvest(
   //   actors.apTeam.client,
@@ -273,7 +273,7 @@ export async function testExecute(
   //   actors.charity1.client,
   //   actors.charity1.addr,
   //   accounts,
-  //   "juno15m728qxvtat337jdu2f0uk6pu905kktrxclgy36c0wd822tpxcmqwe4t2v",
+  //   "juno18pkq9mwxxlmyq7kr5txhm060wemg2s4u94wvsfd9w2kdc0u99d6s9nzar2",
   //   1,
   //   "locked",
   //   [{vault: vaultLocked1, percentage: "0.3"}, {vault: vaultLocked2, percentage: "0.3"}]
@@ -327,6 +327,7 @@ export async function testExecute(
   
   // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
   await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
+  await testQueryAccountsBalance(actors.apTeam.client, accounts, 2);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);

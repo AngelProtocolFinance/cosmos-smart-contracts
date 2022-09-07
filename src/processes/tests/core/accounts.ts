@@ -291,13 +291,15 @@ export async function testQueryAccountsBalance(
   accountsContract: string,
   endowmentId: number,
 ): Promise<void> {
-  process.stdout.write("Test - Query Accounts Balance");
+  process.stdout.write(`Test - Query Accounts - Endowment(${endowmentId}) Balance\n`);
   const result = await juno.queryContractSmart(accountsContract, {
     balance: { id: endowmentId },
   });
 
-  console.log(result.locked.native);
-  console.log(result.liquid.native);
+  console.log("Locked native:", result.locked.native);
+  console.log("Locked cw20:", result.locked.cw20);
+  console.log("Liquid native:", result.liquid.native);
+  console.log("Liquid cw20:", result.liquid.cw20);
   console.log(chalk.green(" Passed!"));
 }
 

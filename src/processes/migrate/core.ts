@@ -34,27 +34,27 @@ export async function migrateCore(
 async function migrateVaults(
   juno: SigningCosmWasmClient,
   apTeam: string,
-  anchorVaults: string[]
+  vaults: string[]
 ): Promise<void> {
-  process.stdout.write("Uploading Anchor Vault Wasm");
+  process.stdout.write("Uploading Vault Wasm");
   const codeId = await storeCode(
     juno,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.core}/anchor.wasm`)
+    path.resolve(__dirname, `${wasm_path.mock_vault}/mock_vault.wasm`)
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write("Migrate Vault contracts\n");
   let prom = Promise.resolve();
   let id = 1;
-  anchorVaults.forEach((vault) => {
+  vaults.forEach((vault) => {
     // eslint-disable-next-line no-async-promise-executor
     prom = prom.then(
       () =>
         new Promise(async (resolve, reject) => {
           try {
             await migrateContract(juno, apTeam, vault, codeId, {});
-            console.log(chalk.green(`anchorVault #${id++} - Done!`));
+            console.log(chalk.green(`Vault ${id++} of ${vaults.length} - Done!`));
             resolve();
           } catch (e) {
             reject(e);

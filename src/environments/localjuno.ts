@@ -312,7 +312,7 @@ export async function startMigrateCore(): Promise<void> {
     accounts,
     cw4GrpApTeam,
     cw3ApTeam,
-    [],
+    [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
   );
 }
 

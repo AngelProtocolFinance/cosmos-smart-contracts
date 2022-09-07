@@ -84,16 +84,7 @@ pub fn deposit(
         info,
         endowment_id,
         deposit_amount,
-    )
-    .map_err(|_| {
-        ContractError::Std(StdError::GenericErr {
-            msg: format!(
-                "Cannot mint the {} vault tokens from {}",
-                deposit_amount,
-                endowment_id.to_string()
-            ),
-        })
-    })?;
+    )?;
 
     Ok(Response::new().add_attribute("action", "deposit"))
 }
@@ -115,15 +106,7 @@ pub fn redeem(
         .query_wasm_smart(config.registrar_contract.to_string(), &Config {})?;
 
     // First, burn the vault tokens
-    execute_burn(deps.branch(), env.clone(), info, endowment_id, amount).map_err(|_| {
-        ContractError::Std(StdError::GenericErr {
-            msg: format!(
-                "Cannot burn the {} vault tokens from {}",
-                amount,
-                endowment_id.to_string()
-            ),
-        })
-    })?;
+    execute_burn(deps.branch(), env.clone(), info, endowment_id, amount)?;
 
     Ok(Response::new()
         .add_attribute("action", "redeem_from_vault")
@@ -141,7 +124,7 @@ pub fn redeem(
 fn execute_mint(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
+    _info: MessageInfo,
     endowment_id: u32,
     amount: Uint128,
 ) -> Result<(), ContractError> {
@@ -150,10 +133,6 @@ fn execute_mint(
     }
 
     let mut config = TOKEN_INFO.load(deps.storage)?;
-    if config.mint.is_none() || config.mint.as_ref().unwrap().minter != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
-
     // update supply and enforce cap
     config.total_supply += amount;
     if let Some(limit) = config.get_cap() {
