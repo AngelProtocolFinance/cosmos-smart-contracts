@@ -364,12 +364,13 @@ pub fn redeem(
     }
 
     // First, burn the vault tokens
-    execute_burn(deps.branch(), env.clone(), info, id, burn_shares_amount).map_err(|_| {
+    execute_burn(deps.branch(), env.clone(), info, id, burn_shares_amount).map_err(|e| {
         ContractError::Std(StdError::GenericErr {
             msg: format!(
-                "Cannot burn the {} vault tokens from {}",
+                "Cannot burn the {} vault tokens from {} :: {}",
                 burn_shares_amount,
-                id.map_or_else(|| beneficiary.to_string(), |v| format!("Endowment {}", v))
+                id.map_or_else(|| beneficiary.to_string(), |v| format!("Endowment {}", v)),
+                e,
             ),
         })
     })?;
@@ -525,12 +526,13 @@ pub fn reinvest_to_locked_execute(
     }
     // 3. Burn vault tokens an calculate the LP Tokens equivalent
     // First, burn the vault tokens
-    execute_burn(deps.branch(), env.clone(), info, Some(id), amount).map_err(|_| {
+    execute_burn(deps.branch(), env.clone(), info, Some(id), amount).map_err(|e| {
         ContractError::Std(StdError::GenericErr {
             msg: format!(
-                "Cannot burn the {} vault tokens from {}",
+                "Cannot burn the {} vault tokens from {} :: {}",
                 amount,
-                id.to_string()
+                id.to_string(),
+                e,
             ),
         })
     })?;
@@ -673,9 +675,12 @@ pub fn reinvest_to_locked_recieve(
     CONFIG.save(deps.storage, &config)?;
 
     // Mint the `vault_token`
-    execute_mint(deps, env, info, Some(id), vt_mint_amount).map_err(|_| {
+    execute_mint(deps, env, info, Some(id), vt_mint_amount).map_err(|e| {
         ContractError::Std(StdError::GenericErr {
-            msg: format!("Cannot mint the {} vault token for {}", vt_mint_amount, id),
+            msg: format!(
+                "Cannot mint the {} vault token for {}:: {}",
+                vt_mint_amount, id, e
+            ),
         })
     })?;
 
@@ -897,11 +902,11 @@ pub fn stake_lp_token(
 
             // Mint the `vault_token`
             execute_mint(deps.branch(), env, info, Some(endowment_id), vt_mint_amount).map_err(
-                |_| {
+                |e| {
                     ContractError::Std(StdError::GenericErr {
                         msg: format!(
-                            "Cannot mint the {} vault token for {}",
-                            vt_mint_amount, endowment_id
+                            "Cannot mint the {} vault token for {} :: {}",
+                            vt_mint_amount, endowment_id, e
                         ),
                     })
                 },
@@ -929,9 +934,8 @@ pub fn stake_lp_token(
             let tax_mint_amount =
                 vt_mint_amount.multiply_ratio(tax_rate.numerator(), tax_rate.denominator());
 
-            APTAX.update(deps.storage, |mut balance: Uint128| -> StdResult<Uint128> {
-                balance = balance.checked_add(tax_mint_amount)?;
-                Ok(balance)
+            APTAX.update(deps.storage, |balance: Uint128| -> StdResult<_> {
+                Ok(balance.checked_add(tax_mint_amount)?)
             })?;
 
             match config.acct_type {
@@ -1436,7 +1440,7 @@ fn execute_mint(
             |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
         )?,
         None => APTAX.update(deps.storage, |balance: Uint128| -> StdResult<_> {
-            Ok(balance + amount)
+            Ok(balance.checked_add(amount)?)
         })?,
     };
 
