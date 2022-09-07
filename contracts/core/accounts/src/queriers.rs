@@ -1,10 +1,8 @@
 use crate::state::{read_endowments, Endowment, CONFIG, ENDOWMENTS, STATES};
-use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::responses::accounts::*;
-use angel_core::responses::registrar::VaultListResponse;
 use angel_core::structs::{AccountType, BalanceInfo, EndowmentEntry, EndowmentType, Tier};
 use angel_core::utils::vault_endowment_balance;
-use cosmwasm_std::{to_binary, Deps, QueryRequest, StdResult, Uint128, WasmQuery};
+use cosmwasm_std::{Deps, StdResult, Uint128};
 use cw2::get_contract_version;
 use cw20::{Balance, Cw20CoinVerified};
 use cw_asset::AssetInfo;
@@ -29,30 +27,41 @@ pub fn query_state(deps: Deps, id: u32) -> StdResult<StateResponse> {
     })
 }
 
-pub fn query_account_balance(deps: Deps, id: u32) -> StdResult<BalanceInfo> {
-    let config = CONFIG.load(deps.storage)?;
+pub fn query_endowment_balance(deps: Deps, id: u32) -> StdResult<BalanceInfo> {
+    let endowment = ENDOWMENTS.load(deps.storage, id)?;
     let state = STATES.load(deps.storage, id)?;
     // setup the basic response object w/ account's balances locked & liquid (held by this contract)
     let mut balances = state.balances;
-    // add any Vault balances into locked
-    let vault_list: VaultListResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarQuerier::VaultList {
-                network: None,
-                endowment_type: None,
-                acct_type: None,
-                approved: None,
-                start_after: None,
-                limit: None,
-            })?,
-        }))?;
 
-    for vault in vault_list.vaults.iter() {
-        let vault_bal = vault_endowment_balance(deps, vault.address.clone(), id);
+    // process all one-off vaults
+    for vault in endowment.oneoff_vaults.locked.into_iter() {
+        let vault_bal = vault_endowment_balance(deps, vault.clone().to_string(), id);
         balances.locked.add_tokens(Balance::Cw20(Cw20CoinVerified {
             amount: vault_bal,
-            address: deps.api.addr_validate(&vault.address).unwrap(),
+            address: vault,
+        }));
+    }
+    for vault in endowment.oneoff_vaults.liquid.into_iter() {
+        let vault_bal = vault_endowment_balance(deps, vault.clone().to_string(), id);
+        balances.liquid.add_tokens(Balance::Cw20(Cw20CoinVerified {
+            amount: vault_bal,
+            address: vault,
+        }));
+    }
+    // process all strategies vaults
+    for strat in endowment.strategies.locked.iter() {
+        let vault_bal = vault_endowment_balance(deps, strat.vault.clone(), id);
+        balances.locked.add_tokens(Balance::Cw20(Cw20CoinVerified {
+            amount: vault_bal,
+            address: deps.api.addr_validate(&strat.vault)?,
+        }));
+    }
+
+    for strat in endowment.strategies.liquid.iter() {
+        let vault_bal = vault_endowment_balance(deps, strat.vault.clone(), id);
+        balances.liquid.add_tokens(Balance::Cw20(Cw20CoinVerified {
+            amount: vault_bal,
+            address: deps.api.addr_validate(&strat.vault)?,
         }));
     }
 
