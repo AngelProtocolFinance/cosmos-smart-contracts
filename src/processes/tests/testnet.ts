@@ -22,6 +22,7 @@ import {
   testUpdateEndowmentStatus,
   testCreateEndowment,
   testQueryAccountsEndowmentList,
+  testEndowmentVaultsRedeem,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -57,7 +58,7 @@ import {
   testQueryRegistrarConfig,
   testQueryRegistrarVault,
 } from "./core/registrar";
-import { testQueryVaultConfig } from "./core/vaults";
+import { testQueryVaultConfig, testVaultHarvest } from "./core/vaults";
 import {
   testAirdropClaim,
   testAirdropRegisterNewMerkleRoot,
@@ -282,21 +283,58 @@ export async function testExecute(
   //   actors.charity1.client,
   //   actors.charity1.addr,
   //   accounts,
-  //   "juno18pkq9mwxxlmyq7kr5txhm060wemg2s4u94wvsfd9w2kdc0u99d6s9nzar2",
-  //   1,
-  //   "locked",
-  //   [{vault: vaultLocked1, percentage: "0.3"}, {vault: vaultLocked2, percentage: "0.3"}]
-  // );  // vault-related
-  // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, 1);
-  // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 1, status: 1, benficiary: undefined });
+  //   endowId1,
+  //   `locked`,
+  //   Vault1,
+  //   Vault2
+  // );
+
+
+  // const res = await actors.apTeam.client.queryContractSmart(vaultLocked1, { config: {} });
+  // console.log(" vaultLocked1 config: ", res);
+  // const tk = await actors.apTeam.client.queryContractSmart(vaultLocked1, { token_info: {} });
+  // console.log(" vaultLocked1 token info: ", tk);
+  // const ap = await actors.apTeam.client.queryContractSmart(vaultLocked1, { ap_tax_balance: {} });
+  // console.log("AP Tax balance: ", ap);
+  // const bal = await actors.apTeam.client.queryContractSmart(vaultLocked1, { balance: { endowment_id: endowId1} });
+  // console.log("vault token balance for EndowID 1: ", bal);
+  // const re1 = await actors.apTeam.client.queryContractSmart(accounts, { endowment: {id: endowId1}});
+  // console.log(re1);
+  // const reg_config = await actors.apTeam.client.queryContractSmart(registrar, { config: {}});
+  // console.log("registrar_config: ", reg_config);
+
   // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1, "1000");
+  // await testEndowmentVaultsRedeem(
+  //   actors.charity1.client,
+  //   actors.charity1.addr,
+  //   accounts,
+  //   endowId1,
+  //   `locked`,
+  //   [[vaultLocked1, "500000"]],  // Vec<(vault, amount)>
+  // );
+  // await testVaultHarvest(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   vaultLocked1,
+  // );
+
+  // const r = await actors.apTeam.client.queryContractSmart("juno1qmk0v725sdg5ecu6xfh5pt0fv0nfzrstarue2maum3snzk2zrt5qd2p4rm", {
+  //   query_flp_token_from_pool_address: {pool_address: "juno1eyfccmjm6732k7wp4p6gdjwhxjwsvje44j0hfx8nkgrm8fs7vqfs9a4ky4" }
+  // });
+  // console.log(" flp token address : ", r);
+  // const bal_ch = await actors.apTeam.client.queryContractSmart("juno18a2u6az6dzw528rptepfg6n49ak6hdzkf8ewf0n5r0nwju7gtdgq0vvvn8", {
+  //   balance: {address: vaultLocked1}
+  // });
+  // console.log(" flp token amount for vault_locked_1: ", bal_ch);
+
+  
   // await testEndowmentCanWithdraw(
   //   actors.charity1.client, 
   //   actors.charity1.addr, 
   //   accounts,
   //   endowId1, 
   //   Vault1, 
-  //   "100", 
+  //   "500000", 
   //   actors.charity1.addr,
   // );
   // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, 1);

@@ -97,6 +97,42 @@ export async function testEndowmentCanWithdraw(
   console.log(chalk.green(" Passed!"));
 }
 
+
+//----------------------------------------------------------------------------------------
+// TEST: Endowment owner can withdraw from available balance in their Accounts
+//
+// SCENARIO:
+// Endowment owner can draw down on the available Liquid Account balance and should
+// not be able to touch the Locked Account's balance.
+//
+//----------------------------------------------------------------------------------------
+export async function testEndowmentVaultsRedeem(
+  juno: SigningCosmWasmClient,
+  accountsOwner: string,
+  accountsContract: string,
+  endowmentId: number,
+  acct_type: string,
+  vaults: any,
+): Promise<void> {
+  process.stdout.write(
+    "Test - Endowment can redeem the vault token"
+  );
+
+  const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId }});
+  const cw3 = res.owner as string;
+
+  await expect(
+    sendMessageViaCw3Proposal(juno, accountsOwner, cw3, accountsContract, {
+      vaults_redeem: {
+        id: endowmentId,
+        acct_type: acct_type,
+        vaults,
+      },
+    })
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
 //----------------------------------------------------------------------------------------
 // TEST: Charity Beneficiary can withdraw from available balance in their Accounts
 //
