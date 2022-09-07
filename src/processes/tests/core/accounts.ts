@@ -51,8 +51,8 @@ export async function testSendDonationToEndowment(
     sendTransactionWithFunds(juno, apTeam, accountsContract, {
         deposit: {
           id: endowmentId,
-          locked_percentage: "1",
-          liquid_percentage: "0",
+          locked_percentage: "0.5",
+          liquid_percentage: "0.5",
         },
       },
       [{ denom: "ujuno", amount }]
@@ -121,22 +121,21 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
 
 export async function testCharityCanUpdateStrategies(
   juno: SigningCosmWasmClient,
-  charity1: string,
+  charity: string,
   accountsContract: string,
+  endowCw3: string,
   endowmentId: number,
-  Vault1: string,
-  Vault2: string
+  acct_type: string,
+  strategies: any, // [ { vault: string, percentage: "decimal" }, ... ]
 ): Promise<void> {
   process.stdout.write("Test - Charity can update their Endowment's strategies");
 
   await expect(
-    sendTransaction(juno, charity1, accountsContract, {
+    await sendMessageViaCw3Proposal(juno, charity, endowCw3, accountsContract, {
       update_strategies: {
         id: endowmentId,
-        strategies: [
-          { vault: Vault1, percentage: "0.5"},
-          { vault: Vault2, percentage: "0.5"},
-        ],
+        acct_type, 
+        strategies,
       },
     })
   );

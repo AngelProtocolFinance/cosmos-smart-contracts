@@ -51,6 +51,10 @@ let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
 let accounts: string;
+let vaultLocked1: string;
+let vaultLiquid1: string;
+let vaultLocked2: string;
+let vaultLiquid2: string;
 let endowId1: number;
 let endowId2: number;
 let endowId3: number;
@@ -118,6 +122,14 @@ async function initialize() {
   cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   indexFund = config.contracts.indexFund;
   accounts = config.contracts.accounts;
+  endowId1 = config.contracts.endowId1;
+  endowId2 = config.contracts.endowId2;
+  endowId3 = config.contracts.endowId3;
+  endowId4 = config.contracts.endowId4;
+  vaultLocked1 = config.contracts.vaultLocked1;
+  vaultLiquid1 = config.contracts.vaultLiquid1;
+  vaultLocked2 = config.contracts.vaultLocked2;
+  vaultLiquid2 = config.contracts.vaultLiquid2;
 
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
@@ -130,6 +142,10 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
   console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
   console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
+  console.log(`Using ${chalk.cyan(vaultLocked1)} as vault Locked #1`); 
+  console.log(`Using ${chalk.cyan(vaultLiquid1)} as vault Liquid #1`); 
+  console.log(`Using ${chalk.cyan(vaultLocked2)} as vault Locked #2`); 
+  console.log(`Using ${chalk.cyan(vaultLiquid2)} as vault Liquid #2`); 
 
   junoswapTokenCode = config.junoswap.junoswap_token_code;
   junoswapHaloTokenContract = config.junoswap.halo_token_contract;
@@ -207,7 +223,7 @@ export async function startSetupCore(): Promise<void> {
       charity_cw3_threshold_abs_perc: "0.5", // threshold absolute percentage for "charity-cw3"
       charity_cw3_max_voting_period: 60,      // max_voting_period time(unit: seconds) for "charity-cw3"
       accepted_tokens:  {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
         cw20: [],
       },
     }
@@ -359,8 +375,10 @@ export async function startTests(): Promise<void> {
     tcaAccount,
     registrar,
     indexFund,
-    "undefined",
-    "undefined",
+    vaultLocked1,
+    vaultLiquid1,
+    vaultLocked2,
+    vaultLiquid2,
     accounts,
     endowId1,
     endowId2,

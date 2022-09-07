@@ -50,11 +50,10 @@ import {
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
-  testQueryRegistrarApprovedVaultList,
+  testQueryRegistrarVaultList,
   testQueryRegistrarApprovedVaultRateList,
   testQueryRegistrarConfig,
   testQueryRegistrarVault,
-  testQueryRegistrarVaultList,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -150,8 +149,10 @@ export async function testExecute(
   tcaAddr: string,
   registrar: string,
   indexFund: string,
-  Vault1: string,
-  Vault2: string,
+  vaultLocked1: string,
+  vaultLiquid1: string,
+  vaultLocked2: string,
+  vaultLiquid2: string,
   accounts: string,
   endowId1: number,
   endowId2: number,
@@ -214,14 +215,6 @@ export async function testExecute(
   //   []
   // );
   // await testUpdateFundMembers(actors.apTeam.client, actors.apTeam.addr, indexFund, 2, [], []);
-  // await testChangeManyAccountsEndowmentOwners(actors.apTeam.client, actors.apTeam.addr, [
-  //   {
-  //     "address": "juno16zj5dw97sk7q3rvakzu76uyfv6zrxkvsln0yjz2wa5s58mq67vhs5wdv7l", // Current one is localjuno endow1.
-  //     "owner": apTeamAddr, 
-  //     "kyc_donors_only": false,
-  //   }
-  // ]);
-
   // await testCreateEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, {
   //   owner: actors.charity1.addr,
   //   withdraw_before_maturity: false,
@@ -279,9 +272,11 @@ export async function testExecute(
   // await testCharityCanUpdateStrategies(
   //   actors.charity1.client,
   //   actors.charity1.addr,
-  //   endowmentContract1,
-  //   Vault1,
-  //   Vault2
+  //   accounts,
+  //   "juno15m728qxvtat337jdu2f0uk6pu905kktrxclgy36c0wd822tpxcmqwe4t2v",
+  //   1,
+  //   "locked",
+  //   [{vault: vaultLocked1, percentage: "0.3"}, {vault: vaultLocked2, percentage: "0.3"}]
   // );  // vault-related
   // await testBeneficiaryCanWithdrawFromLiquid(
   //   actors.charity3.client,
@@ -324,25 +319,19 @@ export async function testExecute(
   // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
   // Test query
   // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
-  // await testQueryRegistrarApprovedVaultList(actors.apTeam.client, registrar);
+  // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarApprovedVaultRateList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, Vault1);
   // await testQueryVaultConfig(actors.apTeam.client, Vault1);
-  // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
-  // await testQueryAccountsConfig(actors.apTeam.client, accounts);
+  
   // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
+  await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsConfig(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsState(actors.apTeam.client, accounts, 1);
-  // await testQueryAccountsTransactions(
-  //   actors.apTeam.client,
-  //   accounts,
-  //   1,
-  //   undefined,
-  //   undefined,
-  //   undefined
-  // );
+  
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);
   // await testQueryIndexFundTcaList(actors.apTeam.client, indexFund);
