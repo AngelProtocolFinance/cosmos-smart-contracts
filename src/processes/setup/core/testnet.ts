@@ -31,8 +31,10 @@ let cw3ApTeam: string;
 let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
-let vault1: string;
-let vault2: string;
+let vault1_locked: string;
+let vault1_liquid: string;
+let vault2_locked: string;
+let vault2_liquid: string;
 
 let endow_1_id: number;
 let endow_2_id: number;
@@ -95,9 +97,7 @@ export async function setupCore(
     config.is_localjuno,
   );
   await turnOverApTeamMultisig();
-  if (!config.is_localjuno) {
-    await createVaults(config.harvest_to_liquid, config.tax_per_block);
-  }
+  await createVaults(config.harvest_to_liquid, config.tax_per_block);
   await createEndowments(
     config.threshold_absolute_percentage,
     config.max_voting_period_height,
@@ -558,44 +558,71 @@ async function createVaults(
   const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.mock_vault}/mock_vault.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
 
-  // Anchor Vault - #1
-  process.stdout.write("Instantiating Vault (#1) contract");
-  const vaultResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
+  // Vault - #1
+  process.stdout.write("Instantiating Vault (#1) locked & liquid contracts");
+  const vaultLockedResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
-    input_denom: "ujunox", // testnet placeholder
-    yield_token: registrar, // placeholder addr for now
+    acct_type: "locked",
+    input_denom: "ujuno", // testnet placeholder
     tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
-    name: "AP DP Token - #1",
-    symbol: "apANC1",
+    name: "AP DP Token - #1 (locked)",
+    symbol: "apV1Lk",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
   });
-  vault1 = vaultResult1.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault1}`);
+  vault1_locked = vaultLockedResult1.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("Locked contractAddress")}=${vault1_locked}`);
+
+  const vaultLiquidResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
+    registrar_contract: registrar,
+    acct_type: "liquid",
+    input_denom: "ujuno", // testnet placeholder
+    yield_token: registrar, // placeholder addr for now
+    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
+    name: "AP DP Token - #1 (liquid)",
+    symbol: "apV1Lq",
+    decimals: 6,
+    harvest_to_liquid: harvest_to_liquid,
+  });
+  vault1_liquid = vaultLiquidResult1.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("Liquid contractAddress")}=${vault1_liquid}`);
 
   // Vault - #2 (to better test multistrategy logic)
-  process.stdout.write("Instantiating Vault (#2) contract");
-  const vaultResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
+  process.stdout.write("Instantiating Vault (#2) locked & liquid contracts");
+  const vaultLockedResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
-    moneymarket: registrar, // placeholder addr for now
-    input_denom: "ujunox", // testnet placeholder
+    acct_type: "locked",
+    input_denom: "ujuno", // testnet placeholder
     yield_token: registrar, // placeholder addr for now
     tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
-    name: "AP DP Token - #2",
-    symbol: "apANC2",
+    name: "AP DP Token - #2 (locked)",
+    symbol: "apV2Lk",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
   });
-  vault2 = vaultResult2.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault2}`);
+  vault2_locked = vaultLockedResult2.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("Locked contractAddress")}=${vault2_locked}`);
+
+  const vaultLiquidResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
+    registrar_contract: registrar,
+    acct_type: "liquid",
+    input_denom: "ujuno", // testnet placeholder
+    yield_token: registrar, // placeholder addr for now
+    tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
+    name: "AP DP Token - #2 (liquid)",
+    symbol: "apV2Lq",
+    decimals: 6,
+    harvest_to_liquid: harvest_to_liquid,
+  });
+  vault2_liquid = vaultLiquidResult2.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("Liquid contractAddress")}=${vault2_liquid}`);
 
   // Step 3. AP team must add & approve the new vaults in registrar & make #1 the default vault
-  process.stdout.write("Add Vault #1 & #2 in Registrar");
+  process.stdout.write("Add Vaults into Registrar");
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
       network: "juno-1",
-      vault_addr: vault1,
+      vault_addr: vault1_locked,
       input_denom: "ujunox",
       yield_token: registrar,
       restricted_from: [],
@@ -605,7 +632,7 @@ async function createVaults(
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
       network: "juno-1",
-      vault_addr: vault1,
+      vault_addr: vault1_liquid,
       input_denom: "ujunox",
       yield_token: registrar,
       restricted_from: [],
@@ -615,7 +642,7 @@ async function createVaults(
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
       network: "juno-1",
-      vault_addr: vault2,
+      vault_addr: vault2_locked,
       input_denom: "ujunox",
       yield_token: registrar,
       restricted_from: [],
@@ -625,7 +652,7 @@ async function createVaults(
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
       network: "juno-1",
-      vault_addr: vault2,
+      vault_addr: vault2_liquid,
       input_denom: "ujunox",
       yield_token: registrar,
       restricted_from: [],
