@@ -564,7 +564,7 @@ async function createLoopVaults(
   harvest_to_liquid: string,
 ): Promise<void> {
   process.stdout.write("Uploading Vault Wasm");
-  const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/loop.wasm`);
+  const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/loopswap_vault.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
 
   // LOOP Vault - #1 (Locked)
