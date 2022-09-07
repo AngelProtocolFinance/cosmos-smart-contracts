@@ -180,7 +180,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
-        QueryMsg::Balance { id } => to_binary(&queriers::query_account_balance(deps, id)?),
+        QueryMsg::Balance { id } => to_binary(&queriers::query_endowment_balance(deps, id)?),
         QueryMsg::State { id } => to_binary(&queriers::query_state(deps, id)?),
         QueryMsg::EndowmentList {
             name,
