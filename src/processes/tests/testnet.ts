@@ -326,8 +326,7 @@ export async function testExecute(
   // await testQueryVaultConfig(actors.apTeam.client, Vault1);
   
   // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
-  await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
-  await testQueryAccountsBalance(actors.apTeam.client, accounts, 2);
+  // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
