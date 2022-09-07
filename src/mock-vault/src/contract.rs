@@ -1,17 +1,14 @@
 use crate::errors::ContractError;
 use crate::executers;
-use crate::msg::{
-    deposit_stable_msg, redeem_stable_msg, ConfigResponse, ExchangeRateResponse, ExecuteMsg,
-    InstantiateMsg, MigrateMsg, QueryMsg,
-};
+use crate::msg::{ExchangeRateResponse, ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg};
 use crate::queriers;
 use crate::state::{Config, TokenInfo, CONFIG, TOKEN_INFO};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Decimal256, Deps, DepsMut, Env, MessageInfo, Response,
     StdError, StdResult, Uint128, Uint256,
 };
-use cw2::{get_contract_version, set_contract_version};
-use cw20::Balance;
+use cw2::set_contract_version;
+use cw20::Denom;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "mock-vault";
@@ -20,7 +17,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -31,11 +28,11 @@ pub fn instantiate(
         &Config {
             owner: info.sender,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-            moneymarket: deps.api.addr_validate(&msg.moneymarket)?,
-            input_denom: msg.input_denom.clone(),
-            yield_token: deps.api.addr_validate(&msg.yield_token)?,
+            acct_type: msg.acct_type,
+            sibling_vault: env.contract.address,
+            input_denom: msg.input_denom,
             next_pending_id: 0,
-            tax_per_block: msg.tax_per_block,
+            last_harvest: env.block.height,
             harvest_to_liquid: msg.harvest_to_liquid,
         },
     )?;
@@ -68,73 +65,56 @@ pub fn execute(
         }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         // -UST (Account) --> +Deposit Token/Yield Token (Vault)
-        ExecuteMsg::Deposit {} => {
-            executers::deposit_stable(deps, env, info.clone(), Balance::from(info.funds))
+        ExecuteMsg::Deposit { endowment_id } => {
+            if info.funds.len() != 1 {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "Invalid: Multiple coins sent. Only accepts a single token as input."
+                        .to_string(),
+                }));
+            }
+            let deposit_denom = Denom::Native(info.funds[0].denom.to_string());
+            let deposit_amount = info.funds[0].amount;
+            let msg_sender = info.sender.to_string();
+            executers::deposit(
+                deps,
+                env,
+                info,
+                msg_sender,
+                endowment_id,
+                deposit_denom,
+                deposit_amount,
+            )
         }
         // Redeem is only called by the SC when setting up new strategies.
         // Pulls all existing strategy amounts back to Account in UST.
         // Then re-Deposits according to the Strategies set.
         // -Deposit Token/Yield Token (Vault) --> +UST (Account) --> -UST (Account) --> +Deposit Token/Yield Token (Vault)
-        ExecuteMsg::Redeem { account_addr } => {
-            executers::redeem_stable(deps, env, info, account_addr)
-        } // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
-        ExecuteMsg::Withdraw(msg) => executers::withdraw_stable(deps, env, info, msg), // DP (Account Locked) -> DP (Account Liquid + Treasury Tax)
-        ExecuteMsg::Harvest {
-            last_earnings_harvest,
-            last_harvest_fx,
-        } => executers::harvest(deps, env, info, last_earnings_harvest, last_harvest_fx), // DP -> DP shuffle (taxes collected)
+        ExecuteMsg::Redeem {
+            endowment_id,
+            amount,
+        } => executers::redeem(deps, env, info, endowment_id, amount), // -Deposit Token/Yield Token (Account) --> +UST (outside beneficiary)
+        _ => unimplemented!(),
     }
 }
 
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
-    let config = CONFIG.load(deps.storage)?;
-
     match msg {
         QueryMsg::VaultConfig {} => to_binary(&queriers::query_vault_config(deps)),
-        QueryMsg::Config {} => to_binary(&ConfigResponse {
-            input_denom: config.input_denom.clone(),
-            yield_token: config.yield_token.to_string(),
-        }),
-        QueryMsg::Balance { address } => to_binary(&queriers::query_balance(deps, address)),
+        QueryMsg::Balance { endowment_id } => {
+            to_binary(&queriers::query_balance(deps, endowment_id))
+        }
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
         // ANCHOR-SPECIFIC QUERIES BELOW THIS POINT!
         QueryMsg::ExchangeRate { input_denom: _ } => to_binary(&ExchangeRateResponse {
             exchange_rate: Decimal256::one(),
             yield_token_supply: Uint256::zero(),
         }),
-        QueryMsg::Deposit { amount } => to_binary(&deposit_stable_msg(
-            &config.moneymarket,
-            &config.input_denom,
-            amount,
-        )?),
-        QueryMsg::Redeem { amount } => to_binary(&redeem_stable_msg(
-            &config.moneymarket,
-            &config.yield_token,
-            amount,
-        )?),
         _ => unimplemented!(),
     }
 }
 
 #[entry_point]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
-    let ver = get_contract_version(deps.storage)?;
-    // ensure we are migrating from an allowed contract
-    if ver.contract != CONTRACT_NAME {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Can only upgrade from same type".to_string(),
-        }));
-    }
-    // note: better to do proper semver compare, but string compare *usually* works
-    if ver.version >= CONTRACT_VERSION.to_string() {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Cannot upgrade from a newer version".to_string(),
-        }));
-    }
-
-    // set the new version
-    set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
+pub fn migrate(_deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
     Ok(Response::default())
 }

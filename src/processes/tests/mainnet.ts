@@ -34,11 +34,10 @@ import {
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
-  testQueryRegistrarApprovedVaultList,
+  testQueryRegistrarVaultList,
   testQueryRegistrarApprovedVaultRateList,
   testQueryRegistrarConfig,
   testQueryRegistrarVault,
-  testQueryRegistrarVaultList,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -193,7 +192,7 @@ export async function testExecute(
   // Test query
   // await testQueryRegistrarConfig(juno, registrar);
   // await testQueryRegistrarEndowmentDetails(juno, registrar, endowmentContract1);
-  // await testQueryRegistrarApprovedVaultList(juno, registrar);
+  // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarApprovedVaultRateList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVault(juno, registrar, anchorVault);
