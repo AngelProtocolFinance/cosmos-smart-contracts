@@ -10,12 +10,12 @@ use std::fmt;
 pub struct Config {
     pub owner: Addr,
     pub registrar_contract: Addr,
-    pub moneymarket: Addr,
     pub input_denom: String,
-    pub yield_token: Addr,
-    pub next_pending_id: u64,
-    pub tax_per_block: Decimal,
+    pub acct_type: AccountType,
+    pub last_harvest: u64,
     pub harvest_to_liquid: Decimal,
+    pub sibling_vault: Addr,
+    pub next_pending_id: u32, // (Incrementing) ID used for indexing the PendingInfo
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
@@ -92,6 +92,67 @@ impl fmt::Display for EndowmentType {
                 EndowmentType::Normal => "normal",
             }
         )
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum AccountType {
+    Locked = 0,
+    Liquid = 1,
+}
+
+impl fmt::Display for AccountType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                AccountType::Locked => "locked",
+                AccountType::Liquid => "liquid",
+            }
+        )
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub struct SplitDetails {
+    pub max: Decimal,
+    pub min: Decimal,
+    pub default: Decimal, // for when a split parameter is not provided
+}
+
+impl SplitDetails {
+    pub fn default() -> Self {
+        SplitDetails {
+            min: Decimal::zero(),
+            max: Decimal::one(),
+            default: Decimal::percent(50),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct AcceptedTokens {
+    pub native: Vec<String>,
+    pub cw20: Vec<String>,
+}
+
+impl AcceptedTokens {
+    pub fn default() -> Self {
+        AcceptedTokens {
+            native: vec![
+                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+            ],
+            cw20: vec![],
+        }
+    }
+    pub fn native_valid(&self, denom: String) -> bool {
+        matches!(self.native.iter().position(|d| *d == denom), Some(_i))
+    }
+    pub fn cw20_valid(&self, addr: String) -> bool {
+        matches!(self.cw20.iter().position(|a| *a == addr), Some(_i))
     }
 }
 
@@ -283,5 +344,5 @@ pub struct PendingInfo {
 
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
-pub const BALANCES: Map<&Addr, GenericBalance> = Map::new("balance");
+pub const BALANCES: Map<u32, Uint128> = Map::new("balance");
 pub const PENDING: Map<&[u8], PendingInfo> = Map::new("pending");
