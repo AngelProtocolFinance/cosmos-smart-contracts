@@ -291,7 +291,7 @@ export async function testQueryAccountsBalance(
   accountsContract: string,
   endowmentId: number,
 ): Promise<void> {
-  process.stdout.write(`Test - Query Accounts - Endowment(${endowmentId}) Balance\n`);
+  process.stdout.write(`Test - Query Accounts - Endowment(#${endowmentId}) Balance\n`);
   const result = await juno.queryContractSmart(accountsContract, {
     balance: { id: endowmentId },
   });
