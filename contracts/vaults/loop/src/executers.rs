@@ -1,3 +1,4 @@
+use angel_core::utils::{query_balance, query_token_balance};
 use cosmwasm_std::{
     attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, Fraction,
     MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
@@ -13,9 +14,7 @@ use angel_core::messages::vault::{
 };
 use angel_core::responses::{accounts::EndowmentListResponse, registrar::ConfigResponse};
 use angel_core::structs::{AccountType, EndowmentEntry};
-use terraswap::querier::{
-    query_balance, query_pair_info, query_pair_info_from_pair, query_token_balance,
-};
+use terraswap::querier::{query_pair_info, query_pair_info_from_pair};
 
 use crate::state::{Config, APTAX, BALANCES, CONFIG, TOKEN_INFO};
 
@@ -181,14 +180,12 @@ pub fn restake_claim_reward(
     }
 
     // Compute the `lp_reward_token` amount
-    let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+    let reward_token_bal = query_token_balance(
+        deps.as_ref(),
         config.lp_reward_token.to_string(),
-        &cw20::Cw20QueryMsg::Balance {
-            address: env.contract.address.to_string(),
-        },
+        env.contract.address.to_string(),
     )?;
-    let reward_amount = reward_token_bal_query
-        .balance
+    let reward_amount = reward_token_bal
         .checked_sub(reward_token_bal_before)
         .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
 
@@ -333,21 +330,13 @@ pub fn redeem(
     env: Env,
     info: MessageInfo,
     endowment_id: u32,
-    amount: Uint128,
+    burn_shares_amount: Uint128,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
-    let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract.to_string(),
-        &RegistrarQueryMsg::Config {},
-    )?;
-    let accounts_contract = deps
-        .api
-        .addr_validate(&registar_config.accounts_contract.unwrap())?;
-
-    let burn_shares_amount = amount;
 
     let beneficiary: Addr;
     let id: Option<u32>;
+
     if info.sender == config.tax_collector {
         beneficiary = config.tax_collector.clone();
         id = None;
@@ -359,6 +348,13 @@ pub fn redeem(
             info.sender.to_string(),
             endowment_id,
         )?;
+        let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
+            config.registrar_contract.to_string(),
+            &RegistrarQueryMsg::Config {},
+        )?;
+        let accounts_contract = deps
+            .api
+            .addr_validate(&registar_config.accounts_contract.unwrap())?;
         beneficiary = accounts_contract.clone();
         id = Some(endowment_id);
     }
@@ -376,7 +372,8 @@ pub fn redeem(
     })?;
 
     // Update the config
-    let lp_amount = burn_shares_amount.multiply_ratio(config.total_lp_amount, config.total_shares);
+    let lp_2_vt_rate = Decimal::from_ratio(config.total_lp_amount, config.total_shares);
+    let lp_amount = burn_shares_amount * lp_2_vt_rate;
     config.total_lp_amount -= lp_amount;
     config.total_shares -= burn_shares_amount;
 
@@ -404,16 +401,15 @@ pub fn redeem(
     }));
 
     // Handle the returning lp tokens
-    let lp_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-        lp_token_contract,
-        &cw20::Cw20QueryMsg::Balance {
-            address: env.contract.address.to_string(),
-        },
+    let lp_token_bal = query_token_balance(
+        deps.as_ref(),
+        lp_token_contract.to_string(),
+        env.contract.address.to_string(),
     )?;
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::RemoveLiquidity {
-            lp_token_bal_before: lp_bal_query.balance,
+            lp_token_bal_before: lp_token_bal,
             beneficiary,
             id,
         })
@@ -422,16 +418,15 @@ pub fn redeem(
     }));
 
     // Handle the lp_reward_token(LOOP) tokens (Re-stake the lp_reward_tokens)
-    let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+    let reward_token_bal = query_token_balance(
+        deps.as_ref(),
         config.lp_reward_token.to_string(),
-        &cw20::Cw20QueryMsg::Balance {
-            address: env.contract.address.to_string(),
-        },
+        env.contract.address.to_string(),
     )?;
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::RestakeClaimReward {
-            reward_token_bal_before: reward_token_bal_query.balance,
+            reward_token_bal_before: reward_token_bal,
         })
         .unwrap(),
         funds: vec![],
@@ -465,16 +460,15 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
     }));
 
     // Re-stake the lp_reward_token(LOOP)
-    let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+    let reward_token_bal = query_token_balance(
+        deps.as_ref(),
         config.lp_reward_token.to_string(),
-        &cw20::Cw20QueryMsg::Balance {
-            address: env.contract.address.to_string(),
-        },
+        env.contract.address.to_string(),
     )?;
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::RestakeClaimReward {
-            reward_token_bal_before: reward_token_bal_query.balance,
+            reward_token_bal_before: reward_token_bal,
         })
         .unwrap(),
         funds: vec![],
@@ -495,7 +489,7 @@ pub fn reinvest_to_locked_execute(
     env: Env,
     info: MessageInfo,
     id: u32,
-    amount: Uint128, // vault tokens
+    burn_shares_amount: Uint128, // vault tokens
 ) -> Result<Response, ContractError> {
     let mut config: Config = CONFIG.load(deps.storage)?;
 
@@ -516,21 +510,28 @@ pub fn reinvest_to_locked_execute(
     }
     // 2. Check that sender ID has >= amount of vault tokens in it's balance
     let endowment_vt_balance = crate::queriers::query_balance(deps.as_ref(), id).balance;
-    if amount > endowment_vt_balance {
+    if burn_shares_amount > endowment_vt_balance {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: format!(
                 "Insufficient balance: Needed {}, existing: {}",
-                amount, endowment_vt_balance
+                burn_shares_amount, endowment_vt_balance
             ),
         }));
     }
     // 3. Burn vault tokens an calculate the LP Tokens equivalent
     // First, burn the vault tokens
-    execute_burn(deps.branch(), env.clone(), info, Some(id), amount).map_err(|e| {
+    execute_burn(
+        deps.branch(),
+        env.clone(),
+        info,
+        Some(id),
+        burn_shares_amount,
+    )
+    .map_err(|e| {
         ContractError::Std(StdError::GenericErr {
             msg: format!(
                 "Cannot burn the {} vault tokens from {} :: {}",
-                amount,
+                burn_shares_amount,
                 id.to_string(),
                 e,
             ),
@@ -538,9 +539,10 @@ pub fn reinvest_to_locked_execute(
     })?;
 
     // Update the config
-    let lp_amount = amount.multiply_ratio(config.total_lp_amount, config.total_shares);
+    let lp_2_vt_rate = Decimal::from_ratio(config.total_lp_amount, config.total_shares);
+    let lp_amount = burn_shares_amount * lp_2_vt_rate;
     config.total_lp_amount -= lp_amount;
-    config.total_shares -= amount;
+    config.total_shares -= burn_shares_amount;
 
     CONFIG.save(deps.storage, &config)?;
 
@@ -581,16 +583,15 @@ pub fn reinvest_to_locked_execute(
     })];
 
     // 5. Handle the reward LOOP tokens(= re-stake the reward tokens)
-    let reward_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+    let reward_token_bal = query_token_balance(
+        deps.as_ref(),
         config.lp_reward_token.to_string(),
-        &cw20::Cw20QueryMsg::Balance {
-            address: env.contract.address.to_string(),
-        },
+        env.contract.address.to_string(),
     )?;
     let restake_reward_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::RestakeClaimReward {
-            reward_token_bal_before: reward_token_bal_query.balance,
+            reward_token_bal_before: reward_token_bal,
         })
         .unwrap(),
         funds: vec![],
@@ -611,7 +612,7 @@ pub fn reinvest_to_locked_recieve(
     env: Env,
     info: MessageInfo,
     id: u32,
-    amount: Uint128, // asset tokens (ex. LPs)
+    lp_amount: Uint128, // asset tokens (ex. LPs)
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
     let mut config: Config = CONFIG.load(deps.storage)?;
@@ -642,11 +643,11 @@ pub fn reinvest_to_locked_recieve(
 
     // ensure the `amount` matches `sent_amount`.
     let sent_amount = cw20_msg.amount;
-    if amount != sent_amount {
+    if lp_amount != sent_amount {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: format!(
                 "Balance does not match: Received: {}, Expected: {}",
-                sent_amount, amount
+                sent_amount, lp_amount
             ),
         }));
     }
@@ -657,7 +658,7 @@ pub fn reinvest_to_locked_recieve(
         contract_addr: config.lp_token_contract.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
-            amount,
+            amount: lp_amount,
             msg: to_binary(&LoopFarmingExecuteMsg::Stake {}).unwrap(),
         })
         .unwrap(),
@@ -666,11 +667,15 @@ pub fn reinvest_to_locked_recieve(
 
     // 2. Mint the vault tokens
     // Compute the `vault_token` amount
-    config.total_lp_amount += amount;
     let vt_mint_amount = match config.total_shares.u128() {
         0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
-        _ => amount.multiply_ratio(config.total_shares, config.total_lp_amount),
+        _ => {
+            let increased_total_lp = config.total_lp_amount + lp_amount;
+            let vt_2_lp_rate = Decimal::from_ratio(config.total_shares, increased_total_lp);
+            lp_amount * vt_2_lp_rate
+        }
     };
+    config.total_lp_amount += lp_amount;
     config.total_shares += vt_mint_amount;
     CONFIG.save(deps.storage, &config)?;
 
@@ -876,15 +881,12 @@ pub fn stake_lp_token(
     let mut harvest_to_liquid_msgs = vec![];
 
     // Prepare the "loop::farming::stake" msg
-    let lp_token_contract = config.lp_token_contract.clone();
-    let lp_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-        lp_token_contract.to_string(),
-        &cw20::Cw20QueryMsg::Balance {
-            address: env.contract.address.to_string(),
-        },
+    let lp_token_bal = query_token_balance(
+        deps.as_ref(),
+        config.lp_token_contract.to_string(),
+        env.contract.address.to_string(),
     )?;
-    let lp_amount = lp_bal_query
-        .balance
+    let lp_amount = lp_token_bal
         .checked_sub(lp_token_bal_before)
         .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
     if lp_amount.is_zero() {
@@ -897,11 +899,15 @@ pub fn stake_lp_token(
         // Case of `deposit` from `endowment`
         Some(endowment_id) => {
             // Compute the `vault_token` amount
-            config.total_lp_amount += lp_amount;
             let vt_mint_amount = match config.total_shares.u128() {
                 0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
-                _ => lp_amount.multiply_ratio(config.total_shares, config.total_lp_amount),
+                _ => {
+                    let increased_total_lp = config.total_lp_amount + lp_amount;
+                    let vt_2_lp_rate = Decimal::from_ratio(config.total_shares, increased_total_lp);
+                    lp_amount * vt_2_lp_rate
+                }
             };
+            config.total_lp_amount += lp_amount;
             config.total_shares += vt_mint_amount;
 
             // Mint the `vault_token`
@@ -922,11 +928,15 @@ pub fn stake_lp_token(
         // Case of `harvest` from `keeper` wallet
         None => {
             // Compute the `vault_token` amount
-            config.total_lp_amount += lp_amount;
             let vt_mint_amount = match config.total_shares.u128() {
                 0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
-                _ => lp_amount.multiply_ratio(config.total_shares, config.total_lp_amount),
+                _ => {
+                    let increased_total_lp = config.total_lp_amount + lp_amount;
+                    let vt_2_lp_rate = Decimal::from_ratio(config.total_shares, increased_total_lp);
+                    lp_amount * vt_2_lp_rate
+                }
             };
+            config.total_lp_amount += lp_amount;
             config.total_shares += vt_mint_amount;
 
             // Compute the `ap_treasury tax portion` & store in APTAX
@@ -935,8 +945,7 @@ pub fn stake_lp_token(
                 &RegistrarQueryMsg::Config {},
             )?;
             let tax_rate = registrar_config.tax_rate;
-            let tax_mint_amount =
-                vt_mint_amount.multiply_ratio(tax_rate.numerator(), tax_rate.denominator());
+            let tax_mint_amount = vt_mint_amount * tax_rate;
 
             APTAX.update(deps.storage, |balance: Uint128| -> StdResult<_> {
                 Ok(balance.checked_add(tax_mint_amount)?)
@@ -960,19 +969,12 @@ pub fn stake_lp_token(
                 }
                 AccountType::Locked => {
                     // Send the portion of LP tokens to the sibling(liquid) vault
-                    let lp_tax_amount =
-                        lp_amount.multiply_ratio(tax_rate.numerator(), tax_rate.denominator());
+                    let lp_tax_amount = lp_amount * tax_rate;
                     let lp_less_tax = lp_amount - lp_tax_amount;
 
                     let send_liquid_ratio = registrar_config.rebalance.interest_distribution;
-                    let send_liquid_lp_amount = lp_less_tax.multiply_ratio(
-                        send_liquid_ratio.numerator(),
-                        send_liquid_ratio.denominator(),
-                    );
-                    let vt_shares_to_burn = (vt_mint_amount - tax_mint_amount).multiply_ratio(
-                        send_liquid_ratio.numerator(),
-                        send_liquid_ratio.denominator(),
-                    );
+                    let send_liquid_lp_amount = lp_less_tax * send_liquid_ratio;
+                    let vt_shares_to_burn = (vt_mint_amount - tax_mint_amount) * send_liquid_ratio;
                     config.total_shares -= vt_shares_to_burn;
                     config.total_lp_amount -= send_liquid_lp_amount;
 
@@ -991,7 +993,7 @@ pub fn stake_lp_token(
                     lp_stake_amount = lp_amount - send_liquid_lp_amount;
 
                     harvest_to_liquid_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: lp_token_contract.to_string(),
+                        contract_addr: config.lp_token_contract.to_string(),
                         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                             contract: config.sibling_vault.to_string(),
                             amount: send_liquid_lp_amount,
@@ -1007,7 +1009,7 @@ pub fn stake_lp_token(
     CONFIG.save(deps.storage, &config)?;
 
     let farming_stake_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: lp_token_contract.to_string(),
+        contract_addr: config.lp_token_contract.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_stake_amount,
@@ -1091,41 +1093,38 @@ pub fn remove_liquidity(
         return Err(ContractError::Unauthorized {});
     }
 
-    let config = CONFIG.load(deps.storage)?;
-    let lp_token_contract = config.lp_token_contract.to_string();
+    let config: Config = CONFIG.load(deps.storage)?;
     let asset_infos = config.lp_pair_asset_infos;
     let pair_contract = config.lp_pair_contract;
 
     // First, compute "unfarm"ed LP token balance for "remove_liquidity"
-    let lp_token_bal_query: cw20::BalanceResponse = deps.querier.query_wasm_smart(
-        lp_token_contract.to_string(),
-        &cw20::Cw20QueryMsg::Balance {
-            address: env.contract.address.to_string(),
-        },
+    let lp_token_bal = query_token_balance(
+        deps.as_ref(),
+        config.lp_token_contract.to_string(),
+        env.contract.address.to_string(),
     )?;
 
-    let lp_token_amt = lp_token_bal_query
-        .balance
+    let lp_token_amount = lp_token_bal
         .checked_sub(lp_token_bal_before)
         .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
 
     // Prepare the "remove_liquidity" messages
     let mut withdraw_liquidity_msgs = vec![];
     withdraw_liquidity_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: lp_token_contract.to_string(),
+        contract_addr: config.lp_token_contract.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
             spender: pair_contract.to_string(),
-            amount: lp_token_amt,
+            amount: lp_token_amount,
             expires: None,
         })
         .unwrap(),
         funds: vec![],
     }));
     withdraw_liquidity_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: lp_token_contract.to_string(),
+        contract_addr: config.lp_token_contract.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: pair_contract.to_string(),
-            amount: lp_token_amt,
+            amount: lp_token_amount,
             msg: to_binary(&LoopPairExecuteMsg::WithdrawLiquidity {}).unwrap(),
         })
         .unwrap(),
@@ -1492,11 +1491,9 @@ fn query_asset_balance(
     asset_info: AssetInfo,
 ) -> StdResult<Uint128> {
     match asset_info {
-        AssetInfo::NativeToken { denom } => query_balance(&deps.querier, account_addr, denom),
-        AssetInfo::Token { contract_addr } => query_token_balance(
-            &deps.querier,
-            deps.api.addr_validate(&contract_addr)?,
-            account_addr,
-        ),
+        AssetInfo::NativeToken { denom } => query_balance(deps, account_addr.to_string(), denom),
+        AssetInfo::Token { contract_addr } => {
+            query_token_balance(deps, contract_addr, account_addr.to_string())
+        }
     }
 }

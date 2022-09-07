@@ -324,7 +324,7 @@ fn test_redeem() {
         err,
         ContractError::Std(StdError::GenericErr {
             msg: format!(
-                "Cannot burn the {} vault tokens from Endowment {}",
+                "Cannot burn the {} vault tokens from Endowment {} :: Overflow: Cannot Sub with 0 and 30",
                 redeem_amount, endowment_id
             )
         })
@@ -594,7 +594,7 @@ fn test_redeem_lp_token() {
     assert_eq!(
         err,
         ContractError::Std(StdError::generic_err(
-            "Cannot burn the 100 vault tokens from tax-collector"
+            "Cannot burn the 100 vault tokens from tax-collector :: Overflow: Cannot Sub with 0 and 100"
         ))
     );
 }

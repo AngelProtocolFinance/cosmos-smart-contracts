@@ -254,10 +254,10 @@ pub fn validate_deposit_fund(
 pub fn query_denom_balance(deps: &DepsMut, denom: &Denom, account_addr: String) -> Uint128 {
     match denom {
         Denom::Native(denom) => {
-            query_balance(&deps, account_addr, denom.to_string()).unwrap_or(Uint128::zero())
+            query_balance(deps.as_ref(), account_addr, denom.to_string()).unwrap_or(Uint128::zero())
         }
         Denom::Cw20(contract_addr) => {
-            query_token_balance(&deps, contract_addr.to_string(), account_addr)
+            query_token_balance(deps.as_ref(), contract_addr.to_string(), account_addr)
                 .unwrap_or(Uint128::zero())
         }
     }
@@ -265,12 +265,12 @@ pub fn query_denom_balance(deps: &DepsMut, denom: &Denom, account_addr: String) 
 
 /// Returns a native token's balance for a specific account.
 /// ## Params
-/// * **deps** is an object of type [`DepsMut`].
+/// * **deps** is an object of type [`Deps`].
 ///
 /// * **account_addr** is an object of type [`String`].
 ///
 /// * **denom** is an object of type [`String`] used to specify the denomination used to return the balance (e.g uluna).
-pub fn query_balance(deps: &DepsMut, account_addr: String, denom: String) -> StdResult<Uint128> {
+pub fn query_balance(deps: Deps, account_addr: String, denom: String) -> StdResult<Uint128> {
     Ok(deps
         .querier
         .query_balance(account_addr, denom)
@@ -280,13 +280,13 @@ pub fn query_balance(deps: &DepsMut, account_addr: String, denom: String) -> Std
 
 /// Returns a token balance for an account.
 /// ## Params
-/// * **deps** is an object of type [`DepsMut`].
+/// * **deps** is an object of type [`Deps`].
 ///
 /// * **contract_addr** is an object of type [`String`]. This is the token contract for which we return a balance.
 ///
 /// * **account_addr** is an object of type [`String`] for which we query the token balance for.
 pub fn query_token_balance(
-    deps: &DepsMut,
+    deps: Deps,
     contract_addr: String,
     account_addr: String,
 ) -> StdResult<Uint128> {
