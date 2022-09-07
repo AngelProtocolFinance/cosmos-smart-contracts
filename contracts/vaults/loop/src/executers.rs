@@ -675,7 +675,11 @@ pub fn reinvest_to_locked_recieve(
     CONFIG.save(deps.storage, &config)?;
 
     // Mint the `vault_token`
-    execute_mint(deps, env, info, Some(id), vt_mint_amount).map_err(|e| {
+    let minter_info = MessageInfo {
+        sender: env.contract.address.clone(),
+        funds: vec![],
+    };
+    execute_mint(deps, env, minter_info, Some(id), vt_mint_amount).map_err(|e| {
         ContractError::Std(StdError::GenericErr {
             msg: format!(
                 "Cannot mint the {} vault token for {}:: {}",
