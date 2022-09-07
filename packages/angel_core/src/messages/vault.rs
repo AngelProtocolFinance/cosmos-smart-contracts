@@ -133,6 +133,9 @@ pub enum QueryMsg {
     /// Returns the total balance/total_share of the contract
     /// Return type: BalanceResponse.
     TotalBalance {},
+    /// Returns the APTAX balance of the contract
+    /// Return type: BalanceResponse
+    ApTaxBalance {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -3,7 +3,7 @@ use cw20::{BalanceResponse, TokenInfoResponse};
 
 use angel_core::responses::vault::ConfigResponse;
 
-use crate::state::{Config, BALANCES, CONFIG, TOKEN_INFO};
+use crate::state::{Config, APTAX, BALANCES, CONFIG, TOKEN_INFO};
 
 pub fn query_balance(deps: Deps, id: u32) -> BalanceResponse {
     let balance = BALANCES.load(deps.storage, id).unwrap_or_default();
@@ -43,4 +43,9 @@ pub fn query_total_balance(deps: Deps) -> BalanceResponse {
     BalanceResponse {
         balance: config.total_shares,
     }
+}
+
+pub fn query_ap_tax_balance(deps: Deps) -> BalanceResponse {
+    let ap_tax = APTAX.load(deps.storage).unwrap();
+    BalanceResponse { balance: ap_tax }
 }

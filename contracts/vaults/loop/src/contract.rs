@@ -218,6 +218,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         }
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
         QueryMsg::TotalBalance {} => to_binary(&queriers::query_total_balance(deps)),
+        QueryMsg::ApTaxBalance {} => to_binary(&queriers::query_ap_tax_balance(deps)),
     }
 }
 
