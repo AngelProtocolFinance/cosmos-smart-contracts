@@ -191,7 +191,9 @@ export async function testExecute(
   console.log(chalk.green(" Done!"));
 
   console.log(chalk.yellow("\nStep 3. Running Tests"));
- 
+
+  // Test execute
+
   // Multisig test
   // await testAddMemberToC4Group(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, cw4GrpApTeam, actors.apTeam2.addr);
   // await testUpdateCw3Config(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 50, 25000);
@@ -202,7 +204,7 @@ export async function testExecute(
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ApTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
 
-  // Test execute
+
   /* --- IndexFund contract --- */
   // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund);
   // await testUpdateAllianceMembersList(
@@ -231,8 +233,19 @@ export async function testExecute(
   //   false,
   //   []
   // );
-
   // await testUpdateFundMembers(actors.apTeam.client, actors.apTeam.addr, indexFund, 2, [], []);
+  // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0", "1000000");
+  // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund);
+  // await testUpdateFundMembers(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   indexFund,
+  //   2,
+  //   [endowmentContract2],
+  //   [endowmentContract4]
+  // );
+
+  /* --- Accounts & Endowments --- */
   // await testCreateEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, {
   //   owner: actors.charity1.addr,
   //   withdraw_before_maturity: false,
@@ -265,20 +278,6 @@ export async function testExecute(
   //     cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
   //     cw3_max_voting_period: 10000,
   // });
-
-  /* --- Accounts & Endowments --- */
-  // Test execute
-  // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, endowmentContract1, "10000000"); // possible query registrar error
-  // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0", "1000000"); // possible query registrar error
-  // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund); // possible query registrar error
-  // await testAngelTeamCanTriggerVaultsHarvest(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   charity1,
-  //   registrar,
-  //   haloCollector,
-  //   "0.5"
-  // );  // vault-related
   // await testCharityCanUpdateStrategies(
   //   actors.charity1.client,
   //   actors.charity1.addr,
@@ -288,35 +287,8 @@ export async function testExecute(
   //   "locked",
   //   [{vault: vaultLocked1, percentage: "0.3"}, {vault: vaultLocked2, percentage: "0.3"}]
   // );  // vault-related
-  // await testBeneficiaryCanWithdrawFromLiquid(
-  //   actors.charity3.client,
-  //   actors.charity3.addr,
-  //   endowmentContract3,
-  //   Vault1,
-  //   plebAddr
-  // );  // vault-related
-  // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, registrar, {
-  //   cw3_code: 102,
-  //   cw4_code: 104,
-  //   accounts_code_id: 102,
-  // });
   // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, 1);
   // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 1, status: 1, benficiary: undefined });
-  // await testClosingEndpoint(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   registrar,
-  //   endowmentContract3,
-  //   endowmentContract4
-  // );
-  // await testUpdateFundMembers(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   indexFund,
-  //   2,
-  //   [endowmentContract2],
-  //   [endowmentContract4]
-  // );
   // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1, "1000");
   // await testEndowmentCanWithdraw(
   //   actors.charity1.client, 

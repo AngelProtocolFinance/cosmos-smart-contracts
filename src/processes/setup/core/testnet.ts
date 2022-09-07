@@ -587,7 +587,7 @@ async function createLoopVaults(
 
     harvest_to_liquid: harvest_to_liquid,
   });
-  vault1_locked = vaultLiquidResult1.contractAddress as string;
+  vault1_locked = vaultResult1.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("Liquid contractAddress")}=${vault1_locked}`);
 
   // Vault - #1 (Liquid)
@@ -610,8 +610,8 @@ async function createLoopVaults(
 
     harvest_to_liquid: harvest_to_liquid,
   });
-  vault2_liquid = vaultLiquidResult2.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("Liquid contractAddress")}=${vault2_liquid}`);
+  vault1_liquid = vaultResult2.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("Liquid contractAddress")}=${vault1_liquid}`);
 
   // Update the "sibling_vault" config of "vault1_locked"
   await sendTransaction(juno, apTeamAddr, vault1_locked, {
@@ -628,7 +628,7 @@ async function createLoopVaults(
   process.stdout.write("Add Vault #1 & #2 in Registrar");
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
-      network: "uni-3",
+      network: undefined,
       vault_addr: vault1_locked,
       input_denom: "ujuno",
       yield_token: registrar,
@@ -638,7 +638,7 @@ async function createLoopVaults(
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
-      network: "uni-3",
+      network: undefined,
       vault_addr: vault1_liquid,
       input_denom: "ujuno",
       yield_token: registrar,
