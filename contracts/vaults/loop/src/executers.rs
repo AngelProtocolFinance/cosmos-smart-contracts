@@ -1372,8 +1372,8 @@ fn validate_action_caller_n_endow_id(
         config.registrar_contract.to_string(),
         &RegistrarQueryMsg::Config {},
     )?;
-    if let Some(accounts_contract) = registar_config.accounts_contract {
-        if caller != accounts_contract {
+    if let Some(ref accounts_contract) = registar_config.accounts_contract {
+        if caller != accounts_contract.to_string() {
             return Err(ContractError::Unauthorized {});
         }
     } else {
@@ -1383,7 +1383,7 @@ fn validate_action_caller_n_endow_id(
     // Check that the "deposit-endowment-id" is an Accounts SC
     let endowments_rsp: EndowmentListResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
+            contract_addr: registar_config.accounts_contract.unwrap(),
             msg: to_binary(&angel_core::messages::accounts::QueryMsg::EndowmentList {
                 name: None,
                 owner: None,
