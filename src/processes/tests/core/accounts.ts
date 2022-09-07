@@ -150,6 +150,7 @@ export async function testCharityCanUpdateStrategies(
   charity1: string,
   accountsContract: string,
   endowmentId: number,
+  acct_type: string,
   Vault1: string,
   Vault2: string
 ): Promise<void> {
@@ -162,9 +163,10 @@ export async function testCharityCanUpdateStrategies(
     sendMessageViaCw3Proposal(juno, charity1, cw3, accountsContract, {
       update_strategies: {
         id: endowmentId,
+        acct_type: acct_type,
         strategies: [
           { vault: Vault1, percentage: "0.5"},
-          { vault: Vault2, percentage: "0.5"},
+          // { vault: Vault2, percentage: "0.5"},
         ],
       },
     })
