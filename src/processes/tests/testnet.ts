@@ -52,11 +52,10 @@ import {
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
-  testQueryRegistrarApprovedVaultList,
+  testQueryRegistrarVaultList,
   testQueryRegistrarApprovedVaultRateList,
   testQueryRegistrarConfig,
   testQueryRegistrarVault,
-  testQueryRegistrarVaultList,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -152,8 +151,10 @@ export async function testExecute(
   tcaAddr: string,
   registrar: string,
   indexFund: string,
-  Vault1: string,
-  Vault2: string,
+  vaultLocked1: string,
+  vaultLiquid1: string,
+  vaultLocked2: string,
+  vaultLiquid2: string,
   accounts: string,
   endowId1: number,
   endowId2: number,
@@ -230,24 +231,91 @@ export async function testExecute(
   //   false,
   //   []
   // );
-  // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, 5);
-  // await testUpdateFundMembers(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, 2, [], []);
-  // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0.5", "4200000");
-  // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund); // Failed to retrieve account from signer error
 
-  /* --- Registrar contract --- */
-  // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, {
-  //     accepted_tokens_native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+  // await testUpdateFundMembers(actors.apTeam.client, actors.apTeam.addr, indexFund, 2, [], []);
+  // await testCreateEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, {
+  //   owner: actors.charity1.addr,
+  //   withdraw_before_maturity: false,
+  //   maturity_time: undefined,
+  //   maturity_height: undefined,
+  //   profile: {
+  //     name: "Test-Suite Endowment",
+  //     overview: "Endowment created from the test-suite integration test",
+  //     categories: { sdgs:[2], general: [] },
+  //     tier: 3,
+  //     logo: "test logo",
+  //     image: "test image",
+  //     url: undefined,
+  //     registration_number: undefined,
+  //     country_city_origin: undefined,
+  //     contact_email: undefined,
+  //     social_media_urls: {
+  //       facebook: undefined,
+  //       twitter: undefined,
+  //       linkedin: undefined,
+  //     },
+  //     number_of_employees: undefined,
+  //     average_annual_budget: undefined,
+  //     annual_revenue: undefined,
+  //     charity_navigator_rating: undefined,
+  //     endow_type: "Normal",
+  //   },
+  //     cw4_members: [{ addr: actors.charity1.addr, weight: 1 }],
+  //     kyc_donors_only: false,
+  //     cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
+  //     cw3_max_voting_period: 10000,
   // });
 
   /* --- Accounts & Endowments --- */
+  // Test execute
+  // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, endowmentContract1, "10000000"); // possible query registrar error
+  // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0", "1000000"); // possible query registrar error
+  // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund); // possible query registrar error
+  // await testAngelTeamCanTriggerVaultsHarvest(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   charity1,
+  //   registrar,
+  //   haloCollector,
+  //   "0.5"
+  // );  // vault-related
   // await testCharityCanUpdateStrategies(
   //   actors.charity1.client,
   //   actors.charity1.addr,
   //   accounts,
-  //   endowId1,
+  //   "juno18pkq9mwxxlmyq7kr5txhm060wemg2s4u94wvsfd9w2kdc0u99d6s9nzar2",
+  //   1,
+  //   "locked",
+  //   [{vault: vaultLocked1, percentage: "0.3"}, {vault: vaultLocked2, percentage: "0.3"}]
+  // );  // vault-related
+  // await testBeneficiaryCanWithdrawFromLiquid(
+  //   actors.charity3.client,
+  //   actors.charity3.addr,
+  //   endowmentContract3,
   //   Vault1,
-  //   Vault2
+  //   plebAddr
+  // );  // vault-related
+  // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, registrar, {
+  //   cw3_code: 102,
+  //   cw4_code: 104,
+  //   accounts_code_id: 102,
+  // });
+  // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, 1);
+  // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 1, status: 1, benficiary: undefined });
+  // await testClosingEndpoint(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   registrar,
+  //   endowmentContract3,
+  //   endowmentContract4
+  // );
+  // await testUpdateFundMembers(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   indexFund,
+  //   2,
+  //   [endowmentContract2],
+  //   [endowmentContract4]
   // );
   // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1, "1000");
   // await testEndowmentCanWithdraw(
@@ -266,25 +334,19 @@ export async function testExecute(
 
   // Test query
   // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
-  // await testQueryRegistrarApprovedVaultList(actors.apTeam.client, registrar);
+  // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarApprovedVaultRateList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, Vault1);
   // await testQueryVaultConfig(actors.apTeam.client, Vault1);
+  
+  // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
   // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
-  // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsState(actors.apTeam.client, accounts, 1);
-  // await testQueryAccountsTransactions(
-  //   actors.apTeam.client,
-  //   accounts,
-  //   1,
-  //   undefined,
-  //   undefined,
-  //   undefined
-  // );
+  
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);
   // await testQueryIndexFundTcaList(actors.apTeam.client, indexFund);

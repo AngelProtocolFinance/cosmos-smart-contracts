@@ -1,13 +1,13 @@
 use crate::errors::ContractError;
 use crate::msg::{
-    AccountWithdrawMsg, EndowmentDetailResponse, EndowmentListResponse, QueryMsg, UpdateConfigMsg,
+    ExecuteMsg::VaultReceipt, QueryMsg::Config, RegistrarConfigResponse, UpdateConfigMsg,
 };
-use crate::state::{EndowmentEntry, EndowmentStatus, GenericBalance, BALANCES, CONFIG, TOKEN_INFO};
+use crate::state::{BALANCES, CONFIG, TOKEN_INFO};
 use cosmwasm_std::{
-    to_binary, Addr, Decimal256, DepsMut, Env, MessageInfo, QueryRequest, Response, StdResult,
-    WasmQuery,
+    coins, to_binary, Addr, CosmosMsg, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    Uint128, WasmMsg,
 };
-use cw20::{Balance, Cw20CoinVerified};
+use cw20::Denom;
 
 pub fn update_owner(
     deps: DepsMut,
@@ -51,204 +51,131 @@ pub fn update_config(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    msg: UpdateConfigMsg,
+    _msg: UpdateConfigMsg,
 ) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
 
     // only the SC admin can update these configs...for now
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
-
-    config.moneymarket = match msg.moneymarket {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.moneymarket,
-    };
-
-    config.yield_token = match msg.yield_token {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.yield_token,
-    };
-
-    config.input_denom = match msg.input_denom {
-        Some(denom) => denom,
-        None => config.input_denom,
-    };
-    config.tax_per_block = msg.tax_per_block.unwrap_or(config.tax_per_block);
-    config.harvest_to_liquid = msg.harvest_to_liquid.unwrap_or(config.harvest_to_liquid);
-    CONFIG.save(deps.storage, &config)?;
-
     Ok(Response::default())
 }
 
-pub fn deposit_stable(
-    deps: DepsMut,
+pub fn deposit(
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    _balance: Balance,
+    _msg_sender: String,
+    endowment_id: u32,
+    _deposit_denom: Denom,
+    deposit_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    // only accept max of 1 deposit coin/token per donation
-    if info.funds.len() != 1 {
-        return Err(ContractError::InvalidCoinsDeposited {});
+    let _config = CONFIG.load(deps.storage)?;
+    // Check if the "deposit_amount" is zero or not
+    if deposit_amount.is_zero() {
+        return Err(ContractError::EmptyBalance {});
     }
 
-    // check that the depositor is an Accounts SC
-    let endowments_rsp: EndowmentListResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&QueryMsg::EndowmentList {
-                name: None,
-                owner: None,
-                status: None,
-                tier: None,
-                un_sdg: None,
-                endow_type: None,
-            })?,
-        }))?;
-    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments.iter().position(|p| p.address == info.sender);
-    // reject if the sender was found in the list of endowments
-    if pos == None {
-        return Err(ContractError::Unauthorized {});
-    }
+    // First, burn the vault tokens
+    execute_mint(
+        deps.branch(),
+        env.clone(),
+        info,
+        endowment_id,
+        deposit_amount,
+    )?;
 
-    // increase the total supply of deposit tokens
-    let deposit_amount = info.funds[0].amount;
-    let mut token_info = TOKEN_INFO.load(deps.storage)?;
-    token_info.total_supply += deposit_amount;
-    TOKEN_INFO.save(deps.storage, &token_info)?;
-
-    let mut investment = BALANCES
-        .load(deps.storage, &info.sender)
-        .unwrap_or_else(|_| GenericBalance::default());
-
-    // update investment holdings balances
-    investment.add_tokens(Balance::Cw20(Cw20CoinVerified {
-        amount: deposit_amount,
-        address: env.contract.address.clone(),
-    }));
-    BALANCES.save(deps.storage, &info.sender, &investment)?;
-
-    Ok(Response::new()
-        .add_attribute("action", "deposit")
-        .add_attribute("sender", info.sender)
-        .add_attribute("deposit_amount", deposit_amount))
+    Ok(Response::new().add_attribute("action", "deposit"))
 }
 
-/// Redeem Stable: Take in an amount of locked/liquid deposit tokens
+/// Redeem: Take in an amount of locked/liquid deposit tokens
 /// to redeem from the vault for stablecoins to send back to the the Accounts SC
-pub fn redeem_stable(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    _account_addr: Addr,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    // check that the depositor is a Registered Accounts SC
-    let endowments_rsp: EndowmentListResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&QueryMsg::EndowmentList {
-                name: None,
-                owner: None,
-                status: None,
-                tier: None,
-                un_sdg: None,
-                endow_type: None,
-            })?,
-        }))?;
-    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments
-        .iter()
-        .position(|p| p.address == info.sender.clone());
-
-    // reject if the sender was found not in the list of endowments
-    // OR if the sender is not the Registrar SC (ie. we're closing the endowment)
-    if pos == None && info.sender != config.registrar_contract {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    Ok(Response::new())
-}
-
-/// Withdraw Stable: Takes in an amount of locked/liquid deposit tokens
-/// to withdraw from the vault for UST to send back to a beneficiary
-pub fn withdraw_stable(
-    deps: DepsMut,
+pub fn redeem(
+    mut deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    msg: AccountWithdrawMsg,
+    endowment_id: u32,
+    amount: Uint128,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // check that the tx sender is an Accounts SC
-    // Also, it gets some Endowment info
-    // If tx sender is an invalid Account or wrong address,
-    // this rejects the tx by sending "Unauthroized" error.
-    let _endow_detail_resp: EndowmentDetailResponse = deps
+    // get accounts contract from registrar
+    let registrar_config: RegistrarConfigResponse = deps
         .querier
-        .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&QueryMsg::Endowment {
-                endowment_addr: info.sender.to_string(),
-            })?,
-        }))
-        .map_err(|_| ContractError::Unauthorized {})?;
+        .query_wasm_smart(config.registrar_contract.to_string(), &Config {})?;
 
-    // reduce the total supply of CW20 deposit tokens
-    let withdraw_total = msg.amount;
-    let mut token_info = TOKEN_INFO.load(deps.storage)?;
-    token_info.total_supply -= withdraw_total;
-    TOKEN_INFO.save(deps.storage, &token_info)?;
-
-    let mut investment = BALANCES
-        .load(deps.storage, &info.sender)
-        .unwrap_or_else(|_| GenericBalance::default());
-
-    // check the account has enough balance to cover the withdraw
-    let balance = investment.get_token_amount(env.contract.address.clone());
-    if balance.amount < msg.amount {
-        return Err(ContractError::CannotExceedCap {});
-    }
-
-    // update investment holdings balances
-    investment.deduct_tokens(Balance::Cw20(Cw20CoinVerified {
-        amount: msg.amount,
-        address: env.contract.address.clone(),
-    }));
-    BALANCES.save(deps.storage, &info.sender, &investment)?;
+    // First, burn the vault tokens
+    execute_burn(deps.branch(), env.clone(), info, endowment_id, amount)?;
 
     Ok(Response::new()
-        .add_attribute("action", "withdraw_from_vault")
-        .add_attribute("sender", info.sender)
-        .add_attribute("withdraw_amount", withdraw_total))
+        .add_attribute("action", "redeem_from_vault")
+        .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: registrar_config.accounts_contract.unwrap(),
+            msg: to_binary(&VaultReceipt {
+                id: endowment_id,
+                acct_type: config.acct_type,
+            })
+            .unwrap(),
+            funds: coins(amount.u128(), config.input_denom),
+        })))
 }
 
-pub fn harvest(
+fn execute_mint(
     deps: DepsMut,
     _env: Env,
-    info: MessageInfo,
-    _last_earnings_harvest: u64,
-    _last_harvest_fx: Option<Decimal256>,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    // check that the tx sender is an approved Accounts SC
-    let res: StdResult<EndowmentDetailResponse> =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&QueryMsg::Endowment {
-                endowment_addr: info.sender.to_string(),
-            })?,
-        }));
-    if res.is_err() || res.unwrap().endowment.status != EndowmentStatus::Approved {
-        return Err(ContractError::Unauthorized {});
+    _info: MessageInfo,
+    endowment_id: u32,
+    amount: Uint128,
+) -> Result<(), ContractError> {
+    if amount == Uint128::zero() {
+        return Err(ContractError::InvalidZeroAmount {});
     }
 
-    Ok(Response::new()
-        .add_attribute("action", "harvest_redeem_from_vault")
-        .add_attribute("sender", info.sender))
+    let mut config = TOKEN_INFO.load(deps.storage)?;
+    // update supply and enforce cap
+    config.total_supply += amount;
+    if let Some(limit) = config.get_cap() {
+        if config.total_supply > limit {
+            return Err(ContractError::CannotExceedCap {});
+        }
+    }
+    TOKEN_INFO.save(deps.storage, &config)?;
+
+    // add amount to recipient balance
+    BALANCES.update(
+        deps.storage,
+        endowment_id,
+        |balance: Option<Uint128>| -> StdResult<_> { Ok(balance.unwrap_or_default() + amount) },
+    )?;
+
+    Ok(())
+}
+
+fn execute_burn(
+    deps: DepsMut,
+    _env: Env,
+    _info: MessageInfo,
+    endowment_id: u32,
+    amount: Uint128,
+) -> Result<(), ContractError> {
+    if amount == Uint128::zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
+
+    // lower balance
+    BALANCES.update(
+        deps.storage,
+        endowment_id,
+        |balance: Option<Uint128>| -> StdResult<_> {
+            Ok(balance.unwrap_or_default().checked_sub(amount)?)
+        },
+    )?;
+    // reduce total_supply
+    TOKEN_INFO.update(deps.storage, |mut info| -> StdResult<_> {
+        info.total_supply = info.total_supply.checked_sub(amount)?;
+        Ok(info)
+    })?;
+
+    Ok(())
 }

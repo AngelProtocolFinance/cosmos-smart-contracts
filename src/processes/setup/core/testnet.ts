@@ -31,8 +31,10 @@ let cw3ApTeam: string;
 let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
-let vault1: string;
-let vault2: string;
+let vault1_locked: string;
+let vault1_liquid: string;
+let vault2_locked: string;
+let vault2_liquid: string;
 
 let endow_1_id: number;
 let endow_2_id: number;
@@ -565,7 +567,7 @@ async function createLoopVaults(
   const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/loop.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
 
-  // LOOP Vault - #1
+  // LOOP Vault - #1 (Locked)
   process.stdout.write("Instantiating Vault #1 (Locked) contract");
   const vaultResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     acct_type: `locked`, // Locked: 0, Liquid: 1
@@ -585,14 +587,14 @@ async function createLoopVaults(
 
     harvest_to_liquid: harvest_to_liquid,
   });
-  vault1 = vaultResult1.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault1}`);
+  vault1_locked = vaultLiquidResult1.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("Liquid contractAddress")}=${vault1_locked}`);
 
-  // Vault - #2
-  process.stdout.write("Instantiating Vault #2 (Liquid) contract");
+  // Vault - #1 (Liquid)
+  process.stdout.write("Instantiating Vault #1 (Liquid) contract");
   const vaultResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     acct_type: `liquid`, // Locked: 0, Liquid: 1
-    sibling_vault: vault1,
+    sibling_vault: vault1_locked,
     registrar_contract: registrar,
     keeper: keeper,
     tax_collector: tax_collector,
@@ -608,13 +610,13 @@ async function createLoopVaults(
 
     harvest_to_liquid: harvest_to_liquid,
   });
-  vault2 = vaultResult2.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${vault2}`);
+  vault2_liquid = vaultLiquidResult2.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("Liquid contractAddress")}=${vault2_liquid}`);
 
-  // Update the "sibling_vault" config of "vault1"
-  await sendTransaction(juno, apTeamAddr, vault1, {
+  // Update the "sibling_vault" config of "vault1_locked"
+  await sendTransaction(juno, apTeamAddr, vault1_locked, {
     update_config: {
-      sibling_vault: vault2,
+      sibling_vault: vault1_liquid,
       lp_staking_contract: undefined,
       lp_pair_contract: undefined,
       keeper: undefined,
@@ -627,7 +629,7 @@ async function createLoopVaults(
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
       network: "uni-3",
-      vault_addr: vault1,
+      vault_addr: vault1_locked,
       input_denom: "ujuno",
       yield_token: registrar,
       restricted_from: [],
@@ -637,7 +639,7 @@ async function createLoopVaults(
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
       network: "uni-3",
-      vault_addr: vault2,
+      vault_addr: vault1_liquid,
       input_denom: "ujuno",
       yield_token: registrar,
       restricted_from: [],

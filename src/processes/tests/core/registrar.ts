@@ -46,13 +46,13 @@ export async function testQueryRegistrarConfig(
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarApprovedVaultList(
+export async function testQueryRegistrarVaultList(
   juno: SigningCosmWasmClient,
   registrar: string
 ): Promise<void> {
-  process.stdout.write("Test - Query Registrar ApprovedVaultList");
+  process.stdout.write("Test - Query Registrar Vault List");
   const result: any = await juno.queryContractSmart(registrar, {
-    approved_vault_list: {},
+    vault_list: { approved: true },
   });
 
   console.log(result);
@@ -66,19 +66,6 @@ export async function testQueryRegistrarApprovedVaultRateList(
   process.stdout.write("Test - Query Registrar Approved Vault Exchange Rate List");
   const result: any = await juno.queryContractSmart(registrar, {
     approved_vault_rate_list: {},
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryRegistrarVaultList(
-  juno: SigningCosmWasmClient,
-  registrar: string
-): Promise<void> {
-  process.stdout.write("Test - Query Registrar VaultList");
-  const result: any = await juno.queryContractSmart(registrar, {
-    vault_list: {},
   });
 
   console.log(result);

@@ -50,9 +50,11 @@ let cw3ApTeam: string;
 let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
-let vault1: string;
-let vault2: string;
 let accounts: string;
+let vaultLocked1: string;
+let vaultLiquid1: string;
+let vaultLocked2: string;
+let vaultLiquid2: string;
 let endowId1: number;
 let endowId2: number;
 let endowId3: number;
@@ -361,7 +363,7 @@ export async function startMigrateCore(): Promise<void> {
     accounts,
     cw4GrpApTeam,
     cw3ApTeam,
-    [vault1, vault2],
+    [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
   );
 }
 
@@ -423,8 +425,10 @@ export async function startTests(): Promise<void> {
     tcaAccount,
     registrar,
     indexFund,
-    vault1,
-    vault2,
+    vaultLocked1,
+    vaultLiquid1,
+    vaultLocked2,
+    vaultLiquid2,
     accounts,
     endowId1,
     endowId2,

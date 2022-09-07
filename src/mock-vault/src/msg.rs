@@ -1,18 +1,14 @@
-use crate::state::EndowmentEntry;
-use cosmwasm_std::{
-    to_binary, Addr, Coin, CosmosMsg, Decimal, Decimal256, Deps, QueryRequest, StdResult, Uint128,
-    Uint256, WasmMsg, WasmQuery,
-};
-use cw20::{Cw20CoinVerified, Cw20ExecuteMsg};
+use crate::state::{AcceptedTokens, AccountType, EndowmentEntry, SplitDetails};
+use cosmwasm_std::{Addr, Decimal, Decimal256, Uint128, Uint256};
+use cw20::Denom;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub moneymarket: String,
-    pub yield_token: String,
-    pub input_denom: String,
     pub registrar_contract: String,
+    pub acct_type: AccountType,
+    pub input_denom: String,
     pub tax_per_block: Decimal,
     pub name: String,
     pub symbol: String,
@@ -27,96 +23,48 @@ pub struct MigrateMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    UpdateOwner {
-        new_owner: String,
-    },
-    UpdateRegistrar {
-        new_registrar: Addr,
-    },
+    UpdateOwner { new_owner: String },
+    UpdateRegistrar { new_registrar: Addr },
     UpdateConfig(UpdateConfigMsg),
-    Deposit {},
-    Redeem {
-        account_addr: Addr,
-    },
-    Withdraw(AccountWithdrawMsg),
-    Harvest {
-        last_earnings_harvest: u64,
-        last_harvest_fx: Option<Decimal256>,
-    },
+    Deposit { endowment_id: u32 },
+    Redeem { endowment_id: u32, amount: Uint128 },
+    // Tokens are sent back to an Account from an Asset Vault
+    VaultReceipt { id: u32, acct_type: AccountType },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub moneymarket: Option<String>,
-    pub input_denom: Option<String>,
-    pub yield_token: Option<String>,
-    pub tax_per_block: Option<Decimal>,
-    pub treasury_withdraw_threshold: Option<Uint128>,
-    pub harvest_to_liquid: Option<Decimal>,
+    pub swap_pool_addr: Option<String>,
+    pub staking_addr: Option<String>,
+    pub routes: RoutesUpdateMsg,
+    pub output_token_denom: Option<Denom>,
+    pub keeper: Option<String>,
+    pub sibling_vault: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct AccountWithdrawMsg {
-    pub beneficiary: Addr,
-    pub amount: Uint128,
+pub struct RoutesUpdateMsg {
+    pub add: Vec<Addr>,
+    pub remove: Vec<Addr>,
 }
 
-// We define a custom struct for each query response
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct EpochStateResponse {
-    pub exchange_rate: Decimal256,
-    pub aterra_supply: Uint256,
-}
-
-pub fn epoch_state(deps: Deps, market: &Addr) -> StdResult<EpochStateResponse> {
-    let epoch_state = deps
-        .querier
-        .query::<EpochStateResponse>(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: market.to_string(),
-            msg: to_binary(&QueryMsg::EpochState {
-                block_height: None,
-                distributed_interest: None,
-            })?,
-        }))?;
-
-    Ok(epoch_state)
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ReceiveMsg {
+    Deposit { endowment_id: u32 },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum HandleMsg {
-    DepositStable {},
+    Deposit {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Cw20HookMsg {
-    /// Return stable coins to a user
-    /// according to exchange rate
-    RedeemStable {},
-}
-
-pub fn deposit_stable_msg(market: &Addr, denom: &str, amount: Uint128) -> StdResult<CosmosMsg> {
-    Ok(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: market.to_string(),
-        msg: to_binary(&HandleMsg::DepositStable {})?,
-        funds: vec![Coin {
-            denom: denom.to_string(),
-            amount,
-        }],
-    }))
-}
-
-pub fn redeem_stable_msg(market: &Addr, token: &Addr, amount: Uint128) -> StdResult<CosmosMsg> {
-    Ok(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: token.into(),
-        msg: to_binary(&Cw20ExecuteMsg::Send {
-            contract: market.into(),
-            amount,
-            msg: to_binary(&Cw20HookMsg::RedeemStable {})?,
-        })?,
-        funds: vec![],
-    }))
+    /// Return coins to accounts
+    Redeem {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -127,16 +75,9 @@ pub enum QueryMsg {
     ExchangeRate {
         input_denom: String,
     },
-    Deposit {
-        amount: Uint128,
-    }, // some qty of "input_denom"
-    Redeem {
-        amount: Uint128,
-    }, // some qty of "yield_token"
     /// Returns the current balance of the given address, 0 if unset.
-    /// Return type: BalanceResponse.
     Balance {
-        address: String,
+        endowment_id: u32,
     },
     /// Returns metadata on the contract - name, decimals, supply, etc.
     /// Return type: TokenInfoResponse.
@@ -156,7 +97,7 @@ pub enum QueryMsg {
         distributed_interest: Option<Uint256>,
     },
     Endowment {
-        endowment_addr: String,
+        id: u32,
     },
     // Gets list of all registered Endowments
     EndowmentList {
@@ -169,19 +110,23 @@ pub enum QueryMsg {
     },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct BalanceResponse {
-    pub native: Vec<Coin>,
-    pub cw20: Vec<Cw20CoinVerified>,
-}
-
-impl BalanceResponse {
-    pub fn default() -> Self {
-        BalanceResponse {
-            native: vec![],
-            cw20: vec![],
-        }
-    }
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
+pub struct RegistrarConfigResponse {
+    pub owner: String,
+    pub version: String,
+    pub accounts_contract: Option<String>,
+    pub treasury: String,
+    pub tax_rate: Decimal,
+    pub index_fund: Option<String>,
+    pub split_to_liquid: SplitDetails,
+    pub halo_token: Option<String>,
+    pub gov_contract: Option<String>,
+    pub charity_shares_contract: Option<String>,
+    pub cw3_code: Option<u64>,
+    pub cw4_code: Option<u64>,
+    pub accepted_tokens: AcceptedTokens,
+    pub applications_review: String,
+    pub swaps_router: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -200,10 +145,6 @@ pub struct ExchangeRateResponse {
 pub struct VaultConfigResponse {
     pub owner: String,
     pub registrar_contract: String,
-    pub moneymarket: String,
-    pub input_denom: String,
-    pub yield_token: String,
-    pub tax_per_block: Decimal,
     pub harvest_to_liquid: Decimal,
 }
 

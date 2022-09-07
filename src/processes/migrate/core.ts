@@ -34,7 +34,7 @@ export async function migrateCore(
 async function migrateVaults(
   juno: SigningCosmWasmClient,
   apTeam: string,
-  vaults: string[],
+  vaults: string[]
 ): Promise<void> {
   process.stdout.write("Uploading Vault Wasm");
   const codeId = await storeCode(
@@ -54,7 +54,7 @@ async function migrateVaults(
         new Promise(async (resolve, reject) => {
           try {
             await migrateContract(juno, apTeam, vault, codeId, {});
-            console.log(chalk.green(`Vault #${id++} - Done!`));
+            console.log(chalk.green(`Vault ${id++} of ${vaults.length} - Done!`));
             resolve();
           } catch (e) {
             reject(e);

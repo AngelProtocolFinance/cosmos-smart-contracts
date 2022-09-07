@@ -51,6 +51,10 @@ let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
 let accounts: string;
+let vaultLocked1: string;
+let vaultLiquid1: string;
+let vaultLocked2: string;
+let vaultLiquid2: string;
 let endowId1: number;
 let endowId2: number;
 let endowId3: number;
@@ -128,16 +132,15 @@ async function initialize() {
   cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
   cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   indexFund = config.contracts.indexFund;
-  accounts = config.contracts.accounts
-  cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
-  cw3ReviewTeam = config.contracts.cw3ReviewTeam;
-  vault1 = config.contracts.vault1;
-  vault2 = config.contracts.vault2;
-
+  accounts = config.contracts.accounts;
   endowId1 = config.contracts.endowId1;
   endowId2 = config.contracts.endowId2;
   endowId3 = config.contracts.endowId3;
   endowId4 = config.contracts.endowId4;
+  vaultLocked1 = config.contracts.vaultLocked1;
+  vaultLiquid1 = config.contracts.vaultLiquid1;
+  vaultLocked2 = config.contracts.vaultLocked2;
+  vaultLiquid2 = config.contracts.vaultLiquid2;
 
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
@@ -150,8 +153,6 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
   console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
   console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
-  console.log(`Using ${chalk.cyan(vault1)} as Vault1`);
-  console.log(`Using ${chalk.cyan(vault2)} as Vault2`);
 
   loopswapTokenCode = config.loopswap.loopswap_token_code;
   loopswapPairCode = config.loopswap.loopswap_pair_code;
@@ -164,8 +165,7 @@ async function initialize() {
   loopswapInitialLoopSupply = config.loopswap.initial_loop_supply;
   loopswapLoopLiquidity = config.loopswap.loop_liquidity;
   loopswapJunoLiquidity = config.loopswap.juno_liquidity;
-
-
+  
   loopswapHaloTokenContract = config.loopswap.halo_token_contract;
   loopswapHaloJunoPairContract = config.loopswap.halo_juno_pair_contract;
   loopswapHaloJunoPairLpToken = config.loopswap.halo_juno_pair_lp_token;
@@ -192,6 +192,10 @@ async function initialize() {
   console.log(
     `Using ${chalk.cyan(loopswapJunoLiquidity)} as loopSwap LOOP/JUNO Pair JUNO liquidity`
   );
+  console.log(`Using ${chalk.cyan(vaultLocked1)} as vault Locked #1`); 
+  console.log(`Using ${chalk.cyan(vaultLiquid1)} as vault Liquid #1`); 
+  console.log(`Using ${chalk.cyan(vaultLocked2)} as vault Locked #2`); 
+  console.log(`Using ${chalk.cyan(vaultLiquid2)} as vault Liquid #2`); 
 
   console.log(`Using ${chalk.cyan(loopswapHaloTokenContract)} as loopSwap HALO Token`);
   console.log(
@@ -268,7 +272,7 @@ export async function startSetupCore(): Promise<void> {
       fund_member_limit: 10,
       charity_cw3_threshold_abs_perc: "0.5", // threshold absolute percentage for "charity-cw3"
       charity_cw3_max_voting_period: 60,      // max_voting_period time(unit: seconds) for "charity-cw3"
-      accepted_tokens: {
+      accepted_tokens:  {
         native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
         cw20: [],
       },
@@ -366,7 +370,7 @@ export async function startMigrateCore(): Promise<void> {
     accounts,
     cw4GrpApTeam,
     cw3ApTeam,
-    [vault1, vault2],
+    [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
   );
 }
 
@@ -429,8 +433,10 @@ export async function startTests(): Promise<void> {
     tcaAccount,
     registrar,
     indexFund,
-    vault1,
-    vault2,
+    vaultLocked1,
+    vaultLiquid1,
+    vaultLocked2,
+    vaultLiquid2,
     accounts,
     endowId1,
     endowId2,
