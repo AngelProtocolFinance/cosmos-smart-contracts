@@ -185,7 +185,6 @@ export async function testCharityCanUpdateStrategies(
   juno: SigningCosmWasmClient,
   charity: string,
   accountsContract: string,
-  endowCw3: string,
   endowmentId: number,
   acct_type: string,
   strategies: any, // [ { vault: string, percentage: "decimal" }, ... ]
@@ -196,7 +195,7 @@ export async function testCharityCanUpdateStrategies(
   const cw3 = res.owner as string;
 
   await expect(
-    await sendMessageViaCw3Proposal(juno, charity, endowCw3, accountsContract, {
+    sendMessageViaCw3Proposal(juno, charity, cw3, accountsContract, {
       update_strategies: {
         id: endowmentId,
         acct_type, 

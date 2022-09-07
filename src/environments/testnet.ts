@@ -133,8 +133,10 @@ async function initialize() {
   cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   indexFund = config.contracts.indexFund;
   accounts = config.contracts.accounts;
-  vault1 = config.contracts.vault1;
-  vault2 = config.contracts.vault2;
+  vaultLocked1 = config.contracts.vaultLocked1;
+  vaultLiquid1 = config.contracts.vaultLiquid1;
+  vaultLocked2 = config.contracts.vaultLocked2;
+  vaultLiquid2 = config.contracts.vaultLiquid2;
 
   endowId1 = config.contracts.endowId1;
   endowId2 = config.contracts.endowId2;
@@ -152,8 +154,10 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
   console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
   console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
-  console.log(`Using ${chalk.cyan(vault1)} as Vault1`);
-  console.log(`Using ${chalk.cyan(vault2)} as Vault2`);
+  console.log(`Using ${chalk.cyan(vaultLocked1)} as Vault_Locked_1`);
+  console.log(`Using ${chalk.cyan(vaultLiquid1)} as Vault_Liquid_1`);
+  console.log(`Using ${chalk.cyan(vaultLocked2)} as Vault_Locked_2`);
+  console.log(`Using ${chalk.cyan(vaultLiquid2)} as Vault_Liquid_2`);
 
   loopswapTokenCode = config.loopswap.loopswap_token_code;
   loopswapPairCode = config.loopswap.loopswap_pair_code;
