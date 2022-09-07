@@ -83,13 +83,30 @@ pub fn create_endowment(
         }
     }
 
-    let (status, deposit_approved, withdraw_approved): (EndowmentStatus, bool, bool) =
-        match msg.profile.endow_type {
-            // normalized endowments are approved & active upon creation
-            EndowmentType::Normal => (EndowmentStatus::Approved, true, true),
-            // charity endowments are locked at creations and must undergo a review before being approved
-            EndowmentType::Charity => (EndowmentStatus::Inactive, false, false),
-        };
+    // Depending on EndowmentType chosen, we give/take reign in allowing the endowment creatooor the
+    // ability to set certain parameters. Additionally, some parameters such as endowment status and
+    // deposit/withdraw approval is determined solely based on EndowmentType chosen.
+    let (
+        status,
+        deposit_approved,
+        withdraw_approved,
+        withdraw_before_maturity,
+        maturity_height,
+        maturity_time,
+    ): (EndowmentStatus, bool, bool, bool, Option<u64>, Option<u64>) = match msg.profile.endow_type
+    {
+        // normalized endowments are approved & active upon creation
+        EndowmentType::Normal => (
+            EndowmentStatus::Approved,
+            true,
+            true,
+            msg.withdraw_before_maturity,
+            msg.maturity_height,
+            msg.maturity_time,
+        ),
+        // charity endowments are locked at creations and must undergo a review before being approved
+        EndowmentType::Charity => (EndowmentStatus::Inactive, false, false, false, None, None),
+    };
 
     let owner = deps.api.addr_validate(&msg.owner)?;
     // try to store the endowment, fail if the ID is already in use
@@ -102,10 +119,10 @@ pub fn create_endowment(
                 status,
                 deposit_approved,
                 withdraw_approved,
-                owner,                                                  // Addr
-                withdraw_before_maturity: msg.withdraw_before_maturity, // bool
-                maturity_time: msg.maturity_time,                       // Option<u64>
-                maturity_height: msg.maturity_height,                   // Option<u64>
+                owner,
+                withdraw_before_maturity,
+                maturity_time,
+                maturity_height,
                 strategies: AccountStrategies::default(),
                 oneoff_vaults: OneOffVaults::default(),
                 kyc_donors_only: msg.kyc_donors_only,
