@@ -1,6 +1,6 @@
 use crate::structs::{
     AccountStrategies, Beneficiary, Categories, DonationsReceived, EndowmentEntry, EndowmentStatus,
-    EndowmentType, SocialMedialUrls, TransactionRecord,
+    EndowmentType, OneOffVaults, RebalanceDetails, SocialMedialUrls, TransactionRecord,
 };
 
 use cosmwasm_std::Addr;
@@ -35,6 +35,8 @@ pub struct EndowmentDetailsResponse {
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
     pub strategies: AccountStrategies,
+    pub oneoff_vaults: OneOffVaults,
+    pub rebalance: RebalanceDetails,
     pub kyc_donors_only: bool,
     pub deposit_approved: bool,
     pub withdraw_approved: bool,

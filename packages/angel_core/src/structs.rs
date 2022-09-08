@@ -329,6 +329,23 @@ impl AcceptedTokens {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
+pub struct EndowmentBalanceResponse {
+    pub tokens_on_hand: BalanceInfo,
+    pub oneoff_locked: Vec<(String, Uint128)>,
+    pub oneoff_liquid: Vec<(String, Uint128)>,
+    pub strategies_locked: Vec<(String, Uint128)>,
+    pub strategies_liquid: Vec<(String, Uint128)>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[serde(rename_all = "snake_case")]
+pub struct VaultsBalanceInfo {
+    locked: Vec<(String, Uint128)>,
+    liquid: Vec<(String, Uint128)>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[serde(rename_all = "snake_case")]
 pub struct BalanceInfo {
     pub locked: GenericBalance,
     pub liquid: GenericBalance,
@@ -645,6 +662,7 @@ pub struct NetworkInfo {
     pub name: String,
     pub chain_id: String,
     pub ibc_channel: Option<String>,
+    pub ica_address: Option<Addr>,
     pub gas_limit: Option<u64>,
 }
 
