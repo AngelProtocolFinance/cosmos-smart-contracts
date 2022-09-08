@@ -140,7 +140,7 @@ pub fn deposit(
     // Swap the half of input token to lp contract pair token
     let input_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
     let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
-        &config.lp_pair_contract.to_string(),
+        &config.lp_pair_contract.as_ref(),
         &deposit_asset_info,
         input_amount,
     )?;
@@ -204,7 +204,7 @@ pub fn restake_claim_reward(
     if config.lp_pair_asset_infos.contains(&reward_asset_info) {
         // Swap the half of input token to the lp contract pair token
         loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
-            &config.lp_pair_contract.to_string(),
+            &config.lp_pair_contract.as_ref(),
             &AssetInfo::Token {
                 contract_addr: config.lp_reward_token.to_string(),
             },
@@ -234,10 +234,7 @@ pub fn restake_claim_reward(
         let pair_2_contract = query_pair_info(
             &deps.querier,
             config.lp_factory_contract.clone(),
-            &[
-                reward_asset_info.clone(),
-                config.lp_pair_asset_infos[1].clone(),
-            ],
+            &[reward_asset_info, config.lp_pair_asset_infos[1].clone()],
         )?
         .contract_addr;
 
@@ -355,7 +352,7 @@ pub fn redeem(
         let accounts_contract = deps
             .api
             .addr_validate(&registar_config.accounts_contract.unwrap())?;
-        beneficiary = accounts_contract.clone();
+        beneficiary = accounts_contract;
         id = Some(endowment_id);
     }
 
@@ -390,7 +387,7 @@ pub fn redeem(
     )?;
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: flp_token_contract.to_string(),
+        contract_addr: flp_token_contract,
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_amount,
@@ -554,7 +551,7 @@ pub fn reinvest_to_locked_execute(
     )?;
 
     let unstake_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: flp_token_contract.to_string(),
+        contract_addr: flp_token_contract,
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_amount,

@@ -140,7 +140,7 @@ pub fn execute_propose_locked_withdraw(
             contract_addr: cfg.registrar_contract.to_string(),
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
-    let accounts_contract = registrar_config.accounts_contract.unwrap().to_string();
+    let accounts_contract = registrar_config.accounts_contract.unwrap();
     let endowment_config: EndowmentDetailsResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: accounts_contract.clone(),
