@@ -284,36 +284,27 @@ export async function testExecute(
   //   actors.charity1.addr,
   //   accounts,
   //   endowId1,
+  //   `locked`,
+  //   [{ vault: vaultLocked1, percentage: "0.5"}]
+  // );
+  // await testCharityCanUpdateStrategies(
+  //   actors.charity1.client,
+  //   actors.charity1.addr,
+  //   accounts,
+  //   endowId1,
   //   `liquid`,
   //   [{ vault: vaultLiquid1, percentage: "0.5"}]
   // );
 
-  const res = await actors.apTeam.client.queryContractSmart(vaultLocked1, { config: {} });
-  console.log(" vaultLocked1 config: ", res);
-  const re = await actors.apTeam.client.queryContractSmart(vaultLiquid1, { config: {} });
-  console.log(" vaultLiquid1 token info: ", re);
-  const ap = await actors.apTeam.client.queryContractSmart(vaultLocked1, { ap_tax_balance: {} });
-  console.log("AP Tax balance in locked vault: ", ap);
-  const ap1 = await actors.apTeam.client.queryContractSmart(vaultLiquid1, { ap_tax_balance: {} });
-  console.log("AP Tax balance in liquid vault: ", ap1);
-  const ba = await actors.apTeam.client.queryContractSmart(vaultLocked1, { balance: { endowment_id: endowId1} });
-  console.log("vault token balance for EndowID 1 in locked vault: ", ba);
-  const bal = await actors.apTeam.client.queryContractSmart(vaultLiquid1, { balance: { endowment_id: endowId1} });
-  console.log("vault token balance for EndowID 1 in liquid vault: ", bal);
-  // const re1 = await actors.apTeam.client.queryContractSmart(accounts, { endowment: {id: endowId1}});
-  // console.log(re1);
-  // const reg_config = await actors.apTeam.client.queryContractSmart(registrar, { config: {}});
-  // console.log("registrar_config: ", reg_config);
-
   // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1, "1000");
-  await testEndowmentVaultsRedeem(
-    actors.charity1.client,
-    actors.charity1.addr,
-    accounts,
-    endowId1,
-    `locked`,
-    [[vaultLocked1, "500000"]],  // Vec<(vault, amount)>
-  );
+  // await testEndowmentVaultsRedeem(
+  //   actors.charity1.client,
+  //   actors.charity1.addr,
+  //   accounts,
+  //   endowId1,
+  //   `locked`,
+  //   [[vaultLocked1, "500000"]],  // Vec<(vault, amount)>
+  // );
   // await testVaultHarvest(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
@@ -327,19 +318,6 @@ export async function testExecute(
   //   "1000000",
   //   vaultLiquid1,
   // );
-
-  // const r = await actors.apTeam.client.queryContractSmart("juno1qmk0v725sdg5ecu6xfh5pt0fv0nfzrstarue2maum3snzk2zrt5qd2p4rm", {
-  //   query_flp_token_from_pool_address: {pool_address: "juno1eyfccmjm6732k7wp4p6gdjwhxjwsvje44j0hfx8nkgrm8fs7vqfs9a4ky4" }
-  // });
-  // console.log(" flp token address : ", r);
-  const bal_ch = await actors.apTeam.client.queryContractSmart("juno18a2u6az6dzw528rptepfg6n49ak6hdzkf8ewf0n5r0nwju7gtdgq0vvvn8", {
-    balance: {address: vaultLocked1}
-  });
-  console.log(" flp token amount for vault_locked_1: ", bal_ch);
-  const bal_ = await actors.apTeam.client.queryContractSmart("juno18a2u6az6dzw528rptepfg6n49ak6hdzkf8ewf0n5r0nwju7gtdgq0vvvn8", {
-    balance: {address: vaultLiquid1}
-  });
-  console.log(" flp token amount for vault_liquid_1: ", bal_);
 
   // await testEndowmentCanWithdraw(
   //   actors.charity1.client, 

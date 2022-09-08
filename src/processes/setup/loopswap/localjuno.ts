@@ -147,7 +147,7 @@ export async function setupLoopSwap(
         spender: loopJunoPairContract,
       },
     });
-  await sendTransaction(juno, apTeam, loopJunoPairContract, {
+  await sendTransactionWithFunds(juno, apTeam, loopJunoPairContract, {
       provide_liquidity: {
         assets: [
           {
@@ -247,7 +247,7 @@ export async function setupLoopSwap(
         spender: haloJunoPairContract,
       },
     });
-  await sendTransaction(juno, apTeam, haloJunoPairContract, {
+  await sendTransactionWithFunds(juno, apTeam, haloJunoPairContract, {
       provide_liquidity: {
         assets: [
           {
