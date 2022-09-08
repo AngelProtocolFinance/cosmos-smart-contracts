@@ -1,10 +1,11 @@
 use crate::state::{read_endowments, Endowment, CONFIG, ENDOWMENTS, STATES};
 use angel_core::responses::accounts::*;
-use angel_core::structs::{AccountType, BalanceInfo, EndowmentEntry, EndowmentType, Tier};
+use angel_core::structs::{
+    AccountType, EndowmentBalanceResponse, EndowmentEntry, EndowmentType, Tier, VaultsBalanceInfo,
+};
 use angel_core::utils::vault_endowment_balance;
 use cosmwasm_std::{Deps, StdResult, Uint128};
 use cw2::get_contract_version;
-use cw20::{Balance, Cw20CoinVerified};
 use cw_asset::AssetInfo;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -27,45 +28,44 @@ pub fn query_state(deps: Deps, id: u32) -> StdResult<StateResponse> {
     })
 }
 
-pub fn query_endowment_balance(deps: Deps, id: u32) -> StdResult<BalanceInfo> {
+pub fn query_endowment_balance(deps: Deps, id: u32) -> StdResult<EndowmentBalanceResponse> {
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
     let state = STATES.load(deps.storage, id)?;
+
     // setup the basic response object w/ account's balances locked & liquid (held by this contract)
-    let mut balances = state.balances;
+    let tokens_on_hand = state.balances;
 
     // process all one-off vaults
+    let mut oneoff_locked = vec![];
     for vault in endowment.oneoff_vaults.locked.into_iter() {
         let vault_bal = vault_endowment_balance(deps, vault.clone().to_string(), id);
-        balances.locked.add_tokens(Balance::Cw20(Cw20CoinVerified {
-            amount: vault_bal,
-            address: vault,
-        }));
+        oneoff_locked.push((vault.to_string(), vault_bal));
     }
+    let mut oneoff_liquid = vec![];
     for vault in endowment.oneoff_vaults.liquid.into_iter() {
         let vault_bal = vault_endowment_balance(deps, vault.clone().to_string(), id);
-        balances.liquid.add_tokens(Balance::Cw20(Cw20CoinVerified {
-            amount: vault_bal,
-            address: vault,
-        }));
+        oneoff_liquid.push((vault.to_string(), vault_bal));
     }
+    let mut strategies_locked = vec![];
+
     // process all strategies vaults
     for strat in endowment.strategies.locked.iter() {
         let vault_bal = vault_endowment_balance(deps, strat.vault.clone(), id);
-        balances.locked.add_tokens(Balance::Cw20(Cw20CoinVerified {
-            amount: vault_bal,
-            address: deps.api.addr_validate(&strat.vault)?,
-        }));
+        strategies_locked.push((strat.vault.to_string(), vault_bal));
     }
-
+    let mut strategies_liquid = vec![];
     for strat in endowment.strategies.liquid.iter() {
         let vault_bal = vault_endowment_balance(deps, strat.vault.clone(), id);
-        balances.liquid.add_tokens(Balance::Cw20(Cw20CoinVerified {
-            amount: vault_bal,
-            address: deps.api.addr_validate(&strat.vault)?,
-        }));
+        strategies_liquid.push((strat.vault.to_string(), vault_bal));
     }
 
-    Ok(balances)
+    Ok(EndowmentBalanceResponse {
+        tokens_on_hand,
+        oneoff_locked,
+        oneoff_liquid,
+        strategies_locked,
+        strategies_liquid,
+    })
 }
 
 pub fn query_token_amount(
@@ -189,6 +189,7 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         maturity_time: endowment.maturity_time,
         maturity_height: endowment.maturity_height,
         strategies: endowment.strategies,
+        oneoff_vaults: endowment.oneoff_vaults,
         rebalance: endowment.rebalance,
         kyc_donors_only: endowment.kyc_donors_only,
         deposit_approved: endowment.deposit_approved,

@@ -285,6 +285,7 @@ fn test_add_update_and_remove_network_infos() {
     let mock_network_info = NetworkInfo {
         name: "juno mainnet".to_string(),
         chain_id: "juno-1".to_string(),
+        ica_address: None,
         ibc_channel: None,
         gas_limit: None,
     };
