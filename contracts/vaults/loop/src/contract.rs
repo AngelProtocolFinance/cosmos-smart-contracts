@@ -168,6 +168,10 @@ pub fn execute(
             asset_info,
             asset_bal_before,
         ),
+        ExecuteMsg::Swap {
+            asset_info,
+            asset_bal_before,
+        } => executers::swap(deps, env, info, asset_info, asset_bal_before),
     }
 }
 

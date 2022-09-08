@@ -78,6 +78,10 @@ pub enum ExecuteMsg {
         asset_info: terraswap::asset::AssetInfo,
         asset_bal_before: Uint128,
     },
+    Swap {
+        asset_info: terraswap::asset::AssetInfo,
+        asset_bal_before: Uint128,
+    },
     Receive(Cw20ReceiveMsg),
 }
 
