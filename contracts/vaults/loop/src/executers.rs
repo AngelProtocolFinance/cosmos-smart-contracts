@@ -1,6 +1,6 @@
 use angel_core::utils::{query_balance, query_token_balance};
 use cosmwasm_std::{
-    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env, Fraction,
+    attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env,
     MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ReceiveMsg;

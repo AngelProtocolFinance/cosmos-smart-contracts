@@ -1,6 +1,6 @@
 use angel_core::structs::{
     AccountStrategies, BalanceInfo, Beneficiary, DonationsReceived, EndowmentStatus, OneOffVaults,
-    Profile, RebalanceDetails,
+    Profile,
 };
 use cosmwasm_std::{Addr, Env, Order, StdResult, Storage, Timestamp};
 use cw_storage_plus::{Item, Map};

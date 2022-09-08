@@ -1,6 +1,6 @@
 use crate::state::{read_vaults, CONFIG, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::responses::registrar::*;
-use angel_core::structs::{AccountType, EndowmentType, VaultRate};
+use angel_core::structs::{AccountType, EndowmentType};
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
 
