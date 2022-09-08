@@ -10,8 +10,8 @@ use angel_core::responses::registrar::{
 };
 use angel_core::structs::{
     AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentStatus,
-    EndowmentType, GenericBalance, OneOffVaults, SocialMedialUrls, SplitDetails, StrategyComponent,
-    SwapOperation, YieldVault,
+    EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails, SocialMedialUrls, SplitDetails,
+    StrategyComponent, SwapOperation, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -125,6 +125,7 @@ pub fn create_endowment(
                 maturity_height,
                 strategies: AccountStrategies::default(),
                 oneoff_vaults: OneOffVaults::default(),
+                rebalance: RebalanceDetails::default(),
                 kyc_donors_only: msg.kyc_donors_only,
                 profile: msg.profile.clone(),
                 pending_redemptions: 0_u8,
@@ -1346,6 +1347,7 @@ pub fn withdraw(
     // Only config owner can authorize a locked balance withdraw when locks are in place or maturity is not reached
     // Only the endowment owner can authorize a locked balance withdraw once maturity is reached or if early withdraws are allowed
     if acct_type == AccountType::Locked {
+        #[allow(clippy::if_same_then_else)]
         if info.sender != config.owner
             && (!endowment.withdraw_before_maturity
                 || endowment.maturity_height.unwrap() > env.block.height)

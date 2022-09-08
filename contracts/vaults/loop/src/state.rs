@@ -25,7 +25,7 @@ pub struct Config {
     pub total_shares: Uint128,    // total amount of minted vault tokens
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct TokenInfo {
     pub name: String,
@@ -35,7 +35,7 @@ pub struct TokenInfo {
     pub mint: Option<MinterData>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
 pub struct MinterData {
     pub minter: Addr,
     /// cap is how many more tokens can be issued by the minter

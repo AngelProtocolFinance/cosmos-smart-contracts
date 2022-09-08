@@ -503,7 +503,7 @@ pub fn reinvest_to_locked_execute(
     // 0. Check that the message sender is the Accounts contract
     validate_action_caller_n_endow_id(deps.as_ref(), &config, info.sender.to_string(), id)?;
     // 1. Check that this vault has a sibling set
-    if config.sibling_vault.to_string() == env.contract.address.to_string() {
+    if config.sibling_vault == env.contract.address {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: "Sibling vault not created".to_string(),
         }));
@@ -531,9 +531,7 @@ pub fn reinvest_to_locked_execute(
         ContractError::Std(StdError::GenericErr {
             msg: format!(
                 "Cannot burn the {} vault tokens from {} :: {}",
-                burn_shares_amount,
-                id.to_string(),
-                e,
+                burn_shares_amount, id, e,
             ),
         })
     })?;
@@ -635,9 +633,7 @@ pub fn reinvest_to_locked_recieve(
             config.sibling_vault.to_string(),
             &angel_core::messages::vault::QueryMsg::Config {},
         )?;
-    if msg_sender != config.sibling_vault.to_string()
-        || sibling_config_resp.acct_type != AccountType::Liquid
-    {
+    if msg_sender != config.sibling_vault || sibling_config_resp.acct_type != AccountType::Liquid {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -812,7 +808,7 @@ fn prepare_loop_pair_provide_liquidity_msgs(
     }
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: pair_contract.to_string(),
+        contract_addr: pair_contract,
         msg: to_binary(&LoopPairExecuteMsg::ProvideLiquidity {
             assets: [
                 Asset {
@@ -1036,7 +1032,7 @@ pub fn harvest_to_liquid(
 
     // 0. Check that the message sender is the Sibling vault contract
     // ensure `received token` is `lp_token`
-    if info.sender.to_string() != lp_token_contract {
+    if info.sender != lp_token_contract {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -1052,9 +1048,7 @@ pub fn harvest_to_liquid(
             config.sibling_vault.to_string(),
             &angel_core::messages::vault::QueryMsg::Config {},
         )?;
-    if msg_sender != config.sibling_vault.to_string()
-        || sibling_config_resp.acct_type != AccountType::Locked
-    {
+    if msg_sender != config.sibling_vault || sibling_config_resp.acct_type != AccountType::Locked {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -1065,7 +1059,7 @@ pub fn harvest_to_liquid(
 
     // 2. Stake the received lp tokens
     let farming_stake_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: lp_token_contract.to_string(),
+        contract_addr: lp_token_contract,
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_stake_amount,
@@ -1109,27 +1103,28 @@ pub fn remove_liquidity(
         .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
 
     // Prepare the "remove_liquidity" messages
-    let mut withdraw_liquidity_msgs = vec![];
-    withdraw_liquidity_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.lp_token_contract.to_string(),
-        msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-            spender: pair_contract.to_string(),
-            amount: lp_token_amount,
-            expires: None,
-        })
-        .unwrap(),
-        funds: vec![],
-    }));
-    withdraw_liquidity_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.lp_token_contract.to_string(),
-        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-            contract: pair_contract.to_string(),
-            amount: lp_token_amount,
-            msg: to_binary(&LoopPairExecuteMsg::WithdrawLiquidity {}).unwrap(),
-        })
-        .unwrap(),
-        funds: vec![],
-    }));
+    let withdraw_liquidity_msgs = vec![
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: config.lp_token_contract.to_string(),
+            msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                spender: pair_contract.to_string(),
+                amount: lp_token_amount,
+                expires: None,
+            })
+            .unwrap(),
+            funds: vec![],
+        }),
+        CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: config.lp_token_contract.to_string(),
+            msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                contract: pair_contract.to_string(),
+                amount: lp_token_amount,
+                msg: to_binary(&LoopPairExecuteMsg::WithdrawLiquidity {}).unwrap(),
+            })
+            .unwrap(),
+            funds: vec![],
+        }),
+    ];
 
     // Handle the returning token pairs
     let mut swap_asset_msgs = vec![];
@@ -1442,7 +1437,7 @@ fn validate_action_caller_n_endow_id(
         &RegistrarQueryMsg::Config {},
     )?;
     if let Some(ref accounts_contract) = registar_config.accounts_contract {
-        if caller != accounts_contract.to_string() {
+        if caller != *accounts_contract {
             return Err(ContractError::Unauthorized {});
         }
     } else {
@@ -1464,7 +1459,7 @@ fn validate_action_caller_n_endow_id(
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
     let pos = endowments.iter().position(|endow| endow.id == endowment_id);
     // reject if the "endowment-id" was not found in the list of endowments
-    if pos == None {
+    if pos.is_none() {
         return Err(ContractError::Unauthorized {});
     }
 
