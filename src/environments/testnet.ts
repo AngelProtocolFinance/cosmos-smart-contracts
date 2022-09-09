@@ -13,6 +13,7 @@ import { migrateCore } from "../processes/migrate/core";
 // import { migrateHalo } from "../processes/migrate/halo";
 
 import { setupCore } from "../processes/setup/core/testnet";
+import { setupMockVaults } from "../processes/setup/vaults/mock-vault";
 // import { setupJunoSwap } from "../processes/setup/junoswap/localjuno";
 // import { setupHalo } from "../processes/setup/halo";
 
@@ -214,6 +215,42 @@ export async function startSetupCore(): Promise<void> {
       charity_cw3_max_voting_period: 60,      // max_voting_period time(unit: seconds) for "charity-cw3"
       accepted_tokens:  {
         native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
+        cw20: [],
+      },
+    }
+  );
+}
+
+// -------------------------------------------------------------------------------------
+// setup mock vault contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupMockVaults(): Promise<void> {
+  console.log(chalk.blue(`\nTestNet ${config.networkInfo.chainId}`));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  await initialize();
+
+  // Setup contracts
+  console.log(chalk.yellow("\nStep 2. Mock Vault Contracts Setup"));
+  await setupMockVaults(
+    juno,
+    // wallets
+    {
+      apTeam,
+      apTreasury,
+    },    
+    // contracts
+    {
+      registrar,
+      cw3ApTeam,
+    },
+    // config
+    {
+      harvest_to_liquid: "0.75", // harvest to liquid percentage
+      tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
+      accepted_tokens:  {
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
         cw20: [],
       },
     }
