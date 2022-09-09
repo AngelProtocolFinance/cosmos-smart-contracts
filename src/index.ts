@@ -17,14 +17,17 @@ import * as MainNet from "./environments/mainnet";
 		// case "localjuno_setup_halo":
 		// 	await LocalNet.startSetupHalo();
 		// 	break;
-		// case "localjuno_setup_junoswap":
-		// 	await LocalNet.startSetupJunoSwap();
-		// 	break;
+		case "localjuno_setup_loopswap":
+			await LocalNet.startSetupLoopSwap();
+			break;
 		case "localjuno_migrate_core":
 			await LocalNet.startMigrateCore();
 			break;
 		case "localjuno_setup_mockvaults":
 			await LocalNet.startSetupMockVaults();
+			break;
+		case "localjuno_setup_loopvaults":
+			await LocalNet.startSetupLoopVaults();
 			break;
 		// case "localjuno_migrate_halo":
 		// 	await LocalNet.startMigrateHalo();
@@ -37,6 +40,9 @@ import * as MainNet from "./environments/mainnet";
 			break;
 		case "testnet_setup_mockvaults":
 			await TestNet.startSetupMockVaults();
+			break;
+		case "testnet_setup_loopvaults":
+			await TestNet.startSetupLoopVaults();
 			break;
 		// case "testnet_setup_halo":
 		// 	await TestNet.startSetupHalo();

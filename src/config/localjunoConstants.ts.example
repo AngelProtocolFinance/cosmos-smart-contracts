@@ -29,10 +29,12 @@ export const localjuno = {
     cw3ApTeam: "",
     cw4GrpReviewTeam: "",
     cw3ReviewTeam: "",
-    endowment1: 1,
-    endowment2: 2,
-    endowment3: 3,
-    endowment4: 4,
+    vault1: "",
+    vault2: "",
+    endowId1: 1,
+    endowId2: 2,
+    endowId3: 3,
+    endowId4: 4,
   },
 
   // JunoSwap contracts
@@ -45,6 +47,29 @@ export const localjuno = {
     initial_halo_supply: "1000000000000000",
     halo_liquidity: "20000000000000",
     native_liquidity: "1000000000000",
+  },
+
+  // Loopswap contracts
+  loopswap: {
+    loopswap_token_code: 1,
+    loopswap_pair_code: 2,  // fatory: 3, farming: 4,
+
+    loopswap_factory: "",
+    loopswap_farming: "",
+
+    loop_token_contract: "",
+    loop_juno_pair_contract: "",
+    loop_juno_pair_lp_token: "",
+    initial_loop_supply: "1000000000000000",
+    loop_liquidity: "20000000",
+    juno_liquidity: "10000000",
+    
+    halo_token_contract: "",
+    halo_juno_pair_contract: "",
+    halo_juno_pair_lp_token: "",
+    initial_halo_supply: "1000000000000000",
+    halo_liquidity: "20000000",
+    native_liquidity: "10000000",
   },
 
   // HALO support contracts

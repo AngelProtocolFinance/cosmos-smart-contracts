@@ -57,7 +57,79 @@ export async function testSendDonationToEndowment(
       },
       [{ denom: "ujuno", amount }]
     )
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Endowment owner can withdraw from available balance in their Accounts
+//
+// SCENARIO:
+// Endowment owner can draw down on the available Liquid Account balance and should
+// not be able to touch the Locked Account's balance.
+//
+//----------------------------------------------------------------------------------------
+export async function testEndowmentCanWithdraw(
+  juno: SigningCosmWasmClient,
+  accountsOwner: string,
+  accountsContract: string,
+  endowmentId: number,
+  vault: string,
+  amount: string,
+  beneficiary: string
+): Promise<void> {
+  process.stdout.write(
+    "Test - Charity Owner cannot withdraw from the Endowment amount"
   );
+
+  const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId }});
+  const cw3 = res.owner as string;
+
+  await expect(
+    sendMessageViaCw3Proposal(juno, accountsOwner, cw3, accountsContract, {
+      withdraw: {
+        id: endowmentId,
+        sources: [{ vault, amount }],
+        beneficiary,
+      },
+    })
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+
+//----------------------------------------------------------------------------------------
+// TEST: Endowment owner can withdraw from available balance in their Accounts
+//
+// SCENARIO:
+// Endowment owner can draw down on the available Liquid Account balance and should
+// not be able to touch the Locked Account's balance.
+//
+//----------------------------------------------------------------------------------------
+export async function testEndowmentVaultsRedeem(
+  juno: SigningCosmWasmClient,
+  accountsOwner: string,
+  accountsContract: string,
+  endowmentId: number,
+  acct_type: string,
+  vaults: any,
+): Promise<void> {
+  process.stdout.write(
+    "Test - Endowment can redeem the vault token"
+  );
+
+  const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId }});
+  const cw3 = res.owner as string;
+
+  await expect(
+    sendMessageViaCw3Proposal(juno, accountsOwner, cw3, accountsContract, {
+      vaults_redeem: {
+        id: endowmentId,
+        acct_type: acct_type,
+        vaults,
+      },
+    })
+  ).to.be.ok;
   console.log(chalk.green(" Passed!"));
 }
 
@@ -72,40 +144,30 @@ export async function testSendDonationToEndowment(
 export async function testBeneficiaryCanWithdrawFromLiquid(
   juno: SigningCosmWasmClient,
   charityOwner: string,
-  accountsContract: string,
-  endowmentId: number,
+  accounts: string,
+  endowId: number,
   vault: string,
+  amount: string,
   beneficiary: string
 ): Promise<void> {
   process.stdout.write(
-    "Test - Charity Owner cannot withdraw from the Endowment locked amount"
+    "Test - Charity Owner cannot withdraw from the Endowment amount liquid"
   );
+
+  const res = await juno.queryContractSmart(accounts, { endowment: { id: endowId }});
+  const cw3 = res.owner as string;
+
   await expect(
-    sendTransaction(juno, charityOwner, accountsContract, {
-      withdraw: {
-        id: endowmentId,
-        sources: [{ vault, locked: "500000", liquid: "1000000" }],
+    sendMessageViaCw3Proposal(juno, charityOwner, cw3, accounts, {
+      withdraw_liquid: {
+        sources: [{ vault, amount }],
         beneficiary,
         asset_info: {
           native: "ujuno"
         }
-      }
-    })
-  ).to.be.rejectedWith("Request failed with status code 400");
-  console.log(chalk.green(" Passed!"));
-
-  process.stdout.write(
-    "Test - Charity Owner can withdraw from the Endowment availalble amount (liquid)"
-  );
-  await expect(
-    sendTransaction(juno, charityOwner, accountsContract, {
-      withdraw: {
-        id: endowmentId,
-        sources: [{ vault, locked: "0", liquid: "30000000" }],
-        beneficiary,
       },
     })
-  );
+  ).to.be.ok;
   console.log(chalk.green(" Passed!"));
 }
 
@@ -123,22 +185,24 @@ export async function testCharityCanUpdateStrategies(
   juno: SigningCosmWasmClient,
   charity: string,
   accountsContract: string,
-  endowCw3: string,
   endowmentId: number,
   acct_type: string,
   strategies: any, // [ { vault: string, percentage: "decimal" }, ... ]
 ): Promise<void> {
   process.stdout.write("Test - Charity can update their Endowment's strategies");
 
+  const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId }});
+  const cw3 = res.owner as string;
+
   await expect(
-    await sendMessageViaCw3Proposal(juno, charity, endowCw3, accountsContract, {
+    sendMessageViaCw3Proposal(juno, charity, cw3, accountsContract, {
       update_strategies: {
         id: endowmentId,
         acct_type, 
         strategies,
       },
     })
-  );
+  ).to.be.ok;
   console.log(chalk.green(" Passed!"));
 }
 

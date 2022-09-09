@@ -24,6 +24,7 @@ let apTeamAddr: string;
 let apTeam2Addr: string;
 let apTreasuryAddr: string;
 
+// contract addresses
 let registrar: string;
 let accounts: string;
 let cw4GrpApTeam: string;
@@ -31,10 +32,6 @@ let cw3ApTeam: string;
 let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
-let vault1_locked: string;
-let vault1_liquid: string;
-let vault2_locked: string;
-let vault2_liquid: string;
 
 let endow_1_id: number;
 let endow_2_id: number;
@@ -94,12 +91,11 @@ export async function setupCore(
     config.fund_member_limit,
     config.funding_goal,
     config.accepted_tokens,
-    config.is_localjuno,
   );
   await turnOverApTeamMultisig();
   await createEndowments(
-    config.threshold_absolute_percentage,
-    config.max_voting_period_height,
+    config.charity_cw3_threshold_abs_perc,
+    config.charity_cw3_max_voting_period,
   );
   await approveEndowments();
   await createIndexFunds();
@@ -114,7 +110,6 @@ async function setup(
   fund_member_limit: number | undefined,
   funding_goal: string | undefined,
   accepted_tokens: any | undefined,
-  is_localjuno: boolean
 ): Promise<void> {
   // Step 1. Upload all local wasm files and capture the codes for each....
   process.stdout.write("Uploading Registrar Wasm");
@@ -211,10 +206,10 @@ async function setup(
     "AddHook & UpdateAdmin on AP Team CW4 Group to point to AP Team C3"
   );
   await sendTransaction(juno, apTeamAddr, cw4GrpApTeam, {
-      add_hook: { addr: cw3ApTeam },
+    add_hook: { addr: cw3ApTeam },
   });
   await sendTransaction(juno, apTeamAddr, cw4GrpApTeam, {
-      update_admin: { admin: cw3ApTeam },
+    update_admin: { admin: cw3ApTeam },
   });
   console.log(chalk.green(" Done!"));
 
@@ -266,10 +261,10 @@ async function setup(
     "AddHook & UpdateAdmin on AP Review Team CW4 Group to point to AP Team C3"
   );
   await sendTransaction(juno, apTeamAddr, cw4GrpReviewTeam, {
-      add_hook: { addr: cw3ReviewTeam },
+    add_hook: { addr: cw3ReviewTeam },
   });
   await sendTransaction(juno, apTeamAddr, cw4GrpReviewTeam, {
-      update_admin: { admin: cw3ReviewTeam },
+    update_admin: { admin: cw3ReviewTeam },
   });
   console.log(chalk.green(" Done!"));
 
@@ -305,7 +300,7 @@ async function createEndowments(
       profile: {
         name: "Test Endowment #1",
         overview: "A wonderful charity endowment that aims to test all the things",
-        categories: { sdgs:[1], general: [] },
+        categories: { sdgs: [1], general: [] },
         tier: 3,
         logo: "logo1",
         image: "image1",
@@ -355,7 +350,7 @@ async function createEndowments(
       profile: {
         name: "Test Endowment #2",
         overview: "An even better endowment full of butterflies and rainbows",
-        categories: { sdgs:[3], general: [] },
+        categories: { sdgs: [3], general: [] },
         tier: 2,
         logo: "logo2",
         image: "image2",
@@ -405,7 +400,7 @@ async function createEndowments(
       profile: {
         name: "Test Endowment #3",
         overview: "Shady endowment that will never be approved",
-        categories: { sdgs:[2], general: [] },
+        categories: { sdgs: [2], general: [] },
         tier: 1,
         logo: "logo3",
         image: "image3",
@@ -454,7 +449,7 @@ async function createEndowments(
       profile: {
         name: "Vibin' Endowment #4",
         overview: "Global endowment that spreads good vibes",
-        categories: { sdgs:[1], general: [] },
+        categories: { sdgs: [1], general: [] },
         tier: 3,
         logo: "logo4",
         image: "image4",
@@ -525,28 +520,28 @@ async function createIndexFunds(): Promise<void> {
   // Create an initial "Fund" with the two charities created above
   process.stdout.write("Create two Funds with two endowments each");
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
-      create_fund: {
-        name: "Test Fund",
-        description: "My first test fund",
-        members: [endow_1_id, endow_2_id],
-        rotating_fund: true,
-        split_to_liquid: undefined,
-        expiry_time: undefined,
-        expiry_height: undefined,
-      }
-    });
-    await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
-      create_fund: {
-        name: "Test Fund #2",
-        description: "Another fund to test rotations",
-        members: [endow_1_id, endow_4_id],
-        rotating_fund: true,
-        split_to_liquid: undefined,
-        expiry_time: undefined,
-        expiry_height: undefined,
-      }
-   });
-   console.log(chalk.green(" Done!"));
+    create_fund: {
+      name: "Test Fund",
+      description: "My first test fund",
+      members: [endow_1_id, endow_2_id],
+      rotating_fund: true,
+      split_to_liquid: undefined,
+      expiry_time: undefined,
+      expiry_height: undefined,
+    }
+  });
+  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
+    create_fund: {
+      name: "Test Fund #2",
+      description: "Another fund to test rotations",
+      members: [endow_1_id, endow_4_id],
+      rotating_fund: true,
+      split_to_liquid: undefined,
+      expiry_time: undefined,
+      expiry_height: undefined,
+    }
+  });
+  console.log(chalk.green(" Done!"));
 }
 
 // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
@@ -559,7 +554,7 @@ async function turnOverApTeamMultisig(): Promise<void> {
     update_owner: { new_owner: cw3ApTeam }
   });
   console.log(chalk.green(" Done!"));
-  
+
   process.stdout.write(chalk.yellow("- Turning over Index Fund"));
   await sendTransaction(juno, apTeamAddr, indexFund, {
     update_owner: { new_owner: cw3ApTeam }

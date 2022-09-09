@@ -41,6 +41,9 @@ let apTreasury: string;
 let members: Member[];
 let tcaMembers: string[];
 
+let junoswap_USDC_Juno_PairContract = config.junoswap.usdc_juno_pool;
+let junoswap_USDC_Juno_PairLpStaking = config.junoswap.usdc_juno_pool_staking;
+
 // JunoSwap Contracts
 let junoswapTokenCode: number;
 let junoswapFactory: string;
@@ -154,11 +157,13 @@ export async function startSetupCore(): Promise<void> {
     tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
     funding_goal: "50000000", // funding goal
     charity_cw3_threshold_abs_perc: "0.50", // threshold absolute percentage for "charity-cw3"
-    charity_cw3_max_voting_period: 100,      // max_voting_period time(unit: seconds) for "charity-cw3",
+    charity_cw3_max_voting_period: 100,      // max_voting_period time(unit: seconds) for "charity-cw3"
     accepted_tokens:  {
       native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
       cw20: [],
     },
+    junoswap_pool_addr: junoswap_USDC_Juno_PairContract, // Junoswap pool (USDC-JUNO) contract
+    junoswap_pool_staking: junoswap_USDC_Juno_PairLpStaking, // Junoswap pool (USDC-JUNO) LP token staking contract
   });
 }
 

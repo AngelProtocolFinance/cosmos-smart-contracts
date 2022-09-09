@@ -40,7 +40,7 @@ async function migrateVaults(
   const codeId = await storeCode(
     juno,
     apTeam,
-    path.resolve(__dirname, `${wasm_path.mock_vault}/mock_vault.wasm`)
+    path.resolve(__dirname, `${wasm_path.core}/loopswap_vault.wasm`)
   );
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 

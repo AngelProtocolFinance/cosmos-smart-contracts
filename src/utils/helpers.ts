@@ -2,7 +2,7 @@ import * as fs from "fs";
 import chalk from "chalk";
 import BN from "bn.js";
 import axios from "axios";
-import { Coin } from "@cosmjs/amino";
+import { Coin, coin } from "@cosmjs/amino";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { wasm_path } from "../config/wasmPaths";
@@ -47,11 +47,12 @@ export async function sendTransaction(
   sender: string,
   contract: string,
   msg: Record<string, unknown>,
+  funds: Coin[] = [],
   memo = undefined,
   verbose = false
 ) {
   try { 
-    const result = await juno.execute(sender, contract, msg, "auto", memo, []);
+    const result = await juno.execute(sender, contract, msg, "auto", memo, funds);
     if (verbose) {
       console.log(chalk.yellow("\n~~~ TX HASH: ", result.transactionHash, "~~~~"));
       console.log(chalk.yellow(JSON.stringify(result.logs)));
@@ -72,7 +73,7 @@ export async function sendTransactionWithFunds(
   sender: string,
   contract: string,
   msg: Record<string, unknown>,
-  funds: Coin[],
+  funds: Coin[] = [],
   memo = undefined,
   verbose = false
 ) {

@@ -38,14 +38,40 @@ export const testnet = {
 
   // JunoSwap contracts
   junoswap: {
+    junoswap_code: 0,
     junoswap_token_code: 83,
-    junoswap_factory: "",
+    junoswap_stake_code: 0,
     halo_token_contract: "",
-    halo_luna_pair_contract: "",
-    halo_luna_pair_lp_token: "",
+    halo_juno_pool_contract: "",
+    halo_juno_pool_lp_token: "",
+    halo_juno_pool_lp_staking_addr: "",
     initial_halo_supply: "1000000000000000",
     halo_liquidity: "2000000",
     native_liquidity: "1000000", // reduced to 1 JUNO due to faucet limitations
+  },
+
+
+  // Loopswap contracts
+  loopswap: {
+    loopswap_token_code: 0,
+    loopswap_pair_code: 0,
+
+    loopswap_factory: "",
+    loopswap_farming: "",
+
+    loop_token_contract: "",
+    loop_juno_pair_contract: "",
+    loop_juno_pair_lp_token: "",
+    initial_loop_supply: "1000000000000000",
+    loop_liquidity: "200000000",
+    juno_liquidity: "100000000",
+    
+    halo_token_contract: "",
+    halo_juno_pair_contract: "",
+    halo_juno_pair_lp_token: "",
+    initial_halo_supply: "1000000000000000",
+    halo_liquidity: "200000000",
+    native_liquidity: "100000000",
   },
 
   // HALO contracts
@@ -104,6 +130,9 @@ export const mainnet = {
     initial_halo_supply: "1000000000000000",
     halo_liquidity: "",
     native_liquidity: "",
+
+    usdc_juno_pool: "juno1ctsmp54v79x7ea970zejlyws50cj9pkrmw49x46085fn80znjmpqz2n642",
+    usdc_juno_pool_staking: "juno1cuu9qxjqukh9drptk2y50r5tvepes7cy55hffh7quvvawk95lxlq6rzzj0",
   },
 
   // LOOP LP contracts
