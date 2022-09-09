@@ -13,6 +13,9 @@ import { migrateCore } from "../processes/migrate/core";
 // import { migrateHalo } from "../processes/migrate/halo";
 
 import { setupCore } from "../processes/setup/core/testnet";
+import { setupLoopSwap } from "../processes/setup/loopswap/localjuno";
+import { setupMockVaults } from "../processes/setup/vaults/mock-vault";
+import { setupLoopVaults } from "../processes/setup/vaults/loop";
 // import { setupJunoSwap } from "../processes/setup/junoswap/localjuno";
 // import { setupHalo } from "../processes/setup/halo";
 
@@ -171,7 +174,6 @@ async function initialize() {
   loopswapLoopLiquidity = config.loopswap.loop_liquidity;
   loopswapJunoLiquidity = config.loopswap.juno_liquidity;
 
-
   loopswapHaloTokenContract = config.loopswap.halo_token_contract;
   loopswapHaloJunoPairContract = config.loopswap.halo_juno_pair_contract;
   loopswapHaloJunoPairLpToken = config.loopswap.halo_juno_pair_lp_token;
@@ -279,10 +281,81 @@ export async function startSetupCore(): Promise<void> {
         native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
         cw20: [],
       },
+    }
+  );
+}
+
+// -------------------------------------------------------------------------------------
+// setup mock vault contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupMockVaults(): Promise<void> {
+  console.log(chalk.blue(`\nTestNet ${config.networkInfo.chainId}`));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  await initialize();
+
+  // Setup contracts
+  console.log(chalk.yellow("\nStep 2. Mock Vault Contracts Setup"));
+  await setupMockVaults(
+    juno,
+    // wallets
+    {
+      apTeam,
+      apTreasury,
+    },    
+    // contracts
+    {
+      registrar,
+      cw3ApTeam,
+    },
+    // config
+    {
+      harvest_to_liquid: "0.75", // harvest to liquid percentage
+      tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
+      accepted_tokens:  {
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+        cw20: [],
+      },
+    }
+  );
+}
+
+// -------------------------------------------------------------------------------------
+// setup LOOP vault contracts
+// -------------------------------------------------------------------------------------
+export async function startSetupLoopVaults(): Promise<void> {
+  console.log(chalk.blue(`\nTestNet ${config.networkInfo.chainId}`));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  await initialize();
+
+  // Setup contracts
+  console.log(chalk.yellow("\nStep 2. LOOP LP Vault Contracts Setup"));
+  await setupLoopVaults(
+    juno,
+    // wallets
+    {
+      apTeam,
+      apTreasury,
+    },    
+    // contracts
+    {
+      registrar,
+      cw3ApTeam,
+    },
+    // config
+    {
       loopswap_factory: loopswapFactory, // LoopSwap Factory contract
       loopswap_farming: loopswapFarming, // LoopSwap Farming contract
       loopswap_loop_juno_pair: loopswapLoopJunoPairContract, // LoopSwap LOOP-JUNO pair contract
       loopswap_lp_reward_token: loopswapLoopTokenContract, // LoopSwap Pair LP Staking reward token (LOOP token)
+      harvest_to_liquid: "0.75", // harvest to liquid percentage
+      accepted_tokens:  {
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+        cw20: [],
+      },
     }
   );
 }

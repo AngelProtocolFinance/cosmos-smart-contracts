@@ -24,6 +24,7 @@ let apTeamAddr: string;
 let apTeam2Addr: string;
 let apTreasuryAddr: string;
 
+// contract addresses
 let registrar: string;
 let accounts: string;
 let cw4GrpApTeam: string;
@@ -31,10 +32,6 @@ let cw3ApTeam: string;
 let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
-let vault1_locked: string;
-let vault1_liquid: string;
-let vault2_locked: string;
-let vault2_liquid: string;
 
 let endow_1_id: number;
 let endow_2_id: number;
@@ -70,10 +67,6 @@ export async function setupCore(
     charity_cw3_threshold_abs_perc: string,
     charity_cw3_max_voting_period: number,
     accepted_tokens: any | undefined;
-    loopswap_factory: string,
-    loopswap_farming: string,
-    loopswap_loop_juno_pair: string,
-    loopswap_lp_reward_token: string,
   }
 ): Promise<void> {
   juno = _juno;
@@ -100,7 +93,6 @@ export async function setupCore(
     config.accepted_tokens,
   );
   await turnOverApTeamMultisig();
-  await createLoopVaults(config.loopswap_factory, config.loopswap_farming, config.loopswap_loop_juno_pair, config.loopswap_lp_reward_token, apTeamAddr, apTeamAddr, config.harvest_to_liquid);
   await createEndowments(
     config.charity_cw3_threshold_abs_perc,
     config.charity_cw3_max_voting_period,
@@ -547,103 +539,6 @@ async function createIndexFunds(): Promise<void> {
       split_to_liquid: undefined,
       expiry_time: undefined,
       expiry_height: undefined,
-    }
-  });
-  console.log(chalk.green(" Done!"));
-}
-
-async function createLoopVaults(
-  loopFactory: string,
-  loopFarming: string,
-  loopPair: string,
-  loopStakingRewardToken: string,
-
-  keeper: string,
-  tax_collector: string,
-
-  harvest_to_liquid: string,
-): Promise<void> {
-  process.stdout.write("Uploading Vault Wasm");
-  const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/loopswap_vault.wasm`);
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
-
-  // LOOP Vault - #1 (Locked)
-  process.stdout.write("Instantiating Vault #1 (Locked) contract");
-  const vaultResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
-    acct_type: `locked`, // Locked: 0, Liquid: 1
-    sibling_vault: undefined,
-    registrar_contract: registrar,
-    keeper: keeper,
-    tax_collector: tax_collector,
-
-    lp_factory_contract: loopFactory,
-    lp_staking_contract: loopFarming,
-    pair_contract: loopPair,
-    lp_reward_token: loopStakingRewardToken,
-
-    name: "Vault Token for LOOP-JUNO pair",
-    symbol: "VTLOOPJUNO",
-    decimals: 6,
-
-    harvest_to_liquid: harvest_to_liquid,
-  });
-  vault1_locked = vaultResult1.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("Liquid contractAddress")}=${vault1_locked}`);
-
-  // Vault - #1 (Liquid)
-  process.stdout.write("Instantiating Vault #1 (Liquid) contract");
-  const vaultResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
-    acct_type: `liquid`, // Locked: 0, Liquid: 1
-    sibling_vault: vault1_locked,
-    registrar_contract: registrar,
-    keeper: keeper,
-    tax_collector: tax_collector,
-
-    lp_factory_contract: loopFactory,
-    lp_staking_contract: loopFarming,
-    pair_contract: loopPair,
-    lp_reward_token: loopStakingRewardToken,
-
-    name: "Vault Token for LOOP-JUNO pair",
-    symbol: "VTLOOPJUNO",
-    decimals: 6,
-
-    harvest_to_liquid: harvest_to_liquid,
-  });
-  vault1_liquid = vaultResult2.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("Liquid contractAddress")}=${vault1_liquid}`);
-
-  // Update the "sibling_vault" config of "vault1_locked"
-  await sendTransaction(juno, apTeamAddr, vault1_locked, {
-    update_config: {
-      sibling_vault: vault1_liquid,
-      lp_staking_contract: undefined,
-      lp_pair_contract: undefined,
-      keeper: undefined,
-      tax_collector: undefined,
-    }
-  });
-
-  // Step 3. AP team must add & approve the new vaults in registrar & make #1 the default vault
-  process.stdout.write("Add Vault #1 & #2 in Registrar");
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
-    vault_add: {
-      network: undefined,
-      vault_addr: vault1_locked,
-      input_denom: "ujuno",
-      yield_token: registrar,
-      restricted_from: [],
-      acct_type: `locked`,
-    }
-  });
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
-    vault_add: {
-      network: undefined,
-      vault_addr: vault1_liquid,
-      input_denom: "ujuno",
-      yield_token: registrar,
-      restricted_from: [],
-      acct_type: `liquid`,
     }
   });
   console.log(chalk.green(" Done!"));
