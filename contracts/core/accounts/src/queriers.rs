@@ -1,7 +1,7 @@
 use crate::state::{read_endowments, Endowment, CONFIG, ENDOWMENTS, STATES};
 use angel_core::responses::accounts::*;
 use angel_core::structs::{
-    AccountType, EndowmentBalanceResponse, EndowmentEntry, EndowmentType, Tier, VaultsBalanceInfo,
+    AccountType, EndowmentBalanceResponse, EndowmentEntry, EndowmentType, Tier,
 };
 use angel_core::utils::vault_endowment_balance;
 use cosmwasm_std::{Deps, StdResult, Uint128};
