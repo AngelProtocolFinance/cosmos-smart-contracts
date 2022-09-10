@@ -1,9 +1,13 @@
-use angel_core::structs::EndowmentType;
+use angel_core::messages::dexs::InfoResponse;
+use angel_core::structs::{AccountType, EndowmentType};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_slice, Api, Coin, Decimal, Empty, OwnedDeps, Querier, QuerierResult, QueryRequest,
-    StdResult, SystemError, SystemResult, Uint128,
+    from_binary, from_slice, to_binary, Addr, Api, BankQuery, Coin, ContractResult, Decimal, Empty,
+    OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult, Uint128,
+    WasmQuery,
 };
+use cw20::{BalanceResponse, Denom};
+use cw_asset::AssetInfo;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -22,6 +26,15 @@ pub enum QueryMsg {
         approved: Option<bool>,
         start_after: Option<String>,
         limit: Option<u64>,
+    },
+    Balance {
+        address: String,
+    },
+    Info {},
+    TokenAmount {
+        id: u32,
+        asset_info: AssetInfo,
+        acct_type: AccountType,
     },
 }
 
@@ -202,6 +215,55 @@ impl Querier for WasmMockQuerier {
 impl WasmMockQuerier {
     pub fn handle_query(&self, request: &QueryRequest<Empty>) -> QuerierResult {
         match &request {
+            QueryRequest::Bank(BankQuery::Balance { address: _, denom }) => {
+                SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&cosmwasm_std::BalanceResponse {
+                        amount: Coin {
+                            denom: denom.to_string(),
+                            amount: Uint128::from(1000000_u128),
+                        },
+                    })
+                    .unwrap(),
+                ))
+            }
+            QueryRequest::Wasm(WasmQuery::Smart {
+                contract_addr: _,
+                msg,
+            }) => match from_binary(&msg).unwrap() {
+                QueryMsg::Balance { address: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&BalanceResponse {
+                        balance: Uint128::from(1000000_u128),
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::Info {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&InfoResponse {
+                        token1_reserve: Uint128::from(1000000_u128),
+                        token1_denom: Denom::Native("usdc".to_string()),
+                        token2_reserve: Uint128::from(1000000_u128),
+                        token2_denom: Denom::Cw20(Addr::unchecked("asset0000")),
+                        lp_token_supply: Uint128::from(1000000_u128),
+                        lp_token_address: "contract-2".to_string(),
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::TokenAmount {
+                    id,
+                    asset_info,
+                    acct_type,
+                } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&Uint128::from(1000000_u128)).unwrap(),
+                )),
+                QueryMsg::Config {} => unimplemented!(),
+                QueryMsg::Vault { vault_addr } => unimplemented!(),
+                QueryMsg::VaultList {
+                    network,
+                    endowment_type,
+                    approved,
+                    start_after,
+                    limit,
+                } => unimplemented!(),
+            },
             _ => self.base.handle_query(request),
         }
     }

@@ -1347,6 +1347,7 @@ pub fn withdraw(
     // Only config owner can authorize a locked balance withdraw when locks are in place or maturity is not reached
     // Only the endowment owner can authorize a locked balance withdraw once maturity is reached or if early withdraws are allowed
     if acct_type == AccountType::Locked {
+        #[allow(clippy::if_same_then_else)]
         if info.sender != config.owner
             && (!endowment.withdraw_before_maturity
                 || endowment.maturity_height.unwrap() > env.block.height)

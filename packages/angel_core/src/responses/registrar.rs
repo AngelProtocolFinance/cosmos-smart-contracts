@@ -1,4 +1,6 @@
-use crate::structs::{AcceptedTokens, NetworkInfo, SplitDetails, VaultRate, YieldVault};
+use crate::structs::{
+    AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails, VaultRate, YieldVault,
+};
 use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -20,6 +22,7 @@ pub struct ConfigResponse {
     pub accounts_contract: Option<String>,
     pub treasury: String,
     pub tax_rate: Decimal,
+    pub rebalance: RebalanceDetails,
     pub index_fund: Option<String>,
     pub split_to_liquid: SplitDetails,
     pub halo_token: Option<String>,

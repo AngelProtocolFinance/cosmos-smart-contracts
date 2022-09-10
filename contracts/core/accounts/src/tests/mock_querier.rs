@@ -1,7 +1,9 @@
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
-use angel_core::structs::{AcceptedTokens, AccountType, EndowmentType, SplitDetails, YieldVault};
+use angel_core::structs::{
+    AcceptedTokens, AccountType, EndowmentType, RebalanceDetails, SplitDetails, YieldVault,
+};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, CanonicalAddr, Coin, ContractResult, Decimal,
@@ -219,6 +221,7 @@ impl WasmMockQuerier {
                         accounts_contract: Some("accounts_contract_addr".to_string()),
                         treasury: "treasury".to_string(),
                         tax_rate: Decimal::one(),
+                        rebalance: RebalanceDetails::default(),
                         index_fund: Some("index_fund".to_string()),
                         split_to_liquid: SplitDetails {
                             min: Decimal::zero(),

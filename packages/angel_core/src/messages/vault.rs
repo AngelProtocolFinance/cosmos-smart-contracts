@@ -1,17 +1,22 @@
+use crate::structs::AccountType;
 use cosmwasm_std::{Addr, Decimal, Uint128};
-use cw20::{Cw20ReceiveMsg, Denom};
-use cw_utils::{Duration, Expiration};
+use cw20::Cw20ReceiveMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use terraswap::asset::Asset;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub swap_pool_addr: String,
-    pub staking_addr: String,
-    pub output_token_denom: Denom,
-
+    pub acct_type: AccountType,
+    pub sibling_vault: Option<String>,
     pub registrar_contract: String,
     pub keeper: String,
+    pub tax_collector: String,
+
+    pub lp_factory_contract: String,
+    pub lp_staking_contract: String,
+    pub pair_contract: String,
+    pub lp_reward_token: String,
 
     pub name: String,
     pub symbol: String,
@@ -47,85 +52,46 @@ pub enum ExecuteMsg {
         endowment_id: u32,
         amount: Uint128,
     },
-    Claim {},
-    DistributeClaim {
-        lp_token_bal_before: Uint128,
-    },
-    Withdraw(AccountWithdrawMsg),
     Harvest {},
-    HarvestSwap {
-        token1_denom_bal_before: Uint128,
-        token2_denom_bal_before: Uint128,
-    },
-    DistributeHarvest {
-        output_token_bal_before: Uint128,
+    RestakeClaimReward {
+        reward_token_bal_before: Uint128,
     },
     AddLiquidity {
-        endowment_id: u32,
-        in_denom: Denom,
-        out_denom: Denom,
-        in_denom_bal_before: Uint128,
-        out_denom_bal_before: Uint128,
+        endowment_id: Option<u32>,
+        in_asset_info: terraswap::asset::AssetInfo,
+        out_asset_info: terraswap::asset::AssetInfo,
+        in_asset_bal_before: Uint128,
+        out_asset_bal_before: Uint128,
     },
     RemoveLiquidity {
         lp_token_bal_before: Uint128,
-        action: RemoveLiquidAction,
+        beneficiary: Addr,
+        id: Option<u32>,
     },
     Stake {
-        endowment_id: u32,
+        endowment_id: Option<u32>,
         lp_token_bal_before: Uint128,
     },
-    SwapAndSendTo {
-        token1_denom_bal_before: Uint128,
-        token2_denom_bal_before: Uint128,
+    SendAsset {
         beneficiary: Addr,
+        id: Option<u32>,
+        asset_info: terraswap::asset::AssetInfo,
+        asset_bal_before: Uint128,
+    },
+    Swap {
+        asset_info: terraswap::asset::AssetInfo,
+        asset_bal_before: Uint128,
     },
     Receive(Cw20ReceiveMsg),
-    // // Cw20_base entries
-    // Transfer {
-    //     recipient: String,
-    //     amount: Uint128,
-    // },
-    // Send {
-    //     contract: String,
-    //     amount: Uint128,
-    //     msg: Binary,
-    // },
-    // IncreaseAllowance {
-    //     spender: String,
-    //     amount: Uint128,
-    //     expires: Option<Expiration>,
-    // },
-    // DecreaseAllowance {
-    //     spender: String,
-    //     amount: Uint128,
-    //     expires: Option<Expiration>,
-    // },
-    // TransferFrom {
-    //     owner: String,
-    //     recipient: String,
-    //     amount: Uint128,
-    // },
-    // BurnFrom {
-    //     owner: String,
-    //     amount: Uint128,
-    // },
-    // SendFrom {
-    //     owner: String,
-    //     contract: String,
-    //     amount: Uint128,
-    //     msg: Binary,
-    // },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub swap_pool_addr: Option<String>,
-    pub staking_addr: Option<String>,
-    pub routes: RoutesUpdateMsg,
-    pub output_token_denom: Option<Denom>,
+    pub lp_staking_contract: Option<String>,
+    pub lp_pair_contract: Option<String>,
     pub keeper: Option<String>,
     pub sibling_vault: Option<String>,
+    pub tax_collector: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -144,7 +110,16 @@ pub struct RoutesUpdateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ReceiveMsg {
-    Deposit { endowment_id: u32 },
+    Deposit {
+        endowment_id: u32,
+    },
+    ReinvestToLocked {
+        endowment_id: u32,
+        amount: Uint128,
+    },
+    /// send the harvest portion from self (if AccountType::Locked)
+    /// over to it's AccountType::Liquid (sibling) vault
+    HarvestToLiquid {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -162,141 +137,35 @@ pub enum QueryMsg {
     /// Returns the total balance/total_share of the contract
     /// Return type: BalanceResponse.
     TotalBalance {},
-}
-
-///
-/// The following messages are just a clone of `msg` types defined in `wasmswap-contracts`.
-/// Ref: https://github.com/Wasmswap/wasmswap-contracts/blob/main/src/msg.rs
-///
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub enum TokenSelect {
-    Token1,
-    Token2,
+    /// Returns the APTAX balance of the contract
+    /// Return type: BalanceResponse
+    ApTaxBalance {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum WasmSwapExecuteMsg {
-    AddLiquidity {
-        token1_amount: Uint128,
-        min_liquidity: Uint128,
-        max_token2: Uint128,
-        expiration: Option<Expiration>,
-    },
-    RemoveLiquidity {
-        amount: Uint128,
-        min_token1: Uint128,
-        min_token2: Uint128,
-        expiration: Option<Expiration>,
-    },
+pub enum LoopFarmingExecuteMsg {
+    Stake {},           // Farm action. Stake LP token.(param: amount in `send` msg)
+    UnstakeAndClaim {}, // Unfarm action. Unstake farmed LP token & rewards.(param: amount in `send` msg)
+    ClaimReward {},     // Claim the reward. Enabled just after `stake`
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum LoopPairExecuteMsg {
     Swap {
-        input_token: TokenSelect,
-        input_amount: Uint128,
-        min_output: Uint128,
-        expiration: Option<Expiration>,
+        offer_asset: Asset,
+        belief_price: Option<Decimal>,
+        max_spread: Option<Decimal>,
     },
-    /// Chained swap converting A -> B and B -> C by leveraging two swap contracts
-    PassThroughSwap {
-        output_amm_address: String,
-        input_token: TokenSelect,
-        input_token_amount: Uint128,
-        output_min_token: Uint128,
-        expiration: Option<Expiration>,
+    ProvideLiquidity {
+        assets: [Asset; 2],
     },
-    SwapAndSendTo {
-        input_token: TokenSelect,
-        input_amount: Uint128,
-        recipient: String,
-        min_token: Uint128,
-        expiration: Option<Expiration>,
-    },
+    WithdrawLiquidity {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum WasmSwapQueryMsg {
-    /// Implements CW20. Returns the current balance of the given address, 0 if unset.
-    Balance {
-        address: String,
-    },
-    Info {},
-    Token1ForToken2Price {
-        token1_amount: Uint128,
-    },
-    Token2ForToken1Price {
-        token2_amount: Uint128,
-    },
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub enum RemoveLiquidAction {
-    Harvest,
-    Claim {},
-    Withdraw { beneficiary: Addr },
-}
-
-// Following msg & response definitions are for "dao-stake-cw20" contract interaction.
-// The reason of using these copy-pasted definitions is that the current "dao-stake-cw20"
-// or "stake-cw20" crate uses the old dependencty("cw-utils": 0.11.1), and it conflicts
-// the crate version(0.13.4) used in existing system.
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum DaoStakeCw20ExecuteMsg {
-    Receive(Cw20ReceiveMsg),
-    Unstake {
-        amount: Uint128,
-    },
-    Claim {},
-    UpdateConfig {
-        owner: Option<String>,
-        manager: Option<String>,
-        duration: Option<Duration>,
-    },
-    AddHook {
-        addr: String,
-    },
-    RemoveHook {
-        addr: String,
-    },
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum DaoStakeCw20ReceiveMsg {
-    Stake {},
-    Fund {},
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum DaoStakeCw20QueryMsg {
-    StakedBalanceAtHeight {
-        address: String,
-        height: Option<u64>,
-    },
-    TotalStakedAtHeight {
-        height: Option<u64>,
-    },
-    StakedValue {
-        address: String,
-    },
-    TotalValue {},
-    GetConfig {},
-    Claims {
-        address: String,
-    },
-    GetHooks {},
-    ListStakers {
-        start_after: Option<String>,
-        limit: Option<u32>,
-    },
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct DaoStakeCw20GetConfigResponse {
-    pub owner: Option<Addr>,
-    pub manager: Option<Addr>,
-    pub token_address: Addr,
-    pub unstaking_duration: Option<Duration>,
+pub enum LoopFarmingQueryMsg {
+    QueryFlpTokenFromPoolAddress { pool_address: String },
 }

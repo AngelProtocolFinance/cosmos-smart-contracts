@@ -75,6 +75,10 @@ pub fn update_config(
         None => Ok(config.tax_rate),
     }
     .unwrap();
+    config.rebalance = match msg.rebalance {
+        Some(details) => details,
+        None => config.rebalance,
+    };
     let max = match msg.split_max {
         Some(max) => percentage_checks(max),
         None => Ok(config.split_to_liquid.max),
