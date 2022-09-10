@@ -8,6 +8,7 @@ use cw_utils::{Duration, Expiration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
+use std::fmt;
 
 // we multiply by this when calculating needed_votes in order to round up properly
 // Note: `10u128.pow(9)` fails as "u128::pow` is not yet stable as a const fn"
@@ -23,6 +24,7 @@ pub struct Config {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct Proposal {
+    pub proposal_type: ProposalType,
     pub title: String,
     pub description: String,
     pub start_height: u64,
@@ -37,6 +39,26 @@ pub struct Proposal {
     pub votes: Votes,
     /// metadata field allows for a UI to easily set and display data about the proposal
     pub meta: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
+pub enum ProposalType {
+    Normal = 0,
+    Application = 1,
+}
+
+impl fmt::Display for ProposalType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                ProposalType::Normal => "normal",
+                ProposalType::Application => "application",
+            }
+        )
+    }
 }
 
 // weight of votes for each option
@@ -215,6 +237,7 @@ mod test {
             false => Expiration::AtHeight(block.height + 100),
         };
         let prop = Proposal {
+            proposal_type: ProposalType::Normal,
             title: "Demo".to_string(),
             description: "Info".to_string(),
             start_height: 100,

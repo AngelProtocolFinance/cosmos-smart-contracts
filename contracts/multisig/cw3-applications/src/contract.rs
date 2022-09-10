@@ -1,5 +1,7 @@
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg};
-use crate::state::{next_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS};
+use crate::state::{
+    next_id, Ballot, Config, Proposal, ProposalType, Votes, BALLOTS, CONFIG, PROPOSALS,
+};
 use angel_core::errors::multisig::ContractError;
 use angel_core::messages::accounts::CreateEndowmentMsg;
 use angel_core::messages::cw3_multisig::*;
@@ -74,7 +76,11 @@ pub fn execute(
             latest,
             meta,
         } => execute_propose_application(deps, env, info, ref_id, msg, latest, meta),
-        ExecuteMsg::Vote { proposal_id, vote } => execute_vote(deps, env, info, proposal_id, vote),
+        ExecuteMsg::Vote {
+            proposal_id,
+            vote,
+            reason,
+        } => execute_vote(deps, env, info, proposal_id, vote, reason),
         ExecuteMsg::UpdateConfig {
             threshold,
             max_voting_period,
@@ -141,6 +147,7 @@ pub fn execute_propose(
 
     // create a proposal
     let mut prop = Proposal {
+        proposal_type: ProposalType::Normal,
         title,
         description,
         start_height: env.block.height,
@@ -225,6 +232,7 @@ pub fn execute_propose_application(
 
     // create an application for Endowment creation for review
     let mut prop = Proposal {
+        proposal_type: ProposalType::Application,
         title: format!("{} Application - {}", msg.profile.endow_type, ref_id),
         description: "".to_string(),
         start_height: env.block.height,
@@ -258,6 +266,7 @@ pub fn execute_vote(
     info: MessageInfo,
     proposal_id: u64,
     vote: Vote,
+    reason: Option<String>,
 ) -> Result<Response<Empty>, ContractError> {
     // only members of the multisig can vote
     let cfg = CONFIG.load(deps.storage)?;
@@ -291,6 +300,13 @@ pub fn execute_vote(
     // update vote tally
     prop.votes.add_vote(vote, vote_power);
     prop.update_status(&env.block);
+
+    // If this is an application proposal && Vote == NO && Reason is given
+    // Set the Proposal description field with Reason for NO vote.
+    if prop.proposal_type == ProposalType::Application && vote == Vote::No {
+        prop.description = reason.unwrap_or(prop.description);
+    }
+
     PROPOSALS.save(deps.storage, proposal_id, &prop)?;
 
     Ok(Response::new()
