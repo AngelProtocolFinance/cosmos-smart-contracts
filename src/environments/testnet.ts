@@ -61,7 +61,6 @@ let vaultLiquid2: string;
 let endowId1: number;
 let endowId2: number;
 let endowId3: number;
-let endowId4: number;
 
 // LoopSwap Contracts
 let loopswapTokenCode: number;
@@ -144,7 +143,6 @@ async function initialize() {
   endowId1 = config.contracts.endowId1;
   endowId2 = config.contracts.endowId2;
   endowId3 = config.contracts.endowId3;
-  endowId4 = config.contracts.endowId4;
 
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
@@ -152,7 +150,6 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(endowId1)} as Endowment ID #1`);
   console.log(`Using ${chalk.cyan(endowId2)} as Endowment ID #2`);
   console.log(`Using ${chalk.cyan(endowId3)} as Endowment ID #3`);
-  console.log(`Using ${chalk.cyan(endowId4)} as Endowment ID #4`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
   console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
@@ -510,7 +507,6 @@ export async function startTests(): Promise<void> {
     endowId1,
     endowId2,
     endowId3,
-    endowId4,
     cw4GrpApTeam,
     cw3ApTeam,
     cw4GrpReviewTeam,

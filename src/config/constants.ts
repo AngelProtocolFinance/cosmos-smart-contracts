@@ -33,7 +33,6 @@ export const testnet = {
     endowId1: 1,
     endowId2: 2,
     endowId3: 3,
-    endowId4: 4,
   },
 
   // JunoSwap contracts

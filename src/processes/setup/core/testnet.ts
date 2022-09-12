@@ -4,7 +4,7 @@ import chalk from "chalk";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
-import { sendTransaction, storeCode, instantiateContract, getWalletAddress, sendMessageViaCw3Proposal } from "../../../utils/helpers";
+import { sendTransaction, storeCode, instantiateContract, getWalletAddress, sendMessageViaCw3Proposal, sendApplicationViaCw3Proposal } from "../../../utils/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
 
 // -------------------------------------------------------------------------------------
@@ -97,7 +97,6 @@ export async function setupCore(
     config.charity_cw3_threshold_abs_perc,
     config.charity_cw3_max_voting_period,
   );
-  await approveEndowments();
   await createIndexFunds();
 }
 
@@ -132,9 +131,9 @@ async function setup(
   const cw3MultiSigApTeam = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_apteam.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigApTeam}`);
 
-  process.stdout.write("Uploading Generic CW3 MultiSig Wasm");
-  const cw3MultiSigGeneric = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_generic.wasm`);
-  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigGeneric}`);
+  process.stdout.write("Uploading Review Team CW3 MultiSig Wasm");
+  const cw3MultiSigApplications = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_applications.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigApplications}`);
 
   process.stdout.write("Uploading Endowment CW3 MultiSig Wasm");
   const cw3MultiSigEndowment = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_endowment.wasm`);
@@ -244,7 +243,7 @@ async function setup(
     juno,
     apTeamAddr,
     apTeamAddr,
-    cw3MultiSigGeneric,
+    cw3MultiSigApplications,
     {
       registrar_contract: registrar,
       group_addr: cw4GrpReviewTeam,
@@ -288,10 +287,13 @@ async function createEndowments(
   charity_cw3_threshold_abs_perc: string,
   charity_cw3_max_voting_period: number,
 ): Promise<void> {
-  // endowment #1
-  process.stdout.write("Charity Endowment #1 created from the Registrar by the AP Team");
   let charity1_wallet = await getWalletAddress(charity1);
-  const charityResult1 = await sendTransaction(juno, apTeamAddr, accounts, {
+  let charity2_wallet = await getWalletAddress(charity2);
+  let charity3_wallet = await getWalletAddress(charity3);
+
+  // AP Team approves 3 of 4 newly created endowments
+  process.stdout.write("AP Review Team proposes and approves 3 new endowments");
+  const endow_1_id = await sendApplicationViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, {
     create_endowment: {
       owner: charity1_wallet,
       withdraw_before_maturity: false,
@@ -326,22 +328,12 @@ async function createEndowments(
       cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
-  endow_1_id = parseInt(charityResult1.logs[0].events
-    .find((event) => {
-      return event.type == "wasm";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "endow_id";
-    })?.value as string);
   console.log(
     chalk.green(" Done!"),
     `${chalk.blue("Endowment_ID")}=${endow_1_id}`
   );
 
-  // endowment #2
-  process.stdout.write("Charity Endowment #2 created from the Registrar by the AP Team");
-  let charity2_wallet = await getWalletAddress(charity2);
-  const charityResult2 = await sendTransaction(juno, apTeamAddr, accounts, {
+  const endow_2_id = await sendApplicationViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, {
     create_endowment: {
       owner: charity2_wallet,
       withdraw_before_maturity: false,
@@ -376,78 +368,19 @@ async function createEndowments(
       cw3_max_voting_period: charity_cw3_max_voting_period,
     },
   });
-  endow_2_id = parseInt(charityResult2.logs[0].events
-    .find((event) => {
-      return event.type == "wasm";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "endow_id";
-    })?.value as string);
   console.log(
     chalk.green(" Done!"),
     `${chalk.blue("Endowment_ID")}=${endow_2_id}`
   );
 
-  // endowment #3
-  process.stdout.write("Charity Endowment #3 created from the Registrar by the AP Team");
-  let charity3_wallet = await getWalletAddress(charity3);
-  const charityResult3 = await sendTransaction(juno, apTeamAddr, accounts, {
+  const endow_3_id = await sendApplicationViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, {
     create_endowment: {
       owner: charity3_wallet,
       withdraw_before_maturity: false,
       maturity_time: undefined,
       maturity_height: undefined,
       profile: {
-        name: "Test Endowment #3",
-        overview: "Shady endowment that will never be approved",
-        categories: { sdgs: [2], general: [] },
-        tier: 1,
-        logo: "logo3",
-        image: "image3",
-        url: undefined,
-        registration_number: undefined,
-        country_of_origin: undefined,
-        street_address: undefined,
-        contact_email: undefined,
-        social_media_urls: {
-          facebook: undefined,
-          twitter: undefined,
-          linkedin: undefined,
-        },
-        number_of_employees: undefined,
-        average_annual_budget: undefined,
-        annual_revenue: undefined,
-        charity_navigator_rating: undefined,
-        endow_type: "Charity",
-      },
-      cw4_members: [{ addr: charity3_wallet, weight: 1 }],
-      kyc_donors_only: false,
-      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_max_voting_period: charity_cw3_max_voting_period,
-    },
-  });
-  endow_3_id = parseInt(charityResult3.logs[0].events
-    .find((event) => {
-      return event.type == "wasm";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "endow_id";
-    })?.value as string);
-  console.log(
-    chalk.green(" Done!"),
-    `${chalk.blue("Endowment_ID")}=${endow_3_id}`
-  );
-
-  // endowment #4
-  process.stdout.write("Charity Endowment #4 created from the Registrar by the AP Team");
-  const charityResult4 = await sendTransaction(juno, apTeamAddr, accounts, {
-    create_endowment: {
-      owner: charity3_wallet,
-      withdraw_before_maturity: false,
-      maturity_time: undefined,
-      maturity_height: undefined,
-      profile: {
-        name: "Vibin' Endowment #4",
+        name: "Vibin' Endowment #3",
         overview: "Global endowment that spreads good vibes",
         categories: { sdgs: [1], general: [] },
         tier: 3,
@@ -475,44 +408,10 @@ async function createEndowments(
       cw3_max_voting_period: charity_cw3_max_voting_period,
     }
   });
-  endow_4_id = parseInt(charityResult4.logs[0].events
-    .find((event) => {
-      return event.type == "wasm";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "endow_id";
-    })?.value as string);
   console.log(
     chalk.green(" Done!"),
-    `${chalk.blue("Endowment_ID")}=${endow_4_id}`
+    `${chalk.blue("Endowment_ID")}=${endow_3_id}`
   );
-}
-
-async function approveEndowments(): Promise<void> {
-  // AP Team approves 3 of 4 newly created endowments
-  process.stdout.write("AP Team approves 3 of 4 endowments");
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, {
-    update_endowment_status: {
-      endowment_id: endow_1_id,
-      status: 1,
-      beneficiary: undefined,
-    }
-  });
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, {
-    update_endowment_status: {
-      endowment_id: endow_2_id,
-      status: 1,
-      beneficiary: undefined,
-    }
-  });
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, {
-    update_endowment_status: {
-      endowment_id: endow_4_id,
-      status: 1,
-      beneficiary: undefined,
-    }
-  });
-  console.log(chalk.green(" Done!"));
 }
 
 // Step 5: Index Fund finals setup
