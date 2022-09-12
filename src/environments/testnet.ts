@@ -24,6 +24,8 @@ import { testExecute } from "../processes/tests/testnet";
 // -------------------------------------------------------------------------------------
 // Variables
 // -------------------------------------------------------------------------------------
+let networkUrl: string;
+
 let juno: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;
 let apTeam2: DirectSecp256k1HdWallet;
@@ -126,6 +128,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(plebAccount)} as Pleb`);
   console.log(`Using ${chalk.cyan(tcaAccount)} as TCA member`);
 
+  networkUrl = config.networkInfo.url;
 
   registrar = config.contracts.registrar;
   accounts = config.contracts.accounts;
@@ -249,6 +252,7 @@ export async function startSetupCore(): Promise<void> {
   // Setup contracts
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   await setupCore(
+    networkUrl,
     juno,
     // wallets
     {

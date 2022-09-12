@@ -1,10 +1,9 @@
 import chalk from "chalk";
 
-import { GasPrice } from "@cosmjs/stargate";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
-import { datetimeStringToUTC } from "../../utils/helpers";
+import { datetimeStringToUTC, clientSetup } from "../../utils/helpers";
 import {
   testBeneficiaryCanWithdrawFromLiquid,
   testCharityCanUpdateStrategies,
@@ -126,11 +125,6 @@ import {
   testQueryVestingAccounts,
 } from "./halo/vesting";
 
-async function clientSetup(wallet: DirectSecp256k1HdWallet, networkUrl: string) {
-  let client = await SigningCosmWasmClient.connectWithSigner(networkUrl, wallet, { gasPrice: GasPrice.fromString("0.025ujunox") })
-  return client;
-}
-
 export async function testExecute(
   config: any, // environment config object 
   apTeam: DirectSecp256k1HdWallet,
@@ -246,7 +240,7 @@ export async function testExecute(
   // );
 
   /* --- Accounts & Endowments --- */
-  // await testCreateEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, {
+  // await testCreateEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, {
   //   owner: actors.charity1.addr,
   //   withdraw_before_maturity: false,
   //   maturity_time: undefined,

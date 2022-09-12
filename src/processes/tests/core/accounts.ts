@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, sendTransactionWithFunds, sendMessageViaCw3Proposal } from "../../../utils/helpers";
+import { sendTransaction, sendTransactionWithFunds, sendMessageViaCw3Proposal, sendApplicationViaCw3Proposal } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -235,7 +235,9 @@ export async function testApTeamChangesAccountsEndowmentOwner(
       },
     })
   );
-  console.log(chalk.green(" Passed!"));
+  console.log(chalk.green(" Passed!"));const result = await sendTransaction(juno, apTeam, accounts, {
+    create_endowment: msg,
+  });
 }
 
 //----------------------------------------------------------------------------------------
@@ -248,21 +250,13 @@ export async function testApTeamChangesAccountsEndowmentOwner(
 export async function testCreateEndowment(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3ReviewTeam: string,
   accounts: string,
   msg: any
 ): Promise<void> {
-  process.stdout.write("Create a new endowment via the Registrar");
-  const result = await sendTransaction(juno, apTeam, accounts, {
-    create_endowment: msg,
-  });
-  const acct = parseInt(result.logs[0].events
-    .find((event) => {
-      return event.type == "wasm";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "endow_id";
-    })?.value as string);
-  console.log(chalk.green(` ${acct} - Done!`));
+  process.stdout.write("Create a new endowment via the CW3 Applications contract");
+  let endow_id = await sendApplicationViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, "unknown", msg);
+  console.log(chalk.green(` ${endow_id} - Done!`));
 }
 
 export async function testApproveInactiveEndowment(

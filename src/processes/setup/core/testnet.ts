@@ -10,6 +10,8 @@ import { wasm_path } from "../../../config/wasmPaths";
 // -------------------------------------------------------------------------------------
 // Variables
 // -------------------------------------------------------------------------------------
+let networkUrl: string;
+
 let juno: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;
 let apTeam2: DirectSecp256k1HdWallet;
@@ -36,13 +38,13 @@ let indexFund: string;
 let endow_1_id: number;
 let endow_2_id: number;
 let endow_3_id: number;
-let endow_4_id: number;
 
 // -------------------------------------------------------------------------------------
 // setup all contracts for LocalJuno and TestNet
 // -------------------------------------------------------------------------------------
 
 export async function setupCore(
+  _networkUrl: string,
   _juno: SigningCosmWasmClient,
   wallets: {
     apTeam: DirectSecp256k1HdWallet;
@@ -69,6 +71,7 @@ export async function setupCore(
     accepted_tokens: any | undefined;
   }
 ): Promise<void> {
+  networkUrl = _networkUrl;
   juno = _juno;
   apTeam = wallets.apTeam;
   apTeam2 = wallets.apTeam2;
@@ -287,14 +290,13 @@ async function createEndowments(
   charity_cw3_threshold_abs_perc: string,
   charity_cw3_max_voting_period: number,
 ): Promise<void> {
+  // AP Team approves 3 of 4 newly created endowments
+  process.stdout.write("Charities propose endowment applications and CW Review Team approves (3 new)\n");
   let charity1_wallet = await getWalletAddress(charity1);
   let charity2_wallet = await getWalletAddress(charity2);
   let charity3_wallet = await getWalletAddress(charity3);
 
-  // AP Team approves 3 of 4 newly created endowments
-  process.stdout.write("AP Review Team proposes and approves 3 new endowments");
-  const endow_1_id = await sendApplicationViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, {
-    create_endowment: {
+  endow_1_id = await sendApplicationViaCw3Proposal(networkUrl, charity1, cw3ReviewTeam, accounts, "unknown", {
       owner: charity1_wallet,
       withdraw_before_maturity: false,
       maturity_time: undefined,
@@ -326,15 +328,13 @@ async function createEndowments(
       kyc_donors_only: false,
       cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
       cw3_max_voting_period: charity_cw3_max_voting_period,
-    },
-  });
+  }, [apTeam]);
   console.log(
     chalk.green(" Done!"),
-    `${chalk.blue("Endowment_ID")}=${endow_1_id}`
+    `${chalk.blue("Endowment ID")}=${endow_1_id}`
   );
 
-  const endow_2_id = await sendApplicationViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, {
-    create_endowment: {
+  endow_2_id = await sendApplicationViaCw3Proposal(networkUrl, charity2, cw3ReviewTeam, accounts, "unknown", {
       owner: charity2_wallet,
       withdraw_before_maturity: false,
       maturity_time: undefined,
@@ -366,15 +366,13 @@ async function createEndowments(
       kyc_donors_only: false,
       cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
       cw3_max_voting_period: charity_cw3_max_voting_period,
-    },
-  });
+  }, [apTeam]);
   console.log(
     chalk.green(" Done!"),
-    `${chalk.blue("Endowment_ID")}=${endow_2_id}`
+    `${chalk.blue("Endowment ID")}=${endow_2_id}`
   );
 
-  const endow_3_id = await sendApplicationViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, {
-    create_endowment: {
+  endow_3_id = await sendApplicationViaCw3Proposal(networkUrl, charity3, cw3ReviewTeam, accounts, "unknown", {
       owner: charity3_wallet,
       withdraw_before_maturity: false,
       maturity_time: undefined,
@@ -406,11 +404,10 @@ async function createEndowments(
       kyc_donors_only: false,
       cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
       cw3_max_voting_period: charity_cw3_max_voting_period,
-    }
-  });
+  }, [apTeam]);
   console.log(
     chalk.green(" Done!"),
-    `${chalk.blue("Endowment_ID")}=${endow_3_id}`
+    `${chalk.blue("Endowment ID")}=${endow_3_id}`
   );
 }
 
@@ -433,7 +430,7 @@ async function createIndexFunds(): Promise<void> {
     create_fund: {
       name: "Test Fund #2",
       description: "Another fund to test rotations",
-      members: [endow_1_id, endow_4_id],
+      members: [endow_1_id, endow_3_id],
       rotating_fund: true,
       split_to_liquid: undefined,
       expiry_time: undefined,

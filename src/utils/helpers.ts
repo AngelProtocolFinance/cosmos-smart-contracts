@@ -6,6 +6,7 @@ import { Coin, coin } from "@cosmjs/amino";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { wasm_path } from "../config/wasmPaths";
+import { GasPrice } from "@cosmjs/stargate";
 
 export type Member = {
   addr: string;
@@ -17,6 +18,11 @@ export type Actor = {
   client: SigningCosmWasmClient;
   wallet: DirectSecp256k1HdWallet;
 };
+
+export async function clientSetup(wallet: DirectSecp256k1HdWallet, networkUrl: string) {
+  let client = await SigningCosmWasmClient.connectWithSigner(networkUrl, wallet, { gasPrice: GasPrice.fromString("0.025ujunox") })
+  return client;
+}
 
 export async function getWalletAddress(wallet: DirectSecp256k1HdWallet) {
   let [account] = await wallet.getAccounts();
@@ -211,7 +217,7 @@ export async function sendMessageViaCw3Proposal(
   //   });
   // }
 
-  console.log(chalk.yellow("> Executing the Poll"));
+  console.log(chalk.yellow("> Executing the Proposal"));
   await sendTransaction(juno, proposor, cw3, {
     execute: { proposal_id: parseInt(proposal_id) }
   });
@@ -225,33 +231,20 @@ export async function sendMessageViaCw3Proposal(
 // 4. Proposal needs to be executed and new endowment ID captured
 //----------------------------------------------------------------------------------------
 export async function sendApplicationViaCw3Proposal(
-  juno: SigningCosmWasmClient,
-  proposor: string,
+  networkUrl: string,
+  proposor: DirectSecp256k1HdWallet,
   cw3: string,
   target_contract: string,
+  ref_id: string,
   msg: Record<string, unknown>,
-  // members: (SigningCosmWasmClient, string)[], // only needed if more votes required than initial proposor
+  members: DirectSecp256k1HdWallet[],
 ): Promise<number> {
-  console.log(chalk.yellow("\n> Creating CW3 Proposal"));
-  const info_text = `CW3 Member proposes to send msg to: ${target_contract}`;
-
-  // 1. Create the new proposal
-  const proposal = await sendTransaction(juno, proposor, cw3, {
-    propose: {
-      title: info_text,
-      description: info_text,
-      msgs: [
-        {
-          wasm: {
-            execute: {
-              contract_addr: target_contract,
-              msg: toEncodedBinary(msg),
-              funds: [],
-            },
-          },
-        },
-      ],
-    },
+  let proposor_client = await clientSetup(proposor, networkUrl);
+  let proposor_wallet = await getWalletAddress(proposor);
+  console.log(chalk.yellow(`> Charity ${proposor_wallet} submits an application proposal`));
+  // 1. Create the new proposal (no vote is cast here)
+  const proposal = await sendTransaction(proposor_client, proposor_wallet, cw3, {
+    propose_application: { ref_id, msg },
   });
 
   // 2. Parse out the proposal ID
@@ -264,19 +257,35 @@ export async function sendApplicationViaCw3Proposal(
     })?.value as string;
   console.log(chalk.yellow(`> New Proposal's ID: ${proposal_id}`));
 
-  // // 3. Additional members need to vote on proposal to get to passing threshold
-  // for member in members {
-  //   console.log(chalk.green(`Member votes on proposal: ${proposal_id}`));
-  //   await sendTransaction(juno, proposor, cw3, {
-  //     vote: {
-  //       poll_id: parseInt(proposal_id),
-  //       vote: VoteOption.YES,
-  //     },
-  //   });
-  // }
+  // 3. Additional members need to vote on proposal to get to passing threshold
+  let prom = Promise.resolve();
+  members.forEach((member) => {
+    // eslint-disable-next-line no-async-promise-executor
+    prom = prom.then(
+      () =>
+        new Promise(async (resolve, reject) => {
+          try {
+            let voter_wallet = await getWalletAddress(member);
+            let voter_client = await clientSetup(member, networkUrl);
+            console.log(chalk.yellow(`> CW3 Member ${voter_wallet} votes YES on application proposal`));
+            await sendTransaction(voter_client, voter_wallet, cw3, {
+              vote_application: {
+                proposal_id: parseInt(proposal_id),
+                vote: `yes`,
+                reason: undefined,
+              },
+            });
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        })
+    );
+  });
+  await prom;
 
-  console.log(chalk.yellow("> Executing the Poll"));
-  const creation = await sendTransaction(juno, proposor, cw3, {
+  console.log(chalk.yellow("> Executing the Proposal"));
+  const creation = await sendTransaction(proposor_client, proposor_wallet, cw3, {
     execute: { proposal_id: parseInt(proposal_id) }
   });
 
