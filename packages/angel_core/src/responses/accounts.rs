@@ -1,10 +1,9 @@
 use crate::structs::{
     AccountStrategies, Beneficiary, Categories, DonationsReceived, EndowmentEntry, EndowmentFee,
-    EndowmentStatus, EndowmentType, EndowmentType, OneOffVaults, RebalanceDetails,
-    RebalanceDetails, SettingsController, SocialMedialUrls, SocialMedialUrls, StrategyComponent,
-    TransactionRecord,
+    EndowmentStatus, EndowmentType, OneOffVaults, RebalanceDetails, SettingsController,
+    SocialMedialUrls, StrategyComponent,
 };
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::Addr;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -22,10 +21,7 @@ pub struct ConfigResponse {
     pub registrar_contract: String,
     pub deposit_approved: bool,
     pub withdraw_approved: bool,
-    pub last_earnings_harvest: u64,
-    pub last_harvest_fx: String,
     pub settings_controller: SettingsController,
-    pub pending_redemptions: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
@@ -41,11 +37,10 @@ pub struct EndowmentDetailsResponse {
     pub name: String,
     pub description: String,
     pub withdraw_before_maturity: bool,
-    pub strategies: Vec<StrategyComponent>,
+    pub strategies: AccountStrategies,
     pub status: EndowmentStatus,
     pub endow_type: EndowmentType,
     pub maturity_time: Option<u64>,
-    pub strategies: AccountStrategies,
     pub oneoff_vaults: OneOffVaults,
     pub rebalance: RebalanceDetails,
     pub donation_match_contract: String,

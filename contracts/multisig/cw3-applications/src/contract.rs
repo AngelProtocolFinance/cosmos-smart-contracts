@@ -196,7 +196,6 @@ pub fn execute_propose_application(
 
     // ensure charity specific params are set correctly (regardless of what user passes)
     msg.withdraw_before_maturity = false;
-    msg.maturity_height = None;
     msg.maturity_time = None;
 
     let registrar_config: RegistrarConfigResponse =

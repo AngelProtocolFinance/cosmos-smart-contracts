@@ -13,6 +13,7 @@ use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{attr, coins, from_binary, to_binary, Coin, Decimal, Env, OwnedDeps, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw_utils::{Duration, Threshold};
+use std::str::FromStr;
 use std::vec;
 
 use angel_core::messages::accounts::*;
@@ -77,8 +78,29 @@ fn create_endowment() -> (
     };
 
     let instantiate_msg = InstantiateMsg {
-        owner_sc: AP_TEAM.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
+        owner: AP_TEAM.to_string(),
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        withdraw_before_maturity: true,
+        maturity_time: None,
+        split_max: Decimal::default(),
+        split_min: Decimal::default(),
+        split_default: Decimal::default(),
+        profile,
+        cw4_members: vec![],
+        earnings_fee: None,
+        withdraw_fee: None,
+        deposit_fee: None,
+        aum_fee: None,
+        dao: None,
+        settings_controller: None,
+        parent: None,
+        kyc_donors_only: false,
+        cw3_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::from_str("0.5"),
+        },
+        cw3_max_voting_period: Duration::Time(600),
     };
     let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
     let env = mock_env();
@@ -145,8 +167,16 @@ fn test_update_endowment_settings() {
     // update the endowment "owner" & "kyc_donors_only"
     let msg = UpdateEndowmentSettingsMsg {
         id: CHARITY_ID,
-        owner: CHARITY_ADDR.to_string(),
+        owner: Some(CHARITY_ADDR.to_string()),
         kyc_donors_only: false,
+        whitelisted_beneficiaries: None,
+        whitelisted_contributors: None,
+        withdraw_before_maturity: None,
+        maturity_time: None,
+        strategies: None,
+        locked_endowment_configs: None,
+        rebalance: None,
+        maturity_whitelist: None,
     };
     let res = execute(
         deps.as_mut(),
@@ -231,14 +261,18 @@ fn test_change_registrar_contract() {
 
     // change the owner to some pleb
     let info = mock_info(REGISTRAR_CONTRACT, &coins(100000, "earth"));
+    let msg = UpdateConfigMsg {
+        accepted_tokens_native: vec![],
+        accepted_tokens_cw20: vec![],
+        settings_controller: None,
+        new_registrar: PLEB.to_string(),
+        max_general_category_id: 2 as u8,
+    };
     let res = execute(
         deps.as_mut(),
         env.clone(),
         info.clone(),
-        ExecuteMsg::UpdateConfig {
-            new_registrar: PLEB.to_string(),
-            max_general_category_id: 2 as u8,
-        },
+        ExecuteMsg::UpdateConfig(msg),
     )
     .unwrap();
     assert_eq!(0, res.messages.len());
@@ -249,10 +283,14 @@ fn test_change_registrar_contract() {
     assert_eq!(PLEB, value.registrar_contract);
 
     // Original contract owner should not be able to update the registrar now
-    let msg = ExecuteMsg::UpdateConfig {
+    let msg = UpdateConfigMsg {
+        accepted_tokens_native: vec![],
+        accepted_tokens_cw20: vec![],
+        settings_controller: None,
         new_registrar: PLEB.to_string(),
         max_general_category_id: 100 as u8,
     };
+    let msg = ExecuteMsg::UpdateConfig(msg);
     let info = mock_info(AP_TEAM, &coins(100000, "earth "));
     // This should fail with an error!
     let err = execute(deps.as_mut(), env, info, msg).unwrap_err();

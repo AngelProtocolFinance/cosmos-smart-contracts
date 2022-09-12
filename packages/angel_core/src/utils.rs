@@ -5,8 +5,8 @@ use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, Vau
 use crate::structs::{GenericBalance, SplitDetails, StrategyComponent, YieldVault};
 use cosmwasm_std::{
     to_binary, to_vec, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, Decimal256, Deps,
-    Empty, MessageInfo, QueryRequest, StdError, StdResult, SubMsg, SystemError, SystemResult,
-    Uint128, WasmMsg, WasmQuery,
+    DepsMut, Empty, MessageInfo, QueryRequest, StdError, StdResult, SubMsg, SystemError,
+    SystemResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg, Denom};
 use cw_asset::{Asset, AssetInfoBase};
@@ -165,55 +165,14 @@ pub fn redeem_from_vaults(
         redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: yield_vault.address.to_string(),
             msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem {
-                endowment_id: 1, // FIXME
-                amount: "1000",  // FIXME
+                endowment_id: 1,                  // FIXME
+                amount: Uint128::from(1000_u128), // FIXME
             })
             .unwrap(),
             funds: vec![],
         })));
     }
     Ok(redeem_messages)
-}
-
-pub fn withdraw_from_vaults(
-    deps: Deps,
-    registrar_contract: String,
-    beneficiary: &Addr,
-    sources: Vec<FundingSource>,
-) -> Result<Vec<SubMsg>, ContractError> {
-    let mut withdraw_messages = vec![];
-
-    // redeem amounts from sources listed
-    for source in sources.iter() {
-        if source.amount > Uint128::zero() {
-            // check source vault is in registrar vaults list and is approved
-            let vault_config: VaultDetailResponse =
-                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: registrar_contract.to_string(),
-                    msg: to_binary(&RegistrarQuerier::Vault {
-                        vault_addr: source.vault.to_string(),
-                    })?,
-                }))?;
-            let yield_vault: YieldVault = vault_config.vault;
-            if !yield_vault.approved {
-                return Err(ContractError::InvalidInputs {});
-            }
-
-            // create a withdraw message for X Vault, noting amounts for Locked / Liquid
-            withdraw_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: yield_vault.address.to_string(),
-                msg: to_binary(&crate::messages::vault::ExecuteMsg::Withdraw(
-                    AccountWithdrawMsg {
-                        beneficiary: beneficiary.clone(),
-                        amount: source.amount,
-                    },
-                ))
-                .unwrap(),
-                funds: vec![],
-            })));
-        }
-    }
-    Ok(withdraw_messages)
 }
 
 pub fn deposit_to_vaults(

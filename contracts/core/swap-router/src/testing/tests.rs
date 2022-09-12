@@ -1,6 +1,6 @@
 use crate::contract::{execute, instantiate, query};
 use crate::testing::mock_querier::mock_dependencies;
-use angel_core::errors::core::ContractError;
+use angel_core::errors::core::{ContractError, PaymentError};
 use angel_core::messages::router::{
     ConfigResponse,
     Cw20HookMsg,
@@ -85,7 +85,7 @@ fn execute_swap_operations() {
     let env = mock_env();
     let info = mock_info("apaccountscontract", &[]);
     let res = execute(deps.as_mut(), env, info, msg).unwrap_err();
-    assert_eq!(res, ContractError::MustProvideOperations {});
+    assert_eq!(res, PaymentError::MustProvideOperations {});
 
     let msg = ExecuteMsg::ExecuteSwapOperations {
         operations: vec![

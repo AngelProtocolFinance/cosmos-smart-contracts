@@ -111,6 +111,12 @@ pub enum ContractError {
 
     #[error("No claims that can be released currently")]
     NothingToClaim {},
+
+    #[error("Must provide operations!")]
+    MustProvideOperations {},
+
+    #[error("Assertion failed; minimum receive amount: {receive}, swap amount: {amount}")]
+    AssertionMinimumReceive { receive: Uint128, amount: Uint128 },
 }
 
 #[derive(Error, Debug, PartialEq)]
@@ -129,11 +135,6 @@ pub enum PaymentError {
 
     #[error("This message does no accept funds")]
     NonPayable {},
-    #[error("Must provide operations!")]
-    MustProvideOperations {},
-
-    #[error("Assertion failed; minimum receive amount: {receive}, swap amount: {amount}")]
-    AssertionMinimumReceive { receive: Uint128, amount: Uint128 },
 }
 
 impl From<OverflowError> for ContractError {

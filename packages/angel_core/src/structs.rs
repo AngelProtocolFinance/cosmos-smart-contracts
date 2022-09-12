@@ -34,6 +34,7 @@ impl SettingsPermissions {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum AccountType {
     Locked = 0,
@@ -86,6 +87,7 @@ impl SettingsController {
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Pair {
     pub assets: [AssetInfo; 2],

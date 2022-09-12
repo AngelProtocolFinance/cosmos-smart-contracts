@@ -1,9 +1,9 @@
 use angel_core::structs::{
-    AcceptedTokens, AccountStrategies, BalanceInfo, BalanceInfo, Beneficiary, DonationsReceived,
-    EndowmentFee, EndowmentStatus, OneOffVaults, Profile, Profile, RebalanceDetails,
-    RebalanceDetails, SettingsController, StrategyComponent,
+    AcceptedTokens, AccountStrategies, BalanceInfo, DonationsReceived, EndowmentFee,
+    EndowmentStatus, OneOffVaults, Profile, RebalanceDetails, SettingsController,
+    StrategyComponent,
 };
-use cosmwasm_std::{Addr, Decimal256, Env, Order, StdResult, Storage, Timestamp, Uint128};
+use cosmwasm_std::{Addr, Env, Order, StdResult, Storage, Timestamp};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -17,7 +17,6 @@ pub struct Config {
     pub withdraw_approved: bool, // DANO has approved to withdraw funds
     pub settings_controller: SettingsController,
     pub accepted_tokens: AcceptedTokens,
-    pub pending_redemptions: ,
     pub next_account_id: u32,
     pub max_general_category_id: u8,
 }

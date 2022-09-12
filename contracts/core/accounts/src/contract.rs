@@ -1,13 +1,17 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, Endowment, OldConfig, State, CONFIG, ENDOWMENT, PROFILE, STATE};
+use crate::state::{Config, Endowment, State, CONFIG, ENDOWMENTS, STATES};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::responses::registrar::ConfigResponse;
+use angel_core::structs::AccountStrategies;
+use angel_core::structs::DonationsReceived;
 use angel_core::structs::EndowmentType;
+use angel_core::structs::OneOffVaults;
+use angel_core::structs::Profile;
 use angel_core::structs::{AcceptedTokens, BalanceInfo, RebalanceDetails, SettingsController};
 use cosmwasm_std::{
     attr, entry_point, from_binary, from_slice, to_binary, to_vec, Binary, CosmosMsg, Deps,
@@ -55,7 +59,6 @@ pub fn instantiate(
             accepted_tokens: AcceptedTokens::default(),
             deposit_approved: false,  // bool
             withdraw_approved: false, // bool
-            pending_redemptions: None,
             next_account_id: 1_u32,
             max_general_category_id: 1_u8,
             settings_controller: match msg.settings_controller {
@@ -65,13 +68,13 @@ pub fn instantiate(
         },
     )?;
 
-    ENDOWMENT.save(
+    ENDOWMENTS.save(
         deps.storage,
         &Endowment {
             owner: deps.api.addr_validate(&msg.owner)?, // Addr
             withdraw_before_maturity: msg.withdraw_before_maturity, // bool
             maturity_time: msg.maturity_time,           // Option<u64>
-            strategies: vec![],
+            strategies: AccountStrategies::default(),
             rebalance: RebalanceDetails::default(),
             dao: None,
             dao_token: None,
@@ -94,20 +97,28 @@ pub fn instantiate(
             parent: msg.parent,
             kyc_donors_only: false,
             maturity_whitelist: vec![],
+            status: 0,
+            deposit_approved: true,
+            withdraw_approved: true,
+            oneoff_vaults: OneOffVaults::default(),
+            profile: Profile::default(),
+            pending_redemptions: 0,
+            copycat_strategy: None,
         },
     )?;
 
-    STATE.save(
+    STATES.save(
         deps.storage,
         &State {
-            donations_received: Uint128::zero(),
+            donations_received: DonationsReceived {
+                locked: Uint128::zero(),
+                liquid: Uint128::zero(),
+            },
             balances: BalanceInfo::default(),
             closing_endowment: false,
             closing_beneficiary: None,
         },
     )?;
-
-    PROFILE.save(deps.storage, &msg.profile)?;
 
     // initial default Response to add submessages to
     let mut res: Response = Response::new().add_attributes(vec![
@@ -276,10 +287,7 @@ pub fn execute(
             acct_type,
             vaults,
         } => executers::vaults_redeem(deps, env, info, id, acct_type, vaults),
-        ExecuteMsg::UpdateConfig {
-            new_registrar,
-            max_general_category_id,
-        } => executers::update_config(deps, env, info, new_registrar, max_general_category_id),
+        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
         }
@@ -326,7 +334,6 @@ pub fn receive_cw20(
         Ok(ReceiveMsg::VaultReceipt { id, acct_type }) => executers::vault_receipt(
             deps,
             env,
-            info,
             id,
             acct_type,
             api.addr_validate(&cw20_msg.sender)?,
@@ -400,28 +407,6 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-    const CONFIG_KEY: &[u8] = b"config";
-    let data = deps
-        .storage
-        .get(CONFIG_KEY)
-        .ok_or_else(|| ContractError::Std(StdError::not_found("config")))?;
-    let old_config: OldConfig = from_slice(&data)?;
-
-    deps.storage.set(
-        CONFIG_KEY,
-        &to_vec(&Config {
-            owner: old_config.owner,
-            registrar_contract: old_config.registrar_contract,
-            accepted_tokens: old_config.accepted_tokens,
-            deposit_approved: old_config.deposit_approved,
-            withdraw_approved: old_config.withdraw_approved,
-            pending_redemptions: old_config.pending_redemptions,
-            last_earnings_harvest: msg.last_earnings_harvest,
-            last_harvest_fx: None,
-            settings_controller: SettingsController::default(),
-        })?,
-    );
 
     Ok(Response::default())
 }

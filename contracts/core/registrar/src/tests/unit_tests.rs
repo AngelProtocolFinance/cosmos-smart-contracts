@@ -4,9 +4,9 @@ use angel_core::messages::registrar::*;
 use angel_core::messages::subdao_bonding_token::CurveType;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
-    AcceptedTokens, AcceptedTokens, AccountType, EndowmentStatus, EndowmentType, NetworkInfo,
-    NetworkInfo, Profile, RebalanceDetails, RebalanceDetails, SocialMedialUrls, SplitDetails,
-    SplitDetails,
+    AcceptedTokens, AcceptedTokens, AccountType, Categories, EndowmentStatus, EndowmentType,
+    NetworkInfo, NetworkInfo, Profile, RebalanceDetails, RebalanceDetails, SocialMedialUrls,
+    SplitDetails, SplitDetails,
 };
 use angel_core::structs::{DaoSetup, DaoToken};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
@@ -174,9 +174,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     let default_vault_addr = "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg".to_string();
     let index_fund_contract = "terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d".to_string();
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_vault: Some(Addr::unchecked(default_vault_addr)),
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
@@ -187,6 +185,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
             cw20: vec![],
         }),
         swap_factory: None,
+        rebalance: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();
@@ -194,13 +193,11 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
 
     // Config the "index_fund_contract" to avoid the "ContractNotConfigured" error.
     let update_config_msg = UpdateConfigMsg {
-        accounts_code_id: None,
         index_fund_contract: Some(index_fund_contract.clone()),
         fundraising_contract: None,
         approved_charities: None,
         treasury: None,
         tax_rate: None,
-        default_vault: None,
         split_max: None,
         split_min: None,
         split_default: None,
@@ -221,6 +218,12 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,
+        accounts_contract: None,
+        rebalance: None,
+        accepted_tokens_native: None,
+        accepted_tokens_cw20: None,
+        applications_review: None,
+        swaps_router: None,
     };
     let info = mock_info(ap_team.as_ref(), &[]);
     let _ = execute(
@@ -234,7 +237,6 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     let profile: Profile = Profile {
         name: "Test Endowment".to_string(),
         overview: "Endowment to power an amazing charity".to_string(),
-        un_sdg: None,
         tier: None,
         logo: None,
         image: None,
@@ -253,6 +255,7 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
         annual_revenue: None,
         charity_navigator_rating: None,
         endow_type: EndowmentType::Charity,
+        categories: Categories::default(),
     };
 
     let create_endowment_msg = CreateEndowmentMsg {

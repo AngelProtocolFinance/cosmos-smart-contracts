@@ -30,8 +30,6 @@ cw-storage-plus = "0.13.4"
 schemars = "0.8.10"
 serde = "1.0.137"
 cosmwasm-std = { version = "1.0.0",  features = ["abort"] } 
-schemars = "0.8.1"
-serde = { version = "1.0.125", default-features = false, features = ["derive"] }
 thiserror = "1.0.24"
 cosmwasm-schema = "1.0.0"
 cw-asset = "2.2.0"

@@ -21,15 +21,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         registrar_contract: config.registrar_contract.to_string(),
         deposit_approved: config.deposit_approved,
         withdraw_approved: config.withdraw_approved,
-        last_earnings_harvest: config.last_earnings_harvest,
-        last_harvest_fx: config
-            .last_harvest_fx
-            .map(|v| v.to_string())
-            .unwrap_or_else(|| "".to_string()),
         settings_controller: config.settings_controller,
-        pending_redemptions: config
-            .pending_redemptions
-            .map_or("".to_string(), |v| v.to_string()),
     })
 }
 
@@ -135,6 +127,8 @@ pub fn query_endowment_list(
                 _ => None,
             },
             categories: e.profile.categories.clone(),
+            address: Addr::unchecked("endowment"),
+            un_sdg: None,
         })
         .collect();
     let entries = match name {
@@ -218,6 +212,10 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         deposit_approved: endowment.deposit_approved,
         withdraw_approved: endowment.withdraw_approved,
         pending_redemptions: endowment.pending_redemptions,
+        dao: None,
+        dao_token: None,
+        name: "test-endowment".to_string(),
+        description: "test endowment desc".to_string(),
     })
 }
 

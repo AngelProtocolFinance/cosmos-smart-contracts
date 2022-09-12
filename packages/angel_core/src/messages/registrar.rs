@@ -1,7 +1,6 @@
 use crate::structs::{
-    AcceptedTokens, AcceptedTokens, AccountType, DaoSetup, EndowmentFee, EndowmentType,
-    EndowmentType, NetworkInfo, NetworkInfo, Profile, RebalanceDetails, SettingsController,
-    SplitDetails, SplitDetails, Tier,
+    AcceptedTokens, AccountType, DaoSetup, EndowmentFee, EndowmentType, NetworkInfo, Profile,
+    RebalanceDetails, SettingsController, SplitDetails, Tier,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
@@ -102,8 +101,6 @@ pub struct CreateEndowmentMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
     pub accounts_contract: Option<String>,
-    pub index_fund_contract: Option<String>,
-    pub treasury: Option<String>,
     pub tax_rate: Option<Decimal>,
     pub rebalance: Option<RebalanceDetails>,
     pub approved_charities: Option<Vec<String>>,

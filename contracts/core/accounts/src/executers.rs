@@ -1,6 +1,4 @@
-use crate::state::{
-    Endowment, State, CONFIG, COPYCATS, ENDOWMENT, ENDOWMENTS, PROFILE, STATE, STATES,
-};
+use crate::state::{Endowment, State, CONFIG, COPYCATS, ENDOWMENTS, STATES};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -9,7 +7,6 @@ use angel_core::messages::index_fund::{
     DepositMsg as IndexFundDepositMsg, ExecuteMsg as IndexFundExecuter,
     QueryMsg as IndexFundQuerier,
 };
-use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::registrar::{
     ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentEntryMsg,
@@ -25,10 +22,9 @@ use angel_core::responses::registrar::{
 };
 use angel_core::structs::{
     AcceptedTokens, AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup,
-    DonationMatch, DonationsReceived, EndowmentFee, EndowmentStatus, EndowmentType, EndowmentType,
-    FundingSource, GenericBalance, GenericBalance, OneOffVaults, RebalanceDetails,
-    SocialMedialUrls, SocialMedialUrls, SplitDetails, SplitDetails, StrategyComponent,
-    StrategyComponent, SwapOperation, Tier, YieldVault,
+    DonationMatch, DonationsReceived, EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance,
+    OneOffVaults, RebalanceDetails, SocialMedialUrls, SplitDetails, StrategyComponent,
+    SwapOperation, Tier, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -37,7 +33,7 @@ use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
     ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
+use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 use cw_utils::Duration;
@@ -127,7 +123,6 @@ pub fn create_endowment(
                 withdraw_approved: true,
                 owner,
                 withdraw_before_maturity: msg.withdraw_before_maturity,
-                maturity_height: msg.maturity_height,
                 maturity_time: msg.maturity_time,
                 strategies: AccountStrategies::default(),
                 oneoff_vaults: OneOffVaults::default(),
@@ -136,6 +131,18 @@ pub fn create_endowment(
                 profile: msg.profile.clone(),
                 pending_redemptions: 0_u8,
                 copycat_strategy: None,
+                dao: None,
+                dao_token: None,
+                donation_match_active: false,
+                donation_match_contract: None,
+                whitelisted_beneficiaries: vec![],
+                whitelisted_contributors: vec![],
+                earnings_fee: None,
+                withdraw_fee: None,
+                deposit_fee: None,
+                aum_fee: None,
+                parent: None,
+                maturity_whitelist: vec![],
             }),
         },
     )?;
@@ -170,8 +177,6 @@ pub fn create_endowment(
             admin: None,
             label: "new endowment cw3 multisig".to_string(),
             msg: to_binary(&Cw3InstantiateMsg {
-                // endowment ID
-                id: config.next_account_id,
                 // check if CW3/CW4 codes were passed to setup a multisig/group
                 cw4_members: match msg.cw4_members.is_empty() {
                     true => vec![Member {
@@ -372,31 +377,14 @@ pub fn update_config(
         cw20: msg.accepted_tokens_cw20,
     };
     CONFIG.save(deps.storage, &config)?;
-    Ok(Response::default())
-}
 
-pub fn update_config(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    new_registrar: String,
-    max_general_category_id: u8,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    // only the SC admin can update the registrar in the config
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let new_registrar = deps.api.addr_validate(&new_registrar)?;
+    let new_registrar = deps.api.addr_validate(&msg.new_registrar)?;
     // update config attributes with newly passed args
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
         config.registrar_contract = new_registrar;
-        config.max_general_category_id = max_general_category_id;
+        config.max_general_category_id = msg.max_general_category_id;
         Ok(config)
     })?;
-
     Ok(Response::default())
 }
 
@@ -425,7 +413,7 @@ pub fn update_endowment_settings(
         None => endowment.owner,
     };
     // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
-    if profile.endow_type != EndowmentType::Charity {
+    if endowment.profile.endow_type != EndowmentType::Charity {
         endowment.whitelisted_beneficiaries = match msg.whitelisted_beneficiaries {
             Some(i) => {
                 if config
@@ -1110,8 +1098,7 @@ pub fn deposit(
             active,
         } = endowment.deposit_fee.unwrap();
         if active {
-            let deposit_fee_amount = deposit_amount
-                .multiply_ratio(fee_percentage.numerator(), fee_percentage.denominator());
+            let deposit_fee_amount = deposit_amount * fee_percentage;
 
             deposit_amount -= deposit_fee_amount;
             deposit_token.amount -= deposit_fee_amount;
@@ -1517,12 +1504,12 @@ pub fn withdraw(
         #[allow(clippy::if_same_then_else)]
         if info.sender != config.owner
             && (!endowment.withdraw_before_maturity
-                || endowment.maturity_height.unwrap() > env.block.height)
+                || endowment.maturity_time.unwrap() > env.block.time.seconds())
         {
             return Err(ContractError::Unauthorized {});
         } else if info.sender != endowment.owner
             && (endowment.withdraw_before_maturity
-                || endowment.maturity_height.unwrap() <= env.block.height)
+                || endowment.maturity_time.unwrap() > env.block.time.seconds())
         {
             return Err(ContractError::Unauthorized {});
         }
@@ -1842,11 +1829,7 @@ pub fn harvest(
             id: 1,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: vault_addr.to_string(),
-                msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {
-                    last_earnings_harvest: config.last_earnings_harvest,
-                    last_harvest_fx: config.last_harvest_fx,
-                })
-                .unwrap(),
+                msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {}).unwrap(),
                 funds: vec![],
             }),
             gas_limit: None,
@@ -1898,7 +1881,7 @@ pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
         let vault_balances: Uint128 = deps.querier.query_wasm_smart(
             vault.clone(),
             &VaultQueryMsg::Balance {
-                address: vault.clone(),
+                endowment_id: 1, // FIXME
             },
         )?;
         // Here, we assume that only one native coin -
@@ -1913,6 +1896,7 @@ pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
             msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: vault.to_string(),
                 msg: to_binary(&VaultExecuteMsg::Withdraw(AccountWithdrawMsg {
+                    endowment_id: 1, // FIXME
                     beneficiary: payout_address.clone(),
                     amount: aum_harvest_withdraw,
                 }))

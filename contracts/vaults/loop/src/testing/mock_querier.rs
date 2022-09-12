@@ -1,7 +1,7 @@
 // Contains mock functionality to test multi-contract scenarios
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Api, BalanceResponse, BankQuery, CanonicalAddr, Coin,
+    from_binary, from_slice, to_binary, Addr, Api, BalanceResponse, BankQuery, CanonicalAddr, Coin,
     ContractResult, Decimal, Empty, OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult,
     SystemError, SystemResult, Uint128, WasmQuery,
 };
@@ -165,6 +165,8 @@ impl WasmMockQuerier {
                                 sdgs: vec![],
                                 general: vec![],
                             },
+                            address: Addr::unchecked("endowment"),
+                            un_sdg: None,
                         }],
                     })
                     .unwrap(),
@@ -202,6 +204,17 @@ impl WasmMockQuerier {
                         },
                         applications_review: "applications-review".to_string(),
                         swaps_router: None,
+                        subdao_gov_code: None,
+                        subdao_cw20_token_code: None,
+                        subdao_bonding_token_code: None,
+                        subdao_cw900_code: None,
+                        subdao_distributor_code: None,
+                        donation_match_code: None,
+                        halo_token_lp_contract: None,
+                        donation_match_charites_contract: None,
+                        collector_addr: "collector-addr".to_string(),
+                        collector_share: Decimal::zero(),
+                        swap_factory: None,
                     })
                     .unwrap(),
                 )),
