@@ -26,7 +26,6 @@ const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
 const CHARITY_ID: u32 = 1;
 const CHARITY_ADDR: &str = "terra1grjzys0n9n9h9ytkwjsjv5mdhz7dzurdsmrj4v";
 const REGISTRAR_CONTRACT: &str = "terra18wtp5c32zfde3vsjwvne8ylce5thgku99a2hyt";
-const REVIEW_TEAM: &str = "applications-review";
 const PLEB: &str = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh";
 const DEPOSITOR: &str = "depositor";
 
@@ -61,7 +60,7 @@ fn create_endowment() -> (
         average_annual_budget: Some("1 Million Pounds".to_string()),
         annual_revenue: Some("Not enough".to_string()),
         charity_navigator_rating: None,
-        endow_type: EndowmentType::Charity,
+        endow_type: EndowmentType::Normal,
     };
 
     let create_endowment_msg = CreateEndowmentMsg {
@@ -188,7 +187,7 @@ fn test_update_endowment_settings() {
 fn test_update_endowment_status() {
     let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
 
-    // Fail to update the endowment status since caller is not `registrar_contract`
+    // Fail to update the endowment status since caller is not config owner
     let update_endowment_status_msg = UpdateEndowmentStatusMsg {
         endowment_id: CHARITY_ID,
         status: 1,
@@ -204,7 +203,7 @@ fn test_update_endowment_status() {
     .unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
 
-    let info = mock_info(REVIEW_TEAM, &[]);
+    let info = mock_info(AP_TEAM, &[]);
     let res = execute(
         deps.as_mut(),
         env.clone(),
@@ -212,7 +211,7 @@ fn test_update_endowment_status() {
         ExecuteMsg::UpdateEndowmentStatus(update_endowment_status_msg),
     )
     .unwrap();
-    assert_eq!(1, res.attributes.len());
+    assert_eq!(0, res.attributes.len());
 
     // Check the update status
     let res = query(
@@ -491,7 +490,7 @@ fn test_donate() {
     let (mut deps, env, _acct_contract, endow_details) = create_endowment();
 
     // Update the Endowment status
-    let info = mock_info(REVIEW_TEAM, &[]);
+    let info = mock_info(AP_TEAM, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
         endowment_id: CHARITY_ID,
         status: 1,
@@ -574,7 +573,7 @@ fn test_deposit_cw20() {
     let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
 
     // Update the Endowment status
-    let info = mock_info(REVIEW_TEAM, &[]);
+    let info = mock_info(AP_TEAM, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
         endowment_id: CHARITY_ID,
         status: 1,
@@ -605,7 +604,7 @@ fn test_withdraw() {
     let (mut deps, env, _acct_contract, endow_details) = create_endowment();
 
     // Update the Endowment status
-    let info = mock_info(REVIEW_TEAM, &[]);
+    let info = mock_info(AP_TEAM, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
         endowment_id: CHARITY_ID,
         status: 1,
@@ -643,7 +642,7 @@ fn test_withdraw_liquid() {
     let (mut deps, env, _acct_contract, endow_details) = create_endowment();
 
     // Update the Endowment status
-    let info = mock_info(REVIEW_TEAM, &[]);
+    let info = mock_info(AP_TEAM, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
         endowment_id: CHARITY_ID,
         status: 1,
@@ -696,7 +695,7 @@ fn test_vault_receipt() {
     let (mut deps, env, _acct_contract, endow_details) = create_endowment();
 
     // Update the Endowment status to APPROVED
-    let info = mock_info(REVIEW_TEAM, &[]);
+    let info = mock_info(AP_TEAM, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
         endowment_id: CHARITY_ID,
         status: 1,
@@ -817,7 +816,7 @@ fn test_close_endowment() {
     let (mut deps, env, acct_contract, _endow_details) = create_endowment();
 
     // Update the Endowment status
-    let info = mock_info(REVIEW_TEAM, &[]);
+    let info = mock_info(AP_TEAM, &[]);
     let update_status_msg = ExecuteMsg::UpdateEndowmentStatus(UpdateEndowmentStatusMsg {
         endowment_id: CHARITY_ID,
         status: 1,

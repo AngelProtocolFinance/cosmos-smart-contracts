@@ -15,6 +15,7 @@ members = [
     "contracts/normalized-endowment/fee-distributor",
     "contracts/multisig/cw4-group",
     "contracts/multisig/cw3-apteam",
+    "contracts/multisig/cw3-applications",
     "contracts/multisig/cw3-generic",
     "contracts/halo/airdrop",
     "contracts/halo/collector",
