@@ -160,7 +160,6 @@ export async function testExecute(
   endowId1: number,
   endowId2: number,
   endowId3: number,
-  endowId4: number,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
   cw4GrpReviewTeam: string,
