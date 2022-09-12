@@ -1,4 +1,4 @@
-use cosmwasm_std::StdError;
+use cosmwasm_std::{OverflowError, StdError, Uint128};
 use cw20_base::ContractError as Cw20ContractError;
 use thiserror::Error;
 
@@ -37,10 +37,16 @@ pub enum ContractError {
     #[error("Allowance is expired")]
     Expired {},
 
+    #[error("Updates are not allowed after endowment has been closed")]
+    UpdatesAfterClosed {},
+
+    #[error("Balance for this account is insufficient")]
+    BalanceTooSmall {},
+
     #[error("No Balance for this account")]
     EmptyBalance {},
 
-    #[error("There is already an account for the given address")]
+    #[error("There is already an account for the given ID")]
     AlreadyInUse {},
 
     #[error("Token was not found in approved coins")]
@@ -123,4 +129,15 @@ pub enum PaymentError {
 
     #[error("This message does no accept funds")]
     NonPayable {},
+    #[error("Must provide operations!")]
+    MustProvideOperations {},
+
+    #[error("Assertion failed; minimum receive amount: {receive}, swap amount: {amount}")]
+    AssertionMinimumReceive { receive: Uint128, amount: Uint128 },
+}
+
+impl From<OverflowError> for ContractError {
+    fn from(o: OverflowError) -> Self {
+        StdError::from(o).into()
+    }
 }

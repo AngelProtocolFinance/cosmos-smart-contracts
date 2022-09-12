@@ -4,7 +4,8 @@ use angel_core::responses::registrar::{
     ConfigResponse, EndowmentDetailResponse, EndowmentListResponse, VaultDetailResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier, YieldVault,
+    AcceptedTokens, Categories, EndowmentEntry, EndowmentStatus, EndowmentType, RebalanceDetails,
+    SplitDetails, Tier, YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -18,6 +19,10 @@ use terraswap::pair::SimulationResponse;
 
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use terra_cosmwasm::{
+    ExchangeRateItem, ExchangeRatesResponse, TaxCapResponse, TaxRateResponse, TerraQuery,
+    TerraQueryWrapper, TerraRoute,
+};
 use terraswap::asset::Asset;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -237,6 +242,7 @@ impl WasmMockQuerier {
                 } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&EndowmentListResponse {
                         endowments: vec![EndowmentEntry {
+                            id: "endowment-1".to_string(),
                             address: Addr::unchecked("endowment_contract"),
                             name: Some("test-endow".to_string()),
                             logo: Some("test-logo".to_string()),
@@ -246,6 +252,7 @@ impl WasmMockQuerier {
                             status: EndowmentStatus::Approved,
                             tier: None,
                             endow_type: EndowmentType::Charity,
+                            categories: Categories::default(),
                         }],
                     })
                     .unwrap(),
@@ -275,6 +282,7 @@ impl WasmMockQuerier {
                         SystemResult::Ok(ContractResult::Ok(
                             to_binary(&EndowmentDetailResponse {
                                 endowment: EndowmentEntry {
+                                    id: "endowmet-1".to_string(),
                                     address: Addr::unchecked("Test-Endowment-Address"),
                                     name: Some("Test-Endowment-#1".to_string()),
                                     logo: Some("test-logo".to_string()),
@@ -284,6 +292,7 @@ impl WasmMockQuerier {
                                     status: angel_core::structs::EndowmentStatus::Approved,
                                     endow_type: angel_core::structs::EndowmentType::Charity,
                                     tier: Some(Tier::Level1),
+                                    categories: Categories::default(),
                                 },
                             })
                             .unwrap(),
@@ -294,7 +303,10 @@ impl WasmMockQuerier {
                     to_binary(&ConfigResponse {
                         version: "1.7.0".to_string(),
                         owner: "Test-Endowment-Owner".to_string(),
-                        accounts_code_id: 123,
+                        accounts_contract: Some("accounts-contract".to_string()),
+                        rebalance: RebalanceDetails::default(),
+                        applications_review: "applications-review".to_string(),
+                        swaps_router: Some("swaps-router".to_string()),
                         cw3_code: Some(124),
                         cw4_code: Some(125),
                         subdao_gov_code: Some(126),
@@ -308,7 +320,6 @@ impl WasmMockQuerier {
                         gov_contract: None,
                         treasury: "treasury-address".to_string(),
                         tax_rate: Decimal::from_ratio(10_u64, 100_u64),
-                        default_vault: None,
                         index_fund: None,
                         split_to_liquid: SplitDetails::default(),
                         donation_match_charites_contract: Some(MOCK_CONTRACT_ADDR.to_string()),
@@ -335,8 +346,10 @@ impl WasmMockQuerier {
                             yield_token: Addr::unchecked("yield-token").to_string(),
                             approved: true,
                             restricted_from: vec![],
+                            acct_type: AccountType::Locked,
                         },
-                    }).unwrap(),
+                    })
+                    .unwrap(),
                 )),
             },
             _ => self.base.handle_query(request),

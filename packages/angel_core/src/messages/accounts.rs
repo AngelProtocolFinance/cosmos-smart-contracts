@@ -1,10 +1,12 @@
 use crate::structs::{
-    DaoSetup, DonationMatch, EndowmentFee, FundingSource, GenericBalance, Profile,
-    RebalanceDetails, SettingsController, StrategyComponent,
+    AccountType, Beneficiary, Categories, DaoSetup, DonationMatch, EndowmentFee, FundingSource,
+    GenericBalance, Profile, Profile, RebalanceDetails, SettingsController, StrategyComponent,
+    SwapOperation,
 };
-use cosmwasm_std::{Addr, Decimal};
+use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
+use cw_asset::{Asset, AssetInfo};
 use cw_utils::{Duration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -45,40 +47,84 @@ pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
-    // Pull funds from investment vault(s) to the Endowment Beneficiary as <asset_info>
-    // NOTE: Atm, the "vault" logic is not fixed.
-    //       Hence, it SHOULD be updated when the "vault" logic is implemented.
-    Withdraw {
-        beneficiary: String,
-        sources: Vec<FundingSource>,
+    /// reinvest vault assets from Liquid to Locked
+    ReinvestToLocked {
+        id: u32,
+        amount: Uint128,
+        vault_addr: String,
     },
-    WithdrawLiquid {
+    // Pull funds from Endowment locked/liquid free balances (TOH) to a Beneficiary address
+    Withdraw {
+        id: u32,
+        acct_type: AccountType,
         beneficiary: String,
-        assets: GenericBalance,
+        assets: Vec<Asset>,
+    },
+    SwapToken {
+        id: u32,
+        acct_type: AccountType,
+        amount: Uint128,
+        operations: Vec<SwapOperation>,
+    },
+    // Router notifies the Accounts of final tokens from a Swap
+    // Allows Accounts to credit the Endowment's involved Balance
+    // with the amount returned to the main Accounts contract
+    SwapReceipt {
+        id: u32,
+        acct_type: AccountType,
+        final_asset: Asset,
     },
     // Tokens are sent back to an Account from an Asset Vault
-    VaultReceipt {},
+    VaultReceipt {
+        id: u32,
+        acct_type: AccountType,
+    },
+    // Invest TOH funds into Vaults
+    VaultsInvest {
+        id: u32,
+        acct_type: AccountType,
+        vaults: Vec<(String, Asset)>,
+    },
+    // Redeem TOH funds from Vaults
+    VaultsRedeem {
+        id: u32,
+        acct_type: AccountType,
+        vaults: Vec<(String, Uint128)>,
+    },
+    // set another endowment's strategy to "copycat" as your own
+    CopycatStrategies {
+        id: u32,
+        acct_type: AccountType,
+        id_to_copy: u32,
+    },
+    // create a new endowment
+    CreateEndowment(CreateEndowmentMsg),
     // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.
     // If not provided, looks up the Index Fund an Endowment is tied to to donates the funds to it.
     CloseEndowment {
-        beneficiary: Option<String>, // Optional Addr of the Beneficiary to receive funds
+        id: u32,
+        beneficiary: Beneficiary,
+    },
+    DistributeToBeneficiary {
+        id: u32,
     },
     // update owner addrInstantiateMsg
     UpdateOwner {
         new_owner: String,
     },
     // update config
+    // Allows the SC owner (only!) to change ownership & upper limit of general categories ID allowed
     UpdateConfig(UpdateConfigMsg),
     // Allows the SC owner (only!) to change ownership
-    UpdateRegistrar {
-        new_registrar: String,
-    },
+
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
     // Update an Endowment ability to receive/send funds
     UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     // Replace an Account's Strategy with that given.
     UpdateStrategies {
+        id: u32,
+        acct_type: AccountType,
         strategies: Vec<Strategy>,
     },
     // Update Endowment profile
@@ -104,6 +150,27 @@ pub struct UpdateConfigMsg {
     pub accepted_tokens_native: Vec<String>,
     pub accepted_tokens_cw20: Vec<String>,
     pub settings_controller: Option<SettingsController>,
+    pub new_registrar: String,
+    pub max_general_category_id: u8,
+}
+
+pub struct CreateEndowmentMsg {
+    pub owner: String, // address that originally setup the endowment account
+    pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
+    pub maturity_time: Option<u64>,     // datetime int of endowment maturity
+    pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
+    pub profile: Profile,               // struct holding the Endowment info
+    pub cw4_members: Vec<Member>,
+    pub kyc_donors_only: bool,
+    pub cw3_threshold: Threshold,
+    pub cw3_max_voting_period: u64,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct UpdateEndowmentStatusMsg {
+    pub endowment_id: u32,
+    pub status: u8,
+    pub beneficiary: Option<Beneficiary>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -120,6 +187,7 @@ pub struct UpdateMaturityWhitelist {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentSettingsMsg {
+    pub id: u32,
     pub owner: Option<String>,
     pub whitelisted_beneficiaries: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
@@ -133,43 +201,28 @@ pub struct UpdateEndowmentSettingsMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowmentStatusMsg {
-    pub deposit_approved: bool,
-    pub withdraw_approved: bool,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ReceiveMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     // Tokens are sent back to an Account from a Vault
-    VaultReceipt {},
+    VaultReceipt { id: u32, acct_type: AccountType },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct DepositMsg {
+    pub id: u32,
     pub locked_percentage: Decimal,
     pub liquid_percentage: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct RedeemMsg {
-    pub sources: Vec<FundingSource>,
-    // pub reinvest: bool,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct WithdrawMsg {
-    pub sources: Vec<FundingSource>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateProfileMsg {
+    pub id: u32,
     pub name: Option<String>,
     pub overview: Option<String>,
-    pub un_sdg: Option<u64>,
-    pub tier: Option<u64>,
+    pub categories: Option<Categories>,
+    pub tier: Option<u8>,
     pub logo: Option<String>,
     pub image: Option<String>,
     pub url: Option<String>,
@@ -180,7 +233,7 @@ pub struct UpdateProfileMsg {
     pub facebook: Option<String>,
     pub twitter: Option<String>,
     pub linkedin: Option<String>,
-    pub number_of_employees: Option<u64>,
+    pub number_of_employees: Option<u16>,
     pub average_annual_budget: Option<String>,
     pub annual_revenue: Option<String>,
     pub charity_navigator_rating: Option<String>,
@@ -198,17 +251,36 @@ pub struct UpdateEndowmentFeesMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    // Get the balance of available UST and the invested portion balances
-    Balance {},
-    // Get state details (like total donations received so far)
-    State {},
     // Get all Config details for the contract
-    // Returns ConfigResponse
     Config {},
+    // Get the balance of available UST and the invested portion balances
+    Balance {
+        id: u32,
+    },
+    // Get state details (like total donations received so far)
+    State {
+        id: u32,
+    },
     // Get all Endowment details
-    Endowment {},
+    Endowment {
+        id: u32,
+    },
+    // Gets list of all registered Endowments
+    EndowmentList {
+        status: Option<String>,
+        name: Option<Option<String>>,
+        owner: Option<String>,
+        tier: Option<Option<String>>,
+        endow_type: Option<String>,
+    },
     // Get the profile info
-    GetProfile {},
-    // Get all "EndowmentFee"s
-    GetEndowmentFees {},
+    GetProfile {
+        id: u32,
+    },
+    // Get endowment token balance
+    TokenAmount {
+        id: u32,
+        asset_info: AssetInfo,
+        acct_type: AccountType,
+    },
 }

@@ -4,7 +4,8 @@ use crate::state::{
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{
-    EndowmentEntry, EndowmentStatus, EndowmentType, NetworkInfo, Tier, YieldVault,
+    AcceptedTokens, Categories, EndowmentEntry, EndowmentStatus, EndowmentType, EndowmentType,
+    NetworkInfo, NetworkInfo, Tier, YieldVault, YieldVault,
 };
 use angel_core::utils::{percentage_checks, split_checks};
 
@@ -14,14 +15,19 @@ use cosmwasm_std::{
 };
 use cw_utils::Duration;
 
+use crate::state::{CONFIG, NETWORK_CONNECTIONS, VAULTS};
+use angel_core::errors::core::ContractError;
+use angel_core::messages::registrar::*;
+
 fn build_account_status_change_msg(account: String, deposit: bool, withdraw: bool) -> SubMsg {
     let wasm_msg = CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: account,
         msg: to_binary(
             &angel_core::messages::accounts::ExecuteMsg::UpdateEndowmentStatus(
                 angel_core::messages::accounts::UpdateEndowmentStatusMsg {
-                    deposit_approved: deposit,
-                    withdraw_approved: withdraw,
+                    endowment_id: 1_u32,
+                    status: 1_u8,
+                    beneficiary: None,
                 },
             ),
         )
@@ -121,6 +127,7 @@ pub fn update_endowment_status(
                 contract_addr: endowment_entry.address.to_string(),
                 msg: to_binary(
                     &angel_core::messages::accounts::ExecuteMsg::CloseEndowment {
+                        id: "endowment-1".to_string(), // FIXME
                         beneficiary: msg.beneficiary,
                     },
                 )
@@ -170,7 +177,18 @@ pub fn update_config(
     }
 
     // update config attributes with newly passed configs
-    config.accounts_code_id = msg.accounts_code_id.unwrap_or(config.accounts_code_id);
+    config.applications_review = match msg.applications_review {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.applications_review,
+    };
+    config.accounts_contract = match msg.accounts_contract {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => config.accounts_contract,
+    };
+    config.swaps_router = match msg.swaps_router {
+        Some(addr) => Some(deps.api.addr_validate(&addr)?),
+        None => config.swaps_router,
+    };
     config.cw3_code = match msg.cw3_code {
         Some(v) => Some(v),
         None => config.cw3_code,
@@ -199,6 +217,10 @@ pub fn update_config(
         None => Ok(config.tax_rate),
     }
     .unwrap();
+    config.rebalance = match msg.rebalance {
+        Some(details) => details,
+        None => config.rebalance,
+    };
     let max = match msg.split_max {
         Some(max) => percentage_checks(max),
         None => Ok(config.split_to_liquid.max),
@@ -375,8 +397,9 @@ pub fn vault_add(
             address: addr.to_string(),
             input_denom: msg.input_denom,
             yield_token: deps.api.addr_validate(&msg.yield_token)?.to_string(),
-            approved: false,
+            approved: true,
             restricted_from: msg.restricted_from,
+            acct_type: msg.acct_type,
         },
     )?;
     Ok(Response::default())
@@ -465,6 +488,8 @@ pub fn new_accounts_reply(
                 deps.storage,
                 addr.clone().as_bytes(),
                 &EndowmentEntry {
+                    id: 1_u32,                         // FIXME
+                    categories: Categories::default(), // FIXME
                     address: addr,
                     owner: endowment_owner.clone(),
                     status: EndowmentStatus::Inactive,

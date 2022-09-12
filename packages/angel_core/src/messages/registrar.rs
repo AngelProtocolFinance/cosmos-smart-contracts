@@ -1,6 +1,7 @@
 use crate::structs::{
-    AcceptedTokens, DaoSetup, EndowmentFee, EndowmentType, NetworkInfo, Profile,
-    SettingsController, SplitDetails, Tier,
+    AcceptedTokens, AcceptedTokens, AccountType, DaoSetup, EndowmentFee, EndowmentType,
+    EndowmentType, NetworkInfo, NetworkInfo, Profile, RebalanceDetails, SettingsController,
+    SplitDetails, SplitDetails, Tier,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
@@ -37,10 +38,9 @@ pub struct MigrateEndowTypeFees {
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
-    pub accounts_code_id: Option<u64>,
     pub treasury: String,
     pub tax_rate: Decimal,
-    pub default_vault: Option<Addr>,
+    pub rebalance: Option<RebalanceDetails>,
     pub split_to_liquid: Option<SplitDetails>, // default %s to split off into liquid account, if donor provided split is not present
     pub accepted_tokens: Option<AcceptedTokens>, // list of approved native and CW20 coins can accept inward
     pub swap_factory: Option<String>,
@@ -49,8 +49,6 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    CreateEndowment(CreateEndowmentMsg),
-    UpdateEndowmentStatus(UpdateEndowmentStatusMsg),
     VaultAdd(VaultAddMsg),
     VaultRemove {
         vault_addr: String,
@@ -103,7 +101,11 @@ pub struct CreateEndowmentMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
+    pub accounts_contract: Option<String>,
+    pub index_fund_contract: Option<String>,
+    pub treasury: Option<String>,
     pub tax_rate: Option<Decimal>,
+    pub rebalance: Option<RebalanceDetails>,
     pub approved_charities: Option<Vec<String>>,
     pub split_max: Option<Decimal>,
     pub split_min: Option<Decimal>,
@@ -111,7 +113,6 @@ pub struct UpdateConfigMsg {
     pub collector_share: Option<Decimal>,
     pub accepted_tokens: Option<AcceptedTokens>,
     /// WASM CODES
-    pub accounts_code_id: Option<u64>,
     pub cw3_code: Option<u64>,
     pub cw4_code: Option<u64>,
     pub subdao_gov_code: Option<u64>,        // subdao gov wasm code
@@ -124,7 +125,6 @@ pub struct UpdateConfigMsg {
     pub index_fund_contract: Option<String>,
     pub gov_contract: Option<String>,
     pub treasury: Option<String>,
-    pub default_vault: Option<String>,
     pub donation_match_charites_contract: Option<String>,
     pub halo_token: Option<String>,
     pub halo_token_lp_contract: Option<String>,
@@ -132,6 +132,10 @@ pub struct UpdateConfigMsg {
     pub collector_addr: Option<String>,
     pub swap_factory: Option<String>,
     pub fundraising_contract: Option<String>,
+    pub accepted_tokens_native: Option<Vec<String>>,
+    pub accepted_tokens_cw20: Option<Vec<String>>,
+    pub applications_review: Option<String>,
+    pub swaps_router: Option<String>,
 }
 
 impl UpdateConfigMsg {
@@ -144,19 +148,13 @@ impl UpdateConfigMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowmentStatusMsg {
-    pub endowment_addr: String,
-    pub status: u8,
-    pub beneficiary: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct VaultAddMsg {
     pub network: Option<String>,
     pub vault_addr: String,
     pub input_denom: String,
     pub yield_token: String,
     pub restricted_from: Vec<EndowmentType>,
+    pub acct_type: AccountType,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -188,6 +186,7 @@ pub enum QueryMsg {
     VaultList {
         network: Option<String>,
         endowment_type: Option<EndowmentType>,
+        acct_type: Option<AccountType>,
         approved: Option<bool>,
         start_after: Option<String>,
         limit: Option<u64>,

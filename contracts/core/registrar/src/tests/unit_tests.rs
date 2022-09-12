@@ -4,7 +4,8 @@ use angel_core::messages::registrar::*;
 use angel_core::messages::subdao_bonding_token::CurveType;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
-    AcceptedTokens, EndowmentStatus, EndowmentType, NetworkInfo, Profile, SocialMedialUrls,
+    AcceptedTokens, AcceptedTokens, AccountType, EndowmentStatus, EndowmentType, NetworkInfo,
+    NetworkInfo, Profile, RebalanceDetails, RebalanceDetails, SocialMedialUrls, SplitDetails,
     SplitDetails,
 };
 use angel_core::structs::{DaoSetup, DaoToken};
@@ -15,19 +16,19 @@ use cosmwasm_std::{
 };
 use cw_utils::Threshold;
 
-const MOCK_ACCOUNTS_CODE_ID: u64 = 17;
 const MOCK_CW3_CODE_ID: u64 = 18;
 const MOCK_CW4_CODE_ID: u64 = 19;
+const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
+const REVIEW_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65xxxx";
 
 #[test]
 fn proper_initialization() {
     let mut deps = mock_dependencies();
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let ap_team = AP_TEAM.to_string();
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_vault: None,
         tax_rate: Decimal::percent(20),
+        rebalance: None,
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
@@ -44,20 +45,20 @@ fn proper_initialization() {
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_response: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(MOCK_ACCOUNTS_CODE_ID, config_response.accounts_code_id);
+    assert_eq!(None, config_response.accounts_contract);
     assert_eq!(ap_team.clone(), config_response.owner);
+    assert_eq!(RebalanceDetails::default(), config_response.rebalance);
 }
 
 #[test]
 fn update_owner() {
     let mut deps = mock_dependencies();
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let ap_team = AP_TEAM.to_string();
     let pleb = "terra17nqw240gyed27q8y4aj2ukg68evy3ml8n00dnh".to_string();
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_vault: None,
         tax_rate: Decimal::percent(20),
+        rebalance: None,
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
@@ -89,13 +90,12 @@ fn update_owner() {
 #[test]
 fn update_config() {
     let mut deps = mock_dependencies();
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let ap_team = AP_TEAM.to_string();
     let index_fund_contract = String::from("terra1typpfzq9ynmvrt6tt459epfqn4gqejhy6lmu7d");
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_vault: None,
         tax_rate: Decimal::percent(0),
+        rebalance: None,
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
@@ -111,13 +111,19 @@ fn update_config() {
 
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let update_config_message = UpdateConfigMsg {
-        accounts_code_id: None,
+        accounts_contract: Some("accounts_contract_addr".to_string()),
         index_fund_contract: Some(index_fund_contract.clone()),
         fundraising_contract: None,
         approved_charities: None,
         treasury: Some(ap_team.clone()),
         tax_rate: None,
-        default_vault: None,
+        rebalance: Some(RebalanceDetails {
+            rebalance_liquid_invested_profits: true,
+            locked_interests_to_liquid: true,
+            interest_distribution: Decimal::one(),
+            locked_principle_to_liquid: true,
+            principle_distribution: Decimal::one(),
+        }),
         split_max: Some(Decimal::one()),
         split_min: Some(Decimal::zero()),
         split_default: Some(Decimal::percent(30)),
@@ -138,6 +144,10 @@ fn update_config() {
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,
+        accepted_tokens_cw20: None,
+        accepted_tokens_native: None,
+        applications_review: Some(REVIEW_TEAM.to_string()),
+        swaps_router: Some("swaps_router_addr".to_string()),
     };
     let msg = ExecuteMsg::UpdateConfig(update_config_message);
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -398,87 +408,33 @@ fn anyone_can_create_endowment_accounts_and_then_update() {
     .unwrap();
     let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
     assert_eq!(
-        endowment_list_response.endowments[0].address,
-        Addr::unchecked(good_endowment_addr.clone())
+        Some("accounts_contract_addr".to_string()),
+        config_response.accounts_contract
+    );
+    assert_eq!(MOCK_CW3_CODE_ID, config_response.cw3_code.unwrap());
+    assert_eq!(MOCK_CW4_CODE_ID, config_response.cw4_code.unwrap());
+    assert_eq!(
+        Decimal::one(),
+        config_response.rebalance.interest_distribution
     );
     assert_eq!(
-        endowment_list_response.endowments[0].status,
-        EndowmentStatus::Inactive
+        Decimal::one(),
+        config_response.rebalance.principle_distribution
     );
-
-    // let's test update endowment method by admin
-    let update_endowment_entry_msg = UpdateEndowmentEntryMsg {
-        endowment_addr: good_endowment_addr.clone(),
-        name: None,
-        owner: None,
-        tier: None,
-        endow_type: None,
-        un_sdg: None,
-        logo: None,
-        image: None,
-    };
-
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
-    let res = execute(
-        deps.as_mut(),
-        env.clone(),
-        info.clone(),
-        ExecuteMsg::UpdateEndowmentEntry(update_endowment_entry_msg.clone()),
-    )
-    .unwrap();
-    assert_eq!(0, res.messages.len());
-
-    let update_endowment_status_msg = UpdateEndowmentStatusMsg {
-        endowment_addr: good_endowment_addr.clone(),
-        status: 1,
-        beneficiary: None,
-    };
-
-    let info = mock_info(ap_team.as_ref(), &coins(100000, "earth"));
-    let res = execute(
-        deps.as_mut(),
-        env.clone(),
-        info.clone(),
-        ExecuteMsg::UpdateEndowmentStatus(update_endowment_status_msg.clone()),
-    )
-    .unwrap();
-    assert_eq!(1, res.messages.len());
-
-    // test that the updating worked properly by querying
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::EndowmentList {
-            name: None,
-            owner: None,
-            status: None,
-            tier: None,
-            endow_type: None,
-            un_sdg: None,
-        },
-    )
-    .unwrap();
-    let endowment_list_response: EndowmentListResponse = from_binary(&res).unwrap();
-    assert_eq!(
-        endowment_list_response.endowments[0].address,
-        Addr::unchecked(good_endowment_addr.clone())
-    );
-    assert_eq!(
-        endowment_list_response.endowments[0].status,
-        EndowmentStatus::Approved
-    );
+    assert!(config_response.rebalance.locked_interests_to_liquid);
+    assert!(config_response.rebalance.locked_principle_to_liquid);
+    assert!(config_response.rebalance.rebalance_liquid_invested_profits);
 }
 
 #[test]
 fn test_add_update_and_remove_vault() {
     let mut deps = mock_dependencies();
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let ap_team = AP_TEAM.to_string();
     let vault_addr = "terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg".to_string();
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_vault: None,
         tax_rate: Decimal::percent(20),
+        rebalance: None,
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
@@ -496,6 +452,7 @@ fn test_add_update_and_remove_vault() {
     // add vault
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let add_vault_message = VaultAddMsg {
+        acct_type: AccountType::Locked,
         network: None,
         vault_addr: vault_addr.clone(),
         input_denom: String::from("input_denom"),
@@ -516,13 +473,13 @@ fn test_add_update_and_remove_vault() {
     .unwrap();
     let vault_detail_response: VaultDetailResponse = from_binary(&res).unwrap();
     assert_eq!(vault_addr.clone(), vault_detail_response.vault.address);
-    assert_eq!(false, vault_detail_response.vault.approved);
+    assert_eq!(true, vault_detail_response.vault.approved);
 
     // update vault status
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let msg = ExecuteMsg::VaultUpdate {
         vault_addr: String::from("terra1mvtfa3zkayfvczqdrwahpj8wlurucdykm8s2zg"),
-        approved: true,
+        approved: false,
         restricted_from: vec![],
     };
     let res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
@@ -538,7 +495,7 @@ fn test_add_update_and_remove_vault() {
     .unwrap();
     let vault_detail_response: VaultDetailResponse = from_binary(&res).unwrap();
     assert_eq!(vault_addr.clone(), vault_detail_response.vault.address);
-    assert_eq!(true, vault_detail_response.vault.approved);
+    assert_eq!(false, vault_detail_response.vault.approved);
 
     // remove vault
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
@@ -567,12 +524,11 @@ fn test_add_update_and_remove_vault() {
 #[test]
 fn test_add_update_and_remove_accepted_tokens() {
     let mut deps = mock_dependencies();
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let ap_team = AP_TEAM.to_string();
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_vault: None,
         tax_rate: Decimal::percent(20),
+        rebalance: None,
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
@@ -595,13 +551,13 @@ fn test_add_update_and_remove_accepted_tokens() {
     // add new token denom "new_token" to "accepted_tokens"
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let update_config_msg = UpdateConfigMsg {
-        accounts_code_id: None,
+        accounts_contract: None,
         index_fund_contract: None,
         fundraising_contract: None,
         approved_charities: None,
         treasury: None,
         tax_rate: None,
-        default_vault: None,
+        rebalance: None,
         split_max: None,
         split_min: None,
         split_default: None,
@@ -625,6 +581,10 @@ fn test_add_update_and_remove_accepted_tokens() {
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,
+        accepted_tokens_cw20: Some(vec!["new_token".to_string()]),
+        accepted_tokens_native: None,
+        applications_review: Some(REVIEW_TEAM.to_string()),
+        swaps_router: Some("swaps_router_addr".to_string()),
     };
     let res = execute(
         deps.as_mut(),
@@ -646,17 +606,17 @@ fn test_add_update_and_remove_network_infos() {
     let mock_network_info = NetworkInfo {
         name: "juno mainnet".to_string(),
         chain_id: "juno-1".to_string(),
+        ica_address: None,
         ibc_channel: None,
         gas_limit: None,
     };
 
     let mut deps = mock_dependencies();
-    let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
+    let ap_team = AP_TEAM.to_string();
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_vault: None,
         tax_rate: Decimal::percent(20),
+        rebalance: None,
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
@@ -763,9 +723,7 @@ fn test_update_endow_type_fees() {
     let mut deps = mock_dependencies();
     let ap_team = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly".to_string();
     let instantiate_msg = InstantiateMsg {
-        accounts_code_id: Some(MOCK_ACCOUNTS_CODE_ID),
         treasury: ap_team.clone(),
-        default_vault: None,
         tax_rate: Decimal::percent(20),
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
@@ -776,6 +734,7 @@ fn test_update_endow_type_fees() {
             cw20: vec![],
         }),
         swap_factory: None,
+        rebalance: None,
     };
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let res = instantiate(deps.as_mut(), mock_env(), info, instantiate_msg).unwrap();

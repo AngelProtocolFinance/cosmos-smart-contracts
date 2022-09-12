@@ -79,13 +79,12 @@ pub fn active_fund_donations(deps: Deps) -> StdResult<DonationListResponse> {
     Ok(DonationListResponse { donors })
 }
 
-pub fn involved_funds(deps: Deps, address: String) -> StdResult<FundListResponse> {
-    let query_addr = deps.api.addr_validate(&address)?;
-    let all_funds = read_funds(deps.storage, None, None)?;
+pub fn involved_funds(deps: Deps, endowment_id: u32) -> StdResult<FundListResponse> {
     let mut involved_funds = vec![];
+    let all_funds = read_funds(deps.storage, None, None)?;
     for fund in all_funds.iter() {
-        let pos = fund.members.iter().position(|m| *m == query_addr);
-        if pos != None {
+        let pos = fund.members.iter().position(|m| *m == endowment_id);
+        if pos.is_some() {
             involved_funds.push(fund.clone());
         }
     }

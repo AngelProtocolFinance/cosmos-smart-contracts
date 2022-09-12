@@ -1,5 +1,5 @@
 use crate::structs::{
-    AcceptedTokens, EndowmentEntry, NetworkInfo, SplitDetails, VaultRate, YieldVault,
+    AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails, VaultRate, YieldVault,
 };
 use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
@@ -16,20 +16,9 @@ pub struct VaultListResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
-pub struct EndowmentDetailResponse {
-    pub endowment: EndowmentEntry,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct EndowmentListResponse {
-    pub endowments: Vec<EndowmentEntry>,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
     pub owner: String,
     pub version: String,
-    pub accounts_code_id: u64,
     pub cw3_code: Option<u64>,
     pub cw4_code: Option<u64>,
     pub subdao_gov_code: Option<u64>,
@@ -41,9 +30,10 @@ pub struct ConfigResponse {
     pub halo_token: Option<String>,
     pub halo_token_lp_contract: Option<String>,
     pub gov_contract: Option<String>,
+    pub accounts_contract: Option<String>,
     pub treasury: String,
     pub tax_rate: Decimal,
-    pub default_vault: Option<String>,
+    pub rebalance: RebalanceDetails,
     pub index_fund: Option<String>,
     pub split_to_liquid: SplitDetails,
     pub donation_match_charites_contract: Option<String>,
@@ -52,6 +42,8 @@ pub struct ConfigResponse {
     pub charity_shares_contract: Option<String>,
     pub accepted_tokens: AcceptedTokens,
     pub swap_factory: Option<String>,
+    pub applications_review: String,
+    pub swaps_router: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

@@ -35,9 +35,10 @@ pub fn instantiate(
     .unwrap();
 
     let configs = Config {
-        owner: info.sender,
+        owner: info.sender.clone(),
+        applications_review: info.sender,
         index_fund_contract: None,
-        accounts_code_id: msg.accounts_code_id.unwrap_or(0u64),
+        accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
         tax_rate,
         default_vault: msg.default_vault,
@@ -49,6 +50,7 @@ pub fn instantiate(
         subdao_cw900_code: None,
         subdao_distributor_code: None,
         donation_match_code: None,
+        rebalance: msg.rebalance.unwrap_or_else(RebalanceDetails::default),
         split_to_liquid: splits,
         halo_token: None,
         halo_token_lp_contract: None,
@@ -62,6 +64,7 @@ pub fn instantiate(
         swap_factory: msg
             .swap_factory
             .map(|v| deps.api.addr_validate(&v).unwrap()),
+        swaps_router: None,
     };
 
     CONFIG.save(deps.storage, &configs)?;
@@ -77,11 +80,7 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::CreateEndowment(msg) => executers::create_endowment(deps, env, info, msg),
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
-        ExecuteMsg::UpdateEndowmentStatus(msg) => {
-            executers::update_endowment_status(deps, env, info, msg)
-        }
         ExecuteMsg::UpdateOwner { new_owner } => {
             executers::update_owner(deps, env, info, new_owner)
         }
@@ -107,37 +106,14 @@ pub fn execute(
     }
 }
 
-/// Replies back to the registrar from instantiate calls to Accounts SC (@ some code_id)
-/// should be caught and handled to register the Endowment's newly created Accounts SC
-/// in the REGISTRY storage
-#[entry_point]
-pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
-    match msg.id {
-        0 => executers::new_accounts_reply(deps, env, msg.result),
-        _ => Err(ContractError::Unauthorized {}),
-    }
-}
-
 #[entry_point]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)?),
-        QueryMsg::Endowment { endowment_addr } => {
-            to_binary(&queriers::query_endowment_details(deps, endowment_addr)?)
-        }
-        QueryMsg::EndowmentList {
-            name,
-            owner,
-            status,
-            tier,
-            un_sdg,
-            endow_type,
-        } => to_binary(&queriers::query_endowment_list(
-            deps, name, owner, status, tier, un_sdg, endow_type,
-        )?),
         QueryMsg::VaultList {
             network,
             endowment_type,
+            acct_type,
             approved,
             start_after,
             limit,
@@ -145,6 +121,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             deps,
             network,
             endowment_type,
+            acct_type,
             approved,
             start_after,
             limit,
@@ -200,8 +177,9 @@ pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, Co
 
     let config: Config = Config {
         owner: old_config.owner,
+        applications_review: Addr::unchecked("applications-review"), // FIXME
+        accounts_contract: Addr::unchecked("accounts-contract"),     // FIXME
         index_fund_contract: old_config.index_fund_contract,
-        accounts_code_id: old_config.accounts_code_id,
         treasury: old_config.treasury,
         tax_rate: old_config.tax_rate,
         default_vault: old_config.default_vault,

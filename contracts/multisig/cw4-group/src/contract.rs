@@ -5,13 +5,13 @@ use cosmwasm_std::{
     attr, entry_point, to_binary, Addr, Binary, Deps, DepsMut, Env, MessageInfo, Order, Response,
     StdError, StdResult, SubMsg,
 };
-use cw0::maybe_addr;
 use cw2::{get_contract_version, set_contract_version};
 use cw4::{
     Member, MemberChangedHookMsg, MemberDiff, MemberListResponse, MemberResponse,
     TotalWeightResponse,
 };
 use cw_storage_plus::Bound;
+use cw_utils::maybe_addr;
 
 // version info for migration info
 const CONTRACT_NAME: &str = "cw4-group";

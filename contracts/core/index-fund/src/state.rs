@@ -68,7 +68,7 @@ pub fn read_alliance_members(
         .map(|member| {
             let (addr, mem) = member?;
             Ok(AllianceMemberResponse {
-                wallet: std::str::from_utf8(&addr.as_bytes()).unwrap().to_string(),
+                wallet: std::str::from_utf8(addr.as_bytes()).unwrap().to_string(),
                 name: mem.name,
                 logo: mem.logo,
                 website: mem.website,

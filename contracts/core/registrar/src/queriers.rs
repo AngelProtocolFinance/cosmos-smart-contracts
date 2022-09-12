@@ -3,8 +3,7 @@ use crate::state::{
     VAULTS,
 };
 use angel_core::responses::registrar::*;
-use angel_core::structs::{EndowmentEntry, EndowmentType, Tier, VaultRate};
-use angel_core::utils::vault_fx_rate;
+use angel_core::structs::{AccountType, EndowmentType};
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
 
@@ -13,10 +12,10 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
         version: get_contract_version(deps.storage)?.contract,
-        accounts_code_id: config.accounts_code_id,
+        accounts_contract: config.accounts_contract.map(|addr| addr.to_string()),
         treasury: config.treasury.to_string(),
         tax_rate: config.tax_rate,
-        default_vault: config.default_vault.map(|addr| addr.to_string()),
+        rebalance: config.rebalance,
         index_fund: config.index_fund_contract.map(|addr| addr.to_string()),
         cw3_code: config.cw3_code,
         cw4_code: config.cw4_code,
@@ -59,6 +58,8 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         accepted_tokens: config.accepted_tokens,
         charity_shares_contract: config.charity_shares_contract.map(|addr| addr.to_string()),
         swap_factory: config.swap_factory.map(|addr| addr.to_string()),
+        applications_review: config.applications_review.to_string(),
+        swaps_router: config.swaps_router.map(|addr| addr.to_string()),
     })
 }
 
@@ -66,6 +67,7 @@ pub fn query_vault_list(
     deps: Deps,
     network: Option<String>,
     endowment_type: Option<EndowmentType>,
+    acct_type: Option<AccountType>,
     approved: Option<bool>,
     start_after: Option<String>,
     limit: Option<u64>,
@@ -75,7 +77,15 @@ pub fn query_vault_list(
         Some(start_after) => Some(deps.api.addr_validate(&start_after)?),
         None => None,
     };
-    let vaults = read_vaults(deps.storage, network, endowment_type, approved, addr, limit)?;
+    let vaults = read_vaults(
+        deps.storage,
+        network,
+        endowment_type,
+        acct_type,
+        approved,
+        addr,
+        limit,
+    )?;
     Ok(VaultListResponse { vaults })
 }
 
@@ -164,20 +174,6 @@ pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDet
     let addr = deps.api.addr_validate(&vault_addr)?;
     let vault = VAULTS.load(deps.storage, addr.as_bytes())?;
     Ok(VaultDetailResponse { vault })
-}
-
-pub fn query_approved_vaults_fx_rate(deps: Deps) -> StdResult<VaultRateResponse> {
-    // returns a list of approved Vaults exchange rate
-    let vaults = read_vaults(deps.storage, None, None, Some(true), None, None)?;
-    let mut vaults_rate: Vec<VaultRate> = vec![];
-    for vault in vaults.iter().filter(|p| p.approved) {
-        let fx_rate = vault_fx_rate(deps, vault.address.to_string());
-        vaults_rate.push(VaultRate {
-            vault_addr: vault.address.clone(),
-            fx_rate,
-        });
-    }
-    Ok(VaultRateResponse { vaults_rate })
 }
 
 pub fn query_fees(deps: Deps) -> StdResult<FeesResponse> {

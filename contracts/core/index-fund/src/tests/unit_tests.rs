@@ -450,7 +450,7 @@ fn sc_owner_can_update_fund_members() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "charity-address".to_string();
+    let _charity_addr = "charity-address".to_string();
     let registrar_contract = "registrar-account".to_string();
     let pleb = "pleb-account".to_string();
 
@@ -475,8 +475,8 @@ fn sc_owner_can_update_fund_members() {
     };
     let update_members_msg = ExecuteMsg::UpdateMembers {
         fund_id: 1,
-        add: vec![charity_addr.clone(), String::from("charity-addr")],
-        remove: vec![pleb.clone()],
+        add: vec![1, 3],
+        remove: vec![2],
     };
 
     // real SC owner adds a fund
@@ -571,9 +571,9 @@ fn sc_owner_can_remove_member() {
     let mut deps = mock_dependencies(&[]);
     // meet the cast of characters
     let ap_team = "angelprotocolteamdano".to_string();
-    let charity_addr = "charity-address".to_string();
+    let _charity_addr = "charity-address".to_string();
     let registrar_contract = "registrar-account".to_string();
-    let pleb = "pleb-account".to_string();
+    let _pleb = "pleb-account".to_string();
 
     let msg = InstantiateMsg {
         registrar_contract: registrar_contract.clone(),
@@ -602,8 +602,8 @@ fn sc_owner_can_remove_member() {
     // Update the fund members
     let update_members_msg = ExecuteMsg::UpdateMembers {
         fund_id: 1,
-        add: vec![charity_addr.clone(), String::from("charity-addr")],
-        remove: vec![pleb.clone()],
+        add: vec![1, 3],
+        remove: vec![2],
     };
     let info = mock_info(&ap_team.clone(), &coins(1000, "earth"));
     let res = execute(deps.as_mut(), mock_env(), info, update_members_msg.clone()).unwrap();
@@ -621,9 +621,7 @@ fn sc_owner_can_remove_member() {
 
     // Try to remove the member
     // Fails since non-registrar_contract calls the entry
-    let remove_member_msg = RemoveMemberMsg {
-        member: "charity".to_string(),
-    };
+    let remove_member_msg = RemoveMemberMsg { member: 1 };
     let info = mock_info("anyone", &[]);
     let err = execute(
         deps.as_mut(),
@@ -635,9 +633,7 @@ fn sc_owner_can_remove_member() {
     assert_eq!(err, ContractError::Unauthorized {});
 
     // Succeed to remove the member
-    let remove_member_msg = RemoveMemberMsg {
-        member: "charity-addr".to_string(),
-    };
+    let remove_member_msg = RemoveMemberMsg { member: 1 };
     let info = mock_info(registrar_contract.as_ref(), &[]);
     let _res = execute(
         deps.as_mut(),
@@ -681,7 +677,7 @@ fn test_receive_cw20() {
     let create_fund_msg = ExecuteMsg::CreateFund {
         name: "test fund".to_string(),
         description: "test fund desc".to_string(),
-        members: vec![ap_team.clone()],
+        members: vec![3],
         rotating_fund: None,
         split_to_liquid: None,
         expiry_time: None,

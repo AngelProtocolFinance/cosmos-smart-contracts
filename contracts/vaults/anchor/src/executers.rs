@@ -1,5 +1,6 @@
 use crate::anchor;
 use crate::config;
+use crate::config::{PendingInfo, BALANCES, DEPOSIT_TOKEN_DENOM, PENDING, TOKEN_INFO};
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::accounts::QueryMsg as EndowmentQueryMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
@@ -12,7 +13,7 @@ use angel_core::structs::{BalanceInfo, EndowmentEntry, EndowmentStatus};
 use cosmwasm_std::{
     to_binary, Addr, Attribute, BankMsg, Coin, CosmosMsg, Decimal, Decimal256, DepsMut, Env,
     Fraction, MessageInfo, QueryRequest, ReplyOn, Response, StdError, StdResult, SubMsg,
-    SubMsgResult, Uint128, WasmMsg, WasmQuery,
+    SubMsgResponse, SubMsgResult, Uint128, WasmMsg, WasmMsg, WasmQuery, WasmQuery,
 };
 use cw20::{Balance, Cw20CoinVerified};
 
@@ -71,6 +72,10 @@ pub fn update_config(
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.moneymarket,
     };
+    config.sibling_vault = match msg.sibling_vault {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.sibling_vault,
+    };
 
     let anchor_config = anchor::config(deps.as_ref(), &config.moneymarket)?;
     config.yield_token = deps.api.addr_validate(&anchor_config.aterra_contract)?;
@@ -87,20 +92,21 @@ pub fn deposit_stable(
     _env: Env,
     info: MessageInfo,
     _balance: Balance,
+    endowment_id: u32,
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
-
+    let deposit_denom = DEPOSIT_TOKEN_DENOM.load(deps.storage)?;
     // only accept max of 1 deposit coin/token per donation
     if info.funds.len() != 1 {
         return Err(ContractError::InvalidCoinsDeposited {});
     }
 
     let deposit_amount: Coin = Coin {
-        denom: DEPOSIT_TOKEN_DENOM.to_string(),
+        denom: deposit_denom.clone(),
         amount: info
             .funds
             .iter()
-            .find(|c| c.denom == *DEPOSIT_TOKEN_DENOM)
+            .find(|c| c.denom == deposit_denom)
             .map(|c| c.amount)
             .unwrap_or_else(Uint128::zero),
     };
@@ -123,9 +129,9 @@ pub fn deposit_stable(
             })?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments.iter().position(|p| p.address == info.sender);
+    let pos = endowments.iter().position(|p| p.id == endowment_id);
     // reject if the sender was found in the list of endowments
-    if pos == None {
+    if pos.is_none() {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -143,7 +149,7 @@ pub fn deposit_stable(
         &submessage_id.to_be_bytes(),
         &config::PendingInfo {
             typ: "deposit".to_string(),
-            accounts_address: info.sender.clone(),
+            endowment_id,
             beneficiary: None,
             fund: None,
             locked: after_taxes_locked,
@@ -162,14 +168,42 @@ pub fn deposit_stable(
         .add_attribute("deposit_amount", deposit_amount.amount)
         .add_submessage(SubMsg {
             id: submessage_id,
-            msg: deposit_stable_msg(
-                &config.moneymarket,
-                DEPOSIT_TOKEN_DENOM,
-                deposit_amount.amount,
-            )?,
+            msg: deposit_stable_msg(&config.moneymarket, &deposit_denom, deposit_amount.amount)?,
             reply_on: ReplyOn::Always,
             gas_limit: None,
         }))
+}
+
+pub fn reinvest_to_locked_execute(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    id: u32,
+    amount: Uint128, // vault tokens
+) -> Result<Response, ContractError> {
+    let mut config = config::read(deps.storage)?;
+
+    // 0. Check that the message sender is the Accounts contract
+    // 1. Check that this vault has a sibling set
+    // 2. Check that sender ID has >= amount of vault tokens in it's balance
+    // 3. Burn vault tokens an calculate the LP Tokens equivalent
+    // 4. SEND LP tokens to the Locked Account (using ReinvestToLocked recieve msg)
+
+    Ok(Response::new())
+}
+pub fn reinvest_to_locked_recieve(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    id: u32,
+    amount: Uint128, // asset tokens (ex. LPs)
+) -> Result<Response, ContractError> {
+    let mut config = config::read(deps.storage)?;
+
+    // 0. Check that the message sender is the Sibling vault contract
+    // 1. Treat as a Deposit for the given ID (mint vault tokens for deposited assets)
+
+    Ok(Response::new())
 }
 
 /// Redeem Stable: Take in an amount of locked/liquid deposit tokens
@@ -178,7 +212,8 @@ pub fn redeem_stable(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    account_addr: Addr,
+    endowment_id: u32,
+    amount: Uint128,
 ) -> Result<Response, ContractError> {
     let mut config = config::read(deps.storage)?;
 
@@ -196,19 +231,17 @@ pub fn redeem_stable(
             })?,
         }))?;
     let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments
-        .iter()
-        .position(|p| p.address == info.sender.clone());
+    let pos = endowments.iter().position(|p| p.id == endowment_id);
 
     // reject if the sender was found not in the list of endowments
     // OR if the sender is not the Registrar SC (ie. we're closing the endowment)
-    if pos == None && info.sender != config.registrar_contract {
+    if pos.is_none() && info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
 
     // use arg account_addr to lookup Balances
-    let mut investment = config::BALANCES
-        .load(deps.storage, &account_addr)
+    let mut investment = BALANCES
+        .load(deps.storage, &endowment_id)
         .unwrap_or_else(|_| BalanceInfo::default());
 
     // grab total tokens for locked and liquid balances
@@ -225,7 +258,7 @@ pub fn redeem_stable(
         address: env.contract.address,
     }));
 
-    config::BALANCES.save(deps.storage, &account_addr, &investment)?;
+    BALANCES.save(deps.storage, &endowment_id, &investment)?;
 
     let submessage_id = config.next_pending_id;
     config::PENDING.save(
@@ -233,7 +266,7 @@ pub fn redeem_stable(
         &submessage_id.to_be_bytes(),
         &config::PendingInfo {
             typ: "redeem".to_string(),
-            accounts_address: account_addr,
+            endowment_id,
             beneficiary: None,
             fund: None,
             locked: locked_deposit_tokens,
@@ -276,15 +309,20 @@ pub fn withdraw_stable(
     // Also, it gets some Endowment info
     // If tx sender is an invalid Account or wrong address,
     // this rejects the tx by sending "Unauthroized" error.
-    let _endow_detail_resp: EndowmentDetailResponse = deps
-        .querier
-        .query(&QueryRequest::Wasm(WasmQuery::Smart {
+    let _endow_detail_resp: EndowmentDetailResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQueryMsg::Endowment {
                 endowment_addr: info.sender.to_string(),
             })?,
-        }))
-        .map_err(|_| ContractError::Unauthorized {})?;
+        }))?;
+    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
+    let pos = endowments.iter().position(|p| p.id == msg.endowment_id);
+
+    // reject if the sender was found not in the list of endowments
+    if pos.is_none() {
+        return Err(ContractError::Unauthorized {});
+    }
 
     // reduce the total supply of CW20 deposit tokens
     let withdraw_total = msg.amount;
@@ -292,8 +330,8 @@ pub fn withdraw_stable(
     token_info.total_supply -= withdraw_total;
     config::TOKEN_INFO.save(deps.storage, &token_info)?;
 
-    let mut investment = config::BALANCES
-        .load(deps.storage, &info.sender)
+    let mut investment = BALANCES
+        .load(deps.storage, &msg.endowment_id)
         .unwrap_or_else(|_| BalanceInfo::default());
 
     // check the account has enough balance to cover the withdraw
@@ -307,7 +345,7 @@ pub fn withdraw_stable(
         amount: msg.amount,
         address: env.contract.address.clone(),
     }));
-    BALANCES.save(deps.storage, &info.sender, &investment)?;
+    BALANCES.save(deps.storage, &msg.endowment_id, &investment)?;
 
     let submessage_id = config.next_pending_id;
     config::PENDING.save(
@@ -315,7 +353,7 @@ pub fn withdraw_stable(
         &submessage_id.to_be_bytes(),
         &config::PendingInfo {
             typ: "withdraw".to_string(),
-            accounts_address: info.sender.clone(),
+            endowment_id: msg.endowment_id,
             beneficiary: Some(msg.beneficiary.clone()),
             fund: None,
             locked: msg.locked,
@@ -389,14 +427,13 @@ pub fn harvest(
 
     // shuffle DP tokens from Locked to Liquid
     // set aside a small amount for treasury
-    let accounts: Result<Vec<_>, _> = BALANCES
+    let accounts: Result<Vec<u32>, _> = BALANCES
         .keys(deps.storage, None, None, Order::Ascending)
-        .map(String::from_utf8)
+        .map(|id| id.unwrap())
         .collect();
-    for account in accounts.unwrap().iter() {
-        let account_address = deps.api.addr_validate(account)?;
+    for account_id in accounts.unwrap().iter() {
         let mut balances = BALANCES
-            .load(deps.storage, &account_address)
+            .load(deps.storage, &account_id)
             .unwrap_or_else(|_| BalanceInfo::default());
 
         // CALCULATE ALL AMOUNTS TO BE COLLECTED FOR TAXES AND TO BE TRANSFERED
@@ -439,8 +476,7 @@ pub fn harvest(
             amount: transfer_amt,
         };
 
-        // lower balance
-        balances.deduct_tokens(Balance::Cw20(deposit_token.clone()));
+        BALANCES.save(deps.storage, &account_id, &balances)?;
     }
 
     config::BALANCES.save(deps.storage, &account_address, &balances)?;
@@ -463,7 +499,7 @@ pub fn harvest(
                 &submessage_id.to_be_bytes(),
                 &config::PendingInfo {
                     typ: "withdraw".to_string(),
-                    accounts_address: collector_addr.clone(),
+                    endowment_id: 0,
                     beneficiary: Some(collector_addr.clone()),
                     fund: None,
                     locked: Uint128::zero(),
@@ -512,7 +548,7 @@ pub fn harvest(
                 &submessage_id.to_be_bytes(),
                 &config::PendingInfo {
                     typ: "withdraw".to_string(),
-                    accounts_address: treasury_addr.clone(),
+                    endowment_id: 0,
                     beneficiary: Some(treasury_addr.clone()),
                     fund: None,
                     locked: Uint128::zero(),
@@ -594,8 +630,8 @@ pub fn process_anchor_reply(
             let res = match transaction.typ.as_str() {
                 "deposit" => {
                     // Increase the Account's Deposit token balances by the correct amounts of aUST
-                    let mut investment = config::BALANCES
-                        .load(deps.storage, &transaction.accounts_address.clone())
+                    let mut investment = BALANCES
+                        .load(deps.storage, &transaction.endowment_id.clone())
                         .unwrap_or_else(|_| BalanceInfo::default());
                     config::BALANCES.save(
                         deps.storage,
@@ -606,7 +642,7 @@ pub fn process_anchor_reply(
                         amount: anchor_amount,
                         address: env.contract.address.clone(),
                     }));
-                    BALANCES.save(deps.storage, &transaction.accounts_address, &investment)?;
+                    BALANCES.save(deps.storage, &transaction.endowment_id, &investment)?;
 
                     // update total token supply by total aUST returned from deposit
                     let mut token_info = config::TOKEN_INFO.load(deps.storage)?;
@@ -622,13 +658,15 @@ pub fn process_anchor_reply(
                         .add_attribute("action", "anchor_reply_processing")
                         // Send UST back to the Account SC via VaultReciept msg
                         .add_message(CosmosMsg::Wasm(WasmMsg::Execute {
-                            contract_addr: transaction.accounts_address.to_string(),
+                            contract_addr: transaction.endowment_id.to_string(),
                             msg: to_binary(
-                                &angel_core::messages::accounts::ExecuteMsg::VaultReceipt {},
+                                &angel_core::messages::accounts::ExecuteMsg::VaultReceipt {
+                                    id: transaction.endowment_id,
+                                },
                             )?,
                             funds: vec![Coin {
                                 amount: anchor_amount,
-                                denom: DEPOSIT_TOKEN_DENOM.to_string(),
+                                denom: DEPOSIT_TOKEN_DENOM.load(deps.storage)?.to_string(),
                             }],
                         }))
                 }
@@ -662,7 +700,7 @@ pub fn process_anchor_reply(
                             to_address: transaction.beneficiary.unwrap().to_string(),
                             amount: vec![Coin {
                                 amount: anchor_amount,
-                                denom: DEPOSIT_TOKEN_DENOM.to_string(),
+                                denom: DEPOSIT_TOKEN_DENOM.load(deps.storage)?.to_string(),
                             }],
                         })
                 }
