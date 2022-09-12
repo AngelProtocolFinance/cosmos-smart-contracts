@@ -215,7 +215,7 @@ async function setup(
   });
   console.log(chalk.green(" Done!"));
 
-  process.stdout.write("Instantiating the Accounts contract");
+  process.stdout.write("Instantiating Accounts contract");
   const accountsResult = await instantiateContract(
     juno,
     apTeamAddr,
