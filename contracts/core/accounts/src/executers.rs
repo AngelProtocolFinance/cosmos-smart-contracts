@@ -59,54 +59,30 @@ pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response
 pub fn create_endowment(
     deps: DepsMut,
     _env: Env,
-    _info: MessageInfo,
+    info: MessageInfo,
     mut msg: CreateEndowmentMsg,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
 
-    // check that at least 1 SDG category is set for charity endowments
-    if msg.profile.endow_type == EndowmentType::Charity {
-        if msg.profile.categories.sdgs.is_empty() {
-            return Err(ContractError::InvalidInputs {});
-        }
-        msg.profile.categories.sdgs.sort();
-        for item in msg.profile.categories.sdgs.clone().into_iter() {
-            if item > 17 || item == 0 {
-                return Err(ContractError::InvalidInputs {});
-            }
-        }
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarConfig {})?,
+        }))?;
+
+    // Charity endowments must be created through the CW3 Review Applications
+    if msg.profile.endow_type == EndowmentType::Charity
+        && info.sender.to_string() != registrar_config.applications_review
+    {
+        return Err(ContractError::Unauthorized {});
     }
+
     if !msg.profile.categories.general.is_empty() {
         msg.profile.categories.general.sort();
         if msg.profile.categories.general.last().unwrap() > &config.max_general_category_id {
             return Err(ContractError::InvalidInputs {});
         }
     }
-
-    // Depending on EndowmentType chosen, we give/take reign in allowing the endowment creatooor the
-    // ability to set certain parameters. Additionally, some parameters such as endowment status and
-    // deposit/withdraw approval is determined solely based on EndowmentType chosen.
-    let (
-        status,
-        deposit_approved,
-        withdraw_approved,
-        withdraw_before_maturity,
-        maturity_height,
-        maturity_time,
-    ): (EndowmentStatus, bool, bool, bool, Option<u64>, Option<u64>) = match msg.profile.endow_type
-    {
-        // normalized endowments are approved & active upon creation
-        EndowmentType::Normal => (
-            EndowmentStatus::Approved,
-            true,
-            true,
-            msg.withdraw_before_maturity,
-            msg.maturity_height,
-            msg.maturity_time,
-        ),
-        // charity endowments are locked at creations and must undergo a review before being approved
-        EndowmentType::Charity => (EndowmentStatus::Inactive, false, false, false, None, None),
-    };
 
     let owner = deps.api.addr_validate(&msg.owner)?;
     // try to store the endowment, fail if the ID is already in use
@@ -116,13 +92,13 @@ pub fn create_endowment(
         |existing| match existing {
             Some(_) => Err(ContractError::AlreadyInUse {}),
             None => Ok(Endowment {
-                status,
-                deposit_approved,
-                withdraw_approved,
+                status: EndowmentStatus::Approved,
+                deposit_approved: true,
+                withdraw_approved: true,
                 owner,
-                withdraw_before_maturity,
-                maturity_time,
-                maturity_height,
+                withdraw_before_maturity: msg.withdraw_before_maturity,
+                maturity_height: msg.maturity_height,
+                maturity_time: msg.maturity_time,
                 strategies: AccountStrategies::default(),
                 oneoff_vaults: OneOffVaults::default(),
                 rebalance: RebalanceDetails::default(),
@@ -150,11 +126,6 @@ pub fn create_endowment(
 
     // initial default Response to add submessages to
     let mut res = Response::new();
-    let registrar_config: RegistrarConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarConfig {})?,
-        }))?;
     if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {
         return Err(ContractError::Std(StdError::generic_err(
             "cw3_code & cw4_code must exist",
@@ -218,14 +189,7 @@ pub fn update_endowment_status(
             msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
 
-    // AP Applications Review: Can only handle Endowments that are still INACTIVE.
-    // Can only set a status of either Approved OR Closed.
-    // AP Team CW3 (owner): Can only handle Endowments that are NOT Inactive. Can set any status.
-    if !((info.sender == registrar_config.applications_review
-        && endowment.status == EndowmentStatus::Inactive
-        && (msg.status == 1 || msg.status == 3))
-        || (info.sender == config.owner && endowment.status != EndowmentStatus::Inactive))
-    {
+    if !(info.sender == config.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
