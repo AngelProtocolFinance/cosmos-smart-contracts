@@ -69,18 +69,19 @@ pub fn execute(
             latest,
             meta,
         } => execute_propose(deps, env, info, title, description, msgs, latest, meta),
-        // charity application review proposal
+        ExecuteMsg::Vote { proposal_id, vote } => execute_vote(deps, env, info, proposal_id, vote),
+        // Endowment Application review proposal & voting
         ExecuteMsg::ProposeApplication {
             ref_id,
             msg,
             latest,
             meta,
         } => execute_propose_application(deps, env, info, ref_id, msg, latest, meta),
-        ExecuteMsg::Vote {
+        ExecuteMsg::VoteApplication {
             proposal_id,
             vote,
             reason,
-        } => execute_vote(deps, env, info, proposal_id, vote, reason),
+        } => execute_vote_application(deps, env, info, proposal_id, vote, reason),
         ExecuteMsg::UpdateConfig {
             threshold,
             max_voting_period,
@@ -266,12 +267,12 @@ pub fn execute_vote(
     info: MessageInfo,
     proposal_id: u64,
     vote: Vote,
-    reason: Option<String>,
 ) -> Result<Response<Empty>, ContractError> {
     // only members of the multisig can vote
     let cfg = CONFIG.load(deps.storage)?;
 
-    // ensure proposal exists and can be voted on
+    // ensure proposal exists and can be voted on and it is NOT
+    // an Application ProposalType
     let mut prop = PROPOSALS.load(deps.storage, proposal_id)?;
     if prop.status != Status::Open {
         return Err(ContractError::NotOpen {});
@@ -279,7 +280,65 @@ pub fn execute_vote(
     if prop.expires.is_expired(&env.block) {
         return Err(ContractError::Expired {});
     }
+    if prop.proposal_type == ProposalType::Application {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Cannot vote on a Proposal that is an Application type".to_string(),
+        }));
+    }
+    // Only voting members of the multisig can vote
+    // Additional check if weight >= 1
+    // use a snapshot of "start of proposal"
+    let vote_power = cfg
+        .group_addr
+        .member_at_height(&deps.querier, info.sender.clone(), Some(prop.start_height))?
+        .ok_or(ContractError::Unauthorized {})?;
 
+    // cast vote if no vote previously cast
+    BALLOTS.update(deps.storage, (proposal_id, &info.sender), |bal| match bal {
+        Some(_) => Err(ContractError::AlreadyVoted {}),
+        None => Ok(Ballot {
+            weight: vote_power,
+            vote,
+        }),
+    })?;
+
+    // update vote tally
+    prop.votes.add_vote(vote, vote_power);
+    prop.update_status(&env.block);
+    PROPOSALS.save(deps.storage, proposal_id, &prop)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "vote")
+        .add_attribute("sender", info.sender)
+        .add_attribute("proposal_id", proposal_id.to_string())
+        .add_attribute("status", format!("{:?}", prop.status)))
+}
+
+pub fn execute_vote_application(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    proposal_id: u64,
+    vote: Vote,
+    reason: Option<String>,
+) -> Result<Response<Empty>, ContractError> {
+    // only members of the multisig can vote
+    let cfg = CONFIG.load(deps.storage)?;
+
+    // ensure proposal exists and can be voted on
+    // and that it is a Application ProposalType
+    let mut prop = PROPOSALS.load(deps.storage, proposal_id)?;
+    if prop.status != Status::Open {
+        return Err(ContractError::NotOpen {});
+    }
+    if prop.expires.is_expired(&env.block) {
+        return Err(ContractError::Expired {});
+    }
+    if prop.proposal_type != ProposalType::Application {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Cannot vote on a Proposal that is not an Application type".to_string(),
+        }));
+    }
     // Only voting members of the multisig can vote
     // Additional check if weight >= 1
     // use a snapshot of "start of proposal"
@@ -301,9 +360,8 @@ pub fn execute_vote(
     prop.votes.add_vote(vote, vote_power);
     prop.update_status(&env.block);
 
-    // If this is an application proposal && Vote == NO && Reason is given
-    // Set the Proposal description field with Reason for NO vote.
-    if prop.proposal_type == ProposalType::Application && vote == Vote::No {
+    // If Vote == NO && Reason is given, set the Proposal description with reason for NO vote
+    if vote == Vote::No {
         prop.description = reason.unwrap_or(prop.description);
     }
 

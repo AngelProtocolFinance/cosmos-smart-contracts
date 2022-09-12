@@ -40,6 +40,10 @@ pub enum ExecuteMsg {
     Vote {
         proposal_id: u64,
         vote: Vote,
+    },
+    VoteApplication {
+        proposal_id: u64,
+        vote: Vote,
         reason: Option<String>,
     },
     Execute {
