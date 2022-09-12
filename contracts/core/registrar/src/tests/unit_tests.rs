@@ -2,7 +2,9 @@ use crate::contract::{execute, instantiate, query};
 use angel_core::errors::core::*;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
-use angel_core::structs::{AcceptedTokens, AccountType, NetworkInfo, SplitDetails};
+use angel_core::structs::{
+    AcceptedTokens, AccountType, NetworkInfo, RebalanceDetails, SplitDetails,
+};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coins, from_binary, Decimal};
 
@@ -18,6 +20,7 @@ fn proper_initialization() {
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
         tax_rate: Decimal::percent(20),
+        rebalance: None,
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
@@ -35,6 +38,7 @@ fn proper_initialization() {
     let config_response: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(None, config_response.accounts_contract);
     assert_eq!(ap_team.clone(), config_response.owner);
+    assert_eq!(RebalanceDetails::default(), config_response.rebalance);
 }
 
 #[test]
@@ -45,6 +49,7 @@ fn update_owner() {
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
         tax_rate: Decimal::percent(20),
+        rebalance: None,
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
@@ -80,6 +85,7 @@ fn update_config() {
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
         tax_rate: Decimal::percent(0),
+        rebalance: None,
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
@@ -99,6 +105,13 @@ fn update_config() {
         approved_charities: None,
         treasury: Some(ap_team.clone()),
         tax_rate: None,
+        rebalance: Some(RebalanceDetails {
+            rebalance_liquid_invested_profits: true,
+            locked_interests_to_liquid: true,
+            interest_distribution: Decimal::one(),
+            locked_principle_to_liquid: true,
+            principle_distribution: Decimal::one(),
+        }),
         split_max: Some(Decimal::one()),
         split_min: Some(Decimal::zero()),
         split_default: Some(Decimal::percent(30)),
@@ -128,6 +141,17 @@ fn update_config() {
     );
     assert_eq!(MOCK_CW3_CODE_ID, config_response.cw3_code.unwrap());
     assert_eq!(MOCK_CW4_CODE_ID, config_response.cw4_code.unwrap());
+    assert_eq!(
+        Decimal::one(),
+        config_response.rebalance.interest_distribution
+    );
+    assert_eq!(
+        Decimal::one(),
+        config_response.rebalance.principle_distribution
+    );
+    assert!(config_response.rebalance.locked_interests_to_liquid);
+    assert!(config_response.rebalance.locked_principle_to_liquid);
+    assert!(config_response.rebalance.rebalance_liquid_invested_profits);
 }
 
 #[test]
@@ -138,6 +162,7 @@ fn test_add_update_and_remove_vault() {
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
         tax_rate: Decimal::percent(20),
+        rebalance: None,
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
@@ -226,6 +251,7 @@ fn test_add_update_and_remove_accepted_tokens() {
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
         tax_rate: Decimal::percent(20),
+        rebalance: None,
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![
@@ -252,6 +278,7 @@ fn test_add_update_and_remove_accepted_tokens() {
         approved_charities: None,
         treasury: None,
         tax_rate: None,
+        rebalance: None,
         split_max: None,
         split_min: None,
         split_default: None,
@@ -295,6 +322,7 @@ fn test_add_update_and_remove_network_infos() {
     let instantiate_msg = InstantiateMsg {
         treasury: ap_team.clone(),
         tax_rate: Decimal::percent(20),
+        rebalance: None,
         split_to_liquid: Some(SplitDetails::default()),
         accepted_tokens: Some(AcceptedTokens {
             native: vec![

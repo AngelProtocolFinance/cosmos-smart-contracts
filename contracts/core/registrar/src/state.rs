@@ -1,5 +1,6 @@
 use angel_core::structs::{
-    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, SplitDetails, YieldVault,
+    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, RebalanceDetails, SplitDetails,
+    YieldVault,
 };
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
@@ -18,6 +19,7 @@ pub struct Config {
     pub accounts_contract: Option<Addr>,
     pub treasury: Addr,
     pub tax_rate: Decimal,
+    pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
     pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
     pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
     pub gov_contract: Option<Addr>,    // AP governance contract

@@ -22,7 +22,7 @@ backtraces = ["cosmwasm-std/backtraces", "cosmwasm-vm/backtraces"]
 [dependencies]
 angel-core = { path = "../../../packages/angel_core" }
 accounts = { path = "../../../contracts/core/accounts" }
-cosmwasm-std = { version = "1.0.0", features = ["staking"] }
+cosmwasm-std = { version = "1.0.0", features = ["staking", "abort"] }
 cw-storage-plus = { version = "0.13.4", features = ["iterator"] }
 cw2 = "0.13.4"
 cw20 = "0.13.4"
