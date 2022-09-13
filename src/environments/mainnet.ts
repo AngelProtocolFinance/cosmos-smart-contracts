@@ -244,6 +244,7 @@ export async function startMigrateCore(): Promise<void> {
     accounts,
     cw4GrpApTeam,
     cw3ApTeam,
+    cw3ReviewTeam,
     [anchorVault],
   );
 }
