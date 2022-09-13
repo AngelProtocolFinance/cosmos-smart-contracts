@@ -37,8 +37,7 @@ fn proper_initialization() {
     assert_eq!("apaccountscontract", config.accounts_contract.as_str());
 }
 
-// FIXME!: Update the test afterwards
-// #[test]
+#[test]
 fn execute_swap_operations() {
     let mut deps = mock_dependencies(&[]);
     let msg = InstantiateMsg {
@@ -117,9 +116,9 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::JunoSwap {
-                        offer_asset_info: AssetInfo::Native("usdc".to_string()),
-                        ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
+                    operation: SwapOperation::Loop {
+                        offer_asset_info: AssetInfo::Native("usdt".to_string()),
+                        ask_asset_info: AssetInfo::Cw20(Addr::unchecked("usdc")),
                     },
                     to: None,
                 })
@@ -130,19 +129,7 @@ fn execute_swap_operations() {
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
                     operation: SwapOperation::JunoSwap {
-                        offer_asset_info: AssetInfo::Native("usdc".to_string()),
-                        ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
-                    },
-                    to: None,
-                })
-                .unwrap(),
-            })),
-            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: MOCK_CONTRACT_ADDR.into(),
-                funds: vec![],
-                msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::JunoSwap {
-                        offer_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
+                        offer_asset_info: AssetInfo::Cw20(Addr::unchecked("usdc")),
                         ask_asset_info: AssetInfo::Native("ujuno".to_string()),
                     },
                     to: None,
@@ -157,7 +144,7 @@ fn execute_swap_operations() {
                         offer_asset_info: AssetInfo::Native("ujuno".to_string()),
                         ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0002")),
                     },
-                    to: Some(Addr::unchecked("addr0000")),
+                    to: Some(Addr::unchecked("apaccountscontract")),
                 })
                 .unwrap(),
             })),
@@ -166,9 +153,20 @@ fn execute_swap_operations() {
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::AssertMinimumReceive {
                     asset_info: AssetInfo::Cw20(Addr::unchecked("asset0002")),
-                    prev_balance: Uint128::zero(),
+                    prev_balance: Uint128::from(1000000_u128),
                     minimum_receive: Uint128::from(1000000u128),
-                    receiver: Addr::unchecked("addr0000"),
+                    receiver: Addr::unchecked("apaccountscontract"),
+                })
+                .unwrap(),
+            })),
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: MOCK_CONTRACT_ADDR.into(),
+                funds: vec![],
+                msg: to_binary(&ExecuteMsg::SendSwapReceipt {
+                    asset_info: AssetInfo::Cw20(Addr::unchecked("asset0002")),
+                    prev_balance: Uint128::from(1000000_u128),
+                    endowment_id: 1,
+                    acct_type: AccountType::Locked,
                 })
                 .unwrap(),
             })),
@@ -176,7 +174,7 @@ fn execute_swap_operations() {
     );
 
     let msg = ExecuteMsg::Receive(Cw20ReceiveMsg {
-        sender: "addr0000".into(),
+        sender: "vault-1".into(),
         amount: Uint128::from(1000000u128),
         msg: to_binary(&Cw20HookMsg::ExecuteSwapOperations {
             operations: vec![
@@ -234,14 +232,25 @@ fn execute_swap_operations() {
                 contract_addr: MOCK_CONTRACT_ADDR.into(),
                 funds: vec![],
                 msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: SwapOperation::JunoSwap {
+                    operation: SwapOperation::Loop {
                         offer_asset_info: AssetInfo::Native("ujuno".to_string()),
-                        ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0002")),
+                        ask_asset_info: AssetInfo::Cw20(Addr::unchecked("loop")),
                     },
-                    to: Some(Addr::unchecked("addr0002")),
+                    to: Some(Addr::unchecked("vault-1")),
                 })
                 .unwrap(),
-            }))
+            })),
+            SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: MOCK_CONTRACT_ADDR.into(),
+                funds: vec![],
+                msg: to_binary(&ExecuteMsg::SendSwapReceipt {
+                    asset_info: AssetInfo::Cw20(Addr::unchecked("loop")),
+                    prev_balance: Uint128::from(1000000_u128),
+                    endowment_id: 1,
+                    acct_type: AccountType::Locked,
+                })
+                .unwrap(),
+            })),
         ]
     );
 }
