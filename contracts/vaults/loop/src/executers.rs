@@ -140,7 +140,7 @@ pub fn deposit(
     // Swap the half of input token to lp contract pair token
     let input_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
     let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
-        &config.lp_pair_contract.as_ref(),
+        config.lp_pair_contract.as_ref(),
         &deposit_asset_info,
         input_amount,
     )?;
@@ -204,7 +204,7 @@ pub fn restake_claim_reward(
     if config.lp_pair_asset_infos.contains(&reward_asset_info) {
         // Swap the half of input token to the lp contract pair token
         loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
-            &config.lp_pair_contract.as_ref(),
+            config.lp_pair_contract.as_ref(),
             &AssetInfo::Token {
                 contract_addr: config.lp_reward_token.to_string(),
             },
@@ -1259,7 +1259,7 @@ pub fn send_asset(
                 }));
             }
             None => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr,
+                contract_addr,
                 msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
                     recipient: beneficiary.to_string(),
                     amount: send_amount,

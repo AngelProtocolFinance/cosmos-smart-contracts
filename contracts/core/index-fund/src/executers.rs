@@ -536,7 +536,7 @@ pub fn build_donation_messages(
                     contract_addr: accounts_contract.clone(),
                     msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
                         angel_core::messages::accounts::DepositMsg {
-                            id: member.0.clone(),
+                            id: member.0,
                             locked_percentage: member.1 .1,
                             liquid_percentage: member.2 .1,
                         },
@@ -590,14 +590,14 @@ pub fn update_donation_messages(
             .into_iter()
             .position(|msg| &msg.0 == member);
 
-        if pos.is_some() {
+        if let Some(pos) = pos {
             // member addr already exists in the messages vec. Update values.
-            let mut msg_data = donation_messages[pos.unwrap()];
+            let mut msg_data = donation_messages[pos];
             msg_data.1 .0 += member_portion * lock_split;
             msg_data.1 .1 = lock_split;
             msg_data.2 .0 += member_portion * split;
             msg_data.2 .1 = split;
-            donation_messages[pos.unwrap()] = msg_data;
+            donation_messages[pos] = msg_data;
         } else {
             // add new entry for the member
             donation_messages.push((

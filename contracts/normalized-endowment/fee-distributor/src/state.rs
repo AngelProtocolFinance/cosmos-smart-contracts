@@ -8,7 +8,7 @@ pub const STATE: Item<State> = Item::new("state");
 pub const WEEKLY_TOKEN_DISTRIBUTION: Map<u64, Uint128> = Map::new("distributed_tokens");
 pub const USER_LAST_CLAIMED_FEE_TIMESTAMP: Map<Addr, u64> = Map::new("user_last_claimed_fee");
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Config {
     pub owner: Addr,
     pub dao_token: Addr,
@@ -16,7 +16,7 @@ pub struct Config {
     pub terraswap_factory: Addr,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct State {
     pub contract_addr: Addr,
     pub total_distributed_unclaimed_fees: Uint128,

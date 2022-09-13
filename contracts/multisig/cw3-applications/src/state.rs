@@ -41,7 +41,7 @@ pub struct Proposal {
     pub meta: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, Eq, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ProposalType {
     Normal = 0,
@@ -62,7 +62,7 @@ impl fmt::Display for ProposalType {
 }
 
 // weight of votes for each option
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
 pub struct Votes {
     pub yes: u64,
     pub no: u64,

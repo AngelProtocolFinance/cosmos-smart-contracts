@@ -786,7 +786,7 @@ pub fn cast_vote(
     Ok(Response::new().add_attributes(vec![
         ("action", "cast_vote"),
         ("poll_id", &poll_id.to_string()),
-        ("amount", &(amount.to_string()).as_str()),
+        ("amount", ((amount.to_string()).as_str())),
         ("voter", info.sender.to_string().as_str()),
         ("vote_option", vote_info.vote.to_string().as_str()),
     ]))

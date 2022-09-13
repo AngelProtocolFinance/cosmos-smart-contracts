@@ -40,7 +40,7 @@ pub struct Proposal {
 }
 
 // weight of votes for each option
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Eq, JsonSchema, Debug)]
 pub struct Votes {
     pub yes: u64,
     pub no: u64,

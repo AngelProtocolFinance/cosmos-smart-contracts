@@ -151,7 +151,7 @@ pub fn create_endowment(
 
     // Charity endowments must be created through the CW3 Review Applications
     if msg.profile.endow_type == EndowmentType::Charity
-        && info.sender.to_string() != registrar_config.applications_review
+        && info.sender != registrar_config.applications_review
     {
         return Err(ContractError::Unauthorized {});
     }
@@ -167,7 +167,7 @@ pub fn create_endowment(
     // try to store the endowment, fail if the ID is already in use
     let donation_match_contract = match &msg.profile.endow_type {
         &EndowmentType::Charity => match &registrar_config.donation_match_charites_contract {
-            Some(match_contract) => Some(deps.api.addr_validate(&match_contract)?),
+            Some(match_contract) => Some(deps.api.addr_validate(match_contract)?),
             None => None,
         },
         _ => None,
@@ -373,7 +373,7 @@ pub fn update_endowment_status(
             msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
 
-    if !(info.sender == config.owner) {
+    if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -501,7 +501,7 @@ pub fn update_endowment_settings(
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
 
     if info.sender.ne(&endowment.owner)
-        && (endowment.dao != None && info.sender != *endowment.dao.as_ref().unwrap())
+        && (endowment.dao.is_some() && info.sender != *endowment.dao.as_ref().unwrap())
     {
         return Err(ContractError::Unauthorized {});
     }
@@ -2117,13 +2117,13 @@ pub fn setup_donation_match(
         return Err(ContractError::Unauthorized {});
     }
 
-    if endowment.dao == None {
+    if endowment.dao.is_some() {
         return Err(ContractError::Std(StdError::generic_err(
             "A DAO does not exist yet for this Endowment. Please set that up first.",
         )));
     }
 
-    if endowment.donation_match_contract != None {
+    if endowment.donation_match_contract.is_some() {
         return Err(ContractError::Std(StdError::generic_err(
             "A Donation Match contract already exists for this Endowment",
         )));

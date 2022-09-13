@@ -14,7 +14,7 @@ pub const FUND: Map<&[u8], IndexFund> = Map::new("fund");
 const MAX_LIMIT: u64 = 30;
 const DEFAULT_LIMIT: u64 = 10;
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Config {
     pub owner: Addr,                   // DANO Address
@@ -24,7 +24,7 @@ pub struct Config {
     pub funding_goal: Option<Uint128>, // donation funding limit (in UUSD) to trigger early cycle of the Active IndexFund
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct State {
     pub total_funds: u64,
@@ -60,8 +60,8 @@ pub fn read_alliance_members(
     ALLIANCE_MEMBERS
         .range(
             storage,
-            start_after.map(|v| Bound::inclusive(v)),
-            end_before.map(|v| Bound::inclusive(v)),
+            start_after.map(Bound::inclusive),
+            end_before.map(Bound::inclusive),
             Order::Ascending,
         )
         .take(limit)

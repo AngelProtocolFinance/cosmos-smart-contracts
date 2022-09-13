@@ -374,10 +374,8 @@ pub fn execute_contribute(
                 .iter()
                 .position(|camp_bal| camp_bal.campaign == id);
 
-            if pos.is_some() {
-                contributor[pos.unwrap()]
-                    .balance
-                    .add_tokens(balance.clone());
+            if let Some(pos) = pos {
+                contributor[pos].balance.add_tokens(balance.clone());
             } else {
                 let mut default_bal = GenericBalance::default();
                 default_bal.add_tokens(balance.clone());
@@ -405,12 +403,7 @@ pub fn execute_contribute(
     // update the campaign's generic "total" contributions balance as well
     campaign.contributed_balance.add_tokens(balance);
     // make sure the contributor's addr is noted for this campaign
-    if campaign
-        .contributors
-        .iter()
-        .position(|addr| &addr == &sender)
-        .is_none()
-    {
+    if !campaign.contributors.iter().any(|addr| &addr == &sender) {
         campaign.contributors.push(sender.clone())
     }
 
@@ -764,13 +757,7 @@ fn query_list_by_contributor(deps: Deps, contributor: String) -> StdResult<ListR
     let campaigns: Vec<Campaign> = all_campaigns(deps.storage)
         .unwrap_or_default()
         .into_iter()
-        .filter(|campaign| {
-            campaign
-                .contributors
-                .iter()
-                .position(|c| c == &contrib_addr)
-                .is_some()
-        })
+        .filter(|campaign| campaign.contributors.iter().any(|c| c == &contrib_addr))
         .collect::<Vec<Campaign>>();
 
     Ok(ListResponse { campaigns })

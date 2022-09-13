@@ -29,7 +29,7 @@ pub const STATE: SnapshotItem<State> = SnapshotItem::new(
     "state__changelog",
     cw_storage_plus::Strategy::EveryBlock,
 );
-#[derive(Default, Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Default, Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct QuadraticEquationCoefficients {
     pub quad_coefficient: Decimal256,
     pub linear_coefficient: Decimal256,
@@ -130,7 +130,7 @@ impl SubAssign for QuadraticEquationCoefficients {
     }
 }
 
-#[derive(Default, Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Default, Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct UserLockedBalance {
     // Locked balance info
     pub deposited_amount: Uint128,
@@ -321,7 +321,7 @@ impl UserLockedBalance {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct Config {
     pub cw20_address: Option<Addr>,
     pub owner: Addr,

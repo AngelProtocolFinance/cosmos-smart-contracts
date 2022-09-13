@@ -29,7 +29,7 @@ pub struct Config {
     pub gov_hodler: Addr,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
 pub struct State {
     pub poll_count: u64,
     pub total_share: Uint128,
