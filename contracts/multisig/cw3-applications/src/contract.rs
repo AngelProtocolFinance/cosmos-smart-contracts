@@ -185,7 +185,7 @@ pub fn execute_propose_application(
     ref_id: String,
     mut msg: CreateEndowmentMsg,
     latest: Option<Expiration>, // we ignore earliest
-    _meta: Option<String>,
+    meta: Option<String>,
 ) -> Result<Response<Empty>, ContractError> {
     let cfg = CONFIG.load(deps.storage)?;
 
@@ -248,7 +248,7 @@ pub fn execute_propose_application(
         votes: Votes::new(0),
         threshold: cfg.threshold,
         total_weight: cfg.group_addr.total_weight(&deps.querier)?,
-        meta: Some(ref_id),
+        meta,
     };
     prop.update_status(&env.block);
     let id = next_id(deps.storage)?;
