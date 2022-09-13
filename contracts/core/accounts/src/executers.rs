@@ -13,11 +13,6 @@ use angel_core::messages::registrar::{
 };
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
-use angel_core::messages::vault::{
-    AccountWithdrawMsg, ExecuteMsg as VaultExecuteMsg, QueryMsg as VaultQueryMsg,
-};
-use angel_core::responses::index_fund::FundListResponse;
-
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
@@ -25,7 +20,7 @@ use angel_core::structs::{
     AcceptedTokens, AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup,
     DonationMatch, DonationsReceived, EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance,
     OneOffVaults, RebalanceDetails, SocialMedialUrls, SplitDetails, StrategyComponent,
-    SwapOperation, Tier, YieldVault,
+    SwapOperation, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -101,8 +96,8 @@ pub fn dao_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response
 
             // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
             Ok(Response::default()
-                .add_attribute("endow_dao", dao)
-                .add_attribute("endow_dao_token", dao_token))
+                .add_attribute("endow_dao", endowment.dao.unwrap())
+                .add_attribute("endow_dao_token", endowment.dao_token.unwrap()))
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
@@ -139,8 +134,10 @@ pub fn donation_match_reply(
             ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
             // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
-            Ok(Response::default()
-                .add_attribute("endow_donation_match_contract", donation_match_contract))
+            Ok(Response::default().add_attribute(
+                "endow_donation_match_contract",
+                endowment.donation_match_contract.unwrap(),
+            ))
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
@@ -176,6 +173,13 @@ pub fn create_endowment(
 
     let owner = deps.api.addr_validate(&msg.owner)?;
     // try to store the endowment, fail if the ID is already in use
+    let donation_match_contract = match &msg.profile.endow_type {
+        &EndowmentType::Charity => match &registrar_config.donation_match_charites_contract {
+            Some(match_contract) => Some(deps.api.addr_validate(&match_contract)?),
+            None => None,
+        },
+        _ => None,
+    };
     ENDOWMENTS.update(
         deps.storage,
         config.next_account_id,
@@ -198,21 +202,13 @@ pub fn create_endowment(
                 dao: None,
                 dao_token: None,
                 donation_match_active: false,
-                donation_match_contract: match &msg.profile.endow_type {
-                    &EndowmentType::Charity => {
-                        match &registrar_config.donation_match_charites_contract {
-                            Some(match_contract) => Some(deps.api.addr_validate(&match_contract)?),
-                            None => None,
-                        }
-                    }
-                    _ => None,
-                },
-                whitelisted_beneficiaries: msg.whitelisted_beneficiaries,
-                whitelisted_contributors: msg.whitelisted_contributors,
-                earnings_fee: msg.earnings_fee,
-                withdraw_fee: msg.withdraw_fee,
-                deposit_fee: msg.deposit_fee,
-                aum_fee: msg.aum_fee,
+                donation_match_contract,
+                whitelisted_beneficiaries: msg.whitelisted_beneficiaries.clone(),
+                whitelisted_contributors: msg.whitelisted_contributors.clone(),
+                earnings_fee: msg.earnings_fee.clone(),
+                withdraw_fee: msg.withdraw_fee.clone(),
+                deposit_fee: msg.deposit_fee.clone(),
+                aum_fee: msg.aum_fee.clone(),
                 maturity_whitelist: vec![],
             }),
         },
@@ -340,25 +336,24 @@ pub fn update_config(
     info: MessageInfo,
     msg: UpdateConfigMsg,
 ) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
 
     // only the SC admin can update these configs...for now
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
-
     let new_registrar = deps.api.addr_validate(&msg.new_registrar)?;
-    let settings_controller = match msg.settings_controller {
-        Some(controller) => controller,
-        None => config.settings_controller,
-    };
-    let accepted_tokens = AcceptedTokens {
-        native: msg.accepted_tokens_native,
-        cw20: msg.accepted_tokens_cw20,
-    };
 
     // update config attributes with newly passed args
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+        let settings_controller = match msg.settings_controller {
+            Some(controller) => controller,
+            None => config.settings_controller,
+        };
+        let accepted_tokens = AcceptedTokens {
+            native: msg.accepted_tokens_native,
+            cw20: msg.accepted_tokens_cw20,
+        };
         config.registrar_contract = new_registrar;
         config.settings_controller = settings_controller;
         config.accepted_tokens = accepted_tokens;
@@ -1066,7 +1061,7 @@ pub fn distribute_to_beneficiary(
     state.balances = BalanceInfo::default();
     STATES.save(deps.storage, id, &state)?;
 
-    Ok(Response::new())
+    Ok(Response::default())
 }
 
 pub fn vault_receipt(
@@ -1184,6 +1179,7 @@ pub fn deposit(
     msg: DepositMsg,
     fund: Asset,
 ) -> Result<Response, ContractError> {
+    let mut res = Response::default();
     let config = CONFIG.load(deps.storage)?;
     let endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
 
@@ -1338,7 +1334,7 @@ pub fn deposit(
     });
 
     STATES.save(deps.storage, msg.id, &state)?;
-    Ok(Response::new()
+    Ok(res
         .add_submessages(deposit_messages)
         .add_attribute("action", "account_deposit"))
 }
@@ -1875,12 +1871,11 @@ pub fn update_endowment_fees(
     info: MessageInfo,
     msg: UpdateEndowmentFeesMsg,
 ) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENT.load(deps.storage)?;
-    let profile = PROFILE.load(deps.storage)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
     let config = CONFIG.load(deps.storage)?;
 
     // only normalized endowments can update the additional fees
-    if profile.endow_type != EndowmentType::Charity {
+    if endowment.profile.endow_type != EndowmentType::Charity {
         return Err(ContractError::Std(StdError::generic_err(
             "Charity Endowments may not change endowment fees",
         )));
@@ -1919,7 +1914,7 @@ pub fn update_endowment_fees(
         endowment.aum_fee = msg.aum_fee;
     }
 
-    ENDOWMENT.save(deps.storage, &endowment)?;
+    ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
     Ok(Response::new()
         .add_attribute("action", "update_endowment_fees")
@@ -1954,82 +1949,83 @@ pub fn harvest(
 }
 
 pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
-    // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
-    let profile = PROFILE.load(deps.storage)?;
-    if profile.endow_type != EndowmentType::Charity {
-        return Err(ContractError::Std(StdError::generic_err(
-            "Charity Endowments do not have AUM fees to harvest",
-        )));
-    }
+    // FIXME
+    // // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
+    // let profile = PROFILE.load(deps.storage)?;
+    // if profile.endow_type != EndowmentType::Charity {
+    //     return Err(ContractError::Std(StdError::generic_err(
+    //         "Charity Endowments do not have AUM fees to harvest",
+    //     )));
+    // }
 
-    // Validations
-    let endowment = ENDOWMENT.load(deps.storage)?;
-    if info.sender != endowment.owner {
-        return Err(ContractError::Unauthorized {});
-    }
+    // // Validations
+    // let endowment = ENDOWMENT.load(deps.storage)?;
+    // if info.sender != endowment.owner {
+    //     return Err(ContractError::Unauthorized {});
+    // }
 
-    // Get the `aum_fee` info
-    if endowment.aum_fee.is_none() {
-        return Err(ContractError::Std(StdError::generic_err(
-            "AUM_FEE info is not set",
-        )));
-    }
-    let EndowmentFee {
-        fee_percentage,
-        payout_address,
-        active,
-    } = endowment.aum_fee.unwrap();
-    if !active {
-        return Err(ContractError::Std(StdError::generic_err(
-            "AUM_FEE info is not activated",
-        )));
-    }
+    // // Get the `aum_fee` info
+    // if endowment.aum_fee.is_none() {
+    //     return Err(ContractError::Std(StdError::generic_err(
+    //         "AUM_FEE info is not set",
+    //     )));
+    // }
+    // let EndowmentFee {
+    //     fee_percentage,
+    //     payout_address,
+    //     active,
+    // } = endowment.aum_fee.unwrap();
+    // if !active {
+    //     return Err(ContractError::Std(StdError::generic_err(
+    //         "AUM_FEE info is not activated",
+    //     )));
+    // }
 
-    // Calc the total AUM & aum_harvest_withdraw from vaults balances
-    let mut msgs: Vec<CosmosMsg> = vec![];
-    let vaults: Vec<String> = endowment
-        .strategies
-        .iter()
-        .map(|s| s.vault.clone())
-        .collect();
-    for vault in vaults {
-        let vault_balances: Uint128 = deps.querier.query_wasm_smart(
-            vault.clone(),
-            &VaultQueryMsg::Balance {
-                endowment_id: 1, // FIXME
-            },
-        )?;
-        // Here, we assume that only one native coin -
-        // `UST` is used for deposit/withdraw in vault
-        let mut total_aum: Uint128 = Uint128::zero();
-        total_aum += vault_balances;
+    // // Calc the total AUM & aum_harvest_withdraw from vaults balances
+    // let mut msgs: Vec<CosmosMsg> = vec![];
+    // let vaults: Vec<String> = endowment
+    //     .strategies
+    //     .iter()
+    //     .map(|s| s.vault.clone())
+    //     .collect();
+    // for vault in vaults {
+    //     let vault_balances: Uint128 = deps.querier.query_wasm_smart(
+    //         vault.clone(),
+    //         &VaultQueryMsg::Balance {
+    //             endowment_id: 1, // FIXME
+    //         },
+    //     )?;
+    //     // Here, we assume that only one native coin -
+    //     // `UST` is used for deposit/withdraw in vault
+    //     let mut total_aum: Uint128 = Uint128::zero();
+    //     total_aum += vault_balances;
 
-        // Calc the `aum_harvest_withdraw` amount
-        if !total_aum.is_zero() {
-            let aum_harvest_withdraw =
-                total_aum.multiply_ratio(fee_percentage.numerator(), fee_percentage.denominator());
-            msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: vault.to_string(),
-                msg: to_binary(&VaultExecuteMsg::Withdraw(AccountWithdrawMsg {
-                    endowment_id: 1, // FIXME
-                    beneficiary: payout_address.clone(),
-                    amount: aum_harvest_withdraw,
-                }))
-                .unwrap(),
-                funds: vec![],
-            }))
-        }
-    }
+    //     // Calc the `aum_harvest_withdraw` amount
+    //     if !total_aum.is_zero() {
+    //         let aum_harvest_withdraw = total_aum * fee_percentage;
+    //         msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+    //             contract_addr: vault.to_string(),
+    //             msg: to_binary(&VaultExecuteMsg::Withdraw(AccountWithdrawMsg {
+    //                 endowment_id: 1, // FIXME
+    //                 beneficiary: payout_address.clone(),
+    //                 amount: aum_harvest_withdraw,
+    //             }))
+    //             .unwrap(),
+    //             funds: vec![],
+    //         }))
+    //     }
+    // }
 
-    if msgs.is_empty() {
-        return Err(ContractError::Std(StdError::generic_err(
-            "Total AUM is zero",
-        )));
-    }
+    // if msgs.is_empty() {
+    //     return Err(ContractError::Std(StdError::generic_err(
+    //         "Total AUM is zero",
+    //     )));
+    // }
 
-    Ok(Response::new()
-        .add_messages(msgs)
-        .add_attribute("action", "harvest_aum_fee"))
+    // Ok(Response::new()
+    //     .add_messages(msgs)
+    //     .add_attribute("action", "harvest_aum_fee"))
+    Ok(Response::default())
 }
 
 pub fn harvest_reply(
@@ -2037,38 +2033,41 @@ pub fn harvest_reply(
     _env: Env,
     msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
-    match msg {
-        SubMsgResult::Ok(subcall) => {
-            let mut config = CONFIG.load(deps.storage)?;
-            for event in subcall.events {
-                if event.ty == "wasm" {
-                    for attrb in event.attributes {
-                        if attrb.key == "last_earnings_harvest" {
-                            config.last_earnings_harvest = attrb.value.parse::<u64>().unwrap();
-                        }
-                        if attrb.key == "last_harvest_fx" {
-                            config.last_harvest_fx =
-                                Some(Decimal256::from_str(&attrb.value).unwrap());
-                        }
-                    }
-                }
-            }
-            CONFIG.save(deps.storage, &config)?;
-            Ok(Response::default())
-        }
-        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
-    }
+    // FIXMEs
+    // match msg {
+    //     SubMsgResult::Ok(subcall) => {
+    //         let mut config = CONFIG.load(deps.storage)?;
+    //         for event in subcall.events {
+    //             if event.ty == "wasm" {
+    //                 for attrb in event.attributes {
+    //                     if attrb.key == "last_earnings_harvest" {
+    //                         config.last_earnings_harvest = attrb.value.parse::<u64>().unwrap();
+    //                     }
+    //                     if attrb.key == "last_harvest_fx" {
+    //                         config.last_harvest_fx =
+    //                             Some(Decimal256::from_str(&attrb.value).unwrap());
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         CONFIG.save(deps.storage, &config)?;
+    //         Ok(Response::default())
+    //     }
+    //     SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
+    // }
+    Ok(Response::default())
 }
 
 pub fn setup_dao(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
+    endowment_id: u32,
     msg: DaoSetup,
 ) -> Result<Response, ContractError> {
-    let endowment = ENDOWMENT.load(deps.storage)?;
+    let endowment = ENDOWMENTS.load(deps.storage, endowment_id)?;
     let config = CONFIG.load(deps.storage)?;
-    let profile = PROFILE.load(deps.storage)?;
+    let profile = endowment.profile;
 
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
@@ -2087,12 +2086,13 @@ pub fn setup_dao(
         }))?;
 
     Ok(Response::new().add_submessage(SubMsg {
-        id: 0,
+        id: 1,
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
             code_id: registrar_config.subdao_gov_code.unwrap(),
             admin: None,
             label: "new endowment dao contract".to_string(),
             msg: to_binary(&angel_core::messages::subdao::InstantiateMsg {
+                id: endowment_id,
                 quorum: msg.quorum,
                 threshold: msg.threshold,
                 voting_period: msg.voting_period,
@@ -2168,7 +2168,7 @@ pub fn setup_donation_match(
                             label: "new donation match contract".to_string(),
                             msg: to_binary(
                                 &angel_core::messages::donation_match::InstantiateMsg {
-                                    id: endwoment_id,
+                                    id: endowment_id,
                                     reserve_token: reserve_addr,
                                     lp_pair: lp_addr,
                                     registrar_contract: config.registrar_contract.to_string(),

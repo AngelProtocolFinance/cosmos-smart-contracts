@@ -361,7 +361,8 @@ fn test_donor_match() {
         msg: to_binary(&Cw20HookMsg::DonorMatch {
             amount: Uint128::from(100_u128),
             donor: "donor".to_string(),
-            endowment_contract: "endowment-contract".to_string(),
+            accounts_contract: "accounts-contract".to_string(),
+            endowment_id: 1_u32,
         })
         .unwrap(),
     };
@@ -382,7 +383,8 @@ fn test_donor_match() {
         msg: to_binary(&Cw20HookMsg::DonorMatch {
             amount: Uint128::from(100_u128),
             donor: "donor".to_string(),
-            endowment_contract: "endowment-contract".to_string(),
+            accounts_contract: "accounts-contract".to_string(),
+            endowment_id: 1_u32,
         })
         .unwrap(),
     };
@@ -403,7 +405,8 @@ fn test_donor_match() {
         msg: to_binary(&Cw20HookMsg::DonorMatch {
             amount: Uint128::from(100_u128),
             donor: "donor".to_string(),
-            endowment_contract: "endowment-contract".to_string(),
+            accounts_contract: "accounts-contract".to_string(),
+            endowment_id: 1_u32,
         })
         .unwrap(),
     };

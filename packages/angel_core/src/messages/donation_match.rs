@@ -19,10 +19,12 @@ pub struct InstantiateMsg {
 pub enum ExecuteMsg {
     /// DonerMatch will attempt to send reserve tokens to CS/dao-token contract.
     /// You must send only reserve tokens in that message  
+    /// `endowment_id`: Endowment ID
     /// `amount`: UST amount for reserve tokens  
     /// `donor` : Wallet address, which done donation  
     /// `token` : CS/dao-token address  
     DonorMatch {
+        endowment_id: u32,
         amount: Uint128,
         donor: Addr,
         token: Addr,
@@ -32,7 +34,7 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum RecieveMsg {
-    DonorMatch {},
+    DonorMatch { endowment_id: u32 },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

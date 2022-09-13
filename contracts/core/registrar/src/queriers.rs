@@ -1,7 +1,4 @@
-use crate::state::{
-    read_registry_entries, read_vaults, CONFIG, ENDOWTYPE_FEES, NETWORK_CONNECTIONS, REGISTRY,
-    VAULTS,
-};
+use crate::state::{read_vaults, CONFIG, ENDOWTYPE_FEES, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::responses::registrar::*;
 use angel_core::structs::{AccountType, EndowmentType};
 use cosmwasm_std::{Deps, StdResult};
@@ -87,86 +84,6 @@ pub fn query_vault_list(
         limit,
     )?;
     Ok(VaultListResponse { vaults })
-}
-
-pub fn query_endowment_details(
-    deps: Deps,
-    endowment_addr: String,
-) -> StdResult<EndowmentDetailResponse> {
-    let endowment = REGISTRY.load(deps.storage, endowment_addr.as_bytes())?;
-    Ok(EndowmentDetailResponse { endowment })
-}
-
-pub fn query_endowment_list(
-    deps: Deps,
-    name: Option<Option<String>>,
-    owner: Option<String>,
-    status: Option<String>,       // String -> EndowmentStatus
-    tier: Option<Option<String>>, // String -> Tier
-    un_sdg: Option<Option<u64>>,  // u64 -> UN SDG
-    endow_type: Option<String>,   // String -> EndowmentType
-) -> StdResult<EndowmentListResponse> {
-    let endowments = read_registry_entries(deps.storage)?;
-    let endowments = match name {
-        Some(nm) => endowments
-            .into_iter()
-            .filter(|e| e.name == nm)
-            .collect::<Vec<EndowmentEntry>>(),
-        None => endowments,
-    };
-
-    let endowments = match owner {
-        Some(owner) => endowments
-            .into_iter()
-            .filter(|e| e.owner == owner)
-            .collect::<Vec<EndowmentEntry>>(),
-        None => endowments,
-    };
-    let endowments = match status {
-        Some(status) => endowments
-            .into_iter()
-            .filter(|e| e.status.to_string() == status)
-            .collect::<Vec<EndowmentEntry>>(),
-        None => endowments,
-    };
-    let endowments = match tier {
-        Some(tier) => {
-            let tier = tier.and_then(|v| match v.as_str() {
-                "1" => Some(Tier::Level1),
-                "2" => Some(Tier::Level2),
-                "3" => Some(Tier::Level3),
-                _ => unimplemented!(),
-            });
-            endowments
-                .into_iter()
-                .filter(|e| e.tier == tier)
-                .collect::<Vec<EndowmentEntry>>()
-        }
-        None => endowments,
-    };
-    let endowments = match un_sdg {
-        Some(un_sdg) => endowments
-            .into_iter()
-            .filter(|e| e.un_sdg == un_sdg)
-            .collect::<Vec<EndowmentEntry>>(),
-        None => endowments,
-    };
-    let endowments = match endow_type {
-        Some(endow_type) => {
-            let end_ty = match endow_type.as_str() {
-                "charity" => EndowmentType::Charity,
-                "normal" => EndowmentType::Normal,
-                _ => unimplemented!(),
-            };
-            endowments
-                .into_iter()
-                .filter(|e| e.endow_type == end_ty)
-                .collect::<Vec<EndowmentEntry>>()
-        }
-        None => endowments,
-    };
-
-    Ok(EndowmentListResponse { endowments })
 }
 
 pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDetailResponse> {

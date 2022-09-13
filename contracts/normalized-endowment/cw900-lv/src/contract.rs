@@ -386,7 +386,7 @@ pub fn execute_register_contracts(
     cw20_address: String,
 ) -> Result<Response, ContractError> {
     let mut config: Config = CONFIG.load(deps.storage)?;
-    if config.cw20_address != None && config.owner != info.sender {
+    if config.cw20_address.is_some() && config.owner != info.sender {
         return Err(ContractError::Unauthorized {});
     }
 

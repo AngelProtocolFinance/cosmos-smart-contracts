@@ -5,10 +5,10 @@ use crate::msg::{
 use crate::state::{
     all_campaigns, Campaign, Config, ContributorInfo, CAMPAIGNS, CONFIG, CONTRIBUTORS,
 };
-use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
-use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, EndowmentDetailResponse,
-};
+use angel_core::messages::accounts::QueryMsg as AccountQueryMsg;
+use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
+use angel_core::responses::accounts::EndowmentDetailsResponse;
+use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::{EndowmentStatus, GenericBalance};
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
@@ -52,9 +52,14 @@ pub fn execute(
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
     match msg {
-        ExecuteMsg::Create(msg) => {
-            execute_create(deps, env, msg, Balance::from(info.funds), &info.sender)
-        }
+        ExecuteMsg::Create { endowment_id, msg } => execute_create(
+            deps,
+            env,
+            endowment_id,
+            msg,
+            Balance::from(info.funds),
+            &info.sender,
+        ),
         ExecuteMsg::CloseCampaign { id } => execute_close_campaign(deps, env, info, id),
         ExecuteMsg::TopUp { id } => {
             execute_top_up(deps, env, &info.sender, id, Balance::from(info.funds))
@@ -87,13 +92,15 @@ pub fn execute_receive(
 ) -> Result<Response, ContractError> {
     let msg: ReceiveMsg = from_binary(&wrapper.msg)?;
     let balance = Balance::Cw20(Cw20CoinVerified {
-        address: info.sender.clone(),
+        address: info.sender,
         amount: wrapper.amount,
     });
     let api = deps.api;
     let sender = &api.addr_validate(&wrapper.sender)?;
     match msg {
-        ReceiveMsg::Create(msg) => execute_create(deps, env, msg, balance, sender),
+        ReceiveMsg::Create { endowment_id, msg } => {
+            execute_create(deps, env, endowment_id, msg, balance, sender)
+        }
         ReceiveMsg::TopUp { id } => execute_top_up(deps, env, sender, id, balance),
         ReceiveMsg::Contribute { id } => execute_contribute(deps, env, sender, id, balance),
     }
@@ -111,7 +118,7 @@ pub fn execute_update_config(
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarConfig {})?,
+            msg: to_binary(&RegistrarQueryMsg::Config {}).unwrap(),
         }))?;
 
     // only the Registrar Contract owner can update the configs
@@ -131,6 +138,7 @@ pub fn execute_update_config(
 pub fn execute_create(
     deps: DepsMut,
     env: Env,
+    endowment_id: u32,
     msg: CreateMsg,
     balance: Balance,
     sender: &Addr,
@@ -143,13 +151,31 @@ pub fn execute_create(
 
     // check the sender is an approved endowment in the Registrar
     let config = CONFIG.load(deps.storage)?;
-    let endow_detail: EndowmentDetailResponse = deps.querier.query_wasm_smart(
+    let accounts_contract = sender.to_string();
+    let registrar_config: RegistrarConfigResponse = deps.querier.query_wasm_smart(
         config.registrar_contract.clone(),
-        &angel_core::messages::registrar::QueryMsg::Endowment {
-            endowment_addr: sender.to_string(),
-        },
+        &RegistrarQueryMsg::Config {},
     )?;
-    if endow_detail.endowment.status != EndowmentStatus::Approved {
+
+    match registrar_config.accounts_contract {
+        Some(addr) => {
+            if addr != accounts_contract {
+                return Err(ContractError::Unauthorized {});
+            }
+        }
+        None => {
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: "accounts_contract not exist".to_string(),
+            }))
+        }
+    }
+
+    let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
+        accounts_contract,
+        &AccountQueryMsg::Endowment { id: endowment_id },
+    )?;
+
+    if endow_detail.status != EndowmentStatus::Approved {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -182,9 +208,9 @@ pub fn execute_create(
                 .accepted_tokens
                 .native
                 .iter()
-                .position(|c| &c.denom == &coin.denom);
+                .position(|c| c.denom == coin.denom);
 
-            if pos == None {
+            if pos.is_none() {
                 return Err(ContractError::NotInWhitelist {
                     token_type: "native".to_string(),
                     given: coin.denom.clone(),
@@ -207,9 +233,9 @@ pub fn execute_create(
                 .accepted_tokens
                 .cw20
                 .iter()
-                .position(|t| &t.address == &token.address);
+                .position(|t| t.address == token.address);
 
-            if pos == None {
+            if pos.is_none() {
                 return Err(ContractError::NotInWhitelist {
                     token_type: "CW20".to_string(),
                     given: token.address.to_string(),
@@ -293,7 +319,7 @@ pub fn execute_top_up(
             .funding_goal
             .cw20
             .iter()
-            .any(|t| &t.address == &token.address)
+            .any(|t| t.address == token.address)
         {
             return Err(ContractError::NotInWhitelist {
                 token_type: "CW20".to_string(),
@@ -332,7 +358,7 @@ pub fn execute_contribute(
             .funding_goal
             .cw20
             .iter()
-            .any(|t| &t.address == &token.address)
+            .any(|t| t.address == token.address)
         {
             return Err(ContractError::NotInWhitelist {
                 token_type: "CW20".to_string(),
@@ -346,9 +372,9 @@ pub fn execute_contribute(
         Some(mut contributor) => {
             let pos = contributor
                 .iter()
-                .position(|camp_bal| &camp_bal.campaign == &id);
+                .position(|camp_bal| camp_bal.campaign == id);
 
-            if pos != None {
+            if pos.is_some() {
                 contributor[pos.unwrap()]
                     .balance
                     .add_tokens(balance.clone());
@@ -379,13 +405,13 @@ pub fn execute_contribute(
     // update the campaign's generic "total" contributions balance as well
     campaign.contributed_balance.add_tokens(balance);
     // make sure the contributor's addr is noted for this campaign
-    match campaign
+    if campaign
         .contributors
         .iter()
         .position(|addr| &addr == &sender)
+        .is_none()
     {
-        None => campaign.contributors.push(sender.clone()),
-        _ => (),
+        campaign.contributors.push(sender.clone())
     }
 
     // and save
@@ -412,7 +438,7 @@ pub fn execute_close_campaign(
     let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
-            msg: to_binary(&RegistrarConfig {})?,
+            msg: to_binary(&RegistrarQueryMsg::Config {})?,
         }))?;
 
     let contributor_messages: Vec<SubMsg>;
@@ -470,8 +496,8 @@ pub fn execute_refund_contributions(
     // check that the msg sender made contributions to given campaign
     let pos = contributor
         .iter()
-        .position(|camp_bal| &camp_bal.campaign == &id);
-    if pos == None {
+        .position(|camp_bal| camp_bal.campaign == id);
+    if pos.is_none() {
         return Err(ContractError::InvalidInputs {});
     }
     // now we have record of everything the sender contributed to this campaign & status
@@ -511,8 +537,8 @@ pub fn execute_claim_rewards(
     // check that the msg sender made contributions to given campaign
     let pos = contributor
         .iter()
-        .position(|camp_bal| &camp_bal.campaign == &id);
-    if pos == None {
+        .position(|camp_bal| camp_bal.campaign == id);
+    if pos.is_none() {
         return Err(ContractError::InvalidInputs {});
     }
     // now we have record of everything the sender contributed to this campaign & status
@@ -723,9 +749,9 @@ fn query_list(
     success: Option<bool>,
 ) -> StdResult<ListResponse> {
     let campaigns: Vec<Campaign> = all_campaigns(deps.storage)
-        .unwrap_or(vec![])
+        .unwrap_or_default()
         .into_iter()
-        .filter(|c| &c.creator.as_ref() == &creator.as_ref().unwrap_or(&c.creator).as_ref())
+        .filter(|c| c.creator.as_ref() == creator.as_ref().unwrap_or(&c.creator).as_ref())
         .filter(|c| c.open == open.unwrap_or(c.open))
         .filter(|c| c.success == success.unwrap_or(c.success))
         .collect::<Vec<Campaign>>();
@@ -736,17 +762,14 @@ fn query_list(
 fn query_list_by_contributor(deps: Deps, contributor: String) -> StdResult<ListResponse> {
     let contrib_addr = deps.api.addr_validate(&contributor)?;
     let campaigns: Vec<Campaign> = all_campaigns(deps.storage)
-        .unwrap_or(vec![])
+        .unwrap_or_default()
         .into_iter()
         .filter(|campaign| {
-            match &campaign
+            campaign
                 .contributors
                 .iter()
                 .position(|c| c == &contrib_addr)
-            {
-                Some(_) => true,
-                None => false,
-            }
+                .is_some()
         })
         .collect::<Vec<Campaign>>();
 

@@ -17,11 +17,11 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
-        version: get_contract_version(deps.storage)?.contract,
         registrar_contract: config.registrar_contract.to_string(),
-        deposit_approved: config.deposit_approved,
-        withdraw_approved: config.withdraw_approved,
         settings_controller: config.settings_controller,
+        accepted_tokens: config.accepted_tokens,
+        next_account_id: config.next_account_id,
+        max_general_category_id: config.max_general_category_id,
     })
 }
 
@@ -30,6 +30,7 @@ pub fn query_state(deps: Deps, id: u32) -> StdResult<StateResponse> {
 
     Ok(StateResponse {
         donations_received: state.donations_received,
+        balances: state.balances,
         closing_endowment: state.closing_endowment,
         closing_beneficiary: state.closing_beneficiary,
     })
@@ -239,15 +240,5 @@ pub fn query_profile(deps: Deps, id: u32) -> StdResult<ProfileResponse> {
         annual_revenue: profile.annual_revenue,
         charity_navigator_rating: profile.charity_navigator_rating,
         endowment_type: profile.endow_type,
-    })
-}
-
-pub fn query_endowment_fees(deps: Deps) -> StdResult<EndowmentFeesResponse> {
-    let endowment = ENDOWMENTS.load(deps.storage)?;
-    Ok(EndowmentFeesResponse {
-        earnings_fee: endowment.earnings_fee,
-        deposit_fee: endowment.deposit_fee,
-        withdraw_fee: endowment.withdraw_fee,
-        aum_fee: endowment.aum_fee,
     })
 }

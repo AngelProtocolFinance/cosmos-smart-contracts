@@ -203,7 +203,7 @@ pub fn execute_propose_application(
             contract_addr: cfg.registrar_contract.to_string(),
             msg: to_binary(&RegistrarConfig {})?,
         }))?;
-    let accounts_contract = registrar_config.accounts_contract.unwrap().to_string();
+    let accounts_contract = registrar_config.accounts_contract.unwrap();
 
     // check that at least 1 SDG category is set for charity endowments
     if msg.profile.categories.sdgs.is_empty() {

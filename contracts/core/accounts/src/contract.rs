@@ -250,7 +250,10 @@ pub fn execute(
         ExecuteMsg::UpdateEndowmentFees(msg) => {
             executers::update_endowment_fees(deps, env, info, msg)
         }
-        ExecuteMsg::SetupDao(msg) => executers::setup_dao(deps, env, info, msg),
+        ExecuteMsg::SetupDao {
+            endowment_id,
+            setup,
+        } => executers::setup_dao(deps, env, info, endowment_id, setup),
         ExecuteMsg::SetupDonationMatch {
             endowment_id,
             setup,

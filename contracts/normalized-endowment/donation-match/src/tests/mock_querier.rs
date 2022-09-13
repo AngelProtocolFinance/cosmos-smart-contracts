@@ -1,11 +1,9 @@
 // Contains mock functionality to test multi-contract scenarios
 use angel_core::errors::core::ContractError;
-use angel_core::responses::registrar::{
-    ConfigResponse, EndowmentDetailResponse, EndowmentListResponse, VaultDetailResponse,
-};
+use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
 use angel_core::structs::{
-    AcceptedTokens, Categories, EndowmentEntry, EndowmentStatus, EndowmentType, RebalanceDetails,
-    SplitDetails, Tier, YieldVault,
+    AcceptedTokens, AccountType, Categories, EndowmentEntry, EndowmentStatus, EndowmentType,
+    RebalanceDetails, SplitDetails, Tier, YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -19,37 +17,16 @@ use terraswap::pair::SimulationResponse;
 
 use std::collections::HashMap;
 use std::marker::PhantomData;
-use terra_cosmwasm::{
-    ExchangeRateItem, ExchangeRatesResponse, TaxCapResponse, TaxRateResponse, TerraQuery,
-    TerraQueryWrapper, TerraRoute,
-};
 use terraswap::asset::Asset;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    EndowmentList {
-        name: Option<String>,
-        owner: Option<String>,
-        status: Option<String>,
-        tier: Option<Option<String>>,
-        endow_type: Option<String>,
-    },
-    Simulation {
-        offer_asset: Asset,
-    },
-    Balance {
-        address: String,
-    },
-    // Mock the `registrar` endowment
-    Endowment {
-        endowment_addr: String,
-    },
+    Simulation { offer_asset: Asset },
+    Balance { address: String },
     // Mock the `registrar` config
     Config {},
-    Vault {
-        vault_addr: String,
-    },
+    Vault { vault_addr: String },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -233,30 +210,6 @@ impl WasmMockQuerier {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
-                QueryMsg::EndowmentList {
-                    name: _,
-                    owner: _,
-                    status: _,
-                    tier: _,
-                    endow_type: _,
-                } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&EndowmentListResponse {
-                        endowments: vec![EndowmentEntry {
-                            id: "endowment-1".to_string(),
-                            address: Addr::unchecked("endowment_contract"),
-                            name: Some("test-endow".to_string()),
-                            logo: Some("test-logo".to_string()),
-                            image: Some("test-image".to_string()),
-                            un_sdg: Some(333_u64),
-                            owner: "endowment-owner".to_string(),
-                            status: EndowmentStatus::Approved,
-                            tier: None,
-                            endow_type: EndowmentType::Charity,
-                            categories: Categories::default(),
-                        }],
-                    })
-                    .unwrap(),
-                )),
                 QueryMsg::Simulation { offer_asset: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&SimulationResponse {
                         return_amount: Uint128::from(100_u128),
@@ -271,34 +224,6 @@ impl WasmMockQuerier {
                     })
                     .unwrap(),
                 )),
-                QueryMsg::Endowment { endowment_addr } => {
-                    if endowment_addr != "endowment_contract".to_string() {
-                        SystemResult::Err(SystemError::InvalidResponse {
-                            error: "Query error".to_string(),
-                            response: to_binary(&ContractError::Unauthorized {}.to_string())
-                                .unwrap(),
-                        })
-                    } else {
-                        SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&EndowmentDetailResponse {
-                                endowment: EndowmentEntry {
-                                    id: "endowmet-1".to_string(),
-                                    address: Addr::unchecked("Test-Endowment-Address"),
-                                    name: Some("Test-Endowment-#1".to_string()),
-                                    logo: Some("test-logo".to_string()),
-                                    image: Some("test-image".to_string()),
-                                    un_sdg: Some(333_u64),
-                                    owner: "Test-Endowment-Owner".to_string(),
-                                    status: angel_core::structs::EndowmentStatus::Approved,
-                                    endow_type: angel_core::structs::EndowmentType::Charity,
-                                    tier: Some(Tier::Level1),
-                                    categories: Categories::default(),
-                                },
-                            })
-                            .unwrap(),
-                        ))
-                    }
-                }
                 QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&ConfigResponse {
                         version: "1.7.0".to_string(),

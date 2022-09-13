@@ -1,5 +1,5 @@
 use angel_core::structs::{
-    AcceptedTokens, AccountStrategies, BalanceInfo, DonationsReceived, EndowmentFee,
+    AcceptedTokens, AccountStrategies, BalanceInfo, Beneficiary, DonationsReceived, EndowmentFee,
     EndowmentStatus, OneOffVaults, Profile, RebalanceDetails, SettingsController,
     StrategyComponent,
 };
@@ -78,7 +78,7 @@ pub struct State {
     pub donations_received: DonationsReceived,
     pub balances: BalanceInfo,
     pub closing_endowment: bool,
-    pub closing_beneficiary: Option<String>,
+    pub closing_beneficiary: Option<Beneficiary>,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");

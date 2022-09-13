@@ -65,8 +65,6 @@ pub enum ExecuteMsg {
     },
     // Set/Update/Nullify the EndowmentTypeFees
     UpdateEndowTypeFees(UpdateEndowTypeFeesMsg),
-    // Allows the DANO/AP Team to update the EndowmentEntry
-    UpdateEndowmentEntry(UpdateEndowmentEntryMsg),
     // Updates the NETWORK_CONNECTIONS
     UpdateNetworkConnections {
         network_info: NetworkInfo,
@@ -188,23 +186,8 @@ pub enum QueryMsg {
         start_after: Option<String>,
         limit: Option<u64>,
     },
-    // Get details of single Endowment
-    Endowment {
-        endowment_addr: String,
-    },
-    // Gets list of all registered Endowments
-    EndowmentList {
-        status: Option<String>,
-        name: Option<Option<String>>,
-        owner: Option<String>,
-        tier: Option<Option<String>>,
-        un_sdg: Option<Option<u64>>,
-        endow_type: Option<String>,
-    },
     // Get all Config details for the contract
     Config {},
-    // Get a list of all approved Vaults exchange rates
-    ApprovedVaultRateList {},
     // Get all Fees(both BaseFee & all of the EndowmentTypeFees)
     Fees {},
     // Get a network connection info

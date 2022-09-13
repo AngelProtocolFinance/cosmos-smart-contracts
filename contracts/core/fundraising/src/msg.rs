@@ -16,7 +16,10 @@ pub struct InstantiateMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
-    Create(CreateMsg),
+    Create {
+        endowment_id: u32,
+        msg: CreateMsg,
+    },
     /// Adds all sent native tokens to the campaign (locked)
     TopUp {
         id: u64,
@@ -55,7 +58,10 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ReceiveMsg {
-    Create(CreateMsg),
+    Create {
+        endowment_id: u32,
+        msg: CreateMsg,
+    },
     /// Adds all sent CW20 tokens to the campaign (locked)
     TopUp {
         id: u64,

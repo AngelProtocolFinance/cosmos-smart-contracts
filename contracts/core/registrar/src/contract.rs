@@ -1,18 +1,16 @@
-use std::ops::Deref;
-
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, OldConfig, CONFIG};
+use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::{AcceptedTokens, EndowmentType, SplitDetails};
+use angel_core::structs::RebalanceDetails;
+use angel_core::structs::{AcceptedTokens, SplitDetails};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, to_vec, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
-    Reply, Response, StdError, StdResult,
+    entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
-use cw_storage_plus::Path;
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "registrar";
@@ -41,7 +39,6 @@ pub fn instantiate(
         accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
         tax_rate,
-        default_vault: msg.default_vault,
         cw3_code: None,
         cw4_code: None,
         subdao_gov_code: None,
@@ -93,9 +90,6 @@ pub fn execute(
             approved,
             restricted_from,
         } => executers::vault_update(deps, env, info, vault_addr, approved, restricted_from),
-        ExecuteMsg::UpdateEndowmentEntry(msg) => {
-            executers::update_endowment_entry(deps, env, info, msg)
-        }
         ExecuteMsg::UpdateEndowTypeFees(msg) => {
             executers::update_endowtype_fees(deps, env, info, msg)
         }
@@ -129,26 +123,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Vault { vault_addr } => {
             to_binary(&queriers::query_vault_details(deps, vault_addr)?)
         }
-        QueryMsg::ApprovedVaultRateList {} => {
-            to_binary(&queriers::query_approved_vaults_fx_rate(deps)?)
-        }
         QueryMsg::Fees {} => to_binary(&queriers::query_fees(deps)?),
         QueryMsg::NetworkConnection { chain_id } => {
             to_binary(&queriers::query_network_connection(deps, chain_id)?)
         }
-        QueryMsg::Endowment { endowment_addr } => {
-            to_binary(&queriers::query_endowment_details(deps, endowment_addr)?)
-        }
-        QueryMsg::EndowmentList {
-            status,
-            name,
-            owner,
-            tier,
-            un_sdg,
-            endow_type,
-        } => to_binary(&queriers::query_endowment_list(
-            deps, name, owner, status, tier, un_sdg, endow_type,
-        )?),
     }
 }
 

@@ -94,7 +94,8 @@ pub fn receive_cw20(
         Ok(Cw20HookMsg::DonorMatch {
             amount,
             donor,
-            endowment_contract,
+            accounts_contract,
+            endowment_id,
         }) => execute_donor_match(
             deps,
             env,
@@ -102,7 +103,8 @@ pub fn receive_cw20(
             cw20_msg.amount,
             amount,
             donor,
-            endowment_contract,
+            accounts_contract,
+            endowment_id,
         ),
         _ => Err(ContractError::Unauthorized {}),
     }
@@ -228,7 +230,8 @@ pub fn execute_donor_match(
     sent_reserve_token_amount: Uint128,
     amount: Uint128,
     donor: String,
-    endowment_contract: String,
+    accounts_contract: String,
+    _endowment_id: u32, // FIXME: Should be used for minting the subdao token
 ) -> Result<Response, ContractError> {
     // Validation: Check if the correct amount of tokens are sent
     if sent_reserve_token_amount != amount {
@@ -257,7 +260,7 @@ pub fn execute_donor_match(
         donor_amount,
     )?;
     // Mint to "endowment_contract": 40%
-    execute_mint(deps, env, sub_info, endowment_contract, endowment_amount)?;
+    execute_mint(deps, env, sub_info, accounts_contract, endowment_amount)?; // FIXME: How to handle `accounts_contract` & `endowment_id` together
 
     Ok(Response::default().add_attributes(vec![
         attr("method", "donor_match"),
@@ -389,7 +392,7 @@ fn do_sell(
     let config = CONFIG.load(deps.storage)?;
     CLAIMS.create_claim(
         deps.storage,
-        &info.sender.clone(),
+        &info.sender,
         amount,
         config.unbonding_period.after(&block),
     )?;

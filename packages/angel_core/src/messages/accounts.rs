@@ -119,7 +119,10 @@ pub enum ExecuteMsg {
     // AUM harvest
     HarvestAum {},
     // Set up dao token for "Endowment"
-    SetupDao(DaoSetup),
+    SetupDao {
+        endowment_id: u32,
+        setup: DaoSetup,
+    },
     // Setup Donation match contract for the Endowment
     SetupDonationMatch {
         endowment_id: u32,
@@ -235,6 +238,7 @@ pub struct UpdateProfileMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentFeesMsg {
+    pub id: u32,
     pub earnings_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub withdraw_fee: Option<EndowmentFee>,
