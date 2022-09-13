@@ -5,7 +5,6 @@ use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
-use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::responses::registrar::ConfigResponse;
 use angel_core::structs::AccountStrategies;
 use angel_core::structs::DonationsReceived;
@@ -37,28 +36,20 @@ pub fn instantiate(
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 
-    // check that the "maturity_time" is not empty
-    if msg.maturity_time.is_none() {
-        return Err(ContractError::Std(StdError::NotFound {
-            kind: "maturity_time".to_string(),
-        }));
-    }
-
-    let registrar_config: ConfigResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: msg.registrar_contract.clone(),
-            msg: to_binary(&RegistrarConfig {})?,
-        }))?;
+    // // check that the "maturity_time" is not empty
+    // if msg.maturity_time.is_none() {
+    //     return Err(ContractError::Std(StdError::NotFound {
+    //         kind: "maturity_time".to_string(),
+    //     }));
+    // }
 
     // apply the initial configs passed
     CONFIG.save(
         deps.storage,
         &Config {
-            owner: deps.api.addr_validate(&registrar_config.owner)?,
+            owner: deps.api.addr_validate(&msg.owner_sc)?,
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             accepted_tokens: AcceptedTokens::default(),
-            deposit_approved: false,  // bool
-            withdraw_approved: false, // bool
             next_account_id: 1_u32,
             max_general_category_id: 1_u8,
             settings_controller: match msg.settings_controller {
@@ -68,152 +59,102 @@ pub fn instantiate(
         },
     )?;
 
-    ENDOWMENTS.save(
-        deps.storage,
-        &Endowment {
-            owner: deps.api.addr_validate(&msg.owner)?, // Addr
-            withdraw_before_maturity: msg.withdraw_before_maturity, // bool
-            maturity_time: msg.maturity_time,           // Option<u64>
-            strategies: AccountStrategies::default(),
-            rebalance: RebalanceDetails::default(),
-            dao: None,
-            dao_token: None,
-            whitelisted_beneficiaries: msg.whitelisted_beneficiaries, // Vec<String>
-            whitelisted_contributors: msg.whitelisted_contributors,   // Vec<String>
-            donation_match_active: false,
-            donation_match_contract: match &msg.profile.endow_type {
-                &EndowmentType::Charity => {
-                    match &registrar_config.donation_match_charites_contract {
-                        Some(match_contract) => Some(deps.api.addr_validate(&match_contract)?),
-                        None => None,
-                    }
-                }
-                _ => None,
-            },
-            earnings_fee: msg.earnings_fee,
-            withdraw_fee: msg.withdraw_fee,
-            deposit_fee: msg.deposit_fee,
-            aum_fee: msg.aum_fee,
-            parent: msg.parent,
-            kyc_donors_only: false,
-            maturity_whitelist: vec![],
-            status: 0,
-            deposit_approved: true,
-            withdraw_approved: true,
-            oneoff_vaults: OneOffVaults::default(),
-            profile: Profile::default(),
-            pending_redemptions: 0,
-            copycat_strategy: None,
-        },
-    )?;
+    // // initial default Response to add submessages to
+    // let mut res: Response = Response::new().add_attributes(vec![
+    //     attr("endow_addr", env.contract.address.to_string()),
+    //     attr("endow_name", msg.profile.name),
+    //     attr("endow_type", msg.profile.endow_type.to_string()),
+    //     attr(
+    //         "endow_logo",
+    //         msg.profile.logo.unwrap_or_else(|| "".to_string()),
+    //     ),
+    //     attr(
+    //         "endow_image",
+    //         msg.profile.image.unwrap_or_else(|| "".to_string()),
+    //     ),
+    //     attr(
+    //         "endow_tier",
+    //         msg.profile.tier.unwrap_or_else(|| 0).to_string(),
+    //     ),
+    //     attr(
+    //         "endow_un_sdg",
+    //         msg.profile.un_sdg.unwrap_or_else(|| 0).to_string(),
+    //     ),
+    // ]);
 
-    STATES.save(
-        deps.storage,
-        &State {
-            donations_received: DonationsReceived {
-                locked: Uint128::zero(),
-                liquid: Uint128::zero(),
-            },
-            balances: BalanceInfo::default(),
-            closing_endowment: false,
-            closing_beneficiary: None,
-        },
-    )?;
+    // if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {
+    //     return Err(ContractError::Std(StdError::generic_err(
+    //         "cw3_code & cw4_code must exist",
+    //     )));
+    // }
 
-    // initial default Response to add submessages to
-    let mut res: Response = Response::new().add_attributes(vec![
-        attr("endow_addr", env.contract.address.to_string()),
-        attr("endow_name", msg.profile.name),
-        attr("endow_type", msg.profile.endow_type.to_string()),
-        attr(
-            "endow_logo",
-            msg.profile.logo.unwrap_or_else(|| "".to_string()),
-        ),
-        attr(
-            "endow_image",
-            msg.profile.image.unwrap_or_else(|| "".to_string()),
-        ),
-        attr(
-            "endow_tier",
-            msg.profile.tier.unwrap_or_else(|| 0).to_string(),
-        ),
-        attr(
-            "endow_un_sdg",
-            msg.profile.un_sdg.unwrap_or_else(|| 0).to_string(),
-        ),
-    ]);
+    // res = res.add_submessage(SubMsg {
+    //     id: 0,
+    //     msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+    //         code_id: registrar_config.cw3_code.unwrap(),
+    //         admin: None,
+    //         label: "new endowment cw3 multisig".to_string(),
+    //         msg: to_binary(&Cw3InstantiateMsg {
+    //             // check if CW3/CW4 codes were passed to setup a multisig/group
+    //             cw4_members: match msg.cw4_members.is_empty() {
+    //                 true => vec![Member {
+    //                     addr: msg.owner.to_string(),
+    //                     weight: 1,
+    //                 }],
+    //                 false => msg.cw4_members,
+    //             },
+    //             cw4_code: registrar_config.cw4_code.unwrap(),
+    //             threshold: msg.cw3_threshold,
+    //             max_voting_period: msg.cw3_max_voting_period,
+    //         })?,
+    //         funds: vec![],
+    //     }),
+    //     gas_limit: None,
+    //     reply_on: ReplyOn::Success,
+    // });
 
-    if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {
-        return Err(ContractError::Std(StdError::generic_err(
-            "cw3_code & cw4_code must exist",
-        )));
-    }
+    // // check if a dao needs to be setup along with a dao token contract
+    // match (
+    //     msg.dao,
+    //     registrar_config.subdao_bonding_token_code,
+    //     registrar_config.subdao_gov_code,
+    // ) {
+    //     (Some(dao_setup), Some(_token_code), Some(gov_code)) => {
+    //         res = res.add_submessage(SubMsg {
+    //             id: 0,
+    //             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+    //                 code_id: gov_code,
+    //                 admin: None,
+    //                 label: "new endowment dao contract".to_string(),
+    //                 msg: to_binary(&DaoInstantiateMsg {
+    //                     quorum: dao_setup.quorum,
+    //                     threshold: dao_setup.threshold,
+    //                     voting_period: dao_setup.voting_period,
+    //                     timelock_period: dao_setup.timelock_period,
+    //                     expiration_period: dao_setup.expiration_period,
+    //                     proposal_deposit: dao_setup.proposal_deposit,
+    //                     snapshot_period: dao_setup.snapshot_period,
+    //                     endow_type: msg.profile.endow_type.clone(),
+    //                     endow_owner: env.contract.address.to_string(),
+    //                     registrar_contract: msg.registrar_contract.clone(),
+    //                     token: dao_setup.token,
+    //                 })?,
+    //                 funds: vec![],
+    //             }),
+    //             gas_limit: None,
+    //             reply_on: ReplyOn::Success,
+    //         });
+    //     }
+    //     (Some(_dao_setup), None, _) | (Some(_dao_setup), _, None) => {
+    //         return Err(ContractError::Std(StdError::GenericErr {
+    //             msg: "DAO settings are not yet configured on the Registrar contract".to_string(),
+    //         }));
+    //     }
+    //     _ => (),
+    // }
+    // Ok(res)
 
-    res = res.add_submessage(SubMsg {
-        id: 0,
-        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-            code_id: registrar_config.cw3_code.unwrap(),
-            admin: None,
-            label: "new endowment cw3 multisig".to_string(),
-            msg: to_binary(&Cw3InstantiateMsg {
-                // check if CW3/CW4 codes were passed to setup a multisig/group
-                cw4_members: match msg.cw4_members.is_empty() {
-                    true => vec![Member {
-                        addr: msg.owner.to_string(),
-                        weight: 1,
-                    }],
-                    false => msg.cw4_members,
-                },
-                cw4_code: registrar_config.cw4_code.unwrap(),
-                threshold: msg.cw3_threshold,
-                max_voting_period: msg.cw3_max_voting_period,
-            })?,
-            funds: vec![],
-        }),
-        gas_limit: None,
-        reply_on: ReplyOn::Success,
-    });
-
-    // check if a dao needs to be setup along with a dao token contract
-    match (
-        msg.dao,
-        registrar_config.subdao_bonding_token_code,
-        registrar_config.subdao_gov_code,
-    ) {
-        (Some(dao_setup), Some(_token_code), Some(gov_code)) => {
-            res = res.add_submessage(SubMsg {
-                id: 0,
-                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
-                    code_id: gov_code,
-                    admin: None,
-                    label: "new endowment dao contract".to_string(),
-                    msg: to_binary(&DaoInstantiateMsg {
-                        quorum: dao_setup.quorum,
-                        threshold: dao_setup.threshold,
-                        voting_period: dao_setup.voting_period,
-                        timelock_period: dao_setup.timelock_period,
-                        expiration_period: dao_setup.expiration_period,
-                        proposal_deposit: dao_setup.proposal_deposit,
-                        snapshot_period: dao_setup.snapshot_period,
-                        endow_type: msg.profile.endow_type.clone(),
-                        endow_owner: env.contract.address.to_string(),
-                        registrar_contract: msg.registrar_contract.clone(),
-                        token: dao_setup.token,
-                    })?,
-                    funds: vec![],
-                }),
-                gas_limit: None,
-                reply_on: ReplyOn::Success,
-            });
-        }
-        (Some(_dao_setup), None, _) | (Some(_dao_setup), _, None) => {
-            return Err(ContractError::Std(StdError::GenericErr {
-                msg: "DAO settings are not yet configured on the Registrar contract".to_string(),
-            }));
-        }
-        _ => (),
-    }
-    Ok(res)
+    Ok(Response::default())
 }
 
 #[entry_point]
@@ -310,9 +251,10 @@ pub fn execute(
             executers::update_endowment_fees(deps, env, info, msg)
         }
         ExecuteMsg::SetupDao(msg) => executers::setup_dao(deps, env, info, msg),
-        ExecuteMsg::SetupDonationMatch { setup } => {
-            executers::setup_donation_match(deps, env, info, setup)
-        }
+        ExecuteMsg::SetupDonationMatch {
+            endowment_id,
+            setup,
+        } => executers::setup_donation_match(deps, env, info, endowment_id, setup),
         // Allows the DANO/AP Team to harvest all active vaults
         ExecuteMsg::Harvest { vault_addr } => executers::harvest(deps, env, info, vault_addr),
         ExecuteMsg::HarvestAum {} => executers::harvest_aum(deps, env, info),
@@ -358,6 +300,7 @@ pub fn receive_cw20(
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         0 => executers::cw3_reply(deps, env, msg.result),
+        1 => executers::dao_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }

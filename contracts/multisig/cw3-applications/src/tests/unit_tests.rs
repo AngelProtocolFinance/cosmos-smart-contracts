@@ -223,6 +223,16 @@ fn new_application_proposal() -> ExecuteMsg {
             percentage: Decimal::percent(10),
         },
         cw3_max_voting_period: 60,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::zero(),
+        earnings_fee: None,
+        withdraw_fee: None,
+        deposit_fee: None,
+        aum_fee: None,
+        dao: None,
     };
 
     ExecuteMsg::ProposeApplication {

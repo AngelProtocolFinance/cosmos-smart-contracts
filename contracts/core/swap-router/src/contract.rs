@@ -1,6 +1,6 @@
 use crate::operations::{assert_minium_receive, execute_swap_operation, send_swap_receipt};
 use crate::state::{pair_key, Config, CONFIG, PAIRS};
-use angel_core::errors::core::{ContractError, PaymentError};
+use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::QueryMsg as AccountsQueryMsg;
 use angel_core::messages::dexs::{
     InfoResponse, JunoSwapQueryMsg, LoopQueryMsg, SimulationResponse, Token1ForToken2PriceResponse,

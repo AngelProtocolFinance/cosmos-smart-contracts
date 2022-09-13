@@ -17,27 +17,9 @@ pub struct MigrateMsg {
 
 #[derive(Serialize, Deserialize, JsonSchema)]
 pub struct InstantiateMsg {
+    pub owner_sc: String,
     pub registrar_contract: String,
-    pub owner: String, // address that originally setup the endowment account
-    pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
-    pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
-    pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
-    pub maturity_time: Option<u64>,     // datetime int of endowment maturity(unit: seconds)
-    pub split_max: Decimal,
-    pub split_min: Decimal,
-    pub split_default: Decimal,
-    pub profile: Profile, // struct holding the Endowment info
-    pub cw4_members: Vec<Member>,
-    pub earnings_fee: Option<EndowmentFee>,
-    pub withdraw_fee: Option<EndowmentFee>,
-    pub deposit_fee: Option<EndowmentFee>,
-    pub aum_fee: Option<EndowmentFee>,
-    pub dao: Option<DaoSetup>, // SubDAO setup options
     pub settings_controller: Option<SettingsController>,
-    pub parent: Option<Addr>,
-    pub kyc_donors_only: bool,
-    pub cw3_threshold: Threshold,
-    pub cw3_max_voting_period: Duration,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -140,6 +122,7 @@ pub enum ExecuteMsg {
     SetupDao(DaoSetup),
     // Setup Donation match contract for the Endowment
     SetupDonationMatch {
+        endowment_id: u32,
         setup: DonationMatch,
     },
 }
@@ -157,12 +140,23 @@ pub struct UpdateConfigMsg {
 pub struct CreateEndowmentMsg {
     pub owner: String, // address that originally setup the endowment account
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
-    pub maturity_time: Option<u64>,     // datetime int of endowment maturity
+    pub maturity_time: Option<u64>,     // datetime int of endowment maturity(unit: seconds)
     pub profile: Profile,               // struct holding the Endowment info
     pub cw4_members: Vec<Member>,
     pub kyc_donors_only: bool,
     pub cw3_threshold: Threshold,
     pub cw3_max_voting_period: u64,
+
+    pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
+    pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
+    pub split_max: Decimal,
+    pub split_min: Decimal,
+    pub split_default: Decimal,
+    pub earnings_fee: Option<EndowmentFee>,
+    pub withdraw_fee: Option<EndowmentFee>,
+    pub deposit_fee: Option<EndowmentFee>,
+    pub aum_fee: Option<EndowmentFee>,
+    pub dao: Option<DaoSetup>, // SubDAO setup options
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
+    /// Endowment ID
+    pub id: u32,
     /// address of the reserve token
     pub reserve_token: String,
     /// address of the [reserve_token]-UST LP pair contract

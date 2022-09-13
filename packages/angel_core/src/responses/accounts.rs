@@ -1,7 +1,7 @@
 use crate::structs::{
     AccountStrategies, Beneficiary, Categories, DonationsReceived, EndowmentEntry, EndowmentFee,
     EndowmentStatus, EndowmentType, OneOffVaults, RebalanceDetails, SettingsController,
-    SocialMedialUrls, StrategyComponent,
+    SocialMedialUrls,
 };
 use cosmwasm_std::Addr;
 use schemars::JsonSchema;

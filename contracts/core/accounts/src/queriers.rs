@@ -1,6 +1,6 @@
 use angel_core::messages::vault::QueryMsg as VaultQuerier;
 
-use cosmwasm_std::{to_binary, Deps, Env, QueryRequest, StdResult, Uint128, WasmQuery};
+use cosmwasm_std::{to_binary, Addr, Deps, Env, QueryRequest, StdResult, Uint128, WasmQuery};
 use cw2::get_contract_version;
 use cw20::{Balance, Cw20CoinVerified};
 
@@ -243,7 +243,7 @@ pub fn query_profile(deps: Deps, id: u32) -> StdResult<ProfileResponse> {
 }
 
 pub fn query_endowment_fees(deps: Deps) -> StdResult<EndowmentFeesResponse> {
-    let endowment = ENDOWMENT.load(deps.storage)?;
+    let endowment = ENDOWMENTS.load(deps.storage)?;
     Ok(EndowmentFeesResponse {
         earnings_fee: endowment.earnings_fee,
         deposit_fee: endowment.deposit_fee,

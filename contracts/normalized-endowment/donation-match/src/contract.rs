@@ -51,7 +51,9 @@ pub fn instantiate(
         },
     )?;
 
-    Ok(Response::new().add_attribute("donation_match_addr", env.contract.address.to_string()))
+    Ok(Response::new()
+        .add_attribute("endow_id", msg.id.to_string())
+        .add_attribute("donation_match_addr", env.contract.address.to_string()))
 }
 
 pub fn receive_cw20(

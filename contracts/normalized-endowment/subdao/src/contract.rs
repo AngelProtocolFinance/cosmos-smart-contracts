@@ -67,6 +67,7 @@ pub fn instantiate(
     state_store(deps.storage).save(&state)?;
 
     Ok(Response::default()
+        .add_attribute("endow_id", msg.id.to_string())
         .add_attribute("dao_addr", env.contract.address.to_string())
         .add_submessages(
             build_dao_token_messages(deps, msg.token, msg.endow_type, msg.endow_owner).unwrap(),
