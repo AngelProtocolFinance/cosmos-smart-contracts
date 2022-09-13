@@ -9,7 +9,7 @@ const RESERVE_TOKEN: &str = "reserve-token";
 const LP_PAIR_CONTRACT: &str = "lp-pair-contract";
 const REGISTRAR_CONTRACT: &str = "registrar-contract";
 
-const ACCOUNTS_CONTRACT: &str = "accounts_contract";
+const ACCOUNTS_CONTRACT: &str = "accounts-contract";
 const ENDOWMENT_ID: u32 = 1;
 const UST_AMT: u128 = 50_u128;
 const DONOR: &str = "donor";

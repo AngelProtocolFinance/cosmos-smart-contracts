@@ -1,6 +1,6 @@
 use crate::structs::{
-    AcceptedTokens, AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived,
-    EndowmentEntry, EndowmentFee, EndowmentStatus, EndowmentType, OneOffVaults, RebalanceDetails,
+    AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentEntry,
+    EndowmentFee, EndowmentStatus, EndowmentType, OneOffVaults, RebalanceDetails,
     SettingsController, SocialMedialUrls,
 };
 use cosmwasm_std::Addr;
@@ -22,7 +22,6 @@ pub struct ConfigResponse {
     pub settings_controller: SettingsController,
     pub next_account_id: u32,
     pub max_general_category_id: u8,
-    pub accepted_tokens: AcceptedTokens,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]

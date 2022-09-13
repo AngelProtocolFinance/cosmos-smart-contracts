@@ -4,9 +4,9 @@ use crate::messages::vault::QueryMsg as VaultQuerier;
 use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
 use crate::structs::{GenericBalance, SplitDetails, StrategyComponent, YieldVault};
 use cosmwasm_std::{
-    to_binary, to_vec, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, Decimal256, Deps,
-    DepsMut, Empty, MessageInfo, QueryRequest, StdError, StdResult, SubMsg, SystemError,
-    SystemResult, Uint128, WasmMsg, WasmQuery,
+    to_binary, to_vec, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, Deps, DepsMut,
+    Empty, MessageInfo, QueryRequest, StdError, StdResult, SubMsg, SystemError, SystemResult,
+    Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg, Denom};
 use cw_asset::{Asset, AssetInfoBase};

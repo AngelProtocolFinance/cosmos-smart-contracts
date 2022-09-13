@@ -1,7 +1,6 @@
 use angel_core::structs::{
-    AcceptedTokens, AccountStrategies, BalanceInfo, Beneficiary, DonationsReceived, EndowmentFee,
-    EndowmentStatus, OneOffVaults, Profile, RebalanceDetails, SettingsController,
-    StrategyComponent,
+    AccountStrategies, BalanceInfo, Beneficiary, DonationsReceived, EndowmentFee, EndowmentStatus,
+    OneOffVaults, Profile, RebalanceDetails, SettingsController,
 };
 use cosmwasm_std::{Addr, Env, Order, StdResult, Storage, Timestamp};
 use cw_storage_plus::{Item, Map};
@@ -18,7 +17,6 @@ pub struct Config {
     pub max_general_category_id: u8,
 
     pub settings_controller: SettingsController,
-    pub accepted_tokens: AcceptedTokens,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

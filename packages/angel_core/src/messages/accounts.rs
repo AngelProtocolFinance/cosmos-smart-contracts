@@ -2,11 +2,11 @@ use crate::structs::{
     AccountType, Beneficiary, Categories, DaoSetup, DonationMatch, EndowmentFee, Profile,
     RebalanceDetails, SettingsController, StrategyComponent, SwapOperation,
 };
-use cosmwasm_std::{Addr, Decimal, Uint128};
+use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo};
-use cw_utils::{Duration, Threshold};
+use cw_utils::Threshold;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -132,8 +132,6 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub accepted_tokens_native: Vec<String>,
-    pub accepted_tokens_cw20: Vec<String>,
     pub settings_controller: Option<SettingsController>,
     pub new_registrar: String,
     pub max_general_category_id: u8,

@@ -1,13 +1,9 @@
-use angel_core::messages::vault::QueryMsg as VaultQuerier;
-
-use cosmwasm_std::{to_binary, Addr, Deps, Env, QueryRequest, StdResult, Uint128, WasmQuery};
-use cw2::get_contract_version;
-use cw20::{Balance, Cw20CoinVerified};
+use cosmwasm_std::{Addr, Deps, StdResult, Uint128};
 
 use crate::state::{read_endowments, Endowment, CONFIG, ENDOWMENTS, STATES};
 use angel_core::responses::accounts::*;
 use angel_core::structs::{
-    AccountType, BalanceInfo, EndowmentBalanceResponse, EndowmentEntry, EndowmentType, Tier,
+    AccountType, EndowmentBalanceResponse, EndowmentEntry, EndowmentType, Tier,
 };
 use angel_core::utils::vault_endowment_balance;
 use cw_asset::AssetInfo;
@@ -19,7 +15,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         owner: config.owner.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
         settings_controller: config.settings_controller,
-        accepted_tokens: config.accepted_tokens,
         next_account_id: config.next_account_id,
         max_general_category_id: config.max_general_category_id,
     })

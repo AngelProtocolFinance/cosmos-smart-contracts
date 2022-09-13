@@ -17,7 +17,7 @@ use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{attr, coins, from_binary, to_binary, Coin, Decimal, Env, OwnedDeps, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw_asset::{Asset, AssetInfo};
-use cw_utils::{Duration, Threshold};
+use cw_utils::Threshold;
 use std::vec;
 
 const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
@@ -85,7 +85,7 @@ fn create_endowment() -> (
     };
 
     let instantiate_msg = InstantiateMsg {
-        owner_sc: CHARITY_ADDR.to_string(),
+        owner_sc: AP_TEAM.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         settings_controller: None,
     };
@@ -119,52 +119,7 @@ fn test_proper_initialization() {
     let instantiate_msg = InstantiateMsg {
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         owner_sc: CHARITY_ADDR.to_string(),
-        // split_max: Decimal::one(),
-        // split_min: Decimal::one(),
-        // split_default: Decimal::one(),
-        // whitelisted_beneficiaries: vec![],
-        // whitelisted_contributors: vec![],
-        // dao: None,
-        // earnings_fee: None,
-        // deposit_fee: None,
-        // withdraw_fee: None,
-        // aum_fee: None,
         settings_controller: None,
-        // parent: None,
-        // withdraw_before_maturity: false,
-        // maturity_time: Some(1000_u64),
-        // profile: Profile {
-        //     name: "endowment".to_string(),
-        //     overview: "endowment overview".to_string(),
-        //     categories: Categories {
-        //         sdgs: vec![],
-        //         general: vec![],
-        //     },
-        //     tier: None,
-        //     logo: None,
-        //     image: None,
-        //     url: None,
-        //     registration_number: None,
-        //     country_of_origin: None,
-        //     street_address: None,
-        //     contact_email: None,
-        //     social_media_urls: SocialMedialUrls {
-        //         facebook: None,
-        //         twitter: None,
-        //         linkedin: None,
-        //     },
-        //     number_of_employees: None,
-        //     average_annual_budget: None,
-        //     annual_revenue: None,
-        //     charity_navigator_rating: None,
-        //     endow_type: EndowmentType::Normal,
-        // },
-        // cw4_members: vec![],
-        // kyc_donors_only: true,
-        // cw3_threshold: Threshold::AbsolutePercentage {
-        //     percentage: Decimal::percent(10),
-        // },
-        // cw3_max_voting_period: Duration::Time(60),
     };
     let info = mock_info(AP_TEAM, &coins(100000, "earth"));
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
@@ -274,8 +229,6 @@ fn test_change_registrar_contract() {
     // change the owner to some pleb
     let info = mock_info(REGISTRAR_CONTRACT, &coins(100000, "earth"));
     let msg = UpdateConfigMsg {
-        accepted_tokens_native: vec![],
-        accepted_tokens_cw20: vec![],
         settings_controller: None,
         new_registrar: PLEB.to_string(),
         max_general_category_id: 2 as u8,
@@ -283,7 +236,7 @@ fn test_change_registrar_contract() {
     let res = execute(
         deps.as_mut(),
         env.clone(),
-        info.clone(),
+        info,
         ExecuteMsg::UpdateConfig(msg),
     )
     .unwrap();
@@ -296,8 +249,6 @@ fn test_change_registrar_contract() {
 
     // Original contract owner should not be able to update the registrar now
     let msg = UpdateConfigMsg {
-        accepted_tokens_native: vec![],
-        accepted_tokens_cw20: vec![],
         settings_controller: None,
         new_registrar: PLEB.to_string(),
         max_general_category_id: 100 as u8,

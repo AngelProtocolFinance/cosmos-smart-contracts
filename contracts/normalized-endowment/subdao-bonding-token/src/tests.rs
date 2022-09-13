@@ -8,6 +8,10 @@ use angel_core::messages::subdao_bonding_token::{
     CurveInfoResponse, Cw20HookMsg, ExecuteMsg, InstantiateMsg, QueryMsg,
 };
 
+const ENDOWMENT_ID: u32 = 1_u32;
+const ACCOUNTS_CONTRACT: &str = "accounts-contract";
+const DONATION_MATCH_AMOUNT: u128 = 100_u128;
+
 #[test]
 fn test_proper_initialization() {
     let mut deps = mock_dependencies();
@@ -357,12 +361,12 @@ fn test_donor_match() {
     let info = mock_info("non-reserve-token-address", &[]);
     let cw20_receive_msg = Cw20ReceiveMsg {
         sender: "executer".to_string(),
-        amount: Uint128::from(100_u128),
+        amount: Uint128::from(DONATION_MATCH_AMOUNT),
         msg: to_binary(&Cw20HookMsg::DonorMatch {
-            amount: Uint128::from(100_u128),
+            amount: Uint128::from(DONATION_MATCH_AMOUNT),
             donor: "donor".to_string(),
-            accounts_contract: "accounts-contract".to_string(),
-            endowment_id: 1_u32,
+            accounts_contract: ACCOUNTS_CONTRACT.to_string(),
+            endowment_id: ENDOWMENT_ID,
         })
         .unwrap(),
     };
@@ -381,10 +385,10 @@ fn test_donor_match() {
         sender: "executer".to_string(),
         amount: Uint128::from(10_u128),
         msg: to_binary(&Cw20HookMsg::DonorMatch {
-            amount: Uint128::from(100_u128),
+            amount: Uint128::from(DONATION_MATCH_AMOUNT),
             donor: "donor".to_string(),
-            accounts_contract: "accounts-contract".to_string(),
-            endowment_id: 1_u32,
+            accounts_contract: ACCOUNTS_CONTRACT.to_string(),
+            endowment_id: ENDOWMENT_ID,
         })
         .unwrap(),
     };
@@ -401,12 +405,12 @@ fn test_donor_match() {
     let info = mock_info("reserve-token-address", &[]);
     let cw20_receive_msg = Cw20ReceiveMsg {
         sender: "executer".to_string(),
-        amount: Uint128::from(100_u128),
+        amount: Uint128::from(DONATION_MATCH_AMOUNT),
         msg: to_binary(&Cw20HookMsg::DonorMatch {
-            amount: Uint128::from(100_u128),
+            amount: Uint128::from(DONATION_MATCH_AMOUNT),
             donor: "donor".to_string(),
-            accounts_contract: "accounts-contract".to_string(),
-            endowment_id: 1_u32,
+            accounts_contract: ACCOUNTS_CONTRACT.to_string(),
+            endowment_id: ENDOWMENT_ID,
         })
         .unwrap(),
     };
@@ -430,16 +434,22 @@ fn test_donor_match() {
     )
     .unwrap();
     let dao_token_bal: BalanceResponse = from_binary(&res).unwrap();
-    assert_eq!(dao_token_bal.balance, Uint128::from(40_u128));
+    assert_eq!(
+        dao_token_bal.balance,
+        Uint128::from(DONATION_MATCH_AMOUNT) * Decimal::from_ratio(40_u128, 100_u128)
+    );
 
     let res = query(
         deps.as_ref(),
         mock_env(),
         QueryMsg::Balance {
-            address: "endowment-contract".to_string(),
+            address: ACCOUNTS_CONTRACT.to_string(),
         },
     )
     .unwrap();
     let dao_token_bal: BalanceResponse = from_binary(&res).unwrap();
-    assert_eq!(dao_token_bal.balance, Uint128::from(40_u128));
+    assert_eq!(
+        dao_token_bal.balance,
+        Uint128::from(DONATION_MATCH_AMOUNT) * Decimal::from_ratio(40_u128, 100_u128)
+    );
 }

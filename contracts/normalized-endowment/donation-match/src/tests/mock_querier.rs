@@ -1,9 +1,9 @@
+use angel_core::responses::accounts::EndowmentDetailsResponse;
 // Contains mock functionality to test multi-contract scenarios
-use angel_core::errors::core::ContractError;
 use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
 use angel_core::structs::{
-    AcceptedTokens, AccountType, Categories, EndowmentEntry, EndowmentStatus, EndowmentType,
-    RebalanceDetails, SplitDetails, Tier, YieldVault,
+    AcceptedTokens, AccountStrategies, AccountType, OneOffVaults, RebalanceDetails, SplitDetails,
+    YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -27,6 +27,8 @@ pub enum QueryMsg {
     // Mock the `registrar` config
     Config {},
     Vault { vault_addr: String },
+    // Mock the `accounts` endowment
+    Endowment { id: u32 },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -210,6 +212,28 @@ impl WasmMockQuerier {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
+                QueryMsg::Endowment { id: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&EndowmentDetailsResponse {
+                        owner: Addr::unchecked("endow-cw3"),
+                        dao: None,
+                        dao_token: None,
+                        name: "Test Endowment".to_string(),
+                        description: "Test endowment".to_string(),
+                        withdraw_before_maturity: true,
+                        strategies: AccountStrategies::default(),
+                        status: angel_core::structs::EndowmentStatus::Approved,
+                        endow_type: angel_core::structs::EndowmentType::Charity,
+                        maturity_time: None,
+                        oneoff_vaults: OneOffVaults::default(),
+                        rebalance: RebalanceDetails::default(),
+                        donation_match_contract: "donation-match-contract".to_string(),
+                        kyc_donors_only: false,
+                        maturity_whitelist: vec![],
+                        deposit_approved: true,
+                        withdraw_approved: true,
+                        pending_redemptions: 0,
+                    }).unwrap()
+                )),
                 QueryMsg::Simulation { offer_asset: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&SimulationResponse {
                         return_amount: Uint128::from(100_u128),

@@ -2,25 +2,17 @@ use crate::state::{Config, Endowment, State, CONFIG, COPYCATS, ENDOWMENTS, STATE
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
-use angel_core::messages::donation_match::ExecuteMsg as DonationMatchExecMsg;
-use angel_core::messages::index_fund::{
-    DepositMsg as IndexFundDepositMsg, ExecuteMsg as IndexFundExecuter,
-    QueryMsg as IndexFundQuerier,
-};
+use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
-use angel_core::messages::registrar::{
-    ExecuteMsg as RegistrarExecuter, QueryMsg as RegistrarQuerier, UpdateEndowmentEntryMsg,
-};
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup,
-    DonationMatch, DonationsReceived, EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance,
-    OneOffVaults, RebalanceDetails, SocialMedialUrls, SplitDetails, StrategyComponent,
-    SwapOperation, YieldVault,
+    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup, DonationMatch,
+    DonationsReceived, EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults,
+    RebalanceDetails, SocialMedialUrls, SplitDetails, StrategyComponent, SwapOperation, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -338,8 +330,8 @@ pub fn update_config(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // only the SC admin can update these configs...for now
-    if info.sender != config.owner {
+    // only the registrar contract can update these configs
+    if info.sender != config.registrar_contract {
         return Err(ContractError::Unauthorized {});
     }
     let new_registrar = deps.api.addr_validate(&msg.new_registrar)?;
@@ -350,13 +342,8 @@ pub fn update_config(
             Some(controller) => controller,
             None => config.settings_controller,
         };
-        let accepted_tokens = AcceptedTokens {
-            native: msg.accepted_tokens_native,
-            cw20: msg.accepted_tokens_cw20,
-        };
         config.registrar_contract = new_registrar;
         config.settings_controller = settings_controller;
-        config.accepted_tokens = accepted_tokens;
         config.max_general_category_id = msg.max_general_category_id;
 
         Ok(config)
@@ -510,7 +497,7 @@ pub fn update_endowment_settings(
         return Err(ContractError::UpdatesAfterClosed {});
     }
 
-    let mut config: Config = CONFIG.load(deps.storage)?;
+    let config: Config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
 
     if info.sender.ne(&endowment.owner)
@@ -1263,7 +1250,7 @@ pub fn deposit(
         liquid_split = new_splits.1;
     }
 
-    let mut locked_amount = Asset {
+    let locked_amount = Asset {
         info: deposit_token.info.clone(),
         amount: deposit_amount * locked_split,
     };
@@ -1948,7 +1935,11 @@ pub fn harvest(
         .add_attribute("action", "harvest"))
 }
 
-pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Response, ContractError> {
+pub fn harvest_aum(
+    _deps: DepsMut,
+    _env: Env,
+    _info: MessageInfo,
+) -> Result<Response, ContractError> {
     // FIXME
     // // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
     // let profile = PROFILE.load(deps.storage)?;
@@ -2029,9 +2020,9 @@ pub fn harvest_aum(deps: DepsMut, _env: Env, info: MessageInfo) -> Result<Respon
 }
 
 pub fn harvest_reply(
-    deps: DepsMut,
+    _deps: DepsMut,
     _env: Env,
-    msg: SubMsgResult,
+    _msg: SubMsgResult,
 ) -> Result<Response, ContractError> {
     // FIXMEs
     // match msg {
