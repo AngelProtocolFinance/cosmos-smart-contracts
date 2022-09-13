@@ -1,10 +1,13 @@
-use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg};
+use crate::msg::{
+    ConfigResponse, ExecuteMsg, InstantiateMsg, MetaApplicationsProposalListResponse,
+    MetaApplicationsProposalResponse, MigrateMsg,
+};
 use crate::state::{
     next_id, Ballot, Config, Proposal, ProposalType, Votes, BALLOTS, CONFIG, PROPOSALS,
 };
 use angel_core::errors::multisig::ContractError;
 use angel_core::messages::accounts::CreateEndowmentMsg;
-use angel_core::messages::cw3_multisig::*;
+use angel_core::messages::cw3_multisig::QueryMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::EndowmentType;
@@ -478,6 +481,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let cfg = CONFIG.load(deps.storage)?;
     Ok(ConfigResponse {
+        registrar_contract: cfg.registrar_contract.to_string(),
         threshold: cfg.threshold,
         max_voting_period: cfg.max_voting_period,
         group_addr: cfg.group_addr.0.to_string(),
@@ -490,11 +494,11 @@ fn query_threshold(deps: Deps) -> StdResult<ThresholdResponse> {
     Ok(cfg.threshold.to_response(total_weight))
 }
 
-fn query_proposal(deps: Deps, env: Env, id: u64) -> StdResult<MetaProposalResponse> {
+fn query_proposal(deps: Deps, env: Env, id: u64) -> StdResult<MetaApplicationsProposalResponse> {
     let prop = PROPOSALS.load(deps.storage, id)?;
     let status = prop.current_status(&env.block);
     let threshold = prop.threshold.to_response(prop.total_weight);
-    Ok(MetaProposalResponse {
+    Ok(MetaApplicationsProposalResponse {
         id,
         title: prop.title,
         description: prop.description,
@@ -502,6 +506,7 @@ fn query_proposal(deps: Deps, env: Env, id: u64) -> StdResult<MetaProposalRespon
         status,
         expires: prop.expires,
         threshold,
+        proposal_type: prop.proposal_type,
         meta: prop.meta,
     })
 }
@@ -515,7 +520,7 @@ fn list_proposals(
     env: Env,
     start_after: Option<u64>,
     limit: Option<u32>,
-) -> StdResult<MetaProposalListResponse> {
+) -> StdResult<MetaApplicationsProposalListResponse> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let start = start_after.map(Bound::exclusive);
     let proposals = PROPOSALS
@@ -524,7 +529,7 @@ fn list_proposals(
         .map(|p| map_proposal(&env.block, p))
         .collect::<StdResult<_>>()?;
 
-    Ok(MetaProposalListResponse { proposals })
+    Ok(MetaApplicationsProposalListResponse { proposals })
 }
 
 fn reverse_proposals(
@@ -532,7 +537,7 @@ fn reverse_proposals(
     env: Env,
     start_before: Option<u64>,
     limit: Option<u32>,
-) -> StdResult<MetaProposalListResponse> {
+) -> StdResult<MetaApplicationsProposalListResponse> {
     let limit = limit.unwrap_or(DEFAULT_LIMIT).min(MAX_LIMIT) as usize;
     let end = start_before.map(Bound::exclusive);
     let props: StdResult<Vec<_>> = PROPOSALS
@@ -541,17 +546,17 @@ fn reverse_proposals(
         .map(|p| map_proposal(&env.block, p))
         .collect();
 
-    Ok(MetaProposalListResponse { proposals: props? })
+    Ok(MetaApplicationsProposalListResponse { proposals: props? })
 }
 
 fn map_proposal(
     block: &BlockInfo,
     item: StdResult<(u64, Proposal)>,
-) -> StdResult<MetaProposalResponse> {
+) -> StdResult<MetaApplicationsProposalResponse> {
     item.map(|(id, prop)| {
         let status = prop.current_status(block);
         let threshold = prop.threshold.to_response(prop.total_weight);
-        MetaProposalResponse {
+        MetaApplicationsProposalResponse {
             id,
             title: prop.title,
             description: prop.description,
@@ -559,6 +564,7 @@ fn map_proposal(
             status,
             expires: prop.expires,
             threshold,
+            proposal_type: prop.proposal_type,
             meta: prop.meta,
         }
     })
