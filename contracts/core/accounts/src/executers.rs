@@ -1,4 +1,4 @@
-use crate::state::{Endowment, State, CONFIG, COPYCATS, ENDOWMENTS, STATES};
+use crate::state::{Config, Endowment, State, CONFIG, COPYCATS, ENDOWMENTS, STATES};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -334,6 +334,41 @@ pub fn update_owner(
     Ok(Response::default())
 }
 
+pub fn update_config(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateConfigMsg,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+
+    // only the SC admin can update these configs...for now
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let new_registrar = deps.api.addr_validate(&msg.new_registrar)?;
+    let settings_controller = match msg.settings_controller {
+        Some(controller) => controller,
+        None => config.settings_controller,
+    };
+    let accepted_tokens = AcceptedTokens {
+        native: msg.accepted_tokens_native,
+        cw20: msg.accepted_tokens_cw20,
+    };
+
+    // update config attributes with newly passed args
+    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
+        config.registrar_contract = new_registrar;
+        config.settings_controller = settings_controller;
+        config.accepted_tokens = accepted_tokens;
+        config.max_general_category_id = msg.max_general_category_id;
+
+        Ok(config)
+    })?;
+    Ok(Response::default())
+}
+
 pub fn update_endowment_status(
     deps: DepsMut,
     env: Env,
@@ -469,45 +504,18 @@ pub fn update_endowment_status(
         .add_attribute("action", "update_endowment_status"))
 }
 
-pub fn update_config(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: UpdateConfigMsg,
-) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-
-    // only the SC admin can update these configs...for now
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    config.settings_controller = match msg.settings_controller {
-        Some(controller) => controller,
-        None => config.settings_controller,
-    };
-    config.accepted_tokens = AcceptedTokens {
-        native: msg.accepted_tokens_native,
-        cw20: msg.accepted_tokens_cw20,
-    };
-    CONFIG.save(deps.storage, &config)?;
-
-    let new_registrar = deps.api.addr_validate(&msg.new_registrar)?;
-    // update config attributes with newly passed args
-    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.registrar_contract = new_registrar;
-        config.max_general_category_id = msg.max_general_category_id;
-        Ok(config)
-    })?;
-    Ok(Response::default())
-}
-
 pub fn update_endowment_settings(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
+    let state = STATES.load(deps.storage, msg.id)?;
+    if state.closing_endowment {
+        return Err(ContractError::UpdatesAfterClosed {});
+    }
+
+    let mut config: Config = CONFIG.load(deps.storage)?;
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
 
     if info.sender.ne(&endowment.owner)
@@ -619,14 +627,7 @@ pub fn update_endowment_settings(
             }
         }
     }
-
-    let state = STATES.load(deps.storage, msg.id)?;
-    if state.closing_endowment {
-        return Err(ContractError::UpdatesAfterClosed {});
-    }
-
     endowment.kyc_donors_only = msg.kyc_donors_only;
-    endowment.owner = deps.api.addr_validate(&msg.owner)?;
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
     Ok(Response::new().add_attribute("action", "update_endowment_settings"))
