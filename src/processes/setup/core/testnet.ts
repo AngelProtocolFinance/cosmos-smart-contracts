@@ -402,7 +402,6 @@ async function createEndowments(
 		withdraw_fee: undefined,
 		aum_fee: undefined,
 		settings_controller: undefined,
-		parent: false,
 	}, [apTeam]);
 
 	console.log(
@@ -453,7 +452,6 @@ async function createEndowments(
 		withdraw_fee: undefined,
 		aum_fee: undefined,
 		settings_controller: undefined,
-		parent: false,
 		cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
 		cw3_max_voting_period: charity_cw3_max_voting_period,
 	}, [apTeam]);
@@ -505,7 +503,6 @@ async function createEndowments(
 		withdraw_fee: undefined,
 		aum_fee: undefined,
 		settings_controller: undefined,
-		parent: false,
 		cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
 		cw3_max_voting_period: charity_cw3_max_voting_period,
 	}, [apTeam]);
