@@ -224,6 +224,7 @@ fn new_application_proposal() -> ExecuteMsg {
             percentage: Decimal::percent(10),
         },
         cw3_max_voting_period: 60,
+        proposal_link: Some(1),
     };
 
     ExecuteMsg::ProposeApplication {
@@ -535,7 +536,6 @@ fn test_vote_works() {
     let yes_vote = ExecuteMsg::Vote {
         proposal_id,
         vote: Vote::Yes,
-        reason: None,
     };
     let _ = app
         .execute_contract(Addr::unchecked(OWNER), flex_addr.clone(), &yes_vote, &[])
@@ -569,7 +569,6 @@ fn test_vote_works() {
     let no_vote = ExecuteMsg::Vote {
         proposal_id,
         vote: Vote::No,
-        reason: None,
     };
     let _ = app
         .execute_contract(Addr::unchecked(APTEAM2), flex_addr.clone(), &no_vote, &[])
@@ -579,7 +578,6 @@ fn test_vote_works() {
     let veto_vote = ExecuteMsg::Vote {
         proposal_id,
         vote: Vote::Veto,
-        reason: None,
     };
     let _ = app
         .execute_contract(Addr::unchecked(APTEAM3), flex_addr.clone(), &veto_vote, &[])
@@ -698,7 +696,6 @@ fn test_execute_works() {
     let vote = ExecuteMsg::Vote {
         proposal_id,
         vote: Vote::Yes,
-        reason: None,
     };
     let res = app
         .execute_contract(Addr::unchecked(APTEAM3), flex_addr.clone(), &vote, &[])
@@ -882,7 +879,6 @@ fn execute_group_changes_from_external() {
     let yes_vote = ExecuteMsg::Vote {
         proposal_id: proposal_id2,
         vote: Vote::Yes,
-        reason: None,
     };
     app.execute_contract(Addr::unchecked(APTEAM2), flex_addr.clone(), &yes_vote, &[])
         .unwrap();
@@ -892,7 +888,6 @@ fn execute_group_changes_from_external() {
     let yes_vote = ExecuteMsg::Vote {
         proposal_id,
         vote: Vote::Yes,
-        reason: None,
     };
     app.execute_contract(Addr::unchecked(APTEAM2), flex_addr.clone(), &yes_vote, &[])
         .unwrap();
@@ -997,7 +992,6 @@ fn execute_group_changes_from_proposal() {
     let yes_vote = ExecuteMsg::Vote {
         proposal_id: update_proposal_id,
         vote: Vote::Yes,
-        reason: None,
     };
     app.execute_contract(Addr::unchecked(APTEAM4), flex_addr.clone(), &yes_vote, &[])
         .unwrap();
@@ -1019,7 +1013,6 @@ fn execute_group_changes_from_proposal() {
     let yes_vote = ExecuteMsg::Vote {
         proposal_id: cash_proposal_id,
         vote: Vote::Yes,
-        reason: None,
     };
     app.execute_contract(Addr::unchecked(APTEAM3), flex_addr.clone(), &yes_vote, &[])
         .unwrap();
@@ -1183,7 +1176,6 @@ fn quorum_handles_group_changes() {
     let yes_vote = ExecuteMsg::Vote {
         proposal_id,
         vote: Vote::No,
-        reason: None,
     };
     app.execute_contract(Addr::unchecked(APTEAM2), flex_addr.clone(), &yes_vote, &[])
         .unwrap();
@@ -1236,7 +1228,6 @@ fn quorum_enforced_even_if_absolute_threshold_met() {
     let yes_vote = ExecuteMsg::Vote {
         proposal_id,
         vote: Vote::Yes,
-        reason: None,
     };
     app.execute_contract(Addr::unchecked(APTEAM4), flex_addr.clone(), &yes_vote, &[])
         .unwrap();
@@ -1247,7 +1238,6 @@ fn quorum_enforced_even_if_absolute_threshold_met() {
     let no_vote = ExecuteMsg::Vote {
         proposal_id,
         vote: Vote::No,
-        reason: None,
     };
     app.execute_contract(Addr::unchecked(APTEAM3), flex_addr.clone(), &no_vote, &[])
         .unwrap();

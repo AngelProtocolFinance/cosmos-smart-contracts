@@ -234,6 +234,10 @@ pub fn execute_propose_application(
         return Err(ContractError::WrongExpiration {});
     }
 
+    // set the proposal_link so we can more easily query and endowment by it's proposal ID
+    let id = next_id(deps.storage)?;
+    msg.proposal_link = Some(id);
+
     // create an application for Endowment creation for review
     let mut prop = Proposal {
         proposal_type: ProposalType::Application,
@@ -254,7 +258,6 @@ pub fn execute_propose_application(
         meta,
     };
     prop.update_status(&env.block);
-    let id = next_id(deps.storage)?;
     PROPOSALS.save(deps.storage, id, &prop)?;
 
     Ok(Response::new()

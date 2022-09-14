@@ -65,6 +65,7 @@ fn create_endowment() -> (
             percentage: Decimal::percent(10),
         },
         cw3_max_voting_period: 60,
+        proposal_link: None,
     };
 
     let instantiate_msg = InstantiateMsg {

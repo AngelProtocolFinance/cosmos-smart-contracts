@@ -33,6 +33,7 @@ pub struct Endowment {
     pub profile: Profile,
     pub pending_redemptions: u8, // number of vault redemptions currently pending for this endowment
     pub copycat_strategy: Option<u32>, // endowment ID to copy their strategy
+    pub proposal_link: Option<u64>, // link back the CW3 Proposal that created an endowment
 }
 
 impl Endowment {

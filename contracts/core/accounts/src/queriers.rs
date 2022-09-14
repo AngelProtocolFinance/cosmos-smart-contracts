@@ -101,6 +101,7 @@ pub fn query_endowment_list(
     status: Option<String>, // EndowmentStatus
     tier: Option<Option<String>>,
     endow_type: Option<String>, // EndowmentType
+    proposal_link: Option<u64>,
 ) -> StdResult<EndowmentListResponse> {
     let endowments: Vec<(u32, Endowment)> = read_endowments(deps.storage)?;
     let entries: Vec<EndowmentEntry> = endowments
@@ -120,6 +121,7 @@ pub fn query_endowment_list(
                 _ => None,
             },
             categories: e.profile.categories.clone(),
+            proposal_link: e.proposal_link.clone(),
         })
         .collect();
     let entries = match name {
@@ -129,7 +131,13 @@ pub fn query_endowment_list(
             .collect::<Vec<EndowmentEntry>>(),
         None => entries,
     };
-
+    let entries = match proposal_link {
+        Some(proposal_id) => entries
+            .into_iter()
+            .filter(|e| e.proposal_link == Some(proposal_id))
+            .collect::<Vec<EndowmentEntry>>(),
+        None => entries,
+    };
     let entries = match owner {
         Some(owner) => entries
             .into_iter()
