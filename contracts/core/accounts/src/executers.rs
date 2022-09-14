@@ -106,6 +106,7 @@ pub fn create_endowment(
                 profile: msg.profile.clone(),
                 pending_redemptions: 0_u8,
                 copycat_strategy: None,
+                proposal_link: msg.proposal_link,
             }),
         },
     )?;
