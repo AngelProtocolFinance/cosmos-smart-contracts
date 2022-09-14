@@ -401,7 +401,7 @@ async function createEndowments(
         endow_type: "Charity",
       },
       cw4_members: [{ addr: charity3_wallet, weight: 1 }],
-      kyc_donors_only: false,
+      kyc_donors_only: true,
       cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
       cw3_max_voting_period: charity_cw3_max_voting_period,
   }, [apTeam]);
