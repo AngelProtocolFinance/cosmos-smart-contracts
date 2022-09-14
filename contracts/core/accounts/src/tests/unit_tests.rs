@@ -82,6 +82,7 @@ fn create_endowment() -> (
         deposit_fee: None,
         aum_fee: None,
         dao: None,
+        proposal_link: None,
     };
 
     let instantiate_msg = InstantiateMsg {

@@ -47,6 +47,7 @@ pub struct Endowment {
     pub withdraw_fee: Option<EndowmentFee>, // Withdraw Fee
     pub deposit_fee: Option<EndowmentFee>, // Deposit Fee
     pub aum_fee: Option<EndowmentFee>, // AUM(Assets Under Management) Fee
+    pub proposal_link: Option<u64>,    // link back the CW3 Proposal that created an endowment
 }
 
 impl Endowment {

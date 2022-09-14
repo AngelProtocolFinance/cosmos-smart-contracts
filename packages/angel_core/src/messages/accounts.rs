@@ -157,7 +157,8 @@ pub struct CreateEndowmentMsg {
     pub withdraw_fee: Option<EndowmentFee>,
     pub deposit_fee: Option<EndowmentFee>,
     pub aum_fee: Option<EndowmentFee>,
-    pub dao: Option<DaoSetup>, // SubDAO setup options
+    pub dao: Option<DaoSetup>,      // SubDAO setup options
+    pub proposal_link: Option<u64>, // link back to the proposal that created an Endowment (set @ init)
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -267,6 +268,7 @@ pub enum QueryMsg {
         owner: Option<String>,
         tier: Option<Option<String>>,
         endow_type: Option<String>,
+        proposal_link: Option<u64>,
     },
     // Get the profile info
     GetProfile {

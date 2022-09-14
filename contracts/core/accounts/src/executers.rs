@@ -202,6 +202,7 @@ pub fn create_endowment(
                 deposit_fee: msg.deposit_fee.clone(),
                 aum_fee: msg.aum_fee.clone(),
                 maturity_whitelist: vec![],
+                proposal_link: msg.proposal_link,
             }),
         },
     )?;

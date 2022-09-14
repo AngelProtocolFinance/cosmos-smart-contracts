@@ -266,6 +266,7 @@ pub struct EndowmentEntry {
     pub tier: Option<Tier>,
     pub un_sdg: Option<u64>,
     pub categories: Categories,
+    pub proposal_link: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

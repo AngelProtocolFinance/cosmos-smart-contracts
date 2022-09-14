@@ -306,7 +306,7 @@ fn test_redeem() {
         },
     )
     .unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
+    assert_eq!(err, ContractError::Std(StdError::GenericErr { msg: "Cannot burn the 30 vault tokens from Endowment 12 :: Overflow: Cannot Sub with 0 and 30".to_string() }));
 
     // Also, fail to "redeem" since the `vault` does not have any deposit
     let info = mock_info("accounts-contract", &[]);
@@ -540,7 +540,7 @@ fn test_redeem_lp_token() {
     )
     .unwrap_err();
 
-    assert_eq!(err, ContractError::Unauthorized {});
+    assert_eq!(err, ContractError::Std(StdError::GenericErr { msg: "Cannot burn the 1000 vault tokens from Endowment 2 :: Overflow: Cannot Sub with 0 and 1000".to_string() }));
 
     // Succeed to redeem for Endowment 1.
     let info = mock_info("accounts-contract", &[]);

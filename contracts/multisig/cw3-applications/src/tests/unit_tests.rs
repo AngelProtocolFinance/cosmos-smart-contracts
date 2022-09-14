@@ -233,6 +233,7 @@ fn new_application_proposal() -> ExecuteMsg {
         deposit_fee: None,
         aum_fee: None,
         dao: None,
+        proposal_link: Some(1),
     };
 
     ExecuteMsg::ProposeApplication {

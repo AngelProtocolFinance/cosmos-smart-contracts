@@ -12,8 +12,8 @@ use angel_core::messages::vault::{
     ExecuteMsg, LoopFarmingExecuteMsg, LoopFarmingQueryMsg, LoopPairExecuteMsg, ReceiveMsg,
     UpdateConfigMsg,
 };
-use angel_core::responses::{accounts::EndowmentListResponse, registrar::ConfigResponse};
-use angel_core::structs::{AccountType, EndowmentEntry};
+use angel_core::responses::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
+use angel_core::structs::AccountType;
 use terraswap::querier::{query_pair_info, query_pair_info_from_pair};
 
 use crate::state::{Config, APTAX, BALANCES, CONFIG, TOKEN_INFO};
@@ -1442,23 +1442,14 @@ fn validate_action_caller_n_endow_id(
     }
 
     // Check that the "deposit-endowment-id" is an Accounts SC
-    let endowments_rsp: EndowmentListResponse =
+    let _endowments_rsp: EndowmentDetailsResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: registar_config.accounts_contract.unwrap(),
-            msg: to_binary(&angel_core::messages::accounts::QueryMsg::EndowmentList {
-                name: None,
-                owner: None,
-                status: None,
-                tier: None,
-                endow_type: None,
-            })?,
+            msg: to_binary(&angel_core::messages::accounts::QueryMsg::Endowment {
+                id: endowment_id,
+            })
+            .unwrap(),
         }))?;
-    let endowments: Vec<EndowmentEntry> = endowments_rsp.endowments;
-    let pos = endowments.iter().position(|endow| endow.id == endowment_id);
-    // reject if the "endowment-id" was not found in the list of endowments
-    if pos.is_none() {
-        return Err(ContractError::Unauthorized {});
-    }
 
     Ok(())
 }
