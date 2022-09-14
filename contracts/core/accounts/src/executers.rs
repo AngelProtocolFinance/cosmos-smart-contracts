@@ -265,7 +265,7 @@ pub fn create_endowment(
     ) {
         (Some(dao_setup), Some(_token_code), Some(gov_code)) => {
             res = res.add_submessage(SubMsg {
-                id: 0,
+                id: 1,
                 msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                     code_id: gov_code,
                     admin: None,
@@ -1924,14 +1924,14 @@ pub fn harvest(
     let vault_addr = deps.api.addr_validate(&vault_addr)?;
     Ok(Response::new()
         .add_submessage(SubMsg {
-            id: 1,
+            id: 0,
             msg: CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: vault_addr.to_string(),
                 msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Harvest {}).unwrap(),
                 funds: vec![],
             }),
             gas_limit: None,
-            reply_on: ReplyOn::Success,
+            reply_on: ReplyOn::Never, // FIXME! Reference the `main` branch
         })
         .add_attribute("action", "harvest"))
 }
@@ -2083,7 +2083,7 @@ pub fn setup_dao(
             code_id: registrar_config.subdao_gov_code.unwrap(),
             admin: None,
             label: "new endowment dao contract".to_string(),
-            msg: to_binary(&angel_core::messages::subdao::InstantiateMsg {
+            msg: to_binary(&DaoInstantiateMsg {
                 id: endowment_id,
                 quorum: msg.quorum,
                 threshold: msg.threshold,

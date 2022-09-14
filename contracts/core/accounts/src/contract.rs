@@ -190,6 +190,7 @@ pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractEr
     match msg.id {
         0 => executers::cw3_reply(deps, env, msg.result),
         1 => executers::dao_reply(deps, env, msg.result),
+        2 => executers::donation_match_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }
