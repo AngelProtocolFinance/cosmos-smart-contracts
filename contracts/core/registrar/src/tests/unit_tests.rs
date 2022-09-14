@@ -5,13 +5,8 @@ use angel_core::responses::registrar::*;
 use angel_core::structs::{
     AcceptedTokens, AccountType, NetworkInfo, RebalanceDetails, SplitDetails,
 };
-use angel_core::structs::{DaoSetup, DaoToken};
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
-use cosmwasm_std::{
-    coins, from_binary, Addr, CosmosMsg, Decimal, Event, Reply, StdError, SubMsgResponse,
-    SubMsgResult, Uint128, WasmMsg,
-};
-use cw_utils::Threshold;
+use cosmwasm_std::{coins, from_binary, Decimal, StdError};
 
 const MOCK_CW3_CODE_ID: u64 = 18;
 const MOCK_CW4_CODE_ID: u64 = 19;

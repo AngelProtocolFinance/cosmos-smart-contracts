@@ -140,41 +140,6 @@ pub fn vault_endowment_balance(deps: Deps, vault_address: String, endowment_id: 
     bal_resp.balance
 }
 
-pub fn redeem_from_vaults(
-    deps: Deps,
-    account_addr: Addr,
-    registrar_contract: String,
-    strategies: Vec<StrategyComponent>,
-) -> Result<Vec<SubMsg>, ContractError> {
-    // redeem all amounts from existing strategies
-    let mut redeem_messages = vec![];
-    for source in strategies.iter() {
-        // check source vault is in registrar vaults list and is approved
-        let vault_config: VaultDetailResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: registrar_contract.to_string(),
-                msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: source.vault.to_string(),
-                })?,
-            }))?;
-        let yield_vault: YieldVault = vault_config.vault;
-        if !yield_vault.approved {
-            return Err(ContractError::InvalidInputs {});
-        }
-        // create a withdraw message for X Vault, noting amounts for Locked / Liquid
-        redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: yield_vault.address.to_string(),
-            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem {
-                endowment_id: 1,                  // FIXME
-                amount: Uint128::from(1000_u128), // FIXME
-            })
-            .unwrap(),
-            funds: vec![],
-        })));
-    }
-    Ok(redeem_messages)
-}
-
 pub fn deposit_to_vaults(
     deps: Deps,
     registrar_contract: String,

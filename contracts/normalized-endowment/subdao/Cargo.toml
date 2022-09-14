@@ -1,6 +1,6 @@
 [package]
 name = "subdao"
-version = "1.0.0"
+version = "2.0.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 license = "Apache-2.0"
