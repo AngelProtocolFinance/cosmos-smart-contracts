@@ -83,14 +83,12 @@ async function initialize() {
   cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
   cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   indexFund = config.contracts.indexFund;
-  anchorVault = config.contracts.anchorVault;
   endowmentIDs = [...config.contracts.endowmentIDs];
   members = [...config.members];
   tcaMembers = [];
 
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
-  console.log(`Using ${chalk.cyan(anchorVault)} as Anchor Vault`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
   console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
@@ -150,6 +148,7 @@ export async function startSetupCore(): Promise<void> {
     max_voting_period_height: 100000, // max voting period height for "ap-cw3"
     fund_rotation: 10, // index fund rotation
     fund_member_limit: 10, // fund member limit
+    turnover_to_multisig: true,
     is_localjuno: false, // is LocalJuno
     harvest_to_liquid: "0.75", // harvest to liquid percentage
     tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
@@ -160,8 +159,8 @@ export async function startSetupCore(): Promise<void> {
         native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
         cw20: [],
       },
-    // junoswap_pool_addr: junoswap_USDC_Juno_PairContract, // Junoswap pool (USDC-JUNO) contract
-    // junoswap_pool_staking: junoswap_USDC_Juno_PairLpStaking, // Junoswap pool (USDC-JUNO) LP token staking contract
+    junoswap_pool_addr: junoswap_USDC_Juno_PairContract, // Junoswap pool (USDC-JUNO) contract
+    junoswap_pool_staking: junoswap_USDC_Juno_PairLpStaking, // Junoswap pool (USDC-JUNO) LP token staking contract
   });
 }
 
