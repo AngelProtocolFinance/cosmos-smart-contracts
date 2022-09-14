@@ -24,6 +24,8 @@ import { testExecute } from "../processes/tests/testnet";
 // -------------------------------------------------------------------------------------
 // Variables
 // -------------------------------------------------------------------------------------
+let networkUrl: string;
+
 let juno: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;
 let apTeam2: DirectSecp256k1HdWallet;
@@ -61,7 +63,6 @@ let vaultLiquid2: string;
 let endowId1: number;
 let endowId2: number;
 let endowId3: number;
-let endowId4: number;
 
 // LoopSwap Contracts
 let loopswapTokenCode: number;
@@ -127,6 +128,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(plebAccount)} as Pleb`);
   console.log(`Using ${chalk.cyan(tcaAccount)} as TCA member`);
 
+  networkUrl = config.networkInfo.url;
 
   registrar = config.contracts.registrar;
   accounts = config.contracts.accounts;
@@ -144,7 +146,6 @@ async function initialize() {
   endowId1 = config.contracts.endowId1;
   endowId2 = config.contracts.endowId2;
   endowId3 = config.contracts.endowId3;
-  endowId4 = config.contracts.endowId4;
 
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
@@ -152,7 +153,6 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(endowId1)} as Endowment ID #1`);
   console.log(`Using ${chalk.cyan(endowId2)} as Endowment ID #2`);
   console.log(`Using ${chalk.cyan(endowId3)} as Endowment ID #3`);
-  console.log(`Using ${chalk.cyan(endowId4)} as Endowment ID #4`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
   console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
@@ -252,6 +252,7 @@ export async function startSetupCore(): Promise<void> {
   // Setup contracts
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   await setupCore(
+    networkUrl,
     juno,
     // wallets
     {
@@ -278,7 +279,7 @@ export async function startSetupCore(): Promise<void> {
       charity_cw3_threshold_abs_perc: "0.50", // threshold absolute percentage for "charity-cw3"
       charity_cw3_max_voting_period: 60,      // max_voting_period time(unit: seconds) for "charity-cw3"
       accepted_tokens: {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
         cw20: [],
       },
     }
@@ -314,7 +315,7 @@ export async function startSetupMockVaults(): Promise<void> {
       harvest_to_liquid: "0.75", // harvest to liquid percentage
       tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
       accepted_tokens:  {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
         cw20: [],
       },
     }
@@ -353,7 +354,7 @@ export async function startSetupLoopVaults(): Promise<void> {
       loopswap_lp_reward_token: loopswapLoopTokenContract, // LoopSwap Pair LP Staking reward token (LOOP token)
       harvest_to_liquid: "0.75", // harvest to liquid percentage
       accepted_tokens:  {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
         cw20: [],
       },
     }
@@ -440,6 +441,7 @@ export async function startMigrateCore(): Promise<void> {
     accounts,
     cw4GrpApTeam,
     cw3ApTeam,
+    cw3ReviewTeam,
     [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
   );
 }
@@ -510,7 +512,6 @@ export async function startTests(): Promise<void> {
     endowId1,
     endowId2,
     endowId3,
-    endowId4,
     cw4GrpApTeam,
     cw3ApTeam,
     cw4GrpReviewTeam,

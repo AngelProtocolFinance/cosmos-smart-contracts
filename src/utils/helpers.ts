@@ -6,6 +6,7 @@ import { Coin, coin } from "@cosmjs/amino";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { wasm_path } from "../config/wasmPaths";
+import { GasPrice } from "@cosmjs/stargate";
 
 export enum VoteOption {
   YES,
@@ -22,6 +23,11 @@ export type Actor = {
   client: SigningCosmWasmClient;
   wallet: DirectSecp256k1HdWallet;
 };
+
+export async function clientSetup(wallet: DirectSecp256k1HdWallet, networkUrl: string) {
+  let client = await SigningCosmWasmClient.connectWithSigner(networkUrl, wallet, { gasPrice: GasPrice.fromString("0.025ujunox") })
+  return client;
+}
 
 export async function getWalletAddress(wallet: DirectSecp256k1HdWallet) {
   let [account] = await wallet.getAccounts();
@@ -216,8 +222,84 @@ export async function sendMessageViaCw3Proposal(
   //   });
   // }
 
-  console.log(chalk.yellow("> Executing the Poll"));
+  console.log(chalk.yellow("> Executing the Proposal"));
   await sendTransaction(juno, proposor, cw3, {
     execute: { proposal_id: parseInt(proposal_id) }
   });
+}
+
+//----------------------------------------------------------------------------------------
+// Abstract away steps to send an Application proposal message to Review Team CW3 multisig and approve:
+// 1. Create Application Proposal on CW3 to execute endowment create msg on Accounts contract
+// 2. Capture the new Proposal's ID
+// 3. Optional: Addtional CW3 member(s) vote on the open poll
+// 4. Proposal needs to be executed and new endowment ID captured
+//----------------------------------------------------------------------------------------
+export async function sendApplicationViaCw3Proposal(
+  networkUrl: string,
+  proposor: DirectSecp256k1HdWallet,
+  cw3: string,
+  target_contract: string,
+  ref_id: string,
+  msg: Record<string, unknown>,
+  members: DirectSecp256k1HdWallet[],
+): Promise<number> {
+  let proposor_client = await clientSetup(proposor, networkUrl);
+  let proposor_wallet = await getWalletAddress(proposor);
+  console.log(chalk.yellow(`> Charity ${proposor_wallet} submits an application proposal`));
+  // 1. Create the new proposal (no vote is cast here)
+  const proposal = await sendTransaction(proposor_client, proposor_wallet, cw3, {
+    propose_application: { ref_id, msg },
+  });
+
+  // 2. Parse out the proposal ID
+  const proposal_id = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "proposal_id";
+    })?.value as string;
+  console.log(chalk.yellow(`> New Proposal's ID: ${proposal_id}`));
+
+  // 3. Additional members need to vote on proposal to get to passing threshold
+  let prom = Promise.resolve();
+  members.forEach((member) => {
+    // eslint-disable-next-line no-async-promise-executor
+    prom = prom.then(
+      () =>
+        new Promise(async (resolve, reject) => {
+          try {
+            let voter_wallet = await getWalletAddress(member);
+            let voter_client = await clientSetup(member, networkUrl);
+            console.log(chalk.yellow(`> CW3 Member ${voter_wallet} votes YES on application proposal`));
+            await sendTransaction(voter_client, voter_wallet, cw3, {
+              vote_application: {
+                proposal_id: parseInt(proposal_id),
+                vote: `yes`,
+                reason: undefined,
+              },
+            });
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        })
+    );
+  });
+  await prom;
+
+  console.log(chalk.yellow("> Executing the Proposal"));
+  const creation = await sendTransaction(proposor_client, proposor_wallet, cw3, {
+    execute: { proposal_id: parseInt(proposal_id) }
+  });
+
+  // capture and return the new Endowment ID
+  return await parseInt(creation.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "endow_id";
+    })?.value as string);
 }

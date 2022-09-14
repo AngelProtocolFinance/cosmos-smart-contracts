@@ -23,6 +23,8 @@ import { testExecute } from "../processes/tests/testnet";
 // -------------------------------------------------------------------------------------
 // Variables
 // -------------------------------------------------------------------------------------
+let networkUrl: string;
+
 let juno: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;
 let apTeam2: DirectSecp256k1HdWallet;
@@ -60,7 +62,6 @@ let vaultLiquid2: string;
 let endowId1: number;
 let endowId2: number;
 let endowId3: number;
-let endowId4: number;
 let vault1: string;
 let vault2: string;
 
@@ -128,6 +129,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(plebAccount)} as Pleb`);
   console.log(`Using ${chalk.cyan(tcaAccount)} as TCA member`);
 
+  networkUrl = config.networkInfo.url;
   registrar = config.contracts.registrar;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
@@ -138,7 +140,6 @@ async function initialize() {
   endowId1 = config.contracts.endowId1;
   endowId2 = config.contracts.endowId2;
   endowId3 = config.contracts.endowId3;
-  endowId4 = config.contracts.endowId4;
   vaultLocked1 = config.contracts.vaultLocked1;
   vaultLiquid1 = config.contracts.vaultLiquid1;
   vaultLocked2 = config.contracts.vaultLocked2;
@@ -150,7 +151,6 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(endowId1)} as Endowment ID #1`);
   console.log(`Using ${chalk.cyan(endowId2)} as Endowment ID #2`);
   console.log(`Using ${chalk.cyan(endowId3)} as Endowment ID #3`);
-  console.log(`Using ${chalk.cyan(endowId4)} as Endowment ID #4`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
   console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
@@ -249,6 +249,7 @@ export async function startSetupCore(): Promise<void> {
   // Setup contracts
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   await setupCore(
+    networkUrl,
     juno,
     // wallets
     {
@@ -443,6 +444,7 @@ export async function startMigrateCore(): Promise<void> {
     accounts,
     cw4GrpApTeam,
     cw3ApTeam,
+    cw3ReviewTeam,
     [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
   );
 }
@@ -514,7 +516,6 @@ export async function startTests(): Promise<void> {
     endowId1,
     endowId2,
     endowId3,
-    endowId4,
     cw4GrpApTeam,
     cw3ApTeam,
     cw4GrpReviewTeam,

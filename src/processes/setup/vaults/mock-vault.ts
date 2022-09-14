@@ -67,7 +67,7 @@ async function createMockVaults(
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
 
   // Vault - #1
-  process.stdout.write("Instantiating Vault (#1) locked & liquid contracts");
+  process.stdout.write("Instantiating Vault (#1) locked & liquid contracts\n");
   const vaultLockedResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     acct_type: "locked",
@@ -79,7 +79,7 @@ async function createMockVaults(
     harvest_to_liquid: harvest_to_liquid,
   });
   vault1_locked = vaultLockedResult1.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("Locked contractAddress")}=${vault1_locked}`);
+  console.log(`${chalk.blue("Locked contractAddress")}=${vault1_locked}`);
 
   const vaultLiquidResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
@@ -93,10 +93,11 @@ async function createMockVaults(
     harvest_to_liquid: harvest_to_liquid,
   });
   vault1_liquid = vaultLiquidResult1.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("Liquid contractAddress")}=${vault1_liquid}`);
+  console.log(`${chalk.blue("Liquid contractAddress")}=${vault1_liquid}`);
+  console.log(chalk.green(" Done!"));
 
   // Vault - #2 (to better test multistrategy logic)
-  process.stdout.write("Instantiating Vault (#2) locked & liquid contracts");
+  process.stdout.write("Instantiating Vault (#2) locked & liquid contracts\n");
   const vaultLockedResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     acct_type: "locked",
@@ -109,7 +110,7 @@ async function createMockVaults(
     harvest_to_liquid: harvest_to_liquid,
   });
   vault2_locked = vaultLockedResult2.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("Locked contractAddress")}=${vault2_locked}`);
+  console.log(`${chalk.blue("Locked contractAddress")}=${vault2_locked}`);
 
   const vaultLiquidResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
@@ -123,7 +124,8 @@ async function createMockVaults(
     harvest_to_liquid: harvest_to_liquid,
   });
   vault2_liquid = vaultLiquidResult2.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("Liquid contractAddress")}=${vault2_liquid}`);
+  console.log(`${chalk.blue("Liquid contractAddress")}=${vault2_liquid}`);
+  console.log(chalk.green(" Done!"));
 
   // Step 3. AP team must add & approve the new vaults in registrar & make #1 the default vault
   process.stdout.write("Add Vaults into Registrar");

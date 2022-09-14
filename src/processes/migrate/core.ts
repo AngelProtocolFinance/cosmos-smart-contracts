@@ -17,12 +17,14 @@ export async function migrateCore(
   accounts: string,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
+  cw3ReviewTeam: string,
   vaultContracts: string[],
 ): Promise<void> {
   // run the migrations desired
   // await storeAndMigrateContract(juno, apTeam, registrar, 'registrar.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw4GrpApTeam, 'cw4_group.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw3ApTeam, 'cw3_multisig.wasm');
+  // await storeAndMigrateContract(juno, apTeam, cw3ReviewTeam, 'cw3_applications.wasm');
   // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
   // await storeAndMigrateContract(juno, apTeam, accounts, 'accounts.wasm');
   // await migrateVaults(juno, apTeam, vaultContracts);
