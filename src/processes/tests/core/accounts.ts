@@ -4,6 +4,7 @@ import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { sendTransaction, sendTransactionWithFunds, sendMessageViaCw3Proposal, sendApplicationViaCw3Proposal } from "../../../utils/helpers";
+import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -27,12 +28,12 @@ export async function testRejectUnapprovedDonations(
 
   await expect(
     sendTransactionWithFunds(juno, apTeam, accountsContract, {
-        deposit: {
-          id: endowmentId,
-          locked_percentage: "1",
-          liquid_percentage: "0",
-        },
+      deposit: {
+        id: endowmentId,
+        locked_percentage: "1",
+        liquid_percentage: "0",
       },
+    },
       [{ denom: "ujuno", amount: amount }]
     )
   ).to.be.rejected;
@@ -68,12 +69,12 @@ export async function testSendDonationToEndowment(
   process.stdout.write("Test - Send single amount to an Endowment Account");
   await expect(
     sendTransactionWithFunds(juno, apTeam, accountsContract, {
-        deposit: {
-          id: endowmentId,
-          locked_percentage: "0.5",
-          liquid_percentage: "0.5",
-        },
+      deposit: {
+        id: endowmentId,
+        locked_percentage: "0.5",
+        liquid_percentage: "0.5",
       },
+    },
       [{ denom: "ujuno", amount }]
     )
   ).to.be.ok;
@@ -101,7 +102,7 @@ export async function testEndowmentCanWithdraw(
     "Test - Charity Owner cannot withdraw from the Endowment amount"
   );
 
-  const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId }});
+  const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
   const cw3 = res.owner as string;
 
   await expect(
@@ -137,7 +138,7 @@ export async function testEndowmentVaultsRedeem(
     "Test - Endowment can redeem the vault token"
   );
 
-  const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId }});
+  const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
   const cw3 = res.owner as string;
 
   await expect(
@@ -173,7 +174,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
     "Test - Charity Owner cannot withdraw from the Endowment amount liquid"
   );
 
-  const res = await juno.queryContractSmart(accounts, { endowment: { id: endowId }});
+  const res = await juno.queryContractSmart(accounts, { endowment: { id: endowId } });
   const cw3 = res.owner as string;
 
   await expect(
@@ -210,14 +211,14 @@ export async function testCharityCanUpdateStrategies(
 ): Promise<void> {
   process.stdout.write("Test - Charity can update their Endowment's strategies");
 
-  const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId }});
+  const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
   const cw3 = res.owner as string;
 
   await expect(
     sendMessageViaCw3Proposal(juno, charity, cw3, accountsContract, {
       update_strategies: {
         id: endowmentId,
-        acct_type, 
+        acct_type,
         strategies,
       },
     })
@@ -268,8 +269,8 @@ export async function testCharityCanHarvestAUMFee(
 
   await expect(
     sendTransaction(juno, charity1, endowment, {
-        harvest_aum: { },
-      }),
+      harvest_aum: {},
+    }),
   ).to.be.rejectedWith("AUM_FEE info is not set");
   console.log(chalk.green(" Passed!"));
 }
@@ -282,28 +283,25 @@ export async function testCharityCanHarvestAUMFee(
 //
 //----------------------------------------------------------------------------------------
 
-export async function testApTeamChangesAccountsEndowmentOwner(
+export async function testUpateAccountsOwner(
   juno: SigningCosmWasmClient,
   apTeam: string,
   accountsContract: string,
-  endowmentId: number,
-  owner: string,
-  kyc_donors_only: boolean,
+  new_owner: string,
 ): Promise<void> {
   process.stdout.write("Test - Contract Owner can set new owner of an Endowment");
 
+  let config = await juno.queryContractSmart(accountsContract, { config: {} });
+  let cw3 = config.owner;
+
   await expect(
-    sendTransaction(juno, apTeam, accountsContract, {
-      update_endowment_settings: {
-        id: endowmentId,
-        owner,
-        kyc_donors_only,
+    sendMessageViaCw3Proposal(juno, apTeam, cw3, accountsContract, {
+      update_owner: {
+        new_owner,
       },
     })
   );
-  console.log(chalk.green(" Passed!"));const result = await sendTransaction(juno, apTeam, accounts, {
-    create_endowment: msg,
-  });
+  console.log(chalk.green(" Passed!"));
 }
 
 //----------------------------------------------------------------------------------------
@@ -314,14 +312,14 @@ export async function testApTeamChangesAccountsEndowmentOwner(
 //
 //----------------------------------------------------------------------------------------
 export async function testCreateEndowment(
-  juno: SigningCosmWasmClient,
-  apTeam: string,
+  networkUrl: string,
+  proposerWallet: DirectSecp256k1HdWallet,
   cw3ReviewTeam: string,
   accounts: string,
   msg: any
 ): Promise<void> {
   process.stdout.write("Create a new endowment via the CW3 Applications contract");
-  let endow_id = await sendApplicationViaCw3Proposal(juno, apTeamAddr, cw3ReviewTeam, accounts, "unknown", msg);
+  let endow_id = await sendApplicationViaCw3Proposal(networkUrl, proposerWallet, cw3ReviewTeam, accounts, "unknown", msg, [proposerWallet]);
   console.log(chalk.green(` ${endow_id} - Done!`));
 }
 
@@ -420,10 +418,11 @@ export async function testQueryAccountsBalance(
     balance: { id: endowmentId },
   });
 
-  console.log("Locked native:", result.locked.native);
-  console.log("Locked cw20:", result.locked.cw20);
-  console.log("Liquid native:", result.liquid.native);
-  console.log("Liquid cw20:", result.liquid.cw20);
+  console.log("Tokens on hand:", result.tokens_on_hand);
+  console.log("Oneoff locked:", result.oneoff_locked);
+  console.log("Oneoff liquid:", result.oneoff_liquid);
+  console.log("strategies locked:", result.strategies_locked);
+  console.log("strategies liquid:", result.strategies_liquid);
   console.log(chalk.green(" Passed!"));
 }
 

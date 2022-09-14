@@ -27,8 +27,36 @@ export async function testIndexFundUpdateOwner(
 
   await expect(
     sendTransaction(juno, apTeam, indexFund, {
-        update_owner: { new_owner },
-      },
+      update_owner: { new_owner },
+    })
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Only owner can update registrar of the Index Fund.
+//
+// SCENARIO:
+// (config)Owner updates the owner address in Index Fund.
+//
+//----------------------------------------------------------------------------------------
+export async function testIndexFundUpateRegistrar(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  indexFund: string,
+  new_registrar: string,
+): Promise<void> {
+  process.stdout.write(
+    "Test - Owner can set new_registrar address in an Index Fund"
+  );
+
+  let config = await juno.queryContractSmart(indexFund, { config: {} });
+  let cw3 = config.owner;
+
+  await expect(
+    sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
+      update_registrar: { new_registrar },
+    },
     )
   ).to.be.ok;
   console.log(chalk.green(" Passed!"));
@@ -56,8 +84,8 @@ export async function testDonorSendsToIndexFund(
 
   await expect(
     sendTransactionWithFunds(juno, pleb, indexFund, {
-        deposit: { fund_id, split },
-      },
+      deposit: { fund_id, split },
+    },
       [{ denom: "ujuno", amount }]
     )
   );
@@ -79,22 +107,24 @@ export async function testTcaMemberSendsToIndexFund(
 ): Promise<void> {
   process.stdout.write("Test - TCA Member can send a JUNO donation to an Index Fund");
   await expect(
-    sendTransactionWithFunds(juno, tca, indexFund, { 
-        deposit: { fund_id: undefined, split: undefined } 
-      },
+    sendTransactionWithFunds(juno, tca, indexFund, {
+      deposit: { fund_id: undefined, split: undefined }
+    },
       [{ denom: "ujuno", amount: "300000" }]
     )
   );
   await expect(
-    sendTransactionWithFunds(juno, tca, indexFund, { 
-      deposit: { fund_id: 3, split: undefined } },
+    sendTransactionWithFunds(juno, tca, indexFund, {
+      deposit: { fund_id: 3, split: undefined }
+    },
       [{ denom: "ujuno", amount: "400000" }]
     )
   );
   await expect(
-    sendTransactionWithFunds(juno, tca, indexFund, { 
-        deposit: { fund_id: 3, split: "0.76" } },
-        [{ denom: "ujuno", amount: "400000" }]
+    sendTransactionWithFunds(juno, tca, indexFund, {
+      deposit: { fund_id: 3, split: "0.76" }
+    },
+      [{ denom: "ujuno", amount: "400000" }]
     )
   );
   console.log(chalk.green(" Passed!"));
@@ -142,13 +172,16 @@ export async function testUpdateAllianceMembersList(
 export async function testUpdateFundMembers(
   juno: SigningCosmWasmClient,
   apTeam: string,
-  cw3: string,
   indexFund: string,
   fundId: number,
   add: string[],
   remove: string[]
 ): Promise<void> {
   process.stdout.write("Test - SC owner can update fund members");
+
+  let config = await juno.queryContractSmart(indexFund, { config: {} });
+  let cw3 = config.owner;
+
   await expect(
     sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
       update_members: { fund_id: fundId, add: add, remove: remove },
@@ -197,11 +230,14 @@ export async function testCreateIndexFund(
 export async function testRemoveIndexFund(
   juno: SigningCosmWasmClient,
   apTeam: string,
-  cw3: string,
   indexFund: string,
   fundId: number
 ): Promise<void> {
   process.stdout.write("Test - SC owner can remove index fund");
+
+  let config = await juno.queryContractSmart(indexFund, { config: {} });
+  let cw3 = config.owner;
+
   await expect(
     sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
       remove_fund: { fund_id: fundId },
@@ -220,9 +256,13 @@ export async function testIndexFundRemoveMember(
   juno: SigningCosmWasmClient,
   apTeam: string,
   indexFund: string,
-  member: string,
+  member: number,
 ): Promise<void> {
   process.stdout.write("Test - SC owner can remove member");
+
+  let config = await juno.queryContractSmart(indexFund, { config: {} });
+  let registrar = config.registrar_contract;
+
   await expect(
     sendTransaction(juno, apTeam, indexFund, {
       remove_member: { member },

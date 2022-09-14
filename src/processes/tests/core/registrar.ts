@@ -221,8 +221,8 @@ export async function testRegistrarUpdateOwner(
 
   await expect(
     sendTransaction(juno, apTeam, registrar, {
-        update_owner: { new_owner },
-      },
+      update_owner: { new_owner },
+    },
     )
   ).to.be.ok;
   console.log(chalk.green(" Passed!"));
@@ -247,11 +247,11 @@ export async function testUpdateEndowTypeFees(
 
   await expect(
     sendTransaction(juno, apTeam, registrar, {
-        update_endow_type_fees: {
-          endowtype_charity: fees.endowtype_charity,
-          endowtype_normal: fees.endowtype_normal,
-        }
-      },
+      update_endow_type_fees: {
+        endowtype_charity: fees.endowtype_charity,
+        endowtype_normal: fees.endowtype_normal,
+      }
+    },
     )
   ).to.be.ok;
   console.log(chalk.green(" Passed!"));
@@ -276,11 +276,11 @@ export async function testUpdateNetworkConnections(
 
   await expect(
     sendTransaction(juno, apTeam, registrar, {
-        update_network_connections: {
-          network_info: info.network_info,
-          action: info.action,
-        }
-      },
+      update_network_connections: {
+        network_info: info.network_info,
+        action: info.action,
+      }
+    },
     )
   ).to.be.ok;
   console.log(chalk.green(" Passed!"));
@@ -311,19 +311,6 @@ export async function testQueryRegistrarVaultList(
   process.stdout.write("Test - Query Registrar Vault List");
   const result: any = await juno.queryContractSmart(registrar, {
     vault_list: { approved: true },
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryRegistrarApprovedVaultRateList(
-  juno: SigningCosmWasmClient,
-  registrar: string
-): Promise<void> {
-  process.stdout.write("Test - Query Registrar Approved Vault Exchange Rate List");
-  const result: any = await juno.queryContractSmart(registrar, {
-    approved_vault_rate_list: {},
   });
 
   console.log(result);
