@@ -9,6 +9,8 @@ import {
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
   testSendDonationToEndowment,
+  testUpdateEndowmentStatus,
+  testQueryAccountsEndowmentList,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -31,17 +33,11 @@ import {
   testAddMemberToC4Group,
 } from "./core/multisig";
 import {
-  testAngelTeamCanTriggerVaultsHarvest,
-  testMigrateAllAccounts,
-  testUpdateEndowmentStatus,
   testUpdatingRegistrarConfigs,
-  testQueryRegistrarApprovedVaultList,
+  testQueryRegistrarVaultList,
   testQueryRegistrarApprovedVaultRateList,
   testQueryRegistrarConfig,
-  testQueryRegistrarEndowmentList,
-  testQueryRegistrarEndowmentDetails,
   testQueryRegistrarVault,
-  testQueryRegistrarVaultList,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -113,9 +109,12 @@ export async function testExecute(
   registrar: string,
   indexFund: string,
   anchorVault: string,
-  endowmentContract: string,
+  accounts: string,
+  endowmentID: number,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
+  cw4GrpReviewTeam: string,
+  cw3ReviewTeam: string,
   junoswapFactory: string,
   junoswapToken: string,
   junoswapPair: string,
@@ -192,12 +191,12 @@ export async function testExecute(
 
   // Test query
   // await testQueryRegistrarConfig(juno, registrar);
-  // await testQueryRegistrarEndowmentList(juno, registrar);
   // await testQueryRegistrarEndowmentDetails(juno, registrar, endowmentContract1);
-  // await testQueryRegistrarApprovedVaultList(juno, registrar);
+  // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarApprovedVaultRateList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVault(juno, registrar, anchorVault);
+  // await testQueryAccountsEndowmentList(juno, accounts);
   // await testQueryAccountsBalance(juno, endowmentContract);
   // await testQueryVaultConfig(juno, anchorVault);
   // await testQueryAccountsConfig(juno, endowmentContract);

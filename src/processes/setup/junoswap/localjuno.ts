@@ -4,6 +4,7 @@ import chalk from "chalk";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { instantiateContract, sendTransaction, storeCode } from "../../../utils/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
+import { coin } from "@cosmjs/stargate";
 
 // Deploy HALO Token and HALO/JUNO pair contracts to the LocalJuno
 export async function setupJunoSwap(
@@ -85,7 +86,7 @@ export async function setupJunoSwap(
 
   // Pair contract
   process.stdout.write("Creating Pair contract from Token Factory");
-  const pairResult = await sendTransaction(juno, apTeam, apTeam, factoryContract, {
+  const pairResult = await sendTransaction(juno, apTeam, "factoryContract", {
     create_pair: {
       asset_infos: [
         {
@@ -102,15 +103,15 @@ export async function setupJunoSwap(
       ],
     },
     // }, { "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4": "100" },
-    }, { "ujuno": 1000 },
+    }, [coin(1000, "ujuno")],
   );
 
-  const pairContract = pairResult.contractAddress as string;
+  const pairContract = "pairResult.contractAddress" as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${pairContract}`);
 
   // Get the LP Token address of newly created pair
   process.stdout.write("Query new Pair's LP Token contract");
-  const result: any = await juno.wasm.contractQuery(pairContract, {
+  const result: any = await juno.queryContractSmart(pairContract, {
     pair: {},
   });
   console.log(
@@ -151,7 +152,7 @@ export async function setupJunoSwap(
       ]
     },
     },
-    { ujuno: native_liquidity }
+    [coin(native_liquidity, "ujuno")]
   );
   console.log(chalk.green(" Done!"));
 }

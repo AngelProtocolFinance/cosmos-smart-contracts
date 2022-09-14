@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, sendTransactionWithFunds } from "../../../utils/helpers";
+import { sendMessageViaCw3Proposal, sendTransaction, sendTransactionWithFunds } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -103,10 +103,11 @@ export async function testTcaMemberSendsToIndexFund(
 export async function testUpdatingIndexFundConfigs(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3: string,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("AP Team updates Index Fund configs - funding goal");
-  await sendTransaction(juno, apTeam, indexFund, {
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
     update_config: {
       funding_goal: "10000000000",
       fund_rotation: undefined,
@@ -118,13 +119,14 @@ export async function testUpdatingIndexFundConfigs(
 export async function testUpdateAllianceMembersList(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3: string,
   indexFund: string,
   address: string,
   member: any,
   action: string
 ): Promise<void> {
   process.stdout.write("AP Team updates Angel Alliance members list");
-  await sendTransaction(juno, apTeam, indexFund, {
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
     update_alliance_member_list: { address, member, action },
   });
   console.log(chalk.green(" Done!"));
@@ -140,6 +142,7 @@ export async function testUpdateAllianceMembersList(
 export async function testUpdateFundMembers(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3: string,
   indexFund: string,
   fundId: number,
   add: string[],
@@ -147,7 +150,7 @@ export async function testUpdateFundMembers(
 ): Promise<void> {
   process.stdout.write("Test - SC owner can update fund members");
   await expect(
-    sendTransaction(juno, apTeam, indexFund, {
+    sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
       update_members: { fund_id: fundId, add: add, remove: remove },
     })
   );
@@ -163,6 +166,7 @@ export async function testUpdateFundMembers(
 export async function testCreateIndexFund(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3: string,
   indexFund: string,
   name: string,
   description: string,
@@ -171,7 +175,7 @@ export async function testCreateIndexFund(
 ): Promise<void> {
   process.stdout.write("Test - SC owner can create index fund");
   await expect(
-    sendTransaction(juno, apTeam, indexFund, {
+    sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
       create_fund: {
         name: name,
         description: description,
@@ -193,15 +197,16 @@ export async function testCreateIndexFund(
 export async function testRemoveIndexFund(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3: string,
   indexFund: string,
   fundId: number
 ): Promise<void> {
   process.stdout.write("Test - SC owner can remove index fund");
   await expect(
-    sendTransaction(juno, apTeam, indexFund, {
+    sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
       remove_fund: { fund_id: fundId },
     })
-  );
+  ).to.be.ok;
   console.log(chalk.green(" Passed!"));
 }
 

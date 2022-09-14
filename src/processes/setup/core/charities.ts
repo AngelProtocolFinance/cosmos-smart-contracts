@@ -102,7 +102,6 @@ async function createEndowment(
       withdraw_before_maturity: false,
       maturity_time: undefined,
       maturity_height: undefined,
-      guardians_multisig_addr: undefined,
       profile: {
         name: charity.charity_name,
         overview: charity.charity_overview,

@@ -3,4 +3,7 @@ export const wasm_path = {
   junoswap:
     "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/artifacts/junoswap",
   cw20: "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/artifacts/subdao_cw20_token.wasm",
+  loopswap:
+    "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/artifacts/loopswap",
+  mock_vault: "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/mock-vault/artifacts"
 };

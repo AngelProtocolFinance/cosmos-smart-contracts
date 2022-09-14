@@ -65,7 +65,7 @@ export async function testProposalApprovingEndowment(
   apTeam: string,
   cw3: string,
   registrar: string,
-  endowment: string,
+  endowment: number,
 ): Promise<void> {
   process.stdout.write("Test - CW3 Member Proposes to Approve an Endowment");
 
@@ -81,7 +81,7 @@ export async function testProposalApprovingEndowment(
               funds: [],
               msg: toEncodedBinary({
                 update_endowment_status: {
-                  endowment_addr: endowment,
+                  endowment_id: endowment,
                   status: 1,
                   beneficiary: undefined,
                 },
@@ -116,13 +116,15 @@ export async function testCw3CastVote(
   apTeam: string,
   cw3: string,
   proposal_id: number,
-  vote: VoteOption,
+  // vote: VoteOption,
+  vote: string,
 ): Promise<void> {
   process.stdout.write("Test - Cast vote");
 
   await expect(
     sendTransaction(juno, apTeam, cw3, {
-      vote: { proposal_id, vote: true },
+      // vote: { proposal_id, vote: true },
+      vote: { proposal_id, vote },
     })
   );
   console.log(chalk.green(" Passed!"));

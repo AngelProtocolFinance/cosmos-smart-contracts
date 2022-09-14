@@ -102,6 +102,20 @@ export async function testTransferStake(
   });
   let results = await Promise.all(exec_results);
   console.log(results);
+  // let msgs: Msg[] = [];
+  // staker_info.forEach((info) => {
+  //   msgs.push(
+  //     new MsgExecuteContract(apTeam, oldGov, {
+  //       transfer_stake: {
+  //         new_gov_contract: newGov,
+  //         address: info[0],
+  //         amount: info[1],
+  //       },
+  //     })
+  //   );
+  // });
+
+  // await expect(sendTransaction(juno, apTeam, msgs));
   console.log(chalk.green(" Passed!"));
 }
 

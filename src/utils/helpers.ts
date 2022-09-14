@@ -2,7 +2,7 @@ import * as fs from "fs";
 import chalk from "chalk";
 import BN from "bn.js";
 import axios from "axios";
-import { Coin } from "@cosmjs/amino";
+import { Coin, coin } from "@cosmjs/amino";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { wasm_path } from "../config/wasmPaths";
@@ -52,11 +52,12 @@ export async function sendTransaction(
   sender: string,
   contract: string,
   msg: Record<string, unknown>,
+  funds: Coin[] = [],
   memo = undefined,
   verbose = false
 ) {
   try { 
-    const result = await juno.execute(sender, contract, msg, "auto", memo, []);
+    const result = await juno.execute(sender, contract, msg, "auto", memo, funds);
     if (verbose) {
       console.log(chalk.yellow("\n~~~ TX HASH: ", result.transactionHash, "~~~~"));
       console.log(chalk.yellow(JSON.stringify(result.logs)));
@@ -77,7 +78,7 @@ export async function sendTransactionWithFunds(
   sender: string,
   contract: string,
   msg: Record<string, unknown>,
-  funds: Coin[],
+  funds: Coin[] = [],
   memo = undefined,
   verbose = false
 ) {
@@ -155,6 +156,7 @@ export async function storeAndMigrateContract(
   const result = await migrateContract(juno, apTeam, contract, codeId, msg);
   console.log(chalk.green(" Done!"));
 }
+
 
 //----------------------------------------------------------------------------------------
 // Abstract away steps to send a message to another contract via a CW3 multisig poll:

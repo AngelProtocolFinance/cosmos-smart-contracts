@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction } from "../../../utils/helpers";
+import { sendMessageViaCw3Proposal, sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -18,11 +18,12 @@ const { expect } = chai;
 export async function testUpdatingRegistrarConfigs(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3ApTeam: string,
   registrar: string,
   config: any
 ): Promise<void> {
   process.stdout.write("AP Team updates Registrar Config");
-  await sendTransaction(juno, apTeam, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3ApTeam, registrar, {
     update_config: config,
   });
   console.log(chalk.green(" Done!"));
@@ -303,40 +304,13 @@ export async function testQueryRegistrarConfig(
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarEndowmentDetails(
-  juno: SigningCosmWasmClient,
-  registrar: string,
-  endowment: string
-): Promise<void> {
-  process.stdout.write("Test - Query Registrar Endowment Details/Status");
-  const result: any = await juno.queryContractSmart(registrar, {
-    endowment: { endowment_addr: endowment },
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryRegistrarEndowmentList(
+export async function testQueryRegistrarVaultList(
   juno: SigningCosmWasmClient,
   registrar: string
 ): Promise<void> {
-  process.stdout.write("Test - Query Registrar EndowmentList");
+  process.stdout.write("Test - Query Registrar Vault List");
   const result: any = await juno.queryContractSmart(registrar, {
-    endowment_list: {},
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryRegistrarApprovedVaultList(
-  juno: SigningCosmWasmClient,
-  registrar: string
-): Promise<void> {
-  process.stdout.write("Test - Query Registrar ApprovedVaultList");
-  const result: any = await juno.queryContractSmart(registrar, {
-    approved_vault_list: {},
+    vault_list: { approved: true },
   });
 
   console.log(result);
@@ -350,19 +324,6 @@ export async function testQueryRegistrarApprovedVaultRateList(
   process.stdout.write("Test - Query Registrar Approved Vault Exchange Rate List");
   const result: any = await juno.queryContractSmart(registrar, {
     approved_vault_rate_list: {},
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryRegistrarVaultList(
-  juno: SigningCosmWasmClient,
-  registrar: string
-): Promise<void> {
-  process.stdout.write("Test - Query Registrar VaultList");
-  const result: any = await juno.queryContractSmart(registrar, {
-    vault_list: {},
   });
 
   console.log(result);
