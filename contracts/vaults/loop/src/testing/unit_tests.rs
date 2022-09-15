@@ -347,7 +347,7 @@ fn test_harvest() {
 }
 
 #[test]
-fn test_stake_lp_token() {
+fn test_stake_lp_token_entry() {
     let mut deps = create_mock_vault(AccountType::Locked, vec![]);
 
     // Fail to stake since zero LP amount to stake
@@ -597,4 +597,81 @@ fn test_redeem_lp_token() {
             "Cannot burn the 100 vault tokens from tax-collector :: Overflow: Cannot Sub with 0 and 100"
         ))
     );
+}
+
+#[test]
+fn test_reinvest_to_locked() {
+    let mut deps = create_mock_vault(AccountType::Liquid, vec![]);
+
+    // Mint 1 VT for the Endowment 1.
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Stake {
+            endowment_id: Some(1_u32),
+            lp_token_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap();
+
+    // Only "accounts-contract" can call the "reinvest_to_locked" entry
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::ReinvestToLocked {
+            endowment_id: 1_u32,
+            amount: Uint128::from(100_u128),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Fail to "reinvest_to_locked" since the burn amount is bigger than 1 VT
+    let info = mock_info("accounts-contract", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::ReinvestToLocked {
+            endowment_id: 1_u32,
+            amount: Uint128::from(10000000_u128),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: format!(
+                "Insufficient balance: Needed {}, existing: {}",
+                10000000, 1000000
+            )
+        })
+    );
+
+    // Succeed to "reinvest_to_locked"
+    let info = mock_info("accounts-contract", &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::ReinvestToLocked {
+            endowment_id: 1_u32,
+            amount: Uint128::from(1000000_u128),
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 3);
+
+    // Check the VT(vault token) balance
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config_resp: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        config_resp.total_lp_amount,
+        (100 - 1000000 * 100 / 1000000).to_string()
+    );
+    assert_eq!(config_resp.total_shares, (1000000 - 1000000).to_string());
 }
