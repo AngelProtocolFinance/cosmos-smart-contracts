@@ -1,10 +1,11 @@
+use crate::msg::{ExecuteMsg, MigrateMsg};
 use crate::state::{
     next_id, Ballot, Config, Proposal, TempConfig, Votes, BALLOTS, CONFIG, PROPOSALS, TEMP_CONFIG,
 };
 use angel_core::errors::multisig::ContractError;
 use angel_core::messages::cw3_multisig::{
-    ConfigResponse, EndowmentInstantiateMsg as InstantiateMsg, ExecuteMsg,
-    MetaProposalListResponse, MetaProposalResponse, MigrateMsg, QueryMsg,
+    ConfigResponse, EndowmentInstantiateMsg as InstantiateMsg, MetaProposalListResponse,
+    MetaProposalResponse, QueryMsg,
 };
 use cosmwasm_std::{
     entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
@@ -43,6 +44,7 @@ pub fn instantiate(
     )?;
 
     Ok(Response::default()
+        .add_attribute("endow_id", msg.id.to_string())
         .add_attribute("multisig_addr", env.contract.address.to_string())
         // Fire a submessage to create the CW4 Group to be linked to this CW3 on reply
         .add_submessage(SubMsg {
@@ -100,7 +102,7 @@ pub fn cw4_group_reply(
                 deps.api
                     .addr_validate(&cw4_group_addr.clone().unwrap())
                     .map_err(|_| ContractError::InvalidGroup {
-                        addr: cw4_group_addr.unwrap().clone(),
+                        addr: cw4_group_addr.unwrap(),
                     })?,
             );
 
