@@ -143,7 +143,9 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
             to_binary(&queriers::funds_list(deps, start_after, limit)?)
         }
         QueryMsg::FundDetails { fund_id } => to_binary(&queriers::fund_details(deps, fund_id)?),
-        QueryMsg::InvolvedFunds { address } => to_binary(&queriers::involved_funds(deps, address)?),
+        QueryMsg::InvolvedFunds { endowment_id } => {
+            to_binary(&queriers::involved_funds(deps, endowment_id)?)
+        }
         QueryMsg::ActiveFundDetails {} => to_binary(&queriers::active_fund_details(deps)?),
         QueryMsg::ActiveFundDonations {} => to_binary(&queriers::active_fund_donations(deps)?),
         QueryMsg::Deposit {

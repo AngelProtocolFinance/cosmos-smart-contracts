@@ -8,6 +8,7 @@ use std::fmt;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
+    pub id: u32,
     pub quorum: Decimal,
     pub threshold: Decimal,
     pub voting_period: u64,

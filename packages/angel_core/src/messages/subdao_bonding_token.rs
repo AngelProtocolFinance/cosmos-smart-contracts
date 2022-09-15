@@ -91,7 +91,8 @@ pub enum Cw20HookMsg {
     DonorMatch {
         amount: Uint128,
         donor: String,
-        endowment_contract: String,
+        accounts_contract: String,
+        endowment_id: u32,
     },
 }
 

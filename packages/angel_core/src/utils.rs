@@ -1,15 +1,14 @@
 use crate::errors::core::{ContractError, PaymentError};
 use crate::messages::registrar::QueryMsg as RegistrarQuerier;
-use crate::messages::vault::AccountWithdrawMsg;
+use crate::messages::vault::QueryMsg as VaultQuerier;
 use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
-use crate::responses::vault::ExchangeRateResponse;
-use crate::structs::{FundingSource, GenericBalance, SplitDetails, StrategyComponent, YieldVault};
+use crate::structs::{GenericBalance, SplitDetails, StrategyComponent, YieldVault};
 use cosmwasm_std::{
-    to_binary, to_vec, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, Decimal256, Deps,
+    to_binary, to_vec, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, Deps, DepsMut,
     Empty, MessageInfo, QueryRequest, StdError, StdResult, SubMsg, SystemError, SystemResult,
     Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg};
+use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg, Denom};
 use cw_asset::{Asset, AssetInfoBase};
 
 // this will set the first key after the provided key, by appending a 1 byte
@@ -132,124 +131,30 @@ pub fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<SubMsg>
     Ok(msgs)
 }
 
-pub fn vault_fx_rate(deps: Deps, vault_address: String) -> Decimal256 {
-    // get the vault exchange rate
-    let exchange_rate: ExchangeRateResponse = deps
-        .querier
-        .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: vault_address,
-            msg: to_binary(&crate::messages::vault::QueryMsg::ExchangeRate {
-                input_denom: "uusd".to_string(),
-            })
-            .unwrap(),
-        }))
-        .unwrap();
-    exchange_rate.exchange_rate
-}
-
-pub fn vault_account_balance(
-    deps: Deps,
-    vault_address: String,
-    account_address: String,
-) -> Uint128 {
+pub fn vault_endowment_balance(deps: Deps, vault_address: String, endowment_id: u32) -> Uint128 {
     // get an account's balance held with a vault
-    let account_balance: BalanceResponse = deps
+    let bal_resp: BalanceResponse = deps
         .querier
-        .query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: vault_address,
-            msg: to_binary(&crate::messages::vault::QueryMsg::Balance {
-                address: account_address,
-            })
-            .unwrap(),
-        }))
+        .query_wasm_smart(vault_address, &VaultQuerier::Balance { endowment_id })
         .unwrap();
-    account_balance.balance
-}
-
-pub fn redeem_from_vaults(
-    deps: Deps,
-    account_addr: Addr,
-    registrar_contract: String,
-    strategies: Vec<StrategyComponent>,
-) -> Result<Vec<SubMsg>, ContractError> {
-    // redeem all amounts from existing strategies
-    let mut redeem_messages = vec![];
-    for source in strategies.iter() {
-        // check source vault is in registrar vaults list and is approved
-        let vault_config: VaultDetailResponse =
-            deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                contract_addr: registrar_contract.to_string(),
-                msg: to_binary(&RegistrarQuerier::Vault {
-                    vault_addr: source.vault.to_string(),
-                })?,
-            }))?;
-        let yield_vault: YieldVault = vault_config.vault;
-        if !yield_vault.approved {
-            return Err(ContractError::InvalidInputs {});
-        }
-        // create a withdraw message for X Vault, noting amounts for Locked / Liquid
-        redeem_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: yield_vault.address.to_string(),
-            msg: to_binary(&crate::messages::vault::ExecuteMsg::Redeem {
-                account_addr: account_addr.clone(),
-            })
-            .unwrap(),
-            funds: vec![],
-        })));
-    }
-    Ok(redeem_messages)
-}
-
-pub fn withdraw_from_vaults(
-    deps: Deps,
-    registrar_contract: String,
-    beneficiary: &Addr,
-    sources: Vec<FundingSource>,
-) -> Result<Vec<SubMsg>, ContractError> {
-    let mut withdraw_messages = vec![];
-
-    // redeem amounts from sources listed
-    for source in sources.iter() {
-        if source.amount > Uint128::zero() {
-            // check source vault is in registrar vaults list and is approved
-            let vault_config: VaultDetailResponse =
-                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-                    contract_addr: registrar_contract.to_string(),
-                    msg: to_binary(&RegistrarQuerier::Vault {
-                        vault_addr: source.vault.to_string(),
-                    })?,
-                }))?;
-            let yield_vault: YieldVault = vault_config.vault;
-            if !yield_vault.approved {
-                return Err(ContractError::InvalidInputs {});
-            }
-
-            // create a withdraw message for X Vault, noting amounts for Locked / Liquid
-            withdraw_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: yield_vault.address.to_string(),
-                msg: to_binary(&crate::messages::vault::ExecuteMsg::Withdraw(
-                    AccountWithdrawMsg {
-                        beneficiary: beneficiary.clone(),
-                        amount: source.amount,
-                    },
-                ))
-                .unwrap(),
-                funds: vec![],
-            })));
-        }
-    }
-    Ok(withdraw_messages)
+    bal_resp.balance
 }
 
 pub fn deposit_to_vaults(
     deps: Deps,
     registrar_contract: String,
+    endowment_id: u32,
     fund: Asset,
     strategies: &[StrategyComponent],
-) -> Result<Vec<SubMsg>, ContractError> {
-    let mut deposit_messages = vec![];
+) -> Result<(Vec<SubMsg>, Uint128), ContractError> {
+    // deduct all deposited amounts from the orig amount
+    // tracks how much of the locked funds are leftover
+    let mut leftovers_amt = fund.amount.clone();
+
     // deposit to the strategies set
+    let mut deposit_messages = vec![];
     for strategy in strategies.iter() {
+        leftovers_amt -= fund.amount * strategy.percentage;
         let vault_config: VaultDetailResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: registrar_contract.clone(),
@@ -258,14 +163,23 @@ pub fn deposit_to_vaults(
                 })?,
             }))?;
         let yield_vault: YieldVault = vault_config.vault;
+        if !yield_vault.approved {
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: "Vault is not approved to accept deposits".to_string(),
+            }));
+        }
 
-        // create a deposit message for X Vault, noting amounts for Locked / Liquid
-        // funds payload contains both amounts for locked and liquid accounts
+        // create a deposit message for X Vault
+        // funds payload can contain CW20 | Native token amounts
+        // total to send: payload_amount * strategy.percentage
         match fund.info {
             AssetInfoBase::Native(ref denom) => {
                 deposit_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: yield_vault.address.to_string(),
-                    msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {}).unwrap(),
+                    msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {
+                        endowment_id: endowment_id.clone(),
+                    })
+                    .unwrap(),
                     funds: vec![Coin {
                         denom: denom.clone(),
                         amount: fund.amount * strategy.percentage,
@@ -278,7 +192,10 @@ pub fn deposit_to_vaults(
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                         contract: yield_vault.address.to_string(),
                         amount: fund.amount * strategy.percentage,
-                        msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {}).unwrap(),
+                        msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {
+                            endowment_id: endowment_id.clone(),
+                        })
+                        .unwrap(),
                     })
                     .unwrap(),
                     funds: vec![],
@@ -287,7 +204,7 @@ pub fn deposit_to_vaults(
             AssetInfoBase::Cw1155(_, _) => unimplemented!(),
         }
     }
-    Ok(deposit_messages)
+    Ok((deposit_messages, leftovers_amt))
 }
 
 /// returns an error if any coins were sent
@@ -404,4 +321,60 @@ pub fn validate_deposit_fund(
     }
 
     Ok(fund)
+}
+
+/// Returns a `Denom` balance for a specific account.
+/// ## Params
+/// * **deps** is an object of type [`DepsMut`].
+///
+/// * **account_addr** is an object of type [`String`].
+///
+/// * **denom** is an object of type [`Denom`] used to specify the denomination used to return the balance.
+pub fn query_denom_balance(deps: &DepsMut, denom: &Denom, account_addr: String) -> Uint128 {
+    match denom {
+        Denom::Native(denom) => {
+            query_balance(deps.as_ref(), account_addr, denom.to_string()).unwrap_or(Uint128::zero())
+        }
+        Denom::Cw20(contract_addr) => {
+            query_token_balance(deps.as_ref(), contract_addr.to_string(), account_addr)
+                .unwrap_or(Uint128::zero())
+        }
+    }
+}
+
+/// Returns a native token's balance for a specific account.
+/// ## Params
+/// * **deps** is an object of type [`Deps`].
+///
+/// * **account_addr** is an object of type [`String`].
+///
+/// * **denom** is an object of type [`String`] used to specify the denomination used to return the balance (e.g uluna).
+pub fn query_balance(deps: Deps, account_addr: String, denom: String) -> StdResult<Uint128> {
+    Ok(deps
+        .querier
+        .query_balance(account_addr, denom)
+        .map(|c| c.amount)
+        .unwrap_or(Uint128::zero()))
+}
+
+/// Returns a token balance for an account.
+/// ## Params
+/// * **deps** is an object of type [`Deps`].
+///
+/// * **contract_addr** is an object of type [`String`]. This is the token contract for which we return a balance.
+///
+/// * **account_addr** is an object of type [`String`] for which we query the token balance for.
+pub fn query_token_balance(
+    deps: Deps,
+    contract_addr: String,
+    account_addr: String,
+) -> StdResult<Uint128> {
+    // load balance from the token contract
+    let res: cw20::BalanceResponse = deps.querier.query_wasm_smart(
+        contract_addr,
+        &cw20::Cw20QueryMsg::Balance {
+            address: account_addr,
+        },
+    )?;
+    Ok(res.balance)
 }

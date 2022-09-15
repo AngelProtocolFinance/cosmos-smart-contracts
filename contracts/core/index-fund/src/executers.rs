@@ -133,7 +133,7 @@ pub fn create_index_fund(
     info: MessageInfo,
     name: String,
     description: String,
-    members: Vec<String>,
+    members: Vec<u32>,
     rotating_fund: Option<bool>,
     split_to_liquid: Option<Decimal>,
     expiry_time: Option<u64>,
@@ -145,13 +145,6 @@ pub fn create_index_fund(
     if info.sender.ne(&config.owner) {
         return Err(ContractError::Unauthorized {});
     }
-
-    // check all members addresses passed are valid
-    let validated_members: Vec<Addr> = members
-        .iter()
-        .map(|addr| deps.api.addr_validate(addr).unwrap())
-        .collect();
-
     let optional_split = split_to_liquid.map(|split| percentage_checks(split).unwrap());
 
     // build fund struct from msg params
@@ -159,7 +152,7 @@ pub fn create_index_fund(
         id: state.next_fund_id,
         name,
         description,
-        members: validated_members,
+        members,
         rotating_fund,
         split_to_liquid: optional_split,
         expiry_time,
@@ -216,8 +209,8 @@ pub fn update_fund_members(
     env: Env,
     info: MessageInfo,
     fund_id: u64,
-    add: Vec<String>,
-    remove: Vec<String>,
+    add: Vec<u32>,
+    remove: Vec<u32>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -233,19 +226,17 @@ pub fn update_fund_members(
 
     // add members to the fund, only if they do not already exist
     for add in add.into_iter() {
-        let add_addr = deps.api.addr_validate(&add)?;
-        let pos = fund.members.iter().position(|m| *m == add_addr);
+        let pos = fund.members.iter().position(|m| *m == add);
         // ignore if that member was found in the list
-        if pos == None {
-            fund.members.push(add_addr);
+        if pos.is_none() {
+            fund.members.push(add);
         }
     }
 
     // remove the members from the fund
     for remove in remove.into_iter() {
-        let remove_addr = deps.api.addr_validate(&remove)?;
         // ignore if no member is found
-        if let Some(pos) = fund.members.iter().position(|m| *m == remove_addr) {
+        if let Some(pos) = fund.members.iter().position(|m| *m == remove) {
             fund.members.swap_remove(pos);
         }
     }
@@ -264,7 +255,7 @@ pub fn update_fund_members(
 pub fn remove_member(
     deps: DepsMut,
     info: MessageInfo,
-    member: String,
+    member: u32,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -272,13 +263,10 @@ pub fn remove_member(
         return Err(ContractError::Unauthorized {});
     }
 
-    // check the string is proper addr
-    let member_addr = deps.api.addr_validate(&member)?;
-
     // Check all Funds for the given member and remove the member if found
     let funds = read_funds(deps.storage, None, None)?;
     for mut fund in funds.into_iter() {
-        fund.members.retain(|m| m != &member_addr);
+        fund.members.retain(|m| m != &member);
         FUND.save(deps.storage, &fund.id.to_be_bytes(), &fund)?;
     }
     Ok(Response::default())
@@ -389,7 +377,7 @@ pub fn deposit(
         }))?;
     let registrar_split_configs: SplitDetails = registrar_config.split_to_liquid;
 
-    let mut donation_messages: Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))> = vec![];
+    let mut donation_messages: Vec<(u32, (Uint128, Decimal), (Uint128, Decimal))> = vec![];
 
     // check if active fund donation or if there a provided fund ID
     match msg.fund_id {
@@ -495,8 +483,9 @@ pub fn deposit(
     Ok(Response::new()
         .add_submessages(build_donation_messages(
             deps.as_ref(),
+            registrar_config.accounts_contract.unwrap(),
             donation_messages,
-            deposit_fund.info.clone(),
+            deposit_fund.info,
         ))
         .add_attribute("action", "deposit"))
 }
@@ -535,7 +524,8 @@ pub fn calculate_split(
 
 pub fn build_donation_messages(
     _deps: Deps,
-    donation_messages: Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))>,
+    accounts_contract: String,
+    donation_messages: Vec<(u32, (Uint128, Decimal), (Uint128, Decimal))>,
     deposit_fund_info: AssetInfoBase<Addr>,
 ) -> Vec<SubMsg> {
     let mut messages = vec![];
@@ -543,9 +533,10 @@ pub fn build_donation_messages(
         match deposit_fund_info {
             AssetInfoBase::Native(ref denom) => {
                 messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: member.0.to_string(),
+                    contract_addr: accounts_contract.clone(),
                     msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::Deposit(
                         angel_core::messages::accounts::DepositMsg {
+                            id: member.0,
                             locked_percentage: member.1 .1,
                             liquid_percentage: member.2 .1,
                         },
@@ -561,9 +552,10 @@ pub fn build_donation_messages(
                 messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: contract_addr.to_string(),
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                        contract: member.0.to_string(),
+                        contract: accounts_contract.clone(),
                         amount: member.1 .0 + member.2 .0,
                         msg: to_binary(&angel_core::messages::accounts::DepositMsg {
+                            id: member.0,
                             locked_percentage: member.1 .1,
                             liquid_percentage: member.2 .1,
                         })
@@ -580,11 +572,11 @@ pub fn build_donation_messages(
 }
 
 pub fn update_donation_messages(
-    donation_messages: &[(Addr, (Uint128, Decimal), (Uint128, Decimal))],
-    members: Vec<Addr>,
+    donation_messages: &[(u32, (Uint128, Decimal), (Uint128, Decimal))],
+    members: Vec<u32>,
     split: Decimal,
     balance: Uint128,
-) -> Vec<(Addr, (Uint128, Decimal), (Uint128, Decimal))> {
+) -> Vec<(u32, (Uint128, Decimal), (Uint128, Decimal))> {
     // set split percentages between locked & liquid accounts
     let member_portion = balance
         .checked_div(Uint128::from(members.len() as u128))
@@ -598,18 +590,18 @@ pub fn update_donation_messages(
             .into_iter()
             .position(|msg| &msg.0 == member);
 
-        if pos != None {
+        if let Some(pos) = pos {
             // member addr already exists in the messages vec. Update values.
-            let mut msg_data = donation_messages[pos.unwrap()].clone();
+            let mut msg_data = donation_messages[pos];
             msg_data.1 .0 += member_portion * lock_split;
             msg_data.1 .1 = lock_split;
             msg_data.2 .0 += member_portion * split;
             msg_data.2 .1 = split;
-            donation_messages[pos.unwrap()] = msg_data;
+            donation_messages[pos] = msg_data;
         } else {
             // add new entry for the member
             donation_messages.push((
-                member.clone(), // Addr
+                *member, // Addr
                 (member_portion * lock_split, lock_split),
                 (member_portion * split, split),
             ));

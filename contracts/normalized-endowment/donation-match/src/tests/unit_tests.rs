@@ -9,7 +9,8 @@ const RESERVE_TOKEN: &str = "reserve-token";
 const LP_PAIR_CONTRACT: &str = "lp-pair-contract";
 const REGISTRAR_CONTRACT: &str = "registrar-contract";
 
-const ENDOWMENT: &str = "endowment_contract";
+const ACCOUNTS_CONTRACT: &str = "accounts-contract";
+const ENDOWMENT_ID: u32 = 1;
 const UST_AMT: u128 = 50_u128;
 const DONOR: &str = "donor";
 const DAO_TOKEN: &str = "dao-token";
@@ -20,6 +21,7 @@ fn test_proper_initialization() {
 
     let info = mock_info("anyone", &[]);
     let instantiate_msg = InstantiateMsg {
+        id: ENDOWMENT_ID,
         reserve_token: RESERVE_TOKEN.to_string(),
         lp_pair: LP_PAIR_CONTRACT.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
@@ -36,6 +38,7 @@ fn test_get_config() {
 
     let info = mock_info("anyone", &[]);
     let instantiate_msg = InstantiateMsg {
+        id: ENDOWMENT_ID,
         reserve_token: RESERVE_TOKEN.to_string(),
         lp_pair: LP_PAIR_CONTRACT.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
@@ -60,6 +63,7 @@ fn test_execute_donor_match() {
 
     let info = mock_info("anyone", &[]);
     let instantiate_msg = InstantiateMsg {
+        id: ENDOWMENT_ID,
         reserve_token: RESERVE_TOKEN.to_string(),
         lp_pair: LP_PAIR_CONTRACT.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
@@ -70,6 +74,7 @@ fn test_execute_donor_match() {
 
     // Fail the "donor_match" since info.sender is not endowment contract
     let donor_match_msg = ExecuteMsg::DonorMatch {
+        endowment_id: ENDOWMENT_ID,
         amount: Uint128::from(UST_AMT),
         donor: Addr::unchecked(DONOR),
         token: Addr::unchecked(DAO_TOKEN),
@@ -84,22 +89,24 @@ fn test_execute_donor_match() {
 
     // Fail the "donor_match" since did not send enough UST
     let donor_match_msg = ExecuteMsg::DonorMatch {
+        endowment_id: ENDOWMENT_ID,
         amount: Uint128::from(UST_AMT),
         donor: Addr::unchecked(DONOR),
         token: Addr::unchecked(DAO_TOKEN),
     };
-    let info = mock_info(ENDOWMENT, &coins(30, "uusd"));
+    let info = mock_info(ACCOUNTS_CONTRACT, &coins(30, "uusd"));
 
     let err = execute(deps.as_mut(), mock_env(), info, donor_match_msg).unwrap_err();
     assert_eq!(err, ContractError::InsufficientFunds {});
 
     // Succeed the "donor_match" exeuction
     let donor_match_msg = ExecuteMsg::DonorMatch {
+        endowment_id: ENDOWMENT_ID,
         amount: Uint128::from(UST_AMT),
         donor: Addr::unchecked(DONOR),
         token: Addr::unchecked(DAO_TOKEN),
     };
-    let info = mock_info(ENDOWMENT, &coins(UST_AMT, "uusd"));
+    let info = mock_info(ACCOUNTS_CONTRACT, &coins(UST_AMT, "uusd"));
 
     let res = execute(deps.as_mut(), mock_env(), info, donor_match_msg).unwrap();
     assert_eq!(res.messages.len(), 1);

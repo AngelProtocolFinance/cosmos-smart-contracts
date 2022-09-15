@@ -4,10 +4,9 @@ use angel_core::responses::vault::VaultConfigResponse;
 use cosmwasm_std::{Deps, Uint128};
 use cw20::TokenInfoResponse;
 
-pub fn query_balance(deps: Deps, address: String) -> Uint128 {
-    let address = deps.api.addr_validate(&address).unwrap();
+pub fn query_balance(deps: Deps, endowment_id: u32) -> Uint128 {
     BALANCES
-        .load(deps.storage, &address)
+        .load(deps.storage, &endowment_id)
         .unwrap_or_else(|_| Uint128::zero())
 }
 

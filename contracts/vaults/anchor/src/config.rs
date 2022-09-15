@@ -1,4 +1,5 @@
-use cosmwasm_std::{Addr, Decimal, StdResult, Storage, Uint128};
+use angel_core::structs::AccountType;
+use cosmwasm_std::{Addr, Decimal, Decimal256, StdResult, Storage, Uint128};
 use cosmwasm_storage::{ReadonlySingleton, Singleton};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
@@ -10,6 +11,8 @@ pub static CONFIG_KEY: &[u8] = b"config";
 pub struct Config {
     pub owner: Addr,
     pub registrar_contract: Addr,
+    pub acct_type: AccountType,
+    pub sibling_vault: Addr,
     pub moneymarket: Addr,
     pub input_denom: String,
     pub yield_token: Addr,
@@ -53,15 +56,14 @@ impl TokenInfo {
 #[serde(rename_all = "snake_case")]
 pub struct PendingInfo {
     pub typ: String, // type of pending transaction ('typ', because 'type' is protected keyword in Rust...)
-    pub accounts_address: Addr, // Addr of org. sending Accounts SC
+    pub endowment_id: u32, // ID of Endowment that send msg from Accounts contract
     pub beneficiary: Option<Addr>, // return to the beneficiary
     pub fund: Option<u64>, // return to the active fund
-    pub locked: Uint128,
-    pub liquid: Uint128,
-    pub payout_address: Option<Addr>, // Addr to pay the fee, like "withdraw_fee"
-    pub fee_amount: Option<Uint128>,  // Fee amount to pay to "payout_address"
+    pub amount: Uint128,
 }
 
 pub const TOKEN_INFO: Item<TokenInfo> = Item::new("token_info");
-pub const BALANCES: Map<&Addr, Uint128> = Map::new("balance");
+pub const TREASURY_TOKENS: Item<Uint128> = Item::new("treasury_tokens");
+pub const BALANCES: Map<&u32, Uint128> = Map::new("balances");
 pub const PENDING: Map<&[u8], PendingInfo> = Map::new("pending");
+pub const DEPOSIT_TOKEN_DENOM: Item<String> = Item::new("deposit_token_denom");

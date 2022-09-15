@@ -67,6 +67,7 @@ pub fn instantiate(
     state_store(deps.storage).save(&state)?;
 
     Ok(Response::default()
+        .add_attribute("endow_id", msg.id.to_string())
         .add_attribute("dao_addr", env.contract.address.to_string())
         .add_submessages(
             build_dao_token_messages(deps, msg.token, msg.endow_type, msg.endow_owner).unwrap(),
@@ -120,7 +121,7 @@ pub fn build_dao_token_messages(
                     symbol,
                     decimals: 6,
                     initial_balances: vec![Cw20Coin {
-                        address: endow_owner.to_string(),
+                        address: endow_owner,
                         amount: initial_supply,
                     }],
                     mint: None,
@@ -313,7 +314,7 @@ pub fn dao_token_reply(
             }
 
             // update the "dao_token" to be the new contract
-            if dao_token_addr == String::from("") {
+            if dao_token_addr == *"" {
                 return Err(ContractError::Std(StdError::GenericErr {
                     msg: "DAO Token contract not found in event logs".to_string(),
                 }));
@@ -323,7 +324,7 @@ pub fn dao_token_reply(
             config.dao_token = deps.api.addr_validate(&dao_token_addr)?;
             config_store(deps.storage).save(&config)?;
 
-            Ok(Response::default().add_attribute("dao_token_addr", dao_token_addr.to_string()))
+            Ok(Response::default().add_attribute("dao_token_addr", dao_token_addr))
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
@@ -346,7 +347,7 @@ pub fn donation_match_reply(
                     }
                 }
             }
-            if donation_match_contract_addr == String::from("") {
+            if donation_match_contract_addr == *"" {
                 return Err(ContractError::Std(StdError::GenericErr {
                     msg: "Donation Match contract not found in event logs".to_string(),
                 }));
@@ -568,7 +569,7 @@ pub fn create_poll(
 
     Ok(Response::new().add_attributes(vec![
         ("action", "create_poll"),
-        ("creator", &new_poll.creator.to_string().as_str()),
+        ("creator", &(new_poll.creator.to_string()).as_str()),
         ("poll_id", &poll_id.to_string()),
         ("end_height", new_poll.end_height.to_string().as_str()),
     ]))
@@ -785,7 +786,7 @@ pub fn cast_vote(
     Ok(Response::new().add_attributes(vec![
         ("action", "cast_vote"),
         ("poll_id", &poll_id.to_string()),
-        ("amount", &amount.to_string().as_str()),
+        ("amount", ((amount.to_string()).as_str())),
         ("voter", info.sender.to_string().as_str()),
         ("vote_option", vote_info.vote.to_string().as_str()),
     ]))

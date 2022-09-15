@@ -1,10 +1,9 @@
+use angel_core::responses::accounts::EndowmentDetailsResponse;
 // Contains mock functionality to test multi-contract scenarios
-use angel_core::errors::core::ContractError;
-use angel_core::responses::registrar::{
-    ConfigResponse, EndowmentDetailResponse, EndowmentListResponse, VaultDetailResponse,
-};
+use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
 use angel_core::structs::{
-    AcceptedTokens, EndowmentEntry, EndowmentStatus, EndowmentType, SplitDetails, Tier, YieldVault,
+    AcceptedTokens, AccountStrategies, AccountType, OneOffVaults, RebalanceDetails, SplitDetails,
+    YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -23,28 +22,13 @@ use terraswap::asset::Asset;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    EndowmentList {
-        name: Option<String>,
-        owner: Option<String>,
-        status: Option<String>,
-        tier: Option<Option<String>>,
-        endow_type: Option<String>,
-    },
-    Simulation {
-        offer_asset: Asset,
-    },
-    Balance {
-        address: String,
-    },
-    // Mock the `registrar` endowment
-    Endowment {
-        endowment_addr: String,
-    },
+    Simulation { offer_asset: Asset },
+    Balance { address: String },
     // Mock the `registrar` config
     Config {},
-    Vault {
-        vault_addr: String,
-    },
+    Vault { vault_addr: String },
+    // Mock the `accounts` endowment
+    Endowment { id: u32 },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -228,27 +212,27 @@ impl WasmMockQuerier {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
-                QueryMsg::EndowmentList {
-                    name: _,
-                    owner: _,
-                    status: _,
-                    tier: _,
-                    endow_type: _,
-                } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&EndowmentListResponse {
-                        endowments: vec![EndowmentEntry {
-                            address: Addr::unchecked("endowment_contract"),
-                            name: Some("test-endow".to_string()),
-                            logo: Some("test-logo".to_string()),
-                            image: Some("test-image".to_string()),
-                            un_sdg: Some(333_u64),
-                            owner: "endowment-owner".to_string(),
-                            status: EndowmentStatus::Approved,
-                            tier: None,
-                            endow_type: EndowmentType::Charity,
-                        }],
-                    })
-                    .unwrap(),
+                QueryMsg::Endowment { id: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&EndowmentDetailsResponse {
+                        owner: Addr::unchecked("endow-cw3"),
+                        dao: None,
+                        dao_token: None,
+                        name: "Test Endowment".to_string(),
+                        description: "Test endowment".to_string(),
+                        withdraw_before_maturity: true,
+                        strategies: AccountStrategies::default(),
+                        status: angel_core::structs::EndowmentStatus::Approved,
+                        endow_type: angel_core::structs::EndowmentType::Charity,
+                        maturity_time: None,
+                        oneoff_vaults: OneOffVaults::default(),
+                        rebalance: RebalanceDetails::default(),
+                        donation_match_contract: "donation-match-contract".to_string(),
+                        kyc_donors_only: false,
+                        maturity_whitelist: vec![],
+                        deposit_approved: true,
+                        withdraw_approved: true,
+                        pending_redemptions: 0,
+                    }).unwrap()
                 )),
                 QueryMsg::Simulation { offer_asset: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&SimulationResponse {
@@ -264,37 +248,14 @@ impl WasmMockQuerier {
                     })
                     .unwrap(),
                 )),
-                QueryMsg::Endowment { endowment_addr } => {
-                    if endowment_addr != "endowment_contract".to_string() {
-                        SystemResult::Err(SystemError::InvalidResponse {
-                            error: "Query error".to_string(),
-                            response: to_binary(&ContractError::Unauthorized {}.to_string())
-                                .unwrap(),
-                        })
-                    } else {
-                        SystemResult::Ok(ContractResult::Ok(
-                            to_binary(&EndowmentDetailResponse {
-                                endowment: EndowmentEntry {
-                                    address: Addr::unchecked("Test-Endowment-Address"),
-                                    name: Some("Test-Endowment-#1".to_string()),
-                                    logo: Some("test-logo".to_string()),
-                                    image: Some("test-image".to_string()),
-                                    un_sdg: Some(333_u64),
-                                    owner: "Test-Endowment-Owner".to_string(),
-                                    status: angel_core::structs::EndowmentStatus::Approved,
-                                    endow_type: angel_core::structs::EndowmentType::Charity,
-                                    tier: Some(Tier::Level1),
-                                },
-                            })
-                            .unwrap(),
-                        ))
-                    }
-                }
                 QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&ConfigResponse {
                         version: "1.7.0".to_string(),
                         owner: "Test-Endowment-Owner".to_string(),
-                        accounts_code_id: 123,
+                        accounts_contract: Some("accounts-contract".to_string()),
+                        rebalance: RebalanceDetails::default(),
+                        applications_review: "applications-review".to_string(),
+                        swaps_router: Some("swaps-router".to_string()),
                         cw3_code: Some(124),
                         cw4_code: Some(125),
                         subdao_gov_code: Some(126),
@@ -308,7 +269,6 @@ impl WasmMockQuerier {
                         gov_contract: None,
                         treasury: "treasury-address".to_string(),
                         tax_rate: Decimal::from_ratio(10_u64, 100_u64),
-                        default_vault: None,
                         index_fund: None,
                         split_to_liquid: SplitDetails::default(),
                         donation_match_charites_contract: Some(MOCK_CONTRACT_ADDR.to_string()),
@@ -335,8 +295,10 @@ impl WasmMockQuerier {
                             yield_token: Addr::unchecked("yield-token").to_string(),
                             approved: true,
                             restricted_from: vec![],
+                            acct_type: AccountType::Locked,
                         },
-                    }).unwrap(),
+                    })
+                    .unwrap(),
                 )),
             },
             _ => self.base.handle_query(request),

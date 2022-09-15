@@ -8,9 +8,7 @@ use angel_core::messages::accounts::QueryMsg as AccountQueryMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::subdao_bonding_token::Cw20HookMsg as DaoTokenHookMsg;
 use angel_core::responses::accounts::EndowmentDetailsResponse;
-use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfig, EndowmentDetailResponse,
-};
+use angel_core::responses::registrar::ConfigResponse as RegistrarConfig;
 use angel_core::structs::{EndowmentStatus, EndowmentType};
 use cosmwasm_std::{
     attr, entry_point, from_binary, to_binary, Addr, Binary, CosmosMsg, Deps, DepsMut, Env,
@@ -51,7 +49,9 @@ pub fn instantiate(
         },
     )?;
 
-    Ok(Response::new().add_attribute("donation_match_addr", env.contract.address.to_string()))
+    Ok(Response::new()
+        .add_attribute("endow_id", msg.id.to_string())
+        .add_attribute("donation_match_addr", env.contract.address.to_string()))
 }
 
 pub fn receive_cw20(
@@ -62,12 +62,20 @@ pub fn receive_cw20(
 ) -> Result<Response, ContractError> {
     let api = deps.api;
     match from_binary(&cw20_msg.msg) {
-        Ok(RecieveMsg::DonorMatch {}) => {
-            let contract_addr = api.addr_validate(info.sender.clone().as_str())?;
+        Ok(RecieveMsg::DonorMatch { endowment_id }) => {
+            let contract_addr = api.addr_validate(info.sender.as_str())?;
             let msg_sender = api.addr_validate(&cw20_msg.sender)?;
             // update the info.sender to be the message sender
             info.sender = msg_sender.clone();
-            execute_donor_match(deps, env, info, cw20_msg.amount, msg_sender, contract_addr)
+            execute_donor_match(
+                deps,
+                env,
+                info,
+                endowment_id,
+                cw20_msg.amount,
+                msg_sender,
+                contract_addr,
+            )
         }
         _ => Err(ContractError::InvalidInputs {}),
     }
@@ -83,10 +91,11 @@ pub fn execute(
     match msg {
         // TODO
         ExecuteMsg::DonorMatch {
+            endowment_id,
             amount,
             donor,
             token,
-        } => execute_donor_match(deps, env, info, amount, donor, token),
+        } => execute_donor_match(deps, env, info, endowment_id, amount, donor, token),
     }
 }
 
@@ -94,6 +103,7 @@ fn execute_donor_match(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    endowment_id: u32,
     amount: Uint128,
     donor: Addr,
     token: Addr,
@@ -101,24 +111,36 @@ fn execute_donor_match(
     let uusd_amount = amount;
     let dao_token = token;
     let donor = donor.to_string();
-    let endowment_contract = info.sender.to_string();
+    let accounts_contract = info.sender.to_string();
 
     let config = CONFIG.load(deps.storage)?;
 
-    // Validation 1. Check if the tx sender is valid endowment contract
-    let endow_detail: EndowmentDetailResponse = deps.querier.query_wasm_smart(
+    // Validation 1. Check if the tx sender is valid accounts contract & endowment ID is valid
+    let registrar_config: RegistrarConfig = deps.querier.query_wasm_smart(
         config.registrar_contract.clone(),
-        &RegistrarQueryMsg::Endowment {
-            endowment_addr: info.sender.to_string(),
-        },
+        &RegistrarQueryMsg::Config {},
     )?;
 
-    if endow_detail.endowment.status != EndowmentStatus::Approved {
+    match registrar_config.accounts_contract {
+        Some(addr) => {
+            if addr != accounts_contract {
+                return Err(ContractError::Unauthorized {});
+            }
+        }
+        None => return Err(ContractError::AccountDoesNotExist {}),
+    }
+
+    let endow_detail: EndowmentDetailsResponse = deps.querier.query_wasm_smart(
+        accounts_contract.to_string(),
+        &AccountQueryMsg::Endowment { id: endowment_id },
+    )?;
+
+    if endow_detail.status != EndowmentStatus::Approved {
         return Err(ContractError::Unauthorized {});
     }
 
     // Validation 2. Check if the correct endowment is calling this entry
-    match endow_detail.endowment.endow_type {
+    match endow_detail.endow_type {
         EndowmentType::Charity => {
             let registrar_config: RegistrarConfig = deps.querier.query_wasm_smart(
                 config.registrar_contract.clone(),
@@ -131,10 +153,7 @@ fn execute_donor_match(
             }
         }
         EndowmentType::Normal => {
-            let endow: EndowmentDetailsResponse = deps
-                .querier
-                .query_wasm_smart(config.registrar_contract, &AccountQueryMsg::Endowment {})?;
-            if env.contract.address.to_string() != endow.donation_match_contract {
+            if env.contract.address != endow_detail.donation_match_contract {
                 return Err(ContractError::Unauthorized {});
             }
         }
@@ -186,7 +205,8 @@ fn execute_donor_match(
             msg: to_binary(&DaoTokenHookMsg::DonorMatch {
                 amount: reserve_token_amount,
                 donor,
-                endowment_contract,
+                accounts_contract,
+                endowment_id,
             })?,
         })?,
         funds: vec![],

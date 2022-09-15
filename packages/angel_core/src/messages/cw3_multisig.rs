@@ -10,12 +10,16 @@ use std::fmt;
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
     pub group_addr: String,
+    pub id: u32,
+    pub cw4_members: Vec<Member>,
+    pub cw4_code: u64,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct EndowmentInstantiateMsg {
+    pub id: u32,
     pub cw4_members: Vec<Member>,
     pub cw4_code: u64,
     pub threshold: Threshold,

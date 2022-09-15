@@ -7,8 +7,8 @@ use crate::state::{
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    attr, coins, from_binary, to_binary, Addr, Api, ContractResult, CosmosMsg, Decimal, Deps,
-    DepsMut, Env, Reply, Response, StdError, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg,
+    attr, coins, from_binary, to_binary, Addr, Api, CosmosMsg, Decimal, Deps, DepsMut, Env, Reply,
+    Response, StdError, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg,
 };
 use cw20::{Cw20ExecuteMsg, Cw20ReceiveMsg};
 use cw_utils::Duration;

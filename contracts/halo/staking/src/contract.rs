@@ -297,8 +297,7 @@ fn compute_reward(config: &Config, state: &mut State, block_height: u64) {
     }
 
     state.last_distributed = block_height;
-    state.global_reward_index = state.global_reward_index
-        + Decimal::from_ratio(distributed_amount, state.total_bond_amount);
+    state.global_reward_index += Decimal::from_ratio(distributed_amount, state.total_bond_amount);
 }
 
 // withdraw reward to pending reward
