@@ -3,10 +3,64 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, sendTransactionWithFunds } from "../../../utils/helpers";
+import { sendMessageViaCw3Proposal, sendTransaction, sendTransactionWithFunds } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
+
+//----------------------------------------------------------------------------------------
+// TEST: Only owner can update owner/admin of the Index Fund.
+//
+// SCENARIO:
+// (config)Owner updates the owner address in Index Fund.
+//
+//----------------------------------------------------------------------------------------
+export async function testIndexFundUpdateOwner(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  indexFund: string,
+  new_owner: string,
+): Promise<void> {
+  process.stdout.write(
+    "Test - Owner can set new_owner address in an Index Fund"
+  );
+
+  await expect(
+    sendTransaction(juno, apTeam, indexFund, {
+      update_owner: { new_owner },
+    })
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Only owner can update registrar of the Index Fund.
+//
+// SCENARIO:
+// (config)Owner updates the owner address in Index Fund.
+//
+//----------------------------------------------------------------------------------------
+export async function testIndexFundUpateRegistrar(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  indexFund: string,
+  new_registrar: string,
+): Promise<void> {
+  process.stdout.write(
+    "Test - Owner can set new_registrar address in an Index Fund"
+  );
+
+  let config = await juno.queryContractSmart(indexFund, { config: {} });
+  let cw3 = config.owner;
+
+  await expect(
+    sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
+      update_registrar: { new_registrar },
+    },
+    )
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
 
 //----------------------------------------------------------------------------------------
 // TEST: Normal Donor cannot send funds to the Index Fund
@@ -30,8 +84,8 @@ export async function testDonorSendsToIndexFund(
 
   await expect(
     sendTransactionWithFunds(juno, pleb, indexFund, {
-        deposit: { fund_id, split },
-      },
+      deposit: { fund_id, split },
+    },
       [{ denom: "ujuno", amount }]
     )
   );
@@ -53,22 +107,24 @@ export async function testTcaMemberSendsToIndexFund(
 ): Promise<void> {
   process.stdout.write("Test - TCA Member can send a JUNO donation to an Index Fund");
   await expect(
-    sendTransactionWithFunds(juno, tca, indexFund, { 
-        deposit: { fund_id: undefined, split: undefined } 
-      },
+    sendTransactionWithFunds(juno, tca, indexFund, {
+      deposit: { fund_id: undefined, split: undefined }
+    },
       [{ denom: "ujuno", amount: "300000" }]
     )
   );
   await expect(
-    sendTransactionWithFunds(juno, tca, indexFund, { 
-      deposit: { fund_id: 3, split: undefined } },
+    sendTransactionWithFunds(juno, tca, indexFund, {
+      deposit: { fund_id: 3, split: undefined }
+    },
       [{ denom: "ujuno", amount: "400000" }]
     )
   );
   await expect(
-    sendTransactionWithFunds(juno, tca, indexFund, { 
-        deposit: { fund_id: 3, split: "0.76" } },
-        [{ denom: "ujuno", amount: "400000" }]
+    sendTransactionWithFunds(juno, tca, indexFund, {
+      deposit: { fund_id: 3, split: "0.76" }
+    },
+      [{ denom: "ujuno", amount: "400000" }]
     )
   );
   console.log(chalk.green(" Passed!"));
@@ -77,10 +133,11 @@ export async function testTcaMemberSendsToIndexFund(
 export async function testUpdatingIndexFundConfigs(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3: string,
   indexFund: string
 ): Promise<void> {
   process.stdout.write("AP Team updates Index Fund configs - funding goal");
-  await sendTransaction(juno, apTeam, indexFund, {
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
     update_config: {
       funding_goal: "10000000000",
       fund_rotation: undefined,
@@ -92,13 +149,14 @@ export async function testUpdatingIndexFundConfigs(
 export async function testUpdateAllianceMembersList(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3: string,
   indexFund: string,
   address: string,
   member: any,
   action: string
 ): Promise<void> {
   process.stdout.write("AP Team updates Angel Alliance members list");
-  await sendTransaction(juno, apTeam, indexFund, {
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
     update_alliance_member_list: { address, member, action },
   });
   console.log(chalk.green(" Done!"));
@@ -120,8 +178,12 @@ export async function testUpdateFundMembers(
   remove: string[]
 ): Promise<void> {
   process.stdout.write("Test - SC owner can update fund members");
+
+  let config = await juno.queryContractSmart(indexFund, { config: {} });
+  let cw3 = config.owner;
+
   await expect(
-    sendTransaction(juno, apTeam, indexFund, {
+    sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
       update_members: { fund_id: fundId, add: add, remove: remove },
     })
   );
@@ -137,6 +199,7 @@ export async function testUpdateFundMembers(
 export async function testCreateIndexFund(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3: string,
   indexFund: string,
   name: string,
   description: string,
@@ -145,7 +208,7 @@ export async function testCreateIndexFund(
 ): Promise<void> {
   process.stdout.write("Test - SC owner can create index fund");
   await expect(
-    sendTransaction(juno, apTeam, indexFund, {
+    sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
       create_fund: {
         name: name,
         description: description,
@@ -171,11 +234,62 @@ export async function testRemoveIndexFund(
   fundId: number
 ): Promise<void> {
   process.stdout.write("Test - SC owner can remove index fund");
+
+  let config = await juno.queryContractSmart(indexFund, { config: {} });
+  let cw3 = config.owner;
+
   await expect(
-    sendTransaction(juno, apTeam, indexFund, {
+    sendMessageViaCw3Proposal(juno, apTeam, cw3, indexFund, {
       remove_fund: { fund_id: fundId },
     })
-  );
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: SC owner can remove a member
+//
+// SCENARIO:
+// Remove the member
+//----------------------------------------------------------------------------------------
+export async function testIndexFundRemoveMember(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  indexFund: string,
+  member: number,
+): Promise<void> {
+  process.stdout.write("Test - SC owner can remove member");
+
+  let config = await juno.queryContractSmart(indexFund, { config: {} });
+  let registrar = config.registrar_contract;
+
+  await expect(
+    sendTransaction(juno, apTeam, indexFund, {
+      remove_member: { member },
+    })
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: SC owner can update alliance member
+//
+// SCENARIO:
+// Owner updates the alliance member
+//----------------------------------------------------------------------------------------
+export async function testIndexFundUpdateAllianceMember(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  indexFund: string,
+  address: string,
+  member: any,
+): Promise<void> {
+  process.stdout.write("Test - SC owner can update alliance member");
+  await expect(
+    sendTransaction(juno, apTeam, indexFund, {
+      update_alliance_member: { address, member },
+    })
+  ).to.be.ok;
   console.log(chalk.green(" Passed!"));
 }
 
@@ -286,6 +400,7 @@ export async function testQueryIndexFundDeposit(
   process.stdout.write("Test - Query IndexFund Deposit msg builder");
   const result: any = await juno.queryContractSmart(indexFund, {
     deposit: {
+      token_denom: "ujunox",
       amount: "100000000",
       fund_id: 6,
     },

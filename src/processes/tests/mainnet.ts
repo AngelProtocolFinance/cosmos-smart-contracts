@@ -9,6 +9,8 @@ import {
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
   testSendDonationToEndowment,
+  testUpdateEndowmentStatus,
+  testQueryAccountsEndowmentList,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -31,17 +33,10 @@ import {
   testAddMemberToC4Group,
 } from "./core/multisig";
 import {
-  testAngelTeamCanTriggerVaultsHarvest,
-  testMigrateAllAccounts,
-  testUpdateEndowmentStatus,
   testUpdatingRegistrarConfigs,
-  testQueryRegistrarApprovedVaultList,
-  testQueryRegistrarApprovedVaultRateList,
-  testQueryRegistrarConfig,
-  testQueryRegistrarEndowmentList,
-  testQueryRegistrarEndowmentDetails,
-  testQueryRegistrarVault,
   testQueryRegistrarVaultList,
+  testQueryRegistrarConfig,
+  testQueryRegistrarVault,
 } from "./core/registrar";
 import { testQueryVaultConfig } from "./core/vaults";
 import {
@@ -113,9 +108,12 @@ export async function testExecute(
   registrar: string,
   indexFund: string,
   anchorVault: string,
-  endowmentContract: string,
+  accounts: string,
+  endowmentID: number,
   cw4GrpApTeam: string,
   cw3ApTeam: string,
+  cw4GrpReviewTeam: string,
+  cw3ReviewTeam: string,
   junoswapFactory: string,
   junoswapToken: string,
   junoswapPair: string,
@@ -192,12 +190,11 @@ export async function testExecute(
 
   // Test query
   // await testQueryRegistrarConfig(juno, registrar);
-  // await testQueryRegistrarEndowmentList(juno, registrar);
   // await testQueryRegistrarEndowmentDetails(juno, registrar, endowmentContract1);
-  // await testQueryRegistrarApprovedVaultList(juno, registrar);
-  // await testQueryRegistrarApprovedVaultRateList(juno, registrar);
+  // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVault(juno, registrar, anchorVault);
+  // await testQueryAccountsEndowmentList(juno, accounts);
   // await testQueryAccountsBalance(juno, endowmentContract);
   // await testQueryVaultConfig(juno, anchorVault);
   // await testQueryAccountsConfig(juno, endowmentContract);
@@ -228,7 +225,7 @@ export async function testExecute(
   //   "5000000000", // deposit
   //   100800, // snapshot period
   //   undefined, // unbonding period
-  //   undefined // gov_hodler
+  //   undefined // gov_hodler_contract
   // );
   // await testGovResetClaims(juno, apTeamAddr, haloGov, [apTeamAddr]);
   // await testQueryGovConfig(juno, haloGov);

@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction } from "../../../utils/helpers";
+import { sendMessageViaCw3Proposal, sendTransaction } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -18,11 +18,12 @@ const { expect } = chai;
 export async function testUpdatingRegistrarConfigs(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3ApTeam: string,
   registrar: string,
   config: any
 ): Promise<void> {
   process.stdout.write("AP Team updates Registrar Config");
-  await sendTransaction(juno, apTeam, registrar, {
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3ApTeam, registrar, {
     update_config: config,
   });
   console.log(chalk.green(" Done!"));
@@ -202,6 +203,91 @@ export async function testMigrateAllAccounts(
 }
 
 //----------------------------------------------------------------------------------------
+// TEST: Only owner can update owner/admin of the Registrar Config.
+//
+// SCENARIO:
+// (config)Owner updates the owner address in registrar config.
+//
+//----------------------------------------------------------------------------------------
+export async function testRegistrarUpdateOwner(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  registrar: string,
+  new_owner: string,
+): Promise<void> {
+  process.stdout.write(
+    "Test - Owner can set new_owner address in Registrar"
+  );
+
+  await expect(
+    sendTransaction(juno, apTeam, registrar, {
+      update_owner: { new_owner },
+    },
+    )
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Only owner can update the "EndowTypeFees"
+//
+// SCENARIO:
+// (config)Owner updates both "EndowTypeFees"
+//
+//----------------------------------------------------------------------------------------
+export async function testUpdateEndowTypeFees(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  registrar: string,
+  fees: any, // { endowtype_charity: string | undefined, endowtype_normal: string | undefined }
+): Promise<void> {
+  process.stdout.write(
+    "Test - Owner can update EndowTypeFees in Registrar"
+  );
+
+  await expect(
+    sendTransaction(juno, apTeam, registrar, {
+      update_endow_type_fees: {
+        endowtype_charity: fees.endowtype_charity,
+        endowtype_normal: fees.endowtype_normal,
+      }
+    },
+    )
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Only owner can update the "NetworkConnection(s)"
+//
+// SCENARIO:
+// (config)Owner updates both "EndowTypeFees"
+//
+//----------------------------------------------------------------------------------------
+export async function testUpdateNetworkConnections(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  registrar: string,
+  info: any, // { network_info: obj, action: "add" | "remove" }
+): Promise<void> {
+  process.stdout.write(
+    "Test - Owner can update network_connections in Registrar"
+  );
+
+  await expect(
+    sendTransaction(juno, apTeam, registrar, {
+      update_network_connections: {
+        network_info: info.network_info,
+        action: info.action,
+      }
+    },
+    )
+  ).to.be.ok;
+  console.log(chalk.green(" Passed!"));
+}
+
+
+//----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
 
@@ -218,66 +304,13 @@ export async function testQueryRegistrarConfig(
   console.log(chalk.green(" Passed!"));
 }
 
-export async function testQueryRegistrarEndowmentDetails(
-  juno: SigningCosmWasmClient,
-  registrar: string,
-  endowment: string
-): Promise<void> {
-  process.stdout.write("Test - Query Registrar Endowment Details/Status");
-  const result: any = await juno.queryContractSmart(registrar, {
-    endowment: { endowment_addr: endowment },
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryRegistrarEndowmentList(
-  juno: SigningCosmWasmClient,
-  registrar: string
-): Promise<void> {
-  process.stdout.write("Test - Query Registrar EndowmentList");
-  const result: any = await juno.queryContractSmart(registrar, {
-    endowment_list: {},
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryRegistrarApprovedVaultList(
-  juno: SigningCosmWasmClient,
-  registrar: string
-): Promise<void> {
-  process.stdout.write("Test - Query Registrar ApprovedVaultList");
-  const result: any = await juno.queryContractSmart(registrar, {
-    approved_vault_list: {},
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryRegistrarApprovedVaultRateList(
-  juno: SigningCosmWasmClient,
-  registrar: string
-): Promise<void> {
-  process.stdout.write("Test - Query Registrar Approved Vault Exchange Rate List");
-  const result: any = await juno.queryContractSmart(registrar, {
-    approved_vault_rate_list: {},
-  });
-
-  console.log(result);
-  console.log(chalk.green(" Passed!"));
-}
-
 export async function testQueryRegistrarVaultList(
   juno: SigningCosmWasmClient,
   registrar: string
 ): Promise<void> {
-  process.stdout.write("Test - Query Registrar VaultList");
+  process.stdout.write("Test - Query Registrar Vault List");
   const result: any = await juno.queryContractSmart(registrar, {
-    vault_list: {},
+    vault_list: { approved: true },
   });
 
   console.log(result);

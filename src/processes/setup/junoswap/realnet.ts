@@ -6,6 +6,7 @@ import {
   sendTransaction,
   toEncodedBinary,
 } from "../../../utils/helpers";
+import { coin } from "@cosmjs/proto-signing";
 
 // Deploy HALO Token and HALO/JUNO pair contracts to the TestNet/MainNet
 export async function setupJunoSwap(
@@ -70,7 +71,7 @@ export async function setupJunoSwap(
 
   // Get the LP Token address of newly created pair
   process.stdout.write("Query new Pair's LP Token contract");
-  const result: any = await juno.wasm.contractQuery(pairContract, {
+  const result: any = await juno.queryContractSmart(pairContract, {
     pair: {},
   });
   console.log(
@@ -113,7 +114,7 @@ export async function setupJunoSwap(
         ],
       },
     },
-    { ujuno: native_liquidity }
+    [ coin(native_liquidity, "ujuno")]
   );
   console.log(chalk.green(" Done!"));
 }

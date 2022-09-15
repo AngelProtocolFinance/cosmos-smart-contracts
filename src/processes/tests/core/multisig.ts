@@ -3,15 +3,10 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
+import { sendTransaction, toEncodedBinary, VoteOption } from "../../../utils/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
-
-export enum VoteOption {
-  YES,
-  NO,
-}
 
 //----------------------------------------------------------------------------------------
 // TEST: Add a new AP Team Member to the C4 AP Team Group
@@ -70,7 +65,7 @@ export async function testProposalApprovingEndowment(
   apTeam: string,
   cw3: string,
   registrar: string,
-  endowment: string,
+  endowment: number,
 ): Promise<void> {
   process.stdout.write("Test - CW3 Member Proposes to Approve an Endowment");
 
@@ -86,7 +81,7 @@ export async function testProposalApprovingEndowment(
               funds: [],
               msg: toEncodedBinary({
                 update_endowment_status: {
-                  endowment_addr: endowment,
+                  endowment_id: endowment,
                   status: 1,
                   beneficiary: undefined,
                 },
@@ -120,14 +115,16 @@ export async function testCw3CastVote(
   juno: SigningCosmWasmClient,
   apTeam: string,
   cw3: string,
-  poll_id: number,
-  vote: VoteOption,
+  proposal_id: number,
+  // vote: VoteOption,
+  vote: string,
 ): Promise<void> {
   process.stdout.write("Test - Cast vote");
 
   await expect(
     sendTransaction(juno, apTeam, cw3, {
-      vote: { poll_id, vote },
+      // vote: { proposal_id, vote: true },
+      vote: { proposal_id, vote },
     })
   );
   console.log(chalk.green(" Passed!"));
@@ -191,6 +188,20 @@ export async function testUpdateCw3Config(
   console.log(chalk.green(" Passed!"));
 }
 
+export async function testQueryMultisigGroupWeight(
+  juno: SigningCosmWasmClient,
+  multisig_group: string
+): Promise<void> {
+  process.stdout.write("Test - Query a multisig group's total weight");
+  const result: any = await juno.queryContractSmart(multisig_group, {
+    total_weight: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+
 export async function testQueryMultisigVoters(
   juno: SigningCosmWasmClient,
   multisig: string
@@ -198,6 +209,33 @@ export async function testQueryMultisigVoters(
   process.stdout.write("Test - Query a multisig voters list");
   const result: any = await juno.queryContractSmart(multisig, {
     list_voters: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryProposal(
+  juno: SigningCosmWasmClient,
+  multisig: string,
+  proposal_id: number,
+): Promise<void> {
+  process.stdout.write("Test - Query a proposal by ID");
+  const result: any = await juno.queryContractSmart(multisig, {
+    proposal: { proposal_id },
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryListProposals(
+  juno: SigningCosmWasmClient,
+  multisig: string,
+): Promise<void> {
+  process.stdout.write("Test - Query a list of all proposals");
+  const result: any = await juno.queryContractSmart(multisig, {
+    list_proposals: { start_after: undefined, limit: undefined },
   });
 
   console.log(result);

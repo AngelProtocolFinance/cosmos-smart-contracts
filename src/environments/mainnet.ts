@@ -29,16 +29,20 @@ let apTeamAccount: string;
 let apTreasuryAccount: string;
 
 let registrar: string;
-let cw4GrpOwners: string;
 let cw4GrpApTeam: string;
-let cw3GuardianAngels: string;
 let cw3ApTeam: string;
+let cw4GrpReviewTeam: string;
+let cw3ReviewTeam: string;
 let indexFund: string;
 let anchorVault: string;
-let endowmentContracts: string[];
+let accounts: string;
+let endowmentIDs: number[];
 let apTreasury: string;
 let members: Member[];
 let tcaMembers: string[];
+
+let junoswap_USDC_Juno_PairContract = config.junoswap.usdc_juno_pool;
+let junoswap_USDC_Juno_PairLpStaking = config.junoswap.usdc_juno_pool_staking;
 
 // JunoSwap Contracts
 let junoswapTokenCode: number;
@@ -73,20 +77,23 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(apTreasuryAccount)} as Angel Protocol Treasury`);
 
   registrar = config.contracts.registrar;
+  accounts = config.contracts.accounts;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
+  cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
+  cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   indexFund = config.contracts.indexFund;
-  anchorVault = config.contracts.anchorVault;
-  endowmentContracts = [...config.contracts.endowmentContracts];
+  endowmentIDs = [...config.contracts.endowmentIDs];
   members = [...config.members];
   tcaMembers = [];
 
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
-  console.log(`Using ${chalk.cyan(anchorVault)} as Anchor Vault`);
   console.log(`Using ${chalk.cyan(cw4GrpApTeam)} as CW4 AP Team Group`);
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
-  console.log(`Using ${chalk.cyan(endowmentContracts)} as Endowment Contracts`);
+  console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
+  console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
+  console.log(`Using ${chalk.cyan(endowmentIDs)} as Endowment IDs`);
 
   junoswapTokenCode = config.junoswap.junoswap_token_code;
   junoswapFactory = config.junoswap.junoswap_factory;
@@ -120,7 +127,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(haloVesting)} as HALO vesting`);
 
   // setup client connection to the JUNO network
-  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString("0.025ujunox") });
+  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString("0.0025ujuno") });
 }
 
 // -------------------------------------------------------------------------------------
@@ -138,16 +145,22 @@ export async function startSetupCore(): Promise<void> {
   await setupCore(juno, apTeamAccount, apTreasuryAccount, members, tcaMembers, {
     tax_rate: "0.2", // tax rate
     threshold_absolute_percentage: "0.50", // threshold absolute percentage for "ap-cw3"
-    max_voting_period_height: 1000, // max voting period height for "ap-cw3"
-    max_voting_period_guardians_height: 100, // max voting period guardians height for "ap-cw3"
+    max_voting_period_height: 100000, // max voting period height for "ap-cw3"
     fund_rotation: 10, // index fund rotation
-    turnover_to_multisig: false, // turn over to AP Team multisig
+    fund_member_limit: 10, // fund member limit
+    turnover_to_multisig: true,
     is_localjuno: false, // is LocalJuno
     harvest_to_liquid: "0.75", // harvest to liquid percentage
     tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
     funding_goal: "50000000", // funding goal
-    charity_cw3_multisig_threshold_abs_perc: "0.50", // threshold absolute percentage for "charity-cw3"
-    charity_cw3_multisig_max_voting_period: 100,      // max_voting_period time(unit: seconds) for "charity-cw3"
+    charity_cw3_threshold_abs_perc: "0.50", // threshold absolute percentage for "charity-cw3"
+    charity_cw3_max_voting_period: 100000,      // max_voting_period time(unit: seconds) for "charity-cw3"
+      accepted_tokens:  {
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+        cw20: [],
+      },
+    junoswap_pool_addr: junoswap_USDC_Juno_PairContract, // Junoswap pool (USDC-JUNO) contract
+    junoswap_pool_staking: junoswap_USDC_Juno_PairLpStaking, // Junoswap pool (USDC-JUNO) LP token staking contract
   });
 }
 
@@ -225,10 +238,11 @@ export async function startMigrateCore(): Promise<void> {
     apTeamAccount,
     registrar,
     indexFund,
+    accounts,
     cw4GrpApTeam,
     cw3ApTeam,
+    cw3ReviewTeam,
     [anchorVault],
-    endowmentContracts
   );
 }
 
@@ -276,9 +290,12 @@ export async function startTests(): Promise<void> {
     registrar,
     indexFund,
     anchorVault,
-    endowmentContracts[0],
+    accounts,
+    endowmentIDs[0],
     cw4GrpApTeam,
     cw3ApTeam,
+    cw4GrpReviewTeam,
+    cw3ReviewTeam,
     junoswapFactory,
     junoswapHaloTokenContract,
     junoswapHaloUstPairContract,

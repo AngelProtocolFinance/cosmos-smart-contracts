@@ -1,4 +1,0 @@
-5bc11fc8c62072623c0ba0e32e7b0add3bda85d0ec62b4627ef89daff316634b  target/wasm32-unknown-unknown/release/junoswap_factory.wasm
-be9a7eab5b4d0145aee288f8c589ccc7a7568ed7eb98ebfbab116e610732e943  target/wasm32-unknown-unknown/release/junoswap_pair.wasm
-03c72ae9fde38b8e66514359e4359559a9b7a4f167ef902a5099adf06af58eaa  target/wasm32-unknown-unknown/release/junoswap_router.wasm
-ee41e98ab1c0415c35875c995d96a85911c580cecb7dce83caab547dd3771c99  target/wasm32-unknown-unknown/release/junoswap_token.wasm
