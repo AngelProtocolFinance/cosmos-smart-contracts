@@ -1,4 +1,4 @@
-  // ---------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------
 // TestNet information
 // ---------------------------------------------------------------------------------------------------
 export const testnet = {
@@ -21,6 +21,7 @@ export const testnet = {
   contracts: {
     registrar: "juno1mhnds5wkr26haxpe33svu0jvwsk2nnrwd89zuthc25kjwmx53tgs7hat9k",
     accounts: "juno16sxyhrfjcq7z5q2fhe66q9tkc4204agdynrksj8y6vkucg3sgnrqdkp7ue",
+    donationMatching: "",
     indexFund: "juno1hm8djnz470mrxq67tydezdzhvqsslef4qe5h42aher7grq3venxsprm8py",
     cw4GrpApTeam: "juno1vqwwnmzzgeat62rja9e390fe79aqq56lpamtxcq2c7jzsxxtvwpsc8q5mv",
     cw3ApTeam: "juno1ytnpxkfnt2qeynyspwzu7hzlyulpu4far5gtu9xppalg2p4neecsgdthpj",
@@ -64,7 +65,7 @@ export const testnet = {
     initial_loop_supply: "1000000000000000",
     loop_liquidity: "200000000",
     juno_liquidity: "100000000",
-    
+
     halo_token_contract: "",
     halo_juno_pair_contract: "",
     halo_juno_pair_lp_token: "",
@@ -103,6 +104,7 @@ export const mainnet = {
   contracts: {
     registrar: "",
     accounts: "",
+    donationMatching: "",
     indexFund: "",
     cw4GrpApTeam: "",
     cw3ApTeam: "",

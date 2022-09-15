@@ -56,6 +56,7 @@ let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
 let accounts: string;
+let donationMatching: string;
 let vaultLocked1: string;
 let vaultLiquid1: string;
 let vaultLocked2: string;
@@ -132,6 +133,7 @@ async function initialize() {
 
   registrar = config.contracts.registrar;
   accounts = config.contracts.accounts;
+  donationMatching = config.contracts.donationMatching;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
   cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
@@ -150,6 +152,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
   console.log(`Using ${chalk.cyan(accounts)} as Accounts`);
+  console.log(`Using ${chalk.cyan(donationMatching)} as DonationMatching`);
   console.log(`Using ${chalk.cyan(endowId1)} as Endowment ID #1`);
   console.log(`Using ${chalk.cyan(endowId2)} as Endowment ID #2`);
   console.log(`Using ${chalk.cyan(endowId3)} as Endowment ID #3`);
@@ -304,7 +307,7 @@ export async function startSetupMockVaults(): Promise<void> {
     {
       apTeam,
       apTreasury,
-    },    
+    },
     // contracts
     {
       registrar,
@@ -314,7 +317,7 @@ export async function startSetupMockVaults(): Promise<void> {
     {
       harvest_to_liquid: "0.75", // harvest to liquid percentage
       tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
-      accepted_tokens:  {
+      accepted_tokens: {
         native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
         cw20: [],
       },
@@ -340,7 +343,7 @@ export async function startSetupLoopVaults(): Promise<void> {
     {
       apTeam,
       apTreasury,
-    },    
+    },
     // contracts
     {
       registrar,
@@ -353,7 +356,7 @@ export async function startSetupLoopVaults(): Promise<void> {
       loopswap_loop_juno_pair: loopswapLoopJunoPairContract, // LoopSwap LOOP-JUNO pair contract
       loopswap_lp_reward_token: loopswapLoopTokenContract, // LoopSwap Pair LP Staking reward token (LOOP token)
       harvest_to_liquid: "0.75", // harvest to liquid percentage
-      accepted_tokens:  {
+      accepted_tokens: {
         native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
         cw20: [],
       },
@@ -509,6 +512,7 @@ export async function startTests(): Promise<void> {
     vaultLocked2,
     vaultLiquid2,
     accounts,
+    donationMatching,
     endowId1,
     endowId2,
     endowId3,

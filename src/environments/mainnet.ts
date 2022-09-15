@@ -36,6 +36,7 @@ let cw3ReviewTeam: string;
 let indexFund: string;
 let anchorVault: string;
 let accounts: string;
+let donationMatching: string;
 let endowmentIDs: number[];
 let apTreasury: string;
 let members: Member[];
@@ -78,6 +79,7 @@ async function initialize() {
 
   registrar = config.contracts.registrar;
   accounts = config.contracts.accounts;
+  donationMatching = config.contracts.donationMatching;
   cw4GrpApTeam = config.contracts.cw4GrpApTeam;
   cw3ApTeam = config.contracts.cw3ApTeam;
   cw4GrpReviewTeam = config.contracts.cw4GrpReviewTeam;
@@ -155,10 +157,10 @@ export async function startSetupCore(): Promise<void> {
     funding_goal: "50000000", // funding goal
     charity_cw3_threshold_abs_perc: "0.50", // threshold absolute percentage for "charity-cw3"
     charity_cw3_max_voting_period: 100000,      // max_voting_period time(unit: seconds) for "charity-cw3"
-      accepted_tokens:  {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
-        cw20: [],
-      },
+    accepted_tokens: {
+      native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+      cw20: [],
+    },
     junoswap_pool_addr: junoswap_USDC_Juno_PairContract, // Junoswap pool (USDC-JUNO) contract
     junoswap_pool_staking: junoswap_USDC_Juno_PairLpStaking, // Junoswap pool (USDC-JUNO) LP token staking contract
   });
@@ -291,6 +293,7 @@ export async function startTests(): Promise<void> {
     indexFund,
     anchorVault,
     accounts,
+    donationMatching,
     endowmentIDs[0],
     cw4GrpApTeam,
     cw3ApTeam,

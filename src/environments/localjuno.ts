@@ -55,6 +55,7 @@ let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
 let accounts: string;
+let donationMatching: string;
 let vaultLocked1: string;
 let vaultLiquid1: string;
 let vaultLocked2: string;
@@ -137,6 +138,7 @@ async function initialize() {
   cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   indexFund = config.contracts.indexFund;
   accounts = config.contracts.accounts;
+  donationMatching = config.contracts.donationMatching;
   endowId1 = config.contracts.endowId1;
   endowId2 = config.contracts.endowId2;
   endowId3 = config.contracts.endowId3;
@@ -148,6 +150,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(registrar)} as Registrar`);
   console.log(`Using ${chalk.cyan(indexFund)} as IndexFund`);
   console.log(`Using ${chalk.cyan(accounts)} as Accounts`);
+  console.log(`Using ${chalk.cyan(donationMatching)} as DonationMatching`);
   console.log(`Using ${chalk.cyan(endowId1)} as Endowment ID #1`);
   console.log(`Using ${chalk.cyan(endowId2)} as Endowment ID #2`);
   console.log(`Using ${chalk.cyan(endowId3)} as Endowment ID #3`);
@@ -513,6 +516,7 @@ export async function startTests(): Promise<void> {
     vaultLocked2,
     vaultLiquid2,
     accounts,
+    donationMatching,
     endowId1,
     endowId2,
     endowId3,
