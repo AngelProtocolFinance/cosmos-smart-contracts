@@ -328,125 +328,187 @@ async function createEndowments(
 	charity_cw3_threshold_abs_perc: string,
 	charity_cw3_max_voting_period: number,
 ): Promise<void> {
-  // AP Team approves 3 of 4 newly created endowments
-  process.stdout.write("Charities propose endowment applications and CW Review Team approves (3 new)\n");
-  let charity1_wallet = await getWalletAddress(charity1);
-  let charity2_wallet = await getWalletAddress(charity2);
-  let charity3_wallet = await getWalletAddress(charity3);
+	// AP Team approves 3 of 4 newly created endowments
+	process.stdout.write("Charities propose endowment applications and CW Review Team approves (3 new)\n");
+	let charity1_wallet = await getWalletAddress(charity1);
+	let charity2_wallet = await getWalletAddress(charity2);
+	let charity3_wallet = await getWalletAddress(charity3);
 
-  endow_1_id = await sendApplicationViaCw3Proposal(networkUrl, charity1, cw3ReviewTeam, accounts, "unknown", {
-      owner: charity1_wallet,
-      withdraw_before_maturity: false,
-      maturity_time: undefined,
-      maturity_height: undefined,
-      profile: {
-        name: "Test Endowment #1",
-        overview: "A wonderful charity endowment that aims to test all the things",
-        categories: { sdgs: [1], general: [] },
-        tier: 3,
-        logo: "logo1",
-        image: "image1",
-        url: undefined,
-        registration_number: undefined,
-        country_of_origin: undefined,
-        street_address: undefined,
-        contact_email: undefined,
-        social_media_urls: {
-          facebook: undefined,
-          twitter: undefined,
-          linkedin: undefined,
-        },
-        number_of_employees: undefined,
-        average_annual_budget: undefined,
-        annual_revenue: undefined,
-        charity_navigator_rating: undefined,
-        endow_type: "Charity",
-      },
-      cw4_members: [{ addr: charity1_wallet, weight: 1 }],
-      kyc_donors_only: false,
-      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_max_voting_period: charity_cw3_max_voting_period,
-  }, [apTeam]);
-  console.log(
-    chalk.green(" Done!"),
-    `${chalk.blue("Endowment ID")}=${endow_1_id}`
-  );
+	endow_1_id = await sendApplicationViaCw3Proposal(networkUrl, charity1, cw3ReviewTeam, accounts, "unknown", {
+		owner: charity1_wallet,
+		withdraw_before_maturity: false,
+		maturity_time: 300,
+		split_max: "1",
+		split_min: "0",
+		split_default: "0.5",
+		cw4_members: [{ addr: charity1_wallet, weight: 1 }],
+		cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+		cw3_max_voting_period: charity_cw3_max_voting_period,
+		profile: {
+			name: "Test Endowment #1",
+			overview: "A wonderful charity endowment that aims to test all the things",
+			categories: { sdgs: [1], general: [] },
+			tier: 3,
+			logo: "logo1",
+			image: "image1",
+			url: undefined,
+			registration_number: undefined,
+			country_of_origin: undefined,
+			street_address: undefined,
+			contact_email: undefined,
+			social_media_urls: {
+				facebook: undefined,
+				twitter: undefined,
+				linkedin: undefined,
+			},
+			number_of_employees: undefined,
+			average_annual_budget: undefined,
+			annual_revenue: undefined,
+			charity_navigator_rating: undefined,
+			endow_type: "Charity",
+		},
+		kyc_donors_only: false,
+		whitelisted_beneficiaries: [charity1_wallet],
+		whitelisted_contributors: [],
+		dao: {
+			quorum: "0.2",
+			threshold: "0.5",
+			voting_period: 1000000,
+			timelock_period: 1000000,
+			expiration_period: 1000000,
+			proposal_deposit: "1000000",
+			snapshot_period: 1000,
+			token: {
+				bonding_curve: {
+					curve_type: {
+						square_root: {
+							slope: "19307000",
+							power: "428571429",
+							scale: 9,
+						}
+					},
+					name: "AP Endowment DAO Token",
+					symbol: "APEDT",
+					decimals: 6,
+					reserve_decimals: 6,
+					reserve_denom: "ujunox",
+					unbonding_period: 1,
+				}
+			}
+		},
+		donation_match: undefined,
+		earnings_fee: undefined,
+		deposit_fee: undefined,
+		withdraw_fee: undefined,
+		aum_fee: undefined,
+		settings_controller: undefined,
+	}, [apTeam]);
+	console.log(
+		chalk.green(" Done!"),
+		`${chalk.blue("Endowment ID")}=${endow_1_id}`
+	);
 
-  endow_2_id = await sendApplicationViaCw3Proposal(networkUrl, charity2, cw3ReviewTeam, accounts, "unknown", {
-      owner: charity2_wallet,
-      withdraw_before_maturity: false,
-      maturity_time: undefined,
-      maturity_height: undefined,
-      profile: {
-        name: "Test Endowment #2",
-        overview: "An even better endowment full of butterflies and rainbows",
-        categories: { sdgs: [3], general: [] },
-        tier: 2,
-        logo: "logo2",
-        image: "image2",
-        url: undefined,
-        registration_number: undefined,
-        country_of_origin: undefined,
-        street_address: undefined,
-        contact_email: undefined,
-        social_media_urls: {
-          facebook: undefined,
-          twitter: undefined,
-          linkedin: undefined,
-        },
-        number_of_employees: undefined,
-        average_annual_budget: undefined,
-        annual_revenue: undefined,
-        charity_navigator_rating: undefined,
-        endow_type: "Charity",
-      },
-      cw4_members: [{ addr: charity2_wallet, weight: 1 }],
-      kyc_donors_only: false,
-      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_max_voting_period: charity_cw3_max_voting_period,
-  }, [apTeam]);
-  console.log(
-    chalk.green(" Done!"),
-    `${chalk.blue("Endowment ID")}=${endow_2_id}`
-  );
+	endow_2_id = await sendApplicationViaCw3Proposal(networkUrl, charity2, cw3ReviewTeam, accounts, "unknown", {
+		owner: charity2_wallet,
+		withdraw_before_maturity: false,
+		maturity_time: 300,
+		split_max: "1",
+		split_min: "0",
+		split_default: "0.5",
+		cw4_members: [{ addr: charity2_wallet, weight: 1 }],
+		cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+		cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
+		profile: {
+			name: "Test Endowment #2",
+			overview: "An even better endowment full of butterflies and rainbows",
+			categories: { sdgs: [3], general: [] },
+			tier: 2,
+			logo: "logo2",
+			image: "image2",
+			url: undefined,
+			registration_number: undefined,
+			country_of_origin: undefined,
+			street_address: undefined,
+			contact_email: undefined,
+			social_media_urls: {
+				facebook: undefined,
+				twitter: undefined,
+				linkedin: undefined,
+			},
+			number_of_employees: undefined,
+			average_annual_budget: undefined,
+			annual_revenue: undefined,
+			charity_navigator_rating: undefined,
+			endow_type: "Charity",
+		},
+		kyc_donors_only: false,
+		whitelisted_beneficiaries: [charity2_wallet],
+		whitelisted_contributors: [],
+		dao: undefined,
+		donation_match: undefined,
+		earnings_fee: undefined,
+		deposit_fee: undefined,
+		withdraw_fee: undefined,
+		aum_fee: undefined,
+		settings_controller: undefined,
+		cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+		cw3_max_voting_period: charity_cw3_max_voting_period,
+	}, [apTeam]);
+	console.log(
+		chalk.green(" Done!"),
+		`${chalk.blue("Endowment ID")}=${endow_2_id}`
+	);
 
-  endow_3_id = await sendApplicationViaCw3Proposal(networkUrl, charity3, cw3ReviewTeam, accounts, "unknown", {
-      owner: charity3_wallet,
-      withdraw_before_maturity: false,
-      maturity_time: undefined,
-      maturity_height: undefined,
-      profile: {
-        name: "Vibin' Endowment #3",
-        overview: "Global endowment that spreads good vibes",
-        categories: { sdgs: [1], general: [] },
-        tier: 3,
-        logo: "logo4",
-        image: "image4",
-        url: undefined,
-        registration_number: undefined,
-        country_of_origin: undefined,
-        street_address: undefined,
-        contact_email: undefined,
-        social_media_urls: {
-          facebook: undefined,
-          twitter: undefined,
-          linkedin: undefined,
-        },
-        number_of_employees: undefined,
-        average_annual_budget: undefined,
-        annual_revenue: undefined,
-        charity_navigator_rating: undefined,
-        endow_type: "Charity",
-      },
-      cw4_members: [{ addr: charity3_wallet, weight: 1 }],
-      kyc_donors_only: true,
-      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_max_voting_period: charity_cw3_max_voting_period,
-  }, [apTeam]);
-  console.log(
-    chalk.green(" Done!"),
-    `${chalk.blue("Endowment ID")}=${endow_3_id}`
-  );
+	endow_3_id = await sendApplicationViaCw3Proposal(networkUrl, charity3, cw3ReviewTeam, accounts, "unknown", {
+		owner: charity3_wallet,
+		withdraw_before_maturity: false,
+		maturity_time: 300,
+		split_max: "1",
+		split_min: "0",
+		split_default: "0.5",
+		cw4_members: [{ addr: charity3_wallet, weight: 1 }],
+		cw3_multisig_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+		cw3_multisig_max_vote_period: charity_cw3_max_voting_period,
+		profile: {
+			name: "Vibin' Endowment #3",
+			overview: "Global endowment that spreads good vibes",
+			categories: { sdgs: [1], general: [] },
+			tier: 3,
+			logo: "logo4",
+			image: "image4",
+			url: undefined,
+			registration_number: undefined,
+			country_of_origin: undefined,
+			street_address: undefined,
+			contact_email: undefined,
+			social_media_urls: {
+				facebook: undefined,
+				twitter: undefined,
+				linkedin: undefined,
+			},
+			number_of_employees: undefined,
+			average_annual_budget: undefined,
+			annual_revenue: undefined,
+			charity_navigator_rating: undefined,
+			endow_type: "Charity",
+		},
+		kyc_donors_only: true,
+		whitelisted_beneficiaries: [charity1_wallet],
+		whitelisted_contributors: [],
+		dao: undefined,
+		donation_match: undefined,
+		earnings_fee: undefined,
+		deposit_fee: undefined,
+		withdraw_fee: undefined,
+		aum_fee: undefined,
+		settings_controller: undefined,
+		cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
+		cw3_max_voting_period: charity_cw3_max_voting_period,
+	}, [apTeam]);
+	console.log(
+		chalk.green(" Done!"),
+		`${chalk.blue("Endowment ID")}=${endow_3_id}`
+	);
 }
 
 // Step 5: Index Fund finals setup
