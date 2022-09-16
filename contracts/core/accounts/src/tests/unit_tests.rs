@@ -7,7 +7,7 @@ use angel_core::structs::{
     AccountType, Beneficiary, Categories, EndowmentType, Profile, SocialMedialUrls,
     StrategyComponent, SwapOperation,
 };
-use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
+use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     attr, coins, from_binary, to_binary, Addr, Coin, Decimal, Env, OwnedDeps, StdError, Uint128,
 };
@@ -1402,6 +1402,72 @@ fn test_reinvest_to_locked() {
             amount: Uint128::from(1000000_u128),
             vault_addr: "liquid-vault".to_string(),
         },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
+}
+
+// FIXME: What if the `native_coins` are empty, so just adds the message of sending empty balance native tokens?
+#[test]
+fn test_distribute_to_beneficiary() {
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+
+    // Only contract itself can call this entry. In other words, it is internal entry.
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::DistributeToBeneficiary { id: CHARITY_ID },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Since "state.closing_beneficiary" is None, it just defaults the "state.balances".
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::DistributeToBeneficiary { id: CHARITY_ID },
+    )
+    .unwrap();
+
+    // Set the "closing_beneficiary" for the tests
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::CloseEndowment {
+            id: CHARITY_ID,
+            beneficiary: Beneficiary::Wallet {
+                address: CHARITY_ADDR.to_string(),
+            },
+        },
+    )
+    .unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::State { id: CHARITY_ID },
+    )
+    .unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state.closing_beneficiary,
+        Some(Beneficiary::Wallet {
+            address: CHARITY_ADDR.to_string()
+        })
+    );
+
+    // Succeed to distribute to "wallet beneficiary"
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::DistributeToBeneficiary { id: CHARITY_ID },
     )
     .unwrap();
     assert_eq!(res.messages.len(), 1);

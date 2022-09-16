@@ -805,7 +805,7 @@ pub fn distribute_to_beneficiary(
     state.balances = BalanceInfo::default();
     STATES.save(deps.storage, id, &state)?;
 
-    Ok(Response::new())
+    Ok(Response::default().add_submessages(msgs))
 }
 
 pub fn vault_receipt(
