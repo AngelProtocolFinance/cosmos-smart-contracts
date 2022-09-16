@@ -253,20 +253,36 @@ impl WasmMockQuerier {
                     })
                     .unwrap(),
                 )),
-                QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultDetailResponse {
-                        vault: YieldVault {
-                            network: "juno".to_string(),
-                            address: Addr::unchecked("vault").to_string(),
-                            input_denom: "input-denom".to_string(),
-                            yield_token: Addr::unchecked("yield-token").to_string(),
-                            approved: true,
-                            restricted_from: vec![],
-                            acct_type: AccountType::Locked,
-                        },
-                    })
-                    .unwrap(),
-                )),
+                QueryMsg::Vault { vault_addr } => match vault_addr.as_str() {
+                    "liquid-vault" => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&VaultDetailResponse {
+                            vault: YieldVault {
+                                network: "juno".to_string(),
+                                address: Addr::unchecked("liquid-vault").to_string(),
+                                input_denom: "input-denom".to_string(),
+                                yield_token: Addr::unchecked("yield-token").to_string(),
+                                approved: true,
+                                restricted_from: vec![],
+                                acct_type: AccountType::Liquid,
+                            },
+                        })
+                        .unwrap(),
+                    )),
+                    _ => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&VaultDetailResponse {
+                            vault: YieldVault {
+                                network: "juno".to_string(),
+                                address: Addr::unchecked("vault").to_string(),
+                                input_denom: "input-denom".to_string(),
+                                yield_token: Addr::unchecked("yield-token").to_string(),
+                                approved: true,
+                                restricted_from: vec![],
+                                acct_type: AccountType::Locked,
+                            },
+                        })
+                        .unwrap(),
+                    )),
+                },
                 QueryMsg::VaultList {
                     network: _,
                     endowment_type: _,
