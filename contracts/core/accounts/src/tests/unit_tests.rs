@@ -1097,3 +1097,53 @@ fn test_swap_token() {
     .unwrap();
     assert_eq!(res.messages.len(), 1);
 }
+
+// FIXME: Swapreceipt also need `cw20_receive` entry?
+//        Also, it needs the validation of received asset amount?
+#[test]
+fn test_swap_receipt() {
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+
+    // Fail to swap receipt since non-authorized call
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapReceipt {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            final_asset: Asset::native("ujuno", 1000000_u128),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Succeed to swap receipt & update the state
+    let info = mock_info("swaps_router_addr", &[]);
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapReceipt {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            final_asset: Asset::native("ujuno", 1000000_u128),
+        },
+    )
+    .unwrap();
+
+    // Check the state
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::TokenAmount {
+            id: CHARITY_ID,
+            asset_info: AssetInfo::Native("ujuno".to_string()),
+            acct_type: AccountType::Locked,
+        },
+    )
+    .unwrap();
+    let balance: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(balance, Uint128::from(1000000_u128));
+}
