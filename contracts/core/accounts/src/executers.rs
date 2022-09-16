@@ -125,6 +125,8 @@ pub fn create_endowment(
         },
     )?;
 
+    COPYCATS.save(deps.storage, config.next_account_id, &vec![])?;
+
     // initial default Response to add submessages to
     let mut res = Response::new();
     if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {
