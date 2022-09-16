@@ -11,6 +11,7 @@ use cosmwasm_std::{
     Uint128, WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
+use cw20::BalanceResponse;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -30,6 +31,10 @@ pub enum QueryMsg {
         approved: Option<bool>,
         start_after: Option<String>,
         limit: Option<u64>,
+    },
+    // Mock the "vault::balance { endowment_id: u32 }" query
+    Balance {
+        endowment_id: u32,
     },
 }
 
@@ -214,6 +219,12 @@ impl WasmMockQuerier {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
+                QueryMsg::Balance { endowment_id: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&BalanceResponse {
+                        balance: Uint128::from(1000000_u128),
+                    })
+                    .unwrap(),
+                )),
                 QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&RegistrarConfigResponse {
                         owner: "registrar_owner".to_string(),

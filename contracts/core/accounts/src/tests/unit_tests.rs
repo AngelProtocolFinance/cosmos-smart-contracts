@@ -1270,3 +1270,74 @@ fn test_vaults_invest() {
     let balance: Uint128 = from_binary(&res).unwrap();
     assert_eq!(balance, Uint128::from(1000000_u128 - 300000_u128));
 }
+
+// FIXME: Do we need to check if the `amount` is larger than `vault token(VT)` amount?
+#[test]
+fn test_vaults_redeem() {
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+
+    // Fail to redeem vaults since no endowment owner calls
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsRedeem {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![("vault".to_string(), Uint128::from(1000000_u128))],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Fail to redeem vaults since vaults are empty
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsRedeem {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Fail to invest to vaults since acct_type does not match
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsRedeem {
+            id: CHARITY_ID,
+            acct_type: AccountType::Liquid,
+            vaults: vec![("vault".to_string(), Uint128::from(1000000_u128))],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: "Vault and Endowment AccountTypes do not match".to_string(),
+        })
+    );
+
+    // Fail to invest to vaults since insufficient funds
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsRedeem {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![("vault".to_string(), Uint128::from(2000000_u128))],
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
+}
