@@ -1133,7 +1133,7 @@ fn test_swap_receipt() {
     )
     .unwrap();
 
-    // Check the state
+    // Check the result(state.balances)
     let res = query(
         deps.as_ref(),
         mock_env(),
@@ -1146,4 +1146,127 @@ fn test_swap_receipt() {
     .unwrap();
     let balance: Uint128 = from_binary(&res).unwrap();
     assert_eq!(balance, Uint128::from(1000000_u128));
+}
+
+// FIXME: When receive & send the cw20 tokens as "VaultsInvest", it needs "IncreaseAllowance" message?
+#[test]
+fn test_vaults_invest() {
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+
+    // Fail to invest to vaults since no endowment owner calls
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsInvest {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Fail to invest to vaults since vaults are empty
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsInvest {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Fail to invest to vaults since acct_type does not match
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsInvest {
+            id: CHARITY_ID,
+            acct_type: AccountType::Liquid,
+            vaults: vec![(
+                "vault".to_string(),
+                Asset::native("input-denom", 1000000_u128),
+            )],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: "Vault and Endowment AccountTypes do not match".to_string(),
+        })
+    );
+
+    // Fail to invest to vaults since insufficient funds
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsInvest {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![(
+                "vault".to_string(),
+                Asset::native("input-denom", 1000000_u128),
+            )],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InsufficientFunds {});
+
+    // Finally, succeed to do "vaults_invest"
+    // first, need to update the "state.balances"
+    let info = mock_info("swaps_router_addr", &[]);
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapReceipt {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            final_asset: Asset::native("input-denom", 1000000_u128),
+        },
+    )
+    .unwrap();
+
+    // succeed to "vaults_invest"
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsInvest {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![(
+                "vault".to_string(),
+                Asset::native("input-denom", 300000_u128),
+            )],
+        },
+    )
+    .unwrap();
+
+    // Check the result(state.balances)
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::TokenAmount {
+            id: CHARITY_ID,
+            asset_info: AssetInfo::Native("input-denom".to_string()),
+            acct_type: AccountType::Locked,
+        },
+    )
+    .unwrap();
+    let balance: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(balance, Uint128::from(1000000_u128 - 300000_u128));
 }
