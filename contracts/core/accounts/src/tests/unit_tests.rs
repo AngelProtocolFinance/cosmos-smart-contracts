@@ -5,11 +5,11 @@ use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
 use angel_core::structs::{
     AccountType, Beneficiary, Categories, EndowmentType, Profile, SocialMedialUrls,
-    StrategyComponent,
+    StrategyComponent, SwapOperation,
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{
-    attr, coins, from_binary, to_binary, Coin, Decimal, Env, OwnedDeps, StdError, Uint128,
+    attr, coins, from_binary, to_binary, Addr, Coin, Decimal, Env, OwnedDeps, StdError, Uint128,
 };
 use cw20::Cw20ReceiveMsg;
 use cw_asset::{Asset, AssetInfo};
@@ -1008,4 +1008,92 @@ fn test_copycat_strategies() {
     .unwrap();
     let endow_detail: EndowmentDetailsResponse = from_binary(&res).unwrap();
     assert_eq!(endow_detail.copycat_strategy, Some(CHARITY_ID));
+}
+
+#[test]
+fn test_swap_token() {
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+
+    // Should deposit some funds before swap operation
+    execute(
+        deps.as_mut(),
+        mock_env(),
+        mock_info("anyone", &coins(1000000000_u128, "ujuno")),
+        ExecuteMsg::Deposit(DepositMsg {
+            id: CHARITY_ID,
+            locked_percentage: Decimal::percent(100),
+            liquid_percentage: Decimal::percent(0),
+        }),
+    )
+    .unwrap();
+
+    // Fail to swap token since non-authorized call
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapToken {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            amount: Uint128::from(1000000_u128),
+            operations: vec![],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Fail to swap token since no operations
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapToken {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            amount: Uint128::from(1000000_u128),
+            operations: vec![],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Fail to swap token since no amount
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapToken {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            amount: Uint128::zero(),
+            operations: vec![SwapOperation::JunoSwap {
+                offer_asset_info: AssetInfo::Native("ujuno".to_string()),
+                ask_asset_info: AssetInfo::Cw20(Addr::unchecked("loop")),
+            }],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Succeed to swap token
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapToken {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            amount: Uint128::from(1000000_u128),
+            operations: vec![SwapOperation::JunoSwap {
+                offer_asset_info: AssetInfo::Native("ujuno".to_string()),
+                ask_asset_info: AssetInfo::Cw20(Addr::unchecked("loop")),
+            }],
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
 }
