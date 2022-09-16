@@ -5,6 +5,7 @@ use angel_core::messages::accounts::*;
 use angel_core::responses::accounts::*;
 use angel_core::structs::{
     AccountType, Beneficiary, Categories, EndowmentType, Profile, SocialMedialUrls,
+    StrategyComponent,
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
 use cosmwasm_std::{attr, coins, from_binary, to_binary, Coin, Decimal, Env, OwnedDeps, Uint128};
@@ -357,6 +358,37 @@ fn test_update_strategy() {
     let info = mock_info(PLEB, &coins(100000, "earth"));
     let err = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
+
+    // Succeed to update the strategies
+    let msg = ExecuteMsg::UpdateStrategies {
+        id: CHARITY_ID,
+        acct_type: AccountType::Locked,
+        strategies: vec![Strategy {
+            vault: "tech_strategy_component_addr".to_string(),
+            percentage: Decimal::percent(100),
+        }],
+    };
+    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
+    let _res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    // Check the strategies
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Endowment { id: CHARITY_ID },
+    )
+    .unwrap();
+    let endowment: EndowmentDetailsResponse = from_binary(&res).unwrap();
+    assert_eq!(endowment.strategies.locked.len(), 1);
+    assert_eq!(
+        endowment.strategies.locked,
+        vec![StrategyComponent {
+            vault: "tech_strategy_component_addr".to_string(),
+            percentage: Decimal::percent(100),
+        }]
+    );
+    assert_eq!(endowment.strategies.liquid.len(), 0);
+    assert_eq!(endowment.copycat_strategy, None);
 }
 
 #[test]
@@ -856,4 +888,9 @@ fn test_close_endowment() {
             address: CHARITY_ADDR.to_string()
         })
     );
+}
+
+#[test]
+fn test_copycat_strategies() {
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
 }
