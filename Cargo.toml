@@ -2,6 +2,9 @@
 members = [
     "packages/angel_core",
     "packages/halo_token",
+    "packages/ica_vaults",
+    "contracts/ica/ica-controller",
+    "contracts/ica/ica-host",
     "contracts/core/accounts",
     "contracts/core/cw3-endowment",
     "contracts/core/index-fund",

@@ -138,6 +138,7 @@ pub fn vault_add(
             approved: true,
             restricted_from: msg.restricted_from,
             acct_type: msg.acct_type,
+            vault_type: msg.vault_type,
         },
     )?;
     Ok(Response::default())
@@ -201,10 +202,10 @@ pub fn update_network_connections(
         return Err(ContractError::Unauthorized {});
     }
 
-    if action == *"add" {
-        // Add the network_info to NETWORK_CONNECTIONS
+    if action == *"post" {
+        // Add/Overwrite the network_info to NETWORK_CONNECTIONS
         NETWORK_CONNECTIONS.save(deps.storage, &network_info.chain_id, &network_info)?;
-    } else if action == *"remove" {
+    } else if action == *"delete" {
         // Remove the network_info from NETWORK_CONNECTIONS
         NETWORK_CONNECTIONS.remove(deps.storage, &network_info.chain_id);
     } else {

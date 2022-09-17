@@ -91,6 +91,7 @@ pub enum ExecuteMsg {
     UpdateConfig {
         new_registrar: String,
         max_general_category_id: u8,
+        ibc_controller: Option<String>,
     },
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),

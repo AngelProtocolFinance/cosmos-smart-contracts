@@ -3,7 +3,7 @@ use angel_core::errors::core::*;
 use angel_core::messages::registrar::*;
 use angel_core::responses::registrar::*;
 use angel_core::structs::{
-    AcceptedTokens, AccountType, NetworkInfo, RebalanceDetails, SplitDetails,
+    AcceptedTokens, AccountType, NetworkInfo, RebalanceDetails, SplitDetails, VaultType,
 };
 use cosmwasm_std::testing::{mock_dependencies, mock_env, mock_info};
 use cosmwasm_std::{coins, from_binary, Decimal};
@@ -180,6 +180,7 @@ fn test_add_update_and_remove_vault() {
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let add_vault_message = VaultAddMsg {
         acct_type: AccountType::Locked,
+        vault_type: VaultType::Native,
         network: None,
         vault_addr: vault_addr.clone(),
         input_denom: String::from("input_denom"),
@@ -312,8 +313,8 @@ fn test_add_update_and_remove_network_infos() {
     let mock_network_info = NetworkInfo {
         name: "juno mainnet".to_string(),
         chain_id: "juno-1".to_string(),
-        ica_address: None,
         ibc_channel: None,
+        ibc_host_contract: None,
         gas_limit: None,
     };
 
