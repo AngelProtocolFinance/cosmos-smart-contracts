@@ -89,7 +89,7 @@ pub fn query_token_amount(
         (AssetInfo::Cw20(addr), AccountType::Locked) => {
             state.balances.locked.get_token_amount(addr).amount
         }
-        (AssetInfo::Cw1155(_, _), _) => unimplemented!(),
+        _ => unreachable!(),
     };
     Ok(balance)
 }

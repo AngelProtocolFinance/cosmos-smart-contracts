@@ -609,7 +609,7 @@ pub fn swap_token(
                     amount,
                 }));
         }
-        (AssetInfo::Cw1155(_, _), _) => unimplemented!(),
+        _ => unreachable!(),
     }
 
     let swap_msg: CosmosMsg = match offer_asset {
@@ -643,7 +643,7 @@ pub fn swap_token(
             .unwrap(),
             funds: vec![],
         }),
-        AssetInfo::Cw1155(_, _) => unimplemented!(),
+        _ => unreachable!(),
     };
     STATES.save(deps.storage, id, &state)?;
     Ok(Response::new().add_message(swap_msg))
@@ -699,7 +699,7 @@ pub fn swap_receipt(
                     amount: final_asset.amount,
                 }))
         }
-        (AssetInfo::Cw1155(_, _), _) => unimplemented!(),
+        _ => unreachable!(),
     }
     STATES.save(deps.storage, id, &state)?;
     Ok(Response::new())
@@ -842,7 +842,7 @@ pub fn vault_receipt(
             address: contract_addr,
             amount: returned_token.amount,
         }),
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+        _ => unreachable!(),
     };
     match acct_type {
         AccountType::Locked => state.balances.locked.add_tokens(returned_bal),
@@ -1005,7 +1005,7 @@ pub fn deposit(
             address: contract_addr,
             amount: leftover_amt,
         }),
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+        _ => unreachable!(),
     });
 
     // Process Liquid Strategy Deposits
@@ -1032,7 +1032,7 @@ pub fn deposit(
             address: contract_addr,
             amount: leftover_amt,
         }),
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+        _ => unreachable!(),
     });
 
     STATES.save(deps.storage, msg.id, &state)?;
@@ -1135,7 +1135,7 @@ pub fn vaults_invest(
         let token_balance: Uint128 = match asset.info.clone() {
             AssetInfo::Native(denom) => current_bal.get_denom_amount(denom).amount,
             AssetInfo::Cw20(addr) => current_bal.get_token_amount(addr).amount,
-            AssetInfo::Cw1155(_, _) => Uint128::zero(),
+            _ => unreachable!(),
         };
         // check that the amount in state balance is sufficient to cover withdraw request
         if asset.amount > token_balance {
@@ -1152,7 +1152,7 @@ pub fn vaults_invest(
                 amount: asset.amount,
                 address: addr,
             })),
-            AssetInfo::Cw1155(_, _) => unimplemented!(),
+            _ => unreachable!(),
         }
 
         // create a deposit message for the vault
@@ -1182,7 +1182,7 @@ pub fn vaults_invest(
                 .unwrap(),
                 funds: vec![],
             })),
-            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+            _ => unreachable!(),
         });
     }
 
@@ -1344,7 +1344,7 @@ pub fn withdraw(
         let balance: Uint128 = match asset.info.clone() {
             AssetInfo::Native(denom) => state_bal.get_denom_amount(denom).amount,
             AssetInfo::Cw20(addr) => state_bal.get_token_amount(addr).amount,
-            AssetInfo::Cw1155(_, _) => Uint128::zero(),
+            _ => unreachable!(),
         };
         // check that the amount in state balance is sufficient to cover withdraw request
         if asset.amount > balance {
@@ -1378,7 +1378,7 @@ pub fn withdraw(
                     address: addr,
                 }));
             }
-            AssetInfo::Cw1155(_, _) => unimplemented!(),
+            _ => unreachable!(),
         }
     }
 
