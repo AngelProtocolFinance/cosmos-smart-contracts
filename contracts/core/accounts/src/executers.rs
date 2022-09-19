@@ -18,7 +18,8 @@ use angel_core::utils::{
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
-    ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
+    ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg,
+    WasmQuery,
 };
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw4::Member;
@@ -1312,17 +1313,22 @@ pub fn withdraw(
     // Only config owner can authorize a locked balance withdraw when locks are in place or maturity is not reached
     // Only the endowment owner can authorize a locked balance withdraw once maturity is reached or if early withdraws are allowed
     if acct_type == AccountType::Locked {
-        #[allow(clippy::if_same_then_else)]
-        if info.sender != config.owner
-            && (!endowment.withdraw_before_maturity
-                || endowment.maturity_height.unwrap() > env.block.height)
-        {
-            return Err(ContractError::Unauthorized {});
-        } else if info.sender != endowment.owner
-            && (endowment.withdraw_before_maturity
-                || endowment.maturity_height.unwrap() <= env.block.height)
-        {
-            return Err(ContractError::Unauthorized {});
+        if let EndowmentType::Charity = endowment.profile.endow_type {
+            if info.sender != config.owner {
+                return Err(ContractError::Unauthorized {});
+            }
+        } else {
+            if info.sender != endowment.owner {
+                return Err(ContractError::Unauthorized {});
+            }
+            if !endowment.withdraw_before_maturity
+                || (endowment.maturity_time != None
+                    && Timestamp::from_seconds(endowment.maturity_time.unwrap()) <= env.block.time)
+            {
+                return Err(ContractError::Std(StdError::generic_err(
+                    "Endowment is not mature. Cannot withdraw before maturity time is reached.",
+                )));
+            }
         }
     }
     // Only the owner of an endowment w/ withdraws approved can remove liquid balances
