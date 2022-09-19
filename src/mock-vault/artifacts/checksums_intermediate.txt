@@ -1,1 +1,1 @@
-371132c0c73411e006d511def084a9e4f6019f1339fbe0f28873f873a24c571f  ./target/wasm32-unknown-unknown/release/mock_vault.wasm
+a870924f8328ad68fd22acd6693f3bd4f7e4df76f7a4bed1878707c97903b503  ./target/wasm32-unknown-unknown/release/mock_vault.wasm
