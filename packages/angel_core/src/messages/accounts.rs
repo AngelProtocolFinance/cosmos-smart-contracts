@@ -201,7 +201,16 @@ pub enum ReceiveMsg {
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     // Tokens are sent back to an Account from a Vault
-    VaultReceipt { id: u32, acct_type: AccountType },
+    VaultReceipt {
+        id: u32,
+        acct_type: AccountType,
+    },
+    // Tokens are sent back to an Account from a Swap
+    SwapReceipt {
+        id: u32,
+        final_asset: Asset,
+        acct_type: AccountType,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

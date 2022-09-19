@@ -152,6 +152,8 @@ impl WasmMockQuerier {
                         description: "Test Endowment".to_string(),
                         donation_match_contract: "donation-match-contract".to_string(),
                         maturity_whitelist: vec![],
+                        copycat_strategy: None,
+                        proposal_link: None,
                     })
                     .unwrap(),
                 )),
