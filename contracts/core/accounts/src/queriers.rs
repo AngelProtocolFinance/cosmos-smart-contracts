@@ -89,7 +89,7 @@ pub fn query_token_amount(
         (AssetInfo::Cw20(addr), AccountType::Locked) => {
             state.balances.locked.get_token_amount(addr).amount
         }
-        (AssetInfo::Cw1155(_, _), _) => unimplemented!(),
+        _ => unreachable!(),
     };
     Ok(balance)
 }
@@ -203,6 +203,8 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         deposit_approved: endowment.deposit_approved,
         withdraw_approved: endowment.withdraw_approved,
         pending_redemptions: endowment.pending_redemptions,
+        copycat_strategy: endowment.copycat_strategy,
+        proposal_link: endowment.proposal_link,
     })
 }
 
