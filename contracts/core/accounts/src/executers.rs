@@ -20,7 +20,7 @@ use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
     ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
+use cw20::{Balance, BalanceResponse, Cw20Coin, Cw20CoinVerified};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 use cw_utils::Duration;
@@ -729,10 +729,12 @@ pub fn distribute_to_beneficiary(
                 state.balances.locked.native.clone(),
             ]
             .concat();
-            msgs.push(SubMsg::new(BankMsg::Send {
-                to_address: address.to_string(),
-                amount: native_coins,
-            }));
+            if !native_coins.is_empty() {
+                msgs.push(SubMsg::new(BankMsg::Send {
+                    to_address: address.to_string(),
+                    amount: native_coins,
+                }));
+            }
 
             // build list of all CW20 coins
             let cw20_coins: Vec<Cw20Coin> = [
@@ -742,15 +744,17 @@ pub fn distribute_to_beneficiary(
             .concat();
             // create a transfer msg for each CW20 coin
             for coin in cw20_coins.iter() {
-                msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: coin.address.to_string(),
-                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-                        recipient: address.to_string(),
-                        amount: coin.amount,
-                    })
-                    .unwrap(),
-                    funds: vec![],
-                })));
+                if !coin.amount.is_zero() {
+                    msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: coin.address.to_string(),
+                        msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                            recipient: address.to_string(),
+                            amount: coin.amount,
+                        })
+                        .unwrap(),
+                        funds: vec![],
+                    })));
+                }
             }
         }
         Some(Beneficiary::Endowment { id }) => {
@@ -1269,6 +1273,15 @@ pub fn vaults_redeem(
                     endowment.oneoff_vaults.liquid.swap_remove(pos.unwrap());
                 }
             }
+        }
+
+        // Check the vault token(VT) balance
+        let available_vt: BalanceResponse = deps.querier.query_wasm_smart(
+            vault_addr.to_string(),
+            &angel_core::messages::vault::QueryMsg::Balance { endowment_id: id },
+        )?;
+        if *amount > available_vt.balance {
+            return Err(ContractError::BalanceTooSmall {});
         }
 
         redeem_msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {

@@ -1148,7 +1148,6 @@ fn test_swap_receipt() {
     assert_eq!(balance, Uint128::from(1000000_u128));
 }
 
-// FIXME: When receive & send the cw20 tokens as "VaultsInvest", it needs "IncreaseAllowance" message?
 #[test]
 fn test_vaults_invest() {
     let (mut deps, env, _acct_contract, endow_details) = create_endowment();
@@ -1271,7 +1270,6 @@ fn test_vaults_invest() {
     assert_eq!(balance, Uint128::from(1000000_u128 - 300000_u128));
 }
 
-// FIXME: Do we need to check if the `amount` is larger than `vault token(VT)` amount?
 #[test]
 fn test_vaults_redeem() {
     let (mut deps, env, _acct_contract, endow_details) = create_endowment();
@@ -1328,7 +1326,7 @@ fn test_vaults_redeem() {
 
     // Fail to invest to vaults since insufficient funds
     let info = mock_info(CHARITY_ADDR, &[]);
-    let res = execute(
+    let err = execute(
         deps.as_mut(),
         mock_env(),
         info,
@@ -1336,6 +1334,21 @@ fn test_vaults_redeem() {
             id: CHARITY_ID,
             acct_type: AccountType::Locked,
             vaults: vec![("vault".to_string(), Uint128::from(2000000_u128))],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::BalanceTooSmall {});
+
+    // Succeed to invest to vaults
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsRedeem {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![("vault".to_string(), Uint128::from(100000_u128))],
         },
     )
     .unwrap();
@@ -1407,7 +1420,6 @@ fn test_reinvest_to_locked() {
     assert_eq!(res.messages.len(), 1);
 }
 
-// FIXME: What if the `native_coins` are empty, so just adds the message of sending empty balance native tokens?
 #[test]
 fn test_distribute_to_beneficiary() {
     let (mut deps, env, _acct_contract, endow_details) = create_endowment();
@@ -1470,5 +1482,5 @@ fn test_distribute_to_beneficiary() {
         ExecuteMsg::DistributeToBeneficiary { id: CHARITY_ID },
     )
     .unwrap();
-    assert_eq!(res.messages.len(), 1);
+    assert_eq!(res.messages.len(), 0);
 }
