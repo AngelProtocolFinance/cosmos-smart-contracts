@@ -92,7 +92,7 @@ pub fn query_token_amount(
         (AssetInfo::Cw20(addr), AccountType::Locked) => {
             state.balances.locked.get_token_amount(addr).amount
         }
-        (AssetInfo::Cw1155(_, _), _) => unimplemented!(),
+        _ => unreachable!(),
     };
     Ok(balance)
 }
@@ -220,6 +220,8 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         dao_token: None,
         name: "test-endowment".to_string(),
         description: "test endowment desc".to_string(),
+        copycat_strategy: endowment.copycat_strategy,
+        proposal_link: endowment.proposal_link,
     })
 }
 

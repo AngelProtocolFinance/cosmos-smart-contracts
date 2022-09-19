@@ -11,6 +11,7 @@ use cosmwasm_std::{
     Uint128, WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
+use cw20::BalanceResponse;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -30,6 +31,10 @@ pub enum QueryMsg {
         approved: Option<bool>,
         start_after: Option<String>,
         limit: Option<u64>,
+    },
+    // Mock the "vault::balance { endowment_id: u32 }" query
+    Balance {
+        endowment_id: u32,
     },
 }
 
@@ -231,6 +236,12 @@ impl WasmMockQuerier {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
+                QueryMsg::Balance { endowment_id: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&BalanceResponse {
+                        balance: Uint128::from(1000000_u128),
+                    })
+                    .unwrap(),
+                )),
                 QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&RegistrarConfigResponse {
                         owner: "registrar_owner".to_string(),
@@ -270,20 +281,36 @@ impl WasmMockQuerier {
                     })
                     .unwrap(),
                 )),
-                QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultDetailResponse {
-                        vault: YieldVault {
-                            address: Addr::unchecked("vault").to_string(),
-                            network: "juno-1".to_string(),
-                            input_denom: "input-denom".to_string(),
-                            yield_token: Addr::unchecked("yield-token").to_string(),
-                            approved: true,
-                            restricted_from: vec![],
-                            acct_type: AccountType::Locked,
-                        },
-                    })
-                    .unwrap(),
-                )),
+                QueryMsg::Vault { vault_addr } => match vault_addr.as_str() {
+                    "liquid-vault" => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&VaultDetailResponse {
+                            vault: YieldVault {
+                                network: "juno".to_string(),
+                                address: Addr::unchecked("liquid-vault").to_string(),
+                                input_denom: "input-denom".to_string(),
+                                yield_token: Addr::unchecked("yield-token").to_string(),
+                                approved: true,
+                                restricted_from: vec![],
+                                acct_type: AccountType::Liquid,
+                            },
+                        })
+                        .unwrap(),
+                    )),
+                    _ => SystemResult::Ok(ContractResult::Ok(
+                        to_binary(&VaultDetailResponse {
+                            vault: YieldVault {
+                                network: "juno".to_string(),
+                                address: Addr::unchecked("vault").to_string(),
+                                input_denom: "input-denom".to_string(),
+                                yield_token: Addr::unchecked("yield-token").to_string(),
+                                approved: true,
+                                restricted_from: vec![],
+                                acct_type: AccountType::Locked,
+                            },
+                        })
+                        .unwrap(),
+                    )),
+                },
                 QueryMsg::VaultList {
                     network: _,
                     endowment_type: _,

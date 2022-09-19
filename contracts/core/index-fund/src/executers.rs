@@ -341,7 +341,7 @@ pub fn deposit(
                 address: contract_addr.clone(),
                 amount: deposit_amount,
             }),
-            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+            _ => unreachable!(),
         };
         tca_donor.add_tokens(balance);
         TCA_DONATIONS.save(deps.storage, sender_addr.to_string(), &tca_donor)?;
@@ -565,7 +565,7 @@ pub fn build_donation_messages(
                     funds: vec![],
                 })));
             }
-            AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+            _ => unreachable!(),
         }
     }
     messages

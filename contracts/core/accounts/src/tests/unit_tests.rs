@@ -12,9 +12,12 @@ use angel_core::responses::accounts::{
 };
 use angel_core::structs::{
     AccountType, Beneficiary, Categories, EndowmentType, Profile, SocialMedialUrls,
+    StrategyComponent, SwapOperation,
 };
-use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage};
-use cosmwasm_std::{attr, coins, from_binary, to_binary, Coin, Decimal, Env, OwnedDeps, Uint128};
+use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
+use cosmwasm_std::{
+    attr, coins, from_binary, to_binary, Addr, Coin, Decimal, Env, OwnedDeps, StdError, Uint128,
+};
 use cw20::Cw20ReceiveMsg;
 use cw_asset::{Asset, AssetInfo};
 use cw_utils::Threshold;
@@ -396,6 +399,37 @@ fn test_update_strategy() {
     let info = mock_info(PLEB, &coins(100000, "earth"));
     let err = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
     assert_eq!(err, ContractError::Unauthorized {});
+
+    // Succeed to update the strategies
+    let msg = ExecuteMsg::UpdateStrategies {
+        id: CHARITY_ID,
+        acct_type: AccountType::Locked,
+        strategies: vec![Strategy {
+            vault: "tech_strategy_component_addr".to_string(),
+            percentage: Decimal::percent(100),
+        }],
+    };
+    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
+    let _res = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    // Check the strategies
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Endowment { id: CHARITY_ID },
+    )
+    .unwrap();
+    let endowment: EndowmentDetailsResponse = from_binary(&res).unwrap();
+    assert_eq!(endowment.strategies.locked.len(), 1);
+    assert_eq!(
+        endowment.strategies.locked,
+        vec![StrategyComponent {
+            vault: "tech_strategy_component_addr".to_string(),
+            percentage: Decimal::percent(100),
+        }]
+    );
+    assert_eq!(endowment.strategies.liquid.len(), 0);
+    assert_eq!(endowment.copycat_strategy, None);
 }
 
 #[test]
@@ -895,4 +929,604 @@ fn test_close_endowment() {
             address: CHARITY_ADDR.to_string()
         })
     );
+}
+
+#[test]
+fn test_copycat_strategies() {
+    let TEST_ENDOWMENT_ID = 2_u32;
+
+    let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
+
+    // Create one more endowment for tests
+    let profile: Profile = Profile {
+        name: "Test Endowment".to_string(),
+        overview: "Endowment to power an amazing charity".to_string(),
+        categories: Categories {
+            sdgs: vec![2],
+            general: vec![],
+        },
+        tier: Some(3),
+        logo: Some("Some fancy logo".to_string()),
+        image: Some("Nice banner image".to_string()),
+        url: Some("nice-charity.org".to_string()),
+        registration_number: Some("1234567".to_string()),
+        country_of_origin: Some("GB".to_string()),
+        street_address: Some("10 Downing St".to_string()),
+        contact_email: Some("admin@nice-charity.org".to_string()),
+        social_media_urls: SocialMedialUrls {
+            facebook: None,
+            twitter: Some("https://twitter.com/nice-charity".to_string()),
+            linkedin: None,
+        },
+        number_of_employees: Some(10),
+        average_annual_budget: Some("1 Million Pounds".to_string()),
+        annual_revenue: Some("Not enough".to_string()),
+        charity_navigator_rating: None,
+        endow_type: EndowmentType::Normal,
+    };
+
+    let create_endowment_msg = CreateEndowmentMsg {
+        owner: CHARITY_ADDR.to_string(),
+        withdraw_before_maturity: false,
+        maturity_time: Some(1000_u64),
+        profile: profile,
+        cw4_members: vec![],
+        kyc_donors_only: true,
+        cw3_threshold: Threshold::AbsolutePercentage {
+            percentage: Decimal::percent(10),
+        },
+        cw3_max_voting_period: 60,
+        whitelisted_beneficiaries: vec![],
+        whitelisted_contributors: vec![],
+        split_max: Decimal::one(),
+        split_min: Decimal::zero(),
+        split_default: Decimal::default(),
+        earnings_fee: None,
+        withdraw_fee: None,
+        deposit_fee: None,
+        aum_fee: None,
+        dao: None,
+        proposal_link: None,
+    };
+    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
+    let _ = execute(
+        deps.as_mut(),
+        env.clone(),
+        info,
+        ExecuteMsg::CreateEndowment(create_endowment_msg),
+    )
+    .unwrap();
+
+    // Fail to copycat the strategy since unauthorized call
+    let info = mock_info("anyone", &[]);
+    let msg = ExecuteMsg::CopycatStrategies {
+        id: TEST_ENDOWMENT_ID,
+        acct_type: AccountType::Locked,
+        id_to_copy: CHARITY_ID,
+    };
+    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Fail to copycat the strategies since stratgies to be copied are empty
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let msg = ExecuteMsg::CopycatStrategies {
+        id: TEST_ENDOWMENT_ID,
+        acct_type: AccountType::Locked,
+        id_to_copy: CHARITY_ID,
+    };
+    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: "Attempting to copy an endowment with no set strategy for that account type"
+                .to_string(),
+        })
+    );
+
+    // Suceed to copycat the strategies
+    // First, update the strategies for CHARITY_ID endowment
+    let msg = ExecuteMsg::UpdateStrategies {
+        id: CHARITY_ID,
+        acct_type: AccountType::Locked,
+        strategies: vec![Strategy {
+            vault: "tech_strategy_component_addr".to_string(),
+            percentage: Decimal::percent(100),
+        }],
+    };
+    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
+    let _ = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
+
+    // Try to copycat the strategies
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let msg = ExecuteMsg::CopycatStrategies {
+        id: TEST_ENDOWMENT_ID,
+        acct_type: AccountType::Locked,
+        id_to_copy: CHARITY_ID,
+    };
+    let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
+
+    // Check the result
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Endowment {
+            id: TEST_ENDOWMENT_ID,
+        },
+    )
+    .unwrap();
+    let endow_detail: EndowmentDetailsResponse = from_binary(&res).unwrap();
+    assert_eq!(endow_detail.copycat_strategy, Some(CHARITY_ID));
+}
+
+#[test]
+fn test_swap_token() {
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+
+    // Should deposit some funds before swap operation
+    execute(
+        deps.as_mut(),
+        mock_env(),
+        mock_info("anyone", &coins(1000000000_u128, "ujuno")),
+        ExecuteMsg::Deposit(DepositMsg {
+            id: CHARITY_ID,
+            locked_percentage: Decimal::percent(100),
+            liquid_percentage: Decimal::percent(0),
+        }),
+    )
+    .unwrap();
+
+    // Fail to swap token since non-authorized call
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapToken {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            amount: Uint128::from(1000000_u128),
+            operations: vec![],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Fail to swap token since no operations
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapToken {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            amount: Uint128::from(1000000_u128),
+            operations: vec![],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Fail to swap token since no amount
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapToken {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            amount: Uint128::zero(),
+            operations: vec![SwapOperation::JunoSwap {
+                offer_asset_info: AssetInfo::Native("ujuno".to_string()),
+                ask_asset_info: AssetInfo::Cw20(Addr::unchecked("loop")),
+            }],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Succeed to swap token
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapToken {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            amount: Uint128::from(1000000_u128),
+            operations: vec![SwapOperation::JunoSwap {
+                offer_asset_info: AssetInfo::Native("ujuno".to_string()),
+                ask_asset_info: AssetInfo::Cw20(Addr::unchecked("loop")),
+            }],
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
+}
+
+#[test]
+fn test_swap_receipt() {
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+
+    // Fail to swap receipt since non-authorized call
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapReceipt {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            final_asset: Asset::native("ujuno", 1000000_u128),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Succeed to swap receipt & update the state
+    let info = mock_info("swaps_router_addr", &[]);
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapReceipt {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            final_asset: Asset::native("ujuno", 1000000_u128),
+        },
+    )
+    .unwrap();
+
+    // Check the result(state.balances)
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::TokenAmount {
+            id: CHARITY_ID,
+            asset_info: AssetInfo::Native("ujuno".to_string()),
+            acct_type: AccountType::Locked,
+        },
+    )
+    .unwrap();
+    let balance: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(balance, Uint128::from(1000000_u128));
+}
+
+#[test]
+fn test_vaults_invest() {
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+
+    // Fail to invest to vaults since no endowment owner calls
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsInvest {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Fail to invest to vaults since vaults are empty
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsInvest {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Fail to invest to vaults since acct_type does not match
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsInvest {
+            id: CHARITY_ID,
+            acct_type: AccountType::Liquid,
+            vaults: vec![(
+                "vault".to_string(),
+                Asset::native("input-denom", 1000000_u128),
+            )],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: "Vault and Endowment AccountTypes do not match".to_string(),
+        })
+    );
+
+    // Fail to invest to vaults since insufficient funds
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsInvest {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![(
+                "vault".to_string(),
+                Asset::native("input-denom", 1000000_u128),
+            )],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InsufficientFunds {});
+
+    // Finally, succeed to do "vaults_invest"
+    // first, need to update the "state.balances"
+    let info = mock_info("swaps_router_addr", &[]);
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapReceipt {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            final_asset: Asset::native("input-denom", 1000000_u128),
+        },
+    )
+    .unwrap();
+
+    // succeed to "vaults_invest"
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsInvest {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![(
+                "vault".to_string(),
+                Asset::native("input-denom", 300000_u128),
+            )],
+        },
+    )
+    .unwrap();
+
+    // Check the result(state.balances)
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::TokenAmount {
+            id: CHARITY_ID,
+            asset_info: AssetInfo::Native("input-denom".to_string()),
+            acct_type: AccountType::Locked,
+        },
+    )
+    .unwrap();
+    let balance: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(balance, Uint128::from(1000000_u128 - 300000_u128));
+}
+
+#[test]
+fn test_vaults_redeem() {
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+
+    // Fail to redeem vaults since no endowment owner calls
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsRedeem {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![("vault".to_string(), Uint128::from(1000000_u128))],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Fail to redeem vaults since vaults are empty
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsRedeem {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Fail to invest to vaults since acct_type does not match
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsRedeem {
+            id: CHARITY_ID,
+            acct_type: AccountType::Liquid,
+            vaults: vec![("vault".to_string(), Uint128::from(1000000_u128))],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: "Vault and Endowment AccountTypes do not match".to_string(),
+        })
+    );
+
+    // Fail to invest to vaults since insufficient funds
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsRedeem {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![("vault".to_string(), Uint128::from(2000000_u128))],
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::BalanceTooSmall {});
+
+    // Succeed to invest to vaults
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::VaultsRedeem {
+            id: CHARITY_ID,
+            acct_type: AccountType::Locked,
+            vaults: vec![("vault".to_string(), Uint128::from(100000_u128))],
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
+}
+
+#[test]
+fn test_reinvest_to_locked() {
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+
+    // Fail to invest to locked since no endowment owner calls
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::ReinvestToLocked {
+            id: CHARITY_ID,
+            amount: Uint128::from(1000000_u128),
+            vault_addr: "vault".to_string(),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Fail to invest to locked since no amount
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::ReinvestToLocked {
+            id: CHARITY_ID,
+            amount: Uint128::zero(),
+            vault_addr: "vault".to_string(),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Fail to invest to locked since acct_type does not match
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::ReinvestToLocked {
+            id: CHARITY_ID,
+            amount: Uint128::zero(),
+            vault_addr: "vault".to_string(),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidInputs {});
+
+    // Finally, succeed to reinvest to locked vault
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::ReinvestToLocked {
+            id: CHARITY_ID,
+            amount: Uint128::from(1000000_u128),
+            vault_addr: "liquid-vault".to_string(),
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
+}
+
+#[test]
+fn test_distribute_to_beneficiary() {
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+
+    // Only contract itself can call this entry. In other words, it is internal entry.
+    let info = mock_info("anyone", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::DistributeToBeneficiary { id: CHARITY_ID },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Since "state.closing_beneficiary" is None, it just defaults the "state.balances".
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::DistributeToBeneficiary { id: CHARITY_ID },
+    )
+    .unwrap();
+
+    // Set the "closing_beneficiary" for the tests
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::CloseEndowment {
+            id: CHARITY_ID,
+            beneficiary: Beneficiary::Wallet {
+                address: CHARITY_ADDR.to_string(),
+            },
+        },
+    )
+    .unwrap();
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::State { id: CHARITY_ID },
+    )
+    .unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state.closing_beneficiary,
+        Some(Beneficiary::Wallet {
+            address: CHARITY_ADDR.to_string()
+        })
+    );
+
+    // Succeed to distribute to "wallet beneficiary"
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::DistributeToBeneficiary { id: CHARITY_ID },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 0);
 }

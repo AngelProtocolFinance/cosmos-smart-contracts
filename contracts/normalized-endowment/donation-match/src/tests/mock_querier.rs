@@ -232,6 +232,8 @@ impl WasmMockQuerier {
                         deposit_approved: true,
                         withdraw_approved: true,
                         pending_redemptions: 0,
+                        copycat_strategy: None,
+                        proposal_link: None,
                     }).unwrap()
                 )),
                 QueryMsg::Simulation { offer_asset: _ } => SystemResult::Ok(ContractResult::Ok(

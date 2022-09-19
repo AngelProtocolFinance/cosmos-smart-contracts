@@ -178,6 +178,14 @@ pub fn receive_cw20(
             msg,
             cw20_fund,
         ),
+        Ok(ReceiveMsg::SwapReceipt {
+            id,
+            final_asset,
+            acct_type,
+        }) => {
+            let sender_addr = deps.api.addr_validate(&cw20_msg.sender)?;
+            executers::swap_receipt(deps, id, sender_addr, final_asset, acct_type)
+        }
         _ => Err(ContractError::InvalidInputs {}),
     }
 }
