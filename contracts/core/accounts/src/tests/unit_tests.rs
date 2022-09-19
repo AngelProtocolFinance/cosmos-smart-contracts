@@ -1098,8 +1098,6 @@ fn test_swap_token() {
     assert_eq!(res.messages.len(), 1);
 }
 
-// FIXME: Swapreceipt also need `cw20_receive` entry?
-//        Also, it needs the validation of received asset amount?
 #[test]
 fn test_swap_receipt() {
     let (mut deps, env, _acct_contract, endow_details) = create_endowment();
