@@ -41,6 +41,8 @@ pub struct EndowmentDetailsResponse {
     pub deposit_approved: bool,
     pub withdraw_approved: bool,
     pub pending_redemptions: u8,
+    pub copycat_strategy: Option<u32>,
+    pub proposal_link: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

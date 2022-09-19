@@ -18,9 +18,10 @@ use angel_core::utils::{
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
-    ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
+    ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg,
+    WasmQuery,
 };
-use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
+use cw20::{Balance, BalanceResponse, Cw20Coin, Cw20CoinVerified};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 use cw_utils::Duration;
@@ -124,6 +125,8 @@ pub fn create_endowment(
             closing_beneficiary: None,
         },
     )?;
+
+    COPYCATS.save(deps.storage, config.next_account_id, &vec![])?;
 
     // initial default Response to add submessages to
     let mut res = Response::new();
@@ -614,7 +617,7 @@ pub fn swap_token(
                     amount,
                 }));
         }
-        (AssetInfo::Cw1155(_, _), _) => unimplemented!(),
+        _ => unreachable!(),
     }
 
     let swap_msg: CosmosMsg = match offer_asset {
@@ -648,7 +651,7 @@ pub fn swap_token(
             .unwrap(),
             funds: vec![],
         }),
-        AssetInfo::Cw1155(_, _) => unimplemented!(),
+        _ => unreachable!(),
     };
     STATES.save(deps.storage, id, &state)?;
     Ok(Response::new().add_message(swap_msg))
@@ -704,7 +707,7 @@ pub fn swap_receipt(
                     amount: final_asset.amount,
                 }))
         }
-        (AssetInfo::Cw1155(_, _), _) => unimplemented!(),
+        _ => unreachable!(),
     }
     STATES.save(deps.storage, id, &state)?;
     Ok(Response::new())
@@ -734,10 +737,12 @@ pub fn distribute_to_beneficiary(
                 state.balances.locked.native.clone(),
             ]
             .concat();
-            msgs.push(SubMsg::new(BankMsg::Send {
-                to_address: address.to_string(),
-                amount: native_coins,
-            }));
+            if !native_coins.is_empty() {
+                msgs.push(SubMsg::new(BankMsg::Send {
+                    to_address: address.to_string(),
+                    amount: native_coins,
+                }));
+            }
 
             // build list of all CW20 coins
             let cw20_coins: Vec<Cw20Coin> = [
@@ -747,15 +752,17 @@ pub fn distribute_to_beneficiary(
             .concat();
             // create a transfer msg for each CW20 coin
             for coin in cw20_coins.iter() {
-                msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: coin.address.to_string(),
-                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
-                        recipient: address.to_string(),
-                        amount: coin.amount,
-                    })
-                    .unwrap(),
-                    funds: vec![],
-                })));
+                if !coin.amount.is_zero() {
+                    msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: coin.address.to_string(),
+                        msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                            recipient: address.to_string(),
+                            amount: coin.amount,
+                        })
+                        .unwrap(),
+                        funds: vec![],
+                    })));
+                }
             }
         }
         Some(Beneficiary::Endowment { id }) => {
@@ -810,7 +817,7 @@ pub fn distribute_to_beneficiary(
     state.balances = BalanceInfo::default();
     STATES.save(deps.storage, id, &state)?;
 
-    Ok(Response::new())
+    Ok(Response::default().add_submessages(msgs))
 }
 
 pub fn vault_receipt(
@@ -847,7 +854,7 @@ pub fn vault_receipt(
             address: contract_addr,
             amount: returned_token.amount,
         }),
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+        _ => unreachable!(),
     };
     match acct_type {
         AccountType::Locked => state.balances.locked.add_tokens(returned_bal),
@@ -1018,7 +1025,7 @@ pub fn deposit(
             address: contract_addr,
             amount: leftover_amt,
         }),
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+        _ => unreachable!(),
     });
 
     // Process Liquid Strategy Deposits
@@ -1045,7 +1052,7 @@ pub fn deposit(
             address: contract_addr,
             amount: leftover_amt,
         }),
-        AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+        _ => unreachable!(),
     });
 
     STATES.save(deps.storage, msg.id, &state)?;
@@ -1148,7 +1155,7 @@ pub fn vaults_invest(
         let token_balance: Uint128 = match asset.info.clone() {
             AssetInfo::Native(denom) => current_bal.get_denom_amount(denom).amount,
             AssetInfo::Cw20(addr) => current_bal.get_token_amount(addr).amount,
-            AssetInfo::Cw1155(_, _) => Uint128::zero(),
+            _ => unreachable!(),
         };
         // check that the amount in state balance is sufficient to cover withdraw request
         if asset.amount > token_balance {
@@ -1165,7 +1172,7 @@ pub fn vaults_invest(
                 amount: asset.amount,
                 address: addr,
             })),
-            AssetInfo::Cw1155(_, _) => unimplemented!(),
+            _ => unreachable!(),
         }
 
         // create a deposit message for the vault
@@ -1201,7 +1208,7 @@ pub fn vaults_invest(
                             funds: vec![],
                         }))
                     }
-                    AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+                    _ => unreachable!(),
                 });
             }
             VaultType::Ibc { ica: _ } => unimplemented!(),
@@ -1296,6 +1303,15 @@ pub fn vaults_redeem(
 
         match vault_config.vault.vault_type {
             VaultType::Native => {
+                // Check the vault token(VT) balance
+                let available_vt: BalanceResponse = deps.querier.query_wasm_smart(
+                    vault_addr.to_string(),
+                    &angel_core::messages::vault::QueryMsg::Balance { endowment_id: id },
+                )?;
+                if *amount > available_vt.balance {
+                    return Err(ContractError::BalanceTooSmall {});
+                }
+
                 redeem_msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: vault_addr,
                     msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
@@ -1343,17 +1359,22 @@ pub fn withdraw(
     // Only config owner can authorize a locked balance withdraw when locks are in place or maturity is not reached
     // Only the endowment owner can authorize a locked balance withdraw once maturity is reached or if early withdraws are allowed
     if acct_type == AccountType::Locked {
-        #[allow(clippy::if_same_then_else)]
-        if info.sender != config.owner
-            && (!endowment.withdraw_before_maturity
-                || endowment.maturity_height.unwrap() > env.block.height)
-        {
-            return Err(ContractError::Unauthorized {});
-        } else if info.sender != endowment.owner
-            && (endowment.withdraw_before_maturity
-                || endowment.maturity_height.unwrap() <= env.block.height)
-        {
-            return Err(ContractError::Unauthorized {});
+        if let EndowmentType::Charity = endowment.profile.endow_type {
+            if info.sender != config.owner {
+                return Err(ContractError::Unauthorized {});
+            }
+        } else {
+            if info.sender != endowment.owner {
+                return Err(ContractError::Unauthorized {});
+            }
+            if !endowment.withdraw_before_maturity
+                || (endowment.maturity_time != None
+                    && Timestamp::from_seconds(endowment.maturity_time.unwrap()) <= env.block.time)
+            {
+                return Err(ContractError::Std(StdError::generic_err(
+                    "Endowment is not mature. Cannot withdraw before maturity time is reached.",
+                )));
+            }
         }
     }
     // Only the owner of an endowment w/ withdraws approved can remove liquid balances
@@ -1373,7 +1394,7 @@ pub fn withdraw(
         let balance: Uint128 = match asset.info.clone() {
             AssetInfo::Native(denom) => state_bal.get_denom_amount(denom).amount,
             AssetInfo::Cw20(addr) => state_bal.get_token_amount(addr).amount,
-            AssetInfo::Cw1155(_, _) => Uint128::zero(),
+            _ => unreachable!(),
         };
         // check that the amount in state balance is sufficient to cover withdraw request
         if asset.amount > balance {
@@ -1407,7 +1428,7 @@ pub fn withdraw(
                     address: addr,
                 }));
             }
-            AssetInfo::Cw1155(_, _) => unimplemented!(),
+            _ => unreachable!(),
         }
     }
 
