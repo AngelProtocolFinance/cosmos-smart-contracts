@@ -39,6 +39,11 @@ import {
   testQueryIndexFundFundsList,
   testQueryIndexFundState,
   testQueryIndexFundTcaList,
+  testQueryIndexFundAllianceMember,
+  testUpdatingIndexFundOwner,
+  testUpdatingIndexFundRegistrar,
+  testIndexFundRemoveMember,
+  testUpdateAllianceMember,
 } from "./core/indexFunds";
 import {
   testUpdateCw3Config,
@@ -182,7 +187,7 @@ export async function testExecute(
     charity2: { client: await clientSetup(charity2, networkUrl), wallet: charity2, addr: charity2Addr },
     charity3: { client: await clientSetup(charity3, networkUrl), wallet: charity3, addr: charity3Addr },
     pleb: { client: await clientSetup(pleb, networkUrl), wallet: pleb, addr: plebAddr },
-    tca: { client: await clientSetup(tca, networkUrl), wallet: tca, addr: charity3Addr },
+    tca: { client: await clientSetup(tca, networkUrl), wallet: tca, addr: tcaAddr },
   };
   console.log(chalk.green(" Done!"));
 
@@ -222,6 +227,8 @@ export async function testExecute(
   // );
 
   /* --- INDEXFUND contract --- */
+  // await testUpdatingIndexFundOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, cw3ApTeam);
+  // await testUpdatingIndexFundRegistrar(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, registrar);
   // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund);
   // await testUpdateAllianceMembersList(
   //   actors.apTeam.client,
@@ -239,6 +246,19 @@ export async function testExecute(
   //   // { name: "Testnet Admin", webiste: "http://angelprotocol.io", logo: "" }, // member #2
   //   "add" // action
   // );
+  // await testUpdateAllianceMember(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   actors.apTeam2.addr, // member address
+  //   {
+  //     name: "Testnet Charity #2",
+  //     website:
+  //       "http://angelprotocol.io/app/charity/juno1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+  //     logo: "https://angelprotocol.io/favicon.ico",
+  //   },
+  // );
   // await testCreateIndexFund(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
@@ -249,16 +269,24 @@ export async function testExecute(
   //   false,
   //   []
   // );
-  // await testUpdateFundMembers(actors.apTeam.client, actors.apTeam.addr, indexFund, 2, [], []);
+  // await testRemoveIndexFund(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   7,
+  // );
+  // await testIndexFundRemoveMember(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, 1); // INCOMPLETE: "remove_member" entry should be called from "accounts_contract".
   // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0", "1000000");
   // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund);
   // await testUpdateFundMembers(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
+  //   cw3ApTeam,
   //   indexFund,
   //   2,
-  //   [endowmentContract2],
-  //   [endowmentContract4]
+  //   [1, 2],
+  //   []
   // );
 
   /* --- ACCOUNTS & ENDOWMENTS --- */
@@ -349,12 +377,12 @@ export async function testExecute(
 
 
   // Test query
-  await testQueryRegistrarConfig(actors.apTeam.client, registrar);
-  await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
-  await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
-  await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, "juno-1");
+  // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
+  // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
+  // await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
+  // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, "juno-1");
 
-  await testQueryVaultConfig(actors.apTeam.client, vaultLocked1);
+  // await testQueryVaultConfig(actors.apTeam.client, vaultLocked1);
 
   // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
   // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
@@ -368,9 +396,9 @@ export async function testExecute(
   // await testQueryIndexFundTcaList(actors.apTeam.client, indexFund);
   // await testQueryIndexFundFundsList(actors.apTeam.client, indexFund, undefined, undefined);
   // await testQueryIndexFundFundDetails(actors.apTeam.client, indexFund, 1);
-  // await testQueryIndexFundActiveFundDetails(actors.apTeam.client, indexFund);
   // await testQueryIndexFundActiveFundDonations(actors.apTeam.client, indexFund);
   // await testQueryIndexFundDeposit(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundAllianceMember(actors.apTeam.client, indexFund, actors.apTeam2.addr);
 
   // Test query for HALO airdrop
   // await testAirdropUpdateConfig(actors.apTeam.client, actors.apTeam.addr, apTeam2, pleb, haloAirdrop);
