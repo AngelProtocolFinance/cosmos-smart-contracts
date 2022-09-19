@@ -7,7 +7,7 @@ use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, DepsMut, QueryRequest, StdError,
     StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg, Denom};
+use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg, Denom};
 use cw_asset::{Asset, AssetInfoBase};
 
 /// The following `calc_range_<???>` functions will set the first key after the provided key, by appending a 1 byte
@@ -129,11 +129,9 @@ pub fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<SubMsg>
 
 pub fn vault_endowment_balance(deps: Deps, vault_address: String, endowment_id: u32) -> Uint128 {
     // get an account's balance held with a vault
-    let bal_resp: BalanceResponse = deps
-        .querier
+    deps.querier
         .query_wasm_smart(vault_address, &VaultQuerier::Balance { endowment_id })
-        .unwrap();
-    bal_resp.balance
+        .unwrap()
 }
 
 pub fn deposit_to_vaults(
