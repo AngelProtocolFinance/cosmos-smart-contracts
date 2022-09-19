@@ -53,9 +53,11 @@ import {
 import {
   testUpdatingRegistrarConfigs,
   testQueryRegistrarVaultList,
-  testQueryRegistrarApprovedVaultRateList,
   testQueryRegistrarConfig,
   testQueryRegistrarVault,
+  testQueryRegistrarNetworkConnection,
+  testUpdatingRegistrarNetworkConnections,
+  testUpdatingRegistrarUpdateOwner
 } from "./core/registrar";
 import { testQueryVaultConfig, testVaultHarvest, testVaultReinvestToLocked } from "./core/vaults";
 import {
@@ -198,8 +200,28 @@ export async function testExecute(
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ApTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
 
+  /* --- REGISTRAR contract --- */
+  // await testUpdatingRegistrarUpdateOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, cw3ApTeam);
+  // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, {
+  //   accepted_tokens_native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno', 'ujunox'],
+  //   accepted_tokens_cw20: [],
+  // });
+  // await testUpdatingRegistrarNetworkConnections(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   registrar,
+  //   {
+  //     name: "Juno mainnet",
+  //     chain_id: "juno-1",
+  //     ibc_channel: undefined,
+  //     ica_address: undefined,
+  //     gas_limit: undefined,
+  //   },
+  //   "add", // action: "add" or "remove"
+  // );
 
-  /* --- IndexFund contract --- */
+  /* --- INDEXFUND contract --- */
   // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund);
   // await testUpdateAllianceMembersList(
   //   actors.apTeam.client,
@@ -239,7 +261,7 @@ export async function testExecute(
   //   [endowmentContract4]
   // );
 
-  /* --- Accounts & Endowments --- */
+  /* --- ACCOUNTS & ENDOWMENTS --- */
   // await testCreateEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, {
   //   owner: actors.charity1.addr,
   //   withdraw_before_maturity: false,
@@ -327,20 +349,20 @@ export async function testExecute(
 
 
   // Test query
-  // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
-  // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
-  // await testQueryRegistrarApprovedVaultRateList(actors.apTeam.client, registrar);
-  // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
-  // await testQueryRegistrarVault(actors.apTeam.client, registrar, Vault1);
-  // await testQueryVaultConfig(actors.apTeam.client, Vault1);
-  
+  await testQueryRegistrarConfig(actors.apTeam.client, registrar);
+  await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
+  await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
+  await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, "juno-1");
+
+  await testQueryVaultConfig(actors.apTeam.client, vaultLocked1);
+
   // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
   // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsState(actors.apTeam.client, accounts, 1);
-  
+
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);
   // await testQueryIndexFundTcaList(actors.apTeam.client, indexFund);
