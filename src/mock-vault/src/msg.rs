@@ -79,6 +79,8 @@ pub enum QueryMsg {
     Balance {
         endowment_id: u32,
     },
+    /// Total balance of vault tokens issued
+    TotalBalance {},
     /// Returns metadata on the contract - name, decimals, supply, etc.
     /// Return type: TokenInfoResponse.
     TokenInfo {},

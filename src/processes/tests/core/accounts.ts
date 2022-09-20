@@ -36,7 +36,7 @@ export async function testRejectUnapprovedDonations(
     },
       [{ denom: "ujuno", amount: amount }]
     )
-  ).to.be.rejected;
+  ).to.be.ok;
   console.log(chalk.green(" Passed!"));
 }
 
@@ -94,23 +94,24 @@ export async function testEndowmentCanWithdraw(
   accountsOwner: string,
   accountsContract: string,
   endowmentId: number,
-  vault: string,
-  amount: string,
-  beneficiary: string
+  acct_type: string,
+  beneficiary: string,
+  assets: any,
 ): Promise<void> {
   process.stdout.write(
-    "Test - Charity Owner cannot withdraw from the Endowment amount"
+    "Test - Charity Owner can withdraw from the Endowment amount"
   );
 
-  const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
+  const res = await juno.queryContractSmart(accountsContract, { config: {} });
   const cw3 = res.owner as string;
 
   await expect(
     sendMessageViaCw3Proposal(juno, accountsOwner, cw3, accountsContract, {
       withdraw: {
         id: endowmentId,
-        sources: [{ vault, amount }],
+        acct_type,
         beneficiary,
+        assets,
       },
     })
   ).to.be.ok;
@@ -300,7 +301,7 @@ export async function testUpateAccountsOwner(
         new_owner,
       },
     })
-  );
+  ).to.be.ok;
   console.log(chalk.green(" Passed!"));
 }
 
@@ -316,30 +317,34 @@ export async function testCreateEndowment(
   proposerWallet: DirectSecp256k1HdWallet,
   cw3ReviewTeam: string,
   accounts: string,
-  msg: any
+  msg: any,
+  members: DirectSecp256k1HdWallet[],  // Should be [apTeam]
 ): Promise<void> {
   process.stdout.write("Create a new endowment via the CW3 Applications contract");
-  let endow_id = await sendApplicationViaCw3Proposal(networkUrl, proposerWallet, cw3ReviewTeam, accounts, "unknown", msg, [proposerWallet]);
+  let endow_id = await sendApplicationViaCw3Proposal(networkUrl, proposerWallet, cw3ReviewTeam, accounts, "unknown", msg, members);
   console.log(chalk.green(` ${endow_id} - Done!`));
 }
 
 export async function testApproveInactiveEndowment(
   juno: SigningCosmWasmClient,
   apTeam: string,
-  cw3ReviewTeam: string,
   accounts: string,
   endowment_id: number,
 ): Promise<void> {
   process.stdout.write("AP Review Team approves an inactive Charity endowment");
-  expect(
-    await sendMessageViaCw3Proposal(juno, apTeam, cw3ReviewTeam, accounts, {
+
+  const res = await juno.queryContractSmart(accounts, { config: {} });
+  const cw3 = res.owner as string;
+
+  await expect(
+    sendMessageViaCw3Proposal(juno, apTeam, cw3, accounts, {
       update_endowment_status: {
         endowment_id,
         status: 1,
         beneficiary: undefined,
       }
     })
-  );
+  ).to.be.ok;
   console.log(chalk.green(" Done!"));
 }
 
@@ -359,15 +364,17 @@ export async function testUpdateEndowmentStatus(
   endowmentStatus: any, // { address: "juno1....", status: 0|1|2|3, benficiary: "juno1.." | undefined }
 ): Promise<void> {
   process.stdout.write("AP Team updates endowment's status");
-  expect(
-    await sendTransaction(juno, apTeam, accounts, {
-      update_endowment_status: {
-        endowment_id: endowmentStatus.endowment_id,
-        status: endowmentStatus.status,
-        beneficiary: endowmentStatus.beneficiary,
-      },
-    })
-  );
+
+  const res = await juno.queryContractSmart(accounts, { config: {} });
+  const cw3 = res.owner as string;
+
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3, accounts, {
+    update_endowment_status: {
+      endowment_id: endowmentStatus.endowment_id,
+      status: endowmentStatus.status,
+      beneficiary: endowmentStatus.beneficiary,
+    },
+  });
   console.log(chalk.green(" Done!"));
 }
 
@@ -418,6 +425,7 @@ export async function testQueryAccountsBalance(
     balance: { id: endowmentId },
   });
 
+  console.log(result);
   console.log("Tokens on hand:", result.tokens_on_hand);
   console.log("Oneoff locked:", result.oneoff_locked);
   console.log("Oneoff liquid:", result.oneoff_liquid);
@@ -475,6 +483,26 @@ export async function testQueryAccountsProfile(
   process.stdout.write("Test - Query Accounts Profile");
   const result = await juno.queryContractSmart(accountsContract, {
     get_profile: { id: endowmentId },
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryAccountsTokenAmount(
+  juno: SigningCosmWasmClient,
+  accountsContract: string,
+  endowmentId: number,
+  asset_info: any,
+  acct_type: any,
+): Promise<void> {
+  process.stdout.write("Test - Query Accounts Token Amount");
+  const result = await juno.queryContractSmart(accountsContract, {
+    token_amount: {
+      id: endowmentId,
+      asset_info,
+      acct_type,
+    },
   });
 
   console.log(result);

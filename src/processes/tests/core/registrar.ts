@@ -12,7 +12,7 @@ const { expect } = chai;
 // TEST: Update registrar configs
 //
 // SCENARIO:
-// AP Team string needs to update registrar config
+// Cw3ApTeam needs to update registrar config
 //
 //----------------------------------------------------------------------------------------
 export async function testUpdatingRegistrarConfigs(
@@ -145,6 +145,30 @@ export async function testUpdateEndowmentStatus(
       },
     })
   );
+  console.log(chalk.green(" Done!"));
+}
+
+// TEST: Update registrar network connections
+//
+// SCENARIO:
+// Cw3ApTeam needs to update registrar network connections
+//
+//----------------------------------------------------------------------------------------
+export async function testUpdatingRegistrarNetworkConnections(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  cw3ApTeam: string,
+  registrar: string,
+  network_info: any, // NetworkInfo: { name: string, chain_id: string, ibc_channel: string | undefined, ica_address: string | undefined, gas_limit: number | undefined }
+  action: string,  // Should be "add" or "remove"
+): Promise<void> {
+  process.stdout.write("AP Team updates Registrar Network");
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3ApTeam, registrar, {
+    update_network_connections: {
+      network_info,
+      action,
+    },
+  });
   console.log(chalk.green(" Done!"));
 }
 
@@ -286,6 +310,28 @@ export async function testUpdateNetworkConnections(
   console.log(chalk.green(" Passed!"));
 }
 
+// TEST: Update registrar owner
+//
+// SCENARIO:
+// Cw3ApTeam needs to update registrar config owner
+//
+//----------------------------------------------------------------------------------------
+export async function testUpdatingRegistrarUpdateOwner(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  cw3ApTeam: string,
+  registrar: string,
+  new_owner: string,
+): Promise<void> {
+  process.stdout.write("AP Team updates Registrar Owner");
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3ApTeam, registrar, {
+    update_owner: {
+      new_owner,
+    },
+  });
+  console.log(chalk.green(" Done!"));
+}
+
 
 //----------------------------------------------------------------------------------------
 // Querying tests
@@ -326,6 +372,22 @@ export async function testQueryRegistrarVault(
   const result: any = await juno.queryContractSmart(registrar, {
     vault: {
       vault_addr: Vault1,
+    },
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryRegistrarNetworkConnection(
+  juno: SigningCosmWasmClient,
+  registrar: string,
+  chain_id: string
+): Promise<void> {
+  process.stdout.write("Test - Query Registrar Network connection(s)");
+  const result: any = await juno.queryContractSmart(registrar, {
+    network_connection: {
+      chain_id: chain_id,
     },
   });
 
