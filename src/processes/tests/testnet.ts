@@ -22,6 +22,7 @@ import {
   testCreateEndowment,
   testQueryAccountsEndowmentList,
   testEndowmentVaultsRedeem,
+  testQueryAccountsTokenAmount,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -290,7 +291,7 @@ export async function testExecute(
   // );
 
   /* --- ACCOUNTS & ENDOWMENTS --- */
-  // await testCreateEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, {
+  // await testCreateEndowment(networkUrl, actors.charity1.wallet, cw3ReviewTeam, accounts, {
   //   owner: actors.charity1.addr,
   //   withdraw_before_maturity: false,
   //   maturity_time: undefined,
@@ -298,7 +299,7 @@ export async function testExecute(
   //   profile: {
   //     name: "Test-Suite Endowment",
   //     overview: "Endowment created from the test-suite integration test",
-  //     categories: { sdgs:[2], general: [] },
+  //     categories: { sdgs: [2], general: [] },
   //     tier: 3,
   //     logo: "test logo",
   //     image: "test image",
@@ -315,20 +316,20 @@ export async function testExecute(
   //     average_annual_budget: undefined,
   //     annual_revenue: undefined,
   //     charity_navigator_rating: undefined,
-  //     endow_type: "Normal",
+  //     endow_type: "Charity",
   //   },
-  //     cw4_members: [{ addr: actors.charity1.addr, weight: 1 }],
-  //     kyc_donors_only: false,
-  //     cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
-  //     cw3_max_voting_period: 10000,
-  // });
+  //   cw4_members: [{ addr: actors.charity1.addr, weight: 1 }],
+  //   kyc_donors_only: false,
+  //   cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
+  //   cw3_max_voting_period: 10000,
+  // }, [actors.apTeam.wallet]);
   // await testCharityCanUpdateStrategies(
   //   actors.charity1.client,
   //   actors.charity1.addr,
   //   accounts,
   //   endowId1,
   //   `locked`,
-  //   [{ vault: vaultLocked1, percentage: "0.5"}]
+  //   [{ vault: vaultLocked1, percentage: "0.5" }]
   // );
   // await testCharityCanUpdateStrategies(
   //   actors.charity1.client,
@@ -336,7 +337,7 @@ export async function testExecute(
   //   accounts,
   //   endowId1,
   //   `liquid`,
-  //   [{ vault: vaultLiquid1, percentage: "0.5"}]
+  //   [{ vault: vaultLiquid1, percentage: "0.5" }]
   // );
 
   // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1, "1000");
@@ -363,17 +364,17 @@ export async function testExecute(
   // );
 
   // await testEndowmentCanWithdraw(
-  //   actors.charity1.client, 
-  //   actors.charity1.addr, 
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   accounts,
-  //   endowId1, 
-  //   Vault1, 
-  //   "500000", 
+  //   endowId1,
+  //   `locked`,
   //   actors.charity1.addr,
+  //   [{ info: { native: "ujuno" }, amount: "1000" }],
   // );
-  // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, 1);
-  // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 1, status: 1, benficiary: undefined });
-  // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, endowmentContract1, "10000000"); // possible query registrar error
+  // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1);
+  // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: endowId1, status: 1, benficiary: undefined });
+  // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, accounts, endowId3, "10000000"); // possible query registrar error
 
 
   // Test query
@@ -390,6 +391,7 @@ export async function testExecute(
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
   // await testQueryAccountsState(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsTokenAmount(actors.apTeam.client, accounts, 1, { native: "ujuno" }, "locked");
 
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);
