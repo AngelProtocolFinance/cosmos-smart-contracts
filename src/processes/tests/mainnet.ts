@@ -35,7 +35,6 @@ import {
 import {
   testUpdatingRegistrarConfigs,
   testQueryRegistrarVaultList,
-  testQueryRegistrarApprovedVaultRateList,
   testQueryRegistrarConfig,
   testQueryRegistrarVault,
 } from "./core/registrar";
@@ -193,7 +192,6 @@ export async function testExecute(
   // await testQueryRegistrarConfig(juno, registrar);
   // await testQueryRegistrarEndowmentDetails(juno, registrar, endowmentContract1);
   // await testQueryRegistrarVaultList(juno, registrar);
-  // await testQueryRegistrarApprovedVaultRateList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVault(juno, registrar, anchorVault);
   // await testQueryAccountsEndowmentList(juno, accounts);
