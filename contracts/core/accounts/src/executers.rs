@@ -1277,11 +1277,11 @@ pub fn vaults_redeem(
         }
 
         // Check the vault token(VT) balance
-        let available_vt: BalanceResponse = deps.querier.query_wasm_smart(
+        let available_vt: Uint128 = deps.querier.query_wasm_smart(
             vault_addr.to_string(),
             &angel_core::messages::vault::QueryMsg::Balance { endowment_id: id },
         )?;
-        if *amount > available_vt.balance {
+        if *amount > available_vt {
             return Err(ContractError::BalanceTooSmall {});
         }
 
