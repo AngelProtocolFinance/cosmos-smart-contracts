@@ -155,7 +155,7 @@ pub fn deposit_to_vaults(
 ) -> Result<(Vec<SubMsg>, Uint128), ContractError> {
     // deduct all deposited amounts from the orig amount
     // tracks how much of the locked funds are leftover
-    let mut leftovers_amt = fund.amount.clone();
+    let mut leftovers_amt = fund.amount;
 
     // deposit to the strategies set
     let mut deposit_messages = vec![];
@@ -182,10 +182,8 @@ pub fn deposit_to_vaults(
             AssetInfoBase::Native(ref denom) => {
                 deposit_messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: yield_vault.address.to_string(),
-                    msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {
-                        endowment_id: endowment_id.clone(),
-                    })
-                    .unwrap(),
+                    msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit { endowment_id })
+                        .unwrap(),
                     funds: vec![Coin {
                         denom: denom.clone(),
                         amount: fund.amount * strategy.percentage,
@@ -199,7 +197,7 @@ pub fn deposit_to_vaults(
                         contract: yield_vault.address.to_string(),
                         amount: fund.amount * strategy.percentage,
                         msg: to_binary(&crate::messages::vault::ExecuteMsg::Deposit {
-                            endowment_id: endowment_id.clone(),
+                            endowment_id,
                         })
                         .unwrap(),
                     })

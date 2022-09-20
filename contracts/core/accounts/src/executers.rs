@@ -22,7 +22,7 @@ use cosmwasm_std::{
     ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg,
     WasmQuery,
 };
-use cw20::{Balance, BalanceResponse, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
+use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 use cw_utils::Duration;
@@ -1549,8 +1549,10 @@ pub fn vaults_redeem(
                     .locked
                     .iter()
                     .position(|v| v == vault);
-                if pos.is_some() && vault_balance == *amount {
-                    endowment.oneoff_vaults.locked.swap_remove(pos.unwrap());
+                if let Some(pos) = pos {
+                    if vault_balance == *amount {
+                        endowment.oneoff_vaults.locked.swap_remove(pos);
+                    }
                 }
             }
             AccountType::Liquid => {
@@ -1559,8 +1561,10 @@ pub fn vaults_redeem(
                     .liquid
                     .iter()
                     .position(|v| v == vault);
-                if pos.is_some() && vault_balance == *amount {
-                    endowment.oneoff_vaults.liquid.swap_remove(pos.unwrap());
+                if let Some(pos) = pos {
+                    if vault_balance == *amount {
+                        endowment.oneoff_vaults.liquid.swap_remove(pos);
+                    }
                 }
             }
         }
@@ -1626,7 +1630,7 @@ pub fn withdraw(
                 return Err(ContractError::Unauthorized {});
             }
             if !endowment.withdraw_before_maturity
-                || (endowment.maturity_time != None
+                || (endowment.maturity_time.is_some()
                     && Timestamp::from_seconds(endowment.maturity_time.unwrap()) <= env.block.time)
             {
                 return Err(ContractError::Std(StdError::generic_err(
@@ -2087,7 +2091,7 @@ pub fn setup_dao(
         return Err(ContractError::Unauthorized {});
     }
 
-    if endowment.dao != None {
+    if endowment.dao.is_some() {
         return Err(ContractError::Std(StdError::generic_err(
             "A DAO already exists for this Endowment",
         )));

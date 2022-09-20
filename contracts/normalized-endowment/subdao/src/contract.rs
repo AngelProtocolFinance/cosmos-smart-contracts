@@ -569,7 +569,7 @@ pub fn create_poll(
 
     Ok(Response::new().add_attributes(vec![
         ("action", "create_poll"),
-        ("creator", &(new_poll.creator.to_string()).as_str()),
+        ("creator", ((new_poll.creator.to_string()).as_str())),
         ("poll_id", &poll_id.to_string()),
         ("end_height", new_poll.end_height.to_string().as_str()),
     ]))

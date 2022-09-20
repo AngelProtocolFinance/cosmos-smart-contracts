@@ -359,8 +359,8 @@ pub struct IndexFund {
 
 impl IndexFund {
     pub fn is_expired(&self, env_height: u64, env_time: Timestamp) -> bool {
-        if (self.expiry_height != None && env_height >= self.expiry_height.unwrap())
-            || (self.expiry_time != None
+        if (self.expiry_height.is_some() && env_height >= self.expiry_height.unwrap())
+            || (self.expiry_time.is_some()
                 && env_time >= Timestamp::from_seconds(self.expiry_time.unwrap()))
         {
             return true;

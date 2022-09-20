@@ -126,7 +126,7 @@ pub fn query_endowment_list(
             categories: e.profile.categories.clone(),
             address: Addr::unchecked("endowment"),
             un_sdg: None,
-            proposal_link: e.proposal_link.clone(),
+            proposal_link: e.proposal_link,
         })
         .collect();
     let entries = match name {
