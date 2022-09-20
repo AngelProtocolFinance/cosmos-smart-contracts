@@ -403,7 +403,7 @@ pub fn execute_contribute(
     // update the campaign's generic "total" contributions balance as well
     campaign.contributed_balance.add_tokens(balance);
     // make sure the contributor's addr is noted for this campaign
-    if !campaign.contributors.iter().any(|addr| &addr == &sender) {
+    if !campaign.contributors.iter().any(|addr| addr == sender) {
         campaign.contributors.push(sender.clone())
     }
 

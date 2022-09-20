@@ -935,7 +935,7 @@ fn test_close_endowment() {
 fn test_copycat_strategies() {
     let TEST_ENDOWMENT_ID = 2_u32;
 
-    let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
 
     // Create one more endowment for tests
     let profile: Profile = Profile {

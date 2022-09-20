@@ -146,9 +146,7 @@ fn execute_donor_match(
                 config.registrar_contract.clone(),
                 &RegistrarQueryMsg::Config {},
             )?;
-            if env.contract.address.to_string()
-                != registrar_config.donation_match_charites_contract.unwrap()
-            {
+            if env.contract.address != registrar_config.donation_match_charites_contract.unwrap() {
                 return Err(ContractError::Unauthorized {});
             }
         }

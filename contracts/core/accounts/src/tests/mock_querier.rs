@@ -237,10 +237,7 @@ impl WasmMockQuerier {
                 msg,
             }) => match from_binary(&msg).unwrap() {
                 QueryMsg::Balance { endowment_id: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&BalanceResponse {
-                        balance: Uint128::from(1000000_u128),
-                    })
-                    .unwrap(),
+                    to_binary(&Uint128::from(1000000_u128)).unwrap(),
                 )),
                 QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&RegistrarConfigResponse {

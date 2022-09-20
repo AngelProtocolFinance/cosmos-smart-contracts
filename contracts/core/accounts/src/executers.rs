@@ -22,7 +22,7 @@ use cosmwasm_std::{
     ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg,
     WasmQuery,
 };
-use cw20::{Balance, BalanceResponse, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
+use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 use cw_utils::Duration;
@@ -238,7 +238,7 @@ pub fn create_endowment(
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
             code_id: registrar_config.cw3_code.unwrap(),
             admin: None,
-            label: "new endowment cw3 multisig".to_string(),
+            label: format!("new endowment cw3 multisig - {}", config.next_account_id),
             msg: to_binary(&Cw3InstantiateMsg {
                 // Endowment ID
                 id: config.next_account_id,
@@ -253,6 +253,7 @@ pub fn create_endowment(
                 cw4_code: registrar_config.cw4_code.unwrap(),
                 threshold: msg.cw3_threshold,
                 max_voting_period: Duration::Time(msg.cw3_max_voting_period),
+                registrar_contract: config.registrar_contract.to_string(),
             })?,
             funds: vec![],
         }),
@@ -1231,7 +1232,7 @@ pub fn deposit(
                         funds: vec![],
                     }));
                 }
-                AssetInfoBase::Cw1155(_, _) => unimplemented!(),
+                _ => unreachable!(),
             }
         }
     }
@@ -1548,8 +1549,10 @@ pub fn vaults_redeem(
                     .locked
                     .iter()
                     .position(|v| v == vault);
-                if pos.is_some() && vault_balance == *amount {
-                    endowment.oneoff_vaults.locked.swap_remove(pos.unwrap());
+                if let Some(pos) = pos {
+                    if vault_balance == *amount {
+                        endowment.oneoff_vaults.locked.swap_remove(pos);
+                    }
                 }
             }
             AccountType::Liquid => {
@@ -1558,18 +1561,20 @@ pub fn vaults_redeem(
                     .liquid
                     .iter()
                     .position(|v| v == vault);
-                if pos.is_some() && vault_balance == *amount {
-                    endowment.oneoff_vaults.liquid.swap_remove(pos.unwrap());
+                if let Some(pos) = pos {
+                    if vault_balance == *amount {
+                        endowment.oneoff_vaults.liquid.swap_remove(pos);
+                    }
                 }
             }
         }
 
         // Check the vault token(VT) balance
-        let available_vt: BalanceResponse = deps.querier.query_wasm_smart(
+        let available_vt: Uint128 = deps.querier.query_wasm_smart(
             vault_addr.to_string(),
             &angel_core::messages::vault::QueryMsg::Balance { endowment_id: id },
         )?;
-        if *amount > available_vt.balance {
+        if *amount > available_vt {
             return Err(ContractError::BalanceTooSmall {});
         }
 
@@ -1625,7 +1630,7 @@ pub fn withdraw(
                 return Err(ContractError::Unauthorized {});
             }
             if !endowment.withdraw_before_maturity
-                || (endowment.maturity_time != None
+                || (endowment.maturity_time.is_some()
                     && Timestamp::from_seconds(endowment.maturity_time.unwrap()) <= env.block.time)
             {
                 return Err(ContractError::Std(StdError::generic_err(
@@ -2086,7 +2091,7 @@ pub fn setup_dao(
         return Err(ContractError::Unauthorized {});
     }
 
-    if endowment.dao != None {
+    if endowment.dao.is_some() {
         return Err(ContractError::Std(StdError::generic_err(
             "A DAO already exists for this Endowment",
         )));
