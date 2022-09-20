@@ -1,5 +1,4 @@
-use angel_core::errors::multisig::ContractError;
-use cosmwasm_std::{CosmosMsg, Decimal, Empty};
+use cosmwasm_std::{CosmosMsg, Empty};
 use cw3::{Status, Vote};
 use cw4::MemberChangedHookMsg;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
