@@ -298,15 +298,16 @@ export async function testUpdateNetworkConnections(
     "Test - Owner can update network_connections in Registrar"
   );
 
-  await expect(
-    sendTransaction(juno, apTeam, registrar, {
-      update_network_connections: {
-        network_info: info.network_info,
-        action: info.action,
-      }
-    },
-    )
-  ).to.be.ok;
+  const res = await juno.queryContractSmart(registrar, { config: {} });
+  const cw3 = await res.owner as string;
+
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3, registrar, {
+    update_network_connections: {
+      network_info: info.network_info,
+      action: info.action,
+    }
+  },
+  );
   console.log(chalk.green(" Passed!"));
 }
 

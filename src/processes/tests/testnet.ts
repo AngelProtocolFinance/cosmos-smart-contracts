@@ -337,7 +337,7 @@ export async function testExecute(
   // await testUpdateNetworkConnections(actors.apTeam.client, actors.apTeam.addr, registrar, {
   //   network_info: {
   //     name: "terra-juno channel",
-  //     chain_id: "phoenix-1",
+  //     chain_id: "juno-1",
   //     ibc_channel: "terra-juno-chann-1",
   //     gas_limit: undefined,
   //   },
