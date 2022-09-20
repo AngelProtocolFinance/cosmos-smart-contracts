@@ -5,13 +5,21 @@ use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, Vau
 use crate::structs::{GenericBalance, SplitDetails, StrategyComponent, YieldVault};
 use cosmwasm_std::{
     to_binary, to_vec, Addr, BankMsg, Coin, ContractResult, CosmosMsg, Decimal, Deps, DepsMut,
-    Empty, MessageInfo, QueryRequest, StdError, StdResult, SubMsg, SystemError, SystemResult,
-    Uint128, WasmMsg, WasmQuery,
+    Empty, Event, MessageInfo, QueryRequest, StdError, StdResult, SubMsg, SystemError,
+    SystemResult, Uint128, WasmMsg, WasmQuery,
 };
-use cw20::{Balance, BalanceResponse, Cw20CoinVerified, Cw20ExecuteMsg, Denom};
+use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg, Denom};
 use cw_asset::{Asset, AssetInfoBase};
 
-// this will set the first key after the provided key, by appending a 1 byte
+/// Determine if a reply event contains a specific key-value pair
+pub fn event_contains_attr(event: &Event, key: &str, value: &str) -> bool {
+    event
+        .attributes
+        .iter()
+        .any(|attr| attr.key == key && attr.value == value)
+}
+
+/// The following `calc_range_<???>` functions will set the first key after the provided key, by appending a 1 byte
 pub fn calc_range_start(start_after: Option<u64>) -> Option<Vec<u8>> {
     start_after.map(|id| {
         let mut v = id.to_be_bytes().to_vec();
@@ -133,11 +141,9 @@ pub fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<SubMsg>
 
 pub fn vault_endowment_balance(deps: Deps, vault_address: String, endowment_id: u32) -> Uint128 {
     // get an account's balance held with a vault
-    let bal_resp: BalanceResponse = deps
-        .querier
+    deps.querier
         .query_wasm_smart(vault_address, &VaultQuerier::Balance { endowment_id })
-        .unwrap();
-    bal_resp.balance
+        .unwrap()
 }
 
 pub fn deposit_to_vaults(

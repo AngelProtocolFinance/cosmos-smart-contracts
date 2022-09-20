@@ -189,7 +189,7 @@ pub fn execute_propose_locked_withdraw(
     PROPOSALS.save(deps.storage, id, &prop)?;
 
     Ok(Response::new()
-        .add_attribute("action", "propose")
+        .add_attribute("action", "locked_withdraw_proposal")
         .add_attribute("sender", info.sender)
         .add_attribute("proposal_id", id.to_string())
         .add_attribute("status", format!("{:?}", prop.status)))

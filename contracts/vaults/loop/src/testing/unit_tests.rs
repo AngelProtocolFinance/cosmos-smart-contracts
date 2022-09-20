@@ -408,8 +408,8 @@ fn test_stake_lp_token_entry() {
         QueryMsg::Balance { endowment_id: 1 },
     )
     .unwrap();
-    let bal_resp: BalanceResponse = from_binary(&res).unwrap();
-    assert_eq!(bal_resp.balance, Uint128::from(1000000_u128));
+    let balance: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(balance, Uint128::from(1000000_u128));
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::TokenInfo {}).unwrap();
     let token_info_resp: TokenInfoResponse = from_binary(&res).unwrap();
@@ -444,8 +444,8 @@ fn test_stake_lp_token_entry() {
         QueryMsg::Balance { endowment_id: 1 },
     )
     .unwrap();
-    let bal_resp: BalanceResponse = from_binary(&res).unwrap();
-    assert_eq!(bal_resp.balance, Uint128::from(expected_total_share));
+    let balance: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(balance, Uint128::from(expected_total_share));
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::TokenInfo {}).unwrap();
     let token_info_resp: TokenInfoResponse = from_binary(&res).unwrap();
@@ -484,8 +484,8 @@ fn test_stake_lp_token_entry() {
         QueryMsg::Balance { endowment_id: 2 },
     )
     .unwrap();
-    let bal_resp: BalanceResponse = from_binary(&res).unwrap();
-    assert_eq!(bal_resp.balance, Uint128::from(minted_amount));
+    let balance: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(balance, Uint128::from(minted_amount));
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::TokenInfo {}).unwrap();
     let token_info_resp: TokenInfoResponse = from_binary(&res).unwrap();
@@ -572,8 +572,8 @@ fn test_redeem_lp_token() {
         QueryMsg::Balance { endowment_id: 1 },
     )
     .unwrap();
-    let bal_resp: BalanceResponse = from_binary(&res).unwrap();
-    assert_eq!(bal_resp.balance, Uint128::from(900000_u128));
+    let balance: Uint128 = from_binary(&res).unwrap();
+    assert_eq!(balance, Uint128::from(900000_u128));
 
     let res = query(deps.as_ref(), mock_env(), QueryMsg::TokenInfo {}).unwrap();
     let token_info_resp: TokenInfoResponse = from_binary(&res).unwrap();

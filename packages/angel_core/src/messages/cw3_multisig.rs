@@ -24,6 +24,7 @@ pub struct EndowmentInstantiateMsg {
     pub cw4_code: u64,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
+    pub registrar_contract: String,
 }
 
 /// We currently take no arguments for migrations

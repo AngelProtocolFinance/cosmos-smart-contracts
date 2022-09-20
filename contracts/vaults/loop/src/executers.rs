@@ -506,7 +506,7 @@ pub fn reinvest_to_locked_execute(
         }));
     }
     // 2. Check that sender ID has >= amount of vault tokens in it's balance
-    let endowment_vt_balance = crate::queriers::query_balance(deps.as_ref(), id).balance;
+    let endowment_vt_balance = crate::queriers::query_balance(deps.as_ref(), id);
     if burn_shares_amount > endowment_vt_balance {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: format!(
