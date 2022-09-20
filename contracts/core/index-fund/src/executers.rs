@@ -259,8 +259,20 @@ pub fn remove_member(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    if info.sender != config.registrar_contract {
-        return Err(ContractError::Unauthorized {});
+    let registrar_config: angel_core::responses::registrar::ConfigResponse =
+        deps.querier.query_wasm_smart(
+            config.registrar_contract,
+            &angel_core::messages::registrar::QueryMsg::Config {},
+        )?;
+
+    if let Some(accounts_contract) = registrar_config.accounts_contract {
+        if info.sender != accounts_contract {
+            return Err(ContractError::Unauthorized {});
+        }
+    } else {
+        return Err(ContractError::Std(StdError::generic_err(
+            "Accounts contract has not been set in registrar contract config".to_string(),
+        )));
     }
 
     // Check all Funds for the given member and remove the member if found

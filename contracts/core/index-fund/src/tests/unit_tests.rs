@@ -549,6 +549,7 @@ fn sc_owner_can_remove_member() {
     let ap_team = "angelprotocolteamdano".to_string();
     let _charity_addr = "charity-address".to_string();
     let registrar_contract = "registrar-account".to_string();
+    let accounts_contract = "accounts_contract_addr".to_string();
     let _pleb = "pleb-account".to_string();
 
     let msg = InstantiateMsg {
@@ -596,7 +597,7 @@ fn sc_owner_can_remove_member() {
     assert_eq!(fund_detail.fund.unwrap().members.len(), 2);
 
     // Try to remove the member
-    // Fails since non-registrar_contract calls the entry
+    // Fails since non-accounts_contract calls the entry
     let remove_member_msg = RemoveMemberMsg { member: 1 };
     let info = mock_info("anyone", &[]);
     let err = execute(
@@ -610,7 +611,7 @@ fn sc_owner_can_remove_member() {
 
     // Succeed to remove the member
     let remove_member_msg = RemoveMemberMsg { member: 1 };
-    let info = mock_info(registrar_contract.as_ref(), &[]);
+    let info = mock_info(accounts_contract.as_ref(), &[]);
     let _res = execute(
         deps.as_mut(),
         mock_env(),
