@@ -74,14 +74,3 @@ where
 pub struct MetaProposalListResponse {
     pub proposals: Vec<MetaProposalResponse>,
 }
-
-/// Asserts that the 0.0 < percent <= 1.0
-pub fn valid_percentage(percent: &Decimal) -> Result<(), ContractError> {
-    if percent.is_zero() {
-        Err(ContractError::ZeroThreshold {})
-    } else if *percent > Decimal::one() {
-        Err(ContractError::UnreachableThreshold {})
-    } else {
-        Ok(())
-    }
-}
