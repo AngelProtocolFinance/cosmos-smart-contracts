@@ -21,7 +21,7 @@ use cosmwasm_std::{
     ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg,
     WasmQuery,
 };
-use cw20::{Balance, BalanceResponse, Cw20Coin, Cw20CoinVerified};
+use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 use cw_utils::Duration;
@@ -157,6 +157,7 @@ pub fn create_endowment(
                 cw4_code: registrar_config.cw4_code.unwrap(),
                 threshold: msg.cw3_threshold,
                 max_voting_period: Duration::Time(msg.cw3_max_voting_period),
+                registrar_contract: config.registrar_contract.to_string(),
             })?,
             funds: vec![],
         }),

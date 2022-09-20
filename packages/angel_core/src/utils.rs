@@ -4,11 +4,19 @@ use crate::messages::vault::QueryMsg as VaultQuerier;
 use crate::responses::registrar::{ConfigResponse as RegistrarConfigResponse, VaultDetailResponse};
 use crate::structs::{GenericBalance, SplitDetails, StrategyComponent, YieldVault};
 use cosmwasm_std::{
-    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, DepsMut, QueryRequest, StdError,
-    StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, DepsMut, Event, QueryRequest,
+    StdError, StdResult, SubMsg, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20CoinVerified, Cw20ExecuteMsg, Denom};
 use cw_asset::{Asset, AssetInfoBase};
+
+/// Determine if a reply event contains a specific key-value pair
+pub fn event_contains_attr(event: &Event, key: &str, value: &str) -> bool {
+    event
+        .attributes
+        .iter()
+        .any(|attr| attr.key == key && attr.value == value)
+}
 
 /// The following `calc_range_<???>` functions will set the first key after the provided key, by appending a 1 byte
 pub fn calc_range_start(start_after: Option<u64>) -> Option<Vec<u8>> {
