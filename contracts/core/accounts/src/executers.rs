@@ -142,7 +142,7 @@ pub fn create_endowment(
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
             code_id: registrar_config.cw3_code.unwrap(),
             admin: None,
-            label: "new endowment cw3 multisig".to_string(),
+            label: format!("new endowment cw3 multisig - {}", config.next_account_id),
             msg: to_binary(&Cw3InstantiateMsg {
                 // endowment ID
                 id: config.next_account_id,
