@@ -10,6 +10,11 @@ pub fn query_balance(deps: Deps, endowment_id: u32) -> Uint128 {
         .unwrap_or_else(|_| Uint128::zero())
 }
 
+pub fn query_total_balance(deps: Deps) -> Uint128 {
+    let info = TOKEN_INFO.load(deps.storage).unwrap();
+    info.total_supply
+}
+
 pub fn query_token_info(deps: Deps) -> TokenInfoResponse {
     let info = TOKEN_INFO.load(deps.storage).unwrap();
     TokenInfoResponse {

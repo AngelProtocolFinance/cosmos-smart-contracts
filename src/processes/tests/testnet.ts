@@ -24,6 +24,7 @@ import {
   testCreateEndowment,
   testQueryAccountsEndowmentList,
   testEndowmentVaultsRedeem,
+  testQueryAccountsTokenAmount,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -45,6 +46,10 @@ import {
   testIndexFundRemoveMember,
   testIndexFundUpdateAllianceMember,
   testIndexFundUpateRegistrar,
+  testQueryIndexFundAllianceMember,
+  testUpdatingIndexFundOwner,
+  testUpdatingIndexFundRegistrar,
+  testUpdateAllianceMember,
 } from "./core/indexFunds";
 import {
   testUpdateCw3Config,
@@ -68,6 +73,9 @@ import {
   testRegistrarUpdateOwner,
   testUpdateEndowTypeFees,
   testUpdateNetworkConnections,
+  testQueryRegistrarNetworkConnection,
+  testUpdatingRegistrarNetworkConnections,
+  testUpdatingRegistrarUpdateOwner
 } from "./core/registrar";
 import { testQueryVaultConfig, testVaultHarvest, testVaultReinvestToLocked } from "./core/vaults";
 import {
@@ -198,7 +206,7 @@ export async function testExecute(
     charity2: { client: await clientSetup(charity2, networkUrl), wallet: charity2, addr: charity2Addr },
     charity3: { client: await clientSetup(charity3, networkUrl), wallet: charity3, addr: charity3Addr },
     pleb: { client: await clientSetup(pleb, networkUrl), wallet: pleb, addr: plebAddr },
-    tca: { client: await clientSetup(tca, networkUrl), wallet: tca, addr: charity3Addr },
+    tca: { client: await clientSetup(tca, networkUrl), wallet: tca, addr: tcaAddr },
   };
   console.log(chalk.green(" Done!"));
 
@@ -222,8 +230,30 @@ export async function testExecute(
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ApTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
 
+  /* --- REGISTRAR contract --- */
+  // await testUpdatingRegistrarUpdateOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, cw3ApTeam);
+  // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, {
+  //   accepted_tokens_native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno', 'ujunox'],
+  //   accepted_tokens_cw20: [],
+  // });
+  // await testUpdatingRegistrarNetworkConnections(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   registrar,
+  //   {
+  //     name: "Juno mainnet",
+  //     chain_id: "juno-1",
+  //     ibc_channel: undefined,
+  //     ica_address: undefined,
+  //     gas_limit: undefined,
+  //   },
+  //   "add", // action: "add" or "remove"
+  // );
 
-  // INDEXFUND test
+  /* --- INDEXFUND contract --- */
+  // await testUpdatingIndexFundOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, cw3ApTeam);
+  // await testUpdatingIndexFundRegistrar(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, registrar);
   // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund);
   // await testUpdateAllianceMembersList(
   //   actors.apTeam.client,
@@ -239,6 +269,19 @@ export async function testExecute(
   //   }, // member #1`
   //   "add" // action
   // );
+  // await testUpdateAllianceMember(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   actors.apTeam2.addr, // member address
+  //   {
+  //     name: "Testnet Charity #2",
+  //     website:
+  //       "http://angelprotocol.io/app/charity/juno1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+  //     logo: "https://angelprotocol.io/favicon.ico",
+  //   },
+  // );
   // await testCreateIndexFund(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
@@ -249,7 +292,14 @@ export async function testExecute(
   //   false,
   //   []
   // );
-  // await testUpdateFundMembers(actors.apTeam.client, actors.apTeam.addr, indexFund, 2, [], []);
+  // await testRemoveIndexFund(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   7,
+  // );
+  // await testIndexFundRemoveMember(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, 1); // INCOMPLETE: "remove_member" entry should be called from "accounts_contract".
   // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0", "1000000");
   // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund);
   // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
@@ -257,7 +307,14 @@ export async function testExecute(
   // await testIndexFundUpateRegistrar(actors.apTeam.client, actors.apTeam.addr, indexFund, registrar); //SHOULDFIXCONTRACT
   // await testIndexFundRemoveMember(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
   // await testIndexFundUpdateAllianceMember(actors.apTeam.client, actors.apTeam.addr, indexFund, charity3Addr, { name: "Charity3", logo: undefined, website: undefined });
-
+  // await testUpdateFundMembers(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   indexFund,
+  //   2,
+  //   [1, 2],
+  //   []
+  // );
 
   // REGISTRAR test
   // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, registrar, {
@@ -280,21 +337,20 @@ export async function testExecute(
   // await testUpdateNetworkConnections(actors.apTeam.client, actors.apTeam.addr, registrar, {
   //   network_info: {
   //     name: "terra-juno channel",
-  //     chain_id: "phoenix-1",
+  //     chain_id: "juno-1",
   //     ibc_channel: "terra-juno-chann-1",
   //     gas_limit: undefined,
   //   },
   //   action: "add",
   // });
 
-  // ACCOUNTS test
+  /* --- ACCOUNTS & ENDOWMENTS --- */
   // await testUpateAccountsOwner(
   //   actors.charity1.client,
   //   actors.charity1.addr,
   //   accounts,
   //   apTeamAddr,
   // );
-
   // await testCreateEndowment(networkUrl, actors.charity1.wallet, cw3ReviewTeam, accounts, {
   //   owner: actors.charity1.addr,
   //   withdraw_before_maturity: false,
@@ -320,7 +376,7 @@ export async function testExecute(
   //     average_annual_budget: undefined,
   //     annual_revenue: undefined,
   //     charity_navigator_rating: undefined,
-  //     endow_type: "Normal",
+  //     endow_type: "Charity",
   //   },
   //   kyc_donors_only: false,
   //   whitelisted_beneficiaries: [charity1Addr],
@@ -357,14 +413,18 @@ export async function testExecute(
   //   aum_fee: undefined,
   //   settings_controller: undefined,
   //   parent: false,
-  // });
+  //   cw4_members: [{ addr: actors.charity1.addr, weight: 1 }],
+  //   kyc_donors_only: false,
+  //   cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
+  //   cw3_max_voting_period: 10000,
+  // }, [actors.apTeam.wallet]);
   // await testCharityCanUpdateStrategies(
   //   actors.charity1.client,
   //   actors.charity1.addr,
   //   accounts,
   //   endowId1,
   //   `locked`,
-  //   [{ vault: vaultLocked1, percentage: "0.5"}]
+  //   [{ vault: vaultLocked1, percentage: "0.5" }]
   // );
   // await testCharityCanUpdateStrategies(
   //   actors.charity1.client,
@@ -372,7 +432,7 @@ export async function testExecute(
   //   accounts,
   //   endowId1,
   //   `liquid`,
-  //   [{ vault: vaultLiquid1, percentage: "0.5"}]
+  //   [{ vault: vaultLiquid1, percentage: "0.5" }]
   // );
 
   // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1, "1000");
@@ -399,42 +459,43 @@ export async function testExecute(
   // );
 
   // await testEndowmentCanWithdraw(
-  //   actors.charity1.client,
-  //   actors.charity1.addr,
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
   //   accounts,
   //   endowId1,
-  //   vaultLocked1,
-  //   "500000",
+  //   `locked`,
   //   actors.charity1.addr,
+  //   [{ info: { native: "ujuno" }, amount: "1000" }],
   // );
-  // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ReviewTeam, accounts, 1);
-  // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 1, status: 1, benficiary: undefined });
-  // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, endowmentContract1, "10000000"); // possible query registrar error
+  // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1);
+  // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: endowId1, status: 1, benficiary: undefined });
+  // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, accounts, endowId3, "10000000"); // possible query registrar error
 
 
   // Test query
-  await testQueryRegistrarConfig(actors.apTeam.client, registrar);
-  await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
-  await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
-  await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
+  // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
+  // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
+  // await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
+  // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, "juno-1");
 
-  await testQueryVaultConfig(actors.apTeam.client, vaultLocked1);
+  // await testQueryVaultConfig(actors.apTeam.client, vaultLocked1);
 
-  await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
-  await testQueryAccountsConfig(actors.apTeam.client, accounts);
-  await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
-  await testQueryAccountsProfile(actors.apTeam.client, accounts, endowId1);
-  await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
-  await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
+  // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
+  // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsConfig(actors.apTeam.client, accounts);
+  // await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsState(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsTokenAmount(actors.apTeam.client, accounts, 1, { native: "ujuno" }, "locked");
 
-  await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
-  await testQueryIndexFundState(actors.apTeam.client, indexFund);
-  await testQueryIndexFundTcaList(actors.apTeam.client, indexFund);
-  await testQueryIndexFundFundsList(actors.apTeam.client, indexFund, undefined, undefined);
-  await testQueryIndexFundFundDetails(actors.apTeam.client, indexFund, 1);
-  await testQueryIndexFundActiveFundDetails(actors.apTeam.client, indexFund);
-  await testQueryIndexFundActiveFundDonations(actors.apTeam.client, indexFund);
-  await testQueryIndexFundDeposit(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundState(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundTcaList(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundFundsList(actors.apTeam.client, indexFund, undefined, undefined);
+  // await testQueryIndexFundFundDetails(actors.apTeam.client, indexFund, 1);
+  // await testQueryIndexFundActiveFundDonations(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundDeposit(actors.apTeam.client, indexFund);
+  // await testQueryIndexFundAllianceMember(actors.apTeam.client, indexFund, actors.apTeam2.addr);
 
   // Test query for HALO airdrop
   // await testAirdropUpdateConfig(actors.apTeam.client, actors.apTeam.addr, apTeam2, pleb, haloAirdrop);

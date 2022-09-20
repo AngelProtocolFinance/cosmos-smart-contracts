@@ -104,6 +104,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Balance { endowment_id } => {
             to_binary(&queriers::query_balance(deps, endowment_id))
         }
+        QueryMsg::TotalBalance {} => to_binary(&queriers::query_total_balance(deps)),
         QueryMsg::TokenInfo {} => to_binary(&queriers::query_token_info(deps)),
         // ANCHOR-SPECIFIC QUERIES BELOW THIS POINT!
         QueryMsg::ExchangeRate { input_denom: _ } => to_binary(&ExchangeRateResponse {
