@@ -1,9 +1,10 @@
 use cosmwasm_std::{CosmosMsg, Empty};
-use cw3::Vote;
+use cw3::{Status, Vote};
 use cw4::MemberChangedHookMsg;
-use cw_utils::{Duration, Expiration, Threshold};
+use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use std::fmt;
 
 /// We currently take no arguments for migrations
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -37,4 +38,38 @@ pub enum ExecuteMsg {
     },
     /// Handles update hook messages from the group contract
     MemberChangedHook(MemberChangedHookMsg),
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+#[serde(rename_all = "snake_case")]
+pub struct ConfigResponse {
+    pub registrar_contract: String,
+    pub threshold: Threshold,
+    pub max_voting_period: Duration,
+    pub group_addr: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct MetaProposalResponse<T = Empty>
+where
+    T: Clone + fmt::Debug + PartialEq + JsonSchema,
+{
+    pub id: u64,
+    pub title: String,
+    pub description: String,
+    pub msgs: Vec<CosmosMsg<T>>,
+    pub status: Status,
+    pub expires: Expiration,
+    pub confirmation_proposal: Option<u64>,
+    /// This is the threshold that is applied to this proposal. Both the rules of the voting contract,
+    /// as well as the total_weight of the voting group may have changed since this time. That means
+    /// that the generic `Threshold{}` query does not provide valid information for existing proposals.
+    pub threshold: ThresholdResponse,
+    /// metadata field allows for a UI to easily set and display data about the proposal
+    pub meta: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct MetaProposalListResponse {
+    pub proposals: Vec<MetaProposalResponse>,
 }

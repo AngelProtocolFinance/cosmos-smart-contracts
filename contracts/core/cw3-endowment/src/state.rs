@@ -15,6 +15,7 @@ const PRECISION_FACTOR: u128 = 1_000_000_000;
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct Config {
+    pub registrar_contract: Addr,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
     pub group_addr: Cw4Contract,
@@ -22,6 +23,7 @@ pub struct Config {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct TempConfig {
+    pub registrar_contract: Addr,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
 }
@@ -34,6 +36,8 @@ pub struct Proposal {
     pub expires: Expiration,
     pub msgs: Vec<CosmosMsg<Empty>>,
     pub status: Status,
+    /// Confirmation Proposal ID needed for Early Locked Withdraw requests (set by reply)
+    pub confirmation_proposal: Option<u64>,
     /// pass requirements
     pub threshold: Threshold,
     // the total weight when the proposal started (used to calculate percentages)
@@ -230,6 +234,7 @@ mod test {
             threshold,
             total_weight,
             votes,
+            confirmation_proposal: None,
             meta: Some("".to_string()),
         };
         prop.is_passed(&block)

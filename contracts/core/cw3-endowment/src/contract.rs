@@ -1,15 +1,18 @@
-use crate::msg::{ExecuteMsg, MigrateMsg};
+use crate::msg::{
+    ConfigResponse, ExecuteMsg, MetaProposalListResponse, MetaProposalResponse, MigrateMsg,
+};
 use crate::state::{
     next_id, Ballot, Config, Proposal, TempConfig, Votes, BALLOTS, CONFIG, PROPOSALS, TEMP_CONFIG,
 };
 use angel_core::errors::multisig::ContractError;
-use angel_core::messages::cw3_multisig::{
-    ConfigResponse, EndowmentInstantiateMsg as InstantiateMsg, MetaProposalListResponse,
-    MetaProposalResponse, QueryMsg,
-};
+use angel_core::messages::cw3_multisig::{EndowmentInstantiateMsg as InstantiateMsg, QueryMsg};
+use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
+use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
+use angel_core::utils::event_contains_attr;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
-    Order, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, WasmMsg,
+    entry_point, to_binary, Binary, BlockInfo, CosmosMsg, CosmosMsg::Wasm, Deps, DepsMut, Empty,
+    Env, MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
+    SubMsgResult, WasmMsg, WasmMsg::Execute, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
@@ -25,6 +28,9 @@ use std::cmp::Ordering;
 const CONTRACT_NAME: &str = "cw3-endowment";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
+const INIT_CW4_REPLY_ID: u64 = 0;
+const APTEAM_CW3_REPLY_ID: u64 = 1;
+
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
     deps: DepsMut,
@@ -38,6 +44,7 @@ pub fn instantiate(
     TEMP_CONFIG.save(
         deps.storage,
         &TempConfig {
+            registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             threshold: msg.threshold,
             max_voting_period: msg.max_voting_period,
         },
@@ -67,10 +74,73 @@ pub fn instantiate(
 #[entry_point]
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
-        0 => cw4_group_reply(deps, env, msg.result),
+        INIT_CW4_REPLY_ID => cw4_group_reply(deps, env, msg.result),
+        APTEAM_CW3_REPLY_ID => apteam_cw3_reply(deps, env, msg.result),
         _ => Err(ContractError::Std(StdError::GenericErr {
-            msg: "Invalid Submessage Reply ID!".to_string(),
+            msg: format!("Invalid Submessage Reply ID: {}", msg.id),
         })),
+    }
+}
+
+pub fn apteam_cw3_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: SubMsgResult,
+) -> Result<Response, ContractError> {
+    match msg {
+        SubMsgResult::Ok(subcall) => {
+            // filter out relevent events from the reply logs
+            let apteam_event = subcall
+                .events
+                .iter()
+                .find(|event| event_contains_attr(event, "action", "locked_withdraw_proposal"))
+                .ok_or_else(|| {
+                    StdError::generic_err("cannot find `locked_withdraw_proposal` event")
+                })?;
+
+            let execution_event = subcall
+                .events
+                .iter()
+                .find(|event| event_contains_attr(event, "action", "execute"))
+                .ok_or_else(|| StdError::generic_err("cannot find `execute` event"))?;
+
+            // find & parse the proposal IDs from each event
+            let cw3_apteam_proposal: u64 = apteam_event
+                .attributes
+                .iter()
+                .cloned()
+                .find(|attr| attr.key == "proposal_id")
+                .ok_or_else(|| {
+                    StdError::generic_err(
+                        "Cannot find `proposal_id` attribute within the `locked_withdraw_proposal` event",
+                    )
+                })?
+                .value
+                .parse()
+                .unwrap();
+
+            let orig_id: u64 = execution_event
+                .attributes
+                .iter()
+                .cloned()
+                .find(|attr| attr.key == "proposal_id")
+                .ok_or_else(|| {
+                    StdError::generic_err(
+                        "Cannot find `proposal_id` attribute within the `execute` event",
+                    )
+                })?
+                .value
+                .parse()
+                .unwrap();
+
+            // update the original proposal with the new confirmation CW3 AP Team proposal ID
+            let mut proposal = PROPOSALS.load(deps.storage, orig_id)?;
+            proposal.confirmation_proposal = Some(cw3_apteam_proposal);
+            PROPOSALS.save(deps.storage, orig_id, &proposal)?;
+
+            Ok(Response::default())
+        }
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
 }
 
@@ -113,6 +183,7 @@ pub fn cw4_group_reply(
             CONFIG.save(
                 deps.storage,
                 &Config {
+                    registrar_contract: temp.registrar_contract,
                     threshold: temp.threshold,
                     max_voting_period: temp.max_voting_period,
                     group_addr,
@@ -212,6 +283,7 @@ pub fn execute_propose(
         start_height: env.block.height,
         expires,
         msgs,
+        confirmation_proposal: None,
         status: Status::Open,
         votes: Votes::new(vote_power),
         threshold: cfg.threshold,
@@ -307,9 +379,40 @@ pub fn execute_execute(
     prop.status = Status::Executed;
     PROPOSALS.save(deps.storage, proposal_id, &prop)?;
 
+    // grab the ap_team cw3 address from registrar
+    let cfg = CONFIG.load(deps.storage)?;
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: cfg.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarConfig {})?,
+        }))?;
+
+    // work into submsgs where needed (ie. going to AP Team CW3 or Gov) for catching replies
+    let mut norm_msgs: Vec<CosmosMsg> = vec![];
+    let mut sub_msgs: Vec<SubMsg> = vec![];
+    for msg in prop.msgs.into_iter() {
+        if let Wasm(ref wasm_m) = msg {
+            if let Execute { contract_addr, .. } = wasm_m {
+                if contract_addr.to_string() == registrar_config.owner {
+                    sub_msgs.push(SubMsg::reply_on_success(
+                        wasm_m.clone(),
+                        APTEAM_CW3_REPLY_ID,
+                    ));
+                } else {
+                    norm_msgs.push(msg);
+                }
+            } else {
+                norm_msgs.push(msg);
+            }
+        } else {
+            norm_msgs.push(msg)
+        }
+    }
+
     // dispatch all proposed messages
     Ok(Response::new()
-        .add_messages(prop.msgs)
+        .add_messages(norm_msgs)
+        .add_submessages(sub_msgs)
         .add_attribute("action", "execute")
         .add_attribute("sender", info.sender)
         .add_attribute("proposal_id", proposal_id.to_string()))
@@ -391,6 +494,7 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         threshold: cfg.threshold,
         max_voting_period: cfg.max_voting_period,
         group_addr: cfg.group_addr.0.to_string(),
+        registrar_contract: cfg.registrar_contract.to_string(),
     })
 }
 
@@ -410,6 +514,7 @@ fn query_proposal(deps: Deps, env: Env, id: u64) -> StdResult<MetaProposalRespon
         description: prop.description,
         msgs: prop.msgs,
         status,
+        confirmation_proposal: prop.confirmation_proposal,
         expires: prop.expires,
         threshold,
         meta: prop.meta,
@@ -467,6 +572,7 @@ fn map_proposal(
             description: prop.description,
             msgs: prop.msgs,
             status,
+            confirmation_proposal: prop.confirmation_proposal,
             expires: prop.expires,
             threshold,
             meta: prop.meta,
