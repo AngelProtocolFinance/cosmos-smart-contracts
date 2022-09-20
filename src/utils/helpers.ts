@@ -119,7 +119,7 @@ export async function instantiateContract(
   codeId: number,
   instantiateMsg: Record<string, unknown>
 ) {
-  const result = await juno.instantiate(deployer, codeId, instantiateMsg, "instantiate", "auto", { admin: admin });
+  const result = await juno.instantiate(deployer, codeId, instantiateMsg, `instantiate-${Math.floor(Math.random() * codeId)}`, "auto", { admin: admin });
   return result;
 }
 
