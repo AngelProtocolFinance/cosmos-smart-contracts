@@ -4,7 +4,7 @@ use cosmwasm_std::{
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
-use terraswap::asset::AssetInfo;
+use terraswap::asset::{AssetInfo, PairInfo};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
@@ -12,7 +12,7 @@ use terraswap::querier::query_pair_info_from_pair;
 
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, MinterData, TokenInfo, APTAX, CONFIG, TOKEN_INFO};
+use crate::state::{Config, MinterData, State, TokenInfo, APTAX, CONFIG, STATE, TOKEN_INFO};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "loopswap_vault";
@@ -33,7 +33,7 @@ pub fn instantiate(
         None => env.contract.address.clone(), // can set later with update_config
     };
     let pair_contract = deps.api.addr_validate(&msg.pair_contract)?;
-    let pair_info = query_pair_info_from_pair(&deps.querier, pair_contract.clone())?;
+    let pair_info: PairInfo = query_pair_info_from_pair(&deps.querier, pair_contract.clone())?;
 
     let config = Config {
         owner: info.sender,
@@ -43,18 +43,30 @@ pub fn instantiate(
         keeper: deps.api.addr_validate(&msg.keeper)?,
         tax_collector: deps.api.addr_validate(&msg.tax_collector)?,
 
+        lp_token: deps.api.addr_validate(&pair_info.liquidity_token)?,
+        lp_pair_token0: pair_info.asset_infos[0].clone(),
+        lp_pair_token1: pair_info.asset_infos[1],
+        lp_reward_token: deps.api.addr_validate(&msg.lp_reward_token)?,
+
+        native_token: AssetInfo::NativeToken {
+            denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
+                .to_string(),
+        },
+        reward_to_native_route: vec![],
+        native_to_lp0_route: vec![],
+        native_to_lp1_route: vec![],
+
         lp_factory_contract: deps.api.addr_validate(&msg.lp_factory_contract)?,
         lp_staking_contract: deps.api.addr_validate(&msg.lp_staking_contract)?,
         lp_pair_contract: pair_contract,
-        lp_pair_asset_infos: pair_info.asset_infos,
-        lp_token_contract: deps.api.addr_validate(&pair_info.liquidity_token)?,
-        lp_reward_token: deps.api.addr_validate(&msg.lp_reward_token)?,
+    };
+    CONFIG.save(deps.storage, &config)?;
 
+    let state = State {
         total_lp_amount: Uint128::zero(),
         total_shares: Uint128::zero(),
     };
-
-    CONFIG.save(deps.storage, &config)?;
+    STATE.save(deps.storage, &state)?;
 
     APTAX.save(deps.storage, &Uint128::zero())?;
 
@@ -217,6 +229,7 @@ fn receive_cw20(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Config {} => to_binary(&queriers::query_config(deps)),
+        QueryMsg::State {} => to_binary(&queriers::query_state(deps)),
         QueryMsg::Balance { endowment_id } => {
             to_binary(&queriers::query_balance(deps, endowment_id))
         }

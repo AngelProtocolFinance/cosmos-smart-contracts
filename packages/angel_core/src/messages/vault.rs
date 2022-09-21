@@ -128,6 +128,9 @@ pub enum QueryMsg {
     /// Returns the configuration of the contract
     /// Return type: ConfigResponse.
     Config {},
+    /// Returns the state of the contract
+    /// Return type: StateResponse.
+    State {},
     /// Returns the current balance of the given "Endowment ID", 0 if unset.
     /// Return type: BalanceResponse.
     Balance { endowment_id: u32 },
