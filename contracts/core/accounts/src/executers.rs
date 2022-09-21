@@ -21,7 +21,7 @@ use cosmwasm_std::{
     ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg,
     WasmQuery,
 };
-use cw20::{Balance, BalanceResponse, Cw20Coin, Cw20CoinVerified};
+use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 use cw_utils::Duration;
@@ -142,7 +142,7 @@ pub fn create_endowment(
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
             code_id: registrar_config.cw3_code.unwrap(),
             admin: None,
-            label: "new endowment cw3 multisig".to_string(),
+            label: format!("new endowment cw3 multisig - {}", config.next_account_id),
             msg: to_binary(&Cw3InstantiateMsg {
                 // endowment ID
                 id: config.next_account_id,
@@ -157,6 +157,7 @@ pub fn create_endowment(
                 cw4_code: registrar_config.cw4_code.unwrap(),
                 threshold: msg.cw3_threshold,
                 max_voting_period: Duration::Time(msg.cw3_max_voting_period),
+                registrar_contract: config.registrar_contract.to_string(),
             })?,
             funds: vec![],
         }),
@@ -1304,14 +1305,13 @@ pub fn vaults_redeem(
         match vault_config.vault.vault_type {
             VaultType::Native => {
                 // Check the vault token(VT) balance
-                let available_vt: BalanceResponse = deps.querier.query_wasm_smart(
+                let available_vt: Uint128 = deps.querier.query_wasm_smart(
                     vault_addr.to_string(),
                     &angel_core::messages::vault::QueryMsg::Balance { endowment_id: id },
                 )?;
-                if *amount > available_vt.balance {
+                if *amount > available_vt {
                     return Err(ContractError::BalanceTooSmall {});
                 }
-
                 redeem_msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: vault_addr,
                     msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {

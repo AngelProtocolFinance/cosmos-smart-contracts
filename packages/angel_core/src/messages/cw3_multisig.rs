@@ -14,6 +14,7 @@ pub struct EndowmentInstantiateMsg {
     pub cw4_code: u64,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
+    pub registrar_contract: String,
 }
 
 // We can also add this as a cw3 extension
