@@ -1,13 +1,11 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
-use cosmwasm_std::{
-    coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, StdError, Uint128,
-};
+use cosmwasm_std::{coins, from_binary, to_binary, Addr, Coin, OwnedDeps, StdError, Uint128};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, QueryMsg, UpdateConfigMsg};
-use angel_core::responses::vault::ConfigResponse;
+use angel_core::responses::vault::{ConfigResponse, StateResponse};
 use angel_core::structs::AccountType;
-use cw20::{BalanceResponse, TokenInfoResponse};
+use cw20::TokenInfoResponse;
 
 use crate::contract::{execute, instantiate, query};
 use crate::testing::mock_querier::{mock_dependencies, WasmMockQuerier};
@@ -32,8 +30,6 @@ fn create_mock_vault(
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
-
-        harvest_to_liquid: Decimal::from_ratio(10_u128, 100_u128),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -60,8 +56,6 @@ fn proper_instantiation() {
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
-
-        harvest_to_liquid: Decimal::from_ratio(10_u128, 100_u128),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -397,10 +391,10 @@ fn test_stake_lp_token_entry() {
     assert_eq!(res.messages.len(), 1);
 
     // Check if only 1 VT(vault token) is minted for Endowment 1.
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config_resp: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config_resp.total_lp_amount, "100");
-    assert_eq!(config_resp.total_shares, "1000000");
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(state.total_lp_amount, "100");
+    assert_eq!(state.total_shares, "1000000");
 
     let res = query(
         deps.as_ref(),
@@ -432,11 +426,11 @@ fn test_stake_lp_token_entry() {
     assert_eq!(res.messages.len(), 1);
 
     // Check the VT(vault token) balance
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config_resp: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config_resp.total_lp_amount, (100 + 100).to_string());
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(state.total_lp_amount, (100 + 100).to_string());
     let expected_total_share: u128 = 1000000 + 100 * 1000000 / 200;
-    assert_eq!(config_resp.total_shares, expected_total_share.to_string());
+    assert_eq!(state.total_shares, expected_total_share.to_string());
 
     let res = query(
         deps.as_ref(),
@@ -471,12 +465,12 @@ fn test_stake_lp_token_entry() {
     assert_eq!(res.messages.len(), 1);
 
     // Check the VT(vault token) balance
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config_resp: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config_resp.total_lp_amount, (200 + 100).to_string());
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(state.total_lp_amount, (200 + 100).to_string());
     let minted_amount: u128 = 100 * 1500000 / 300;
     let expected_total_share: u128 = 1500000 + minted_amount;
-    assert_eq!(config_resp.total_shares, expected_total_share.to_string());
+    assert_eq!(state.total_shares, expected_total_share.to_string());
 
     let res = query(
         deps.as_ref(),
@@ -558,13 +552,13 @@ fn test_redeem_lp_token() {
     assert_eq!(res.messages.len(), 3);
 
     // Check the VT(vault token) balance
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config_resp: ConfigResponse = from_binary(&res).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
     assert_eq!(
-        config_resp.total_lp_amount,
+        state.total_lp_amount,
         (100 - 100000 * 100 / 1000000).to_string()
     );
-    assert_eq!(config_resp.total_shares, (1000000 - 100000).to_string());
+    assert_eq!(state.total_shares, (1000000 - 100000).to_string());
 
     let res = query(
         deps.as_ref(),
@@ -667,11 +661,11 @@ fn test_reinvest_to_locked() {
     assert_eq!(res.messages.len(), 3);
 
     // Check the VT(vault token) balance
-    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config_resp: ConfigResponse = from_binary(&res).unwrap();
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
     assert_eq!(
-        config_resp.total_lp_amount,
+        state.total_lp_amount,
         (100 - 1000000 * 100 / 1000000).to_string()
     );
-    assert_eq!(config_resp.total_shares, (1000000 - 1000000).to_string());
+    assert_eq!(state.total_shares, (1000000 - 1000000).to_string());
 }

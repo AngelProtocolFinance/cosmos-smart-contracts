@@ -45,7 +45,7 @@ pub fn instantiate(
 
         lp_token: deps.api.addr_validate(&pair_info.liquidity_token)?,
         lp_pair_token0: pair_info.asset_infos[0].clone(),
-        lp_pair_token1: pair_info.asset_infos[1],
+        lp_pair_token1: pair_info.asset_infos[1].clone(),
         lp_reward_token: deps.api.addr_validate(&msg.lp_reward_token)?,
 
         native_token: AssetInfo::NativeToken {

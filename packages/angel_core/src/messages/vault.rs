@@ -21,8 +21,6 @@ pub struct InstantiateMsg {
     pub name: String,
     pub symbol: String,
     pub decimals: u8,
-
-    pub harvest_to_liquid: Decimal,
 }
 
 /// We currently take no arguments for migrations
@@ -87,11 +85,12 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
+    pub sibling_vault: Option<String>,
+    pub keeper: Option<String>,
+    pub tax_collector: Option<String>,
+
     pub lp_staking_contract: Option<String>,
     pub lp_pair_contract: Option<String>,
-    pub keeper: Option<String>,
-    pub sibling_vault: Option<String>,
-    pub tax_collector: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
