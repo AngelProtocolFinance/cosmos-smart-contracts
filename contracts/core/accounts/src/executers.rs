@@ -57,6 +57,33 @@ pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response
     }
 }
 
+pub fn init_ibc_controller_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: SubMsgResult,
+) -> Result<Response, ContractError> {
+    match msg {
+        SubMsgResult::Ok(subcall) => {
+            let mut config = CONFIG.load(deps.storage)?;
+            for event in subcall.events {
+                if event.ty == *"wasm" {
+                    for attrb in event.attributes {
+                        match attrb.key.as_str() {
+                            "_contract_addr" => {
+                                config.ibc_controller = deps.api.addr_validate(&attrb.value)?
+                            }
+                            _ => (),
+                        }
+                    }
+                }
+            }
+            CONFIG.save(deps.storage, &config)?;
+            Ok(Response::default())
+        }
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
+    }
+}
+
 pub fn create_endowment(
     deps: DepsMut,
     _env: Env,

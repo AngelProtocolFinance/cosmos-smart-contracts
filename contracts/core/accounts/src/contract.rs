@@ -4,8 +4,8 @@ use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use cosmwasm_std::{
-    entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
-    StdError, StdResult,
+    entry_point, from_binary, to_binary, Binary, CosmosMsg, Deps, DepsMut, Env, MessageInfo, Reply,
+    Response, StdError, StdResult, SubMsg, WasmMsg,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
@@ -36,7 +36,18 @@ pub fn instantiate(
         },
     )?;
 
-    Ok(Response::default())
+    Ok(Response::default()
+        // Add submessage to create IBC Controller contract for Accounts
+        .add_submessage(SubMsg::reply_on_success(
+            CosmosMsg::Wasm(WasmMsg::Instantiate {
+                code_id: msg.ibc_controller_code,
+                admin: None,
+                label: "IBC controller for Accounts contract".to_string(),
+                msg: to_binary(&ica_vaults::ica_controller_msg::InstantiateMsg {})?,
+                funds: vec![],
+            }),
+            1,
+        )))
 }
 
 #[entry_point]
@@ -189,6 +200,7 @@ pub fn receive_cw20(
 pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
     match msg.id {
         0 => executers::cw3_reply(deps, env, msg.result),
+        1 => executers::init_ibc_controller_reply(deps, env, msg.result),
         _ => Err(ContractError::Unauthorized {}),
     }
 }
