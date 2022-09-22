@@ -137,6 +137,8 @@ async function createMockVaults(
       yield_token: registrar,
       restricted_from: [],
       acct_type: `locked`,
+      vault_type: "native",
+
     }
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
@@ -147,6 +149,7 @@ async function createMockVaults(
       yield_token: registrar,
       restricted_from: [],
       acct_type: `liquid`,
+      vault_type: "native",
     }
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
@@ -157,6 +160,7 @@ async function createMockVaults(
       yield_token: registrar,
       restricted_from: [],
       acct_type: `locked`,
+      vault_type: "native", // { ibc: { ica: "terra13sdf46134135sdgasdfasfq00" } },
     }
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
@@ -167,6 +171,7 @@ async function createMockVaults(
       yield_token: registrar,
       restricted_from: [],
       acct_type: `liquid`,
+      vault_type: "native", // { ibc: { ica: "terra134q352adf34135sdgasdfasfq99" } },
     }
   });
   console.log(chalk.green(" Done!"));

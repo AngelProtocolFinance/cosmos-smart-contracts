@@ -329,8 +329,6 @@ export async function testExecute(
   // Test query
   // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
-  // await testQueryRegistrarApprovedVaultRateList(actors.apTeam.client, registrar);
-  // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, Vault1);
   // await testQueryVaultConfig(actors.apTeam.client, Vault1);
   
