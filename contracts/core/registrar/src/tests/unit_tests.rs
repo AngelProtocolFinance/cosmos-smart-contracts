@@ -367,7 +367,7 @@ fn test_add_update_and_remove_network_infos() {
     // Succeed to add the network_info
     let add_network_info_msg = ExecuteMsg::UpdateNetworkConnections {
         network_info: mock_network_info.clone(),
-        action: "add".to_string(),
+        action: "post".to_string(),
     };
     let res = execute(deps.as_mut(), mock_env(), info, add_network_info_msg).unwrap();
     assert_eq!(1, res.attributes.len());
@@ -388,26 +388,11 @@ fn test_add_update_and_remove_network_infos() {
     );
 
     // Remove the network_info
-
-    // Should fail since invalid action mode
+    // Succeed to remove the network_info
     let info = mock_info(ap_team.as_ref(), &coins(1000, "earth"));
     let add_network_info_msg = ExecuteMsg::UpdateNetworkConnections {
         network_info: mock_network_info.clone(),
-        action: "wowo".to_string(),
-    };
-    let err = execute(
-        deps.as_mut(),
-        mock_env(),
-        info.clone(),
-        add_network_info_msg.clone(),
-    )
-    .unwrap_err();
-    assert_eq!(err, ContractError::InvalidInputs {});
-
-    // Succeed to remove the network_info
-    let add_network_info_msg = ExecuteMsg::UpdateNetworkConnections {
-        network_info: mock_network_info.clone(),
-        action: "remove".to_string(),
+        action: "delete".to_string(),
     };
     let res = execute(deps.as_mut(), mock_env(), info, add_network_info_msg).unwrap();
     assert_eq!(1, res.attributes.len());
