@@ -3,7 +3,7 @@ use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
 use angel_core::structs::{
     AcceptedTokens, AccountStrategies, AccountType, OneOffVaults, RebalanceDetails, SplitDetails,
-    YieldVault,
+    VaultType, YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -298,6 +298,7 @@ impl WasmMockQuerier {
                             approved: true,
                             restricted_from: vec![],
                             acct_type: AccountType::Locked,
+                            vault_type: VaultType::Native,
                         },
                     })
                     .unwrap(),

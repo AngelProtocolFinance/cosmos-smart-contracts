@@ -1,10 +1,9 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, CONFIG};
+use crate::state::{Config, CONFIG, NETWORK_CONNECTIONS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::RebalanceDetails;
-use angel_core::structs::{AcceptedTokens, SplitDetails};
+use angel_core::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError,
@@ -19,7 +18,7 @@ const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 #[entry_point]
 pub fn instantiate(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
@@ -66,6 +65,19 @@ pub fn instantiate(
 
     CONFIG.save(deps.storage, &configs)?;
 
+    // setup basic JUNO network info for native Vaults
+    NETWORK_CONNECTIONS.save(
+        deps.storage,
+        &env.block.chain_id.clone(),
+        &NetworkInfo {
+            name: "Juno".to_string(),
+            chain_id: env.block.chain_id,
+            ibc_channel: None,
+            ibc_host_contract: None,
+            gas_limit: None,
+        },
+    )?;
+
     Ok(Response::default())
 }
 
@@ -108,6 +120,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             network,
             endowment_type,
             acct_type,
+            vault_type,
             approved,
             start_after,
             limit,
@@ -116,6 +129,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             network,
             endowment_type,
             acct_type,
+            vault_type,
             approved,
             start_after,
             limit,

@@ -1,6 +1,6 @@
 use angel_core::messages::dexs::InfoResponse;
 use angel_core::responses::registrar::VaultDetailResponse;
-use angel_core::structs::{AccountType, EndowmentType};
+use angel_core::structs::{AccountType, EndowmentType, VaultType};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, BankQuery, Coin, ContractResult, Decimal, Empty,
@@ -266,6 +266,7 @@ impl WasmMockQuerier {
                             approved: true,
                             restricted_from: vec![],
                             acct_type: AccountType::Locked,
+                            vault_type: VaultType::Native,
                         },
                     })
                     .unwrap(),

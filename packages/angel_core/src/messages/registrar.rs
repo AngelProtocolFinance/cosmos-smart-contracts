@@ -1,6 +1,6 @@
 use crate::structs::{
     AcceptedTokens, AccountType, DaoSetup, EndowmentFee, EndowmentType, NetworkInfo, Profile,
-    RebalanceDetails, SettingsController, SplitDetails, Tier,
+    RebalanceDetails, SettingsController, SplitDetails, Tier, VaultType,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use cw4::Member;
@@ -150,6 +150,7 @@ pub struct VaultAddMsg {
     pub yield_token: String,
     pub restricted_from: Vec<EndowmentType>,
     pub acct_type: AccountType,
+    pub vault_type: VaultType,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -182,6 +183,7 @@ pub enum QueryMsg {
         network: Option<String>,
         endowment_type: Option<EndowmentType>,
         acct_type: Option<AccountType>,
+        vault_type: Option<VaultType>,
         approved: Option<bool>,
         start_after: Option<String>,
         limit: Option<u64>,
