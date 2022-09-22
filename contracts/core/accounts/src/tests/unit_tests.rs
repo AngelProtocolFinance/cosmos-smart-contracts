@@ -251,19 +251,6 @@ fn test_change_configs_() {
     let res = query(deps.as_ref(), env.clone(), QueryMsg::Config {}).unwrap();
     let value: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(PLEB, value.registrar_contract);
-
-    // Original contract owner should not be able to update the registrar now
-    let msg = UpdateConfigMsg {
-        settings_controller: None,
-        new_registrar: PLEB.to_string(),
-        max_general_category_id: 100 as u8,
-        ibc_controller: None,
-    };
-    let msg = ExecuteMsg::UpdateConfig(msg);
-    let info = mock_info(AP_TEAM, &coins(100000, "earth "));
-    // This should fail with an error!
-    let err = execute(deps.as_mut(), env, info, msg).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
 }
 
 #[test]
