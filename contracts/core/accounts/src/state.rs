@@ -12,6 +12,7 @@ use serde::{Deserialize, Serialize};
 pub struct Config {
     pub owner: Addr, // DANO/AP Team Address
     pub registrar_contract: Addr,
+    pub ibc_controller: Addr, // created to allow IBC packet sending to other Cosmos chains
     pub next_account_id: u32,
     pub max_general_category_id: u8,
 }

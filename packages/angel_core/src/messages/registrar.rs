@@ -1,5 +1,6 @@
 use crate::structs::{
     AcceptedTokens, AccountType, EndowmentType, NetworkInfo, RebalanceDetails, SplitDetails,
+    VaultType,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
 use schemars::JsonSchema;
@@ -81,6 +82,7 @@ pub struct VaultAddMsg {
     pub yield_token: String,
     pub restricted_from: Vec<EndowmentType>,
     pub acct_type: AccountType,
+    pub vault_type: VaultType,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -95,6 +97,7 @@ pub enum QueryMsg {
         network: Option<String>,
         endowment_type: Option<EndowmentType>,
         acct_type: Option<AccountType>,
+        vault_type: Option<VaultType>,
         approved: Option<bool>,
         start_after: Option<String>,
         limit: Option<u64>,

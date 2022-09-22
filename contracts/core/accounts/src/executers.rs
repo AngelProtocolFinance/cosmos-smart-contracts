@@ -11,7 +11,7 @@ use angel_core::responses::registrar::{
 use angel_core::structs::{
     AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentStatus,
     EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails, SocialMedialUrls, SplitDetails,
-    StrategyComponent, SwapOperation, YieldVault,
+    StrategyComponent, SwapOperation, VaultType, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -331,19 +331,25 @@ pub fn update_config(
     info: MessageInfo,
     new_registrar: String,
     max_general_category_id: u8,
+    ibc_controller: Option<String>,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // only the registrar contract can update it's address in the config
-    if info.sender != config.registrar_contract {
+    // only the accounts owner can update the config
+    if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
     let new_registrar = deps.api.addr_validate(&new_registrar)?;
+    let mut controller = config.ibc_controller;
+    if ibc_controller != None {
+        controller = deps.api.addr_validate(&ibc_controller.unwrap())?;
+    }
     // update config attributes with newly passed args
     CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
         config.registrar_contract = new_registrar;
         config.max_general_category_id = max_general_category_id;
+        config.ibc_controller = controller;
         Ok(config)
     })?;
 
@@ -417,6 +423,7 @@ pub fn update_strategies(
             approved: Some(true),
             endowment_type: Some(endowment.profile.endow_type.clone()),
             acct_type: Some(acct_type.clone()),
+            vault_type: None,
             network: None,
             start_after: None,
             limit: None,
@@ -909,15 +916,23 @@ pub fn reinvest_to_locked(
     if amount.is_zero() || !yield_vault.approved || yield_vault.acct_type.ne(&AccountType::Liquid) {
         return Err(ContractError::InvalidInputs {});
     }
-    let msg: SubMsg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: vault_addr,
-        msg: to_binary(&angel_core::messages::vault::ExecuteMsg::ReinvestToLocked {
-            endowment_id: id,
-            amount,
-        })
-        .unwrap(),
-        funds: vec![],
-    }));
+
+    let msg: SubMsg;
+    match yield_vault.vault_type {
+        VaultType::Native => {
+            msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: vault_addr,
+                msg: to_binary(&angel_core::messages::vault::ExecuteMsg::ReinvestToLocked {
+                    endowment_id: id,
+                    amount,
+                })
+                .unwrap(),
+                funds: vec![],
+            }));
+        }
+        VaultType::Ibc { ica: _ } => unimplemented!(),
+        VaultType::Evm => unimplemented!(),
+    }
     Ok(Response::new().add_submessage(msg))
 }
 
@@ -1163,33 +1178,43 @@ pub fn vaults_invest(
 
         // create a deposit message for the vault
         // funds payload can contain CW20 | Native token amounts
-        deposit_msgs.push(match &asset.info {
-            AssetInfoBase::Native(ref denom) => SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: vault_addr.clone().to_string(),
-                msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Deposit {
-                    endowment_id: id,
-                })
-                .unwrap(),
-                funds: vec![Coin {
-                    denom: denom.clone(),
-                    amount: asset.amount,
-                }],
-            })),
-            AssetInfo::Cw20(ref contract_addr) => SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                    contract: vault_addr.clone().to_string(),
-                    amount: asset.amount,
-                    msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Deposit {
-                        endowment_id: id,
-                    })
-                    .unwrap(),
-                })
-                .unwrap(),
-                funds: vec![],
-            })),
-            _ => unreachable!(),
-        });
+        match vault_config.vault.vault_type {
+            VaultType::Native => {
+                deposit_msgs.push(match &asset.info {
+                    AssetInfoBase::Native(ref denom) => {
+                        SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: vault_addr.clone().to_string(),
+                            msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Deposit {
+                                endowment_id: id,
+                            })
+                            .unwrap(),
+                            funds: vec![Coin {
+                                denom: denom.clone(),
+                                amount: asset.amount,
+                            }],
+                        }))
+                    }
+                    AssetInfo::Cw20(ref contract_addr) => {
+                        SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: contract_addr.to_string(),
+                            msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                                contract: vault_addr.clone().to_string(),
+                                amount: asset.amount,
+                                msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Deposit {
+                                    endowment_id: id,
+                                })
+                                .unwrap(),
+                            })
+                            .unwrap(),
+                            funds: vec![],
+                        }))
+                    }
+                    _ => unreachable!(),
+                });
+            }
+            VaultType::Ibc { ica: _ } => unimplemented!(),
+            VaultType::Evm => unimplemented!(),
+        }
     }
 
     // set the final state balance after all assets have been deducted and save
@@ -1277,24 +1302,29 @@ pub fn vaults_redeem(
             }
         }
 
-        // Check the vault token(VT) balance
-        let available_vt: Uint128 = deps.querier.query_wasm_smart(
-            vault_addr.to_string(),
-            &angel_core::messages::vault::QueryMsg::Balance { endowment_id: id },
-        )?;
-        if *amount > available_vt {
-            return Err(ContractError::BalanceTooSmall {});
+        match vault_config.vault.vault_type {
+            VaultType::Native => {
+                // Check the vault token(VT) balance
+                let available_vt: Uint128 = deps.querier.query_wasm_smart(
+                    vault_addr.to_string(),
+                    &angel_core::messages::vault::QueryMsg::Balance { endowment_id: id },
+                )?;
+                if *amount > available_vt {
+                    return Err(ContractError::BalanceTooSmall {});
+                }
+                redeem_msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: vault_addr,
+                    msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
+                        endowment_id: id,
+                        amount: *amount,
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                })));
+            }
+            VaultType::Ibc { ica: _ } => unimplemented!(),
+            VaultType::Evm => unimplemented!(),
         }
-
-        redeem_msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: vault_addr,
-            msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
-                endowment_id: id,
-                amount: *amount,
-            })
-            .unwrap(),
-            funds: vec![],
-        })));
     }
 
     ENDOWMENTS.save(deps.storage, id, &endowment)?;

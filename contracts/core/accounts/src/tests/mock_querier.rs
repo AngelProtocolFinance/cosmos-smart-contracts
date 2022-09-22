@@ -2,7 +2,8 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
 use angel_core::structs::{
-    AcceptedTokens, AccountType, EndowmentType, RebalanceDetails, SplitDetails, YieldVault,
+    AcceptedTokens, AccountType, EndowmentType, RebalanceDetails, SplitDetails, VaultType,
+    YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -28,6 +29,7 @@ pub enum QueryMsg {
         network: Option<String>,
         endowment_type: Option<EndowmentType>,
         acct_type: Option<AccountType>,
+        vault_type: Option<VaultType>,
         approved: Option<bool>,
         start_after: Option<String>,
         limit: Option<u64>,
@@ -250,40 +252,46 @@ impl WasmMockQuerier {
                     })
                     .unwrap(),
                 )),
-                QueryMsg::Vault { vault_addr } => match vault_addr.as_str() {
-                    "liquid-vault" => SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&VaultDetailResponse {
-                            vault: YieldVault {
-                                network: "juno".to_string(),
-                                address: Addr::unchecked("liquid-vault").to_string(),
-                                input_denom: "input-denom".to_string(),
-                                yield_token: Addr::unchecked("yield-token").to_string(),
-                                approved: true,
-                                restricted_from: vec![],
-                                acct_type: AccountType::Liquid,
-                            },
-                        })
-                        .unwrap(),
-                    )),
-                    _ => SystemResult::Ok(ContractResult::Ok(
-                        to_binary(&VaultDetailResponse {
-                            vault: YieldVault {
-                                network: "juno".to_string(),
-                                address: Addr::unchecked("vault").to_string(),
-                                input_denom: "input-denom".to_string(),
-                                yield_token: Addr::unchecked("yield-token").to_string(),
-                                approved: true,
-                                restricted_from: vec![],
-                                acct_type: AccountType::Locked,
-                            },
-                        })
-                        .unwrap(),
-                    )),
-                },
+                QueryMsg::Vault { vault_addr } => {
+                    if let "liquid-vault" = vault_addr.as_str() {
+                        SystemResult::Ok(ContractResult::Ok(
+                            to_binary(&VaultDetailResponse {
+                                vault: YieldVault {
+                                    network: "juno".to_string(),
+                                    address: Addr::unchecked("liquid-vault").to_string(),
+                                    input_denom: "input-denom".to_string(),
+                                    yield_token: Addr::unchecked("yield-token").to_string(),
+                                    approved: true,
+                                    restricted_from: vec![],
+                                    acct_type: AccountType::Liquid,
+                                    vault_type: VaultType::Native,
+                                },
+                            })
+                            .unwrap(),
+                        ))
+                    } else {
+                        SystemResult::Ok(ContractResult::Ok(
+                            to_binary(&VaultDetailResponse {
+                                vault: YieldVault {
+                                    network: "juno".to_string(),
+                                    address: Addr::unchecked("vault").to_string(),
+                                    input_denom: "input-denom".to_string(),
+                                    yield_token: Addr::unchecked("yield-token").to_string(),
+                                    approved: true,
+                                    restricted_from: vec![],
+                                    acct_type: AccountType::Locked,
+                                    vault_type: VaultType::Native,
+                                },
+                            })
+                            .unwrap(),
+                        ))
+                    }
+                }
                 QueryMsg::VaultList {
                     network: _,
                     endowment_type: _,
                     acct_type: Some(AccountType::Locked),
+                    vault_type: _,
                     approved: _,
                     start_after: _,
                     limit: _,
@@ -298,6 +306,7 @@ impl WasmMockQuerier {
                                 approved: true,
                                 restricted_from: vec![],
                                 acct_type: AccountType::Locked,
+                                vault_type: VaultType::Native,
                             },
                             YieldVault {
                                 address: Addr::unchecked("tech_strategy_component_addr")
@@ -308,6 +317,7 @@ impl WasmMockQuerier {
                                 approved: true,
                                 restricted_from: vec![],
                                 acct_type: AccountType::Locked,
+                                vault_type: VaultType::Native,
                             },
                         ],
                     })
@@ -317,6 +327,7 @@ impl WasmMockQuerier {
                     network: _,
                     endowment_type: _,
                     acct_type: Some(AccountType::Liquid),
+                    vault_type: _,
                     approved: _,
                     start_after: _,
                     limit: _,
@@ -330,6 +341,7 @@ impl WasmMockQuerier {
                             approved: true,
                             restricted_from: vec![],
                             acct_type: AccountType::Liquid,
+                            vault_type: VaultType::Native,
                         }],
                     })
                     .unwrap(),
@@ -338,6 +350,7 @@ impl WasmMockQuerier {
                     network: _,
                     endowment_type: _,
                     acct_type: _,
+                    vault_type: _,
                     approved: _,
                     start_after: _,
                     limit: _,
@@ -352,6 +365,7 @@ impl WasmMockQuerier {
                                 approved: true,
                                 restricted_from: vec![],
                                 acct_type: AccountType::Locked,
+                                vault_type: VaultType::Native,
                             },
                             YieldVault {
                                 address: Addr::unchecked("cash_strategy_component_addr")
@@ -362,6 +376,7 @@ impl WasmMockQuerier {
                                 approved: true,
                                 restricted_from: vec![],
                                 acct_type: AccountType::Liquid,
+                                vault_type: VaultType::Native,
                             },
                             YieldVault {
                                 address: Addr::unchecked("tech_strategy_component_addr")
@@ -372,6 +387,7 @@ impl WasmMockQuerier {
                                 approved: true,
                                 restricted_from: vec![],
                                 acct_type: AccountType::Locked,
+                                vault_type: VaultType::Native,
                             },
                         ],
                     })

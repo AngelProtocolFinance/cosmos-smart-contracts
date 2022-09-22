@@ -1,6 +1,6 @@
 use crate::state::{read_vaults, CONFIG, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::responses::registrar::*;
-use angel_core::structs::{AccountType, EndowmentType};
+use angel_core::structs::{AccountType, EndowmentType, VaultType};
 use cosmwasm_std::{Deps, StdResult};
 use cw2::get_contract_version;
 
@@ -31,6 +31,7 @@ pub fn query_vault_list(
     network: Option<String>,
     endowment_type: Option<EndowmentType>,
     acct_type: Option<AccountType>,
+    vault_type: Option<VaultType>,
     approved: Option<bool>,
     start_after: Option<String>,
     limit: Option<u64>,
@@ -45,6 +46,7 @@ pub fn query_vault_list(
         network,
         endowment_type,
         acct_type,
+        vault_type,
         approved,
         addr,
         limit,

@@ -1,6 +1,6 @@
 use angel_core::structs::{
     AcceptedTokens, AccountType, EndowmentType, NetworkInfo, RebalanceDetails, SplitDetails,
-    YieldVault,
+    VaultType, YieldVault,
 };
 use cosmwasm_std::{Addr, Decimal, Order, StdResult, Storage};
 use cw_storage_plus::{Bound, Item, Map};
@@ -39,6 +39,7 @@ pub fn read_vaults(
     network: Option<String>,
     endowment_type: Option<EndowmentType>,
     acct_type: Option<AccountType>,
+    vault_type: Option<VaultType>,
     approved: Option<bool>,
     start_after: Option<Addr>,
     limit: Option<u64>,
@@ -61,6 +62,13 @@ pub fn read_vaults(
         .filter(|vault| match vault {
             Ok(v) => match &endowment_type {
                 Some(et) => !v.restricted_from.iter().any(|t| t == et),
+                None => true,
+            },
+            &Err(_) => false,
+        })
+        .filter(|vault| match vault {
+            Ok(v) => match &vault_type {
+                Some(vt) => vt == &v.vault_type,
                 None => true,
             },
             &Err(_) => false,
