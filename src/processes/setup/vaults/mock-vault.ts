@@ -10,6 +10,7 @@ import { wasm_path } from "../../../config/wasmPaths";
 // -------------------------------------------------------------------------------------
 // Variables
 // -------------------------------------------------------------------------------------
+let chainId: string;
 let juno: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;
 let apTreasury: DirectSecp256k1HdWallet;
@@ -31,6 +32,7 @@ let vault2_liquid: string;
 // -------------------------------------------------------------------------------------
 
 export async function setupMockVaults(
+  _chainId: string,
   _juno: SigningCosmWasmClient,
   wallets: {
     apTeam: DirectSecp256k1HdWallet;
@@ -46,6 +48,7 @@ export async function setupMockVaults(
     accepted_tokens: any | undefined;
   }
 ): Promise<void> {
+  chainId = _chainId;
   juno = _juno;
   apTeam = wallets.apTeam;
   apTreasury = wallets.apTreasury;
@@ -71,7 +74,7 @@ async function createMockVaults(
   const vaultLockedResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     acct_type: "locked",
-    input_denom: "ujuno", // testnet placeholder
+    input_denom: "ujunox", // testnet placeholder
     tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - #1 (locked)",
     symbol: "apV1Lk",
@@ -84,7 +87,7 @@ async function createMockVaults(
   const vaultLiquidResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     acct_type: "liquid",
-    input_denom: "ujuno", // testnet placeholder
+    input_denom: "ujunox", // testnet placeholder
     yield_token: registrar, // placeholder addr for now
     tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - #1 (liquid)",
@@ -101,7 +104,7 @@ async function createMockVaults(
   const vaultLockedResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     acct_type: "locked",
-    input_denom: "ujuno", // testnet placeholder
+    input_denom: "ujunox", // testnet placeholder
     yield_token: registrar, // placeholder addr for now
     tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - #2 (locked)",
@@ -115,7 +118,7 @@ async function createMockVaults(
   const vaultLiquidResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     acct_type: "liquid",
-    input_denom: "ujuno", // testnet placeholder
+    input_denom: "ujunox", // testnet placeholder
     yield_token: registrar, // placeholder addr for now
     tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - #2 (liquid)",
@@ -131,42 +134,46 @@ async function createMockVaults(
   process.stdout.write("Add Vaults into Registrar");
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
-      network: "juno-1",
+      network: chainId,
       vault_addr: vault1_locked,
       input_denom: "ujunox",
       yield_token: registrar,
       restricted_from: [],
       acct_type: `locked`,
+      vault_type: "native",
     }
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
-      network: "juno-1",
+      network: chainId,
       vault_addr: vault1_liquid,
       input_denom: "ujunox",
       yield_token: registrar,
       restricted_from: [],
       acct_type: `liquid`,
+      vault_type: "native",
     }
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
-      network: "juno-1",
+      network: chainId,
       vault_addr: vault2_locked,
       input_denom: "ujunox",
       yield_token: registrar,
       restricted_from: [],
       acct_type: `locked`,
+      vault_type: "native", // { ibc: { ica: "terra13sdf46134135sdgasdfasfq00" } },
     }
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
-      network: "juno-1",
+      network: chainId,
       vault_addr: vault2_liquid,
       input_denom: "ujunox",
       yield_token: registrar,
       restricted_from: [],
       acct_type: `liquid`,
+      vault_type: "native", // { ibc: { ica: "terra134q352adf34135sdgasdfasfq99" } },
     }
   });
   console.log(chalk.green(" Done!"));

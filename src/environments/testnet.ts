@@ -302,6 +302,7 @@ export async function startSetupMockVaults(): Promise<void> {
   // Setup contracts
   console.log(chalk.yellow("\nStep 2. Mock Vault Contracts Setup"));
   await setupMockVaults(
+    config.networkInfo.chainId,
     juno,
     // wallets
     {
@@ -338,6 +339,7 @@ export async function startSetupLoopVaults(): Promise<void> {
   // Setup contracts
   console.log(chalk.yellow("\nStep 2. LOOP LP Vault Contracts Setup"));
   await setupLoopVaults(
+    config.networkInfo.chainId,
     juno,
     // wallets
     {
