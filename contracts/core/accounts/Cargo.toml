@@ -21,7 +21,6 @@ backtraces = ["cosmwasm-std/backtraces"]
 
 [dependencies]
 angel-core = { path = "../../../packages/angel_core" }
-ica-vaults = { path = "../../../packages/ica_vaults" }
 cw-utils = "0.13.4"
 cw2 = "0.13.4"
 cw20 = "0.13.4"
