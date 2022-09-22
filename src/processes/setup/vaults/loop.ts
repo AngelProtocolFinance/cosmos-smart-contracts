@@ -10,6 +10,7 @@ import { wasm_path } from "../../../config/wasmPaths";
 // -------------------------------------------------------------------------------------
 // Variables
 // -------------------------------------------------------------------------------------
+let chainId: string;
 let juno: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;
 let apTreasury: DirectSecp256k1HdWallet;
@@ -31,6 +32,7 @@ let vault2_liquid: string;
 // -------------------------------------------------------------------------------------
 
 export async function setupLoopVaults(
+  _chainId: string,
   _juno: SigningCosmWasmClient,
   wallets: {
     apTeam: DirectSecp256k1HdWallet;
@@ -49,6 +51,7 @@ export async function setupLoopVaults(
     accepted_tokens: any | undefined;
   }
 ): Promise<void> {
+  chainId = _chainId;
   juno = _juno;
   apTeam = wallets.apTeam;
   apTreasury = wallets.apTreasury;
@@ -130,22 +133,24 @@ async function createLoopVaults(
   process.stdout.write("Add Vault #1 (locked & liquid) in Registrar");
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
-      network: undefined,
+      network: chainId,
       vault_addr: vault1_locked,
       input_denom: "ujuno",
       yield_token: registrar,
       restricted_from: [],
       acct_type: `locked`,
+      vault_type: "native",
     }
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
     vault_add: {
-      network: undefined,
+      network: chainId,
       vault_addr: vault1_liquid,
       input_denom: "ujuno",
       yield_token: registrar,
       restricted_from: [],
       acct_type: `liquid`,
+      vault_type: "native",
     }
   });
   console.log(chalk.green(" Done!"));
