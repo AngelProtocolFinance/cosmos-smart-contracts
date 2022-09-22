@@ -96,7 +96,6 @@ pub enum ExecuteMsg {
     // update config
     // Allows the SC owner (only!) to change ownership & upper limit of general categories ID allowed
     UpdateConfig(UpdateConfigMsg),
-    // Allows the SC owner (only!) to change ownership
 
     // Update an Endowment owner, beneficiary, and other settings
     UpdateEndowmentSettings(UpdateEndowmentSettingsMsg),
@@ -135,6 +134,7 @@ pub struct UpdateConfigMsg {
     pub settings_controller: Option<SettingsController>,
     pub new_registrar: String,
     pub max_general_category_id: u8,
+    pub ibc_controller: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

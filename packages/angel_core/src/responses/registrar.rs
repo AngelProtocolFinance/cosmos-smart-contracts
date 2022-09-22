@@ -1,6 +1,4 @@
-use crate::structs::{
-    AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails, VaultRate, YieldVault,
-};
+use crate::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails, YieldVault};
 use cosmwasm_std::Decimal;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -44,11 +42,6 @@ pub struct ConfigResponse {
     pub swap_factory: Option<String>,
     pub applications_review: String,
     pub swaps_router: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
-pub struct VaultRateResponse {
-    pub vaults_rate: Vec<VaultRate>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]

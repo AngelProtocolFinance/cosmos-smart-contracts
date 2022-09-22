@@ -227,15 +227,16 @@ fn test_update_endowment_status() {
 }
 
 #[test]
-fn test_change_registrar_contract() {
+fn test_change_configs_() {
     let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
 
     // change the owner to some pleb
-    let info = mock_info(REGISTRAR_CONTRACT, &coins(100000, "earth"));
+    let info = mock_info(AP_TEAM, &coins(100000, "earth"));
     let msg = UpdateConfigMsg {
         settings_controller: None,
         new_registrar: PLEB.to_string(),
         max_general_category_id: 2 as u8,
+        ibc_controller: None,
     };
     let res = execute(
         deps.as_mut(),
@@ -256,6 +257,7 @@ fn test_change_registrar_contract() {
         settings_controller: None,
         new_registrar: PLEB.to_string(),
         max_general_category_id: 100 as u8,
+        ibc_controller: None,
     };
     let msg = ExecuteMsg::UpdateConfig(msg);
     let info = mock_info(AP_TEAM, &coins(100000, "earth "));

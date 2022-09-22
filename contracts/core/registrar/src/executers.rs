@@ -1,10 +1,9 @@
 use crate::state::{CONFIG, ENDOWTYPE_FEES, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::{EndowmentType, NetworkInfo, YieldVault};
+use angel_core::structs::{AcceptedTokens, EndowmentType, NetworkInfo, VaultType, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
-
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdResult};
+use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 
 pub fn update_owner(
     deps: DepsMut,
@@ -174,18 +173,30 @@ pub fn vault_add(
         return Err(ContractError::VaultAlreadyExists {});
     }
 
+    // check that valid network connection info is provided for a vault
+    let vault_network = msg.network.unwrap_or(env.block.chain_id);
+    let network = NETWORK_CONNECTIONS.load(deps.storage, &vault_network)?;
+
+    // if non-native vault type, ensure the NetworkInfo has IBC configured
+    if msg.vault_type != VaultType::Native && network.ibc_channel == None {
+        return Err(ContractError::Std(StdError::generic_err(
+            "IBC Channel must be configured before adding a non-Native Vault",
+        )));
+    }
+
     // save the new vault to storage
     VAULTS.save(
         deps.storage,
         addr.as_bytes(),
         &YieldVault {
-            network: msg.network.unwrap_or(env.block.chain_id),
+            network: vault_network,
             address: addr.to_string(),
             input_denom: msg.input_denom,
             yield_token: deps.api.addr_validate(&msg.yield_token)?.to_string(),
             approved: true,
             restricted_from: msg.restricted_from,
             acct_type: msg.acct_type,
+            vault_type: msg.vault_type,
         },
     )?;
     Ok(Response::default())
@@ -267,10 +278,10 @@ pub fn update_network_connections(
         return Err(ContractError::Unauthorized {});
     }
 
-    if action == *"add" {
-        // Add the network_info to NETWORK_CONNECTIONS
+    if action == *"post" {
+        // Add/Overwrite the network_info to NETWORK_CONNECTIONS
         NETWORK_CONNECTIONS.save(deps.storage, &network_info.chain_id, &network_info)?;
-    } else if action == *"remove" {
+    } else if action == *"delete" {
         // Remove the network_info from NETWORK_CONNECTIONS
         NETWORK_CONNECTIONS.remove(deps.storage, &network_info.chain_id);
     } else {

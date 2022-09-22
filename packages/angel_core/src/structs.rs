@@ -129,21 +129,23 @@ impl SwapOperation {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub enum VaultType {
+    Native,              // Juno native Vault contract
+    Ibc { ica: String }, // the address of the Vault contract on it's Cosmos(non-Juno) chain
+    Evm,                 // the address of the Vault contract on it's EVM chain
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub struct YieldVault {
-    pub address: String,
+    pub address: String, // vault's contract address on chain where the Registrar lives
     pub network: String, // Points to key in NetworkConnections storage map
     pub input_denom: String,
     pub yield_token: String,
     pub approved: bool,
     pub restricted_from: Vec<EndowmentType>,
     pub acct_type: AccountType,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub struct VaultRate {
-    pub vault_addr: String,
-    pub fx_rate: Decimal256,
+    pub vault_type: VaultType,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -780,7 +782,7 @@ pub struct NetworkInfo {
     pub name: String,
     pub chain_id: String,
     pub ibc_channel: Option<String>,
-    pub ica_address: Option<Addr>,
+    pub ibc_host_contract: Option<Addr>,
     pub gas_limit: Option<u64>,
 }
 
