@@ -393,7 +393,7 @@ pub fn execute_execute(
     for msg in prop.msgs.into_iter() {
         if let Wasm(ref wasm_m) = msg {
             if let Execute { contract_addr, .. } = wasm_m {
-                if contract_addr.to_string() == registrar_config.owner {
+                if *contract_addr == registrar_config.owner {
                     sub_msgs.push(SubMsg::reply_on_success(
                         wasm_m.clone(),
                         APTEAM_CW3_REPLY_ID,

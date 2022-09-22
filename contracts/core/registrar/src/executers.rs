@@ -1,7 +1,7 @@
 use crate::state::{CONFIG, ENDOWTYPE_FEES, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::{AcceptedTokens, EndowmentType, NetworkInfo, VaultType, YieldVault};
+use angel_core::structs::{EndowmentType, NetworkInfo, VaultType, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 
@@ -178,7 +178,7 @@ pub fn vault_add(
     let network = NETWORK_CONNECTIONS.load(deps.storage, &vault_network)?;
 
     // if non-native vault type, ensure the NetworkInfo has IBC configured
-    if msg.vault_type != VaultType::Native && network.ibc_channel == None {
+    if msg.vault_type != VaultType::Native && network.ibc_channel.is_none() {
         return Err(ContractError::Std(StdError::generic_err(
             "IBC Channel must be configured before adding a non-Native Vault",
         )));
