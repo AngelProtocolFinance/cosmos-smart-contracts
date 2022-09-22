@@ -1,7 +1,7 @@
 use cosmwasm_std::{CosmosMsg, Empty};
 use cw3::{Status, Vote};
 use cw4::MemberChangedHookMsg;
-use cw_asset::Asset;
+use cw_asset::AssetUnchecked;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -27,7 +27,7 @@ pub enum ExecuteMsg {
         endowment_id: u32,
         description: String,
         beneficiary: String,
-        assets: Vec<Asset>,
+        assets: Vec<AssetUnchecked>,
         // note: we ignore API-spec'd earliest if passed, always opens immediately
         latest: Option<Expiration>,
         meta: Option<String>,

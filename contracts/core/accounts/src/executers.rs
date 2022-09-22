@@ -23,7 +23,7 @@ use cosmwasm_std::{
 };
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw4::Member;
-use cw_asset::{Asset, AssetInfo, AssetInfoBase};
+use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
 use cw_utils::Duration;
 
 pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
@@ -1340,7 +1340,7 @@ pub fn withdraw(
     id: u32,
     acct_type: AccountType,
     beneficiary: String,
-    assets: Vec<Asset>,
+    assets: Vec<AssetUnchecked>,
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
     let config = CONFIG.load(deps.storage)?;
@@ -1385,6 +1385,7 @@ pub fn withdraw(
     }
 
     for asset in assets.iter() {
+        asset.check(deps.api, None);
         // check for assets with zero amounts and raise error if found
         if asset.amount.is_zero() {
             return Err(ContractError::InvalidZeroAmount {});
@@ -1392,8 +1393,12 @@ pub fn withdraw(
 
         // fetch the amount of an asset held in the state balance
         let balance: Uint128 = match asset.info.clone() {
-            AssetInfo::Native(denom) => state_bal.get_denom_amount(denom).amount,
-            AssetInfo::Cw20(addr) => state_bal.get_token_amount(addr).amount,
+            AssetInfoBase::Native(denom) => state_bal.get_denom_amount(denom).amount,
+            AssetInfoBase::Cw20(addr) => {
+                state_bal
+                    .get_token_amount(deps.api.addr_validate(&addr).unwrap())
+                    .amount
+            }
             _ => unreachable!(),
         };
         // check that the amount in state balance is sufficient to cover withdraw request
@@ -1403,7 +1408,7 @@ pub fn withdraw(
 
         // build message based on asset type and update state balance with deduction
         match asset.info.clone() {
-            AssetInfo::Native(denom) => {
+            AssetInfoBase::Native(denom) => {
                 // add Coin to the native coins vector to have a message built
                 // and all deductions against the state balance done at the end
                 native_coins.push(Coin {
@@ -1411,7 +1416,7 @@ pub fn withdraw(
                     amount: asset.amount,
                 });
             }
-            AssetInfo::Cw20(addr) => {
+            AssetInfoBase::Cw20(addr) => {
                 // Build message to transfer CW20 tokens to the Beneficiary
                 messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: addr.to_string(),
@@ -1425,7 +1430,7 @@ pub fn withdraw(
                 // Update a CW20 token's Balance in STATE
                 state_bal.deduct_tokens(Balance::Cw20(Cw20CoinVerified {
                     amount: asset.amount,
-                    address: addr,
+                    address: deps.api.addr_validate(&addr).unwrap(),
                 }));
             }
             _ => unreachable!(),

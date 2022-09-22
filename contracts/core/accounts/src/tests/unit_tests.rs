@@ -12,7 +12,7 @@ use cosmwasm_std::{
     attr, coins, from_binary, to_binary, Addr, Coin, Decimal, Env, OwnedDeps, StdError, Uint128,
 };
 use cw20::Cw20ReceiveMsg;
-use cw_asset::{Asset, AssetInfo};
+use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
 use cw_utils::Threshold;
 
 const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
@@ -627,8 +627,8 @@ fn test_withdraw() {
         id: CHARITY_ID,
         acct_type: AccountType::Liquid,
         beneficiary: "beneficiary".to_string(),
-        assets: vec![Asset {
-            info: AssetInfo::Native("ujuno".to_string()),
+        assets: vec![AssetUnchecked {
+            info: AssetInfoBase::Native("ujuno".to_string()),
             amount: Uint128::from(100_u128),
         }],
     };
@@ -666,8 +666,8 @@ fn test_withdraw_liquid() {
         id: CHARITY_ID,
         acct_type: AccountType::Liquid,
         beneficiary: "beneficiary".to_string(),
-        assets: vec![Asset {
-            info: AssetInfo::Native("ujuno".to_string()),
+        assets: vec![AssetUnchecked {
+            info: AssetInfoBase::Native("ujuno".to_string()),
             amount: Uint128::from(1000_u128),
         }],
     };
@@ -680,8 +680,8 @@ fn test_withdraw_liquid() {
         id: CHARITY_ID,
         acct_type: AccountType::Liquid,
         beneficiary: "beneficiary".to_string(),
-        assets: vec![Asset {
-            info: AssetInfo::Native("ujuno".to_string()),
+        assets: vec![AssetUnchecked {
+            info: AssetInfoBase::Native("ujuno".to_string()),
             amount: Uint128::from(10_u128),
         }],
     };
@@ -898,7 +898,7 @@ fn test_close_endowment() {
 fn test_copycat_strategies() {
     let TEST_ENDOWMENT_ID = 2_u32;
 
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
 
     // Create one more endowment for tests
     let profile: Profile = Profile {

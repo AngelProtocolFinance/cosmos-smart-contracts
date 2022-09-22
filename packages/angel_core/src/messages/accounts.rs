@@ -2,7 +2,7 @@ use crate::structs::{AccountType, Beneficiary, Categories, Profile, SwapOperatio
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
-use cw_asset::{Asset, AssetInfo};
+use cw_asset::{Asset, AssetInfo, AssetUnchecked};
 use cw_utils::Threshold;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -33,7 +33,7 @@ pub enum ExecuteMsg {
         id: u32,
         acct_type: AccountType,
         beneficiary: String,
-        assets: Vec<Asset>,
+        assets: Vec<AssetUnchecked>,
     },
     SwapToken {
         id: u32,

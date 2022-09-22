@@ -18,7 +18,7 @@ use cw3::{
     VoterResponse,
 };
 use cw4::{Cw4Contract, MemberChangedHookMsg, MemberDiff};
-use cw_asset::Asset;
+use cw_asset::AssetUnchecked;
 use cw_storage_plus::Bound;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
 use std::cmp::Ordering;
@@ -131,7 +131,7 @@ pub fn execute_propose_locked_withdraw(
     endowment_id: u32,
     description: String,
     beneficiary: String,
-    assets: Vec<Asset>,
+    assets: Vec<AssetUnchecked>,
     latest: Option<Expiration>, // we ignore earliest
     meta: Option<String>,
 ) -> Result<Response<Empty>, ContractError> {
