@@ -224,7 +224,7 @@ export async function testExecute(
   //     ica_address: undefined,
   //     gas_limit: undefined,
   //   },
-  //   "add", // action: "add" or "remove"
+  //   "post", // action: "post" or "delete"
   // );
 
   /* --- INDEXFUND contract --- */
