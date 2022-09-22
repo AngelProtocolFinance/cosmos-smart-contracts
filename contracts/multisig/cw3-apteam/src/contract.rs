@@ -1,7 +1,8 @@
-use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg};
+use crate::msg::{InstantiateMsg, MigrateMsg};
 use crate::state::{next_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS};
 use angel_core::errors::multisig::ContractError;
 use angel_core::messages::accounts::QueryMsg::Endowment as EndowmentDetails;
+use angel_core::messages::cw3_apteam::ExecuteMsg;
 use angel_core::messages::cw3_multisig::*;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::accounts::EndowmentDetailsResponse;
@@ -70,6 +71,7 @@ pub fn execute(
             meta,
         } => execute_propose(deps, env, info, title, description, msgs, latest, meta),
         ExecuteMsg::ProposeLockedWithdraw {
+            orig_proposal,
             endowment_id,
             description,
             beneficiary,
@@ -80,6 +82,7 @@ pub fn execute(
             deps,
             env,
             info,
+            orig_proposal,
             endowment_id,
             description,
             beneficiary,
@@ -124,6 +127,7 @@ pub fn execute_propose_locked_withdraw(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    orig_proposal: u64,
     endowment_id: u32,
     description: String,
     beneficiary: String,
@@ -192,6 +196,7 @@ pub fn execute_propose_locked_withdraw(
         .add_attribute("action", "locked_withdraw_proposal")
         .add_attribute("sender", info.sender)
         .add_attribute("proposal_id", id.to_string())
+        .add_attribute("endowment_cw3_proposal_id", orig_proposal.to_string())
         .add_attribute("status", format!("{:?}", prop.status)))
 }
 

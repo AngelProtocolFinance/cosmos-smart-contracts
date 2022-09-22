@@ -20,6 +20,7 @@ use cw3::{
     VoterResponse,
 };
 use cw4::{Cw4Contract, MemberChangedHookMsg, MemberDiff};
+use cw_asset::Asset;
 use cw_storage_plus::Bound;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
 use std::cmp::Ordering;
@@ -89,7 +90,7 @@ pub fn apteam_cw3_reply(
 ) -> Result<Response, ContractError> {
     match msg {
         SubMsgResult::Ok(subcall) => {
-            // filter out relevent events from the reply logs
+            // filter out relevent event from the reply logs
             let apteam_event = subcall
                 .events
                 .iter()
@@ -98,13 +99,7 @@ pub fn apteam_cw3_reply(
                     StdError::generic_err("cannot find `locked_withdraw_proposal` event")
                 })?;
 
-            let execution_event = subcall
-                .events
-                .iter()
-                .find(|event| event_contains_attr(event, "action", "execute"))
-                .ok_or_else(|| StdError::generic_err("cannot find `execute` event"))?;
-
-            // find & parse the proposal IDs from each event
+            // find & parse the proposal IDs from event
             let cw3_apteam_proposal: u64 = apteam_event
                 .attributes
                 .iter()
@@ -119,14 +114,14 @@ pub fn apteam_cw3_reply(
                 .parse()
                 .unwrap();
 
-            let orig_id: u64 = execution_event
+            let orig_proposal_id: u64 = apteam_event
                 .attributes
                 .iter()
                 .cloned()
-                .find(|attr| attr.key == "proposal_id")
+                .find(|attr| attr.key == "endowment_cw3_proposal_id")
                 .ok_or_else(|| {
                     StdError::generic_err(
-                        "Cannot find `proposal_id` attribute within the `execute` event",
+                        "Cannot find `endowment_cw3_proposal_id` attribute within the `locked_withdraw_proposal` event",
                     )
                 })?
                 .value
@@ -134,9 +129,9 @@ pub fn apteam_cw3_reply(
                 .unwrap();
 
             // update the original proposal with the new confirmation CW3 AP Team proposal ID
-            let mut proposal = PROPOSALS.load(deps.storage, orig_id)?;
+            let mut proposal = PROPOSALS.load(deps.storage, orig_proposal_id)?;
             proposal.confirmation_proposal = Some(cw3_apteam_proposal);
-            PROPOSALS.save(deps.storage, orig_id, &proposal)?;
+            PROPOSALS.save(deps.storage, orig_proposal_id, &proposal)?;
 
             Ok(Response::default())
         }
@@ -211,6 +206,24 @@ pub fn execute(
             latest,
             meta,
         } => execute_propose(deps, env, info, title, description, msgs, latest, meta),
+        ExecuteMsg::ProposeLockedWithdraw {
+            endowment_id,
+            description,
+            beneficiary,
+            assets,
+            latest,
+            meta,
+        } => execute_propose_locked_withdraw(
+            deps,
+            env,
+            info,
+            endowment_id,
+            description,
+            beneficiary,
+            assets,
+            latest,
+            meta,
+        ),
         ExecuteMsg::Vote { proposal_id, vote } => execute_vote(deps, env, info, proposal_id, vote),
         ExecuteMsg::UpdateConfig {
             threshold,
@@ -277,6 +290,7 @@ pub fn execute_propose(
     }
 
     // create a proposal
+    let id = next_id(deps.storage)?;
     let mut prop = Proposal {
         title,
         description,
@@ -291,7 +305,92 @@ pub fn execute_propose(
         meta,
     };
     prop.update_status(&env.block);
+    PROPOSALS.save(deps.storage, id, &prop)?;
+
+    // add the first yes vote from voter
+    let ballot = Ballot {
+        weight: vote_power,
+        vote: Vote::Yes,
+    };
+    BALLOTS.save(deps.storage, (id, &info.sender), &ballot)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "propose")
+        .add_attribute("sender", info.sender)
+        .add_attribute("proposal_id", id.to_string())
+        .add_attribute("status", format!("{:?}", prop.status)))
+}
+
+pub fn execute_propose_locked_withdraw(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    endowment_id: u32,
+    description: String,
+    beneficiary: String,
+    assets: Vec<Asset>,
+    latest: Option<Expiration>, // we ignore earliest
+    meta: Option<String>,
+) -> Result<Response<Empty>, ContractError> {
+    let cfg = CONFIG.load(deps.storage)?;
+
+    // Only members of the multisig can create a proposal
+    // Non-voting members are special - they are allowed to create a proposal and
+    // therefore "vote", but they aren't allowed to vote otherwise.
+    // Such vote is also special, because despite having 0 weight it still counts when
+    // counting threshold passing
+    let vote_power = cfg
+        .group_addr
+        .is_member(&deps.querier, &info.sender, Some(env.block.height))?
+        .ok_or(ContractError::Unauthorized {})?;
+
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: cfg.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarConfig {})?,
+        }))?;
+
+    // max expires also used as default
+    let max_expires = cfg.max_voting_period.after(&env.block);
+    let mut expires = latest.unwrap_or(max_expires);
+    let comp = expires.partial_cmp(&max_expires);
+    if let Some(Ordering::Greater) = comp {
+        expires = max_expires;
+    } else if comp.is_none() {
+        return Err(ContractError::WrongExpiration {});
+    }
+
+    // create a proposal
     let id = next_id(deps.storage)?;
+    let mut prop = Proposal {
+        title: format!("Locked Withdraw Request - Endowment #{}", endowment_id),
+        description: format!("Reason for request:\n{}", description),
+        start_height: env.block.height,
+        expires,
+        msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: registrar_config.owner,
+            msg: to_binary(
+                &angel_core::messages::cw3_apteam::ExecuteMsg::ProposeLockedWithdraw {
+                    orig_proposal: id,
+                    endowment_id,
+                    description,
+                    beneficiary,
+                    assets,
+                    latest: None,
+                    meta: meta.clone(),
+                },
+            )
+            .unwrap(),
+            funds: vec![],
+        })],
+        confirmation_proposal: None,
+        status: Status::Open,
+        votes: Votes::new(vote_power),
+        threshold: cfg.threshold,
+        total_weight: cfg.group_addr.total_weight(&deps.querier)?,
+        meta,
+    };
+    prop.update_status(&env.block);
     PROPOSALS.save(deps.storage, id, &prop)?;
 
     // add the first yes vote from voter
