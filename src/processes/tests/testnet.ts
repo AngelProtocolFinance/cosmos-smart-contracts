@@ -248,7 +248,7 @@ export async function testExecute(
   //     ica_address: undefined,
   //     gas_limit: undefined,
   //   },
-  //   "add", // action: "add" or "remove"
+  //   "post", // action: "post" or "delete"
   // );
 
   /* --- INDEXFUND contract --- */
@@ -477,8 +477,6 @@ export async function testExecute(
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
   // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, "juno-1");
-
-  // await testQueryVaultConfig(actors.apTeam.client, vaultLocked1);
 
   // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
   // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);

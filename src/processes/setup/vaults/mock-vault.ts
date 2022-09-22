@@ -71,7 +71,7 @@ async function createMockVaults(
   const vaultLockedResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     acct_type: "locked",
-    input_denom: "ujuno", // testnet placeholder
+    input_denom: "ujunox", // testnet placeholder
     tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - #1 (locked)",
     symbol: "apV1Lk",
@@ -84,7 +84,7 @@ async function createMockVaults(
   const vaultLiquidResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     acct_type: "liquid",
-    input_denom: "ujuno", // testnet placeholder
+    input_denom: "ujunox", // testnet placeholder
     yield_token: registrar, // placeholder addr for now
     tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - #1 (liquid)",
@@ -101,7 +101,7 @@ async function createMockVaults(
   const vaultLockedResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     acct_type: "locked",
-    input_denom: "ujuno", // testnet placeholder
+    input_denom: "ujunox", // testnet placeholder
     yield_token: registrar, // placeholder addr for now
     tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - #2 (locked)",
@@ -115,7 +115,7 @@ async function createMockVaults(
   const vaultLiquidResult2 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
     registrar_contract: registrar,
     acct_type: "liquid",
-    input_denom: "ujuno", // testnet placeholder
+    input_denom: "ujunox", // testnet placeholder
     yield_token: registrar, // placeholder addr for now
     tax_per_block: tax_per_block, // 70% of Anchor's 19.5% earnings collected per block
     name: "AP DP Token - #2 (liquid)",
@@ -137,6 +137,8 @@ async function createMockVaults(
       yield_token: registrar,
       restricted_from: [],
       acct_type: `locked`,
+      vault_type: "native",
+
     }
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
@@ -147,6 +149,7 @@ async function createMockVaults(
       yield_token: registrar,
       restricted_from: [],
       acct_type: `liquid`,
+      vault_type: "native",
     }
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
@@ -157,6 +160,7 @@ async function createMockVaults(
       yield_token: registrar,
       restricted_from: [],
       acct_type: `locked`,
+      vault_type: "native", // { ibc: { ica: "terra13sdf46134135sdgasdfasfq00" } },
     }
   });
   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, registrar, {
@@ -167,6 +171,7 @@ async function createMockVaults(
       yield_token: registrar,
       restricted_from: [],
       acct_type: `liquid`,
+      vault_type: "native", // { ibc: { ica: "terra134q352adf34135sdgasdfasfq99" } },
     }
   });
   console.log(chalk.green(" Done!"));
