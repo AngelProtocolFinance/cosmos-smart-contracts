@@ -1,5 +1,4 @@
-use crate::errors::multisig::ContractError;
-use cosmwasm_std::{CosmosMsg, Decimal, Empty};
+use cosmwasm_std::{CosmosMsg, Empty};
 use cw3::Status;
 use cw4::Member;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
@@ -85,15 +84,4 @@ where
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct MetaProposalListResponse {
     pub proposals: Vec<MetaProposalResponse>,
-}
-
-/// Asserts that the 0.0 < percent <= 1.0
-pub fn valid_percentage(percent: &Decimal) -> Result<(), ContractError> {
-    if percent.is_zero() {
-        Err(ContractError::ZeroThreshold {})
-    } else if *percent > Decimal::one() {
-        Err(ContractError::UnreachableThreshold {})
-    } else {
-        Ok(())
-    }
 }
