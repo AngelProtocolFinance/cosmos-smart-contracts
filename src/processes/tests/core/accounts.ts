@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, sendTransactionWithFunds, sendMessageViaCw3Proposal, sendApplicationViaCw3Proposal } from "../../../utils/helpers";
+import { sendTransaction, sendTransactionWithFunds, sendMessageViaCw3Proposal, sendApplicationViaCw3Proposal, clientSetup, getWalletAddress } from "../../../utils/helpers";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
 chai.use(chaiAsPromised);
@@ -47,7 +47,7 @@ export async function testSendDonationToEndowment(
   endowmentId: number,
   amount: string
 ): Promise<void> {
-  process.stdout.write("Test - Send single amount to an Endowment Account");
+  process.stdout.write("Test - Send amount to a single Endowment Account (50:50 split)");
   await expect(
     sendTransactionWithFunds(juno, apTeam, accountsContract, {
       deposit: {
@@ -70,9 +70,9 @@ export async function testSendDonationToEndowment(
 // not be able to touch the Locked Account's balance.
 //
 //----------------------------------------------------------------------------------------
-export async function testEndowmentCanWithdraw(
+export async function testEndowmentCanWithdrawLiquid(
   juno: SigningCosmWasmClient,
-  accountsOwner: string,
+  endowMember: string,
   accountsContract: string,
   endowmentId: number,
   acct_type: string,
@@ -80,17 +80,17 @@ export async function testEndowmentCanWithdraw(
   assets: any,
 ): Promise<void> {
   process.stdout.write(
-    "Test - Charity Owner can withdraw from the Endowment amount"
+    "Test - Charity Owner can withdraw from the Endowment's liquid amount"
   );
 
-  const res = await juno.queryContractSmart(accountsContract, { config: {} });
+  const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
   const cw3 = res.owner as string;
 
   await expect(
-    sendMessageViaCw3Proposal(juno, accountsOwner, cw3, accountsContract, {
+    sendMessageViaCw3Proposal(juno, endowMember, cw3, accountsContract, {
       withdraw: {
         id: endowmentId,
-        acct_type,
+        acct_type: `liquid`,
         beneficiary,
         assets,
       },
@@ -171,6 +171,136 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
     })
   ).to.be.ok;
   console.log(chalk.green(" Passed!"));
+}
+
+//----------------------------------------------------------------------------------------
+// TEST: Charity Member of the Charity Endowment CW3 can send a proposal for a Locked Withdraw to the AP Team CW3.
+// 
+// Abstract away steps to send an Charity Endowment's Locked Withdraw proposal message to 
+// the AP Team CW3 multisig for subsequent approval:
+// 1. Create Early Locked Withdraw Proposal on Charity Endowment's CW3 to execute Locked Withdraw Proposal on AP Team CW3 contract
+// 2. Capture the new Proposal's ID
+// 3. Optional: Addtional Charity Endowment CW3 member(s) vote on the open poll
+// 4. Proposal needs to be executed
+// 5. Capture the new proposal ID from AP Team CW3
+// 6. Optional: Addtional AP Team CW3 member(s) vote on the open poll 
+// 7. Proposal on CW3 AP Team needs to be executed 
+//----------------------------------------------------------------------------------------
+export async function testCharityCanWithdrawLocked(
+  networkUrl: string,
+  proposor: DirectSecp256k1HdWallet,
+  accountsContract: string,
+  apTeamCw3: string,
+  endowmentId: number,
+  assets: any,
+  endow_members: DirectSecp256k1HdWallet[],
+  apteam_members: DirectSecp256k1HdWallet[],
+): Promise<void> {
+  process.stdout.write(
+    "Test - Charity Member can withdraw from their Endowment's Locked account with AP Team Approval\n"
+  );
+  let proposor_client = await clientSetup(proposor, networkUrl);
+  let proposor_wallet = await getWalletAddress(proposor);
+  console.log(chalk.yellow(`> Charity ${proposor_wallet} submits an early withdraw proposal to their CW3`));
+  
+  // 0. Get the charity endowment's CW3 
+  const res = await proposor_client.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
+  const endowCw3 = res.owner as string;
+  
+  // 1. Create the new proposal (no vote is cast here)
+  const proposal = await sendTransaction(proposor_client, proposor_wallet, endowCw3, {
+    propose_locked_withdraw: {
+        endowment_id: endowmentId,
+        description: "SHOW ME THE MONEYYYY!",
+        beneficiary: proposor_wallet, // send to the charity proposer's wallet
+        assets
+      },
+  });
+
+  // 2. Parse out the proposal ID
+  const endowment_proposal_id = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "proposal_id";
+    })?.value as string;
+  console.log(chalk.yellow(`> Endowment CW3's New Proposal's ID: ${endowment_proposal_id}`));
+
+  // 3. Additional members need to vote on proposal to get to passing threshold
+  let endow_prom = Promise.resolve();
+  endow_members.forEach((member) => {
+    // eslint-disable-next-line no-async-promise-executor
+    endow_prom = endow_prom.then(
+      () =>
+        new Promise(async (resolve, reject) => {
+          try {
+            let voter_wallet = await getWalletAddress(member);
+            let voter_client = await clientSetup(member, networkUrl);
+            console.log(chalk.yellow(`> Endowment CW3 Member ${voter_wallet} votes YES on endowment's proposal`));
+            await sendTransaction(voter_client, voter_wallet, endowCw3, {
+              vote: {
+                proposal_id: parseInt(endowment_proposal_id),
+                vote: `yes`,
+              },
+            });
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        })
+    );
+  });
+  await endow_prom;
+
+  // 4. Execute the Endowment's CW3 Proposal (this creates an AP Team CW3 proposal)
+  console.log(chalk.yellow("> Executing the Endowment CW3 Proposal"));
+  const endowment_res = await sendTransaction(proposor_client, proposor_wallet, endowCw3, {
+    execute: { proposal_id: parseInt(endowment_proposal_id) }
+  });
+
+  // 5. Capture and return the newly created AP Team CW3 Proposal ID (from returned submessage attr)
+  let apteam_proposal_id = await endowment_res.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "proposal_id";
+    })?.value as string;
+  console.log(chalk.yellow(`> AP Team CW3's New Proposal's ID: ${apteam_proposal_id}`));
+
+  // 6. Voting on AP Team C3 proposal occurs
+  let apteam_prom = Promise.resolve();
+  apteam_members.forEach((member) => {
+    // eslint-disable-next-line no-async-promise-executor
+    apteam_prom = apteam_prom.then(
+      () =>
+        new Promise(async (resolve, reject) => {
+          try {
+            let voter_wallet = await getWalletAddress(member);
+            let voter_client = await clientSetup(member, networkUrl);
+            console.log(chalk.yellow(`> AP Team CW3 Member ${voter_wallet} votes YES on AP Team proposal`));
+            await sendTransaction(voter_client, voter_wallet, apTeamCw3, {
+              vote: {
+                proposal_id: parseInt(apteam_proposal_id),
+                vote: `yes`,
+              },
+            });
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        })
+    );
+  });
+  await apteam_prom;
+
+  // 7. Execute the AP Team CW3 proposal
+  console.log(chalk.yellow("> Executing the AP Team CW3 Proposal"));
+  const apteam_res = await sendTransaction(proposor_client, proposor_wallet, apTeamCw3, {
+    execute: { proposal_id: parseInt(apteam_proposal_id) }
+  });
+  console.log(chalk.green(" Done!"));
 }
 
 //----------------------------------------------------------------------------------------

@@ -5,7 +5,8 @@ import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
 import { datetimeStringToUTC, clientSetup } from "../../utils/helpers";
 import {
-  testBeneficiaryCanWithdrawFromLiquid,
+  testEndowmentCanWithdrawLiquid,
+  testCharityCanWithdrawLocked,
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
   testApTeamChangesAccountsEndowmentOwner,
@@ -16,7 +17,6 @@ import {
   testQueryAccountsProfile,
   testQueryAccountsState,
   testQueryAccountsTransactions,
-  testEndowmentCanWithdraw,
   testApproveInactiveEndowment,
   testUpdateEndowmentStatus,
   testCreateEndowment,
@@ -340,7 +340,7 @@ export async function testExecute(
   //   [{ vault: vaultLiquid1, percentage: "0.5" }]
   // );
 
-  // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1, "1000");
+  // await testSendDonationToEndowment(actors.apTeam2.client, actors.apTeam2.addr, accounts, endowId1, "1000000");
   // await testEndowmentVaultsRedeem(
   //   actors.charity1.client,
   //   actors.charity1.addr,
@@ -352,7 +352,6 @@ export async function testExecute(
   // await testVaultHarvest(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
-  //   vaultLocked1,
   // );
   // await testVaultReinvestToLocked(
   //   actors.charity1.client,
@@ -362,16 +361,24 @@ export async function testExecute(
   //   "1000000",
   //   vaultLiquid1,
   // );
-
-  // await testEndowmentCanWithdraw(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
+  // await testEndowmentCanWithdrawLiquid(
+  //   actors.charity1.client,
+  //   actors.charity1.addr,
   //   accounts,
   //   endowId1,
-  //   `locked`,
   //   actors.charity1.addr,
   //   [{ info: { native: "ujuno" }, amount: "1000" }],
   // );
+  await testCharityCanWithdrawLocked(
+    networkUrl,
+    actors.charity1.wallet,
+    accounts,
+    cw3ApTeam,
+    endowId1,
+    [{ info: { native: "ujuno" }, amount: "2000" }],
+    [],
+    [actors.apTeam.wallet],
+  );
   // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1);
   // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: endowId1, status: 1, benficiary: undefined });
   // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, accounts, endowId3, "10000000"); // possible query registrar error
@@ -384,11 +391,11 @@ export async function testExecute(
   // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, "juno-1");
 
   // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
-  // await testQueryAccountsBalance(actors.apTeam.client, accounts, 1);
+  await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
-  // await testQueryAccountsEndowment(actors.apTeam.client, accounts, 1);
-  // await testQueryAccountsProfile(actors.apTeam.client, accounts, 1);
-  // await testQueryAccountsState(actors.apTeam.client, accounts, 1);
+  // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
+  // await testQueryAccountsProfile(actors.apTeam.client, accounts, endowId1);
+  // await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsTokenAmount(actors.apTeam.client, accounts, 1, { native: "ujuno" }, "locked");
 
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);

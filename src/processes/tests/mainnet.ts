@@ -2,7 +2,7 @@ import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import chalk from "chalk";
 import {
-  testBeneficiaryCanWithdrawFromLiquid,
+  testEndowmentCanWithdrawLiquid,
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
   testQueryAccountsBalance,
