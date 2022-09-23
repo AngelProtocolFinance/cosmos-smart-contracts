@@ -61,9 +61,7 @@ export async function setupCore(
     threshold_absolute_percentage: string;
     max_voting_period_height: number;
     fund_rotation: number | undefined;
-    is_localjuno: boolean;
     harvest_to_liquid: string;
-    tax_per_block: string;
     funding_goal: string | undefined;
     fund_member_limit: number | undefined;
     charity_cw3_threshold_abs_perc: string,
