@@ -101,17 +101,17 @@ export const mainnet = {
   },
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {
-    registrar: "",
-    accounts: "",
-    indexFund: "",
-    cw4GrpApTeam: "",
-    cw3ApTeam: "",
-    cw4GrpReviewTeam: "",
-    cw3ReviewTeam: "",
+    registrar: "juno16uva5mgmzj78rdwf5hcqv688lyenms6s32zfjectg8zkr4vc3xfq95eueu",
+    accounts: "juno1wkfy4u8zj45jqeeyvl7pedzcvaksutug56d0v32p6qw3fmpyw6rq82y648",
+    indexFund: "juno1ycpml96cru0ln20zv7qxkc6xuass8lerpk0cfwvgmvyn6zjux55srqkah5",
+    cw4GrpApTeam: "juno1ucjmf3nztyq4a6q8tzja9thefq7092s9r4a2yk8267spr2fays2qks9rl4",
+    cw3ApTeam: "juno1dftgv4yhy8yqx95c7a3jar9dg5nnq4p2m50nzk6wdlkahd2h4hms3js63a",
+    cw4GrpReviewTeam: "juno1p2yg2xy7z39mhnn4r248nfsf9zufa7kxh34g7kh9u7zvjacm4nssx2x6gv",
+    cw3ReviewTeam: "juno1et8z5we83ny06j5sra9q9vaxw6e9cp4qjy5agy8emqz8wcmmgheqnq5xdy",
     vaults: [],
   },
   members: [
-    { addr: "", weight: 1 },
+    { addr: "juno1c2ha303qdjlcpphjjv7s7r8ns2lnqm9ec79lfa", weight: 1 },
   ],
 
   // JunoSwap contracts
