@@ -16,10 +16,6 @@ let juno: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;
 let apTeam2: DirectSecp256k1HdWallet;
 let apTreasury: DirectSecp256k1HdWallet;
-let charity1: DirectSecp256k1HdWallet;
-let charity2: DirectSecp256k1HdWallet;
-let charity3: DirectSecp256k1HdWallet;
-let tca: DirectSecp256k1HdWallet;
 
 // wallet addresses
 let apTeamAddr: string;
@@ -47,10 +43,6 @@ export async function setupCore(
     apTeam2: DirectSecp256k1HdWallet;
     apTeam3: DirectSecp256k1HdWallet;
     apTreasury: DirectSecp256k1HdWallet;
-    charity1: DirectSecp256k1HdWallet;
-    charity2: DirectSecp256k1HdWallet;
-    charity3: DirectSecp256k1HdWallet;
-    tca: DirectSecp256k1HdWallet;
   },
   config: {
     tax_rate: string;
@@ -70,10 +62,6 @@ export async function setupCore(
   apTeam = wallets.apTeam;
   apTeam2 = wallets.apTeam2;
   apTreasury = wallets.apTreasury;
-  charity1 = wallets.charity1;
-  charity2 = wallets.charity2;
-  charity3 = wallets.charity3;
-  tca = wallets.tca;
 
   apTeamAddr = await getWalletAddress(apTeam);
   apTeam2Addr = await getWalletAddress(apTeam2);
@@ -90,13 +78,6 @@ export async function setupCore(
     config.accepted_tokens,
   );
   await turnOverApTeamMultisig();
-  // await createEndowments(
-  //   networkUrl,
-  //   apTeam,
-
-  //   config.charity_cw3_threshold_abs_perc,
-  //   config.charity_cw3_max_voting_period,
-  // );
   // await createIndexFunds();
 }
 
@@ -150,7 +131,7 @@ async function setup(
     {
       tax_rate,
       treasury: treasury_address,
-      default_vault: apTeamAddr, // Fake vault address from apTeam
+      rebalance: undefined,
       split_to_liquid: undefined,
       accepted_tokens: accepted_tokens,
     }
@@ -282,19 +263,29 @@ async function setup(
   console.log(chalk.green(" Done!"));
 }
 
-// // Step 4: Create Endowments via the Registrar contract
-// async function createEndowments(
-//   charity_cw3_threshold_abs_perc: string,
-//   charity_cw3_max_voting_period: number,
-// ): Promise<void> {
-//   // AP Team approves 3 of 4 newly created endowments
-//   process.stdout.write("Charities propose endowment applications and CW Review Team approves (3 new)\n");
-//   let charity1_wallet = await getWalletAddress(charity1);
-//   let charity2_wallet = await getWalletAddress(charity2);
-//   let charity3_wallet = await getWalletAddress(charity3);
+// Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
+async function turnOverApTeamMultisig(): Promise<void> {
+  process.stdout.write(
+    "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract\n"
+  );
+  process.stdout.write(chalk.yellow("- Turning over Registrar"));
+  await sendTransaction(juno, apTeamAddr, registrar, {
+    update_owner: { new_owner: cw3ApTeam }
+  });
+  console.log(chalk.green(" Done!"));
 
-  
-// }
+  process.stdout.write(chalk.yellow("- Turning over Index Fund"));
+  await sendTransaction(juno, apTeamAddr, indexFund, {
+    update_owner: { new_owner: cw3ApTeam }
+  });
+  console.log(chalk.green(" Done!"));
+
+  process.stdout.write(chalk.yellow("- Turning over Accounts"));
+  await sendTransaction(juno, apTeamAddr, accounts, {
+    update_owner: { new_owner: cw3ApTeam }
+  });
+  console.log(chalk.green(" Done!"));
+}
 
 // // Step 5: Index Fund finals setup
 // async function createIndexFunds(): Promise<void> {
@@ -324,27 +315,3 @@ async function setup(
 //   });
 //   console.log(chalk.green(" Done!"));
 // }
-
-// Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
-async function turnOverApTeamMultisig(): Promise<void> {
-  process.stdout.write(
-    "Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract\n"
-  );
-  process.stdout.write(chalk.yellow("- Turning over Registrar"));
-  await sendTransaction(juno, apTeamAddr, registrar, {
-    update_owner: { new_owner: cw3ApTeam }
-  });
-  console.log(chalk.green(" Done!"));
-
-  process.stdout.write(chalk.yellow("- Turning over Index Fund"));
-  await sendTransaction(juno, apTeamAddr, indexFund, {
-    update_owner: { new_owner: cw3ApTeam }
-  });
-  console.log(chalk.green(" Done!"));
-
-  process.stdout.write(chalk.yellow("- Turning over Accounts"));
-  await sendTransaction(juno, apTeamAddr, accounts, {
-    update_owner: { new_owner: cw3ApTeam }
-  });
-  console.log(chalk.green(" Done!"));
-}

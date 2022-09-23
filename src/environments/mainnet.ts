@@ -56,7 +56,7 @@ async function initialize() {
   apTeam = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTeam, { prefix: "juno" });
   apTeamAccount = await getWalletAddress(apTeam);
   // mainnet config for AP Treasury should hold the wallet address (not seed phrase)
-  apTreasuryAccount = config.mnemonicKeys.apTeam;
+  apTreasuryAccount = config.mnemonicKeys.apTreasury;
 
   console.log(`Using ${chalk.cyan(apTeamAccount)} as Angel Team`);
   console.log(`Using ${chalk.cyan(apTreasuryAccount)} as Angel Protocol Treasury`);

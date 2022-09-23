@@ -259,10 +259,6 @@ export async function startSetupCore(): Promise<void> {
       apTeam2,
       apTeam3,
       apTreasury,
-      charity1,
-      charity2,
-      charity3,
-      tca,
     },
     // config
     {
