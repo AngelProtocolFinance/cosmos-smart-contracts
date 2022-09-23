@@ -16,10 +16,6 @@ let juno: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;
 let apTeam2: DirectSecp256k1HdWallet;
 let apTreasury: DirectSecp256k1HdWallet;
-let charity1: DirectSecp256k1HdWallet;
-let charity2: DirectSecp256k1HdWallet;
-let charity3: DirectSecp256k1HdWallet;
-let tca: DirectSecp256k1HdWallet;
 
 // wallet addresses
 let apTeamAddr: string;
@@ -35,10 +31,6 @@ let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
 
-let endow_1_id: number;
-let endow_2_id: number;
-let endow_3_id: number;
-
 // -------------------------------------------------------------------------------------
 // setup all contracts for LocalJuno and TestNet
 // -------------------------------------------------------------------------------------
@@ -51,19 +43,13 @@ export async function setupCore(
     apTeam2: DirectSecp256k1HdWallet;
     apTeam3: DirectSecp256k1HdWallet;
     apTreasury: DirectSecp256k1HdWallet;
-    charity1: DirectSecp256k1HdWallet;
-    charity2: DirectSecp256k1HdWallet;
-    charity3: DirectSecp256k1HdWallet;
-    tca: DirectSecp256k1HdWallet;
   },
   config: {
     tax_rate: string;
     threshold_absolute_percentage: string;
     max_voting_period_height: number;
     fund_rotation: number | undefined;
-    is_localjuno: boolean;
     harvest_to_liquid: string;
-    tax_per_block: string;
     funding_goal: string | undefined;
     fund_member_limit: number | undefined;
     charity_cw3_threshold_abs_perc: string,
@@ -76,10 +62,6 @@ export async function setupCore(
   apTeam = wallets.apTeam;
   apTeam2 = wallets.apTeam2;
   apTreasury = wallets.apTreasury;
-  charity1 = wallets.charity1;
-  charity2 = wallets.charity2;
-  charity3 = wallets.charity3;
-  tca = wallets.tca;
 
   apTeamAddr = await getWalletAddress(apTeam);
   apTeam2Addr = await getWalletAddress(apTeam2);
@@ -96,11 +78,7 @@ export async function setupCore(
     config.accepted_tokens,
   );
   await turnOverApTeamMultisig();
-  await createEndowments(
-    config.charity_cw3_threshold_abs_perc,
-    config.charity_cw3_max_voting_period,
-  );
-  await createIndexFunds();
+  // await createIndexFunds();
 }
 
 async function setup(
@@ -153,7 +131,7 @@ async function setup(
     {
       tax_rate,
       treasury: treasury_address,
-      default_vault: apTeamAddr, // Fake vault address from apTeam
+      rebalance: undefined,
       split_to_liquid: undefined,
       accepted_tokens: accepted_tokens,
     }
@@ -285,161 +263,6 @@ async function setup(
   console.log(chalk.green(" Done!"));
 }
 
-// Step 4: Create Endowments via the Registrar contract
-async function createEndowments(
-  charity_cw3_threshold_abs_perc: string,
-  charity_cw3_max_voting_period: number,
-): Promise<void> {
-  // AP Team approves 3 of 4 newly created endowments
-  process.stdout.write("Charities propose endowment applications and CW Review Team approves (3 new)\n");
-  let charity1_wallet = await getWalletAddress(charity1);
-  let charity2_wallet = await getWalletAddress(charity2);
-  let charity3_wallet = await getWalletAddress(charity3);
-
-  endow_1_id = await sendApplicationViaCw3Proposal(networkUrl, charity1, cw3ReviewTeam, accounts, "unknown", {
-      owner: charity1_wallet,
-      withdraw_before_maturity: false,
-      maturity_time: undefined,
-      maturity_height: undefined,
-      profile: {
-        name: "Test Endowment #1",
-        overview: "A wonderful charity endowment that aims to test all the things",
-        categories: { sdgs: [1], general: [] },
-        tier: 3,
-        logo: "logo1",
-        image: "image1",
-        url: undefined,
-        registration_number: undefined,
-        country_of_origin: undefined,
-        street_address: undefined,
-        contact_email: undefined,
-        social_media_urls: {
-          facebook: undefined,
-          twitter: undefined,
-          linkedin: undefined,
-        },
-        number_of_employees: undefined,
-        average_annual_budget: undefined,
-        annual_revenue: undefined,
-        charity_navigator_rating: undefined,
-        endow_type: "Charity",
-      },
-      cw4_members: [{ addr: charity1_wallet, weight: 1 }],
-      kyc_donors_only: false,
-      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_max_voting_period: charity_cw3_max_voting_period,
-  }, [apTeam]);
-  console.log(
-    chalk.green(" Done!"),
-    `${chalk.blue("Endowment ID")}=${endow_1_id}`
-  );
-
-  endow_2_id = await sendApplicationViaCw3Proposal(networkUrl, charity2, cw3ReviewTeam, accounts, "unknown", {
-      owner: charity2_wallet,
-      withdraw_before_maturity: false,
-      maturity_time: undefined,
-      maturity_height: undefined,
-      profile: {
-        name: "Test Endowment #2",
-        overview: "An even better endowment full of butterflies and rainbows",
-        categories: { sdgs: [3], general: [] },
-        tier: 2,
-        logo: "logo2",
-        image: "image2",
-        url: undefined,
-        registration_number: undefined,
-        country_of_origin: undefined,
-        street_address: undefined,
-        contact_email: undefined,
-        social_media_urls: {
-          facebook: undefined,
-          twitter: undefined,
-          linkedin: undefined,
-        },
-        number_of_employees: undefined,
-        average_annual_budget: undefined,
-        annual_revenue: undefined,
-        charity_navigator_rating: undefined,
-        endow_type: "Charity",
-      },
-      cw4_members: [{ addr: charity2_wallet, weight: 1 }],
-      kyc_donors_only: false,
-      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_max_voting_period: charity_cw3_max_voting_period,
-  }, [apTeam]);
-  console.log(
-    chalk.green(" Done!"),
-    `${chalk.blue("Endowment ID")}=${endow_2_id}`
-  );
-
-  endow_3_id = await sendApplicationViaCw3Proposal(networkUrl, charity3, cw3ReviewTeam, accounts, "unknown", {
-      owner: charity3_wallet,
-      withdraw_before_maturity: false,
-      maturity_time: undefined,
-      maturity_height: undefined,
-      profile: {
-        name: "Vibin' Endowment #3",
-        overview: "Global endowment that spreads good vibes",
-        categories: { sdgs: [1], general: [] },
-        tier: 3,
-        logo: "logo4",
-        image: "image4",
-        url: undefined,
-        registration_number: undefined,
-        country_of_origin: undefined,
-        street_address: undefined,
-        contact_email: undefined,
-        social_media_urls: {
-          facebook: undefined,
-          twitter: undefined,
-          linkedin: undefined,
-        },
-        number_of_employees: undefined,
-        average_annual_budget: undefined,
-        annual_revenue: undefined,
-        charity_navigator_rating: undefined,
-        endow_type: "Charity",
-      },
-      cw4_members: [{ addr: charity3_wallet, weight: 1 }],
-      kyc_donors_only: true,
-      cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
-      cw3_max_voting_period: charity_cw3_max_voting_period,
-  }, [apTeam]);
-  console.log(
-    chalk.green(" Done!"),
-    `${chalk.blue("Endowment ID")}=${endow_3_id}`
-  );
-}
-
-// Step 5: Index Fund finals setup
-async function createIndexFunds(): Promise<void> {
-  // Create an initial "Fund" with the two charities created above
-  process.stdout.write("Create two Funds with two endowments each");
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
-    create_fund: {
-      name: "Test Fund",
-      description: "My first test fund",
-      members: [endow_1_id, endow_2_id],
-      rotating_fund: true,
-      split_to_liquid: undefined,
-      expiry_time: undefined,
-      expiry_height: undefined,
-    }
-  });
-  await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
-    create_fund: {
-      name: "Test Fund #2",
-      description: "Another fund to test rotations",
-      members: [endow_1_id, endow_3_id],
-      rotating_fund: true,
-      split_to_liquid: undefined,
-      expiry_time: undefined,
-      expiry_height: undefined,
-    }
-  });
-  console.log(chalk.green(" Done!"));
-}
-
 // Turn over Ownership/Admin control of all Core contracts to AP Team MultiSig Contract
 async function turnOverApTeamMultisig(): Promise<void> {
   process.stdout.write(
@@ -463,3 +286,32 @@ async function turnOverApTeamMultisig(): Promise<void> {
   });
   console.log(chalk.green(" Done!"));
 }
+
+// // Step 5: Index Fund finals setup
+// async function createIndexFunds(): Promise<void> {
+//   // Create an initial "Fund" with the two charities created above
+//   process.stdout.write("Create two Funds with two endowments each");
+//   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
+//     create_fund: {
+//       name: "Test Fund",
+//       description: "My first test fund",
+//       members: [endow_1_id, endow_2_id],
+//       rotating_fund: true,
+//       split_to_liquid: undefined,
+//       expiry_time: undefined,
+//       expiry_height: undefined,
+//     }
+//   });
+//   await sendMessageViaCw3Proposal(juno, apTeamAddr, cw3ApTeam, indexFund, {
+//     create_fund: {
+//       name: "Test Fund #2",
+//       description: "Another fund to test rotations",
+//       members: [endow_1_id, endow_3_id],
+//       rotating_fund: true,
+//       split_to_liquid: undefined,
+//       expiry_time: undefined,
+//       expiry_height: undefined,
+//     }
+//   });
+//   console.log(chalk.green(" Done!"));
+// }

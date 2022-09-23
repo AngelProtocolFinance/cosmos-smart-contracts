@@ -491,6 +491,8 @@ export async function testQueryAccountsBalance(
   });
 
   console.log(result);
+  console.log("Locked native:", result.tokens_on_hand.locked.native);
+  console.log("Liquid native:", result.tokens_on_hand.liquid.native);
   console.log(chalk.green(" Passed!"));
 }
 

@@ -14,6 +14,9 @@ import * as MainNet from "./environments/mainnet";
 		case "localjuno_setup_core":
 			await LocalNet.startSetupCore();
 			break;
+		case "localjuno_setup_endowments":
+			await LocalNet.startSetupEndowments();
+			break;
 		// case "localjuno_setup_halo":
 		// 	await LocalNet.startSetupHalo();
 		// 	break;
@@ -38,6 +41,9 @@ import * as MainNet from "./environments/mainnet";
 		case "testnet_setup_core":
 			await TestNet.startSetupCore();	
 			break;
+		case "testnet_setup_endowments":
+			await TestNet.startSetupEndowments();
+			break;
 		case "testnet_setup_mockvaults":
 			await TestNet.startSetupMockVaults();
 			break;
@@ -61,6 +67,9 @@ import * as MainNet from "./environments/mainnet";
 			break;
 		case "mainnet_setup_core":
 			await MainNet.startSetupCore();
+			break;
+		case "mainnet_setup_endowments":
+			await MainNet.startSetupEndowments();
 			break;
 		// case "mainnet_setup_halo":
 		// 	await MainNet.startSetupHalo();

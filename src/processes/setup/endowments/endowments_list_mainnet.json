@@ -1,0 +1,26 @@
+{
+  "data": [
+    {
+        "owner": "juno17j2ahply2lef2hv27z8vu5ykzecnsxcsq6rp5r",
+        "email": "tomwedgwood@mac.com",
+        "image": "https://charity-profile-images.s3.amazonaws.com/banner/Water+for+Africa.jpeg",
+        "logo": "https://charity-profile-images.s3.amazonaws.com/logo/water-for-africa-logo-white-version-web.png",
+        "name": "Water for Africa",
+        "charity_navigator_rating": "",
+        "overview": "Water for Africa is UK based charity that specialises in providing clean water, sanitation and basic healthcare within Africa. We believe that to tackle endemic poverty within Africa you must first tackle the issue of clean sustainable water. Having worked nearly 10 years in the field of ground water resource management within Africa, Water for Africa has helped many International NGOs, Charities, and villages to provide clean sustainable water for their projects. We drill boreholes with our own drilling rigs and our own fully trained in-country drillers. We also offer consultancy services on the best practises of sustainable ground water resource management within Africa.",
+        "registration_number": "1113268",
+        "country_of_origin": "GB",
+        "street_address": "Stoke on Trent, Staffordshire",
+        "facebook_page": "",
+        "linkedin_page": "water-for-africa",
+        "twitter_handle": "waterforafrica1",
+        "annual_revenue": "$100k - $500k",
+        "average_annual_budget": "\u00a375,000",
+        "number_of_employees": 25,
+        "tier": 3,
+        "un_sdg": 6,
+        "url": "https://www.waterforafrica.org.uk/",
+        "kyc_donors_only": false
+    }
+  ]
+}
