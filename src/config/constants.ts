@@ -4,7 +4,7 @@
 export const testnet = {
   networkInfo: {
     url: "https://rpc.uni.junomint.com:443/", // "https://rpc.uni.juno.deuslabs.fi",
-    chainId: "uni-3",
+    chainId: "uni-4",
   },
   mnemonicKeys: {
     apTeam: "pact fancy rough prison twenty dismiss mushroom rival page ship quantum deer rookie system cargo",
@@ -111,10 +111,6 @@ export const mainnet = {
     vaults: [],
   },
   members: [
-    { addr: "", weight: 1 },
-    { addr: "", weight: 1 },
-    { addr: "", weight: 1 },
-    { addr: "", weight: 1 },
     { addr: "", weight: 1 },
   ],
 

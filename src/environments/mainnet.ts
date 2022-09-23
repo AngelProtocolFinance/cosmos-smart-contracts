@@ -7,16 +7,18 @@ import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
 import chalk from "chalk";
 import { mainnet as config } from "../config/constants";
-import { datetimeStringToUTC, getWalletAddress, Member } from "../utils/helpers";
+import { datetimeStringToUTC, getWalletAddress, Member, Endowment } from "../utils/helpers";
 
 import { migrateCore } from "../processes/migrate/core";
 // import { migrateHalo } from "../processes/migrate/halo";
 
 import { setupCore } from "../processes/setup/core/mainnet";
+import { setupEndowments } from "../processes/setup/endowments/endowments";
 // import { setupJunoSwap } from "../processes/setup/junoswap/realnet";
 // import { setupHalo } from "../processes/setup/halo";
 
 import { testExecute } from "../processes/tests/mainnet";
+import jsonData from "../processes/setup/endowments/endowments_list_mainnet.json";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -120,6 +122,36 @@ export async function startSetupCore(): Promise<void> {
       cw20: [],
     }
   });
+}
+
+// -------------------------------------------------------------------------------------
+// setup new charity endowments in the Accounts contract
+// -------------------------------------------------------------------------------------
+export async function startSetupEndowments(): Promise<void> {
+  console.log(chalk.blue(`\nMainNet ${config.networkInfo.chainId}`));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  await initialize();
+
+  // parse endowment JSON data
+  let endowmentData: Endowment[] = [];
+  jsonData.data.forEach((el) => {
+    const item: Endowment = el;
+    endowmentData.push(item);
+  });
+
+  // Setup endowments
+  console.log(chalk.yellow("\nStep 2. Endowments Setup"));
+  await setupEndowments(
+    config.networkInfo.url,
+    endowmentData,
+    apTeam,
+    cw3ReviewTeam,
+    accounts,
+    "0.5", // threshold absolute percentage for "charity-cw3"
+    604800, // 1 week max voting period time(unit: seconds) for "charity-cw3"
+  );
 }
 
 // -------------------------------------------------------------------------------------

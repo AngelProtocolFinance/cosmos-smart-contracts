@@ -8,6 +8,29 @@ import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { wasm_path } from "../config/wasmPaths";
 import { GasPrice } from "@cosmjs/stargate";
 
+export type Endowment = {
+  name: string;
+  owner: string;
+  tier: number;
+  overview: string;
+  url: string;
+  un_sdg: number;
+  logo: string;
+  image: string;
+  email: string;
+  twitter_handle: string;
+  facebook_page: string;
+  linkedin_page: string;
+  number_of_employees: number;
+  registration_number: string;
+  country_of_origin: string;
+  street_address: string;
+  charity_navigator_rating: string;
+  annual_revenue: string;
+  average_annual_budget: string;
+  kyc_donors_only: boolean;
+};
+
 export type Member = {
   addr: string;
   weight: number;

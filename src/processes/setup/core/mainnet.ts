@@ -4,7 +4,6 @@ import chalk from "chalk";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
-import * as mainNet from "./charities";
 import { 
   sendTransaction, 
   storeCode, 

@@ -7,18 +7,20 @@ import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
 import chalk from "chalk";
 import { localjuno as config } from "../config/localjunoConstants";
-import { datetimeStringToUTC, getWalletAddress } from "../utils/helpers";
+import { datetimeStringToUTC, getWalletAddress, Endowment } from "../utils/helpers";
 
 import { migrateCore } from "../processes/migrate/core";
 // import { migrateHalo } from "../processes/migrate/halo";
 
 import { setupCore } from "../processes/setup/core/testnet";
+import { setupEndowments } from "../processes/setup/endowments/endowments";
 import { setupLoopSwap } from "../processes/setup/loopswap/localjuno";
 import { setupMockVaults } from "../processes/setup/vaults/mock-vault";
 import { setupLoopVaults } from "../processes/setup/vaults/loop";
 // import { setupHalo } from "../processes/setup/halo";
 
 import { testExecute } from "../processes/tests/testnet";
+import jsonData from "../processes/setup/endowments/endowments_list_testnet.json";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -281,11 +283,42 @@ export async function startSetupCore(): Promise<void> {
   );
 }
 
+
+// -------------------------------------------------------------------------------------
+// setup new charity endowments in the Accounts contract
+// -------------------------------------------------------------------------------------
+export async function startSetupEndowments(): Promise<void> {
+  console.log(chalk.blue(`\nLocalJuno ${config.networkInfo.chainId}`));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  await initialize();
+
+  // parse endowment JSON data
+  let endowmentData: Endowment[] = [];
+  jsonData.data.forEach((el) => {
+    const item: Endowment = el;
+    endowmentData.push(item);
+  });
+
+  // Setup endowments
+  console.log(chalk.yellow("\nStep 2. Endowments Setup"));
+  await setupEndowments(
+    config.networkInfo.url,
+    endowmentData,
+    apTeam,
+    cw3ReviewTeam,
+    accounts,
+    "0.5", // threshold absolute percentage for "charity-cw3"
+    604800, // 1 week max voting period time(unit: seconds) for "charity-cw3"
+  );
+}
+
 // -------------------------------------------------------------------------------------
 // setup mock vault contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupMockVaults(): Promise<void> {
-  console.log(chalk.blue(`\nTestNet ${config.networkInfo.chainId}`));
+  console.log(chalk.blue(`\nLocalJuno ${config.networkInfo.chainId}`));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -322,7 +355,7 @@ export async function startSetupMockVaults(): Promise<void> {
 // setup LOOP vault contracts
 // -------------------------------------------------------------------------------------
 export async function startSetupLoopVaults(): Promise<void> {
-  console.log(chalk.blue(`\nTestNet ${config.networkInfo.chainId}`));
+  console.log(chalk.blue(`\nLocalJuno ${config.networkInfo.chainId}`));
 
   // Initialize environment information
   console.log(chalk.yellow("\nStep 1. Environment Info"));
