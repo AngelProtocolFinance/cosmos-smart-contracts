@@ -118,7 +118,7 @@ export async function startSetupCore(): Promise<void> {
     fund_member_limit: 10, // fund member limit
     funding_goal: "50000000000", // funding goal limit to trigger active fund rotation
     accepted_tokens:  {
-      native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno'],
+      native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034'],
       cw20: [],
     }
   });
