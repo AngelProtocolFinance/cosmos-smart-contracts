@@ -390,6 +390,27 @@ export async function testCreateEndowment(
   console.log(chalk.green(` ${endow_id} - Done!`));
 }
 
+export async function testCreateNormalEndowment(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  accounts: string,
+  msg: any,
+): Promise<void> {
+  process.stdout.write("Create a new endowment via the CW3 Applications contract");
+  let endow_res = await sendTransaction(juno, apTeam, accounts, { 
+    create_endowment: msg
+  });
+  // capture and return the new Endowment ID
+  let endow_id = await parseInt(endow_res.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "endow_id";
+    })?.value as string);
+  console.log(chalk.green(`> New Endowment ID: ${endow_id} - Done!`));
+}
+
 export async function testApproveInactiveEndowment(
   juno: SigningCosmWasmClient,
   apTeam: string,
@@ -511,10 +532,10 @@ export async function testQueryAccountsConfig(
 
 export async function testQueryAccountsEndowmentList(
   juno: SigningCosmWasmClient,
-  registrar: string
+  accounts: string
 ): Promise<void> {
-  process.stdout.write("Test - Query Registrar EndowmentList");
-  const result: any = await juno.queryContractSmart(registrar, {
+  process.stdout.write("Test - Query Accounts Endowment List");
+  const result: any = await juno.queryContractSmart(accounts, {
     endowment_list: {},
   });
 

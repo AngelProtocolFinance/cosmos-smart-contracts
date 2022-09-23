@@ -97,7 +97,7 @@ export const mainnet = {
   },
   mnemonicKeys: {
     apTeam: "",
-    apTreasury: "",
+    apTreasury: "juno19kvyyqmlqwtfkzmzkrpascj0yaz2j9msl4kqlzlj4nhmxt0gmljs3qa3lm", // CW3 attached to the AP Endowment contract
   },
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {

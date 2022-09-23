@@ -11,6 +11,7 @@ import {
   testSendDonationToEndowment,
   testUpdateEndowmentStatus,
   testQueryAccountsEndowmentList,
+  testCreateNormalEndowment,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -30,7 +31,14 @@ import {
   testQueryIndexFundInvolvedAddress,
 } from "./core/indexFunds";
 import {
+  testUpdateCw3Config,
   testAddMemberToC4Group,
+  testProposalApprovingEndowment,
+  testCw3CastVote,
+  testCw3ExecutePoll,
+  testQueryMultisigVoters,
+  testQueryMultisigThreshold,
+  testQueryGroupMembersList,
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
@@ -121,6 +129,42 @@ export async function testExecute(
   haloVesting: string,
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // await testQueryMultisigVoters(juno, cw3ReviewTeam);
+
+  /* --- ACCOUNTS & ENDOWMENTS --- */
+  // await testCreateNormalEndowment(juno, apTeamAddr, accounts, {
+  //   owner: apTeamAddr,
+  //   withdraw_before_maturity: true,
+  //   maturity_time: undefined,
+  //   maturity_height: undefined,
+  //   profile: {
+  //     name: "Test Normal Endowment",
+  //     overview: "Test normalized endowment created from the test-suite",
+  //     categories: { sdgs: [], general: [] },
+  //     tier: 3,
+  //     logo: "logo 1",
+  //     image: "logo 1",
+  //     url: "",
+  //     registration_number: undefined,
+  //     country_city_origin: undefined,
+  //     contact_email: "",
+  //     social_media_urls: {
+  //       facebook: undefined,
+  //       twitter: undefined,
+  //       linkedin: undefined,
+  //     },
+  //     number_of_employees: 1,
+  //     average_annual_budget: undefined,
+  //     annual_revenue: undefined,
+  //     charity_navigator_rating: undefined,
+  //     endow_type: "Normal",
+  //   },
+  //   cw4_members: [{ addr: apTeamAddr, weight: 1 }],
+  //   kyc_donors_only: false,
+  //   cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
+  //   cw3_max_voting_period: 604800,
+  // });
+
   // await testAngelTeamCanTriggerVaultsHarvest(
   //   juno,
   //   apTeamAddr,
@@ -189,10 +233,10 @@ export async function testExecute(
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVault(juno, registrar, anchorVault);
-  // await testQueryAccountsEndowmentList(juno, accounts);
+  await testQueryAccountsEndowmentList(juno, accounts);
   // await testQueryAccountsBalance(juno, endowmentContract);
   // await testQueryVaultConfig(juno, anchorVault);
-  // await testQueryAccountsConfig(juno, endowmentContract);
+  // await testQueryAccountsConfig(juno, accounts);
   // await testQueryIndexFundConfig(juno, indexFund);
   // await testQueryIndexFundState(juno, indexFund);
   // await testQueryIndexFundTcaList(juno, indexFund);

@@ -70,7 +70,7 @@ export async function setupEndowments(
               kyc_donors_only: false,
               cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
               cw3_max_voting_period: charity_cw3_max_voting_period,
-            }, [apTeamWallet]);
+            }, [apTeam]);
             console.log(chalk.green(`> Endowment ID: ${endow_id} - Done!`));
             resolve();
           } catch (e) {

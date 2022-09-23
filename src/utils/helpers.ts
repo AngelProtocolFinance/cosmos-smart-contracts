@@ -290,7 +290,7 @@ export async function sendApplicationViaCw3Proposal(
           try {
             let voter_wallet = await getWalletAddress(member);
             let voter_client = await clientSetup(member, networkUrl);
-            console.log(chalk.yellow(`> CW3 Member ${voter_wallet} votes YES on application proposal`));
+            console.log(chalk.yellow(`> CW3 Review Member ${voter_wallet} votes YES on application proposal`));
             await sendTransaction(voter_client, voter_wallet, cw3, {
               vote_application: {
                 proposal_id: parseInt(proposal_id),
