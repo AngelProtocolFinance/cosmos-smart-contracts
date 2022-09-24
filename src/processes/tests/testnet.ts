@@ -369,16 +369,16 @@ export async function testExecute(
   //   actors.charity1.addr,
   //   [{ info: { native: "ujuno" }, amount: "1000" }],
   // );
-  await testCharityCanWithdrawLocked(
-    networkUrl,
-    actors.charity1.wallet,
-    accounts,
-    cw3ApTeam,
-    endowId1,
-    [{ info: { native: "ujuno" }, amount: "2000" }],
-    [],
-    [actors.apTeam.wallet],
-  );
+  // await testCharityCanWithdrawLocked(
+  //   networkUrl,
+  //   actors.charity1.wallet,
+  //   accounts,
+  //   cw3ApTeam,
+  //   endowId1,
+  //   [{ info: { native: "ujuno" }, amount: "2000" }],
+  //   [],
+  //   [actors.apTeam.wallet],
+  // );
   // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1);
   // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: endowId1, status: 1, benficiary: undefined });
   // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, accounts, endowId3, "10000000"); // possible query registrar error
@@ -391,7 +391,7 @@ export async function testExecute(
   // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, "juno-1");
 
   // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
-  await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
+  // await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsProfile(actors.apTeam.client, accounts, endowId1);

@@ -233,7 +233,8 @@ export async function testExecute(
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVault(juno, registrar, anchorVault);
-  await testQueryAccountsEndowmentList(juno, accounts);
+  // await testQueryAccountsEndowmentList(juno, accounts);
+  // await testQueryAccountsEndowment(juno, accounts, 1);
   // await testQueryAccountsBalance(juno, endowmentContract);
   // await testQueryVaultConfig(juno, anchorVault);
   // await testQueryAccountsConfig(juno, accounts);
