@@ -9,9 +9,9 @@ use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
 };
 use angel_core::structs::{
-    AccountStrategies, AccountType, BalanceInfo, Beneficiary, Categories, DonationsReceived,
-    EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails,
-    SocialMedialUrls, SplitDetails, StrategyComponent, SwapOperation, VaultType, YieldVault,
+    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentStatus,
+    EndowmentType, GenericBalance, OneOffVaults, RebalanceDetails, SocialMedialUrls, SplitDetails,
+    StrategyComponent, SwapOperation, VaultType, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -95,7 +95,7 @@ pub fn create_endowment(
             None => Ok(Endowment {
                 owner,
                 name: msg.name.clone(),
-                categories: Categories::default(),
+                categories: msg.categories.clone(),
                 endow_type: msg.endow_type.clone(),
                 status: EndowmentStatus::Approved,
                 deposit_approved: true,
