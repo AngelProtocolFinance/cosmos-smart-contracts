@@ -186,16 +186,7 @@ fn pay_somebody_proposal() -> ExecuteMsg {
 
 fn new_application_proposal() -> ExecuteMsg {
     let profile: Profile = Profile {
-        name: "Test Endowment".to_string(),
         overview: "Endowment to power an amazing charity".to_string(),
-        categories: Categories {
-            sdgs: vec![2],
-            general: vec![],
-        },
-        tier: Some(3),
-        logo: Some("Some fancy logo".to_string()),
-        image: Some("Nice banner image".to_string()),
-        url: Some("nice-charity.org".to_string()),
         registration_number: Some("1234567".to_string()),
         country_of_origin: Some("GB".to_string()),
         street_address: Some("10 Downing St".to_string()),
@@ -209,14 +200,23 @@ fn new_application_proposal() -> ExecuteMsg {
         average_annual_budget: Some("1 Million Pounds".to_string()),
         annual_revenue: Some("Not enough".to_string()),
         charity_navigator_rating: None,
-        endow_type: EndowmentType::Charity,
+        url: Some("nice-charity.org".to_string()),
     };
 
     let create_endowment_msg = CreateEndowmentMsg {
         owner: ENDOWMENTOWNER1.to_string(),
+        endow_type: EndowmentType::Charity,
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
+        name: "Test Endowment".to_string(),
+        categories: Categories {
+            sdgs: vec![2],
+            general: vec![],
+        },
+        tier: Some(3),
+        logo: Some("Some fancy logo".to_string()),
+        image: Some("Nice banner image".to_string()),
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,

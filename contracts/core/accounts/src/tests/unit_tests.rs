@@ -30,15 +30,7 @@ fn create_endowment() -> (
 ) {
     let mut deps = mock_dependencies(&[]);
     let profile: Profile = Profile {
-        name: "Test Endowment".to_string(),
         overview: "Endowment to power an amazing charity".to_string(),
-        categories: Categories {
-            sdgs: vec![2],
-            general: vec![],
-        },
-        tier: Some(3),
-        logo: Some("Some fancy logo".to_string()),
-        image: Some("Nice banner image".to_string()),
         url: Some("nice-charity.org".to_string()),
         registration_number: Some("1234567".to_string()),
         country_of_origin: Some("GB".to_string()),
@@ -53,11 +45,19 @@ fn create_endowment() -> (
         average_annual_budget: Some("1 Million Pounds".to_string()),
         annual_revenue: Some("Not enough".to_string()),
         charity_navigator_rating: None,
-        endow_type: EndowmentType::Normal,
     };
 
     let create_endowment_msg = CreateEndowmentMsg {
         owner: CHARITY_ADDR.to_string(),
+        name: "Test Endowment".to_string(),
+        endow_type: EndowmentType::Normal,
+        categories: Categories {
+            sdgs: vec![2],
+            general: vec![],
+        },
+        tier: Some(3),
+        logo: Some("Some fancy logo".to_string()),
+        image: Some("Nice banner image".to_string()),
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
@@ -119,8 +119,17 @@ fn test_update_endowment_settings() {
     // update the endowment "owner" & "kyc_donors_only"
     let msg = UpdateEndowmentSettingsMsg {
         id: CHARITY_ID,
-        owner: CHARITY_ADDR.to_string(),
-        kyc_donors_only: false,
+        owner: Some(CHARITY_ADDR.to_string()),
+        kyc_donors_only: Some(false),
+        name: Some("Test Endowment".to_string()),
+        endow_type: Some("normal".to_string()),
+        categories: Some(Categories {
+            sdgs: vec![2],
+            general: vec![],
+        }),
+        tier: Some(3),
+        logo: Some("Some fancy logo".to_string()),
+        image: Some("Nice banner image".to_string()),
     };
     let res = execute(
         deps.as_mut(),
@@ -134,8 +143,17 @@ fn test_update_endowment_settings() {
     // Not just anyone can update the Endowment's settings! Only Endowment owner can.
     let msg = UpdateEndowmentSettingsMsg {
         id: CHARITY_ID,
-        owner: CHARITY_ADDR.to_string(),
-        kyc_donors_only: false,
+        owner: Some(CHARITY_ADDR.to_string()),
+        kyc_donors_only: Some(false),
+        name: Some("Test Endowment name goes here".to_string()),
+        endow_type: Some("normal".to_string()),
+        categories: Some(Categories {
+            sdgs: vec![2],
+            general: vec![],
+        }),
+        tier: Some(3),
+        logo: Some("Some fancy logo".to_string()),
+        image: Some("Nice banner image".to_string()),
     };
     let info = mock_info(PLEB, &coins(100000, "earth "));
     // This should fail with an error!
@@ -400,15 +418,7 @@ fn test_update_endowment_profile() {
     let (mut deps, env, _acct_contract, endow_details) = create_endowment();
     let msg = UpdateProfileMsg {
         id: CHARITY_ID,
-        name: None,
         overview: Some("Test Endowment is for just testing".to_string()),
-        categories: Some(Categories {
-            sdgs: vec![1],
-            general: vec![],
-        }),
-        tier: Some(2_u8),
-        logo: Some("".to_string()),
-        image: Some("".to_string()),
         url: None,
         registration_number: None,
         country_of_origin: None,
@@ -421,7 +431,6 @@ fn test_update_endowment_profile() {
         average_annual_budget: None,
         annual_revenue: None,
         charity_navigator_rating: None,
-        endow_type: None,
     };
 
     // Not just anyone can update the Endowment's profile! Only Endowment owner or Config owner can.
@@ -460,28 +469,6 @@ fn test_update_endowment_profile() {
         value.overview,
         "Test Endowment is for just testing".to_string()
     );
-    assert_eq!(value.categories.sdgs.len(), 1);
-    assert_eq!(value.tier, Some(3));
-
-    // Config owner can update certain profile
-    let info = mock_info(AP_TEAM, &[]);
-    // This should succeed!
-    let _res = execute(
-        deps.as_mut(),
-        env.clone(),
-        info,
-        ExecuteMsg::UpdateProfile(msg.clone()),
-    )
-    .unwrap();
-
-    let res = query(
-        deps.as_ref(),
-        env.clone(),
-        QueryMsg::GetProfile { id: CHARITY_ID },
-    )
-    .unwrap();
-    let value: ProfileResponse = from_binary(&res).unwrap();
-    assert_eq!(value.tier.unwrap(), 2);
 }
 
 #[test]
@@ -902,15 +889,7 @@ fn test_copycat_strategies() {
 
     // Create one more endowment for tests
     let profile: Profile = Profile {
-        name: "Test Endowment".to_string(),
         overview: "Endowment to power an amazing charity".to_string(),
-        categories: Categories {
-            sdgs: vec![2],
-            general: vec![],
-        },
-        tier: Some(3),
-        logo: Some("Some fancy logo".to_string()),
-        image: Some("Nice banner image".to_string()),
         url: Some("nice-charity.org".to_string()),
         registration_number: Some("1234567".to_string()),
         country_of_origin: Some("GB".to_string()),
@@ -925,11 +904,11 @@ fn test_copycat_strategies() {
         average_annual_budget: Some("1 Million Pounds".to_string()),
         annual_revenue: Some("Not enough".to_string()),
         charity_navigator_rating: None,
-        endow_type: EndowmentType::Normal,
     };
 
     let create_endowment_msg = CreateEndowmentMsg {
         owner: CHARITY_ADDR.to_string(),
+        name: "Test Endowment".to_string(),
         withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
@@ -941,6 +920,14 @@ fn test_copycat_strategies() {
         },
         cw3_max_voting_period: 60,
         proposal_link: None,
+        categories: Categories {
+            sdgs: vec![2],
+            general: vec![],
+        },
+        tier: Some(3),
+        logo: Some("Some fancy logo".to_string()),
+        image: Some("Nice banner image".to_string()),
+        endow_type: EndowmentType::Normal,
     };
     let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
     let _ = execute(
