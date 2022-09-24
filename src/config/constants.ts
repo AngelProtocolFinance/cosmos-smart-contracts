@@ -4,7 +4,7 @@
 export const testnet = {
   networkInfo: {
     url: "https://rpc.uni.junomint.com:443/", // "https://rpc.uni.juno.deuslabs.fi",
-    chainId: "uni-4",
+    chainId: "uni-5",
   },
   mnemonicKeys: {
     apTeam: "pact fancy rough prison twenty dismiss mushroom rival page ship quantum deer rookie system cargo",
@@ -19,17 +19,17 @@ export const testnet = {
   },
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
-    registrar: "juno19vfquz8hz0dp773ct9q39anqghw7lzqpdzafwcqjl0c7tn5mz0vqmvww28",
-    accounts: "juno1wj0dak9qwv6jtay0knldyupg7a56m2awpezyh8u407v66la5q9tqt345ng",
-    indexFund: "juno16rz2d0n4sjuwlzwgwxn3xuk7zarr2u2css3v5qy6azc9f002tgrqhekful",
-    cw4GrpApTeam: "juno1lr0jcep4ckr7fwcteu9jgndj4nycstksajy2fjy3ap4n2usc67ss7tqsep",
-    cw3ApTeam: "juno1qur3fztscxwutxpl2xk3gsmy442gqneskj95q8zpmvmvd7zam96sxdq55k",
-    cw4GrpReviewTeam: "juno1qf6jqdr633ry7e52hq9kels98vlzxh2lt983w79qafvdzse3dk6s6zecnw",
-    cw3ReviewTeam: "juno1wtkvj07sxk8wa2sjsvaneym8ly5nzhvzdwwukelmf4ywklqdy96qlhllvt",
-    vaultLocked1: "juno1vay5qjs5aa5jgmm0qq6z9yffwtu4ntz3s883mc02efsjsv2m7t9qm4cfsc",
-    vaultLiquid1: "juno17svz6ft6dkk6p828tedcdsuw0erra3agpgu3tpak3q07gz89st7ssp94js",
-    vaultLocked2: "juno1s2u3wkw6djexf7ygnqzlesa6ea249lhyl9j3ldkgaj4px5jdveds8xrlpe",
-    vaultLiquid2: "juno1ttf9hg76vhw7scv6qnn9xtu2006elj3gnk5x3qudgfv59z7xe9zsmyjxrs",
+    registrar: "juno1ul4msjc3mmaxsscdgdtjds85rg50qrepvrczp0ldgma5mm9xv8yqpv6zva",
+    accounts: "juno12cfxezwfq4q90nk0g5zvzpjf0t9t2gfdn8vlnwkhm9lpde0pd49qwfdvn4",
+    indexFund: "juno1mx32w9tnfxv0z5j000750h8ver7qf3xpj09w3uzvsr3hq68f4hxqvzedz6",
+    cw4GrpApTeam: "juno1lqgdq9u8zhcvwwwz3xjswactrtq6qzptmlzlh6xspl34dxq32uhqhlphat",
+    cw3ApTeam: "juno186ucx5mtdq6ams8rsvvcu7yfw5lhtxue8ykdkyqvlnk3gpc77las5wms6m",
+    cw4GrpReviewTeam: "juno14483x4pm76hwpzyvj56ccarl8kls3tdyz2rtve7p0u7lj9dgsjcqft5umc",
+    cw3ReviewTeam: "juno1qt0gkcrvcpv765k8ec4tl2svvg6hd3e3td8pvg2fsncrt3dzjefsmyhx8r",
+    vaultLocked1: "juno1ppg8jl8gpe9wv7ga5h7k3z2g3889nvnh4qdv9wh5830ngy9a85tq8x3s65",
+    vaultLiquid1: "juno1450hrg6dv2l58c0rvdwx8ec2a0r6dd50hn4frk370tpvqjhy8khqcx0908",
+    vaultLocked2: "juno1u6sg78xududaer4mwmgh2n2s6ta7az74ghg647a75nsyhcdsrspsneuynh",
+    vaultLiquid2: "juno1s0vkxnwyzfeeexqctu9mjargd8utwf90djllz4cf57ausv79k2hs2usqth",
     endowId1: 1,
     endowId2: 2,
     endowId3: 3,
