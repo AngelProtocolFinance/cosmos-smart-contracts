@@ -9,7 +9,7 @@ use cosmwasm_std::{
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
-use cw_asset::{Asset, AssetInfoBase, AssetUnchecked};
+use cw_asset::{Asset, AssetInfoBase};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "accounts";

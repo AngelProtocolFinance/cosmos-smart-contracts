@@ -601,7 +601,7 @@ pub struct Categories {
 }
 
 impl Categories {
-    fn default() -> Self {
+    pub fn default() -> Self {
         Categories {
             sdgs: vec![],
             general: vec![],
@@ -612,12 +612,7 @@ impl Categories {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Profile {
-    pub name: String, // name of the Charity Endowment
     pub overview: String,
-    pub categories: Categories, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
-    pub tier: Option<u8>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
-    pub logo: Option<String>,
-    pub image: Option<String>,
     pub url: Option<String>,
     pub registration_number: Option<String>,
     pub country_of_origin: Option<String>,
@@ -628,18 +623,11 @@ pub struct Profile {
     pub average_annual_budget: Option<String>,
     pub annual_revenue: Option<String>,
     pub charity_navigator_rating: Option<String>,
-    pub endow_type: EndowmentType,
 }
 
 impl Default for Profile {
     fn default() -> Self {
         Profile {
-            name: "".to_string(),
-            overview: "".to_string(),
-            categories: Categories::default(),
-            tier: None,
-            logo: None,
-            image: None,
             url: None,
             registration_number: None,
             country_of_origin: None,
@@ -654,7 +642,7 @@ impl Default for Profile {
             average_annual_budget: None,
             annual_revenue: None,
             charity_navigator_rating: None,
-            endow_type: EndowmentType::Charity,
+            overview: "".to_string(),
         }
     }
 }

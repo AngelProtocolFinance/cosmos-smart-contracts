@@ -41,18 +41,18 @@ pub struct EndowmentDetailsResponse {
     pub deposit_approved: bool,
     pub withdraw_approved: bool,
     pub pending_redemptions: u8,
+    pub logo: Option<String>,
+    pub image: Option<String>,
+    pub name: String,
+    pub categories: Categories,
+    pub tier: Option<u8>,
     pub copycat_strategy: Option<u32>,
     pub proposal_link: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ProfileResponse {
-    pub name: String,
     pub overview: String,
-    pub categories: Categories,
-    pub tier: Option<u8>,
-    pub logo: Option<String>,
-    pub image: Option<String>,
     pub url: Option<String>,
     pub registration_number: Option<String>,
     pub country_of_origin: Option<String>,
