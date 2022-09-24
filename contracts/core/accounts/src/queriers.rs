@@ -215,7 +215,13 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
 
 pub fn query_profile(deps: Deps, id: u32) -> StdResult<ProfileResponse> {
     let profile = PROFILES.load(deps.storage, id)?;
+    let endowment = ENDOWMENTS.load(deps.storage, id)?;
     Ok(ProfileResponse {
+        name: endowment.name,
+        categories: endowment.categories,
+        tier: endowment.tier,
+        logo: endowment.logo,
+        image: endowment.image,
         overview: profile.overview,
         url: profile.url,
         registration_number: profile.registration_number,

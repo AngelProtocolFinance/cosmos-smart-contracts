@@ -52,7 +52,12 @@ pub struct EndowmentDetailsResponse {
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
 pub struct ProfileResponse {
+    pub name: String,
     pub overview: String,
+    pub categories: Categories,
+    pub tier: Option<u8>,
+    pub logo: Option<String>,
+    pub image: Option<String>,
     pub url: Option<String>,
     pub registration_number: Option<String>,
     pub country_of_origin: Option<String>,
