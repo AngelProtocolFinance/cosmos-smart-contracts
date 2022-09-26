@@ -102,8 +102,8 @@ export const mainnet = {
     gasPrice: "0.025ujuno",
   },
   mnemonicKeys: {
-    apTeam: "buffalo fine quote ocean energy curve quantum task virus wrist slight mixture chase settle develop music combine choice prosper drum junk stool review actress",
-    apTreasury: "juno19kvyyqmlqwtfkzmzkrpascj0yaz2j9msl4kqlzlj4nhmxt0gmljs3qa3lm", // CW3 attached to the AP Endowment contract
+    apTeam: "",
+    apTreasury: "juno1vc22myxcgt4asdgpk2n8qn9vapdrgusu38t87vatc248sjndhr2q67t3ey", // CW3 attached to the AP Endowment contract
   },
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {
