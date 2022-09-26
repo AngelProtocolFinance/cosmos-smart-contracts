@@ -107,13 +107,13 @@ export const mainnet = {
   },
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {
-    registrar: "",
-    accounts: "",
-    indexFund: "",
-    cw4GrpApTeam: "",
-    cw3ApTeam: "",
-    cw4GrpReviewTeam: "",
-    cw3ReviewTeam: "",
+    registrar: "juno17emcut72n6ycmf54qd0l4mzsefqxnqdhqxzlczxstlkkatdlst5qf9s3qr",
+    accounts: "juno1e0w8892n60v0juuugvwptj8f6v3ad56ydr3cgxstmpkggjrqzfhsaqh38c",
+    indexFund: "juno1yrahlxavwr7juyrty580d24mgvmhknn6h3sgepjtkyg7udvj2l2sujdlqn",
+    cw4GrpApTeam: "juno15g9u395kprfhxxzfqhfw56rvwfhjzg8k6mjq82u3yg7fxkhprv8stsu8mm",
+    cw3ApTeam: "juno1sae4p8crnac0h9m27psn205d6k586f7cnm4eshws623v05g95teqvj2s8q",
+    cw4GrpReviewTeam: "juno1a22f8dxevu3er7vs4lkrca9n8rgf8uvgjd8s2p5eq787vmczq59syuplqx",
+    cw3ReviewTeam: "juno1vp2q50smgzw64xm2j2ksntej34pnnedaz4qkwdh8zah9kjcaas6s8g92t8",
     vaults: [],
   },
   members: [
