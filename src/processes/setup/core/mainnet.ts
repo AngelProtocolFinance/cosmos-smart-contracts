@@ -159,7 +159,6 @@ async function setup(
       group_addr: cw4GrpApTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
-      // registrar_contract: registrar,
     }
   );
   cw3ApTeam = cw3ApTeamResult.contractAddress as string;
@@ -184,7 +183,7 @@ async function setup(
     apTeamAddr,
     accountsCodeId,
     {
-      owner_sc: apTeamAddr,
+      owner_sc: cw3ApTeam,
       registrar_contract: registrar,
     }
   );
@@ -214,7 +213,6 @@ async function setup(
       group_addr: cw4GrpReviewTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
-      // registrar_contract: registrar,
     }
   );
   cw3ReviewTeam = cw3ReviewTeamResult.contractAddress as string;
@@ -258,12 +256,6 @@ async function turnOverApTeamMultisig(): Promise<void> {
 
   process.stdout.write(chalk.yellow("- Turning over Index Fund"));
   await sendTransaction(juno, apTeamAddr, indexFund, {
-    update_owner: { new_owner: cw3ApTeam }
-  });
-  console.log(chalk.green(" Done!"));
-
-  process.stdout.write(chalk.yellow("- Turning over Accounts"));
-  await sendTransaction(juno, apTeamAddr, accounts, {
     update_owner: { new_owner: cw3ApTeam }
   });
   console.log(chalk.green(" Done!"));
