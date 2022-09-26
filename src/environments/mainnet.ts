@@ -53,7 +53,7 @@ let haloVesting: string;
 // initialize variables
 // -------------------------------------------------------------------------------------
 async function initialize() {
-  apTeam = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTeam, { prefix: "juno" });
+  apTeam = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTeam, { prefix: config.networkInfo.walletPrefix });
   apTeamAccount = await getWalletAddress(apTeam);
   // mainnet config for AP Treasury should hold the wallet address (not seed phrase)
   apTreasuryAccount = config.mnemonicKeys.apTreasury;
@@ -95,7 +95,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(haloVesting)} as HALO vesting`);
 
   // setup client connection to the JUNO network
-  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString("0.025ujuno") });
+  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString(config.networkInfo.gasPrice) });
 }
 
 // -------------------------------------------------------------------------------------
@@ -144,7 +144,7 @@ export async function startSetupEndowments(): Promise<void> {
   // Setup endowments
   console.log(chalk.yellow("\nStep 2. Endowments Setup"));
   await setupEndowments(
-    config.networkInfo.url,
+    config.networkInfo,
     endowmentData,
     apTeam,
     cw3ReviewTeam,

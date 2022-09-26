@@ -179,16 +179,16 @@ export async function testExecute(
   haloVesting: string,
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 2. Setting up signing clients for all possible actors"));
-  const networkUrl = config.networkInfo.url;
+  const networkInfo = config.networkInfo;
   const actors = {
-    apTeam: { client: await clientSetup(apTeam, networkUrl), wallet: apTeam, addr: apTeamAddr },
-    apTeam2: { client: await clientSetup(apTeam2, networkUrl), wallet: apTeam2, addr: apTeam2Addr },
-    apTeam3: { client: await clientSetup(apTeam3, networkUrl), wallet: apTeam3, addr: apTeam3Addr },
-    charity1: { client: await clientSetup(charity1, networkUrl), wallet: charity1, addr: charity1Addr },
-    charity2: { client: await clientSetup(charity2, networkUrl), wallet: charity2, addr: charity2Addr },
-    charity3: { client: await clientSetup(charity3, networkUrl), wallet: charity3, addr: charity3Addr },
-    pleb: { client: await clientSetup(pleb, networkUrl), wallet: pleb, addr: plebAddr },
-    tca: { client: await clientSetup(tca, networkUrl), wallet: tca, addr: tcaAddr },
+    apTeam: { client: await clientSetup(apTeam, networkInfo), wallet: apTeam, addr: apTeamAddr },
+    apTeam2: { client: await clientSetup(apTeam2, networkInfo), wallet: apTeam2, addr: apTeam2Addr },
+    apTeam3: { client: await clientSetup(apTeam3, networkInfo), wallet: apTeam3, addr: apTeam3Addr },
+    charity1: { client: await clientSetup(charity1, networkInfo), wallet: charity1, addr: charity1Addr },
+    charity2: { client: await clientSetup(charity2, networkInfo), wallet: charity2, addr: charity2Addr },
+    charity3: { client: await clientSetup(charity3, networkInfo), wallet: charity3, addr: charity3Addr },
+    pleb: { client: await clientSetup(pleb, networkInfo), wallet: pleb, addr: plebAddr },
+    tca: { client: await clientSetup(tca, networkInfo), wallet: tca, addr: tcaAddr },
   };
   console.log(chalk.green(" Done!"));
 
@@ -209,7 +209,7 @@ export async function testExecute(
   /* --- REGISTRAR contract --- */
   // await testUpdatingRegistrarUpdateOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, cw3ApTeam);
   // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, {
-  //   accepted_tokens_native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujuno', 'ujunox'],
+  //   accepted_tokens_native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', config.networkInfo.nativeToken],
   //   accepted_tokens_cw20: [],
   // });
   // await testUpdatingRegistrarNetworkConnections(
@@ -340,7 +340,7 @@ export async function testExecute(
   //   [{ vault: vaultLiquid1, percentage: "0.5" }]
   // );
 
-  // await testSendDonationToEndowment(actors.apTeam2.client, actors.apTeam2.addr, accounts, endowId1, "1000000");
+  // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, 32, { denom: config.networkInfo.nativeToken, amount: "100000" });
   // await testEndowmentVaultsRedeem(
   //   actors.charity1.client,
   //   actors.charity1.addr,
@@ -367,7 +367,7 @@ export async function testExecute(
   //   accounts,
   //   endowId1,
   //   actors.charity1.addr,
-  //   [{ info: { native: "ujuno" }, amount: "1000" }],
+  //   [{ info: { native: config.networkInfo.nativeToken }, amount: "1000" }],
   // );
   // await testCharityCanWithdrawLocked(
   //   networkUrl,
@@ -375,7 +375,7 @@ export async function testExecute(
   //   accounts,
   //   cw3ApTeam,
   //   endowId1,
-  //   [{ info: { native: "ujuno" }, amount: "2000" }],
+  //   [{ info: { native: config.networkInfo.nativeToken }, amount: "2000" }],
   //   [],
   //   [actors.apTeam.wallet],
   // );
@@ -396,7 +396,7 @@ export async function testExecute(
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsProfile(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsState(actors.apTeam.client, accounts, endowId1);
-  // await testQueryAccountsTokenAmount(actors.apTeam.client, accounts, 1, { native: "ujuno" }, "locked");
+  // await testQueryAccountsTokenAmount(actors.apTeam.client, accounts, 1, { native: config.networkInfo.nativeToken }, "locked");
 
   // await testQueryIndexFundConfig(actors.apTeam.client, indexFund);
   // await testQueryIndexFundState(actors.apTeam.client, indexFund);

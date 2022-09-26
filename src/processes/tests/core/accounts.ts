@@ -45,7 +45,7 @@ export async function testSendDonationToEndowment(
   apTeam: string,
   accountsContract: string,
   endowmentId: number,
-  amount: string
+  coin: any // { denom: "ujuno", amount: "100000" }
 ): Promise<void> {
   process.stdout.write("Test - Send amount to a single Endowment Account (50:50 split)");
   await expect(
@@ -56,7 +56,7 @@ export async function testSendDonationToEndowment(
         liquid_percentage: "0.5",
       },
     },
-      [{ denom: "ujuno", amount }]
+      [coin]
     )
   ).to.be.ok;
   console.log(chalk.green(" Passed!"));

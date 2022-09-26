@@ -5,6 +5,9 @@ export const testnet = {
   networkInfo: {
     url: "https://rpc.uni.junomint.com:443/", // "https://rpc.uni.juno.deuslabs.fi",
     chainId: "uni-5",
+    walletPrefix: "juno",
+    nativeToken: "ujunox",
+    gasPrice: "0.0025ujunox",
   },
   mnemonicKeys: {
     apTeam: "pact fancy rough prison twenty dismiss mushroom rival page ship quantum deer rookie system cargo",
@@ -94,20 +97,23 @@ export const mainnet = {
   networkInfo: {
     url: "https://rpc-juno.itastakers.com",
     chainId: "juno-1",
+    walletPrefix: "juno",
+    nativeToken: "ujuno",
+    gasPrice: "0.025ujuno",
   },
   mnemonicKeys: {
-    apTeam: "",
+    apTeam: "buffalo fine quote ocean energy curve quantum task virus wrist slight mixture chase settle develop music combine choice prosper drum junk stool review actress",
     apTreasury: "juno19kvyyqmlqwtfkzmzkrpascj0yaz2j9msl4kqlzlj4nhmxt0gmljs3qa3lm", // CW3 attached to the AP Endowment contract
   },
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {
     registrar: "juno16uva5mgmzj78rdwf5hcqv688lyenms6s32zfjectg8zkr4vc3xfq95eueu",
-    accounts: "juno1wkfy4u8zj45jqeeyvl7pedzcvaksutug56d0v32p6qw3fmpyw6rq82y648",
+    accounts: "juno148s6297wzl42cm2l44wnl5xs5m45qe6a2e945c0px8jgq860yfhqq56e9g",
     indexFund: "juno1ycpml96cru0ln20zv7qxkc6xuass8lerpk0cfwvgmvyn6zjux55srqkah5",
     cw4GrpApTeam: "juno1ucjmf3nztyq4a6q8tzja9thefq7092s9r4a2yk8267spr2fays2qks9rl4",
     cw3ApTeam: "juno1dftgv4yhy8yqx95c7a3jar9dg5nnq4p2m50nzk6wdlkahd2h4hms3js63a",
-    cw4GrpReviewTeam: "juno1p2yg2xy7z39mhnn4r248nfsf9zufa7kxh34g7kh9u7zvjacm4nssx2x6gv",
-    cw3ReviewTeam: "juno1et8z5we83ny06j5sra9q9vaxw6e9cp4qjy5agy8emqz8wcmmgheqnq5xdy",
+    cw4GrpReviewTeam: "juno1yv9rs87s6f4ql5mnuu0hmg4ehpdc7urdhty8ja8992hhc8dgxscsygwt9t",
+    cw3ReviewTeam: "juno1w5uypgtrm03k7qrrj4pf6cf8aj6tnglm4ze2mxv94f2xgy97muyswfcd9j",
     vaults: [],
   },
   members: [
