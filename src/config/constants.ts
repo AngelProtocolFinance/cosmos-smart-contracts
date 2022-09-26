@@ -5,6 +5,9 @@ export const testnet = {
   networkInfo: {
     url: "https://rpc.uni.junomint.com:443/", // "https://rpc.uni.juno.deuslabs.fi",
     chainId: "uni-5",
+    walletPrefix: "juno",
+    nativeToken: "ujunox",
+    gasPrice: "0.0025ujunox",
   },
   mnemonicKeys: {
     apTeam: "pact fancy rough prison twenty dismiss mushroom rival page ship quantum deer rookie system cargo",
@@ -94,6 +97,9 @@ export const mainnet = {
   networkInfo: {
     url: "https://rpc-juno.itastakers.com",
     chainId: "juno-1",
+    walletPrefix: "juno",
+    nativeToken: "ujuno",
+    gasPrice: "0.025ujuno",
   },
   mnemonicKeys: {
     apTeam: "",

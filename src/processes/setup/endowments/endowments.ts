@@ -17,7 +17,7 @@ let endowmentIds: any[] = [];
 
 // setup charity endowments
 export async function setupEndowments(
-  networkUrl: string,
+  networkInfo: any,
   endowmentData: Endowment[],
   apTeamWallet: DirectSecp256k1HdWallet,
   cw3ReviewTeam: string,
@@ -25,7 +25,7 @@ export async function setupEndowments(
   charity_cw3_threshold_abs_perc: string,
   charity_cw3_max_voting_period: number,
 ): Promise<void> {
-  networkUrl = networkUrl;
+  networkInfo = networkInfo;
   apTeam = apTeamWallet;
   cw3ReviewTeam = cw3ReviewTeam;
   accounts = accountsContract;
@@ -38,7 +38,7 @@ export async function setupEndowments(
         new Promise(async (resolve, reject) => {
           try {
             console.log(`Building new endowment for owner: ${item.owner}`);
-            let endow_id = await sendApplicationViaCw3Proposal(networkUrl, apTeam, cw3ReviewTeam, accounts, "unknown", {
+            let endow_id = await sendApplicationViaCw3Proposal(networkInfo, apTeam, cw3ReviewTeam, accounts, "unknown", {
               owner: item.owner,
               withdraw_before_maturity: false,
               maturity_time: undefined,

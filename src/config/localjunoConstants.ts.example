@@ -6,6 +6,9 @@ export const localjuno = {
   networkInfo: {
     url: "localhost:26657",
     chainId: "localjuno",
+    walletPrefix: "juno",
+    nativeToken: "ujuno",
+    gasPrice: "0.01ujuno",
   },
 
   mnemonicKeys: {

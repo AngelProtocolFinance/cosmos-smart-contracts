@@ -36,7 +36,7 @@ let indexFund: string;
 // -------------------------------------------------------------------------------------
 
 export async function setupCore(
-  _networkUrl: string,
+  _networkUrl: any,
   _juno: SigningCosmWasmClient,
   wallets: {
     apTeam: DirectSecp256k1HdWallet;
