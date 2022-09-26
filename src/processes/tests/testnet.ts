@@ -380,7 +380,7 @@ export async function testExecute(
   //   [actors.apTeam.wallet],
   // );
   // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1);
-  // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: endowId1, status: 1, benficiary: undefined });
+  // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 10, status: 3, beneficiary: { wallet: { address: actors.apTeam.addr }}});
   // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, accounts, endowId3, "10000000"); // possible query registrar error
 
 

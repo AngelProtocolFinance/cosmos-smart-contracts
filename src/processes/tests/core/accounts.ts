@@ -455,11 +455,7 @@ export async function testUpdateEndowmentStatus(
   const cw3 = res.owner as string;
 
   await sendMessageViaCw3Proposal(juno, apTeam, cw3, accounts, {
-    update_endowment_status: {
-      endowment_id: endowmentStatus.endowment_id,
-      status: endowmentStatus.status,
-      beneficiary: endowmentStatus.beneficiary,
-    },
+    update_endowment_status: endowmentStatus
   });
   console.log(chalk.green(" Done!"));
 }

@@ -219,13 +219,11 @@ export async function testExecute(
   // await testUpdateFundMembers(juno, apTeamAddr, pleb, indexFund, 1, [], ["",""]);
   // await testUpdateFundMembers(juno, apTeamAddr, pleb, indexFund, 2, ["",""], []);
 
-  // await testUpdateEndowmentsStatus(juno, apTeamAddr, registrar, [
-  //   {
-  //     address: "juno1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2",
-  //     status: 3,
-  //     beneficiary: "juno1suxqzxtzztxvakvucc6u4s9833n4u0cyk9pmv8",
-  //   },
-  // ]);
+  // await testUpdateEndowmentStatus(juno, apTeamAddr, accounts, {
+  //   endowment_id: 1,
+  //   status: 3,
+  //   beneficiary: { wallet: { address: apTeamAddr } }
+  // });
 
   // Test query
   // await testQueryRegistrarConfig(juno, registrar);

@@ -103,7 +103,7 @@ export const mainnet = {
   },
   mnemonicKeys: {
     apTeam: "",
-    apTreasury: "juno1vc22myxcgt4asdgpk2n8qn9vapdrgusu38t87vatc248sjndhr2q67t3ey", // CW3 attached to the AP Endowment contract
+    apTreasury: "juno1q6n47p729sla2jekc45rlmrvwchkj4gc39a296", // Temp use AP Team Admin until we can use the CW3 of the AP Endowment
   },
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {
@@ -117,7 +117,7 @@ export const mainnet = {
     vaults: [],
   },
   members: [
-    { addr: "juno1c2ha303qdjlcpphjjv7s7r8ns2lnqm9ec79lfa", weight: 1 },
+    { addr: "juno1q6n47p729sla2jekc45rlmrvwchkj4gc39a296", weight: 1 },
   ],
 
   // JunoSwap contracts
