@@ -62,6 +62,42 @@ export async function testSendDonationToEndowment(
   console.log(chalk.green(" Passed!"));
 }
 
+export async function testSendRestitutionFundsToEndowments(
+  juno: SigningCosmWasmClient,
+  wallet: string,
+  accountsContract: string,
+  endowments: any[],
+  denom: string,
+): Promise<void> {
+  console.log(`Test - Send restitution funds to a new batch of charity endowments`);
+  let prom = Promise.resolve();
+  endowments.forEach((e) => {
+    // eslint-disable-next-line no-async-promise-executor
+    prom = prom.then(
+      () =>
+        new Promise(async (resolve, reject) => {
+          try {
+            console.log(`Sending ${chalk.blue(`${e.amount} ${e.acct_type}`)} restitution funds to Endowment ID: ${chalk.blue(e.id)}`);
+            let res = await sendTransactionWithFunds(juno, wallet, accountsContract, {
+                deposit: {
+                  id: e.id,
+                  locked_percentage: (e.acct_type == "locked") ? "1" : "0",
+                  liquid_percentage: (e.acct_type == "liquid") ? "1" : "0",
+                },
+              },
+              [{ denom, amount: e.amount }]
+            );
+            console.log(chalk.green(" Sent!"));
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        })
+    );
+  });
+  await prom;
+}
+
 //----------------------------------------------------------------------------------------
 // TEST: Endowment owner can withdraw from available balance in their Accounts
 //

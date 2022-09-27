@@ -12,6 +12,7 @@ import {
   testUpdateEndowmentStatus,
   testQueryAccountsEndowmentList,
   testCreateNormalEndowment,
+  testSendRestitutionFundsToEndowments,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -132,6 +133,14 @@ export async function testExecute(
   // await testQueryMultisigVoters(juno, cw3ReviewTeam);
 
   /* --- ACCOUNTS & ENDOWMENTS --- */
+  // const endowments_batch = [];
+  // await testSendRestitutionFundsToEndowments(
+  //   juno,
+  //   apTeamAddr,
+  //   accounts,
+  //   endowments_batch,
+  //   "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034"
+  // );
   // await testCreateNormalEndowment(juno, apTeamAddr, accounts, {
   //   owner: apTeamAddr,
   //   withdraw_before_maturity: true,
