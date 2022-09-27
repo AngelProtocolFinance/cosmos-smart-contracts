@@ -193,7 +193,7 @@ pub fn execute_propose_application(
     let cfg = CONFIG.load(deps.storage)?;
 
     // Only charity endowments are processed through this CW3 for now
-    if msg.profile.endow_type != EndowmentType::Charity {
+    if msg.endow_type != EndowmentType::Charity {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -209,13 +209,13 @@ pub fn execute_propose_application(
     let accounts_contract = registrar_config.accounts_contract.unwrap();
 
     // check that at least 1 SDG category is set for charity endowments
-    if msg.profile.categories.sdgs.is_empty() {
+    if msg.categories.sdgs.is_empty() {
         return Err(ContractError::Std(StdError::GenericErr {
             msg: "Invalid UN SDG inputs given".to_string(),
         }));
     }
-    msg.profile.categories.sdgs.sort();
-    for item in msg.profile.categories.sdgs.clone().into_iter() {
+    msg.categories.sdgs.sort();
+    for item in msg.categories.sdgs.clone().into_iter() {
         if item > 17 || item == 0 {
             return Err(ContractError::Std(StdError::GenericErr {
                 msg: "Invalid UN SDG inputs given".to_string(),
@@ -240,7 +240,7 @@ pub fn execute_propose_application(
     // create an application for Endowment creation for review
     let mut prop = Proposal {
         proposal_type: ProposalType::Application,
-        title: format!("{} Application - {}", msg.profile.endow_type, ref_id),
+        title: format!("{} Application - {}", msg.endow_type, ref_id),
         description: "".to_string(),
         start_height: env.block.height,
         expires,

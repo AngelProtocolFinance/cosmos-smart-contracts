@@ -1,6 +1,6 @@
 use angel_core::structs::{
-    AccountStrategies, BalanceInfo, Beneficiary, DonationsReceived, EndowmentFee, EndowmentStatus,
-    OneOffVaults, Profile, RebalanceDetails, SettingsController,
+    AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentFee,
+    EndowmentStatus, EndowmentType, OneOffVaults, Profile, RebalanceDetails, SettingsController,
 };
 use cosmwasm_std::{Addr, Env, Order, StdResult, Storage, Timestamp};
 use cw_storage_plus::{Item, Map};
@@ -22,7 +22,13 @@ pub struct Config {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Endowment {
-    pub owner: Addr, // address that originally setup the endowment account
+    pub owner: Addr,            // address that originally setup the endowment account
+    pub name: String,           // name of the Endowment
+    pub categories: Categories, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
+    pub tier: Option<u8>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
+    pub endow_type: EndowmentType,
+    pub logo: Option<String>,
+    pub image: Option<String>,
     pub status: EndowmentStatus,
     pub deposit_approved: bool, // approved to receive donations & transact
     pub withdraw_approved: bool, // approved to withdraw funds
@@ -32,12 +38,10 @@ pub struct Endowment {
     pub oneoff_vaults: OneOffVaults, // vaults not covered in account startegies (more efficient tracking of vaults vs. looking up allll vaults)
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
-    pub profile: Profile,
     pub pending_redemptions: u8, // number of vault redemptions currently pending for this endowment
     pub copycat_strategy: Option<u32>, // endowment ID to copy their strategy
-
-    pub dao: Option<Addr>,           // subdao governance contract address
-    pub dao_token: Option<Addr>,     // dao gov token contract address
+    pub dao: Option<Addr>,     // subdao governance contract address
+    pub dao_token: Option<Addr>, // dao gov token contract address
     pub donation_match_active: bool, // donation matching contract address (None set for Charity Endowments as they just phone home to Registrar to get the addr)
     pub donation_match_contract: Option<Addr>, // contract for donation matching
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
@@ -83,4 +87,5 @@ pub struct State {
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATES: Map<u32, State> = Map::new("states");
 pub const ENDOWMENTS: Map<u32, Endowment> = Map::new("endowments");
+pub const PROFILES: Map<u32, Profile> = Map::new("profiles");
 pub const COPYCATS: Map<u32, Vec<u32>> = Map::new("copycats");

@@ -12,7 +12,6 @@ use cosmwasm_std::{
     Uint128, WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
-use cw20::BalanceResponse;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

@@ -1,4 +1,4 @@
-use crate::state::{Config, Endowment, State, CONFIG, COPYCATS, ENDOWMENTS, STATES};
+use crate::state::{Endowment, State, CONFIG, COPYCATS, ENDOWMENTS, PROFILES, STATES};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -24,7 +24,7 @@ use cosmwasm_std::{
 };
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw4::Member;
-use cw_asset::{Asset, AssetInfo, AssetInfoBase};
+use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
 use cw_utils::Duration;
 
 pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
@@ -151,22 +151,22 @@ pub fn create_endowment(
         }))?;
 
     // Charity endowments must be created through the CW3 Review Applications
-    if msg.profile.endow_type == EndowmentType::Charity
-        && info.sender != registrar_config.applications_review
+    if msg.endow_type == EndowmentType::Charity
+        && info.sender.to_string() != registrar_config.applications_review
     {
         return Err(ContractError::Unauthorized {});
     }
 
-    if !msg.profile.categories.general.is_empty() {
-        msg.profile.categories.general.sort();
-        if msg.profile.categories.general.last().unwrap() > &config.max_general_category_id {
+    if !msg.categories.general.is_empty() {
+        msg.categories.general.sort();
+        if msg.categories.general.last().unwrap() > &config.max_general_category_id {
             return Err(ContractError::InvalidInputs {});
         }
     }
 
     let owner = deps.api.addr_validate(&msg.owner)?;
     // try to store the endowment, fail if the ID is already in use
-    let donation_match_contract = match &msg.profile.endow_type {
+    let donation_match_contract = match &msg.endow_type {
         &EndowmentType::Charity => match &registrar_config.donation_match_charites_contract {
             Some(match_contract) => Some(deps.api.addr_validate(match_contract)?),
             None => None,
@@ -179,17 +179,19 @@ pub fn create_endowment(
         |existing| match existing {
             Some(_) => Err(ContractError::AlreadyInUse {}),
             None => Ok(Endowment {
+                owner,
+                name: msg.name.clone(),
+                categories: msg.categories.clone(),
+                endow_type: msg.endow_type.clone(),
                 status: EndowmentStatus::Approved,
                 deposit_approved: true,
                 withdraw_approved: true,
-                owner,
                 withdraw_before_maturity: msg.withdraw_before_maturity,
                 maturity_time: msg.maturity_time,
                 strategies: AccountStrategies::default(),
                 oneoff_vaults: OneOffVaults::default(),
                 rebalance: RebalanceDetails::default(),
                 kyc_donors_only: msg.kyc_donors_only,
-                profile: msg.profile.clone(),
                 pending_redemptions: 0_u8,
                 copycat_strategy: None,
                 dao: None,
@@ -203,10 +205,16 @@ pub fn create_endowment(
                 deposit_fee: msg.deposit_fee.clone(),
                 aum_fee: msg.aum_fee.clone(),
                 maturity_whitelist: vec![],
+                tier: msg.tier.clone(),
+                logo: msg.logo.clone(),
+                image: msg.image.clone(),
                 proposal_link: msg.proposal_link,
             }),
         },
     )?;
+
+    // store the profile data
+    PROFILES.save(deps.storage, config.next_account_id, &msg.profile)?;
 
     STATES.save(
         deps.storage,
@@ -283,7 +291,7 @@ pub fn create_endowment(
                         expiration_period: dao_setup.expiration_period,
                         proposal_deposit: dao_setup.proposal_deposit,
                         snapshot_period: dao_setup.snapshot_period,
-                        endow_type: msg.profile.endow_type.clone(),
+                        endow_type: msg.endow_type.clone(),
                         endow_owner: msg.owner.to_string(),
                         registrar_contract: config.registrar_contract.to_string(),
                         token: dao_setup.token,
@@ -496,13 +504,30 @@ pub fn update_endowment_settings(
     info: MessageInfo,
     msg: UpdateEndowmentSettingsMsg,
 ) -> Result<Response, ContractError> {
+    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
+    let config = CONFIG.load(deps.storage)?;
+
     let state = STATES.load(deps.storage, msg.id)?;
     if state.closing_endowment {
         return Err(ContractError::UpdatesAfterClosed {});
     }
 
-    let config: Config = CONFIG.load(deps.storage)?;
-    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
+    // Only config.owner can update owner, tier and endowment_type fields
+    if info.sender == config.owner {
+        endowment.tier = msg.tier;
+        if let Some(owner) = msg.owner {
+            endowment.owner = deps.api.addr_validate(&owner)?;
+        }
+        if let Some(endow_type) = msg.endow_type {
+            endowment.endow_type = match endow_type.as_str() {
+                "charity" => EndowmentType::Charity,
+                "normal" => EndowmentType::Normal,
+                _ => return Err(ContractError::InvalidInputs {}),
+            };
+        }
+        ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
+        return Ok(Response::new().add_attribute("action", "update_endowment_settings"));
+    }
 
     if info.sender.ne(&endowment.owner)
         && (endowment.dao.is_some() && info.sender != *endowment.dao.as_ref().unwrap())
@@ -521,7 +546,7 @@ pub fn update_endowment_settings(
         None => endowment.owner,
     };
     // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
-    if endowment.profile.endow_type != EndowmentType::Charity {
+    if endowment.endow_type != EndowmentType::Charity {
         endowment.whitelisted_beneficiaries = match msg.whitelisted_beneficiaries {
             Some(i) => {
                 if config
@@ -590,7 +615,10 @@ pub fn update_endowment_settings(
         &endowment.owner,
         endowment.dao.as_ref(),
     ) {
-        endowment.kyc_donors_only = msg.kyc_donors_only;
+        endowment.kyc_donors_only = match msg.kyc_donors_only {
+            Some(i) => i,
+            None => endowment.kyc_donors_only,
+        };
     }
 
     if let Some(whitelist) = msg.maturity_whitelist {
@@ -613,7 +641,42 @@ pub fn update_endowment_settings(
             }
         }
     }
-    endowment.kyc_donors_only = msg.kyc_donors_only;
+
+    // // Only endowment.owner can update all other fields
+    // if info.sender == endowment.owner {
+    //     if let Some(name) = msg.name.clone() {
+    //         endowment.name = name;
+    //     }
+    //     if let Some(categories) = msg.categories {
+    //         // check that at least 1 SDG category is set for charity endowments
+    //         if endowment.endow_type == EndowmentType::Charity {
+    //             if endowment.categories.sdgs.is_empty() {
+    //                 return Err(ContractError::InvalidInputs {});
+    //             }
+    //             endowment.categories.sdgs.sort();
+    //             for item in endowment.categories.sdgs.clone().into_iter() {
+    //                 if item > 17 || item == 0 {
+    //                     return Err(ContractError::InvalidInputs {});
+    //                 }
+    //             }
+    //         }
+    //         if !endowment.categories.general.is_empty() {
+    //             endowment.categories.general.sort();
+    //             if endowment.categories.general.last().unwrap() > &config.max_general_category_id {
+    //                 return Err(ContractError::InvalidInputs {});
+    //             }
+    //         }
+    //         endowment.categories = categories;
+    //     }
+
+    //     if let Some(logo) = msg.logo.clone() {
+    //         endowment.logo = Some(logo);
+    //     }
+    //     if let Some(image) = msg.image.clone() {
+    //         endowment.image = Some(image);
+    //     }
+    // }
+
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
     Ok(Response::new().add_attribute("action", "update_endowment_settings"))
@@ -660,7 +723,7 @@ pub fn update_strategies(
         contract_addr: config.registrar_contract.to_string(),
         msg: to_binary(&RegistrarQuerier::VaultList {
             approved: Some(true),
-            endowment_type: Some(endowment.profile.endow_type.clone()),
+            endowment_type: Some(endowment.endow_type.clone()),
             acct_type: Some(acct_type.clone()),
             vault_type: None,
             network: None,
@@ -1625,7 +1688,7 @@ pub fn withdraw(
     id: u32,
     acct_type: AccountType,
     beneficiary: String,
-    assets: Vec<Asset>,
+    assets: Vec<AssetUnchecked>,
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
     let config = CONFIG.load(deps.storage)?;
@@ -1644,7 +1707,7 @@ pub fn withdraw(
     // Only config owner can authorize a locked balance withdraw when locks are in place or maturity is not reached
     // Only the endowment owner can authorize a locked balance withdraw once maturity is reached or if early withdraws are allowed
     if acct_type == AccountType::Locked {
-        if let EndowmentType::Charity = endowment.profile.endow_type {
+        if let EndowmentType::Charity = endowment.endow_type {
             if info.sender != config.owner {
                 return Err(ContractError::Unauthorized {});
             }
@@ -1670,6 +1733,7 @@ pub fn withdraw(
     }
 
     for asset in assets.iter() {
+        asset.check(deps.api, None)?;
         // check for assets with zero amounts and raise error if found
         if asset.amount.is_zero() {
             return Err(ContractError::InvalidZeroAmount {});
@@ -1677,8 +1741,12 @@ pub fn withdraw(
 
         // fetch the amount of an asset held in the state balance
         let balance: Uint128 = match asset.info.clone() {
-            AssetInfo::Native(denom) => state_bal.get_denom_amount(denom).amount,
-            AssetInfo::Cw20(addr) => state_bal.get_token_amount(addr).amount,
+            AssetInfoBase::Native(denom) => state_bal.get_denom_amount(denom).amount,
+            AssetInfoBase::Cw20(addr) => {
+                state_bal
+                    .get_token_amount(deps.api.addr_validate(&addr).unwrap())
+                    .amount
+            }
             _ => unreachable!(),
         };
         // check that the amount in state balance is sufficient to cover withdraw request
@@ -1688,7 +1756,7 @@ pub fn withdraw(
 
         // build message based on asset type and update state balance with deduction
         match asset.info.clone() {
-            AssetInfo::Native(denom) => {
+            AssetInfoBase::Native(denom) => {
                 // add Coin to the native coins vector to have a message built
                 // and all deductions against the state balance done at the end
                 native_coins.push(Coin {
@@ -1696,7 +1764,7 @@ pub fn withdraw(
                     amount: asset.amount,
                 });
             }
-            AssetInfo::Cw20(addr) => {
+            AssetInfoBase::Cw20(addr) => {
                 // Build message to transfer CW20 tokens to the Beneficiary
                 messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: addr.to_string(),
@@ -1710,7 +1778,7 @@ pub fn withdraw(
                 // Update a CW20 token's Balance in STATE
                 state_bal.deduct_tokens(Balance::Cw20(Cw20CoinVerified {
                     amount: asset.amount,
-                    address: addr,
+                    address: deps.api.addr_validate(&addr).unwrap(),
                 }));
             }
             _ => unreachable!(),
@@ -1817,10 +1885,11 @@ pub fn update_profile(
     msg: UpdateProfileMsg,
 ) -> Result<Response, ContractError> {
     // Validation 1. Only "Endowment.owner" or "Config.owner" is able to execute
-    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
-    let config = CONFIG.load(deps.storage)?;
+    let endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
+    let mut profile = PROFILES.load(deps.storage, msg.id)?;
 
-    if !(info.sender == endowment.owner || info.sender == config.owner) {
+    // Only endowment.owner can update these fields
+    if !(info.sender == endowment.owner) {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -1829,76 +1898,25 @@ pub fn update_profile(
         return Err(ContractError::UpdatesAfterClosed {});
     }
 
-    // Update the Endowment profile
-    // Only config.owner can update "tier" fields
-    if info.sender == config.owner {
-        endowment.profile.tier = msg.tier;
-        if let Some(endow_type) = msg.endow_type {
-            endowment.profile.endow_type = match endow_type.as_str() {
-                "charity" => EndowmentType::Charity,
-                "normal" => EndowmentType::Normal,
-                _ => return Err(ContractError::InvalidInputs {}),
-            };
-        }
+    if let Some(overview) = msg.overview {
+        profile.overview = overview;
     }
-
-    // Only endowment.owner can update all other fields
-    if config.settings_controller.profile.can_change(
-        &info.sender,
-        &endowment.owner,
-        endowment.dao.as_ref(),
-    ) {
-        if let Some(name) = msg.name.clone() {
-            endowment.profile.name = name;
-        }
-        if let Some(overview) = msg.overview {
-            endowment.profile.overview = overview;
-        }
-        if let Some(categories) = msg.categories {
-            // check that at least 1 SDG category is set for charity endowments
-            if endowment.profile.endow_type == EndowmentType::Charity {
-                if endowment.profile.categories.sdgs.is_empty() {
-                    return Err(ContractError::InvalidInputs {});
-                }
-                endowment.profile.categories.sdgs.sort();
-                for item in endowment.profile.categories.sdgs.clone().into_iter() {
-                    if item > 17 || item == 0 {
-                        return Err(ContractError::InvalidInputs {});
-                    }
-                }
-            }
-            if !endowment.profile.categories.general.is_empty() {
-                endowment.profile.categories.general.sort();
-                if endowment.profile.categories.general.last().unwrap()
-                    > &config.max_general_category_id
-                {
-                    return Err(ContractError::InvalidInputs {});
-                }
-            }
-            endowment.profile.categories = categories;
-        }
-        endowment.profile.logo = msg.logo.clone();
-        endowment.profile.image = msg.image.clone();
-        endowment.profile.url = msg.url;
-        endowment.profile.registration_number = msg.registration_number;
-        endowment.profile.country_of_origin = msg.country_of_origin;
-        endowment.profile.street_address = msg.street_address;
-        endowment.profile.contact_email = msg.contact_email;
-        endowment.profile.number_of_employees = msg.number_of_employees;
-        endowment.profile.average_annual_budget = msg.average_annual_budget;
-        endowment.profile.annual_revenue = msg.annual_revenue;
-        endowment.profile.charity_navigator_rating = msg.charity_navigator_rating;
-
-        let social_media_urls = SocialMedialUrls {
-            facebook: msg.facebook,
-            twitter: msg.twitter,
-            linkedin: msg.linkedin,
-        };
-        endowment.profile.social_media_urls = social_media_urls;
-    }
-
-    ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
-
+    let social_media_urls = SocialMedialUrls {
+        facebook: msg.facebook,
+        twitter: msg.twitter,
+        linkedin: msg.linkedin,
+    };
+    profile.social_media_urls = social_media_urls;
+    profile.url = msg.url;
+    profile.registration_number = msg.registration_number;
+    profile.country_of_origin = msg.country_of_origin;
+    profile.street_address = msg.street_address;
+    profile.contact_email = msg.contact_email;
+    profile.number_of_employees = msg.number_of_employees;
+    profile.average_annual_budget = msg.average_annual_budget;
+    profile.annual_revenue = msg.annual_revenue;
+    profile.charity_navigator_rating = msg.charity_navigator_rating;
+    PROFILES.save(deps.storage, msg.id, &profile)?;
     Ok(Response::new().add_attribute("action", "update_profile"))
 }
 
@@ -1912,7 +1930,7 @@ pub fn update_endowment_fees(
     let config = CONFIG.load(deps.storage)?;
 
     // only normalized endowments can update the additional fees
-    if endowment.profile.endow_type != EndowmentType::Charity {
+    if endowment.endow_type != EndowmentType::Charity {
         return Err(ContractError::Std(StdError::generic_err(
             "Charity Endowments may not change endowment fees",
         )));
@@ -2108,7 +2126,6 @@ pub fn setup_dao(
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENTS.load(deps.storage, endowment_id)?;
     let config = CONFIG.load(deps.storage)?;
-    let profile = endowment.profile;
 
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
@@ -2142,7 +2159,7 @@ pub fn setup_dao(
                 proposal_deposit: msg.proposal_deposit,
                 snapshot_period: msg.snapshot_period,
                 token: msg.token,
-                endow_type: profile.endow_type,
+                endow_type: endowment.endow_type,
                 endow_owner: endowment.owner.to_string(),
                 registrar_contract: config.registrar_contract.to_string(),
             })?,
