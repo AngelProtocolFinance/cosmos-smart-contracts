@@ -1,11 +1,11 @@
 use crate::structs::{
-    AccountType, Beneficiary, Categories, DaoSetup, DonationMatch, EndowmentFee, Profile,
-    RebalanceDetails, SettingsController, StrategyComponent, SwapOperation,
+    AccountType, Beneficiary, Categories, DaoSetup, DonationMatch, EndowmentFee, EndowmentType,
+    Profile, RebalanceDetails, SettingsController, StrategyComponent, SwapOperation,
 };
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
-use cw_asset::{Asset, AssetInfo};
+use cw_asset::{Asset, AssetInfo, AssetUnchecked};
 use cw_utils::Threshold;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -39,7 +39,7 @@ pub enum ExecuteMsg {
         id: u32,
         acct_type: AccountType,
         beneficiary: String,
-        assets: Vec<Asset>,
+        assets: Vec<AssetUnchecked>,
     },
     SwapToken {
         id: u32,
@@ -141,8 +141,14 @@ pub struct UpdateConfigMsg {
 pub struct CreateEndowmentMsg {
     pub owner: String, // address that originally setup the endowment account
     pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
-    pub maturity_time: Option<u64>,     // datetime int of endowment maturity(unit: seconds)
-    pub profile: Profile,               // struct holding the Endowment info
+    pub maturity_time: Option<u64>,     // datetime int of endowment maturity
+    pub name: String,                   // name of the Endowment
+    pub categories: Categories, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
+    pub tier: Option<u8>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
+    pub endow_type: EndowmentType,
+    pub logo: Option<String>,
+    pub image: Option<String>,
+    pub profile: Profile, // struct holding the Endowment info
     pub cw4_members: Vec<Member>,
     pub kyc_donors_only: bool,
     pub cw3_threshold: Threshold,
@@ -191,8 +197,14 @@ pub struct UpdateEndowmentSettingsMsg {
     pub strategies: Option<Vec<StrategyComponent>>, // list of vaults and percentage for locked/liquid accounts
     pub locked_endowment_configs: Option<Vec<String>>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: Option<RebalanceDetails>,
-    pub kyc_donors_only: bool,
     pub maturity_whitelist: Option<UpdateMaturityWhitelist>,
+    pub kyc_donors_only: Option<bool>,
+    pub endow_type: Option<String>,
+    pub name: Option<String>,
+    pub categories: Option<Categories>,
+    pub tier: Option<u8>,
+    pub logo: Option<String>,
+    pub image: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -223,12 +235,7 @@ pub struct DepositMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateProfileMsg {
     pub id: u32,
-    pub name: Option<String>,
     pub overview: Option<String>,
-    pub categories: Option<Categories>,
-    pub tier: Option<u8>,
-    pub logo: Option<String>,
-    pub image: Option<String>,
     pub url: Option<String>,
     pub registration_number: Option<String>,
     pub country_of_origin: Option<String>,
@@ -241,7 +248,6 @@ pub struct UpdateProfileMsg {
     pub average_annual_budget: Option<String>,
     pub annual_revenue: Option<String>,
     pub charity_navigator_rating: Option<String>,
-    pub endow_type: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

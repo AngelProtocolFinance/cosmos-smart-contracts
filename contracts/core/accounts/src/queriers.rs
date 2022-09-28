@@ -1,11 +1,10 @@
-use cosmwasm_std::{Addr, Deps, StdResult, Uint128};
-
-use crate::state::{read_endowments, Endowment, CONFIG, ENDOWMENTS, STATES};
+use crate::state::{read_endowments, Endowment, CONFIG, ENDOWMENTS, PROFILES, STATES};
 use angel_core::responses::accounts::*;
 use angel_core::structs::{
     AccountType, EndowmentBalanceResponse, EndowmentEntry, EndowmentType, Tier,
 };
 use angel_core::utils::vault_endowment_balance;
+use cosmwasm_std::{Deps, StdResult, Uint128};
 use cw_asset::AssetInfo;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -113,20 +112,18 @@ pub fn query_endowment_list(
             id: *i,
             owner: e.owner.to_string(),
             status: e.status.clone(),
-            endow_type: e.profile.endow_type.clone(),
-            name: Some(e.profile.name.clone()),
-            logo: e.profile.logo.clone(),
-            image: e.profile.image.clone(),
-            tier: match e.profile.tier.unwrap() {
+            endow_type: e.endow_type.clone(),
+            name: Some(e.name.clone()),
+            logo: e.logo.clone(),
+            image: e.image.clone(),
+            tier: match e.tier.unwrap() {
                 1 => Some(Tier::Level1),
                 2 => Some(Tier::Level2),
                 3 => Some(Tier::Level3),
                 _ => None,
             },
-            categories: e.profile.categories.clone(),
-            address: Addr::unchecked("endowment"),
-            un_sdg: None,
-            proposal_link: e.proposal_link,
+            categories: e.categories.clone(),
+            proposal_link: e.proposal_link.clone(),
         })
         .collect();
     let entries = match name {
@@ -197,7 +194,7 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
     Ok(EndowmentDetailsResponse {
         owner: endowment.owner,
         status: endowment.status,
-        endow_type: endowment.profile.endow_type,
+        endow_type: endowment.endow_type,
         withdraw_before_maturity: endowment.withdraw_before_maturity,
         maturity_time: endowment.maturity_time,
         strategies: endowment.strategies,
@@ -218,22 +215,27 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         pending_redemptions: endowment.pending_redemptions,
         dao: None,
         dao_token: None,
-        name: "test-endowment".to_string(),
         description: "test endowment desc".to_string(),
         copycat_strategy: endowment.copycat_strategy,
         proposal_link: endowment.proposal_link,
+        name: endowment.name,
+        tier: endowment.tier,
+        categories: endowment.categories,
+        logo: endowment.logo,
+        image: endowment.image,
     })
 }
 
 pub fn query_profile(deps: Deps, id: u32) -> StdResult<ProfileResponse> {
-    let profile = ENDOWMENTS.load(deps.storage, id)?.profile;
+    let profile = PROFILES.load(deps.storage, id)?;
+    let endowment = ENDOWMENTS.load(deps.storage, id)?;
     Ok(ProfileResponse {
-        name: profile.name,
+        name: endowment.name,
+        categories: endowment.categories,
+        tier: endowment.tier,
+        logo: endowment.logo,
+        image: endowment.image,
         overview: profile.overview,
-        categories: profile.categories,
-        tier: profile.tier,
-        logo: profile.logo,
-        image: profile.image,
         url: profile.url,
         registration_number: profile.registration_number,
         country_of_origin: profile.country_of_origin,
@@ -244,6 +246,6 @@ pub fn query_profile(deps: Deps, id: u32) -> StdResult<ProfileResponse> {
         average_annual_budget: profile.average_annual_budget,
         annual_revenue: profile.annual_revenue,
         charity_navigator_rating: profile.charity_navigator_rating,
-        endowment_type: profile.endow_type,
+        endowment_type: endowment.endow_type,
     })
 }

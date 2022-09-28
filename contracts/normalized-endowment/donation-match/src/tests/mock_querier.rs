@@ -2,8 +2,8 @@ use angel_core::responses::accounts::EndowmentDetailsResponse;
 // Contains mock functionality to test multi-contract scenarios
 use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
 use angel_core::structs::{
-    AcceptedTokens, AccountStrategies, AccountType, OneOffVaults, RebalanceDetails, SplitDetails,
-    VaultType, YieldVault,
+    AcceptedTokens, AccountStrategies, AccountType, Categories, OneOffVaults, RebalanceDetails,
+    SplitDetails, VaultType, YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -234,6 +234,10 @@ impl WasmMockQuerier {
                         pending_redemptions: 0,
                         copycat_strategy: None,
                         proposal_link: None,
+                        categories: Categories::default(),
+                        tier: None,
+                        image: None,
+                        logo: None,
                     }).unwrap()
                 )),
                 QueryMsg::Simulation { offer_asset: _ } => SystemResult::Ok(ContractResult::Ok(

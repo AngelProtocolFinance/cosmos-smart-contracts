@@ -67,6 +67,10 @@ pub struct SettingsController {
     pub deposit_fee: SettingsPermissions,
     pub aum_fee: SettingsPermissions,
     pub kyc_donors_only: SettingsPermissions,
+    pub name: SettingsPermissions,
+    pub image: SettingsPermissions,
+    pub logo: SettingsPermissions,
+    pub categories: SettingsPermissions,
 }
 
 impl SettingsController {
@@ -83,6 +87,10 @@ impl SettingsController {
             deposit_fee: SettingsPermissions::default(),
             aum_fee: SettingsPermissions::default(),
             kyc_donors_only: SettingsPermissions::default(),
+            name: SettingsPermissions::default(),
+            image: SettingsPermissions::default(),
+            logo: SettingsPermissions::default(),
+            categories: SettingsPermissions::default(),
         }
     }
 }
@@ -258,7 +266,6 @@ impl RebalanceDetails {
 #[serde(rename_all = "snake_case")]
 pub struct EndowmentEntry {
     pub id: u32,
-    pub address: Addr,
     pub owner: String,
     pub status: EndowmentStatus,
     pub endow_type: EndowmentType,
@@ -266,7 +273,6 @@ pub struct EndowmentEntry {
     pub logo: Option<String>,
     pub image: Option<String>,
     pub tier: Option<Tier>,
-    pub un_sdg: Option<u64>,
     pub categories: Categories,
     pub proposal_link: Option<u64>,
 }
@@ -710,7 +716,7 @@ pub struct Categories {
 }
 
 impl Categories {
-    fn default() -> Self {
+    pub fn default() -> Self {
         Categories {
             sdgs: vec![],
             general: vec![],
@@ -721,12 +727,7 @@ impl Categories {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Profile {
-    pub name: String, // name of the Charity Endowment
     pub overview: String,
-    pub categories: Categories, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
-    pub tier: Option<u8>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
-    pub logo: Option<String>,
-    pub image: Option<String>,
     pub url: Option<String>,
     pub registration_number: Option<String>,
     pub country_of_origin: Option<String>,
@@ -737,18 +738,11 @@ pub struct Profile {
     pub average_annual_budget: Option<String>,
     pub annual_revenue: Option<String>,
     pub charity_navigator_rating: Option<String>,
-    pub endow_type: EndowmentType,
 }
 
 impl Default for Profile {
     fn default() -> Self {
         Profile {
-            name: "".to_string(),
-            overview: "".to_string(),
-            categories: Categories::default(),
-            tier: None,
-            logo: None,
-            image: None,
             url: None,
             registration_number: None,
             country_of_origin: None,
@@ -763,7 +757,7 @@ impl Default for Profile {
             average_annual_budget: None,
             annual_revenue: None,
             charity_navigator_rating: None,
-            endow_type: EndowmentType::Charity,
+            overview: "".to_string(),
         }
     }
 }
