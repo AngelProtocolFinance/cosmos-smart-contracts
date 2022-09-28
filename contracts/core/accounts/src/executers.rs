@@ -104,7 +104,7 @@ pub fn create_endowment(
                 maturity_height: msg.maturity_height,
                 maturity_time: msg.maturity_time,
                 strategies: AccountStrategies::default(),
-                oneoff_vaults: OneOffVaults::default(),
+                invested_vaults: OneOffVaults::default(),
                 rebalance: RebalanceDetails::default(),
                 kyc_donors_only: msg.kyc_donors_only,
                 pending_redemptions: 0_u8,
@@ -1111,7 +1111,7 @@ pub fn deposit(
 
 /// Allow Endowment owners to invest some amount of their free balance
 /// "Tokens on Hand" holdings into Vault(s). Does not have to be a Vault
-/// that exists in their donation Strategy. One-time/one-off investment.
+/// that exists in their donation Strategy.
 pub fn vaults_invest(
     deps: DepsMut,
     info: MessageInfo,
@@ -1174,26 +1174,26 @@ pub fn vaults_invest(
             }));
         }
 
-        // add vault to the one-off-vaults list if a new vault
+        // add vault to the invested-vaults list if a new vault
         match acct_type {
             AccountType::Locked => {
                 let pos = endowment
-                    .oneoff_vaults
+                    .invested_vaults
                     .locked
                     .iter()
                     .position(|v| v == vault);
                 if pos.is_some() {
-                    endowment.oneoff_vaults.locked.push(vault_addr.clone());
+                    endowment.invested_vaults.locked.push(vault_addr.clone());
                 }
             }
             AccountType::Liquid => {
                 let pos = endowment
-                    .oneoff_vaults
+                    .invested_vaults
                     .liquid
                     .iter()
                     .position(|v| v == vault);
                 if pos.is_some() {
-                    endowment.oneoff_vaults.liquid.push(vault_addr.clone());
+                    endowment.invested_vaults.liquid.push(vault_addr.clone());
                 }
             }
         }
@@ -1263,6 +1263,8 @@ pub fn vaults_invest(
             VaultType::Evm => unimplemented!(),
         }
     }
+    // save any changes to the endowment's invested vaults
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     // set the final state balance after all assets have been deducted and save
     match &acct_type {
@@ -1324,27 +1326,27 @@ pub fn vaults_redeem(
             }));
         }
 
-        // check if the vault tokens have been depleted and remove one-off-vault from list if so
+        // check if the vault tokens have been depleted and remove invested-vault from list if so
         let vault_balance = vault_endowment_balance(deps.as_ref(), vault.to_string(), id);
         match acct_type {
             AccountType::Locked => {
                 let pos = endowment
-                    .oneoff_vaults
+                    .invested_vaults
                     .locked
                     .iter()
                     .position(|v| v == vault);
                 if pos.is_some() && vault_balance == *amount {
-                    endowment.oneoff_vaults.locked.swap_remove(pos.unwrap());
+                    endowment.invested_vaults.locked.swap_remove(pos.unwrap());
                 }
             }
             AccountType::Liquid => {
                 let pos = endowment
-                    .oneoff_vaults
+                    .invested_vaults
                     .liquid
                     .iter()
                     .position(|v| v == vault);
                 if pos.is_some() && vault_balance == *amount {
-                    endowment.oneoff_vaults.liquid.swap_remove(pos.unwrap());
+                    endowment.invested_vaults.liquid.swap_remove(pos.unwrap());
                 }
             }
         }
@@ -1532,8 +1534,8 @@ pub fn close_endowment(
     // Redeem all funds back from vaults that an Endowment is invested in
     let mut all_vaults: Vec<String> = [
         [
-            endowment.oneoff_vaults.get(AccountType::Liquid),
-            endowment.oneoff_vaults.get(AccountType::Locked),
+            endowment.invested_vaults.get(AccountType::Liquid),
+            endowment.invested_vaults.get(AccountType::Locked),
         ]
         .concat()
         .iter()

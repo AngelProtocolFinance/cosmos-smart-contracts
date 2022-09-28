@@ -37,12 +37,12 @@ pub fn query_endowment_balance(deps: Deps, id: u32) -> StdResult<EndowmentBalanc
 
     // process all one-off vaults
     let mut oneoff_locked = vec![];
-    for vault in endowment.oneoff_vaults.locked.into_iter() {
+    for vault in endowment.invested_vaults.locked.into_iter() {
         let vault_bal = vault_endowment_balance(deps, vault.clone().to_string(), id);
         oneoff_locked.push((vault.to_string(), vault_bal));
     }
     let mut oneoff_liquid = vec![];
-    for vault in endowment.oneoff_vaults.liquid.into_iter() {
+    for vault in endowment.invested_vaults.liquid.into_iter() {
         let vault_bal = vault_endowment_balance(deps, vault.clone().to_string(), id);
         oneoff_liquid.push((vault.to_string(), vault_bal));
     }
@@ -197,7 +197,7 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         maturity_time: endowment.maturity_time,
         maturity_height: endowment.maturity_height,
         strategies: endowment.strategies,
-        oneoff_vaults: endowment.oneoff_vaults,
+        invested_vaults: endowment.invested_vaults,
         rebalance: endowment.rebalance,
         kyc_donors_only: endowment.kyc_donors_only,
         deposit_approved: endowment.deposit_approved,
