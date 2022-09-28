@@ -489,7 +489,7 @@ pub fn update_strategies(
     }))?;
 
     let mut percentages_sum = Decimal::zero();
-
+    let mut new_strategies = vec![];
     for strategy in strategies.iter() {
         match allowed
             .vaults
@@ -497,7 +497,14 @@ pub fn update_strategies(
             .position(|v| v.address == strategy.vault)
         {
             None => return Err(ContractError::InvalidInputs {}),
-            Some(_) => percentages_sum += strategy.percentage,
+            Some(_) => {
+                percentages_sum += strategy.percentage;
+                // update endowment strategies attribute with all newly passed strategies
+                new_strategies.push(StrategyComponent {
+                    vault: deps.api.addr_validate(&strategy.vault.clone())?.to_string(),
+                    percentage: strategy.percentage,
+                });
+            }
         }
     }
 
@@ -507,29 +514,11 @@ pub fn update_strategies(
         return Err(ContractError::InvalidStrategyAllocation {});
     }
 
-    // update endowment strategies attribute with all newly passed strategies
-    let mut new_strategies = vec![];
-    for strategy in strategies {
-        new_strategies.push(StrategyComponent {
-            vault: deps.api.addr_validate(&strategy.vault.clone())?.to_string(),
-            percentage: strategy.percentage,
-        });
-    }
-
-    endowment.copycat_strategy = None;
     endowment
         .strategies
         .set(acct_type.clone(), new_strategies.clone());
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
-    // If this Endowment that is changing their strategy is also being "copycatted"
-    // by other endowments, the new strategy needs to be updated on those endowments.
-    let copiers = COPYCATS.load(deps.storage, id).unwrap_or_default();
-    for i in copiers.iter() {
-        let mut e = ENDOWMENTS.load(deps.storage, *i).unwrap();
-        e.strategies.set(acct_type.clone(), new_strategies.clone());
-        ENDOWMENTS.save(deps.storage, *i, &e).unwrap();
-    }
     Ok(Response::new().add_attribute("action", "update_strategies"))
 }
 

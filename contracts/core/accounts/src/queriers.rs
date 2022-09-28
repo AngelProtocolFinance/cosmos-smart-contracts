@@ -46,9 +46,9 @@ pub fn query_endowment_balance(deps: Deps, id: u32) -> StdResult<EndowmentBalanc
         let vault_bal = vault_endowment_balance(deps, vault.clone().to_string(), id);
         oneoff_liquid.push((vault.to_string(), vault_bal));
     }
-    let mut strategies_locked = vec![];
 
     // process all strategies vaults
+    let mut strategies_locked = vec![];
     for strat in endowment.strategies.locked.iter() {
         let vault_bal = vault_endowment_balance(deps, strat.vault.clone(), id);
         strategies_locked.push((strat.vault.to_string(), vault_bal));
