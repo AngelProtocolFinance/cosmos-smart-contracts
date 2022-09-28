@@ -4,7 +4,7 @@ use angel_core::structs::{
     AccountType, EndowmentBalanceResponse, EndowmentEntry, EndowmentType, Tier,
 };
 use angel_core::utils::vault_endowment_balance;
-use cosmwasm_std::{Addr, Deps, StdResult, Uint128};
+use cosmwasm_std::{Deps, StdResult, Uint128};
 use cw_asset::AssetInfo;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
