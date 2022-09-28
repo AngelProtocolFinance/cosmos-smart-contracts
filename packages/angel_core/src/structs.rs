@@ -67,6 +67,10 @@ pub struct SettingsController {
     pub deposit_fee: SettingsPermissions,
     pub aum_fee: SettingsPermissions,
     pub kyc_donors_only: SettingsPermissions,
+    pub name: SettingsPermissions,
+    pub image: SettingsPermissions,
+    pub logo: SettingsPermissions,
+    pub categories: SettingsPermissions,
 }
 
 impl SettingsController {
@@ -83,6 +87,10 @@ impl SettingsController {
             deposit_fee: SettingsPermissions::default(),
             aum_fee: SettingsPermissions::default(),
             kyc_donors_only: SettingsPermissions::default(),
+            name: SettingsPermissions::default(),
+            image: SettingsPermissions::default(),
+            logo: SettingsPermissions::default(),
+            categories: SettingsPermissions::default(),
         }
     }
 }

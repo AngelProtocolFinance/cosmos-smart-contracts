@@ -642,40 +642,82 @@ pub fn update_endowment_settings(
         }
     }
 
-    // // Only endowment.owner can update all other fields
-    // if info.sender == endowment.owner {
-    //     if let Some(name) = msg.name.clone() {
-    //         endowment.name = name;
-    //     }
-    //     if let Some(categories) = msg.categories {
-    //         // check that at least 1 SDG category is set for charity endowments
-    //         if endowment.endow_type == EndowmentType::Charity {
-    //             if endowment.categories.sdgs.is_empty() {
-    //                 return Err(ContractError::InvalidInputs {});
-    //             }
-    //             endowment.categories.sdgs.sort();
-    //             for item in endowment.categories.sdgs.clone().into_iter() {
-    //                 if item > 17 || item == 0 {
-    //                     return Err(ContractError::InvalidInputs {});
-    //                 }
-    //             }
-    //         }
-    //         if !endowment.categories.general.is_empty() {
-    //             endowment.categories.general.sort();
-    //             if endowment.categories.general.last().unwrap() > &config.max_general_category_id {
-    //                 return Err(ContractError::InvalidInputs {});
-    //             }
-    //         }
-    //         endowment.categories = categories;
-    //     }
-
-    //     if let Some(logo) = msg.logo.clone() {
-    //         endowment.logo = Some(logo);
-    //     }
-    //     if let Some(image) = msg.image.clone() {
-    //         endowment.image = Some(image);
-    //     }
-    // }
+    endowment.name = match msg.name.clone() {
+        Some(name) => {
+            if config.settings_controller.name.can_change(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+            ) {
+                name
+            } else {
+                endowment.name
+            }
+        }
+        None => endowment.name,
+    };
+    endowment.categories = match msg.categories {
+        Some(categories) => {
+            if config.settings_controller.categories.can_change(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+            ) {
+                // check that at least 1 SDG category is set for charity endowments
+                if endowment.endow_type == EndowmentType::Charity {
+                    if endowment.categories.sdgs.is_empty() {
+                        return Err(ContractError::InvalidInputs {});
+                    }
+                    endowment.categories.sdgs.sort();
+                    for item in endowment.categories.sdgs.clone().into_iter() {
+                        if item > 17 || item == 0 {
+                            return Err(ContractError::InvalidInputs {});
+                        }
+                    }
+                }
+                if !endowment.categories.general.is_empty() {
+                    endowment.categories.general.sort();
+                    if endowment.categories.general.last().unwrap()
+                        > &config.max_general_category_id
+                    {
+                        return Err(ContractError::InvalidInputs {});
+                    }
+                }
+                categories
+            } else {
+                endowment.categories
+            }
+        }
+        None => endowment.categories,
+    };
+    endowment.logo = match msg.logo.clone() {
+        Some(logo) => {
+            if config.settings_controller.logo.can_change(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+            ) {
+                Some(logo)
+            } else {
+                endowment.logo
+            }
+        }
+        None => endowment.logo,
+    };
+    endowment.image = match msg.image.clone() {
+        Some(image) => {
+            if config.settings_controller.image.can_change(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+            ) {
+                Some(image)
+            } else {
+                endowment.image
+            }
+        }
+        None => endowment.image,
+    };
 
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
