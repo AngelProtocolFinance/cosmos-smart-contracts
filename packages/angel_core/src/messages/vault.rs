@@ -1,6 +1,7 @@
-use crate::structs::AccountType;
+use crate::structs::{AccountType, SwapOperation};
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
+use cw_asset::AssetInfo as CwAssetInfo;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use terraswap::asset::Asset;
@@ -17,6 +18,11 @@ pub struct InstantiateMsg {
     pub lp_staking_contract: String,
     pub pair_contract: String,
     pub lp_reward_token: String,
+    pub native_token: CwAssetInfo,
+
+    pub reward_to_native_route: Vec<SwapOperation>,
+    pub native_to_lp0_route: Vec<SwapOperation>,
+    pub native_to_lp1_route: Vec<SwapOperation>,
 
     pub name: String,
     pub symbol: String,
@@ -88,6 +94,11 @@ pub struct UpdateConfigMsg {
     pub sibling_vault: Option<String>,
     pub keeper: Option<String>,
     pub tax_collector: Option<String>,
+
+    pub native_token: Option<CwAssetInfo>,
+    pub reward_to_native_route: Vec<SwapOperation>,
+    pub native_to_lp0_route: Vec<SwapOperation>,
+    pub native_to_lp1_route: Vec<SwapOperation>,
 
     pub lp_staking_contract: Option<String>,
     pub lp_pair_contract: Option<String>,

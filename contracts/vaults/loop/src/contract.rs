@@ -4,6 +4,7 @@ use cosmwasm_std::{
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
+use cw_asset::{AssetInfo as CwAssetInfo, AssetInfoBase as CwAssetInfoBase};
 use terraswap::asset::{AssetInfo, PairInfo};
 
 use angel_core::errors::vault::ContractError;
@@ -48,13 +49,16 @@ pub fn instantiate(
         lp_pair_token1: pair_info.asset_infos[1].clone(),
         lp_reward_token: deps.api.addr_validate(&msg.lp_reward_token)?,
 
-        native_token: AssetInfo::NativeToken {
-            denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4"
-                .to_string(),
+        native_token: match msg.native_token {
+            CwAssetInfoBase::Native(denom) => AssetInfo::NativeToken { denom },
+            CwAssetInfoBase::Cw20(contract_addr) => AssetInfo::Token {
+                contract_addr: contract_addr.to_string(),
+            },
+            _ => unreachable!(),
         },
-        reward_to_native_route: vec![],
-        native_to_lp0_route: vec![],
-        native_to_lp1_route: vec![],
+        reward_to_native_route: msg.reward_to_native_route,
+        native_to_lp0_route: msg.native_to_lp0_route,
+        native_to_lp1_route: msg.native_to_lp1_route,
 
         lp_factory_contract: deps.api.addr_validate(&msg.lp_factory_contract)?,
         lp_staking_contract: deps.api.addr_validate(&msg.lp_staking_contract)?,

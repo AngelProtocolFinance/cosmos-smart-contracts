@@ -4,6 +4,7 @@ use cosmwasm_std::{
     MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ReceiveMsg;
+use cw_asset::AssetInfoBase as CwAssetInfoBase;
 use terraswap::asset::{Asset, AssetInfo, PairInfo};
 
 use angel_core::errors::vault::ContractError;
@@ -106,6 +107,16 @@ pub fn update_config(
     config.lp_token = deps.api.addr_validate(&pair_info.liquidity_token)?;
     config.lp_pair_token0 = pair_info.asset_infos[0].clone();
     config.lp_pair_token1 = pair_info.asset_infos[1].clone();
+    config.native_token = match msg.native_token {
+        Some(CwAssetInfoBase::Native(denom)) => AssetInfo::NativeToken { denom },
+        Some(CwAssetInfoBase::Cw20(contract_addr)) => AssetInfo::Token {
+            contract_addr: contract_addr.to_string(),
+        },
+        _ => unreachable!(),
+    };
+    config.reward_to_native_route = msg.reward_to_native_route;
+    config.native_to_lp0_route = msg.native_to_lp0_route;
+    config.native_to_lp1_route = msg.native_to_lp1_route;
 
     CONFIG.save(deps.storage, &config)?;
 
@@ -130,10 +141,16 @@ pub fn deposit(
     validate_action_caller_n_endow_id(deps.as_ref(), &config, msg_sender.clone(), endowment_id)?;
 
     // Check if the "deposit_asset_info" is valid
-    // FIXME: Should check if `deposit_asset_info` == `config.native_token` &
-    //        add the swap msgs if native_token != `lp_pair_token0` && native_token != lp_pair_token1.
-    if deposit_asset_info != config.lp_pair_token0 && deposit_asset_info != config.lp_pair_token1 {
+    if deposit_asset_info != config.native_token {
         return Err(ContractError::InvalidCoinsDeposited {});
+    }
+    if config.native_token != config.lp_pair_token0 && config.native_token != config.lp_pair_token1
+    {
+        if config.native_to_lp0_route.is_empty() && config.native_to_lp1_route.is_empty() {
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: format!("Cannot find a way to swap native token to pair tokens"),
+            }));
+        }
     }
 
     // Check if the "deposit_amount" is zero
@@ -142,7 +159,14 @@ pub fn deposit(
     }
 
     // Swap the half of input token to lp contract pair token
-    let input_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
+    let input_amount: Uint128;
+    if deposit_asset_info == config.lp_pair_token0 || deposit_asset_info == config.lp_pair_token1 {
+        input_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
+    } else {
+        // Swap the `native_token` to either `lp_pair_token0` or `lp_pair_token1` &
+        // compute the `input_amount` for next process.
+        input_amount = Uint128::zero();
+    }
     let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
         &config.lp_pair_contract.as_ref(),
         &deposit_asset_info,

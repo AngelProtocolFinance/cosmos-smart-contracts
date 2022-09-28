@@ -27,6 +27,11 @@ fn create_mock_vault(
         pair_contract: "loop-pair".to_string(),
         lp_reward_token: "lp-reward-token".to_string(),
 
+        native_token: cw_asset::AssetInfoBase::Native("ujuno".to_string()),
+        reward_to_native_route: vec![],
+        native_to_lp0_route: vec![],
+        native_to_lp1_route: vec![],
+
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
@@ -52,6 +57,11 @@ fn proper_instantiation() {
         lp_staking_contract: "loop-farming".to_string(),
         pair_contract: "loop-pair".to_string(),
         lp_reward_token: "lp-reward-token".to_string(),
+
+        native_token: cw_asset::AssetInfoBase::Native("ujuno".to_string()),
+        reward_to_native_route: vec![],
+        native_to_lp0_route: vec![],
+        native_to_lp1_route: vec![],
 
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
@@ -154,6 +164,11 @@ fn test_update_config() {
         keeper: Some("new-keeper".to_string()),
         sibling_vault: None,
         tax_collector: Some("new-tax-collector".to_string()),
+
+        native_token: Some(cw_asset::AssetInfoBase::Native("ujuno".to_string())),
+        reward_to_native_route: vec![],
+        native_to_lp0_route: vec![],
+        native_to_lp1_route: vec![],
     };
 
     // Only "config.owner" can update the config, otherwise fails
@@ -219,7 +234,9 @@ fn test_deposit_native_token() {
     assert_eq!(res.messages.len(), 2);
 }
 
-#[test]
+// #[test]
+// FIXME: Current scenario only supports the `native_token`(either native or cw20 token)
+//        for the `deposit` entry. Hence, this test should be re-assessed after generic vault impl.
 fn test_deposit_cw20_token() {
     // Instantiate the vault contract
     let mut deps = create_mock_vault(AccountType::Locked, vec![]);
