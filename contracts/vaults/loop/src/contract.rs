@@ -67,6 +67,7 @@ pub fn instantiate(
     };
     CONFIG.save(deps.storage, &config)?;
 
+    // Initialize the contract state
     let state = State {
         total_lp_amount: Uint128::zero(),
         total_shares: Uint128::zero(),
@@ -142,7 +143,7 @@ pub fn execute(
             amount,
         } => executers::reinvest_to_locked_execute(deps, env, info, endowment_id, amount),
 
-        // Entries which are used internally
+        /* --- INTERNAL ENTRIES --- */
         ExecuteMsg::RestakeClaimReward {
             reward_token_bal_before,
         } => executers::restake_claim_reward(deps, env, info, reward_token_bal_before),
