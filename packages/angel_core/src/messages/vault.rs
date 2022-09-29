@@ -75,15 +75,14 @@ pub enum ExecuteMsg {
         endowment_id: Option<u32>,
         lp_token_bal_before: Uint128,
     },
+    SwapBack {
+        lp_pair_token0_bal_before: Uint128,
+        lp_pair_token1_bal_before: Uint128,
+    },
     SendAsset {
         beneficiary: Addr,
         id: Option<u32>,
-        asset_info: terraswap::asset::AssetInfo,
-        asset_bal_before: Uint128,
-    },
-    Swap {
-        asset_info: terraswap::asset::AssetInfo,
-        asset_bal_before: Uint128,
+        native_token_bal_before: Uint128,
     },
     Receive(Cw20ReceiveMsg),
 }

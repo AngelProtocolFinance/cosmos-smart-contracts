@@ -8,7 +8,9 @@ use cw_asset::{AssetInfo as CwAssetInfo, AssetInfoBase as CwAssetInfoBase};
 use terraswap::asset::{AssetInfo, PairInfo};
 
 use angel_core::errors::vault::ContractError;
+use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
+use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use terraswap::querier::query_pair_info_from_pair;
 
 use crate::executers;
@@ -170,21 +172,18 @@ pub fn execute(
         ExecuteMsg::SendAsset {
             beneficiary,
             id,
-            asset_info,
-            asset_bal_before,
-        } => executers::send_asset(
+            native_token_bal_before,
+        } => executers::send_asset(deps, env, info, beneficiary, id, native_token_bal_before),
+        ExecuteMsg::SwapBack {
+            lp_pair_token0_bal_before,
+            lp_pair_token1_bal_before,
+        } => executers::swap_back(
             deps,
             env,
             info,
-            beneficiary,
-            id,
-            asset_info,
-            asset_bal_before,
+            lp_pair_token0_bal_before,
+            lp_pair_token1_bal_before,
         ),
-        ExecuteMsg::Swap {
-            asset_info,
-            asset_bal_before,
-        } => executers::swap(deps, env, info, asset_info, asset_bal_before),
     }
 }
 

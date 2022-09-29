@@ -1141,8 +1141,6 @@ pub fn remove_liquidity(
     }
 
     let config: Config = CONFIG.load(deps.storage)?;
-    let asset_infos = vec![config.lp_pair_token0, config.lp_pair_token1];
-    let pair_contract = config.lp_pair_contract;
 
     // First, compute "unfarm"ed LP token balance for "remove_liquidity"
     let lp_token_bal = query_token_balance(
@@ -1160,7 +1158,7 @@ pub fn remove_liquidity(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: config.lp_token.to_string(),
             msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: pair_contract.to_string(),
+                spender: config.lp_factory_contract.to_string(),
                 amount: lp_token_amount,
                 expires: None,
             })
@@ -1170,7 +1168,7 @@ pub fn remove_liquidity(
         CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: config.lp_token.to_string(),
             msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                contract: pair_contract.to_string(),
+                contract: config.lp_pair_contract.to_string(),
                 amount: lp_token_amount,
                 msg: to_binary(&LoopPairExecuteMsg::WithdrawLiquidity {}).unwrap(),
             })
@@ -1179,71 +1177,48 @@ pub fn remove_liquidity(
         }),
     ];
 
-    // Handle the returning token pairs
-    let mut swap_asset_msgs = vec![];
-    let mut send_asset_msgs = vec![];
-
-    let reg_config: ConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract.to_string(),
-        &RegistrarQueryMsg::Config {},
-    )?;
-    let assets = asset_infos
-        .iter()
-        .map(|info| match info {
-            AssetInfo::NativeToken { denom } => denom.to_string(),
-            AssetInfo::Token { contract_addr } => contract_addr.to_string(),
-        })
-        .collect::<Vec<String>>();
-    let (swap_in_asset_info, send_asset_info) =
-        if reg_config.accepted_tokens.cw20_valid(assets[0].clone())
-            || reg_config.accepted_tokens.native_valid(assets[0].clone())
-        {
-            (asset_infos[1].clone(), asset_infos[0].clone())
-        } else if reg_config.accepted_tokens.cw20_valid(assets[1].clone())
-            || reg_config.accepted_tokens.native_valid(assets[1].clone())
-        {
-            (asset_infos[0].clone(), asset_infos[1].clone())
-        } else {
-            return Err(ContractError::Std(StdError::generic_err(
-                "Neither of pair tokens is accepted for accounts",
-            )));
-        };
-    let swap_asset_bal_before = query_asset_balance(
+    // Convert the returning token pairs to the `native_token`
+    // & send back to `accounts_contract`.
+    let mut swap_back_msgs = vec![];
+    let lp_pair_token0_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address.clone(),
-        swap_in_asset_info.clone(),
+        config.lp_pair_token0.clone(),
     )?;
-    let send_asset_bal_before = query_asset_balance(
+    let lp_pair_token1_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address.clone(),
-        send_asset_info.clone(),
+        config.lp_pair_token1.clone(),
     )?;
-
-    swap_asset_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+    swap_back_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::Swap {
-            asset_info: swap_in_asset_info,
-            asset_bal_before: swap_asset_bal_before,
+        msg: to_binary(&ExecuteMsg::SwapBack {
+            lp_pair_token0_bal_before: lp_pair_token0_bal,
+            lp_pair_token1_bal_before: lp_pair_token1_bal,
         })
         .unwrap(),
         funds: vec![],
     }));
 
-    send_asset_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+    let native_token_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        config.native_token.clone(),
+    )?;
+    let send_asset_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::SendAsset {
             beneficiary,
             id,
-            asset_info: send_asset_info,
-            asset_bal_before: send_asset_bal_before,
+            native_token_bal_before: native_token_bal,
         })
         .unwrap(),
         funds: vec![],
-    }));
+    })];
 
     Ok(Response::default()
         .add_messages(withdraw_liquidity_msgs)
-        .add_messages(swap_asset_msgs)
+        .add_messages(swap_back_msgs)
         .add_messages(send_asset_msgs)
         .add_attributes(vec![attr("action", "remove_liquidity")]))
 }
@@ -1254,8 +1229,7 @@ pub fn send_asset(
     info: MessageInfo,
     beneficiary: Addr,
     id: Option<u32>,
-    asset_info: AssetInfo,
-    asset_bal_before: Uint128,
+    native_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
     // Validations
     if info.sender != env.contract.address {
@@ -1265,13 +1239,16 @@ pub fn send_asset(
     let config: Config = CONFIG.load(deps.storage)?;
 
     // Send the asset to the `beneficiary`
-    let asset_bal = query_asset_balance(deps.as_ref(), env.contract.address, asset_info.clone())?;
-    let send_amount = asset_bal
-        .checked_sub(asset_bal_before)
-        .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
+
+    let native_token_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        config.native_token.clone(),
+    )?;
+    let send_amount = native_token_bal - native_token_bal_before;
 
     let mut msgs = vec![];
-    match asset_info {
+    match config.native_token {
         AssetInfo::NativeToken { denom } => match id {
             Some(id) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: beneficiary.to_string(),
@@ -1331,12 +1308,12 @@ pub fn send_asset(
         .add_attributes(vec![attr("action", "send_asset")]))
 }
 
-pub fn swap(
+pub fn swap_back(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    swap_in_asset_info: AssetInfo,
-    swap_in_asset_bal_before: Uint128,
+    lp_pair_token0_bal_before: Uint128,
+    lp_pair_token1_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
     // Validations
     if info.sender != env.contract.address {
@@ -1345,25 +1322,41 @@ pub fn swap(
 
     let config: Config = CONFIG.load(deps.storage)?;
 
-    // Send the asset to the `beneficiary`
-    let asset_bal = query_asset_balance(
+    // Swap the pair tokens back to the `native_token`.
+    let mut swap_router_swap_msgs = vec![];
+    let lp_pair_token0_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        config.lp_pair_token0.clone(),
+    )?;
+    let swap_amount = lp_pair_token0_bal - lp_pair_token0_bal_before;
+    let mut operations = config.native_to_lp0_route.clone();
+    operations.reverse();
+    swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
+        config.swap_router.to_string(),
+        config.lp_pair_token0.clone(),
+        swap_amount,
+        operations,
+    )?);
+
+    let lp_pair_token1_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address,
-        swap_in_asset_info.clone(),
+        config.lp_pair_token1.clone(),
     )?;
-    let swap_amount = asset_bal
-        .checked_sub(swap_in_asset_bal_before)
-        .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
-
-    let msgs = prepare_loop_pair_swap_msg(
-        config.lp_pair_contract.as_str(),
-        &swap_in_asset_info,
+    let swap_amount = lp_pair_token1_bal - lp_pair_token1_bal_before;
+    let mut operations = config.native_to_lp1_route.clone();
+    operations.reverse();
+    swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
+        config.swap_router.to_string(),
+        config.lp_pair_token1.clone(),
         swap_amount,
-    )?;
+        operations,
+    )?);
 
     Ok(Response::default()
-        .add_messages(msgs)
-        .add_attributes(vec![attr("action", "swap_asset_to_another_pair")]))
+        .add_messages(swap_router_swap_msgs)
+        .add_attributes(vec![attr("action", "swap_pair_to_native")]))
 }
 
 fn prepare_contract_add_liquidity_msgs(
