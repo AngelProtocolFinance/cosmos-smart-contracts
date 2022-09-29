@@ -8,9 +8,7 @@ use cw_asset::{AssetInfo as CwAssetInfo, AssetInfoBase as CwAssetInfoBase};
 use terraswap::asset::{AssetInfo, PairInfo};
 
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
-use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use terraswap::querier::query_pair_info_from_pair;
 
 use crate::executers;

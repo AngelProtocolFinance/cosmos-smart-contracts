@@ -16,7 +16,7 @@ use angel_core::messages::vault::{
 };
 use angel_core::responses::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
 use angel_core::structs::{AccountType, SwapOperation};
-use terraswap::querier::{query_pair_info, query_pair_info_from_pair};
+use terraswap::querier::query_pair_info_from_pair;
 
 use crate::state::{Config, State, APTAX, BALANCES, CONFIG, STATE, TOKEN_INFO};
 
@@ -146,54 +146,71 @@ pub fn deposit(
         return Err(ContractError::InvalidCoinsDeposited {});
     }
 
-    // FIXME: Take care of special case of `native_token` == `lp_pair_token0` or `lp_pair_token1`
-    // if config.native_token != config.lp_pair_token0 && config.native_token != config.lp_pair_token1
-    // {
-    //     if config.native_to_lp0_route.is_empty() && config.native_to_lp1_route.is_empty() {
-    //         return Err(ContractError::Std(StdError::GenericErr {
-    //             msg: format!("Cannot find a way to swap native token to pair tokens"),
-    //         }));
-    //     }
-    // }
+    if config.native_token != config.lp_pair_token0
+        && config.native_token != config.lp_pair_token1
+        && config.native_to_lp0_route.is_empty()
+        && config.native_to_lp1_route.is_empty()
+    {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Cannot find a way to swap native token to pair tokens".to_string(),
+        }));
+    }
 
     // Check if the "deposit_amount" is zero
     if deposit_amount.is_zero() {
         return Err(ContractError::EmptyBalance {});
     }
 
-    // // Swap the half of input token to lp contract pair token
-    // FIXME: Take care of special case of `native_token` == `lp_pair_token0` or `lp_pair_token1`
-    // let input_amount: Uint128;
-    // if deposit_asset_info == config.lp_pair_token0 || deposit_asset_info == config.lp_pair_token1 {
-    //     input_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
-    // } else {
-    //     // Swap the `native_token` to either `lp_pair_token0` or `lp_pair_token1` &
-    //     // compute the `input_amount` for next process.
-    //     input_amount = Uint128::zero();
-    // }
-
-    // Swap the half of `native_token`(`deposit`) to the `lp_pair_token0`, and another half to `lp_pair_token1`.
     let mut swap_router_swap_msgs = vec![];
-    let swap_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
-    swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
-        config.swap_router.to_string(),
-        config.native_token.clone(),
-        swap_amount,
-        config.native_to_lp0_route.clone(),
-    )?);
-    swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
-        config.swap_router.to_string(),
-        config.native_token.clone(),
-        swap_amount,
-        config.native_to_lp1_route.clone(),
-    )?);
+    let mut loop_pair_swap_msgs = vec![];
+    let mut contract_add_liquidity_msgs = vec![];
+    if deposit_asset_info == config.lp_pair_token0 || deposit_asset_info == config.lp_pair_token1 {
+        // Swap the half of `native_token`(`deposit`) to lp contract pair token
+        loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
+            config.lp_pair_contract.as_ref(),
+            &deposit_asset_info,
+            deposit_amount.multiply_ratio(1_u128, 2_u128),
+        )?);
 
-    // Call the "(this contract::)add_liquidity" entry
-    let contract_add_liquidity_msgs =
-        prepare_contract_add_liquidity_msgs(deps, env, &config, Some(endowment_id))?;
+        // Call the "(this contract::)add_liquidity" entry
+        contract_add_liquidity_msgs.extend_from_slice(&prepare_contract_add_liquidity_msgs(
+            deps,
+            env,
+            &config,
+            Some(endowment_id),
+            Some(deposit_asset_info),
+            Some(deposit_amount),
+        )?);
+    } else {
+        // Swap the half of `native_token`(`deposit`) to the `lp_pair_token0`, and another half to `lp_pair_token1`.
+        let swap_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
+        swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
+            config.swap_router.to_string(),
+            config.native_token.clone(),
+            swap_amount,
+            config.native_to_lp0_route.clone(),
+        )?);
+        swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
+            config.swap_router.to_string(),
+            config.native_token.clone(),
+            swap_amount,
+            config.native_to_lp1_route.clone(),
+        )?);
+
+        // Call the "(this contract::)add_liquidity" entry
+        contract_add_liquidity_msgs.extend_from_slice(&prepare_contract_add_liquidity_msgs(
+            deps,
+            env,
+            &config,
+            Some(endowment_id),
+            None,
+            None,
+        )?);
+    }
 
     Ok(Response::default()
         .add_messages(swap_router_swap_msgs)
+        .add_messages(loop_pair_swap_msgs)
         .add_messages(contract_add_liquidity_msgs)
         .add_attribute("action", "deposit")
         .add_attribute("sender", msg_sender)
@@ -209,9 +226,9 @@ fn prepare_swap_router_swap_msgs(
 ) -> StdResult<Vec<CosmosMsg>> {
     let msgs = match start_token {
         AssetInfo::NativeToken { ref denom } => vec![CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: swap_router.to_string(),
+            contract_addr: swap_router,
             msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
-                operations: operations.clone(),
+                operations,
                 minimum_receive: None,
                 endowment_id: 1,
                 acct_type: AccountType::Locked,
@@ -233,7 +250,7 @@ fn prepare_swap_router_swap_msgs(
             CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: contract_addr.to_string(),
                 msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                    contract: swap_router.to_string(),
+                    contract: swap_router,
                     amount: swap_amount,
                     msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
                         operations,
@@ -288,22 +305,25 @@ pub fn restake_claim_reward(
         contract_addr: config.lp_reward_token.to_string(),
     };
     let mut swap_router_swap_msgs = vec![];
+    let mut loop_pair_swap_msgs = vec![];
     let mut contract_add_liquidity_msgs = vec![];
     if reward_asset_info == config.lp_pair_token0 || reward_asset_info == config.lp_pair_token1 {
-        // FIXME: Take care of special case when above.
-        // // Swap the half of input token to the lp contract pair token
-        // loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
-        //     &config.lp_pair_contract.as_ref(),
-        //     &AssetInfo::Token {
-        //         contract_addr: config.lp_reward_token.to_string(),
-        //     },
-        //     reward_amount.multiply_ratio(1_u128, 2_u128),
-        // )?);
+        // Swap the half of `reward_token` to the lp contract pair token
+        loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
+            config.lp_pair_contract.as_ref(),
+            &reward_asset_info,
+            reward_amount.multiply_ratio(1_u128, 2_u128),
+        )?);
 
-        // // Call the "(this contract::)add_liquidity" entry
-        // contract_add_liquidity_msgs.extend_from_slice(&prepare_contract_add_liquidity_msgs(
-        //     deps, env, &config, None,
-        // )?);
+        // Call the "(this contract::)add_liquidity" entry
+        contract_add_liquidity_msgs.extend_from_slice(&prepare_contract_add_liquidity_msgs(
+            deps,
+            env,
+            &config,
+            None,
+            Some(reward_asset_info),
+            Some(reward_amount),
+        )?);
     } else {
         let swap_amount = reward_amount.multiply_ratio(1_u128, 2_u128);
         let start_token = AssetInfo::Token {
@@ -337,54 +357,14 @@ pub fn restake_claim_reward(
 
         // Call the "(this contract::)add_liquidity" entry
         contract_add_liquidity_msgs =
-            prepare_contract_add_liquidity_msgs(deps, env, &config, None)?;
+            prepare_contract_add_liquidity_msgs(deps, env, &config, None, None, None)?;
     }
 
     Ok(Response::default()
         .add_messages(swap_router_swap_msgs)
+        .add_messages(loop_pair_swap_msgs)
         .add_messages(contract_add_liquidity_msgs)
         .add_attributes(vec![attr("action", "restake_claimed_reward")]))
-}
-
-fn prepare_add_liquidity_msgs(
-    deps: DepsMut,
-    env: Env,
-    config: &Config,
-    token1_bal_before: Uint128,
-    token2_bal_before: Uint128,
-) -> StdResult<Vec<CosmosMsg>> {
-    let mut msgs = vec![];
-
-    // Compute the amounts of lp contract pair tokens, available for `provide_liquidity` operation
-    let token1_bal = query_asset_balance(
-        deps.as_ref(),
-        env.contract.address.clone(),
-        config.lp_pair_token0.clone(),
-    )?;
-    let token2_bal = query_asset_balance(
-        deps.as_ref(),
-        env.contract.address.clone(),
-        config.lp_pair_token1.clone(),
-    )?;
-    let token1_amount = token1_bal - token1_bal_before;
-    let token2_amount = token2_bal - token2_bal_before;
-
-    // Call the "loopswap::pair::provide_liquidity" entry
-    let loop_pair_provide_liquidity_msgs = prepare_loop_pair_provide_liquidity_msgs(
-        config.lp_pair_token0.clone(),
-        token1_amount,
-        config.lp_pair_token1.clone(),
-        token2_amount,
-        config.lp_pair_contract.to_string(),
-    )?;
-    msgs.extend_from_slice(&loop_pair_provide_liquidity_msgs);
-
-    // Call the "(this contract::)stake" entry
-    let contract_stake_msgs =
-        prepare_contract_stake_msgs(deps.as_ref(), env, None, config.lp_pair_contract.clone())?;
-    msgs.extend_from_slice(&contract_stake_msgs);
-
-    Ok(msgs)
 }
 
 /// Contract entry: **redeem**
@@ -1203,7 +1183,7 @@ pub fn remove_liquidity(
     let native_token_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address.clone(),
-        config.native_token.clone(),
+        config.native_token,
     )?;
     let send_asset_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
@@ -1242,7 +1222,7 @@ pub fn send_asset(
 
     let native_token_bal = query_asset_balance(
         deps.as_ref(),
-        env.contract.address.clone(),
+        env.contract.address,
         config.native_token.clone(),
     )?;
     let send_amount = native_token_bal - native_token_bal_before;
@@ -1349,7 +1329,7 @@ pub fn swap_back(
     operations.reverse();
     swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
         config.swap_router.to_string(),
-        config.lp_pair_token1.clone(),
+        config.lp_pair_token1,
         swap_amount,
         operations,
     )?);
@@ -1364,19 +1344,33 @@ fn prepare_contract_add_liquidity_msgs(
     env: Env,
     config: &Config,
     endowment_id: Option<u32>,
+    deduct_token: Option<AssetInfo>,
+    deduct_amount: Option<Uint128>,
 ) -> Result<Vec<CosmosMsg>, StdError> {
     let mut msgs: Vec<CosmosMsg> = vec![];
 
-    let lp_pair_token0_bal = query_asset_balance(
+    let mut lp_pair_token0_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address.clone(),
         config.lp_pair_token0.clone(),
     )?;
-    let lp_pair_token1_bal = query_asset_balance(
+    let mut lp_pair_token1_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address.clone(),
         config.lp_pair_token1.clone(),
     )?;
+
+    if let Some(deduct_token_info) = deduct_token {
+        if deduct_token_info == config.lp_pair_token0 {
+            lp_pair_token0_bal -= deduct_amount.expect("Deduct amount not set.");
+        } else if deduct_token_info == config.lp_pair_token1 {
+            lp_pair_token1_bal -= deduct_amount.expect("Deduct amount not set.");
+        } else {
+            return Err(StdError::GenericErr {
+                msg: "Cannot deduct token amount of native or reward token when they are either of lp pair tokens".to_string(),
+            });
+        }
+    }
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::AddLiquidity {
