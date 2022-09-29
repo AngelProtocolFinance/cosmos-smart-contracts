@@ -1,4 +1,4 @@
-use crate::state::{Endowment, State, CONFIG, COPYCATS, ENDOWMENTS, PROFILES, STATES};
+use crate::state::{Endowment, State, CONFIG, ENDOWMENTS, PROFILES, STATES};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -104,7 +104,7 @@ pub fn create_endowment(
                 maturity_height: msg.maturity_height,
                 maturity_time: msg.maturity_time,
                 strategies: AccountStrategies::default(),
-                invested_vaults: OneOffVaults::default(),
+                oneoff_vaults: OneOffVaults::default(),
                 rebalance: RebalanceDetails::default(),
                 kyc_donors_only: msg.kyc_donors_only,
                 pending_redemptions: 0_u8,
@@ -133,8 +133,6 @@ pub fn create_endowment(
             closing_beneficiary: None,
         },
     )?;
-
-    COPYCATS.save(deps.storage, config.next_account_id, &vec![])?;
 
     // initial default Response to add submessages to
     let mut res = Response::new();
@@ -547,21 +545,6 @@ pub fn copycat_strategies(
             msg: "Attempting re-set the same copycat endowment ID".to_string(),
         }));
     }
-    // if this endowment was already copying another prior to this new one,
-    // first remove it from the old list and add to the new copycat list
-    if endowment.copycat_strategy.is_some() {
-        let old_id = endowment.copycat_strategy.unwrap();
-        let mut old_copiers = COPYCATS.load(deps.storage, old_id)?;
-        if let Some(pos) = old_copiers.iter().position(|i| *i == id) {
-            old_copiers.swap_remove(pos);
-        }
-        COPYCATS.save(deps.storage, old_id, &old_copiers)?;
-    }
-
-    // add this endowment to the new Copycat list
-    let mut copiers = COPYCATS.load(deps.storage, id_to_copy)?;
-    copiers.push(id);
-    COPYCATS.save(deps.storage, id_to_copy, &copiers)?;
 
     // set new copycat id
     endowment.copycat_strategy = Some(id_to_copy);
@@ -1178,22 +1161,22 @@ pub fn vaults_invest(
         match acct_type {
             AccountType::Locked => {
                 let pos = endowment
-                    .invested_vaults
+                    .oneoff_vaults
                     .locked
                     .iter()
                     .position(|v| v == vault);
                 if pos.is_some() {
-                    endowment.invested_vaults.locked.push(vault_addr.clone());
+                    endowment.oneoff_vaults.locked.push(vault_addr.clone());
                 }
             }
             AccountType::Liquid => {
                 let pos = endowment
-                    .invested_vaults
+                    .oneoff_vaults
                     .liquid
                     .iter()
                     .position(|v| v == vault);
                 if pos.is_some() {
-                    endowment.invested_vaults.liquid.push(vault_addr.clone());
+                    endowment.oneoff_vaults.liquid.push(vault_addr.clone());
                 }
             }
         }
@@ -1331,22 +1314,22 @@ pub fn vaults_redeem(
         match acct_type {
             AccountType::Locked => {
                 let pos = endowment
-                    .invested_vaults
+                    .oneoff_vaults
                     .locked
                     .iter()
                     .position(|v| v == vault);
                 if pos.is_some() && vault_balance == *amount {
-                    endowment.invested_vaults.locked.swap_remove(pos.unwrap());
+                    endowment.oneoff_vaults.locked.swap_remove(pos.unwrap());
                 }
             }
             AccountType::Liquid => {
                 let pos = endowment
-                    .invested_vaults
+                    .oneoff_vaults
                     .liquid
                     .iter()
                     .position(|v| v == vault);
                 if pos.is_some() && vault_balance == *amount {
-                    endowment.invested_vaults.liquid.swap_remove(pos.unwrap());
+                    endowment.oneoff_vaults.liquid.swap_remove(pos.unwrap());
                 }
             }
         }
@@ -1534,8 +1517,8 @@ pub fn close_endowment(
     // Redeem all funds back from vaults that an Endowment is invested in
     let mut all_vaults: Vec<String> = [
         [
-            endowment.invested_vaults.get(AccountType::Liquid),
-            endowment.invested_vaults.get(AccountType::Locked),
+            endowment.oneoff_vaults.get(AccountType::Liquid),
+            endowment.oneoff_vaults.get(AccountType::Locked),
         ]
         .concat()
         .iter()

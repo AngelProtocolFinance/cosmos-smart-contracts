@@ -334,10 +334,8 @@ impl AcceptedTokens {
 #[serde(rename_all = "snake_case")]
 pub struct EndowmentBalanceResponse {
     pub tokens_on_hand: BalanceInfo,
-    pub oneoff_locked: Vec<(String, Uint128)>,
-    pub oneoff_liquid: Vec<(String, Uint128)>,
-    pub strategies_locked: Vec<(String, Uint128)>,
-    pub strategies_liquid: Vec<(String, Uint128)>,
+    pub invested_locked: Vec<(String, Uint128)>,
+    pub invested_liquid: Vec<(String, Uint128)>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]

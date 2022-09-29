@@ -141,7 +141,7 @@ impl WasmMockQuerier {
                         maturity_time: None,
                         maturity_height: None,
                         strategies: AccountStrategies::default(),
-                        invested_vaults: OneOffVaults::default(),
+                        oneoff_vaults: OneOffVaults::default(),
                         rebalance: RebalanceDetails::default(),
                         kyc_donors_only: false,
                         deposit_approved: true,
