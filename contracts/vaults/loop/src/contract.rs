@@ -43,6 +43,7 @@ pub fn instantiate(
         registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
         keeper: deps.api.addr_validate(&msg.keeper)?,
         tax_collector: deps.api.addr_validate(&msg.tax_collector)?,
+        swap_router: deps.api.addr_validate(&msg.swap_router)?,
 
         lp_token: deps.api.addr_validate(&pair_info.liquidity_token)?,
         lp_pair_token0: pair_info.asset_infos[0].clone(),

@@ -21,6 +21,7 @@ fn create_mock_vault(
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
         tax_collector: "tax-collector".to_string(),
+        swap_router: "swap-router".to_string(),
 
         lp_factory_contract: "loop-factory".to_string(),
         lp_staking_contract: "loop-farming".to_string(),
@@ -52,6 +53,7 @@ fn proper_instantiation() {
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
         tax_collector: "tax-collector".to_string(),
+        swap_router: "swap-router".to_string(),
 
         lp_factory_contract: "loop-factory".to_string(),
         lp_staking_contract: "loop-farming".to_string(),

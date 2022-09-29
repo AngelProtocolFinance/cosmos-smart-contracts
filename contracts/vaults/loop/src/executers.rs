@@ -9,6 +9,7 @@ use terraswap::asset::{Asset, AssetInfo, PairInfo};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
+use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::messages::vault::{
     ExecuteMsg, LoopFarmingExecuteMsg, LoopFarmingQueryMsg, LoopPairExecuteMsg, ReceiveMsg,
     UpdateConfigMsg,
@@ -171,6 +172,50 @@ pub fn deposit(
     //     input_amount = Uint128::zero();
     // }
 
+    // Swap the half of `native_token`(`deposit`) to the `lp_pair_token0`, and another half to `lp_pair_token1`.
+    let swap_amount = deposit_amount * Decimal::from_ratio(1_u128, 2_u128);
+    let swap_router_swap_msgs = match config.native_token {
+        AssetInfo::NativeToken { ref denom } => vec![CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: config.swap_router.to_string(),
+            msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
+                operations: config.native_to_lp0_route.clone(),
+                minimum_receive: None,
+                endowment_id: 1,
+                acct_type: AccountType::Locked,
+            })
+            .unwrap(),
+            funds: coins(swap_amount.u128(), denom.to_string()),
+        })],
+        AssetInfo::Token { ref contract_addr } => vec![
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.swap_router.to_string(),
+                msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                    spender: config.swap_router.to_string(),
+                    amount: swap_amount,
+                    expires: None,
+                })
+                .unwrap(),
+                funds: vec![],
+            }),
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: contract_addr.to_string(),
+                msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                    contract: config.swap_router.to_string(),
+                    amount: swap_amount,
+                    msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
+                        operations: config.native_to_lp1_route.clone(),
+                        minimum_receive: None,
+                        endowment_id: 1,
+                        acct_type: AccountType::Locked,
+                    })
+                    .unwrap(),
+                })
+                .unwrap(),
+                funds: vec![],
+            }),
+        ],
+    };
+
     // Call the "(this contract::)add_liquidity" entry
     let contract_add_liquidity_msgs = prepare_contract_add_liquidity_msgs(
         deps,
@@ -181,7 +226,7 @@ pub fn deposit(
     )?;
 
     Ok(Response::default()
-        // .add_messages(loop_pair_swap_msgs)
+        .add_messages(swap_router_swap_msgs)
         .add_messages(contract_add_liquidity_msgs)
         .add_attribute("action", "deposit")
         .add_attribute("sender", msg_sender)
@@ -757,13 +802,15 @@ pub fn add_liquidity(
     if in_asset_info == config.lp_pair_token0 {
         token1_asset_info = in_asset_info;
         token2_asset_info = out_asset_info;
-        token1_amount = in_asset_bal_before - in_asset_bal;
+        // token1_amount = in_asset_bal_before - in_asset_bal;
+        token1_amount = in_asset_bal - in_asset_bal_before;
         token2_amount = out_asset_bal - out_asset_bal_before;
     } else {
         token1_asset_info = out_asset_info;
         token2_asset_info = in_asset_info;
         token1_amount = out_asset_bal - out_asset_bal_before;
-        token2_amount = in_asset_bal_before - in_asset_bal;
+        // token2_amount = in_asset_bal_before - in_asset_bal;
+        token2_amount = in_asset_bal - in_asset_bal_before;
     }
 
     let loop_pair_provide_liquidity_msgs = prepare_loop_pair_provide_liquidity_msgs(

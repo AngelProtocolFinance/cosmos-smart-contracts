@@ -13,6 +13,7 @@ pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub keeper: String,
     pub tax_collector: String,
+    pub swap_router: String,
 
     pub lp_factory_contract: String,
     pub lp_staking_contract: String,

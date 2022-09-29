@@ -231,14 +231,17 @@ pub fn execute_swap_operations(
     }
 
     // Send a Swap Receipt message back to sender as the final message
-    let prev_balance: Uint128 = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-        contract_addr: config.accounts_contract.to_string(),
-        msg: to_binary(&AccountsQueryMsg::TokenAmount {
-            id: endowment_id,
-            asset_info: target_asset_info.clone(),
-            acct_type: acct_type.clone(),
-        })?,
-    }))?;
+    let prev_balance: Uint128 = match vault_addr {
+        None => deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.accounts_contract.to_string(),
+            msg: to_binary(&AccountsQueryMsg::TokenAmount {
+                id: endowment_id,
+                asset_info: target_asset_info.clone(),
+                acct_type: acct_type.clone(),
+            })?,
+        }))?,
+        Some(ref vault_addr) => target_asset_info.query_balance(&deps.querier, vault_addr)?,
+    };
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         funds: vec![],

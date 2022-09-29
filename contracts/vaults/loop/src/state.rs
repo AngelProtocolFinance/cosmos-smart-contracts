@@ -13,6 +13,7 @@ pub struct Config {
     pub registrar_contract: Addr,
     pub keeper: Addr,
     pub tax_collector: Addr,
+    pub swap_router: Addr,
 
     // TOKENS
     pub native_token: AssetInfo, // the input token(and output back to Accounts) into Vault
