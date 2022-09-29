@@ -40,6 +40,7 @@ import {
   testQueryMultisigVoters,
   testQueryMultisigThreshold,
   testQueryGroupMembersList,
+  testCw3CastApplicationVote,
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
@@ -130,6 +131,9 @@ export async function testExecute(
   haloVesting: string,
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // await testAddMemberToC4Group(juno, apTeamAddr, cw3ReviewTeam, cw4GrpReviewTeam, "juno1h27pex3z3mm97gwfdhan8cfak8yzvtvprjlcz7");
+  // await testCw3ExecutePoll(juno, apTeamAddr, cw3ReviewTeam, 44);
+  // await testCw3CastApplicationVote(juno, apTeamAddr, cw3ReviewTeam, 44, `yes`);
   // await testQueryMultisigVoters(juno, cw3ReviewTeam);
 
   /* --- ACCOUNTS & ENDOWMENTS --- */

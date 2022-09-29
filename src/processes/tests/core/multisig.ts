@@ -35,7 +35,7 @@ export async function testAddMemberToC4Group(
   const proposal = await sendTransaction(juno, apTeam, cw3, {
     propose: {
       title: "New CW4 member",
-      description: "New member for the CW4 AP Team Group. They are legit, I swear!",
+      description: "New member for the CW4 AP Team Group.",
       msgs: [
         {
           wasm: {
@@ -128,6 +128,31 @@ export async function testCw3CastVote(
   await expect(
     sendTransaction(juno, apTeam, cw3, {
       vote: { proposal_id, vote },
+    })
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+
+//----------------------------------------------------------------------------------------
+// TEST: Cast vote on Charity Application poll
+//
+// SCENARIO:
+// AP Review Team CW3 member can vote on the open Charity Application poll
+//
+//----------------------------------------------------------------------------------------
+export async function testCw3CastApplicationVote(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  cw3: string,
+  proposal_id: number,
+  vote: string,
+): Promise<void> {
+  process.stdout.write("Test - Cast vote");
+
+  await expect(
+    sendTransaction(juno, apTeam, cw3, {
+      vote_application: { proposal_id, vote },
     })
   );
   console.log(chalk.green(" Passed!"));
