@@ -144,34 +144,32 @@ pub fn deposit(
     if deposit_asset_info != config.native_token {
         return Err(ContractError::InvalidCoinsDeposited {});
     }
-    if config.native_token != config.lp_pair_token0 && config.native_token != config.lp_pair_token1
-    {
-        if config.native_to_lp0_route.is_empty() && config.native_to_lp1_route.is_empty() {
-            return Err(ContractError::Std(StdError::GenericErr {
-                msg: format!("Cannot find a way to swap native token to pair tokens"),
-            }));
-        }
-    }
+
+    // FIXME: Take care of special case of `native_token` == `lp_pair_token0` or `lp_pair_token1`
+    // if config.native_token != config.lp_pair_token0 && config.native_token != config.lp_pair_token1
+    // {
+    //     if config.native_to_lp0_route.is_empty() && config.native_to_lp1_route.is_empty() {
+    //         return Err(ContractError::Std(StdError::GenericErr {
+    //             msg: format!("Cannot find a way to swap native token to pair tokens"),
+    //         }));
+    //     }
+    // }
 
     // Check if the "deposit_amount" is zero
     if deposit_amount.is_zero() {
         return Err(ContractError::EmptyBalance {});
     }
 
-    // Swap the half of input token to lp contract pair token
-    let input_amount: Uint128;
-    if deposit_asset_info == config.lp_pair_token0 || deposit_asset_info == config.lp_pair_token1 {
-        input_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
-    } else {
-        // Swap the `native_token` to either `lp_pair_token0` or `lp_pair_token1` &
-        // compute the `input_amount` for next process.
-        input_amount = Uint128::zero();
-    }
-    let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
-        &config.lp_pair_contract.as_ref(),
-        &deposit_asset_info,
-        input_amount,
-    )?;
+    // // Swap the half of input token to lp contract pair token
+    // FIXME: Take care of special case of `native_token` == `lp_pair_token0` or `lp_pair_token1`
+    // let input_amount: Uint128;
+    // if deposit_asset_info == config.lp_pair_token0 || deposit_asset_info == config.lp_pair_token1 {
+    //     input_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
+    // } else {
+    //     // Swap the `native_token` to either `lp_pair_token0` or `lp_pair_token1` &
+    //     // compute the `input_amount` for next process.
+    //     input_amount = Uint128::zero();
+    // }
 
     // Call the "(this contract::)add_liquidity" entry
     let contract_add_liquidity_msgs = prepare_contract_add_liquidity_msgs(
@@ -183,7 +181,7 @@ pub fn deposit(
     )?;
 
     Ok(Response::default()
-        .add_messages(loop_pair_swap_msgs)
+        // .add_messages(loop_pair_swap_msgs)
         .add_messages(contract_add_liquidity_msgs)
         .add_attribute("action", "deposit")
         .add_attribute("sender", msg_sender)

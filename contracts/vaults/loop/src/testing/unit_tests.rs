@@ -231,7 +231,7 @@ fn test_deposit_native_token() {
         ExecuteMsg::Deposit { endowment_id: 1 },
     )
     .unwrap();
-    assert_eq!(res.messages.len(), 2);
+    assert_eq!(res.messages.len(), 1);
 }
 
 // #[test]

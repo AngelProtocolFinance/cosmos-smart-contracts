@@ -50,6 +50,7 @@ pub enum ExecuteMsg {
         prev_balance: Uint128,
         endowment_id: u32,
         acct_type: AccountType,
+        vault_addr: Option<Addr>,
     },
 }
 

@@ -95,6 +95,7 @@ pub fn execute(
             prev_balance,
             endowment_id,
             acct_type,
+            vault_addr,
         } => send_swap_receipt(
             deps.as_ref(),
             env,
@@ -103,6 +104,7 @@ pub fn execute(
             prev_balance,
             endowment_id,
             acct_type,
+            vault_addr,
         ),
     }
 }
@@ -168,6 +170,7 @@ pub fn execute_swap_operations(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
     // Swaps are restricted to the Accounts contract (endowments) & approved Vault contracts
+    let mut vault_addr = None;
     if sender != config.accounts_contract {
         // check that the deposit token came from an approved Vault SC
         let vault_res: VaultDetailResponse =
@@ -180,6 +183,7 @@ pub fn execute_swap_operations(
         if !vault_res.vault.approved {
             return Err(ContractError::Unauthorized {});
         }
+        vault_addr = Some(sender.clone());
     }
 
     let operations_len = operations.len();
@@ -243,6 +247,7 @@ pub fn execute_swap_operations(
             prev_balance,
             endowment_id,
             acct_type,
+            vault_addr,
         })?,
     }));
 
