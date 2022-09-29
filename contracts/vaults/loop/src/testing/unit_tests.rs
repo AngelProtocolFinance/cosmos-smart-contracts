@@ -236,12 +236,35 @@ fn test_deposit_native_token() {
     assert_eq!(res.messages.len(), 2);
 }
 
-// #[test]
-// FIXME: Current scenario only supports the `native_token`(either native or cw20 token)
-//        for the `deposit` entry. Hence, this test should be re-assessed after generic vault impl.
+#[test]
 fn test_deposit_cw20_token() {
     // Instantiate the vault contract
-    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
+    let mut deps = mock_dependencies(&[]);
+    let instantiate_msg = InstantiateMsg {
+        acct_type: AccountType::Locked,
+        sibling_vault: Some("sibling-vault".to_string()),
+        registrar_contract: "angelprotocolteamdano".to_string(),
+        keeper: "keeper".to_string(),
+        tax_collector: "tax-collector".to_string(),
+        swap_router: "swap-router".to_string(),
+
+        lp_factory_contract: "loop-factory".to_string(),
+        lp_staking_contract: "loop-farming".to_string(),
+        pair_contract: "loop-pair".to_string(),
+        lp_reward_token: "lp-reward-token".to_string(),
+
+        native_token: cw_asset::AssetInfoBase::Cw20(Addr::unchecked("halo-token")),
+        reward_to_native_route: vec![],
+        native_to_lp0_route: vec![],
+        native_to_lp1_route: vec![],
+
+        name: "Cash Token".to_string(),
+        symbol: "CASH".to_string(),
+        decimals: 6,
+    };
+    let info = mock_info("creator", &[]);
+    let env = mock_env();
+    let _ = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
 
     // Try to deposit the "HALO"(cw20) token
 
