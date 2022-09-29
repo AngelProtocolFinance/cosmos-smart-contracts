@@ -63,10 +63,8 @@ pub enum ExecuteMsg {
     },
     AddLiquidity {
         endowment_id: Option<u32>,
-        in_asset_info: terraswap::asset::AssetInfo,
-        out_asset_info: terraswap::asset::AssetInfo,
-        in_asset_bal_before: Uint128,
-        out_asset_bal_before: Uint128,
+        lp_pair_token0_bal_before: Uint128,
+        lp_pair_token1_bal_before: Uint128,
     },
     RemoveLiquidity {
         lp_token_bal_before: Uint128,

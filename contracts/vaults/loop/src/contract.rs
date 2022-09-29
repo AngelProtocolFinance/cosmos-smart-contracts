@@ -148,19 +148,15 @@ pub fn execute(
         } => executers::restake_claim_reward(deps, env, info, reward_token_bal_before),
         ExecuteMsg::AddLiquidity {
             endowment_id,
-            in_asset_info,
-            out_asset_info,
-            in_asset_bal_before,
-            out_asset_bal_before,
+            lp_pair_token0_bal_before,
+            lp_pair_token1_bal_before,
         } => executers::add_liquidity(
             deps,
             env,
             info,
             endowment_id,
-            in_asset_info,
-            out_asset_info,
-            in_asset_bal_before,
-            out_asset_bal_before,
+            lp_pair_token0_bal_before,
+            lp_pair_token1_bal_before,
         ),
         ExecuteMsg::RemoveLiquidity {
             lp_token_bal_before,
