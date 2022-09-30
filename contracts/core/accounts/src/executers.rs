@@ -1334,27 +1334,29 @@ pub fn vaults_redeem(
             }));
         }
 
-        // check if the vault tokens have been depleted and remove invested-vault from list if so
+        // check if the vault tokens have been depleted and remove one-off(invested) vault from list if so
         let vault_balance = vault_endowment_balance(deps.as_ref(), vault.to_string(), id);
-        match acct_type {
-            AccountType::Locked => {
-                let pos = endowment
-                    .oneoff_vaults
-                    .locked
-                    .iter()
-                    .position(|v| v == vault);
-                if pos.is_some() && vault_balance == *amount {
-                    endowment.oneoff_vaults.locked.swap_remove(pos.unwrap());
+        if vault_balance == *amount || vault_balance == Uint128::zero() {
+            match acct_type {
+                AccountType::Locked => {
+                    let pos = endowment
+                        .oneoff_vaults
+                        .locked
+                        .iter()
+                        .position(|v| v == vault);
+                    if pos.is_some() {
+                        endowment.oneoff_vaults.locked.swap_remove(pos.unwrap());
+                    }
                 }
-            }
-            AccountType::Liquid => {
-                let pos = endowment
-                    .oneoff_vaults
-                    .liquid
-                    .iter()
-                    .position(|v| v == vault);
-                if pos.is_some() && vault_balance == *amount {
-                    endowment.oneoff_vaults.liquid.swap_remove(pos.unwrap());
+                AccountType::Liquid => {
+                    let pos = endowment
+                        .oneoff_vaults
+                        .liquid
+                        .iter()
+                        .position(|v| v == vault);
+                    if pos.is_some() {
+                        endowment.oneoff_vaults.liquid.swap_remove(pos.unwrap());
+                    }
                 }
             }
         }
