@@ -365,13 +365,13 @@ export async function testExecute(
   //   [{ vault: vaultLiquid2, percentage: "0.50" }]
   // );
 
-  await testSendDonationToEndowment(
-    actors.apTeam.client,
-    actors.apTeam.addr,
-    accounts,
-    endowId1,
-    { denom: config.networkInfo.nativeToken, amount: "100000" }
-  );
+  // await testSendDonationToEndowment(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   accounts,
+  //   endowId1,
+  //   { denom: config.networkInfo.nativeToken, amount: "100000" }
+  // );
   // await testEndowmentVaultsRedeem(
   //   actors.charity1.client,
   //   actors.charity1.addr,
