@@ -384,9 +384,9 @@ fn test_update_strategy() {
     // Succeed to update the strategies
     let msg = ExecuteMsg::UpdateStrategies {
         id: CHARITY_ID,
-        acct_type: AccountType::Locked,
+        acct_type: AccountType::Liquid,
         strategies: vec![Strategy {
-            vault: "tech_strategy_component_addr".to_string(),
+            vault: "cash_strategy_component_addr".to_string(),
             percentage: Decimal::percent(100),
         }],
     };
@@ -401,15 +401,15 @@ fn test_update_strategy() {
     )
     .unwrap();
     let endowment: EndowmentDetailsResponse = from_binary(&res).unwrap();
-    assert_eq!(endowment.strategies.locked.len(), 1);
+    assert_eq!(endowment.strategies.locked.len(), 2);
+    assert_eq!(endowment.strategies.liquid.len(), 1);
     assert_eq!(
-        endowment.strategies.locked,
+        endowment.strategies.liquid,
         vec![StrategyComponent {
-            vault: "tech_strategy_component_addr".to_string(),
+            vault: "cash_strategy_component_addr".to_string(),
             percentage: Decimal::percent(100),
         }]
     );
-    assert_eq!(endowment.strategies.liquid.len(), 0);
     assert_eq!(endowment.copycat_strategy, None);
 }
 

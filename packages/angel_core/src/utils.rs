@@ -138,7 +138,10 @@ pub fn send_tokens(to: &Addr, balance: &GenericBalance) -> StdResult<Vec<SubMsg>
 pub fn vault_endowment_balance(deps: Deps, vault_address: String, endowment_id: u32) -> Uint128 {
     // get an account's balance held with a vault
     deps.querier
-        .query_wasm_smart(vault_address, &VaultQuerier::Balance { endowment_id })
+        .query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: vault_address,
+            msg: to_binary(&VaultQuerier::Balance { endowment_id }).unwrap(),
+        }))
         .unwrap()
 }
 

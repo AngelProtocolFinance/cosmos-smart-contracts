@@ -975,7 +975,7 @@ pub fn deposit(
     fund: Asset,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
 
     // check that the Endowment has been approved to receive deposits
     if !endowment.deposit_approved {
@@ -1034,6 +1034,19 @@ pub fn deposit(
 
     // Process Locked Strategy Deposits
     let locked_strategies = endowment.strategies.get(AccountType::Locked);
+    // Make sure that all locked strategies vaults are now included in the invested (one-off) vaults list
+    for strat in locked_strategies.clone().iter() {
+        let v_addr = deps.api.addr_validate(&strat.vault)?;
+        let pos = endowment
+            .oneoff_vaults
+            .locked
+            .iter()
+            .position(|v| v == &v_addr);
+        if pos.is_some() {
+            endowment.oneoff_vaults.locked.push(v_addr);
+        }
+    }
+
     // build deposit messages for each of the sources/amounts
     let (messages, leftover_amt) = deposit_to_vaults(
         deps.as_ref(),
@@ -1061,6 +1074,18 @@ pub fn deposit(
 
     // Process Liquid Strategy Deposits
     let liquid_strategies = endowment.strategies.get(AccountType::Liquid);
+    // Make sure that all liquid strategies vaults are now included in the invested (one-off) vaults list
+    for strat in liquid_strategies.clone().iter() {
+        let v_addr = deps.api.addr_validate(&strat.vault)?;
+        let pos = endowment
+            .oneoff_vaults
+            .liquid
+            .iter()
+            .position(|v| v == &v_addr);
+        if pos.is_some() {
+            endowment.oneoff_vaults.liquid.push(v_addr);
+        }
+    }
     // build deposit messages for each of the sources/amounts
     let (messages, leftover_amt) = deposit_to_vaults(
         deps.as_ref(),
@@ -1085,8 +1110,8 @@ pub fn deposit(
         }),
         _ => unreachable!(),
     });
-
     STATES.save(deps.storage, msg.id, &state)?;
+    ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
     Ok(Response::new()
         .add_submessages(deposit_messages)
         .add_attribute("action", "account_deposit"))
