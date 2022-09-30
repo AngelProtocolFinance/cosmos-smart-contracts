@@ -53,9 +53,49 @@ export async function testQueryVaultConfig(
   juno: SigningCosmWasmClient,
   vault: string
 ): Promise<void> {
-  process.stdout.write("Test - Query Vault Config");
+  process.stdout.write("Test - Query Vault Config\n");
   const result: any = await juno.queryContractSmart(vault, {
-    config: {},
+    vault_config: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryVaultEndowmentBalance(
+  juno: SigningCosmWasmClient,
+  vault: string,
+  endowmentId: number,
+): Promise<void> {
+  process.stdout.write("Test - Query Vault Endowment Balance\n");
+  const result: any = await juno.queryContractSmart(vault, {
+    balance: { endowment_id: endowmentId },
+  });
+
+  console.log(`Endow ID #${endowmentId} balance: ${result}`);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryVaultTotalBalance(
+  juno: SigningCosmWasmClient,
+  vault: string
+): Promise<void> {
+  process.stdout.write("Test - Query Vault Total Balance\n");
+  const result: any = await juno.queryContractSmart(vault, {
+    total_balance: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryVaultTokenInfo(
+  juno: SigningCosmWasmClient,
+  vault: string
+): Promise<void> {
+  process.stdout.write("Test - Query Vault Token Info\n");
+  const result: any = await juno.queryContractSmart(vault, {
+    token_info: {},
   });
 
   console.log(result);

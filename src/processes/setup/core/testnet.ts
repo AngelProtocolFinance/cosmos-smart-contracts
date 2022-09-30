@@ -159,7 +159,7 @@ async function setup(
       { addr: apTeamAddr, weight: 1 },
       { addr: apTeam2Addr, weight: 1 },
     ],
-  });
+  }, "ap-team-group");
   cw4GrpApTeam = cw4GrpApTeamResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpApTeam}`);
 
@@ -214,7 +214,7 @@ async function setup(
     members: [
       { addr: apTeamAddr, weight: 1 },
     ],
-  });
+  }, "review-team-group");
   cw4GrpReviewTeam = cw4GrpReviewTeamResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw4GrpReviewTeam}`);
 

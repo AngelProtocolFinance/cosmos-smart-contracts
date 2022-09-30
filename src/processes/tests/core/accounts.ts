@@ -111,7 +111,6 @@ export async function testEndowmentCanWithdrawLiquid(
   endowMember: string,
   accountsContract: string,
   endowmentId: number,
-  acct_type: string,
   beneficiary: string,
   assets: any,
 ): Promise<void> {
@@ -348,6 +347,10 @@ export async function testCharityCanWithdrawLocked(
 // 2) reinvest all redeemed funds, according the accounts' strategy
 //
 //----------------------------------------------------------------------------------------
+export interface Strategy {
+  vault: string; // Vault SC Address
+  percentage: string; // percentage of funds to invest
+}
 
 export async function testCharityCanUpdateStrategies(
   juno: SigningCosmWasmClient,
@@ -355,7 +358,7 @@ export async function testCharityCanUpdateStrategies(
   accountsContract: string,
   endowmentId: number,
   acct_type: string,
-  strategies: any, // [ { vault: string, percentage: "decimal" }, ... ]
+  strategies: Strategy[], // [ { vault: string, percentage: "decimal" }, ... ]
 ): Promise<void> {
   process.stdout.write("Test - Charity can update their Endowment's strategies");
 
@@ -587,6 +590,8 @@ export async function testQueryAccountsEndowment(
   });
 
   console.log(result);
+  console.log("Locked strat:", result.strategies.locked);
+  console.log("Liquid strat:", result.strategies.liquid);
   console.log(chalk.green(" Passed!"));
 }
 

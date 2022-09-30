@@ -140,9 +140,10 @@ export async function instantiateContract(
   deployer: string,
   admin: string, // leave this emtpy then contract is not migratable
   codeId: number,
-  instantiateMsg: Record<string, unknown>
+  instantiateMsg: Record<string, unknown>,
+  label: string | undefined = undefined
 ) {
-  const result = await juno.instantiate(deployer, codeId, instantiateMsg, `instantiate-${Math.floor(Math.random() * codeId)}`, "auto", { admin: admin });
+  const result = await juno.instantiate(deployer, codeId, instantiateMsg, `instantiate-${label || Math.floor(Math.random() * codeId)}`, "auto", { admin: admin });
   return result;
 }
 
@@ -244,6 +245,7 @@ export async function sendMessageViaCw3Proposal(
   await sendTransaction(juno, proposor, cw3, {
     execute: { proposal_id: parseInt(proposal_id) }
   });
+  console.log(chalk.yellow("> Done!"));
 }
 
 //----------------------------------------------------------------------------------------

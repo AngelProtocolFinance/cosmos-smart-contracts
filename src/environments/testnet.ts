@@ -322,6 +322,7 @@ export async function startSetupMockVaults(): Promise<void> {
   console.log(chalk.yellow("\nStep 2. Mock Vault Contracts Setup"));
   await setupMockVaults(
     config.networkInfo.chainId,
+    config.networkInfo.nativeToken,
     juno,
     // wallets
     {
