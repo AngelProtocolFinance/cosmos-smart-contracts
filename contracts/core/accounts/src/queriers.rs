@@ -36,35 +36,21 @@ pub fn query_endowment_balance(deps: Deps, id: u32) -> StdResult<EndowmentBalanc
     let tokens_on_hand = state.balances;
 
     // process all one-off vaults
-    let mut oneoff_locked = vec![];
+    let mut invested_locked = vec![];
     for vault in endowment.oneoff_vaults.locked.into_iter() {
         let vault_bal = vault_endowment_balance(deps, vault.clone().to_string(), id);
-        oneoff_locked.push((vault.to_string(), vault_bal));
+        invested_locked.push((vault.to_string(), vault_bal));
     }
-    let mut oneoff_liquid = vec![];
+    let mut invested_liquid = vec![];
     for vault in endowment.oneoff_vaults.liquid.into_iter() {
         let vault_bal = vault_endowment_balance(deps, vault.clone().to_string(), id);
-        oneoff_liquid.push((vault.to_string(), vault_bal));
-    }
-    let mut strategies_locked = vec![];
-
-    // process all strategies vaults
-    for strat in endowment.strategies.locked.iter() {
-        let vault_bal = vault_endowment_balance(deps, strat.vault.clone(), id);
-        strategies_locked.push((strat.vault.to_string(), vault_bal));
-    }
-    let mut strategies_liquid = vec![];
-    for strat in endowment.strategies.liquid.iter() {
-        let vault_bal = vault_endowment_balance(deps, strat.vault.clone(), id);
-        strategies_liquid.push((strat.vault.to_string(), vault_bal));
+        invested_liquid.push((vault.to_string(), vault_bal));
     }
 
     Ok(EndowmentBalanceResponse {
         tokens_on_hand,
-        oneoff_locked,
-        oneoff_liquid,
-        strategies_locked,
-        strategies_liquid,
+        invested_locked,
+        invested_liquid,
     })
 }
 

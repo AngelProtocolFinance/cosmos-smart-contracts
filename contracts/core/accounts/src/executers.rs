@@ -1,4 +1,4 @@
-use crate::state::{Endowment, State, CONFIG, COPYCATS, ENDOWMENTS, PROFILES, STATES};
+use crate::state::{Endowment, State, CONFIG, ENDOWMENTS, PROFILES, STATES};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -133,8 +133,6 @@ pub fn create_endowment(
             closing_beneficiary: None,
         },
     )?;
-
-    COPYCATS.save(deps.storage, config.next_account_id, &vec![])?;
 
     // initial default Response to add submessages to
     let mut res = Response::new();
@@ -489,7 +487,7 @@ pub fn update_strategies(
     }))?;
 
     let mut percentages_sum = Decimal::zero();
-
+    let mut new_strategies = vec![];
     for strategy in strategies.iter() {
         match allowed
             .vaults
@@ -497,7 +495,14 @@ pub fn update_strategies(
             .position(|v| v.address == strategy.vault)
         {
             None => return Err(ContractError::InvalidInputs {}),
-            Some(_) => percentages_sum += strategy.percentage,
+            Some(_) => {
+                percentages_sum += strategy.percentage;
+                // update endowment strategies attribute with all newly passed strategies
+                new_strategies.push(StrategyComponent {
+                    vault: deps.api.addr_validate(&strategy.vault.clone())?.to_string(),
+                    percentage: strategy.percentage,
+                });
+            }
         }
     }
 
@@ -507,29 +512,11 @@ pub fn update_strategies(
         return Err(ContractError::InvalidStrategyAllocation {});
     }
 
-    // update endowment strategies attribute with all newly passed strategies
-    let mut new_strategies = vec![];
-    for strategy in strategies {
-        new_strategies.push(StrategyComponent {
-            vault: deps.api.addr_validate(&strategy.vault.clone())?.to_string(),
-            percentage: strategy.percentage,
-        });
-    }
-
-    endowment.copycat_strategy = None;
     endowment
         .strategies
         .set(acct_type.clone(), new_strategies.clone());
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
-    // If this Endowment that is changing their strategy is also being "copycatted"
-    // by other endowments, the new strategy needs to be updated on those endowments.
-    let copiers = COPYCATS.load(deps.storage, id).unwrap_or_default();
-    for i in copiers.iter() {
-        let mut e = ENDOWMENTS.load(deps.storage, *i).unwrap();
-        e.strategies.set(acct_type.clone(), new_strategies.clone());
-        ENDOWMENTS.save(deps.storage, *i, &e).unwrap();
-    }
     Ok(Response::new().add_attribute("action", "update_strategies"))
 }
 
@@ -558,21 +545,6 @@ pub fn copycat_strategies(
             msg: "Attempting re-set the same copycat endowment ID".to_string(),
         }));
     }
-    // if this endowment was already copying another prior to this new one,
-    // first remove it from the old list and add to the new copycat list
-    if endowment.copycat_strategy.is_some() {
-        let old_id = endowment.copycat_strategy.unwrap();
-        let mut old_copiers = COPYCATS.load(deps.storage, old_id)?;
-        if let Some(pos) = old_copiers.iter().position(|i| *i == id) {
-            old_copiers.swap_remove(pos);
-        }
-        COPYCATS.save(deps.storage, old_id, &old_copiers)?;
-    }
-
-    // add this endowment to the new Copycat list
-    let mut copiers = COPYCATS.load(deps.storage, id_to_copy)?;
-    copiers.push(id);
-    COPYCATS.save(deps.storage, id_to_copy, &copiers)?;
 
     // set new copycat id
     endowment.copycat_strategy = Some(id_to_copy);
@@ -1003,7 +975,7 @@ pub fn deposit(
     fund: Asset,
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
-    let endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
 
     // check that the Endowment has been approved to receive deposits
     if !endowment.deposit_approved {
@@ -1062,6 +1034,19 @@ pub fn deposit(
 
     // Process Locked Strategy Deposits
     let locked_strategies = endowment.strategies.get(AccountType::Locked);
+    // Make sure that all current locked strategies vaults are now included in the invested (one-off) vaults list
+    for strat in locked_strategies.clone().iter() {
+        let v_addr = deps.api.addr_validate(&strat.vault)?;
+        if let None = endowment
+            .oneoff_vaults
+            .locked
+            .iter()
+            .position(|v| v == &v_addr)
+        {
+            endowment.oneoff_vaults.locked.push(v_addr)
+        }
+    }
+
     // build deposit messages for each of the sources/amounts
     let (messages, leftover_amt) = deposit_to_vaults(
         deps.as_ref(),
@@ -1089,6 +1074,18 @@ pub fn deposit(
 
     // Process Liquid Strategy Deposits
     let liquid_strategies = endowment.strategies.get(AccountType::Liquid);
+    // Make sure that all current liquid strategies vaults are now included in the invested (one-off) vaults list
+    for strat in liquid_strategies.clone().iter() {
+        let v_addr = deps.api.addr_validate(&strat.vault)?;
+        if let None = endowment
+            .oneoff_vaults
+            .liquid
+            .iter()
+            .position(|v| v == &v_addr)
+        {
+            endowment.oneoff_vaults.liquid.push(v_addr)
+        }
+    }
     // build deposit messages for each of the sources/amounts
     let (messages, leftover_amt) = deposit_to_vaults(
         deps.as_ref(),
@@ -1113,8 +1110,8 @@ pub fn deposit(
         }),
         _ => unreachable!(),
     });
-
     STATES.save(deps.storage, msg.id, &state)?;
+    ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
     Ok(Response::new()
         .add_submessages(deposit_messages)
         .add_attribute("action", "account_deposit"))
@@ -1122,7 +1119,7 @@ pub fn deposit(
 
 /// Allow Endowment owners to invest some amount of their free balance
 /// "Tokens on Hand" holdings into Vault(s). Does not have to be a Vault
-/// that exists in their donation Strategy. One-time/one-off investment.
+/// that exists in their donation Strategy.
 pub fn vaults_invest(
     deps: DepsMut,
     info: MessageInfo,
@@ -1185,7 +1182,7 @@ pub fn vaults_invest(
             }));
         }
 
-        // add vault to the one-off-vaults list if a new vault
+        // add vault to the invested-vaults list if a new vault
         match acct_type {
             AccountType::Locked => {
                 let pos = endowment
@@ -1274,6 +1271,8 @@ pub fn vaults_invest(
             VaultType::Evm => unimplemented!(),
         }
     }
+    // save any changes to the endowment's invested vaults
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     // set the final state balance after all assets have been deducted and save
     match &acct_type {
@@ -1335,27 +1334,29 @@ pub fn vaults_redeem(
             }));
         }
 
-        // check if the vault tokens have been depleted and remove one-off-vault from list if so
+        // check if the vault tokens have been depleted and remove one-off(invested) vault from list if so
         let vault_balance = vault_endowment_balance(deps.as_ref(), vault.to_string(), id);
-        match acct_type {
-            AccountType::Locked => {
-                let pos = endowment
-                    .oneoff_vaults
-                    .locked
-                    .iter()
-                    .position(|v| v == vault);
-                if pos.is_some() && vault_balance == *amount {
-                    endowment.oneoff_vaults.locked.swap_remove(pos.unwrap());
+        if vault_balance == *amount || vault_balance == Uint128::zero() {
+            match acct_type {
+                AccountType::Locked => {
+                    let pos = endowment
+                        .oneoff_vaults
+                        .locked
+                        .iter()
+                        .position(|v| v == vault);
+                    if pos.is_some() {
+                        endowment.oneoff_vaults.locked.swap_remove(pos.unwrap());
+                    }
                 }
-            }
-            AccountType::Liquid => {
-                let pos = endowment
-                    .oneoff_vaults
-                    .liquid
-                    .iter()
-                    .position(|v| v == vault);
-                if pos.is_some() && vault_balance == *amount {
-                    endowment.oneoff_vaults.liquid.swap_remove(pos.unwrap());
+                AccountType::Liquid => {
+                    let pos = endowment
+                        .oneoff_vaults
+                        .liquid
+                        .iter()
+                        .position(|v| v == vault);
+                    if pos.is_some() {
+                        endowment.oneoff_vaults.liquid.swap_remove(pos.unwrap());
+                    }
                 }
             }
         }

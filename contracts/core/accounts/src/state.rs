@@ -76,4 +76,3 @@ pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATES: Map<u32, State> = Map::new("states");
 pub const ENDOWMENTS: Map<u32, Endowment> = Map::new("endowments");
 pub const PROFILES: Map<u32, Profile> = Map::new("profiles");
-pub const COPYCATS: Map<u32, Vec<u32>> = Map::new("copycats");
