@@ -168,9 +168,9 @@ fn test_update_config() {
         tax_collector: Some("new-tax-collector".to_string()),
 
         native_token: Some(cw_asset::AssetInfoBase::Native("ujuno".to_string())),
-        reward_to_native_route: vec![],
-        native_to_lp0_route: vec![],
-        native_to_lp1_route: vec![],
+        reward_to_native_route: None,
+        native_to_lp0_route: None,
+        native_to_lp1_route: None,
     };
 
     // Only "config.owner" can update the config, otherwise fails
