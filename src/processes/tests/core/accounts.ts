@@ -3,7 +3,15 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, sendTransactionWithFunds, sendMessageViaCw3Proposal, sendApplicationViaCw3Proposal, clientSetup, getWalletAddress } from "../../../utils/helpers";
+import {
+  sendTransaction,
+  sendTransactionWithFunds,
+  sendMessageViaCw3Proposal,
+  sendApplicationViaCw3Proposal,
+  clientSetup,
+  getWalletAddress,
+  instantiateContract,
+} from "../../../utils/helpers";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
 chai.use(chaiAsPromised);
@@ -78,7 +86,7 @@ export async function testSendRestitutionFundsToEndowments(
         new Promise(async (resolve, reject) => {
           try {
             console.log(`Sending ${chalk.blue(`${e.amount} ${e.acct_type}`)} restitution funds to Endowment ID: ${chalk.blue(e.id)}`);
-            let res = await sendTransactionWithFunds(juno, wallet, accountsContract, {
+            const res = await sendTransactionWithFunds(juno, wallet, accountsContract, {
                 deposit: {
                   id: e.id,
                   locked_percentage: (e.acct_type == "locked") ? "1" : "0",
@@ -234,8 +242,8 @@ export async function testCharityCanWithdrawLocked(
   process.stdout.write(
     "Test - Charity Member can withdraw from their Endowment's Locked account with AP Team Approval\n"
   );
-  let proposor_client = await clientSetup(proposor, networkUrl);
-  let proposor_wallet = await getWalletAddress(proposor);
+  const proposor_client = await clientSetup(proposor, networkUrl);
+  const proposor_wallet = await getWalletAddress(proposor);
   console.log(chalk.yellow(`> Charity ${proposor_wallet} submits an early withdraw proposal to their CW3`));
   
   // 0. Get the charity endowment's CW3 
@@ -270,8 +278,8 @@ export async function testCharityCanWithdrawLocked(
       () =>
         new Promise(async (resolve, reject) => {
           try {
-            let voter_wallet = await getWalletAddress(member);
-            let voter_client = await clientSetup(member, networkUrl);
+            const voter_wallet = await getWalletAddress(member);
+            const voter_client = await clientSetup(member, networkUrl);
             console.log(chalk.yellow(`> Endowment CW3 Member ${voter_wallet} votes YES on endowment's proposal`));
             await sendTransaction(voter_client, voter_wallet, endowCw3, {
               vote: {
@@ -295,7 +303,7 @@ export async function testCharityCanWithdrawLocked(
   });
 
   // 5. Capture and return the newly created AP Team CW3 Proposal ID (from returned submessage attr)
-  let apteam_proposal_id = await endowment_res.logs[0].events
+  const apteam_proposal_id = await endowment_res.logs[0].events
     .find((event) => {
       return event.type == "wasm";
     })
@@ -312,8 +320,8 @@ export async function testCharityCanWithdrawLocked(
       () =>
         new Promise(async (resolve, reject) => {
           try {
-            let voter_wallet = await getWalletAddress(member);
-            let voter_client = await clientSetup(member, networkUrl);
+            const voter_wallet = await getWalletAddress(member);
+            const voter_client = await clientSetup(member, networkUrl);
             console.log(chalk.yellow(`> AP Team CW3 Member ${voter_wallet} votes YES on AP Team proposal`));
             await sendTransaction(voter_client, voter_wallet, apTeamCw3, {
               vote: {
@@ -425,7 +433,7 @@ export async function testCreateEndowment(
   members: DirectSecp256k1HdWallet[],  // Should be [apTeam]
 ): Promise<void> {
   process.stdout.write("Create a new endowment via the CW3 Applications contract");
-  let endow_id = await sendApplicationViaCw3Proposal(networkUrl, proposerWallet, cw3ReviewTeam, accounts, "unknown", msg, members);
+  const endow_id = await sendApplicationViaCw3Proposal(networkUrl, proposerWallet, cw3ReviewTeam, accounts, "unknown", msg, members);
   console.log(chalk.green(` ${endow_id} - Done!`));
 }
 
@@ -436,11 +444,11 @@ export async function testCreateNormalEndowment(
   msg: any,
 ): Promise<void> {
   process.stdout.write("Create a new endowment via the CW3 Applications contract");
-  let endow_res = await sendTransaction(juno, apTeam, accounts, { 
+  const endow_res = await sendTransaction(juno, apTeam, accounts, { 
     create_endowment: msg
   });
   // capture and return the new Endowment ID
-  let endow_id = await parseInt(endow_res.logs[0].events
+  const endow_id = await parseInt(endow_res.logs[0].events
     .find((event) => {
       return event.type == "wasm";
     })
@@ -591,7 +599,7 @@ export async function testQueryAccountsEndowment(
     endowment: { id: endowmentId },
   });
 
-  // console.log(result);
+  console.log(result);
   console.log("Locked oneoff:", result.oneoff_vaults.locked);
   console.log("Liquid oneoff:", result.oneoff_vaults.liquid);
   console.log("Locked strat:", result.strategies.locked);

@@ -43,12 +43,12 @@ export type Actor = {
 };
 
 export async function clientSetup(wallet: DirectSecp256k1HdWallet, networkInfo: any) {
-  let client = await SigningCosmWasmClient.connectWithSigner(networkInfo.url, wallet, { gasPrice: GasPrice.fromString(networkInfo.gasPrice) })
+  const client = await SigningCosmWasmClient.connectWithSigner(networkInfo.url, wallet, { gasPrice: GasPrice.fromString(networkInfo.gasPrice) });
   return client;
 }
 
 export async function getWalletAddress(wallet: DirectSecp256k1HdWallet) {
-  let [account] = await wallet.getAccounts();
+  const [account] = await wallet.getAccounts();
   return account.address;
 }
 
@@ -264,8 +264,8 @@ export async function sendApplicationViaCw3Proposal(
   msg: Record<string, unknown>,
   members: DirectSecp256k1HdWallet[],
 ): Promise<number> {
-  let proposor_client = await clientSetup(proposor, networkInfo);
-  let proposor_wallet = await getWalletAddress(proposor);
+  const proposor_client = await clientSetup(proposor, networkInfo);
+  const proposor_wallet = await getWalletAddress(proposor);
   console.log(chalk.yellow(`> Charity ${proposor_wallet} submits an application proposal`));
   // 1. Create the new proposal (no vote is cast here)
   const proposal = await sendTransaction(proposor_client, proposor_wallet, cw3, {
@@ -290,8 +290,8 @@ export async function sendApplicationViaCw3Proposal(
       () =>
         new Promise(async (resolve, reject) => {
           try {
-            let voter_wallet = await getWalletAddress(member);
-            let voter_client = await clientSetup(member, networkInfo);
+            const voter_wallet = await getWalletAddress(member);
+            const voter_client = await clientSetup(member, networkInfo);
             console.log(chalk.yellow(`> CW3 Review Member ${voter_wallet} votes YES on application proposal`));
             await sendTransaction(voter_client, voter_wallet, cw3, {
               vote_application: {

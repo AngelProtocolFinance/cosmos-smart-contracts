@@ -289,7 +289,7 @@ export async function startSetupEndowments(): Promise<void> {
   await initialize();
 
   // parse endowment JSON data
-  let endowmentData: Endowment[] = [];
+  const endowmentData: Endowment[] = [];
   jsonData.data.forEach((el) => {
     const item: Endowment = el;
     endowmentData.push(item);

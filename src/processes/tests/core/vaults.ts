@@ -15,7 +15,7 @@ export async function testVaultHarvest(
   sender: string,
   vault: string,
 ): Promise<void> {
-  process.stdout.write("Test - Keeper harvests the vault")
+  process.stdout.write("Test - Keeper harvests the vault");
   await sendTransaction(juno, sender, vault, { harvest: {} });
   console.log(chalk.green(" Passed!"));
 }

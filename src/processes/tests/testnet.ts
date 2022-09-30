@@ -414,7 +414,6 @@ export async function testExecute(
   // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 10, status: 3, beneficiary: { wallet: { address: actors.apTeam.addr }}});
   // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, accounts, endowId3, "10000000"); // possible query registrar error
 
-
   // Test query
   // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);

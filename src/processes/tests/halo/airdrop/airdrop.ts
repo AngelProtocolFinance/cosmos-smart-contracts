@@ -1,4 +1,4 @@
-import sha256 from 'crypto-js/sha256'
+import sha256 from 'crypto-js/sha256';
 import { MerkleTree } from 'merkletreejs';
 
 class Airdrop {
@@ -44,4 +44,4 @@ class Airdrop {
   }
 }
 
-export {Airdrop}
+export {Airdrop};

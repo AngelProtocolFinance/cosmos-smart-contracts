@@ -3,16 +3,25 @@ import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import chalk from "chalk";
 import {
   testEndowmentCanWithdrawLiquid,
+  testCharityCanWithdrawLocked,
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
+  testApTeamChangesAccountsEndowmentOwner,
+  testSendDonationToEndowment,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
-  testSendDonationToEndowment,
+  testQueryAccountsProfile,
+  testQueryAccountsState,
+  testQueryAccountsTransactions,
+  testApproveInactiveEndowment,
   testUpdateEndowmentStatus,
+  testCreateEndowment,
   testQueryAccountsEndowmentList,
-  testCreateNormalEndowment,
+  testEndowmentVaultsRedeem,
+  testQueryAccountsTokenAmount,
   testSendRestitutionFundsToEndowments,
+  // buildNewEndowmentCw3sAndChangeOwner,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -132,7 +141,7 @@ export async function testExecute(
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
   // await testAddMemberToC4Group(juno, apTeamAddr, cw3ReviewTeam, cw4GrpReviewTeam, "juno1h27pex3z3mm97gwfdhan8cfak8yzvtvprjlcz7");
-  // await testCw3ExecutePoll(juno, apTeamAddr, cw3ReviewTeam, 44);
+  // await testCw3ExecutePoll(juno, apTeamAddr, cw3ApTeam, 2);
   // await testCw3CastApplicationVote(juno, apTeamAddr, cw3ReviewTeam, 44, `yes`);
   // await testQueryMultisigVoters(juno, cw3ReviewTeam);
 
@@ -272,8 +281,9 @@ export async function testExecute(
   // await testSendDonationToEndowment(
   //   juno,
   //   apTeamAddr,
-  //   "juno1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r", // Coalition for Engaged Education
-  //   "1000000000"
+  //   accounts,
+  //   25,
+  //   { denom: "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034", amount: "1371000000" }
   // );
   // await testRejectUnapprovedDonations(
   //   juno,
@@ -328,6 +338,7 @@ export async function testExecute(
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVault(juno, registrar, anchorVault);
   // await testQueryAccountsEndowmentList(juno, accounts);
+  // await testQueryAccountsState(juno, accounts, 1);
   // await testQueryAccountsEndowment(juno, accounts, 1);
   // await testQueryAccountsBalance(juno, endowmentContract);
   // await testQueryVaultConfig(juno, anchorVault);
