@@ -250,13 +250,24 @@ async function setup(
       {
         assets: [
           {
-            native: "ujuno",
+            native: localjuno.networkInfo.nativeToken,
           },
           {
             cw20: localjuno.loopswap.halo_token_contract,
           }
         ],
         contract_address: localjuno.loopswap.halo_juno_pair_contract,
+      },
+      {
+        assets: [
+          {
+            native: localjuno.networkInfo.nativeToken,
+          },
+          {
+            cw20: localjuno.loopswap.loop_token_contract,
+          }
+        ],
+        contract_address: localjuno.loopswap.loop_juno_pair_contract,
       }
     ],
   });
