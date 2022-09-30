@@ -60,7 +60,7 @@ pub fn instantiate(
             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                 code_id: msg.cw4_code,
                 admin: None,
-                label: format!("new endowment cw4 group - {}", msg.id),
+                label: format!("v2 endowment cw4 group - {}", msg.id),
                 msg: to_binary(&angel_core::messages::cw4_group::InstantiateMsg {
                     admin: Some(env.contract.address.to_string()),
                     members: msg.cw4_members,
