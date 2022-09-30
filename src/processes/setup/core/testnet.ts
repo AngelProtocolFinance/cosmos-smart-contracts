@@ -6,6 +6,7 @@ import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
 import { sendTransaction, storeCode, instantiateContract, getWalletAddress, sendMessageViaCw3Proposal, sendApplicationViaCw3Proposal } from "../../../utils/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
+import { localjuno } from "../../../config/localjunoConstants";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -30,6 +31,7 @@ let cw3ApTeam: string;
 let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
+let swapRouter: string;
 
 // -------------------------------------------------------------------------------------
 // setup all contracts for LocalJuno and TestNet
@@ -119,6 +121,10 @@ async function setup(
   process.stdout.write("Uploading Endowment CW3 MultiSig Wasm");
   const cw3MultiSigEndowment = await storeCode(juno, apTeamAddr, `${wasm_path.core}/cw3_endowment.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw3MultiSigEndowment}`);
+
+  process.stdout.write("Uploading SwapRouter Wasm");
+  const swapRouterCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/swap_router.wasm`);
+  console.log(chalk.green(" Done!", `${chalk.blue("codeId")}=${swapRouterCodeId}`))
 
   // Step 2. Instantiate the key contracts
   // Registrar
@@ -234,6 +240,28 @@ async function setup(
   );
   cw3ReviewTeam = cw3ReviewTeamResult.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${cw3ReviewTeam}`);
+
+  // Swap-Rotuer
+  process.stdout.write("Instantiating the Swap-router contract")
+  const swapRouterResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, swapRouterCodeId, {
+    registrar_contract: registrar,
+    accounts_contract: accounts,
+    pairs: [
+      {
+        assets: [
+          {
+            native: "ujuno",
+          },
+          {
+            cw20: localjuno.loopswap.halo_token_contract,
+          }
+        ],
+        contract_address: localjuno.loopswap.halo_juno_pair_contract,
+      }
+    ],
+  });
+  swapRouter = swapRouterResult.contractAddress as string;
+  console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${swapRouter}`);
 
   // Setup AP Team C3 to be the admin to it's C4 Group
   process.stdout.write(
