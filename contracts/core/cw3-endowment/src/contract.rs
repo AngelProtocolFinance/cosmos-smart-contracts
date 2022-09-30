@@ -10,9 +10,9 @@ use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::utils::event_contains_attr;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, BlockInfo, CosmosMsg, CosmosMsg::Wasm, Deps, DepsMut, Empty,
-    Env, MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
-    SubMsgResult, WasmMsg, WasmMsg::Execute, WasmQuery,
+    entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
+    Order, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult,
+    WasmMsg, WasmMsg::Execute, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
@@ -487,34 +487,27 @@ pub fn execute_execute(
         }))?;
 
     // work into submsgs where needed (ie. going to AP Team CW3 or Gov) for catching replies
-    let mut norm_msgs: Vec<CosmosMsg> = vec![];
-    let mut sub_msgs: Vec<SubMsg> = vec![];
-    for msg in prop.msgs.into_iter() {
-        if let Wasm(ref wasm_m) = msg {
-            if let Execute { contract_addr, .. } = wasm_m {
-                if contract_addr.to_string() == registrar_config.owner {
-                    sub_msgs.push(SubMsg::reply_on_success(
-                        wasm_m.clone(),
-                        APTEAM_CW3_REPLY_ID,
-                    ));
-                } else {
-                    norm_msgs.push(msg);
-                }
-            } else {
-                norm_msgs.push(msg);
-            }
-        } else {
-            norm_msgs.push(msg)
-        }
-    }
-
-    // dispatch all proposed messages
-    Ok(Response::new()
-        .add_messages(norm_msgs)
-        .add_submessages(sub_msgs)
+    let mut res = Response::new()
         .add_attribute("action", "execute")
         .add_attribute("sender", info.sender)
-        .add_attribute("proposal_id", proposal_id.to_string()))
+        .add_attribute("proposal_id", proposal_id.to_string());
+
+    // check for the single msg early withdraw proposal to
+    match &prop.msgs[0] {
+        cosmwasm_std::CosmosMsg::Wasm(Execute { contract_addr, .. }) => {
+            res = if contract_addr.to_string() == registrar_config.owner {
+                res.add_submessage(SubMsg::reply_on_success(
+                    prop.msgs[0].clone(),
+                    APTEAM_CW3_REPLY_ID,
+                ))
+            } else {
+                res.add_messages(prop.msgs)
+            };
+        }
+        _ => res = res.add_messages(prop.msgs),
+    }
+    // dispatch all proposed messages
+    Ok(res)
 }
 
 pub fn execute_close(
