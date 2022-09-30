@@ -56,6 +56,8 @@ import {
   testQueryMultisigVoters,
   testQueryMultisigThreshold,
   testQueryGroupMembersList,
+  testQueryProposal,
+  testQueryProposalList,
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
@@ -66,7 +68,14 @@ import {
   testUpdatingRegistrarNetworkConnections,
   testUpdatingRegistrarUpdateOwner
 } from "./core/registrar";
-import { testQueryVaultConfig, testVaultHarvest, testVaultReinvestToLocked } from "./core/vaults";
+import { 
+  testQueryVaultConfig, 
+  testVaultHarvest, 
+  testVaultReinvestToLocked,
+  testQueryVaultTotalBalance,
+  testQueryVaultEndowmentBalance,
+  testQueryVaultTokenInfo,
+} from "./core/vaults";
 import {
   testAirdropClaim,
   testAirdropRegisterNewMerkleRoot,
@@ -204,6 +213,7 @@ export async function testExecute(
   // await testCw3CastVote(actors.apTeam2.client, actors.apTeam2.addr, cw3ApTeam, 7, `yes`);
   // await testCw3ExecutePoll(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 3);
   // await testQueryMultisigVoters(actors.apTeam.client, cw3ApTeam);
+  // await testQueryProposal(actors.apTeam.client, cw3ApTeam, 3);
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ApTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
 
@@ -337,13 +347,14 @@ export async function testExecute(
   //   cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
   //   cw3_max_voting_period: 10000,
   // }, [actors.apTeam.wallet]);
+
   // await testCharityCanUpdateStrategies(
   //   actors.charity1.client,
   //   actors.charity1.addr,
   //   accounts,
   //   endowId1,
-  //   `locked`,
-  //   [{ vault: vaultLocked1, percentage: "0.5" }]
+  //   "locked",
+  //   [{ vault: vaultLocked1, percentage: "0.50" }]
   // );
   // await testCharityCanUpdateStrategies(
   //   actors.charity1.client,
@@ -351,10 +362,16 @@ export async function testExecute(
   //   accounts,
   //   endowId1,
   //   `liquid`,
-  //   [{ vault: vaultLiquid1, percentage: "0.5" }]
+  //   [{ vault: vaultLiquid2, percentage: "0.50" }]
   // );
 
-  // await testSendDonationToEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, 32, { denom: config.networkInfo.nativeToken, amount: "100000" });
+  await testSendDonationToEndowment(
+    actors.apTeam.client,
+    actors.apTeam.addr,
+    accounts,
+    endowId1,
+    { denom: config.networkInfo.nativeToken, amount: "100000" }
+  );
   // await testEndowmentVaultsRedeem(
   //   actors.charity1.client,
   //   actors.charity1.addr,
@@ -402,7 +419,7 @@ export async function testExecute(
   // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
-  // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, "juno-1");
+  // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, networkInfo.chainId);
 
   // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
   // await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
@@ -429,6 +446,12 @@ export async function testExecute(
   // await testQueryAirdropMerkleRoot(actors.apTeam.client, haloAirdrop, 1);
   // await testQueryAirdropIsClaimed(actors.apTeam.client, haloAirdrop, 1, "juno1qfqa2eu9wp272ha93lj4yhcenrc6ymng079nu8");
   // await testQueryAirdropLatestStage(actors.apTeam.client, haloAirdrop);
+
+  // vaultqueries
+  // await testQueryVaultConfig(actors.apTeam.client, vaultLocked1);
+  // await testQueryVaultEndowmentBalance(actors.apTeam.client, vaultLiquid1, endowId1);
+  // await testQueryVaultTotalBalance(actors.apTeam.client, vaultLocked1);
+  // await testQueryVaultTokenInfo(actors.apTeam.client, vaultLocked1);
 
   // Test query for HALO collector
   // await testCollectorUpdateConfig(

@@ -13,6 +13,33 @@ export enum VoteOption {
   NO,
 }
 
+export async function testQueryProposal(
+  juno: SigningCosmWasmClient,
+  cw3: string,
+  proposal_id: number
+): Promise<void> {
+  process.stdout.write("Test - Query proposal by id");
+  const result: any = await juno.queryContractSmart(cw3, {
+    proposal: { proposal_id},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
+export async function testQueryProposalList(
+  juno: SigningCosmWasmClient,
+  cw3: string,
+): Promise<void> {
+  process.stdout.write("Test - Query proposal list");
+  const result: any = await juno.queryContractSmart(cw3, {
+    proposal_list: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
+
 //----------------------------------------------------------------------------------------
 // TEST: Add a new AP Team Member to the C4 AP Team Group
 //
