@@ -546,9 +546,11 @@ export async function testQueryAccountsBalance(
     balance: { id: endowmentId },
   });
 
-  console.log(result);
-  console.log("Locked native:", result.tokens_on_hand.locked.native);
-  console.log("Liquid native:", result.tokens_on_hand.liquid.native);
+  // console.log(result);
+  console.log("Locked invested:", result.invested_locked);
+  console.log("Liquid invested:", result.invested_liquid);
+  console.log("Locked TOH:", result.tokens_on_hand.locked);
+  console.log("Liquid TOH:", result.tokens_on_hand.liquid);
   console.log(chalk.green(" Passed!"));
 }
 
@@ -584,12 +586,14 @@ export async function testQueryAccountsEndowment(
   accountsContract: string,
   endowmentId: number,
 ): Promise<void> {
-  process.stdout.write("Test - Query Accounts Endowment");
+  process.stdout.write("Test - Query Accounts Endowment\n");
   const result = await juno.queryContractSmart(accountsContract, {
     endowment: { id: endowmentId },
   });
 
-  console.log(result);
+  // console.log(result);
+  console.log("Locked oneoff:", result.oneoff_vaults.locked);
+  console.log("Liquid oneoff:", result.oneoff_vaults.liquid);
   console.log("Locked strat:", result.strategies.locked);
   console.log("Liquid strat:", result.strategies.liquid);
   console.log(chalk.green(" Passed!"));

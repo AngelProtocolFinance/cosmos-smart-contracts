@@ -230,7 +230,6 @@ async function setup(
       group_addr: cw4GrpReviewTeam,
       threshold: { absolute_percentage: { percentage: threshold_absolute_percentage } },
       max_voting_period: { height: max_voting_period_height },
-      // registrar_contract: registrar,
     }
   );
   cw3ReviewTeam = cw3ReviewTeamResult.contractAddress as string;

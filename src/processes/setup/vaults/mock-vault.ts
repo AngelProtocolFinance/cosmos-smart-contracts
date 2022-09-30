@@ -83,7 +83,7 @@ async function createMockVaults(
     symbol: "apV1Lk",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
-  });
+  }, "apV1Lk");
   vault1_locked = vaultLockedResult1.contractAddress as string;
   console.log(`${chalk.blue("Locked contractAddress")}=${vault1_locked}`);
 
@@ -97,7 +97,7 @@ async function createMockVaults(
     symbol: "apV1Lq",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
-  });
+  }, "apV1Lq");
   vault1_liquid = vaultLiquidResult1.contractAddress as string;
   console.log(`${chalk.blue("Liquid contractAddress")}=${vault1_liquid}`);
   console.log(chalk.green(" Done!"));
@@ -114,7 +114,7 @@ async function createMockVaults(
     symbol: "apV2Lk",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
-  });
+  }, "apV2Lk");
   vault2_locked = vaultLockedResult2.contractAddress as string;
   console.log(`${chalk.blue("Locked contractAddress")}=${vault2_locked}`);
 
@@ -128,7 +128,7 @@ async function createMockVaults(
     symbol: "apV2Lq",
     decimals: 6,
     harvest_to_liquid: harvest_to_liquid,
-  });
+  }, "apV2Lq");
   vault2_liquid = vaultLiquidResult2.contractAddress as string;
   console.log(`${chalk.blue("Liquid contractAddress")}=${vault2_liquid}`);
   console.log(chalk.green(" Done!"));

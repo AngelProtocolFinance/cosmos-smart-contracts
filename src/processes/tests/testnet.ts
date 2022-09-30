@@ -353,8 +353,8 @@ export async function testExecute(
   //   actors.charity1.addr,
   //   accounts,
   //   endowId1,
-  //   "locked",
-  //   [{ vault: vaultLocked1, percentage: "0.50" }]
+  //   `locked`,
+  //   [{ vault: vaultLocked1, percentage: "0.50" }, { vault: vaultLocked2, percentage: "0.50" }]
   // );
   // await testCharityCanUpdateStrategies(
   //   actors.charity1.client,
