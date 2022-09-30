@@ -94,9 +94,9 @@ pub struct UpdateConfigMsg {
     pub tax_collector: Option<String>,
 
     pub native_token: Option<CwAssetInfo>,
-    pub reward_to_native_route: Vec<SwapOperation>,
-    pub native_to_lp0_route: Vec<SwapOperation>,
-    pub native_to_lp1_route: Vec<SwapOperation>,
+    pub reward_to_native_route: Option<Vec<SwapOperation>>,
+    pub native_to_lp0_route: Option<Vec<SwapOperation>>,
+    pub native_to_lp1_route: Option<Vec<SwapOperation>>,
 
     pub lp_staking_contract: Option<String>,
     pub lp_pair_contract: Option<String>,

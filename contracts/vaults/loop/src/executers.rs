@@ -109,15 +109,25 @@ pub fn update_config(
     config.lp_pair_token0 = pair_info.asset_infos[0].clone();
     config.lp_pair_token1 = pair_info.asset_infos[1].clone();
     config.native_token = match msg.native_token {
+        None => config.native_token,
         Some(CwAssetInfoBase::Native(denom)) => AssetInfo::NativeToken { denom },
         Some(CwAssetInfoBase::Cw20(contract_addr)) => AssetInfo::Token {
             contract_addr: contract_addr.to_string(),
         },
         _ => unreachable!(),
     };
-    config.reward_to_native_route = msg.reward_to_native_route;
-    config.native_to_lp0_route = msg.native_to_lp0_route;
-    config.native_to_lp1_route = msg.native_to_lp1_route;
+    config.reward_to_native_route = match msg.reward_to_native_route {
+        Some(ops) => ops,
+        None => config.reward_to_native_route,
+    };
+    config.native_to_lp0_route = match msg.native_to_lp0_route {
+        Some(ops) => ops,
+        None => config.native_to_lp0_route,
+    };
+    config.native_to_lp1_route = match msg.native_to_lp1_route {
+        Some(ops) => ops,
+        None => config.native_to_lp1_route,
+    };
 
     CONFIG.save(deps.storage, &config)?;
 
