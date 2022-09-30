@@ -1310,47 +1310,70 @@ pub fn swap_back(
 
     // Swap the pair tokens back to the `native_token`.
     let mut swap_router_swap_msgs = vec![];
+    let mut loop_pair_swap_msgs = vec![];
     let lp_pair_token0_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address.clone(),
         config.lp_pair_token0.clone(),
     )?;
-    let swap_amount = lp_pair_token0_bal - lp_pair_token0_bal_before;
-    let operations = config
-        .native_to_lp0_route
-        .iter()
-        .rev()
-        .map(|op| op.reverse_operation())
-        .collect();
-
-    swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
-        config.swap_router.to_string(),
-        config.lp_pair_token0.clone(),
-        swap_amount,
-        operations,
-    )?);
-
     let lp_pair_token1_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address,
         config.lp_pair_token1.clone(),
     )?;
-    let swap_amount = lp_pair_token1_bal - lp_pair_token1_bal_before;
-    let operations = config
-        .native_to_lp1_route
-        .iter()
-        .rev()
-        .map(|op| op.reverse_operation())
-        .collect();
-    swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
-        config.swap_router.to_string(),
-        config.lp_pair_token1,
-        swap_amount,
-        operations,
-    )?);
+
+    if config.native_token == config.lp_pair_token0 || config.native_token == config.lp_pair_token1
+    {
+        let (input_asset_info, swap_amount) = if config.native_token == config.lp_pair_token0 {
+            (
+                config.lp_pair_token1,
+                lp_pair_token1_bal - lp_pair_token1_bal_before,
+            )
+        } else {
+            (
+                config.lp_pair_token0,
+                lp_pair_token0_bal - lp_pair_token0_bal_before,
+            )
+        };
+        loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
+            config.lp_pair_contract.as_str(),
+            &input_asset_info,
+            swap_amount,
+        )?);
+    } else {
+        let swap_amount = lp_pair_token0_bal - lp_pair_token0_bal_before;
+        let operations = config
+            .native_to_lp0_route
+            .iter()
+            .rev()
+            .map(|op| op.reverse_operation())
+            .collect();
+
+        swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
+            config.swap_router.to_string(),
+            config.lp_pair_token0.clone(),
+            swap_amount,
+            operations,
+        )?);
+
+        let swap_amount = lp_pair_token1_bal - lp_pair_token1_bal_before;
+        let operations = config
+            .native_to_lp1_route
+            .iter()
+            .rev()
+            .map(|op| op.reverse_operation())
+            .collect();
+        swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
+            config.swap_router.to_string(),
+            config.lp_pair_token1,
+            swap_amount,
+            operations,
+        )?);
+    }
 
     Ok(Response::default()
         .add_messages(swap_router_swap_msgs)
+        .add_messages(loop_pair_swap_msgs)
         .add_attributes(vec![attr("action", "swap_pair_to_native")]))
 }
 
