@@ -136,6 +136,89 @@ export async function testExecute(
   // await testCw3CastApplicationVote(juno, apTeamAddr, cw3ReviewTeam, 44, `yes`);
   // await testQueryMultisigVoters(juno, cw3ReviewTeam);
 
+  /* --- REGISTRAR contract --- */
+  // await testUpdatingRegistrarUpdateOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, cw3ApTeam);
+  // await testUpdatingRegistrarConfigs(juno, apTeamAddr, cw3ApTeam, registrar, {
+  //   cw3_code: 1098,
+  // });
+  // await testUpdatingRegistrarNetworkConnections(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   registrar,
+  //   {
+  //     name: "Juno mainnet",
+  //     chain_id: "juno-1",
+  //     ibc_channel: undefined,
+  //     ica_address: undefined,
+  //     gas_limit: undefined,
+  //   },
+  //   "post", // action: "post" or "delete"
+  // );
+
+  /* --- INDEXFUND contract --- */
+  // await testUpdatingIndexFundOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, cw3ApTeam);
+  // await testUpdatingIndexFundRegistrar(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, registrar);
+  // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund);
+  // await testUpdateAllianceMembersList(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   actors.apTeam2.addr, // address #1
+  //   {
+  //     name: "Testnet Charity #2",
+  //     website:
+  //       "http://angelprotocol.io/app/charity/juno1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+  //     logo: "https://angelprotocol.io/favicon.ico",
+  //   }, // member #1`
+  //   // "juno178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // address #2
+  //   // { name: "Testnet Admin", webiste: "http://angelprotocol.io", logo: "" }, // member #2
+  //   "add" // action
+  // );
+  // await testUpdateAllianceMember(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   actors.apTeam2.addr, // member address
+  //   {
+  //     name: "Testnet Charity #2",
+  //     website:
+  //       "http://angelprotocol.io/app/charity/juno1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+  //     logo: "https://angelprotocol.io/favicon.ico",
+  //   },
+  // );
+  // await testCreateIndexFund(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   "Test Index Fund Name",
+  //   "Test Index Fund desc",
+  //   false,
+  //   []
+  // );
+  // await testRemoveIndexFund(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   7,
+  // );
+  // await testIndexFundRemoveMember(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, 1); // INCOMPLETE: "remove_member" entry should be called from "accounts_contract".
+  // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0", "1000000");
+  // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund);
+  // await testUpdateFundMembers(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   2,
+  //   [1, 2],
+  //   []
+  // );
+
   /* --- ACCOUNTS & ENDOWMENTS --- */
   // const endowments_batch = [];
   // await testSendRestitutionFundsToEndowments(
