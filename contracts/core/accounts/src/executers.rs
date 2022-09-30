@@ -1034,16 +1034,16 @@ pub fn deposit(
 
     // Process Locked Strategy Deposits
     let locked_strategies = endowment.strategies.get(AccountType::Locked);
-    // Make sure that all locked strategies vaults are now included in the invested (one-off) vaults list
+    // Make sure that all current locked strategies vaults are now included in the invested (one-off) vaults list
     for strat in locked_strategies.clone().iter() {
         let v_addr = deps.api.addr_validate(&strat.vault)?;
-        let pos = endowment
+        if let None = endowment
             .oneoff_vaults
             .locked
             .iter()
-            .position(|v| v == &v_addr);
-        if pos.is_some() {
-            endowment.oneoff_vaults.locked.push(v_addr);
+            .position(|v| v == &v_addr)
+        {
+            endowment.oneoff_vaults.locked.push(v_addr)
         }
     }
 
@@ -1074,16 +1074,16 @@ pub fn deposit(
 
     // Process Liquid Strategy Deposits
     let liquid_strategies = endowment.strategies.get(AccountType::Liquid);
-    // Make sure that all liquid strategies vaults are now included in the invested (one-off) vaults list
+    // Make sure that all current liquid strategies vaults are now included in the invested (one-off) vaults list
     for strat in liquid_strategies.clone().iter() {
         let v_addr = deps.api.addr_validate(&strat.vault)?;
-        let pos = endowment
+        if let None = endowment
             .oneoff_vaults
             .liquid
             .iter()
-            .position(|v| v == &v_addr);
-        if pos.is_some() {
-            endowment.oneoff_vaults.liquid.push(v_addr);
+            .position(|v| v == &v_addr)
+        {
+            endowment.oneoff_vaults.liquid.push(v_addr)
         }
     }
     // build deposit messages for each of the sources/amounts
