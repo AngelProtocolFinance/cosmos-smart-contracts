@@ -1316,8 +1316,13 @@ pub fn swap_back(
         config.lp_pair_token0.clone(),
     )?;
     let swap_amount = lp_pair_token0_bal - lp_pair_token0_bal_before;
-    let mut operations = config.native_to_lp0_route.clone();
-    operations.reverse();
+    let operations = config
+        .native_to_lp0_route
+        .iter()
+        .rev()
+        .map(|op| op.reverse_operation())
+        .collect();
+
     swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
         config.swap_router.to_string(),
         config.lp_pair_token0.clone(),
@@ -1331,8 +1336,12 @@ pub fn swap_back(
         config.lp_pair_token1.clone(),
     )?;
     let swap_amount = lp_pair_token1_bal - lp_pair_token1_bal_before;
-    let mut operations = config.native_to_lp1_route.clone();
-    operations.reverse();
+    let operations = config
+        .native_to_lp1_route
+        .iter()
+        .rev()
+        .map(|op| op.reverse_operation())
+        .collect();
     swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
         config.swap_router.to_string(),
         config.lp_pair_token1,
