@@ -100,7 +100,7 @@ pub fn query_endowment_list(
             name: Some(e.name.clone()),
             logo: e.logo.clone(),
             image: e.image.clone(),
-            tier: match e.tier.unwrap() {
+            tier: match e.tier.unwrap_or(0) {
                 1 => Some(Tier::Level1),
                 2 => Some(Tier::Level2),
                 3 => Some(Tier::Level3),
