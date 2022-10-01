@@ -191,16 +191,33 @@ pub fn execute_swap_operation(
                 &pair_key(&[offer_asset_info.clone(), ask_asset_info]),
             )?;
 
+            // Here, there is little trick to convert `cw_asset::Asset` to `terraswap::Asset`.
+            // The reason is that the `loopswap` messages follow the format of `terraswap`.
             offer_asset = Asset {
-                info: offer_asset_info,
+                info: offer_asset_info.clone(),
                 amount,
             };
 
+            let ofer_asset = match offer_asset_info {
+                AssetInfoBase::Native(ref denom) => terraswap::asset::Asset {
+                    info: terraswap::asset::AssetInfo::NativeToken {
+                        denom: denom.to_string(),
+                    },
+                    amount,
+                },
+                AssetInfoBase::Cw20(ref contract_addr) => terraswap::asset::Asset {
+                    info: terraswap::asset::AssetInfo::Token {
+                        contract_addr: contract_addr.to_string(),
+                    },
+                    amount,
+                },
+                _ => unreachable!(),
+            };
+
             to_binary(&LoopExecuteMsg::Swap {
-                offer_asset: offer_asset.clone(),
+                offer_asset: ofer_asset,
                 belief_price: None,
                 max_spread: None,
-                to: None,
             })?
         }
     };
