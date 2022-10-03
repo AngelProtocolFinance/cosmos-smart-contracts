@@ -4,21 +4,23 @@ use cosmwasm_std::{
     MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::Cw20ReceiveMsg;
-use terraswap::asset::{Asset, AssetInfo};
+use cw_asset::AssetInfoBase as CwAssetInfoBase;
+use terraswap::asset::{Asset, AssetInfo, PairInfo};
 
 use angel_core::errors::vault::ContractError;
 use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
+use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::messages::vault::{
     ExecuteMsg, LoopFarmingExecuteMsg, LoopFarmingQueryMsg, LoopPairExecuteMsg, ReceiveMsg,
     UpdateConfigMsg,
 };
 use angel_core::responses::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
-use angel_core::structs::AccountType;
-use terraswap::querier::{query_pair_info, query_pair_info_from_pair};
+use angel_core::structs::{AccountType, SwapOperation};
+use terraswap::querier::query_pair_info_from_pair;
 
-use crate::state::{Config, APTAX, BALANCES, CONFIG, TOKEN_INFO};
+use crate::state::{Config, State, APTAX, BALANCES, CONFIG, STATE, TOKEN_INFO};
 
-/// Contract entry: **update_owner**
+/// Contract entry: **UpdateOwner**
 pub fn update_owner(
     deps: DepsMut,
     info: MessageInfo,
@@ -38,7 +40,7 @@ pub fn update_owner(
     Ok(Response::default())
 }
 
-/// Contract entry: **update_registrar**
+/// Contract entry: **UpdateRegistrar**
 ///
 /// Update the `registrar_contract` address in **CONFIG**
 pub fn update_registrar(
@@ -60,7 +62,7 @@ pub fn update_registrar(
     Ok(Response::default())
 }
 
-/// Contract entry: **update_owner**
+/// Contract entry: **UpdateConfig**
 ///
 /// Update the **CONFIG** of the contract
 pub fn update_config(
@@ -82,6 +84,15 @@ pub fn update_config(
         None => config.sibling_vault,
     };
 
+    config.keeper = match msg.keeper {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.keeper,
+    };
+    config.tax_collector = match msg.tax_collector {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.tax_collector,
+    };
+
     config.lp_staking_contract = match msg.lp_staking_contract {
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.lp_staking_contract,
@@ -92,17 +103,30 @@ pub fn update_config(
         None => config.lp_pair_contract,
     };
 
-    let pair_info = query_pair_info_from_pair(&deps.querier, config.lp_pair_contract.clone())?;
-    config.lp_pair_asset_infos = pair_info.asset_infos;
-    config.lp_token_contract = deps.api.addr_validate(&pair_info.liquidity_token)?;
-
-    config.keeper = match msg.keeper {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.keeper,
+    let pair_info: PairInfo =
+        query_pair_info_from_pair(&deps.querier, config.lp_pair_contract.clone())?;
+    config.lp_token = deps.api.addr_validate(&pair_info.liquidity_token)?;
+    config.lp_pair_token0 = pair_info.asset_infos[0].clone();
+    config.lp_pair_token1 = pair_info.asset_infos[1].clone();
+    config.native_token = match msg.native_token {
+        None => config.native_token,
+        Some(CwAssetInfoBase::Native(denom)) => AssetInfo::NativeToken { denom },
+        Some(CwAssetInfoBase::Cw20(contract_addr)) => AssetInfo::Token {
+            contract_addr: contract_addr.to_string(),
+        },
+        _ => unreachable!(),
     };
-    config.tax_collector = match msg.tax_collector {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.tax_collector,
+    config.reward_to_native_route = match msg.reward_to_native_route {
+        Some(ops) => ops,
+        None => config.reward_to_native_route,
+    };
+    config.native_to_lp0_route = match msg.native_to_lp0_route {
+        Some(ops) => ops,
+        None => config.native_to_lp0_route,
+    };
+    config.native_to_lp1_route = match msg.native_to_lp1_route {
+        Some(ops) => ops,
+        None => config.native_to_lp1_route,
     };
 
     CONFIG.save(deps.storage, &config)?;
@@ -110,8 +134,8 @@ pub fn update_config(
     Ok(Response::default())
 }
 
-/// Contract entry: **deposit**
-///   1. Swap the half of input token to lp contract pair token
+/// Contract entry: **Deposit**
+///   1. Swap the `native_token` to lp contract pair tokens
 ///   2. Call the `(this contract::)add_liquidity` entry
 pub fn deposit(
     deps: DepsMut,
@@ -127,34 +151,78 @@ pub fn deposit(
     // Check if the `caller` is "accounts_contract" & "endowment_id" is valid
     validate_action_caller_n_endow_id(deps.as_ref(), &config, msg_sender.clone(), endowment_id)?;
 
-    // Check if the "deposit_asset_info" is valid
-    if !config.lp_pair_asset_infos.contains(&deposit_asset_info) {
+    // Check if the `deposit_asset_info` is valid
+    if deposit_asset_info != config.native_token {
         return Err(ContractError::InvalidCoinsDeposited {});
     }
 
-    // Check if the "deposit_amount" is zero
+    if config.native_token != config.lp_pair_token0
+        && config.native_token != config.lp_pair_token1
+        && config.native_to_lp0_route.is_empty()
+        && config.native_to_lp1_route.is_empty()
+    {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Cannot find a way to swap native token to pair tokens".to_string(),
+        }));
+    }
+
+    // Check if the `deposit_amount` is zero
     if deposit_amount.is_zero() {
         return Err(ContractError::EmptyBalance {});
     }
 
-    // Swap the half of input token to lp contract pair token
-    let input_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
-    let loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
-        &config.lp_pair_contract.as_ref(),
-        &deposit_asset_info,
-        input_amount,
-    )?;
+    // Here, we take care of 2 cases.
+    //  - The `native_token` is either of `lp_pair_token0` or `lp_pair_token1`
+    //  - The `native_token` is not any of lp pair tokens
+    let mut swap_router_swap_msgs = vec![];
+    let mut loop_pair_swap_msgs = vec![];
+    let mut contract_add_liquidity_msgs = vec![];
+    if deposit_asset_info == config.lp_pair_token0 || deposit_asset_info == config.lp_pair_token1 {
+        // Swap the half of `native_token`(`deposit`) to lp contract pair token
+        loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
+            config.lp_pair_contract.as_ref(),
+            &deposit_asset_info,
+            deposit_amount.multiply_ratio(1_u128, 2_u128),
+        )?);
 
-    // Call the "(this contract::)add_liquidity" entry
-    let contract_add_liquidity_msgs = prepare_contract_add_liquidity_msgs(
-        deps,
-        env,
-        &config,
-        Some(endowment_id),
-        deposit_asset_info,
-    )?;
+        // Call the "(this contract::)add_liquidity" entry
+        contract_add_liquidity_msgs.extend_from_slice(&prepare_contract_add_liquidity_msgs(
+            deps,
+            env,
+            &config,
+            Some(endowment_id),
+            Some(deposit_asset_info),
+            Some(deposit_amount),
+        )?);
+    } else {
+        // Swap the half of `native_token`(`deposit`) to the `lp_pair_token0`, and another half to `lp_pair_token1`.
+        let swap_amount = deposit_amount.multiply_ratio(1_u128, 2_u128);
+        swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
+            config.swap_router.to_string(),
+            config.native_token.clone(),
+            swap_amount,
+            config.native_to_lp0_route.clone(),
+        )?);
+        swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
+            config.swap_router.to_string(),
+            config.native_token.clone(),
+            swap_amount,
+            config.native_to_lp1_route.clone(),
+        )?);
+
+        // Call the "(this contract::)add_liquidity" entry
+        contract_add_liquidity_msgs.extend_from_slice(&prepare_contract_add_liquidity_msgs(
+            deps,
+            env,
+            &config,
+            Some(endowment_id),
+            None,
+            None,
+        )?);
+    }
 
     Ok(Response::default()
+        .add_messages(swap_router_swap_msgs)
         .add_messages(loop_pair_swap_msgs)
         .add_messages(contract_add_liquidity_msgs)
         .add_attribute("action", "deposit")
@@ -163,8 +231,8 @@ pub fn deposit(
         .add_attribute("deposit_amount", deposit_amount))
 }
 
-/// Contract entry: **restake_claim_reward**
-///   1. Compute the amount of `lp_reward_token`(`LOOP`) generated from `harvest(claim)`
+/// Contract entry: **RestakeClaimReward**
+///   1. Compute the amount of `lp_reward_token` generated from `harvest(claim)`
 ///   2. Convert the `lp_reward_token`(`LOOP`)s to the LP tokens
 ///   3. Re-stake the LP tokens
 pub fn restake_claim_reward(
@@ -174,7 +242,7 @@ pub fn restake_claim_reward(
     reward_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
     let config: Config = CONFIG.load(deps.storage)?;
-    // Check if the caller is this contract
+    // Check if the caller is this contract itself.
     if info.sender != env.contract.address {
         return Err(ContractError::Unauthorized {});
     }
@@ -190,138 +258,77 @@ pub fn restake_claim_reward(
         .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
 
     // Re-stake the `reward token`s for more yield
-    //
-    // If the `lp_reward_token` is one of pair tokens in `lp_pair_contract`,
-    // it follows the `deposit` entry flow.
-    //
-    // Otherwise, it converts the `lp_reward_token` to lp contract pair token.
-    // Then, it converts lp contract pair tokens to LP token & does the staking.
+    // NOTE: This logic is similar to the `Deposit` entry logic, taking care of 2 cases.
     let reward_asset_info = AssetInfo::Token {
         contract_addr: config.lp_reward_token.to_string(),
     };
+    let mut swap_router_swap_msgs = vec![];
     let mut loop_pair_swap_msgs = vec![];
     let mut contract_add_liquidity_msgs = vec![];
-    if config.lp_pair_asset_infos.contains(&reward_asset_info) {
-        // Swap the half of input token to the lp contract pair token
+    if reward_asset_info == config.lp_pair_token0 || reward_asset_info == config.lp_pair_token1 {
+        // Swap the half of `reward_token` to the lp contract pair token
         loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
-            &config.lp_pair_contract.as_ref(),
-            &AssetInfo::Token {
-                contract_addr: config.lp_reward_token.to_string(),
-            },
+            config.lp_pair_contract.as_ref(),
+            &reward_asset_info,
             reward_amount.multiply_ratio(1_u128, 2_u128),
         )?);
 
-        // Call the "(this contract::)add_liquidity" entry
+        // Call the `(this contract::)add_liquidity` entry
         contract_add_liquidity_msgs.extend_from_slice(&prepare_contract_add_liquidity_msgs(
             deps,
             env,
             &config,
             None,
-            AssetInfo::Token {
-                contract_addr: config.lp_reward_token.to_string(),
-            },
+            Some(reward_asset_info),
+            Some(reward_amount),
         )?);
     } else {
-        let pair_1_contract = query_pair_info(
-            &deps.querier,
-            config.lp_factory_contract.clone(),
-            &[
-                reward_asset_info.clone(),
-                config.lp_pair_asset_infos[0].clone(),
-            ],
-        )?
-        .contract_addr;
-        let pair_2_contract = query_pair_info(
-            &deps.querier,
-            config.lp_factory_contract.clone(),
-            &[reward_asset_info, config.lp_pair_asset_infos[1].clone()],
-        )?
-        .contract_addr;
-
-        // Swap the half of input token to lp contract pair token(token 1)
-        loop_pair_swap_msgs = prepare_loop_pair_swap_msg(
-            &pair_1_contract,
-            &AssetInfo::Token {
-                contract_addr: config.lp_reward_token.to_string(),
-            },
-            reward_amount.multiply_ratio(1_u128, 2_u128),
-        )?;
-
-        // Swap the half of input token to lp contract pair token(token 2)
-        loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
-            &pair_2_contract,
-            &AssetInfo::Token {
-                contract_addr: config.lp_reward_token.to_string(),
-            },
-            reward_amount.multiply_ratio(1_u128, 2_u128),
+        let swap_amount = reward_amount.multiply_ratio(1_u128, 2_u128);
+        let start_token = AssetInfo::Token {
+            contract_addr: config.lp_reward_token.to_string(),
+        };
+        // Swap the half of input token to `lp_pair_token0`
+        let operations = [
+            config.reward_to_native_route.clone(),
+            config.native_to_lp0_route.clone(),
+        ]
+        .concat();
+        swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
+            config.swap_router.to_string(),
+            start_token.clone(),
+            swap_amount,
+            operations,
         )?);
 
-        // Call the "(this contract::)add_liquidity" entry
-        let token1_bal_before = query_asset_balance(
-            deps.as_ref(),
-            env.contract.address.clone(),
-            config.lp_pair_asset_infos[0].clone(),
-        )?;
-        let token2_bal_before = query_asset_balance(
-            deps.as_ref(),
-            env.contract.address.clone(),
-            config.lp_pair_asset_infos[0].clone(),
-        )?;
+        // Swap the half of input token to `lp_pair_token1`
+        let operations = [
+            config.reward_to_native_route.clone(),
+            config.native_to_lp1_route.clone(),
+        ]
+        .concat();
+        swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
+            config.swap_router.to_string(),
+            start_token,
+            swap_amount,
+            operations,
+        )?);
+
+        // Call the `(this contract::)add_liquidity` entry
         contract_add_liquidity_msgs =
-            prepare_add_liquidity_msgs(deps, env, &config, token1_bal_before, token2_bal_before)?;
+            prepare_contract_add_liquidity_msgs(deps, env, &config, None, None, None)?;
     }
 
     Ok(Response::default()
+        .add_messages(swap_router_swap_msgs)
         .add_messages(loop_pair_swap_msgs)
         .add_messages(contract_add_liquidity_msgs)
         .add_attributes(vec![attr("action", "restake_claimed_reward")]))
 }
 
-fn prepare_add_liquidity_msgs(
-    deps: DepsMut,
-    env: Env,
-    config: &Config,
-    token1_bal_before: Uint128,
-    token2_bal_before: Uint128,
-) -> StdResult<Vec<CosmosMsg>> {
-    let mut msgs = vec![];
-
-    // Compute the amounts of lp contract pair tokens, available for `provide_liquidity` operation
-    let token1_bal = query_asset_balance(
-        deps.as_ref(),
-        env.contract.address.clone(),
-        config.lp_pair_asset_infos[0].clone(),
-    )?;
-    let token2_bal = query_asset_balance(
-        deps.as_ref(),
-        env.contract.address.clone(),
-        config.lp_pair_asset_infos[0].clone(),
-    )?;
-    let token1_amount = token1_bal - token1_bal_before;
-    let token2_amount = token2_bal - token2_bal_before;
-
-    // Call the "loopswap::pair::provide_liquidity" entry
-    let loop_pair_provide_liquidity_msgs = prepare_loop_pair_provide_liquidity_msgs(
-        config.lp_pair_asset_infos[0].clone(),
-        token1_amount,
-        config.lp_pair_asset_infos[1].clone(),
-        token2_amount,
-        config.lp_pair_contract.to_string(),
-    )?;
-    msgs.extend_from_slice(&loop_pair_provide_liquidity_msgs);
-
-    // Call the "(this contract::)stake" entry
-    let contract_stake_msgs =
-        prepare_contract_stake_msgs(deps.as_ref(), env, None, config.lp_pair_contract.clone())?;
-    msgs.extend_from_slice(&contract_stake_msgs);
-
-    Ok(msgs)
-}
-
-/// Contract entry: **redeem**
+/// Contract entry: **Redeem**
 ///   1. Unstake/unfarm the LP tokens from the `loopswap::farming` contract
-///   2. Re-stake the `lp_reward_token(`LOOP`)
-///   3. Return the `LP token`s to the `accounts` contract
+///   2. Re-stake the `lp_reward_token`
+///   3. Swap the lp tokens back to the `native_token`, & send them to the `accounts_contract`
 pub fn redeem(
     mut deps: DepsMut,
     env: Env,
@@ -329,7 +336,8 @@ pub fn redeem(
     endowment_id: u32,
     burn_shares_amount: Uint128,
 ) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
+    let config = CONFIG.load(deps.storage)?;
+    let mut state: State = STATE.load(deps.storage)?;
 
     let beneficiary: Addr;
     let id: Option<u32>;
@@ -357,6 +365,13 @@ pub fn redeem(
     }
 
     // First, burn the vault tokens
+    // The formula of calculating the amount of LP tokens to be burnt is as follows:
+    //   s = vault shares to burn
+    //   T = vault shares total (before burn)
+    //   a = LP tokens withdraw to Vault's balance <<< what we need to calculate given some # of Vault shares to be burned
+    //   B = Vault's total LP Token balance
+    //
+    //   a = (s * B) / T
     execute_burn(deps.branch(), env.clone(), info, id, burn_shares_amount).map_err(|e| {
         ContractError::Std(StdError::GenericErr {
             msg: format!(
@@ -368,17 +383,17 @@ pub fn redeem(
         })
     })?;
 
-    // Update the config
-    let lp_2_vt_rate = Decimal::from_ratio(config.total_lp_amount, config.total_shares);
+    // Update the contract state
+    let lp_2_vt_rate = Decimal::from_ratio(state.total_lp_amount, state.total_shares);
     let lp_amount = burn_shares_amount * lp_2_vt_rate;
-    config.total_lp_amount -= lp_amount;
-    config.total_shares -= burn_shares_amount;
+    state.total_lp_amount -= lp_amount;
+    state.total_shares -= burn_shares_amount;
 
-    CONFIG.save(deps.storage, &config)?;
+    STATE.save(deps.storage, &state)?;
 
-    // Call the "loopswap::farming::unstake_and_claim(unfarm)" entry
+    // Call the `loopswap::farming::unstake_and_claim(unfarm)` entry
     let mut msgs = vec![];
-    let lp_token_contract = config.lp_token_contract;
+    let lp_token_contract = config.lp_token;
     let flp_token_contract: String = deps.querier.query_wasm_smart(
         config.lp_staking_contract.to_string(),
         &LoopFarmingQueryMsg::QueryFlpTokenFromPoolAddress {
@@ -397,7 +412,7 @@ pub fn redeem(
         funds: vec![],
     }));
 
-    // Handle the returning lp tokens
+    // Handle the returning lp tokens (Swap back to `native_token` & send to `beneficiary`)
     let lp_token_bal = query_token_balance(
         deps.as_ref(),
         lp_token_contract.to_string(),
@@ -414,7 +429,7 @@ pub fn redeem(
         funds: vec![],
     }));
 
-    // Handle the lp_reward_token(LOOP) tokens (Re-stake the lp_reward_tokens)
+    // Handle the `lp_reward_token`s (Re-stake them for more yield)
     let reward_token_bal = query_token_balance(
         deps.as_ref(),
         config.lp_reward_token.to_string(),
@@ -436,10 +451,10 @@ pub fn redeem(
     ]))
 }
 
-/// Contract entry: **harvest**
-///   1. `Claim` the `lp_reward_token` from `loopswap::farming` contract
-///   2. Convert the `lp_reward_token`(LOOP) to LP tokens
-///   3. Re-stake the LP tokens to the `farming` contract
+/// Contract entry: **Harvest**
+///   1. Claim(Harvest) the `lp_reward_token` from `loopswap::farming` contract
+///   2. Convert the `lp_reward_token` to LP tokens
+///   3. Re-stake the LP tokens to the `farming` contract for more yield
 pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
@@ -448,15 +463,16 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         return Err(ContractError::Unauthorized {});
     }
 
-    // Call the "loopswap::farming::claim_reward" entry
     let mut msgs = vec![];
+
+    // Call the `loopswap::farming::claim_reward` entry
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.lp_staking_contract.to_string(),
         msg: to_binary(&LoopFarmingExecuteMsg::ClaimReward {}).unwrap(),
         funds: vec![],
     }));
 
-    // Re-stake the lp_reward_token(LOOP)
+    // Re-stake the `lp_reward_token`
     let reward_token_bal = query_token_balance(
         deps.as_ref(),
         config.lp_reward_token.to_string(),
@@ -476,7 +492,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
         .add_attributes(vec![attr("action", "harvest")]))
 }
 
-/// Contract entry: **reinvest_to_locked** (liquid vault logic)
+/// Contract entry: **ReinvestToLocked** (liquid vault logic)
 ///   1. Burn the `vault_token`
 ///   2. Unstake the LP tokens from `farming` contract
 ///   3. Re-stake the lp_reward_token from `unstake` operation
@@ -488,7 +504,8 @@ pub fn reinvest_to_locked_execute(
     id: u32,
     burn_shares_amount: Uint128, // vault tokens
 ) -> Result<Response, ContractError> {
-    let mut config: Config = CONFIG.load(deps.storage)?;
+    let config: Config = CONFIG.load(deps.storage)?;
+    let mut state: State = STATE.load(deps.storage)?;
 
     // Check that the vault acct_type is `liquid`
     if config.acct_type != AccountType::Liquid {
@@ -516,7 +533,15 @@ pub fn reinvest_to_locked_execute(
         }));
     }
     // 3. Burn vault tokens an calculate the LP Tokens equivalent
+    //
     // First, burn the vault tokens
+    // The formula of calculating the amount of LP tokens to be burnt is as follows:
+    //   s = vault shares to burn
+    //   T = vault shares total (before burn)
+    //   a = LP tokens withdraw to Vault's balance <<< what we need to calculate given some # of Vault shares to be burned
+    //   B = Vault's total LP Token balance
+    //
+    //   a = (s * B) / T
     execute_burn(
         deps.branch(),
         env.clone(),
@@ -533,16 +558,16 @@ pub fn reinvest_to_locked_execute(
         })
     })?;
 
-    // Update the config
-    let lp_2_vt_rate = Decimal::from_ratio(config.total_lp_amount, config.total_shares);
+    // Update the contract state
+    let lp_2_vt_rate = Decimal::from_ratio(state.total_lp_amount, state.total_shares);
     let lp_amount = burn_shares_amount * lp_2_vt_rate;
-    config.total_lp_amount -= lp_amount;
-    config.total_shares -= burn_shares_amount;
+    state.total_lp_amount -= lp_amount;
+    state.total_shares -= burn_shares_amount;
 
-    CONFIG.save(deps.storage, &config)?;
+    STATE.save(deps.storage, &state)?;
 
     // Unfarm the LP token from "lp_staking_contract"
-    let lp_token_contract = config.lp_token_contract.clone();
+    let lp_token_contract = config.lp_token.clone();
     let flp_token_contract: String = deps.querier.query_wasm_smart(
         config.lp_staking_contract.to_string(),
         &LoopFarmingQueryMsg::QueryFlpTokenFromPoolAddress {
@@ -563,7 +588,7 @@ pub fn reinvest_to_locked_execute(
 
     // 4. SEND LP tokens to the Locked Account (using ReinvestToLocked recieve msg)
     let reinvest_to_locked_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.lp_token_contract.to_string(),
+        contract_addr: config.lp_token.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.sibling_vault.to_string(),
             amount: lp_amount,
@@ -599,7 +624,7 @@ pub fn reinvest_to_locked_execute(
         .add_attributes(vec![attr("action", "reinvest_to_locked_vault")]))
 }
 
-/// Contract entry: **reinvest_to_locked** (locked vault logic)
+/// Contract entry: **ReinvestToLocked** (locked vault logic)
 ///   1. Receive the LP tokens from sibling vault(liquid)
 ///   2. Stake the LP tokens to the `farming` contract
 pub fn reinvest_to_locked_recieve(
@@ -610,11 +635,12 @@ pub fn reinvest_to_locked_recieve(
     lp_amount: Uint128, // asset tokens (ex. LPs)
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
-    let mut config: Config = CONFIG.load(deps.storage)?;
+    let config: Config = CONFIG.load(deps.storage)?;
+    let mut state: State = STATE.load(deps.storage)?;
 
     // 0. Check that the message sender is the Sibling vault contract
     // ensure `received token` is `lp_token`
-    if info.sender != config.lp_token_contract {
+    if info.sender != config.lp_token {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -648,7 +674,7 @@ pub fn reinvest_to_locked_recieve(
     // 1. Treat as a Deposit for the given ID (mint vault tokens for deposited assets)
     // Prepare the messages for "loop::farming::stake" opeartion
     let lp_stake_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.lp_token_contract.to_string(),
+        contract_addr: config.lp_token.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_amount,
@@ -659,18 +685,26 @@ pub fn reinvest_to_locked_recieve(
     })];
 
     // 2. Mint the vault tokens
+    //
     // Compute the `vault_token` amount
-    let vt_mint_amount = match config.total_shares.u128() {
+    // The formula of calculating the amount of vault tokens to be minted is as follows:
+    //   s = vault shares to mint <<< what we need to calculate given some # of LP tokens created from despoit
+    //   T = vault shares total (before mint)
+    //   a = LP tokens added to Vault's balance
+    //   B = Vault's total LP Token balance
+    //
+    //   s = (a * T) / B
+    let vt_mint_amount = match state.total_shares.u128() {
         0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
         _ => {
-            let increased_total_lp = config.total_lp_amount + lp_amount;
-            let vt_2_lp_rate = Decimal::from_ratio(config.total_shares, increased_total_lp);
+            let increased_total_lp = state.total_lp_amount + lp_amount;
+            let vt_2_lp_rate = Decimal::from_ratio(state.total_shares, increased_total_lp);
             lp_amount * vt_2_lp_rate
         }
     };
-    config.total_lp_amount += lp_amount;
-    config.total_shares += vt_mint_amount;
-    CONFIG.save(deps.storage, &config)?;
+    state.total_lp_amount += lp_amount;
+    state.total_shares += vt_mint_amount;
+    STATE.save(deps.storage, &state)?;
 
     // Mint the `vault_token`
     let minter_info = MessageInfo {
@@ -691,7 +725,7 @@ pub fn reinvest_to_locked_recieve(
         .add_attributes(vec![attr("action", "reinvest_to_locked_vault")]))
 }
 
-/// Contract entry: **add_liquidity**
+/// Contract entry: **AddLiquidity**
 ///   1. Add/Provide the `liquidity` to the `loopswap::pair` contract
 ///   2. Call the `(this contract::)stake` entry
 pub fn add_liquidity(
@@ -699,58 +733,40 @@ pub fn add_liquidity(
     env: Env,
     info: MessageInfo,
     endowment_id: Option<u32>,
-    in_asset_info: AssetInfo,
-    out_asset_info: AssetInfo,
-    in_asset_bal_before: Uint128,
-    out_asset_bal_before: Uint128,
+    lp_pair_token0_bal_before: Uint128,
+    lp_pair_token1_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
     // Validations
     if info.sender != env.contract.address {
         return Err(ContractError::Unauthorized {});
     }
 
-    // Add the "loopswap::pair::provide_liquidity" message
+    // Add the `loopswap::pair::provide_liquidity` message
     let config = CONFIG.load(deps.storage)?;
 
-    let in_asset_bal = query_asset_balance(
+    let lp_pair_token0_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address.clone(),
-        in_asset_info.clone(),
+        config.lp_pair_token0.clone(),
     )?;
-    let out_asset_bal = query_asset_balance(
+    let lp_pair_token1_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address.clone(),
-        out_asset_info.clone(),
+        config.lp_pair_token1.clone(),
     )?;
 
-    let token1_asset_info: AssetInfo;
-    let token2_asset_info: AssetInfo;
-    let token1_amount: Uint128;
-    let token2_amount: Uint128;
-
-    let asset_infos = config.lp_pair_asset_infos;
-
-    if in_asset_info == asset_infos[0] {
-        token1_asset_info = in_asset_info;
-        token2_asset_info = out_asset_info;
-        token1_amount = in_asset_bal_before - in_asset_bal;
-        token2_amount = out_asset_bal - out_asset_bal_before;
-    } else {
-        token1_asset_info = out_asset_info;
-        token2_asset_info = in_asset_info;
-        token1_amount = out_asset_bal - out_asset_bal_before;
-        token2_amount = in_asset_bal_before - in_asset_bal;
-    }
+    let token0_amount = lp_pair_token0_bal - lp_pair_token0_bal_before;
+    let token1_amount = lp_pair_token1_bal - lp_pair_token1_bal_before;
 
     let loop_pair_provide_liquidity_msgs = prepare_loop_pair_provide_liquidity_msgs(
-        token1_asset_info,
+        config.lp_pair_token0.clone(),
+        token0_amount,
+        config.lp_pair_token1.clone(),
         token1_amount,
-        token2_asset_info,
-        token2_amount,
         config.lp_pair_contract.to_string(),
     )?;
 
-    // Add the "(this contract::)stake" message
+    // Add the `(this contract::)stake` message
     let contract_stake_msgs =
         prepare_contract_stake_msgs(deps.as_ref(), env, endowment_id, config.lp_pair_contract)?;
 
@@ -870,13 +886,14 @@ pub fn stake_lp_token(
         return Err(ContractError::Unauthorized {});
     }
 
-    let mut config: Config = CONFIG.load(deps.storage)?;
+    let config: Config = CONFIG.load(deps.storage)?;
+    let mut state: State = STATE.load(deps.storage)?;
     let mut harvest_to_liquid_msgs = vec![];
 
     // Prepare the "loop::farming::stake" msg
     let lp_token_bal = query_token_balance(
         deps.as_ref(),
-        config.lp_token_contract.to_string(),
+        config.lp_token.to_string(),
         env.contract.address.to_string(),
     )?;
     let lp_amount = lp_token_bal
@@ -892,16 +909,23 @@ pub fn stake_lp_token(
         // Case of `deposit` from `endowment`
         Some(endowment_id) => {
             // Compute the `vault_token` amount
-            let vt_mint_amount = match config.total_shares.u128() {
+            // The formula of calculating the amount of vault tokens to be minted is as follows:
+            //   s = vault shares to mint <<< what we need to calculate given some # of LP tokens created from despoit
+            //   T = vault shares total (before mint)
+            //   a = LP tokens added to Vault's balance
+            //   B = Vault's total LP Token balance
+            //
+            //   s = (a * T) / B
+            let vt_mint_amount = match state.total_shares.u128() {
                 0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
                 _ => {
-                    let increased_total_lp = config.total_lp_amount + lp_amount;
-                    let vt_2_lp_rate = Decimal::from_ratio(config.total_shares, increased_total_lp);
+                    let increased_total_lp = state.total_lp_amount + lp_amount;
+                    let vt_2_lp_rate = Decimal::from_ratio(state.total_shares, increased_total_lp);
                     lp_amount * vt_2_lp_rate
                 }
             };
-            config.total_lp_amount += lp_amount;
-            config.total_shares += vt_mint_amount;
+            state.total_lp_amount += lp_amount;
+            state.total_shares += vt_mint_amount;
 
             // Mint the `vault_token`
             execute_mint(deps.branch(), env, info, Some(endowment_id), vt_mint_amount).map_err(
@@ -921,16 +945,23 @@ pub fn stake_lp_token(
         // Case of `harvest` from `keeper` wallet
         None => {
             // Compute the `vault_token` amount
-            let vt_mint_amount = match config.total_shares.u128() {
+            // The formula of calculating the amount of vault tokens to be minted is as follows:
+            //   s = vault shares to mint <<< what we need to calculate given some # of LP tokens created from despoit
+            //   T = vault shares total (before mint)
+            //   a = LP tokens added to Vault's balance
+            //   B = Vault's total LP Token balance
+            //
+            //   s = (a * T) / B
+            let vt_mint_amount = match state.total_shares.u128() {
                 0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
                 _ => {
-                    let increased_total_lp = config.total_lp_amount + lp_amount;
-                    let vt_2_lp_rate = Decimal::from_ratio(config.total_shares, increased_total_lp);
+                    let increased_total_lp = state.total_lp_amount + lp_amount;
+                    let vt_2_lp_rate = Decimal::from_ratio(state.total_shares, increased_total_lp);
                     lp_amount * vt_2_lp_rate
                 }
             };
-            config.total_lp_amount += lp_amount;
-            config.total_shares += vt_mint_amount;
+            state.total_lp_amount += lp_amount;
+            state.total_shares += vt_mint_amount;
 
             // Compute the `ap_treasury tax portion` & store in APTAX
             let registrar_config: ConfigResponse = deps.querier.query_wasm_smart(
@@ -968,8 +999,8 @@ pub fn stake_lp_token(
                     let send_liquid_ratio = registrar_config.rebalance.interest_distribution;
                     let send_liquid_lp_amount = lp_less_tax * send_liquid_ratio;
                     let vt_shares_to_burn = (vt_mint_amount - tax_mint_amount) * send_liquid_ratio;
-                    config.total_shares -= vt_shares_to_burn;
-                    config.total_lp_amount -= send_liquid_lp_amount;
+                    state.total_shares -= vt_shares_to_burn;
+                    state.total_lp_amount -= send_liquid_lp_amount;
 
                     // Mint the `vault token` with left LP token
                     // update supply and enforce cap
@@ -986,7 +1017,7 @@ pub fn stake_lp_token(
                     lp_stake_amount = lp_amount - send_liquid_lp_amount;
 
                     harvest_to_liquid_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: config.lp_token_contract.to_string(),
+                        contract_addr: config.lp_token.to_string(),
                         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                             contract: config.sibling_vault.to_string(),
                             amount: send_liquid_lp_amount,
@@ -999,10 +1030,10 @@ pub fn stake_lp_token(
             }
         }
     }
-    CONFIG.save(deps.storage, &config)?;
+    STATE.save(deps.storage, &state)?;
 
     let farming_stake_msg = CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: config.lp_token_contract.to_string(),
+        contract_addr: config.lp_token.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_stake_amount,
@@ -1018,14 +1049,17 @@ pub fn stake_lp_token(
         .add_attributes(vec![attr("action", "stake_lp_token")]))
 }
 
+/// Contract entry: **HarvestToLiquid**
+///   1. Stake/Farm the `LP` tokens received from `sibling_vault(locked)`
 pub fn harvest_to_liquid(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
     cw20_msg: Cw20ReceiveMsg,
 ) -> Result<Response, ContractError> {
-    let mut config: Config = CONFIG.load(deps.storage)?;
-    let lp_token_contract = config.lp_token_contract.to_string();
+    let config: Config = CONFIG.load(deps.storage)?;
+    let mut state: State = STATE.load(deps.storage)?;
+    let lp_token_contract = config.lp_token.to_string();
 
     // 0. Check that the message sender is the Sibling vault contract
     // ensure `received token` is `lp_token`
@@ -1051,8 +1085,8 @@ pub fn harvest_to_liquid(
 
     // 1. Increase the lp_token amount
     let lp_stake_amount = cw20_msg.amount;
-    config.total_lp_amount += lp_stake_amount;
-    CONFIG.save(deps.storage, &config)?;
+    state.total_lp_amount += lp_stake_amount;
+    STATE.save(deps.storage, &state)?;
 
     // 2. Stake the received lp tokens
     let farming_stake_msg = CosmosMsg::Wasm(WasmMsg::Execute {
@@ -1071,6 +1105,10 @@ pub fn harvest_to_liquid(
         .add_attributes(vec![attr("action", "harvest_to_liquid")]))
 }
 
+/// Contract entry: **RemoveLiquidity**
+///   1. Remove liquidity from lp pair contract
+///   2. Swap back the lp pair tokens to the `native_token`
+///   2. Call the `(this contract::)SendAsset` entry
 pub fn remove_liquidity(
     deps: DepsMut,
     env: Env,
@@ -1085,13 +1123,11 @@ pub fn remove_liquidity(
     }
 
     let config: Config = CONFIG.load(deps.storage)?;
-    let asset_infos = config.lp_pair_asset_infos;
-    let pair_contract = config.lp_pair_contract;
 
     // First, compute "unfarm"ed LP token balance for "remove_liquidity"
     let lp_token_bal = query_token_balance(
         deps.as_ref(),
-        config.lp_token_contract.to_string(),
+        config.lp_token.to_string(),
         env.contract.address.to_string(),
     )?;
 
@@ -1102,9 +1138,9 @@ pub fn remove_liquidity(
     // Prepare the "remove_liquidity" messages
     let withdraw_liquidity_msgs = vec![
         CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.lp_token_contract.to_string(),
+            contract_addr: config.lp_token.to_string(),
             msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: pair_contract.to_string(),
+                spender: config.lp_factory_contract.to_string(),
                 amount: lp_token_amount,
                 expires: None,
             })
@@ -1112,9 +1148,9 @@ pub fn remove_liquidity(
             funds: vec![],
         }),
         CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.lp_token_contract.to_string(),
+            contract_addr: config.lp_token.to_string(),
             msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                contract: pair_contract.to_string(),
+                contract: config.lp_pair_contract.to_string(),
                 amount: lp_token_amount,
                 msg: to_binary(&LoopPairExecuteMsg::WithdrawLiquidity {}).unwrap(),
             })
@@ -1123,83 +1159,61 @@ pub fn remove_liquidity(
         }),
     ];
 
-    // Handle the returning token pairs
-    let mut swap_asset_msgs = vec![];
-    let mut send_asset_msgs = vec![];
-
-    let reg_config: ConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract.to_string(),
-        &RegistrarQueryMsg::Config {},
-    )?;
-    let assets = asset_infos
-        .iter()
-        .map(|info| match info {
-            AssetInfo::NativeToken { denom } => denom.to_string(),
-            AssetInfo::Token { contract_addr } => contract_addr.to_string(),
-        })
-        .collect::<Vec<String>>();
-    let (swap_in_asset_info, send_asset_info) =
-        if reg_config.accepted_tokens.cw20_valid(assets[0].clone())
-            || reg_config.accepted_tokens.native_valid(assets[0].clone())
-        {
-            (asset_infos[1].clone(), asset_infos[0].clone())
-        } else if reg_config.accepted_tokens.cw20_valid(assets[1].clone())
-            || reg_config.accepted_tokens.native_valid(assets[1].clone())
-        {
-            (asset_infos[0].clone(), asset_infos[1].clone())
-        } else {
-            return Err(ContractError::Std(StdError::generic_err(
-                "Neither of pair tokens is accepted for accounts",
-            )));
-        };
-    let swap_asset_bal_before = query_asset_balance(
+    // Convert the returning token pairs to the `native_token`
+    // & send back to `accounts_contract`.
+    let mut swap_back_msgs = vec![];
+    let lp_pair_token0_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address.clone(),
-        swap_in_asset_info.clone(),
+        config.lp_pair_token0.clone(),
     )?;
-    let send_asset_bal_before = query_asset_balance(
+    let lp_pair_token1_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address.clone(),
-        send_asset_info.clone(),
+        config.lp_pair_token1.clone(),
     )?;
-
-    swap_asset_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+    swap_back_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
-        msg: to_binary(&ExecuteMsg::Swap {
-            asset_info: swap_in_asset_info,
-            asset_bal_before: swap_asset_bal_before,
+        msg: to_binary(&ExecuteMsg::SwapBack {
+            lp_pair_token0_bal_before: lp_pair_token0_bal,
+            lp_pair_token1_bal_before: lp_pair_token1_bal,
         })
         .unwrap(),
         funds: vec![],
     }));
 
-    send_asset_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+    let native_token_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        config.native_token,
+    )?;
+    let send_asset_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::SendAsset {
             beneficiary,
             id,
-            asset_info: send_asset_info,
-            asset_bal_before: send_asset_bal_before,
+            native_token_bal_before: native_token_bal,
         })
         .unwrap(),
         funds: vec![],
-    }));
+    })];
 
     Ok(Response::default()
         .add_messages(withdraw_liquidity_msgs)
-        .add_messages(swap_asset_msgs)
+        .add_messages(swap_back_msgs)
         .add_messages(send_asset_msgs)
         .add_attributes(vec![attr("action", "remove_liquidity")]))
 }
 
+/// Contract entry: **SendAsset**
+///   1. Send the `native_token` back to the `beneficiary`
 pub fn send_asset(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
     beneficiary: Addr,
     id: Option<u32>,
-    asset_info: AssetInfo,
-    asset_bal_before: Uint128,
+    native_token_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
     // Validations
     if info.sender != env.contract.address {
@@ -1209,13 +1223,16 @@ pub fn send_asset(
     let config: Config = CONFIG.load(deps.storage)?;
 
     // Send the asset to the `beneficiary`
-    let asset_bal = query_asset_balance(deps.as_ref(), env.contract.address, asset_info.clone())?;
-    let send_amount = asset_bal
-        .checked_sub(asset_bal_before)
-        .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
+
+    let native_token_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address,
+        config.native_token.clone(),
+    )?;
+    let send_amount = native_token_bal - native_token_bal_before;
 
     let mut msgs = vec![];
-    match asset_info {
+    match config.native_token {
         AssetInfo::NativeToken { denom } => match id {
             Some(id) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: beneficiary.to_string(),
@@ -1275,12 +1292,14 @@ pub fn send_asset(
         .add_attributes(vec![attr("action", "send_asset")]))
 }
 
-pub fn swap(
+/// Contract entry: **SwapBack**
+///   1. Swap lp pair tokens to the `native_token`s
+pub fn swap_back(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
-    swap_in_asset_info: AssetInfo,
-    swap_in_asset_bal_before: Uint128,
+    lp_pair_token0_bal_before: Uint128,
+    lp_pair_token1_bal_before: Uint128,
 ) -> Result<Response, ContractError> {
     // Validations
     if info.sender != env.contract.address {
@@ -1289,25 +1308,123 @@ pub fn swap(
 
     let config: Config = CONFIG.load(deps.storage)?;
 
-    // Send the asset to the `beneficiary`
-    let asset_bal = query_asset_balance(
+    // Swap the pair tokens back to the `native_token`.
+    let mut swap_router_swap_msgs = vec![];
+    let mut loop_pair_swap_msgs = vec![];
+    let lp_pair_token0_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        config.lp_pair_token0.clone(),
+    )?;
+    let lp_pair_token1_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address,
-        swap_in_asset_info.clone(),
+        config.lp_pair_token1.clone(),
     )?;
-    let swap_amount = asset_bal
-        .checked_sub(swap_in_asset_bal_before)
-        .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
 
-    let msgs = prepare_loop_pair_swap_msg(
-        config.lp_pair_contract.as_str(),
-        &swap_in_asset_info,
-        swap_amount,
-    )?;
+    if config.native_token == config.lp_pair_token0 || config.native_token == config.lp_pair_token1
+    {
+        let (input_asset_info, swap_amount) = if config.native_token == config.lp_pair_token0 {
+            (
+                config.lp_pair_token1,
+                lp_pair_token1_bal - lp_pair_token1_bal_before,
+            )
+        } else {
+            (
+                config.lp_pair_token0,
+                lp_pair_token0_bal - lp_pair_token0_bal_before,
+            )
+        };
+        loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
+            config.lp_pair_contract.as_str(),
+            &input_asset_info,
+            swap_amount,
+        )?);
+    } else {
+        let swap_amount = lp_pair_token0_bal - lp_pair_token0_bal_before;
+        let operations = config
+            .native_to_lp0_route
+            .iter()
+            .rev()
+            .map(|op| op.reverse_operation())
+            .collect();
+
+        swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
+            config.swap_router.to_string(),
+            config.lp_pair_token0.clone(),
+            swap_amount,
+            operations,
+        )?);
+
+        let swap_amount = lp_pair_token1_bal - lp_pair_token1_bal_before;
+        let operations = config
+            .native_to_lp1_route
+            .iter()
+            .rev()
+            .map(|op| op.reverse_operation())
+            .collect();
+        swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
+            config.swap_router.to_string(),
+            config.lp_pair_token1,
+            swap_amount,
+            operations,
+        )?);
+    }
 
     Ok(Response::default()
-        .add_messages(msgs)
-        .add_attributes(vec![attr("action", "swap_asset_to_another_pair")]))
+        .add_messages(swap_router_swap_msgs)
+        .add_messages(loop_pair_swap_msgs)
+        .add_attributes(vec![attr("action", "swap_pair_to_native")]))
+}
+
+fn prepare_swap_router_swap_msgs(
+    swap_router: String,
+    start_token: AssetInfo,
+    swap_amount: Uint128,
+    operations: Vec<SwapOperation>,
+) -> StdResult<Vec<CosmosMsg>> {
+    let msgs = match start_token {
+        AssetInfo::NativeToken { ref denom } => vec![CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: swap_router,
+            msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
+                operations,
+                minimum_receive: None,
+                endowment_id: 1,                // Placeholder value
+                acct_type: AccountType::Locked, // Placeholder value
+            })
+            .unwrap(),
+            funds: coins(swap_amount.u128(), denom.to_string()),
+        })],
+        AssetInfo::Token { ref contract_addr } => vec![
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: contract_addr.to_string(),
+                msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                    spender: swap_router.to_string(),
+                    amount: swap_amount,
+                    expires: None,
+                })
+                .unwrap(),
+                funds: vec![],
+            }),
+            CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: contract_addr.to_string(),
+                msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                    contract: swap_router,
+                    amount: swap_amount,
+                    msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
+                        operations,
+                        minimum_receive: None,
+                        endowment_id: 1,                // Placeholder value
+                        acct_type: AccountType::Locked, // Placeholder value
+                    })
+                    .unwrap(),
+                })
+                .unwrap(),
+                funds: vec![],
+            }),
+        ],
+    };
+    Ok(msgs)
 }
 
 fn prepare_contract_add_liquidity_msgs(
@@ -1315,41 +1432,39 @@ fn prepare_contract_add_liquidity_msgs(
     env: Env,
     config: &Config,
     endowment_id: Option<u32>,
-    deposit_asset_info: AssetInfo,
+    deduct_token: Option<AssetInfo>,
+    deduct_amount: Option<Uint128>,
 ) -> Result<Vec<CosmosMsg>, StdError> {
     let mut msgs: Vec<CosmosMsg> = vec![];
 
-    let lp_pair_asset_infos = config.lp_pair_asset_infos.clone();
-    let (in_asset_info, out_asset_info) = if deposit_asset_info == lp_pair_asset_infos[0] {
-        (
-            lp_pair_asset_infos[0].clone(),
-            lp_pair_asset_infos[1].clone(),
-        )
-    } else {
-        (
-            lp_pair_asset_infos[1].clone(),
-            lp_pair_asset_infos[0].clone(),
-        )
-    };
+    let mut lp_pair_token0_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        config.lp_pair_token0.clone(),
+    )?;
+    let mut lp_pair_token1_bal = query_asset_balance(
+        deps.as_ref(),
+        env.contract.address.clone(),
+        config.lp_pair_token1.clone(),
+    )?;
 
-    let in_asset_bal_before = query_asset_balance(
-        deps.as_ref(),
-        env.contract.address.clone(),
-        in_asset_info.clone(),
-    )?;
-    let out_asset_bal_before = query_asset_balance(
-        deps.as_ref(),
-        env.contract.address.clone(),
-        out_asset_info.clone(),
-    )?;
+    if let Some(deduct_token_info) = deduct_token {
+        if deduct_token_info == config.lp_pair_token0 {
+            lp_pair_token0_bal -= deduct_amount.expect("Deduct amount not set.");
+        } else if deduct_token_info == config.lp_pair_token1 {
+            lp_pair_token1_bal -= deduct_amount.expect("Deduct amount not set.");
+        } else {
+            return Err(StdError::GenericErr {
+                msg: "Cannot deduct token amount of native or reward token when they are either of lp pair tokens".to_string(),
+            });
+        }
+    }
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         msg: to_binary(&ExecuteMsg::AddLiquidity {
             endowment_id,
-            in_asset_info,
-            out_asset_info,
-            in_asset_bal_before,
-            out_asset_bal_before,
+            lp_pair_token0_bal_before: lp_pair_token0_bal,
+            lp_pair_token1_bal_before: lp_pair_token1_bal,
         })
         .unwrap(),
         funds: vec![],

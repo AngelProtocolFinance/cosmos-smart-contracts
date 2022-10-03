@@ -63,6 +63,25 @@ impl SwapOperation {
             SwapOperation::Loop { ask_asset_info, .. } => ask_asset_info.clone(),
         }
     }
+
+    pub fn reverse_operation(&self) -> Self {
+        match self {
+            SwapOperation::JunoSwap {
+                offer_asset_info,
+                ask_asset_info,
+            } => SwapOperation::JunoSwap {
+                offer_asset_info: ask_asset_info.clone(),
+                ask_asset_info: offer_asset_info.clone(),
+            },
+            SwapOperation::Loop {
+                offer_asset_info,
+                ask_asset_info,
+            } => SwapOperation::Loop {
+                offer_asset_info: ask_asset_info.clone(),
+                ask_asset_info: offer_asset_info.clone(),
+            },
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

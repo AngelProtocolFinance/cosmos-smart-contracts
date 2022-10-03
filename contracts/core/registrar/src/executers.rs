@@ -131,7 +131,7 @@ pub fn vault_add(
     let network = NETWORK_CONNECTIONS.load(deps.storage, &vault_network)?;
 
     // if non-native vault type, ensure the NetworkInfo has IBC configured
-    if msg.vault_type != VaultType::Native && network.ibc_channel == None {
+    if msg.vault_type != VaultType::Native && network.ibc_channel.is_none() {
         return Err(ContractError::Std(StdError::generic_err(
             "IBC Channel must be configured before adding a non-Native Vault",
         )));
