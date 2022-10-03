@@ -32,7 +32,6 @@ pub enum ExecuteMsg {
     /// Swap all offer tokens to ask token
     ExecuteSwapOperation {
         operation: SwapOperation,
-        to: Option<Addr>,
     },
     /// Internal use
     /// Check the swap amount is exceed minimum_receive
@@ -40,7 +39,6 @@ pub enum ExecuteMsg {
         asset_info: AssetInfo,
         prev_balance: Uint128,
         minimum_receive: Uint128,
-        receiver: Addr,
     },
     /// Send a Swap Receipt message back to the original contract
     /// Used by Accounts to properly credit the Endowment with

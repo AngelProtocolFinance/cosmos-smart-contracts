@@ -1,7 +1,6 @@
 use crate::state::{pair_key, CONFIG, PAIRS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::ExecuteMsg as AccountsExecuteMsg;
-use angel_core::messages::accounts::QueryMsg as AccountsQueryMsg;
 use angel_core::messages::dexs::{
     InfoResponse, JunoSwapExecuteMsg, JunoSwapQueryMsg, LoopExecuteMsg, TokenSelect,
 };
@@ -27,21 +26,12 @@ pub fn send_swap_receipt(
         return Err(ContractError::Unauthorized {});
     }
     let config = CONFIG.load(deps.storage)?;
+    let receiver_balance =
+        asset_info.query_balance(&deps.querier, env.contract.address.to_string())?;
+    let swap_amount = receiver_balance.checked_sub(prev_balance)?;
     // Take care of 2 cases:
     //   - `accounts_contract` should receive the operation result
     //   - `vault` contract should receive the operation result
-    let receiver_balance: Uint128 = match vault_addr {
-        None => deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.accounts_contract.to_string(),
-            msg: to_binary(&AccountsQueryMsg::TokenAmount {
-                id: endowment_id,
-                asset_info: asset_info.clone(),
-                acct_type: acct_type.clone(),
-            })?,
-        }))?,
-        Some(ref vault_addr) => asset_info.query_balance(&deps.querier, vault_addr)?,
-    };
-    let swap_amount = receiver_balance.checked_sub(prev_balance)?;
     let message = match vault_addr {
         None => CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: config.accounts_contract.to_string(),
@@ -78,12 +68,12 @@ pub fn send_swap_receipt(
 
 pub fn assert_minium_receive(
     deps: Deps,
+    env: Env,
     asset_info: AssetInfo,
     prev_balance: Uint128,
     minimum_receive: Uint128,
-    receiver: Addr,
 ) -> Result<Response, ContractError> {
-    let receiver_balance = asset_info.query_balance(&deps.querier, &receiver)?;
+    let receiver_balance = asset_info.query_balance(&deps.querier, &env.contract.address)?;
     let swap_amount = receiver_balance.checked_sub(prev_balance)?;
 
     if swap_amount < minimum_receive {
@@ -103,7 +93,6 @@ pub fn execute_swap_operation(
     env: Env,
     info: MessageInfo,
     operation: SwapOperation,
-    _to: Option<Addr>,
 ) -> Result<Response, ContractError> {
     if env.contract.address != info.sender {
         return Err(ContractError::Unauthorized {});

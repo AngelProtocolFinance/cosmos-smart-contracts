@@ -1,7 +1,6 @@
 use crate::operations::{assert_minium_receive, execute_swap_operation, send_swap_receipt};
 use crate::state::{pair_key, Config, CONFIG, PAIRS};
 use angel_core::errors::core::ContractError;
-use angel_core::messages::accounts::QueryMsg as AccountsQueryMsg;
 use angel_core::messages::dexs::{
     InfoResponse, JunoSwapQueryMsg, LoopQueryMsg, SimulationResponse, Token1ForToken2PriceResponse,
     Token2ForToken1PriceResponse,
@@ -75,20 +74,19 @@ pub fn execute(
             operations,
             minimum_receive,
         ),
-        ExecuteMsg::ExecuteSwapOperation { operation, to } => {
-            execute_swap_operation(deps, env, info, operation, to)
+        ExecuteMsg::ExecuteSwapOperation { operation } => {
+            execute_swap_operation(deps, env, info, operation)
         }
         ExecuteMsg::AssertMinimumReceive {
             asset_info,
             prev_balance,
             minimum_receive,
-            receiver,
         } => assert_minium_receive(
             deps.as_ref(),
+            env,
             asset_info,
             prev_balance,
             minimum_receive,
-            receiver,
         ),
         ExecuteMsg::SendSwapReceipt {
             asset_info,
@@ -196,21 +194,12 @@ pub fn execute_swap_operations(
 
     let target_asset_info = operations.last().unwrap().get_ask_asset_info();
 
-    let mut operation_index = 0;
     let mut messages: Vec<CosmosMsg> = operations
         .into_iter()
         .map(|op| {
-            operation_index += 1;
             Ok(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: env.contract.address.to_string(),
-                msg: to_binary(&ExecuteMsg::ExecuteSwapOperation {
-                    operation: op,
-                    to: if operation_index == operations_len {
-                        Some(sender.clone())
-                    } else {
-                        None
-                    },
-                })?,
+                msg: to_binary(&ExecuteMsg::ExecuteSwapOperation { operation: op })?,
                 funds: vec![],
             }))
         })
@@ -223,25 +212,17 @@ pub fn execute_swap_operations(
             funds: vec![],
             msg: to_binary(&ExecuteMsg::AssertMinimumReceive {
                 asset_info: target_asset_info.clone(),
-                prev_balance: target_asset_info.query_balance(&deps.querier, &sender)?,
+                prev_balance: target_asset_info
+                    .query_balance(&deps.querier, &env.contract.address.clone())?,
                 minimum_receive,
-                receiver: sender,
             })?,
         }));
     }
 
     // Send a Swap Receipt message back to sender as the final message
-    let prev_balance: Uint128 = match vault_addr {
-        None => deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: config.accounts_contract.to_string(),
-            msg: to_binary(&AccountsQueryMsg::TokenAmount {
-                id: endowment_id,
-                asset_info: target_asset_info.clone(),
-                acct_type: acct_type.clone(),
-            })?,
-        }))?,
-        Some(ref vault_addr) => target_asset_info.query_balance(&deps.querier, vault_addr)?,
-    };
+    let prev_balance: Uint128 =
+        target_asset_info.query_balance(&deps.querier, env.contract.address.clone())?;
+
     messages.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: env.contract.address.to_string(),
         funds: vec![],

@@ -4,7 +4,7 @@ use cosmwasm_std::{
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
-use cw_asset::{AssetInfo as CwAssetInfo, AssetInfoBase as CwAssetInfoBase};
+use cw_asset::AssetInfoBase as CwAssetInfoBase;
 use terraswap::asset::{AssetInfo, PairInfo};
 
 use angel_core::errors::vault::ContractError;
