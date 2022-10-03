@@ -34,17 +34,16 @@ export async function testRejectUnapprovedDonations(
 ): Promise<void> {
   process.stdout.write("Test - Donors cannot send donation to unapproved Accounts");
 
-  await expect(
-    sendTransactionWithFunds(juno, apTeam, accountsContract, {
+  await sendTransactionWithFunds(juno, apTeam, accountsContract,
+    {
       deposit: {
         id: endowmentId,
         locked_percentage: "1",
         liquid_percentage: "0",
       },
     },
-      [{ denom: "ujuno", amount: amount }]
-    )
-  ).to.be.ok;
+    [{ denom: "ujuno", amount: amount }]
+  );
   console.log(chalk.green(" Passed!"));
 }
 
@@ -56,17 +55,17 @@ export async function testSendDonationToEndowment(
   coin: any // { denom: "ujuno", amount: "100000" }
 ): Promise<void> {
   process.stdout.write("Test - Send amount to a single Endowment Account (50:50 split)");
-  await expect(
-    sendTransactionWithFunds(juno, apTeam, accountsContract, {
-      deposit: {
-        id: endowmentId,
-        locked_percentage: "0.5",
-        liquid_percentage: "0.5",
+  await
+    sendTransactionWithFunds(juno, apTeam, accountsContract,
+      {
+        deposit: {
+          id: endowmentId,
+          locked_percentage: "0.5",
+          liquid_percentage: "0.5",
+        },
       },
-    },
       [coin]
-    )
-  ).to.be.ok;
+    );
   console.log(chalk.green(" Passed!"));
 }
 
@@ -86,13 +85,13 @@ export async function testSendRestitutionFundsToEndowments(
         new Promise(async (resolve, reject) => {
           try {
             console.log(`Sending ${chalk.blue(`${e.amount} ${e.acct_type}`)} restitution funds to Endowment ID: ${chalk.blue(e.id)}`);
-            const res = await sendTransactionWithFunds(juno, wallet, accountsContract, {
-                deposit: {
-                  id: e.id,
-                  locked_percentage: (e.acct_type == "locked") ? "1" : "0",
-                  liquid_percentage: (e.acct_type == "liquid") ? "1" : "0",
-                },
+            let res = await sendTransactionWithFunds(juno, wallet, accountsContract, {
+              deposit: {
+                id: e.id,
+                locked_percentage: (e.acct_type == "locked") ? "1" : "0",
+                liquid_percentage: (e.acct_type == "liquid") ? "1" : "0",
               },
+            },
               [{ denom, amount: e.amount }]
             );
             console.log(chalk.green(" Sent!"));
@@ -129,16 +128,14 @@ export async function testEndowmentCanWithdrawLiquid(
   const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
   const cw3 = res.owner as string;
 
-  await expect(
-    sendMessageViaCw3Proposal(juno, endowMember, cw3, accountsContract, {
-      withdraw: {
-        id: endowmentId,
-        acct_type: `liquid`,
-        beneficiary,
-        assets,
-      },
-    })
-  ).to.be.ok;
+  await sendMessageViaCw3Proposal(juno, endowMember, cw3, accountsContract, {
+    withdraw: {
+      id: endowmentId,
+      acct_type: `liquid`,
+      beneficiary,
+      assets,
+    },
+  });
   console.log(chalk.green(" Passed!"));
 }
 
@@ -166,15 +163,13 @@ export async function testEndowmentVaultsRedeem(
   const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
   const cw3 = res.owner as string;
 
-  await expect(
-    sendMessageViaCw3Proposal(juno, accountsOwner, cw3, accountsContract, {
-      vaults_redeem: {
-        id: endowmentId,
-        acct_type: acct_type,
-        vaults,
-      },
-    })
-  ).to.be.ok;
+  await sendMessageViaCw3Proposal(juno, accountsOwner, cw3, accountsContract, {
+    vaults_redeem: {
+      id: endowmentId,
+      acct_type: acct_type,
+      vaults,
+    },
+  });
   console.log(chalk.green(" Passed!"));
 }
 
@@ -202,17 +197,15 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
   const res = await juno.queryContractSmart(accounts, { endowment: { id: endowId } });
   const cw3 = res.owner as string;
 
-  await expect(
-    sendMessageViaCw3Proposal(juno, charityOwner, cw3, accounts, {
-      withdraw_liquid: {
-        sources: [{ vault, amount }],
-        beneficiary,
-        asset_info: {
-          native: "ujuno"
-        }
-      },
-    })
-  ).to.be.ok;
+  await sendMessageViaCw3Proposal(juno, charityOwner, cw3, accounts, {
+    withdraw_liquid: {
+      sources: [{ vault, amount }],
+      beneficiary,
+      asset_info: {
+        native: "ujuno"
+      }
+    },
+  });
   console.log(chalk.green(" Passed!"));
 }
 
@@ -245,19 +238,19 @@ export async function testCharityCanWithdrawLocked(
   const proposor_client = await clientSetup(proposor, networkUrl);
   const proposor_wallet = await getWalletAddress(proposor);
   console.log(chalk.yellow(`> Charity ${proposor_wallet} submits an early withdraw proposal to their CW3`));
-  
+
   // 0. Get the charity endowment's CW3 
   const res = await proposor_client.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
   const endowCw3 = res.owner as string;
-  
+
   // 1. Create the new proposal (no vote is cast here)
   const proposal = await sendTransaction(proposor_client, proposor_wallet, endowCw3, {
     propose_locked_withdraw: {
-        endowment_id: endowmentId,
-        description: "SHOW ME THE MONEYYYY!",
-        beneficiary: proposor_wallet, // send to the charity proposer's wallet
-        assets
-      },
+      endowment_id: endowmentId,
+      description: "SHOW ME THE MONEYYYY!",
+      beneficiary: proposor_wallet, // send to the charity proposer's wallet
+      assets
+    },
   });
 
   // 2. Parse out the proposal ID
@@ -373,15 +366,13 @@ export async function testCharityCanUpdateStrategies(
   const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
   const cw3 = res.owner as string;
 
-  await expect(
-    sendMessageViaCw3Proposal(juno, charity, cw3, accountsContract, {
-      update_strategies: {
-        id: endowmentId,
-        acct_type,
-        strategies,
-      },
-    })
-  ).to.be.ok;
+  await sendMessageViaCw3Proposal(juno, charity, cw3, accountsContract, {
+    update_strategies: {
+      id: endowmentId,
+      acct_type,
+      strategies,
+    },
+  });
   console.log(chalk.green(" Passed!"));
 }
 
@@ -404,16 +395,14 @@ export async function testApTeamChangesAccountsEndowmentOwner(
 ): Promise<void> {
   process.stdout.write("Test - Contract Owner can set new owner of an Endowment");
 
-  await expect(
-    sendTransaction(juno, apTeam, accountsContract, {
-      update_endowment_settings: {
-        id: endowmentId,
-        owner,
-        beneficiary,
-        kyc_donors_only,
-      },
-    })
-  ).to.be.ok;
+  await sendTransaction(juno, apTeam, accountsContract, {
+    update_endowment_settings: {
+      id: endowmentId,
+      owner,
+      beneficiary,
+      kyc_donors_only,
+    },
+  });
   console.log(chalk.green(" Passed!"));
 }
 
@@ -444,7 +433,7 @@ export async function testCreateNormalEndowment(
   msg: any,
 ): Promise<void> {
   process.stdout.write("Create a new endowment via the CW3 Applications contract");
-  const endow_res = await sendTransaction(juno, apTeam, accounts, { 
+  let endow_res = await sendTransaction(juno, apTeam, accounts, {
     create_endowment: msg
   });
   // capture and return the new Endowment ID
@@ -469,15 +458,13 @@ export async function testApproveInactiveEndowment(
   const res = await juno.queryContractSmart(accounts, { config: {} });
   const cw3 = res.owner as string;
 
-  await expect(
-    sendMessageViaCw3Proposal(juno, apTeam, cw3, accounts, {
-      update_endowment_status: {
-        endowment_id,
-        status: 1,
-        beneficiary: undefined,
-      }
-    })
-  ).to.be.ok;
+  await sendMessageViaCw3Proposal(juno, apTeam, cw3, accounts, {
+    update_endowment_status: {
+      endowment_id,
+      status: 1,
+      beneficiary: undefined,
+    }
+  });
   console.log(chalk.green(" Done!"));
 }
 

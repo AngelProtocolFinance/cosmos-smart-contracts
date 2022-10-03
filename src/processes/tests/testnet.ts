@@ -68,13 +68,14 @@ import {
   testUpdatingRegistrarNetworkConnections,
   testUpdatingRegistrarUpdateOwner
 } from "./core/registrar";
-import { 
-  testQueryVaultConfig, 
-  testVaultHarvest, 
+import {
+  testQueryVaultConfig,
+  testVaultHarvest,
   testVaultReinvestToLocked,
   testQueryVaultTotalBalance,
   testQueryVaultEndowmentBalance,
   testQueryVaultTokenInfo,
+  testVaultUpdateConfig,
 } from "./core/vaults";
 import {
   testAirdropClaim,
@@ -142,6 +143,7 @@ import {
   testQueryVestingAccount,
   testQueryVestingAccounts,
 } from "./halo/vesting";
+import { localjuno } from "../../config/localjunoConstants";
 
 export async function testExecute(
   config: any, // environment config object 
@@ -362,8 +364,32 @@ export async function testExecute(
   //   accounts,
   //   endowId1,
   //   `liquid`,
-  //   [{ vault: vaultLiquid2, percentage: "0.50" }]
+  //   [{ vault: vaultLiquid1, percentage: "0.50" }]
   // );
+
+  // await testVaultUpdateConfig(actors.apTeam.client, apTeamAddr, vaultLocked1, {
+  //   sibling_vault: undefined,
+  //   lp_staking_contract: undefined,
+  //   lp_pair_contract: undefined,
+  //   keeper: undefined,
+  //   tax_collector: undefined,
+
+  //   native_token: undefined,
+  //   reward_to_native_route: [
+  //     {
+  //       loop: {
+  //         offer_asset_info: {
+  //           cw20: localjuno.loopswap.loop_token_contract,
+  //         },
+  //         ask_asset_info: {
+  //           native: localjuno.networkInfo.nativeToken,
+  //         }
+  //       }
+  //     }
+  //   ],
+  //   native_to_lp0_route: undefined,
+  //   native_to_lp1_route: undefined,
+  // });
 
   // await testSendDonationToEndowment(
   //   actors.apTeam.client,
@@ -383,6 +409,7 @@ export async function testExecute(
   // await testVaultHarvest(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
+  //   vaultLocked1,
   // );
   // await testVaultReinvestToLocked(
   //   actors.charity1.client,

@@ -253,10 +253,32 @@ async function setup(
             native: localjuno.networkInfo.nativeToken,
           },
           {
-            cw20: localjuno.loopswap.halo_token_contract,
+            cw20: localjuno.loopswap.malo_token_contract,
           }
         ],
-        contract_address: localjuno.loopswap.halo_juno_pair_contract,
+        contract_address: localjuno.loopswap.malo_juno_pair_contract,
+      },
+      {
+        assets: [
+          {
+            native: localjuno.networkInfo.nativeToken,
+          },
+          {
+            cw20: localjuno.loopswap.kalo_token_contract,
+          }
+        ],
+        contract_address: localjuno.loopswap.kalo_juno_pair_contract,
+      },
+      {
+        assets: [
+          {
+            cw20: localjuno.loopswap.malo_token_contract,
+          },
+          {
+            cw20: localjuno.loopswap.kalo_token_contract,
+          }
+        ],
+        contract_address: localjuno.loopswap.malo_kalo_pair_contract,
       },
       {
         assets: [
