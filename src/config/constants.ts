@@ -29,6 +29,7 @@ export const testnet = {
     cw3ApTeam: "juno1pgedpd8m0g76ckxd6fduwpnm6x4g6fzsg0xj4u3xdchvjdxuzckqdhjv9a",
     cw4GrpReviewTeam: "juno1h94wjgxv32zsg64f34retxudwd4nppslwm4glvu2jld9vrqh7k6srzjhcj",
     cw3ReviewTeam: "juno13mlk69qjx2cm8upx3d04h9dxh78mzhfksxrrnuyjk2l5s5wknl8skvkjhp",
+    swapRouter: "",
     vaultLocked1: "juno1lem7xy2gam9lm46jax8wzpdyjx4clcqd554zr7mfjrzu2xglh90s8rakew",
     vaultLiquid1: "juno17x84z3vk8k88rqmkladfqaesg2dha8m593kcupszkehdh0u478eqy4kmxr",
     vaultLocked2: "juno1phxdtakp9wdn8w99v7fvddywmhshn6mka68qjexgwhcde97ezyzqwylwl5",
@@ -65,15 +66,27 @@ export const testnet = {
     loop_juno_pair_contract: "",
     loop_juno_pair_lp_token: "",
     initial_loop_supply: "1000000000000000",
-    loop_liquidity: "200000000",
-    juno_liquidity: "100000000",
-    
-    halo_token_contract: "",
-    halo_juno_pair_contract: "",
-    halo_juno_pair_lp_token: "",
-    initial_halo_supply: "1000000000000000",
-    halo_liquidity: "200000000",
-    native_liquidity: "100000000",
+    lj_pair_loop_liquidity: "200000000",
+    lj_pair_juno_liquidity: "100000000",
+
+    malo_token_contract: "",
+    malo_juno_pair_contract: "",
+    malo_juno_pair_lp_token: "",
+    initial_malo_supply: "1000000000000000",
+    mj_pair_malo_liquidity: "20000000",
+    mj_pair_juno_liquidity: "10000000",
+
+    kalo_token_contract: "",
+    kalo_juno_pair_contract: "",
+    kalo_juno_pair_lp_token: "",
+    initial_kalo_supply: "1000000000000000",
+    kj_pair_kalo_liquidity: "20000000",
+    kj_pair_juno_liquidity: "10000000",
+
+    malo_kalo_pair_contract: "",
+    malo_kalo_pair_lp_token: "",
+    mk_pair_malo_liquidity: "10000000",
+    mk_pair_kalo_liquidity: "10000000",
   },
 
   // HALO contracts
@@ -150,7 +163,7 @@ export const mainnet = {
     initial_loop_supply: "1000000000000000",
     loop_liquidity: "200000000",
     juno_liquidity: "100000000",
-    
+
     halo_token_contract: "",
     halo_juno_pair_contract: "",
     halo_juno_pair_lp_token: "",

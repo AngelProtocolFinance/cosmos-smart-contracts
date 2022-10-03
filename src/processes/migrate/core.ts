@@ -18,6 +18,7 @@ export async function migrateCore(
   cw4GrpApTeam: string,
   cw3ApTeam: string,
   cw3ReviewTeam: string,
+  swapRouter: string,
   vaultContracts: string[],
 ): Promise<void> {
   // run the migrations desired
@@ -27,6 +28,7 @@ export async function migrateCore(
   // await storeAndMigrateContract(juno, apTeam, cw3ReviewTeam, 'cw3_applications.wasm');
   // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
   // await storeAndMigrateContract(juno, apTeam, accounts, 'accounts.wasm');
+  // await storeAndMigrateContract(juno, apTeam, swapRouter, 'swap_router.wasm');
   // await migrateVaults(juno, apTeam, vaultContracts);
 }
 

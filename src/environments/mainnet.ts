@@ -37,6 +37,7 @@ let cw4GrpReviewTeam: string;
 let cw3ReviewTeam: string;
 let indexFund: string;
 let accounts: string;
+let swapRouter: string;  // FIXME: Add the scripts to initialize this variable.
 let apTreasury: string;
 
 // Angel/HALO contracts
@@ -117,7 +118,7 @@ export async function startSetupCore(): Promise<void> {
     fund_rotation: undefined, // blocks of time for each active fund rotation
     fund_member_limit: 10, // fund member limit
     funding_goal: "50000000000", // funding goal limit to trigger active fund rotation
-    accepted_tokens:  {
+    accepted_tokens: {
       native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034'],
       cw20: [],
     }
@@ -232,6 +233,7 @@ export async function startMigrateCore(): Promise<void> {
     cw4GrpApTeam,
     cw3ApTeam,
     cw3ReviewTeam,
+    swapRouter,
     [],
   );
 }

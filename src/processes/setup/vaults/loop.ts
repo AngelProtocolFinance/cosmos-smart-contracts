@@ -6,6 +6,7 @@ import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
 import { sendTransaction, storeCode, instantiateContract, getWalletAddress, sendMessageViaCw3Proposal } from "../../../utils/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
+import { localjuno } from "../../../config/localjunoConstants";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -45,10 +46,12 @@ export async function setupLoopVaults(
   config: {
     loopswap_factory: string;
     loopswap_farming: string;
-    loopswap_loop_juno_pair: string;
+    loopswap_malo_kalo_pair: string;
     loopswap_lp_reward_token: string;
     harvest_to_liquid: string;
     accepted_tokens: any | undefined;
+    swapRouter: string;
+    nativeToken: any,
   }
 ): Promise<void> {
   chainId = _chainId;
@@ -60,7 +63,7 @@ export async function setupLoopVaults(
   apTeamAddr = await getWalletAddress(apTeam);
   apTreasuryAddr = await getWalletAddress(apTreasury);
 
-  await createLoopVaults(config.loopswap_factory, config.loopswap_farming, config.loopswap_loop_juno_pair, config.loopswap_lp_reward_token, apTeamAddr, apTeamAddr, config.harvest_to_liquid);
+  await createLoopVaults(config.loopswap_factory, config.loopswap_farming, config.loopswap_malo_kalo_pair, config.loopswap_lp_reward_token, apTeamAddr, apTeamAddr, config.harvest_to_liquid, config.swapRouter, config.nativeToken);
 }
 
 async function createLoopVaults(
@@ -71,6 +74,8 @@ async function createLoopVaults(
   keeper: string,
   tax_collector: string,
   harvest_to_liquid: string,
+  swapRouter: string,
+  native_token: string,
 ): Promise<void> {
   process.stdout.write("Uploading Vault Wasm");
   const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/loopswap_vault.wasm`);
@@ -84,18 +89,57 @@ async function createLoopVaults(
     registrar_contract: registrar,
     keeper: keeper,
     tax_collector: tax_collector,
+    swap_router: swapRouter,
+
     lp_factory_contract: loopFactory,
     lp_staking_contract: loopFarming,
     pair_contract: loopPair,
     lp_reward_token: loopStakingRewardToken,
-    name: "Vault Token for LOOP-JUNO pair",
-    symbol: "VTLOOPJUNO",
-    decimals: 6,
+    native_token: native_token,
 
-    harvest_to_liquid: harvest_to_liquid,
+    reward_to_native_route: [
+      {
+        loop: {
+          offer_asset_info: {
+            cw20: localjuno.loopswap.loop_token_contract,
+          },
+          ask_asset_info: {
+            native: localjuno.networkInfo.nativeToken,
+          }
+        }
+      }
+    ],
+    native_to_lp0_route: [
+      {
+        loop: {
+          offer_asset_info: {
+            native: localjuno.networkInfo.nativeToken,
+          },
+          ask_asset_info: {
+            cw20: localjuno.loopswap.malo_token_contract,
+          }
+        }
+      }
+    ],
+    native_to_lp1_route: [
+      {
+        loop: {
+          offer_asset_info: {
+            native: localjuno.networkInfo.nativeToken,
+          },
+          ask_asset_info: {
+            cw20: localjuno.loopswap.kalo_token_contract,
+          }
+        }
+      }
+    ],
+
+    name: "Vault Token for MALO-KALO pair",
+    symbol: "VTMALOKALO",
+    decimals: 6,
   });
   vault1_locked = vaultResult1.contractAddress as string;
-  console.log(chalk.green(" Done!"), `${chalk.blue("Liquid contractAddress")}=${vault1_locked}`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("Locked contractAddress")}=${vault1_locked}`);
 
   // Vault - #1 (Liquid)
   process.stdout.write("Instantiating Vault #1 (Liquid) contract");
@@ -105,15 +149,54 @@ async function createLoopVaults(
     registrar_contract: registrar,
     keeper: keeper,
     tax_collector: tax_collector,
+    swap_router: swapRouter,
+
     lp_factory_contract: loopFactory,
     lp_staking_contract: loopFarming,
     pair_contract: loopPair,
     lp_reward_token: loopStakingRewardToken,
-    name: "Vault Token for LOOP-JUNO pair",
-    symbol: "VTLOOPJUNO",
-    decimals: 6,
+    native_token: native_token,
 
-    harvest_to_liquid: harvest_to_liquid,
+    reward_to_native_route: [
+      {
+        loop: {
+          offer_asset_info: {
+            cw20: localjuno.loopswap.loop_token_contract,
+          },
+          ask_asset_info: {
+            native: localjuno.networkInfo.nativeToken,
+          }
+        }
+      }
+    ],
+    native_to_lp0_route: [
+      {
+        loop: {
+          offer_asset_info: {
+            native: localjuno.networkInfo.nativeToken,
+          },
+          ask_asset_info: {
+            cw20: localjuno.loopswap.malo_token_contract,
+          }
+        }
+      }
+    ],
+    native_to_lp1_route: [
+      {
+        loop: {
+          offer_asset_info: {
+            native: localjuno.networkInfo.nativeToken,
+          },
+          ask_asset_info: {
+            cw20: localjuno.loopswap.kalo_token_contract,
+          }
+        }
+      }
+    ],
+
+    name: "Vault Token for MALO-KALO pair",
+    symbol: "VTMALOKALO",
+    decimals: 6,
   });
   vault1_liquid = vaultResult2.contractAddress as string;
   console.log(chalk.green(" Done!"), `${chalk.blue("Liquid contractAddress")}=${vault1_liquid}`);
@@ -126,6 +209,11 @@ async function createLoopVaults(
       lp_pair_contract: undefined,
       keeper: undefined,
       tax_collector: undefined,
+
+      native_token: undefined,
+      reward_to_native_route: undefined,
+      native_to_lp0_route: undefined,
+      native_to_lp1_route: undefined,
     }
   });
 

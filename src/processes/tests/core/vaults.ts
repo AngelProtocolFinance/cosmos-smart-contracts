@@ -45,6 +45,17 @@ export async function testVaultReinvestToLocked(
   console.log(chalk.green(" Passed!"));
 }
 
+export async function testVaultUpdateConfig(
+  juno: SigningCosmWasmClient,
+  sender: string,
+  vault_addr: string,
+  new_config: any | undefined,
+): Promise<void> {
+  process.stdout.write("Test - Vault owner updates the vault config")
+  await sendTransaction(juno, sender, vault_addr, { update_config: new_config });
+  console.log(chalk.green(" Passed!"));
+}
+
 //----------------------------------------------------------------------------------------
 // Querying tests
 //----------------------------------------------------------------------------------------
@@ -55,7 +66,7 @@ export async function testQueryVaultConfig(
 ): Promise<void> {
   process.stdout.write("Test - Query Vault Config\n");
   const result: any = await juno.queryContractSmart(vault, {
-    vault_config: {},
+    config: {},
   });
 
   console.log(result);
