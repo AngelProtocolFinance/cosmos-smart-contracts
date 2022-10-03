@@ -1389,8 +1389,8 @@ fn prepare_swap_router_swap_msgs(
             msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
                 operations,
                 minimum_receive: None,
-                endowment_id: 1,
-                acct_type: AccountType::Locked,
+                endowment_id: 1,                // Placeholder value
+                acct_type: AccountType::Locked, // Placeholder value
             })
             .unwrap(),
             funds: coins(swap_amount.u128(), denom.to_string()),
@@ -1414,8 +1414,8 @@ fn prepare_swap_router_swap_msgs(
                     msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
                         operations,
                         minimum_receive: None,
-                        endowment_id: 1,
-                        acct_type: AccountType::Locked,
+                        endowment_id: 1,                // Placeholder value
+                        acct_type: AccountType::Locked, // Placeholder value
                     })
                     .unwrap(),
                 })
