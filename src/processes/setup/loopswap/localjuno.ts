@@ -235,10 +235,10 @@ export async function setupLoopSwap(
 
   // Get the LP Token address of newly created swap pool
   process.stdout.write("Query new MALO/JUNO pool's LP Token contract");
-  const result: any = await juno.queryContractSmart(maloJunoPairContract, {
+  const result1: any = await juno.queryContractSmart(maloJunoPairContract, {
     pair: {},
   });
-  const maloJunoPairLP = result.liquidity_token as string;
+  const maloJunoPairLP = result1.liquidity_token as string;
   console.log(
     chalk.green(" Done!"),
     `${chalk.blue("contractAddress")}=${maloJunoPairLP}`
@@ -334,10 +334,10 @@ export async function setupLoopSwap(
 
   // Get the LP Token address of newly created swap pool
   process.stdout.write("Query new KALO/JUNO pool's LP Token contract");
-  const result1: any = await juno.queryContractSmart(kaloJunoPairContract, {
+  const result2: any = await juno.queryContractSmart(kaloJunoPairContract, {
     pair: {},
   });
-  const kaloJunoPairLP = result.liquidity_token as string;
+  const kaloJunoPairLP = result2.liquidity_token as string;
   console.log(
     chalk.green(" Done!"),
     `${chalk.blue("contractAddress")}=${kaloJunoPairLP}`
@@ -409,10 +409,10 @@ export async function setupLoopSwap(
 
   // Get the LP Token address of newly created swap pool
   process.stdout.write("Query new MALO/KALO pool's LP Token contract");
-  const resul: any = await juno.queryContractSmart(maloKaloPairContract, {
+  const result3: any = await juno.queryContractSmart(maloKaloPairContract, {
     pair: {},
   });
-  const maloKaloPairLP = result.liquidity_token as string;
+  const maloKaloPairLP = result3.liquidity_token as string;
   console.log(
     chalk.green(" Done!"),
     `${chalk.blue("contractAddress")}=${maloKaloPairLP}`
@@ -512,7 +512,7 @@ export async function setupLoopSwap(
 
   process.stdout.write("Instantiating the Loopswap Farming contract");
   const farmingResult = await instantiateContract(juno, apTeam, apTeam, farmingCodeId, {
-    lp_tokens: [loopJunoPairLP, maloJunoPairLP],
+    lp_tokens: [loopJunoPairLP, maloKaloPairLP],
     flp_tokens: [flpTokenContract1, flpTokenContract2],
     loop_token_address: loopTokenContract,
   });
