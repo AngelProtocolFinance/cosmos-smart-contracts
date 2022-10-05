@@ -4,9 +4,11 @@ import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import {
+  toEncodedBinary,
   sendTransaction,
   sendTransactionWithFunds,
   sendMessageViaCw3Proposal,
+  sendMessagesViaCw3Proposal,
   sendApplicationViaCw3Proposal,
   clientSetup,
   getWalletAddress,
@@ -393,28 +395,44 @@ export async function testCharityCanUpdateStrategies(
 //
 //----------------------------------------------------------------------------------------
 
-export async function testApTeamChangesAccountsEndowmentOwner(
+export async function testApTeamChangesEndowmentSettings(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3ApTeam: string,
   accountsContract: string,
-  endowmentId: number,
-  owner: string,
-  beneficiary: string,
-  kyc_donors_only: boolean,
+  msgs: any[],
 ): Promise<void> {
-  process.stdout.write("Test - Contract Owner can set new owner of an Endowment");
+  process.stdout.write("Test - Contract Owner can change a limited number an Endowment settings\n");
 
-  await expect(
-    sendTransaction(juno, apTeam, accountsContract, {
-      update_endowment_settings: {
-        id: endowmentId,
-        owner,
-        beneficiary,
-        kyc_donors_only,
-      },
-    })
-  ).to.be.ok;
-  console.log(chalk.green(" Passed!"));
+  let prom = Promise.resolve();
+  let final_msgs: any[] = [];
+  msgs.forEach((msg) => {
+    // eslint-disable-next-line no-async-promise-executor
+    prom = prom.then(
+      () =>
+        new Promise(async (resolve, reject) => {
+          try {
+            console.log(chalk.yellow(`Updating Endowment ID: ${msg.id}`));
+            final_msgs.push({
+              wasm: {
+                execute: {
+                  contract_addr: accountsContract,
+                  msg: toEncodedBinary({
+                    update_endowment_settings: { id: msg.id, tier: msg.tier }
+                  }),
+                  funds: [],
+                },
+              },
+            });
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        })
+    );
+  });
+  await prom;
+  await sendMessagesViaCw3Proposal(juno, apTeam, cw3ApTeam, accountsContract, final_msgs);
 }
 
 //----------------------------------------------------------------------------------------

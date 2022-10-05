@@ -248,6 +248,43 @@ export async function sendMessageViaCw3Proposal(
   console.log(chalk.yellow("> Done!"));
 }
 
+export async function sendMessagesViaCw3Proposal(
+  juno: SigningCosmWasmClient,
+  proposor: string,
+  cw3: string,
+  target_contract: string,
+  msgs: any[],
+  // members: (SigningCosmWasmClient, string)[], // only needed if more votes required than initial proposor
+): Promise<void> {
+  console.log(chalk.yellow("\n> Creating CW3 Proposal"));
+  const info_text = `CW3 Member proposes to send msg to: ${target_contract}`;
+
+  // 1. Create the new proposal
+  const proposal = await sendTransaction(juno, proposor, cw3, {
+    propose: {
+      title: info_text,
+      description: info_text,
+      msgs,
+    },
+  });
+
+  // 2. Parse out the proposal ID
+  const proposal_id = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "proposal_id";
+    })?.value as string;
+  console.log(chalk.yellow(`> New Proposal's ID: ${proposal_id}`));
+
+  console.log(chalk.yellow("> Executing the Proposal"));
+  await sendTransaction(juno, proposor, cw3, {
+    execute: { proposal_id: parseInt(proposal_id) }
+  });
+  console.log(chalk.yellow("> Done!"));
+}
+
 //----------------------------------------------------------------------------------------
 // Abstract away steps to send an Application proposal message to Review Team CW3 multisig and approve:
 // 1. Create Application Proposal on CW3 to execute endowment create msg on Accounts contract
