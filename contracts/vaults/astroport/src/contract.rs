@@ -8,14 +8,14 @@ use cw_asset::AssetInfoBase as CwAssetInfoBase;
 
 use angel_core::errors::vault::ContractError;
 
+use crate::astro_core_structs::{
+    asset::{AssetInfo, PairInfo},
+    pair::QueryMsg as AstroportPairQueryMsg,
+};
 use crate::executers;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
 use crate::queriers;
 use crate::state::{Config, MinterData, State, TokenInfo, APTAX, CONFIG, STATE, TOKEN_INFO};
-use crate::structs::{
-    asset::{AssetInfo, PairInfo},
-    pair::QueryMsg as AstroportPairQueryMsg,
-};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "astroport_vault";

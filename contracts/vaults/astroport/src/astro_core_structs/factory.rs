@@ -1,4 +1,4 @@
-use crate::structs::asset::{AssetInfo, PairInfo};
+use crate::astro_core_structs::asset::{AssetInfo, PairInfo};
 use cosmwasm_std::{Addr, Binary};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};

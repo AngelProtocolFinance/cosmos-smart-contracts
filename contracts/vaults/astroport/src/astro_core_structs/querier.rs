@@ -1,9 +1,9 @@
-use crate::structs::asset::{Asset, AssetInfo, PairInfo};
-use crate::structs::factory::{
+use crate::astro_core_structs::asset::{Asset, AssetInfo, PairInfo};
+use crate::astro_core_structs::factory::{
     ConfigResponse as FactoryConfigResponse, FeeInfoResponse, PairType, PairsResponse,
     QueryMsg as FactoryQueryMsg,
 };
-use crate::structs::pair::{
+use crate::astro_core_structs::pair::{
     QueryMsg as PairQueryMsg, ReverseSimulationResponse, SimulationResponse,
 };
 
