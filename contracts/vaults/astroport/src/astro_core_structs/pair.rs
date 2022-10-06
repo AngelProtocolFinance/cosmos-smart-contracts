@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::structs::asset::{Asset, AssetInfo};
+use crate::astro_core_structs::asset::{Asset, AssetInfo};
 
 use cosmwasm_std::{Addr, Binary, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;

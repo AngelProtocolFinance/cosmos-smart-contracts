@@ -1,5 +1,5 @@
-use crate::structs::asset::Asset;
-use angel_core::structs::{AccountType, SwapOperation};
+use crate::astro_core_structs::{asset::Asset, router::SwapOperation};
+use angel_core::structs::AccountType;
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfo as CwAssetInfo;

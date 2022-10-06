@@ -1,7 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use angel_core::structs::{AccountType, SwapOperation};
+use crate::astro_core_structs::router::SwapOperation;
+use angel_core::structs::AccountType;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {

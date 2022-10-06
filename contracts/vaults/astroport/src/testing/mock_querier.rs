@@ -17,8 +17,8 @@ use angel_core::structs::{
     AcceptedTokens, AccountStrategies, Categories, OneOffVaults, RebalanceDetails, SplitDetails,
 };
 
-use crate::structs::asset::{AssetInfo, PairInfo};
-use crate::structs::factory::PairType;
+use crate::astro_core_structs::asset::{AssetInfo, PairInfo};
+use crate::astro_core_structs::factory::PairType;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]

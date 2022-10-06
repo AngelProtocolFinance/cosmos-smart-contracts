@@ -2,8 +2,8 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-use crate::structs::factory::PairType;
-use crate::structs::querier::{query_balance, query_token_balance, query_token_symbol};
+use crate::astro_core_structs::factory::PairType;
+use crate::astro_core_structs::querier::{query_balance, query_token_balance, query_token_symbol};
 use cosmwasm_std::{
     coins, to_binary, Addr, Api, BankMsg, Coin, CosmosMsg, Decimal, MessageInfo, QuerierWrapper,
     StdError, StdResult, Uint128, WasmMsg,

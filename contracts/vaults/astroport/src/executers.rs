@@ -1,4 +1,4 @@
-use angel_core::structs::{AccountType, SwapOperation};
+use angel_core::structs::AccountType;
 use angel_core::utils::{query_balance, query_token_balance};
 use cosmwasm_std::{
     attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env,
@@ -11,16 +11,18 @@ use crate::msg::{
     AstroportFarmingExecuteMsg, AstroportFarmingQueryMsg, AstroportPairExecuteMsg, ExecuteMsg,
     ReceiveMsg, UpdateConfigMsg,
 };
-use angel_core::errors::vault::ContractError;
-use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 
+use angel_core::errors::vault::ContractError;
+
+use crate::astro_core_structs::router::ExecuteMsg as SwapRouterExecuteMsg;
+use crate::astro_core_structs::{
+    asset::{Asset, AssetInfo, PairInfo},
+    pair::QueryMsg as AstroportPairQueryMsg,
+    router::SwapOperation,
+};
 use crate::msg::QueryMsg as VaultQueryMsg;
 use crate::responses::ConfigResponse;
 use crate::state::{Config, State, APTAX, BALANCES, CONFIG, STATE, TOKEN_INFO};
-use crate::structs::{
-    asset::{Asset, AssetInfo, PairInfo},
-    pair::QueryMsg as AstroportPairQueryMsg,
-};
 
 /// Contract entry: **UpdateOwner**
 pub fn update_owner(
@@ -1369,8 +1371,8 @@ fn prepare_swap_router_swap_msgs(
             msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
                 operations,
                 minimum_receive: None,
-                endowment_id: 1,                // Placeholder value
-                acct_type: AccountType::Locked, // Placeholder value
+                to: None,
+                max_spread: None,
             })
             .unwrap(),
             funds: coins(swap_amount.u128(), denom.to_string()),
@@ -1394,8 +1396,8 @@ fn prepare_swap_router_swap_msgs(
                     msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
                         operations,
                         minimum_receive: None,
-                        endowment_id: 1,                // Placeholder value
-                        acct_type: AccountType::Locked, // Placeholder value
+                        to: None,
+                        max_spread: None,
                     })
                     .unwrap(),
                 })
