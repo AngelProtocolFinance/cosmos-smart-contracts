@@ -194,7 +194,7 @@ impl WasmMockQuerier {
                     })
                     .unwrap(),
                 )),
-                // Simulating the `loopswap::pair::Pair {}` query
+                // Simulating the `astroport::pair::Pair {}` query
                 QueryMsg::Pair {} => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&PairInfo {
                         pair_type: PairType::Stable {},
@@ -206,12 +206,12 @@ impl WasmMockQuerier {
                                 contract_addr: Addr::unchecked("halo-token"),
                             },
                         ],
-                        contract_addr: Addr::unchecked("loop-pair"),
-                        liquidity_token: Addr::unchecked("loop-lp-token"),
+                        contract_addr: Addr::unchecked("astroport-usdc-usdt-pair"),
+                        liquidity_token: Addr::unchecked("astroport-lp-token"),
                     })
                     .unwrap(),
                 )),
-                // Simulating the `loopswap::farming::QueryFlpTokenFromPoolAddress { pool_address: String }` query
+                // Simulating the `astroport::generator::QueryFlpTokenFromPoolAddress { pool_address: String }` query
                 QueryMsg::QueryFlpTokenFromPoolAddress { pool_address: _ } => SystemResult::Ok(
                     ContractResult::Ok(to_binary(&"flp-token-contract").unwrap()),
                 ),

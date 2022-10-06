@@ -28,11 +28,11 @@ fn create_mock_vault(
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
         tax_collector: "tax-collector".to_string(),
-        swap_router: "swap-router".to_string(),
+        swap_router: "astroport-router".to_string(),
 
-        lp_factory_contract: "loop-factory".to_string(),
-        lp_staking_contract: "loop-farming".to_string(),
-        pair_contract: "loop-pair".to_string(),
+        lp_factory_contract: "astroport-factory".to_string(),
+        lp_staking_contract: "astroport-generator".to_string(),
+        pair_contract: "astroport-usdc-usdt-pair".to_string(),
         lp_reward_token: "lp-reward-token".to_string(),
 
         native_token: cw_asset::AssetInfoBase::Native("ujuno".to_string()),
@@ -65,11 +65,11 @@ fn proper_instantiation() {
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
         tax_collector: "tax-collector".to_string(),
-        swap_router: "swap-router".to_string(),
+        swap_router: "astroport-router".to_string(),
 
-        lp_factory_contract: "loop-factory".to_string(),
-        lp_staking_contract: "loop-farming".to_string(),
-        pair_contract: "loop-pair".to_string(),
+        lp_factory_contract: "astroport-factory".to_string(),
+        lp_staking_contract: "astroport-generator".to_string(),
+        pair_contract: "astroport-usdc-usdt-pair".to_string(),
         lp_reward_token: "lp-reward-token".to_string(),
 
         native_token: cw_asset::AssetInfoBase::Native("ujuno".to_string()),
@@ -134,8 +134,8 @@ fn test_update_config() {
         ibc_relayer: Some("new-ibc-relayer".to_string()),
         ibc_sender: Some("new-ibc-sender".to_string()),
 
-        lp_staking_contract: Some("new-loop-farming".to_string()),
-        lp_pair_contract: Some("new-loop-pair".to_string()),
+        lp_staking_contract: Some("new-astroport-generator".to_string()),
+        lp_pair_contract: Some("new-astroport-pair".to_string()),
         keeper: Some("new-keeper".to_string()),
         sibling_vault: None,
         tax_collector: Some("new-tax-collector".to_string()),
@@ -172,8 +172,11 @@ fn test_update_config() {
     let config: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(config.ibc_relayer, "new-ibc-relayer".to_string());
     assert_eq!(config.ibc_sender, "new-ibc-sender".to_string());
-    assert_eq!(config.lp_pair_contract, "new-loop-pair".to_string());
-    assert_eq!(config.lp_staking_contract, "new-loop-farming".to_string());
+    assert_eq!(config.lp_pair_contract, "new-astroport-pair".to_string());
+    assert_eq!(
+        config.lp_staking_contract,
+        "new-astroport-generator".to_string()
+    );
     assert_eq!(config.keeper, "new-keeper".to_string());
     assert_eq!(config.tax_collector, "new-tax-collector".to_string());
 }
@@ -223,11 +226,11 @@ fn test_deposit_cw20_token() {
         registrar_contract: "angelprotocolteamdano".to_string(),
         keeper: "keeper".to_string(),
         tax_collector: "tax-collector".to_string(),
-        swap_router: "swap-router".to_string(),
+        swap_router: "astroport-router".to_string(),
 
-        lp_factory_contract: "loop-factory".to_string(),
-        lp_staking_contract: "loop-farming".to_string(),
-        pair_contract: "loop-pair".to_string(),
+        lp_factory_contract: "astroport-factory".to_string(),
+        lp_staking_contract: "astroport-generator".to_string(),
+        pair_contract: "astroport-usdc-usdt-pair".to_string(),
         lp_reward_token: "lp-reward-token".to_string(),
 
         native_token: cw_asset::AssetInfoBase::Cw20(Addr::unchecked("halo-token")),
