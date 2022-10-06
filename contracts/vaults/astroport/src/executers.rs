@@ -16,8 +16,10 @@ use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::responses::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
 
 use crate::state::{Config, State, APTAX, BALANCES, CONFIG, STATE, TOKEN_INFO};
-use crate::structs::asset::{Asset, AssetInfo, PairInfo};
-use crate::structs::querier::query_pair_info;
+use crate::structs::{
+    asset::{Asset, AssetInfo, PairInfo},
+    pair::QueryMsg as AstroportPairQueryMsg,
+};
 
 /// Contract entry: **UpdateOwner**
 pub fn update_owner(
@@ -34,28 +36,6 @@ pub fn update_owner(
     let new_owner = deps.api.addr_validate(&new_owner)?;
     // update config attributes with newly passed args
     config.owner = new_owner;
-    CONFIG.save(deps.storage, &config)?;
-
-    Ok(Response::default())
-}
-
-/// Contract entry: **UpdateRegistrar**
-///
-/// Update the `registrar_contract` address in **CONFIG**
-pub fn update_registrar(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    new_registrar: Addr,
-) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-
-    // only the registrar contract can update it's address in the config
-    if info.sender != config.registrar_contract {
-        return Err(ContractError::Unauthorized {});
-    }
-    // update config attributes with newly passed args
-    config.registrar_contract = new_registrar;
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::default())
@@ -78,6 +58,16 @@ pub fn update_config(
     }
 
     // Update the config
+    config.ibc_relayer = match msg.ibc_relayer {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.ibc_relayer,
+    };
+
+    config.ibc_sender = match msg.ibc_sender {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.ibc_sender,
+    };
+
     config.sibling_vault = match msg.sibling_vault {
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.sibling_vault,
@@ -102,17 +92,17 @@ pub fn update_config(
         None => config.lp_pair_contract,
     };
 
-    let pair_info: PairInfo =
-        query_pair_info_from_pair(&deps.querier, config.lp_pair_contract.clone())?;
-    config.lp_token = deps.api.addr_validate(&pair_info.liquidity_token)?;
+    let pair_info: PairInfo = deps.querier.query_wasm_smart(
+        config.lp_pair_contract.to_string(),
+        &AstroportPairQueryMsg::Pair {},
+    )?;
+    config.lp_token = pair_info.liquidity_token;
     config.lp_pair_token0 = pair_info.asset_infos[0].clone();
     config.lp_pair_token1 = pair_info.asset_infos[1].clone();
     config.native_token = match msg.native_token {
         None => config.native_token,
         Some(CwAssetInfoBase::Native(denom)) => AssetInfo::NativeToken { denom },
-        Some(CwAssetInfoBase::Cw20(contract_addr)) => AssetInfo::Token {
-            contract_addr: contract_addr.to_string(),
-        },
+        Some(CwAssetInfoBase::Cw20(contract_addr)) => AssetInfo::Token { contract_addr },
         _ => unreachable!(),
     };
     config.reward_to_native_route = match msg.reward_to_native_route {
