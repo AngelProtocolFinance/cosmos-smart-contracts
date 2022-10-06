@@ -2,7 +2,7 @@ use angel_core::structs::{AccountType, SwapOperation};
 use angel_core::utils::{query_balance, query_token_balance};
 use cosmwasm_std::{
     attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env,
-    MessageInfo, QueryRequest, Response, StdError, StdResult, Uint128, WasmMsg, WasmQuery,
+    MessageInfo, Response, StdError, StdResult, Uint128, WasmMsg,
 };
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfoBase as CwAssetInfoBase;
@@ -12,10 +12,10 @@ use crate::msg::{
     ReceiveMsg, UpdateConfigMsg,
 };
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::registrar::QueryMsg as RegistrarQueryMsg;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
-use angel_core::responses::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
 
+use crate::msg::QueryMsg as VaultQueryMsg;
+use crate::responses::ConfigResponse;
 use crate::state::{Config, State, APTAX, BALANCES, CONFIG, STATE, TOKEN_INFO};
 use crate::structs::{
     asset::{Asset, AssetInfo, PairInfo},
@@ -138,8 +138,10 @@ pub fn deposit(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // Check if the `caller` is "accounts_contract" & "endowment_id" is valid
-    validate_action_caller_n_endow_id(deps.as_ref(), &config, msg_sender.clone(), endowment_id)?;
+    // Check if the `caller` is "ibc_relayer" & "endowment_id" is valid
+    if msg_sender != config.ibc_relayer {
+        return Err(ContractError::Unauthorized {});
+    }
 
     // Check if the `deposit_asset_info` is valid
     if deposit_asset_info != config.native_token {
@@ -165,11 +167,11 @@ pub fn deposit(
     //  - The `native_token` is either of `lp_pair_token0` or `lp_pair_token1`
     //  - The `native_token` is not any of lp pair tokens
     let mut swap_router_swap_msgs = vec![];
-    let mut loop_pair_swap_msgs = vec![];
+    let mut astroport_pair_swap_msgs = vec![];
     let mut contract_add_liquidity_msgs = vec![];
     if deposit_asset_info == config.lp_pair_token0 || deposit_asset_info == config.lp_pair_token1 {
         // Swap the half of `native_token`(`deposit`) to lp contract pair token
-        loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
+        astroport_pair_swap_msgs.extend_from_slice(&prepare_astroport_pair_swap_msg(
             config.lp_pair_contract.as_ref(),
             &deposit_asset_info,
             deposit_amount.multiply_ratio(1_u128, 2_u128),
@@ -213,7 +215,7 @@ pub fn deposit(
 
     Ok(Response::default()
         .add_messages(swap_router_swap_msgs)
-        .add_messages(loop_pair_swap_msgs)
+        .add_messages(astroport_pair_swap_msgs)
         .add_messages(contract_add_liquidity_msgs)
         .add_attribute("action", "deposit")
         .add_attribute("sender", msg_sender)
@@ -223,7 +225,7 @@ pub fn deposit(
 
 /// Contract entry: **RestakeClaimReward**
 ///   1. Compute the amount of `lp_reward_token` generated from `harvest(claim)`
-///   2. Convert the `lp_reward_token`(`LOOP`)s to the LP tokens
+///   2. Convert the `lp_reward_token`(`ASTRO`)s to the LP tokens
 ///   3. Re-stake the LP tokens
 pub fn restake_claim_reward(
     deps: DepsMut,
@@ -253,11 +255,11 @@ pub fn restake_claim_reward(
         contract_addr: config.lp_reward_token.clone(),
     };
     let mut swap_router_swap_msgs = vec![];
-    let mut loop_pair_swap_msgs = vec![];
+    let mut astroport_pair_swap_msgs = vec![];
     let mut contract_add_liquidity_msgs = vec![];
     if reward_asset_info == config.lp_pair_token0 || reward_asset_info == config.lp_pair_token1 {
         // Swap the half of `reward_token` to the lp contract pair token
-        loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
+        astroport_pair_swap_msgs.extend_from_slice(&prepare_astroport_pair_swap_msg(
             config.lp_pair_contract.as_ref(),
             &reward_asset_info,
             reward_amount.multiply_ratio(1_u128, 2_u128),
@@ -310,13 +312,13 @@ pub fn restake_claim_reward(
 
     Ok(Response::default()
         .add_messages(swap_router_swap_msgs)
-        .add_messages(loop_pair_swap_msgs)
+        .add_messages(astroport_pair_swap_msgs)
         .add_messages(contract_add_liquidity_msgs)
         .add_attributes(vec![attr("action", "restake_claimed_reward")]))
 }
 
 /// Contract entry: **Redeem**
-///   1. Unstake/unfarm the LP tokens from the `loopswap::farming` contract
+///   1. Unstake/unfarm the LP tokens from the `astroport::farming` contract
 ///   2. Re-stake the `lp_reward_token`
 ///   3. Swap the lp tokens back to the `native_token`, & send them to the `accounts_contract`
 pub fn redeem(
@@ -336,21 +338,12 @@ pub fn redeem(
         beneficiary = config.tax_collector.clone();
         id = None;
     } else {
-        // Check if the `caller` is "accounts_contract" & "endowment_id" is valid
-        validate_action_caller_n_endow_id(
-            deps.as_ref(),
-            &config,
-            info.sender.to_string(),
-            endowment_id,
-        )?;
-        let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
-            config.registrar_contract.to_string(),
-            &RegistrarQueryMsg::Config {},
-        )?;
-        let accounts_contract = deps
-            .api
-            .addr_validate(&registar_config.accounts_contract.unwrap())?;
-        beneficiary = accounts_contract;
+        // Check if the `caller` is "ibc_relayer".
+        if info.sender != config.ibc_relayer {
+            return Err(ContractError::Unauthorized {});
+        }
+
+        beneficiary = config.ibc_sender.clone();
         id = Some(endowment_id);
     }
 
@@ -381,7 +374,7 @@ pub fn redeem(
 
     STATE.save(deps.storage, &state)?;
 
-    // Call the `loopswap::farming::unstake_and_claim(unfarm)` entry
+    // Call the `astroport::farming::unstake_and_claim(unfarm)` entry
     let mut msgs = vec![];
     let lp_token_contract = config.lp_token;
     let flp_token_contract: String = deps.querier.query_wasm_smart(
@@ -442,7 +435,7 @@ pub fn redeem(
 }
 
 /// Contract entry: **Harvest**
-///   1. Claim(Harvest) the `lp_reward_token` from `loopswap::farming` contract
+///   1. Claim(Harvest) the `lp_reward_token` from `astroport::farming` contract
 ///   2. Convert the `lp_reward_token` to LP tokens
 ///   3. Re-stake the LP tokens to the `farming` contract for more yield
 pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, ContractError> {
@@ -455,7 +448,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
 
     let mut msgs = vec![];
 
-    // Call the `loopswap::farming::claim_reward` entry
+    // Call the `astroport::farming::claim_reward` entry
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.lp_staking_contract.to_string(),
         msg: to_binary(&AstroportFarmingExecuteMsg::ClaimReward {}).unwrap(),
@@ -504,8 +497,11 @@ pub fn reinvest_to_locked_execute(
         }));
     }
 
-    // 0. Check that the message sender is the Accounts contract
-    validate_action_caller_n_endow_id(deps.as_ref(), &config, info.sender.to_string(), id)?;
+    // 0. Check that the message sender is the `ibc_relayer`
+    if info.sender != config.ibc_relayer {
+        return Err(ContractError::Unauthorized {});
+    }
+
     // 1. Check that this vault has a sibling set
     if config.sibling_vault == env.contract.address {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -592,7 +588,7 @@ pub fn reinvest_to_locked_execute(
         funds: vec![],
     })];
 
-    // 5. Handle the reward LOOP tokens(= re-stake the reward tokens)
+    // 5. Handle the reward ASTRO tokens(= re-stake the reward tokens)
     let reward_token_bal = query_token_balance(
         deps.as_ref(),
         config.lp_reward_token.to_string(),
@@ -641,11 +637,9 @@ pub fn reinvest_to_locked_recieve(
 
     // ensure `msg_sender` is sibling_vault(liquid)
     let msg_sender = cw20_msg.sender;
-    let sibling_config_resp: angel_core::responses::vault::ConfigResponse =
-        deps.querier.query_wasm_smart(
-            config.sibling_vault.to_string(),
-            &angel_core::messages::vault::QueryMsg::Config {},
-        )?;
+    let sibling_config_resp: ConfigResponse = deps
+        .querier
+        .query_wasm_smart(config.sibling_vault.to_string(), &VaultQueryMsg::Config {})?;
     if msg_sender != config.sibling_vault || sibling_config_resp.acct_type != AccountType::Liquid {
         return Err(ContractError::Unauthorized {});
     }
@@ -662,7 +656,7 @@ pub fn reinvest_to_locked_recieve(
     }
 
     // 1. Treat as a Deposit for the given ID (mint vault tokens for deposited assets)
-    // Prepare the messages for "loop::farming::stake" opeartion
+    // Prepare the messages for "astroport::farming::stake" opeartion
     let lp_stake_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.lp_token.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
@@ -716,7 +710,7 @@ pub fn reinvest_to_locked_recieve(
 }
 
 /// Contract entry: **AddLiquidity**
-///   1. Add/Provide the `liquidity` to the `loopswap::pair` contract
+///   1. Add/Provide the `liquidity` to the `astroport::pair` contract
 ///   2. Call the `(this contract::)stake` entry
 pub fn add_liquidity(
     deps: DepsMut,
@@ -731,7 +725,7 @@ pub fn add_liquidity(
         return Err(ContractError::Unauthorized {});
     }
 
-    // Add the `loopswap::pair::provide_liquidity` message
+    // Add the `astroport::pair::provide_liquidity` message
     let config = CONFIG.load(deps.storage)?;
 
     let lp_pair_token0_bal = query_asset_balance(
@@ -748,7 +742,7 @@ pub fn add_liquidity(
     let token0_amount = lp_pair_token0_bal - lp_pair_token0_bal_before;
     let token1_amount = lp_pair_token1_bal - lp_pair_token1_bal_before;
 
-    let loop_pair_provide_liquidity_msgs = prepare_loop_pair_provide_liquidity_msgs(
+    let astroport_pair_provide_liquidity_msgs = prepare_astroport_pair_provide_liquidity_msgs(
         config.lp_pair_token0.clone(),
         token0_amount,
         config.lp_pair_token1.clone(),
@@ -761,13 +755,13 @@ pub fn add_liquidity(
         prepare_contract_stake_msgs(deps.as_ref(), env, endowment_id, config.lp_pair_contract)?;
 
     Ok(Response::new()
-        .add_messages(loop_pair_provide_liquidity_msgs)
+        .add_messages(astroport_pair_provide_liquidity_msgs)
         .add_messages(contract_stake_msgs)
-        .add_attributes(vec![attr("action", "add_liquidity_to_loopswap_pair")]))
+        .add_attributes(vec![attr("action", "add_liquidity_to_astroport_pair")]))
 }
 
-/// Prepare the `loopswap::pair::provide_liquidity` msgs
-fn prepare_loop_pair_provide_liquidity_msgs(
+/// Prepare the `astroport::pair::provide_liquidity` msgs
+fn prepare_astroport_pair_provide_liquidity_msgs(
     token1_asset_info: AssetInfo,
     token1_amount: Uint128,
     token2_asset_info: AssetInfo,
@@ -883,7 +877,7 @@ pub fn stake_lp_token(
     let mut state: State = STATE.load(deps.storage)?;
     let mut harvest_to_liquid_msgs = vec![];
 
-    // Prepare the "loop::farming::stake" msg
+    // Prepare the "astroport::farming::stake" msg
     let lp_token_bal = query_token_balance(
         deps.as_ref(),
         config.lp_token.to_string(),
@@ -957,12 +951,7 @@ pub fn stake_lp_token(
             state.total_shares += vt_mint_amount;
 
             // Compute the `ap_treasury tax portion` & store in APTAX
-            let registrar_config: ConfigResponse = deps.querier.query_wasm_smart(
-                config.registrar_contract.to_string(),
-                &RegistrarQueryMsg::Config {},
-            )?;
-            let tax_rate = registrar_config.tax_rate;
-            let tax_mint_amount = vt_mint_amount * tax_rate;
+            let tax_mint_amount = vt_mint_amount * config.ap_tax_rate;
 
             APTAX.update(deps.storage, |balance: Uint128| -> StdResult<_> {
                 Ok(balance.checked_add(tax_mint_amount)?)
@@ -986,10 +975,10 @@ pub fn stake_lp_token(
                 }
                 AccountType::Locked => {
                     // Send the portion of LP tokens to the sibling(liquid) vault
-                    let lp_tax_amount = lp_amount * tax_rate;
+                    let lp_tax_amount = lp_amount * config.ap_tax_rate;
                     let lp_less_tax = lp_amount - lp_tax_amount;
 
-                    let send_liquid_ratio = registrar_config.rebalance.interest_distribution;
+                    let send_liquid_ratio = config.interest_distribution;
                     let send_liquid_lp_amount = lp_less_tax * send_liquid_ratio;
                     let vt_shares_to_burn = (vt_mint_amount - tax_mint_amount) * send_liquid_ratio;
                     state.total_shares -= vt_shares_to_burn;
@@ -1067,11 +1056,9 @@ pub fn harvest_to_liquid(
 
     // ensure `msg_sender` is sibling_vault(locked)
     let msg_sender = cw20_msg.sender;
-    let sibling_config_resp: angel_core::responses::vault::ConfigResponse =
-        deps.querier.query_wasm_smart(
-            config.sibling_vault.to_string(),
-            &angel_core::messages::vault::QueryMsg::Config {},
-        )?;
+    let sibling_config_resp: ConfigResponse = deps
+        .querier
+        .query_wasm_smart(config.sibling_vault.to_string(), &VaultQueryMsg::Config {})?;
     if msg_sender != config.sibling_vault || sibling_config_resp.acct_type != AccountType::Locked {
         return Err(ContractError::Unauthorized {});
     }
@@ -1303,7 +1290,7 @@ pub fn swap_back(
 
     // Swap the pair tokens back to the `native_token`.
     let mut swap_router_swap_msgs = vec![];
-    let mut loop_pair_swap_msgs = vec![];
+    let mut astroport_pair_swap_msgs = vec![];
     let lp_pair_token0_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address.clone(),
@@ -1328,7 +1315,7 @@ pub fn swap_back(
                 lp_pair_token0_bal - lp_pair_token0_bal_before,
             )
         };
-        loop_pair_swap_msgs.extend_from_slice(&prepare_loop_pair_swap_msg(
+        astroport_pair_swap_msgs.extend_from_slice(&prepare_astroport_pair_swap_msg(
             config.lp_pair_contract.as_str(),
             &input_asset_info,
             swap_amount,
@@ -1366,7 +1353,7 @@ pub fn swap_back(
 
     Ok(Response::default()
         .add_messages(swap_router_swap_msgs)
-        .add_messages(loop_pair_swap_msgs)
+        .add_messages(astroport_pair_swap_msgs)
         .add_attributes(vec![attr("action", "swap_pair_to_native")]))
 }
 
@@ -1466,7 +1453,7 @@ fn prepare_contract_add_liquidity_msgs(
     Ok(msgs)
 }
 
-fn prepare_loop_pair_swap_msg(
+fn prepare_astroport_pair_swap_msg(
     pair_contract: &str,
     input_asset_info: &AssetInfo,
     input_amount: Uint128,
@@ -1526,40 +1513,6 @@ fn prepare_loop_pair_swap_msg(
     };
 
     Ok(msgs)
-}
-
-/// Check if the `caller` is the `accounts_contract` address &
-/// `endowment_id` is valid Endowment ID in `accounts_contract`
-fn validate_action_caller_n_endow_id(
-    deps: Deps,
-    config: &Config,
-    caller: String,
-    endowment_id: u32,
-) -> Result<(), ContractError> {
-    // Check if sender address is the "accounts_contract"
-    let registar_config: ConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract.to_string(),
-        &RegistrarQueryMsg::Config {},
-    )?;
-    if let Some(ref accounts_contract) = registar_config.accounts_contract {
-        if caller != *accounts_contract {
-            return Err(ContractError::Unauthorized {});
-        }
-    } else {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    // Check that the "deposit-endowment-id" is an Accounts SC
-    let _endowments_rsp: EndowmentDetailsResponse =
-        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-            contract_addr: registar_config.accounts_contract.unwrap(),
-            msg: to_binary(&angel_core::messages::accounts::QueryMsg::Endowment {
-                id: endowment_id,
-            })
-            .unwrap(),
-        }))?;
-
-    Ok(())
 }
 
 /// Custom `mint` function for `vault token`

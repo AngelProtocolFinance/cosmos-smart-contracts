@@ -10,6 +10,8 @@ use serde::{Deserialize, Serialize};
 pub struct InstantiateMsg {
     pub ibc_relayer: String,
     pub ibc_sender: String,
+    pub ap_tax_rate: Decimal,
+    pub interest_distribution: Decimal,
 
     pub acct_type: AccountType,
     pub sibling_vault: Option<String>,
