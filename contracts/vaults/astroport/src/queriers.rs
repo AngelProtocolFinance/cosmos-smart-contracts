@@ -1,8 +1,7 @@
 use cosmwasm_std::{Deps, Uint128};
 use cw20::{BalanceResponse, TokenInfoResponse};
 
-use angel_core::responses::vault::{ConfigResponse, StateResponse};
-
+use crate::responses::{ConfigResponse, StateResponse};
 use crate::state::{Config, APTAX, BALANCES, CONFIG, STATE, TOKEN_INFO};
 
 pub fn query_balance(deps: Deps, id: u32) -> Uint128 {
@@ -22,6 +21,9 @@ pub fn query_token_info(deps: Deps) -> TokenInfoResponse {
 pub fn query_config(deps: Deps) -> ConfigResponse {
     let config: Config = CONFIG.load(deps.storage).unwrap();
     ConfigResponse {
+        ibc_relayer: config.ibc_relayer.to_string(),
+        ibc_sender: config.ibc_sender.to_string(),
+
         owner: config.owner.to_string(),
         acct_type: config.acct_type,
         sibling_vault: config.sibling_vault.to_string(),
