@@ -5,14 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter, Result};
 
 /// ## Description
-/// This enum describes available types of pair.
-/// ## Available types
-/// ```
-/// # use astroport::factory::PairType::{Custom, Stable, Xyk};
-/// Xyk {};
-/// Stable {};
-/// Custom(String::from("Custom"));
-/// ```
+/// This enum describes available types of pair in Astroport-fi.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum PairType {

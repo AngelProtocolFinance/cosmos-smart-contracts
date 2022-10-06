@@ -1,3 +1,4 @@
+use angel_core::structs::{AccountType, SwapOperation};
 use angel_core::utils::{query_balance, query_token_balance};
 use cosmwasm_std::{
     attr, coins, to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, Deps, DepsMut, Env,
@@ -249,7 +250,7 @@ pub fn restake_claim_reward(
     // Re-stake the `reward token`s for more yield
     // NOTE: This logic is similar to the `Deposit` entry logic, taking care of 2 cases.
     let reward_asset_info = AssetInfo::Token {
-        contract_addr: config.lp_reward_token.to_string(),
+        contract_addr: config.lp_reward_token.clone(),
     };
     let mut swap_router_swap_msgs = vec![];
     let mut loop_pair_swap_msgs = vec![];
@@ -274,7 +275,7 @@ pub fn restake_claim_reward(
     } else {
         let swap_amount = reward_amount.multiply_ratio(1_u128, 2_u128);
         let start_token = AssetInfo::Token {
-            contract_addr: config.lp_reward_token.to_string(),
+            contract_addr: config.lp_reward_token.clone(),
         };
         // Swap the half of input token to `lp_pair_token0`
         let operations = [
@@ -385,7 +386,7 @@ pub fn redeem(
     let lp_token_contract = config.lp_token;
     let flp_token_contract: String = deps.querier.query_wasm_smart(
         config.lp_staking_contract.to_string(),
-        &LoopFarmingQueryMsg::QueryFlpTokenFromPoolAddress {
+        &AstroportFarmingQueryMsg::QueryFlpTokenFromPoolAddress {
             pool_address: lp_token_contract.to_string(),
         },
     )?;
@@ -395,7 +396,7 @@ pub fn redeem(
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_amount,
-            msg: to_binary(&LoopFarmingExecuteMsg::UnstakeAndClaim {}).unwrap(),
+            msg: to_binary(&AstroportFarmingExecuteMsg::UnstakeAndClaim {}).unwrap(),
         })
         .unwrap(),
         funds: vec![],
@@ -457,7 +458,7 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
     // Call the `loopswap::farming::claim_reward` entry
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.lp_staking_contract.to_string(),
-        msg: to_binary(&LoopFarmingExecuteMsg::ClaimReward {}).unwrap(),
+        msg: to_binary(&AstroportFarmingExecuteMsg::ClaimReward {}).unwrap(),
         funds: vec![],
     }));
 
@@ -559,7 +560,7 @@ pub fn reinvest_to_locked_execute(
     let lp_token_contract = config.lp_token.clone();
     let flp_token_contract: String = deps.querier.query_wasm_smart(
         config.lp_staking_contract.to_string(),
-        &LoopFarmingQueryMsg::QueryFlpTokenFromPoolAddress {
+        &AstroportFarmingQueryMsg::QueryFlpTokenFromPoolAddress {
             pool_address: lp_token_contract.to_string(),
         },
     )?;
@@ -569,7 +570,7 @@ pub fn reinvest_to_locked_execute(
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_amount,
-            msg: to_binary(&LoopFarmingExecuteMsg::UnstakeAndClaim {}).unwrap(),
+            msg: to_binary(&AstroportFarmingExecuteMsg::UnstakeAndClaim {}).unwrap(),
         })
         .unwrap(),
         funds: vec![],
@@ -667,7 +668,7 @@ pub fn reinvest_to_locked_recieve(
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_amount,
-            msg: to_binary(&LoopFarmingExecuteMsg::Stake {}).unwrap(),
+            msg: to_binary(&AstroportFarmingExecuteMsg::Stake {}).unwrap(),
         })
         .unwrap(),
         funds: vec![],
@@ -811,7 +812,7 @@ fn prepare_loop_pair_provide_liquidity_msgs(
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: pair_contract,
-        msg: to_binary(&LoopPairExecuteMsg::ProvideLiquidity {
+        msg: to_binary(&AstroportPairExecuteMsg::ProvideLiquidity {
             assets: [
                 Asset {
                     info: token1_asset_info,
@@ -839,8 +840,11 @@ fn prepare_contract_stake_msgs(
 ) -> StdResult<Vec<CosmosMsg>> {
     let mut msgs = vec![];
 
-    let lp_token_contract =
-        query_pair_info_from_pair(&deps.querier, pair_contract)?.liquidity_token;
+    let pair_info: PairInfo = deps
+        .querier
+        .query_wasm_smart(pair_contract.to_string(), &AstroportPairQueryMsg::Pair {})?;
+    let lp_token_contract = pair_info.liquidity_token;
+
     let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
         lp_token_contract,
         &cw20::Cw20QueryMsg::Balance {
@@ -1026,7 +1030,7 @@ pub fn stake_lp_token(
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_stake_amount,
-            msg: to_binary(&LoopFarmingExecuteMsg::Stake {}).unwrap(),
+            msg: to_binary(&AstroportFarmingExecuteMsg::Stake {}).unwrap(),
         })
         .unwrap(),
         funds: vec![],
@@ -1083,7 +1087,7 @@ pub fn harvest_to_liquid(
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_stake_amount,
-            msg: to_binary(&LoopFarmingExecuteMsg::Stake {}).unwrap(),
+            msg: to_binary(&AstroportFarmingExecuteMsg::Stake {}).unwrap(),
         })
         .unwrap(),
         funds: vec![],
@@ -1141,7 +1145,7 @@ pub fn remove_liquidity(
             msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                 contract: config.lp_pair_contract.to_string(),
                 amount: lp_token_amount,
-                msg: to_binary(&LoopPairExecuteMsg::WithdrawLiquidity {}).unwrap(),
+                msg: to_binary(&AstroportPairExecuteMsg::WithdrawLiquidity {}).unwrap(),
             })
             .unwrap(),
             funds: vec![],
@@ -1240,7 +1244,7 @@ pub fn send_asset(
         AssetInfo::Token { contract_addr } => match id {
             Some(id) => {
                 msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: contract_addr.clone(),
+                    contract_addr: contract_addr.to_string(),
                     msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
                         spender: beneficiary.to_string(),
                         amount: send_amount,
@@ -1250,7 +1254,7 @@ pub fn send_asset(
                     funds: vec![],
                 }));
                 msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr,
+                    contract_addr: contract_addr.to_string(),
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                         contract: beneficiary.to_string(),
                         amount: send_amount,
@@ -1265,7 +1269,7 @@ pub fn send_asset(
                 }));
             }
             None => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr,
+                contract_addr: contract_addr.to_string(),
                 msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
                     recipient: beneficiary.to_string(),
                     amount: send_amount,
@@ -1331,7 +1335,7 @@ pub fn swap_back(
         )?);
     } else {
         let swap_amount = lp_pair_token0_bal - lp_pair_token0_bal_before;
-        let operations = config
+        let operations: Vec<SwapOperation> = config
             .native_to_lp0_route
             .iter()
             .rev()
@@ -1485,7 +1489,7 @@ fn prepare_loop_pair_swap_msg(
         AssetInfo::NativeToken { denom } => {
             msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: pair_contract.to_string(),
-                msg: to_binary(&LoopPairExecuteMsg::Swap {
+                msg: to_binary(&AstroportPairExecuteMsg::Swap {
                     offer_asset: Asset {
                         info: input_asset_info.clone(),
                         amount: input_amount,
@@ -1505,7 +1509,7 @@ fn prepare_loop_pair_swap_msg(
                 msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                     contract: pair_contract.to_string(),
                     amount: input_amount,
-                    msg: to_binary(&LoopPairExecuteMsg::Swap {
+                    msg: to_binary(&AstroportPairExecuteMsg::Swap {
                         offer_asset: Asset {
                             info: input_asset_info.clone(),
                             amount: input_amount,
@@ -1642,7 +1646,7 @@ fn query_asset_balance(
     match asset_info {
         AssetInfo::NativeToken { denom } => query_balance(deps, account_addr.to_string(), denom),
         AssetInfo::Token { contract_addr } => {
-            query_token_balance(deps, contract_addr, account_addr.to_string())
+            query_token_balance(deps, contract_addr.to_string(), account_addr.to_string())
         }
     }
 }
