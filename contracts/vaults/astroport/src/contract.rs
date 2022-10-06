@@ -7,13 +7,15 @@ use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfoBase as CwAssetInfoBase;
 
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
 
 use crate::executers;
+use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
 use crate::queriers;
 use crate::state::{Config, MinterData, State, TokenInfo, APTAX, CONFIG, STATE, TOKEN_INFO};
-use crate::structs::asset::{AssetInfo, PairInfo};
-use crate::structs::pair::QueryMsg as AstroportPairQueryMsg;
+use crate::structs::{
+    asset::{AssetInfo, PairInfo},
+    pair::QueryMsg as AstroportPairQueryMsg,
+};
 
 // version info for future migration info
 const CONTRACT_NAME: &str = "loopswap_vault";
@@ -46,6 +48,9 @@ pub fn instantiate(
         keeper: deps.api.addr_validate(&msg.keeper)?,
         tax_collector: deps.api.addr_validate(&msg.tax_collector)?,
         swap_router: deps.api.addr_validate(&msg.swap_router)?,
+
+        ibc_relayer: deps.api.addr_validate(&msg.ibc_relayer)?,
+        ibc_sender: deps.api.addr_validate(&msg.ibc_sender)?,
 
         lp_token: pair_info.liquidity_token,
         lp_pair_token0: pair_info.asset_infos[0].clone(),
@@ -103,9 +108,6 @@ pub fn execute(
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
         ExecuteMsg::UpdateOwner { new_owner } => executers::update_owner(deps, info, new_owner),
-        ExecuteMsg::UpdateRegistrar { new_registrar } => {
-            executers::update_registrar(deps, env, info, new_registrar)
-        }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         // -Input token(eg. USDC) (Account) --> +Deposit Token/Yield Token (Vault)
         ExecuteMsg::Deposit { endowment_id } => {

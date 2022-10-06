@@ -16,6 +16,9 @@ pub struct Config {
     pub tax_collector: Addr,
     pub swap_router: Addr,
 
+    pub ibc_relayer: Addr,
+    pub ibc_sender: Addr,
+
     // TOKENS
     pub native_token: AssetInfo, // the input token(and output back to Accounts) into Vault
     pub lp_token: Addr,          // loopswap pair liquidity token contract address(LP token)
