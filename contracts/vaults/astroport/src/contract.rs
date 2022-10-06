@@ -18,7 +18,7 @@ use crate::structs::{
 };
 
 // version info for future migration info
-const CONTRACT_NAME: &str = "loopswap_vault";
+const CONTRACT_NAME: &str = "astroport_vault";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[entry_point]
