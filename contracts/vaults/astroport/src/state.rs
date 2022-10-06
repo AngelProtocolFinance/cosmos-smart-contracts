@@ -23,10 +23,10 @@ pub struct Config {
 
     // TOKENS
     pub native_token: AssetInfo, // the input token(and output back to Accounts) into Vault
-    pub lp_token: Addr,          // loopswap pair liquidity token contract address(LP token)
-    pub lp_pair_token0: AssetInfo, // loopswap pair token 1 of 2 in LP
-    pub lp_pair_token1: AssetInfo, // loopswap pair token 2 of 2 in LP
-    pub lp_reward_token: Addr,   // LOOP token address(Atm, LOOP is loopswap farming reward token)
+    pub lp_token: Addr,          // astroport pair liquidity token contract address(LP token)
+    pub lp_pair_token0: AssetInfo, // astroport pair token 1 of 2 in LP
+    pub lp_pair_token1: AssetInfo, // astroport pair token 2 of 2 in LP
+    pub lp_reward_token: Addr, // ASTRO token address(Atm, ASTRO is astroport generator reward token)
 
     // ROUTES
     pub reward_to_native_route: Vec<SwapOperation>,
@@ -34,9 +34,9 @@ pub struct Config {
     pub native_to_lp1_route: Vec<SwapOperation>, // reverse the vec to go from LP1 >> native
 
     // CORE CONTRACTS
-    pub lp_factory_contract: Addr, // loopswap factory contract address
-    pub lp_staking_contract: Addr, // loopswap farming contract address
-    pub lp_pair_contract: Addr,    // loopswap pair contract address
+    pub lp_factory_contract: Addr, // astroport factory contract address
+    pub lp_staking_contract: Addr, // astroport generator contract address
+    pub lp_pair_contract: Addr,    // astroport pair contract address
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
