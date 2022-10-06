@@ -198,7 +198,7 @@ fn receive_cw20(
         Ok(ReceiveMsg::Deposit { endowment_id }) => {
             let msg_sender = cw20_msg.sender;
             let deposit_asset_info = AssetInfo::Token {
-                contract_addr: info.sender,
+                contract_addr: info.sender.clone(),
             };
             let deposit_amount = cw20_msg.amount;
             executers::deposit(
