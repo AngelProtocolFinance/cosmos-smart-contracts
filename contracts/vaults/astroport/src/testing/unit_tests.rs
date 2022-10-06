@@ -1,9 +1,9 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{coins, from_binary, to_binary, Addr, Coin, OwnedDeps, StdError, Uint128};
 
+use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UpdateConfigMsg};
+use crate::responses::{ConfigResponse, StateResponse};
 use angel_core::errors::vault::ContractError;
-use angel_core::messages::vault::{ExecuteMsg, InstantiateMsg, QueryMsg, UpdateConfigMsg};
-use angel_core::responses::vault::{ConfigResponse, StateResponse};
 use angel_core::structs::AccountType;
 use cw20::TokenInfoResponse;
 
@@ -16,6 +16,9 @@ fn create_mock_vault(
 ) -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
     let mut deps = mock_dependencies(&coins);
     let instantiate_msg = InstantiateMsg {
+        ibc_relayer: "ibc-relayer".to_string(),
+        ibc_sender: "ibc-sender".to_string(),
+
         acct_type,
         sibling_vault: Some("sibling-vault".to_string()),
         registrar_contract: "angelprotocolteamdano".to_string(),
@@ -48,6 +51,9 @@ fn create_mock_vault(
 fn proper_instantiation() {
     let mut deps = mock_dependencies(&[]);
     let instantiate_msg = InstantiateMsg {
+        ibc_relayer: "ibc-relayer".to_string(),
+        ibc_sender: "ibc-sender".to_string(),
+
         acct_type: AccountType::Locked,
         sibling_vault: Some("sibling-vault".to_string()),
         registrar_contract: "angelprotocolteamdano".to_string(),
@@ -107,51 +113,9 @@ fn test_update_owner() {
     .unwrap();
 
     // Check if the "owner" has been changed
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        angel_core::messages::vault::QueryMsg::Config {},
-    )
-    .unwrap();
-    let config_resp: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config_resp.owner, "new-owner".to_string());
-}
-
-#[test]
-fn test_update_registrar() {
-    // Instantiate the "vault" contract
-    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
-
-    // Try to update the "registrar" contract address
-    // Fail to update the "registrar" since non-"registrar" address calls the entry
-    let info = mock_info("any-address", &[]);
-    let err = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::UpdateRegistrar {
-            new_registrar: Addr::unchecked("new-registrar"),
-        },
-    )
-    .unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    // Succeed to update the "registrar" contract address
-    let info = mock_info("angelprotocolteamdano", &[]);
-    let _res = execute(
-        deps.as_mut(),
-        mock_env(),
-        info,
-        ExecuteMsg::UpdateRegistrar {
-            new_registrar: Addr::unchecked("new-registrar"),
-        },
-    )
-    .unwrap();
-
-    // Check if the "registrar" contract address has been changed
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_resp: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config_resp.registrar_contract, "new-registrar".to_string());
+    assert_eq!(config_resp.owner, "new-owner".to_string());
 }
 
 #[test]
@@ -161,6 +125,9 @@ fn test_update_config() {
 
     // Try to update the "config"
     let update_config_msg = UpdateConfigMsg {
+        ibc_relayer: Some("new-ibc-relayer".to_string()),
+        ibc_sender: Some("new-ibc-sender".to_string()),
+
         lp_staking_contract: Some("new-loop-farming".to_string()),
         lp_pair_contract: Some("new-loop-pair".to_string()),
         keeper: Some("new-keeper".to_string()),
@@ -196,14 +163,13 @@ fn test_update_config() {
 
     // Check the "config" update
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config_resp: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config_resp.lp_pair_contract, "new-loop-pair".to_string());
-    assert_eq!(
-        config_resp.lp_staking_contract,
-        "new-loop-farming".to_string()
-    );
-    assert_eq!(config_resp.keeper, "new-keeper".to_string());
-    assert_eq!(config_resp.tax_collector, "new-tax-collector".to_string());
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config.ibc_relayer, "new-ibc-relayer".to_string());
+    assert_eq!(config.ibc_sender, "new-ibc-sender".to_string());
+    assert_eq!(config.lp_pair_contract, "new-loop-pair".to_string());
+    assert_eq!(config.lp_staking_contract, "new-loop-farming".to_string());
+    assert_eq!(config.keeper, "new-keeper".to_string());
+    assert_eq!(config.tax_collector, "new-tax-collector".to_string());
 }
 
 #[test]
@@ -241,6 +207,9 @@ fn test_deposit_cw20_token() {
     // Instantiate the vault contract
     let mut deps = mock_dependencies(&[]);
     let instantiate_msg = InstantiateMsg {
+        ibc_relayer: "ibc-relayer".to_string(),
+        ibc_sender: "ibc-sender".to_string(),
+
         acct_type: AccountType::Locked,
         sibling_vault: Some("sibling-vault".to_string()),
         registrar_contract: "angelprotocolteamdano".to_string(),
