@@ -51,6 +51,8 @@ pub fn instantiate(
 
         ibc_relayer: deps.api.addr_validate(&msg.ibc_relayer)?,
         ibc_sender: deps.api.addr_validate(&msg.ibc_sender)?,
+        ap_tax_rate: msg.ap_tax_rate,
+        interest_distribution: msg.interest_distribution,
 
         lp_token: pair_info.liquidity_token,
         lp_pair_token0: pair_info.asset_infos[0].clone(),

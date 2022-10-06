@@ -1,5 +1,5 @@
 use angel_core::structs::{AccountType, SwapOperation};
-use cosmwasm_std::{Addr, Uint128};
+use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -18,6 +18,8 @@ pub struct Config {
 
     pub ibc_relayer: Addr,
     pub ibc_sender: Addr,
+    pub ap_tax_rate: Decimal, // Same as `registrar::config.tax_rate`
+    pub interest_distribution: Decimal, // Same as `registrar::config.rebalance.interest_distribution`
 
     // TOKENS
     pub native_token: AssetInfo, // the input token(and output back to Accounts) into Vault

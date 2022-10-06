@@ -1,5 +1,7 @@
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
-use cosmwasm_std::{coins, from_binary, to_binary, Addr, Coin, OwnedDeps, StdError, Uint128};
+use cosmwasm_std::{
+    coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, StdError, Uint128,
+};
 
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UpdateConfigMsg};
 use crate::responses::{ConfigResponse, StateResponse};
@@ -18,6 +20,8 @@ fn create_mock_vault(
     let instantiate_msg = InstantiateMsg {
         ibc_relayer: "ibc-relayer".to_string(),
         ibc_sender: "ibc-sender".to_string(),
+        ap_tax_rate: Decimal::from_ratio(10_u128, 100_u128),
+        interest_distribution: Decimal::from_ratio(25_u128, 100_u128),
 
         acct_type,
         sibling_vault: Some("sibling-vault".to_string()),
@@ -53,6 +57,8 @@ fn proper_instantiation() {
     let instantiate_msg = InstantiateMsg {
         ibc_relayer: "ibc-relayer".to_string(),
         ibc_sender: "ibc-sender".to_string(),
+        ap_tax_rate: Decimal::from_ratio(10_u128, 100_u128),
+        interest_distribution: Decimal::from_ratio(25_u128, 100_u128),
 
         acct_type: AccountType::Locked,
         sibling_vault: Some("sibling-vault".to_string()),
@@ -191,7 +197,7 @@ fn test_deposit_native_token() {
     assert_eq!(err, ContractError::Unauthorized {});
 
     // Succeed to "deposit" JUNO tokens
-    let info = mock_info("accounts-contract", &coins(100, "ujuno"));
+    let info = mock_info("ibc-relayer", &coins(100, "ujuno"));
     let res = execute(
         deps.as_mut(),
         mock_env(),
@@ -209,6 +215,8 @@ fn test_deposit_cw20_token() {
     let instantiate_msg = InstantiateMsg {
         ibc_relayer: "ibc-relayer".to_string(),
         ibc_sender: "ibc-sender".to_string(),
+        ap_tax_rate: Decimal::from_ratio(10_u128, 100_u128),
+        interest_distribution: Decimal::from_ratio(25_u128, 100_u128),
 
         acct_type: AccountType::Locked,
         sibling_vault: Some("sibling-vault".to_string()),
@@ -256,7 +264,7 @@ fn test_deposit_cw20_token() {
 
     // Second, fail to "deposit" since the "token" deposited is not one of "input_denoms"
     let deposit_msg = cw20::Cw20ReceiveMsg {
-        sender: "accounts-contract".to_string(),
+        sender: "ibc-relayer".to_string(),
         amount: Uint128::from(100_u128),
         msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit { endowment_id: 1 })
             .unwrap(),
@@ -273,7 +281,7 @@ fn test_deposit_cw20_token() {
 
     // Succeed to "deposit" HALO tokens
     let deposit_msg = cw20::Cw20ReceiveMsg {
-        sender: "accounts-contract".to_string(),
+        sender: "ibc-relayer".to_string(),
         amount: Uint128::from(100_u128),
         msg: to_binary(&angel_core::messages::vault::ReceiveMsg::Deposit { endowment_id: 1 })
             .unwrap(),
@@ -300,7 +308,7 @@ fn test_redeem() {
     let mut deps = create_mock_vault(AccountType::Locked, vec![]);
 
     // First, fail to "redeem" since VT amount for Endowment is insufficient
-    let info = mock_info("accounts-contract", &[]);
+    let info = mock_info("ibc-relayer", &[]);
     let err = execute(
         deps.as_mut(),
         mock_env(),
@@ -314,7 +322,7 @@ fn test_redeem() {
     assert_eq!(err, ContractError::Std(StdError::GenericErr { msg: "Cannot burn the 30 vault tokens from Endowment 12 :: Overflow: Cannot Sub with 0 and 30".to_string() }));
 
     // Also, fail to "redeem" since the `vault` does not have any deposit
-    let info = mock_info("accounts-contract", &[]);
+    let info = mock_info("ibc-relayer", &[]);
     let err = execute(
         deps.as_mut(),
         mock_env(),
@@ -533,7 +541,7 @@ fn test_redeem_lp_token() {
     assert_eq!(err, ContractError::Unauthorized {});
 
     // Fail to redeem since the VT amount for Endowment is insufficient
-    let info = mock_info("accounts-contract", &[]);
+    let info = mock_info("ibc-relayer", &[]);
     let err = execute(
         deps.as_mut(),
         mock_env(),
@@ -548,7 +556,7 @@ fn test_redeem_lp_token() {
     assert_eq!(err, ContractError::Std(StdError::GenericErr { msg: "Cannot burn the 1000 vault tokens from Endowment 2 :: Overflow: Cannot Sub with 0 and 1000".to_string() }));
 
     // Succeed to redeem for Endowment 1.
-    let info = mock_info("accounts-contract", &[]);
+    let info = mock_info("ibc-relayer", &[]);
     let res = execute(
         deps.as_mut(),
         mock_env(),
@@ -636,7 +644,7 @@ fn test_reinvest_to_locked() {
     assert_eq!(err, ContractError::Unauthorized {});
 
     // Fail to "reinvest_to_locked" since the burn amount is bigger than 1 VT
-    let info = mock_info("accounts-contract", &[]);
+    let info = mock_info("ibc-relayer", &[]);
     let err = execute(
         deps.as_mut(),
         mock_env(),
@@ -658,7 +666,7 @@ fn test_reinvest_to_locked() {
     );
 
     // Succeed to "reinvest_to_locked"
-    let info = mock_info("accounts-contract", &[]);
+    let info = mock_info("ibc-relayer", &[]);
     let res = execute(
         deps.as_mut(),
         mock_env(),
