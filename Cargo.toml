@@ -23,6 +23,7 @@ members = [
     "contracts/halo/staking",
     "contracts/halo/vesting",
     "contracts/vaults/loop",
+    "contracts/vaults/astroport",
 ]
 
 exclude = [
