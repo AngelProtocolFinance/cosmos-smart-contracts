@@ -1,6 +1,7 @@
 import * as LocalNet from "./environments/localjuno";
 import * as TestNet from "./environments/testnet";
 import * as MainNet from "./environments/mainnet";
+import * as LocalTerra from "./environments/localterra";
 
 //----------------------------------------------------------------------------------------
 // Test-suite for  TestNet, and MainNet
@@ -23,6 +24,9 @@ import * as MainNet from "./environments/mainnet";
 		case "localjuno_setup_loopswap":
 			await LocalNet.startSetupLoopSwap();
 			break;
+		case "localterra_setup_astroport":
+			await LocalTerra.startSetupAstroport();
+			break;
 		case "localjuno_migrate_core":
 			await LocalNet.startMigrateCore();
 			break;
@@ -32,6 +36,9 @@ import * as MainNet from "./environments/mainnet";
 		case "localjuno_setup_loopvaults":
 			await LocalNet.startSetupLoopVaults();
 			break;
+		case "localterra_setup_astrovaults":
+			await LocalTerra.startSetupAstroportVaults();
+			break;
 		// case "localjuno_migrate_halo":
 		// 	await LocalNet.startMigrateHalo();
 		// 	break;
@@ -39,7 +46,7 @@ import * as MainNet from "./environments/mainnet";
 			await TestNet.startTests();
 			break;
 		case "testnet_setup_core":
-			await TestNet.startSetupCore();	
+			await TestNet.startSetupCore();
 			break;
 		case "testnet_setup_endowments":
 			await TestNet.startSetupEndowments();

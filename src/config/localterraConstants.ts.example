@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------------------------------
 export const localterra = {
   networkInfo: {
-    url: "http://localhost:1317",
+    url: "http://localhost:1307",
     chainId: "localterra",
   },
 
