@@ -215,12 +215,9 @@ pub enum QueryMsg {
     },
     // Gets list of all registered Endowments
     EndowmentList {
-        status: Option<String>,
-        name: Option<Option<String>>,
-        owner: Option<String>,
-        tier: Option<Option<String>>,
-        endow_type: Option<String>,
         proposal_link: Option<u64>,
+        start_after: Option<u32>, 
+        limit: Option<u64>,
     },
     // Get the profile info
     GetProfile {

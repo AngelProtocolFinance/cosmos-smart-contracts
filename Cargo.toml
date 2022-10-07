@@ -2,18 +2,24 @@
 members = [
     "packages/angel_core",
     "packages/halo_token",
-    "packages/ica_vaults",
-    "contracts/ica/ica-controller",
-    "contracts/ica/ica-host",
     "contracts/core/accounts",
     "contracts/core/cw3-endowment",
     "contracts/core/index-fund",
-    "contracts/core/swap-router",
     "contracts/core/registrar",
     "contracts/multisig/cw4-group",
     "contracts/multisig/cw3-apteam",
     "contracts/multisig/cw3-applications",
     "contracts/multisig/cw3-generic",
+]
+
+exclude = [
+    "packages/ica_vaults",
+    "contracts/ica/ica-controller",
+    "contracts/ica/ica-host",
+    "contracts/vaults/anchor",
+    "contracts/vaults/junoswap",
+    "contracts/vaults/loop",
+    "contracts/core/swap-router",
     "contracts/halo/airdrop",
     "contracts/halo/collector",
     "contracts/halo/community",
@@ -22,12 +28,6 @@ members = [
     "contracts/halo/gov-hodler",
     "contracts/halo/staking",
     "contracts/halo/vesting",
-    "contracts/vaults/loop",
-]
-
-exclude = [
-    "contracts/vaults/anchor",
-    "contracts/vaults/junoswap",
 ]
 
 [profile.release]
