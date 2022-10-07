@@ -6,10 +6,12 @@ members = [
     "contracts/core/cw3-endowment",
     "contracts/core/index-fund",
     "contracts/core/registrar",
+    "contracts/core/swap-router",
     "contracts/multisig/cw4-group",
     "contracts/multisig/cw3-apteam",
     "contracts/multisig/cw3-applications",
     "contracts/multisig/cw3-generic",
+    "contracts/vaults/loop",
 ]
 
 exclude = [
@@ -18,8 +20,6 @@ exclude = [
     "contracts/ica/ica-host",
     "contracts/vaults/anchor",
     "contracts/vaults/junoswap",
-    "contracts/vaults/loop",
-    "contracts/core/swap-router",
     "contracts/halo/airdrop",
     "contracts/halo/collector",
     "contracts/halo/community",
