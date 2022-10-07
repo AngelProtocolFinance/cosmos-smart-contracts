@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
+import { sendTransaction, toEncodedBinary } from "../../../utils/juno/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -20,7 +20,7 @@ export async function testQueryProposal(
 ): Promise<void> {
   process.stdout.write("Test - Query proposal by id");
   const result: any = await juno.queryContractSmart(cw3, {
-    proposal: { proposal_id},
+    proposal: { proposal_id },
   });
 
   console.log(result);

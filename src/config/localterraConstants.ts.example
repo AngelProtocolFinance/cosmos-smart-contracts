@@ -1,0 +1,51 @@
+// ---------------------------------------------------------------------------------------------------
+// LocalTerra information
+// ---------------------------------------------------------------------------------------------------
+export const localterra = {
+  networkInfo: {
+    url: "http://localhost:1317",
+    chainId: "localterra",
+  },
+
+
+  // Should be updated contract addresses after deploying wasms in the LocalJuno
+  contracts: {
+    registrar: "",
+    accounts: "",
+    indexFund: "",
+    cw4GrpApTeam: "",
+    cw3ApTeam: "",
+    cw4GrpReviewTeam: "",
+    cw3ReviewTeam: "",
+    vault1: "",
+    vault2: "",
+
+    vaultLocked1: "",
+    vaultLiquid1: "",
+    vaultLocked2: "",
+    vaultLiquid2: "",
+    
+    endowId1: 1,
+    endowId2: 2,
+    endowId3: 3,
+  },
+
+
+  // Astroport contracts
+  astroport: {
+    astroport_token_code: 30,
+    astroport_pair_code: 31, 
+
+    astroport_factory: "",
+    astroport_generator: "",
+    astroport_router: "",
+
+    ASTRO_token_contract: "",
+    initial_ASTRO_supply: "1000000000000000",
+
+    usdc_usdt_pair_contract: "",
+    usdc_usdt_lp_token: "",
+    usdc_usdt_pair_usdc_liquidity: "10000000",
+    usdc_usdt_pair_usdt_liquidity: "10000000",
+  },
+};

@@ -11,7 +11,7 @@ import {
   clientSetup,
   getWalletAddress,
   instantiateContract,
-} from "../../../utils/helpers";
+} from "../../../utils/juno/helpers";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
 chai.use(chaiAsPromised);
