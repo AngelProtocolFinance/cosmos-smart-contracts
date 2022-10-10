@@ -168,6 +168,9 @@ async function setup(
 
 
     // Astroport Generator
+    //  `tokens_per_block`: "0"  -> mock value
+    //  `start_block`: 0         -> mock value
+    //  `vesting_contract`: apTeam.key.accAddress   -> mock value
     process.stdout.write("Instantiating Astroport Generator contract");
     const astroportGeneratorResult = await instantiateContract(
         terra,
@@ -175,30 +178,18 @@ async function setup(
         apTeam,
         generatorCodeId,
         {
-            /// Address that can change contract settings
-            owner: apTeam.key.accAddress,
-            /// Address of factory contract
-            factory: astroportFactory,
-            /// Address that can set active generators and their alloc points
-            generator_controller: undefined,
-            /// The voting escrow delegation contract address
-            voting_escrow_delegation: undefined,
-            /// The voting escrow contract address
-            voting_escrow: undefined,
-            /// Address of guardian
-            guardian: undefined,
-            /// ASTRO token contract address
-            astro_token: astro,
-            /// Amount of ASTRO distributed per block among all pairs
-            tokens_per_block: "0", // mock value
-            /// Start block for distributing ASTRO
-            start_block: 0, // mock value
-            /// Dual rewards proxy contracts allowed to interact with the generator
-            allowed_reward_proxies: [],
-            /// The ASTRO vesting contract that drips ASTRO rewards
-            vesting_contract: apTeam.key.accAddress, // mock value
-            /// Whitelist code id
-            whitelist_code_id: whitelistCodeId,
+            "owner": apTeam.key.accAddress,
+            "factory": astroportFactory,
+            "generator_controller": undefined,
+            "voting_escrow_delegation": undefined,
+            "voting_escrow": undefined,
+            "guardian": undefined,
+            "astro_token": astro,
+            "tokens_per_block": "0",
+            "start_block": 0,
+            "allowed_reward_proxies": [],
+            "vesting_contract": apTeam.key.accAddress,
+            "whitelist_code_id": whitelistCodeId,
         }
     );
 
