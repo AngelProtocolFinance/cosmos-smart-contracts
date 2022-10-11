@@ -100,6 +100,14 @@ async function setup(
     );
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")} = ${whitelistCodeId}`);
 
+    process.stdout.write("Uploading Astroport Vesting Wasm");
+    const vestingCodeId = await storeCode(
+        terra,
+        apTeam,
+        `${wasm_path.astroport}/astroport_vesting.wasm`
+    );
+    console.log(chalk.green(" Done!"), `${chalk.blue("codeId")} = ${vestingCodeId}`);
+
     // Step 2. Instantiate contracts
 
     // ASTRO token 
@@ -170,7 +178,24 @@ async function setup(
     // Astroport Generator
     //  `tokens_per_block`: "0"  -> mock value
     //  `start_block`: 0         -> mock value
-    //  `vesting_contract`: apTeam.key.accAddress   -> mock value
+    const astroportVestingResult = await instantiateContract(
+        terra,
+        apTeam,
+        apTeam,
+        vestingCodeId,
+        {
+            "owner": apTeam.key.accAddress,
+            "token_addr": astro,
+        }
+    );
+    let astroportVesting = astroportVestingResult.logs[0].events
+        .find((event) => {
+            return event.type == "instantiate";
+        })
+        ?.attributes.find((attribute) => {
+            return attribute.key == "_contract_address";
+        })?.value as string;
+
     process.stdout.write("Instantiating Astroport Generator contract");
     const astroportGeneratorResult = await instantiateContract(
         terra,
@@ -188,9 +213,19 @@ async function setup(
             "tokens_per_block": "0",
             "start_block": 0,
             "allowed_reward_proxies": [],
-            "vesting_contract": apTeam.key.accAddress,
+            "vesting_contract": astroportVesting,
             "whitelist_code_id": whitelistCodeId,
         }
+        // {
+        //     "owner": null,
+        //     "allowed_reward_proxies": [],
+        //     "astro_token": null,
+        //     "start_block": "5918639",
+        //     "tokens_per_block": "8403094",
+        //     "vesting_contract": null,
+        //     "factory": null,
+        //     "whitelist_code_id": null
+        // }
     );
 
     astroportGenerator = astroportGeneratorResult.logs[0].events
