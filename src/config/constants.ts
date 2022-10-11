@@ -95,7 +95,7 @@ export const testnet = {
 export const mainnet = {
   // MainNet phoenix-1
   networkInfo: {
-    url: "https://rpc-juno.itastakers.com",
+    url: "https://juno-rpc.angelprotocol.io",
     chainId: "juno-1",
     walletPrefix: "juno",
     nativeToken: "ujuno",
@@ -103,7 +103,7 @@ export const mainnet = {
   },
   mnemonicKeys: {
     apTeam: "",
-    apTreasury: "juno1q6n47p729sla2jekc45rlmrvwchkj4gc39a296", // Temp use AP Team Admin until we can use the CW3 of the AP Endowment
+    apTreasury: "juno1fz8jx4qhkgdrm5vm3s20n670mf872xsp2c0a6cl0yuncquzmj4jss2cfgj", // this is the CW3 of the AP Endowment
   },
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {
