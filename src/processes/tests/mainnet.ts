@@ -7,6 +7,7 @@ import {
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
   testApTeamChangesEndowmentSettings,
+  testCreateEndowmentCw3s,
   testSendDonationToEndowment,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
@@ -237,6 +238,7 @@ export async function testExecute(
   //   endowments_batch,
   //   "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034"
   // );
+  // await testCreateEndowmentCw3s(juno, apTeamAddr, registrar, accounts, endowments_batch);
   // await testApTeamChangesEndowmentSettings(juno, apTeamAddr, cw3ApTeam, accounts, endowments_batch);
   // await testCreateNormalEndowment(juno, apTeamAddr, accounts, {
   //   owner: apTeamAddr,
@@ -338,7 +340,7 @@ export async function testExecute(
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVault(juno, registrar, anchorVault);
-  // await testQueryAccountsEndowmentList(juno, accounts);
+  // await testQueryAccountsEndowmentList(juno, accounts, 1, 20);
   // await testQueryAccountsState(juno, accounts, 1);
   // await testQueryAccountsEndowment(juno, accounts, 1);
   // await testQueryAccountsBalance(juno, endowmentContract);
