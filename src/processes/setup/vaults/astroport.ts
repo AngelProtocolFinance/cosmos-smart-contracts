@@ -31,13 +31,13 @@ export async function setupAstroportVaults(
     },
     config: {
         astroport_factory: string;
-        astroport_farming: string;
-        astroport_malo_kalo_pair: string;
+        astroport_generator: string;
+        astroport_usdc_usdt_lp_pair: string;
         astroport_lp_reward_token: string;
-        harvest_to_liquid: string;
-        accepted_tokens: any | undefined;
         astroport_router: string;
         nativeToken: any,
+        ap_tax_rate: string,
+        interest_distribution: string,
     }
 ): Promise<void> {
     chainId = _chainId;
@@ -47,35 +47,42 @@ export async function setupAstroportVaults(
 
     await createAstroportVaults(
         config.astroport_factory,
-        config.astroport_farming,
-        config.astroport_malo_kalo_pair,
+        config.astroport_generator,
+        config.astroport_usdc_usdt_lp_pair,
         config.astroport_lp_reward_token,
         apTeam.key.accAddress,
         apTeam.key.accAddress,
-        config.harvest_to_liquid,
         config.astroport_router,
         config.nativeToken,
+        config.ap_tax_rate,
+        config.interest_distribution,
     );
 }
 
 async function createAstroportVaults(
-    loopFactory: string,
-    loopFarming: string,
-    loopPair: string,
-    loopStakingRewardToken: string,
+    astroportFactory: string,
+    astroportGenerator: string,
+    usdc_usdt_pair_contract: string,
+    astroport_lp_reward_token: string,
     keeper: string,
     tax_collector: string,
-    harvest_to_liquid: string,
     astroport_router: string,
     native_token: string,
+    ap_tax_rate: string,
+    interest_distribution: string,
 ): Promise<void> {
     process.stdout.write("Uploading Vault Wasm");
     const vaultCodeId = await storeCode(terra, apTeam, `${wasm_path.core}/astroport_vault.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
 
-    // LOOP Vault - #1 (Locked)
+    // Astroport Vault - #1 (Locked)
     process.stdout.write("Instantiating Vault #1 (Locked) contract");
     const vaultResult1 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
+        ibc_relayer: apTeam.key.accAddress,
+        ibc_sender: apTeam.key.accAddress,
+        ap_tax_rate: ap_tax_rate,
+        interest_distribution: interest_distribution,
+
         acct_type: `locked`, // Locked: 0, Liquid: 1
         sibling_vault: undefined,
         registrar_contract: apTeam.key.accAddress, // Use the `apTeam` address for mock
@@ -83,51 +90,51 @@ async function createAstroportVaults(
         tax_collector: tax_collector,
         swap_router: astroport_router,
 
-        lp_factory_contract: loopFactory,
-        lp_staking_contract: loopFarming,
-        pair_contract: loopPair,
-        lp_reward_token: loopStakingRewardToken,
+        lp_factory_contract: astroportFactory,
+        lp_staking_contract: astroportGenerator,
+        pair_contract: usdc_usdt_pair_contract,
+        lp_reward_token: astroport_lp_reward_token,
         native_token: native_token,
 
         reward_to_native_route: [
             {
-                loop: {
+                astro_swap: {
                     offer_asset_info: {
-                        cw20: localterra.astroport.ASTRO_token_contract,
+                        token: { contract_addr: astroport_lp_reward_token },
                     },
                     ask_asset_info: {
-                        native: localterra.astroport.ASTRO_token_contract,
+                        native_token: { denom: localterra.networkInfo.nativeToken },
                     }
                 }
             }
         ],
         native_to_lp0_route: [
             {
-                loop: {
+                astro_swap: {
                     offer_asset_info: {
-                        native: localterra.astroport.ASTRO_token_contract,
+                        native_token: { denom: localterra.networkInfo.nativeToken },
                     },
                     ask_asset_info: {
-                        cw20: localterra.astroport.ASTRO_token_contract,
+                        native_token: { denom: "usdc" },
                     }
                 }
             }
         ],
         native_to_lp1_route: [
             {
-                loop: {
+                astro_swap: {
                     offer_asset_info: {
-                        native: localterra.astroport.ASTRO_token_contract,
+                        native_token: { denom: localterra.networkInfo.nativeToken },
                     },
                     ask_asset_info: {
-                        cw20: localterra.astroport.ASTRO_token_contract,
+                        native_token: { denom: "usdt" },
                     }
                 }
             }
         ],
 
-        name: "Vault Token for MALO-KALO pair",
-        symbol: "VTMALOKALO",
+        name: "Vault Token for USDC-USDT pair",
+        symbol: "VTUSDCUSDT",
         decimals: 6,
     });
     vault1_locked = vaultResult1.logs[0].events
@@ -139,9 +146,14 @@ async function createAstroportVaults(
         })?.value as string;
     console.log(chalk.green(" Done!"), `${chalk.blue("Locked contractAddress")}=${vault1_locked}`);
 
-    // Vault - #1 (Liquid)
+    // Astroport Vault - #1 (Liquid)
     process.stdout.write("Instantiating Vault #1 (Liquid) contract");
     const vaultResult2 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
+        ibc_relayer: apTeam.key.accAddress,
+        ibc_sender: apTeam.key.accAddress,
+        ap_tax_rate: ap_tax_rate,
+        interest_distribution: interest_distribution,
+
         acct_type: `liquid`, // Locked: 0, Liquid: 1
         sibling_vault: vault1_locked,
         registrar_contract: apTeam.key.accAddress, // Use the `apTeam` address for mock
@@ -149,51 +161,51 @@ async function createAstroportVaults(
         tax_collector: tax_collector,
         swap_router: astroport_router,
 
-        lp_factory_contract: loopFactory,
-        lp_staking_contract: loopFarming,
-        pair_contract: loopPair,
-        lp_reward_token: loopStakingRewardToken,
+        lp_factory_contract: astroportFactory,
+        lp_staking_contract: astroportGenerator,
+        pair_contract: usdc_usdt_pair_contract,
+        lp_reward_token: astroport_lp_reward_token,
         native_token: native_token,
 
         reward_to_native_route: [
             {
-                loop: {
+                astro_swap: {
                     offer_asset_info: {
-                        cw20: localterra.astroport.ASTRO_token_contract,
+                        token: { contract_addr: astroport_lp_reward_token },
                     },
                     ask_asset_info: {
-                        native: localterra.astroport.ASTRO_token_contract,
+                        native_token: { denom: localterra.networkInfo.nativeToken },
                     }
                 }
             }
         ],
         native_to_lp0_route: [
             {
-                loop: {
+                astro_swap: {
                     offer_asset_info: {
-                        native: localterra.astroport.ASTRO_token_contract,
+                        native_token: { denom: localterra.networkInfo.nativeToken },
                     },
                     ask_asset_info: {
-                        cw20: localterra.astroport.ASTRO_token_contract,
+                        native_token: { denom: "usdc" },
                     }
                 }
             }
         ],
         native_to_lp1_route: [
             {
-                loop: {
+                astro_swap: {
                     offer_asset_info: {
-                        native: localterra.astroport.ASTRO_token_contract,
+                        native_token: { denom: localterra.networkInfo.nativeToken },
                     },
                     ask_asset_info: {
-                        cw20: localterra.astroport.ASTRO_token_contract,
+                        native_token: { denom: "usdt" },
                     }
                 }
             }
         ],
 
-        name: "Vault Token for MALO-KALO pair",
-        symbol: "VTMALOKALO",
+        name: "Vault Token for USDC-USDT pair",
+        symbol: "VTUSDCUSDT",
         decimals: 6,
     });
     vault1_liquid = vaultResult2.logs[0].events

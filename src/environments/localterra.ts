@@ -40,15 +40,21 @@ let usdcUsdtPairUsdtLiquidity: string;
 // initialize variables
 // -------------------------------------------------------------------------------------
 async function initialize() {
-    terra = new LCDClient({
-        URL: localterra.networkInfo.url,
-        chainID: localterra.networkInfo.chainId,
-    });
+    // terra = new LCDClient({
+    //     URL: localterra.networkInfo.url,
+    //     chainID: localterra.networkInfo.chainId,
+    // });
 
-    apTeam = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test1 }));
-    apTeam2 = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test2 }));
-    apTeam3 = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test3 }));
-    apTreasury = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test4 }));
+    // apTeam = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test1 }));
+    // apTeam2 = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test2 }));
+    // apTeam3 = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test3 }));
+    // apTreasury = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test4 }));
+
+    terra = new LocalTerra();
+    apTeam = (terra as LocalTerra).wallets.test1;
+    apTeam2 = (terra as LocalTerra).wallets.test2;
+    apTeam3 = (terra as LocalTerra).wallets.test3;
+    apTreasury = (terra as LocalTerra).wallets.test4;
 
     console.log(`Using ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
     console.log(`Using ${chalk.cyan(apTeam2.key.accAddress)} as Angel Team #2`);
@@ -121,31 +127,28 @@ export async function startSetupAstroportVaults(): Promise<void> {
     console.log(chalk.yellow("\nStep 1. Environment Info"));
     await initialize();
 
-    // // Setup contracts
-    // console.log(chalk.yellow("\nStep 2. LOOP LP Vault Contracts Setup"));
-    // await setupAstroportVaults(
-    //     localterra.networkInfo.chainId,
-    //     terra,
-    //     // wallets
-    //     {
-    //         apTeam,
-    //         apTreasury,
-    //     },
-    //     // config
-    //     {
-    //         loopswap_factory: loopswapFactory, // LoopSwap Factory contract
-    //         loopswap_farming: loopswapFarming, // LoopSwap Farming contract
-    //         loopswap_malo_kalo_pair: loopswapMaloKaloPairContract, // LoopSwap MALO-KALO pair contract
-    //         loopswap_lp_reward_token: loopswapLoopTokenContract, // LoopSwap Pair LP Staking reward token (LOOP token)
-    //         harvest_to_liquid: "0.75", // harvest to liquid percentage
-    //         accepted_tokens: {
-    //             native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', config.networkInfo.nativeToken],
-    //             cw20: [],
-    //         },
-    //         swapRouter: swapRouter, // SwapRouter contract
-    //         nativeToken: { native: config.networkInfo.nativeToken }, // { cw20: config.loopswap.halo_token_contract },
-    //     }
-    // );
+    // Setup contracts
+    console.log(chalk.yellow("\nStep 2. LOOP LP Vault Contracts Setup"));
+    await setupAstroportVaults(
+        localterra.networkInfo.chainId,
+        terra,
+        // wallets
+        {
+            apTeam,
+            apTreasury,
+        },
+        // config
+        {
+            astroport_factory: astroportFactory, // Astroport Factory contract
+            astroport_generator: astroportGenerator, // Astroport Generator contract
+            astroport_usdc_usdt_lp_pair: usdcUsdtPair, // Astroport USDC-USDT pair contract
+            astroport_lp_reward_token: astroTokenContract, // Astroport Pair LP Staking reward token (LOOP token)
+            astroport_router: astroportRouter, // SwapRouter contract
+            nativeToken: { native: localterra.networkInfo.nativeToken },
+            ap_tax_rate: "0.1",
+            interest_distribution: "0.5",
+        }
+    );
 }
 
 
