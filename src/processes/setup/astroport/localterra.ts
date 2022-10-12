@@ -2,7 +2,7 @@
 import chalk from "chalk";
 import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 
-import { storeCode, instantiateContract, sendTransaction } from "../../../utils/terra/helpers";
+import { storeCode, instantiateContract, sendTransaction, toEncodedBinary } from "../../../utils/terra/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
 import { localterra } from "../../../config/localterraConstants";
 
@@ -20,6 +20,7 @@ let astroportGenerator: string;
 let astroportFactory: string;
 let astroportRouter: string;
 let usdcUsdtPair: string;
+let usdcUsdtPairLpToken: string;
 
 
 
@@ -276,7 +277,7 @@ async function setup(
                             }
                         }
                     ],
-                    "init_params": undefined,
+                    "init_params": toEncodedBinary({ "amp": 1 }),
                 }
             },
         )
@@ -286,13 +287,52 @@ async function setup(
     usdcUsdtPair = usdcUsdtPairResult.logs[0].events
         .find((event) => {
             return event.type == "instantiate";
+            // return event.type == "wasm";
         })
         ?.attributes.find((attribute) => {
             return attribute.key == "_contract_address";
             // return attribute.key == "pair_contract_addr";
         })?.value as string;
     console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${usdcUsdtPair}`);
-    console.log("logs: ", usdcUsdtPairResult.logs[0].events);
+
+    // Get the LP Token address of newly created pair
+    process.stdout.write("Query new USDC/USDT pair's LP Token contract");
+    const res: any = await terra.wasm.contractQuery(usdcUsdtPair, { pair: {} });
+    usdcUsdtPairLpToken = res.liquidity_token as string;
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${usdcUsdtPairLpToken}`);
+
+    // Send liquidity to USDC/USDT pair for swaps
+    await sendTransaction(terra, apTeam, [
+        new MsgExecuteContract(
+            apTeam.key.accAddress,
+            usdcUsdtPair,
+            {
+                provide_liquidity: {
+                    assets: [
+                        {
+                            info: {
+                                native_token: { denom: "usdc" },
+                            },
+                            amount: localterra.astroport.usdc_usdt_pair_usdc_liquidity,
+                        },
+                        {
+                            info: {
+                                native_token: { denom: "usdt" },
+                            },
+                            amount: localterra.astroport.usdc_usdt_pair_usdt_liquidity,
+                        }
+                    ],
+                    slippage_tolerance: undefined,
+                    auto_stake: undefined, // Option<bool> ?
+                    receiver: undefined,
+                }
+            },
+            {
+                usdc: localterra.astroport.usdc_usdt_pair_usdc_liquidity,
+                usdt: localterra.astroport.usdc_usdt_pair_usdt_liquidity,
+            },
+        )
+    ]);
 
     // Step 3. Update the contracts' configuration
 

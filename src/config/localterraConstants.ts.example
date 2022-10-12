@@ -49,12 +49,12 @@ export const localterra = {
     astroport_token_code: 30,
     astroport_pair_code: 31, 
 
+    ASTRO_token_contract: "",
+    initial_ASTRO_supply: "1000000000000000",
+
     astroport_factory: "",
     astroport_generator: "",
     astroport_router: "",
-
-    ASTRO_token_contract: "",
-    initial_ASTRO_supply: "1000000000000000",
 
     usdc_usdt_pair_contract: "",
     usdc_usdt_lp_token: "",
