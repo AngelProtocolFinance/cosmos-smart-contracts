@@ -204,28 +204,18 @@ async function setup(
         generatorCodeId,
         {
             "owner": apTeam.key.accAddress,
+            "allowed_reward_proxies": [],
+            "astro_token": astro,
+            "start_block": "5918639",
+            "tokens_per_block": "8403094",
+            "vesting_contract": astroportVesting,
+
             "factory": astroportFactory,
             "generator_controller": undefined,
-            "voting_escrow_delegation": undefined,
             "voting_escrow": undefined,
             "guardian": undefined,
-            "astro_token": astro,
-            "tokens_per_block": "0",
-            "start_block": 0,
-            "allowed_reward_proxies": [],
-            "vesting_contract": astroportVesting,
             "whitelist_code_id": whitelistCodeId,
         }
-        // {
-        //     "owner": null,
-        //     "allowed_reward_proxies": [],
-        //     "astro_token": null,
-        //     "start_block": "5918639",
-        //     "tokens_per_block": "8403094",
-        //     "vesting_contract": null,
-        //     "factory": null,
-        //     "whitelist_code_id": null
-        // }
     );
 
     astroportGenerator = astroportGeneratorResult.logs[0].events
