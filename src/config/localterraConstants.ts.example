@@ -21,7 +21,7 @@ export const localterra = {
     test10: 'prefer forget visit mistake mixture feel eyebrow autumn shop pair address airport diesel street pass vague innocent poem method awful require hurry unhappy shoulder',
   },
 
-  // Should be updated contract addresses after deploying wasms in the LocalJuno
+  // Should be updated contract addresses after deploying wasms in the LocalTerra
   contracts: {
     registrar: "",
     accounts: "",

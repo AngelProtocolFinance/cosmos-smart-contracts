@@ -36,6 +36,13 @@ let usdcUsdtPairLpToken: string;
 let usdcUsdtPairUsdcLiquidity: string;
 let usdcUsdtPairUsdtLiquidity: string;
 
+let lunaAstroPair: string;
+let lunaAstroPairLpToken: string;
+let lunaUsdcPair: string;
+let lunaUsdcPairLpToken: string;
+let lunaUsdtPair: string;
+let lunaUsdtPairLpToken: string;
+
 
 // -------------------------------------------------------------------------------------
 // initialize variables
@@ -85,6 +92,13 @@ async function initialize() {
     usdcUsdtPairUsdcLiquidity = localterra.astroport.usdc_usdt_pair_usdc_liquidity;
     usdcUsdtPairUsdtLiquidity = localterra.astroport.usdc_usdt_pair_usdt_liquidity;
 
+    lunaAstroPair = localterra.astroport.luna_astro_pair_contract;
+    lunaAstroPairLpToken = localterra.astroport.luna_astro_pair_lp_token;
+    lunaUsdcPair = localterra.astroport.luna_usdc_pair_contract;
+    lunaUsdcPairLpToken = localterra.astroport.luna_usdc_pair_lp_token;
+    lunaUsdtPair = localterra.astroport.luna_usdt_pair_contract;
+    lunaUsdtPairLpToken = localterra.astroport.luna_usdt_pair_lp_token;
+
     console.log(`Using ${chalk.cyan(astroportTokenCode)} as Astroport (cw20) Token Code`);
     console.log(`Using ${chalk.cyan(astroportPairCode)} as Astroport Pair Code`);
     console.log(`Using ${chalk.cyan(astroportFactory)} as Astroport Factory contract`);
@@ -100,6 +114,25 @@ async function initialize() {
     console.log(`Using ${chalk.cyan(usdcUsdtPairUsdcLiquidity)} as Astroport USDC/USDT Pair USDC liquidity`);
     console.log(
         `Using ${chalk.cyan(usdcUsdtPairUsdtLiquidity)} as Astroport USDC/USDT Pair USDT liquidity`
+    );
+
+    console.log(
+        `Using ${chalk.cyan(lunaAstroPair)} as Astroport Luna/ASTRO Swap Pair`
+    );
+    console.log(
+        `Using ${chalk.cyan(lunaAstroPairLpToken)} as Astroport Luna/ASTRO Swap Pair LP Token`
+    );
+    console.log(
+        `Using ${chalk.cyan(lunaUsdcPair)} as Astroport Luna/USDC Swap Pair`
+    );
+    console.log(
+        `Using ${chalk.cyan(lunaUsdcPairLpToken)} as Astroport Luna/USDC Swap Pair LP Token`
+    );
+    console.log(
+        `Using ${chalk.cyan(lunaUsdtPair)} as Astroport Luna/USDT Swap Pair`
+    );
+    console.log(
+        `Using ${chalk.cyan(lunaUsdtPairLpToken)} as Astroport Luna/USDT Swap Pair LP Token`
     );
 }
 
