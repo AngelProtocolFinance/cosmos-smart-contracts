@@ -42,6 +42,33 @@ docker-compose rm
 How to know if LocalJuno is working properly?
 **Go to [https://localhost:1317](http://localhost:1317).** You should see a page with some APIs which can be used to send transactions or query blockchain state.
 
+### Spin up LocalTerra
+1. Clone the LocalTerra repo: 
+```bash
+git clone https://github.com/terra-money/LocalTerra.git
+```
+2. Copy the file named `localterra_genesis.json` in this `test-suite` repo over to the base folder of the LocalTerra repo, replacing the existing default `genesis.json` file. 
+```bash
+cp ./localterra_genesis.json <localterra_repo_path>/genesis.json`
+```
+3. In the LocalTerra repo base folder run the following to build LocalTerra container:
+```bash
+docker-compose build
+```
+
+Once the build is done, you can start your LocalTerra by running
+```bash
+docker-compose up  # Ctrl + C to quit
+```
+
+From time to time, you may need to revert LocalTerra to its initial state. Do this by running
+```bash
+docker-compose rm
+```
+
+How to know if LocalTerra is working properly?
+**Go to [https://localhost:1317](http://localhost:1317).** You should see a page with some APIs which can be used to send transactions or query blockchain state.
+
 ### Compile contracts
 
 ```bash
