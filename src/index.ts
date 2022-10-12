@@ -9,6 +9,16 @@ import * as LocalTerra from "./environments/localterra";
 (async () => {
 	const mode = process.env.npm_config_mode || "";
 	switch (mode) {
+		case "localterra_tests":
+			await LocalTerra.startTestsAstroportVault();
+			break;
+		case "localterra_setup_astroport":
+			await LocalTerra.startSetupAstroport();
+			break;
+		case "localterra_setup_astrovaults":
+			await LocalTerra.startSetupAstroportVaults();
+			break;
+
 		case "localjuno_tests":
 			await LocalNet.startTests();
 			break;
@@ -24,9 +34,6 @@ import * as LocalTerra from "./environments/localterra";
 		case "localjuno_setup_loopswap":
 			await LocalNet.startSetupLoopSwap();
 			break;
-		case "localterra_setup_astroport":
-			await LocalTerra.startSetupAstroport();
-			break;
 		case "localjuno_migrate_core":
 			await LocalNet.startMigrateCore();
 			break;
@@ -35,9 +42,6 @@ import * as LocalTerra from "./environments/localterra";
 			break;
 		case "localjuno_setup_loopvaults":
 			await LocalNet.startSetupLoopVaults();
-			break;
-		case "localterra_setup_astrovaults":
-			await LocalTerra.startSetupAstroportVaults();
 			break;
 		// case "localjuno_migrate_halo":
 		// 	await LocalNet.startMigrateHalo();

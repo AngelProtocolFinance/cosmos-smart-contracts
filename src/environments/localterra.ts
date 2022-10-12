@@ -7,6 +7,7 @@ import { LCDClient, LocalTerra, MnemonicKey, Wallet } from "@terra-money/terra.j
 import { localterra } from "../config/localterraConstants";
 import { setupAstroportPlatform } from "../processes/setup/astroport/localterra";
 import { setupAstroportVaults } from "../processes/setup/vaults/astroport";
+import { testExecuteAstroport } from "../processes/tests/localterra";
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -162,16 +163,27 @@ export async function startTestsAstroportVault(): Promise<void> {
     console.log(chalk.yellow("\nStep 1. Environment Info"));
     await initialize();
 
-    // // Test queries
-    // await testExecuteStation(
-    //     terra,
-    //     wallet1,
-    //     wallet2,
-    //     wallet3,
-    //     auto,
-    //     registryStake,
-    //     fundsRouter,
-    //     timeConditions,
-    //     counter,
-    // );
+    // Test queries
+    await testExecuteAstroport(
+        terra,
+        apTeam,
+        apTeam2,
+        apTeam3,
+        apTreasury,
+
+        vaultLocked1,
+        vaultLiquid1,
+        vaultLocked2,
+        vaultLiquid2,
+
+        astroportFactory,
+        astroportGenerator,
+        astroportRouter,
+        astroTokenContract,
+        astroTokenInitialSupply,
+        usdcUsdtPair,
+        usdcUsdtPairLpToken,
+        usdcUsdtPairUsdcLiquidity,
+        usdcUsdtPairUsdtLiquidity,
+    );
 }
