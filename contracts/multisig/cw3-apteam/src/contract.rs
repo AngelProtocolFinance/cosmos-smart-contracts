@@ -17,7 +17,7 @@ use cw3::{
     Status, Vote, VoteInfo, VoteListResponse, VoteResponse, VoterDetail, VoterListResponse,
     VoterResponse,
 };
-use cw4::{Cw4Contract, MemberChangedHookMsg, MemberDiff};
+use cw4::{Cw4Contract, Cw4QueryMsg, MemberChangedHookMsg, MemberDiff, MemberListResponse};
 use cw_asset::AssetUnchecked;
 use cw_storage_plus::Bound;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
@@ -192,12 +192,31 @@ pub fn execute_propose_locked_withdraw(
     let id = next_id(deps.storage)?;
     PROPOSALS.save(deps.storage, id, &prop)?;
 
+    // If only 1 member, then execute the proposal directly.
+    let cw4_group_addr = cfg.group_addr;
+    let member_list: MemberListResponse = deps.querier.query_wasm_smart(
+        cw4_group_addr.0,
+        &Cw4QueryMsg::ListMembers {
+            start_after: None,
+            limit: None,
+        },
+    )?;
+    let mut direct_execute_msgs = vec![];
+    if member_list.members.len() == 1 {
+        direct_execute_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::Execute { proposal_id: id }).unwrap(),
+            funds: vec![],
+        }));
+    };
+
     Ok(Response::new()
         .add_attribute("action", "locked_withdraw_proposal")
         .add_attribute("sender", info.sender)
         .add_attribute("proposal_id", id.to_string())
         .add_attribute("endowment_cw3_proposal_id", orig_proposal.to_string())
-        .add_attribute("status", format!("{:?}", prop.status)))
+        .add_attribute("status", format!("{:?}", prop.status))
+        .add_messages(direct_execute_msgs))
 }
 
 pub fn execute_propose(
@@ -256,11 +275,30 @@ pub fn execute_propose(
     };
     BALLOTS.save(deps.storage, (id, &info.sender), &ballot)?;
 
+    // If only 1 member, then execute the proposal directly.
+    let cw4_group_addr = cfg.group_addr;
+    let member_list: MemberListResponse = deps.querier.query_wasm_smart(
+        cw4_group_addr.0,
+        &Cw4QueryMsg::ListMembers {
+            start_after: None,
+            limit: None,
+        },
+    )?;
+    let mut direct_execute_msgs = vec![];
+    if member_list.members.len() == 1 {
+        direct_execute_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::Execute { proposal_id: id }).unwrap(),
+            funds: vec![],
+        }));
+    };
+
     Ok(Response::new()
         .add_attribute("action", "propose")
         .add_attribute("sender", info.sender)
         .add_attribute("proposal_id", id.to_string())
-        .add_attribute("status", format!("{:?}", prop.status)))
+        .add_attribute("status", format!("{:?}", prop.status))
+        .add_messages(direct_execute_msgs))
 }
 
 pub fn execute_vote(
