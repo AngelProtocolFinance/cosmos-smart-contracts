@@ -21,8 +21,8 @@ pub fn query_token_info(deps: Deps) -> TokenInfoResponse {
 pub fn query_config(deps: Deps) -> ConfigResponse {
     let config: Config = CONFIG.load(deps.storage).unwrap();
     ConfigResponse {
-        ibc_relayer: config.ibc_relayer.to_string(),
-        ibc_sender: config.ibc_sender.to_string(),
+        ibc_host: config.ibc_host.to_string(),
+        ibc_controller: config.ibc_controller.to_string(),
 
         owner: config.owner.to_string(),
         acct_type: config.acct_type,

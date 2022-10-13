@@ -7,8 +7,8 @@ use angel_core::structs::AccountType;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct ConfigResponse {
-    pub ibc_relayer: String,
-    pub ibc_sender: String,
+    pub ibc_host: String,
+    pub ibc_controller: String,
 
     pub owner: String,
     pub acct_type: AccountType,

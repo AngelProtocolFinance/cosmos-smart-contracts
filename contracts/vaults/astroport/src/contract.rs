@@ -50,8 +50,8 @@ pub fn instantiate(
         tax_collector: deps.api.addr_validate(&msg.tax_collector)?,
         swap_router: deps.api.addr_validate(&msg.swap_router)?,
 
-        ibc_relayer: deps.api.addr_validate(&msg.ibc_relayer)?,
-        ibc_sender: deps.api.addr_validate(&msg.ibc_sender)?,
+        ibc_host: deps.api.addr_validate(&msg.ibc_host)?,
+        ibc_controller: deps.api.addr_validate(&msg.ibc_controller)?,
         ap_tax_rate: msg.ap_tax_rate,
         interest_distribution: msg.interest_distribution,
 
