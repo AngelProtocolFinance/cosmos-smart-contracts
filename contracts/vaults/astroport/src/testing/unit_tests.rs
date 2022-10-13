@@ -18,8 +18,8 @@ fn create_mock_vault(
 ) -> OwnedDeps<MockStorage, MockApi, WasmMockQuerier> {
     let mut deps = mock_dependencies(&coins);
     let instantiate_msg = InstantiateMsg {
-        ibc_relayer: "ibc-relayer".to_string(),
-        ibc_sender: "ibc-sender".to_string(),
+        ibc_host: "ibc-relayer".to_string(),
+        ibc_controller: "ibc-sender".to_string(),
         ap_tax_rate: Decimal::from_ratio(10_u128, 100_u128),
         interest_distribution: Decimal::from_ratio(25_u128, 100_u128),
 
@@ -55,8 +55,8 @@ fn create_mock_vault(
 fn proper_instantiation() {
     let mut deps = mock_dependencies(&[]);
     let instantiate_msg = InstantiateMsg {
-        ibc_relayer: "ibc-relayer".to_string(),
-        ibc_sender: "ibc-sender".to_string(),
+        ibc_host: "ibc-relayer".to_string(),
+        ibc_controller: "ibc-sender".to_string(),
         ap_tax_rate: Decimal::from_ratio(10_u128, 100_u128),
         interest_distribution: Decimal::from_ratio(25_u128, 100_u128),
 
@@ -131,8 +131,8 @@ fn test_update_config() {
 
     // Try to update the "config"
     let update_config_msg = UpdateConfigMsg {
-        ibc_relayer: Some("new-ibc-relayer".to_string()),
-        ibc_sender: Some("new-ibc-sender".to_string()),
+        ibc_host: Some("new-ibc-relayer".to_string()),
+        ibc_controller: Some("new-ibc-sender".to_string()),
 
         lp_staking_contract: Some("new-astroport-generator".to_string()),
         lp_pair_contract: Some("new-astroport-pair".to_string()),
@@ -170,8 +170,8 @@ fn test_update_config() {
     // Check the "config" update
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config.ibc_relayer, "new-ibc-relayer".to_string());
-    assert_eq!(config.ibc_sender, "new-ibc-sender".to_string());
+    assert_eq!(config.ibc_host, "new-ibc-relayer".to_string());
+    assert_eq!(config.ibc_controller, "new-ibc-sender".to_string());
     assert_eq!(config.lp_pair_contract, "new-astroport-pair".to_string());
     assert_eq!(
         config.lp_staking_contract,
@@ -216,8 +216,8 @@ fn test_deposit_cw20_token() {
     // Instantiate the vault contract
     let mut deps = mock_dependencies(&[]);
     let instantiate_msg = InstantiateMsg {
-        ibc_relayer: "ibc-relayer".to_string(),
-        ibc_sender: "ibc-sender".to_string(),
+        ibc_host: "ibc-relayer".to_string(),
+        ibc_controller: "ibc-sender".to_string(),
         ap_tax_rate: Decimal::from_ratio(10_u128, 100_u128),
         interest_distribution: Decimal::from_ratio(25_u128, 100_u128),
 

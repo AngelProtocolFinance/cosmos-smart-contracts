@@ -17,8 +17,8 @@ pub struct Config {
     pub tax_collector: Addr,
     pub swap_router: Addr,
 
-    pub ibc_relayer: Addr,
-    pub ibc_sender: Addr,
+    pub ibc_host: Addr,
+    pub ibc_controller: Addr,
     pub ap_tax_rate: Decimal, // Same as `registrar::config.tax_rate`
     pub interest_distribution: Decimal, // Same as `registrar::config.rebalance.interest_distribution`
 

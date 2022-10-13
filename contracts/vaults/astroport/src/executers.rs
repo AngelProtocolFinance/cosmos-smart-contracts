@@ -62,14 +62,14 @@ pub fn update_config(
     }
 
     // Update the config
-    config.ibc_relayer = match msg.ibc_relayer {
+    config.ibc_host = match msg.ibc_host {
         Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.ibc_relayer,
+        None => config.ibc_host,
     };
 
-    config.ibc_sender = match msg.ibc_sender {
+    config.ibc_controller = match msg.ibc_controller {
         Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.ibc_sender,
+        None => config.ibc_controller,
     };
 
     config.sibling_vault = match msg.sibling_vault {
@@ -141,8 +141,8 @@ pub fn deposit(
 ) -> Result<Response, ContractError> {
     let config = CONFIG.load(deps.storage)?;
 
-    // Check if the `caller` is "ibc_relayer" & "endowment_id" is valid
-    if msg_sender != config.ibc_relayer {
+    // Check if the `caller` is "ibc_host" & "endowment_id" is valid
+    if msg_sender != config.ibc_host {
         return Err(ContractError::Unauthorized {});
     }
 
@@ -341,12 +341,12 @@ pub fn redeem(
         beneficiary = config.tax_collector.clone();
         id = None;
     } else {
-        // Check if the `caller` is "ibc_relayer".
-        if info.sender != config.ibc_relayer {
+        // Check if the `caller` is "ibc_host".
+        if info.sender != config.ibc_host {
             return Err(ContractError::Unauthorized {});
         }
 
-        beneficiary = config.ibc_sender.clone();
+        beneficiary = config.ibc_controller.clone();
         id = Some(endowment_id);
     }
 
@@ -500,8 +500,8 @@ pub fn reinvest_to_locked_execute(
         }));
     }
 
-    // 0. Check that the message sender is the `ibc_relayer`
-    if info.sender != config.ibc_relayer {
+    // 0. Check that the message sender is the `ibc_host`
+    if info.sender != config.ibc_host {
         return Err(ContractError::Unauthorized {});
     }
 

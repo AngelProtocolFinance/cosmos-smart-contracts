@@ -10,8 +10,8 @@ use angel_core::structs::AccountType;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
-    pub ibc_relayer: String,
-    pub ibc_sender: String,
+    pub ibc_host: String,
+    pub ibc_controller: String,
     pub ap_tax_rate: Decimal,
     pub interest_distribution: Decimal,
 
@@ -93,8 +93,8 @@ pub enum ExecuteMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
-    pub ibc_relayer: Option<String>,
-    pub ibc_sender: Option<String>,
+    pub ibc_host: Option<String>,
+    pub ibc_controller: Option<String>,
 
     pub sibling_vault: Option<String>,
     pub keeper: Option<String>,
