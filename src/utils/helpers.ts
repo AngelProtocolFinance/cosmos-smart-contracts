@@ -162,6 +162,20 @@ export async function migrateContract(
   return result;
 }
 
+/**
+ * @notice Existing Admin address updates a contract to a new admin address
+ */
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
+export async function updateContractAdmin(
+  juno: SigningCosmWasmClient,
+  sender: string,
+  contract: string,
+  new_admin: string,
+) {
+  const result = await juno.updateAdmin(sender, contract, new_admin, "auto");
+  return result;
+}
+
 // --------------------------------------------------
 // Wrapper Function:
 // Stores wasm, gets new code, and migrates contract 

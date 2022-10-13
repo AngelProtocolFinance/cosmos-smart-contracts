@@ -414,7 +414,7 @@ export async function testExecute(
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
   // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, networkInfo.chainId);
 
-  // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
+  // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts, 1, undefined);
   // await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
