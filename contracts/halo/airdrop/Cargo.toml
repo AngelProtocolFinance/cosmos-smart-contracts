@@ -1,6 +1,6 @@
 [package]
 name = "halo-airdrop"
-version = "1.8.0"
+version = "1.9.1"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 description = "A Airdrop contract for Angel Protocol - allow users to claim rewards with Merkle Tree based proof"
