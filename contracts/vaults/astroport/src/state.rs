@@ -1,10 +1,11 @@
-use angel_core::structs::AccountType;
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw_storage_plus::{Item, Map};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::astro_core_structs::{asset::AssetInfo, router::SwapOperation};
+use angel_core::structs::AccountType;
+
+use astroport::{asset::AssetInfo, router::SwapOperation};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct Config {

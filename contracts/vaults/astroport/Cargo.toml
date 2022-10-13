@@ -31,6 +31,7 @@ serde = { version = "1.0.130", default-features = false, features = ["derive"] }
 thiserror = "1.0.24"
 cw-controllers = "0.13.4"
 cw-asset = "2.2.0"
+astroport = { git = "https://github.com/astroport-fi/astroport-core.git", rev = "2b87bb8" }
 
 [dev-dependencies]
 cosmwasm-storage = "1.0.0"

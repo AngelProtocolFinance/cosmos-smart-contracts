@@ -6,12 +6,13 @@ use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfoBase as CwAssetInfoBase;
 
+use astroport::{
+    asset::{AssetInfo, PairInfo},
+    pair::QueryMsg as AstroPairQueryMsg,
+};
+
 use angel_core::errors::vault::ContractError;
 
-use crate::astro_core_structs::{
-    asset::{AssetInfo, PairInfo},
-    pair::QueryMsg as AstroportPairQueryMsg,
-};
 use crate::executers;
 use crate::msg::{ExecuteMsg, InstantiateMsg, MigrateMsg, QueryMsg, ReceiveMsg};
 use crate::queriers;
@@ -38,7 +39,7 @@ pub fn instantiate(
     let pair_contract = deps.api.addr_validate(&msg.pair_contract)?;
     let pair_info: PairInfo = deps
         .querier
-        .query_wasm_smart(pair_contract.to_string(), &AstroportPairQueryMsg::Pair {})?;
+        .query_wasm_smart(pair_contract.to_string(), &AstroPairQueryMsg::Pair {})?;
 
     let config = Config {
         owner: info.sender,

@@ -1,7 +1,8 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::astro_core_structs::router::SwapOperation;
+use astroport::router::SwapOperation;
+
 use angel_core::structs::AccountType;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

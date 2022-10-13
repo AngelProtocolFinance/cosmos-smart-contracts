@@ -1,4 +1,3 @@
-pub mod astro_core_structs;
 pub mod contract;
 pub mod executers;
 pub mod msg;
