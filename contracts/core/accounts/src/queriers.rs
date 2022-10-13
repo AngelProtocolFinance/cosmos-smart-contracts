@@ -1,8 +1,6 @@
 use crate::state::{read_endowments, Endowment, CONFIG, ENDOWMENTS, PROFILES, STATES};
 use angel_core::responses::accounts::*;
-use angel_core::structs::{
-    AccountType, EndowmentBalanceResponse, EndowmentEntry, Tier
-};
+use angel_core::structs::{AccountType, EndowmentBalanceResponse, EndowmentEntry, Tier};
 use angel_core::utils::vault_endowment_balance;
 use cosmwasm_std::{Deps, StdResult, Uint128};
 use cw2::get_contract_version;
@@ -86,7 +84,8 @@ pub fn query_endowment_list(
     start_after: Option<u32>,
     limit: Option<u64>,
 ) -> StdResult<EndowmentListResponse> {
-    let endowments: Vec<(u32, Endowment)> = read_endowments(deps.storage, proposal_link, start_after, limit)?;
+    let endowments: Vec<(u32, Endowment)> =
+        read_endowments(deps.storage, proposal_link, start_after, limit)?;
     let entries: Vec<EndowmentEntry> = endowments
         .iter()
         .map(|(i, e)| EndowmentEntry {

@@ -216,7 +216,7 @@ pub enum QueryMsg {
     // Gets list of all registered Endowments
     EndowmentList {
         proposal_link: Option<u64>,
-        start_after: Option<u32>, 
+        start_after: Option<u32>,
         limit: Option<u64>,
     },
     // Get the profile info
