@@ -7,20 +7,21 @@ use cosmwasm_std::{
 use cw20::Cw20ReceiveMsg;
 use cw_asset::AssetInfoBase as CwAssetInfoBase;
 
-use crate::msg::{
-    AstroportFarmingExecuteMsg, AstroportFarmingQueryMsg, AstroportPairExecuteMsg, ExecuteMsg,
-    ReceiveMsg, UpdateConfigMsg,
+use astroport::{
+    asset::{Asset, AssetInfo, PairInfo},
+    pair::{
+        Cw20HookMsg as AstroPairHookMsg, ExecuteMsg as AstroPairExecuteMsg,
+        QueryMsg as AstroPairQueryMsg,
+    },
+    router::{ExecuteMsg as AstroRouterExecuteMsg, SwapOperation},
 };
 
 use angel_core::errors::vault::ContractError;
 
-use crate::astro_core_structs::router::ExecuteMsg as SwapRouterExecuteMsg;
-use crate::astro_core_structs::{
-    asset::{Asset, AssetInfo, PairInfo},
-    pair::QueryMsg as AstroportPairQueryMsg,
-    router::SwapOperation,
+use crate::msg::{
+    AstroportFarmingExecuteMsg, AstroportFarmingQueryMsg, ExecuteMsg, QueryMsg as VaultQueryMsg,
+    ReceiveMsg, UpdateConfigMsg,
 };
-use crate::msg::QueryMsg as VaultQueryMsg;
 use crate::responses::ConfigResponse;
 use crate::state::{Config, State, APTAX, BALANCES, CONFIG, STATE, TOKEN_INFO};
 
@@ -97,7 +98,7 @@ pub fn update_config(
 
     let pair_info: PairInfo = deps.querier.query_wasm_smart(
         config.lp_pair_contract.to_string(),
-        &AstroportPairQueryMsg::Pair {},
+        &AstroPairQueryMsg::Pair {},
     )?;
     config.lp_token = pair_info.liquidity_token;
     config.lp_pair_token0 = pair_info.asset_infos[0].clone();
@@ -808,7 +809,7 @@ fn prepare_astroport_pair_provide_liquidity_msgs(
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: pair_contract,
-        msg: to_binary(&AstroportPairExecuteMsg::ProvideLiquidity {
+        msg: to_binary(&AstroPairExecuteMsg::ProvideLiquidity {
             assets: [
                 Asset {
                     info: token1_asset_info,
@@ -819,6 +820,9 @@ fn prepare_astroport_pair_provide_liquidity_msgs(
                     amount: token2_amount,
                 },
             ],
+            slippage_tolerance: None,
+            auto_stake: None, // Option<bool> ?
+            receiver: None,
         })
         .unwrap(),
         funds,
@@ -838,7 +842,7 @@ fn prepare_contract_stake_msgs(
 
     let pair_info: PairInfo = deps
         .querier
-        .query_wasm_smart(pair_contract.to_string(), &AstroportPairQueryMsg::Pair {})?;
+        .query_wasm_smart(pair_contract.to_string(), &AstroPairQueryMsg::Pair {})?;
     let lp_token_contract = pair_info.liquidity_token;
 
     let lp_token_bal: cw20::BalanceResponse = deps.querier.query_wasm_smart(
@@ -1134,7 +1138,7 @@ pub fn remove_liquidity(
             msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                 contract: config.lp_pair_contract.to_string(),
                 amount: lp_token_amount,
-                msg: to_binary(&AstroportPairExecuteMsg::WithdrawLiquidity {}).unwrap(),
+                msg: to_binary(&AstroPairHookMsg::WithdrawLiquidity {}).unwrap(),
             })
             .unwrap(),
             funds: vec![],
@@ -1328,7 +1332,7 @@ pub fn swap_back(
             .native_to_lp0_route
             .iter()
             .rev()
-            .map(|op| op.reverse_operation())
+            .map(|op| reverse_operation_order(op))
             .collect();
 
         swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
@@ -1343,7 +1347,7 @@ pub fn swap_back(
             .native_to_lp1_route
             .iter()
             .rev()
-            .map(|op| op.reverse_operation())
+            .map(|op| reverse_operation_order(op))
             .collect();
         swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
             config.swap_router.to_string(),
@@ -1368,7 +1372,7 @@ fn prepare_swap_router_swap_msgs(
     let msgs = match start_token {
         AssetInfo::NativeToken { ref denom } => vec![CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: swap_router,
-            msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
+            msg: to_binary(&AstroRouterExecuteMsg::ExecuteSwapOperations {
                 operations,
                 minimum_receive: None,
                 to: None,
@@ -1393,7 +1397,7 @@ fn prepare_swap_router_swap_msgs(
                 msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                     contract: swap_router,
                     amount: swap_amount,
-                    msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
+                    msg: to_binary(&AstroRouterExecuteMsg::ExecuteSwapOperations {
                         operations,
                         minimum_receive: None,
                         to: None,
@@ -1478,13 +1482,14 @@ fn prepare_astroport_pair_swap_msg(
         AssetInfo::NativeToken { denom } => {
             msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: pair_contract.to_string(),
-                msg: to_binary(&AstroportPairExecuteMsg::Swap {
+                msg: to_binary(&AstroPairExecuteMsg::Swap {
                     offer_asset: Asset {
                         info: input_asset_info.clone(),
                         amount: input_amount,
                     },
                     belief_price: None,
                     max_spread: None,
+                    to: None,
                 })?,
                 funds: vec![Coin {
                     denom: denom.to_string(),
@@ -1498,13 +1503,10 @@ fn prepare_astroport_pair_swap_msg(
                 msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
                     contract: pair_contract.to_string(),
                     amount: input_amount,
-                    msg: to_binary(&AstroportPairExecuteMsg::Swap {
-                        offer_asset: Asset {
-                            info: input_asset_info.clone(),
-                            amount: input_amount,
-                        },
+                    msg: to_binary(&AstroPairHookMsg::Swap {
                         belief_price: None,
                         max_spread: None,
+                        to: None,
                     })
                     .unwrap(),
                 })
@@ -1603,5 +1605,25 @@ fn query_asset_balance(
         AssetInfo::Token { contract_addr } => {
             query_token_balance(deps, contract_addr.to_string(), account_addr.to_string())
         }
+    }
+}
+
+// Swap the order of `offer` and `target` asset info in `SwapOperation`
+fn reverse_operation_order(op: &SwapOperation) -> SwapOperation {
+    match op {
+        SwapOperation::NativeSwap {
+            offer_denom,
+            ask_denom,
+        } => SwapOperation::NativeSwap {
+            offer_denom: ask_denom.to_string(),
+            ask_denom: offer_denom.to_string(),
+        },
+        SwapOperation::AstroSwap {
+            offer_asset_info,
+            ask_asset_info,
+        } => SwapOperation::AstroSwap {
+            offer_asset_info: ask_asset_info.clone(),
+            ask_asset_info: offer_asset_info.clone(),
+        },
     }
 }
