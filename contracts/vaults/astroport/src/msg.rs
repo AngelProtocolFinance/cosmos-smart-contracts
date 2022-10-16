@@ -149,14 +149,8 @@ pub enum QueryMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
-pub enum AstroportFarmingExecuteMsg {
-    Stake {},           // Farm action. Stake LP token.(param: amount in `send` msg)
-    UnstakeAndClaim {}, // Unfarm action. Unstake farmed LP token & rewards.(param: amount in `send` msg)
-    ClaimReward {},     // Claim the reward. Enabled just after `stake`
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-#[serde(rename_all = "snake_case")]
-pub enum AstroportFarmingQueryMsg {
-    QueryFlpTokenFromPoolAddress { pool_address: String },
+pub enum AstroportGeneratorExecuteMsg {
+    Deposit {}, // Deposit(stake) LP token.(param: amount in `send` msg)
+    Withdraw { lp_token: String, amount: Uint128 }, // Unfarm action. Unstake farmed LP token & rewards.(param: amount in `send` msg)
+    ClaimRewards { lp_tokens: Vec<String> },        // Claim the reward. Enabled just after `stake`
 }
