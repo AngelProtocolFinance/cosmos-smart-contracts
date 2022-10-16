@@ -19,8 +19,8 @@ use astroport::{
 use angel_core::errors::vault::ContractError;
 
 use crate::msg::{
-    AstroportFarmingExecuteMsg, AstroportFarmingQueryMsg, ExecuteMsg, QueryMsg as VaultQueryMsg,
-    ReceiveMsg, UpdateConfigMsg,
+    AstroportGeneratorExecuteMsg, ExecuteMsg, QueryMsg as VaultQueryMsg, ReceiveMsg,
+    UpdateConfigMsg,
 };
 use crate::responses::ConfigResponse;
 use crate::state::{Config, State, APTAX, BALANCES, CONFIG, STATE, TOKEN_INFO};
@@ -379,20 +379,12 @@ pub fn redeem(
 
     // Call the `astroport::farming::unstake_and_claim(unfarm)` entry
     let mut msgs = vec![];
-    let lp_token_contract = config.lp_token;
-    let flp_token_contract: String = deps.querier.query_wasm_smart(
-        config.lp_staking_contract.to_string(),
-        &AstroportFarmingQueryMsg::QueryFlpTokenFromPoolAddress {
-            pool_address: lp_token_contract.to_string(),
-        },
-    )?;
 
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: flp_token_contract,
-        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-            contract: config.lp_staking_contract.to_string(),
+        contract_addr: config.lp_staking_contract.to_string(),
+        msg: to_binary(&AstroportGeneratorExecuteMsg::Withdraw {
+            lp_token: config.lp_token.to_string(),
             amount: lp_amount,
-            msg: to_binary(&AstroportFarmingExecuteMsg::UnstakeAndClaim {}).unwrap(),
         })
         .unwrap(),
         funds: vec![],
@@ -401,7 +393,7 @@ pub fn redeem(
     // Handle the returning lp tokens (Swap back to `native_token` & send to `beneficiary`)
     let lp_token_bal = query_token_balance(
         deps.as_ref(),
-        lp_token_contract.to_string(),
+        config.lp_token.to_string(),
         env.contract.address.to_string(),
     )?;
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
@@ -454,7 +446,10 @@ pub fn harvest(deps: DepsMut, env: Env, info: MessageInfo) -> Result<Response, C
     // Call the `astroport::farming::claim_reward` entry
     msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.lp_staking_contract.to_string(),
-        msg: to_binary(&AstroportFarmingExecuteMsg::ClaimReward {}).unwrap(),
+        msg: to_binary(&AstroportGeneratorExecuteMsg::ClaimRewards {
+            lp_tokens: vec![config.lp_token.to_string()],
+        })
+        .unwrap(),
         funds: vec![],
     }));
 
@@ -556,20 +551,11 @@ pub fn reinvest_to_locked_execute(
     STATE.save(deps.storage, &state)?;
 
     // Unfarm the LP token from "lp_staking_contract"
-    let lp_token_contract = config.lp_token.clone();
-    let flp_token_contract: String = deps.querier.query_wasm_smart(
-        config.lp_staking_contract.to_string(),
-        &AstroportFarmingQueryMsg::QueryFlpTokenFromPoolAddress {
-            pool_address: lp_token_contract.to_string(),
-        },
-    )?;
-
     let unstake_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
-        contract_addr: flp_token_contract,
-        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-            contract: config.lp_staking_contract.to_string(),
+        contract_addr: config.lp_staking_contract.to_string(),
+        msg: to_binary(&AstroportGeneratorExecuteMsg::Withdraw {
+            lp_token: config.lp_token.to_string(),
             amount: lp_amount,
-            msg: to_binary(&AstroportFarmingExecuteMsg::UnstakeAndClaim {}).unwrap(),
         })
         .unwrap(),
         funds: vec![],
@@ -665,7 +651,7 @@ pub fn reinvest_to_locked_recieve(
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_amount,
-            msg: to_binary(&AstroportFarmingExecuteMsg::Stake {}).unwrap(),
+            msg: to_binary(&AstroportGeneratorExecuteMsg::Deposit {}).unwrap(),
         })
         .unwrap(),
         funds: vec![],
@@ -1025,7 +1011,7 @@ pub fn stake_lp_token(
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_stake_amount,
-            msg: to_binary(&AstroportFarmingExecuteMsg::Stake {}).unwrap(),
+            msg: to_binary(&AstroportGeneratorExecuteMsg::Deposit {}).unwrap(),
         })
         .unwrap(),
         funds: vec![],
@@ -1080,7 +1066,7 @@ pub fn harvest_to_liquid(
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
             contract: config.lp_staking_contract.to_string(),
             amount: lp_stake_amount,
-            msg: to_binary(&AstroportFarmingExecuteMsg::Stake {}).unwrap(),
+            msg: to_binary(&AstroportGeneratorExecuteMsg::Deposit {}).unwrap(),
         })
         .unwrap(),
         funds: vec![],
