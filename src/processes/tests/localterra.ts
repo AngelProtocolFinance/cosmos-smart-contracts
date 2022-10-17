@@ -32,13 +32,13 @@ export async function testExecuteAstroport(
 ): Promise<void> {
     console.log(chalk.yellow("\nStep 2. Running Tests"));
 
-    /* - EXECUTE tests - */
+    /* --- EXECUTE tests --- */
     // await testVaultDeposit(terra, apTeam, vaultLocked1, 1, { uluna: 20000 });
     // await testVaultRedeem(terra, apTeam, vaultLocked1, 1, "5000");
     // await testVaultHarvest(terra, apTreasury, vaultLocked1);
     // await testVaultReinvestToLocked(terra, apTeam, vaultLiquid1, 1, "5000");
 
-    /* -  QUERY tests - */
+    /* ---  QUERY tests --- */
     await testQueryVaultConfig(terra, vaultLocked1);
     await testQueryVaultEndowmentBalance(terra, vaultLocked1, 1);
     await testQueryVaultTokenInfo(terra, vaultLocked1);
@@ -55,7 +55,7 @@ export async function testVaultDeposit(
     endowment_id: number,
     coins: any,
 ): Promise<void> {
-    process.stdout.write("Test - Ibc_relayer deposits to the vault");
+    process.stdout.write("Test - Ibc_host deposits to the vault");
     await sendTransaction(terra, sender, [
         new MsgExecuteContract(
             sender.key.accAddress,
@@ -79,7 +79,7 @@ export async function testVaultRedeem(
     endowment_id: number,
     amount: string,
 ): Promise<void> {
-    process.stdout.write("Test - Ibc_relayer deposits to the vault");
+    process.stdout.write("Test - Ibc_host redeems from the vault");
     await sendTransaction(terra, sender, [
         new MsgExecuteContract(
             sender.key.accAddress,

@@ -78,8 +78,8 @@ async function createAstroportVaults(
     // Astroport Vault - #1 (Locked)
     process.stdout.write("Instantiating Vault #1 (Locked) contract");
     const vaultResult1 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
-        ibc_relayer: apTeam.key.accAddress,
-        ibc_sender: apTeam.key.accAddress,
+        ibc_host: apTeam.key.accAddress,
+        ibc_controller: apTeam.key.accAddress,
         ap_tax_rate: ap_tax_rate,
         interest_distribution: interest_distribution,
 
@@ -149,8 +149,8 @@ async function createAstroportVaults(
     // Astroport Vault - #1 (Liquid)
     process.stdout.write("Instantiating Vault #1 (Liquid) contract");
     const vaultResult2 = await instantiateContract(terra, apTeam, apTeam, vaultCodeId, {
-        ibc_relayer: apTeam.key.accAddress,
-        ibc_sender: apTeam.key.accAddress,
+        ibc_host: apTeam.key.accAddress,
+        ibc_controller: apTeam.key.accAddress,
         ap_tax_rate: ap_tax_rate,
         interest_distribution: interest_distribution,
 
