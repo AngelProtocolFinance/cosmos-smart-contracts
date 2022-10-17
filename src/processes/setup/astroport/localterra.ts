@@ -233,8 +233,8 @@ async function setup(
             "owner": apTeam.key.accAddress,
             "allowed_reward_proxies": [],
             "astro_token": astro,
-            "start_block": "5918639",
-            "tokens_per_block": "8403094",
+            "start_block": "0",
+            "tokens_per_block": "1000",
             "vesting_contract": astroportVesting,
 
             "factory": astroportFactory,
@@ -638,5 +638,21 @@ async function setup(
             }
         )
     ]);
+    console.log(chalk.green(" Done!"));
+
+    // Setup pools in `astroport_generator` contract
+    process.stdout.write("Setup pool for USDC-USDT pair in Generator contract");
+    await sendTransaction(terra, apTeam, [
+        new MsgExecuteContract(
+            apTeam.key.accAddress,
+            astroportGenerator,
+            {
+                setup_pools: {
+                    pools: [[usdcUsdtPairLpToken, "1000000"]]
+                }
+            }
+        )
+    ]);
+
     console.log(chalk.green(" Done!"));
 }

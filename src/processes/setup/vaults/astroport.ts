@@ -12,6 +12,8 @@ import { localterra } from "../../../config/localterraConstants";
 let chainId: string;
 let terra: LocalTerra | LCDClient;
 let apTeam: Wallet;
+let apTeam2: Wallet;
+let apTeam3: Wallet;
 let apTreasury: Wallet;
 
 // contracts
@@ -27,6 +29,8 @@ export async function setupAstroportVaults(
     _terra: LocalTerra | LCDClient,
     wallets: {
         apTeam: Wallet;
+        apTeam2: Wallet;
+        apTeam3: Wallet;
         apTreasury: Wallet;
     },
     config: {
@@ -43,6 +47,8 @@ export async function setupAstroportVaults(
     chainId = _chainId;
     terra = _terra;
     apTeam = wallets.apTeam;
+    apTeam2 = wallets.apTeam2;
+    apTeam3 = wallets.apTeam3;
     apTreasury = wallets.apTreasury;
 
     await createAstroportVaults(
@@ -51,7 +57,7 @@ export async function setupAstroportVaults(
         config.astroport_usdc_usdt_lp_pair,
         config.astroport_lp_reward_token,
         apTeam.key.accAddress,
-        apTeam.key.accAddress,
+        apTeam2.key.accAddress,
         config.astroport_router,
         config.nativeToken,
         config.ap_tax_rate,

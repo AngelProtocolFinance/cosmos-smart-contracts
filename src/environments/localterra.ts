@@ -169,6 +169,8 @@ export async function startSetupAstroportVaults(): Promise<void> {
         // wallets
         {
             apTeam,
+            apTeam2,
+            apTeam3,
             apTreasury,
         },
         // config
