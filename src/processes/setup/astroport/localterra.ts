@@ -654,5 +654,36 @@ async function setup(
         )
     ]);
 
+    // Setup vesting schedule in vesting contract
+    process.stdout.write("Setup vesting schedule in vesting contract");
+    await sendTransaction(terra, apTeam, [
+        new MsgExecuteContract(
+            apTeam.key.accAddress,
+            astro,
+            {
+                send: {
+                    msg: toEncodedBinary({
+                        "register_vesting_accounts": {
+                            "vesting_accounts": [
+                                {
+                                    "address": astroportGenerator,
+                                    "schedules": [
+                                        {
+                                            "start_point": { "time": 1654599600, "amount": "1000000000000" },
+                                            "end_point": { "time": 1686135600, "amount": "100000000000000" }
+                                        }
+                                    ],
+                                }
+                            ]
+                        }
+                    }),
+                    amount: "100000000000000",
+                    contract: astroportVesting,
+                }
+            }
+
+        )
+    ]);
+
     console.log(chalk.green(" Done!"));
 }
