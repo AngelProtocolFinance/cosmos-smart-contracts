@@ -37,25 +37,14 @@ export async function testExecuteAstroport(
     /* --- EXECUTE tests --- */
     // await testVaultDeposit(terra, apTeam, vaultLocked1, 1, { uluna: 2000000 });
     // await testVaultRedeem(terra, apTeam, vaultLocked1, 1, "500000");
-    await testVaultHarvest(terra, apTeam, vaultLocked1);
-    // await testVaultReinvestToLocked(terra, apTeam, vaultLiquid1, 1, "5000");
+    // await testVaultHarvest(terra, apTeam, vaultLocked1);
+    // await testVaultReinvestToLocked(terra, apTeam, vaultLiquid1, 1, "500000");
 
     /* ---  QUERY tests --- */
     // await testQueryVaultConfig(terra, vaultLocked1);
     // await testQueryVaultEndowmentBalance(terra, vaultLocked1, 1);
     // await testQueryVaultTokenInfo(terra, vaultLocked1);
     // await testQueryVaultTotalBalance(terra, vaultLocked1);
-
-    // const res = await terra.wasm.contractQuery(astroportGenerator, {
-    //     config: {}
-    // });
-    // console.log(res);
-    // const r1 = await terra.wasm.contractQuery(astroportGenerator, {
-    //     pool_info: {
-    //         lp_token: usdcUsdtPairLpToken
-    //     }
-    // });
-    // console.log(r1);
 }
 
 //----------------------------------------------------------------------------------------
@@ -80,7 +69,6 @@ export async function testVaultDeposit(
             },
             coins,
         ),
-
     ]);
     console.log(chalk.green(" Passed!"));
 }
@@ -93,36 +81,18 @@ export async function testVaultRedeem(
     amount: string,
 ): Promise<void> {
     process.stdout.write("Test - Ibc_host redeems from the vault");
-    try {
-        const tx = await sender.createTx({
-            msgs: [
-                new MsgExecuteContract(
-                    sender.key.accAddress,
-                    vault,
-                    {
-                        redeem: {
-                            endowment_id,
-                            amount,
-                        },
-                    },
-                ),
-            ]
-        })
-    } catch (e) {
-        console.log(e);
-    }
-    // await sendTransaction(terra, sender, [
-    //     new MsgExecuteContract(
-    //         sender.key.accAddress,
-    //         vault,
-    //         {
-    //             redeem: {
-    //                 endowment_id,
-    //                 amount,
-    //             },
-    //         },
-    //     ),
-    // ]);
+    await sendTransaction(terra, sender, [
+        new MsgExecuteContract(
+            sender.key.accAddress,
+            vault,
+            {
+                redeem: {
+                    endowment_id,
+                    amount,
+                },
+            },
+        ),
+    ]);
     console.log(chalk.green(" Passed!"));
 }
 
@@ -132,31 +102,15 @@ export async function testVaultHarvest(
     vault: string,
 ): Promise<void> {
     process.stdout.write("Test - Keeper harvests the vault");
-    try {
-        const tx = await sender.createTx({
-            msgs: [
-                new MsgExecuteContract(
-                    sender.key.accAddress,
-                    vault,
-                    {
-                        harvest: {},
-                    },
-                ),
-            ]
-        })
-    } catch (e) {
-        console.log(e);
-    }
-
-    // await sendTransaction(terra, sender, [
-    //     new MsgExecuteContract(
-    //         sender.key.accAddress,
-    //         vault,
-    //         {
-    //             harvest: {},
-    //         }
-    //     )
-    // ]);
+    await sendTransaction(terra, sender, [
+        new MsgExecuteContract(
+            sender.key.accAddress,
+            vault,
+            {
+                harvest: {},
+            }
+        )
+    ]);
     console.log(chalk.green(" Passed!"));
 }
 
@@ -175,7 +129,7 @@ export async function testVaultReinvestToLocked(
             vault,
             {
                 reinvest_to_locked: {
-                    id: endowmentId,
+                    endowment_id: endowmentId,
                     amount: amount,
                 }
             }

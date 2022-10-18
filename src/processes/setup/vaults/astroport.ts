@@ -227,7 +227,7 @@ async function createAstroportVaults(
     await sendTransaction(terra, apTeam, [
         new MsgExecuteContract(
             apTeam.key.accAddress,
-            vault1_liquid,
+            vault1_locked,
             {
                 update_config: {
                     sibling_vault: vault1_liquid,
