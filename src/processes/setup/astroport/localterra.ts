@@ -417,7 +417,7 @@ async function setup(
             astro,
             {
                 increase_allowance: {
-                    amount: "1000000",
+                    amount: "100000000000",
                     spender: lunaAstroPair,
                 },
             }
@@ -434,13 +434,13 @@ async function setup(
                             info: {
                                 native_token: { denom: "uluna" },
                             },
-                            amount: "1000000",
+                            amount: "100000000000",
                         },
                         {
                             info: {
                                 token: { contract_addr: astro },
                             },
-                            amount: "1000000",
+                            amount: "100000000000",
                         }
                     ],
                     slippage_tolerance: undefined,
@@ -449,7 +449,7 @@ async function setup(
                 }
             },
             {
-                uluna: "1000000",
+                uluna: "100000000000",
             },
         )
     ]);
@@ -516,13 +516,13 @@ async function setup(
                             info: {
                                 native_token: { denom: "uluna" },
                             },
-                            amount: "1000000",
+                            amount: "100000000000",
                         },
                         {
                             info: {
                                 native_token: { denom: "usdc" },
                             },
-                            amount: "1000000",
+                            amount: "100000000000",
                         }
                     ],
                     slippage_tolerance: undefined,
@@ -531,8 +531,8 @@ async function setup(
                 }
             },
             {
-                uluna: "1000000",
-                usdc: "1000000",
+                uluna: "100000000000",
+                usdc: "100000000000",
             },
         )
     ]);
@@ -599,13 +599,13 @@ async function setup(
                             info: {
                                 native_token: { denom: "uluna" },
                             },
-                            amount: "1000000",
+                            amount: "100000000000",
                         },
                         {
                             info: {
                                 native_token: { denom: "usdt" },
                             },
-                            amount: "1000000",
+                            amount: "100000000000",
                         }
                     ],
                     slippage_tolerance: undefined,
@@ -614,8 +614,8 @@ async function setup(
                 }
             },
             {
-                uluna: "1000000",
-                usdt: "1000000",
+                uluna: "100000000000",
+                usdt: "100000000000",
             },
         )
     ]);
@@ -648,7 +648,7 @@ async function setup(
             astroportGenerator,
             {
                 setup_pools: {
-                    pools: [[usdcUsdtPairLpToken, "1000000"]]
+                    pools: [[usdcUsdtPairLpToken, "100000000000"]]
                 }
             }
         )
@@ -657,6 +657,17 @@ async function setup(
     // Setup vesting schedule in vesting contract
     process.stdout.write("Setup vesting schedule in vesting contract");
     await sendTransaction(terra, apTeam, [
+        new MsgExecuteContract(
+            apTeam.key.accAddress,
+            astro,
+            {
+                increase_allowance: {
+                    spender: astroportVesting,
+                    amount: "100000000000000",
+                    expires: undefined,
+                }
+            }
+        ),
         new MsgExecuteContract(
             apTeam.key.accAddress,
             astro,
