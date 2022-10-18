@@ -968,7 +968,7 @@ pub fn stake_lp_token(
                 config.registrar_contract.to_string(),
                 &RegistrarQueryMsg::Config {},
             )?;
-            let tax_rate = registrar_config.tax_rate;
+            let tax_rate = registrar_config.fees.get_rate("vaults_harvest".to_string());
             let tax_mint_amount = vt_mint_amount * tax_rate;
 
             APTAX.update(deps.storage, |balance: Uint128| -> StdResult<_> {

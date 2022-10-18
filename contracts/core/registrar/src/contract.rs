@@ -3,10 +3,11 @@ use crate::queriers;
 use crate::state::{Config, CONFIG, NETWORK_CONNECTIONS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
-use angel_core::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails};
+use angel_core::structs::{AcceptedTokens, Fee, Fees, NetworkInfo, RebalanceDetails, SplitDetails};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
 
@@ -36,7 +37,18 @@ pub fn instantiate(
         index_fund_contract: None,
         accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
-        tax_rate,
+        fees: Fees {
+            fees: vec![
+                Fee {
+                    name: "vault_harvest".to_string(),
+                    rate: tax_rate,
+                },
+                Fee {
+                    name: "accounts_withdraw".to_string(),
+                    rate: Decimal::permille(2), // Default to 0.002 or 0.2%
+                },
+            ],
+        },
         rebalance: msg.rebalance.unwrap_or_else(RebalanceDetails::default),
         split_to_liquid: splits,
         halo_token: None,

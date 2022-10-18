@@ -1,5 +1,5 @@
 use crate::structs::{
-    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, RebalanceDetails, SplitDetails,
+    AcceptedTokens, AccountType, EndowmentType, Fee, NetworkInfo, RebalanceDetails, SplitDetails,
     VaultType,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
@@ -48,7 +48,7 @@ pub struct UpdateConfigMsg {
     pub accounts_contract: Option<String>,
     pub index_fund_contract: Option<String>,
     pub treasury: Option<String>,
-    pub tax_rate: Option<Decimal>,
+    pub fees: Option<Vec<Fee>>,
     pub rebalance: Option<RebalanceDetails>,
     pub approved_charities: Option<Vec<String>>,
     pub split_max: Option<Decimal>,

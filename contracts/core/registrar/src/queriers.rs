@@ -11,7 +11,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         version: get_contract_version(deps.storage)?.contract,
         accounts_contract: config.accounts_contract.map(|addr| addr.to_string()),
         treasury: config.treasury.to_string(),
-        tax_rate: config.tax_rate,
+        fees: config.fees,
         rebalance: config.rebalance,
         index_fund: config.index_fund_contract.map(|addr| addr.to_string()),
         split_to_liquid: config.split_to_liquid,

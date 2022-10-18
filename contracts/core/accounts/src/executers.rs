@@ -1407,6 +1407,7 @@ pub fn withdraw(
     let mut state_bal: GenericBalance = state.balances.get(&acct_type);
     let mut messages: Vec<SubMsg> = vec![];
     let mut native_coins: Vec<Coin> = vec![];
+    let mut native_coins_fees: Vec<Coin> = vec![];
 
     if !endowment.withdraw_approved {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -1443,6 +1444,12 @@ pub fn withdraw(
         }
     }
 
+    let registrar_config: RegistrarConfigResponse =    
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+
     for asset in assets.iter() {
         asset.check(deps.api, None)?;
         // check for assets with zero amounts and raise error if found
@@ -1465,6 +1472,9 @@ pub fn withdraw(
             return Err(ContractError::InsufficientFunds {});
         }
 
+        // calculate withdraw fee
+        let withdraw_rate = registrar_config.fees.get_rate("accounts_withdraw".to_string());
+        let withdraw_fee = asset.amount * withdraw_rate;
         // build message based on asset type and update state balance with deduction
         match asset.info.clone() {
             AssetInfoBase::Native(denom) => {
@@ -1472,7 +1482,11 @@ pub fn withdraw(
                 // and all deductions against the state balance done at the end
                 native_coins.push(Coin {
                     denom: denom.clone(),
-                    amount: asset.amount,
+                    amount: asset.amount - withdraw_fee,
+                });
+                native_coins_fees.push(Coin {
+                    denom: denom.clone(),
+                    amount: withdraw_fee,
                 });
             }
             AssetInfoBase::Cw20(addr) => {
@@ -1481,7 +1495,17 @@ pub fn withdraw(
                     contract_addr: addr.to_string(),
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
                         recipient: beneficiary.to_string(),
-                        amount: asset.amount,
+                        amount: asset.amount - withdraw_fee,
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                })));
+                // Build message to AP treasury for withdraw fee owned
+                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: addr.to_string(),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                        recipient: registrar_config.treasury.to_string(),
+                        amount: withdraw_fee,
                     })
                     .unwrap(),
                     funds: vec![],
@@ -1500,10 +1524,16 @@ pub fn withdraw(
     if !native_coins.is_empty() {
         // deduct the native coins withdrawn against balances held in state
         state_bal.deduct_tokens(Balance::from(native_coins.clone()));
-        // Build message to send all native tokens to the Beneficiary via BankMsg::Send
+        state_bal.deduct_tokens(Balance::from(native_coins_fees.clone()));
+        // Build messages to send all native tokens  via BankMsg::Send to either: 
+        // the Beneficiary for withdraw amount less fees and AP Treasury for the fees portion
         messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
             to_address: beneficiary,
             amount: native_coins,
+        })));
+        messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+            to_address: registrar_config.treasury,
+            amount: native_coins_fees,
         })));
     }
 

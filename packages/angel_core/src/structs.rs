@@ -26,6 +26,52 @@ impl fmt::Display for AccountType {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Fees {
+    pub fees: Vec<Fee>,
+}
+
+impl Fees {
+    pub fn default() -> Self {
+        Fees { fees: vec![] }
+    }
+
+    /// set_fee - Updates an existing Fee struct with passed Fee struct
+    /// or adds a new Fee is none exists in fees already with the same name
+    pub fn set_fee(&mut self, fee: Fee) {
+        if let Some(item) = self.fees.iter_mut().find(|f| f.name == fee.name) {
+            // create placeholder value
+            let mut temp = Fee {
+                name: "temp".to_string(),
+                rate: Decimal::zero(),
+            };
+            std::mem::swap(item, &mut temp); // swap the placeholder in
+            *item = fee; // overwrite with real value
+        } else {
+            self.fees.push(fee);
+        }
+    }
+
+    pub fn get_rate(&self, name: String) -> Decimal {
+        let res: Vec<Fee> = self
+            .fees
+            .clone()
+            .into_iter()
+            .filter(|f| f.name == name)
+            .collect();
+        if res.len() == 1 {
+            return res[0].rate;
+        }
+        Decimal::zero()
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Fee {
+    pub name: String,
+    pub rate: Decimal,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub struct Pair {
     pub assets: [AssetInfo; 2],

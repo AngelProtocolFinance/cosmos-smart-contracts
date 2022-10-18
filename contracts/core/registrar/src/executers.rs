@@ -70,11 +70,14 @@ pub fn update_config(
     config.treasury = deps
         .api
         .addr_validate(&msg.treasury.unwrap_or_else(|| config.treasury.to_string()))?;
-    config.tax_rate = match msg.tax_rate {
-        Some(tax_rate) => percentage_checks(tax_rate),
-        None => Ok(config.tax_rate),
+    if msg.fees.is_some() {
+        for fee in msg.fees.unwrap().into_iter() {
+            // check supplied rate is valid
+            percentage_checks(fee.rate).unwrap();
+            // set the new fee
+            config.fees.set_fee(fee);
+        }
     }
-    .unwrap();
     config.rebalance = match msg.rebalance {
         Some(details) => details,
         None => config.rebalance,
