@@ -346,6 +346,8 @@ pub fn redeem(
             return Err(ContractError::Unauthorized {});
         }
 
+        // NOTE: Originally, this `beneficiary` should be `accounts` contract address.
+        //       Here, we just set `ibc_controller` as the `beneficiary` for simplicity(`IBC` feature not implemented yet)
         beneficiary = config.ibc_controller.clone();
         id = Some(endowment_id);
     }
@@ -1108,28 +1110,16 @@ pub fn remove_liquidity(
         .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
 
     // Prepare the "remove_liquidity" messages
-    let withdraw_liquidity_msgs = vec![
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.lp_token.to_string(),
-            msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: config.lp_factory_contract.to_string(),
-                amount: lp_token_amount,
-                expires: None,
-            })
-            .unwrap(),
-            funds: vec![],
-        }),
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.lp_token.to_string(),
-            msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                contract: config.lp_pair_contract.to_string(),
-                amount: lp_token_amount,
-                msg: to_binary(&AstroPairHookMsg::WithdrawLiquidity {}).unwrap(),
-            })
-            .unwrap(),
-            funds: vec![],
-        }),
-    ];
+    let withdraw_liquidity_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.lp_token.to_string(),
+        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+            contract: config.lp_pair_contract.to_string(),
+            amount: lp_token_amount,
+            msg: to_binary(&AstroPairHookMsg::WithdrawLiquidity {}).unwrap(),
+        })
+        .unwrap(),
+        funds: vec![],
+    })];
 
     // Convert the returning token pairs to the `native_token`
     // & send back to `accounts_contract`.
@@ -1195,7 +1185,6 @@ pub fn send_asset(
     let config: Config = CONFIG.load(deps.storage)?;
 
     // Send the asset to the `beneficiary`
-
     let native_token_bal = query_asset_balance(
         deps.as_ref(),
         env.contract.address,
@@ -1206,48 +1195,73 @@ pub fn send_asset(
     let mut msgs = vec![];
     match config.native_token {
         AssetInfo::NativeToken { denom } => match id {
-            Some(id) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: beneficiary.to_string(),
-                msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::VaultReceipt {
-                    id,
-                    acct_type: config.acct_type,
-                })
-                .unwrap(),
-                funds: coins(send_amount.u128(), denom),
-            })),
-            None => msgs.push(CosmosMsg::Bank(BankMsg::Send {
+            /*
+                Some(id) => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: beneficiary.to_string(),
+                    msg: to_binary(&angel_core::messages::accounts::ExecuteMsg::VaultReceipt {
+                        id,
+                        acct_type: config.acct_type,
+                    })
+                    .unwrap(),
+                    funds: coins(send_amount.u128(), denom),
+                })),
+                None => msgs.push(CosmosMsg::Bank(BankMsg::Send {
+                    to_address: beneficiary.to_string(),
+                    amount: coins(send_amount.u128(), denom),
+                })),
+            */
+            // NOTE: Here, we just send all of redeem amount to `beneficiary`(ibc_controller).
+            //      The reason is that current implementation does not care the `IBC` connection feature
+            //      & is based on scenario of simply sending fund to `ibc_controller` wallet.
+            //      Above commented codes should be considered when adding the `IBC` features to this contract.
+            _ => msgs.push(CosmosMsg::Bank(BankMsg::Send {
                 to_address: beneficiary.to_string(),
                 amount: coins(send_amount.u128(), denom),
             })),
         },
         AssetInfo::Token { contract_addr } => match id {
-            Some(id) => {
-                msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: contract_addr.to_string(),
-                    msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                        spender: beneficiary.to_string(),
-                        amount: send_amount,
-                        expires: None,
-                    })
-                    .unwrap(),
-                    funds: vec![],
-                }));
-                msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: contract_addr.to_string(),
-                    msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                        contract: beneficiary.to_string(),
-                        amount: send_amount,
-                        msg: to_binary(&angel_core::messages::accounts::ReceiveMsg::VaultReceipt {
-                            id,
-                            acct_type: config.acct_type,
+            /*
+                Some(id) => {
+                    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: contract_addr.to_string(),
+                        msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
+                            spender: beneficiary.to_string(),
+                            amount: send_amount,
+                            expires: None,
                         })
                         .unwrap(),
+                        funds: vec![],
+                    }));
+                    msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: contract_addr.to_string(),
+                        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                            contract: beneficiary.to_string(),
+                            amount: send_amount,
+                            msg: to_binary(&angel_core::messages::accounts::ReceiveMsg::VaultReceipt {
+                                id,
+                                acct_type: config.acct_type,
+                            })
+                            .unwrap(),
+                        })
+                        .unwrap(),
+                        funds: vec![],
+                    }));
+                }
+                None => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: contract_addr.to_string(),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                        recipient: beneficiary.to_string(),
+                        amount: send_amount,
                     })
                     .unwrap(),
                     funds: vec![],
-                }));
-            }
-            None => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+                })),
+            */
+            // NOTE: Here, we just send all of redeem amount to `beneficiary`(ibc_controller).
+            //      The reason is that current implementation does not care the `IBC` connection feature
+            //      & is based on scenario of simply sending fund to `ibc_controller` wallet.
+            //      Above commented codes should be considered when adding the `IBC` features to this contract.
+            _ => msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: contract_addr.to_string(),
                 msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
                     recipient: beneficiary.to_string(),
