@@ -1,12 +1,13 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, CONFIG, NETWORK_CONNECTIONS};
+use crate::state::{Config, CONFIG, FEES, NETWORK_CONNECTIONS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails};
 use angel_core::utils::{percentage_checks, split_checks};
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
+    entry_point, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo, Response, StdError,
+    StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
 
@@ -36,7 +37,6 @@ pub fn instantiate(
         index_fund_contract: None,
         accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
-        tax_rate,
         rebalance: msg.rebalance.unwrap_or_else(RebalanceDetails::default),
         split_to_liquid: splits,
         halo_token: None,
@@ -49,6 +49,10 @@ pub fn instantiate(
     };
 
     CONFIG.save(deps.storage, &configs)?;
+
+    // setup first basic fees
+    FEES.save(deps.storage, &"vault_harvest", &tax_rate)?;
+    FEES.save(deps.storage, &"accounts_withdraw", &Decimal::permille(2))?; // Default to 0.002 or 0.2%
 
     // setup basic JUNO network info for native Vaults
     NETWORK_CONNECTIONS.save(
@@ -91,6 +95,7 @@ pub fn execute(
             network_info,
             action,
         } => executers::update_network_connections(deps, env, info, network_info, action),
+        ExecuteMsg::UpdateFees { fees } => executers::update_fees(deps, info, fees),
     }
 }
 
@@ -122,6 +127,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::NetworkConnection { chain_id } => {
             to_binary(&queriers::query_network_connection(deps, chain_id)?)
         }
+        QueryMsg::Fee { name } => to_binary(&queriers::query_fee(deps, name)?),
     }
 }
 
@@ -140,6 +146,10 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
             msg: "Cannot upgrade from a newer version".to_string(),
         }));
     }
+
+    // setup first fees
+    FEES.save(deps.storage, &"vault_harvest", &Decimal::percent(20))?; // Default to 0.2 or 20%
+    FEES.save(deps.storage, &"accounts_withdraw", &Decimal::permille(2))?; // Default to 0.002 or 0.2%
 
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;

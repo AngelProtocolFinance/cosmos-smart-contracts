@@ -18,7 +18,6 @@ pub struct Config {
     pub index_fund_contract: Option<Addr>,
     pub accounts_contract: Option<Addr>,
     pub treasury: Addr,
-    pub tax_rate: Decimal,
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
     pub split_to_liquid: SplitDetails, // set of max, min, and default Split paramenters to check user defined split input against
     pub halo_token: Option<Addr>,      // TerraSwap HALO token addr
@@ -33,6 +32,7 @@ pub struct Config {
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const VAULTS: Map<&[u8], YieldVault> = Map::new("vault");
 pub const NETWORK_CONNECTIONS: Map<&str, NetworkInfo> = Map::new("network_connections");
+pub const FEES: Map<&str, Decimal> = Map::new("fee");
 
 pub fn read_vaults(
     storage: &dyn Storage,
