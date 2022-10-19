@@ -174,7 +174,6 @@ impl WasmMockQuerier {
                         version: "1.0.0".to_string(),
                         accounts_contract: Some("accounts-contract".to_string()),
                         treasury: "treasury".to_string(),
-                        tax_rate: Decimal::from_ratio(5_u128, 100_u128),
                         rebalance: RebalanceDetails::default(),
                         index_fund: None,
                         split_to_liquid: SplitDetails {
