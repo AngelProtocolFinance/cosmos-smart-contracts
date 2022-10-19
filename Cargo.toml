@@ -19,7 +19,6 @@ members = [
 ]
 
 exclude = [
-    "contracts/vaults/junoswap",
     "contracts/halo/airdrop",
     "contracts/halo/collector",
     "contracts/halo/community",
@@ -28,7 +27,6 @@ exclude = [
     "contracts/halo/gov-hodler",
     "contracts/halo/staking",
     "contracts/halo/vesting",
-    "contracts/vaults/anchor",
     "contracts/vaults/junoswap",
 ]
 
