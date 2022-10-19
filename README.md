@@ -47,10 +47,16 @@ How to know if LocalJuno is working properly?
 ```bash
 git clone https://github.com/terra-money/LocalTerra.git
 ```
-2. Copy the file named `localterra_genesis.json` in this `test-suite` repo over to the base folder of the LocalTerra repo, replacing the existing default `genesis.json` file. 
+2. Copy the files in `./localterra_env_files` dir of this `test-suite` repo over to the base folder of the LocalTerra repo, replacing the existing default files with same name. 
 ```bash
-cp ./localterra_genesis.json <localterra_repo_path>/genesis.json`
+cp ./localterra_env_files/genesis.json <localterra_repo_path>/genesis.json
+cp ./localterra_env_files/app.toml     <localterra_repo_path>/app.toml
+cp ./localterra_env_files/client.toml  <localterra_repo_path>/client.toml
+cp ./localterra_env_files/config.toml  <localterra_repo_path>/config.toml
+cp ./localterra_env_files/docker-compose.yml <localterra_repo_path>/docker-compose.yml
+cp ./localterra_env_files/fcd.env      <localterra_repo_path>/fcd.env
 ```
+
 3. In the LocalTerra repo base folder run the following to build LocalTerra container:
 ```bash
 docker-compose build
@@ -67,7 +73,7 @@ docker-compose rm
 ```
 
 How to know if LocalTerra is working properly?
-**Go to [https://localhost:1317](http://localhost:1317).** You should see a page with some APIs which can be used to send transactions or query blockchain state.
+**Go to [https://localhost:1307](http://localhost:1307).** You should see a page with some APIs which can be used to send transactions or query blockchain state.
 
 ### Compile contracts
 

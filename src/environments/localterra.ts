@@ -48,21 +48,21 @@ let lunaUsdtPairLpToken: string;
 // initialize variables
 // -------------------------------------------------------------------------------------
 async function initialize() {
-    // terra = new LCDClient({
-    //     URL: localterra.networkInfo.url,
-    //     chainID: localterra.networkInfo.chainId,
-    // });
+    terra = new LCDClient({
+        URL: localterra.networkInfo.url,
+        chainID: localterra.networkInfo.chainId,
+    });
 
-    // apTeam = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test1 }));
-    // apTeam2 = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test2 }));
-    // apTeam3 = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test3 }));
-    // apTreasury = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test4 }));
+    apTeam = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test1 }));
+    apTeam2 = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test2 }));
+    apTeam3 = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test3 }));
+    apTreasury = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test4 }));
 
-    terra = new LocalTerra();
-    apTeam = (terra as LocalTerra).wallets.test1;
-    apTeam2 = (terra as LocalTerra).wallets.test2;
-    apTeam3 = (terra as LocalTerra).wallets.test3;
-    apTreasury = (terra as LocalTerra).wallets.test4;
+    // terra = new LocalTerra();
+    // apTeam = (terra as LocalTerra).wallets.test1;
+    // apTeam2 = (terra as LocalTerra).wallets.test2;
+    // apTeam3 = (terra as LocalTerra).wallets.test3;
+    // apTreasury = (terra as LocalTerra).wallets.test4;
 
     console.log(`Using ${chalk.cyan(apTeam.key.accAddress)} as Angel Team`);
     console.log(`Using ${chalk.cyan(apTeam2.key.accAddress)} as Angel Team #2`);
