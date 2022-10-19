@@ -1,6 +1,4 @@
-use crate::structs::{
-    AcceptedTokens, Fees, NetworkInfo, RebalanceDetails, SplitDetails, YieldVault,
-};
+use crate::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails, YieldVault};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -20,7 +18,6 @@ pub struct ConfigResponse {
     pub version: String,
     pub accounts_contract: Option<String>,
     pub treasury: String,
-    pub fees: Fees,
     pub rebalance: RebalanceDetails,
     pub index_fund: Option<String>,
     pub split_to_liquid: SplitDetails,

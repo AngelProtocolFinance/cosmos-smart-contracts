@@ -104,7 +104,6 @@ fn update_config() {
         index_fund_contract: Some(index_fund_contract.clone()),
         approved_charities: None,
         treasury: Some(ap_team.clone()),
-        tax_rate: None,
         rebalance: Some(RebalanceDetails {
             rebalance_liquid_invested_profits: true,
             locked_interests_to_liquid: true,
@@ -278,7 +277,6 @@ fn test_add_update_and_remove_accepted_tokens() {
         index_fund_contract: None,
         approved_charities: None,
         treasury: None,
-        tax_rate: None,
         rebalance: None,
         split_max: None,
         split_min: None,

@@ -1444,11 +1444,18 @@ pub fn withdraw(
         }
     }
 
-    let registrar_config: RegistrarConfigResponse =    
+    let registrar_config: RegistrarConfigResponse =
         deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
             contract_addr: config.registrar_contract.to_string(),
             msg: to_binary(&RegistrarQuerier::Config {})?,
         }))?;
+
+    let withdraw_rate: Decimal = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: config.registrar_contract.to_string(),
+        msg: to_binary(&RegistrarQuerier::Fee {
+            name: "accounts_withdraw".to_string(),
+        })?,
+    }))?;
 
     for asset in assets.iter() {
         asset.check(deps.api, None)?;
@@ -1473,7 +1480,6 @@ pub fn withdraw(
         }
 
         // calculate withdraw fee
-        let withdraw_rate = registrar_config.fees.get_rate("accounts_withdraw".to_string());
         let withdraw_fee = asset.amount * withdraw_rate;
         // build message based on asset type and update state balance with deduction
         match asset.info.clone() {
@@ -1525,7 +1531,7 @@ pub fn withdraw(
         // deduct the native coins withdrawn against balances held in state
         state_bal.deduct_tokens(Balance::from(native_coins.clone()));
         state_bal.deduct_tokens(Balance::from(native_coins_fees.clone()));
-        // Build messages to send all native tokens  via BankMsg::Send to either: 
+        // Build messages to send all native tokens  via BankMsg::Send to either:
         // the Beneficiary for withdraw amount less fees and AP Treasury for the fees portion
         messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
             to_address: beneficiary,

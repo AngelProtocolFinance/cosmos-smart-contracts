@@ -1,5 +1,5 @@
 use crate::structs::{
-    AcceptedTokens, AccountType, EndowmentType, Fee, NetworkInfo, RebalanceDetails, SplitDetails,
+    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, RebalanceDetails, SplitDetails,
     VaultType,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
@@ -41,6 +41,9 @@ pub enum ExecuteMsg {
         network_info: NetworkInfo,
         action: String,
     },
+    UpdateFees {
+        fees: Vec<(String, Decimal)>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -48,7 +51,6 @@ pub struct UpdateConfigMsg {
     pub accounts_contract: Option<String>,
     pub index_fund_contract: Option<String>,
     pub treasury: Option<String>,
-    pub fees: Option<Vec<Fee>>,
     pub rebalance: Option<RebalanceDetails>,
     pub approved_charities: Option<Vec<String>>,
     pub split_max: Option<Decimal>,
@@ -107,5 +109,8 @@ pub enum QueryMsg {
     // Get a network connection info
     NetworkConnection {
         chain_id: String,
+    },
+    Fee {
+        name: String,
     },
 }
