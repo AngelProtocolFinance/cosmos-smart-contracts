@@ -3,7 +3,7 @@
 import * as path from "path";
 import chalk from "chalk";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, storeCode, migrateContract, storeAndMigrateContract } from "../../utils/helpers";
+import { sendTransaction, storeCode, migrateContract, storeAndMigrateContract } from "../../utils/juno/helpers";
 import { wasm_path } from "../../config/wasmPaths";
 
 // -----------------------------

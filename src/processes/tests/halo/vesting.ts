@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction } from "../../../utils/helpers";
+import { sendTransaction } from "../../../utils/juno/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -75,6 +75,7 @@ export async function testVestingRegisterVestingAccounts(
 export async function testAddSchedulesToVestingAccount(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  vestingContract: string,
   address: string,
   newSchedules: [number, number, string][]
 ): Promise<void> {

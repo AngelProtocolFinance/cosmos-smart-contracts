@@ -2,7 +2,7 @@
 import * as path from "path";
 import chalk from "chalk";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { instantiateContract, sendTransaction, storeCode } from "../../../utils/helpers";
+import { instantiateContract, sendTransaction, storeCode } from "../../../utils/juno/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
 import { coin } from "@cosmjs/stargate";
 
@@ -103,7 +103,7 @@ export async function setupJunoSwap(
       ],
     },
     // }, { "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4": "100" },
-    }, [coin(1000, "ujuno")],
+  }, [coin(1000, "ujuno")],
   );
 
   const pairContract = "pairResult.contractAddress" as string;
@@ -124,11 +124,11 @@ export async function setupJunoSwap(
     "Provide liquidity to the new Pair contract @ ratio of 0.05 JUNO per HALO"
   );
   const liqResult = await sendTransaction(juno, apTeam, tokenContract, {
-      increase_allowance: {
-        amount: halo_liquidity,
-        spender: pairContract,
-      },
-    });
+    increase_allowance: {
+      amount: halo_liquidity,
+      spender: pairContract,
+    },
+  });
   await sendTransaction(juno, apTeam, pairContract, {
     provide_liquidity: {
       assets: [
@@ -151,7 +151,7 @@ export async function setupJunoSwap(
         },
       ]
     },
-    },
+  },
     [coin(native_liquidity, "ujuno")]
   );
   console.log(chalk.green(" Done!"));

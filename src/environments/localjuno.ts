@@ -7,7 +7,7 @@ import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
 import chalk from "chalk";
 import { localjuno as config } from "../config/localjunoConstants";
-import { datetimeStringToUTC, getWalletAddress, Endowment } from "../utils/helpers";
+import { datetimeStringToUTC, getWalletAddress, Endowment } from "../utils/juno/helpers";
 
 import { migrateCore } from "../processes/migrate/core";
 // import { migrateHalo } from "../processes/migrate/halo";

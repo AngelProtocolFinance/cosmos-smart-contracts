@@ -7,7 +7,7 @@ import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
 import chalk from "chalk";
 import { mainnet as config } from "../config/constants";
-import { datetimeStringToUTC, getWalletAddress, Member, Endowment } from "../utils/helpers";
+import { datetimeStringToUTC, getWalletAddress, Member, Endowment } from "../utils/juno/helpers";
 
 import { migrateCore } from "../processes/migrate/core";
 // import { migrateHalo } from "../processes/migrate/halo";

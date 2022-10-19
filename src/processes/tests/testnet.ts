@@ -3,7 +3,7 @@ import chalk from "chalk";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
-import { datetimeStringToUTC, clientSetup } from "../../utils/helpers";
+import { datetimeStringToUTC, clientSetup } from "../../utils/juno/helpers";
 import {
   testEndowmentCanWithdrawLiquid,
   testCharityCanWithdrawLocked,

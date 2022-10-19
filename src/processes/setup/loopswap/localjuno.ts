@@ -3,7 +3,7 @@ import * as path from "path";
 import chalk from "chalk";
 import { coin } from '@cosmjs/proto-signing';
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { instantiateContract, sendTransaction, sendTransactionWithFunds, storeCode } from "../../../utils/helpers";
+import { instantiateContract, sendTransaction, sendTransactionWithFunds, storeCode } from "../../../utils/juno/helpers";
 import { wasm_path } from "../../../config/wasmPaths";
 
 // Deploy LOOP & HALO Token and LOOP/JUNO & HALO/JUNO pair contracts to the LocalJuno

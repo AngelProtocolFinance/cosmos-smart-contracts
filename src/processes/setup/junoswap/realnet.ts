@@ -5,7 +5,7 @@ import {
   instantiateContract,
   sendTransaction,
   toEncodedBinary,
-} from "../../../utils/helpers";
+} from "../../../utils/juno/helpers";
 import { coin } from "@cosmjs/proto-signing";
 
 // Deploy HALO Token and HALO/JUNO pair contracts to the TestNet/MainNet
@@ -92,29 +92,29 @@ export async function setupJunoSwap(
     "Provide liquidity to the new Pair contract @ ratio of 0.05 JUNO per HALO"
   );
   const liqResult = await sendTransaction(juno, apTeam, pairContract, {
-        provide_liquidity: {
-        assets: [
-          {
-            info: {
-              token: {
-                contract_addr: tokenContract,
-              },
+    provide_liquidity: {
+      assets: [
+        {
+          info: {
+            token: {
+              contract_addr: tokenContract,
             },
-            amount: halo_liquidity,
           },
-          {
-            info: {
-              native_token: {
-                // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
-                denom: "ujuno", // only for testnet
-              },
+          amount: halo_liquidity,
+        },
+        {
+          info: {
+            native_token: {
+              // denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              denom: "ujuno", // only for testnet
             },
-            amount: native_liquidity,
           },
-        ],
-      },
+          amount: native_liquidity,
+        },
+      ],
     },
-    [ coin(native_liquidity, "ujuno")]
+  },
+    [coin(native_liquidity, "ujuno")]
   );
   console.log(chalk.green(" Done!"));
 }

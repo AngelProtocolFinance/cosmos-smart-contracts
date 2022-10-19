@@ -5,7 +5,7 @@ import fs from "fs";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 
-import { sendTransaction, sendApplicationViaCw3Proposal, Endowment } from "../../../utils/helpers";
+import { sendTransaction, sendApplicationViaCw3Proposal, Endowment } from "../../../utils/juno/helpers";
 
 let client: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;

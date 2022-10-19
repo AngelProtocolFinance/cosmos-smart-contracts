@@ -5,7 +5,7 @@ import axios from "axios";
 import { Coin, coin } from "@cosmjs/amino";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
-import { wasm_path } from "../config/wasmPaths";
+import { wasm_path } from "../../config/wasmPaths";
 import { GasPrice } from "@cosmjs/stargate";
 
 export type Endowment = {
@@ -80,7 +80,7 @@ export async function sendTransaction(
   memo = undefined,
   verbose = false
 ) {
-  try { 
+  try {
     const result = await juno.execute(sender, contract, msg, "auto", memo, funds);
     if (verbose) {
       console.log(chalk.yellow("\n~~~ TX HASH: ", result.transactionHash, "~~~~"));
@@ -106,7 +106,7 @@ export async function sendTransactionWithFunds(
   memo = undefined,
   verbose = false
 ) {
-  try { 
+  try {
     const result = await juno.execute(sender, contract, msg, "auto", memo, funds);
     if (verbose) {
       console.log(chalk.yellow("\n~~~ TX HASH: ", result.transactionHash, "~~~~"));

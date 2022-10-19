@@ -1,6 +1,7 @@
 import * as LocalNet from "./environments/localjuno";
 import * as TestNet from "./environments/testnet";
 import * as MainNet from "./environments/mainnet";
+import * as LocalTerra from "./environments/localterra";
 
 //----------------------------------------------------------------------------------------
 // Test-suite for  TestNet, and MainNet
@@ -8,6 +9,16 @@ import * as MainNet from "./environments/mainnet";
 (async () => {
 	const mode = process.env.npm_config_mode || "";
 	switch (mode) {
+		case "localterra_tests":
+			await LocalTerra.startTestsAstroportVault();
+			break;
+		case "localterra_setup_astroport":
+			await LocalTerra.startSetupAstroport();
+			break;
+		case "localterra_setup_astrovaults":
+			await LocalTerra.startSetupAstroportVaults();
+			break;
+
 		case "localjuno_tests":
 			await LocalNet.startTests();
 			break;
@@ -39,7 +50,7 @@ import * as MainNet from "./environments/mainnet";
 			await TestNet.startTests();
 			break;
 		case "testnet_setup_core":
-			await TestNet.startSetupCore();	
+			await TestNet.startSetupCore();
 			break;
 		case "testnet_setup_endowments":
 			await TestNet.startSetupEndowments();
