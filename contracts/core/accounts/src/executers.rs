@@ -1453,7 +1453,10 @@ pub fn withdraw(
     let withdraw_rate: Decimal = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
         contract_addr: config.registrar_contract.to_string(),
         msg: to_binary(&RegistrarQuerier::Fee {
-            name: "accounts_withdraw".to_string(),
+            name: match endowment.endow_type {
+                EndowmentType::Charity => "accounts_withdraw_charity".to_string(),
+                _ => "accounts_withdraw_normal".to_string(),
+            },
         })?,
     }))?;
 
