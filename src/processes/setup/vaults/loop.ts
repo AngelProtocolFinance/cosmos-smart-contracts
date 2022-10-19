@@ -81,6 +81,18 @@ async function createLoopVaults(
   const vaultCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/loopswap_vault.wasm`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${vaultCodeId}`);
 
+  process.stdout.write("Uploading ica_controller wasm...");
+  const icaControllerCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/ica_controller.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${icaControllerCodeId}`);
+
+  process.stdout.write("Uploading ica_host wasm...");
+  const icaHostCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.core}/ica_host.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${icaHostCodeId}`);
+
+  process.stdout.write("Uploading cw1_whitelist wasm...");
+  const cw1WhitelistCodeId = await storeCode(juno, apTeamAddr, `${wasm_path.cosmwasm}/cw1_whitelist.wasm`);
+  console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw1WhitelistCodeId}`);
+
   // LOOP Vault - #1 (Locked)
   process.stdout.write("Instantiating Vault #1 (Locked) contract");
   const vaultResult1 = await instantiateContract(juno, apTeamAddr, apTeamAddr, vaultCodeId, {
