@@ -620,7 +620,7 @@ fn test_withdraw() {
         }],
     };
     let res = execute(deps.as_mut(), env.clone(), info, withdraw_msg).unwrap();
-    assert_eq!(res.messages.len(), 1);
+    assert_eq!(2, res.messages.len());
 }
 
 #[test]
@@ -673,7 +673,7 @@ fn test_withdraw_liquid() {
         }],
     };
     let res = execute(deps.as_mut(), env.clone(), info, withdraw_liquid_msg).unwrap();
-    assert_eq!(1, res.messages.len());
+    assert_eq!(2, res.messages.len());
 }
 
 #[test]

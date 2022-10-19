@@ -1,6 +1,6 @@
 [package]
 name = "halo-gov-hodler"
-version = "1.8.0"
+version = "1.9.1"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 description = "A Claims Hodler for the Angel Protocol Gov contract- holds on to all claimed HALO from Gov until it is ready to be released to their owners"

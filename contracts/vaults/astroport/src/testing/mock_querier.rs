@@ -1,28 +1,35 @@
 // Contains mock functionality to test multi-contract scenarios
-
-use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
-};
-use angel_core::structs::{
-    AcceptedTokens, AccountType, RebalanceDetails, SplitDetails, VaultType, YieldVault,
-};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Addr, Api, CanonicalAddr, Coin, ContractResult, Decimal,
-    Empty, OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult,
-    Uint128, WasmQuery,
+    from_binary, from_slice, to_binary, Addr, Api, BalanceResponse, BankQuery, CanonicalAddr, Coin,
+    ContractResult, Decimal, Empty, OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult,
+    SystemError, SystemResult, Uint128, WasmQuery,
 };
 use cosmwasm_storage::to_length_prefixed;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+
 use std::collections::HashMap;
 use std::marker::PhantomData;
+
+use angel_core::responses::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
+use angel_core::structs::{
+    AcceptedTokens, AccountStrategies, Categories, OneOffVaults, RebalanceDetails, SplitDetails,
+};
+
+use astroport::{
+    asset::{AssetInfo, PairInfo},
+    factory::PairType,
+};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
+    Endowment { id: u32 },
+    Balance { address: String },
     Config {},
-    Vault { vault_addr: String },
+    Pair {},
+    QueryFlpTokenFromPoolAddress { pool_address: String },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -52,9 +59,6 @@ pub fn mock_dependencies(
 pub struct WasmMockQuerier {
     base: MockQuerier<Empty>,
     token_querier: TokenQuerier,
-    terraswap_factory_querier: TerraswapFactoryQuerier,
-    oracle_price_querier: OraclePriceQuerier,
-    oracle_prices_querier: OraclePricesQuerier,
 }
 
 #[derive(Clone, Default)]
@@ -86,40 +90,6 @@ pub(crate) fn balances_to_map(
     balances_map
 }
 
-pub(crate) fn caps_to_map(caps: &[(&String, &Uint128)]) -> HashMap<String, Uint128> {
-    let mut owner_map: HashMap<String, Uint128> = HashMap::new();
-    for (denom, cap) in caps.iter() {
-        owner_map.insert(denom.to_string(), **cap);
-    }
-    owner_map
-}
-
-#[derive(Clone, Default)]
-pub struct OraclePriceQuerier {
-    // this lets us iterate over all pairs that match the first string
-    oracle_price: HashMap<(String, String), (Decimal, u64, u64)>,
-}
-
-impl OraclePriceQuerier {
-    #[allow(dead_code)]
-    pub fn new(oracle_price: &[(&(String, String), &(Decimal, u64, u64))]) -> Self {
-        OraclePriceQuerier {
-            oracle_price: oracle_price_to_map(oracle_price),
-        }
-    }
-}
-#[allow(dead_code)]
-pub(crate) fn oracle_price_to_map(
-    oracle_price: &[(&(String, String), &(Decimal, u64, u64))],
-) -> HashMap<(String, String), (Decimal, u64, u64)> {
-    let mut oracle_price_map: HashMap<(String, String), (Decimal, u64, u64)> = HashMap::new();
-    for (base_quote, oracle_price) in oracle_price.iter() {
-        oracle_price_map.insert((*base_quote).clone(), **oracle_price);
-    }
-
-    oracle_price_map
-}
-
 #[allow(dead_code)]
 #[derive(Clone, Default)]
 pub struct PriceStruct {
@@ -128,59 +98,6 @@ pub struct PriceStruct {
     rate: Decimal,
     last_updated_base: u64,
     last_updated_quote: u64,
-}
-
-#[derive(Clone, Default)]
-pub struct OraclePricesQuerier {
-    // this lets us iterate over all pairs
-    oracle_prices: Vec<PriceStruct>,
-}
-
-impl OraclePricesQuerier {
-    #[allow(dead_code)]
-    pub fn new(oracle_prices: &[(&(String, String), &(Decimal, u64, u64))]) -> Self {
-        OraclePricesQuerier {
-            oracle_prices: oracle_prices_to_map(oracle_prices),
-        }
-    }
-}
-
-pub(crate) fn oracle_prices_to_map(
-    oracle_prices: &[(&(String, String), &(Decimal, u64, u64))],
-) -> Vec<PriceStruct> {
-    let mut oracle_prices_map: Vec<PriceStruct> = vec![];
-    for (base_quote, oracle_prices) in oracle_prices.iter() {
-        oracle_prices_map.push(PriceStruct {
-            base: base_quote.0.clone(),
-            quote: base_quote.1.clone(),
-            rate: oracle_prices.0,
-            last_updated_base: oracle_prices.1,
-            last_updated_quote: oracle_prices.2,
-        });
-    }
-
-    oracle_prices_map
-}
-
-#[derive(Clone, Default)]
-pub struct TerraswapFactoryQuerier {
-    pairs: HashMap<String, String>,
-}
-
-impl TerraswapFactoryQuerier {
-    pub fn new(pairs: &[(&String, &String)]) -> Self {
-        TerraswapFactoryQuerier {
-            pairs: pairs_to_map(pairs),
-        }
-    }
-}
-
-pub(crate) fn pairs_to_map(pairs: &[(&String, &String)]) -> HashMap<String, String> {
-    let mut pairs_map: HashMap<String, String> = HashMap::new();
-    for (key, pair) in pairs.iter() {
-        pairs_map.insert(key.to_string(), pair.to_string());
-    }
-    pairs_map
 }
 
 impl Querier for WasmMockQuerier {
@@ -202,52 +119,103 @@ impl Querier for WasmMockQuerier {
 impl WasmMockQuerier {
     pub fn handle_query(&self, request: &QueryRequest<Empty>) -> QuerierResult {
         match &request {
+            QueryRequest::Bank(BankQuery::Balance { address: _, denom }) => {
+                SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&BalanceResponse {
+                        amount: Coin {
+                            denom: denom.to_string(),
+                            amount: Uint128::from(100_u128),
+                        },
+                    })
+                    .unwrap(),
+                ))
+            }
             QueryRequest::Wasm(WasmQuery::Smart {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
+                // Simulating the `Registrar::QueryMsg::EndowmentList {...}`
+                QueryMsg::Endowment { id: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&EndowmentDetailsResponse {
+                        owner: Addr::unchecked("owner"),
+                        status: angel_core::structs::EndowmentStatus::Approved,
+                        endow_type: angel_core::structs::EndowmentType::Charity,
+                        withdraw_before_maturity: false,
+                        maturity_time: None,
+                        maturity_height: None,
+                        strategies: AccountStrategies::default(),
+                        oneoff_vaults: OneOffVaults::default(),
+                        rebalance: RebalanceDetails::default(),
+                        kyc_donors_only: false,
+                        deposit_approved: true,
+                        withdraw_approved: true,
+                        pending_redemptions: 0,
+                        copycat_strategy: None,
+                        proposal_link: None,
+                        name: "Test Endowment".to_string(),
+                        categories: Categories::default(),
+                        tier: Some(3),
+                        logo: Some("Some fancy logo".to_string()),
+                        image: Some("Nice banner image".to_string()),
+                    })
+                    .unwrap(),
+                )),
+                // Simulating the `cw20::QueryMsg::Balance { address: [account_address]}`
+                QueryMsg::Balance { address: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&cw20::BalanceResponse {
+                        balance: Uint128::from(100_u128),
+                    })
+                    .unwrap(),
+                )),
+                // Simulating the `registrar::QueryMsg::Config {}`
                 QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&RegistrarConfigResponse {
-                        owner: "registrar_owner".to_string(),
-                        version: "0.1.0".to_string(),
-                        accounts_contract: Some("accounts_contract_addr".to_string()),
+                    to_binary(&ConfigResponse {
+                        owner: "registrar-owner".to_string(),
+                        version: "1.0.0".to_string(),
+                        accounts_contract: Some("accounts-contract".to_string()),
                         treasury: "treasury".to_string(),
                         rebalance: RebalanceDetails::default(),
-                        index_fund: Some("index_fund".to_string()),
+                        index_fund: None,
                         split_to_liquid: SplitDetails {
-                            min: Decimal::zero(),
                             max: Decimal::one(),
-                            default: Decimal::percent(50),
+                            min: Decimal::zero(),
+                            default: Decimal::default(),
                         },
-                        halo_token: Some("halo_token".to_string()),
-                        gov_contract: Some("gov_contract".to_string()),
-                        charity_shares_contract: Some("charity_shares".to_string()),
-                        cw3_code: Some(2),
-                        cw4_code: Some(3),
+                        halo_token: None,
+                        gov_contract: None,
+                        charity_shares_contract: None,
+                        cw3_code: Some(3_u64),
+                        cw4_code: Some(4_u64),
                         accepted_tokens: AcceptedTokens {
-                            native: vec!["uluna".to_string()],
-                            cw20: vec!["test-cw20".to_string()],
+                            native: vec![],
+                            cw20: vec![],
                         },
                         applications_review: "applications-review".to_string(),
-                        swaps_router: Some("swaps_router_addr".to_string()),
+                        swaps_router: None,
                     })
                     .unwrap(),
                 )),
-                QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&VaultDetailResponse {
-                        vault: YieldVault {
-                            network: "juno".to_string(),
-                            address: Addr::unchecked("vault").to_string(),
-                            input_denom: "input-denom".to_string(),
-                            yield_token: Addr::unchecked("yield-token").to_string(),
-                            approved: true,
-                            restricted_from: vec![],
-                            acct_type: AccountType::Locked,
-                            vault_type: VaultType::Native,
-                        },
+                // Simulating the `astroport::pair::Pair {}` query
+                QueryMsg::Pair {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&PairInfo {
+                        pair_type: PairType::Stable {},
+                        asset_infos: [
+                            AssetInfo::NativeToken {
+                                denom: "ujuno".to_string(),
+                            },
+                            AssetInfo::Token {
+                                contract_addr: Addr::unchecked("halo-token"),
+                            },
+                        ],
+                        contract_addr: Addr::unchecked("astroport-usdc-usdt-pair"),
+                        liquidity_token: Addr::unchecked("astroport-lp-token"),
                     })
                     .unwrap(),
                 )),
+                // Simulating the `astroport::generator::QueryFlpTokenFromPoolAddress { pool_address: String }` query
+                QueryMsg::QueryFlpTokenFromPoolAddress { pool_address: _ } => SystemResult::Ok(
+                    ContractResult::Ok(to_binary(&"flp-token-contract").unwrap()),
+                ),
             },
             QueryRequest::Wasm(WasmQuery::Raw { contract_addr, key }) => {
                 let key: &[u8] = key.as_slice();
@@ -307,9 +275,6 @@ impl WasmMockQuerier {
         WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
-            terraswap_factory_querier: TerraswapFactoryQuerier::default(),
-            oracle_price_querier: OraclePriceQuerier::default(),
-            oracle_prices_querier: OraclePricesQuerier::default(),
         }
     }
 
@@ -318,28 +283,6 @@ impl WasmMockQuerier {
         self.token_querier = TokenQuerier::new(balances);
     }
 
-    // configure the terraswap pair
-    pub fn with_terraswap_pairs(&mut self, pairs: &[(&String, &String)]) {
-        self.terraswap_factory_querier = TerraswapFactoryQuerier::new(pairs);
-    }
-
-    //  Configure oracle price
-    #[allow(dead_code)]
-    pub fn with_oracle_price(
-        &mut self,
-        oracle_price: &[(&(String, String), &(Decimal, u64, u64))],
-    ) {
-        self.oracle_price_querier = OraclePriceQuerier::new(oracle_price);
-    }
-
-    //  Configure oracle prices
-    #[allow(dead_code)]
-    pub fn with_oracle_prices(
-        &mut self,
-        oracle_prices: &[(&(String, String), &(Decimal, u64, u64))],
-    ) {
-        self.oracle_prices_querier = OraclePricesQuerier::new(oracle_prices);
-    }
     pub fn query_all_balances(&mut self, address: String) -> StdResult<Vec<Coin>> {
         let mut res = vec![];
         for contract_addr in self.token_querier.balances.keys() {
