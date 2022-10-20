@@ -1,3 +1,4 @@
+use crate::errors::core::ContractError;
 use crate::messages::subdao_bonding_token::CurveType;
 use cosmwasm_std::{Addr, Coin, Decimal, SubMsg, Timestamp, Uint128};
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
@@ -7,10 +8,25 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+pub struct Delegate {
+    address: Addr,
+    expires: Option<u64>, // datetime int of delegation expiry
+}
+
+impl Delegate {
+    pub fn can_take_action(&self, sender: &Addr, env_time: Timestamp) -> bool {
+        sender == &self.address
+            && (self.expires.is_none()
+                || env_time >= Timestamp::from_seconds(self.expires.unwrap()))
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct SettingsPermissions {
     owner_controlled: bool,
     gov_controlled: bool,
     modifiable_after_init: bool,
+    delegate: Option<Delegate>,
 }
 
 impl SettingsPermissions {
@@ -19,12 +35,63 @@ impl SettingsPermissions {
             owner_controlled: true,
             gov_controlled: false,
             modifiable_after_init: true,
+            delegate: None,
         }
     }
 
-    pub fn can_change(&self, sender: &Addr, owner: &Addr, gov: Option<&Addr>) -> bool {
+    pub fn set_delegate(
+        &mut self,
+        sender: &Addr,
+        owner: &Addr,
+        gov: Option<&Addr>,
+        delegate_addr: Addr,
+        delegate_expiry: Option<u64>,
+    ) {
         if sender == owner && self.owner_controlled
-            || !gov.is_none() && self.gov_controlled && sender == gov.unwrap()
+            || gov.is_some() && self.gov_controlled && sender == gov.unwrap()
+        {
+            self.delegate = Some(Delegate {
+                address: delegate_addr,
+                expires: delegate_expiry,
+            })
+        }
+    }
+
+    pub fn revoke_delegate(
+        &mut self,
+        sender: &Addr,
+        owner: &Addr,
+        gov: Option<&Addr>,
+        env_time: Timestamp,
+    ) {
+        if sender == owner && self.owner_controlled
+            || gov.is_some() && self.gov_controlled && sender == gov.unwrap()
+            || self.delegate.is_some()
+                && self
+                    .delegate
+                    .clone()
+                    .unwrap()
+                    .can_take_action(sender, env_time)
+        {
+            self.delegate = None
+        }
+    }
+
+    pub fn can_change(
+        &self,
+        sender: &Addr,
+        owner: &Addr,
+        gov: Option<&Addr>,
+        env_time: Timestamp,
+    ) -> bool {
+        if sender == owner && self.owner_controlled
+            || gov.is_some() && self.gov_controlled && sender == gov.unwrap()
+            || self.delegate.is_some()
+                && self
+                    .delegate
+                    .clone()
+                    .unwrap()
+                    .can_take_action(sender, env_time)
         {
             if self.modifiable_after_init {
                 return true;
@@ -91,6 +158,52 @@ impl SettingsController {
             image: SettingsPermissions::default(),
             logo: SettingsPermissions::default(),
             categories: SettingsPermissions::default(),
+        }
+    }
+
+    pub fn get_permissions(&self, name: String) -> Result<SettingsPermissions, ContractError> {
+        match name.as_str() {
+            "strategies" => Ok(self.strategies.clone()),
+            "whitelisted_beneficiaries" => Ok(self.whitelisted_beneficiaries.clone()),
+            "whitelisted_contributors" => Ok(self.whitelisted_contributors.clone()),
+            "withdraw_before_maturity" => Ok(self.withdraw_before_maturity.clone()),
+            "maturity_time" => Ok(self.maturity_time.clone()),
+            "profile" => Ok(self.profile.clone()),
+            "earnings_fee" => Ok(self.earnings_fee.clone()),
+            "withdraw_fee" => Ok(self.withdraw_fee.clone()),
+            "deposit_fee" => Ok(self.deposit_fee.clone()),
+            "aum_fee" => Ok(self.aum_fee.clone()),
+            "kyc_donors_only" => Ok(self.kyc_donors_only.clone()),
+            "name" => Ok(self.name.clone()),
+            "image" => Ok(self.image.clone()),
+            "logo" => Ok(self.logo.clone()),
+            "categories" => Ok(self.categories.clone()),
+            _ => Err(ContractError::InvalidInputs {}),
+        }
+    }
+
+    pub fn set_permissions(
+        &mut self,
+        name: String,
+        permissions: SettingsPermissions,
+    ) -> Result<(), ContractError> {
+        match name.as_str() {
+            "strategies" => Ok(self.strategies = permissions),
+            "whitelisted_beneficiaries" => Ok(self.whitelisted_beneficiaries = permissions),
+            "whitelisted_contributors" => Ok(self.whitelisted_contributors = permissions),
+            "withdraw_before_maturity" => Ok(self.withdraw_before_maturity = permissions),
+            "maturity_time" => Ok(self.maturity_time = permissions),
+            "profile" => Ok(self.profile = permissions),
+            "earnings_fee" => Ok(self.earnings_fee = permissions),
+            "withdraw_fee" => Ok(self.withdraw_fee = permissions),
+            "deposit_fee" => Ok(self.deposit_fee = permissions),
+            "aum_fee" => Ok(self.aum_fee = permissions),
+            "kyc_donors_only" => Ok(self.kyc_donors_only = permissions),
+            "name" => Ok(self.name = permissions),
+            "image" => Ok(self.image = permissions),
+            "logo" => Ok(self.logo = permissions),
+            "categories" => Ok(self.categories = permissions),
+            _ => Err(ContractError::InvalidInputs {}),
         }
     }
 }
