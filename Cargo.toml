@@ -16,6 +16,7 @@ members = [
     "contracts/multisig/cw3-generic",
     "contracts/vaults/loop",
     "contracts/vaults/astroport",
+    "contracts/accessory/gift-cards",
 ]
 
 exclude = [
