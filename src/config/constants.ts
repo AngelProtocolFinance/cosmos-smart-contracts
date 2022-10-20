@@ -19,6 +19,8 @@ export const testnet = {
     charity3: "lobster worry angry spoil milk cash asthma unhappy number cave object fortune lens uniform simple",
     pleb: "announce reflect cinnamon regular address copper below funny lens draft gain wage inhale gold loyal",
     tca: "camp mom loud claim grass kick tail into cake wear mistake box grunt stand runway",
+
+    junoIbcClient: "soda tomato draft between amazing grab suit verb help pony elegant oxygen trial cactus coffee",
   },
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
