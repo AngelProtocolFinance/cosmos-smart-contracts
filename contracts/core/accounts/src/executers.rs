@@ -552,7 +552,12 @@ pub fn update_endowment_settings(
                 if config
                     .settings_controller
                     .whitelisted_beneficiaries
-                    .can_change(&info.sender, &endowment.owner, endowment.dao.as_ref())
+                    .can_change(
+                        &info.sender,
+                        &endowment.owner,
+                        endowment.dao.as_ref(),
+                        env.block.time,
+                    )
                 {
                     i
                 } else {
@@ -566,7 +571,12 @@ pub fn update_endowment_settings(
                 if config
                     .settings_controller
                     .whitelisted_contributors
-                    .can_change(&info.sender, &endowment.owner, endowment.dao.as_ref())
+                    .can_change(
+                        &info.sender,
+                        &endowment.owner,
+                        endowment.dao.as_ref(),
+                        env.block.time,
+                    )
                 {
                     i
                 } else {
@@ -580,7 +590,12 @@ pub fn update_endowment_settings(
                 if config
                     .settings_controller
                     .whitelisted_contributors
-                    .can_change(&info.sender, &endowment.owner, endowment.dao.as_ref())
+                    .can_change(
+                        &info.sender,
+                        &endowment.owner,
+                        endowment.dao.as_ref(),
+                        env.block.time,
+                    )
                 {
                     i
                 } else {
@@ -595,6 +610,7 @@ pub fn update_endowment_settings(
                     &info.sender,
                     &endowment.owner,
                     endowment.dao.as_ref(),
+                    env.block.time,
                 ) {
                     i
                 } else {
@@ -614,6 +630,7 @@ pub fn update_endowment_settings(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
+        env.block.time,
     ) {
         endowment.kyc_donors_only = match msg.kyc_donors_only {
             Some(i) => i,
@@ -648,6 +665,7 @@ pub fn update_endowment_settings(
                 &info.sender,
                 &endowment.owner,
                 endowment.dao.as_ref(),
+                env.block.time,
             ) {
                 name
             } else {
@@ -662,6 +680,7 @@ pub fn update_endowment_settings(
                 &info.sender,
                 &endowment.owner,
                 endowment.dao.as_ref(),
+                env.block.time,
             ) {
                 // check that at least 1 SDG category is set for charity endowments
                 if endowment.endow_type == EndowmentType::Charity {
@@ -696,6 +715,7 @@ pub fn update_endowment_settings(
                 &info.sender,
                 &endowment.owner,
                 endowment.dao.as_ref(),
+                env.block.time,
             ) {
                 Some(logo)
             } else {
@@ -710,6 +730,7 @@ pub fn update_endowment_settings(
                 &info.sender,
                 &endowment.owner,
                 endowment.dao.as_ref(),
+                env.block.time,
             ) {
                 Some(image)
             } else {
@@ -722,6 +743,54 @@ pub fn update_endowment_settings(
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
     Ok(Response::new().add_attribute("action", "update_endowment_settings"))
+}
+
+pub fn update_delegate(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    id: u32,
+    setting: String,
+    action: String,
+    delegate_address: String,
+    delegate_expiry: Option<u64>,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+    let endowment = ENDOWMENTS.load(deps.storage, id)?;
+
+    // grab a setting's permissions from SettingsController
+    let mut permissions = config
+        .settings_controller
+        .get_permissions(setting.clone())?;
+
+    // update the delegate field appropraitely based on action
+    match action.as_str() {
+        "set" => {
+            permissions.set_delegate(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+                deps.api.addr_validate(&delegate_address)?,
+                delegate_expiry,
+            );
+        }
+        "revoke" => {
+            permissions.revoke_delegate(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+                env.block.time,
+            );
+        }
+        _ => unimplemented!(),
+    }
+
+    // save mutated permissions back to SettingsController
+    config
+        .settings_controller
+        .set_permissions(setting, permissions)?;
+
+    Ok(Response::default().add_attribute("action", "update_delegate"))
 }
 
 pub fn update_strategies(
@@ -1964,7 +2033,7 @@ pub fn update_profile(
 
 pub fn update_endowment_fees(
     deps: DepsMut,
-    _env: Env,
+    env: Env,
     info: MessageInfo,
     msg: UpdateEndowmentFeesMsg,
 ) -> Result<Response, ContractError> {
@@ -1983,6 +2052,7 @@ pub fn update_endowment_fees(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
+        env.block.time,
     ) {
         endowment.earnings_fee = msg.earnings_fee;
     }
@@ -1991,6 +2061,7 @@ pub fn update_endowment_fees(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
+        env.block.time,
     ) {
         endowment.deposit_fee = msg.deposit_fee;
     }
@@ -1999,6 +2070,7 @@ pub fn update_endowment_fees(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
+        env.block.time,
     ) {
         endowment.withdraw_fee = msg.withdraw_fee;
     }
@@ -2007,6 +2079,7 @@ pub fn update_endowment_fees(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
+        env.block.time,
     ) {
         endowment.aum_fee = msg.aum_fee;
     }
