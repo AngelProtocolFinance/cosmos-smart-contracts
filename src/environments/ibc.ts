@@ -13,6 +13,8 @@ import { LCDClient, LocalTerra, MnemonicKey, MsgSend, Wallet } from "@terra-mone
 import { localterra } from "../config/localterraConstants";
 import { sendTransaction } from "../utils/terra/helpers";
 
+import { localibc } from "../config/localIbcConstants";
+
 
 // -------------------------------------------------------------------------------------
 // Variables
@@ -30,7 +32,7 @@ let terraIbcClient: Wallet;
 // -------------------------------------------------------------------------------------
 async function initialize() {
     // Setup the `junoIbcClient` wallet
-    junoIbcClient = await DirectSecp256k1HdWallet.fromMnemonic(localjuno.mnemonicKeys.junoIbcClient, { prefix: localjuno.networkInfo.walletPrefix });
+    junoIbcClient = await DirectSecp256k1HdWallet.fromMnemonic(localibc.mnemonicKeys.junoIbcClient, { prefix: localjuno.networkInfo.walletPrefix });
     junoIbcClientAccount = await getWalletAddress(junoIbcClient);
     juno = await SigningCosmWasmClient.connectWithSigner(localjuno.networkInfo.url, junoIbcClient, { gasPrice: GasPrice.fromString(localjuno.networkInfo.gasPrice) });
 
@@ -49,8 +51,7 @@ async function initialize() {
         URL: localterra.networkInfo.url,
         chainID: localterra.networkInfo.chainId,
     });
-    terraIbcClient = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.terraIbcClient }));
-
+    terraIbcClient = new Wallet(terra, new MnemonicKey({ mnemonic: localibc.mnemonicKeys.terraIbcClient }));
 
     // Fund the `terraIbcClient` wallet
     const balances = await terra.bank.balance(terraIbcClient.key.accAddress);

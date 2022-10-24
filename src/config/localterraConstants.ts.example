@@ -19,9 +19,6 @@ export const localterra = {
     test8: 'cream sport mango believe inhale text fish rely elegant below earth april wall rug ritual blossom cherry detail length blind digital proof identify ride',
     test9: 'index light average senior silent limit usual local involve delay update rack cause inmate wall render magnet common feature laundry exact casual resource hundred',
     test10: 'prefer forget visit mistake mixture feel eyebrow autumn shop pair address airport diesel street pass vague innocent poem method awful require hurry unhappy shoulder',
-
-    terraIbcClient: "punch relax wire approve nice sting cargo explain inside acid people achieve later owner once organ mountain ripple ankle chapter holiday since aspect scrub",
-  },
   },
 
   // Should be updated contract addresses after deploying wasms in the LocalTerra
