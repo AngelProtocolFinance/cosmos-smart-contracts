@@ -326,7 +326,8 @@ pub fn execute_propose(
 
     // If Proposal's status is Passed, then execute it immediately (if execution is not explicitly required)
     let mut direct_execute_msgs = vec![];
-    if !cfg.require_execution && prop.status == Status::Passed {
+    let auto_execute = !cfg.require_execution && prop.status == Status::Passed;
+    if auto_execute {
         direct_execute_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: env.contract.address.to_string(),
             msg: to_binary(&ExecuteMsg::Execute { proposal_id: id }).unwrap(),
@@ -339,6 +340,7 @@ pub fn execute_propose(
         .add_attribute("sender", info.sender)
         .add_attribute("proposal_id", id.to_string())
         .add_attribute("status", format!("{:?}", prop.status))
+        .add_attribute("auto-executed", auto_execute.to_string())
         .add_messages(direct_execute_msgs))
 }
 
@@ -423,7 +425,8 @@ pub fn execute_propose_locked_withdraw(
 
     // If Proposal's status is Passed, then execute it immediately (if execution is not explicitly required)
     let mut direct_execute_msgs = vec![];
-    if !cfg.require_execution && prop.status == Status::Passed {
+    let auto_execute = !cfg.require_execution && prop.status == Status::Passed;
+    if auto_execute {
         direct_execute_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: env.contract.address.to_string(),
             msg: to_binary(&ExecuteMsg::Execute { proposal_id: id }).unwrap(),
@@ -436,6 +439,7 @@ pub fn execute_propose_locked_withdraw(
         .add_attribute("sender", info.sender)
         .add_attribute("proposal_id", id.to_string())
         .add_attribute("status", format!("{:?}", prop.status))
+        .add_attribute("auto-executed", auto_execute.to_string())
         .add_messages(direct_execute_msgs))
 }
 
@@ -482,7 +486,8 @@ pub fn execute_vote(
 
     // If Proposal's status is Passed, then execute it immediately (if execution is not explicitly required)
     let mut direct_execute_msgs = vec![];
-    if !cfg.require_execution && prop.status == Status::Passed {
+    let auto_execute = !cfg.require_execution && prop.status == Status::Passed;
+    if auto_execute {
         direct_execute_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
             contract_addr: env.contract.address.to_string(),
             msg: to_binary(&ExecuteMsg::Execute { proposal_id }).unwrap(),
@@ -495,6 +500,7 @@ pub fn execute_vote(
         .add_attribute("sender", info.sender)
         .add_attribute("proposal_id", proposal_id.to_string())
         .add_attribute("status", format!("{:?}", prop.status))
+        .add_attribute("auto-executed", auto_execute.to_string())
         .add_messages(direct_execute_msgs))
 }
 
