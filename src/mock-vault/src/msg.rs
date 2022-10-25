@@ -118,7 +118,6 @@ pub struct RegistrarConfigResponse {
     pub version: String,
     pub accounts_contract: Option<String>,
     pub treasury: String,
-    pub tax_rate: Decimal,
     pub index_fund: Option<String>,
     pub split_to_liquid: SplitDetails,
     pub halo_token: Option<String>,

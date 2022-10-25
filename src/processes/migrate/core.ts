@@ -23,7 +23,7 @@ export async function migrateCore(
   // run the migrations desired
   // await storeAndMigrateContract(juno, apTeam, registrar, 'registrar.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw4GrpApTeam, 'cw4_group.wasm');
-  // await storeAndMigrateContract(juno, apTeam, cw3ApTeam, 'cw3_multisig.wasm');
+  // await storeAndMigrateContract(juno, apTeam, cw3ApTeam, 'cw3_apteam.wasm');
   // await storeAndMigrateContract(juno, apTeam, cw3ReviewTeam, 'cw3_applications.wasm');
   // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
   // await storeAndMigrateContract(juno, apTeam, accounts, 'accounts.wasm');
