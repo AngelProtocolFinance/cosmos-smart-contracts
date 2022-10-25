@@ -39,6 +39,7 @@ pub enum ExecuteMsg {
         proposal_id: u64,
     },
     UpdateConfig {
+        require_execution: bool,
         threshold: Threshold,
         max_voting_period: Duration,
     },
