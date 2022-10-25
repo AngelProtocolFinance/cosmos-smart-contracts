@@ -88,7 +88,7 @@ const terrad = {
     estimatedBlockTime: 400,
     estimatedIndexerTime: 80,
 };
-const IbcVersion = "simple-ica-v2";
+const IbcVersion = "ica-vaults-v1"; // "simple-ica-v2";
 
 // -------------------------------------------------------------------------------------
 // setup all contracts for LocalJuno and TestNet
@@ -105,11 +105,11 @@ export async function setupIBC(
 ): Promise<void> {
     juno = juno_config.juno;
     junoIbcClient = juno_config.junoIbcClient;
-    // await deployJunoIcaContracts();
+    await deployJunoIcaContracts();
 
     terra = terra_config.terra;
     terraIbcClient = terra_config.terraIbcClient;
-    // await deployTerraIcaContracts();
+    await deployTerraIcaContracts();
 
     await customConnSetup(junod, terrad);
 
@@ -147,7 +147,7 @@ function extras() {
     const extras = {
         // This is just for tests - don't add this in production code
         broadcastPollIntervalMs: 300,
-        broadcastTimeoutMs: 2000,
+        broadcastTimeoutMs: 5000,
     };
     return extras;
 }
@@ -210,6 +210,7 @@ async function deployJunoIcaContracts(): Promise<void> {
 
     const icaControllerContract = await juno.getContract(icaController);
     console.log(chalk.green(" Done!"), `${chalk.blue("ica_controller ibcPortId")}=${icaControllerContract.ibcPortId}`);
+    icaControllerPort = icaControllerContract.ibcPortId!;
 
     process.stdout.write("Instantiating ica_host contract");
     const icaHostResult = await instantiateContract(juno, junoIbcClientAddr, junoIbcClientAddr, icaHostCodeId, {
@@ -220,6 +221,7 @@ async function deployJunoIcaContracts(): Promise<void> {
 
     const icaHostContract = await juno.getContract(icaHost);
     console.log(chalk.green(" Done!"), `${chalk.blue("ica_host ibcPortId")}=${icaHostContract.ibcPortId}`);
+    icaHostPort = icaHostContract.ibcPortId!;
 
     console.log(chalk.green(" Done!"));
 }
@@ -252,6 +254,7 @@ async function deployTerraIcaContracts(): Promise<void> {
 
     const icaControllerContract = await terra.wasm.contractInfo(terraIcaController);
     console.log(chalk.green(" Done!"), `${chalk.blue("ica_controller ibcPortId")}=${icaControllerContract.ibc_port_id!}`);
+    terraIcaControllerPort = icaControllerContract.ibc_port_id!;
 
     process.stdout.write("Instantiating ica_host contract");
     const icaHostResult = await tInstantiateContract(terra, terraIbcClient, terraIbcClient, icaHostCodeId, {
@@ -268,6 +271,7 @@ async function deployTerraIcaContracts(): Promise<void> {
 
     const icaHostContract = await terra.wasm.contractInfo(terraIcaHost);
     console.log(chalk.green(" Done!"), `${chalk.blue("ica_host ibcPortId")}=${icaHostContract.ibc_port_id!}`);
+    terraIcaHostPort = icaHostContract.ibc_port_id!;
 
     console.log(chalk.green(" Done!"));
 }
