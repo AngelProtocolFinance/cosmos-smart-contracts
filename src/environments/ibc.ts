@@ -14,6 +14,7 @@ import { localterra } from "../config/localterraConstants";
 import { sendTransaction } from "../utils/terra/helpers";
 
 import { localibc } from "../config/localIbcConstants";
+import { testExecuteIBC } from "../processes/tests/ibc";
 
 
 // -------------------------------------------------------------------------------------
@@ -68,7 +69,6 @@ async function initialize() {
     console.log(`Using ${chalk.cyan(terraIbcClient.key.accAddress)} as Terra IBC Client`);
 }
 
-
 export async function startSetupIBC(): Promise<void> {
     // Initialize environment information
     console.log(chalk.yellow("\nStep 1. Environment Info"));
@@ -88,4 +88,8 @@ export async function startSetupIBC(): Promise<void> {
             terraIbcClient,
         }
     );
+}
+
+export async function startTestIBC(): Promise<void> {
+    await testExecuteIBC();
 }
