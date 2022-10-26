@@ -43,6 +43,7 @@ pub enum ExecuteMsg {
         proposal_id: u64,
     },
     UpdateConfig {
+        require_execution: bool,
         threshold: Threshold,
         max_voting_period: Duration,
     },
@@ -53,6 +54,7 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 #[serde(rename_all = "snake_case")]
 pub struct ConfigResponse {
+    pub require_execution: bool,
     pub registrar_contract: String,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
