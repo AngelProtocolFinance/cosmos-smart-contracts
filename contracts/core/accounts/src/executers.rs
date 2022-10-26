@@ -6,7 +6,8 @@ use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
+    ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, VaultDetailResponse,
+    VaultListResponse,
 };
 use angel_core::structs::{
     AccountStrategies, AccountType, BalanceInfo, Beneficiary, DonationsReceived, EndowmentStatus,
@@ -942,15 +943,15 @@ pub fn reinvest_to_locked(
                 vault_addr: vault_addr.clone(),
             })?,
         }))?;
-    let yield_vault: YieldVault = vault_config.vault;
+    let yield_vault: YieldVault = vault_config.vault.clone();
     if amount.is_zero() || !yield_vault.approved || yield_vault.acct_type.ne(&AccountType::Liquid) {
         return Err(ContractError::InvalidInputs {});
     }
 
-    let msg: SubMsg;
+    let mut res = Response::new().add_attribute("action", "vault_reinvest_to_locked");
     match yield_vault.vault_type {
         VaultType::Native => {
-            msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            res = res.add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: vault_addr,
                 msg: to_binary(&angel_core::messages::vault::ExecuteMsg::ReinvestToLocked {
                     endowment_id: id,
@@ -958,12 +959,43 @@ pub fn reinvest_to_locked(
                 })
                 .unwrap(),
                 funds: vec![],
+            })));
+        }
+        // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
+        VaultType::Ibc { ica } => {
+            // look up Registrar network information on the given IBC Vault
+            let network_info: NetworkConnectionResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: config.registrar_contract.to_string(),
+                    msg: to_binary(&RegistrarQuerier::NetworkConnection {
+                        chain_id: vault_config.vault.network,
+                    })?,
+                }))?;
+            // build message
+            res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.ibc_controller.to_string(),
+                msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
+                    channel_id: network_info.network_connection.ibc_channel.unwrap(),
+                    msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: ica.to_string(),
+                        msg: to_binary(
+                            &angel_core::messages::vault::ExecuteMsg::ReinvestToLocked {
+                                endowment_id: id,
+                                amount,
+                            },
+                        )
+                        .unwrap(),
+                        funds: vec![],
+                    })],
+                    callback_id: Some("ibc-vault-reinvest".to_string()),
+                })
+                .unwrap(),
+                funds: vec![],
             }));
         }
-        VaultType::Ibc { ica: _ } => unimplemented!(),
         VaultType::Evm => unimplemented!(),
     }
-    Ok(Response::new().add_submessage(msg))
+    Ok(res)
 }
 
 pub fn deposit(
@@ -1144,7 +1176,7 @@ pub fn vaults_invest(
     // 1. Validate that Vault addr and input Asset are valid
     // 2. Check that TOH for AcctType has enough tokens to cover deposit amt
     // 3. Create deposit message to Vault
-    let mut deposit_msgs: Vec<SubMsg> = vec![];
+    let mut res = Response::new().add_attribute("action", "vault_invest");
     for (vault, asset) in vaults.iter() {
         // check vault addr passed is valid
         let vault_addr = deps.api.addr_validate(vault)?;
@@ -1235,7 +1267,7 @@ pub fn vaults_invest(
         // funds payload can contain CW20 | Native token amounts
         match vault_config.vault.vault_type {
             VaultType::Native => {
-                deposit_msgs.push(match &asset.info {
+                res = res.add_submessage(match &asset.info {
                     AssetInfoBase::Native(ref denom) => {
                         SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                             contract_addr: vault_addr.clone().to_string(),
@@ -1267,7 +1299,45 @@ pub fn vaults_invest(
                     _ => unreachable!(),
                 });
             }
-            VaultType::Ibc { ica: _ } => unimplemented!(),
+            // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
+            VaultType::Ibc { ica } => {
+                // look up Registrar network information on the given IBC Vault
+                let network_info: NetworkConnectionResponse =
+                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                        contract_addr: config.registrar_contract.to_string(),
+                        msg: to_binary(&RegistrarQuerier::NetworkConnection {
+                            chain_id: vault_config.vault.network,
+                        })?,
+                    }))?;
+                // build message
+                res = res.add_message(match &asset.info {
+                    AssetInfoBase::Native(ref denom) => CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: config.ibc_controller.to_string(),
+                        msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
+                            channel_id: network_info.network_connection.ibc_channel.unwrap(),
+                            msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                                contract_addr: ica.to_string(),
+                                msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Deposit {
+                                    endowment_id: id,
+                                })
+                                .unwrap(),
+                                funds: vec![Coin {
+                                    denom: denom.clone(),
+                                    amount: asset.amount,
+                                }],
+                            })],
+                            callback_id: Some("ibc-deposit-native".to_string()),
+                        })
+                        .unwrap(),
+                        funds: vec![Coin {
+                            denom: denom.clone(),
+                            amount: asset.amount,
+                        }],
+                    }),
+                    AssetInfo::Cw20(ref _contract_addr) => unimplemented!(),
+                    _ => unreachable!(),
+                });
+            }
             VaultType::Evm => unimplemented!(),
         }
     }
@@ -1281,9 +1351,7 @@ pub fn vaults_invest(
     }
     STATES.save(deps.storage, id, &state)?;
 
-    Ok(Response::new()
-        .add_attribute("action", "vault_invest")
-        .add_submessages(deposit_msgs))
+    Ok(res)
 }
 
 /// Allow Endowment owners to redeem some amount of Vault tokens back to their
@@ -1314,7 +1382,7 @@ pub fn vaults_redeem(
     // iterate over each vault and amount passed in
     // 1. Validate that Vault addr and input Asset are valid
     // 2. Create redeem message to Vault
-    let mut redeem_msgs: Vec<SubMsg> = vec![];
+    let mut res = Response::new().add_attribute("action", "vault_redeem");
     for (vault, amount) in vaults.iter() {
         // check vault addr passed is valid
         let vault_addr = deps.api.addr_validate(vault)?.to_string();
@@ -1371,7 +1439,7 @@ pub fn vaults_redeem(
                 if *amount > available_vt {
                     return Err(ContractError::BalanceTooSmall {});
                 }
-                redeem_msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                res = res.add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: vault_addr,
                     msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
                         endowment_id: id,
@@ -1381,15 +1449,42 @@ pub fn vaults_redeem(
                     funds: vec![],
                 })));
             }
-            VaultType::Ibc { ica: _ } => unimplemented!(),
+            // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
+            VaultType::Ibc { ica } => {
+                // look up Registrar network information on the given IBC Vault
+                let network_info: NetworkConnectionResponse =
+                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                        contract_addr: config.registrar_contract.to_string(),
+                        msg: to_binary(&RegistrarQuerier::NetworkConnection {
+                            chain_id: vault_config.vault.network,
+                        })?,
+                    }))?;
+                // build message
+                res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: config.ibc_controller.to_string(),
+                    msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
+                        channel_id: network_info.network_connection.ibc_channel.unwrap(),
+                        msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: ica.to_string(),
+                            msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
+                                endowment_id: id,
+                                amount: *amount,
+                            })
+                            .unwrap(),
+                            funds: vec![],
+                        })],
+                        callback_id: Some("ibc-vault-redeem".to_string()),
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                }));
+            }
             VaultType::Evm => unimplemented!(),
         }
     }
 
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
-    Ok(Response::new()
-        .add_attribute("action", "vault_redeem")
-        .add_submessages(redeem_msgs))
+    Ok(res)
 }
 
 pub fn withdraw(
