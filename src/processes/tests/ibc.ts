@@ -8,7 +8,7 @@ chai.use(chaiAsPromised);
 // IBC-related imports
 import { Order } from "cosmjs-types/ibc/core/channel/v1/channel";
 import { Link, Logger } from "@confio/relayer";
-import { ChainDefinition } from "@confio/relayer/build/lib/helpers";
+import { ChainDefinition, CosmWasmSigner } from "@confio/relayer/build/lib/helpers";
 
 import { localibc, junod, terrad } from "../../config/localIbcConstants";
 import { customFundAccount, customSigningClient, customSigningCosmWasmClient, listAccounts } from "../../utils/ibc";
@@ -26,6 +26,8 @@ let terraIcaController: string;
 let terraIcaControllerPort: string;
 let terraIcaHost: string;
 let terraIcaHostPort: string;
+
+let junoIbcSigner: CosmWasmSigner;
 
 export async function testExecuteIBC(
     ibc: {
@@ -51,27 +53,9 @@ export async function testExecuteIBC(
     terraIcaHost = ibc.terraIcaHost;
     terraIcaHostPort = ibc.terraIcaHostPort;
 
+    junoIbcSigner = await customSigningCosmWasmClient(junod, localibc.mnemonicKeys.junoIbcClient);
+
     const { link, ics20 } = await customConnSetup(junod, terrad);
-
-    // IBCQuery 
-    const junoSigner = await customSigningCosmWasmClient(junod, localibc.mnemonicKeys.junoIbcClient);
-
-    await link.relayAll();
-    const accounts = await listAccounts(junoSigner, junoIcaController);
-    console.log("accounts query: ", accounts);
-    const { remote_addr: remoteAddr, channel_id: channelId } = accounts[0];
-    const ibcQuery = await junoSigner.sign.execute(
-        junoSigner.senderAddress,
-        junoIcaController,
-        {
-            ibc_query: {
-                channel_id: channelId,
-                msgs: [{ smart: { msg: toBinary({ list_accounts: {} }), contract_addr: terraIcaHost } }]
-            }
-        },
-        "auto"
-    );
-    console.log("IbcQuery content: ", ibcQuery);
 
     /* --- EXECUTE tests --- */
     // await testVaultDeposit(terra, apTeam, vaultLocked1, 1, { uluna: 2000000 });
@@ -84,6 +68,8 @@ export async function testExecuteIBC(
     // await testQueryVaultEndowmentBalance(terra, vaultLocked1, 1);
     // await testQueryVaultTokenInfo(terra, vaultLocked1);
     // await testQueryVaultTotalBalance(terra, vaultLocked1);
+
+    await testIbcQuery(link);
 }
 
 
@@ -124,4 +110,26 @@ async function customConnSetup(srcConfig: ChainDefinition, destConfig: ChainDefi
         }
     };
     return { link, ics20 };
+}
+
+// IBCQuery
+async function testIbcQuery(link: Link) {
+    await link.relayAll();
+
+    const accounts = await listAccounts(junoIbcSigner, junoIcaController);
+    // console.log("accounts query: ", accounts);
+    const { remote_addr: remoteAddr, channel_id: channelId } = accounts[0];
+
+    const ibcQuery = await junoIbcSigner.sign.execute(
+        junoIbcSigner.senderAddress,
+        junoIcaController,
+        {
+            ibc_query: {
+                channel_id: channelId,
+                msgs: [{ smart: { msg: toBinary({ list_accounts: {} }), contract_addr: terraIcaHost } }]
+            }
+        },
+        "auto"
+    );
+    console.log("IbcQuery content: ", ibcQuery);
 }

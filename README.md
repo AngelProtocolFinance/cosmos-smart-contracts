@@ -20,9 +20,10 @@ Notes:
 ```bash
 git clone https://github.com/CosmosContracts/juno.git
 ```
-2. Copy the file named `junod_docker-compose.yml` in this `test-suite` repo over to the base folder of the junod repo, replacing the existing default `docker-compose.yml` file. 
+2. Copy the files in `./localjuno_env_files` dir of this `test-suite` repo over to the base folder of the junod repo, replacing the existing default `docker-compose.yml` file. 
 ```bash
-cp ./junod_docker-compose.yml <juno_repo_path>/docker-compose.yml`
+cp ./localjuno_env_files/docker-compose.yml <juno_repo_path>/docker-compose.yml
+cp ./localjuno_env_files/setup_junod.sh <juno_repo_path>/docker/setup_junod.sh
 ```
 3. In the jundo repo base folder run the following to build junod container:
 ```bash
