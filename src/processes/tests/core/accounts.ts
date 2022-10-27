@@ -438,7 +438,7 @@ export async function testApTeamChangesEndowmentSettings(
     );
   });
   await prom;
-  await sendMessagesViaCw3Proposal(juno, apTeam, cw3ApTeam, accountsContract, final_msgs);
+  await sendMessagesViaCw3Proposal(juno, apTeam, cw3ApTeam, "Make changes to several Endowments' Settings", final_msgs);
 }
 
 export async function testCreateEndowmentCw3s(
