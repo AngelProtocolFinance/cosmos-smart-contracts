@@ -3,6 +3,7 @@ use cosmwasm_std::{
 };
 use cw3::{Status, Vote};
 use cw4::Cw4Contract;
+use cw_asset::Asset;
 use cw_storage_plus::{Item, Map};
 use cw_utils::{Duration, Expiration, Threshold};
 use schemars::JsonSchema;
@@ -29,6 +30,8 @@ pub struct Config {
     pub max_voting_period: Duration,
     pub group_addr: Cw4Contract,
     pub require_execution: bool,
+    pub seed_asset: Option<Asset>,
+    pub seed_split_to_liquid: Decimal,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
