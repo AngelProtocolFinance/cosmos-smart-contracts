@@ -123,15 +123,15 @@
           "address": "terra199vw7724lzkwz6lf2hsx04lrxfkz09tg8dlp6r",
           "coins": [
             {
+              "denom": "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              "amount": "1000000000000000"
+            },
+            {
+              "denom": "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+              "amount": "1000000000000000"
+            },
+            {
               "denom": "uluna",
-              "amount": "1000000000000000"
-            },
-            {
-              "denom": "usdc",
-              "amount": "1000000000000000"
-            },
-            {
-              "denom": "usdt",
               "amount": "1000000000000000"
             }
           ]
@@ -140,15 +140,15 @@
           "address": "terra1x46rqay4d3cssq8gxxvqz8xt6nwlz4td20k38v",
           "coins": [
             {
+              "denom": "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              "amount": "1000000000000000"
+            },
+            {
+              "denom": "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+              "amount": "1000000000000000"
+            },
+            {
               "denom": "uluna",
-              "amount": "1000000000000000"
-            },
-            {
-              "denom": "usdc",
-              "amount": "1000000000000000"
-            },
-            {
-              "denom": "usdt",
               "amount": "1000000000000000"
             }
           ]
@@ -157,15 +157,15 @@
           "address": "terra18wlvftxzj6zt0xugy2lr9nxzu402690ltaf4ss",
           "coins": [
             {
+              "denom": "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              "amount": "1000000000000000"
+            },
+            {
+              "denom": "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+              "amount": "1000000000000000"
+            },
+            {
               "denom": "uluna",
-              "amount": "1000000000000000"
-            },
-            {
-              "denom": "usdc",
-              "amount": "1000000000000000"
-            },
-            {
-              "denom": "usdt",
               "amount": "1000000000000000"
             }
           ]
@@ -174,15 +174,15 @@
           "address": "terra1fmcjjt6yc9wqup2r06urnrd928jhrde6gcld6n",
           "coins": [
             {
+              "denom": "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              "amount": "1000000000000000"
+            },
+            {
+              "denom": "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+              "amount": "1000000000000000"
+            },
+            {
               "denom": "uluna",
-              "amount": "1000000000000000"
-            },
-            {
-              "denom": "usdc",
-              "amount": "1000000000000000"
-            },
-            {
-              "denom": "usdt",
               "amount": "1000000000000000"
             }
           ]
@@ -193,20 +193,20 @@
             {
               "denom": "uluna",
               "amount": "1000000000000000"
-            },
-            {
-              "denom": "usdc",
-              "amount": "1000000000000000"
-            },
-            {
-              "denom": "usdt",
-              "amount": "1000000000000000"
             }
           ]
         },
         {
           "address": "terra1333veey879eeqcff8j3gfcgwt8cfrg9mq20v6f",
           "coins": [
+            {
+              "denom": "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              "amount": "1000000000000000"
+            },
+            {
+              "denom": "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+              "amount": "1000000000000000"
+            },
             {
               "denom": "uluna",
               "amount": "1000000000000000"
@@ -217,6 +217,14 @@
           "address": "terra1e8ryd9ezefuucd4mje33zdms9m2s90m57878v9",
           "coins": [
             {
+              "denom": "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              "amount": "1000000000000000"
+            },
+            {
+              "denom": "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+              "amount": "1000000000000000"
+            },
+            {
               "denom": "uluna",
               "amount": "1000000000000000"
             }
@@ -225,6 +233,14 @@
         {
           "address": "terra17tv2hvwpg0ukqgd2y5ct2w54fyan7z0zxrm2f9",
           "coins": [
+            {
+              "denom": "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              "amount": "1000000000000000"
+            },
+            {
+              "denom": "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+              "amount": "1000000000000000"
+            },
             {
               "denom": "uluna",
               "amount": "1000000000000000"
@@ -235,6 +251,14 @@
           "address": "terra1757tkx08n0cqrw7p86ny9lnxsqeth0wgp0em95",
           "coins": [
             {
+              "denom": "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              "amount": "1000000000000000"
+            },
+            {
+              "denom": "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+              "amount": "1000000000000000"
+            },
+            {
               "denom": "uluna",
               "amount": "1000000000000000"
             }
@@ -243,6 +267,14 @@
         {
           "address": "terra17lmam6zguazs5q5u6z5mmx76uj63gldnse2pdp",
           "coins": [
+            {
+              "denom": "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              "amount": "1000000000000000"
+            },
+            {
+              "denom": "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+              "amount": "1000000000000000"
+            },
             {
               "denom": "uluna",
               "amount": "1000000000000000"
@@ -253,6 +285,14 @@
           "address": "terra1lkccuqgj6sjwjn8gsa9xlklqv4pmrqg9dx2fxc",
           "coins": [
             {
+              "denom": "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+              "amount": "1000000000000000"
+            },
+            {
+              "denom": "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+              "amount": "1000000000000000"
+            },
+            {
               "denom": "uluna",
               "amount": "1000000000000000"
             }
@@ -261,16 +301,16 @@
       ],
       "supply": [
         {
+          "denom": "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+          "amount": "10000000000000000"
+        },
+        {
+          "denom": "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+          "amount": "10000000000000000"
+        },
+        {
           "denom": "uluna",
           "amount": "11000000000000000"
-        },
-        {
-          "denom": "usdc",
-          "amount": "5000000000000000"
-        },
-        {
-          "denom": "usdt",
-          "amount": "5000000000000000"
         }
       ],
       "denom_metadata": []
