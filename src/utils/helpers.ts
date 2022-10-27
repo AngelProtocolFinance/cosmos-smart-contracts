@@ -200,7 +200,7 @@ export async function storeAndMigrateContract(
 //----------------------------------------------------------------------------------------
 // Abstract away steps to send a message to another contract via a CW3 multisig poll:
 // 1. Create a proposal on a CW3 to execute some msg on a target contract
-// 2. Capture the new Proposal's ID
+// 2. Capture the Proposal ID and other important info
 // 3. Optional: Addtional CW3 member(s) vote on the open poll
 // 4. Proposal needs to be executed
 //----------------------------------------------------------------------------------------
@@ -242,36 +242,33 @@ export async function sendMessageViaCw3Proposal(
     ?.attributes.find((attribute) => {
       return attribute.key == "proposal_id";
     })?.value as string;
-  console.log(chalk.yellow(`> New Proposal's ID: ${proposal_id}`));
-
-  // // 3. Additional members need to vote on proposal to get to passing threshold
-  // for member in members {
-  //   console.log(chalk.green(`Member votes on proposal: ${proposal_id}`));
-  //   await sendTransaction(juno, proposor, cw3, {
-  //     vote: {
-  //       poll_id: parseInt(proposal_id),
-  //       vote: VoteOption.YES,
-  //     },
-  //   });
-  // }
-
-  console.log(chalk.yellow("> Executing the Proposal"));
-  await sendTransaction(juno, proposor, cw3, {
-    execute: { proposal_id: parseInt(proposal_id) }
-  });
-  console.log(chalk.yellow("> Done!"));
+  const proposal_status = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "status";
+    })?.value as string;
+  const proposal_auto_executed = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "auto-executed";
+    })?.value as string;
+  console.log(chalk.yellow(`> Proposal ID: ${proposal_id}; Status: ${proposal_status}; Auto-Executed: ${proposal_auto_executed}`));
 }
 
 export async function sendMessagesViaCw3Proposal(
   juno: SigningCosmWasmClient,
   proposor: string,
   cw3: string,
-  target_contract: string,
+  description: string,
   msgs: any[],
   // members: (SigningCosmWasmClient, string)[], // only needed if more votes required than initial proposor
 ): Promise<void> {
   console.log(chalk.yellow("\n> Creating CW3 Proposal"));
-  const info_text = `CW3 Member proposes to send msg to: ${target_contract}`;
+  const info_text = `CW3 Member proposes to: ${description}`;
 
   // 1. Create the new proposal
   const proposal = await sendTransaction(juno, proposor, cw3, {
@@ -290,19 +287,27 @@ export async function sendMessagesViaCw3Proposal(
     ?.attributes.find((attribute) => {
       return attribute.key == "proposal_id";
     })?.value as string;
-  console.log(chalk.yellow(`> New Proposal's ID: ${proposal_id}`));
-
-  console.log(chalk.yellow("> Executing the Proposal"));
-  await sendTransaction(juno, proposor, cw3, {
-    execute: { proposal_id: parseInt(proposal_id) }
-  });
-  console.log(chalk.yellow("> Done!"));
+  const proposal_status = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "status";
+    })?.value as string;
+  const proposal_auto_executed = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "auto-executed";
+    })?.value as string;
+  console.log(chalk.yellow(`> Proposal ID: ${proposal_id}; Status: ${proposal_status}; Auto-Executed: ${proposal_auto_executed}`));
 }
 
 //----------------------------------------------------------------------------------------
 // Abstract away steps to send an Application proposal message to Review Team CW3 multisig and approve:
 // 1. Create Application Proposal on CW3 to execute endowment create msg on Accounts contract
-// 2. Capture the new Proposal's ID
+// 2. Capture the Proposal ID
 // 3. Optional: Addtional CW3 member(s) vote on the open poll
 // 4. Proposal needs to be executed and new endowment ID captured
 //----------------------------------------------------------------------------------------
@@ -331,10 +336,25 @@ export async function sendApplicationViaCw3Proposal(
     ?.attributes.find((attribute) => {
       return attribute.key == "proposal_id";
     })?.value as string;
-  console.log(chalk.yellow(`> New Proposal's ID: ${proposal_id}`));
+  const proposal_status = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "status";
+    })?.value as string;
+  const proposal_auto_executed = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "auto-executed";
+    })?.value as string;
+  console.log(chalk.yellow(`> Proposal ID: ${proposal_id}; Status: ${proposal_status}; Auto-Executed: ${proposal_auto_executed}`));
 
   // 3. Additional members need to vote on proposal to get to passing threshold
   let prom = Promise.resolve();
+  let endowment_id: number = 0;
   members.forEach((member) => {
     // eslint-disable-next-line no-async-promise-executor
     prom = prom.then(
@@ -344,13 +364,21 @@ export async function sendApplicationViaCw3Proposal(
             const voter_wallet = await getWalletAddress(member);
             const voter_client = await clientSetup(member, networkInfo);
             console.log(chalk.yellow(`> CW3 Review Member ${voter_wallet} votes YES on application proposal`));
-            await sendTransaction(voter_client, voter_wallet, cw3, {
+            const creation = await sendTransaction(voter_client, voter_wallet, cw3, {
               vote_application: {
                 proposal_id: parseInt(proposal_id),
                 vote: `yes`,
                 reason: undefined,
               },
             });
+            // capture the endowment ID
+            endowment_id = await parseInt(creation.logs[0].events
+              .find((event) => {
+                return event.type == "wasm";
+              })
+              ?.attributes.find((attribute) => {
+                return attribute.key == "endow_id";
+              })?.value as string);
             resolve();
           } catch (e) {
             reject(e);
@@ -360,17 +388,6 @@ export async function sendApplicationViaCw3Proposal(
   });
   await prom;
 
-  console.log(chalk.yellow("> Executing the Proposal"));
-  const creation = await sendTransaction(proposor_client, proposor_wallet, cw3, {
-    execute: { proposal_id: parseInt(proposal_id) }
-  });
-
-  // capture and return the new Endowment ID
-  return await parseInt(creation.logs[0].events
-    .find((event) => {
-      return event.type == "wasm";
-    })
-    ?.attributes.find((attribute) => {
-      return attribute.key == "endow_id";
-    })?.value as string);
+  //  return the new Endowment ID (if auto-executed will be a number > 0)
+  return endowment_id;
 }
