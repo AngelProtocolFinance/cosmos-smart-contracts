@@ -8,15 +8,15 @@ export const localibc = {
     },
 
     config: {
-        junoIcaController: "juno1x20slqu99zcgq395e5mqs0272ygenlsmj74n50tn2r0986jdk0cqchc7p6",
-        junoIcaControllerPort: "wasm.juno1x20slqu99zcgq395e5mqs0272ygenlsmj74n50tn2r0986jdk0cqchc7p6",
-        junoIcaHost: "juno1s5a8zm5wf0l647pxv80zk2335jchvmyjk5dam7nlyaeg8dytwx0qsewjnt",
-        junoIcaHostPort: "wasm.juno1s5a8zm5wf0l647pxv80zk2335jchvmyjk5dam7nlyaeg8dytwx0qsewjnt",
+        junoIcaController: "juno1l4hck8x8w95xvfntur99ehx22n7sved78u5zce50lekvcfdjnldqk9v4s5",
+        junoIcaControllerPort: "wasm.juno1l4hck8x8w95xvfntur99ehx22n7sved78u5zce50lekvcfdjnldqk9v4s5",
+        junoIcaHost: "juno14ez42uefjnlavlpxfjh49ajyq4vdw5eq8q6wrge9lxtvxtar5wxqvlnmwj",
+        junoIcaHostPort: "wasm.juno14ez42uefjnlavlpxfjh49ajyq4vdw5eq8q6wrge9lxtvxtar5wxqvlnmwj",
 
-        terraIcaController: "terra1lauppdu6hhj9lxlzjura2ujqw0zzsctn70aqsg7zuvlldduzrpequ3a837",
-        terraIcaControllerPort: "wasm.terra1lauppdu6hhj9lxlzjura2ujqw0zzsctn70aqsg7zuvlldduzrpequ3a837",
-        terraIcaHost: "terra1wqaewp2t7g5mt6gn5zpvxxtrfh0xurvjlu5sge0jyynrl7h5ckmsj3l8x3",
-        terraIcaHostPort: "wasm.terra1wqaewp2t7g5mt6gn5zpvxxtrfh0xurvjlu5sge0jyynrl7h5ckmsj3l8x3",
+        terraIcaController: "terra17w39pfa7qw5uejcc4jkksxkpaekh59d7xwg90t3xr2lvac94vc3snsf67j",
+        terraIcaControllerPort: "wasm.terra17w39pfa7qw5uejcc4jkksxkpaekh59d7xwg90t3xr2lvac94vc3snsf67j",
+        terraIcaHost: "terra1qv4yn5rpu8v6sdgxww65rdpftujuzdgw5xw3tffhf633qxrzuemqfjezsn",
+        terraIcaHostPort: "wasm.terra1qv4yn5rpu8v6sdgxww65rdpftujuzdgw5xw3tffhf633qxrzuemqfjezsn",
     }
 }
 

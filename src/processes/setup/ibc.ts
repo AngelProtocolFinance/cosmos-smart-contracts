@@ -90,10 +90,10 @@ async function deployJunoIcaContracts(): Promise<void> {
     const icaHostResult = await instantiateContract(juno, junoIbcClientAddr, junoIbcClientAddr, icaHostCodeId, {
         cw1_code_id: cw1WhitelistCodeId,
     });
-    process.stdout.write("Querying (juno)ica_host ibcPort");
     junoIcaHost = icaHostResult.contractAddress as string;
     console.log(chalk.green(" Done!"), `${chalk.blue("(juno)ica_host contractAddress")}=${junoIcaHost}`);
 
+    process.stdout.write("Querying (juno)ica_host ibcPort");
     const icaHostContract = await juno.getContract(junoIcaHost);
     junoIcaHostPort = icaHostContract.ibcPortId!;
     console.log(chalk.green(" Done!"), `${chalk.blue("(juno)ica_host ibcPortId")}=${junoIcaHostPort}`);
@@ -196,7 +196,7 @@ async function postProcess() {
         }
     });
 
-    const terraApTeamSigner = await customSigningCosmWasmClient(terrad, localjuno.mnemonicKeys.apTeam);
+    const terraApTeamSigner = await customSigningCosmWasmClient(terrad, localterra.mnemonicKeys.test1);  // `test1` wallet is used as `APTeam` wallet.
     await terraApTeamSigner.sign.execute(terraApTeamSigner.senderAddress, localterra.contracts.vaultLocked1, {
         update_config: {
             ibc_host: terraIcaHost,
