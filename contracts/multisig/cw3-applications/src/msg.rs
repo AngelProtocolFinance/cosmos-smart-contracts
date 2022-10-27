@@ -59,7 +59,7 @@ pub enum ExecuteMsg {
         require_execution: bool,
         threshold: Threshold,
         max_voting_period: Duration,
-        seed_amount: Option<Asset>,
+        seed_asset: Option<Asset>,
         seed_split_to_liquid: Decimal,
     },
     /// Handles update hook messages from the group contract

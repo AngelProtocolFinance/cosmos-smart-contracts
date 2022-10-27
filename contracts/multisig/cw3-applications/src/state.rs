@@ -30,7 +30,7 @@ pub struct Config {
     pub max_voting_period: Duration,
     pub group_addr: Cw4Contract,
     pub require_execution: bool,
-    pub seed_amount: Option<Asset>,
+    pub seed_asset: Option<Asset>,
     pub seed_split_to_liquid: Decimal,
 }
 

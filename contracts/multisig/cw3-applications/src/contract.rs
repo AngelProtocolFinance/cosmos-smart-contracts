@@ -59,7 +59,7 @@ pub fn instantiate(
         max_voting_period: msg.max_voting_period,
         group_addr,
         require_execution: false,
-        seed_amount: None,
+        seed_asset: None,
         seed_split_to_liquid: Decimal::percent(0), // all to LOCKED
     };
     CONFIG.save(deps.storage, &cfg)?;
@@ -105,7 +105,7 @@ pub fn application_reply(
 
             // Add the seed money deposit to new endowment if set in Config
             let cfg = CONFIG.load(deps.storage)?;
-            Ok(match cfg.seed_amount {
+            Ok(match cfg.seed_asset {
                 Some(asset) => {
                     // query registrar config in order to get the accounts contract
                     let registrar_config: RegistrarConfigResponse =
@@ -187,14 +187,14 @@ pub fn execute(
             threshold,
             max_voting_period,
             require_execution,
-            seed_amount,
+            seed_asset,
             seed_split_to_liquid,
         } => execute_update_config(
             deps,
             env,
             info,
             require_execution,
-            seed_amount,
+            seed_asset,
             seed_split_to_liquid,
             threshold,
             max_voting_period,
@@ -212,7 +212,7 @@ pub fn execute_update_config(
     env: Env,
     info: MessageInfo,
     require_execution: bool,
-    seed_amount: Option<Asset>,
+    seed_asset: Option<Asset>,
     seed_split_to_liquid: Decimal,
     threshold: Threshold,
     max_voting_period: Duration,
@@ -227,7 +227,7 @@ pub fn execute_update_config(
     cfg.max_voting_period = max_voting_period;
 
     // Check the seed token with "accepted_tokens"
-    cfg.seed_amount = match seed_amount {
+    cfg.seed_asset = match seed_asset {
         Some(asset) => {
             let _token_check = validate_deposit_fund(
                 deps.as_ref(),
@@ -591,7 +591,7 @@ pub fn execute_execute(
         .add_attribute("proposal_id", proposal_id.to_string());
 
     // check if this is an Application proposal & send out as a submessage, so that we can catch the successful Endowment setup and follow
-    // it up with a seed money top-up (set by CONFIG seed_amount & seed_split_to_liquid)
+    // it up with a seed money top-up (set by CONFIG seed_asset & seed_split_to_liquid)
     // if Normal proposal treat as standard cosmos message sending
     res = match prop.proposal_type {
         ProposalType::Application => res.add_submessage(SubMsg::reply_on_success(
@@ -864,7 +864,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
             max_voting_period: old_config.max_voting_period,
             group_addr: old_config.group_addr,
             require_execution: false, // default to auto-execute
-            seed_amount: None,        // default to NO seed funding program
+            seed_asset: None,         // default to NO seed funding program
             seed_split_to_liquid: Decimal::percent(0), // all to LOCKED
         },
     )?;
