@@ -6,14 +6,18 @@ use crate::state::{
     next_id, Ballot, Config, OldConfig, Proposal, ProposalType, Votes, BALLOTS, CONFIG, PROPOSALS,
 };
 use angel_core::errors::multisig::ContractError;
-use angel_core::messages::accounts::CreateEndowmentMsg;
+use angel_core::messages::accounts::{
+    CreateEndowmentMsg, DepositMsg, ExecuteMsg as AccountsExecuteMsg,
+};
 use angel_core::messages::cw3_multisig::QueryMsg;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::EndowmentType;
+use angel_core::utils::validate_deposit_fund;
 use cosmwasm_std::{
-    entry_point, from_slice, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env,
-    MessageInfo, Order, QueryRequest, Response, StdError, StdResult, WasmMsg, WasmQuery,
+    entry_point, from_slice, to_binary, Binary, BlockInfo, Coin, CosmosMsg, Decimal, Deps, DepsMut,
+    Empty, Env, MessageInfo, Order, QueryRequest, Reply, Response, StdError, StdResult, SubMsg,
+    SubMsgResult, WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
@@ -21,6 +25,7 @@ use cw3::{
     VoterResponse,
 };
 use cw4::{Cw4Contract, MemberChangedHookMsg, MemberDiff};
+use cw_asset::{Asset, AssetInfo, AssetInfoBase};
 use cw_storage_plus::Bound;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
 use std::cmp::Ordering;
@@ -28,6 +33,8 @@ use std::cmp::Ordering;
 // version info for migration info
 const CONTRACT_NAME: &str = "cw3-applications";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
+
+const APPLICATION_REPLY_ID: u64 = 1;
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn instantiate(
@@ -52,10 +59,100 @@ pub fn instantiate(
         max_voting_period: msg.max_voting_period,
         group_addr,
         require_execution: false,
+        seed_amount: None,
+        seed_split_to_liquid: Decimal::percent(0), // all to LOCKED
     };
     CONFIG.save(deps.storage, &cfg)?;
 
     Ok(Response::default())
+}
+
+#[entry_point]
+pub fn reply(deps: DepsMut, env: Env, msg: Reply) -> Result<Response, ContractError> {
+    match msg.id {
+        APPLICATION_REPLY_ID => application_reply(deps, env, msg.result),
+        _ => Err(ContractError::Std(StdError::GenericErr {
+            msg: format!("Invalid Submessage Reply ID: {}", msg.id),
+        })),
+    }
+}
+
+pub fn application_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: SubMsgResult,
+) -> Result<Response, ContractError> {
+    match msg {
+        SubMsgResult::Ok(subcall) => {
+            // filter out the newly created endowment ID from the events reply logs
+            let mut endow_id: u32 = 0;
+            for event in subcall.events {
+                if event.ty == *"wasm" {
+                    for attrb in event.attributes {
+                        // This value comes from the custom attrbiute
+                        match attrb.key.as_str() {
+                            "endow_id" => endow_id = attrb.value.parse().unwrap(),
+                            _ => (),
+                        }
+                    }
+                }
+            }
+            if endow_id == 0 {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: "Cannot find Application's new Endowment ID in event logs".to_string(),
+                }));
+            }
+
+            // Add the seed money deposit to new endowment if set in Config
+            let cfg = CONFIG.load(deps.storage)?;
+            Ok(match cfg.seed_amount {
+                Some(asset) => {
+                    // query registrar config in order to get the accounts contract
+                    let registrar_config: RegistrarConfigResponse =
+                        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                            contract_addr: cfg.registrar_contract.to_string(),
+                            msg: to_binary(&RegistrarConfig {})?,
+                        }))?;
+                    // build the responce with correct message based on Asset type
+                    Response::default().add_message(match &asset.info {
+                        // execute of deposit w/ funds attached
+                        AssetInfoBase::Native(ref denom) => CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: registrar_config.accounts_contract.unwrap().to_string(),
+                            msg: to_binary(&AccountsExecuteMsg::Deposit(DepositMsg {
+                                id: endow_id,
+                                locked_percentage: Decimal::one() - cfg.seed_split_to_liquid,
+                                liquid_percentage: cfg.seed_split_to_liquid,
+                            }))
+                            .unwrap(),
+                            funds: vec![Coin {
+                                denom: denom.clone(),
+                                amount: asset.amount,
+                            }],
+                        }),
+                        // CW20 Send with deposit msg embedded
+                        AssetInfo::Cw20(ref contract_addr) => CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: contract_addr.to_string(),
+                            msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                                contract: registrar_config.accounts_contract.unwrap().to_string(),
+                                amount: asset.amount,
+                                msg: to_binary(&AccountsExecuteMsg::Deposit(DepositMsg {
+                                    id: endow_id,
+                                    locked_percentage: Decimal::one() - cfg.seed_split_to_liquid,
+                                    liquid_percentage: cfg.seed_split_to_liquid,
+                                }))
+                                .unwrap(),
+                            })
+                            .unwrap(),
+                            funds: vec![],
+                        }),
+                        _ => unreachable!(),
+                    })
+                }
+                None => Response::default(),
+            })
+        }
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
+    }
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -90,11 +187,15 @@ pub fn execute(
             threshold,
             max_voting_period,
             require_execution,
+            seed_amount,
+            seed_split_to_liquid,
         } => execute_update_config(
             deps,
             env,
             info,
             require_execution,
+            seed_amount,
+            seed_split_to_liquid,
             threshold,
             max_voting_period,
         ),
@@ -111,6 +212,8 @@ pub fn execute_update_config(
     env: Env,
     info: MessageInfo,
     require_execution: bool,
+    seed_amount: Option<Asset>,
+    seed_split_to_liquid: Decimal,
     threshold: Threshold,
     max_voting_period: Duration,
 ) -> Result<Response<Empty>, ContractError> {
@@ -122,6 +225,21 @@ pub fn execute_update_config(
     cfg.require_execution = require_execution;
     cfg.threshold = threshold;
     cfg.max_voting_period = max_voting_period;
+
+    // Check the seed token with "accepted_tokens"
+    cfg.seed_amount = match seed_amount {
+        Some(asset) => {
+            let _token_check = validate_deposit_fund(
+                deps.as_ref(),
+                cfg.registrar_contract.as_str(),
+                asset.clone(),
+            )
+            .unwrap();
+            Some(asset)
+        }
+        None => None,
+    };
+    cfg.seed_split_to_liquid = seed_split_to_liquid;
 
     CONFIG.save(deps.storage, &cfg)?;
     Ok(Response::default())
@@ -467,12 +585,24 @@ pub fn execute_execute(
     prop.status = Status::Executed;
     PROPOSALS.save(deps.storage, proposal_id, &prop)?;
 
-    // dispatch all proposed messages
-    Ok(Response::new()
-        .add_messages(prop.msgs)
+    let mut res = Response::new()
         .add_attribute("action", "execute")
         .add_attribute("sender", info.sender)
-        .add_attribute("proposal_id", proposal_id.to_string()))
+        .add_attribute("proposal_id", proposal_id.to_string());
+
+    // check if this is an Application proposal & send out as a submessage, so that we can catch the successful Endowment setup and follow
+    // it up with a seed money top-up (set by CONFIG seed_amount & seed_split_to_liquid)
+    // if Normal proposal treat as standard cosmos message sending
+    res = match prop.proposal_type {
+        ProposalType::Application => res.add_submessage(SubMsg::reply_on_success(
+            prop.msgs[0].clone(),
+            APPLICATION_REPLY_ID,
+        )),
+        _ => res.add_messages(prop.msgs),
+    };
+
+    // dispatch all proposed messages
+    Ok(res)
 }
 
 pub fn execute_close(
@@ -734,6 +864,8 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
             max_voting_period: old_config.max_voting_period,
             group_addr: old_config.group_addr,
             require_execution: false, // default to auto-execute
+            seed_amount: None,        // default to NO seed funding program
+            seed_split_to_liquid: Decimal::percent(0), // all to LOCKED
         },
     )?;
 
