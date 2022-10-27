@@ -71,7 +71,7 @@ async function migrateVaults(
 }
 
 // -------------------------------------------------
-//  Migrate vaults
+//  Migrate Endowment CW3s
 //--------------------------------------------------
 async function migrateEndowmentCw3s(
   juno: SigningCosmWasmClient,
