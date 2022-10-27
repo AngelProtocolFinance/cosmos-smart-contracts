@@ -2,6 +2,7 @@
   "scripts": {
     "test": "ts-node ./src/index.ts",
     "test:local-setup-ibc": "npm run test --mode=local_setup_ibc",
+    "test:local-test-ibc": "npm run test --mode=local_test_ibc",
     "test:localterra-tests": "npm run test --mode=localterra_tests",
     "test:localterra-setup-astrovaults": "npm run test --mode=localterra_setup_astrovaults",
     "test:localterra-setup-astroport": "npm run test --mode=localterra_setup_astroport",

@@ -99,6 +99,9 @@ import * as IBC from "./environments/ibc";
 		case "local_setup_ibc":
 			await IBC.startSetupIBC();
 			break;
+		case "local_test_ibc":
+			await IBC.startTestIBC();
+			break;
 		default:
 			console.log("Invalid command");
 			break;

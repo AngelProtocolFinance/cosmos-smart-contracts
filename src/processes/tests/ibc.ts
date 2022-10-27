@@ -14,30 +14,42 @@ import { localibc, junod, terrad } from "../../config/localIbcConstants";
 import { customFundAccount, customSigningClient, customSigningCosmWasmClient, listAccounts } from "../../utils/ibc";
 import { toBinary } from "@cosmjs/cosmwasm-stargate";
 
-const IbcVersion = "ica-vaults-v1"; // "simple-ica-v2";
+const IbcVersion = "ica-vaults-v1";
+const Ics20Version = "ics20-1";
+
+let junoIcaController: string;
+let junoIcaControllerPort: string;
+let junoIcaHost: string;
+let junoIcaHostPort: string;
+
+let terraIcaController: string;
+let terraIcaControllerPort: string;
+let terraIcaHost: string;
+let terraIcaHostPort: string;
 
 export async function testExecuteIBC(
-    terra: LocalTerra | LCDClient, // environment config object 
-    apTeam: Wallet,
-    apTeam2: Wallet,
-    apTeam3: Wallet,
-    apTreasury: Wallet,
-    vaultLocked1: string,
-    vaultLiquid1: string,
-    vaultLocked2: string,
-    vaultLiquid2: string,
-
-    astroportFactory: string,
-    astroportGenerator: string,
-    astroportRouter: string,
-    astroTokenContract: string,
-    astroTokenInitialSupply: string,
-    usdcUsdtPair: string,
-    usdcUsdtPairLpToken: string,
-    usdcUsdtPairUsdcLiquidity: string,
-    usdcUsdtPairUsdtLiquidity: string,
+    ibc: {
+        junoIcaController: string,
+        junoIcaControllerPort: string,
+        junoIcaHost: string,
+        junoIcaHostPort: string,
+        terraIcaController: string,
+        terraIcaControllerPort: string,
+        terraIcaHost: string,
+        terraIcaHostPort: string,
+    }
 ): Promise<void> {
     console.log(chalk.yellow("\nStep 2. Running Tests"));
+
+    junoIcaController = ibc.junoIcaController;
+    junoIcaControllerPort = ibc.junoIcaControllerPort;
+    junoIcaHost = ibc.junoIcaHost;
+    junoIcaHostPort = ibc.junoIcaHostPort;
+
+    terraIcaController = ibc.terraIcaController;
+    terraIcaControllerPort = ibc.terraIcaControllerPort;
+    terraIcaHost = ibc.terraIcaHost;
+    terraIcaHostPort = ibc.terraIcaHostPort;
 
     const { link, ics20 } = await customConnSetup(junod, terrad);
 
@@ -48,7 +60,7 @@ export async function testExecuteIBC(
     const accounts = await listAccounts(junoSigner, junoIcaController);
     console.log("accounts query: ", accounts);
     const { remote_addr: remoteAddr, channel_id: channelId } = accounts[0];
-    const ibcQuery = await juno.execute(
+    const ibcQuery = await junoSigner.sign.execute(
         junoSigner.senderAddress,
         junoIcaController,
         {
@@ -95,129 +107,21 @@ async function customConnSetup(srcConfig: ChainDefinition, destConfig: ChainDefi
 
     const link = await Link.createWithNewConnections(src, dest);
     await link.createChannel("A", junoIcaControllerPort, terraIcaHostPort, Order.ORDER_UNORDERED, IbcVersion);
+    await link.createChannel("B", terraIcaControllerPort, junoIcaHostPort, Order.ORDER_UNORDERED, IbcVersion);
 
     // also create a ics20 channel on this connection
-    const ics20Info = await link.createChannel("A", junod.ics20Port, terrad.ics20Port, Order.ORDER_UNORDERED, "ics20-1");
+    const ics20Info1 = await link.createChannel("A", junod.ics20Port, terrad.ics20Port, Order.ORDER_UNORDERED, Ics20Version);
+    const ics20Info2 = await link.createChannel("B", terrad.ics20Port, junod.ics20Port, Order.ORDER_UNORDERED, Ics20Version);
+
     const ics20 = {
-        juno: ics20Info.src.channelId,
-        terra: ics20Info.dest.channelId,
+        junoTerra: {
+            juno: ics20Info1.src.channelId,
+            terra: ics20Info1.dest.channelId,
+        },
+        terraJuno: {
+            terra: ics20Info2.src.channelId,
+            juno: ics20Info2.dest.channelId,
+        }
     };
     return { link, ics20 };
-}
-
-//----------------------------------------------------------------------------------------
-// Execution tests
-//----------------------------------------------------------------------------------------
-export async function testVaultDeposit(
-    terra: LocalTerra | LCDClient,
-    sender: Wallet,
-    vault: string,
-    endowment_id: number,
-    coins: any,
-): Promise<void> {
-    process.stdout.write("Test - Ibc_host deposits to the vault");
-    // TODO
-    console.log(chalk.green(" Passed!"));
-}
-
-export async function testVaultRedeem(
-    terra: LocalTerra | LCDClient,
-    sender: Wallet,
-    vault: string,
-    endowment_id: number,
-    amount: string,
-): Promise<void> {
-    process.stdout.write("Test - Ibc_host redeems from the vault");
-    // TODO
-    console.log(chalk.green(" Passed!"));
-}
-
-export async function testVaultHarvest(
-    terra: LocalTerra | LCDClient,
-    sender: Wallet,
-    vault: string,
-): Promise<void> {
-    process.stdout.write("Test - Keeper harvests the vault");
-    // TODO
-    console.log(chalk.green(" Passed!"));
-}
-
-export async function testVaultReinvestToLocked(
-    terra: LocalTerra | LCDClient,
-    sender: Wallet,
-    vault: string,
-    endowmentId: number,
-    amount: string,
-): Promise<void> {
-    process.stdout.write("Test - Liquid vault reinvests the LP to locked vault");
-    // TODO
-    console.log(chalk.green(" Passed!"));
-}
-
-export async function testVaultUpdateConfig(
-    terra: LocalTerra | LCDClient,
-    sender: Wallet,
-    vault_addr: string,
-    new_config: any | undefined,
-): Promise<void> {
-    process.stdout.write("Test - Vault owner updates the vault config")
-    // TODO
-    console.log(chalk.green(" Passed!"));
-}
-
-//----------------------------------------------------------------------------------------
-// Querying tests
-//----------------------------------------------------------------------------------------
-
-export async function testQueryVaultConfig(
-    terra: LocalTerra | LCDClient,
-    vault: string
-): Promise<void> {
-    process.stdout.write("Test - Query Vault Config\n");
-    const result: any = await terra.wasm.contractQuery(vault, {
-        config: {},
-    });
-
-    console.log(result);
-    console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryVaultEndowmentBalance(
-    terra: LocalTerra | LCDClient,
-    vault: string,
-    endowmentId: number,
-): Promise<void> {
-    process.stdout.write("Test - Query Vault Endowment Balance\n");
-    const result: any = await terra.wasm.contractQuery(vault, {
-        balance: { endowment_id: endowmentId },
-    });
-
-    console.log(`Endow ID #${endowmentId} balance: ${result}`);
-    console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryVaultTotalBalance(
-    terra: LocalTerra | LCDClient,
-    vault: string
-): Promise<void> {
-    process.stdout.write("Test - Query Vault Total Balance\n");
-    const result: any = await terra.wasm.contractQuery(vault, {
-        total_balance: {},
-    });
-
-    console.log(result);
-    console.log(chalk.green(" Passed!"));
-}
-
-export async function testQueryVaultTokenInfo(
-    terra: LocalTerra | LCDClient,
-    vault: string
-): Promise<void> {
-    process.stdout.write("Test - Query Vault Token Info\n");
-    const result: any = await terra.wasm.contractQuery(vault, {
-        token_info: {},
-    });
-
-    console.log(result);
-    console.log(chalk.green(" Passed!"));
 }

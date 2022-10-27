@@ -24,9 +24,18 @@ let juno: SigningCosmWasmClient;
 let junoIbcClient: DirectSecp256k1HdWallet;
 let junoIbcClientAccount: string;
 
-
 let terra: LocalTerra | LCDClient;
 let terraIbcClient: Wallet;
+
+let junoIcaController: string;
+let junoIcaControllerPort: string;
+let junoIcaHost: string;
+let junoIcaHostPort: string;
+
+let terraIcaController: string;
+let terraIcaControllerPort: string;
+let terraIcaHost: string;
+let terraIcaHostPort: string;
 
 // -------------------------------------------------------------------------------------
 // initialize variables
@@ -67,6 +76,27 @@ async function initialize() {
         ]);
     }
     console.log(`Using ${chalk.cyan(terraIbcClient.key.accAddress)} as Terra IBC Client`);
+
+    junoIcaController = localibc.config.junoIcaController;
+    junoIcaControllerPort = localibc.config.junoIcaControllerPort;
+    junoIcaHost = localibc.config.junoIcaHost;
+    junoIcaHostPort = localibc.config.junoIcaHostPort;
+
+    terraIcaController = localibc.config.terraIcaController;
+    terraIcaControllerPort = localibc.config.terraIcaControllerPort;
+    terraIcaHost = localibc.config.terraIcaHost;
+    terraIcaHostPort = localibc.config.terraIcaHostPort;
+
+    console.log(`Using ${chalk.cyan(junoIcaController)} as Juno ica controller contract`);
+    console.log(`Using ${chalk.cyan(junoIcaControllerPort)} as Juno ica controller Port`);
+    console.log(`Using ${chalk.cyan(junoIcaHost)} as Juno ica host contract`);
+    console.log(`Using ${chalk.cyan(junoIcaHostPort)} as Juno ica host Port`);
+
+    console.log(`Using ${chalk.cyan(terraIcaController)} as Terra ica controller contract`);
+    console.log(`Using ${chalk.cyan(terraIcaControllerPort)} as Terra ica controller Port`);
+    console.log(`Using ${chalk.cyan(terraIcaHost)} as Terra ica host contract`);
+    console.log(`Using ${chalk.cyan(terraIcaHostPort)} as Terra ica host Port`);
+
 }
 
 export async function startSetupIBC(): Promise<void> {
@@ -91,5 +121,21 @@ export async function startSetupIBC(): Promise<void> {
 }
 
 export async function startTestIBC(): Promise<void> {
-    await testExecuteIBC();
+    // Initialize environment information
+    console.log(chalk.yellow("\nStep 1. Environment Info"));
+    await initialize();
+
+    // Tests
+    await testExecuteIBC(
+        {
+            junoIcaController,
+            junoIcaControllerPort,
+            junoIcaHost,
+            junoIcaHostPort,
+            terraIcaController,
+            terraIcaControllerPort,
+            terraIcaHost,
+            terraIcaHostPort,
+        }
+    );
 }

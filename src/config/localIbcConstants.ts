@@ -6,6 +6,18 @@ export const localibc = {
 
         signingClient: "charge strong album advance remind brain pool panic squeeze crystal pretty term remember power decorate lend pen ritual trick anxiety hat domain puzzle borrow",
     },
+
+    config: {
+        junoIcaController: "juno1x20slqu99zcgq395e5mqs0272ygenlsmj74n50tn2r0986jdk0cqchc7p6",
+        junoIcaControllerPort: "wasm.juno1x20slqu99zcgq395e5mqs0272ygenlsmj74n50tn2r0986jdk0cqchc7p6",
+        junoIcaHost: "juno1s5a8zm5wf0l647pxv80zk2335jchvmyjk5dam7nlyaeg8dytwx0qsewjnt",
+        junoIcaHostPort: "wasm.juno1s5a8zm5wf0l647pxv80zk2335jchvmyjk5dam7nlyaeg8dytwx0qsewjnt",
+
+        terraIcaController: "terra1lauppdu6hhj9lxlzjura2ujqw0zzsctn70aqsg7zuvlldduzrpequ3a837",
+        terraIcaControllerPort: "wasm.terra1lauppdu6hhj9lxlzjura2ujqw0zzsctn70aqsg7zuvlldduzrpequ3a837",
+        terraIcaHost: "terra1wqaewp2t7g5mt6gn5zpvxxtrfh0xurvjlu5sge0jyynrl7h5ckmsj3l8x3",
+        terraIcaHostPort: "wasm.terra1wqaewp2t7g5mt6gn5zpvxxtrfh0xurvjlu5sge0jyynrl7h5ckmsj3l8x3",
+    }
 }
 
 export const junod = {

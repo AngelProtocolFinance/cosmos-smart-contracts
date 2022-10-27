@@ -1,20 +1,25 @@
 // LocalJuno-related imports
 import { SigningCosmWasmClient, toBinary } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
-import { LCDClient, LocalTerra, Wallet } from "@terra-money/terra.js";
+import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
+import { junod, terrad } from "../../config/localIbcConstants";
+import { localjuno } from "../../config/localjunoConstants";
+import { localterra } from "../../config/localterraConstants";
 
 import { wasm_path } from "../../config/wasmPaths";
-import { getWalletAddress, instantiateContract, storeCode } from "../../utils/juno/helpers";
+import { customSigningCosmWasmClient } from "../../utils/ibc";
+import { getWalletAddress, instantiateContract, sendMessageViaCw3Proposal, storeCode } from "../../utils/juno/helpers";
 
 // LocalTerra-related imports
-import { instantiateContract as tInstantiateContract, storeCode as tStoreCode } from "../../utils/terra/helpers";
+import { instantiateContract as tInstantiateContract, storeCode as tStoreCode, sendTransaction as tSendTransaction } from "../../utils/terra/helpers";
 
 // -------------------------------------------------------------------------------------
 // Variables
 // -------------------------------------------------------------------------------------
 let juno: SigningCosmWasmClient;
 let junoIbcClient: DirectSecp256k1HdWallet;
+let junoIbcClientAddr: string;
 
 let junoIcaController: string;
 let junoIcaControllerPort: string;
@@ -44,15 +49,18 @@ export async function setupIBC(
 ): Promise<void> {
     juno = juno_config.juno;
     junoIbcClient = juno_config.junoIbcClient;
+    junoIbcClientAddr = await getWalletAddress(junoIbcClient);
     await deployJunoIcaContracts();
 
     terra = terra_config.terra;
     terraIbcClient = terra_config.terraIbcClient;
     await deployTerraIcaContracts();
+
+    await postProcess();
+    console.log(chalk.green(" Done!"));
 }
 
 async function deployJunoIcaContracts(): Promise<void> {
-    const junoIbcClientAddr = await getWalletAddress(junoIbcClient);
     // Step 1: Upload the wasms
     process.stdout.write("Uploading ica_controller wasm on JUNO");
     const icaControllerCodeId = await storeCode(juno, junoIbcClientAddr, `${wasm_path.core}/ica_controller.wasm`);
@@ -73,6 +81,7 @@ async function deployJunoIcaContracts(): Promise<void> {
     junoIcaController = icaControllerResult.contractAddress as string;
     console.log(chalk.green(" Done!"), `${chalk.blue("(juno)ica_controller contractAddress")}=${junoIcaController}`);
 
+    process.stdout.write("Querying (juno)ica_controller ibcPort");
     const icaControllerContract = await juno.getContract(junoIcaController);
     junoIcaControllerPort = icaControllerContract.ibcPortId!;
     console.log(chalk.green(" Done!"), `${chalk.blue("(juno)ica_controller ibcPortId")}=${junoIcaControllerPort}`);
@@ -81,13 +90,13 @@ async function deployJunoIcaContracts(): Promise<void> {
     const icaHostResult = await instantiateContract(juno, junoIbcClientAddr, junoIbcClientAddr, icaHostCodeId, {
         cw1_code_id: cw1WhitelistCodeId,
     });
+    process.stdout.write("Querying (juno)ica_host ibcPort");
     junoIcaHost = icaHostResult.contractAddress as string;
     console.log(chalk.green(" Done!"), `${chalk.blue("(juno)ica_host contractAddress")}=${junoIcaHost}`);
 
     const icaHostContract = await juno.getContract(junoIcaHost);
     junoIcaHostPort = icaHostContract.ibcPortId!;
     console.log(chalk.green(" Done!"), `${chalk.blue("(juno)ica_host ibcPortId")}=${junoIcaHostPort}`);
-    console.log(chalk.green(" Done!"));
 }
 
 async function deployTerraIcaContracts(): Promise<void> {
@@ -116,6 +125,7 @@ async function deployTerraIcaContracts(): Promise<void> {
         })?.value as string;
     console.log(chalk.green(" Done!"), `${chalk.blue("(terra)ica_controller contractAddress")}=${terraIcaController}`);
 
+    process.stdout.write("Querying (terra)ica_controller ibcPort");
     const icaControllerContract = await terra.wasm.contractInfo(terraIcaController);
     terraIcaControllerPort = icaControllerContract.ibc_port_id!;
     console.log(chalk.green(" Done!"), `${chalk.blue("(terra)ica_controller ibcPortId")}=${terraIcaControllerPort}`);
@@ -134,8 +144,69 @@ async function deployTerraIcaContracts(): Promise<void> {
         })?.value as string;
     console.log(chalk.green(" Done!"), `${chalk.blue("(terra)ica_host contractAddress")}=${terraIcaHost}`);
 
+    process.stdout.write("Querying (terra)ica_host ibcPort");
     const icaHostContract = await terra.wasm.contractInfo(terraIcaHost);
     terraIcaHostPort = icaHostContract.ibc_port_id!;
     console.log(chalk.green(" Done!"), `${chalk.blue("(terra)ica_host ibcPortId")}=${terraIcaHostPort}`);
-    console.log(chalk.green(" Done!"));
+}
+
+async function postProcess() {
+    process.stdout.write("Updating admins of controller & host contracts");
+    await juno.execute(junoIbcClientAddr, junoIcaController, {
+        update_admin: {
+            admin: localjuno.contracts.accounts,
+        }
+    }, "auto");
+    // await juno.execute(junoIbcClientAddr, junoIcaHost, {
+    //     update_admin: {
+    //         admin: localjuno.contracts.accounts,
+    //     }
+    // }, "auto");
+
+    await tSendTransaction(terra, terraIbcClient, [
+        new MsgExecuteContract(
+            terraIbcClient.key.accAddress,
+            terraIcaController,
+            {
+                update_admin: {
+                    admin: localterra.contracts.vaultLocked1,
+                }
+            }
+        )
+    ]);
+    // await tSendTransaction(terra, terraIbcClient, [
+    //     new MsgExecuteContract(
+    //         terraIbcClient.key.accAddress,
+    //         terraIcaHost,
+    //         {
+    //             update_admin: {
+    //                 admin: localterra.contracts.vaultLocked1,
+    //             }
+    //         }
+    //     )
+    // ]);
+
+    process.stdout.write("Updating configs of `(juno) accounts` and `(terra) vault` contracts");
+    const junoAPTeamSigner = await customSigningCosmWasmClient(junod, localjuno.mnemonicKeys.apTeam);
+    await sendMessageViaCw3Proposal(junoAPTeamSigner.sign, junoAPTeamSigner.senderAddress, localjuno.contracts.cw3ApTeam, localjuno.contracts.accounts, {
+        update_config: {
+            new_registrar: localjuno.contracts.registrar,
+            max_general_category_id: 1,
+            ibc_controller: junoIcaController,
+        }
+    });
+
+    const terraApTeamSigner = await customSigningCosmWasmClient(terrad, localjuno.mnemonicKeys.apTeam);
+    await terraApTeamSigner.sign.execute(terraApTeamSigner.senderAddress, localterra.contracts.vaultLocked1, {
+        update_config: {
+            ibc_host: terraIcaHost,
+            ibc_controller: terraIcaController,
+        }
+    }, "auto");
+    await terraApTeamSigner.sign.execute(terraApTeamSigner.senderAddress, localterra.contracts.vaultLiquid1, {
+        update_config: {
+            ibc_host: terraIcaHost,
+            ibc_controller: terraIcaController,
+        }
+    }, "auto");
 }
