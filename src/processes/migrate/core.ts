@@ -28,7 +28,7 @@ export async function migrateCore(
   // await storeAndMigrateContract(juno, apTeam, indexFund, 'index_fund.wasm');
   // await storeAndMigrateContract(juno, apTeam, accounts, 'accounts.wasm');
   // await migrateVaults(juno, apTeam, vaultContracts);
-  await migrateEndowmentCw3s(juno, apTeam, cw3ApTeam, registrar, accounts, 16);
+  // await migrateEndowmentCw3s(juno, apTeam, cw3ApTeam, registrar, accounts, 0);
 }
 
 // -------------------------------------------------
