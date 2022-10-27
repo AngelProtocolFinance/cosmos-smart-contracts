@@ -23,6 +23,11 @@ export const localjuno = {
     tca: "camp mom loud claim grass kick tail into cake wear mistake box grunt stand runway",
   },
 
+  denoms: {
+    usdc: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+    usdt: "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+  },
+
   // Should be updated contract addresses after deploying wasms in the LocalJuno
   contracts: {
     registrar: "",

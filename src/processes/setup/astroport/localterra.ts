@@ -294,12 +294,12 @@ async function setup(
                     "asset_infos": [
                         {
                             "native_token": {
-                                "denom": "usdc",
+                                "denom": localterra.denoms.usdc,
                             }
                         },
                         {
                             "native_token": {
-                                "denom": "usdt"
+                                "denom": localterra.denoms.usdt
                             }
                         }
                     ],
@@ -337,13 +337,13 @@ async function setup(
                     assets: [
                         {
                             info: {
-                                native_token: { denom: "usdc" },
+                                native_token: { denom: localterra.denoms.usdc },
                             },
                             amount: localterra.astroport.usdc_usdt_pair_usdc_liquidity,
                         },
                         {
                             info: {
-                                native_token: { denom: "usdt" },
+                                native_token: { denom: localterra.denoms.usdt },
                             },
                             amount: localterra.astroport.usdc_usdt_pair_usdt_liquidity,
                         }
@@ -476,7 +476,7 @@ async function setup(
                         },
                         {
                             "native_token": {
-                                "denom": "usdc"
+                                "denom": localterra.denoms.usdc
                             }
                         }
                     ],
@@ -520,7 +520,7 @@ async function setup(
                         },
                         {
                             info: {
-                                native_token: { denom: "usdc" },
+                                native_token: { denom: localterra.denoms.usdc },
                             },
                             amount: "100000000000",
                         }
@@ -559,7 +559,7 @@ async function setup(
                         },
                         {
                             "native_token": {
-                                "denom": "usdt"
+                                "denom": localterra.denoms.usdt
                             }
                         }
                     ],
@@ -603,7 +603,7 @@ async function setup(
                         },
                         {
                             info: {
-                                native_token: { denom: "usdt" },
+                                native_token: { denom: localterra.denoms.usdt },
                             },
                             amount: "100000000000",
                         }
