@@ -6,17 +6,18 @@ import chaiAsPromised from "chai-as-promised";
 chai.use(chaiAsPromised);
 
 // IBC-related imports
-import { Order } from "cosmjs-types/ibc/core/channel/v1/channel";
+
 import { Link, Logger } from "@confio/relayer";
 import { ChainDefinition, CosmWasmSigner } from "@confio/relayer/build/lib/helpers";
 
 import { localibc, junod, terrad } from "../../config/localIbcConstants";
-import { customFundAccount, customSigningClient, customSigningCosmWasmClient, listAccounts } from "../../utils/ibc";
+import { customFundAccount, customSigningClient, customSigningCosmWasmClient, listAccounts, setup } from "../../utils/ibc";
 import { toBinary } from "@cosmjs/cosmwasm-stargate";
 
-const IbcVersion = "ica-vaults-v1";
-const Ics20Version = "ics20-1";
 
+// -------------------------------------------------------------------------------------
+// Variables
+// -------------------------------------------------------------------------------------
 let junoIcaController: string;
 let junoIcaControllerPort: string;
 let junoIcaHost: string;
@@ -55,7 +56,21 @@ export async function testExecuteIBC(
 
     junoIbcSigner = await customSigningCosmWasmClient(junod, localibc.mnemonicKeys.junoIbcClient);
 
-    const { link, ics20 } = await customConnSetup(junod, terrad);
+    // Restore the existing IBC link.
+    const [nodeA, nodeB] = await setup(junod, terrad);
+
+    const link = await Link.createWithExistingConnections(nodeA, nodeB, localibc.conns.juno, localibc.conns.terra);
+    const ics20 = {
+        junoTerra: {
+            juno: localibc.ics20.junoTerra.juno,
+            terra: localibc.ics20.junoTerra.terra,
+        },
+        terraJuno: {
+            terra: localibc.ics20.terraJuno.terra,
+            juno: localibc.ics20.terraJuno.juno,
+        }
+    };
+    console.log("ics20: ", ics20);
 
     /* --- EXECUTE tests --- */
     // await testVaultDeposit(terra, apTeam, vaultLocked1, 1, { uluna: 2000000 });
@@ -70,46 +85,6 @@ export async function testExecuteIBC(
     // await testQueryVaultTotalBalance(terra, vaultLocked1);
 
     await testIbcQuery(link);
-}
-
-
-/**
- * Clone of original "@confio/relayer/testutils/setup" util.  
- * create a connection and channel for simple-ica
- * @param srcConfig Source chain definition
- * @param destConfig Destination chain definition
- * @param logger 
- * @returns Promise<{link, ics20}>
- */
-async function customConnSetup(srcConfig: ChainDefinition, destConfig: ChainDefinition, logger?: Logger) {
-    // create apps and fund an account
-    const mnemonic = localibc.mnemonicKeys.signingClient;
-
-    const src = await customSigningClient(srcConfig, mnemonic);
-    const dest = await customSigningClient(destConfig, mnemonic);
-
-    await customFundAccount(destConfig, dest.senderAddress, '4000000');
-    await customFundAccount(srcConfig, src.senderAddress, '4000000');
-
-    const link = await Link.createWithNewConnections(src, dest);
-    await link.createChannel("A", junoIcaControllerPort, terraIcaHostPort, Order.ORDER_UNORDERED, IbcVersion);
-    await link.createChannel("B", terraIcaControllerPort, junoIcaHostPort, Order.ORDER_UNORDERED, IbcVersion);
-
-    // also create a ics20 channel on this connection
-    const ics20Info1 = await link.createChannel("A", junod.ics20Port, terrad.ics20Port, Order.ORDER_UNORDERED, Ics20Version);
-    const ics20Info2 = await link.createChannel("B", terrad.ics20Port, junod.ics20Port, Order.ORDER_UNORDERED, Ics20Version);
-
-    const ics20 = {
-        junoTerra: {
-            juno: ics20Info1.src.channelId,
-            terra: ics20Info1.dest.channelId,
-        },
-        terraJuno: {
-            terra: ics20Info2.src.channelId,
-            juno: ics20Info2.dest.channelId,
-        }
-    };
-    return { link, ics20 };
 }
 
 // IBCQuery

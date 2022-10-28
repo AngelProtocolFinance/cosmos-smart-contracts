@@ -1,9 +1,10 @@
 import { IbcClient, Logger } from "@confio/relayer";
-import { CosmWasmSigner, SigningOpts } from "@confio/relayer/build/lib/helpers";
+import { ChainDefinition, CosmWasmSigner, SigningOpts } from "@confio/relayer/build/lib/helpers";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { stringToPath } from "@cosmjs/crypto";
 import { Coin, DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import { GasPrice } from "@cosmjs/stargate";
+import { localibc } from "../config/localIbcConstants";
 
 type FundingOpts = SigningOpts & {
     readonly faucet: {
@@ -117,4 +118,23 @@ function extras() {
         broadcastTimeoutMs: 5000,
     };
     return extras;
+}
+
+/**
+ * Returns the pair of `IbcClient`s for setting up the IBC `Link`
+ * @param srcConfig ChainDefinition
+ * @param destConfig ChainDefinition
+ * @returns [IbcClient, IbcClient]
+ */
+export async function setup(srcConfig: ChainDefinition, destConfig: ChainDefinition): Promise<[IbcClient, IbcClient]> {
+    // create apps and fund an account
+    const mnemonic = localibc.mnemonicKeys.signingClient;
+
+    const src = await customSigningClient(srcConfig, mnemonic);
+    const dest = await customSigningClient(destConfig, mnemonic);
+
+    await customFundAccount(destConfig, dest.senderAddress, '4000000');
+    await customFundAccount(srcConfig, src.senderAddress, '4000000');
+
+    return [src, dest];
 }
