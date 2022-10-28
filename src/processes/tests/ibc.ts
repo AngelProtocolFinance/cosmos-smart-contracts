@@ -75,7 +75,7 @@ async function testIbcQuery(link: Link) {
     // console.log("accounts query: ", accounts);
     const { remote_addr: remoteAddr, channel_id: channelId } = accounts[0];
 
-    const ibcQuery = await junoApTeamSigner.sign.execute(
+    await junoApTeamSigner.sign.execute(
         junoApTeamSigner.senderAddress,
         junoIcaController,
         {
@@ -86,5 +86,11 @@ async function testIbcQuery(link: Link) {
         },
         "auto"
     );
-    console.log("IbcQuery content: ", ibcQuery);
+
+    const ibcQueryResult = await junoApTeamSigner.sign.queryContractSmart(junoIcaController, {
+        latest_query_result: {
+            channel_id: channelId,
+        }
+    });
+    console.log(ibcQueryResult);
 }
