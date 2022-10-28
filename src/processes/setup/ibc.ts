@@ -1,17 +1,15 @@
 // LocalJuno-related imports
 import { Link, Logger } from "@confio/relayer";
-import { ChainDefinition } from "@confio/relayer/build/lib/helpers";
-import { SigningCosmWasmClient, toBinary } from "@cosmjs/cosmwasm-stargate";
-import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
-import { LCDClient, LocalTerra, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
+import { ChainDefinition, CosmWasmSigner } from "@confio/relayer/build/lib/helpers";
+import { LCDClient, LocalTerra, MnemonicKey, MsgExecuteContract, Wallet } from "@terra-money/terra.js";
 import chalk from "chalk";
-import { junod, localibc, terrad } from "../../config/localIbcConstants";
+import { junod, terrad } from "../../config/localIbcConstants";
 import { localjuno } from "../../config/localjunoConstants";
 import { localterra } from "../../config/localterraConstants";
 
 import { wasm_path } from "../../config/wasmPaths";
-import { customFundAccount, customSigningClient, customSigningCosmWasmClient, setup } from "../../utils/ibc";
-import { getWalletAddress, instantiateContract, sendMessageViaCw3Proposal, storeCode } from "../../utils/juno/helpers";
+import { customSigningCosmWasmClient, setup } from "../../utils/ibc";
+import { instantiateContract, sendMessageViaCw3Proposal, storeCode } from "../../utils/juno/helpers";
 
 import { Order } from "cosmjs-types/ibc/core/channel/v1/channel";
 
@@ -21,97 +19,85 @@ import { instantiateContract as tInstantiateContract, storeCode as tStoreCode, s
 // -------------------------------------------------------------------------------------
 // Variables
 // -------------------------------------------------------------------------------------
-let juno: SigningCosmWasmClient;
-let junoIbcClient: DirectSecp256k1HdWallet;
-let junoIbcClientAddr: string;
-
+let junoIbcSetupper: CosmWasmSigner;
 let junoIcaController: string;
 let junoIcaControllerPort: string;
 let junoIcaHost: string;
 let junoIcaHostPort: string;
 
 let terra: LocalTerra | LCDClient;
-let terraIbcClient: Wallet;
+let terraIbcSetupper: Wallet;
 
-let terraIcaController: string;
-let terraIcaControllerPort: string;
+let terraIcaController1: string;
+let terraIcaController1Port: string;
+let terraIcaController2: string;
+let terraIcaController2Port: string;
 let terraIcaHost: string;
 let terraIcaHostPort: string;
 
+let channelId0: string;
+let channelId1: string;
+let channelId2: string;
+
 const IbcVersion = "ica-vaults-v1";
-const Ics20Version = "ics20-1";
+// const Ics20Version = "ics20-1";
 
 // -------------------------------------------------------------------------------------
 // setup all contracts for LocalJuno and TestNet
 // -------------------------------------------------------------------------------------
-export async function setupIBC(
-    juno_config: {
-        juno: SigningCosmWasmClient,
-        junoIbcClient: DirectSecp256k1HdWallet,
-    },
-    terra_config: {
-        terra: LocalTerra | LCDClient,
-        terraIbcClient: Wallet,
-    }
-): Promise<void> {
-    juno = juno_config.juno;
-    junoIbcClient = juno_config.junoIbcClient;
-    junoIbcClientAddr = await getWalletAddress(junoIbcClient);
+export async function setupIBC(): Promise<void> {
+    junoIbcSetupper = await customSigningCosmWasmClient(junod, localjuno.mnemonicKeys.charity3);
     await deployJunoIcaContracts();
 
-    terra = terra_config.terra;
-    terraIbcClient = terra_config.terraIbcClient;
+    terra = new LCDClient({
+        URL: localterra.networkInfo.url,
+        chainID: localterra.networkInfo.chainId,
+    });
+    terraIbcSetupper = new Wallet(terra, new MnemonicKey({ mnemonic: localterra.mnemonicKeys.test10 }));
     await deployTerraIcaContracts();
 
-    process.stdout.write("Setting up the IBC connection");
-    const { link, ics20 } = await customConnSetup(junod, terrad);
-    console.log(chalk.green(" Done!"), `${chalk.blue("conns-juno(connA)")}=${link.endA.connectionID}`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("conns-terra(connB)")}=${link.endB.connectionID}`);
-    console.log(chalk.green(" Done!"), `${chalk.blue("ics20")}`);
-    console.log(`${chalk.blue("ics20-junoTerra-juno")}=${ics20.junoTerra.juno}`);
-    console.log(`${chalk.blue("ics20-junoTerra-terra")}=${ics20.junoTerra.terra}`);
-    console.log(`${chalk.blue("ics20-terraJuno-terra")}=${ics20.terraJuno.terra}`);
-    console.log(`${chalk.blue("ics20-terraJuno-juno")}=${ics20.terraJuno.juno}`);
+    await customConnSetup(junod, terrad);
 
-    // await postProcess();
+    await postProcess();
+
     console.log(chalk.green(" Done!"));
 }
 
 async function deployJunoIcaContracts(): Promise<void> {
     // Step 1: Upload the wasms
     process.stdout.write("Uploading ica_controller wasm on JUNO");
-    const icaControllerCodeId = await storeCode(juno, junoIbcClientAddr, `${wasm_path.core}/ica_controller.wasm`);
+    const icaControllerCodeId = await storeCode(junoIbcSetupper.sign, junoIbcSetupper.senderAddress, `${wasm_path.core}/ica_controller.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${icaControllerCodeId}`);
 
     process.stdout.write("Uploading ica_host wasm on JUNO");
-    const icaHostCodeId = await storeCode(juno, junoIbcClientAddr, `${wasm_path.core}/ica_host.wasm`);
+    const icaHostCodeId = await storeCode(junoIbcSetupper.sign, junoIbcSetupper.senderAddress, `${wasm_path.core}/ica_host.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${icaHostCodeId}`);
 
     process.stdout.write("Uploading cw1_whitelist wasm on JUNO");
-    const cw1WhitelistCodeId = await storeCode(juno, junoIbcClientAddr, `${wasm_path.cosmwasm}/cw1_whitelist.wasm`);
+    const cw1WhitelistCodeId = await storeCode(junoIbcSetupper.sign, junoIbcSetupper.senderAddress, `${wasm_path.cosmwasm}/cw1_whitelist.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw1WhitelistCodeId}`);
 
 
     // Step 2: JunoIbcClient set up the "ica"-related contracts
     process.stdout.write("Instantiating (juno)ica_controller contract");
-    const icaControllerResult = await instantiateContract(juno, junoIbcClientAddr, junoIbcClientAddr, icaControllerCodeId, {});
+    const icaControllerResult = await instantiateContract(junoIbcSetupper.sign, junoIbcSetupper.senderAddress, junoIbcSetupper.senderAddress, icaControllerCodeId, {});
     junoIcaController = icaControllerResult.contractAddress as string;
     console.log(chalk.green(" Done!"), `${chalk.blue("(juno)ica_controller contractAddress")}=${junoIcaController}`);
 
     process.stdout.write("Querying (juno)ica_controller ibcPort");
-    const icaControllerContract = await juno.getContract(junoIcaController);
+    const icaControllerContract = await junoIbcSetupper.sign.getContract(junoIcaController);
     junoIcaControllerPort = icaControllerContract.ibcPortId!;
     console.log(chalk.green(" Done!"), `${chalk.blue("(juno)ica_controller ibcPortId")}=${junoIcaControllerPort}`);
 
     process.stdout.write("Instantiating (juno)ica_host contract");
-    const icaHostResult = await instantiateContract(juno, junoIbcClientAddr, junoIbcClientAddr, icaHostCodeId, {
+    const icaHostResult = await instantiateContract(junoIbcSetupper.sign, junoIbcSetupper.senderAddress, junoIbcSetupper.senderAddress, icaHostCodeId, {
         cw1_code_id: cw1WhitelistCodeId,
     });
     junoIcaHost = icaHostResult.contractAddress as string;
     console.log(chalk.green(" Done!"), `${chalk.blue("(juno)ica_host contractAddress")}=${junoIcaHost}`);
 
     process.stdout.write("Querying (juno)ica_host ibcPort");
-    const icaHostContract = await juno.getContract(junoIcaHost);
+    const icaHostContract = await junoIbcSetupper.sign.getContract(junoIcaHost);
     junoIcaHostPort = icaHostContract.ibcPortId!;
     console.log(chalk.green(" Done!"), `${chalk.blue("(juno)ica_host ibcPortId")}=${junoIcaHostPort}`);
 }
@@ -119,37 +105,54 @@ async function deployJunoIcaContracts(): Promise<void> {
 async function deployTerraIcaContracts(): Promise<void> {
     // Step 1: Upload the wasms
     process.stdout.write("Uploading ica_controller wasm on TERRA");
-    const icaControllerCodeId = await tStoreCode(terra, terraIbcClient, `${wasm_path.core}/ica_controller.wasm`);
+    const icaControllerCodeId = await tStoreCode(terra, terraIbcSetupper, `${wasm_path.core}/ica_controller.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${icaControllerCodeId}`);
 
     process.stdout.write("Uploading ica_host wasm on TERRA");
-    const icaHostCodeId = await tStoreCode(terra, terraIbcClient, `${wasm_path.core}/ica_host.wasm`);
+    const icaHostCodeId = await tStoreCode(terra, terraIbcSetupper, `${wasm_path.core}/ica_host.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${icaHostCodeId}`);
 
     process.stdout.write("Uploading cw1_whitelist wasm on TERRA");
-    const cw1WhitelistCodeId = await tStoreCode(terra, terraIbcClient, `${wasm_path.cosmwasm}/cw1_whitelist.wasm`);
+    const cw1WhitelistCodeId = await tStoreCode(terra, terraIbcSetupper, `${wasm_path.cosmwasm}/cw1_whitelist.wasm`);
     console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${cw1WhitelistCodeId}`);
 
     // Step 2: TerraIbcClient set up the "ica"-related contracts
-    process.stdout.write("Instantiating (terra)ica_controller contract");
-    const icaControllerResult = await tInstantiateContract(terra, terraIbcClient, terraIbcClient, icaControllerCodeId, {});
-    terraIcaController = icaControllerResult.logs[0].events
+    process.stdout.write("Instantiating (terra)ica_controller1 contract(for locked vault)");
+    const res1 = await tInstantiateContract(terra, terraIbcSetupper, terraIbcSetupper, icaControllerCodeId, {});
+    terraIcaController1 = res1.logs[0].events
         .find((event) => {
             return event.type == "instantiate";
         })
         ?.attributes.find((attribute) => {
             return attribute.key == "_contract_address";
         })?.value as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("(terra)ica_controller contractAddress")}=${terraIcaController}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("(terra)ica_controller contractAddress")}=${terraIcaController1}`);
 
-    process.stdout.write("Querying (terra)ica_controller ibcPort");
-    const icaControllerContract = await terra.wasm.contractInfo(terraIcaController);
-    terraIcaControllerPort = icaControllerContract.ibc_port_id!;
-    console.log(chalk.green(" Done!"), `${chalk.blue("(terra)ica_controller ibcPortId")}=${terraIcaControllerPort}`);
+    process.stdout.write("Querying (terra)ica_controller1 ibcPort");
+    const contInfo1 = await terra.wasm.contractInfo(terraIcaController1);
+    terraIcaController1Port = contInfo1.ibc_port_id!;
+    console.log(chalk.green(" Done!"), `${chalk.blue("(terra)ica_controller ibcPortId")}=${terraIcaController1Port}`);
+
+    process.stdout.write("Instantiating (terra)ica_controller2 contract(for liquid vault)");
+    const res2 = await tInstantiateContract(terra, terraIbcSetupper, terraIbcSetupper, icaControllerCodeId, {});
+    terraIcaController2 = res2.logs[0].events
+        .find((event) => {
+            return event.type == "instantiate";
+        })
+        ?.attributes.find((attribute) => {
+            return attribute.key == "_contract_address";
+        })?.value as string;
+    console.log(chalk.green(" Done!"), `${chalk.blue("(terra)ica_controller contractAddress")}=${terraIcaController2}`);
+
+    process.stdout.write("Querying (terra)ica_controller2 ibcPort");
+    const contInfo2 = await terra.wasm.contractInfo(terraIcaController2);
+    terraIcaController2Port = contInfo2.ibc_port_id!;
+    console.log(chalk.green(" Done!"), `${chalk.blue("(terra)ica_controller ibcPortId")}=${terraIcaController2Port}`);
+
 
 
     process.stdout.write("Instantiating (terra)ica_host contract");
-    const icaHostResult = await tInstantiateContract(terra, terraIbcClient, terraIbcClient, icaHostCodeId, {
+    const icaHostResult = await tInstantiateContract(terra, terraIbcSetupper, terraIbcSetupper, icaHostCodeId, {
         cw1_code_id: cw1WhitelistCodeId,
     });
     terraIcaHost = icaHostResult.logs[0].events
@@ -169,19 +172,31 @@ async function deployTerraIcaContracts(): Promise<void> {
 
 async function postProcess() {
     process.stdout.write("Updating admins of controller & host contracts");
-    await juno.execute(junoIbcClientAddr, junoIcaController, {
+    await junoIbcSetupper.sign.execute(junoIbcSetupper.senderAddress, junoIcaController, {
         update_admin: {
             admin: localjuno.contracts.accounts,
         }
     }, "auto");
 
-    await tSendTransaction(terra, terraIbcClient, [
+    await tSendTransaction(terra, terraIbcSetupper, [
         new MsgExecuteContract(
-            terraIbcClient.key.accAddress,
-            terraIcaController,
+            terraIbcSetupper.key.accAddress,
+            terraIcaController1,
             {
                 update_admin: {
                     admin: localterra.contracts.vaultLocked1,
+                }
+            }
+        )
+    ]);
+
+    await tSendTransaction(terra, terraIbcSetupper, [
+        new MsgExecuteContract(
+            terraIbcSetupper.key.accAddress,
+            terraIcaController2,
+            {
+                update_admin: {
+                    admin: localterra.contracts.vaultLiquid1,
                 }
             }
         )
@@ -201,17 +216,42 @@ async function postProcess() {
     await terraApTeamSigner.sign.execute(terraApTeamSigner.senderAddress, localterra.contracts.vaultLocked1, {
         update_config: {
             ibc_host: terraIcaHost,
-            ibc_controller: terraIcaController,
+            ibc_controller: terraIcaController1,
         }
     }, "auto");
     await terraApTeamSigner.sign.execute(terraApTeamSigner.senderAddress, localterra.contracts.vaultLiquid1, {
         update_config: {
             ibc_host: terraIcaHost,
-            ibc_controller: terraIcaController,
+            ibc_controller: terraIcaController2,
         }
     }, "auto");
 
+    process.stdout.write("Register the ibc link info(NetworkInfo) to the (juno)registrar contract");
+    await sendMessageViaCw3Proposal(
+        junoAPTeamSigner.sign,
+        junoAPTeamSigner.senderAddress,
+        localjuno.contracts.cw3ApTeam,
+        localjuno.contracts.registrar,
+        {
+            update_network_connections: {
+                action: "post",
+                network_info: {
+                    name: "juno-terra-ibc-conn",
+                    chain_id: localterra.networkInfo.chainId,
+                    ibc_channel: channelId0,
+                    ibc_host_contract: junoIcaHost,
+                    gas_limit: undefined,
+                }
+            }
+        }
+    );
+
     process.stdout.write("Register the (terra)vaults to the (juno)registrar contract");
+    const accountInfo1 = await junoAPTeamSigner.sign.queryContractSmart(junoIcaHost, {
+        account: {
+            channel_id: channelId1,
+        }
+    });
     await sendMessageViaCw3Proposal(
         junoAPTeamSigner.sign,
         junoAPTeamSigner.senderAddress,
@@ -220,15 +260,20 @@ async function postProcess() {
         {
             vault_add: {
                 network: localterra.networkInfo.chainId,
-                vault_addr: localterra.contracts.vaultLocked1,
+                vault_addr: accountInfo1.account,
                 input_denom: localterra.denoms.usdc,
-                yield_token: localterra.denoms.usdc,
+                yield_token: localjuno.contracts.registrar, // Really needed?
                 restricted_from: [],
                 acct_type: `locked`,
                 vault_type: { ibc: { ica: localterra.contracts.vaultLocked1 } },
             }
         }
     );
+    const accountInfo2 = await junoAPTeamSigner.sign.queryContractSmart(junoIcaHost, {
+        account: {
+            channel_id: channelId2,
+        }
+    });
     await sendMessageViaCw3Proposal(
         junoAPTeamSigner.sign,
         junoAPTeamSigner.senderAddress,
@@ -237,12 +282,12 @@ async function postProcess() {
         {
             vault_add: {
                 network: localterra.networkInfo.chainId,
-                vault_addr: localterra.contracts.vaultLiquid1,
+                vault_addr: accountInfo2.account,
                 input_denom: localterra.denoms.usdc,
-                yield_token: localterra.denoms.usdc,
+                yield_token: localjuno.contracts.registrar, // Really needed?
                 restricted_from: [],
                 acct_type: `liquid`,
-                vault_type: { ibc: { ica: localterra.contracts.vaultLocked1 } },
+                vault_type: { ibc: { ica: localterra.contracts.vaultLiquid1 } },
             }
         }
     );
@@ -255,28 +300,29 @@ async function postProcess() {
  * @param srcConfig Source chain definition
  * @param destConfig Destination chain definition
  * @param logger 
- * @returns Promise<{link, ics20}>
+ * @returns IBC link
  */
 async function customConnSetup(srcConfig: ChainDefinition, destConfig: ChainDefinition, logger?: Logger) {
+    process.stdout.write("Setting up the IBC connection\n");
+
+    // Setup the IbcClients
     const [src, dest] = await setup(srcConfig, destConfig);
 
+    // Setup ibc link/connection
     const link = await Link.createWithNewConnections(src, dest);
-    await link.createChannel("A", junoIcaControllerPort, terraIcaHostPort, Order.ORDER_UNORDERED, IbcVersion);
-    await link.createChannel("B", terraIcaControllerPort, junoIcaHostPort, Order.ORDER_UNORDERED, IbcVersion);
+    console.log(chalk.green(" Done!"), `${chalk.blue("conns-juno(connA)")}=${link.endA.connectionID}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("conns-terra(connB)")}=${link.endB.connectionID}`);
 
-    // also create a ics20 channel on this connection
-    const ics20Info1 = await link.createChannel("A", junod.ics20Port, terrad.ics20Port, Order.ORDER_UNORDERED, Ics20Version);
-    const ics20Info2 = await link.createChannel("B", terrad.ics20Port, junod.ics20Port, Order.ORDER_UNORDERED, Ics20Version);
+    // Create channels between controller & host contracts(ports)
+    const channel0 = await link.createChannel("A", junoIcaControllerPort, terraIcaHostPort, Order.ORDER_UNORDERED, IbcVersion);
+    const channel1 = await link.createChannel("B", terraIcaController1Port, junoIcaHostPort, Order.ORDER_UNORDERED, IbcVersion);
+    const channel2 = await link.createChannel("B", terraIcaController2Port, junoIcaHostPort, Order.ORDER_UNORDERED, IbcVersion);
+    console.log(chalk.green(" Done!"), `${chalk.blue("JUNO cont -> TERRA host channelId")}=${channel0.src.channelId}, ${channel0.dest.channelId}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("TERRA cont1 -> JUNO host channelId")}=${channel1.src.channelId}, ${channel1.dest.channelId}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("TERRA cont2 -> JUNO host channelId")}=${channel2.src.channelId}, ${channel2.dest.channelId}`);
+    channelId0 = channel0.src.channelId;
+    channelId1 = channel1.src.channelId;
+    channelId2 = channel2.src.channelId;
 
-    const ics20 = {
-        junoTerra: {
-            juno: ics20Info1.src.channelId,
-            terra: ics20Info1.dest.channelId,
-        },
-        terraJuno: {
-            terra: ics20Info2.src.channelId,
-            juno: ics20Info2.dest.channelId,
-        }
-    };
-    return { link, ics20 };
+    return { link };
 }

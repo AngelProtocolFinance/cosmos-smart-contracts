@@ -13,64 +13,44 @@ import { ChainDefinition, CosmWasmSigner } from "@confio/relayer/build/lib/helpe
 import { localibc, junod, terrad } from "../../config/localIbcConstants";
 import { customFundAccount, customSigningClient, customSigningCosmWasmClient, listAccounts, setup } from "../../utils/ibc";
 import { toBinary } from "@cosmjs/cosmwasm-stargate";
+import { localjuno } from "../../config/localjunoConstants";
 
 
 // -------------------------------------------------------------------------------------
 // Variables
 // -------------------------------------------------------------------------------------
 let junoIcaController: string;
-let junoIcaControllerPort: string;
 let junoIcaHost: string;
-let junoIcaHostPort: string;
 
-let terraIcaController: string;
-let terraIcaControllerPort: string;
+let terraIcaController1: string;
+let terraIcaController2: string;
 let terraIcaHost: string;
-let terraIcaHostPort: string;
 
-let junoIbcSigner: CosmWasmSigner;
+let junoApTeamSigner: CosmWasmSigner;
 
 export async function testExecuteIBC(
     ibc: {
         junoIcaController: string,
-        junoIcaControllerPort: string,
         junoIcaHost: string,
-        junoIcaHostPort: string,
-        terraIcaController: string,
-        terraIcaControllerPort: string,
+        terraIcaController1: string,
+        terraIcaController2: string,
         terraIcaHost: string,
-        terraIcaHostPort: string,
     }
 ): Promise<void> {
     console.log(chalk.yellow("\nStep 2. Running Tests"));
 
     junoIcaController = ibc.junoIcaController;
-    junoIcaControllerPort = ibc.junoIcaControllerPort;
     junoIcaHost = ibc.junoIcaHost;
-    junoIcaHostPort = ibc.junoIcaHostPort;
 
-    terraIcaController = ibc.terraIcaController;
-    terraIcaControllerPort = ibc.terraIcaControllerPort;
+    terraIcaController1 = ibc.terraIcaController1;
+    terraIcaController2 = ibc.terraIcaController2;
     terraIcaHost = ibc.terraIcaHost;
-    terraIcaHostPort = ibc.terraIcaHostPort;
 
-    junoIbcSigner = await customSigningCosmWasmClient(junod, localibc.mnemonicKeys.junoIbcClient);
+    junoApTeamSigner = await customSigningCosmWasmClient(junod, localjuno.mnemonicKeys.apTeam);
 
     // Restore the existing IBC link.
     const [nodeA, nodeB] = await setup(junod, terrad);
-
     const link = await Link.createWithExistingConnections(nodeA, nodeB, localibc.conns.juno, localibc.conns.terra);
-    const ics20 = {
-        junoTerra: {
-            juno: localibc.ics20.junoTerra.juno,
-            terra: localibc.ics20.junoTerra.terra,
-        },
-        terraJuno: {
-            terra: localibc.ics20.terraJuno.terra,
-            juno: localibc.ics20.terraJuno.juno,
-        }
-    };
-    console.log("ics20: ", ics20);
 
     /* --- EXECUTE tests --- */
     // await testVaultDeposit(terra, apTeam, vaultLocked1, 1, { uluna: 2000000 });
@@ -91,12 +71,12 @@ export async function testExecuteIBC(
 async function testIbcQuery(link: Link) {
     await link.relayAll();
 
-    const accounts = await listAccounts(junoIbcSigner, junoIcaController);
+    const accounts = await listAccounts(junoApTeamSigner, junoIcaController);
     // console.log("accounts query: ", accounts);
     const { remote_addr: remoteAddr, channel_id: channelId } = accounts[0];
 
-    const ibcQuery = await junoIbcSigner.sign.execute(
-        junoIbcSigner.senderAddress,
+    const ibcQuery = await junoApTeamSigner.sign.execute(
+        junoApTeamSigner.senderAddress,
         junoIcaController,
         {
             ibc_query: {
