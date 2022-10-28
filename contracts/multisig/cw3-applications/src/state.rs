@@ -1,5 +1,5 @@
 use cosmwasm_std::{
-    Addr, BlockInfo, CosmosMsg, Decimal, Empty, StdError, StdResult, Storage, Uint128,
+    Addr, BlockInfo, Coin, CosmosMsg, Decimal, Empty, StdError, StdResult, Storage, Uint128,
 };
 use cw3::{Status, Vote};
 use cw4::Cw4Contract;
@@ -32,6 +32,7 @@ pub struct Config {
     pub require_execution: bool,
     pub seed_asset: Option<Asset>,
     pub seed_split_to_liquid: Decimal,
+    pub new_endow_gas_money: Option<Coin>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]

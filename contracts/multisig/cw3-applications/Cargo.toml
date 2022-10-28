@@ -1,6 +1,6 @@
 [package]
 name = "cw3-applications"
-version = "1.8.3"
+version = "1.8.4"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
 
