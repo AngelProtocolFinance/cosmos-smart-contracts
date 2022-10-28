@@ -228,24 +228,21 @@ export async function sendMessageViaCw3Proposal(
     ?.attributes.find((attribute) => {
       return attribute.key == "proposal_id";
     })?.value as string;
-  console.log(chalk.yellow(`> New Proposal's ID: ${proposal_id}`));
-
-  // // 3. Additional members need to vote on proposal to get to passing threshold
-  // for member in members {
-  //   console.log(chalk.green(`Member votes on proposal: ${proposal_id}`));
-  //   await sendTransaction(juno, proposor, cw3, {
-  //     vote: {
-  //       poll_id: parseInt(proposal_id),
-  //       vote: VoteOption.YES,
-  //     },
-  //   });
-  // }
-
-  console.log(chalk.yellow("> Executing the Proposal"));
-  await sendTransaction(juno, proposor, cw3, {
-    execute: { proposal_id: parseInt(proposal_id) }
-  });
-  console.log(chalk.yellow("> Done!"));
+  const proposal_status = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "status";
+    })?.value as string;
+  const proposal_auto_executed = await proposal.logs[0].events
+    .find((event) => {
+      return event.type == "wasm";
+    })
+    ?.attributes.find((attribute) => {
+      return attribute.key == "auto-executed";
+    })?.value as string;
+  console.log(chalk.yellow(`> Proposal ID: ${proposal_id}; Status: ${proposal_status}; Auto-Executed: ${proposal_auto_executed}`));
 }
 
 //----------------------------------------------------------------------------------------
