@@ -159,6 +159,9 @@ pub fn deposit_to_vaults(
     // deposit to the strategies set
     let mut deposit_messages = vec![];
     for strategy in strategies.iter() {
+        if (fund.amount * strategy.percentage).is_zero() {
+            continue;
+        }
         leftovers_amt -= fund.amount * strategy.percentage;
         let vault_config: VaultDetailResponse =
             deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
