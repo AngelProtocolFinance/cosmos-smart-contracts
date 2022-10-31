@@ -84,12 +84,20 @@ async function deployJunoIcaContracts(): Promise<void> {
     junoIcaController = icaControllerResult.contractAddress as string;
     console.log(chalk.green(" Done!"), `${chalk.blue(" contractAddress")}=${junoIcaController}`);
 
+    let contractQuery = await junoIbcSetupper.sign.getContract(junoIcaController);
+    junoIcaControllerPort = contractQuery.ibcPortId!;
+    console.log(chalk.green(" Done!"), `${chalk.blue(" ibcPortId")}=${junoIcaControllerPort}`);
+
     process.stdout.write("Instantiating (juno)ica_host contract");
     const icaHostResult = await instantiateContract(junoIbcSetupper.sign, junoIbcSetupper.senderAddress, junoIbcSetupper.senderAddress, icaHostCodeId, {
         cw1_code_id: cw1WhitelistCodeId,
     });
     junoIcaHost = icaHostResult.contractAddress as string;
     console.log(chalk.green(" Done!"), `${chalk.blue(" contractAddress")}=${junoIcaHost}`);
+
+    contractQuery = await junoIbcSetupper.sign.getContract(junoIcaHost);
+    junoIcaHostPort = contractQuery.ibcPortId!;
+    console.log(chalk.green(" Done!"), `${chalk.blue(" ibcPortId")}=${junoIcaHostPort}`);
 }
 
 async function deployTerraIcaContracts(): Promise<void> {
@@ -118,6 +126,10 @@ async function deployTerraIcaContracts(): Promise<void> {
         })?.value as string;
     console.log(chalk.green(" Done!"), `${chalk.blue(" contractAddress")}=${terraIcaController1}`);
 
+    let contractQuery = await terra.wasm.contractInfo(terraIcaController1);
+    terraIcaController1Port = contractQuery.ibc_port_id!;
+    console.log(chalk.green(" Done!"), `${chalk.blue(" ibcPortId")}=${terraIcaController1Port}`);
+
     process.stdout.write("Instantiating (terra)ica_controller2 contract(for liquid vault)");
     const res2 = await tInstantiateContract(terra, terraIbcSetupper, terraIbcSetupper, icaControllerCodeId, {});
     terraIcaController2 = res2.logs[0].events
@@ -128,6 +140,10 @@ async function deployTerraIcaContracts(): Promise<void> {
             return attribute.key == "_contract_address";
         })?.value as string;
     console.log(chalk.green(" Done!"), `${chalk.blue(" contractAddress")}=${terraIcaController2}`);
+
+    contractQuery = await terra.wasm.contractInfo(terraIcaController2);
+    terraIcaController2Port = contractQuery.ibc_port_id!;
+    console.log(chalk.green(" Done!"), `${chalk.blue(" ibcPortId")}=${terraIcaController2Port}`);
 
     process.stdout.write("Instantiating (terra)ica_host contract");
     const icaHostResult = await tInstantiateContract(terra, terraIbcSetupper, terraIbcSetupper, icaHostCodeId, {
@@ -141,6 +157,10 @@ async function deployTerraIcaContracts(): Promise<void> {
             return attribute.key == "_contract_address";
         })?.value as string;
     console.log(chalk.green(" Done!"), `${chalk.blue(" contractAddress")}=${terraIcaHost}`);
+
+    contractQuery = await terra.wasm.contractInfo(terraIcaHost);
+    terraIcaHostPort = contractQuery.ibc_port_id!;
+    console.log(chalk.green(" Done!"), `${chalk.blue(" ibcPortId")}=${terraIcaHostPort}`);
 }
 
 async function postProcess() {
@@ -242,6 +262,8 @@ async function postProcess() {
             }
         }
     );
+    console.log(chalk.green(" Done!"), `${chalk.blue(" contractAddress")}=${accountInfo1.account}`);
+
     const accountInfo2 = await junoAPTeamSigner.sign.queryContractSmart(junoIcaHost, {
         account: {
             channel_id: channelId2,
@@ -264,6 +286,7 @@ async function postProcess() {
             }
         }
     );
+    console.log(chalk.green(" Done!"), `${chalk.blue(" contractAddress")}=${accountInfo2.account}`);
 }
 
 
