@@ -2,6 +2,7 @@ import * as LocalNet from "./environments/localjuno";
 import * as TestNet from "./environments/testnet";
 import * as MainNet from "./environments/mainnet";
 import * as LocalTerra from "./environments/localterra";
+import * as IBC from "./environments/ibc";
 
 //----------------------------------------------------------------------------------------
 // Test-suite for  TestNet, and MainNet
@@ -94,6 +95,13 @@ import * as LocalTerra from "./environments/localterra";
 		// case "mainnet_migrate_halo":
 		// 	await MainNet.startMigrateHalo();
 		// 	break;
+
+		case "local_setup_ibc":
+			await IBC.startSetupIBC();
+			break;
+		case "local_test_ibc":
+			await IBC.startTestIBC();
+			break;
 		default:
 			console.log("Invalid command");
 			break;

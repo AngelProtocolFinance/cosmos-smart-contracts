@@ -20,9 +20,11 @@ Notes:
 ```bash
 git clone https://github.com/CosmosContracts/juno.git
 ```
-2. Copy the file named `junod_docker-compose.yml` in this `test-suite` repo over to the base folder of the junod repo, replacing the existing default `docker-compose.yml` file. 
+2. Copy the files in `./localjuno_env_files` dir of this `test-suite` repo over to the base folder of the junod repo, replacing the existing default `docker-compose.yml` file. 
 ```bash
-cp ./junod_docker-compose.yml <juno_repo_path>/docker-compose.yml`
+LOCALJUNO_PATH=<juno_repo_path>
+cp ./localjuno_env_files/docker-compose.yml $LOCALJUNO_PATH/docker-compose.yml
+cp ./localjuno_env_files/setup_junod.sh $LOCALJUNO_PATH/docker/setup_junod.sh
 ```
 3. In the jundo repo base folder run the following to build junod container:
 ```bash
@@ -47,10 +49,17 @@ How to know if LocalJuno is working properly?
 ```bash
 git clone https://github.com/terra-money/LocalTerra.git
 ```
-2. Copy the file named `localterra_genesis.json` in this `test-suite` repo over to the base folder of the LocalTerra repo, replacing the existing default `genesis.json` file. 
+2. Copy the files in `./localterra_env_files` dir of this `test-suite` repo over to the base folder of the LocalTerra repo, replacing the existing default files with same name. 
 ```bash
-cp ./localterra_genesis.json <localterra_repo_path>/genesis.json`
+LOCALTERRA_PATH=<localterra_repo_path>
+cp ./localterra_env_files/genesis.json $LOCALTERRA_PATH/config/genesis.json
+cp ./localterra_env_files/app.toml $LOCALTERRA_PATH/config/app.toml
+cp ./localterra_env_files/client.toml $LOCALTERRA_PATH/config/client.toml
+cp ./localterra_env_files/config.toml $LOCALTERRA_PATH/config/config.toml
+cp ./localterra_env_files/docker-compose.yml $LOCALTERRA_PATH/docker-compose.yml
+cp ./localterra_env_files/fcd.env $LOCALTERRA_PATH/fcd.env
 ```
+
 3. In the LocalTerra repo base folder run the following to build LocalTerra container:
 ```bash
 docker-compose build
@@ -67,7 +76,7 @@ docker-compose rm
 ```
 
 How to know if LocalTerra is working properly?
-**Go to [https://localhost:1317](http://localhost:1317).** You should see a page with some APIs which can be used to send transactions or query blockchain state.
+**Go to [https://localhost:1307](http://localhost:1307).** You should see a page with some APIs which can be used to send transactions or query blockchain state.
 
 ### Compile contracts
 

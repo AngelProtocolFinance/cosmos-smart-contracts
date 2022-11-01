@@ -121,7 +121,7 @@ async function createAstroportVaults(
                         native_token: { denom: localterra.networkInfo.nativeToken },
                     },
                     ask_asset_info: {
-                        native_token: { denom: "usdc" },
+                        native_token: { denom: localterra.denoms.usdc },
                     }
                 }
             }
@@ -133,7 +133,7 @@ async function createAstroportVaults(
                         native_token: { denom: localterra.networkInfo.nativeToken },
                     },
                     ask_asset_info: {
-                        native_token: { denom: "usdt" },
+                        native_token: { denom: localterra.denoms.usdt },
                     }
                 }
             }
@@ -192,7 +192,7 @@ async function createAstroportVaults(
                         native_token: { denom: localterra.networkInfo.nativeToken },
                     },
                     ask_asset_info: {
-                        native_token: { denom: "usdc" },
+                        native_token: { denom: localterra.denoms.usdc },
                     }
                 }
             }
@@ -204,7 +204,7 @@ async function createAstroportVaults(
                         native_token: { denom: localterra.networkInfo.nativeToken },
                     },
                     ask_asset_info: {
-                        native_token: { denom: "usdt" },
+                        native_token: { denom: localterra.denoms.usdt },
                     }
                 }
             }

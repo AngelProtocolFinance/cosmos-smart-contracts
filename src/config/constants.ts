@@ -19,21 +19,23 @@ export const testnet = {
     charity3: "lobster worry angry spoil milk cash asthma unhappy number cave object fortune lens uniform simple",
     pleb: "announce reflect cinnamon regular address copper below funny lens draft gain wage inhale gold loyal",
     tca: "camp mom loud claim grass kick tail into cake wear mistake box grunt stand runway",
+
+    junoIbcClient: "soda tomato draft between amazing grab suit verb help pony elegant oxygen trial cactus coffee",
   },
   // Should be updated contract addresses after deploying wasms in the testnet
   contracts: {
-    registrar: "juno13ufhg4xjdzylk9mhayc8khmgg25tl2vs42pzala9x53vxa8ppjkschfr0x",
-    accounts: "juno1prqanslytzwtrext3qpfy4p83ld7yw04ga06n6yufg53fukf4x0q0udwj2",
-    indexFund: "juno107zpvrdyww48d0fylez3lxjf87qwwh8r5nphcdzlwnepnm2kga5q36quta",
-    cw4GrpApTeam: "juno13mk4dzwc5qdz7fxcrnkyj448lvap06rp7aw5h34xkcudrm98yv2sz4fysa",
-    cw3ApTeam: "juno1pgedpd8m0g76ckxd6fduwpnm6x4g6fzsg0xj4u3xdchvjdxuzckqdhjv9a",
-    cw4GrpReviewTeam: "juno1h94wjgxv32zsg64f34retxudwd4nppslwm4glvu2jld9vrqh7k6srzjhcj",
-    cw3ReviewTeam: "juno13mlk69qjx2cm8upx3d04h9dxh78mzhfksxrrnuyjk2l5s5wknl8skvkjhp",
+    registrar: "juno1dmry032p0khv2d5knrtf8q5hzcnv06f8ps24naw9hrpv699zw9xqad4jma",
+    accounts: "juno1ltu4ng2gnm5zs3gnmww89udr0kknd5hlds44lq48guem5xxf4nzsawa9sc",
+    indexFund: "juno1jxgswmw6kndcqtp545pt0wn4m2rqunf7mzaxncyguuc9nx2tycgqalxeg6",
+    cw4GrpApTeam: "juno1ptpsp2shhyqqesd52gwtj0lele46sl3wp3myvxa46zq3r0g596wsztqvur",
+    cw3ApTeam: "juno189gdk2aczgkx7p0cyll2whah5afazazhmaw4rmfhh7lda2twyrxseq76zw",
+    cw4GrpReviewTeam: "juno129g6ldqjnfpgzyxn3lm5yr67r2zl7e35upsrswejdds49q5s60dqnttzx9",
+    cw3ReviewTeam: "juno1dkt5kujyd876wf0xgv3sedsjh6nzlhtdyykaz2e6tmnamzwphryqvaayaj",
     swapRouter: "",
-    vaultLocked1: "juno1lem7xy2gam9lm46jax8wzpdyjx4clcqd554zr7mfjrzu2xglh90s8rakew",
-    vaultLiquid1: "juno17x84z3vk8k88rqmkladfqaesg2dha8m593kcupszkehdh0u478eqy4kmxr",
-    vaultLocked2: "juno1phxdtakp9wdn8w99v7fvddywmhshn6mka68qjexgwhcde97ezyzqwylwl5",
-    vaultLiquid2: "juno10vcys0a934r3xnsy6ueprntzv3ymfeumxzy9a9qk9p82qu7fzjxs6jqhrf",
+    vaultLocked1: "juno1tta5j2tzsgnq2smnwh595alqn8jg6sxll6cym7wg2ufgyvhrnu7qef5sfw",
+    vaultLiquid1: "juno1qyh0g7jwgqnxl07h8cs8f5df7aujf5t9xdp4c3a3330qt2gxcnesq5yjrt",
+    vaultLocked2: "juno1ew6nzhzskpqqncd0rxlqzd98khgzcfjcy3964q42qm7r2dafuagqrvg634",
+    vaultLiquid2: "juno1n0llmlzjqsc60m42q36mzvelyz9dn7yprm0jpp0f457rt9t4km7sk7l483",
     endowId1: 1,
     endowId2: 2,
     endowId3: 3,
@@ -108,7 +110,7 @@ export const testnet = {
 export const mainnet = {
   // MainNet phoenix-1
   networkInfo: {
-    url: "https://rpc-juno.itastakers.com",
+    url: "https://juno-rpc.angelprotocol.io",
     chainId: "juno-1",
     walletPrefix: "juno",
     nativeToken: "ujuno",
@@ -116,7 +118,7 @@ export const mainnet = {
   },
   mnemonicKeys: {
     apTeam: "",
-    apTreasury: "juno1q6n47p729sla2jekc45rlmrvwchkj4gc39a296", // Temp use AP Team Admin until we can use the CW3 of the AP Endowment
+    apTreasury: "juno1fz8jx4qhkgdrm5vm3s20n670mf872xsp2c0a6cl0yuncquzmj4jss2cfgj", // this is the CW3 of the AP Endowment
   },
   // Should be updated contract addresses after deploying wasms in the mainnet
   contracts: {
@@ -127,6 +129,7 @@ export const mainnet = {
     cw3ApTeam: "juno1sae4p8crnac0h9m27psn205d6k586f7cnm4eshws623v05g95teqvj2s8q",
     cw4GrpReviewTeam: "juno1a22f8dxevu3er7vs4lkrca9n8rgf8uvgjd8s2p5eq787vmczq59syuplqx",
     cw3ReviewTeam: "juno1vp2q50smgzw64xm2j2ksntej34pnnedaz4qkwdh8zah9kjcaas6s8g92t8",
+    swapRouter: "", 
     vaults: [],
   },
   members: [

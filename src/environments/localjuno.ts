@@ -324,7 +324,7 @@ export async function startSetupCore(): Promise<void> {
       charity_cw3_threshold_abs_perc: "0.5", // threshold absolute percentage for "charity-cw3"
       charity_cw3_max_voting_period: 604800, // 1 week max voting period time(unit: seconds) for "charity-cw3"
       accepted_tokens: {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', config.networkInfo.nativeToken],
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', config.denoms.usdc, config.denoms.usdt, config.networkInfo.nativeToken],
         cw20: [],
       },
     }

@@ -127,7 +127,6 @@ async function setup(
 
     // ASTRO token 
     process.stdout.write("Instantiating ASTRO token contract");
-
     const astroTokenResult = await instantiateContract(
         terra,
         apTeam,
@@ -279,7 +278,6 @@ async function setup(
 
     // Usdc-Usdt pair
     process.stdout.write("Instantiating USDC-USDT Swap(Pair) contract");
-
     const usdcUsdtPairResult = await sendTransaction(
         terra,
         apTeam, [
@@ -294,12 +292,12 @@ async function setup(
                     "asset_infos": [
                         {
                             "native_token": {
-                                "denom": "usdc",
+                                "denom": localterra.denoms.usdc,
                             }
                         },
                         {
                             "native_token": {
-                                "denom": "usdt"
+                                "denom": localterra.denoms.usdt
                             }
                         }
                     ],
@@ -337,13 +335,13 @@ async function setup(
                     assets: [
                         {
                             info: {
-                                native_token: { denom: "usdc" },
+                                native_token: { denom: localterra.denoms.usdc },
                             },
                             amount: localterra.astroport.usdc_usdt_pair_usdc_liquidity,
                         },
                         {
                             info: {
-                                native_token: { denom: "usdt" },
+                                native_token: { denom: localterra.denoms.usdt },
                             },
                             amount: localterra.astroport.usdc_usdt_pair_usdt_liquidity,
                         }
@@ -354,15 +352,14 @@ async function setup(
                 }
             },
             {
-                usdc: localterra.astroport.usdc_usdt_pair_usdc_liquidity,
-                usdt: localterra.astroport.usdc_usdt_pair_usdt_liquidity,
+                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4": localterra.astroport.usdc_usdt_pair_usdc_liquidity,
+                "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF": localterra.astroport.usdc_usdt_pair_usdt_liquidity,
             },
         )
     ]);
 
     // Luna-ASTRO pair
     process.stdout.write("Instantiating Luna-ASTRO Swap(Pair) contract");
-
     const lunaAstroPairResult = await sendTransaction(
         terra,
         apTeam, [
@@ -456,7 +453,6 @@ async function setup(
 
     // Luna-USDC pair
     process.stdout.write("Instantiating Luna-USDC Swap(Pair) contract");
-
     const lunaUsdcPairResult = await sendTransaction(
         terra,
         apTeam, [
@@ -476,7 +472,7 @@ async function setup(
                         },
                         {
                             "native_token": {
-                                "denom": "usdc"
+                                "denom": localterra.denoms.usdc
                             }
                         }
                     ],
@@ -520,7 +516,7 @@ async function setup(
                         },
                         {
                             info: {
-                                native_token: { denom: "usdc" },
+                                native_token: { denom: localterra.denoms.usdc },
                             },
                             amount: "100000000000",
                         }
@@ -532,14 +528,13 @@ async function setup(
             },
             {
                 uluna: "100000000000",
-                usdc: "100000000000",
+                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4": "100000000000",
             },
         )
     ]);
 
     // Luna-USDT pair
     process.stdout.write("Instantiating Luna-USDT Swap(Pair) contract");
-
     const lunaUsdtPairResult = await sendTransaction(
         terra,
         apTeam, [
@@ -559,7 +554,7 @@ async function setup(
                         },
                         {
                             "native_token": {
-                                "denom": "usdt"
+                                "denom": localterra.denoms.usdt
                             }
                         }
                     ],
@@ -603,7 +598,7 @@ async function setup(
                         },
                         {
                             info: {
-                                native_token: { denom: "usdt" },
+                                native_token: { denom: localterra.denoms.usdt },
                             },
                             amount: "100000000000",
                         }
@@ -615,7 +610,7 @@ async function setup(
             },
             {
                 uluna: "100000000000",
-                usdt: "100000000000",
+                "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF": "100000000000",
             },
         )
     ]);

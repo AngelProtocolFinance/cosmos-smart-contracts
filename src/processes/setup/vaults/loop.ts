@@ -224,7 +224,7 @@ async function createLoopVaults(
       network: chainId,
       vault_addr: vault1_locked,
       input_denom: "ujuno",
-      yield_token: registrar,
+      yield_token: registrar, // Really needed?
       restricted_from: [],
       acct_type: `locked`,
       vault_type: "native",
@@ -235,7 +235,7 @@ async function createLoopVaults(
       network: chainId,
       vault_addr: vault1_liquid,
       input_denom: "ujuno",
-      yield_token: registrar,
+      yield_token: registrar, // Really needed?
       restricted_from: [],
       acct_type: `liquid`,
       vault_type: "native",

@@ -4,9 +4,11 @@ import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import {
+  toEncodedBinary,
   sendTransaction,
   sendTransactionWithFunds,
   sendMessageViaCw3Proposal,
+  sendMessagesViaCw3Proposal,
   sendApplicationViaCw3Proposal,
   clientSetup,
   getWalletAddress,
@@ -384,26 +386,95 @@ export async function testCharityCanUpdateStrategies(
 //
 //----------------------------------------------------------------------------------------
 
-export async function testApTeamChangesAccountsEndowmentOwner(
+export async function testApTeamChangesEndowmentSettings(
   juno: SigningCosmWasmClient,
   apTeam: string,
+  cw3ApTeam: string,
   accountsContract: string,
-  endowmentId: number,
-  owner: string,
-  beneficiary: string,
-  kyc_donors_only: boolean,
+  msgs: any[],
 ): Promise<void> {
-  process.stdout.write("Test - Contract Owner can set new owner of an Endowment");
+  process.stdout.write("Test - Contract Owner can change a limited number an Endowment settings\n");
 
-  await sendTransaction(juno, apTeam, accountsContract, {
-    update_endowment_settings: {
-      id: endowmentId,
-      owner,
-      beneficiary,
-      kyc_donors_only,
-    },
+  let prom = Promise.resolve();
+  let final_msgs: any[] = [];
+  msgs.forEach((msg) => {
+    // eslint-disable-next-line no-async-promise-executor
+    prom = prom.then(
+      () =>
+        new Promise(async (resolve, reject) => {
+          try {
+            console.log(chalk.yellow(`Updating Endowment ID: ${msg.id}`));
+            // grab current endowment state data
+            const endow = await juno.queryContractSmart(accountsContract, { endowment: { id: msg.id } });
+            final_msgs.push({
+              wasm: {
+                execute: {
+                  contract_addr: accountsContract,
+                  msg: toEncodedBinary({
+                    update_endowment_settings: {
+                      id: msg.id,
+                      tier: endow.tier, // MUST BE PASSED: Tier field is nulled if not there (this needs to be patched in Accounts contract!)
+                      owner: msg.owner,
+                    }
+                  }),
+                  funds: [],
+                },
+              },
+            });
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        })
+    );
   });
-  console.log(chalk.green(" Passed!"));
+  await prom;
+  await sendMessagesViaCw3Proposal(juno, apTeam, cw3ApTeam, "Make changes to several Endowments' Settings", final_msgs);
+}
+
+export async function testCreateEndowmentCw3s(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  registrar: string,
+  accounts: string,
+  msgs: any[],
+): Promise<void> {
+  process.stdout.write("Test - Create a number of new Endowment CW3s\n");
+  const reg_config = await juno.queryContractSmart(registrar, { config: {} });
+  const cw3_code = parseInt(reg_config.cw3_code);
+  const cw4_code = parseInt(reg_config.cw4_code);
+
+  let prom = Promise.resolve();
+  msgs.forEach((msg) => {
+    // eslint-disable-next-line no-async-promise-executor
+    prom = prom.then(
+      () =>
+        new Promise(async (resolve, reject) => {
+          try {
+            console.log(chalk.yellow(`Creating a CW3 for Endowment ID: ${msg.id}`));
+            // grab current state data from existing CW3
+            const endow = await juno.queryContractSmart(accounts, { endowment: { id: msg.id } });
+            const old_members = await juno.queryContractSmart(endow.owner, { list_voters: {} });
+            const old_settings = await juno.queryContractSmart(endow.owner, { config: {} });
+            // create the CW3
+            const res = await instantiateContract(juno, apTeam, apTeam, cw3_code, {
+              id: msg.id,
+              registrar_contract: registrar,
+              threshold: old_settings.threshold,
+              max_voting_period: old_settings.max_voting_period,
+              cw4_members: old_members.voters,
+              cw4_code,
+            });
+            const new_cw3 = res.contractAddress as string;
+            console.log(chalk.blue(`New Contract: ${new_cw3}`));
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        })
+    );
+  });
+  await prom;
 }
 
 //----------------------------------------------------------------------------------------
@@ -564,11 +635,16 @@ export async function testQueryAccountsConfig(
 
 export async function testQueryAccountsEndowmentList(
   juno: SigningCosmWasmClient,
-  accounts: string
+  accounts: string,
+  start_after: number | undefined,
+  limit: number | undefined,
 ): Promise<void> {
   process.stdout.write("Test - Query Accounts Endowment List");
   const result: any = await juno.queryContractSmart(accounts, {
-    endowment_list: {},
+    endowment_list: {
+      start_after,
+      limit
+    },
   });
 
   console.log(result);

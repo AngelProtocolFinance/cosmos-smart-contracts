@@ -5,6 +5,9 @@ export const localterra = {
   networkInfo: {
     url: "http://localhost:1307",
     chainId: "localterra",
+    walletPrefix: "terra",
+    nativeToken: "uluna",
+    gasPrice: "0.01uluna",
   },
 
   mnemonicKeys: {
@@ -21,33 +24,23 @@ export const localterra = {
     test10: 'prefer forget visit mistake mixture feel eyebrow autumn shop pair address airport diesel street pass vague innocent poem method awful require hurry unhappy shoulder',
   },
 
+  denoms: {
+    usdc: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+    usdt: "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+  },
+
   // Should be updated contract addresses after deploying wasms in the LocalTerra
   contracts: {
-    registrar: "",
-    accounts: "",
-    indexFund: "",
-    cw4GrpApTeam: "",
-    cw3ApTeam: "",
-    cw4GrpReviewTeam: "",
-    cw3ReviewTeam: "",
-    vault1: "",
-    vault2: "",
-
     vaultLocked1: "",
     vaultLiquid1: "",
     vaultLocked2: "",
     vaultLiquid2: "",
-    
-    endowId1: 1,
-    endowId2: 2,
-    endowId3: 3,
   },
-
 
   // Astroport contracts
   astroport: {
-    astroport_token_code: 30,
-    astroport_pair_code: 31, 
+    astroport_token_code: 11,
+    astroport_pair_code: 12,
 
     ASTRO_token_contract: "",
     initial_ASTRO_supply: "1000000000000000",
@@ -57,8 +50,17 @@ export const localterra = {
     astroport_router: "",
 
     usdc_usdt_pair_contract: "",
-    usdc_usdt_lp_token: "",
-    usdc_usdt_pair_usdc_liquidity: "10000000",
-    usdc_usdt_pair_usdt_liquidity: "10000000",
+    usdc_usdt_pair_lp_token: "",
+    usdc_usdt_pair_usdc_liquidity: "100000000000",
+    usdc_usdt_pair_usdt_liquidity: "100000000000",
+
+    luna_astro_pair_contract: "",
+    luna_astro_pair_lp_token: "",
+
+    luna_usdc_pair_contract: "",
+    luna_usdc_pair_lp_token: "",
+
+    luna_usdt_pair_contract: "",
+    luna_usdt_pair_lp_token: "",
   },
 };

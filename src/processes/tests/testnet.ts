@@ -9,7 +9,8 @@ import {
   testCharityCanWithdrawLocked,
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
-  testApTeamChangesAccountsEndowmentOwner,
+  testApTeamChangesEndowmentSettings,
+  testCreateEndowmentCw3s,
   testSendDonationToEndowment,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
@@ -144,6 +145,7 @@ import {
   testQueryVestingAccounts,
 } from "./halo/vesting";
 import { localjuno } from "../../config/localjunoConstants";
+import { localibc } from "../../config/localIbcConstants";
 
 export async function testExecute(
   config: any, // environment config object 
@@ -222,7 +224,7 @@ export async function testExecute(
   /* --- REGISTRAR contract --- */
   // await testUpdatingRegistrarUpdateOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, cw3ApTeam);
   // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, {
-  //   accepted_tokens_native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', config.networkInfo.nativeToken],
+  //   accepted_tokens_native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', localjuno.denoms.usdc, localjuno.denoms.usdt, config.networkInfo.nativeToken],
   //   accepted_tokens_cw20: [],
   // });
   // await testUpdatingRegistrarNetworkConnections(
@@ -305,18 +307,11 @@ export async function testExecute(
 
   /* --- ACCOUNTS & ENDOWMENTS --- */
   // let endowments_batch = [
-  //   { "id": 6, "acct_type": "liquid", "amount": "114000" },
-  //   { "id": 6, "acct_type": "locked", "amount": "128470" },
-  //   { "id": 2, "acct_type": "liquid", "amount": "600000" },
-  //   { "id": 2, "acct_type": "locked", "amount": "1003000" },
+  //   { "id": 6, "tier": 2 },
+  //   { "id": 2, "tier": 2 },
   // ];
-  // await testSendRestitutionFundsToEndowments(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   accounts,
-  //   endowments_batch,
-  //   "ujunox"
-  // );
+  // await testCreateEndowmentCw3s(actors.apTeam.client, actors.apTeam.addr, registrar, accounts, endowments_batch);
+  // await testApTeamChangesEndowmentSettings(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, accounts, endowments_batch);
   // await testCreateEndowment(networkUrl, actors.charity1.wallet, cw3ReviewTeam, accounts, {
   //   owner: actors.charity1.addr,
   //   withdraw_before_maturity: false,
@@ -392,11 +387,12 @@ export async function testExecute(
   // });
 
   // await testSendDonationToEndowment(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
+  //   actors.charity1.client,
+  //   actors.charity1.addr,
   //   accounts,
   //   endowId1,
-  //   { denom: config.networkInfo.nativeToken, amount: "100000" }
+  //   // { denom: config.networkInfo.nativeToken, amount: "100000" }
+  //   { denom: localjuno.denoms.usdc, amount: "1000000" }
   // );
   // await testEndowmentVaultsRedeem(
   //   actors.charity1.client,
@@ -443,12 +439,12 @@ export async function testExecute(
 
   // Test query
   // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
-  // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
+  await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
   // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, networkInfo.chainId);
 
   // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
-  // await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
+  await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsProfile(actors.apTeam.client, accounts, endowId1);
