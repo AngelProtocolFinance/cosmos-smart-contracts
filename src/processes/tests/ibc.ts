@@ -12,8 +12,11 @@ import { ChainDefinition, CosmWasmSigner } from "@confio/relayer/build/lib/helpe
 
 import { localibc, junod, terrad } from "../../config/localIbcConstants";
 import { customFundAccount, customSigningClient, customSigningCosmWasmClient, listAccounts, setup } from "../../utils/ibc";
-import { toBinary } from "@cosmjs/cosmwasm-stargate";
+import { SigningCosmWasmClient, toBinary } from "@cosmjs/cosmwasm-stargate";
 import { localjuno } from "../../config/localjunoConstants";
+import { sendMessageViaCw3Proposal, sendTransactionWithFunds } from "../../utils/juno/helpers";
+import { localterra } from "../../config/localterraConstants";
+import { LCDClient } from "@terra-money/terra.js";
 
 
 // -------------------------------------------------------------------------------------
@@ -48,23 +51,118 @@ export async function testExecuteIBC(
 
     junoApTeamSigner = await customSigningCosmWasmClient(junod, localjuno.mnemonicKeys.apTeam);
 
-    // Restore the existing IBC link.
-    const [nodeA, nodeB] = await setup(junod, terrad);
-    const link = await Link.createWithExistingConnections(nodeA, nodeB, localibc.conns.juno, localibc.conns.terra);
+    // // Restore the existing IBC link.
+    // const [nodeA, nodeB] = await setup(junod, terrad);
+    // const link = await Link.createWithExistingConnections(nodeA, nodeB, localibc.conns.juno, localibc.conns.terra);
+    // await testIbcQuery(link);
+
+    const junoCharity1Signer = await customSigningCosmWasmClient(junod, localjuno.mnemonicKeys.charity1);
 
     /* --- EXECUTE tests --- */
-    // await testVaultDeposit(terra, apTeam, vaultLocked1, 1, { uluna: 2000000 });
-    // await testVaultRedeem(terra, apTeam, vaultLocked1, 1, "500000");
+    // await testIBCVaultsInvest(
+    //     junoCharity1Signer.sign,
+    //     junoCharity1Signer.senderAddress,
+    //     localjuno.contracts.accounts,
+    //     1, // endowmentId
+    //     `locked`, // acct_type
+    //     [[localibc.contracts.ibcVaultLocked1, { info: { native: localjuno.denoms.usdc }, amount: "5000" }]],  // Vec<(vault, amount)>
+    // );
+    // await testIBCVaultsRedeem(
+    //     junoCharity1Signer.sign,
+    //     junoCharity1Signer.senderAddress,
+    //     localjuno.contracts.accounts,
+    //     1, // endowmentId
+    //     `locked`, // acct_type
+    //     [[localibc.contracts.ibcVaultLocked1, "500000"]],  // Vec<(vault, amount)>
+    // );
+    // await testIBCVaultReinvestToLocked(
+    //     junoCharity1Signer.sign,
+    //     junoCharity1Signer.senderAddress,
+    //     localjuno.contracts.accounts,
+    //     1,
+    //     "500000",
+    //     localibc.contracts.ibcVaultLiquid1
+    // );
+
     // await testVaultHarvest(terra, apTeam, vaultLocked1);
-    // await testVaultReinvestToLocked(terra, apTeam, vaultLiquid1, 1, "500000");
+
 
     /* ---  QUERY tests --- */
     // await testQueryVaultConfig(terra, vaultLocked1);
     // await testQueryVaultEndowmentBalance(terra, vaultLocked1, 1);
     // await testQueryVaultTokenInfo(terra, vaultLocked1);
     // await testQueryVaultTotalBalance(terra, vaultLocked1);
+}
 
-    await testIbcQuery(link);
+async function testIBCVaultsInvest(
+    juno: SigningCosmWasmClient,
+    accountsOwner: string,
+    accountsContract: string,
+    endowmentId: number,
+    acct_type: string,
+    vaults: any,
+): Promise<void> {
+    process.stdout.write("IBC Test - Send amount to a single Endowment Account");
+
+    const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
+    const cw3 = res.owner as string;
+
+    await sendMessageViaCw3Proposal(juno, accountsOwner, cw3, accountsContract, {
+        vaults_invest: {
+            id: endowmentId,
+            acct_type: acct_type,
+            vaults,
+        },
+    });
+    console.log(chalk.green(" Passed!"));
+}
+
+async function testIBCVaultsRedeem(
+    juno: SigningCosmWasmClient,
+    accountsOwner: string,
+    accountsContract: string,
+    endowmentId: number,
+    acct_type: string,
+    vaults: any,
+): Promise<void> {
+    process.stdout.write("IBC Test -Redeem endowment");
+
+    const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
+    const cw3 = res.owner as string;
+
+    await sendMessageViaCw3Proposal(juno, accountsOwner, cw3, accountsContract, {
+        vaults_redeem: {
+            id: endowmentId,
+            acct_type: acct_type,
+            vaults,
+        },
+    });
+    console.log(chalk.green(" Passed!"));
+}
+
+async function testIBCVaultReinvestToLocked(
+    juno: SigningCosmWasmClient,
+    sender: string,
+    accountsContract: string,
+    endowmentId: number,
+    amount: string,
+    vault_addr: string,
+): Promise<void> {
+    process.stdout.write("Test - Liquid vault reinvests the LP to locked vault");
+
+    const res = await juno.queryContractSmart(accountsContract, { endowment: { id: endowmentId } });
+    const cw3 = res.owner as string;
+
+    await sendMessageViaCw3Proposal(juno, sender, cw3, accountsContract,
+        {
+            reinvest_to_locked: {
+                id: endowmentId,
+                amount: amount,
+                vault_addr: vault_addr,
+            }
+        }
+    );
+    console.log(chalk.green(" Passed!"));
 }
 
 // IBCQuery
