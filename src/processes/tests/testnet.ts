@@ -9,7 +9,8 @@ import {
   testCharityCanWithdrawLocked,
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
-  testApTeamChangesAccountsEndowmentOwner,
+  testApTeamChangesEndowmentSettings,
+  testCreateEndowmentCw3s,
   testSendDonationToEndowment,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
@@ -305,18 +306,11 @@ export async function testExecute(
 
   /* --- ACCOUNTS & ENDOWMENTS --- */
   // let endowments_batch = [
-  //   { "id": 6, "acct_type": "liquid", "amount": "114000" },
-  //   { "id": 6, "acct_type": "locked", "amount": "128470" },
-  //   { "id": 2, "acct_type": "liquid", "amount": "600000" },
-  //   { "id": 2, "acct_type": "locked", "amount": "1003000" },
+  //   { "id": 6, "tier": 2 },
+  //   { "id": 2, "tier": 2 },
   // ];
-  // await testSendRestitutionFundsToEndowments(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   accounts,
-  //   endowments_batch,
-  //   "ujunox"
-  // );
+  // await testCreateEndowmentCw3s(actors.apTeam.client, actors.apTeam.addr, registrar, accounts, endowments_batch);
+  // await testApTeamChangesEndowmentSettings(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, accounts, endowments_batch);
   // await testCreateEndowment(networkUrl, actors.charity1.wallet, cw3ReviewTeam, accounts, {
   //   owner: actors.charity1.addr,
   //   withdraw_before_maturity: false,
@@ -447,7 +441,7 @@ export async function testExecute(
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
   // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, networkInfo.chainId);
 
-  // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
+  // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts, undefined, undefined);
   // await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
