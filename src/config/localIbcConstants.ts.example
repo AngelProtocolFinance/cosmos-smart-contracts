@@ -24,6 +24,11 @@ export const localibc = {
         junoAccount: "channel-17",
         terraVaultLocked: "channel-18",
         terraVaultLiquid: "channel-19",
+    },
+
+    contracts: {
+        ibcVaultLocked1: "juno1...",
+        ibcVaultLiquid1: "juno1...",
     }
 }
 
