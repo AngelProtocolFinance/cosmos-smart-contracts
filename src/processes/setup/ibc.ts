@@ -86,7 +86,6 @@ async function deployJunoIcaContracts(): Promise<void> {
 
     let contractQuery = await junoIbcSetupper.sign.getContract(junoIcaController);
     junoIcaControllerPort = contractQuery.ibcPortId!;
-    console.log(chalk.green(" Done!"), `${chalk.blue(" ibcPortId")}=${junoIcaControllerPort}`);
 
     process.stdout.write("Instantiating (juno)ica_host contract");
     const icaHostResult = await instantiateContract(junoIbcSetupper.sign, junoIbcSetupper.senderAddress, junoIbcSetupper.senderAddress, icaHostCodeId, {
@@ -97,7 +96,6 @@ async function deployJunoIcaContracts(): Promise<void> {
 
     contractQuery = await junoIbcSetupper.sign.getContract(junoIcaHost);
     junoIcaHostPort = contractQuery.ibcPortId!;
-    console.log(chalk.green(" Done!"), `${chalk.blue(" ibcPortId")}=${junoIcaHostPort}`);
 }
 
 async function deployTerraIcaContracts(): Promise<void> {
@@ -128,7 +126,6 @@ async function deployTerraIcaContracts(): Promise<void> {
 
     let contractQuery = await terra.wasm.contractInfo(terraIcaController1);
     terraIcaController1Port = contractQuery.ibc_port_id!;
-    console.log(chalk.green(" Done!"), `${chalk.blue(" ibcPortId")}=${terraIcaController1Port}`);
 
     process.stdout.write("Instantiating (terra)ica_controller2 contract(for liquid vault)");
     const res2 = await tInstantiateContract(terra, terraIbcSetupper, terraIbcSetupper, icaControllerCodeId, {});
@@ -143,7 +140,6 @@ async function deployTerraIcaContracts(): Promise<void> {
 
     contractQuery = await terra.wasm.contractInfo(terraIcaController2);
     terraIcaController2Port = contractQuery.ibc_port_id!;
-    console.log(chalk.green(" Done!"), `${chalk.blue(" ibcPortId")}=${terraIcaController2Port}`);
 
     process.stdout.write("Instantiating (terra)ica_host contract");
     const icaHostResult = await tInstantiateContract(terra, terraIbcSetupper, terraIbcSetupper, icaHostCodeId, {
@@ -160,7 +156,6 @@ async function deployTerraIcaContracts(): Promise<void> {
 
     contractQuery = await terra.wasm.contractInfo(terraIcaHost);
     terraIcaHostPort = contractQuery.ibc_port_id!;
-    console.log(chalk.green(" Done!"), `${chalk.blue(" ibcPortId")}=${terraIcaHostPort}`);
 }
 
 async function postProcess() {
