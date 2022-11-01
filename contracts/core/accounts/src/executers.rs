@@ -26,6 +26,7 @@ use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
 use cw_utils::Duration;
+use ica_vaults::ibc_msg::ReceiveIbcResponseMsg;
 
 pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
@@ -56,6 +57,22 @@ pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response
         }
         SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
     }
+}
+
+pub fn execute_receive_ibc_response(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    resp: ReceiveIbcResponseMsg,
+) -> Result<Response, ContractError> {
+    // only the ibc controller can send this type message as callback
+    let config = CONFIG.load(deps.storage)?;
+    if !config.ibc_controller.eq(&info.sender) {
+        return Err(ContractError::Unauthorized {});
+    }
+    Ok(Response::new()
+        .add_attribute("action", "receive_ibc_callback")
+        .add_attribute("id", resp.id))
 }
 
 pub fn create_endowment(
