@@ -143,7 +143,14 @@ export async function instantiateContract(
   instantiateMsg: Record<string, unknown>,
   label: string | undefined = undefined
 ) {
-  const result = await juno.instantiate(deployer, codeId, instantiateMsg, `instantiate-${label || Math.floor(Math.random() * (codeId + 10000))}`, "auto", { admin: admin });
+  const result = await juno.instantiate(
+    deployer,
+    codeId,
+    instantiateMsg,
+    `instantiate-${label || (codeId + new Date().getMilliseconds())}`,
+    "auto",
+    { admin: admin }
+  );
   return result;
 }
 
@@ -188,7 +195,7 @@ export async function storeAndMigrateContract(
   msg = {}
 ): Promise<void> {
   process.stdout.write(`Uploading ${wasmFilename} Wasm`);
-  const codeId = await storeCode(juno, apTeam, `${wasm_path.core}/${wasmFilename}`);
+  const codeId = await storeCode(juno, apTeam, `${wasm_path.core} /${wasmFilename}`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write(`Migrate ${wasmFilename} contract`);

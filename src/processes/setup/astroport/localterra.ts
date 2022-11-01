@@ -127,7 +127,6 @@ async function setup(
 
     // ASTRO token 
     process.stdout.write("Instantiating ASTRO token contract");
-
     const astroTokenResult = await instantiateContract(
         terra,
         apTeam,
@@ -279,7 +278,6 @@ async function setup(
 
     // Usdc-Usdt pair
     process.stdout.write("Instantiating USDC-USDT Swap(Pair) contract");
-
     const usdcUsdtPairResult = await sendTransaction(
         terra,
         apTeam, [
@@ -362,7 +360,6 @@ async function setup(
 
     // Luna-ASTRO pair
     process.stdout.write("Instantiating Luna-ASTRO Swap(Pair) contract");
-
     const lunaAstroPairResult = await sendTransaction(
         terra,
         apTeam, [
@@ -456,7 +453,6 @@ async function setup(
 
     // Luna-USDC pair
     process.stdout.write("Instantiating Luna-USDC Swap(Pair) contract");
-
     const lunaUsdcPairResult = await sendTransaction(
         terra,
         apTeam, [
@@ -539,7 +535,6 @@ async function setup(
 
     // Luna-USDT pair
     process.stdout.write("Instantiating Luna-USDT Swap(Pair) contract");
-
     const lunaUsdtPairResult = await sendTransaction(
         terra,
         apTeam, [

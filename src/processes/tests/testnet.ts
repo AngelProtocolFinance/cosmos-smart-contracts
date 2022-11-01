@@ -145,6 +145,7 @@ import {
   testQueryVestingAccounts,
 } from "./halo/vesting";
 import { localjuno } from "../../config/localjunoConstants";
+import { localibc } from "../../config/localIbcConstants";
 
 export async function testExecute(
   config: any, // environment config object 
@@ -386,11 +387,12 @@ export async function testExecute(
   // });
 
   // await testSendDonationToEndowment(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
+  //   actors.charity1.client,
+  //   actors.charity1.addr,
   //   accounts,
   //   endowId1,
-  //   { denom: config.networkInfo.nativeToken, amount: "100000" }
+  //   // { denom: config.networkInfo.nativeToken, amount: "100000" }
+  //   { denom: localjuno.denoms.usdc, amount: "1000000" }
   // );
   // await testEndowmentVaultsRedeem(
   //   actors.charity1.client,
@@ -437,12 +439,12 @@ export async function testExecute(
 
   // Test query
   // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
-  // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
+  await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
   // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, networkInfo.chainId);
 
-  // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts, undefined, undefined);
-  // await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
+  // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
+  await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsProfile(actors.apTeam.client, accounts, endowId1);
