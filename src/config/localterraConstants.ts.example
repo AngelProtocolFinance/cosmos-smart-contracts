@@ -5,6 +5,9 @@ export const localterra = {
   networkInfo: {
     url: "http://localhost:1307",
     chainId: "localterra",
+    walletPrefix: "terra",
+    nativeToken: "uluna",
+    gasPrice: "0.01uluna",
   },
 
   mnemonicKeys: {
@@ -28,12 +31,11 @@ export const localterra = {
 
   // Should be updated contract addresses after deploying wasms in the LocalTerra
   contracts: {
-    vaultLocked1: "terra15m5fe2pfxq6796rf2z7gma8a0n2s0f0dxasmrzark3q26tltgsysvs4xr6",
-    vaultLiquid1: "terra18glh4zetf3nkdu724dxqvlw2gw6fdwnhrycazt32dgysq5gvyj4snf36gs",
+    vaultLocked1: "",
+    vaultLiquid1: "",
     vaultLocked2: "",
     vaultLiquid2: "",
   },
-
 
   // Astroport contracts
   astroport: {
