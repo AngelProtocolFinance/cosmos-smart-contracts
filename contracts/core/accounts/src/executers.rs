@@ -1074,7 +1074,7 @@ pub fn deposit(
         amount: deposit_amount * liquid_split,
     };
 
-    // update total donations recieved for a charity
+    // update total donations received for a charity
     let mut state: State = STATES.load(deps.storage, msg.id)?;
     state.donations_received.locked += locked_amount.amount;
     state.donations_received.liquid += liquid_amount.amount;

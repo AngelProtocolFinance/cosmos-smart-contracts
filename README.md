@@ -16,7 +16,7 @@ core platform of smart contracts that support multiple verticals of specialized 
 ### MultiSig Contracts:
 - [AP Team Group](./contracts/multisig/cw4-group)
 - [AP Team](./contracts/multisig/cw3-apteam) - MultiSig contract for enabling Angel Protocol Team's stewardship over all Core and Vault contracts.
-- [Review Team](./contracts/multisig/cw3-applications) - MultiSig contract for enabling Angel Protocol Review Team's to approve Charity endowment applications recieved.
+- [Review Team](./contracts/multisig/cw3-applications) - MultiSig contract for enabling Angel Protocol Review Team's to approve Charity endowment applications received.
 - [Endowment](./contracts/multisig/cw3-endowment) - Allows an Endowment's Members to create a proposal to manage their Endowment or other special actions that requires approval from AP Team CW3.
 
 ## Getting setup for development
