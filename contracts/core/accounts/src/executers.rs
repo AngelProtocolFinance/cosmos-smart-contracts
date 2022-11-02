@@ -1004,7 +1004,8 @@ pub fn reinvest_to_locked(
                         .unwrap(),
                         funds: vec![],
                     })],
-                    callback_id: Some("ibc-vault-reinvest".to_string()),
+                    // callback_id: Some("ibc-vault-reinvest".to_string()),
+                    callback_id: None,
                 })
                 .unwrap(),
                 funds: vec![],
@@ -1343,7 +1344,8 @@ pub fn vaults_invest(
                                     amount: asset.amount,
                                 }],
                             })],
-                            callback_id: Some("ibc-deposit-native".to_string()),
+                            // callback_id: Some("ibc-deposit-native".to_string()),
+                            callback_id: None,
                         })
                         .unwrap(),
                         funds: vec![Coin {
@@ -1490,7 +1492,8 @@ pub fn vaults_redeem(
                             .unwrap(),
                             funds: vec![],
                         })],
-                        callback_id: Some("ibc-vault-redeem".to_string()),
+                        // callback_id: Some("ibc-vault-redeem".to_string()),
+                        callback_id: None,
                     })
                     .unwrap(),
                     funds: vec![],
