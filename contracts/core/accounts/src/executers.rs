@@ -1328,31 +1328,50 @@ pub fn vaults_invest(
                         })?,
                     }))?;
                 // build message
-                res = res.add_message(match &asset.info {
-                    AssetInfoBase::Native(ref denom) => CosmosMsg::Wasm(WasmMsg::Execute {
-                        contract_addr: config.ibc_controller.to_string(),
-                        msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
-                            channel_id: network_info.network_connection.ibc_channel.unwrap(),
-                            msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
-                                contract_addr: ica.to_string(),
-                                msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Deposit {
-                                    endowment_id: id,
-                                })
-                                .unwrap(),
-                                funds: vec![Coin {
-                                    denom: denom.clone(),
-                                    amount: asset.amount,
-                                }],
-                            })],
-                            // callback_id: Some("ibc-deposit-native".to_string()),
-                            callback_id: None,
-                        })
-                        .unwrap(),
-                        funds: vec![Coin {
-                            denom: denom.clone(),
-                            amount: asset.amount,
-                        }],
-                    }),
+                res = res.add_messages(match &asset.info {
+                    AssetInfoBase::Native(ref denom) => [
+                        CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: config.ibc_controller.to_string(),
+                            msg: to_binary(
+                                &ica_vaults::ica_controller_msg::ExecuteMsg::SendFunds {
+                                    reflect_channel_id: network_info
+                                        .network_connection
+                                        .ibc_channel
+                                        .unwrap(),
+                                    transfer_channel_id:
+                                        "Add this info after NetworkInfo has field".to_string(),
+                                },
+                            )
+                            .unwrap(),
+                            funds: vec![Coin {
+                                denom: denom.clone(),
+                                amount: asset.amount,
+                            }],
+                        }),
+                        CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: config.ibc_controller.to_string(),
+                            msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
+                                channel_id: network_info.network_connection.ibc_channel.unwrap(),
+                                msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                                    contract_addr: ica.to_string(),
+                                    msg: to_binary(
+                                        &angel_core::messages::vault::ExecuteMsg::Deposit {
+                                            endowment_id: id,
+                                        },
+                                    )
+                                    .unwrap(),
+                                    funds: vec![Coin {
+                                        denom: denom.clone(),
+                                        amount: asset.amount,
+                                    }],
+                                })],
+                                // callback_id: Some("ibc-deposit-native".to_string()),
+                                callback_id: None,
+                            })
+                            .unwrap(),
+                            funds: vec![],
+                        }),
+                    ],
                     AssetInfo::Cw20(ref _contract_addr) => unimplemented!(),
                     _ => unreachable!(),
                 });
