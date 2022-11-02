@@ -670,6 +670,7 @@ pub struct NetworkInfo {
     pub name: String,
     pub chain_id: String,
     pub ibc_channel: Option<String>,
+    pub transfer_channel: Option<String>,
     pub ibc_host_contract: Option<Addr>,
     pub gas_limit: Option<u64>,
 }

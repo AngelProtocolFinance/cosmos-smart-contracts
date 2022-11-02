@@ -1337,9 +1337,12 @@ pub fn vaults_invest(
                                     reflect_channel_id: network_info
                                         .network_connection
                                         .ibc_channel
+                                        .clone()
                                         .unwrap(),
-                                    transfer_channel_id:
-                                        "Add this info after NetworkInfo has field".to_string(),
+                                    transfer_channel_id: network_info
+                                        .network_connection
+                                        .transfer_channel
+                                        .unwrap(),
                                 },
                             )
                             .unwrap(),
