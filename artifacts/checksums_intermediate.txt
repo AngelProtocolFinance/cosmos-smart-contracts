@@ -1,9 +1,9 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> main
 a0074d55890dff962baa8d739bef19cb70724ef36fe6744a87d13a5d11ca91e9  target/wasm32-unknown-unknown/release/accounts.wasm
 e5ef2b99d3a4e995d8cb15e2f9ed2f1c40bc3fee7690191d02da0b11812fb930  target/wasm32-unknown-unknown/release/astroport_vault.wasm
-68150bf63d257037b73f3a8099791602c68d01e8e457603b9678ef829eb1e4b5  target/wasm32-unknown-unknown/release/cw3_applications.wasm
 5fd490851cfcda970d41a63407b116b3ec74900ab289dd5633440a1d8766b5e4  target/wasm32-unknown-unknown/release/cw3_apteam.wasm
 2de84dcc60d4afdb19e6d3e91cf36c2775e4a83aec537d3df2affe00613385c6  target/wasm32-unknown-unknown/release/cw3_endowment.wasm
 67824e1115bdf991ce24578f3398cd67388fb2018d0d505f148f78800fac4168  target/wasm32-unknown-unknown/release/cw3_generic.wasm
@@ -15,3 +15,13 @@ b6885a8ab7102a780dd613e2f28816667f77291a1f5282549ddc64d4921d64ac  target/wasm32-
 80904e4fdf41d685a216653955dd78c6ba02d3e566f1223e6f32190d3b0c989b  target/wasm32-unknown-unknown/release/loopswap_vault.wasm
 c09cbb13ba07b2b539a12a25e5242229ae04ff37d2b9afb6b56df1a68c4e3f0f  target/wasm32-unknown-unknown/release/registrar.wasm
 f29d97797619787c7401a08becef7d8cb786e28db3a015512140b7ab7273c5e7  target/wasm32-unknown-unknown/release/swap_router.wasm
+=======
+afe49e457ef62e94d62fb0259d285b86aa6e9c589aff72201e54d8b3a24d3d47  target/wasm32-unknown-unknown/release/accounts.wasm
+802c322429f55b715f4e771f3aa6c627e7a2f489451adb5fda29110d79096826  target/wasm32-unknown-unknown/release/cw3_apteam.wasm
+a4b3264b469c6b9162f42355ed842b6d13b044c433ee006acf02eb6e052c6171  target/wasm32-unknown-unknown/release/cw3_endowment.wasm
+dda9741c5fb0eddb35eb60d9c898e1f7ff3cc28596ec99e25fc528abb51fa261  target/wasm32-unknown-unknown/release/cw3_generic.wasm
+bdd5d68bdfc40964661a99080eedfdbd3fdff60e50beddfce618df431ed4f154  target/wasm32-unknown-unknown/release/cw4_group.wasm
+9dc91b3cbd68ec223236700fc2a81562a32aca6dcd5b46aefb28c32605538a3f  target/wasm32-unknown-unknown/release/index_fund.wasm
+09786c4555ee44d265ae2c129796f5dc13a1c8445d19482464d07b3382e1ab8b  target/wasm32-unknown-unknown/release/registrar.wasm
+>>>>>>> v1.8.7
+0df3ae83ce56c4b496b45195154b5af16c2f2aac648183e005300cb2a97c5577  target/wasm32-unknown-unknown/release/cw3_applications.wasm
