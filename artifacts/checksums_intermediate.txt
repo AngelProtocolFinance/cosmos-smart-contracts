@@ -1,30 +1,14 @@
-<<<<<<< HEAD
-9d5eb1fb05e03082b6f89112387f0bd630bbdeedafbc18fa3defc07c287551bb  target/wasm32-unknown-unknown/release/ica_controller.wasm
-de3ee9df72e1af34161a0a04ef0f2fcdb0a768c371f747cb3caf6ffec3057866  target/wasm32-unknown-unknown/release/ica_host.wasm
-=======
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> main
-<<<<<<< HEAD
-9d5eb1fb05e03082b6f89112387f0bd630bbdeedafbc18fa3defc07c287551bb  target/wasm32-unknown-unknown/release/ica_controller.wasm
-de3ee9df72e1af34161a0a04ef0f2fcdb0a768c371f747cb3caf6ffec3057866  target/wasm32-unknown-unknown/release/ica_host.wasm
-=======
+783a3325c6a23ad025dc39879a2f1b2c87b9e881a06a9bc4c78c66add1cc5987  target/wasm32-unknown-unknown/release/accounts.wasm
+e5b12b10fcfd08104f944835f6c37cc9554931f7e12f6fa0d06141a064320290  target/wasm32-unknown-unknown/release/astroport_vault.wasm
+56c941ac1c40cf438d012f260df2dd46eed659d2896efaef16634d6cd9fbe008  target/wasm32-unknown-unknown/release/cw3_applications.wasm
+cad2a504c6a1aad8a01fd8a775a99179467e2b3ff2dc6a51029f235fac38ab36  target/wasm32-unknown-unknown/release/cw3_apteam.wasm
+e8634223773cb3053b126745f4c0913cdabf734b5ff96a8ae902ca1d520a2d1e  target/wasm32-unknown-unknown/release/cw3_endowment.wasm
+879e53aa5e1170516029aac3ef5851a97509adc6344e0ef5ec123f6fe411e38f  target/wasm32-unknown-unknown/release/cw3_generic.wasm
+ff166aaf303a75760785731a211e16dfb20094cd1bb3373a2ef207b2be52d311  target/wasm32-unknown-unknown/release/cw4_group.wasm
+e57acf261c84c646221a33957116ceb5c1d77d497d3e32f7c21840d5d93eb6da  target/wasm32-unknown-unknown/release/gift_cards.wasm
 c2f459dae52645de25d997a16707f2ff84437f13062c231d99dabc3042940712  target/wasm32-unknown-unknown/release/ica_controller.wasm
 b497eda33657939933141f4295739b9c941eac7631a86f2f0d6fc4d513c0a9c3  target/wasm32-unknown-unknown/release/ica_host.wasm
-=======
->>>>>>> v1.8.7
->>>>>>> RC-v1.9
->>>>>>> vault-ibc-feature
-a6aaca8b45693caea8432346b4b5f92edac1c80be0910f4fe291e68b2933d694  target/wasm32-unknown-unknown/release/accounts.wasm
-f15131c31d12db7b45420d51a5d5da5d8f091c27909fbdee2e7ad7d0be7b3997  target/wasm32-unknown-unknown/release/astroport_vault.wasm
-db4afbede0ce8241a761f214652024821ec73bb5026dabe30381ffa1f94d884a  target/wasm32-unknown-unknown/release/cw3_applications.wasm
-a791a359b2569d325b91d1a790c84c6c2d59bb4a08daa1645562ca55210c2ac4  target/wasm32-unknown-unknown/release/cw3_apteam.wasm
-e0a38670dcb159b82941e8f45b0b6869278c17f0fb432ba7f16274ed494910f1  target/wasm32-unknown-unknown/release/cw3_endowment.wasm
-0ff4966677921cbe553c85014f6f0a4376fb030bba4df06738faf54fa36b9540  target/wasm32-unknown-unknown/release/cw3_generic.wasm
-307d2d14ec63c829d4e3e66b9aa2f478cc3b89de819d5f0aa0b522151e37750d  target/wasm32-unknown-unknown/release/cw4_group.wasm
-36c6ae06ab05525d96b6bc8232d63282938c6b717af08c8139b8fc414c639724  target/wasm32-unknown-unknown/release/gift_cards.wasm
-0f51a797767ab4e80f17c7868bdb91568d56e83f24451b52852fc87858eb8791  target/wasm32-unknown-unknown/release/index_fund.wasm
-a9156bee8ec66babe827c97f628ee1a3f13dd5f224a04d71c7fc9a167fdf87fc  target/wasm32-unknown-unknown/release/loopswap_vault.wasm
-b2c3a1e876717cf123ab33e057d0c514ca4e7bd9164a04cbf6d74871dbad07fa  target/wasm32-unknown-unknown/release/registrar.wasm
-f6c223ed7352fbbd6d8558ea7cb16afd7a83ca11ee652938cdd4e70208eed9c4  target/wasm32-unknown-unknown/release/swap_router.wasm
+a093e44bac5ff241a3b5ad0abbc957ca10c00b334e2ab6c1b8a762f5026008a6  target/wasm32-unknown-unknown/release/index_fund.wasm
+6147fc63e56453402a55375d23dc962e55700321bd24c8e200f9fc52b1ea315c  target/wasm32-unknown-unknown/release/loopswap_vault.wasm
+b38b83b5a32b44b390da7b99e74764b8463e69e385c87170210c0c934831510d  target/wasm32-unknown-unknown/release/registrar.wasm
+8b795c7ddf5c3caccbfcefbdb93321bd358ed3fe870e16f937045112fb582b29  target/wasm32-unknown-unknown/release/swap_router.wasm
