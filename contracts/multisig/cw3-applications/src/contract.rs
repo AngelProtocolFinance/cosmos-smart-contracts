@@ -280,7 +280,7 @@ pub fn execute_update_config(
         None => None,
     };
     cfg.seed_split_to_liquid = seed_split_to_liquid;
-    new_endow_gas_money;
+    cfg.new_endow_gas_money = new_endow_gas_money;
 
     CONFIG.save(deps.storage, &cfg)?;
     Ok(Response::default())
