@@ -300,7 +300,7 @@ async function customConnSetup(srcConfig: ChainDefinition, destConfig: ChainDefi
     const [src, dest] = await setup(srcConfig, destConfig);
 
     // Setup ibc link/connection
-    const link = await Link.createWithNewConnections(src, dest);
+    const link = await Link.createWithNewConnections(src, dest, undefined, 599, 599); /// "TrustPeriod"s should be < 10 mins(600s).
     console.log(chalk.green(" Done!"), `${chalk.blue("conns-juno(connA)")}=${link.endA.connectionID}`);
     console.log(chalk.green(" Done!"), `${chalk.blue("conns-terra(connB)")}=${link.endB.connectionID}`);
 
