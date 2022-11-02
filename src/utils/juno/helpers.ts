@@ -195,7 +195,7 @@ export async function storeAndMigrateContract(
   msg = {}
 ): Promise<void> {
   process.stdout.write(`Uploading ${wasmFilename} Wasm`);
-  const codeId = await storeCode(juno, apTeam, `${wasm_path.core} /${wasmFilename}`);
+  const codeId = await storeCode(juno, apTeam, `${wasm_path.core}/${wasmFilename}`);
   console.log(chalk.green(" Done!"), `${chalk.blue("codeId")}=${codeId}`);
 
   process.stdout.write(`Migrate ${wasmFilename} contract`);
