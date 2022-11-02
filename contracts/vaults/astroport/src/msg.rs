@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use astroport::router::SwapOperation;
 
 use angel_core::structs::AccountType;
+use ica_vaults::ibc_msg::ReceiveIbcResponseMsg;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct InstantiateMsg {
@@ -89,6 +90,8 @@ pub enum ExecuteMsg {
         native_token_bal_before: Uint128,
     },
     Receive(Cw20ReceiveMsg),
+    // catch ICA msg responses from ICA Controller
+    ReceiveIbcResponse(ReceiveIbcResponseMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

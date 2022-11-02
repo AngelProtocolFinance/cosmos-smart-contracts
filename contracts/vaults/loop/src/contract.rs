@@ -213,7 +213,7 @@ fn receive_cw20(
             endowment_id,
             amount,
         }) => {
-            executers::reinvest_to_locked_recieve(deps, env, info, endowment_id, amount, cw20_msg)
+            executers::reinvest_to_locked_receive(deps, env, info, endowment_id, amount, cw20_msg)
         }
         Ok(ReceiveMsg::HarvestToLiquid {}) => {
             executers::harvest_to_liquid(deps, env, info, cw20_msg)

@@ -62,6 +62,7 @@ pub fn instantiate(
             name: "Juno".to_string(),
             chain_id: env.block.chain_id,
             ibc_channel: None,
+            transfer_channel: None,
             ibc_host_contract: None,
             gas_limit: None,
         },
