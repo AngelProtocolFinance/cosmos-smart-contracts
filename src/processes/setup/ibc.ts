@@ -214,7 +214,7 @@ async function postProcess() {
         }
     }, "auto");
 
-    process.stdout.write("Register the ibc link info(NetworkInfo) to the (juno)registrar contract");
+    process.stdout.write("Register the ibc Terra link info(NetworkInfo) to the (juno)Registrar contract");
     await sendMessageViaCw3Proposal(
         junoAPTeamSigner.sign,
         junoAPTeamSigner.senderAddress,
@@ -224,7 +224,7 @@ async function postProcess() {
             update_network_connections: {
                 action: "post",
                 network_info: {
-                    name: "juno-terra-ibc-conn",
+                    name: "Terra",
                     chain_id: localterra.networkInfo.chainId,
                     ibc_channel: channelId0,
                     ibc_host_contract: junoIcaHost,
@@ -257,7 +257,7 @@ async function postProcess() {
             }
         }
     );
-    console.log(chalk.green(" Done!"), `${chalk.blue(" contractAddress")}=${accountInfo1.account}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("Terra Vault1(Locked) - contractAddress")}=${accountInfo1.account}`);
 
     const accountInfo2 = await junoAPTeamSigner.sign.queryContractSmart(junoIcaHost, {
         account: {
@@ -281,7 +281,7 @@ async function postProcess() {
             }
         }
     );
-    console.log(chalk.green(" Done!"), `${chalk.blue(" contractAddress")}=${accountInfo2.account}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("Terra Vault1(Liquid) - contractAddress")}=${accountInfo2.account}`);
 }
 
 

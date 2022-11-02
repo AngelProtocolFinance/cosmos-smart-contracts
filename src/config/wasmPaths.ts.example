@@ -7,5 +7,5 @@ export const wasm_path = {
   astroport:
     "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/artifacts/astroport",
   mock_vault: "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/mock-vault/artifacts",
-  cosmwasm: "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/artifacts/cosmwasm",
+  cosmwasm: "/home/andrey/Documents/Code/AngelProtocol/angelprotocol-test-suite/src/artifacts/cosmwasm",
 };

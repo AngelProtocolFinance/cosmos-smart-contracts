@@ -439,12 +439,13 @@ export async function testExecute(
 
   // Test query
   // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
-  await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
+  // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, networkInfo.chainId);
+  // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, "localterra");
 
   // await testQueryAccountsEndowmentList(actors.apTeam.client, accounts);
-  await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
+  // await testQueryAccountsBalance(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsConfig(actors.apTeam.client, accounts);
   // await testQueryAccountsEndowment(actors.apTeam.client, accounts, endowId1);
   // await testQueryAccountsProfile(actors.apTeam.client, accounts, endowId1);

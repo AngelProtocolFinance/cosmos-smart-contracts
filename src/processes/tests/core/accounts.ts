@@ -462,7 +462,9 @@ export async function testCreateEndowmentCw3s(
               registrar_contract: registrar,
               threshold: old_settings.threshold,
               max_voting_period: old_settings.max_voting_period,
-              cw4_members: old_members.voters,
+              // allow us to override taking the old members list with new members (as needed)
+              // ex. Multisig setup/changes to wrong members wallets, needs new CW3 with corrected wallet members
+              cw4_members: ("new_members" in msg) ? msg.new_members : old_members.voters,
               cw4_code,
             });
             const new_cw3 = res.contractAddress as string;
