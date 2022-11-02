@@ -62,5 +62,8 @@ export const localterra = {
 
     luna_usdt_pair_contract: "",
     luna_usdt_pair_lp_token: "",
+
+    astro_usdc_pair_contract: "",
+    astro_usdc_pair_lp_token: "",
   },
 };

@@ -27,6 +27,8 @@ let lunaUsdcPair: string;
 let lunaUsdcPairLpToken: string;
 let lunaUsdtPair: string;
 let lunaUsdtPairLpToken: string;
+let astroUsdcPair: string;
+let astroUsdcPairLpToken: string;
 
 
 
@@ -611,6 +613,99 @@ async function setup(
             {
                 uluna: "100000000000",
                 "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF": "100000000000",
+            },
+        )
+    ]);
+
+    // ASTRO-USDC pair
+    process.stdout.write("Instantiating Astro-USDC Swap(Pair) contract");
+    const astroUsdcPairResult = await sendTransaction(
+        terra,
+        apTeam, [
+        new MsgExecuteContract(
+            apTeam.key.accAddress,
+            astroportFactory,
+            {
+                "create_pair": {
+                    "pair_type": {
+                        "xyk": {}
+                    },
+                    "asset_infos": [
+                        {
+                            "token": {
+                                "contract_addr": astro
+                            }
+                        },
+                        {
+                            "native_token": {
+                                "denom": localterra.denoms.usdc
+                            }
+                        }
+                    ],
+                    "init_params": undefined,
+                }
+            },
+        )
+    ]
+    );
+
+    astroUsdcPair = astroUsdcPairResult.logs[0].events
+        .find((event) => {
+            return event.type == "instantiate";
+            // return event.type == "wasm";
+        })
+        ?.attributes.find((attribute) => {
+            return attribute.key == "_contract_address";
+            // return attribute.key == "pair_contract_addr";
+        })?.value as string;
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${astroUsdcPair}`);
+
+    // Get the LP Token address of newly created pair
+    process.stdout.write("Query new ASTRO/USDC pair's LP Token contract");
+    res = await terra.wasm.contractQuery(astroUsdcPair, { pair: {} });
+    astroUsdcPairLpToken = res.liquidity_token as string;
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${astroUsdcPairLpToken}`);
+
+    // Send liquidity to ASTRO/USDC pair for swaps
+    await sendTransaction(terra, apTeam, [
+        new MsgExecuteContract(
+            apTeam.key.accAddress,
+            astro,
+            {
+                increase_allowance: {
+                    amount: "100000000000",
+                    spender: astroUsdcPair,
+                },
+            }
+        )
+    ]);
+    await sendTransaction(terra, apTeam, [
+        new MsgExecuteContract(
+            apTeam.key.accAddress,
+            astroUsdcPair,
+            {
+                provide_liquidity: {
+                    assets: [
+                        {
+                            info: {
+                                native_token: { denom: localterra.denoms.usdc },
+                            },
+                            amount: "100000000000",
+                        },
+                        {
+                            info: {
+                                token: { contract_addr: astro },
+                            },
+                            amount: "100000000000",
+                        }
+                    ],
+                    slippage_tolerance: undefined,
+                    auto_stake: undefined, // Option<bool> ?
+                    receiver: undefined,
+                }
+            },
+            {
+                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4": "100000000000",
             },
         )
     ]);
