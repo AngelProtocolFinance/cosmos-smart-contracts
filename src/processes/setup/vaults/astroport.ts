@@ -115,7 +115,18 @@ async function createAstroportVaults(
             }
         ],
         native_to_lp0_route: [],
-        native_to_lp1_route: [],
+        native_to_lp1_route: [
+            {
+                astro_swap: {
+                    offer_asset_info: {
+                        native_token: { denom: localterra.denoms.usdc },
+                    },
+                    ask_asset_info: {
+                        native_token: { denom: localterra.denoms.usdt },
+                    }
+                }
+            }
+        ],
 
         name: "Vault Token for USDC-USDT pair",
         symbol: "VTUSDCUSDT",
@@ -164,7 +175,18 @@ async function createAstroportVaults(
             }
         ],
         native_to_lp0_route: [],
-        native_to_lp1_route: [],
+        native_to_lp1_route: [
+            {
+                astro_swap: {
+                    offer_asset_info: {
+                        native_token: { denom: localterra.denoms.usdc },
+                    },
+                    ask_asset_info: {
+                        native_token: { denom: localterra.denoms.usdt },
+                    }
+                }
+            }
+        ],
 
         name: "Vault Token for USDC-USDT pair",
         symbol: "VTUSDCUSDT",

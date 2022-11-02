@@ -35,7 +35,7 @@ export async function testExecuteAstroport(
     console.log(chalk.yellow("\nStep 2. Running Tests"));
 
     /* --- EXECUTE tests --- */
-    // await testVaultDeposit(terra, apTeam, vaultLocked1, 1, { uluna: 2000000 });
+    // await testVaultDeposit(terra, apTeam, vaultLocked1, 1, { "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4": 2000000 });
     // await testVaultRedeem(terra, apTeam, vaultLocked1, 1, "500000");
     // await testVaultHarvest(terra, apTeam, vaultLocked1);
     // await testVaultReinvestToLocked(terra, apTeam, vaultLiquid1, 1, "500000");
