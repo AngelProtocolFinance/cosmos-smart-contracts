@@ -39,6 +39,9 @@ let channelId0: string;
 let channelId1: string;
 let channelId2: string;
 
+let junoTransferChannel: string;
+let terraTransferChannel: string;
+
 const IbcVersion = "ica-vaults-v1";
 // const Ics20Version = "ics20-1";
 
@@ -189,6 +192,7 @@ async function postProcess() {
             }
         )
     ]);
+    console.log(chalk.green(" Done!"));
 
     process.stdout.write("Updating configs of `(juno) accounts` and `(terra) vault` contracts");
     const junoAPTeamSigner = await customSigningCosmWasmClient(junod, localjuno.mnemonicKeys.apTeam);
@@ -201,15 +205,20 @@ async function postProcess() {
     });
 
     const terraApTeamSigner = await customSigningCosmWasmClient(terrad, localterra.mnemonicKeys.test1);  // `test1` wallet is used as `APTeam` wallet.
+    const accountInfo0 = await terraApTeamSigner.sign.queryContractSmart(terraIcaHost, {
+        account: {
+            channel_id: channelId0,
+        }
+    });
     await terraApTeamSigner.sign.execute(terraApTeamSigner.senderAddress, localterra.contracts.vaultLocked1, {
         update_config: {
-            ibc_host: terraIcaHost,
+            ibc_host: accountInfo0.account,
             ibc_controller: terraIcaController1,
         }
     }, "auto");
     await terraApTeamSigner.sign.execute(terraApTeamSigner.senderAddress, localterra.contracts.vaultLiquid1, {
         update_config: {
-            ibc_host: terraIcaHost,
+            ibc_host: accountInfo0.account,
             ibc_controller: terraIcaController2,
         }
     }, "auto");
@@ -227,6 +236,7 @@ async function postProcess() {
                     name: "Terra",
                     chain_id: localterra.networkInfo.chainId,
                     ibc_channel: channelId0,
+                    transfer_channel: junoTransferChannel,
                     ibc_host_contract: junoIcaHost,
                     gas_limit: undefined,
                 }
@@ -300,7 +310,7 @@ async function customConnSetup(srcConfig: ChainDefinition, destConfig: ChainDefi
     const [src, dest] = await setup(srcConfig, destConfig);
 
     // Setup ibc link/connection
-    const link = await Link.createWithNewConnections(src, dest);
+    const link = await Link.createWithNewConnections(src, dest, undefined, 599, 599); /// "TrustPeriod"s should be < 10 mins(600s).
     console.log(chalk.green(" Done!"), `${chalk.blue("conns-juno(connA)")}=${link.endA.connectionID}`);
     console.log(chalk.green(" Done!"), `${chalk.blue("conns-terra(connB)")}=${link.endB.connectionID}`);
 
@@ -314,6 +324,18 @@ async function customConnSetup(srcConfig: ChainDefinition, destConfig: ChainDefi
     channelId0 = channel0.src.channelId;
     channelId1 = channel1.src.channelId;
     channelId2 = channel2.src.channelId;
+
+    // also create a ics20 channel on this connection
+    const ics20Info1 = await link.createChannel("A", junod.ics20Port, terrad.ics20Port, Order.ORDER_UNORDERED, "ics20-1");
+    const ics20Info2 = await link.createChannel("B", terrad.ics20Port, junod.ics20Port, Order.ORDER_UNORDERED, "ics20-1");
+    // const ics20 = {
+    //     juno: ics20Info1.src.channelId,
+    //     terra: ics20Info2.src.channelId,
+    // };
+    junoTransferChannel = ics20Info1.src.channelId as string;
+    terraTransferChannel = ics20Info2.src.channelId as string;
+    console.log(junoTransferChannel);
+    console.log(terraTransferChannel);
 
     await link.relayAll();
 

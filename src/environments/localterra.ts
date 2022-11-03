@@ -43,6 +43,8 @@ let lunaUsdcPairLpToken: string;
 let lunaUsdtPair: string;
 let lunaUsdtPairLpToken: string;
 
+let astroUsdcPair: string;
+let astroUsdcPairLpToken: string;
 
 // -------------------------------------------------------------------------------------
 // initialize variables
@@ -99,6 +101,9 @@ async function initialize() {
     lunaUsdtPair = localterra.astroport.luna_usdt_pair_contract;
     lunaUsdtPairLpToken = localterra.astroport.luna_usdt_pair_lp_token;
 
+    astroUsdcPair = localterra.astroport.astro_usdc_pair_contract;
+    astroUsdcPairLpToken = localterra.astroport.astro_usdc_pair_lp_token;
+
     console.log(`Using ${chalk.cyan(astroportTokenCode)} as Astroport (cw20) Token Code`);
     console.log(`Using ${chalk.cyan(astroportPairCode)} as Astroport Pair Code`);
     console.log(`Using ${chalk.cyan(astroportFactory)} as Astroport Factory contract`);
@@ -133,6 +138,12 @@ async function initialize() {
     );
     console.log(
         `Using ${chalk.cyan(lunaUsdtPairLpToken)} as Astroport Luna/USDT Swap Pair LP Token`
+    );
+    console.log(
+        `Using ${chalk.cyan(astroUsdcPair)} as Astroport ASTRO/USDC Swap Pair`
+    );
+    console.log(
+        `Using ${chalk.cyan(astroUsdcPairLpToken)} as Astroport ASTRO/USDC Swap Pair LP Token`
     );
 }
 
@@ -180,7 +191,7 @@ export async function startSetupAstroportVaults(): Promise<void> {
             astroport_usdc_usdt_lp_pair: usdcUsdtPair, // Astroport USDC-USDT pair contract
             astroport_lp_reward_token: astroTokenContract, // Astroport Pair LP Staking reward token (LOOP token)
             astroport_router: astroportRouter, // SwapRouter contract
-            nativeToken: { native: localterra.networkInfo.nativeToken },
+            nativeToken: { native: localterra.denoms.usdc },
             ap_tax_rate: "0.1",
             interest_distribution: "0.5",
         }
