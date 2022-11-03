@@ -312,6 +312,7 @@ fn test_add_update_and_remove_network_infos() {
         name: "juno mainnet".to_string(),
         chain_id: "juno-1".to_string(),
         ibc_channel: None,
+        transfer_channel: None,
         ibc_host_contract: None,
         gas_limit: None,
     };

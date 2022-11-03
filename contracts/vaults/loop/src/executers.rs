@@ -586,7 +586,7 @@ pub fn reinvest_to_locked_execute(
         funds: vec![],
     })];
 
-    // 4. SEND LP tokens to the Locked Account (using ReinvestToLocked recieve msg)
+    // 4. SEND LP tokens to the Locked Account (using ReinvestToLocked receive msg)
     let reinvest_to_locked_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
         contract_addr: config.lp_token.to_string(),
         msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
@@ -627,7 +627,7 @@ pub fn reinvest_to_locked_execute(
 /// Contract entry: **ReinvestToLocked** (locked vault logic)
 ///   1. Receive the LP tokens from sibling vault(liquid)
 ///   2. Stake the LP tokens to the `farming` contract
-pub fn reinvest_to_locked_recieve(
+pub fn reinvest_to_locked_receive(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,

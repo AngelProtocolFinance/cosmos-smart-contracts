@@ -110,6 +110,9 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
+        ExecuteMsg::ReceiveIbcResponse(resp) => {
+            executers::execute_receive_ibc_response(deps, env, info, resp)
+        }
         ExecuteMsg::UpdateOwner { new_owner } => executers::update_owner(deps, info, new_owner),
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         // -Input token(eg. USDC) (Account) --> +Deposit Token/Yield Token (Vault)
@@ -218,7 +221,7 @@ fn receive_cw20(
             endowment_id,
             amount,
         }) => {
-            executers::reinvest_to_locked_recieve(deps, env, info, endowment_id, amount, cw20_msg)
+            executers::reinvest_to_locked_receive(deps, env, info, endowment_id, amount, cw20_msg)
         }
         Ok(ReceiveMsg::HarvestToLiquid {}) => {
             executers::harvest_to_liquid(deps, env, info, cw20_msg)

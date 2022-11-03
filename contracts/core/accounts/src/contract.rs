@@ -48,6 +48,9 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
+        ExecuteMsg::ReceiveIbcResponse(resp) => {
+            executers::execute_receive_ibc_response(deps, env, info, resp)
+        }
         ExecuteMsg::Deposit(msg) => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
