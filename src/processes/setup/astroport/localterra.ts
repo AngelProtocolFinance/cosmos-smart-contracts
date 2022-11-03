@@ -153,7 +153,7 @@ async function setup(
         ?.attributes.find((attribute) => {
             return attribute.key == "_contract_address";
         })?.value as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${astro}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${astro}\n`);
 
     // AstroportFactory
     process.stdout.write("Instantiating Astroport Factory contract");
@@ -276,7 +276,7 @@ async function setup(
             return attribute.key == "_contract_address";
         })?.value as string;
 
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${astroportRouter}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${astroportRouter}\n`);
 
     // Usdc-Usdt pair
     process.stdout.write("Instantiating USDC-USDT Swap(Pair) contract");
@@ -325,7 +325,7 @@ async function setup(
     process.stdout.write("Query new USDC/USDT pair's LP Token contract");
     let res: any = await terra.wasm.contractQuery(usdcUsdtPair, { pair: {} });
     usdcUsdtPairLpToken = res.liquidity_token as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${usdcUsdtPairLpToken}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${usdcUsdtPairLpToken}\n`);
 
     // Send liquidity to USDC/USDT pair for swaps
     await sendTransaction(terra, apTeam, [
@@ -407,7 +407,7 @@ async function setup(
     process.stdout.write("Query new Luna-ASTRO pair's LP Token contract");
     res = await terra.wasm.contractQuery(lunaAstroPair, { pair: {} });
     lunaAstroPairLpToken = res.liquidity_token as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${lunaAstroPairLpToken}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${lunaAstroPairLpToken}\n`);
 
     // Send liquidity to Luna/ASTRO pair for swaps
     await sendTransaction(terra, apTeam, [
@@ -500,7 +500,7 @@ async function setup(
     process.stdout.write("Query new Luna/USDC pair's LP Token contract");
     res = await terra.wasm.contractQuery(lunaUsdcPair, { pair: {} });
     lunaUsdcPairLpToken = res.liquidity_token as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${lunaUsdcPairLpToken}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${lunaUsdcPairLpToken}\n`);
 
     // Send liquidity to Luna/USDC pair for swaps
     await sendTransaction(terra, apTeam, [
@@ -582,7 +582,7 @@ async function setup(
     process.stdout.write("Query new Luna/USDT pair's LP Token contract");
     res = await terra.wasm.contractQuery(lunaUsdtPair, { pair: {} });
     lunaUsdtPairLpToken = res.liquidity_token as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${lunaUsdtPairLpToken}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${lunaUsdtPairLpToken}\n`);
 
     // Send liquidity to Luna/USDC pair for swaps
     await sendTransaction(terra, apTeam, [
@@ -664,7 +664,7 @@ async function setup(
     process.stdout.write("Query new ASTRO/USDC pair's LP Token contract");
     res = await terra.wasm.contractQuery(astroUsdcPair, { pair: {} });
     astroUsdcPairLpToken = res.liquidity_token as string;
-    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${astroUsdcPairLpToken}`);
+    console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${astroUsdcPairLpToken}\n`);
 
     // Send liquidity to ASTRO/USDC pair for swaps
     await sendTransaction(terra, apTeam, [
