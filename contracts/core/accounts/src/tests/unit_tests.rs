@@ -67,7 +67,7 @@ fn create_endowment() -> (
         tier: Some(3),
         logo: Some("Some fancy logo".to_string()),
         image: Some("Nice banner image".to_string()),
-        maturity_time: Some(mock_env().block.time.seconds() - 1000),
+        maturity_time: Some(mock_env().block.time.seconds() + 1000),
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
@@ -632,7 +632,7 @@ fn test_withdraw() {
     });
     let _res = execute(deps.as_mut(), env.clone(), info, deposit_msg).unwrap();
 
-    // Try the "Withdraw"(locked)
+    // "withdraw"(locked) fails since the endowment is not mature yet.
     let info = mock_info(&endow_details.owner.to_string(), &[]);
     let withdraw_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
@@ -643,7 +643,82 @@ fn test_withdraw() {
             amount: Uint128::from(100_u128),
         }],
     };
-    let res = execute(deps.as_mut(), env, info, withdraw_msg).unwrap();
+    let err = execute(
+        deps.as_mut(),
+        env.clone(),
+        info.clone(),
+        withdraw_msg.clone(),
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: "Endowment is not mature. Cannot withdraw before maturity time is reached."
+                .to_string()
+        })
+    );
+
+    // "withdraw"(locked) fails since the caller is not listed in "maturity_whitelist"
+    let mut matured_env = mock_env();
+    matured_env.block.time = mock_env().block.time.plus_seconds(1001); // Mock the matured state
+    let err = execute(
+        deps.as_mut(),
+        matured_env,
+        info.clone(),
+        withdraw_msg.clone(),
+    )
+    .unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: "Sender address is not listed in maturity_whitelist.".to_string()
+        })
+    );
+
+    // Update the "maturity_whitelist" of Endowment
+    let info = mock_info(&endow_details.owner.to_string(), &[]);
+    execute(
+        deps.as_mut(),
+        env,
+        info,
+        ExecuteMsg::UpdateEndowmentSettings(UpdateEndowmentSettingsMsg {
+            id: CHARITY_ID,
+            owner: None,
+            whitelisted_beneficiaries: None,
+            whitelisted_contributors: None,
+            maturity_time: None,
+            strategies: None,
+            locked_endowment_configs: None,
+            rebalance: None,
+            maturity_whitelist: Some(UpdateMaturityWhitelist {
+                add: vec![endow_details.owner.to_string()],
+                remove: vec![],
+            }),
+            kyc_donors_only: None,
+            endow_type: None,
+            name: None,
+            categories: None,
+            tier: None,
+            logo: None,
+            image: None,
+        }),
+    )
+    .unwrap();
+
+    // Success to withdraw locked balances
+    let mut matured_env = mock_env();
+    matured_env.block.time = mock_env().block.time.plus_seconds(1001); // Mock the matured state
+    let info = mock_info(&endow_details.owner.to_string(), &[]);
+    let withdraw_msg = ExecuteMsg::Withdraw {
+        id: CHARITY_ID,
+        acct_type: AccountType::Locked,
+        beneficiary: "beneficiary".to_string(),
+        assets: vec![AssetUnchecked {
+            info: AssetInfoBase::Native("ujuno".to_string()),
+            amount: Uint128::from(100_u128),
+        }],
+    };
+    let res = execute(deps.as_mut(), matured_env, info, withdraw_msg).unwrap();
     assert_eq!(res.messages.len(), 1);
 }
 
@@ -670,8 +745,8 @@ fn test_withdraw_liquid() {
     });
     let _res = execute(deps.as_mut(), env.clone(), info, deposit_msg).unwrap();
 
-    // "WithdrawLiquid" fails since the "beneficiary" is not listed in "maturity_whitelist"
-    let info = mock_info(&endow_details.owner.to_string(), &[]);
+    // "Withdraw"(liquid) fails since the sender/caller is neither of endowment owner or address in "whitelisted_beneficiaries"
+    let info = mock_info(&"anyone".to_string(), &[]);
     let withdraw_liquid_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
         acct_type: AccountType::Liquid,
@@ -685,42 +760,11 @@ fn test_withdraw_liquid() {
     assert_eq!(
         err,
         ContractError::Std(StdError::GenericErr {
-            msg: "Beneficiary address is not listed in maturity_whitelist.".to_string()
+            msg: "Sender address is not listed in whitelist.".to_string()
         })
     );
 
-    // Update the "maturity_whitelist" of Endowment
-    let info = mock_info(&endow_details.owner.to_string(), &[]);
-    execute(
-        deps.as_mut(),
-        env.clone(),
-        info,
-        ExecuteMsg::UpdateEndowmentSettings(UpdateEndowmentSettingsMsg {
-            id: CHARITY_ID,
-            owner: None,
-            whitelisted_beneficiaries: None,
-            whitelisted_contributors: None,
-
-            maturity_time: None,
-            strategies: None,
-            locked_endowment_configs: None,
-            rebalance: None,
-            maturity_whitelist: Some(UpdateMaturityWhitelist {
-                add: vec!["beneficiary".to_string()],
-                remove: vec![],
-            }),
-            kyc_donors_only: None,
-            endow_type: None,
-            name: None,
-            categories: None,
-            tier: None,
-            logo: None,
-            image: None,
-        }),
-    )
-    .unwrap();
-
-    // "WithdrawLiquid" fails since the amount is too big
+    // "Withdraw"(liquid) fails since the amount is too big
     let info = mock_info(&endow_details.owner.to_string(), &[]);
     let withdraw_liquid_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,

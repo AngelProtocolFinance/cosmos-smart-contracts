@@ -620,7 +620,7 @@ pub fn update_endowment_settings(
 
     if let Some(whitelist) = msg.maturity_whitelist {
         let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
-        if endow_mature_time < env.block.time.seconds() {
+        if env.block.time.seconds() < endow_mature_time {
             let UpdateMaturityWhitelist { add, remove } = whitelist;
             for addr in add {
                 let validated_addr = deps.api.addr_validate(&addr)?;
@@ -1782,7 +1782,6 @@ pub fn withdraw(
     assets: Vec<AssetUnchecked>,
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
-    let config = CONFIG.load(deps.storage)?;
     let mut state = STATES.load(deps.storage, id)?;
     let mut state_bal: GenericBalance = state.balances.get(&acct_type);
     let mut messages: Vec<SubMsg> = vec![];
@@ -1794,41 +1793,48 @@ pub fn withdraw(
         }));
     }
 
-    // check that sender is correct based on account type attempting to access
-    // Only config owner can authorize a locked balance withdraw when locks are in place or maturity is not reached
-    // Only the endowment owner can authorize a locked balance withdraw once maturity is reached or if early withdraws are allowed
-    if acct_type == AccountType::Locked {
-        if let EndowmentType::Charity = endowment.endow_type {
-            if info.sender != config.owner {
-                return Err(ContractError::Unauthorized {});
-            }
-        } else {
+    // Check that the sender is correct based on EndowmentType & AccountType
+    // EndowmentType::Charity =>
+    //          Only endowment owner can withdraw locked/liquid balances
+    // EndowmentType::Normal =>
+    //          AccountType::Locked => Endomwent owner or address in "maturity_whitelist"
+    //                      can withdraw the balances AFTER MATURED
+    //          AccountType::Liquid => Endowment owner or address in "whitelisted_beneficiaries"
+    //                      can withdraw the balances
+    match endowment.endow_type {
+        EndowmentType::Charity => {
             if info.sender != endowment.owner {
                 return Err(ContractError::Unauthorized {});
             }
-            if endowment.maturity_time.is_some()
-                && env.block.time < Timestamp::from_seconds(endowment.maturity_time.unwrap())
-            {
-                return Err(ContractError::Std(StdError::generic_err(
-                    "Endowment is not mature. Cannot withdraw before maturity time is reached.",
-                )));
+        }
+        EndowmentType::Normal => match acct_type {
+            AccountType::Locked => {
+                if endowment.maturity_time.is_some()
+                    && env.block.time < Timestamp::from_seconds(endowment.maturity_time.unwrap())
+                {
+                    return Err(ContractError::Std(StdError::generic_err(
+                        "Endowment is not mature. Cannot withdraw before maturity time is reached.",
+                    )));
+                }
+                if !endowment.maturity_whitelist.contains(&info.sender) {
+                    return Err(ContractError::Std(StdError::generic_err(
+                        "Sender address is not listed in maturity_whitelist.",
+                    )));
+                }
             }
-        }
-    }
-    // Only the owner of an endowment w/ withdraws approved can remove liquid balances
-    // Also, the `beneficiary` should be listed in `maturity_whitelist`.
-    if acct_type == AccountType::Liquid {
-        if info.sender != endowment.owner {
-            return Err(ContractError::Unauthorized {});
-        }
-        if !endowment
-            .maturity_whitelist
-            .contains(&deps.api.addr_validate(&beneficiary)?)
-        {
-            return Err(ContractError::Std(StdError::generic_err(
-                "Beneficiary address is not listed in maturity_whitelist.",
-            )));
-        }
+            AccountType::Liquid => {
+                if info.sender != endowment.owner {
+                    if !endowment
+                        .whitelisted_beneficiaries
+                        .contains(&info.sender.to_string())
+                    {
+                        return Err(ContractError::Std(StdError::generic_err(
+                            "Sender address is not listed in whitelist.",
+                        )));
+                    }
+                }
+            }
+        },
     }
 
     for asset in assets.iter() {
