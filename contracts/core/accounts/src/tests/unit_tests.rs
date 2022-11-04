@@ -4,7 +4,7 @@ use angel_core::errors::core::*;
 
 use angel_core::messages::accounts::{
     CreateEndowmentMsg, DepositMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Strategy,
-    UpdateEndowmentSettingsMsg, UpdateEndowmentStatusMsg,
+    UpdateEndowmentSettingsMsg, UpdateEndowmentStatusMsg, UpdateMaturityWhitelist,
 };
 use angel_core::messages::accounts::{UpdateConfigMsg, UpdateProfileMsg};
 use angel_core::responses::accounts::{
@@ -16,7 +16,8 @@ use angel_core::structs::{
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    attr, coins, from_binary, to_binary, Addr, Coin, Decimal, Env, OwnedDeps, StdError, Uint128,
+    attr, coins, from_binary, to_binary, Addr, Coin, Decimal, Env, OwnedDeps, StdError, Timestamp,
+    Uint128,
 };
 use cw20::Cw20ReceiveMsg;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
@@ -67,7 +68,7 @@ fn create_endowment() -> (
         logo: Some("Some fancy logo".to_string()),
         image: Some("Nice banner image".to_string()),
         withdraw_before_maturity: false,
-        maturity_time: Some(1000_u64),
+        maturity_time: Some(mock_env().block.time.seconds() - 1000),
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
@@ -634,18 +635,18 @@ fn test_withdraw() {
     });
     let _res = execute(deps.as_mut(), env.clone(), info, deposit_msg).unwrap();
 
-    // Try the "Withdraw"
+    // Try the "Withdraw"(locked)
     let info = mock_info(&endow_details.owner.to_string(), &[]);
     let withdraw_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
-        acct_type: AccountType::Liquid,
+        acct_type: AccountType::Locked,
         beneficiary: "beneficiary".to_string(),
         assets: vec![AssetUnchecked {
             info: AssetInfoBase::Native("ujuno".to_string()),
             amount: Uint128::from(100_u128),
         }],
     };
-    let res = execute(deps.as_mut(), env.clone(), info, withdraw_msg).unwrap();
+    let res = execute(deps.as_mut(), env, info, withdraw_msg).unwrap();
     assert_eq!(res.messages.len(), 1);
 }
 
@@ -672,8 +673,57 @@ fn test_withdraw_liquid() {
     });
     let _res = execute(deps.as_mut(), env.clone(), info, deposit_msg).unwrap();
 
-    // Try the "WithdrawLiquid"
-    // Fails since the amount is too big
+    // "WithdrawLiquid" fails since the "beneficiary" is not listed in "maturity_whitelist"
+    let info = mock_info(&endow_details.owner.to_string(), &[]);
+    let withdraw_liquid_msg = ExecuteMsg::Withdraw {
+        id: CHARITY_ID,
+        acct_type: AccountType::Liquid,
+        beneficiary: "beneficiary".to_string(),
+        assets: vec![AssetUnchecked {
+            info: AssetInfoBase::Native("ujuno".to_string()),
+            amount: Uint128::from(1000_u128),
+        }],
+    };
+    let err = execute(deps.as_mut(), env.clone(), info, withdraw_liquid_msg).unwrap_err();
+    assert_eq!(
+        err,
+        ContractError::Std(StdError::GenericErr {
+            msg: "Beneficiary address is not listed in maturity_whitelist.".to_string()
+        })
+    );
+
+    // Update the "maturity_whitelist" of Endowment
+    let info = mock_info(&endow_details.owner.to_string(), &[]);
+    execute(
+        deps.as_mut(),
+        env.clone(),
+        info,
+        ExecuteMsg::UpdateEndowmentSettings(UpdateEndowmentSettingsMsg {
+            id: CHARITY_ID,
+            owner: None,
+            whitelisted_beneficiaries: None,
+            whitelisted_contributors: None,
+            withdraw_before_maturity: None,
+            maturity_time: None,
+            strategies: None,
+            locked_endowment_configs: None,
+            rebalance: None,
+            maturity_whitelist: Some(UpdateMaturityWhitelist {
+                add: vec!["beneficiary".to_string()],
+                remove: vec![],
+            }),
+            kyc_donors_only: None,
+            endow_type: None,
+            name: None,
+            categories: None,
+            tier: None,
+            logo: None,
+            image: None,
+        }),
+    )
+    .unwrap();
+
+    // "WithdrawLiquid" fails since the amount is too big
     let info = mock_info(&endow_details.owner.to_string(), &[]);
     let withdraw_liquid_msg = ExecuteMsg::Withdraw {
         id: CHARITY_ID,
