@@ -546,8 +546,9 @@ pub fn update_endowment_settings(
     };
     // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
     if endowment.endow_type != EndowmentType::Charity {
-        endowment.whitelisted_beneficiaries = match msg.whitelisted_beneficiaries {
-            Some(i) => {
+        if let Some(whitelisted_beneficiaries) = msg.whitelisted_beneficiaries {
+            let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+            if env.block.time.seconds() < endow_mature_time {
                 if config
                     .settings_controller
                     .whitelisted_beneficiaries
@@ -558,15 +559,13 @@ pub fn update_endowment_settings(
                         env.block.time,
                     )
                 {
-                    i
-                } else {
-                    endowment.whitelisted_beneficiaries
+                    endowment.whitelisted_beneficiaries = whitelisted_beneficiaries;
                 }
             }
-            None => endowment.whitelisted_beneficiaries,
-        };
-        endowment.whitelisted_contributors = match msg.whitelisted_contributors {
-            Some(i) => {
+        }
+        if let Some(whitelisted_contributors) = msg.whitelisted_contributors {
+            let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+            if env.block.time.seconds() < endow_mature_time {
                 if config
                     .settings_controller
                     .whitelisted_contributors
@@ -577,13 +576,10 @@ pub fn update_endowment_settings(
                         env.block.time,
                     )
                 {
-                    i
-                } else {
-                    endowment.whitelisted_contributors
+                    endowment.whitelisted_contributors = whitelisted_contributors;
                 }
             }
-            None => endowment.whitelisted_contributors,
-        };
+        }
         endowment.maturity_time = match msg.maturity_time {
             Some(i) => {
                 if config.settings_controller.maturity_time.can_change(
