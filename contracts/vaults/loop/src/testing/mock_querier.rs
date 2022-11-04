@@ -137,7 +137,6 @@ impl WasmMockQuerier {
                         owner: Addr::unchecked("owner"),
                         status: angel_core::structs::EndowmentStatus::Approved,
                         endow_type: angel_core::structs::EndowmentType::Charity,
-                        withdraw_before_maturity: false,
                         maturity_time: None,
                         strategies: AccountStrategies::default(),
                         oneoff_vaults: OneOffVaults::default(),

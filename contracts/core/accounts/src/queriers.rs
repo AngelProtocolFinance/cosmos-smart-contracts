@@ -195,7 +195,6 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         owner: endowment.owner,
         status: endowment.status,
         endow_type: endowment.endow_type,
-        withdraw_before_maturity: endowment.withdraw_before_maturity,
         maturity_time: endowment.maturity_time,
         strategies: endowment.strategies,
         oneoff_vaults: endowment.oneoff_vaults,

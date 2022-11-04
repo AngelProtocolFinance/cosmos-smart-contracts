@@ -219,7 +219,6 @@ impl WasmMockQuerier {
                         dao_token: None,
                         name: "Test Endowment".to_string(),
                         description: "Test endowment".to_string(),
-                        withdraw_before_maturity: true,
                         strategies: AccountStrategies::default(),
                         status: angel_core::structs::EndowmentStatus::Approved,
                         endow_type: angel_core::structs::EndowmentType::Charity,

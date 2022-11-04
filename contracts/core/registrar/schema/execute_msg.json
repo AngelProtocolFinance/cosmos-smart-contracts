@@ -1,19 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "ExecuteMsg",
-  "anyOf": [
-    {
-      "type": "object",
-      "required": [
-        "create_endowment"
-      ],
-      "properties": {
-        "create_endowment": {
-          "$ref": "#/definitions/CreateEndowmentMsg"
-        }
-      },
-      "additionalProperties": false
-    },
+  "oneOf": [
     {
       "type": "object",
       "required": [
@@ -29,19 +17,15 @@
     {
       "type": "object",
       "required": [
-        "vault_update_status"
+        "vault_remove"
       ],
       "properties": {
-        "vault_update_status": {
+        "vault_remove": {
           "type": "object",
           "required": [
-            "approved",
             "vault_addr"
           ],
           "properties": {
-            "approved": {
-              "type": "boolean"
-            },
             "vault_addr": {
               "type": "string"
             }
@@ -53,36 +37,27 @@
     {
       "type": "object",
       "required": [
-        "charity_add"
+        "vault_update"
       ],
       "properties": {
-        "charity_add": {
+        "vault_update": {
           "type": "object",
           "required": [
-            "charity"
+            "approved",
+            "restricted_from",
+            "vault_addr"
           ],
           "properties": {
-            "charity": {
-              "type": "string"
-            }
-          }
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "charity_remove"
-      ],
-      "properties": {
-        "charity_remove": {
-          "type": "object",
-          "required": [
-            "charity"
-          ],
-          "properties": {
-            "charity": {
+            "approved": {
+              "type": "boolean"
+            },
+            "restricted_from": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/EndowmentType"
+              }
+            },
+            "vault_addr": {
               "type": "string"
             }
           }
@@ -98,18 +73,6 @@
       "properties": {
         "update_config": {
           "$ref": "#/definitions/UpdateConfigMsg"
-        }
-      },
-      "additionalProperties": false
-    },
-    {
-      "type": "object",
-      "required": [
-        "update_endowment_status"
-      ],
-      "properties": {
-        "update_endowment_status": {
-          "$ref": "#/definitions/UpdateEndowmentStatusMsg"
         }
       },
       "additionalProperties": false
@@ -137,11 +100,11 @@
     {
       "type": "object",
       "required": [
-        "harvest"
+        "update_endow_type_fees"
       ],
       "properties": {
-        "harvest": {
-          "type": "object"
+        "update_endow_type_fees": {
+          "$ref": "#/definitions/UpdateEndowTypeFeesMsg"
         }
       },
       "additionalProperties": false
@@ -149,80 +112,180 @@
     {
       "type": "object",
       "required": [
-        "migrate_accounts"
+        "update_network_connections"
       ],
       "properties": {
-        "migrate_accounts": {
-          "type": "object"
+        "update_network_connections": {
+          "type": "object",
+          "required": [
+            "action",
+            "network_info"
+          ],
+          "properties": {
+            "action": {
+              "type": "string"
+            },
+            "network_info": {
+              "$ref": "#/definitions/NetworkInfo"
+            }
+          }
         }
       },
       "additionalProperties": false
     }
   ],
   "definitions": {
-    "CreateEndowmentMsg": {
+    "AcceptedTokens": {
       "type": "object",
       "required": [
-        "beneficiary",
-        "description",
-        "name",
-        "owner",
-        "withdraw_before_maturity"
+        "cw20",
+        "native"
       ],
       "properties": {
-        "beneficiary": {
-          "type": "string"
+        "cw20": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
-        "description": {
-          "type": "string"
-        },
-        "guardians_multisig_addr": {
-          "type": [
-            "string",
-            "null"
-          ]
-        },
-        "maturity_height": {
-          "type": [
-            "integer",
-            "null"
-          ],
-          "format": "uint64",
-          "minimum": 0.0
-        },
-        "maturity_time": {
-          "type": [
-            "integer",
-            "null"
-          ],
-          "format": "uint64",
-          "minimum": 0.0
-        },
-        "name": {
-          "type": "string"
-        },
-        "owner": {
-          "type": "string"
-        },
-        "withdraw_before_maturity": {
-          "type": "boolean"
+        "native": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         }
       }
+    },
+    "AccountType": {
+      "type": "string",
+      "enum": [
+        "locked",
+        "liquid"
+      ]
+    },
+    "Addr": {
+      "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+      "type": "string"
     },
     "Decimal": {
       "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
       "type": "string"
     },
-    "UpdateConfigMsg": {
+    "EndowmentType": {
+      "type": "string",
+      "enum": [
+        "Charity",
+        "Normal"
+      ]
+    },
+    "NetworkInfo": {
       "type": "object",
+      "required": [
+        "chain_id",
+        "name"
+      ],
       "properties": {
-        "accounts_code_id": {
+        "chain_id": {
+          "type": "string"
+        },
+        "gas_limit": {
           "type": [
             "integer",
             "null"
           ],
           "format": "uint64",
           "minimum": 0.0
+        },
+        "ibc_channel": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ibc_host_contract": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Addr"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "RebalanceDetails": {
+      "type": "object",
+      "required": [
+        "interest_distribution",
+        "locked_interests_to_liquid",
+        "locked_principle_to_liquid",
+        "principle_distribution",
+        "rebalance_liquid_invested_profits"
+      ],
+      "properties": {
+        "interest_distribution": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "locked_interests_to_liquid": {
+          "type": "boolean"
+        },
+        "locked_principle_to_liquid": {
+          "type": "boolean"
+        },
+        "principle_distribution": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "rebalance_liquid_invested_profits": {
+          "type": "boolean"
+        }
+      }
+    },
+    "UpdateConfigMsg": {
+      "type": "object",
+      "properties": {
+        "accepted_tokens": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/AcceptedTokens"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "accepted_tokens_cw20": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "accepted_tokens_native": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "accounts_contract": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "applications_review": {
+          "type": [
+            "string",
+            "null"
+          ]
         },
         "approved_charities": {
           "type": [
@@ -233,25 +296,177 @@
             "type": "string"
           }
         },
-        "default_vault": {
+        "charity_shares_contract": {
           "type": [
             "string",
             "null"
           ]
         },
-        "endowment_owners_group_addr": {
+        "collector_addr": {
           "type": [
             "string",
             "null"
           ]
         },
-        "guardians_multisig_addr": {
+        "collector_share": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cw3_code": {
+          "description": "WASM CODES",
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "cw4_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "donation_match_charites_contract": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "donation_match_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "fundraising_contract": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "gov_contract": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "halo_token": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "halo_token_lp_contract": {
           "type": [
             "string",
             "null"
           ]
         },
         "index_fund_contract": {
+          "description": "CONTRACT ADDRESSES",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rebalance": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RebalanceDetails"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "split_default": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "split_max": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "split_min": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "subdao_bonding_token_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "subdao_cw20_token_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "subdao_cw900_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "subdao_distributor_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "subdao_gov_code": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "swap_factory": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "swaps_router": {
           "type": [
             "string",
             "null"
@@ -275,47 +490,101 @@
         }
       }
     },
-    "UpdateEndowmentStatusMsg": {
+    "UpdateEndowTypeFeesMsg": {
       "type": "object",
-      "required": [
-        "endowment_addr",
-        "status"
-      ],
       "properties": {
-        "beneficiary": {
-          "type": [
-            "string",
-            "null"
+        "endowtype_charity": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Decimal"
+            },
+            {
+              "type": "null"
+            }
           ]
         },
-        "endowment_addr": {
-          "type": "string"
-        },
-        "status": {
-          "type": "integer",
-          "format": "uint8",
-          "minimum": 0.0
+        "endowtype_normal": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Decimal"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
     "VaultAddMsg": {
       "type": "object",
       "required": [
+        "acct_type",
         "input_denom",
+        "restricted_from",
         "vault_addr",
+        "vault_type",
         "yield_token"
       ],
       "properties": {
+        "acct_type": {
+          "$ref": "#/definitions/AccountType"
+        },
         "input_denom": {
           "type": "string"
         },
+        "network": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "restricted_from": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EndowmentType"
+          }
+        },
         "vault_addr": {
           "type": "string"
+        },
+        "vault_type": {
+          "$ref": "#/definitions/VaultType"
         },
         "yield_token": {
           "type": "string"
         }
       }
+    },
+    "VaultType": {
+      "oneOf": [
+        {
+          "type": "string",
+          "enum": [
+            "native",
+            "evm"
+          ]
+        },
+        {
+          "type": "object",
+          "required": [
+            "ibc"
+          ],
+          "properties": {
+            "ibc": {
+              "type": "object",
+              "required": [
+                "ica"
+              ],
+              "properties": {
+                "ica": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
     }
   }
 }

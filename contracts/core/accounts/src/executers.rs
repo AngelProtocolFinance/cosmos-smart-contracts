@@ -186,7 +186,6 @@ pub fn create_endowment(
                 status: EndowmentStatus::Approved,
                 deposit_approved: true,
                 withdraw_approved: true,
-                withdraw_before_maturity: msg.withdraw_before_maturity,
                 maturity_time: msg.maturity_time,
                 strategies: AccountStrategies::default(),
                 oneoff_vaults: OneOffVaults::default(),
@@ -584,25 +583,6 @@ pub fn update_endowment_settings(
                 }
             }
             None => endowment.whitelisted_contributors,
-        };
-        endowment.withdraw_before_maturity = match msg.withdraw_before_maturity {
-            Some(i) => {
-                if config
-                    .settings_controller
-                    .whitelisted_contributors
-                    .can_change(
-                        &info.sender,
-                        &endowment.owner,
-                        endowment.dao.as_ref(),
-                        env.block.time,
-                    )
-                {
-                    i
-                } else {
-                    endowment.withdraw_before_maturity
-                }
-            }
-            None => endowment.withdraw_before_maturity,
         };
         endowment.maturity_time = match msg.maturity_time {
             Some(i) => {
@@ -1826,9 +1806,8 @@ pub fn withdraw(
             if info.sender != endowment.owner {
                 return Err(ContractError::Unauthorized {});
             }
-            if !endowment.withdraw_before_maturity
-                && (endowment.maturity_time.is_some()
-                    && env.block.time < Timestamp::from_seconds(endowment.maturity_time.unwrap()))
+            if endowment.maturity_time.is_some()
+                && env.block.time < Timestamp::from_seconds(endowment.maturity_time.unwrap())
             {
                 return Err(ContractError::Std(StdError::generic_err(
                     "Endowment is not mature. Cannot withdraw before maturity time is reached.",

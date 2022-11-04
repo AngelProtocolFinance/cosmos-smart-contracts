@@ -31,8 +31,7 @@ pub struct Endowment {
     pub status: EndowmentStatus,
     pub deposit_approved: bool, // approved to receive donations & transact
     pub withdraw_approved: bool, // approved to withdraw funds
-    pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
-    pub maturity_time: Option<u64>,     // datetime int of endowment maturity (unit: seconds)
+    pub maturity_time: Option<u64>, // datetime int of endowment maturity (unit: seconds)
     pub strategies: AccountStrategies, // vaults and percentages for locked/liquid accounts donations where auto_invest == TRUE
     pub oneoff_vaults: OneOffVaults, // vaults not covered in account startegies (more efficient tracking of vaults vs. looking up allll vaults)
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
