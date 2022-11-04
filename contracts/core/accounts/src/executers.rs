@@ -1827,8 +1827,8 @@ pub fn withdraw(
                 return Err(ContractError::Unauthorized {});
             }
             if !endowment.withdraw_before_maturity
-                || (endowment.maturity_time.is_some()
-                    && Timestamp::from_seconds(endowment.maturity_time.unwrap()) <= env.block.time)
+                && (endowment.maturity_time.is_some()
+                    && env.block.time < Timestamp::from_seconds(endowment.maturity_time.unwrap()))
             {
                 return Err(ContractError::Std(StdError::generic_err(
                     "Endowment is not mature. Cannot withdraw before maturity time is reached.",
