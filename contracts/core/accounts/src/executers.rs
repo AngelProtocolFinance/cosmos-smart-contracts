@@ -1837,9 +1837,18 @@ pub fn withdraw(
         }
     }
     // Only the owner of an endowment w/ withdraws approved can remove liquid balances
+    // Also, the `beneficiary` should be listed in `maturity_whitelist`.
     if acct_type == AccountType::Liquid {
         if info.sender != endowment.owner {
             return Err(ContractError::Unauthorized {});
+        }
+        if !endowment
+            .maturity_whitelist
+            .contains(&deps.api.addr_validate(&beneficiary)?)
+        {
+            return Err(ContractError::Std(StdError::generic_err(
+                "Beneficiary address is not listed in maturity_whitelist.",
+            )));
         }
     }
 
