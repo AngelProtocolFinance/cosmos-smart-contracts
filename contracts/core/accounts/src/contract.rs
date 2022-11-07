@@ -153,8 +153,9 @@ pub fn execute(
         ExecuteMsg::Allowance {
             endowment_id,
             action,
+            spender,
             asset,
-        } => executers::manage_allowances(deps, info, endowment_id, action, asset),
+        } => executers::manage_allowances(deps, info, endowment_id, action, spender, asset),
     }
 }
 

@@ -83,9 +83,14 @@ pub struct State {
     pub closing_beneficiary: Option<Beneficiary>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
+pub struct Allowances {
+    pub assets: Vec<Asset>,
+}
+
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATES: Map<u32, State> = Map::new("states");
 pub const ENDOWMENTS: Map<u32, Endowment> = Map::new("endowments");
 pub const PROFILES: Map<u32, Profile> = Map::new("profiles");
 pub const COPYCATS: Map<u32, Vec<u32>> = Map::new("copycats");
-pub const ALLOWANCES: Map<(&Addr, &Addr), Vec<Asset>> = Map::new("3rd_party_wallet_allowances");
+pub const ALLOWANCES: Map<(&Addr, &Addr), Allowances> = Map::new("3rd_party_wallet_allowances");

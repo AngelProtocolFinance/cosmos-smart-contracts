@@ -1,4 +1,6 @@
-use crate::state::{Endowment, State, CONFIG, COPYCATS, ENDOWMENTS, PROFILES, STATES};
+use crate::state::{
+    Allowances, Endowment, State, ALLOWANCES, CONFIG, COPYCATS, ENDOWMENTS, PROFILES, STATES,
+};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -24,7 +26,7 @@ use cosmwasm_std::{
 };
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw4::Member;
-use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
+use cw_asset::{Asset, AssetBase, AssetInfo, AssetInfoBase, AssetUnchecked};
 use cw_utils::Duration;
 
 pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
@@ -2390,9 +2392,39 @@ pub fn manage_allowances(
     info: MessageInfo,
     endowment_id: u32,
     action: String,
+    spender: String,
     asset: Asset,
 ) -> Result<Response, ContractError> {
-    // TODO
+    // Validation
+    let endowment = ENDOWMENTS.load(deps.storage, endowment_id)?;
+    if info.sender != endowment.owner {
+        return Err(ContractError::Unauthorized {});
+    }
 
-    Ok(Response::default())
+    // Update the ALLOWANCES as requested
+    let spender = deps.api.addr_validate(&spender)?;
+    ALLOWANCES.update(
+        deps.storage,
+        (&endowment.owner, &spender),
+        |allowances| -> Result<_, _> {
+            let mut allowances = allowances.unwrap_or_default();
+            let id = allowances.assets.iter().position(|x| x.info == asset.info);
+            match (action.as_str(), id) {
+                ("add", Some(id)) => {
+                    allowances.assets[id].amount += asset.amount;
+                }
+                ("add", None) => {
+                    allowances.assets.push(asset);
+                }
+                ("remove", Some(id)) => {
+                    allowances.assets[id].amount -= asset.amount;
+                }
+                ("remove", None) => {}
+                _ => unreachable!(),
+            }
+            Ok::<Allowances, ContractError>(allowances)
+        },
+    )?;
+
+    Ok(Response::default().add_attribute("action", "manage_allowances"))
 }

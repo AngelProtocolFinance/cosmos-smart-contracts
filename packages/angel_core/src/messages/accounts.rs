@@ -132,6 +132,7 @@ pub enum ExecuteMsg {
     Allowance {
         endowment_id: u32,
         action: String,
+        spender: String,
         asset: Asset,
     },
 }
