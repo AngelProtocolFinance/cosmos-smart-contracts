@@ -1778,6 +1778,7 @@ pub fn withdraw(
     assets: Vec<AssetUnchecked>,
 ) -> Result<Response, ContractError> {
     let endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let config = CONFIG.load(deps.storage)?;
     let mut state = STATES.load(deps.storage, id)?;
     let mut state_bal: GenericBalance = state.balances.get(&acct_type);
     let mut messages: Vec<SubMsg> = vec![];
@@ -1790,19 +1791,28 @@ pub fn withdraw(
     }
 
     // Check that the sender is correct based on EndowmentType & AccountType
+    //
     // EndowmentType::Charity =>
-    //          Only endowment owner can withdraw locked/liquid balances
+    //          AccountType::Locked => Only CONFIG owner can withdraw balances
+    //          AccountType::Liquid => Only endowment owner can withdraw balances
     // EndowmentType::Normal =>
     //          AccountType::Locked => Endomwent owner or address in "maturity_whitelist"
     //                      can withdraw the balances AFTER MATURED
     //          AccountType::Liquid => Endowment owner or address in "whitelisted_beneficiaries"
     //                      can withdraw the balances
     match endowment.endow_type {
-        EndowmentType::Charity => {
-            if info.sender != endowment.owner {
-                return Err(ContractError::Unauthorized {});
+        EndowmentType::Charity => match acct_type {
+            AccountType::Locked => {
+                if info.sender != config.owner {
+                    return Err(ContractError::Unauthorized {});
+                }
             }
-        }
+            AccountType::Liquid => {
+                if info.sender != endowment.owner {
+                    return Err(ContractError::Unauthorized {});
+                }
+            }
+        },
         EndowmentType::Normal => match acct_type {
             AccountType::Locked => {
                 if endowment.maturity_time.is_some()
