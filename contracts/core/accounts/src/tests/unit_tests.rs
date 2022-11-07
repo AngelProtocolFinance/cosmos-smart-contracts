@@ -760,7 +760,7 @@ fn test_withdraw_liquid() {
     assert_eq!(
         err,
         ContractError::Std(StdError::GenericErr {
-            msg: "Sender address is not listed in whitelist.".to_string()
+            msg: "Sender is not Endowment owner or is not listed in whitelist.".to_string()
         })
     );
 

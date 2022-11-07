@@ -1826,15 +1826,14 @@ pub fn withdraw(
             }
         }
         (EndowmentType::Normal, AccountType::Liquid) => {
-            if info.sender != endowment.owner {
-                if !endowment
+            if !(info.sender == endowment.owner
+                || endowment
                     .whitelisted_beneficiaries
-                    .contains(&info.sender.to_string())
-                {
-                    return Err(ContractError::Std(StdError::generic_err(
-                        "Sender address is not listed in whitelist.",
-                    )));
-                }
+                    .contains(&info.sender.to_string()))
+            {
+                return Err(ContractError::Std(StdError::generic_err(
+                    "Sender is not Endowment owner or is not listed in whitelist.",
+                )));
             }
         }
     }
