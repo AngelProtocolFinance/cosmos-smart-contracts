@@ -3,36 +3,80 @@
   "title": "EndowmentDetailsResponse",
   "type": "object",
   "required": [
-    "beneficiary",
+    "categories",
+    "deposit_approved",
     "description",
-    "guardians",
+    "donation_match_contract",
+    "endow_type",
+    "kyc_donors_only",
+    "maturity_whitelist",
     "name",
+    "oneoff_vaults",
     "owner",
+    "pending_redemptions",
     "rebalance",
-    "split_to_liquid",
+    "status",
     "strategies",
-    "withdraw_before_maturity"
+    "withdraw_approved"
   ],
   "properties": {
-    "beneficiary": {
-      "$ref": "#/definitions/Addr"
+    "categories": {
+      "$ref": "#/definitions/Categories"
     },
-    "description": {
-      "type": "string"
-    },
-    "guardians": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      }
-    },
-    "maturity_height": {
+    "copycat_strategy": {
       "type": [
         "integer",
         "null"
       ],
-      "format": "uint64",
+      "format": "uint32",
       "minimum": 0.0
+    },
+    "dao": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Addr"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "dao_token": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/Addr"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "deposit_approved": {
+      "type": "boolean"
+    },
+    "description": {
+      "type": "string"
+    },
+    "donation_match_contract": {
+      "type": "string"
+    },
+    "endow_type": {
+      "$ref": "#/definitions/EndowmentType"
+    },
+    "image": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "kyc_donors_only": {
+      "type": "boolean"
+    },
+    "logo": {
+      "type": [
+        "string",
+        "null"
+      ]
     },
     "maturity_time": {
       "type": [
@@ -42,36 +86,146 @@
       "format": "uint64",
       "minimum": 0.0
     },
+    "maturity_whitelist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "name": {
       "type": "string"
+    },
+    "oneoff_vaults": {
+      "$ref": "#/definitions/OneOffVaults"
     },
     "owner": {
       "$ref": "#/definitions/Addr"
     },
+    "pending_redemptions": {
+      "type": "integer",
+      "format": "uint8",
+      "minimum": 0.0
+    },
+    "proposal_link": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint64",
+      "minimum": 0.0
+    },
     "rebalance": {
       "$ref": "#/definitions/RebalanceDetails"
     },
-    "split_to_liquid": {
-      "$ref": "#/definitions/SplitDetails"
+    "status": {
+      "$ref": "#/definitions/EndowmentStatus"
     },
     "strategies": {
-      "type": "array",
-      "items": {
-        "$ref": "#/definitions/StrategyComponent"
-      }
+      "$ref": "#/definitions/AccountStrategies"
     },
-    "withdraw_before_maturity": {
+    "tier": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "format": "uint8",
+      "minimum": 0.0
+    },
+    "withdraw_approved": {
       "type": "boolean"
     }
   },
   "definitions": {
+    "AccountStrategies": {
+      "type": "object",
+      "required": [
+        "liquid",
+        "locked"
+      ],
+      "properties": {
+        "liquid": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StrategyComponent"
+          }
+        },
+        "locked": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/StrategyComponent"
+          }
+        }
+      }
+    },
     "Addr": {
       "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
       "type": "string"
     },
+    "Categories": {
+      "type": "object",
+      "required": [
+        "general",
+        "sdgs"
+      ],
+      "properties": {
+        "general": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8",
+            "minimum": 0.0
+          }
+        },
+        "sdgs": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8",
+            "minimum": 0.0
+          }
+        }
+      }
+    },
     "Decimal": {
       "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
       "type": "string"
+    },
+    "EndowmentStatus": {
+      "type": "string",
+      "enum": [
+        "Inactive",
+        "Approved",
+        "Frozen",
+        "Closed"
+      ]
+    },
+    "EndowmentType": {
+      "type": "string",
+      "enum": [
+        "Charity",
+        "Normal"
+      ]
+    },
+    "OneOffVaults": {
+      "type": "object",
+      "required": [
+        "liquid",
+        "locked"
+      ],
+      "properties": {
+        "liquid": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Addr"
+          }
+        },
+        "locked": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Addr"
+          }
+        }
+      }
     },
     "RebalanceDetails": {
       "type": "object",
@@ -100,41 +254,18 @@
         }
       }
     },
-    "SplitDetails": {
-      "type": "object",
-      "required": [
-        "default",
-        "max",
-        "min"
-      ],
-      "properties": {
-        "default": {
-          "$ref": "#/definitions/Decimal"
-        },
-        "max": {
-          "$ref": "#/definitions/Decimal"
-        },
-        "min": {
-          "$ref": "#/definitions/Decimal"
-        }
-      }
-    },
     "StrategyComponent": {
       "type": "object",
       "required": [
-        "liquid_percentage",
-        "locked_percentage",
+        "percentage",
         "vault"
       ],
       "properties": {
-        "liquid_percentage": {
-          "$ref": "#/definitions/Decimal"
-        },
-        "locked_percentage": {
+        "percentage": {
           "$ref": "#/definitions/Decimal"
         },
         "vault": {
-          "$ref": "#/definitions/Addr"
+          "type": "string"
         }
       }
     }

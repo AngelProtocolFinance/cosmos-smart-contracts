@@ -140,9 +140,8 @@ pub struct UpdateConfigMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateEndowmentMsg {
     pub owner: String, // address that originally setup the endowment account
-    pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
-    pub maturity_time: Option<u64>,     // datetime int of endowment maturity
-    pub name: String,                   // name of the Endowment
+    pub maturity_time: Option<u64>, // datetime int of endowment maturity
+    pub name: String,  // name of the Endowment
     pub categories: Categories, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
     pub tier: Option<u8>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
     pub endow_type: EndowmentType,
@@ -192,8 +191,7 @@ pub struct UpdateEndowmentSettingsMsg {
     pub owner: Option<String>,
     pub whitelisted_beneficiaries: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
-    pub withdraw_before_maturity: Option<bool>, // endowment allowed to withdraw funds from locked acct before maturity date
-    pub maturity_time: Option<Option<u64>>,     // datetime int of endowment maturity
+    pub maturity_time: Option<Option<u64>>,            // datetime int of endowment maturity
     pub strategies: Option<Vec<StrategyComponent>>, // list of vaults and percentage for locked/liquid accounts
     pub locked_endowment_configs: Option<Vec<String>>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: Option<RebalanceDetails>,

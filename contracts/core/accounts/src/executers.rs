@@ -186,7 +186,6 @@ pub fn create_endowment(
                 status: EndowmentStatus::Approved,
                 deposit_approved: true,
                 withdraw_approved: true,
-                withdraw_before_maturity: msg.withdraw_before_maturity,
                 maturity_time: msg.maturity_time,
                 strategies: AccountStrategies::default(),
                 oneoff_vaults: OneOffVaults::default(),
@@ -547,8 +546,9 @@ pub fn update_endowment_settings(
     };
     // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
     if endowment.endow_type != EndowmentType::Charity {
-        endowment.whitelisted_beneficiaries = match msg.whitelisted_beneficiaries {
-            Some(i) => {
+        if let Some(whitelisted_beneficiaries) = msg.whitelisted_beneficiaries {
+            let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+            if env.block.time.seconds() < endow_mature_time {
                 if config
                     .settings_controller
                     .whitelisted_beneficiaries
@@ -559,15 +559,13 @@ pub fn update_endowment_settings(
                         env.block.time,
                     )
                 {
-                    i
-                } else {
-                    endowment.whitelisted_beneficiaries
+                    endowment.whitelisted_beneficiaries = whitelisted_beneficiaries;
                 }
             }
-            None => endowment.whitelisted_beneficiaries,
-        };
-        endowment.whitelisted_contributors = match msg.whitelisted_contributors {
-            Some(i) => {
+        }
+        if let Some(whitelisted_contributors) = msg.whitelisted_contributors {
+            let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+            if env.block.time.seconds() < endow_mature_time {
                 if config
                     .settings_controller
                     .whitelisted_contributors
@@ -578,32 +576,10 @@ pub fn update_endowment_settings(
                         env.block.time,
                     )
                 {
-                    i
-                } else {
-                    endowment.whitelisted_contributors
+                    endowment.whitelisted_contributors = whitelisted_contributors;
                 }
             }
-            None => endowment.whitelisted_contributors,
-        };
-        endowment.withdraw_before_maturity = match msg.withdraw_before_maturity {
-            Some(i) => {
-                if config
-                    .settings_controller
-                    .whitelisted_contributors
-                    .can_change(
-                        &info.sender,
-                        &endowment.owner,
-                        endowment.dao.as_ref(),
-                        env.block.time,
-                    )
-                {
-                    i
-                } else {
-                    endowment.withdraw_before_maturity
-                }
-            }
-            None => endowment.withdraw_before_maturity,
-        };
+        }
         endowment.maturity_time = match msg.maturity_time {
             Some(i) => {
                 if config.settings_controller.maturity_time.can_change(
@@ -640,7 +616,7 @@ pub fn update_endowment_settings(
 
     if let Some(whitelist) = msg.maturity_whitelist {
         let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
-        if endow_mature_time < env.block.time.seconds() {
+        if env.block.time.seconds() < endow_mature_time {
             let UpdateMaturityWhitelist { add, remove } = whitelist;
             for addr in add {
                 let validated_addr = deps.api.addr_validate(&addr)?;
@@ -1814,32 +1790,51 @@ pub fn withdraw(
         }));
     }
 
-    // check that sender is correct based on account type attempting to access
-    // Only config owner can authorize a locked balance withdraw when locks are in place or maturity is not reached
-    // Only the endowment owner can authorize a locked balance withdraw once maturity is reached or if early withdraws are allowed
-    if acct_type == AccountType::Locked {
-        if let EndowmentType::Charity = endowment.endow_type {
+    // Check that the sender is correct based on EndowmentType & AccountType
+    //
+    // EndowmentType::Charity =>
+    //          AccountType::Locked => Only CONFIG owner can withdraw balances
+    //          AccountType::Liquid => Only endowment owner can withdraw balances
+    // EndowmentType::Normal =>
+    //          AccountType::Locked => Endomwent owner or address in "maturity_whitelist"
+    //                      can withdraw the balances AFTER MATURED
+    //          AccountType::Liquid => Endowment owner or address in "whitelisted_beneficiaries"
+    //                      can withdraw the balances
+    match (endowment.endow_type, acct_type.clone()) {
+        (EndowmentType::Charity, AccountType::Locked) => {
             if info.sender != config.owner {
                 return Err(ContractError::Unauthorized {});
             }
-        } else {
+        }
+        (EndowmentType::Charity, AccountType::Liquid) => {
             if info.sender != endowment.owner {
                 return Err(ContractError::Unauthorized {});
             }
-            if !endowment.withdraw_before_maturity
-                || (endowment.maturity_time.is_some()
-                    && Timestamp::from_seconds(endowment.maturity_time.unwrap()) <= env.block.time)
+        }
+        (EndowmentType::Normal, AccountType::Locked) => {
+            if endowment.maturity_time.is_some()
+                && env.block.time < Timestamp::from_seconds(endowment.maturity_time.unwrap())
             {
                 return Err(ContractError::Std(StdError::generic_err(
                     "Endowment is not mature. Cannot withdraw before maturity time is reached.",
                 )));
             }
+            if !endowment.maturity_whitelist.contains(&info.sender) {
+                return Err(ContractError::Std(StdError::generic_err(
+                    "Sender address is not listed in maturity_whitelist.",
+                )));
+            }
         }
-    }
-    // Only the owner of an endowment w/ withdraws approved can remove liquid balances
-    if acct_type == AccountType::Liquid {
-        if info.sender != endowment.owner {
-            return Err(ContractError::Unauthorized {});
+        (EndowmentType::Normal, AccountType::Liquid) => {
+            if !(info.sender == endowment.owner
+                || endowment
+                    .whitelisted_beneficiaries
+                    .contains(&info.sender.to_string()))
+            {
+                return Err(ContractError::Std(StdError::generic_err(
+                    "Sender is not Endowment owner or is not listed in whitelist.",
+                )));
+            }
         }
     }
 

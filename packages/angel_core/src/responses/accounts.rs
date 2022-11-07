@@ -35,7 +35,6 @@ pub struct EndowmentDetailsResponse {
     pub dao: Option<Addr>,
     pub dao_token: Option<Addr>,
     pub description: String,
-    pub withdraw_before_maturity: bool,
     pub strategies: AccountStrategies,
     pub status: EndowmentStatus,
     pub endow_type: EndowmentType,

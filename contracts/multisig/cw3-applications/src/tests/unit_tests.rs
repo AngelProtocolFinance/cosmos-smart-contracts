@@ -206,7 +206,6 @@ fn new_application_proposal() -> ExecuteMsg {
     let create_endowment_msg = CreateEndowmentMsg {
         owner: ENDOWMENTOWNER1.to_string(),
         endow_type: EndowmentType::Charity,
-        withdraw_before_maturity: false,
         maturity_time: None,
         name: "Test Endowment".to_string(),
         categories: Categories {
