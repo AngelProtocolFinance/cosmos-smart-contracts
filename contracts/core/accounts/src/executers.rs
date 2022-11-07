@@ -2406,23 +2406,25 @@ pub fn manage_allowances(
     ALLOWANCES.update(
         deps.storage,
         (&endowment.owner, &spender),
-        |allowances| -> Result<_, _> {
+        |allowances| -> Result<Allowances, ContractError> {
             let mut allowances = allowances.unwrap_or_default();
             let id = allowances.assets.iter().position(|x| x.info == asset.info);
             match (action.as_str(), id) {
                 ("add", Some(id)) => {
+                    allowances.assets[id].amount.checked_add(asset.amount)?;
                     allowances.assets[id].amount += asset.amount;
                 }
                 ("add", None) => {
                     allowances.assets.push(asset);
                 }
                 ("remove", Some(id)) => {
+                    allowances.assets[id].amount.checked_sub(asset.amount)?;
                     allowances.assets[id].amount -= asset.amount;
                 }
                 ("remove", None) => {}
-                _ => unreachable!(),
+                _ => return Err(ContractError::NoAllowance {}),
             }
-            Ok::<Allowances, ContractError>(allowances)
+            Ok(allowances)
         },
     )?;
 
