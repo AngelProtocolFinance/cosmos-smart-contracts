@@ -1800,47 +1800,43 @@ pub fn withdraw(
     //                      can withdraw the balances AFTER MATURED
     //          AccountType::Liquid => Endowment owner or address in "whitelisted_beneficiaries"
     //                      can withdraw the balances
-    match endowment.endow_type {
-        EndowmentType::Charity => match acct_type {
-            AccountType::Locked => {
-                if info.sender != config.owner {
-                    return Err(ContractError::Unauthorized {});
-                }
+    match (endowment.endow_type, acct_type.clone()) {
+        (EndowmentType::Charity, AccountType::Locked) => {
+            if info.sender != config.owner {
+                return Err(ContractError::Unauthorized {});
             }
-            AccountType::Liquid => {
-                if info.sender != endowment.owner {
-                    return Err(ContractError::Unauthorized {});
-                }
+        }
+        (EndowmentType::Charity, AccountType::Liquid) => {
+            if info.sender != endowment.owner {
+                return Err(ContractError::Unauthorized {});
             }
-        },
-        EndowmentType::Normal => match acct_type {
-            AccountType::Locked => {
-                if endowment.maturity_time.is_some()
-                    && env.block.time < Timestamp::from_seconds(endowment.maturity_time.unwrap())
+        }
+        (EndowmentType::Normal, AccountType::Locked) => {
+            if endowment.maturity_time.is_some()
+                && env.block.time < Timestamp::from_seconds(endowment.maturity_time.unwrap())
+            {
+                return Err(ContractError::Std(StdError::generic_err(
+                    "Endowment is not mature. Cannot withdraw before maturity time is reached.",
+                )));
+            }
+            if !endowment.maturity_whitelist.contains(&info.sender) {
+                return Err(ContractError::Std(StdError::generic_err(
+                    "Sender address is not listed in maturity_whitelist.",
+                )));
+            }
+        }
+        (EndowmentType::Normal, AccountType::Liquid) => {
+            if info.sender != endowment.owner {
+                if !endowment
+                    .whitelisted_beneficiaries
+                    .contains(&info.sender.to_string())
                 {
                     return Err(ContractError::Std(StdError::generic_err(
-                        "Endowment is not mature. Cannot withdraw before maturity time is reached.",
-                    )));
-                }
-                if !endowment.maturity_whitelist.contains(&info.sender) {
-                    return Err(ContractError::Std(StdError::generic_err(
-                        "Sender address is not listed in maturity_whitelist.",
+                        "Sender address is not listed in whitelist.",
                     )));
                 }
             }
-            AccountType::Liquid => {
-                if info.sender != endowment.owner {
-                    if !endowment
-                        .whitelisted_beneficiaries
-                        .contains(&info.sender.to_string())
-                    {
-                        return Err(ContractError::Std(StdError::generic_err(
-                            "Sender address is not listed in whitelist.",
-                        )));
-                    }
-                }
-            }
-        },
+        }
     }
 
     for asset in assets.iter() {
