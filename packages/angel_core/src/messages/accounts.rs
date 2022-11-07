@@ -127,6 +127,13 @@ pub enum ExecuteMsg {
         endowment_id: u32,
         setup: DonationMatch,
     },
+    // Manage the allowances for the 3rd_party wallet to withdraw
+    // the endowment TOH liquid balances without the proposal
+    Allowance {
+        endowment_id: u32,
+        action: String,
+        asset: Asset,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

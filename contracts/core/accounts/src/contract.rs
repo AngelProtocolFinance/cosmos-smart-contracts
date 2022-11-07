@@ -148,6 +148,13 @@ pub fn execute(
         // Allows the DANO/AP Team to harvest all active vaults
         ExecuteMsg::Harvest { vault_addr } => executers::harvest(deps, env, info, vault_addr),
         ExecuteMsg::HarvestAum {} => executers::harvest_aum(deps, env, info),
+        // Manage the allowances for the 3rd_party wallet to withdraw
+        // the endowment TOH liquid balances without the proposal
+        ExecuteMsg::Allowance {
+            endowment_id,
+            action,
+            asset,
+        } => executers::manage_allowances(deps, info, endowment_id, action, asset),
     }
 }
 

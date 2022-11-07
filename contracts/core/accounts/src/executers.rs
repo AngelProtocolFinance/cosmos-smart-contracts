@@ -2381,3 +2381,18 @@ pub fn setup_donation_match(
 
     Ok(res)
 }
+
+// Endowment owners can manage(add/remove) the allowances for the
+// 3rd_pary wallets to withdraw the free TOH liquid balances of endowment
+// without the proposal.
+pub fn manage_allowances(
+    deps: DepsMut,
+    info: MessageInfo,
+    endowment_id: u32,
+    action: String,
+    asset: Asset,
+) -> Result<Response, ContractError> {
+    // TODO
+
+    Ok(Response::default())
+}
