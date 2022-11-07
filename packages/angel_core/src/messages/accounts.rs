@@ -301,4 +301,8 @@ pub enum QueryMsg {
         asset_info: AssetInfo,
         acct_type: AccountType,
     },
+    Allowances {
+        id: u32,
+        spender: String,
+    },
 }

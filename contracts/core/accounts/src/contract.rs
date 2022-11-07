@@ -243,6 +243,9 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         } => to_binary(&queriers::query_token_amount(
             deps, id, asset_info, acct_type,
         )?),
+        QueryMsg::Allowances { id, spender } => {
+            to_binary(&queriers::query_allowances(deps, id, spender)?)
+        }
     }
 }
 
