@@ -27,7 +27,7 @@ use cosmwasm_std::{
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
-use cw_utils::Duration;
+use cw_utils::{Duration, Expiration};
 
 pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
@@ -2389,16 +2389,24 @@ pub fn setup_donation_match(
 // without the proposal.
 pub fn manage_allowances(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     endowment_id: u32,
     action: String,
     spender: String,
     asset: Asset,
+    expires: Option<Expiration>,
 ) -> Result<Response, ContractError> {
     // Validation
     let endowment = ENDOWMENTS.load(deps.storage, endowment_id)?;
     if info.sender != endowment.owner {
         return Err(ContractError::Unauthorized {});
+    }
+
+    if let Some(exp) = expires {
+        if exp.is_expired(&env.block) {
+            return Err(ContractError::from(cw20_base::ContractError::Expired {}));
+        }
     }
 
     // Update the ALLOWANCES as requested
@@ -2413,13 +2421,16 @@ pub fn manage_allowances(
                 ("add", Some(id)) => {
                     allowances.assets[id].amount.checked_add(asset.amount)?;
                     allowances.assets[id].amount += asset.amount;
+                    allowances.expires[id] = expires.unwrap_or_default();
                 }
                 ("add", None) => {
                     allowances.assets.push(asset);
+                    allowances.expires.push(expires.unwrap_or_default());
                 }
                 ("remove", Some(id)) => {
                     allowances.assets[id].amount.checked_sub(asset.amount)?;
                     allowances.assets[id].amount -= asset.amount;
+                    allowances.expires[id] = expires.unwrap_or_default();
                 }
                 ("remove", None) => {}
                 _ => return Err(ContractError::NoAllowance {}),

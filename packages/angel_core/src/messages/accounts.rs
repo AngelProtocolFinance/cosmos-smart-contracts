@@ -6,7 +6,7 @@ use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetUnchecked};
-use cw_utils::Threshold;
+use cw_utils::{Expiration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -134,6 +134,7 @@ pub enum ExecuteMsg {
         action: String,
         spender: String,
         asset: Asset,
+        expires: Option<Expiration>,
     },
     // Withdraws the free TOH liquid balances of endowment by 3rd_party wallet
     SpendAllowance {

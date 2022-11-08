@@ -5,6 +5,7 @@ use angel_core::structs::{
 use cosmwasm_std::{Addr, Env, Order, StdResult, Storage, Timestamp};
 use cw_asset::Asset;
 use cw_storage_plus::{Item, Map};
+use cw_utils::Expiration;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -86,6 +87,7 @@ pub struct State {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema, Default)]
 pub struct Allowances {
     pub assets: Vec<Asset>,
+    pub expires: Vec<Expiration>,
 }
 
 pub const CONFIG: Item<Config> = Item::new("config");
