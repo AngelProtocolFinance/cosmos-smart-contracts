@@ -169,7 +169,7 @@ pub fn execute(
         ExecuteMsg::SpendAllowance {
             endowment_id,
             asset,
-        } => executers::spend_allowance(deps, info, endowment_id, asset),
+        } => executers::spend_allowance(deps, env, info, endowment_id, asset),
     }
 }
 

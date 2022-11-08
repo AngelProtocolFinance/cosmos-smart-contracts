@@ -2446,6 +2446,7 @@ pub fn manage_allowances(
 /// using this entry.
 pub fn spend_allowance(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     endowment_id: u32,
     asset: Asset,
@@ -2482,6 +2483,9 @@ pub fn spend_allowance(
             let id = allowances.assets.iter().position(|x| x.info == asset.info);
             match id {
                 Some(id) => {
+                    if allowances.expires[id].is_expired(&env.block) {
+                        return Err(ContractError::from(cw20_base::ContractError::Expired {}));
+                    }
                     allowances.assets[id].amount.checked_sub(asset.amount)?;
                     allowances.assets[id].amount -= asset.amount;
                 }
