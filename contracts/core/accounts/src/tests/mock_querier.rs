@@ -279,6 +279,7 @@ impl WasmMockQuerier {
                         swap_factory: None,
                         applications_review: "applications-review".to_string(),
                         swaps_router: Some("swaps_router_addr".to_string()),
+                        tax_rate: Decimal::from_ratio(10_u128, 100_u128),
                     })
                     .unwrap(),
                 )),

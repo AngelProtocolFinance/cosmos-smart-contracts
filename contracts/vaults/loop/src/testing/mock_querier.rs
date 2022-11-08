@@ -153,7 +153,6 @@ impl WasmMockQuerier {
                         maturity_whitelist: vec![],
                         copycat_strategy: None,
                         proposal_link: None,
-                        name: "Test Endowment".to_string(),
                         categories: Categories::default(),
                         tier: Some(3),
                         logo: Some("Some fancy logo".to_string()),
@@ -204,6 +203,7 @@ impl WasmMockQuerier {
                         collector_addr: "collector-addr".to_string(),
                         collector_share: Decimal::zero(),
                         swap_factory: None,
+                        tax_rate: Decimal::from_ratio(10_u128, 100_u128),
                     })
                     .unwrap(),
                 )),

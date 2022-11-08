@@ -1,28 +1,34 @@
+use angel_core::responses::accounts::EndowmentDetailsResponse;
 // Contains mock functionality to test multi-contract scenarios
-
-use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse,
-};
+use angel_core::responses::registrar::{ConfigResponse, VaultDetailResponse};
 use angel_core::structs::{
-    AcceptedTokens, AccountType, RebalanceDetails, SplitDetails, VaultType, YieldVault,
+    AcceptedTokens, AccountStrategies, AccountType, Categories, OneOffVaults, RebalanceDetails,
+    SplitDetails, VaultType, YieldVault,
 };
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    from_binary, from_slice, to_binary, Addr, Api, CanonicalAddr, Coin, ContractResult, Decimal,
-    Empty, OwnedDeps, Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult,
-    Uint128, WasmQuery,
+    from_binary, from_slice, to_binary, Addr, Api, Coin, ContractResult, Decimal, Empty, OwnedDeps,
+    Querier, QuerierResult, QueryRequest, StdResult, SystemError, SystemResult, Uint128, WasmQuery,
 };
-use cosmwasm_storage::to_length_prefixed;
+use cw20::BalanceResponse;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use terraswap::pair::SimulationResponse;
+
 use std::collections::HashMap;
 use std::marker::PhantomData;
+use terraswap::asset::Asset;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
+    Simulation { offer_asset: Asset },
+    Balance { address: String },
+    // Mock the `registrar` config
     Config {},
     Vault { vault_addr: String },
+    // Mock the `accounts` endowment
+    Endowment { id: u32 },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -206,42 +212,82 @@ impl WasmMockQuerier {
                 contract_addr: _,
                 msg,
             }) => match from_binary(&msg).unwrap() {
-                QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
-                    to_binary(&RegistrarConfigResponse {
-                        owner: "registrar_owner".to_string(),
-                        version: "0.1.0".to_string(),
-                        accounts_contract: Some("accounts_contract_addr".to_string()),
-                        treasury: "treasury".to_string(),
+                QueryMsg::Endowment { id: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&EndowmentDetailsResponse {
+                        owner: Addr::unchecked("endow-cw3"),
+                        dao: None,
+                        dao_token: None,
+                        name: "Test Endowment".to_string(),
+                        description: "Test endowment".to_string(),
+                        strategies: AccountStrategies::default(),
+                        status: angel_core::structs::EndowmentStatus::Approved,
+                        endow_type: angel_core::structs::EndowmentType::Charity,
+                        maturity_time: None,
+                        oneoff_vaults: OneOffVaults::default(),
                         rebalance: RebalanceDetails::default(),
-                        index_fund: Some("index_fund".to_string()),
-                        split_to_liquid: SplitDetails {
-                            min: Decimal::zero(),
-                            max: Decimal::one(),
-                            default: Decimal::percent(50),
-                        },
-                        subdao_gov_code: None,
-                        subdao_bonding_token_code: None,
-                        subdao_cw20_token_code: None,
-                        subdao_cw900_code: None,
+                        donation_match_contract: "donation-match-contract".to_string(),
+                        kyc_donors_only: false,
+                        maturity_whitelist: vec![],
+                        deposit_approved: true,
+                        withdraw_approved: true,
+                        pending_redemptions: 0,
+                        copycat_strategy: None,
+                        proposal_link: None,
+                        categories: Categories::default(),
+                        tier: None,
+                        image: None,
+                        logo: None,
+                    }).unwrap()
+                )),
+                QueryMsg::Simulation { offer_asset: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&SimulationResponse {
+                        return_amount: Uint128::from(100_u128),
+                        spread_amount: Uint128::from(5_u128),
+                        commission_amount: Uint128::from(5_u128),
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::Balance { address: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&BalanceResponse {
+                        balance: Uint128::from(100_u128),
+                    })
+                    .unwrap(),
+                )),
+                QueryMsg::Config {} => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&ConfigResponse {
+                        version: "1.7.0".to_string(),
+                        owner: "Test-Endowment-Owner".to_string(),
+                        accounts_contract: Some("accounts-contract".to_string()),
+                        rebalance: RebalanceDetails::default(),
+                        applications_review: "applications-review".to_string(),
+                        swaps_router: Some("swaps-router".to_string()),
+                        cw3_code: Some(124),
+                        cw4_code: Some(125),
+                        subdao_gov_code: Some(126),
+                        subdao_bonding_token_code: Some(127),
+                        subdao_cw20_token_code: Some(129),
+                        subdao_cw900_code: Some(128),
                         subdao_distributor_code: None,
                         donation_match_code: None,
-                        donation_match_charites_contract: None,
+                        halo_token: None,
+                        halo_token_lp_contract: None,
+                        gov_contract: None,
+                        treasury: "treasury-address".to_string(),
+                        tax_rate: Decimal::from_ratio(10_u64, 100_u64),
+                        index_fund: None,
+                        split_to_liquid: SplitDetails::default(),
+                        donation_match_charites_contract: Some(MOCK_CONTRACT_ADDR.to_string()),
                         collector_addr: "collector-addr".to_string(),
-                        collector_share: Decimal::one(),
-                        halo_token: Some("halo_token".to_string()),
-                        halo_token_lp_contract: Some("halo_token_lp_contract".to_string()),
-                        gov_contract: Some("gov_contract".to_string()),
-                        charity_shares_contract: Some("charity_shares".to_string()),
-                        cw3_code: Some(2),
-                        cw4_code: Some(3),
+                        collector_share: Decimal::percent(50),
+                        charity_shares_contract: None,
                         accepted_tokens: AcceptedTokens {
-                            native: vec!["uluna".to_string()],
-                            cw20: vec!["test-cw20".to_string()],
+                            native: vec![
+                                "uluna".to_string(),
+                                "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4".to_string(),
+                            ],
+                            cw20: vec![],
                         },
-                        swap_factory: None,
-                        applications_review: "applications-review".to_string(),
-                        swaps_router: Some("swaps_router_addr".to_string()),
-                        tax_rate: Decimal::from_ratio(10_u128, 100_u128),
+                        swap_factory: Some("swap-factory".to_string()),
                     })
                     .unwrap(),
                 )),
@@ -261,54 +307,6 @@ impl WasmMockQuerier {
                     .unwrap(),
                 )),
             },
-            QueryRequest::Wasm(WasmQuery::Raw { contract_addr, key }) => {
-                let key: &[u8] = key.as_slice();
-                let prefix_balance = to_length_prefixed(b"balance").to_vec();
-
-                let balances: &HashMap<String, Uint128> =
-                    match self.token_querier.balances.get(contract_addr) {
-                        Some(balances) => balances,
-                        None => {
-                            return SystemResult::Err(SystemError::InvalidRequest {
-                                error: format!(
-                                    "No balance info exists for the contract {}",
-                                    contract_addr
-                                ),
-                                request: key.into(),
-                            })
-                        }
-                    };
-
-                if key[..prefix_balance.len()].to_vec() == prefix_balance {
-                    let key_address: &[u8] = &key[prefix_balance.len()..];
-                    let address_raw: CanonicalAddr = CanonicalAddr::from(key_address);
-
-                    let api: MockApi = MockApi::default();
-                    let address: String = match api.addr_humanize(&address_raw) {
-                        Ok(v) => v.to_string(),
-                        Err(e) => {
-                            return SystemResult::Err(SystemError::InvalidRequest {
-                                error: format!("Parsing query request: {}", e),
-                                request: key.into(),
-                            })
-                        }
-                    };
-
-                    let balance = match balances.get(&address) {
-                        Some(v) => v,
-                        None => {
-                            return SystemResult::Err(SystemError::InvalidRequest {
-                                error: "Balance not found".to_string(),
-                                request: key.into(),
-                            })
-                        }
-                    };
-
-                    SystemResult::Ok(ContractResult::Ok(to_binary(&balance).unwrap()))
-                } else {
-                    panic!("DO NOT ENTER HERE")
-                }
-            }
             _ => self.base.handle_query(request),
         }
     }

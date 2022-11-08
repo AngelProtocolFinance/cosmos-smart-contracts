@@ -1,5 +1,5 @@
 use crate::state::{
-    Allowances, Endowment, State, ALLOWANCES, CONFIG, COPYCATS, ENDOWMENTS, PROFILES, STATES,
+    Allowances, Endowment, State, ALLOWANCES, CONFIG, ENDOWMENTS, PROFILES, STATES,
 };
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
@@ -1389,7 +1389,7 @@ pub fn deposit(
             payout_address,
             fee_percentage,
             active,
-        } = endowment.deposit_fee.unwrap();
+        } = endowment.deposit_fee.clone().unwrap();
         if active {
             let deposit_fee_amount = deposit_amount * fee_percentage;
 
@@ -1942,7 +1942,7 @@ pub fn withdraw(
     //                      can withdraw the balances AFTER MATURED
     //          AccountType::Liquid => Endowment owner or address in "whitelisted_beneficiaries"
     //                      can withdraw the balances
-    match (endowment.endow_type, acct_type.clone()) {
+    match (endowment.endow_type.clone(), acct_type.clone()) {
         (EndowmentType::Charity, AccountType::Locked) => {
             if info.sender != config.owner {
                 return Err(ContractError::Unauthorized {});

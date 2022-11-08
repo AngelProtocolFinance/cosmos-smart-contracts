@@ -1,4 +1,4 @@
-use crate::state::{read_vaults, CONFIG, ENDOWTYPE_FEES, NETWORK_CONNECTIONS, VAULTS};
+use crate::state::{read_vaults, CONFIG, ENDOWTYPE_FEES, FEES, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::responses::registrar::*;
 use angel_core::structs::{AccountType, EndowmentType, VaultType};
 use cosmwasm_std::{Decimal, Deps, StdResult};

@@ -718,10 +718,10 @@ fn test_withdraw() {
             amount: Uint128::from(100_u128),
         }],
     };
+    // let res = execute(deps.as_mut(), matured_env, info, withdraw_msg).unwrap();
+    // assert_eq!(res.messages.len(), 1);
     let res = execute(deps.as_mut(), matured_env, info, withdraw_msg).unwrap();
-    assert_eq!(res.messages.len(), 1);
-    // let res = execute(deps.as_mut(), env.clone(), info, withdraw_msg).unwrap();
-    // assert_eq!(2, res.messages.len());
+    assert_eq!(2, res.messages.len());
 }
 
 #[test]

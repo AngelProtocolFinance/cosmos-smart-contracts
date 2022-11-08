@@ -1,4 +1,4 @@
-use crate::state::{CONFIG, ENDOWTYPE_FEES, NETWORK_CONNECTIONS, VAULTS};
+use crate::state::{CONFIG, ENDOWTYPE_FEES, FEES, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{EndowmentType, NetworkInfo, VaultType, YieldVault};

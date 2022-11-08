@@ -28,15 +28,13 @@ cw-storage-plus = "0.13.4"
 cw2 = "0.13.4"
 cw20 = "0.13.4"
 cw20-base = { version = "0.13.4", features = ["library"] }
-schemars = "0.8.1"
-serde = { version = "1.0.130", default-features = false, features = ["derive"] }
+schemars = "0.8.10"
+serde = "1.0.137"
 thiserror = "1.0.24"
-cw-controllers = "0.13.4"
 cw-asset = "2.2.0"
 astroport = { git = "https://github.com/astroport-fi/astroport-core.git", rev = "2b87bb8" }
 
-schemars = "0.8.10"
-serde = "1.0.137"
+
 
 [dev-dependencies]
 cosmwasm-storage = "1.0.0"
