@@ -6,7 +6,7 @@ use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetUnchecked};
-use cw_utils::Threshold;
+use cw_utils::{Expiration, Threshold};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -126,6 +126,20 @@ pub enum ExecuteMsg {
     SetupDonationMatch {
         endowment_id: u32,
         setup: DonationMatch,
+    },
+    // Manage the allowances for the 3rd_party wallet to withdraw
+    // the endowment TOH liquid balances without the proposal
+    Allowance {
+        endowment_id: u32,
+        action: String,
+        spender: String,
+        asset: Asset,
+        expires: Option<Expiration>,
+    },
+    // Withdraws the free TOH liquid balances of endowment by 3rd_party wallet
+    SpendAllowance {
+        endowment_id: u32,
+        asset: Asset,
     },
 }
 
@@ -292,5 +306,9 @@ pub enum QueryMsg {
         id: u32,
         asset_info: AssetInfo,
         acct_type: AccountType,
+    },
+    Allowances {
+        id: u32,
+        spender: String,
     },
 }

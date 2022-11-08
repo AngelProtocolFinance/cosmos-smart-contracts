@@ -1,4 +1,6 @@
-use crate::state::{read_endowments, Endowment, CONFIG, ENDOWMENTS, PROFILES, STATES};
+use crate::state::{
+    read_endowments, Allowances, Endowment, ALLOWANCES, CONFIG, ENDOWMENTS, PROFILES, STATES,
+};
 use angel_core::responses::accounts::*;
 use angel_core::structs::{
     AccountType, EndowmentBalanceResponse, EndowmentEntry, EndowmentType, Tier,
@@ -247,4 +249,11 @@ pub fn query_profile(deps: Deps, id: u32) -> StdResult<ProfileResponse> {
         charity_navigator_rating: profile.charity_navigator_rating,
         endowment_type: endowment.endow_type,
     })
+}
+
+pub fn query_allowances(deps: Deps, id: u32, spender: String) -> StdResult<Allowances> {
+    let endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let spender = deps.api.addr_validate(&spender)?;
+    let allowances = ALLOWANCES.may_load(deps.storage, (&endowment.owner, &spender))?;
+    Ok(allowances.unwrap_or_default())
 }

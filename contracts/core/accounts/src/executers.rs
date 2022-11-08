@@ -1,4 +1,6 @@
-use crate::state::{Endowment, State, CONFIG, COPYCATS, ENDOWMENTS, PROFILES, STATES};
+use crate::state::{
+    Allowances, Endowment, State, ALLOWANCES, CONFIG, COPYCATS, ENDOWMENTS, PROFILES, STATES,
+};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -25,7 +27,7 @@ use cosmwasm_std::{
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
-use cw_utils::Duration;
+use cw_utils::{Duration, Expiration};
 
 pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
@@ -2380,4 +2382,165 @@ pub fn setup_donation_match(
     }
 
     Ok(res)
+}
+
+// Endowment owners can manage(add/remove) the allowances for the
+// 3rd_pary wallets to withdraw the free TOH liquid balances of endowment
+// without the proposal.
+pub fn manage_allowances(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    endowment_id: u32,
+    action: String,
+    spender: String,
+    asset: Asset,
+    expires: Option<Expiration>,
+) -> Result<Response, ContractError> {
+    // Validation
+    let endowment = ENDOWMENTS.load(deps.storage, endowment_id)?;
+    if info.sender != endowment.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    if let Some(exp) = expires {
+        if exp.is_expired(&env.block) {
+            return Err(ContractError::from(cw20_base::ContractError::Expired {}));
+        }
+    }
+
+    // Update the ALLOWANCES as requested
+    let spender = deps.api.addr_validate(&spender)?;
+    ALLOWANCES.update(
+        deps.storage,
+        (&endowment.owner, &spender),
+        |allowances| -> Result<Allowances, ContractError> {
+            let mut allowances = allowances.unwrap_or_default();
+            let id = allowances.assets.iter().position(|x| x.info == asset.info);
+            match (action.as_str(), id) {
+                ("add", Some(id)) => {
+                    allowances.assets[id].amount.checked_add(asset.amount)?;
+                    allowances.assets[id].amount += asset.amount;
+                    allowances.expires[id] = expires.unwrap_or_default();
+                }
+                ("add", None) => {
+                    allowances.assets.push(asset);
+                    allowances.expires.push(expires.unwrap_or_default());
+                }
+                ("remove", Some(id)) => {
+                    allowances.assets[id].amount.checked_sub(asset.amount)?;
+                    allowances.assets[id].amount -= asset.amount;
+                    allowances.expires[id] = expires.unwrap_or_default();
+                }
+                _ => return Err(ContractError::NoAllowance {}),
+            }
+            Ok(allowances)
+        },
+    )?;
+
+    Ok(Response::default().add_attribute("action", "manage_allowances"))
+}
+
+/// 3rd_party wallets can withdraw the free TOH liquid balances of Endowment
+/// using this entry.
+pub fn spend_allowance(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    endowment_id: u32,
+    asset: Asset,
+) -> Result<Response, ContractError> {
+    let mut messages: Vec<SubMsg> = vec![];
+    let mut native_coins: Vec<Coin> = vec![];
+    let mut state = STATES.load(deps.storage, endowment_id)?;
+    let mut state_bal: GenericBalance = state.balances.get(&AccountType::Liquid);
+
+    // check for assets with zero amounts and raise error if found
+    if asset.amount.is_zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
+
+    // fetch the amount of an asset held in the state balance
+    let balance: Uint128 = match asset.info.clone() {
+        AssetInfoBase::Native(denom) => state_bal.get_denom_amount(denom).amount,
+        AssetInfoBase::Cw20(addr) => state_bal.get_token_amount(addr).amount,
+        _ => unreachable!(),
+    };
+    // check that the amount in state balance is sufficient to cover withdraw request
+    if asset.amount > balance {
+        return Err(ContractError::InsufficientFunds {});
+    }
+
+    // update ALLOWANCES
+    let endowment = ENDOWMENTS.load(deps.storage, endowment_id)?;
+    let spender = info.sender;
+    ALLOWANCES.update(
+        deps.storage,
+        (&endowment.owner, &spender),
+        |allowances| -> Result<Allowances, ContractError> {
+            let mut allowances = allowances.unwrap_or_default();
+            let id = allowances.assets.iter().position(|x| x.info == asset.info);
+            match id {
+                Some(id) => {
+                    if allowances.expires[id].is_expired(&env.block) {
+                        return Err(ContractError::from(cw20_base::ContractError::Expired {}));
+                    }
+                    allowances.assets[id].amount.checked_sub(asset.amount)?;
+                    allowances.assets[id].amount -= asset.amount;
+                }
+                None => return Err(ContractError::NoAllowance {}),
+            }
+            Ok(allowances)
+        },
+    )?;
+
+    // Send the requested "asset"
+    // build message based on asset type and update state balance with deduction
+    match asset.info.clone() {
+        AssetInfoBase::Native(denom) => {
+            // add Coin to the native coins vector to have a message built
+            // and all deductions against the state balance done at the end
+            native_coins.push(Coin {
+                denom: denom.clone(),
+                amount: asset.amount,
+            });
+        }
+        AssetInfoBase::Cw20(addr) => {
+            // Build message to transfer CW20 tokens to the Beneficiary
+            messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: addr.to_string(),
+                msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                    recipient: spender.to_string(),
+                    amount: asset.amount,
+                })
+                .unwrap(),
+                funds: vec![],
+            })));
+            // Update a CW20 token's Balance in STATE
+            state_bal.deduct_tokens(Balance::Cw20(Cw20CoinVerified {
+                amount: asset.amount,
+                address: addr,
+            }));
+        }
+        _ => unreachable!(),
+    }
+
+    // build the native Coin BankMsg if needed
+    if !native_coins.is_empty() {
+        // deduct the native coins withdrawn against balances held in state
+        state_bal.deduct_tokens(Balance::from(native_coins.clone()));
+        // Build message to send all native tokens to the Beneficiary via BankMsg::Send
+        messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+            to_address: spender.to_string(),
+            amount: native_coins,
+        })));
+    }
+
+    // set the updated balance for the account type
+    state.balances.liquid = state_bal;
+    STATES.save(deps.storage, endowment_id, &state)?;
+
+    Ok(Response::new()
+        .add_submessages(messages)
+        .add_attribute("action", "spend_allowance"))
 }
