@@ -37,6 +37,10 @@ pub enum QueryMsg {
     Balance {
         endowment_id: u32,
     },
+    // Mock the "registrar::fee { name: String }" query
+    Fee {
+        name: String,
+    },
 }
 
 /// mock_dependencies is a drop-in replacement for cosmwasm_std::testing::mock_dependencies
@@ -246,7 +250,6 @@ impl WasmMockQuerier {
                         version: "0.1.0".to_string(),
                         accounts_contract: Some("accounts_contract_addr".to_string()),
                         treasury: "treasury".to_string(),
-                        tax_rate: Decimal::one(),
                         rebalance: RebalanceDetails::default(),
                         index_fund: Some("index_fund".to_string()),
                         split_to_liquid: SplitDetails {
@@ -419,6 +422,9 @@ impl WasmMockQuerier {
                         ],
                     })
                     .unwrap(),
+                )),
+                QueryMsg::Fee { name: _ } => SystemResult::Ok(ContractResult::Ok(
+                    to_binary(&Decimal::from_ratio(10_u128, 100_u128)).unwrap(),
                 )),
             },
             QueryRequest::Wasm(WasmQuery::Raw { contract_addr, key }) => {

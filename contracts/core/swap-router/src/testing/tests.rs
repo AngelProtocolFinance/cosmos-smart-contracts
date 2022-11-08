@@ -120,7 +120,6 @@ fn execute_swap_operations() {
                         offer_asset_info: AssetInfo::Native("usdt".to_string()),
                         ask_asset_info: AssetInfo::Cw20(Addr::unchecked("usdc")),
                     },
-                    to: None,
                 })
                 .unwrap(),
             })),
@@ -132,7 +131,6 @@ fn execute_swap_operations() {
                         offer_asset_info: AssetInfo::Cw20(Addr::unchecked("usdc")),
                         ask_asset_info: AssetInfo::Native("ujuno".to_string()),
                     },
-                    to: None,
                 })
                 .unwrap(),
             })),
@@ -144,7 +142,6 @@ fn execute_swap_operations() {
                         offer_asset_info: AssetInfo::Native("ujuno".to_string()),
                         ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0002")),
                     },
-                    to: Some(Addr::unchecked("apaccountscontract")),
                 })
                 .unwrap(),
             })),
@@ -155,7 +152,6 @@ fn execute_swap_operations() {
                     asset_info: AssetInfo::Cw20(Addr::unchecked("asset0002")),
                     prev_balance: Uint128::from(1000000_u128),
                     minimum_receive: Uint128::from(1000000u128),
-                    receiver: Addr::unchecked("apaccountscontract"),
                 })
                 .unwrap(),
             })),
@@ -167,6 +163,7 @@ fn execute_swap_operations() {
                     prev_balance: Uint128::from(1000000_u128),
                     endowment_id: 1,
                     acct_type: AccountType::Locked,
+                    vault_addr: None,
                 })
                 .unwrap(),
             })),
@@ -212,7 +209,6 @@ fn execute_swap_operations() {
                         offer_asset_info: AssetInfo::Native("usdc".to_string()),
                         ask_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
                     },
-                    to: None,
                 })
                 .unwrap(),
             })),
@@ -224,7 +220,6 @@ fn execute_swap_operations() {
                         offer_asset_info: AssetInfo::Cw20(Addr::unchecked("asset0001")),
                         ask_asset_info: AssetInfo::Native("ujuno".to_string()),
                     },
-                    to: None,
                 })
                 .unwrap(),
             })),
@@ -236,7 +231,6 @@ fn execute_swap_operations() {
                         offer_asset_info: AssetInfo::Native("ujuno".to_string()),
                         ask_asset_info: AssetInfo::Cw20(Addr::unchecked("loop")),
                     },
-                    to: Some(Addr::unchecked("vault-1")),
                 })
                 .unwrap(),
             })),
@@ -248,6 +242,7 @@ fn execute_swap_operations() {
                     prev_balance: Uint128::from(1000000_u128),
                     endowment_id: 1,
                     acct_type: AccountType::Locked,
+                    vault_addr: Some(Addr::unchecked("vault-1")),
                 })
                 .unwrap(),
             })),
@@ -321,7 +316,6 @@ fn assert_minimum_receive_native_token() {
         asset_info: AssetInfo::Native("ujuno".to_string()),
         prev_balance: Uint128::zero(),
         minimum_receive: Uint128::from(1000000u128),
-        receiver: Addr::unchecked("addr0000"),
     };
     let _res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
@@ -330,7 +324,6 @@ fn assert_minimum_receive_native_token() {
         asset_info: AssetInfo::Native("ujuno".to_string()),
         prev_balance: Uint128::zero(),
         minimum_receive: Uint128::from(1000001u128),
-        receiver: Addr::unchecked("addr0000"),
     };
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
     assert_eq!(
@@ -352,7 +345,6 @@ fn assert_minimum_receive_token() {
         asset_info: AssetInfo::Cw20(Addr::unchecked("token0000")),
         prev_balance: Uint128::zero(),
         minimum_receive: Uint128::from(1000000u128),
-        receiver: Addr::unchecked("addr0000"),
     };
     let _res = execute(deps.as_mut(), env.clone(), info.clone(), msg).unwrap();
 
@@ -361,7 +353,6 @@ fn assert_minimum_receive_token() {
         asset_info: AssetInfo::Cw20(Addr::unchecked("token0000")),
         prev_balance: Uint128::zero(),
         minimum_receive: Uint128::from(1000001u128),
-        receiver: Addr::unchecked("addr0000"),
     };
     let res = execute(deps.as_mut(), env.clone(), info, msg).unwrap_err();
     assert_eq!(

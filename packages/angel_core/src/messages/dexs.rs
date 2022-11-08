@@ -72,10 +72,9 @@ pub struct Token2ForToken1PriceResponse {
 #[serde(rename_all = "snake_case")]
 pub enum LoopExecuteMsg {
     Swap {
-        offer_asset: Asset,
+        offer_asset: terraswap::asset::Asset,
         belief_price: Option<Decimal>,
         max_spread: Option<Decimal>,
-        to: Option<String>,
     },
     IncreaseAllowance {
         amount: Uint128,

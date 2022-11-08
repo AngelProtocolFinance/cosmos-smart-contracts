@@ -1,6 +1,6 @@
 use angel_core::messages::dexs::InfoResponse;
 use angel_core::responses::registrar::VaultDetailResponse;
-use angel_core::structs::{AccountType, EndowmentType, VaultType};
+use angel_core::structs::{AccountType, EndowmentType, VaultType, YieldVault};
 use cosmwasm_std::testing::{MockApi, MockQuerier, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
     from_binary, from_slice, to_binary, Addr, Api, BankQuery, Coin, ContractResult, Decimal, Empty,
@@ -256,7 +256,7 @@ impl WasmMockQuerier {
                     to_binary(&Uint128::from(1000000_u128)).unwrap(),
                 )),
                 QueryMsg::Config {} => unimplemented!(),
-                QueryMsg::Vault { vault_addr } => SystemResult::Ok(ContractResult::Ok(
+                QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&VaultDetailResponse {
                         vault: angel_core::structs::YieldVault {
                             address: "vault-1".to_string(),

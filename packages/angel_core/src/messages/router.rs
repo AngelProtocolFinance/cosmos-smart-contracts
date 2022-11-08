@@ -22,6 +22,10 @@ pub enum ExecuteMsg {
         remove: Vec<[AssetInfo; 2]>,
     },
     /// Execute multiple BuyOperation
+    /// NOTE: There are 2 contracts which are able to call this entry: `accounts` and `vault`.
+    ///       `endowmnent_id` & `acct_type` fields are only used when `accounts` contract call.
+    ///       When calling from `vault` contract, `endowment_id` & `acct_type` are meaningless and
+    ///       filled with random value(Mostly, `endowment_id`: 1, `acct_type`: AccountType::Locked).
     ExecuteSwapOperations {
         endowment_id: u32,
         acct_type: AccountType,
@@ -32,7 +36,6 @@ pub enum ExecuteMsg {
     /// Swap all offer tokens to ask token
     ExecuteSwapOperation {
         operation: SwapOperation,
-        to: Option<Addr>,
     },
     /// Internal use
     /// Check the swap amount is exceed minimum_receive
@@ -40,7 +43,6 @@ pub enum ExecuteMsg {
         asset_info: AssetInfo,
         prev_balance: Uint128,
         minimum_receive: Uint128,
-        receiver: Addr,
     },
     /// Send a Swap Receipt message back to the original contract
     /// Used by Accounts to properly credit the Endowment with
@@ -50,6 +52,7 @@ pub enum ExecuteMsg {
         prev_balance: Uint128,
         endowment_id: u32,
         acct_type: AccountType,
+        vault_addr: Option<Addr>,
     },
 }
 

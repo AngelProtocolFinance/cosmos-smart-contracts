@@ -108,7 +108,6 @@ fn update_config() {
         fundraising_contract: None,
         approved_charities: None,
         treasury: Some(ap_team.clone()),
-        tax_rate: None,
         rebalance: Some(RebalanceDetails {
             rebalance_liquid_invested_profits: true,
             locked_interests_to_liquid: true,
@@ -286,7 +285,6 @@ fn test_add_update_and_remove_accepted_tokens() {
         fundraising_contract: None,
         approved_charities: None,
         treasury: None,
-        tax_rate: None,
         rebalance: None,
         split_max: None,
         split_min: None,
@@ -337,6 +335,7 @@ fn test_add_update_and_remove_network_infos() {
         name: "juno mainnet".to_string(),
         chain_id: "juno-1".to_string(),
         ibc_channel: None,
+        transfer_channel: None,
         ibc_host_contract: None,
         gas_limit: None,
     };

@@ -24,6 +24,7 @@ library = []
 [dependencies]
 angel-core = { path = "../../../packages/angel_core" }
 cw2 = "0.13.4"
+cw20 = "0.13.4"
 cw3 = "0.13.4"
 cw4 = "0.13.4"
 cw-utils = "0.13.4"

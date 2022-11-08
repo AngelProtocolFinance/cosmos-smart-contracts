@@ -242,6 +242,25 @@ impl SwapOperation {
             SwapOperation::Loop { ask_asset_info, .. } => ask_asset_info.clone(),
         }
     }
+
+    pub fn reverse_operation(&self) -> Self {
+        match self {
+            SwapOperation::JunoSwap {
+                offer_asset_info,
+                ask_asset_info,
+            } => SwapOperation::JunoSwap {
+                offer_asset_info: ask_asset_info.clone(),
+                ask_asset_info: offer_asset_info.clone(),
+            },
+            SwapOperation::Loop {
+                offer_asset_info,
+                ask_asset_info,
+            } => SwapOperation::Loop {
+                offer_asset_info: ask_asset_info.clone(),
+                ask_asset_info: offer_asset_info.clone(),
+            },
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -513,10 +532,8 @@ impl AcceptedTokens {
 #[serde(rename_all = "snake_case")]
 pub struct EndowmentBalanceResponse {
     pub tokens_on_hand: BalanceInfo,
-    pub oneoff_locked: Vec<(String, Uint128)>,
-    pub oneoff_liquid: Vec<(String, Uint128)>,
-    pub strategies_locked: Vec<(String, Uint128)>,
-    pub strategies_liquid: Vec<(String, Uint128)>,
+    pub invested_locked: Vec<(String, Uint128)>,
+    pub invested_liquid: Vec<(String, Uint128)>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
@@ -885,6 +902,7 @@ pub struct NetworkInfo {
     pub name: String,
     pub chain_id: String,
     pub ibc_channel: Option<String>,
+    pub transfer_channel: Option<String>,
     pub ibc_host_contract: Option<Addr>,
     pub gas_limit: Option<u64>,
 }

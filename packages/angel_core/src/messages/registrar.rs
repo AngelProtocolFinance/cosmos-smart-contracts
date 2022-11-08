@@ -70,6 +70,9 @@ pub enum ExecuteMsg {
         network_info: NetworkInfo,
         action: String,
     },
+    UpdateFees {
+        fees: Vec<(String, Decimal)>,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -194,5 +197,8 @@ pub enum QueryMsg {
     // Get a network connection info
     NetworkConnection {
         chain_id: String,
+    },
+    Fee {
+        name: String,
     },
 }

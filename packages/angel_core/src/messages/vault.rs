@@ -1,6 +1,7 @@
-use crate::structs::AccountType;
+use crate::structs::{AccountType, SwapOperation};
 use cosmwasm_std::{Addr, Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
+use cw_asset::AssetInfo as CwAssetInfo;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use terraswap::asset::Asset;
@@ -12,17 +13,21 @@ pub struct InstantiateMsg {
     pub registrar_contract: String,
     pub keeper: String,
     pub tax_collector: String,
+    pub swap_router: String,
 
     pub lp_factory_contract: String,
     pub lp_staking_contract: String,
     pub pair_contract: String,
     pub lp_reward_token: String,
+    pub native_token: CwAssetInfo,
+
+    pub reward_to_native_route: Vec<SwapOperation>,
+    pub native_to_lp0_route: Vec<SwapOperation>,
+    pub native_to_lp1_route: Vec<SwapOperation>,
 
     pub name: String,
     pub symbol: String,
     pub decimals: u8,
-
-    pub harvest_to_liquid: Decimal,
 }
 
 /// We currently take no arguments for migrations
@@ -58,10 +63,8 @@ pub enum ExecuteMsg {
     },
     AddLiquidity {
         endowment_id: Option<u32>,
-        in_asset_info: terraswap::asset::AssetInfo,
-        out_asset_info: terraswap::asset::AssetInfo,
-        in_asset_bal_before: Uint128,
-        out_asset_bal_before: Uint128,
+        lp_pair_token0_bal_before: Uint128,
+        lp_pair_token1_bal_before: Uint128,
     },
     RemoveLiquidity {
         lp_token_bal_before: Uint128,
@@ -72,26 +75,31 @@ pub enum ExecuteMsg {
         endowment_id: Option<u32>,
         lp_token_bal_before: Uint128,
     },
+    SwapBack {
+        lp_pair_token0_bal_before: Uint128,
+        lp_pair_token1_bal_before: Uint128,
+    },
     SendAsset {
         beneficiary: Addr,
         id: Option<u32>,
-        asset_info: terraswap::asset::AssetInfo,
-        asset_bal_before: Uint128,
-    },
-    Swap {
-        asset_info: terraswap::asset::AssetInfo,
-        asset_bal_before: Uint128,
+        native_token_bal_before: Uint128,
     },
     Receive(Cw20ReceiveMsg),
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateConfigMsg {
+    pub sibling_vault: Option<String>,
+    pub keeper: Option<String>,
+    pub tax_collector: Option<String>,
+
+    pub native_token: Option<CwAssetInfo>,
+    pub reward_to_native_route: Option<Vec<SwapOperation>>,
+    pub native_to_lp0_route: Option<Vec<SwapOperation>>,
+    pub native_to_lp1_route: Option<Vec<SwapOperation>>,
+
     pub lp_staking_contract: Option<String>,
     pub lp_pair_contract: Option<String>,
-    pub keeper: Option<String>,
-    pub sibling_vault: Option<String>,
-    pub tax_collector: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -128,6 +136,9 @@ pub enum QueryMsg {
     /// Returns the configuration of the contract
     /// Return type: ConfigResponse.
     Config {},
+    /// Returns the state of the contract
+    /// Return type: StateResponse.
+    State {},
     /// Returns the current balance of the given "Endowment ID", 0 if unset.
     /// Return type: BalanceResponse.
     Balance { endowment_id: u32 },

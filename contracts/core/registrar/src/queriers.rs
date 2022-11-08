@@ -1,7 +1,7 @@
 use crate::state::{read_vaults, CONFIG, ENDOWTYPE_FEES, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::responses::registrar::*;
 use angel_core::structs::{AccountType, EndowmentType, VaultType};
-use cosmwasm_std::{Deps, StdResult};
+use cosmwasm_std::{Decimal, Deps, StdResult};
 use cw2::get_contract_version;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -11,7 +11,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         version: get_contract_version(deps.storage)?.contract,
         accounts_contract: config.accounts_contract.map(|addr| addr.to_string()),
         treasury: config.treasury.to_string(),
-        tax_rate: config.tax_rate,
         rebalance: config.rebalance,
         index_fund: config.index_fund_contract.map(|addr| addr.to_string()),
         cw3_code: config.cw3_code,
@@ -57,6 +56,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         swap_factory: config.swap_factory.map(|addr| addr.to_string()),
         applications_review: config.applications_review.to_string(),
         swaps_router: config.swaps_router.map(|addr| addr.to_string()),
+        tax_rate: config.tax_rate,
     })
 }
 
@@ -117,4 +117,8 @@ pub fn query_network_connection(
 ) -> StdResult<NetworkConnectionResponse> {
     let network_connection = NETWORK_CONNECTIONS.load(deps.storage, &chain_id)?;
     Ok(NetworkConnectionResponse { network_connection })
+}
+
+pub fn query_fee(deps: Deps, name: String) -> StdResult<Decimal> {
+    Ok(FEES.load(deps.storage, &name).unwrap_or(Decimal::zero()))
 }

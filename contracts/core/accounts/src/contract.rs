@@ -54,6 +54,9 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
+        ExecuteMsg::ReceiveIbcResponse(resp) => {
+            executers::execute_receive_ibc_response(deps, env, info, resp)
+        }
         ExecuteMsg::Deposit(msg) => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
@@ -233,20 +236,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Balance { id } => to_binary(&queriers::query_endowment_balance(deps, id)?),
         QueryMsg::State { id } => to_binary(&queriers::query_state(deps, id)?),
         QueryMsg::EndowmentList {
-            name,
-            owner,
-            status,
-            tier,
-            endow_type,
             proposal_link,
+            start_after,
+            limit,
         } => to_binary(&queriers::query_endowment_list(
             deps,
-            name,
-            owner,
-            status,
-            tier,
-            endow_type,
             proposal_link,
+            start_after,
+            limit,
         )?),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),
         QueryMsg::GetProfile { id } => to_binary(&queriers::query_profile(deps, id)?),
