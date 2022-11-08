@@ -1774,3 +1774,149 @@ fn test_manage_allowances() {
         "native:ujuno".to_string()
     );
 }
+
+#[test]
+fn test_spend_allowance() {
+    let donation_amt = 200_u128;
+    let liquid_amt = donation_amt / 2;
+    let spender = "spender";
+    let spend_amt = 60_u128;
+
+    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+
+    // "Deposit" the JUNO tokens
+    let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));
+    let deposit_msg = ExecuteMsg::Deposit(DepositMsg {
+        id: CHARITY_ID,
+        locked_percentage: Decimal::percent(50),
+        liquid_percentage: Decimal::percent(50),
+    });
+    let _res = execute(deps.as_mut(), env.clone(), info, deposit_msg).unwrap();
+
+    // Check the endowment state
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::State { id: CHARITY_ID },
+    )
+    .unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(state.balances.liquid.native, coins(liquid_amt, "ujuno"));
+
+    // "spend_allowance" fails since the sender/caller does not have allowances
+    let info = mock_info(&spender.to_string(), &[]);
+    let spend_allowance_msg = ExecuteMsg::SpendAllowance {
+        endowment_id: CHARITY_ID,
+        asset: Asset {
+            info: AssetInfoBase::Native("ujuno".to_string()),
+            amount: Uint128::from(spend_amt),
+        },
+    };
+    let err = execute(deps.as_mut(), env.clone(), info, spend_allowance_msg).unwrap_err();
+    assert_eq!(err, ContractError::NoAllowance {});
+
+    // "Add allowances" for the spender wallet
+    let info = mock_info(CHARITY_ADDR, &[]);
+    let _ = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::Allowance {
+            endowment_id: CHARITY_ID,
+            action: "add".to_string(),
+            spender: spender.to_string(),
+            asset: Asset {
+                info: AssetInfoBase::Native("ujuno".to_string()),
+                amount: Uint128::from(spend_amt),
+            },
+        },
+    )
+    .unwrap();
+
+    // Check the "allowances" state
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Allowances {
+            id: CHARITY_ID,
+            spender: spender.to_string(),
+        },
+    )
+    .unwrap();
+    let allowances: Allowances = from_binary(&res).unwrap();
+    assert_eq!(allowances.assets.len(), 1);
+    assert_eq!(allowances.assets[0].amount, Uint128::from(spend_amt));
+    assert_eq!(
+        allowances.assets[0].info.to_string(),
+        "native:ujuno".to_string()
+    );
+
+    // "spend_allowance" fails when zero amount
+    let info = mock_info(&spender.to_string(), &[]);
+    let spend_allowance_msg = ExecuteMsg::SpendAllowance {
+        endowment_id: CHARITY_ID,
+        asset: Asset {
+            info: AssetInfoBase::Native("ujuno".to_string()),
+            amount: Uint128::zero(),
+        },
+    };
+    let err = execute(deps.as_mut(), env.clone(), info, spend_allowance_msg).unwrap_err();
+    assert_eq!(err, ContractError::InvalidZeroAmount {});
+
+    // "spend_allowance" fails since the amount is too big
+    let info = mock_info(&spender.to_string(), &[]);
+    let spend_allowance_msg = ExecuteMsg::SpendAllowance {
+        endowment_id: CHARITY_ID,
+        asset: Asset {
+            info: AssetInfoBase::Native("ujuno".to_string()),
+            amount: Uint128::from(liquid_amt + 1),
+        },
+    };
+    let _err = execute(deps.as_mut(), env.clone(), info, spend_allowance_msg).unwrap_err();
+
+    // Succeed to "spend_allowance"
+    let info = mock_info(&spender.to_string(), &[]);
+    let spend_allowance_msg = ExecuteMsg::SpendAllowance {
+        endowment_id: CHARITY_ID,
+        asset: Asset {
+            info: AssetInfoBase::Native("ujuno".to_string()),
+            amount: Uint128::from(spend_amt),
+        },
+    };
+    let res = execute(deps.as_mut(), env.clone(), info, spend_allowance_msg).unwrap();
+    assert_eq!(1, res.messages.len());
+
+    // Check the "allowances" state
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::Allowances {
+            id: CHARITY_ID,
+            spender: spender.to_string(),
+        },
+    )
+    .unwrap();
+    let allowances: Allowances = from_binary(&res).unwrap();
+    assert_eq!(allowances.assets.len(), 1);
+    assert_eq!(
+        allowances.assets[0].amount,
+        Uint128::from(spend_amt - spend_amt)
+    );
+    assert_eq!(
+        allowances.assets[0].info.to_string(),
+        "native:ujuno".to_string()
+    );
+
+    // Check the endowment state
+    let res = query(
+        deps.as_ref(),
+        mock_env(),
+        QueryMsg::State { id: CHARITY_ID },
+    )
+    .unwrap();
+    let state: StateResponse = from_binary(&res).unwrap();
+    assert_eq!(
+        state.balances.liquid.native,
+        coins(liquid_amt - spend_amt, "ujuno")
+    );
+}
