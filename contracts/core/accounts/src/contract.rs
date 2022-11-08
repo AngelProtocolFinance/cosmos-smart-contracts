@@ -156,6 +156,10 @@ pub fn execute(
             spender,
             asset,
         } => executers::manage_allowances(deps, info, endowment_id, action, spender, asset),
+        ExecuteMsg::SpendAllowance {
+            endowment_id,
+            asset,
+        } => executers::spend_allowance(deps, info, endowment_id, asset),
     }
 }
 

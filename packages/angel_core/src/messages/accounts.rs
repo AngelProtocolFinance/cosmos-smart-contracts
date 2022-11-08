@@ -135,6 +135,11 @@ pub enum ExecuteMsg {
         spender: String,
         asset: Asset,
     },
+    // Withdraws the free TOH liquid balances of endowment by 3rd_party wallet
+    SpendAllowance {
+        endowment_id: u32,
+        asset: Asset,
+    },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
