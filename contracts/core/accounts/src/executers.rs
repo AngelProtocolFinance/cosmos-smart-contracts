@@ -2432,7 +2432,6 @@ pub fn manage_allowances(
                     allowances.assets[id].amount -= asset.amount;
                     allowances.expires[id] = expires.unwrap_or_default();
                 }
-                ("remove", None) => {}
                 _ => return Err(ContractError::NoAllowance {}),
             }
             Ok(allowances)
