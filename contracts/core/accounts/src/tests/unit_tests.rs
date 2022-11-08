@@ -17,8 +17,7 @@ use angel_core::structs::{
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    attr, coins, from_binary, to_binary, Addr, Coin, Decimal, Env, OwnedDeps, StdError, Timestamp,
-    Uint128,
+    attr, coins, from_binary, to_binary, Addr, Coin, Decimal, Env, OwnedDeps, StdError, Uint128,
 };
 use cw20::Cw20ReceiveMsg;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
@@ -1002,6 +1001,7 @@ fn test_close_endowment() {
 
 #[test]
 fn test_copycat_strategies() {
+    #[allow(non_snake_case)]
     let TEST_ENDOWMENT_ID = 2_u32;
 
     let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
@@ -1128,7 +1128,7 @@ fn test_copycat_strategies() {
 
 #[test]
 fn test_swap_token() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _, _, _) = create_endowment();
 
     // Should deposit some funds before swap operation
     execute(
@@ -1216,7 +1216,7 @@ fn test_swap_token() {
 
 #[test]
 fn test_swap_receipt() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _, _, _) = create_endowment();
 
     // Fail to swap receipt since non-authorized call
     let info = mock_info("anyone", &[]);
@@ -1264,7 +1264,7 @@ fn test_swap_receipt() {
 
 #[test]
 fn test_vaults_invest() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _, _, _) = create_endowment();
 
     // Fail to invest to vaults since no endowment owner calls
     let info = mock_info("anyone", &[]);
@@ -1386,7 +1386,7 @@ fn test_vaults_invest() {
 
 #[test]
 fn test_vaults_redeem() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _, _, _) = create_endowment();
 
     // Fail to redeem vaults since no endowment owner calls
     let info = mock_info("anyone", &[]);
@@ -1471,7 +1471,7 @@ fn test_vaults_redeem() {
 
 #[test]
 fn test_reinvest_to_locked() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _, _, _) = create_endowment();
 
     // Fail to invest to locked since no endowment owner calls
     let info = mock_info("anyone", &[]);
@@ -1536,7 +1536,7 @@ fn test_reinvest_to_locked() {
 
 #[test]
 fn test_distribute_to_beneficiary() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _, _, _) = create_endowment();
 
     // Only contract itself can call this entry. In other words, it is internal entry.
     let info = mock_info("anyone", &[]);
@@ -1795,7 +1795,7 @@ fn test_spend_allowance() {
     let spender = "spender";
     let spend_amt = 60_u128;
 
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, env, _, _) = create_endowment();
 
     // "Deposit" the JUNO tokens
     let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));

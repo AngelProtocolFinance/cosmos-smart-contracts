@@ -1349,7 +1349,7 @@ pub fn swap_back(
             .native_to_lp0_route
             .iter()
             .rev()
-            .map(|op| reverse_operation_order(op))
+            .map(reverse_operation_order)
             .collect();
 
         swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
@@ -1364,7 +1364,7 @@ pub fn swap_back(
             .native_to_lp1_route
             .iter()
             .rev()
-            .map(|op| reverse_operation_order(op))
+            .map(reverse_operation_order)
             .collect();
         swap_router_swap_msgs.extend_from_slice(&prepare_swap_router_swap_msgs(
             config.swap_router.to_string(),

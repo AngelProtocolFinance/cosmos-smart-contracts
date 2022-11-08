@@ -74,10 +74,7 @@ pub fn read_endowments(
     start_after: Option<u32>,
     limit: Option<u64>,
 ) -> StdResult<Vec<(u32, Endowment)>> {
-    let start: Option<Bound<u32>> = match start_after {
-        Some(id) => Some(Bound::exclusive(id)),
-        None => None,
-    };
+    let start: Option<Bound<u32>> = start_after.map(Bound::exclusive);
     match proposal_link {
         Some(proposal_id) => ENDOWMENTS
             .range(storage, start, None, Order::Ascending)

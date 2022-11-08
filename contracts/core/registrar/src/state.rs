@@ -48,6 +48,7 @@ pub const NETWORK_CONNECTIONS: Map<&str, NetworkInfo> = Map::new("network_connec
 pub const ENDOWTYPE_FEES: Map<String, Option<Decimal>> = Map::new("endowment_type_fees");
 pub const FEES: Map<&str, Decimal> = Map::new("fee");
 
+#[allow(clippy::too_many_arguments)]
 pub fn read_vaults(
     storage: &dyn Storage,
     network: Option<String>,

@@ -184,6 +184,7 @@ fn pay_somebody_proposal() -> ExecuteMsg {
     }
 }
 
+#[allow(dead_code)]
 fn new_application_proposal() -> ExecuteMsg {
     let profile: Profile = Profile {
         overview: "Endowment to power an amazing charity".to_string(),

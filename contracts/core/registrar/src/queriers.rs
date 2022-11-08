@@ -60,6 +60,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn query_vault_list(
     deps: Deps,
     network: Option<String>,
