@@ -22,7 +22,7 @@ use cosmwasm_std::{
 };
 use cw20::Cw20ReceiveMsg;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
-use cw_utils::Threshold;
+use cw_utils::{Expiration, Threshold};
 use std::vec;
 
 const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
@@ -1600,7 +1600,7 @@ fn test_distribute_to_beneficiary() {
 
 #[test]
 fn test_manage_allowances() {
-    let (mut deps, _, _, _) = create_endowment();
+    let (mut deps, env, _, _) = create_endowment();
 
     // Only endowment owner can execute the entry
     let info = mock_info("anyone", &[]);
@@ -1616,6 +1616,7 @@ fn test_manage_allowances() {
                 info: AssetInfoBase::Native("ujuno".to_string()),
                 amount: Uint128::from(100_u128),
             },
+            expires: None,
         },
     )
     .unwrap_err();
@@ -1648,6 +1649,7 @@ fn test_manage_allowances() {
                 info: AssetInfoBase::Native("ujuno".to_string()),
                 amount: Uint128::from(100_u128),
             },
+            expires: None,
         },
     )
     .unwrap();
@@ -1668,6 +1670,7 @@ fn test_manage_allowances() {
         allowances.assets[0].info.to_string(),
         "native:ujuno".to_string()
     );
+    assert_eq!(allowances.expires[0], Expiration::Never {});
 
     // Try to re-"add" the allowance
     let info = mock_info(CHARITY_ADDR, &[]);
@@ -1683,6 +1686,7 @@ fn test_manage_allowances() {
                 info: AssetInfoBase::Native("ujuno".to_string()),
                 amount: Uint128::from(100_u128),
             },
+            expires: Some(Expiration::AtHeight(env.block.height + 100)),
         },
     )
     .unwrap();
@@ -1703,6 +1707,10 @@ fn test_manage_allowances() {
         allowances.assets[0].info.to_string(),
         "native:ujuno".to_string()
     );
+    assert_eq!(
+        allowances.expires[0],
+        Expiration::AtHeight(env.block.height + 100)
+    );
 
     // Cannot "add/remove" the invalid asset amount
     let info = mock_info(CHARITY_ADDR, &[]);
@@ -1718,6 +1726,7 @@ fn test_manage_allowances() {
                 info: AssetInfoBase::Native("ujuno".to_string()),
                 amount: Uint128::MAX,
             },
+            expires: None,
         },
     )
     .unwrap_err();
@@ -1735,6 +1744,7 @@ fn test_manage_allowances() {
                 info: AssetInfoBase::Native("ujuno".to_string()),
                 amount: Uint128::from(1000_u128),
             },
+            expires: None,
         },
     )
     .unwrap_err();
@@ -1753,6 +1763,7 @@ fn test_manage_allowances() {
                 info: AssetInfoBase::Native("ujuno".to_string()),
                 amount: Uint128::from(60_u128),
             },
+            expires: None,
         },
     )
     .unwrap();
@@ -1773,6 +1784,7 @@ fn test_manage_allowances() {
         allowances.assets[0].info.to_string(),
         "native:ujuno".to_string()
     );
+    assert_eq!(allowances.expires[0], Expiration::Never {});
 }
 
 #[test]
@@ -1829,6 +1841,7 @@ fn test_spend_allowance() {
                 info: AssetInfoBase::Native("ujuno".to_string()),
                 amount: Uint128::from(spend_amt),
             },
+            expires: None,
         },
     )
     .unwrap();
