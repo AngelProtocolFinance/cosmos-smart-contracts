@@ -1,5 +1,5 @@
 [package]
-name = "anchor"
+name = "astroport-vault"
 version = "2.0.0"
 authors = ["Angel Ventures LLC"]
 edition = "2018"
