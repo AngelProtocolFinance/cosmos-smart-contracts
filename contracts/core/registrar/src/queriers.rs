@@ -1,4 +1,4 @@
-use crate::state::{read_vaults, CONFIG, ENDOWTYPE_FEES, FEES, NETWORK_CONNECTIONS, VAULTS};
+use crate::state::{read_vaults, CONFIG, FEES, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::responses::registrar::*;
 use angel_core::structs::{AccountType, EndowmentType, VaultType};
 use cosmwasm_std::{Decimal, Deps, StdResult};
@@ -94,22 +94,6 @@ pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDet
     let addr = deps.api.addr_validate(&vault_addr)?;
     let vault = VAULTS.load(deps.storage, addr.as_bytes())?;
     Ok(VaultDetailResponse { vault })
-}
-
-pub fn query_fees(deps: Deps) -> StdResult<FeesResponse> {
-    // returns all Fees(both BaseFee & all of the EndowmentTypeFees)
-    let tax_rate = CONFIG.load(deps.storage)?.tax_rate;
-    let endowtype_charity = ENDOWTYPE_FEES
-        .load(deps.storage, "charity".to_string())
-        .unwrap_or(None);
-    let endowtype_normal = ENDOWTYPE_FEES
-        .load(deps.storage, "normal".to_string())
-        .unwrap_or(None);
-    Ok(FeesResponse {
-        tax_rate,
-        endowtype_charity,
-        endowtype_normal,
-    })
 }
 
 pub fn query_network_connection(

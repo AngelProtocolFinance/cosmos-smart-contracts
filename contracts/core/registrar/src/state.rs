@@ -45,7 +45,6 @@ pub struct Config {
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const VAULTS: Map<&[u8], YieldVault> = Map::new("vault");
 pub const NETWORK_CONNECTIONS: Map<&str, NetworkInfo> = Map::new("network_connections");
-pub const ENDOWTYPE_FEES: Map<String, Option<Decimal>> = Map::new("endowment_type_fees");
 pub const FEES: Map<&str, Decimal> = Map::new("fee");
 
 #[allow(clippy::too_many_arguments)]

@@ -63,8 +63,6 @@ pub enum ExecuteMsg {
     UpdateOwner {
         new_owner: String,
     },
-    // Set/Update/Nullify the EndowmentTypeFees
-    UpdateEndowTypeFees(UpdateEndowTypeFeesMsg),
     // Updates the NETWORK_CONNECTIONS
     UpdateNetworkConnections {
         network_info: NetworkInfo,
@@ -168,12 +166,6 @@ pub struct UpdateEndowmentEntryMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowTypeFeesMsg {
-    pub endowtype_charity: Option<Decimal>,
-    pub endowtype_normal: Option<Decimal>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
     // Get details on single vault
@@ -192,8 +184,6 @@ pub enum QueryMsg {
     },
     // Get all Config details for the contract
     Config {},
-    // Get all Fees(both BaseFee & all of the EndowmentTypeFees)
-    Fees {},
     // Get a network connection info
     NetworkConnection {
         chain_id: String,

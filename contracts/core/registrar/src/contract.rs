@@ -107,9 +107,6 @@ pub fn execute(
             approved,
             restricted_from,
         } => executers::vault_update(deps, env, info, vault_addr, approved, restricted_from),
-        ExecuteMsg::UpdateEndowTypeFees(msg) => {
-            executers::update_endowtype_fees(deps, env, info, msg)
-        }
         ExecuteMsg::UpdateNetworkConnections {
             network_info,
             action,
@@ -143,7 +140,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Vault { vault_addr } => {
             to_binary(&queriers::query_vault_details(deps, vault_addr)?)
         }
-        QueryMsg::Fees {} => to_binary(&queriers::query_fees(deps)?),
         QueryMsg::NetworkConnection { chain_id } => {
             to_binary(&queriers::query_network_connection(deps, chain_id)?)
         }

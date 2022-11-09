@@ -1,4 +1,4 @@
-use crate::state::{CONFIG, ENDOWTYPE_FEES, FEES, NETWORK_CONNECTIONS, VAULTS};
+use crate::state::{CONFIG, FEES, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{EndowmentType, NetworkInfo, VaultType, YieldVault};
@@ -259,24 +259,6 @@ pub fn vault_update(
     VAULTS.save(deps.storage, addr.as_bytes(), &vault)?;
 
     Ok(Response::default())
-}
-
-pub fn update_endowtype_fees(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: UpdateEndowTypeFeesMsg,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-    // Update the "fees"
-    ENDOWTYPE_FEES.save(deps.storage, "charity".to_string(), &msg.endowtype_charity)?;
-    ENDOWTYPE_FEES.save(deps.storage, "normal".to_string(), &msg.endowtype_normal)?;
-
-    Ok(Response::new().add_attribute("action", "update_endowtype_fees"))
 }
 
 pub fn update_network_connections(
