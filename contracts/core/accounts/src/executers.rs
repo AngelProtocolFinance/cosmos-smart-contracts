@@ -14,7 +14,8 @@ use angel_core::responses::registrar::{
 use angel_core::structs::{
     AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup, DonationMatch,
     DonationsReceived, EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults,
-    RebalanceDetails, SplitDetails, StrategyComponent, SwapOperation, VaultType, YieldVault,
+    RebalanceDetails, SettingsController, SplitDetails, StrategyComponent, SwapOperation,
+    VaultType, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -209,6 +210,11 @@ pub fn create_endowment(
                 logo: msg.logo.clone(),
                 image: msg.image.clone(),
                 proposal_link: msg.proposal_link,
+                settings_controller: msg
+                    .settings_controller
+                    .clone()
+                    .unwrap_or(SettingsController::default()),
+                parent: msg.parent,
             }),
         },
     )?;

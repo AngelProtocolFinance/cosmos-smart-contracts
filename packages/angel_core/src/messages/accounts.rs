@@ -1,6 +1,6 @@
 use crate::structs::{
     AccountType, Beneficiary, Categories, DaoSetup, DonationMatch, EndowmentFee, EndowmentType,
-    Profile, RebalanceDetails, SettingsController, StrategyComponent, SwapOperation,
+    RebalanceDetails, SettingsController, StrategyComponent, SwapOperation,
 };
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
@@ -153,12 +153,10 @@ pub struct CreateEndowmentMsg {
     pub endow_type: EndowmentType,
     pub logo: Option<String>,
     pub image: Option<String>,
-    pub profile: Profile, // struct holding the Endowment info
     pub cw4_members: Vec<Member>,
     pub kyc_donors_only: bool,
     pub cw3_threshold: Threshold,
     pub cw3_max_voting_period: u64,
-
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
     pub split_max: Decimal,
@@ -170,6 +168,8 @@ pub struct CreateEndowmentMsg {
     pub aum_fee: Option<EndowmentFee>,
     pub dao: Option<DaoSetup>,      // SubDAO setup options
     pub proposal_link: Option<u64>, // link back to the proposal that created an Endowment (set @ init)
+    pub settings_controller: Option<SettingsController>,
+    pub parent: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
