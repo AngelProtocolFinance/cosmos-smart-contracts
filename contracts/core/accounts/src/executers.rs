@@ -1,5 +1,5 @@
 use crate::state::{
-    Allowances, Endowment, State, ALLOWANCES, CONFIG, COPYCATS, ENDOWMENTS, PROFILES, STATES,
+    Allowances, Endowment, State, ALLOWANCES, CONFIG, COPYCATS, ENDOWMENTS, STATES,
 };
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
@@ -14,8 +14,7 @@ use angel_core::responses::registrar::{
 use angel_core::structs::{
     AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup, DonationMatch,
     DonationsReceived, EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults,
-    RebalanceDetails, SocialMedialUrls, SplitDetails, StrategyComponent, SwapOperation, VaultType,
-    YieldVault,
+    RebalanceDetails, SplitDetails, StrategyComponent, SwapOperation, VaultType, YieldVault,
 };
 use angel_core::utils::{
     check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
@@ -213,9 +212,6 @@ pub fn create_endowment(
             }),
         },
     )?;
-
-    // store the profile data
-    PROFILES.save(deps.storage, config.next_account_id, &msg.profile)?;
 
     STATES.save(
         deps.storage,
@@ -1986,48 +1982,6 @@ pub fn close_endowment(
         .add_submessages(redeem_messages))
 }
 
-pub fn update_profile(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: UpdateProfileMsg,
-) -> Result<Response, ContractError> {
-    // Validation 1. Only "Endowment.owner" or "Config.owner" is able to execute
-    let endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
-    let mut profile = PROFILES.load(deps.storage, msg.id)?;
-
-    // Only endowment.owner can update these fields
-    if !(info.sender == endowment.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let state = STATES.load(deps.storage, msg.id)?;
-    if state.closing_endowment {
-        return Err(ContractError::UpdatesAfterClosed {});
-    }
-
-    if let Some(overview) = msg.overview {
-        profile.overview = overview;
-    }
-    let social_media_urls = SocialMedialUrls {
-        facebook: msg.facebook,
-        twitter: msg.twitter,
-        linkedin: msg.linkedin,
-    };
-    profile.social_media_urls = social_media_urls;
-    profile.url = msg.url;
-    profile.registration_number = msg.registration_number;
-    profile.country_of_origin = msg.country_of_origin;
-    profile.street_address = msg.street_address;
-    profile.contact_email = msg.contact_email;
-    profile.number_of_employees = msg.number_of_employees;
-    profile.average_annual_budget = msg.average_annual_budget;
-    profile.annual_revenue = msg.annual_revenue;
-    profile.charity_navigator_rating = msg.charity_navigator_rating;
-    PROFILES.save(deps.storage, msg.id, &profile)?;
-    Ok(Response::new().add_attribute("action", "update_profile"))
-}
-
 pub fn update_endowment_fees(
     deps: DepsMut,
     env: Env,
@@ -2113,120 +2067,6 @@ pub fn harvest(
             reply_on: ReplyOn::Never, // FIXME! Reference the `main` branch
         })
         .add_attribute("action", "harvest"))
-}
-
-pub fn harvest_aum(
-    _deps: DepsMut,
-    _env: Env,
-    _info: MessageInfo,
-) -> Result<Response, ContractError> {
-    // FIXME
-    // // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
-    // let profile = PROFILE.load(deps.storage)?;
-    // if profile.endow_type != EndowmentType::Charity {
-    //     return Err(ContractError::Std(StdError::generic_err(
-    //         "Charity Endowments do not have AUM fees to harvest",
-    //     )));
-    // }
-
-    // // Validations
-    // let endowment = ENDOWMENT.load(deps.storage)?;
-    // if info.sender != endowment.owner {
-    //     return Err(ContractError::Unauthorized {});
-    // }
-
-    // // Get the `aum_fee` info
-    // if endowment.aum_fee.is_none() {
-    //     return Err(ContractError::Std(StdError::generic_err(
-    //         "AUM_FEE info is not set",
-    //     )));
-    // }
-    // let EndowmentFee {
-    //     fee_percentage,
-    //     payout_address,
-    //     active,
-    // } = endowment.aum_fee.unwrap();
-    // if !active {
-    //     return Err(ContractError::Std(StdError::generic_err(
-    //         "AUM_FEE info is not activated",
-    //     )));
-    // }
-
-    // // Calc the total AUM & aum_harvest_withdraw from vaults balances
-    // let mut msgs: Vec<CosmosMsg> = vec![];
-    // let vaults: Vec<String> = endowment
-    //     .strategies
-    //     .iter()
-    //     .map(|s| s.vault.clone())
-    //     .collect();
-    // for vault in vaults {
-    //     let vault_balances: Uint128 = deps.querier.query_wasm_smart(
-    //         vault.clone(),
-    //         &VaultQueryMsg::Balance {
-    //             endowment_id: 1, // FIXME
-    //         },
-    //     )?;
-    //     // Here, we assume that only one native coin -
-    //     // `UST` is used for deposit/withdraw in vault
-    //     let mut total_aum: Uint128 = Uint128::zero();
-    //     total_aum += vault_balances;
-
-    //     // Calc the `aum_harvest_withdraw` amount
-    //     if !total_aum.is_zero() {
-    //         let aum_harvest_withdraw = total_aum * fee_percentage;
-    //         msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-    //             contract_addr: vault.to_string(),
-    //             msg: to_binary(&VaultExecuteMsg::Withdraw(AccountWithdrawMsg {
-    //                 endowment_id: 1, // FIXME
-    //                 beneficiary: payout_address.clone(),
-    //                 amount: aum_harvest_withdraw,
-    //             }))
-    //             .unwrap(),
-    //             funds: vec![],
-    //         }))
-    //     }
-    // }
-
-    // if msgs.is_empty() {
-    //     return Err(ContractError::Std(StdError::generic_err(
-    //         "Total AUM is zero",
-    //     )));
-    // }
-
-    // Ok(Response::new()
-    //     .add_messages(msgs)
-    //     .add_attribute("action", "harvest_aum_fee"))
-    Ok(Response::default())
-}
-
-pub fn harvest_reply(
-    _deps: DepsMut,
-    _env: Env,
-    _msg: SubMsgResult,
-) -> Result<Response, ContractError> {
-    // FIXMEs
-    // match msg {
-    //     SubMsgResult::Ok(subcall) => {
-    //         let mut config = CONFIG.load(deps.storage)?;
-    //         for event in subcall.events {
-    //             if event.ty == "wasm" {
-    //                 for attrb in event.attributes {
-    //                     if attrb.key == "last_earnings_harvest" {
-    //                         config.last_earnings_harvest = attrb.value.parse::<u64>().unwrap();
-    //                     }
-    //                     if attrb.key == "last_harvest_fx" {
-    //                         config.last_harvest_fx =
-    //                             Some(Decimal256::from_str(&attrb.value).unwrap());
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //         CONFIG.save(deps.storage, &config)?;
-    //         Ok(Response::default())
-    //     }
-    //     SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
-    // }
-    Ok(Response::default())
 }
 
 pub fn setup_dao(

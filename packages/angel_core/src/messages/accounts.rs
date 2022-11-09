@@ -107,16 +107,8 @@ pub enum ExecuteMsg {
         acct_type: AccountType,
         strategies: Vec<Strategy>,
     },
-    // Update Endowment profile
-    UpdateProfile(UpdateProfileMsg),
     // Update various "EndowmentFee"s
     UpdateEndowmentFees(UpdateEndowmentFeesMsg),
-    // (earnings) Harvest
-    Harvest {
-        vault_addr: String,
-    },
-    // AUM harvest
-    HarvestAum {},
     // Set up dao token for "Endowment"
     SetupDao {
         endowment_id: u32,
@@ -245,24 +237,6 @@ pub struct DepositMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateProfileMsg {
-    pub id: u32,
-    pub overview: Option<String>,
-    pub url: Option<String>,
-    pub registration_number: Option<String>,
-    pub country_of_origin: Option<String>,
-    pub street_address: Option<String>,
-    pub contact_email: Option<String>,
-    pub facebook: Option<String>,
-    pub twitter: Option<String>,
-    pub linkedin: Option<String>,
-    pub number_of_employees: Option<u16>,
-    pub average_annual_budget: Option<String>,
-    pub annual_revenue: Option<String>,
-    pub charity_navigator_rating: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentFeesMsg {
     pub id: u32,
     pub earnings_fee: Option<EndowmentFee>,
@@ -296,10 +270,6 @@ pub enum QueryMsg {
         tier: Option<Option<String>>,
         endow_type: Option<String>,
         proposal_link: Option<u64>,
-    },
-    // Get the profile info
-    GetProfile {
-        id: u32,
     },
     // Get endowment token balance
     TokenAmount {
