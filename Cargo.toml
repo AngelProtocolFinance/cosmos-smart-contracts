@@ -7,7 +7,6 @@ members = [
     "contracts/core/accounts",
     "contracts/core/index-fund",
     "contracts/core/registrar",
-    "contracts/core/fundraising",
     "contracts/core/swap-router",
     "contracts/normalized-endowment/cw3-endowment",
     "contracts/normalized-endowment/cw900-lv",
@@ -21,6 +20,7 @@ members = [
     "contracts/multisig/cw3-generic",
     "contracts/vaults/loop",
     "contracts/vaults/astroport",
+    "contracts/accessory/fundraising",
     "contracts/accessory/gift-cards",
 ]
 
