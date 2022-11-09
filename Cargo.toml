@@ -1,7 +1,6 @@
 [workspace]
 members = [
     "packages/angel_core",
-    "packages/halo_token",
     "packages/ica_vaults",
     "contracts/ica/ica-controller",
     "contracts/ica/ica-host",
@@ -26,6 +25,7 @@ members = [
 ]
 
 exclude = [
+    "packages/halo_token",
     "contracts/halo/airdrop",
     "contracts/halo/collector",
     "contracts/halo/community",
