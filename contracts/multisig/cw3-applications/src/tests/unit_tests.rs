@@ -1,7 +1,7 @@
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use angel_core::messages::accounts::CreateEndowmentMsg;
 use angel_core::messages::cw3_multisig::QueryMsg;
-use angel_core::structs::{Categories, EndowmentType, Profile, SocialMedialUrls};
+use angel_core::structs::{Categories, EndowmentType};
 use cosmwasm_std::{coin, coins, Addr, BankMsg, Coin, Decimal, Timestamp};
 use cosmwasm_std::{BlockInfo, CosmosMsg, Empty};
 use cw2::{query_contract_info, ContractVersion};
@@ -186,24 +186,6 @@ fn pay_somebody_proposal() -> ExecuteMsg {
 
 #[allow(dead_code)]
 fn new_application_proposal() -> ExecuteMsg {
-    let profile: Profile = Profile {
-        overview: "Endowment to power an amazing charity".to_string(),
-        registration_number: Some("1234567".to_string()),
-        country_of_origin: Some("GB".to_string()),
-        street_address: Some("10 Downing St".to_string()),
-        contact_email: Some("admin@nice-charity.org".to_string()),
-        social_media_urls: SocialMedialUrls {
-            facebook: None,
-            twitter: Some("https://twitter.com/nice-charity".to_string()),
-            linkedin: None,
-        },
-        number_of_employees: Some(10),
-        average_annual_budget: Some("1 Million Pounds".to_string()),
-        annual_revenue: Some("Not enough".to_string()),
-        charity_navigator_rating: None,
-        url: Some("nice-charity.org".to_string()),
-    };
-
     let create_endowment_msg = CreateEndowmentMsg {
         owner: ENDOWMENTOWNER1.to_string(),
         endow_type: EndowmentType::Charity,
@@ -216,7 +198,6 @@ fn new_application_proposal() -> ExecuteMsg {
         tier: Some(3),
         logo: Some("Some fancy logo".to_string()),
         image: Some("Nice banner image".to_string()),
-        profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,
         cw3_threshold: Threshold::AbsolutePercentage {
@@ -234,6 +215,8 @@ fn new_application_proposal() -> ExecuteMsg {
         aum_fee: None,
         dao: None,
         proposal_link: Some(1),
+        settings_controller: None,
+        parent: None,
     };
 
     ExecuteMsg::ProposeApplication {

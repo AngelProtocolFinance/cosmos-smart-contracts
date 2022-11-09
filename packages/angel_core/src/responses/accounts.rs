@@ -1,7 +1,7 @@
 use crate::structs::{
     AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentEntry,
     EndowmentFee, EndowmentStatus, EndowmentType, OneOffVaults, RebalanceDetails,
-    SettingsController, SocialMedialUrls,
+    SettingsController,
 };
 use cosmwasm_std::Addr;
 use schemars::JsonSchema;
@@ -54,27 +54,6 @@ pub struct EndowmentDetailsResponse {
     pub tier: Option<u8>,
     pub copycat_strategy: Option<u32>,
     pub proposal_link: Option<u64>,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
-pub struct ProfileResponse {
-    pub name: String,
-    pub overview: String,
-    pub categories: Categories,
-    pub tier: Option<u8>,
-    pub logo: Option<String>,
-    pub image: Option<String>,
-    pub url: Option<String>,
-    pub registration_number: Option<String>,
-    pub country_of_origin: Option<String>,
-    pub street_address: Option<String>,
-    pub contact_email: Option<String>,
-    pub social_media_urls: SocialMedialUrls,
-    pub number_of_employees: Option<u16>,
-    pub average_annual_budget: Option<String>,
-    pub annual_revenue: Option<String>,
-    pub charity_navigator_rating: Option<String>,
-    pub endowment_type: EndowmentType,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
