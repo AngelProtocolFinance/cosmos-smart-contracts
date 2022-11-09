@@ -133,7 +133,6 @@ pub fn execute(
         ExecuteMsg::CloseEndowment { id, beneficiary } => {
             executers::close_endowment(deps, env, info, id, beneficiary)
         }
-        ExecuteMsg::UpdateProfile(msg) => executers::update_profile(deps, env, info, msg),
         ExecuteMsg::UpdateEndowmentFees(msg) => {
             executers::update_endowment_fees(deps, env, info, msg)
         }
@@ -145,9 +144,6 @@ pub fn execute(
             endowment_id,
             setup,
         } => executers::setup_donation_match(deps, env, info, endowment_id, setup),
-        // Allows the DANO/AP Team to harvest all active vaults
-        ExecuteMsg::Harvest { vault_addr } => executers::harvest(deps, env, info, vault_addr),
-        ExecuteMsg::HarvestAum {} => executers::harvest_aum(deps, env, info),
         // Manage the allowances for the 3rd_party wallet to withdraw
         // the endowment TOH liquid balances without the proposal
         ExecuteMsg::Allowance {
@@ -249,7 +245,6 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             proposal_link,
         )?),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),
-        QueryMsg::GetProfile { id } => to_binary(&queriers::query_profile(deps, id)?),
         QueryMsg::TokenAmount {
             id,
             asset_info,

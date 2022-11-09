@@ -1,5 +1,5 @@
 use crate::state::{
-    read_endowments, Allowances, Endowment, ALLOWANCES, CONFIG, ENDOWMENTS, PROFILES, STATES,
+    read_endowments, Allowances, Endowment, ALLOWANCES, CONFIG, ENDOWMENTS, STATES,
 };
 use angel_core::responses::accounts::*;
 use angel_core::structs::{
@@ -224,30 +224,6 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         categories: endowment.categories,
         logo: endowment.logo,
         image: endowment.image,
-    })
-}
-
-pub fn query_profile(deps: Deps, id: u32) -> StdResult<ProfileResponse> {
-    let profile = PROFILES.load(deps.storage, id)?;
-    let endowment = ENDOWMENTS.load(deps.storage, id)?;
-    Ok(ProfileResponse {
-        name: endowment.name,
-        categories: endowment.categories,
-        tier: endowment.tier,
-        logo: endowment.logo,
-        image: endowment.image,
-        overview: profile.overview,
-        url: profile.url,
-        registration_number: profile.registration_number,
-        country_of_origin: profile.country_of_origin,
-        street_address: profile.street_address,
-        contact_email: profile.contact_email,
-        social_media_urls: profile.social_media_urls,
-        number_of_employees: profile.number_of_employees,
-        average_annual_budget: profile.average_annual_budget,
-        annual_revenue: profile.annual_revenue,
-        charity_navigator_rating: profile.charity_navigator_rating,
-        endowment_type: endowment.endow_type,
     })
 }
 

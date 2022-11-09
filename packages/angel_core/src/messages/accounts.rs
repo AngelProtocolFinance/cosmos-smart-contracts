@@ -1,6 +1,6 @@
 use crate::structs::{
     AccountType, Beneficiary, Categories, DaoSetup, DonationMatch, EndowmentFee, EndowmentType,
-    Profile, RebalanceDetails, SettingsController, StrategyComponent, SwapOperation,
+    RebalanceDetails, SettingsController, StrategyComponent, SwapOperation,
 };
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
@@ -107,16 +107,8 @@ pub enum ExecuteMsg {
         acct_type: AccountType,
         strategies: Vec<Strategy>,
     },
-    // Update Endowment profile
-    UpdateProfile(UpdateProfileMsg),
     // Update various "EndowmentFee"s
     UpdateEndowmentFees(UpdateEndowmentFeesMsg),
-    // (earnings) Harvest
-    Harvest {
-        vault_addr: String,
-    },
-    // AUM harvest
-    HarvestAum {},
     // Set up dao token for "Endowment"
     SetupDao {
         endowment_id: u32,
@@ -161,12 +153,10 @@ pub struct CreateEndowmentMsg {
     pub endow_type: EndowmentType,
     pub logo: Option<String>,
     pub image: Option<String>,
-    pub profile: Profile, // struct holding the Endowment info
     pub cw4_members: Vec<Member>,
     pub kyc_donors_only: bool,
     pub cw3_threshold: Threshold,
     pub cw3_max_voting_period: u64,
-
     pub whitelisted_beneficiaries: Vec<String>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
     pub whitelisted_contributors: Vec<String>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
     pub split_max: Decimal,
@@ -178,6 +168,8 @@ pub struct CreateEndowmentMsg {
     pub aum_fee: Option<EndowmentFee>,
     pub dao: Option<DaoSetup>,      // SubDAO setup options
     pub proposal_link: Option<u64>, // link back to the proposal that created an Endowment (set @ init)
+    pub settings_controller: Option<SettingsController>,
+    pub parent: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -245,24 +237,6 @@ pub struct DepositMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateProfileMsg {
-    pub id: u32,
-    pub overview: Option<String>,
-    pub url: Option<String>,
-    pub registration_number: Option<String>,
-    pub country_of_origin: Option<String>,
-    pub street_address: Option<String>,
-    pub contact_email: Option<String>,
-    pub facebook: Option<String>,
-    pub twitter: Option<String>,
-    pub linkedin: Option<String>,
-    pub number_of_employees: Option<u16>,
-    pub average_annual_budget: Option<String>,
-    pub annual_revenue: Option<String>,
-    pub charity_navigator_rating: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentFeesMsg {
     pub id: u32,
     pub earnings_fee: Option<EndowmentFee>,
@@ -296,10 +270,6 @@ pub enum QueryMsg {
         tier: Option<Option<String>>,
         endow_type: Option<String>,
         proposal_link: Option<u64>,
-    },
-    // Get the profile info
-    GetProfile {
-        id: u32,
     },
     // Get endowment token balance
     TokenAmount {

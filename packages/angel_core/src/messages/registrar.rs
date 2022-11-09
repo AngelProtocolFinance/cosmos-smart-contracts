@@ -1,10 +1,8 @@
 use crate::structs::{
-    AcceptedTokens, AccountType, DaoSetup, EndowmentFee, EndowmentType, NetworkInfo, Profile,
-    RebalanceDetails, SettingsController, SplitDetails, Tier, VaultType,
+    AcceptedTokens, AccountType, EndowmentType, NetworkInfo, RebalanceDetails, SplitDetails, Tier,
+    VaultType,
 };
 use cosmwasm_std::{Addr, Api, Decimal, StdResult};
-use cw4::Member;
-use cw_utils::Threshold;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -70,29 +68,6 @@ pub enum ExecuteMsg {
         network_info: NetworkInfo,
         action: String,
     },
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct CreateEndowmentMsg {
-    pub owner: String,
-    pub maturity_time: Option<u64>,
-    pub split_max: Option<Decimal>,
-    pub split_min: Option<Decimal>,
-    pub split_default: Option<Decimal>,
-    pub cw4_members: Vec<Member>,
-    pub cw3_threshold: Threshold,
-    pub cw3_max_voting_period: u64, // Time in seconds
-    pub profile: Profile,
-    pub kyc_donors_only: bool,
-    pub whitelisted_beneficiaries: Vec<String>,
-    pub whitelisted_contributors: Vec<String>,
-    pub dao: Option<DaoSetup>,
-    pub earnings_fee: Option<EndowmentFee>,
-    pub deposit_fee: Option<EndowmentFee>,
-    pub withdraw_fee: Option<EndowmentFee>,
-    pub aum_fee: Option<EndowmentFee>,
-    pub settings_controller: Option<SettingsController>,
-    pub parent: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

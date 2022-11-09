@@ -1,6 +1,6 @@
 use angel_core::structs::{
     AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentFee,
-    EndowmentStatus, EndowmentType, OneOffVaults, Profile, RebalanceDetails, SettingsController,
+    EndowmentStatus, EndowmentType, OneOffVaults, RebalanceDetails, SettingsController,
 };
 use cosmwasm_std::{Addr, Env, Order, StdResult, Storage, Timestamp};
 use cw_asset::Asset;
@@ -52,6 +52,8 @@ pub struct Endowment {
     pub deposit_fee: Option<EndowmentFee>, // Deposit Fee
     pub aum_fee: Option<EndowmentFee>, // AUM(Assets Under Management) Fee
     pub proposal_link: Option<u64>,    // link back the CW3 Proposal that created an endowment
+    pub settings_controller: SettingsController,
+    pub parent: Option<u64>,
 }
 
 impl Endowment {
@@ -93,6 +95,5 @@ pub struct Allowances {
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const STATES: Map<u32, State> = Map::new("states");
 pub const ENDOWMENTS: Map<u32, Endowment> = Map::new("endowments");
-pub const PROFILES: Map<u32, Profile> = Map::new("profiles");
 pub const COPYCATS: Map<u32, Vec<u32>> = Map::new("copycats");
 pub const ALLOWANCES: Map<(&Addr, &Addr), Allowances> = Map::new("3rd_party_wallet_allowances");
