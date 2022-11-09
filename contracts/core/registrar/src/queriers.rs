@@ -56,7 +56,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         swap_factory: config.swap_factory.map(|addr| addr.to_string()),
         applications_review: config.applications_review.to_string(),
         swaps_router: config.swaps_router.map(|addr| addr.to_string()),
-        tax_rate: config.tax_rate,
     })
 }
 

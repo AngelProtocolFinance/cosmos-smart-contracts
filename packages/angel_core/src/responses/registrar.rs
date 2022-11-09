@@ -30,7 +30,6 @@ pub struct ConfigResponse {
     pub gov_contract: Option<String>,
     pub accounts_contract: Option<String>,
     pub treasury: String,
-    pub tax_rate: Decimal,
     pub rebalance: RebalanceDetails,
     pub index_fund: Option<String>,
     pub split_to_liquid: SplitDetails,

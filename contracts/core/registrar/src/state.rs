@@ -18,7 +18,6 @@ pub struct Config {
     pub index_fund_contract: Option<Addr>,
     pub accounts_contract: Option<Addr>,
     pub treasury: Addr,
-    pub tax_rate: Decimal,
     pub cw3_code: Option<u64>,                  // multisig wasm code
     pub cw4_code: Option<u64>,                  // multisig wasm code
     pub subdao_gov_code: Option<u64>,           // subdao gov wasm code

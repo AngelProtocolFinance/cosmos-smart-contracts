@@ -37,7 +37,6 @@ pub fn instantiate(
         index_fund_contract: None,
         accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
-        tax_rate,
         cw3_code: None,
         cw4_code: None,
         subdao_gov_code: None,

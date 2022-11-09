@@ -203,7 +203,6 @@ impl WasmMockQuerier {
                         collector_addr: "collector-addr".to_string(),
                         collector_share: Decimal::zero(),
                         swap_factory: None,
-                        tax_rate: Decimal::from_ratio(10_u128, 100_u128),
                     })
                     .unwrap(),
                 )),

@@ -202,7 +202,6 @@ impl WasmMockQuerier {
                         subdao_distributor_code: todo!(),
                         donation_match_code: todo!(),
                         halo_token_lp_contract: todo!(),
-                        tax_rate: todo!(),
                         donation_match_charites_contract: todo!(),
                         collector_addr: todo!(),
                         collector_share: todo!(),
