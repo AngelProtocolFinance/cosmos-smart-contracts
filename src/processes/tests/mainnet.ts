@@ -145,6 +145,7 @@ export async function testExecute(
   // await testCw3ExecutePoll(juno, apTeamAddr, cw3ApTeam, 2);
   // await testCw3CastApplicationVote(juno, apTeamAddr, cw3ReviewTeam, 44, `yes`);
   // await testQueryMultisigVoters(juno, cw3ReviewTeam);
+  // await testQueryMultisigThreshold(juno, cw3ReviewTeam);
 
   /* --- REGISTRAR contract --- */
   // await testUpdatingRegistrarUpdateOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, cw3ApTeam);

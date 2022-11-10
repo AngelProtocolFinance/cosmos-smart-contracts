@@ -218,7 +218,8 @@ export async function testExecute(
   // await testCw3ExecutePoll(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 3);
   // await testQueryMultisigVoters(actors.apTeam.client, cw3ApTeam);
   // await testQueryProposal(actors.apTeam.client, cw3ApTeam, 3);
-  // await testQueryMultisigThreshold(actors.apTeam.client, cw3ApTeam);
+  // await testQueryMultisigVoters(actors.apTeam.client, cw3ReviewTeam);
+  // await testQueryMultisigThreshold(actors.apTeam.client, cw3ReviewTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
 
   /* --- REGISTRAR contract --- */
@@ -312,21 +313,23 @@ export async function testExecute(
   // ];
   // await testCreateEndowmentCw3s(actors.apTeam.client, actors.apTeam.addr, registrar, accounts, endowments_batch);
   // await testApTeamChangesEndowmentSettings(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, accounts, endowments_batch);
-  // await testCreateEndowment(networkUrl, actors.charity1.wallet, cw3ReviewTeam, accounts, {
+  // await testCreateEndowment(networkInfo.url, actors.charity1.wallet, cw3ReviewTeam, accounts, {
   //   owner: actors.charity1.addr,
   //   withdraw_before_maturity: false,
   //   maturity_time: undefined,
   //   maturity_height: undefined,
-  //   profile: {
   //     name: "Test-Suite Endowment",
-  //     overview: "Endowment created from the test-suite integration test",
   //     categories: { sdgs: [2], general: [] },
   //     tier: 3,
   //     logo: "test logo",
   //     image: "test image",
   //     url: undefined,
+  //   endow_type: "Charity",
+  //   profile: {
+  //     overview: "Endowment created from the test-suite integration test",
   //     registration_number: undefined,
-  //     country_city_origin: undefined,
+  //     country_of_origin: undefined,
+  //     street_address: undefined,
   //     contact_email: undefined,
   //     social_media_urls: {
   //       facebook: undefined,
@@ -337,7 +340,6 @@ export async function testExecute(
   //     average_annual_budget: undefined,
   //     annual_revenue: undefined,
   //     charity_navigator_rating: undefined,
-  //     endow_type: "Charity",
   //   },
   //   cw4_members: [{ addr: actors.charity1.addr, weight: 1 }],
   //   kyc_donors_only: false,
