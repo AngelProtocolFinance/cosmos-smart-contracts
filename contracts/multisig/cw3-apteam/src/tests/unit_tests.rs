@@ -322,15 +322,10 @@ fn test_propose_works() {
     let res = app
         .execute_contract(Addr::unchecked(APTEAM1), flex_addr.clone(), &proposal, &[])
         .unwrap();
-    assert_eq!(
-        res.custom_attrs(1),
-        [
-            ("action", "propose"),
-            ("sender", APTEAM1),
-            ("proposal_id", "1"),
-            ("status", "Open"),
-        ],
-    );
+    let res_attr = res.custom_attrs(1);
+    assert_eq!(res_attr[2].value, "1");
+    assert_eq!(res_attr[3].value, "Open");
+    assert_eq!(res_attr[4].value, "false");
 }
 
 fn get_tally(app: &App, flex_addr: &str, proposal_id: u64) -> u64 {
@@ -498,15 +493,10 @@ fn test_vote_works() {
     let res = app
         .execute_contract(Addr::unchecked(APTEAM1), flex_addr.clone(), &yes_vote, &[])
         .unwrap();
-    assert_eq!(
-        res.custom_attrs(1),
-        [
-            ("action", "vote"),
-            ("sender", APTEAM1),
-            ("proposal_id", proposal_id.to_string().as_str()),
-            ("status", "Open"),
-        ],
-    );
+    let res_attr = res.custom_attrs(1);
+    assert_eq!(res_attr[2].value, proposal_id.to_string().as_str());
+    assert_eq!(res_attr[3].value, "Open");
+    assert_eq!(res_attr[4].value, "false");
 
     // No/Veto votes have no effect on the tally
     // Compute the current tally
@@ -550,15 +540,10 @@ fn test_vote_works() {
     let res = app
         .execute_contract(Addr::unchecked(APTEAM4), flex_addr.clone(), &yes_vote, &[])
         .unwrap();
-    assert_eq!(
-        res.custom_attrs(1),
-        [
-            ("action", "vote"),
-            ("sender", APTEAM4),
-            ("proposal_id", proposal_id.to_string().as_str()),
-            ("status", "Passed"),
-        ],
-    );
+    let res_attr_passing = res.custom_attrs(1);
+    assert_eq!(res_attr_passing[2].value, proposal_id.to_string().as_str());
+    assert_eq!(res_attr_passing[3].value, "Passed");
+    assert_eq!(res_attr_passing[4].value, "true");
 
     // non-Open proposals cannot be voted
     let _ = app
@@ -648,34 +633,16 @@ fn test_execute_works() {
     let res = app
         .execute_contract(Addr::unchecked(APTEAM3), flex_addr.clone(), &vote, &[])
         .unwrap();
-    assert_eq!(
-        res.custom_attrs(1),
-        [
-            ("action", "vote"),
-            ("sender", APTEAM3),
-            ("proposal_id", proposal_id.to_string().as_str()),
-            ("status", "Passed"),
-        ],
-    );
+    let res_attr = res.custom_attrs(1);
+    assert_eq!(res_attr[2].value, proposal_id.to_string().as_str());
+    assert_eq!(res_attr[3].value, "Passed");
+    assert_eq!(res_attr[4].value, "true");
 
     // In passing: Try to close Passed fails
     let closing = ExecuteMsg::Close { proposal_id };
     let _ = app
         .execute_contract(Addr::unchecked(OWNER), flex_addr.clone(), &closing, &[])
         .unwrap_err();
-
-    // Execute works. Anybody can execute Passed proposals
-    let res = app
-        .execute_contract(Addr::unchecked(PLEB), flex_addr.clone(), &execution, &[])
-        .unwrap();
-    assert_eq!(
-        res.custom_attrs(1),
-        [
-            ("action", "execute"),
-            ("sender", PLEB),
-            ("proposal_id", proposal_id.to_string().as_str()),
-        ],
-    );
 
     // verify money was transfered
     let some_bal = app.wrap().query_balance(PLEB, "BTC").unwrap();
@@ -830,7 +797,7 @@ fn execute_group_changes_from_external() {
     };
     app.execute_contract(Addr::unchecked(APTEAM2), flex_addr.clone(), &yes_vote, &[])
         .unwrap();
-    assert_eq!(prop_status(&app, proposal_id2), Status::Passed);
+    assert_eq!(prop_status(&app, proposal_id2), Status::Executed);
 
     // APTEAM2 can only vote on first proposal with weight of 2 (not enough to pass)
     let yes_vote = ExecuteMsg::Vote {
@@ -849,7 +816,7 @@ fn execute_group_changes_from_external() {
     // previously removed APTEAM3 can still vote, passing the proposal
     app.execute_contract(Addr::unchecked(APTEAM3), flex_addr.clone(), &yes_vote, &[])
         .unwrap();
-    assert_eq!(prop_status(&app, proposal_id), Status::Passed);
+    assert_eq!(prop_status(&app, proposal_id), Status::Executed);
 
     // check current threshold (global) is updated
     let threshold: ThresholdResponse = app
@@ -943,11 +910,6 @@ fn execute_group_changes_from_proposal() {
     };
     app.execute_contract(Addr::unchecked(APTEAM4), flex_addr.clone(), &yes_vote, &[])
         .unwrap();
-    let execution = ExecuteMsg::Execute {
-        proposal_id: update_proposal_id,
-    };
-    app.execute_contract(Addr::unchecked(APTEAM4), flex_addr.clone(), &execution, &[])
-        .unwrap();
 
     // ensure that the update_proposal is executed, but the other unchanged
     assert_eq!(prop_status(&app, update_proposal_id), Status::Executed);
@@ -964,7 +926,7 @@ fn execute_group_changes_from_proposal() {
     };
     app.execute_contract(Addr::unchecked(APTEAM3), flex_addr.clone(), &yes_vote, &[])
         .unwrap();
-    assert_eq!(prop_status(&app, cash_proposal_id), Status::Passed);
+    assert_eq!(prop_status(&app, cash_proposal_id), Status::Executed);
 
     // but cannot open a new one
     let cash_proposal = pay_somebody_proposal();
@@ -1189,5 +1151,5 @@ fn quorum_enforced_even_if_absolute_threshold_met() {
     };
     app.execute_contract(Addr::unchecked(APTEAM3), flex_addr.clone(), &no_vote, &[])
         .unwrap();
-    assert_eq!(prop_status(&app), Status::Passed);
+    assert_eq!(prop_status(&app), Status::Executed);
 }

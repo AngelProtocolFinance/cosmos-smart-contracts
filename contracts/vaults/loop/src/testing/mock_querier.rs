@@ -16,7 +16,8 @@ use std::marker::PhantomData;
 
 use angel_core::responses::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
 use angel_core::structs::{
-    AcceptedTokens, AccountStrategies, Categories, OneOffVaults, RebalanceDetails, SplitDetails,
+    AcceptedTokens, AccountStrategies, Categories, OneOffVaults, RebalanceDetails,
+    SettingsController, SplitDetails,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -157,6 +158,8 @@ impl WasmMockQuerier {
                         tier: Some(3),
                         logo: Some("Some fancy logo".to_string()),
                         image: Some("Nice banner image".to_string()),
+                        settings_controller: SettingsController::default(),
+                        parent: None,
                     })
                     .unwrap(),
                 )),
@@ -174,7 +177,6 @@ impl WasmMockQuerier {
                         version: "1.0.0".to_string(),
                         accounts_contract: Some("accounts-contract".to_string()),
                         treasury: "treasury".to_string(),
-                        tax_rate: Decimal::from_ratio(5_u128, 100_u128),
                         rebalance: RebalanceDetails::default(),
                         index_fund: None,
                         split_to_liquid: SplitDetails {

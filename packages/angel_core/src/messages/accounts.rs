@@ -7,6 +7,7 @@ use cw20::Cw20ReceiveMsg;
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetUnchecked};
 use cw_utils::{Expiration, Threshold};
+use ica_vaults::ibc_msg::ReceiveIbcResponseMsg;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
@@ -19,13 +20,14 @@ pub struct MigrateMsg {
 pub struct InstantiateMsg {
     pub owner_sc: String,
     pub registrar_contract: String,
-    pub settings_controller: Option<SettingsController>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecuteMsg {
     Receive(Cw20ReceiveMsg),
+    // catch ICA msg responses from ICA Controller
+    ReceiveIbcResponse(ReceiveIbcResponseMsg),
     // Add tokens sent for a specific account
     Deposit(DepositMsg),
     /// reinvest vault assets from Liquid to Locked
@@ -209,6 +211,7 @@ pub struct UpdateEndowmentSettingsMsg {
     pub tier: Option<u8>,
     pub logo: Option<String>,
     pub image: Option<String>,
+    pub settings_controller: Option<SettingsController>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -264,12 +267,9 @@ pub enum QueryMsg {
     },
     // Gets list of all registered Endowments
     EndowmentList {
-        status: Option<String>,
-        name: Option<Option<String>>,
-        owner: Option<String>,
-        tier: Option<Option<String>>,
-        endow_type: Option<String>,
         proposal_link: Option<u64>,
+        start_after: Option<u32>,
+        limit: Option<u64>,
     },
     // Get endowment token balance
     TokenAmount {

@@ -1,8 +1,9 @@
 use cosmwasm_std::{
-    Addr, BlockInfo, CosmosMsg, Decimal, Empty, StdError, StdResult, Storage, Uint128,
+    Addr, BlockInfo, Coin, CosmosMsg, Decimal, Empty, StdError, StdResult, Storage, Uint128,
 };
 use cw3::{Status, Vote};
 use cw4::Cw4Contract;
+use cw_asset::Asset;
 use cw_storage_plus::{Item, Map};
 use cw_utils::{Duration, Expiration, Threshold};
 use schemars::JsonSchema;
@@ -15,11 +16,23 @@ use std::fmt;
 const PRECISION_FACTOR: u128 = 1_000_000_000;
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
+pub struct OldConfig {
+    pub registrar_contract: Addr,
+    pub threshold: Threshold,
+    pub max_voting_period: Duration,
+    pub group_addr: Cw4Contract,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct Config {
     pub registrar_contract: Addr,
     pub threshold: Threshold,
     pub max_voting_period: Duration,
     pub group_addr: Cw4Contract,
+    pub require_execution: bool,
+    pub seed_asset: Option<Asset>,
+    pub seed_split_to_liquid: Decimal,
+    pub new_endow_gas_money: Option<Coin>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]

@@ -123,6 +123,7 @@ impl fmt::Display for AccountType {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct SettingsController {
+    pub settings_controller: SettingsPermissions,
     pub strategies: SettingsPermissions,
     pub whitelisted_beneficiaries: SettingsPermissions,
     pub whitelisted_contributors: SettingsPermissions,
@@ -142,6 +143,7 @@ pub struct SettingsController {
 impl SettingsController {
     pub fn default() -> Self {
         SettingsController {
+            settings_controller: SettingsPermissions::default(),
             strategies: SettingsPermissions::default(),
             whitelisted_beneficiaries: SettingsPermissions::default(),
             whitelisted_contributors: SettingsPermissions::default(),
@@ -161,6 +163,7 @@ impl SettingsController {
 
     pub fn get_permissions(&self, name: String) -> Result<SettingsPermissions, ContractError> {
         match name.as_str() {
+            "settings_controller" => Ok(self.settings_controller.clone()),
             "strategies" => Ok(self.strategies.clone()),
             "whitelisted_beneficiaries" => Ok(self.whitelisted_beneficiaries.clone()),
             "whitelisted_contributors" => Ok(self.whitelisted_contributors.clone()),
@@ -240,6 +243,25 @@ impl SwapOperation {
         match self {
             SwapOperation::JunoSwap { ask_asset_info, .. } => ask_asset_info.clone(),
             SwapOperation::Loop { ask_asset_info, .. } => ask_asset_info.clone(),
+        }
+    }
+
+    pub fn reverse_operation(&self) -> Self {
+        match self {
+            SwapOperation::JunoSwap {
+                offer_asset_info,
+                ask_asset_info,
+            } => SwapOperation::JunoSwap {
+                offer_asset_info: ask_asset_info.clone(),
+                ask_asset_info: offer_asset_info.clone(),
+            },
+            SwapOperation::Loop {
+                offer_asset_info,
+                ask_asset_info,
+            } => SwapOperation::Loop {
+                offer_asset_info: ask_asset_info.clone(),
+                ask_asset_info: offer_asset_info.clone(),
+            },
         }
     }
 }
@@ -513,10 +535,8 @@ impl AcceptedTokens {
 #[serde(rename_all = "snake_case")]
 pub struct EndowmentBalanceResponse {
     pub tokens_on_hand: BalanceInfo,
-    pub oneoff_locked: Vec<(String, Uint128)>,
-    pub oneoff_liquid: Vec<(String, Uint128)>,
-    pub strategies_locked: Vec<(String, Uint128)>,
-    pub strategies_liquid: Vec<(String, Uint128)>,
+    pub invested_locked: Vec<(String, Uint128)>,
+    pub invested_liquid: Vec<(String, Uint128)>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
@@ -839,6 +859,7 @@ pub struct NetworkInfo {
     pub name: String,
     pub chain_id: String,
     pub ibc_channel: Option<String>,
+    pub transfer_channel: Option<String>,
     pub ibc_host_contract: Option<Addr>,
     pub gas_limit: Option<u64>,
 }

@@ -1,6 +1,6 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::{Config, CONFIG, NETWORK_CONNECTIONS};
+use crate::state::{Config, CONFIG, FEES, NETWORK_CONNECTIONS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{AcceptedTokens, NetworkInfo, RebalanceDetails, SplitDetails};
@@ -37,7 +37,6 @@ pub fn instantiate(
         index_fund_contract: None,
         accounts_contract: None,
         treasury: deps.api.addr_validate(&msg.treasury)?,
-        tax_rate,
         cw3_code: None,
         cw4_code: None,
         subdao_gov_code: None,
@@ -65,6 +64,10 @@ pub fn instantiate(
 
     CONFIG.save(deps.storage, &configs)?;
 
+    // setup first basic fees
+    FEES.save(deps.storage, &"vault_harvest", &tax_rate)?;
+    FEES.save(deps.storage, &"accounts_withdraw", &Decimal::permille(2))?; // Default to 0.002 or 0.2%
+
     // setup basic JUNO network info for native Vaults
     NETWORK_CONNECTIONS.save(
         deps.storage,
@@ -73,6 +76,7 @@ pub fn instantiate(
             name: "Juno".to_string(),
             chain_id: env.block.chain_id,
             ibc_channel: None,
+            transfer_channel: None,
             ibc_host_contract: None,
             gas_limit: None,
         },
@@ -102,13 +106,11 @@ pub fn execute(
             approved,
             restricted_from,
         } => executers::vault_update(deps, env, info, vault_addr, approved, restricted_from),
-        ExecuteMsg::UpdateEndowTypeFees(msg) => {
-            executers::update_endowtype_fees(deps, env, info, msg)
-        }
         ExecuteMsg::UpdateNetworkConnections {
             network_info,
             action,
         } => executers::update_network_connections(deps, env, info, network_info, action),
+        ExecuteMsg::UpdateFees { fees } => executers::update_fees(deps, info, fees),
     }
 }
 
@@ -137,10 +139,10 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Vault { vault_addr } => {
             to_binary(&queriers::query_vault_details(deps, vault_addr)?)
         }
-        QueryMsg::Fees {} => to_binary(&queriers::query_fees(deps)?),
         QueryMsg::NetworkConnection { chain_id } => {
             to_binary(&queriers::query_network_connection(deps, chain_id)?)
         }
+        QueryMsg::Fee { name } => to_binary(&queriers::query_fee(deps, name)?),
     }
 }
 
@@ -159,6 +161,10 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
             msg: "Cannot upgrade from a newer version".to_string(),
         }));
     }
+
+    // setup first fees
+    FEES.save(deps.storage, &"vault_harvest", &Decimal::percent(20))?; // Default to 0.2 or 20%
+
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
 

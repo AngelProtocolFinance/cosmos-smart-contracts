@@ -1,5 +1,5 @@
 mod checks;
-mod ibc_msg;
+pub mod ibc_msg;
 pub mod ica_controller_msg;
 pub mod ica_host_msg;
 pub mod utils;

@@ -14,13 +14,11 @@ use angel_core::structs::{
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
-    attr, coins, from_binary, to_binary, Addr, Coin, Decimal, Env, OwnedDeps, StdError, Timestamp,
-    Uint128,
+    attr, coins, from_binary, to_binary, Addr, Coin, Decimal, Env, OwnedDeps, StdError, Uint128,
 };
 use cw20::Cw20ReceiveMsg;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
 use cw_utils::{Expiration, Threshold};
-use std::vec;
 
 const AP_TEAM: &str = "terra1rcznds2le2eflj3y4e8ep3e4upvq04sc65wdly";
 const CHARITY_ID: u32 = 1;
@@ -73,7 +71,6 @@ fn create_endowment() -> (
     let instantiate_msg = InstantiateMsg {
         owner_sc: AP_TEAM.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
-        settings_controller: None,
     };
     let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
     let env = mock_env();
@@ -105,7 +102,6 @@ fn test_proper_initialization() {
     let instantiate_msg = InstantiateMsg {
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         owner_sc: CHARITY_ADDR.to_string(),
-        settings_controller: None,
     };
     let info = mock_info(AP_TEAM, &coins(100000, "earth"));
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
@@ -138,6 +134,7 @@ fn test_update_endowment_settings() {
         locked_endowment_configs: None,
         rebalance: None,
         maturity_whitelist: None,
+        settings_controller: None,
     };
     let res = execute(
         deps.as_mut(),
@@ -169,6 +166,7 @@ fn test_update_endowment_settings() {
         locked_endowment_configs: None,
         rebalance: None,
         maturity_whitelist: None,
+        settings_controller: None,
     };
     let info = mock_info(PLEB, &coins(100000, "earth "));
     // This should fail with an error!
@@ -390,9 +388,9 @@ fn test_update_strategy() {
     // Succeed to update the strategies
     let msg = ExecuteMsg::UpdateStrategies {
         id: CHARITY_ID,
-        acct_type: AccountType::Locked,
+        acct_type: AccountType::Liquid,
         strategies: vec![Strategy {
-            vault: "tech_strategy_component_addr".to_string(),
+            vault: "cash_strategy_component_addr".to_string(),
             percentage: Decimal::percent(100),
         }],
     };
@@ -407,15 +405,15 @@ fn test_update_strategy() {
     )
     .unwrap();
     let endowment: EndowmentDetailsResponse = from_binary(&res).unwrap();
-    assert_eq!(endowment.strategies.locked.len(), 1);
+    assert_eq!(endowment.strategies.locked.len(), 2);
+    assert_eq!(endowment.strategies.liquid.len(), 1);
     assert_eq!(
-        endowment.strategies.locked,
+        endowment.strategies.liquid,
         vec![StrategyComponent {
-            vault: "tech_strategy_component_addr".to_string(),
+            vault: "cash_strategy_component_addr".to_string(),
             percentage: Decimal::percent(100),
         }]
     );
-    assert_eq!(endowment.strategies.liquid.len(), 0);
     assert_eq!(endowment.copycat_strategy, None);
 }
 
@@ -625,6 +623,7 @@ fn test_withdraw() {
             tier: None,
             logo: None,
             image: None,
+            settings_controller: None,
         }),
     )
     .unwrap();
@@ -642,8 +641,10 @@ fn test_withdraw() {
             amount: Uint128::from(100_u128),
         }],
     };
+    // let res = execute(deps.as_mut(), matured_env, info, withdraw_msg).unwrap();
+    // assert_eq!(res.messages.len(), 1);
     let res = execute(deps.as_mut(), matured_env, info, withdraw_msg).unwrap();
-    assert_eq!(res.messages.len(), 1);
+    assert_eq!(2, res.messages.len());
 }
 
 #[test]
@@ -714,7 +715,7 @@ fn test_withdraw_liquid() {
         }],
     };
     let res = execute(deps.as_mut(), env.clone(), info, withdraw_liquid_msg).unwrap();
-    assert_eq!(1, res.messages.len());
+    assert_eq!(2, res.messages.len());
 }
 
 #[test]
@@ -924,6 +925,7 @@ fn test_close_endowment() {
 
 #[test]
 fn test_copycat_strategies() {
+    #[allow(non_snake_case)]
     let TEST_ENDOWMENT_ID = 2_u32;
 
     let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
@@ -1032,7 +1034,7 @@ fn test_copycat_strategies() {
 
 #[test]
 fn test_swap_token() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _, _, _) = create_endowment();
 
     // Should deposit some funds before swap operation
     execute(
@@ -1120,7 +1122,7 @@ fn test_swap_token() {
 
 #[test]
 fn test_swap_receipt() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _, _, _) = create_endowment();
 
     // Fail to swap receipt since non-authorized call
     let info = mock_info("anyone", &[]);
@@ -1168,7 +1170,7 @@ fn test_swap_receipt() {
 
 #[test]
 fn test_vaults_invest() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _, _, _) = create_endowment();
 
     // Fail to invest to vaults since no endowment owner calls
     let info = mock_info("anyone", &[]);
@@ -1290,7 +1292,7 @@ fn test_vaults_invest() {
 
 #[test]
 fn test_vaults_redeem() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _, _, _) = create_endowment();
 
     // Fail to redeem vaults since no endowment owner calls
     let info = mock_info("anyone", &[]);
@@ -1375,7 +1377,7 @@ fn test_vaults_redeem() {
 
 #[test]
 fn test_reinvest_to_locked() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _, _, _) = create_endowment();
 
     // Fail to invest to locked since no endowment owner calls
     let info = mock_info("anyone", &[]);
@@ -1440,7 +1442,7 @@ fn test_reinvest_to_locked() {
 
 #[test]
 fn test_distribute_to_beneficiary() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _, _, _) = create_endowment();
 
     // Only contract itself can call this entry. In other words, it is internal entry.
     let info = mock_info("anyone", &[]);
@@ -1699,7 +1701,7 @@ fn test_spend_allowance() {
     let spender = "spender";
     let spend_amt = 60_u128;
 
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, env, _, _) = create_endowment();
 
     // "Deposit" the JUNO tokens
     let info = mock_info(DEPOSITOR, &coins(donation_amt, "ujuno"));

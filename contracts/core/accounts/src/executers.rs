@@ -1,6 +1,4 @@
-use crate::state::{
-    Allowances, Endowment, State, ALLOWANCES, CONFIG, COPYCATS, ENDOWMENTS, STATES,
-};
+use crate::state::{Allowances, Endowment, State, ALLOWANCES, CONFIG, ENDOWMENTS, STATES};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
@@ -9,7 +7,8 @@ use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
 use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::responses::registrar::{
-    ConfigResponse as RegistrarConfigResponse, VaultDetailResponse, VaultListResponse,
+    ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, VaultDetailResponse,
+    VaultListResponse,
 };
 use angel_core::structs::{
     AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup, DonationMatch,
@@ -28,6 +27,7 @@ use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
 use cw_utils::{Duration, Expiration};
+use ica_vaults::ibc_msg::ReceiveIbcResponseMsg;
 
 pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
@@ -138,6 +138,22 @@ pub fn donation_match_reply(
     }
 }
 
+pub fn execute_receive_ibc_response(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    resp: ReceiveIbcResponseMsg,
+) -> Result<Response, ContractError> {
+    // only the ibc controller can send this type message as callback
+    let config = CONFIG.load(deps.storage)?;
+    if !config.ibc_controller.eq(&info.sender) {
+        return Err(ContractError::Unauthorized {});
+    }
+    Ok(Response::new()
+        .add_attribute("action", "receive_ibc_callback")
+        .add_attribute("id", resp.id))
+}
+
 pub fn create_endowment(
     deps: DepsMut,
     _env: Env,
@@ -233,8 +249,6 @@ pub fn create_endowment(
         },
     )?;
 
-    COPYCATS.save(deps.storage, config.next_account_id, &vec![])?;
-
     // initial default Response to add submessages to
     let mut res = Response::new();
     if registrar_config.cw3_code.eq(&None) || registrar_config.cw4_code.eq(&None) {
@@ -248,7 +262,7 @@ pub fn create_endowment(
         id: 0,
         msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
             code_id: registrar_config.cw3_code.unwrap(),
-            admin: None,
+            admin: Some(config.owner.to_string()),
             label: format!("new endowment cw3 multisig - {}", config.next_account_id),
             msg: to_binary(&Cw3InstantiateMsg {
                 // Endowment ID
@@ -353,10 +367,6 @@ pub fn update_config(
 
     config.registrar_contract = deps.api.addr_validate(&msg.new_registrar)?;
     config.max_general_category_id = msg.max_general_category_id;
-    config.settings_controller = match msg.settings_controller {
-        Some(controller) => controller,
-        None => config.settings_controller,
-    };
     config.ibc_controller = match msg.ibc_controller {
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.ibc_controller,
@@ -515,6 +525,10 @@ pub fn update_endowment_settings(
         return Err(ContractError::UpdatesAfterClosed {});
     }
 
+    if !(info.sender == config.owner || info.sender == endowment.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
     // Only config.owner can update owner, tier and endowment_type fields
     if info.sender == config.owner {
         endowment.tier = msg.tier;
@@ -548,12 +562,13 @@ pub fn update_endowment_settings(
         }
         None => endowment.owner,
     };
+
     // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
     if endowment.endow_type != EndowmentType::Charity {
         if let Some(whitelisted_beneficiaries) = msg.whitelisted_beneficiaries {
             let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
             if env.block.time.seconds() < endow_mature_time {
-                if config
+                if endowment
                     .settings_controller
                     .whitelisted_beneficiaries
                     .can_change(
@@ -570,7 +585,7 @@ pub fn update_endowment_settings(
         if let Some(whitelisted_contributors) = msg.whitelisted_contributors {
             let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
             if env.block.time.seconds() < endow_mature_time {
-                if config
+                if endowment
                     .settings_controller
                     .whitelisted_contributors
                     .can_change(
@@ -586,7 +601,7 @@ pub fn update_endowment_settings(
         }
         endowment.maturity_time = match msg.maturity_time {
             Some(i) => {
-                if config.settings_controller.maturity_time.can_change(
+                if endowment.settings_controller.maturity_time.can_change(
                     &info.sender,
                     &endowment.owner,
                     endowment.dao.as_ref(),
@@ -606,7 +621,7 @@ pub fn update_endowment_settings(
     }
 
     // validate address strings passed
-    if config.settings_controller.kyc_donors_only.can_change(
+    if endowment.settings_controller.kyc_donors_only.can_change(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
@@ -641,7 +656,7 @@ pub fn update_endowment_settings(
 
     endowment.name = match msg.name.clone() {
         Some(name) => {
-            if config.settings_controller.name.can_change(
+            if endowment.settings_controller.name.can_change(
                 &info.sender,
                 &endowment.owner,
                 endowment.dao.as_ref(),
@@ -656,7 +671,7 @@ pub fn update_endowment_settings(
     };
     endowment.categories = match msg.categories {
         Some(categories) => {
-            if config.settings_controller.categories.can_change(
+            if endowment.settings_controller.categories.can_change(
                 &info.sender,
                 &endowment.owner,
                 endowment.dao.as_ref(),
@@ -691,7 +706,7 @@ pub fn update_endowment_settings(
     };
     endowment.logo = match msg.logo.clone() {
         Some(logo) => {
-            if config.settings_controller.logo.can_change(
+            if endowment.settings_controller.logo.can_change(
                 &info.sender,
                 &endowment.owner,
                 endowment.dao.as_ref(),
@@ -706,7 +721,7 @@ pub fn update_endowment_settings(
     };
     endowment.image = match msg.image.clone() {
         Some(image) => {
-            if config.settings_controller.image.can_change(
+            if endowment.settings_controller.image.can_change(
                 &info.sender,
                 &endowment.owner,
                 endowment.dao.as_ref(),
@@ -720,6 +735,21 @@ pub fn update_endowment_settings(
         None => endowment.image,
     };
 
+    endowment.settings_controller = match msg.settings_controller.clone() {
+        Some(controller) => {
+            if endowment.settings_controller.image.can_change(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+                env.block.time,
+            ) {
+                controller
+            } else {
+                endowment.settings_controller
+            }
+        }
+        None => endowment.settings_controller,
+    };
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
     Ok(Response::new().add_attribute("action", "update_endowment_settings"))
@@ -735,11 +765,10 @@ pub fn update_delegate(
     delegate_address: String,
     delegate_expiry: Option<u64>,
 ) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-    let endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
 
     // grab a setting's permissions from SettingsController
-    let mut permissions = config
+    let mut permissions = endowment
         .settings_controller
         .get_permissions(setting.clone())?;
 
@@ -766,9 +795,10 @@ pub fn update_delegate(
     }
 
     // save mutated permissions back to SettingsController
-    config
+    endowment
         .settings_controller
         .set_permissions(setting, permissions)?;
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::default().add_attribute("action", "update_delegate"))
 }
@@ -824,7 +854,7 @@ pub fn update_strategies(
     }))?;
 
     let mut percentages_sum = Decimal::zero();
-
+    let mut new_strategies = vec![];
     for strategy in strategies.iter() {
         match allowed
             .vaults
@@ -832,7 +862,14 @@ pub fn update_strategies(
             .position(|v| v.address == strategy.vault)
         {
             None => return Err(ContractError::InvalidInputs {}),
-            Some(_) => percentages_sum += strategy.percentage,
+            Some(_) => {
+                percentages_sum += strategy.percentage;
+                // update endowment strategies attribute with all newly passed strategies
+                new_strategies.push(StrategyComponent {
+                    vault: deps.api.addr_validate(&strategy.vault.clone())?.to_string(),
+                    percentage: strategy.percentage,
+                });
+            }
         }
     }
 
@@ -842,29 +879,11 @@ pub fn update_strategies(
         return Err(ContractError::InvalidStrategyAllocation {});
     }
 
-    // update endowment strategies attribute with all newly passed strategies
-    let mut new_strategies = vec![];
-    for strategy in strategies {
-        new_strategies.push(StrategyComponent {
-            vault: deps.api.addr_validate(&strategy.vault.clone())?.to_string(),
-            percentage: strategy.percentage,
-        });
-    }
-
-    endowment.copycat_strategy = None;
     endowment
         .strategies
         .set(acct_type.clone(), new_strategies.clone());
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
-    // If this Endowment that is changing their strategy is also being "copycatted"
-    // by other endowments, the new strategy needs to be updated on those endowments.
-    let copiers = COPYCATS.load(deps.storage, id).unwrap_or_default();
-    for i in copiers.iter() {
-        let mut e = ENDOWMENTS.load(deps.storage, *i).unwrap();
-        e.strategies.set(acct_type.clone(), new_strategies.clone());
-        ENDOWMENTS.save(deps.storage, *i, &e).unwrap();
-    }
     Ok(Response::new().add_attribute("action", "update_strategies"))
 }
 
@@ -893,21 +912,6 @@ pub fn copycat_strategies(
             msg: "Attempting re-set the same copycat endowment ID".to_string(),
         }));
     }
-    // if this endowment was already copying another prior to this new one,
-    // first remove it from the old list and add to the new copycat list
-    if endowment.copycat_strategy.is_some() {
-        let old_id = endowment.copycat_strategy.unwrap();
-        let mut old_copiers = COPYCATS.load(deps.storage, old_id)?;
-        if let Some(pos) = old_copiers.iter().position(|i| *i == id) {
-            old_copiers.swap_remove(pos);
-        }
-        COPYCATS.save(deps.storage, old_id, &old_copiers)?;
-    }
-
-    // add this endowment to the new Copycat list
-    let mut copiers = COPYCATS.load(deps.storage, id_to_copy)?;
-    copiers.push(id);
-    COPYCATS.save(deps.storage, id_to_copy, &copiers)?;
 
     // set new copycat id
     endowment.copycat_strategy = Some(id_to_copy);
@@ -1305,15 +1309,15 @@ pub fn reinvest_to_locked(
                 vault_addr: vault_addr.clone(),
             })?,
         }))?;
-    let yield_vault: YieldVault = vault_config.vault;
+    let yield_vault: YieldVault = vault_config.vault.clone();
     if amount.is_zero() || !yield_vault.approved || yield_vault.acct_type.ne(&AccountType::Liquid) {
         return Err(ContractError::InvalidInputs {});
     }
 
-    let msg: SubMsg;
+    let mut res = Response::new().add_attribute("action", "vault_reinvest_to_locked");
     match yield_vault.vault_type {
         VaultType::Native => {
-            msg = SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+            res = res.add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                 contract_addr: vault_addr,
                 msg: to_binary(&angel_core::messages::vault::ExecuteMsg::ReinvestToLocked {
                     endowment_id: id,
@@ -1321,12 +1325,44 @@ pub fn reinvest_to_locked(
                 })
                 .unwrap(),
                 funds: vec![],
+            })));
+        }
+        // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
+        VaultType::Ibc { ica } => {
+            // look up Registrar network information on the given IBC Vault
+            let network_info: NetworkConnectionResponse =
+                deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                    contract_addr: config.registrar_contract.to_string(),
+                    msg: to_binary(&RegistrarQuerier::NetworkConnection {
+                        chain_id: vault_config.vault.network,
+                    })?,
+                }))?;
+            // build message
+            res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                contract_addr: config.ibc_controller.to_string(),
+                msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
+                    channel_id: network_info.network_connection.ibc_channel.unwrap(),
+                    msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                        contract_addr: ica.to_string(),
+                        msg: to_binary(
+                            &angel_core::messages::vault::ExecuteMsg::ReinvestToLocked {
+                                endowment_id: id,
+                                amount,
+                            },
+                        )
+                        .unwrap(),
+                        funds: vec![],
+                    })],
+                    // callback_id: Some("ibc-vault-reinvest".to_string()),
+                    callback_id: None,
+                })
+                .unwrap(),
+                funds: vec![],
             }));
         }
-        VaultType::Ibc { ica: _ } => unimplemented!(),
         VaultType::Evm => unimplemented!(),
     }
-    Ok(Response::new().add_submessage(msg))
+    Ok(res)
 }
 
 pub fn deposit(
@@ -1339,7 +1375,7 @@ pub fn deposit(
 ) -> Result<Response, ContractError> {
     let mut res = Response::default();
     let config = CONFIG.load(deps.storage)?;
-    let endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
 
     // check that the Endowment has been approved to receive deposits
     if !endowment.deposit_approved {
@@ -1365,7 +1401,7 @@ pub fn deposit(
             payout_address,
             fee_percentage,
             active,
-        } = endowment.deposit_fee.unwrap();
+        } = endowment.deposit_fee.clone().unwrap();
         if active {
             let deposit_fee_amount = deposit_amount * fee_percentage;
 
@@ -1430,7 +1466,7 @@ pub fn deposit(
         amount: deposit_amount * liquid_split,
     };
 
-    // update total donations recieved for a charity
+    // update total donations received for a charity
     let mut state: State = STATES.load(deps.storage, msg.id)?;
     state.donations_received.locked += locked_amount.amount;
     state.donations_received.liquid += liquid_amount.amount;
@@ -1439,6 +1475,19 @@ pub fn deposit(
 
     // Process Locked Strategy Deposits
     let locked_strategies = endowment.strategies.get(AccountType::Locked);
+    // Make sure that all current locked strategies vaults are now included in the invested (one-off) vaults list
+    for strat in locked_strategies.clone().iter() {
+        let v_addr = deps.api.addr_validate(&strat.vault)?;
+        if let None = endowment
+            .oneoff_vaults
+            .locked
+            .iter()
+            .position(|v| v == &v_addr)
+        {
+            endowment.oneoff_vaults.locked.push(v_addr)
+        }
+    }
+
     // build deposit messages for each of the sources/amounts
     let (messages, leftover_amt) = deposit_to_vaults(
         deps.as_ref(),
@@ -1466,6 +1515,18 @@ pub fn deposit(
 
     // Process Liquid Strategy Deposits
     let liquid_strategies = endowment.strategies.get(AccountType::Liquid);
+    // Make sure that all current liquid strategies vaults are now included in the invested (one-off) vaults list
+    for strat in liquid_strategies.clone().iter() {
+        let v_addr = deps.api.addr_validate(&strat.vault)?;
+        if let None = endowment
+            .oneoff_vaults
+            .liquid
+            .iter()
+            .position(|v| v == &v_addr)
+        {
+            endowment.oneoff_vaults.liquid.push(v_addr)
+        }
+    }
     // build deposit messages for each of the sources/amounts
     let (messages, leftover_amt) = deposit_to_vaults(
         deps.as_ref(),
@@ -1490,8 +1551,9 @@ pub fn deposit(
         }),
         _ => unreachable!(),
     });
-
     STATES.save(deps.storage, msg.id, &state)?;
+    ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
+
     Ok(res
         .add_submessages(deposit_messages)
         .add_attribute("action", "account_deposit"))
@@ -1499,7 +1561,7 @@ pub fn deposit(
 
 /// Allow Endowment owners to invest some amount of their free balance
 /// "Tokens on Hand" holdings into Vault(s). Does not have to be a Vault
-/// that exists in their donation Strategy. One-time/one-off investment.
+/// that exists in their donation Strategy.
 pub fn vaults_invest(
     deps: DepsMut,
     info: MessageInfo,
@@ -1524,7 +1586,7 @@ pub fn vaults_invest(
     // 1. Validate that Vault addr and input Asset are valid
     // 2. Check that TOH for AcctType has enough tokens to cover deposit amt
     // 3. Create deposit message to Vault
-    let mut deposit_msgs: Vec<SubMsg> = vec![];
+    let mut res = Response::new().add_attribute("action", "vault_invest");
     for (vault, asset) in vaults.iter() {
         // check vault addr passed is valid
         let vault_addr = deps.api.addr_validate(vault)?;
@@ -1562,7 +1624,7 @@ pub fn vaults_invest(
             }));
         }
 
-        // add vault to the one-off-vaults list if a new vault
+        // add vault to the invested-vaults list if a new vault
         match acct_type {
             AccountType::Locked => {
                 let pos = endowment
@@ -1615,7 +1677,7 @@ pub fn vaults_invest(
         // funds payload can contain CW20 | Native token amounts
         match vault_config.vault.vault_type {
             VaultType::Native => {
-                deposit_msgs.push(match &asset.info {
+                res = res.add_submessage(match &asset.info {
                     AssetInfoBase::Native(ref denom) => {
                         SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                             contract_addr: vault_addr.clone().to_string(),
@@ -1647,10 +1709,73 @@ pub fn vaults_invest(
                     _ => unreachable!(),
                 });
             }
-            VaultType::Ibc { ica: _ } => unimplemented!(),
+            // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
+            VaultType::Ibc { ica } => {
+                // look up Registrar network information on the given IBC Vault
+                let network_info: NetworkConnectionResponse =
+                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                        contract_addr: config.registrar_contract.to_string(),
+                        msg: to_binary(&RegistrarQuerier::NetworkConnection {
+                            chain_id: vault_config.vault.network,
+                        })?,
+                    }))?;
+                // build message
+                res = res.add_messages(match &asset.info {
+                    AssetInfoBase::Native(ref denom) => [
+                        CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: config.ibc_controller.to_string(),
+                            msg: to_binary(
+                                &ica_vaults::ica_controller_msg::ExecuteMsg::SendFunds {
+                                    reflect_channel_id: network_info
+                                        .network_connection
+                                        .ibc_channel
+                                        .clone()
+                                        .unwrap(),
+                                    transfer_channel_id: network_info
+                                        .network_connection
+                                        .transfer_channel
+                                        .unwrap(),
+                                },
+                            )
+                            .unwrap(),
+                            funds: vec![Coin {
+                                denom: denom.clone(),
+                                amount: asset.amount,
+                            }],
+                        }),
+                        CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: config.ibc_controller.to_string(),
+                            msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
+                                channel_id: network_info.network_connection.ibc_channel.unwrap(),
+                                msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                                    contract_addr: ica.to_string(),
+                                    msg: to_binary(
+                                        &angel_core::messages::vault::ExecuteMsg::Deposit {
+                                            endowment_id: id,
+                                        },
+                                    )
+                                    .unwrap(),
+                                    funds: vec![Coin {
+                                        denom: denom.clone(),
+                                        amount: asset.amount,
+                                    }],
+                                })],
+                                // callback_id: Some("ibc-deposit-native".to_string()),
+                                callback_id: None,
+                            })
+                            .unwrap(),
+                            funds: vec![],
+                        }),
+                    ],
+                    AssetInfo::Cw20(ref _contract_addr) => unimplemented!(),
+                    _ => unreachable!(),
+                });
+            }
             VaultType::Evm => unimplemented!(),
         }
     }
+    // save any changes to the endowment's invested vaults
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     // set the final state balance after all assets have been deducted and save
     match &acct_type {
@@ -1659,9 +1784,7 @@ pub fn vaults_invest(
     }
     STATES.save(deps.storage, id, &state)?;
 
-    Ok(Response::new()
-        .add_attribute("action", "vault_invest")
-        .add_submessages(deposit_msgs))
+    Ok(res)
 }
 
 /// Allow Endowment owners to redeem some amount of Vault tokens back to their
@@ -1692,7 +1815,7 @@ pub fn vaults_redeem(
     // iterate over each vault and amount passed in
     // 1. Validate that Vault addr and input Asset are valid
     // 2. Create redeem message to Vault
-    let mut redeem_msgs: Vec<SubMsg> = vec![];
+    let mut res = Response::new().add_attribute("action", "vault_redeem");
     for (vault, amount) in vaults.iter() {
         // check vault addr passed is valid
         let vault_addr = deps.api.addr_validate(vault)?.to_string();
@@ -1712,30 +1835,28 @@ pub fn vaults_redeem(
             }));
         }
 
-        // check if the vault tokens have been depleted and remove one-off-vault from list if so
+        // check if the vault tokens have been depleted and remove one-off(invested) vault from list if so
         let vault_balance = vault_endowment_balance(deps.as_ref(), vault.to_string(), id);
-        match acct_type {
-            AccountType::Locked => {
-                let pos = endowment
-                    .oneoff_vaults
-                    .locked
-                    .iter()
-                    .position(|v| v == vault);
-                if let Some(pos) = pos {
-                    if vault_balance == *amount {
-                        endowment.oneoff_vaults.locked.swap_remove(pos);
+        if vault_balance == *amount || vault_balance == Uint128::zero() {
+            match acct_type {
+                AccountType::Locked => {
+                    let pos = endowment
+                        .oneoff_vaults
+                        .locked
+                        .iter()
+                        .position(|v| v == vault);
+                    if pos.is_some() {
+                        endowment.oneoff_vaults.locked.swap_remove(pos.unwrap());
                     }
                 }
-            }
-            AccountType::Liquid => {
-                let pos = endowment
-                    .oneoff_vaults
-                    .liquid
-                    .iter()
-                    .position(|v| v == vault);
-                if let Some(pos) = pos {
-                    if vault_balance == *amount {
-                        endowment.oneoff_vaults.liquid.swap_remove(pos);
+                AccountType::Liquid => {
+                    let pos = endowment
+                        .oneoff_vaults
+                        .liquid
+                        .iter()
+                        .position(|v| v == vault);
+                    if pos.is_some() {
+                        endowment.oneoff_vaults.liquid.swap_remove(pos.unwrap());
                     }
                 }
             }
@@ -1751,7 +1872,7 @@ pub fn vaults_redeem(
                 if *amount > available_vt {
                     return Err(ContractError::BalanceTooSmall {});
                 }
-                redeem_msgs.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                res = res.add_submessage(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr: vault_addr,
                     msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
                         endowment_id: id,
@@ -1761,15 +1882,43 @@ pub fn vaults_redeem(
                     funds: vec![],
                 })));
             }
-            VaultType::Ibc { ica: _ } => unimplemented!(),
+            // Messages bound for IBC vaults need to utilize the Accounts IBC Controller contract on Juno
+            VaultType::Ibc { ica } => {
+                // look up Registrar network information on the given IBC Vault
+                let network_info: NetworkConnectionResponse =
+                    deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+                        contract_addr: config.registrar_contract.to_string(),
+                        msg: to_binary(&RegistrarQuerier::NetworkConnection {
+                            chain_id: vault_config.vault.network,
+                        })?,
+                    }))?;
+                // build message
+                res = res.add_message(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: config.ibc_controller.to_string(),
+                    msg: to_binary(&ica_vaults::ica_controller_msg::ExecuteMsg::SendMsgs {
+                        channel_id: network_info.network_connection.ibc_channel.unwrap(),
+                        msgs: vec![CosmosMsg::Wasm(WasmMsg::Execute {
+                            contract_addr: ica.to_string(),
+                            msg: to_binary(&angel_core::messages::vault::ExecuteMsg::Redeem {
+                                endowment_id: id,
+                                amount: *amount,
+                            })
+                            .unwrap(),
+                            funds: vec![],
+                        })],
+                        // callback_id: Some("ibc-vault-redeem".to_string()),
+                        callback_id: None,
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                }));
+            }
             VaultType::Evm => unimplemented!(),
         }
     }
 
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
-    Ok(Response::new()
-        .add_attribute("action", "vault_redeem")
-        .add_submessages(redeem_msgs))
+    Ok(res)
 }
 
 pub fn withdraw(
@@ -1787,6 +1936,7 @@ pub fn withdraw(
     let mut state_bal: GenericBalance = state.balances.get(&acct_type);
     let mut messages: Vec<SubMsg> = vec![];
     let mut native_coins: Vec<Coin> = vec![];
+    let mut native_coins_fees: Vec<Coin> = vec![];
 
     if !endowment.withdraw_approved {
         return Err(ContractError::Std(StdError::GenericErr {
@@ -1804,7 +1954,7 @@ pub fn withdraw(
     //                      can withdraw the balances AFTER MATURED
     //          AccountType::Liquid => Endowment owner or address in "whitelisted_beneficiaries"
     //                      can withdraw the balances
-    match (endowment.endow_type, acct_type.clone()) {
+    match (endowment.endow_type.clone(), acct_type.clone()) {
         (EndowmentType::Charity, AccountType::Locked) => {
             if info.sender != config.owner {
                 return Err(ContractError::Unauthorized {});
@@ -1842,6 +1992,22 @@ pub fn withdraw(
         }
     }
 
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+
+    let withdraw_rate: Decimal = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: config.registrar_contract.to_string(),
+        msg: to_binary(&RegistrarQuerier::Fee {
+            name: match endowment.endow_type {
+                EndowmentType::Charity => "accounts_withdraw_charity".to_string(),
+                _ => "accounts_withdraw_normal".to_string(),
+            },
+        })?,
+    }))?;
+
     for asset in assets.iter() {
         asset.check(deps.api, None)?;
         // check for assets with zero amounts and raise error if found
@@ -1864,6 +2030,8 @@ pub fn withdraw(
             return Err(ContractError::InsufficientFunds {});
         }
 
+        // calculate withdraw fee
+        let withdraw_fee = asset.amount * withdraw_rate;
         // build message based on asset type and update state balance with deduction
         match asset.info.clone() {
             AssetInfoBase::Native(denom) => {
@@ -1871,7 +2039,11 @@ pub fn withdraw(
                 // and all deductions against the state balance done at the end
                 native_coins.push(Coin {
                     denom: denom.clone(),
-                    amount: asset.amount,
+                    amount: asset.amount - withdraw_fee,
+                });
+                native_coins_fees.push(Coin {
+                    denom: denom.clone(),
+                    amount: withdraw_fee,
                 });
             }
             AssetInfoBase::Cw20(addr) => {
@@ -1880,7 +2052,17 @@ pub fn withdraw(
                     contract_addr: addr.to_string(),
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
                         recipient: beneficiary.to_string(),
-                        amount: asset.amount,
+                        amount: asset.amount - withdraw_fee,
+                    })
+                    .unwrap(),
+                    funds: vec![],
+                })));
+                // Build message to AP treasury for withdraw fee owned
+                messages.push(SubMsg::new(CosmosMsg::Wasm(WasmMsg::Execute {
+                    contract_addr: addr.to_string(),
+                    msg: to_binary(&cw20::Cw20ExecuteMsg::Transfer {
+                        recipient: registrar_config.treasury.to_string(),
+                        amount: withdraw_fee,
                     })
                     .unwrap(),
                     funds: vec![],
@@ -1899,10 +2081,16 @@ pub fn withdraw(
     if !native_coins.is_empty() {
         // deduct the native coins withdrawn against balances held in state
         state_bal.deduct_tokens(Balance::from(native_coins.clone()));
-        // Build message to send all native tokens to the Beneficiary via BankMsg::Send
+        state_bal.deduct_tokens(Balance::from(native_coins_fees.clone()));
+        // Build messages to send all native tokens  via BankMsg::Send to either:
+        // the Beneficiary for withdraw amount less fees and AP Treasury for the fees portion
         messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
             to_address: beneficiary,
             amount: native_coins,
+        })));
+        messages.push(SubMsg::new(CosmosMsg::Bank(BankMsg::Send {
+            to_address: registrar_config.treasury,
+            amount: native_coins_fees,
         })));
     }
 
@@ -1995,7 +2183,6 @@ pub fn update_endowment_fees(
     msg: UpdateEndowmentFeesMsg,
 ) -> Result<Response, ContractError> {
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
-    let config = CONFIG.load(deps.storage)?;
 
     // only normalized endowments can update the additional fees
     if endowment.endow_type != EndowmentType::Charity {
@@ -2005,7 +2192,7 @@ pub fn update_endowment_fees(
     }
 
     // Update the "EndowmentFee"s
-    if config.settings_controller.earnings_fee.can_change(
+    if endowment.settings_controller.earnings_fee.can_change(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
@@ -2014,7 +2201,7 @@ pub fn update_endowment_fees(
         endowment.earnings_fee = msg.earnings_fee;
     }
 
-    if config.settings_controller.deposit_fee.can_change(
+    if endowment.settings_controller.deposit_fee.can_change(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
@@ -2023,7 +2210,7 @@ pub fn update_endowment_fees(
         endowment.deposit_fee = msg.deposit_fee;
     }
 
-    if config.settings_controller.withdraw_fee.can_change(
+    if endowment.settings_controller.withdraw_fee.can_change(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
@@ -2032,7 +2219,7 @@ pub fn update_endowment_fees(
         endowment.withdraw_fee = msg.withdraw_fee;
     }
 
-    if config.settings_controller.aum_fee.can_change(
+    if endowment.settings_controller.aum_fee.can_change(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),

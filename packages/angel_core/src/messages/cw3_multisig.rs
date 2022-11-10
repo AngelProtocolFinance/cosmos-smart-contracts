@@ -104,6 +104,7 @@ pub struct ConfigResponse {
     pub threshold: Threshold,
     pub max_voting_period: Duration,
     pub group_addr: String,
+    pub require_execution: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]

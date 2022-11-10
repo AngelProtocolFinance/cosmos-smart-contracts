@@ -1,9 +1,9 @@
-use crate::state::{CONFIG, ENDOWTYPE_FEES, NETWORK_CONNECTIONS, VAULTS};
+use crate::state::{CONFIG, FEES, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::registrar::*;
 use angel_core::structs::{EndowmentType, NetworkInfo, VaultType, YieldVault};
 use angel_core::utils::{percentage_checks, split_checks};
-use cosmwasm_std::{DepsMut, Env, MessageInfo, Response, StdError, StdResult};
+use cosmwasm_std::{Decimal, DepsMut, Env, MessageInfo, Response, StdError, StdResult};
 
 pub fn update_owner(
     deps: DepsMut,
@@ -24,6 +24,25 @@ pub fn update_owner(
     })?;
 
     Ok(Response::new().add_attribute("action", "update_owner"))
+}
+
+pub fn update_fees(
+    deps: DepsMut,
+    info: MessageInfo,
+    fees: Vec<(String, Decimal)>,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    if info.sender.ne(&config.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    for fee in fees.iter() {
+        // check percentage is valid
+        percentage_checks(fee.1)?;
+        // save|update fee set in storage
+        FEES.save(deps.storage, &fee.0, &fee.1)?;
+    }
+    Ok(Response::new().add_attribute("action", "update_fees"))
 }
 
 pub fn update_config(
@@ -70,11 +89,6 @@ pub fn update_config(
     config.treasury = deps
         .api
         .addr_validate(&msg.treasury.unwrap_or_else(|| config.treasury.to_string()))?;
-    config.tax_rate = match msg.tax_rate {
-        Some(tax_rate) => percentage_checks(tax_rate),
-        None => Ok(config.tax_rate),
-    }
-    .unwrap();
     config.rebalance = match msg.rebalance {
         Some(details) => details,
         None => config.rebalance,
@@ -245,24 +259,6 @@ pub fn vault_update(
     VAULTS.save(deps.storage, addr.as_bytes(), &vault)?;
 
     Ok(Response::default())
-}
-
-pub fn update_endowtype_fees(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    msg: UpdateEndowTypeFeesMsg,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-
-    if info.sender.ne(&config.owner) {
-        return Err(ContractError::Unauthorized {});
-    }
-    // Update the "fees"
-    ENDOWTYPE_FEES.save(deps.storage, "charity".to_string(), &msg.endowtype_charity)?;
-    ENDOWTYPE_FEES.save(deps.storage, "normal".to_string(), &msg.endowtype_normal)?;
-
-    Ok(Response::new().add_attribute("action", "update_endowtype_fees"))
 }
 
 pub fn update_network_connections(

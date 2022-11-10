@@ -603,10 +603,12 @@ pub fn distribute_harvest(
     let mut res = Response::default();
 
     let config = CONFIG.load(deps.storage)?;
-    let registrar_config: ConfigResponse = deps.querier.query_wasm_smart(
-        config.registrar_contract.to_string(),
-        &RegistrarQueryMsg::Config {},
-    )?;
+    let tax_rate: Decimal = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: config.registrar_contract.to_string(),
+        msg: to_binary(&RegistrarQueryMsg::Fee {
+            name: "vault_harvest".to_string(),
+        })?,
+    }))?;
 
     // First, compute the token amount
     let output_token_bal = query_denom_balance(
@@ -616,9 +618,8 @@ pub fn distribute_harvest(
     );
     let total_reward_amt = output_token_bal - output_token_bal_before;
 
-    // Send taxes owed to Treasury wallet: reward_usdc * registrar_config.tax_rate
-    let tax_amt = (total_reward_amt * registrar_config.tax_rate.numerator())
-        / registrar_config.tax_rate.denominator();
+    // Send taxes owed to Treasury wallet: reward_usdc * (registrar::)tax_rate
+    let tax_amt = (total_reward_amt * tax_rate.numerator()) / tax_rate.denominator();
 
     let less_taxes = total_reward_amt - tax_amt;
     let mut restake_amt = Uint128::zero();

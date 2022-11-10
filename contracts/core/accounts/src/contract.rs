@@ -3,7 +3,6 @@ use crate::queriers;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::structs::SettingsController;
 use cosmwasm_std::{
     entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
     StdError, StdResult,
@@ -35,10 +34,6 @@ pub fn instantiate(
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             next_account_id: 1_u32,
             max_general_category_id: 1_u8,
-            settings_controller: match msg.settings_controller {
-                Some(controller) => controller,
-                None => SettingsController::default(),
-            },
         },
     )?;
 
@@ -54,6 +49,9 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
+        ExecuteMsg::ReceiveIbcResponse(resp) => {
+            executers::execute_receive_ibc_response(deps, env, info, resp)
+        }
         ExecuteMsg::Deposit(msg) => {
             if info.funds.len() != 1 {
                 return Err(ContractError::InvalidCoinsDeposited {});
@@ -229,20 +227,14 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
         QueryMsg::Balance { id } => to_binary(&queriers::query_endowment_balance(deps, id)?),
         QueryMsg::State { id } => to_binary(&queriers::query_state(deps, id)?),
         QueryMsg::EndowmentList {
-            name,
-            owner,
-            status,
-            tier,
-            endow_type,
             proposal_link,
+            start_after,
+            limit,
         } => to_binary(&queriers::query_endowment_list(
             deps,
-            name,
-            owner,
-            status,
-            tier,
-            endow_type,
             proposal_link,
+            start_after,
+            limit,
         )?),
         QueryMsg::Endowment { id } => to_binary(&queriers::query_endowment_details(deps, id)?),
         QueryMsg::TokenAmount {

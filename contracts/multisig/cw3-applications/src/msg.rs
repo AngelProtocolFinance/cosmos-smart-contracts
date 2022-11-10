@@ -1,8 +1,9 @@
 use crate::state::ProposalType;
 use angel_core::messages::accounts::CreateEndowmentMsg;
-use cosmwasm_std::{CosmosMsg, Empty};
+use cosmwasm_std::{Coin, CosmosMsg, Decimal, Empty};
 use cw3::{Status, Vote};
 use cw4::MemberChangedHookMsg;
+use cw_asset::Asset;
 use cw_utils::{Duration, Expiration, Threshold, ThresholdResponse};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
@@ -55,8 +56,12 @@ pub enum ExecuteMsg {
         proposal_id: u64,
     },
     UpdateConfig {
+        require_execution: bool,
         threshold: Threshold,
         max_voting_period: Duration,
+        seed_asset: Option<Asset>,
+        seed_split_to_liquid: Decimal,
+        new_endow_gas_money: Option<Coin>,
     },
     /// Handles update hook messages from the group contract
     MemberChangedHook(MemberChangedHookMsg),
@@ -69,6 +74,10 @@ pub struct ConfigResponse {
     pub threshold: Threshold,
     pub max_voting_period: Duration,
     pub group_addr: String,
+    pub require_execution: bool,
+    pub seed_asset: Option<Asset>,
+    pub seed_split_to_liquid: Decimal,
+    pub new_endow_gas_money: Option<Coin>,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]

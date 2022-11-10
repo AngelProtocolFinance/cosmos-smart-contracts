@@ -1,5 +1,7 @@
 use crate::msg::{InstantiateMsg, MigrateMsg};
-use crate::state::{next_id, Ballot, Config, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS};
+use crate::state::{
+    next_id, Ballot, Config, OldConfig, Proposal, Votes, BALLOTS, CONFIG, PROPOSALS,
+};
 use angel_core::errors::multisig::ContractError;
 use angel_core::messages::accounts::QueryMsg::Endowment as EndowmentDetails;
 use angel_core::messages::cw3_apteam::ExecuteMsg;
@@ -9,8 +11,8 @@ use angel_core::responses::accounts::EndowmentDetailsResponse;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::structs::AccountType;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env, MessageInfo,
-    Order, QueryRequest, Response, StdError, StdResult, WasmMsg, WasmQuery,
+    entry_point, from_slice, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env,
+    MessageInfo, Order, QueryRequest, Response, StdError, StdResult, WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
@@ -49,6 +51,7 @@ pub fn instantiate(
         threshold: msg.threshold,
         max_voting_period: msg.max_voting_period,
         group_addr,
+        require_execution: false,
     };
     CONFIG.save(deps.storage, &cfg)?;
 
@@ -94,7 +97,15 @@ pub fn execute(
         ExecuteMsg::UpdateConfig {
             threshold,
             max_voting_period,
-        } => execute_update_config(deps, env, info, threshold, max_voting_period),
+            require_execution,
+        } => execute_update_config(
+            deps,
+            env,
+            info,
+            require_execution,
+            threshold,
+            max_voting_period,
+        ),
         ExecuteMsg::Execute { proposal_id } => execute_execute(deps, env, info, proposal_id),
         ExecuteMsg::Close { proposal_id } => execute_close(deps, env, info, proposal_id),
         ExecuteMsg::MemberChangedHook(MemberChangedHookMsg { diffs }) => {
@@ -107,6 +118,7 @@ pub fn execute_update_config(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    require_execution: bool,
     threshold: Threshold,
     max_voting_period: Duration,
 ) -> Result<Response<Empty>, ContractError> {
@@ -115,7 +127,7 @@ pub fn execute_update_config(
         return Err(ContractError::Unauthorized {});
     }
     let mut cfg = CONFIG.load(deps.storage)?;
-
+    cfg.require_execution = require_execution;
     cfg.threshold = threshold;
     cfg.max_voting_period = max_voting_period;
 
@@ -189,15 +201,31 @@ pub fn execute_propose_locked_withdraw(
         meta,
     };
     prop.update_status(&env.block);
-    let id = next_id(deps.storage)?;
-    PROPOSALS.save(deps.storage, id, &prop)?;
+    let prop_id = next_id(deps.storage)?;
+    PROPOSALS.save(deps.storage, prop_id, &prop)?;
+
+    // If Proposal's status is Passed, then execute it immediately (if execution is not explicitly required)
+    let mut direct_execute_msgs = vec![];
+    let auto_execute = !cfg.require_execution && prop.status == Status::Passed;
+    if auto_execute {
+        direct_execute_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::Execute {
+                proposal_id: prop_id,
+            })
+            .unwrap(),
+            funds: vec![],
+        }));
+    };
 
     Ok(Response::new()
         .add_attribute("action", "locked_withdraw_proposal")
         .add_attribute("sender", info.sender)
-        .add_attribute("proposal_id", id.to_string())
+        .add_attribute("proposal_id", prop_id.to_string())
         .add_attribute("endowment_cw3_proposal_id", orig_proposal.to_string())
-        .add_attribute("status", format!("{:?}", prop.status)))
+        .add_attribute("status", format!("{:?}", prop.status))
+        .add_attribute("auto-executed", auto_execute.to_string())
+        .add_messages(direct_execute_msgs))
 }
 
 pub fn execute_propose(
@@ -246,21 +274,37 @@ pub fn execute_propose(
         meta,
     };
     prop.update_status(&env.block);
-    let id = next_id(deps.storage)?;
-    PROPOSALS.save(deps.storage, id, &prop)?;
+    let prop_id = next_id(deps.storage)?;
+    PROPOSALS.save(deps.storage, prop_id, &prop)?;
 
     // add the first yes vote from voter
     let ballot = Ballot {
         weight: vote_power,
         vote: Vote::Yes,
     };
-    BALLOTS.save(deps.storage, (id, &info.sender), &ballot)?;
+    BALLOTS.save(deps.storage, (prop_id, &info.sender), &ballot)?;
+
+    // If Proposal's status is Passed, then execute it immediately (if execution is not explicitly required)
+    let mut direct_execute_msgs = vec![];
+    let auto_execute = !cfg.require_execution && prop.status == Status::Passed;
+    if auto_execute {
+        direct_execute_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::Execute {
+                proposal_id: prop_id,
+            })
+            .unwrap(),
+            funds: vec![],
+        }));
+    };
 
     Ok(Response::new()
         .add_attribute("action", "propose")
         .add_attribute("sender", info.sender)
-        .add_attribute("proposal_id", id.to_string())
-        .add_attribute("status", format!("{:?}", prop.status)))
+        .add_attribute("proposal_id", prop_id.to_string())
+        .add_attribute("status", format!("{:?}", prop.status))
+        .add_attribute("auto-executed", auto_execute.to_string())
+        .add_messages(direct_execute_msgs))
 }
 
 pub fn execute_vote(
@@ -304,11 +348,24 @@ pub fn execute_vote(
     prop.update_status(&env.block);
     PROPOSALS.save(deps.storage, proposal_id, &prop)?;
 
+    // If Proposal's status is Passed, then execute it immediately (if execution is not explicitly required)
+    let mut direct_execute_msgs = vec![];
+    let auto_execute = !cfg.require_execution && prop.status == Status::Passed;
+    if auto_execute {
+        direct_execute_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::Execute { proposal_id }).unwrap(),
+            funds: vec![],
+        }));
+    };
+
     Ok(Response::new()
         .add_attribute("action", "vote")
         .add_attribute("sender", info.sender)
         .add_attribute("proposal_id", proposal_id.to_string())
-        .add_attribute("status", format!("{:?}", prop.status)))
+        .add_attribute("status", format!("{:?}", prop.status))
+        .add_attribute("auto-executed", auto_execute.to_string())
+        .add_messages(direct_execute_msgs))
 }
 
 pub fn execute_execute(
@@ -418,6 +475,7 @@ fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         threshold: cfg.threshold,
         max_voting_period: cfg.max_voting_period,
         group_addr: cfg.group_addr.0.to_string(),
+        require_execution: cfg.require_execution,
     })
 }
 
@@ -582,6 +640,23 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
     }
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // setup the new config struct and save to storage
+    let data = deps
+        .storage
+        .get("config".as_bytes())
+        .ok_or_else(|| StdError::not_found("Config not found"))?;
+    let old_config: OldConfig = from_slice(&data)?;
+    CONFIG.save(
+        deps.storage,
+        &Config {
+            registrar_contract: old_config.registrar_contract,
+            threshold: old_config.threshold,
+            max_voting_period: old_config.max_voting_period,
+            group_addr: old_config.group_addr,
+            require_execution: false, // default to auto-execute
+        },
+    )?;
 
     Ok(Response::default())
 }

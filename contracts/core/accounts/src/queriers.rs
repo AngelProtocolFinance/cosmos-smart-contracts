@@ -2,9 +2,7 @@ use crate::state::{
     read_endowments, Allowances, Endowment, ALLOWANCES, CONFIG, ENDOWMENTS, STATES,
 };
 use angel_core::responses::accounts::*;
-use angel_core::structs::{
-    AccountType, EndowmentBalanceResponse, EndowmentEntry, EndowmentType, Tier,
-};
+use angel_core::structs::{AccountType, EndowmentBalanceResponse, EndowmentEntry, Tier};
 use angel_core::utils::vault_endowment_balance;
 use cosmwasm_std::{Deps, StdResult, Uint128};
 use cw_asset::AssetInfo;
@@ -15,7 +13,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
-        settings_controller: config.settings_controller,
         next_account_id: config.next_account_id,
         max_general_category_id: config.max_general_category_id,
     })
@@ -40,35 +37,21 @@ pub fn query_endowment_balance(deps: Deps, id: u32) -> StdResult<EndowmentBalanc
     let tokens_on_hand = state.balances;
 
     // process all one-off vaults
-    let mut oneoff_locked = vec![];
+    let mut invested_locked = vec![];
     for vault in endowment.oneoff_vaults.locked.into_iter() {
         let vault_bal = vault_endowment_balance(deps, vault.clone().to_string(), id);
-        oneoff_locked.push((vault.to_string(), vault_bal));
+        invested_locked.push((vault.to_string(), vault_bal));
     }
-    let mut oneoff_liquid = vec![];
+    let mut invested_liquid = vec![];
     for vault in endowment.oneoff_vaults.liquid.into_iter() {
         let vault_bal = vault_endowment_balance(deps, vault.clone().to_string(), id);
-        oneoff_liquid.push((vault.to_string(), vault_bal));
-    }
-    let mut strategies_locked = vec![];
-
-    // process all strategies vaults
-    for strat in endowment.strategies.locked.iter() {
-        let vault_bal = vault_endowment_balance(deps, strat.vault.clone(), id);
-        strategies_locked.push((strat.vault.to_string(), vault_bal));
-    }
-    let mut strategies_liquid = vec![];
-    for strat in endowment.strategies.liquid.iter() {
-        let vault_bal = vault_endowment_balance(deps, strat.vault.clone(), id);
-        strategies_liquid.push((strat.vault.to_string(), vault_bal));
+        invested_liquid.push((vault.to_string(), vault_bal));
     }
 
     Ok(EndowmentBalanceResponse {
         tokens_on_hand,
-        oneoff_locked,
-        oneoff_liquid,
-        strategies_locked,
-        strategies_liquid,
+        invested_locked,
+        invested_liquid,
     })
 }
 
@@ -100,14 +83,12 @@ pub fn query_token_amount(
 
 pub fn query_endowment_list(
     deps: Deps,
-    name: Option<Option<String>>,
-    owner: Option<String>,
-    status: Option<String>, // EndowmentStatus
-    tier: Option<Option<String>>,
-    endow_type: Option<String>, // EndowmentType
     proposal_link: Option<u64>,
+    start_after: Option<u32>,
+    limit: Option<u64>,
 ) -> StdResult<EndowmentListResponse> {
-    let endowments: Vec<(u32, Endowment)> = read_endowments(deps.storage)?;
+    let endowments: Vec<(u32, Endowment)> =
+        read_endowments(deps.storage, proposal_link, start_after, limit)?;
     let entries: Vec<EndowmentEntry> = endowments
         .iter()
         .map(|(i, e)| EndowmentEntry {
@@ -118,7 +99,7 @@ pub fn query_endowment_list(
             name: Some(e.name.clone()),
             logo: e.logo.clone(),
             image: e.image.clone(),
-            tier: match e.tier.unwrap() {
+            tier: match e.tier.unwrap_or(0) {
                 1 => Some(Tier::Level1),
                 2 => Some(Tier::Level2),
                 3 => Some(Tier::Level3),
@@ -128,63 +109,7 @@ pub fn query_endowment_list(
             proposal_link: e.proposal_link.clone(),
         })
         .collect();
-    let entries = match name {
-        Some(nm) => entries
-            .into_iter()
-            .filter(|e| e.name == nm)
-            .collect::<Vec<EndowmentEntry>>(),
-        None => entries,
-    };
-    let entries = match proposal_link {
-        Some(proposal_id) => entries
-            .into_iter()
-            .filter(|e| e.proposal_link == Some(proposal_id))
-            .collect::<Vec<EndowmentEntry>>(),
-        None => entries,
-    };
-    let entries = match owner {
-        Some(owner) => entries
-            .into_iter()
-            .filter(|e| e.owner == owner)
-            .collect::<Vec<EndowmentEntry>>(),
-        None => entries,
-    };
-    let entries = match status {
-        Some(status) => entries
-            .into_iter()
-            .filter(|e| e.status.to_string() == status)
-            .collect::<Vec<EndowmentEntry>>(),
-        None => entries,
-    };
-    let entries = match tier {
-        Some(tier) => {
-            let tier = tier.and_then(|v| match v.as_str() {
-                "1" => Some(Tier::Level1),
-                "2" => Some(Tier::Level2),
-                "3" => Some(Tier::Level3),
-                _ => unimplemented!(),
-            });
-            entries
-                .into_iter()
-                .filter(|e| e.tier == tier)
-                .collect::<Vec<EndowmentEntry>>()
-        }
-        None => entries,
-    };
-    let entries = match endow_type {
-        Some(endow_type) => {
-            let end_ty = match endow_type.as_str() {
-                "charity" => EndowmentType::Charity,
-                "normal" => EndowmentType::Normal,
-                _ => unimplemented!(),
-            };
-            entries
-                .into_iter()
-                .filter(|e| e.endow_type == end_ty)
-                .collect::<Vec<EndowmentEntry>>()
-        }
-        None => entries,
-    };
+
     Ok(EndowmentListResponse {
         endowments: entries,
     })
@@ -224,6 +149,8 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         categories: endowment.categories,
         logo: endowment.logo,
         image: endowment.image,
+        parent: endowment.parent,
+        settings_controller: endowment.settings_controller,
     })
 }
 

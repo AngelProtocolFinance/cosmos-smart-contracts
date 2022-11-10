@@ -2,7 +2,8 @@ use crate::msg::{
     ConfigResponse, ExecuteMsg, MetaProposalListResponse, MetaProposalResponse, MigrateMsg,
 };
 use crate::state::{
-    next_id, Ballot, Config, Proposal, TempConfig, Votes, BALLOTS, CONFIG, PROPOSALS, TEMP_CONFIG,
+    next_id, Ballot, Config, OldConfig, Proposal, TempConfig, Votes, BALLOTS, CONFIG, PROPOSALS,
+    TEMP_CONFIG,
 };
 use angel_core::errors::multisig::ContractError;
 use angel_core::messages::cw3_multisig::{EndowmentInstantiateMsg as InstantiateMsg, QueryMsg};
@@ -10,8 +11,8 @@ use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::responses::registrar::ConfigResponse as RegistrarConfigResponse;
 use angel_core::utils::event_contains_attr;
 use cosmwasm_std::{
-    entry_point, to_binary, Binary, BlockInfo, CosmosMsg, CosmosMsg::Wasm, Deps, DepsMut, Empty,
-    Env, MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
+    entry_point, from_slice, to_binary, Binary, BlockInfo, CosmosMsg, Deps, DepsMut, Empty, Env,
+    MessageInfo, Order, QueryRequest, Reply, ReplyOn, Response, StdError, StdResult, SubMsg,
     SubMsgResult, WasmMsg, WasmMsg::Execute, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
@@ -60,7 +61,7 @@ pub fn instantiate(
             msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
                 code_id: msg.cw4_code,
                 admin: None,
-                label: format!("new endowment cw4 group - {}", msg.id),
+                label: format!("v2 endowment cw4 group - {}", msg.id),
                 msg: to_binary(&angel_core::messages::cw4_group::InstantiateMsg {
                     admin: Some(env.contract.address.to_string()),
                     members: msg.cw4_members,
@@ -182,6 +183,7 @@ pub fn cw4_group_reply(
                     threshold: temp.threshold,
                     max_voting_period: temp.max_voting_period,
                     group_addr,
+                    require_execution: false, // default to auto-executing passing proposals
                 },
             )?;
 
@@ -226,9 +228,17 @@ pub fn execute(
         ),
         ExecuteMsg::Vote { proposal_id, vote } => execute_vote(deps, env, info, proposal_id, vote),
         ExecuteMsg::UpdateConfig {
+            require_execution,
             threshold,
             max_voting_period,
-        } => execute_update_config(deps, env, info, threshold, max_voting_period),
+        } => execute_update_config(
+            deps,
+            env,
+            info,
+            require_execution,
+            threshold,
+            max_voting_period,
+        ),
         ExecuteMsg::Execute { proposal_id } => execute_execute(deps, env, info, proposal_id),
         ExecuteMsg::Close { proposal_id } => execute_close(deps, env, info, proposal_id),
         ExecuteMsg::MemberChangedHook(MemberChangedHookMsg { diffs }) => {
@@ -241,6 +251,7 @@ pub fn execute_update_config(
     deps: DepsMut,
     env: Env,
     info: MessageInfo,
+    require_execution: bool,
     threshold: Threshold,
     max_voting_period: Duration,
 ) -> Result<Response<Empty>, ContractError> {
@@ -249,7 +260,7 @@ pub fn execute_update_config(
         return Err(ContractError::Unauthorized {});
     }
     let mut cfg = CONFIG.load(deps.storage)?;
-
+    cfg.require_execution = require_execution;
     cfg.threshold = threshold;
     cfg.max_voting_period = max_voting_period;
 
@@ -400,11 +411,24 @@ pub fn execute_propose_locked_withdraw(
     };
     BALLOTS.save(deps.storage, (id, &info.sender), &ballot)?;
 
+    // If Proposal's status is Passed, then execute it immediately (if execution is not explicitly required)
+    let mut direct_execute_msgs = vec![];
+    let auto_execute = !cfg.require_execution && prop.status == Status::Passed;
+    if auto_execute {
+        direct_execute_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::Execute { proposal_id: id }).unwrap(),
+            funds: vec![],
+        }));
+    };
+
     Ok(Response::new()
         .add_attribute("action", "propose")
         .add_attribute("sender", info.sender)
         .add_attribute("proposal_id", id.to_string())
-        .add_attribute("status", format!("{:?}", prop.status)))
+        .add_attribute("status", format!("{:?}", prop.status))
+        .add_attribute("auto-executed", auto_execute.to_string())
+        .add_messages(direct_execute_msgs))
 }
 
 pub fn execute_vote(
@@ -448,11 +472,24 @@ pub fn execute_vote(
     prop.update_status(&env.block);
     PROPOSALS.save(deps.storage, proposal_id, &prop)?;
 
+    // If Proposal's status is Passed, then execute it immediately (if execution is not explicitly required)
+    let mut direct_execute_msgs = vec![];
+    let auto_execute = !cfg.require_execution && prop.status == Status::Passed;
+    if auto_execute {
+        direct_execute_msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: env.contract.address.to_string(),
+            msg: to_binary(&ExecuteMsg::Execute { proposal_id }).unwrap(),
+            funds: vec![],
+        }));
+    }
+
     Ok(Response::new()
         .add_attribute("action", "vote")
         .add_attribute("sender", info.sender)
         .add_attribute("proposal_id", proposal_id.to_string())
-        .add_attribute("status", format!("{:?}", prop.status)))
+        .add_attribute("status", format!("{:?}", prop.status))
+        .add_attribute("auto-executed", auto_execute.to_string())
+        .add_messages(direct_execute_msgs))
 }
 
 pub fn execute_execute(
@@ -487,34 +524,27 @@ pub fn execute_execute(
         }))?;
 
     // work into submsgs where needed (ie. going to AP Team CW3 or Gov) for catching replies
-    let mut norm_msgs: Vec<CosmosMsg> = vec![];
-    let mut sub_msgs: Vec<SubMsg> = vec![];
-    for msg in prop.msgs.into_iter() {
-        if let Wasm(ref wasm_m) = msg {
-            if let Execute { contract_addr, .. } = wasm_m {
-                if *contract_addr == registrar_config.owner {
-                    sub_msgs.push(SubMsg::reply_on_success(
-                        wasm_m.clone(),
-                        APTEAM_CW3_REPLY_ID,
-                    ));
-                } else {
-                    norm_msgs.push(msg);
-                }
-            } else {
-                norm_msgs.push(msg);
-            }
-        } else {
-            norm_msgs.push(msg)
-        }
-    }
-
-    // dispatch all proposed messages
-    Ok(Response::new()
-        .add_messages(norm_msgs)
-        .add_submessages(sub_msgs)
+    let mut res = Response::new()
         .add_attribute("action", "execute")
         .add_attribute("sender", info.sender)
-        .add_attribute("proposal_id", proposal_id.to_string()))
+        .add_attribute("proposal_id", proposal_id.to_string());
+
+    // check for the single msg early withdraw proposal to
+    match &prop.msgs[0] {
+        cosmwasm_std::CosmosMsg::Wasm(Execute { contract_addr, .. }) => {
+            res = if contract_addr.to_string() == registrar_config.owner {
+                res.add_submessage(SubMsg::reply_on_success(
+                    prop.msgs[0].clone(),
+                    APTEAM_CW3_REPLY_ID,
+                ))
+            } else {
+                res.add_messages(prop.msgs)
+            };
+        }
+        _ => res = res.add_messages(prop.msgs),
+    }
+    // dispatch all proposed messages
+    Ok(res)
 }
 
 pub fn execute_close(
@@ -590,6 +620,7 @@ pub fn query(deps: Deps, env: Env, msg: QueryMsg) -> StdResult<Binary> {
 fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     let cfg = CONFIG.load(deps.storage)?;
     Ok(ConfigResponse {
+        require_execution: cfg.require_execution,
         threshold: cfg.threshold,
         max_voting_period: cfg.max_voting_period,
         group_addr: cfg.group_addr.0.to_string(),
@@ -760,6 +791,23 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
     }
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // setup the new config struct and save to storage
+    let data = deps
+        .storage
+        .get("config".as_bytes())
+        .ok_or_else(|| StdError::not_found("Config not found"))?;
+    let old_config: OldConfig = from_slice(&data)?;
+    CONFIG.save(
+        deps.storage,
+        &Config {
+            registrar_contract: old_config.registrar_contract,
+            threshold: old_config.threshold,
+            max_voting_period: old_config.max_voting_period,
+            group_addr: old_config.group_addr,
+            require_execution: false, // default to auto-execute
+        },
+    )?;
 
     Ok(Response::default())
 }

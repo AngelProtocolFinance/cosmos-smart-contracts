@@ -1,15 +1,13 @@
 [workspace]
 members = [
     "packages/angel_core",
-    "packages/halo_token",
     "packages/ica_vaults",
     "contracts/ica/ica-controller",
     "contracts/ica/ica-host",
     "contracts/core/accounts",
     "contracts/core/index-fund",
-    "contracts/core/swap-router",
     "contracts/core/registrar",
-    "contracts/core/fundraising",
+    "contracts/core/swap-router",
     "contracts/normalized-endowment/cw3-endowment",
     "contracts/normalized-endowment/cw900-lv",
     "contracts/normalized-endowment/subdao",
@@ -20,6 +18,14 @@ members = [
     "contracts/multisig/cw3-apteam",
     "contracts/multisig/cw3-applications",
     "contracts/multisig/cw3-generic",
+    "contracts/vaults/loop",
+    "contracts/vaults/astroport",
+    "contracts/accessory/fundraising",
+    "contracts/accessory/gift-cards",
+]
+
+exclude = [
+    "packages/halo_token",
     "contracts/halo/airdrop",
     "contracts/halo/collector",
     "contracts/halo/community",
@@ -28,11 +34,6 @@ members = [
     "contracts/halo/gov-hodler",
     "contracts/halo/staking",
     "contracts/halo/vesting",
-    "contracts/vaults/loop",
-]
-
-exclude = [
-    "contracts/vaults/anchor",
     "contracts/vaults/junoswap",
 ]
 

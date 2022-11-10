@@ -249,14 +249,14 @@ impl WasmMockQuerier {
                     .unwrap(),
                 )),
                 QueryMsg::TokenAmount {
-                    id,
-                    asset_info,
-                    acct_type,
+                    id: _,
+                    asset_info: _,
+                    acct_type: _,
                 } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&Uint128::from(1000000_u128)).unwrap(),
                 )),
                 QueryMsg::Config {} => unimplemented!(),
-                QueryMsg::Vault { vault_addr } => SystemResult::Ok(ContractResult::Ok(
+                QueryMsg::Vault { vault_addr: _ } => SystemResult::Ok(ContractResult::Ok(
                     to_binary(&VaultDetailResponse {
                         vault: angel_core::structs::YieldVault {
                             address: "vault-1".to_string(),

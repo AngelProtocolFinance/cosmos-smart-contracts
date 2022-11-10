@@ -1,7 +1,7 @@
-use crate::state::{read_vaults, CONFIG, ENDOWTYPE_FEES, NETWORK_CONNECTIONS, VAULTS};
+use crate::state::{read_vaults, CONFIG, FEES, NETWORK_CONNECTIONS, VAULTS};
 use angel_core::responses::registrar::*;
 use angel_core::structs::{AccountType, EndowmentType, VaultType};
-use cosmwasm_std::{Deps, StdResult};
+use cosmwasm_std::{Decimal, Deps, StdResult};
 use cw2::get_contract_version;
 
 pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
@@ -11,7 +11,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
         version: get_contract_version(deps.storage)?.contract,
         accounts_contract: config.accounts_contract.map(|addr| addr.to_string()),
         treasury: config.treasury.to_string(),
-        tax_rate: config.tax_rate,
         rebalance: config.rebalance,
         index_fund: config.index_fund_contract.map(|addr| addr.to_string()),
         cw3_code: config.cw3_code,
@@ -60,6 +59,7 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     })
 }
 
+#[allow(clippy::too_many_arguments)]
 pub fn query_vault_list(
     deps: Deps,
     network: Option<String>,
@@ -95,26 +95,14 @@ pub fn query_vault_details(deps: Deps, vault_addr: String) -> StdResult<VaultDet
     Ok(VaultDetailResponse { vault })
 }
 
-pub fn query_fees(deps: Deps) -> StdResult<FeesResponse> {
-    // returns all Fees(both BaseFee & all of the EndowmentTypeFees)
-    let tax_rate = CONFIG.load(deps.storage)?.tax_rate;
-    let endowtype_charity = ENDOWTYPE_FEES
-        .load(deps.storage, "charity".to_string())
-        .unwrap_or(None);
-    let endowtype_normal = ENDOWTYPE_FEES
-        .load(deps.storage, "normal".to_string())
-        .unwrap_or(None);
-    Ok(FeesResponse {
-        tax_rate,
-        endowtype_charity,
-        endowtype_normal,
-    })
-}
-
 pub fn query_network_connection(
     deps: Deps,
     chain_id: String,
 ) -> StdResult<NetworkConnectionResponse> {
     let network_connection = NETWORK_CONNECTIONS.load(deps.storage, &chain_id)?;
     Ok(NetworkConnectionResponse { network_connection })
+}
+
+pub fn query_fee(deps: Deps, name: String) -> StdResult<Decimal> {
+    Ok(FEES.load(deps.storage, &name).unwrap_or(Decimal::zero()))
 }

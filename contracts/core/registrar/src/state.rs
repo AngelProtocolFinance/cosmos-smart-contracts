@@ -18,7 +18,6 @@ pub struct Config {
     pub index_fund_contract: Option<Addr>,
     pub accounts_contract: Option<Addr>,
     pub treasury: Addr,
-    pub tax_rate: Decimal,
     pub cw3_code: Option<u64>,                  // multisig wasm code
     pub cw4_code: Option<u64>,                  // multisig wasm code
     pub subdao_gov_code: Option<u64>,           // subdao gov wasm code
@@ -45,8 +44,9 @@ pub struct Config {
 pub const CONFIG: Item<Config> = Item::new("config");
 pub const VAULTS: Map<&[u8], YieldVault> = Map::new("vault");
 pub const NETWORK_CONNECTIONS: Map<&str, NetworkInfo> = Map::new("network_connections");
-pub const ENDOWTYPE_FEES: Map<String, Option<Decimal>> = Map::new("endowment_type_fees");
+pub const FEES: Map<&str, Decimal> = Map::new("fee");
 
+#[allow(clippy::too_many_arguments)]
 pub fn read_vaults(
     storage: &dyn Storage,
     network: Option<String>,
