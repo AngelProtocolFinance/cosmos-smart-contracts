@@ -13,7 +13,6 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
         registrar_contract: config.registrar_contract.to_string(),
-        settings_controller: config.settings_controller,
         next_account_id: config.next_account_id,
         max_general_category_id: config.max_general_category_id,
     })
@@ -150,6 +149,8 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         categories: endowment.categories,
         logo: endowment.logo,
         image: endowment.image,
+        parent: endowment.parent,
+        settings_controller: endowment.settings_controller,
     })
 }
 

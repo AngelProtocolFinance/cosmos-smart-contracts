@@ -367,10 +367,6 @@ pub fn update_config(
 
     config.registrar_contract = deps.api.addr_validate(&msg.new_registrar)?;
     config.max_general_category_id = msg.max_general_category_id;
-    config.settings_controller = match msg.settings_controller {
-        Some(controller) => controller,
-        None => config.settings_controller,
-    };
     config.ibc_controller = match msg.ibc_controller {
         Some(addr) => deps.api.addr_validate(&addr)?,
         None => config.ibc_controller,
@@ -566,12 +562,13 @@ pub fn update_endowment_settings(
         }
         None => endowment.owner,
     };
+
     // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
     if endowment.endow_type != EndowmentType::Charity {
         if let Some(whitelisted_beneficiaries) = msg.whitelisted_beneficiaries {
             let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
             if env.block.time.seconds() < endow_mature_time {
-                if config
+                if endowment
                     .settings_controller
                     .whitelisted_beneficiaries
                     .can_change(
@@ -588,7 +585,7 @@ pub fn update_endowment_settings(
         if let Some(whitelisted_contributors) = msg.whitelisted_contributors {
             let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
             if env.block.time.seconds() < endow_mature_time {
-                if config
+                if endowment
                     .settings_controller
                     .whitelisted_contributors
                     .can_change(
@@ -604,7 +601,7 @@ pub fn update_endowment_settings(
         }
         endowment.maturity_time = match msg.maturity_time {
             Some(i) => {
-                if config.settings_controller.maturity_time.can_change(
+                if endowment.settings_controller.maturity_time.can_change(
                     &info.sender,
                     &endowment.owner,
                     endowment.dao.as_ref(),
@@ -624,7 +621,7 @@ pub fn update_endowment_settings(
     }
 
     // validate address strings passed
-    if config.settings_controller.kyc_donors_only.can_change(
+    if endowment.settings_controller.kyc_donors_only.can_change(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
@@ -659,7 +656,7 @@ pub fn update_endowment_settings(
 
     endowment.name = match msg.name.clone() {
         Some(name) => {
-            if config.settings_controller.name.can_change(
+            if endowment.settings_controller.name.can_change(
                 &info.sender,
                 &endowment.owner,
                 endowment.dao.as_ref(),
@@ -674,7 +671,7 @@ pub fn update_endowment_settings(
     };
     endowment.categories = match msg.categories {
         Some(categories) => {
-            if config.settings_controller.categories.can_change(
+            if endowment.settings_controller.categories.can_change(
                 &info.sender,
                 &endowment.owner,
                 endowment.dao.as_ref(),
@@ -709,7 +706,7 @@ pub fn update_endowment_settings(
     };
     endowment.logo = match msg.logo.clone() {
         Some(logo) => {
-            if config.settings_controller.logo.can_change(
+            if endowment.settings_controller.logo.can_change(
                 &info.sender,
                 &endowment.owner,
                 endowment.dao.as_ref(),
@@ -724,7 +721,7 @@ pub fn update_endowment_settings(
     };
     endowment.image = match msg.image.clone() {
         Some(image) => {
-            if config.settings_controller.image.can_change(
+            if endowment.settings_controller.image.can_change(
                 &info.sender,
                 &endowment.owner,
                 endowment.dao.as_ref(),
@@ -738,6 +735,21 @@ pub fn update_endowment_settings(
         None => endowment.image,
     };
 
+    endowment.settings_controller = match msg.settings_controller.clone() {
+        Some(controller) => {
+            if endowment.settings_controller.image.can_change(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+                env.block.time,
+            ) {
+                controller
+            } else {
+                endowment.settings_controller
+            }
+        }
+        None => endowment.settings_controller,
+    };
     ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
 
     Ok(Response::new().add_attribute("action", "update_endowment_settings"))
@@ -753,11 +765,10 @@ pub fn update_delegate(
     delegate_address: String,
     delegate_expiry: Option<u64>,
 ) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-    let endowment = ENDOWMENTS.load(deps.storage, id)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
 
     // grab a setting's permissions from SettingsController
-    let mut permissions = config
+    let mut permissions = endowment
         .settings_controller
         .get_permissions(setting.clone())?;
 
@@ -784,9 +795,10 @@ pub fn update_delegate(
     }
 
     // save mutated permissions back to SettingsController
-    config
+    endowment
         .settings_controller
         .set_permissions(setting, permissions)?;
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::default().add_attribute("action", "update_delegate"))
 }
@@ -2171,7 +2183,6 @@ pub fn update_endowment_fees(
     msg: UpdateEndowmentFeesMsg,
 ) -> Result<Response, ContractError> {
     let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
-    let config = CONFIG.load(deps.storage)?;
 
     // only normalized endowments can update the additional fees
     if endowment.endow_type != EndowmentType::Charity {
@@ -2181,7 +2192,7 @@ pub fn update_endowment_fees(
     }
 
     // Update the "EndowmentFee"s
-    if config.settings_controller.earnings_fee.can_change(
+    if endowment.settings_controller.earnings_fee.can_change(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
@@ -2190,7 +2201,7 @@ pub fn update_endowment_fees(
         endowment.earnings_fee = msg.earnings_fee;
     }
 
-    if config.settings_controller.deposit_fee.can_change(
+    if endowment.settings_controller.deposit_fee.can_change(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
@@ -2199,7 +2210,7 @@ pub fn update_endowment_fees(
         endowment.deposit_fee = msg.deposit_fee;
     }
 
-    if config.settings_controller.withdraw_fee.can_change(
+    if endowment.settings_controller.withdraw_fee.can_change(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
@@ -2208,7 +2219,7 @@ pub fn update_endowment_fees(
         endowment.withdraw_fee = msg.withdraw_fee;
     }
 
-    if config.settings_controller.aum_fee.can_change(
+    if endowment.settings_controller.aum_fee.can_change(
         &info.sender,
         &endowment.owner,
         endowment.dao.as_ref(),
