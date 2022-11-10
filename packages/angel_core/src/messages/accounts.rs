@@ -20,7 +20,6 @@ pub struct MigrateMsg {
 pub struct InstantiateMsg {
     pub owner_sc: String,
     pub registrar_contract: String,
-    pub settings_controller: Option<SettingsController>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -212,6 +211,7 @@ pub struct UpdateEndowmentSettingsMsg {
     pub tier: Option<u8>,
     pub logo: Option<String>,
     pub image: Option<String>,
+    pub settings_controller: Option<SettingsController>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

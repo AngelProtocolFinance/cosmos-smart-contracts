@@ -71,7 +71,6 @@ fn create_endowment() -> (
     let instantiate_msg = InstantiateMsg {
         owner_sc: AP_TEAM.to_string(),
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
-        settings_controller: None,
     };
     let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
     let env = mock_env();
@@ -103,7 +102,6 @@ fn test_proper_initialization() {
     let instantiate_msg = InstantiateMsg {
         registrar_contract: REGISTRAR_CONTRACT.to_string(),
         owner_sc: CHARITY_ADDR.to_string(),
-        settings_controller: None,
     };
     let info = mock_info(AP_TEAM, &coins(100000, "earth"));
     let res = instantiate(deps.as_mut(), env, info, instantiate_msg).unwrap();
@@ -136,6 +134,7 @@ fn test_update_endowment_settings() {
         locked_endowment_configs: None,
         rebalance: None,
         maturity_whitelist: None,
+        settings_controller: None,
     };
     let res = execute(
         deps.as_mut(),
@@ -167,6 +166,7 @@ fn test_update_endowment_settings() {
         locked_endowment_configs: None,
         rebalance: None,
         maturity_whitelist: None,
+        settings_controller: None,
     };
     let info = mock_info(PLEB, &coins(100000, "earth "));
     // This should fail with an error!
@@ -623,6 +623,7 @@ fn test_withdraw() {
             tier: None,
             logo: None,
             image: None,
+            settings_controller: None,
         }),
     )
     .unwrap();

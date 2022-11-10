@@ -3,7 +3,6 @@ use crate::queriers;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::structs::SettingsController;
 use cosmwasm_std::{
     entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
     StdError, StdResult,
@@ -35,10 +34,6 @@ pub fn instantiate(
             registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
             next_account_id: 1_u32,
             max_general_category_id: 1_u8,
-            settings_controller: match msg.settings_controller {
-                Some(controller) => controller,
-                None => SettingsController::default(),
-            },
         },
     )?;
 

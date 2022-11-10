@@ -14,7 +14,8 @@ use std::marker::PhantomData;
 
 use angel_core::responses::{accounts::EndowmentDetailsResponse, registrar::ConfigResponse};
 use angel_core::structs::{
-    AcceptedTokens, AccountStrategies, Categories, OneOffVaults, RebalanceDetails, SplitDetails,
+    AcceptedTokens, AccountStrategies, Categories, OneOffVaults, RebalanceDetails,
+    SettingsController, SplitDetails,
 };
 
 use astroport::{
@@ -160,6 +161,8 @@ impl WasmMockQuerier {
                         description: todo!(),
                         donation_match_contract: todo!(),
                         maturity_whitelist: todo!(),
+                        settings_controller: SettingsController::default(),
+                        parent: None,
                     })
                     .unwrap(),
                 )),

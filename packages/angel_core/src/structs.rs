@@ -123,6 +123,7 @@ impl fmt::Display for AccountType {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct SettingsController {
+    pub settings_controller: SettingsPermissions,
     pub strategies: SettingsPermissions,
     pub whitelisted_beneficiaries: SettingsPermissions,
     pub whitelisted_contributors: SettingsPermissions,
@@ -142,6 +143,7 @@ pub struct SettingsController {
 impl SettingsController {
     pub fn default() -> Self {
         SettingsController {
+            settings_controller: SettingsPermissions::default(),
             strategies: SettingsPermissions::default(),
             whitelisted_beneficiaries: SettingsPermissions::default(),
             whitelisted_contributors: SettingsPermissions::default(),
@@ -161,6 +163,7 @@ impl SettingsController {
 
     pub fn get_permissions(&self, name: String) -> Result<SettingsPermissions, ContractError> {
         match name.as_str() {
+            "settings_controller" => Ok(self.settings_controller.clone()),
             "strategies" => Ok(self.strategies.clone()),
             "whitelisted_beneficiaries" => Ok(self.whitelisted_beneficiaries.clone()),
             "whitelisted_contributors" => Ok(self.whitelisted_contributors.clone()),

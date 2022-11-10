@@ -19,7 +19,6 @@ pub struct StateResponse {
 pub struct ConfigResponse {
     pub owner: String,
     pub registrar_contract: String,
-    pub settings_controller: SettingsController,
     pub next_account_id: u32,
     pub max_general_category_id: u8,
 }
@@ -54,6 +53,8 @@ pub struct EndowmentDetailsResponse {
     pub tier: Option<u8>,
     pub copycat_strategy: Option<u32>,
     pub proposal_link: Option<u64>,
+    pub parent: Option<u64>,
+    pub settings_controller: SettingsController,
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema)]
