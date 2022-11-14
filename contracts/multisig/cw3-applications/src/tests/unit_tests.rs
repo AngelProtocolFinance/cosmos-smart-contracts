@@ -1,7 +1,7 @@
 use crate::msg::{ExecuteMsg, InstantiateMsg};
 use angel_core::messages::accounts::CreateEndowmentMsg;
 use angel_core::messages::cw3_multisig::QueryMsg;
-use angel_core::structs::{Categories, EndowmentType};
+use angel_core::structs::{Categories, EndowmentType, SplitDetails};
 use cosmwasm_std::{coin, coins, Addr, BankMsg, Coin, Decimal, Timestamp};
 use cosmwasm_std::{BlockInfo, CosmosMsg, Empty};
 use cw2::{query_contract_info, ContractVersion};
@@ -217,6 +217,8 @@ fn new_application_proposal() -> ExecuteMsg {
         proposal_link: Some(1),
         settings_controller: None,
         parent: None,
+        split_to_liquid: Some(SplitDetails::default()),
+        ignore_user_splits: false,
     };
 
     ExecuteMsg::ProposeApplication {
