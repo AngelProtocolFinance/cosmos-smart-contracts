@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { ExecuteResult, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, toEncodedBinary } from "../../../utils/helpers";
+import { sendTransaction, toEncodedBinary } from "../../../utils/juno/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;

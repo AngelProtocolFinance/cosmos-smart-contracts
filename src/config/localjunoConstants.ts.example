@@ -6,6 +6,9 @@ export const localjuno = {
   networkInfo: {
     url: "localhost:26657",
     chainId: "localjuno",
+    walletPrefix: "juno",
+    nativeToken: "ujuno",
+    gasPrice: "0.01ujuno",
   },
 
   mnemonicKeys: {
@@ -20,20 +23,31 @@ export const localjuno = {
     tca: "camp mom loud claim grass kick tail into cake wear mistake box grunt stand runway",
   },
 
+  denoms: {
+    usdc: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4",
+    usdt: "ibc/CBF67A2BCF6CAE343FDF251E510C8E18C361FC02B23430C121116E0811835DEF",
+  },
+
   // Should be updated contract addresses after deploying wasms in the LocalJuno
   contracts: {
     registrar: "",
-    accounts: "",
     indexFund: "",
     cw4GrpApTeam: "",
     cw3ApTeam: "",
+    accounts: "",
     cw4GrpReviewTeam: "",
     cw3ReviewTeam: "",
-    vault1: "",
-    vault2: "",
+    swapRouter: "",
+
+    vaultLocked1: "",
+    vaultLiquid1: "",
+    vaultLocked2: "",
+    vaultLiquid2: "",
+
     endowId1: 1,
     endowId2: 2,
     endowId3: 3,
+    endowId4: 4,
   },
 
   // JunoSwap contracts
@@ -50,8 +64,8 @@ export const localjuno = {
 
   // Loopswap contracts
   loopswap: {
-    loopswap_token_code: 1,
-    loopswap_pair_code: 2,  // fatory: 3, farming: 4,
+    loopswap_token_code: 30,
+    loopswap_pair_code: 31,  // fatory: 16, farming: 17,
 
     loopswap_factory: "",
     loopswap_farming: "",
@@ -60,15 +74,27 @@ export const localjuno = {
     loop_juno_pair_contract: "",
     loop_juno_pair_lp_token: "",
     initial_loop_supply: "1000000000000000",
-    loop_liquidity: "20000000",
-    juno_liquidity: "10000000",
-    
-    halo_token_contract: "",
-    halo_juno_pair_contract: "",
-    halo_juno_pair_lp_token: "",
-    initial_halo_supply: "1000000000000000",
-    halo_liquidity: "20000000",
-    native_liquidity: "10000000",
+    lj_pair_loop_liquidity: "20000000",
+    lj_pair_juno_liquidity: "10000000",
+
+    malo_token_contract: "",
+    malo_juno_pair_contract: "",
+    malo_juno_pair_lp_token: "",
+    initial_malo_supply: "1000000000000000",
+    mj_pair_malo_liquidity: "20000000",
+    mj_pair_juno_liquidity: "10000000",
+
+    kalo_token_contract: "",
+    kalo_juno_pair_contract: "",
+    kalo_juno_pair_lp_token: "",
+    initial_kalo_supply: "1000000000000000",
+    kj_pair_kalo_liquidity: "20000000",
+    kj_pair_juno_liquidity: "10000000",
+
+    malo_kalo_pair_contract: "",
+    malo_kalo_pair_lp_token: "",
+    mk_pair_malo_liquidity: "10000000",
+    mk_pair_kalo_liquidity: "10000000",
   },
 
   // HALO support contracts
@@ -78,7 +104,7 @@ export const localjuno = {
     community_contract: "",
     distributor_contract: "",
     gov_contract: "",
-    gov_hodler_contract: "",
+    gov_holder: "",
     staking_contract: "",
     vesting_contract: "",
   },
