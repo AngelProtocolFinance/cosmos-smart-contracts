@@ -10,7 +10,8 @@ use angel_core::messages::accounts::{
 };
 use angel_core::responses::accounts::{ConfigResponse, EndowmentDetailsResponse, StateResponse};
 use angel_core::structs::{
-    AccountType, Beneficiary, Categories, EndowmentType, StrategyComponent, SwapOperation,
+    AccountType, Beneficiary, Categories, EndowmentType, SplitDetails, StrategyComponent,
+    SwapOperation,
 };
 use cosmwasm_std::testing::{mock_env, mock_info, MockApi, MockStorage, MOCK_CONTRACT_ADDR};
 use cosmwasm_std::{
@@ -66,6 +67,8 @@ fn create_endowment() -> (
         proposal_link: None,
         settings_controller: None,
         parent: None,
+        split_to_liquid: Some(SplitDetails::default()),
+        ignore_user_splits: false,
     };
 
     let instantiate_msg = InstantiateMsg {
@@ -961,6 +964,8 @@ fn test_copycat_strategies() {
         endow_type: EndowmentType::Normal,
         settings_controller: None,
         parent: None,
+        split_to_liquid: Some(SplitDetails::default()),
+        ignore_user_splits: false,
     };
     let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
     let _ = execute(

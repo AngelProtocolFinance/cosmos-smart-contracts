@@ -92,17 +92,14 @@ pub fn ratio_adjusted_balance(balance: Balance, portion: Uint128, total: Uint128
 }
 
 pub fn check_splits(
-    registrar_splits: SplitDetails,
+    splits: SplitDetails,
     user_locked: Decimal,
     user_liquid: Decimal,
+    user_override: bool,
 ) -> (Decimal, Decimal) {
-    // check that the split provided by a non-TCA address meets the default
-    // requirements for splits that is set in the Registrar contract
-    if user_liquid > registrar_splits.max || user_liquid < registrar_splits.min {
-        (
-            Decimal::one() - registrar_splits.default,
-            registrar_splits.default,
-        )
+    // check that the split provided by a user if within the max/min bounds
+    if user_liquid > splits.max || user_liquid < splits.min || user_override == true {
+        (Decimal::one() - splits.default, splits.default)
     } else {
         (user_locked, user_liquid)
     }

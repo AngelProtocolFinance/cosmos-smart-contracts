@@ -182,6 +182,12 @@ pub fn create_endowment(
         }
     }
 
+    // Charity Endowments must also use the Registrar split to liquid settings
+    let split_settings: (Option<SplitDetails>, bool) = match msg.endow_type.clone() {
+        EndowmentType::Charity => (None, false),
+        _ => (msg.split_to_liquid.clone(), msg.ignore_user_splits.clone()),
+    };
+
     let owner = deps.api.addr_validate(&msg.owner)?;
     // try to store the endowment, fail if the ID is already in use
     let donation_match_contract = match &msg.endow_type {
@@ -231,6 +237,8 @@ pub fn create_endowment(
                     .clone()
                     .unwrap_or(SettingsController::default()),
                 parent: msg.parent,
+                split_to_liquid: split_settings.0,
+                ignore_user_splits: split_settings.1,
             }),
         },
     )?;
@@ -1445,14 +1453,34 @@ pub fn deposit(
     let mut locked_split = msg.locked_percentage;
     let mut liquid_split = msg.liquid_percentage;
 
+    // check split passed by the donor against the Registrar SC split params & Endowment-level splits (if set)
     let registrar_split_configs: SplitDetails = registrar_config.split_to_liquid;
-    // check split passed by the donor against the Registrar SC split params
     let index_fund = match registrar_config.index_fund {
         Some(addr) => addr,
         None => return Err(ContractError::ContractNotConfigured {}),
     };
     if sender_addr != index_fund {
-        let new_splits = check_splits(registrar_split_configs, locked_split, liquid_split);
+        // check that the split provided by a user if within the max/min bounds
+        // requirements for splits are set in the Registrar contract & optionally
+        // by Non-Charity Endowments (which overrides Regitrar set splits).
+        // Non-Charity Endowments also have the ability to override user split suggestions and use their defaults.
+        let new_splits = match (
+            endowment.endow_type.clone(),
+            endowment.split_to_liquid.clone(),
+        ) {
+            (EndowmentType::Charity, _) | (_, None) => check_splits(
+                registrar_split_configs,
+                locked_split,
+                liquid_split,
+                endowment.ignore_user_splits,
+            ),
+            (_, Some(endow_split_configs)) => check_splits(
+                endow_split_configs,
+                locked_split,
+                liquid_split,
+                endowment.ignore_user_splits,
+            ),
+        };
         locked_split = new_splits.0;
         liquid_split = new_splits.1;
     }
