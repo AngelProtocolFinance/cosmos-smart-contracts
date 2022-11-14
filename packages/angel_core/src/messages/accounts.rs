@@ -1,6 +1,6 @@
 use crate::structs::{
     AccountType, Beneficiary, Categories, DaoSetup, DonationMatch, EndowmentFee, EndowmentType,
-    RebalanceDetails, SettingsController, StrategyComponent, SwapOperation,
+    RebalanceDetails, SettingsController, SplitDetails, StrategyComponent, SwapOperation,
 };
 use cosmwasm_std::{Decimal, Uint128};
 use cw20::Cw20ReceiveMsg;
@@ -172,6 +172,8 @@ pub struct CreateEndowmentMsg {
     pub proposal_link: Option<u64>, // link back to the proposal that created an Endowment (set @ init)
     pub settings_controller: Option<SettingsController>,
     pub parent: Option<u64>,
+    pub split_to_liquid: Option<SplitDetails>,
+    pub ignore_user_splits: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

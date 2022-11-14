@@ -1,6 +1,7 @@
 use angel_core::structs::{
     AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentFee,
     EndowmentStatus, EndowmentType, OneOffVaults, RebalanceDetails, SettingsController,
+    SplitDetails,
 };
 use cosmwasm_std::{Addr, Env, Order, StdResult, Storage, Timestamp};
 use cw_asset::Asset;
@@ -56,6 +57,8 @@ pub struct Endowment {
     pub proposal_link: Option<u64>,    // link back the CW3 Proposal that created an endowment
     pub settings_controller: SettingsController,
     pub parent: Option<u64>,
+    pub split_to_liquid: Option<SplitDetails>, // set of max, min, and default Split paramenters to check user defined split input against
+    pub ignore_user_splits: bool, // ignore user-submitted splits in favor of the default splits
 }
 
 impl Endowment {
