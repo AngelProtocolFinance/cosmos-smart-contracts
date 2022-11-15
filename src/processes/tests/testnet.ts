@@ -69,16 +69,15 @@ import {
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
+  testUpdateFees,
+  testUpdatingRegistrarNetworkConnections,
+  testUpdatingRegistrarUpdateOwner,
+
   testQueryRegistrarVaultList,
   testQueryRegistrarConfig,
   testQueryRegistrarVault,
-  testUpdateEndowmentEntry,
-  testRegistrarUpdateOwner,
-  testUpdateEndowTypeFees,
-  testUpdateNetworkConnections,
   testQueryRegistrarNetworkConnection,
-  testUpdatingRegistrarNetworkConnections,
-  testUpdatingRegistrarUpdateOwner
+
 } from "./core/registrar";
 import {
   testQueryVaultConfig,
@@ -312,7 +311,11 @@ export async function testExecute(
   // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, {
   //   accepted_tokens_native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', localjuno.denoms.usdc, localjuno.denoms.usdt, config.networkInfo.nativeToken],
   //   accepted_tokens_cw20: [],
+  //   // cw3_code: 102,
+  //   // cw4_code: 104,
+  //   // accounts_code_id: 102,
   // });
+
   // await testUpdatingRegistrarNetworkConnections(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
@@ -328,31 +331,11 @@ export async function testExecute(
   //   "post", // action: "post" or "delete"
   // );
 
-  // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, {
-  //   cw3_code: 102,
-  //   cw4_code: 104,
-  //   accounts_code_id: 102,
-  // });
-
-  // await testRegistrarUpdateOwner(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   registrar,
-  //   cw3ApTeam,
-  // );
-
-  // await testUpdateEndowTypeFees(actors.apTeam.client, actors.apTeam.addr, registrar, {
-  //   endowtype_charity: "0.05",
-  //   endowtype_normal: "0.05",
-  // });
-  // await testUpdateNetworkConnections(actors.apTeam.client, actors.apTeam.addr, registrar, {
-  //   network_info: {
-  //     name: "terra-juno channel",
-  //     chain_id: "juno-1",
-  //     ibc_channel: "terra-juno-chann-1",
-  //     gas_limit: undefined,
-  //   },
-  //   action: "add",
+  // await testUpdateFees(actors.apTeam.client, actors.apTeam.addr, registrar, {
+  //   fees: [
+  //     ["endowtype_charity", "0.05"],
+  //     ["endowtype_normal", "0.05"]
+  //   ],
   // });
 
   /* --- ACCOUNTS & ENDOWMENTS --- */
