@@ -447,8 +447,8 @@ export async function testExecute(
   //   actors.charity1.addr,
   //   accounts,
   //   endowId1,
-  //   // { denom: config.networkInfo.nativeToken, amount: "100000" }
-  //   { denom: localjuno.denoms.usdc, amount: "1000000" }
+  //   { denom: config.networkInfo.nativeToken, amount: "100000" }
+  //   // { denom: localjuno.denoms.usdc, amount: "1000000" }
   // );
   // await testEndowmentVaultsRedeem(
   //   actors.charity1.client,
@@ -480,7 +480,7 @@ export async function testExecute(
   //   [{ info: { native: config.networkInfo.nativeToken }, amount: "1000" }],
   // );
   // await testCharityCanWithdrawLocked(
-  //   networkUrl,
+  //   networkInfo,
   //   actors.charity1.wallet,
   //   accounts,
   //   cw3ApTeam,
@@ -490,11 +490,11 @@ export async function testExecute(
   //   [actors.apTeam.wallet],
   // );
   // await testApproveInactiveEndowment(actors.apTeam.client, actors.apTeam.addr, accounts, endowId1);
-  // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 10, status: 3, beneficiary: { wallet: { address: actors.apTeam.addr }}});
-  // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, accounts, endowId3, "10000000"); // possible query registrar error
+  // await testUpdateEndowmentStatus(actors.apTeam.client, actors.apTeam.addr, accounts, { endowment_id: 3, status: 3, beneficiary: { wallet: { address: actors.apTeam.addr } } });
+  // await testRejectUnapprovedDonations(actors.pleb.client, actors.pleb.addr, accounts, endowId2, "10000000"); // possible query registrar error
 
   // Test query
-  await testQueryRegistrarConfig(actors.apTeam.client, registrar);
+  // await testQueryRegistrarConfig(actors.apTeam.client, registrar);
   // await testQueryRegistrarVault(actors.apTeam.client, registrar, vaultLocked1);
   // await testQueryRegistrarVaultList(actors.apTeam.client, registrar);
   // await testQueryRegistrarNetworkConnection(actors.apTeam.client, registrar, networkInfo.chainId);

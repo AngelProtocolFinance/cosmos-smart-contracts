@@ -225,7 +225,7 @@ export async function testBeneficiaryCanWithdrawFromLiquid(
 // 7. Proposal on CW3 AP Team needs to be executed 
 //----------------------------------------------------------------------------------------
 export async function testCharityCanWithdrawLocked(
-  networkUrl: string,
+  networkInfo: any,
   proposor: DirectSecp256k1HdWallet,
   accountsContract: string,
   apTeamCw3: string,
@@ -237,7 +237,7 @@ export async function testCharityCanWithdrawLocked(
   process.stdout.write(
     "Test - Charity Member can withdraw from their Endowment's Locked account with AP Team Approval\n"
   );
-  const proposor_client = await clientSetup(proposor, networkUrl);
+  const proposor_client = await clientSetup(proposor, networkInfo);
   const proposor_wallet = await getWalletAddress(proposor);
   console.log(chalk.yellow(`> Charity ${proposor_wallet} submits an early withdraw proposal to their CW3`));
 
@@ -274,7 +274,7 @@ export async function testCharityCanWithdrawLocked(
         new Promise(async (resolve, reject) => {
           try {
             const voter_wallet = await getWalletAddress(member);
-            const voter_client = await clientSetup(member, networkUrl);
+            const voter_client = await clientSetup(member, networkInfo);
             console.log(chalk.yellow(`> Endowment CW3 Member ${voter_wallet} votes YES on endowment's proposal`));
             await sendTransaction(voter_client, voter_wallet, endowCw3, {
               vote: {
@@ -316,7 +316,7 @@ export async function testCharityCanWithdrawLocked(
         new Promise(async (resolve, reject) => {
           try {
             const voter_wallet = await getWalletAddress(member);
-            const voter_client = await clientSetup(member, networkUrl);
+            const voter_client = await clientSetup(member, networkInfo);
             console.log(chalk.yellow(`> AP Team CW3 Member ${voter_wallet} votes YES on AP Team proposal`));
             await sendTransaction(voter_client, voter_wallet, apTeamCw3, {
               vote: {
