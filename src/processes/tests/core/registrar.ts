@@ -243,8 +243,11 @@ export async function testRegistrarUpdateOwner(
     "Test - Owner can set new_owner address in Registrar"
   );
 
+  const res = await juno.queryContractSmart(registrar, { config: {} });
+  const cw3 = await res.owner as string;
+
   await expect(
-    sendTransaction(juno, apTeam, registrar, {
+    sendMessageViaCw3Proposal(juno, apTeam, cw3, registrar, {
       update_owner: { new_owner },
     },
     )

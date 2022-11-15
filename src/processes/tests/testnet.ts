@@ -235,36 +235,15 @@ export async function testExecute(
 
   // Multisig test
   // await testAddMemberToC4Group(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, cw4GrpApTeam, actors.apTeam2.addr);
-  // await testUpdateCw3Config(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 50, 25000);
-  // await testProposalApprovingEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, 1);
-  // await testCw3CastVote(actors.apTeam2.client, actors.apTeam2.addr, cw3ApTeam, 7, `yes`);
+  // await testUpdateCw3Config(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, "0.5", 25000, false);
+  // await testProposalApprovingEndowment(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, accounts, 1);
+  // await testCw3CastVote(actors.apTeam2.client, actors.apTeam2.addr, cw3ApTeam, 4, `yes`);
   // await testCw3ExecutePoll(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, 3);
   // await testQueryMultisigVoters(actors.apTeam.client, cw3ApTeam);
   // await testQueryProposal(actors.apTeam.client, cw3ApTeam, 3);
   // await testQueryMultisigVoters(actors.apTeam.client, cw3ReviewTeam);
   // await testQueryMultisigThreshold(actors.apTeam.client, cw3ReviewTeam);
   // await testQueryGroupMembersList(actors.apTeam.client, cw4GrpApTeam);
-
-  /* --- REGISTRAR contract --- */
-  // await testUpdatingRegistrarUpdateOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, cw3ApTeam);
-  // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, {
-  //   accepted_tokens_native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', localjuno.denoms.usdc, localjuno.denoms.usdt, config.networkInfo.nativeToken],
-  //   accepted_tokens_cw20: [],
-  // });
-  // await testUpdatingRegistrarNetworkConnections(
-  //   actors.apTeam.client,
-  //   actors.apTeam.addr,
-  //   cw3ApTeam,
-  //   registrar,
-  //   {
-  //     name: "Juno mainnet",
-  //     chain_id: "juno-1",
-  //     ibc_channel: undefined,
-  //     ica_address: undefined,
-  //     gas_limit: undefined,
-  //   },
-  //   "post", // action: "post" or "delete"
-  // );
 
   /* --- INDEXFUND contract --- */
   // await testUpdatingIndexFundOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, cw3ApTeam);
@@ -310,7 +289,7 @@ export async function testExecute(
   // await testRemoveIndexFund(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
-  //   cw3ApTeam,
+  //   // cw3ApTeam,
   //   indexFund,
   //   7,
   // );
@@ -318,9 +297,6 @@ export async function testExecute(
   // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0", "1000000");
   // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund);
   // await testRemoveIndexFund(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
-  // await testIndexFundUpdateOwner(actors.apTeam.client, actors.apTeam.addr, indexFund, actors.apTeam.addr);
-  // await testIndexFundUpateRegistrar(actors.apTeam.client, actors.apTeam.addr, indexFund, registrar); //SHOULDFIXCONTRACT
-  // await testIndexFundRemoveMember(actors.apTeam.client, actors.apTeam.addr, indexFund, 1);
   // await testIndexFundUpdateAllianceMember(actors.apTeam.client, actors.apTeam.addr, indexFund, charity3Addr, { name: "Charity3", logo: undefined, website: undefined });
   // await testUpdateFundMembers(
   //   actors.apTeam.client,
@@ -331,8 +307,28 @@ export async function testExecute(
   //   []
   // );
 
-  // REGISTRAR test
-  // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, registrar, {
+  /* --- REGISTRAR contract --- */
+  // await testUpdatingRegistrarUpdateOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, cw3ApTeam);
+  // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, {
+  //   accepted_tokens_native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', localjuno.denoms.usdc, localjuno.denoms.usdt, config.networkInfo.nativeToken],
+  //   accepted_tokens_cw20: [],
+  // });
+  // await testUpdatingRegistrarNetworkConnections(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   registrar,
+  //   {
+  //     name: "Juno mainnet",
+  //     chain_id: "juno-1",
+  //     ibc_channel: undefined,
+  //     ica_address: undefined,
+  //     gas_limit: undefined,
+  //   },
+  //   "post", // action: "post" or "delete"
+  // );
+
+  // await testUpdatingRegistrarConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, {
   //   cw3_code: 102,
   //   cw4_code: 104,
   //   accounts_code_id: 102,
@@ -342,7 +338,7 @@ export async function testExecute(
   //   actors.apTeam.client,
   //   actors.apTeam.addr,
   //   registrar,
-  //   apTeamAddr,
+  //   cw3ApTeam,
   // );
 
   // await testUpdateEndowTypeFees(actors.apTeam.client, actors.apTeam.addr, registrar, {

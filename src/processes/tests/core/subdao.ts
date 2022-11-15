@@ -3,18 +3,18 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, instantiateContract } from "../../../utils/helpers";
+import { sendTransaction, instantiateContract } from "../../../utils/juno/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
 
 export async function testInstantiateSubDao(
 	juno: SigningCosmWasmClient,
-  	apTeam: string,
-  	wasm_code: number,
-  	registrar: string,
+	apTeam: string,
+	wasm_code: number,
+	registrar: string,
 ): Promise<void> {
-  	process.stdout.write("Test - Instantiating a stand-alone SubDao contract");
+	process.stdout.write("Test - Instantiating a stand-alone SubDao contract");
 	const subdao = await instantiateContract(
 		juno,
 		apTeam,
@@ -46,7 +46,7 @@ export async function testInstantiateSubDao(
 					decimals: 6,
 					reserve_decimals: 6,
 					reserve_denom: "ujunox",
-					unbonding_period: 1, 
+					unbonding_period: 1,
 				}
 			}
 		}
@@ -56,11 +56,11 @@ export async function testInstantiateSubDao(
 
 export async function testInstantiateSubDaoToken(
 	juno: SigningCosmWasmClient,
-  	apTeam: string,
-  	wasm_code: number,
-  	registrar: string,
+	apTeam: string,
+	wasm_code: number,
+	registrar: string,
 ): Promise<void> {
-  	process.stdout.write("Test - Instantiating a stand-alone SubDao Token contract");
+	process.stdout.write("Test - Instantiating a stand-alone SubDao Token contract");
 	const subdao = await instantiateContract(
 		juno,
 		apTeam,
@@ -79,7 +79,7 @@ export async function testInstantiateSubDaoToken(
 			decimals: 6,
 			reserve_decimals: 6,
 			reserve_denom: "ujunox",
-			unbonding_period: 1, 
+			unbonding_period: 1,
 		}
 	);
 	console.log(`Done! Created SubDao Token: ${subdao.contractAddress}`);
@@ -87,11 +87,11 @@ export async function testInstantiateSubDaoToken(
 
 export async function testInstantiateDonationMatchContract(
 	juno: SigningCosmWasmClient,
-  	apTeam: string,
-  	wasm_code: number,
-  	registrar: string,
+	apTeam: string,
+	wasm_code: number,
+	registrar: string,
 ): Promise<void> {
-  	process.stdout.write("Test - Instantiating a donation matching contract");
+	process.stdout.write("Test - Instantiating a donation matching contract");
 	const donationMatch = await instantiateContract(juno, apTeam, apTeam, wasm_code, {
 		registrar_contract: registrar,
 		reserve_token: apTeam, // FAKE! Need to fix.

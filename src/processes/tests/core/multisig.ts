@@ -82,7 +82,7 @@ export async function testProposalApprovingEndowment(
   juno: SigningCosmWasmClient,
   apTeam: string,
   cw3: string,
-  registrar: string,
+  accounts: string,
   endowment: number,
 ): Promise<void> {
   process.stdout.write("Test - CW3 Member Proposes to Approve an Endowment");
@@ -95,7 +95,7 @@ export async function testProposalApprovingEndowment(
         {
           wasm: {
             execute: {
-              contract_addr: registrar,
+              contract_addr: accounts,
               funds: [],
               msg: toEncodedBinary({
                 update_endowment_status: {
@@ -201,8 +201,9 @@ export async function testUpdateCw3Config(
   juno: SigningCosmWasmClient,
   apTeam: string,
   cw3: string,
-  threshold: number,
-  max_voting_period: number
+  threshold: string,  // decimal
+  max_voting_period: number,
+  require_execution: boolean,
 ): Promise<void> {
   process.stdout.write("Test - Endowment Member Proposes changing the CW3 configs");
 
@@ -220,6 +221,7 @@ export async function testUpdateCw3Config(
                 update_config: {
                   threshold: { absolute_percentage: { percentage: threshold } },
                   max_voting_period: { height: max_voting_period },
+                  require_execution: require_execution,
                 },
               }),
             },
