@@ -336,7 +336,10 @@ export async function sendApplicationViaCw3Proposal(
   console.log(chalk.yellow(`> Charity ${proposor_wallet} submits an application proposal`));
   // 1. Create the new proposal (no vote is cast here)
   const proposal = await sendTransaction(proposor_client, proposor_wallet, cw3, {
-    propose_application: { ref_id, msg },
+    propose_application: {
+      ref_id,
+      msg,
+    },
   });
 
   // 2. Parse out the proposal ID

@@ -555,7 +555,7 @@ export async function testCreateEndowmentCw3s(
 //
 //----------------------------------------------------------------------------------------
 export async function testCreateEndowment(
-  networkUrl: string,
+  networkInfo: any,
   proposerWallet: DirectSecp256k1HdWallet,
   cw3ReviewTeam: string,
   accounts: string,
@@ -563,7 +563,15 @@ export async function testCreateEndowment(
   members: DirectSecp256k1HdWallet[],  // Should be [apTeam]
 ): Promise<void> {
   process.stdout.write("Create a new endowment via the CW3 Applications contract");
-  const endow_id = await sendApplicationViaCw3Proposal(networkUrl, proposerWallet, cw3ReviewTeam, accounts, "unknown", msg, members);
+  const endow_id = await sendApplicationViaCw3Proposal(
+    networkInfo,
+    proposerWallet,
+    cw3ReviewTeam,
+    accounts,
+    "unknown",
+    msg,
+    members,
+  );
   console.log(chalk.green(` ${endow_id} - Done!`));
 }
 
