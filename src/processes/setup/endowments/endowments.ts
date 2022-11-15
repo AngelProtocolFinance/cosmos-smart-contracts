@@ -38,9 +38,7 @@ export async function setupEndowments(
             console.log(`Building new endowment for owner: ${item.owner}`);
             const endow_id = await sendApplicationViaCw3Proposal(networkInfo, apTeam, cw3ReviewTeam, accounts, "unknown", {
               owner: item.owner,
-              withdraw_before_maturity: false,
               maturity_time: undefined,
-              maturity_height: undefined,
               name: item.name,
               categories: { sdgs: [item.un_sdg], general: [] },
               tier: item.tier,
@@ -48,26 +46,26 @@ export async function setupEndowments(
               image: item.image,
               url: item.url,
               endow_type: "Charity",
-              profile: {
-                overview: item.overview,
-                registration_number: item.registration_number,
-                country_of_origin: item.country_of_origin,
-                street_address: item.street_address,
-                contact_email: item.email,
-                social_media_urls: {
-                  facebook: item.facebook_page,
-                  twitter: item.twitter_handle,
-                  linkedin: item.linkedin_page,
-                },
-                number_of_employees: item.number_of_employees,
-                average_annual_budget: item.average_annual_budget,
-                annual_revenue: item.annual_revenue,
-                charity_navigator_rating: item.charity_navigator_rating,
-              },
               cw4_members: [{ addr: item.owner, weight: 1 }],
               kyc_donors_only: false,
               cw3_threshold: { absolute_percentage: { percentage: charity_cw3_threshold_abs_perc } },
               cw3_max_voting_period: charity_cw3_max_voting_period,
+
+              whitelisted_beneficiaries: [],
+              whitelisted_contributors: [],
+              split_max: "1.0",
+              split_min: "0.0",
+              split_default: "0.5",
+              earnings_fee: undefined,
+              withdraw_fee: undefined,
+              deposit_fee: undefined,
+              aum_fee: undefined,
+              dao: undefined, // Option<DaoSetup>,      // SubDAO setup options
+              proposal_link: undefined, // Option<u64>, // link back to the proposal that created an Endowment (set @ init)
+              settings_controller: undefined, // Option<SettingsController>,
+              parent: undefined, // Option<u64>
+              split_to_liquid: undefined,
+              ignore_user_splits: false,
             }, [apTeam]);
             console.log(chalk.green(`> Endowment ID: ${endow_id} - Done!`));
             resolve();

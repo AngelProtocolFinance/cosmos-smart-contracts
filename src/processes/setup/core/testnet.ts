@@ -223,6 +223,31 @@ async function setup(
 	});
 	console.log(chalk.green(" Done!"));
 
+	process.stdout.write("Instantiating Accounts contract");
+	const accountsResult = await instantiateContract(
+		juno,
+		apTeamAddr,
+		apTeamAddr,
+		accountsCodeId,
+		{
+			owner_sc: apTeamAddr,
+			registrar_contract: registrar,
+		}
+	);
+	accounts = accountsResult.contractAddress as string;
+	console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${accounts}`);
+
+	// Charities Donation Matching
+	process.stdout.write("Instantiating Charities Donation Matching contract");
+	const charityDonationMatchResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, subdaoDonationMatch, {
+		id: 1, // FAKE! Need to fix.
+		registrar_contract: registrar,
+		reserve_token: apTeamAddr, // FAKE! Need to fix.
+		lp_pair: apTeamAddr, // FAKE! Need to fix.
+	});
+	donationMatchCharities = charityDonationMatchResult.contractAddress as string;
+	console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${donationMatchCharities}`);
+
 	// Swap-Rotuer
 	process.stdout.write("Instantiating the Swap-router contract")
 	const swapRouterResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, swapRouterCodeId, {
@@ -277,31 +302,6 @@ async function setup(
 	});
 	swapRouter = swapRouterResult.contractAddress as string;
 	console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${swapRouter}`);
-
-	// Charities Donation Matching
-	process.stdout.write("Instantiating Charities Donation Matching contract");
-	const charityDonationMatchResult = await instantiateContract(juno, apTeamAddr, apTeamAddr, subdaoDonationMatch, {
-		id: 1, // FAKE! Need to fix.
-		registrar_contract: registrar,
-		reserve_token: apTeamAddr, // FAKE! Need to fix.
-		lp_pair: apTeamAddr, // FAKE! Need to fix.
-	});
-	donationMatchCharities = charityDonationMatchResult.contractAddress as string;
-	console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${donationMatchCharities}`);
-
-	process.stdout.write("Instantiating Accounts contract");
-	const accountsResult = await instantiateContract(
-		juno,
-		apTeamAddr,
-		apTeamAddr,
-		accountsCodeId,
-		{
-			owner_sc: apTeamAddr,
-			registrar_contract: registrar,
-		}
-	);
-	accounts = accountsResult.contractAddress as string;
-	console.log(chalk.green(" Done!"), `${chalk.blue("contractAddress")}=${accounts}`);
 
 	// CW4 Review Team Group
 	process.stdout.write("Instantiating CW4 Review Team Group contract");
