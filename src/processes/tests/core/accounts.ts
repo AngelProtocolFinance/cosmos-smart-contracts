@@ -49,25 +49,6 @@ export async function testRejectUnapprovedDonations(
   console.log(chalk.green(" Passed!"));
 }
 
-// export async function testSingleDonationAmountToManyEndowments(
-//   juno: SigningCosmWasmClient,
-//   apTeam: string,
-//   endowments: string[],
-//   amount: string
-// ): Promise<void> {
-//   process.stdout.write("Test - Send single amount to many Endowment Accounts");
-//   await expect(sendTransactionWithFunds(juno, apTeam, endowmentContract, {
-//         deposit: {
-//           locked_percentage: "1",
-//           liquid_percentage: "0",
-//         },
-//       },
-//       [{ denom: "ujuno", amount: amount }]
-//     )
-//   ).to.be.rejected;
-//   console.log(chalk.green(" Passed!"));
-// }
-
 export async function testSendDonationToEndowment(
   juno: SigningCosmWasmClient,
   apTeam: string,

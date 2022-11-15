@@ -345,60 +345,60 @@ export async function testExecute(
   // ];
   // await testCreateEndowmentCw3s(actors.apTeam.client, actors.apTeam.addr, registrar, accounts, endowments_batch);
   // await testApTeamChangesEndowmentSettings(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, accounts, endowments_batch);
-  await testCreateEndowment(networkInfo, actors.charity1.wallet, cw3ReviewTeam, accounts, {
-    owner: actors.charity1.addr,
-    maturity_time: undefined,
-    name: "Test-Suite Endowment",
-    categories: { sdgs: [2], general: [] },
-    tier: 3,
-    endow_type: "Charity",
-    logo: "test logo",
-    image: "test image",
-    kyc_donors_only: false,
-    cw4_members: [{ addr: actors.charity1.addr, weight: 1 }],
-    cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
-    cw3_max_voting_period: 10000,
-    whitelisted_beneficiaries: [charity1Addr],
-    whitelisted_contributors: [],
-    split_max: "1.0",
-    split_min: "0.0",
-    split_default: "0.5",
-    earnings_fee: undefined,
-    deposit_fee: undefined,
-    withdraw_fee: undefined,
-    aum_fee: undefined,
-    dao: {
-      quorum: "0.2",
-      threshold: "0.5",
-      voting_period: 1000000,
-      timelock_period: 1000000,
-      expiration_period: 1000000,
-      proposal_deposit: "1000000",
-      snapshot_period: 1000,
-      token: {
-        bonding_curve: {
-          curve_type: {
-            square_root: {
-              slope: "19307000",
-              power: "428571429",
-              scale: 9,
-            }
-          },
-          name: "AP Endowment DAO Token",
-          symbol: "APEDT",
-          decimals: 6,
-          reserve_decimals: 6,
-          reserve_denom: "ujunox",
-          unbonding_period: 1,
-        }
-      }
-    },
-    proposal_link: undefined,
-    settings_controller: undefined,
-    parent: undefined,
-    split_to_liquid: undefined,
-    ignore_user_splits: false,
-  }, [actors.apTeam.wallet]);
+  // await testCreateEndowment(networkInfo, actors.charity1.wallet, cw3ReviewTeam, accounts, {
+  //   owner: actors.charity1.addr,
+  //   maturity_time: undefined,
+  //   name: "Test-Suite Endowment",
+  //   categories: { sdgs: [2], general: [] },
+  //   tier: 3,
+  //   endow_type: "Charity",
+  //   logo: "test logo",
+  //   image: "test image",
+  //   kyc_donors_only: false,
+  //   cw4_members: [{ addr: actors.charity1.addr, weight: 1 }],
+  //   cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
+  //   cw3_max_voting_period: 10000,
+  //   whitelisted_beneficiaries: [charity1Addr],
+  //   whitelisted_contributors: [],
+  //   split_max: "1.0",
+  //   split_min: "0.0",
+  //   split_default: "0.5",
+  //   earnings_fee: undefined,
+  //   deposit_fee: undefined,
+  //   withdraw_fee: undefined,
+  //   aum_fee: undefined,
+  //   dao: {
+  //     quorum: "0.2",
+  //     threshold: "0.5",
+  //     voting_period: 1000000,
+  //     timelock_period: 1000000,
+  //     expiration_period: 1000000,
+  //     proposal_deposit: "1000000",
+  //     snapshot_period: 1000,
+  //     token: {
+  //       bonding_curve: {
+  //         curve_type: {
+  //           square_root: {
+  //             slope: "19307000",
+  //             power: "428571429",
+  //             scale: 9,
+  //           }
+  //         },
+  //         name: "AP Endowment DAO Token",
+  //         symbol: "APEDT",
+  //         decimals: 6,
+  //         reserve_decimals: 6,
+  //         reserve_denom: "ujunox",
+  //         unbonding_period: 1,
+  //       }
+  //     }
+  //   },
+  //   proposal_link: undefined,
+  //   settings_controller: undefined,
+  //   parent: undefined,
+  //   split_to_liquid: undefined,
+  //   ignore_user_splits: false,
+  // }, [actors.apTeam.wallet]);
 
   // await testCharityCanUpdateStrategies(
   //   actors.charity1.client,
