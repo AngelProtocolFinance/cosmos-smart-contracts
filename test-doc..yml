@@ -76,6 +76,26 @@
       description: "Tests that the Registrar contract can update/add the various kind of fees"
       endpoint-tested: update_fees
       success: Registrar contract should return success when adding "endowtype_charity" or "endowtype_normal" fee rates 
+
+    testQueryRegistrarConfig: 
+      description: "Tests the ability to query a config of Registrar contract"
+      endpoint-tested: config
+      success: Registrar contract returns the config details or an Error if not found in storage
+    
+    testQueryRegistrarVault:
+      description: "Tests the ability to query the detail fo vault contract with address"
+      endpoint-tested: vault
+      success: Registrar contract returns the VaultDetailResponse struct or an Error if vault not found in storage
+
+    testQueryRegistrarVaultList: 
+      description: "Tests the ability to query the vault contracts with various details(AccountType, EndowmentType ...)"
+      endpoint-tested: vault_list
+      success: Registrar contract returns the VaultListResponse struct(list of YieldVault detail)
+
+    testQueryRegistrarNetworkConnection:
+      description: "Tests the abilty to query the (IBC)network connection info with network ID"
+      endpoint-tested: network_connection
+      success: Registrar contract returns the NetworkConnectionResponse struct or an Error if network ID not found in storage
     
   - Accounts
     testCreateEndowmentCw3s:
