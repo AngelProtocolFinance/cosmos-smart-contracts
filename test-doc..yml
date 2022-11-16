@@ -1,0 +1,59 @@
+1. Core contracts
+
+  - IndexFund
+    testUpdatingIndexFundOwner:
+      description: "Tests that IndexFund contract owner can update the owner to new address"
+      endpoint-tested: update_owner
+      success: IndexFund contract should have new owner address in config
+    
+    testUpdatingIndexFundRegistrar: 
+      description: "Tests the ability to update the registrar contract address in config of IndexFund contract"
+      endpoint-tested: update_registrar
+      success: IndexFund contract should have new registrar contract address
+
+    testUpdatingIndexFundConfigs:
+      description: "Tests the ability to update the config of IndexFund contract"
+      endpoint-tested: update_config
+      success: IndexFund contract should have new config
+
+    testUpdateAllianceMembersList:
+      description: "Tests the ability to update the Angel Alliance members list"
+      endpoint-tested: update_alliance_member_list
+      success: IndexFund contract should have new Alliance members
+
+    testUpdateAllianceMember:
+      description: "Tests the ability to update the detail of Angel Alliance member"
+      endpoint-tested: update_alliance_member
+      success: IndexFund contract should have new detail for Alliance member
+
+    testCreateIndexFund: 
+      description: "Tests the ability to create new index fund"
+      endpoint-tested: create_fund
+      success: IndexFund contract should have new fund created
+
+    testRemoveIndexFund:
+      description: "Tests the ability to remove the existing index fund"
+      endpoint-tested: remove_fund
+      success: IndexFund contract should return success for removing the fund
+
+    testIndexFundRemoveMember: 
+      description: "Tests the ability to remove the member of index fund"
+      endpoint-tested: remove_member
+      success: IndexFund contract should remove the fund member
+
+    testDonorSendsToIndexFund: 
+      description: "Tests that normal user sends funds to an IndexFund contract fund to have it split up amonst the fund's charity members"
+      endpoint-tested: deposit
+      success: IndexFund contract should return success when normal user sends JUNO funds
+
+    testTcaMemberSendsToIndexFund:
+      description: "Tests that TCA Member can send donations to the IndexFund contract"
+      endpoint-tested: deposit
+      success: IndexFund contract should return success when TCA member sends the JUNO funds
+
+    testUpdateFundMembers:
+      description: "Tests that IndexFund contract owner can update the fund members"
+      endpoint-tested: update_members
+      success: IndeFund contract should have new members for index funds
+
+    
