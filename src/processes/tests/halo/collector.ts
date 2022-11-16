@@ -3,7 +3,7 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction } from "../../../utils/helpers";
+import { sendTransaction } from "../../../utils/juno/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
@@ -52,11 +52,11 @@ export async function testCollectorSweep(
 ): Promise<void> {
   process.stdout.write("Test - Anyone can sweep asset token => HALO token");
 
-  let result = await sendTransaction(juno, apTeam, collectorContract, {
+  const result = await sendTransaction(juno, apTeam, collectorContract, {
     sweep: { denom: "ibc/B3504E092456BA618CC28AC671A71FB08C6CA0FD0BE7C8A5B5A3E2DD933CC9E4" },
   });
 
-  let distribution_amount = result.logs[0].events
+  const distribution_amount = result.logs[0].events
     .find((event) => {
       return event.type == "wasm";
     })

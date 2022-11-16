@@ -3,10 +3,28 @@ import chalk from "chalk";
 import * as chai from "chai";
 import chaiAsPromised from "chai-as-promised";
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import { sendTransaction, toEncodedBinary, VoteOption } from "../../../utils/helpers";
+import { sendTransaction, toEncodedBinary, VoteOption } from "../../../utils/juno/helpers";
 
 chai.use(chaiAsPromised);
 const { expect } = chai;
+
+// export enum VoteOption {
+//   YES,
+//   NO,
+// }
+
+export async function testQueryProposalList(
+  juno: SigningCosmWasmClient,
+  cw3: string,
+): Promise<void> {
+  process.stdout.write("Test - Query proposal list");
+  const result: any = await juno.queryContractSmart(cw3, {
+    proposal_list: {},
+  });
+
+  console.log(result);
+  console.log(chalk.green(" Passed!"));
+}
 
 //----------------------------------------------------------------------------------------
 // TEST: Add a new AP Team Member to the C4 AP Team Group
@@ -30,7 +48,7 @@ export async function testAddMemberToC4Group(
   const proposal = await sendTransaction(juno, apTeam, cw3, {
     propose: {
       title: "New CW4 member",
-      description: "New member for the CW4 AP Team Group. They are legit, I swear!",
+      description: "New member for the CW4 AP Team Group.",
       msgs: [
         {
           wasm: {
@@ -64,7 +82,7 @@ export async function testProposalApprovingEndowment(
   juno: SigningCosmWasmClient,
   apTeam: string,
   cw3: string,
-  registrar: string,
+  accounts: string,
   endowment: number,
 ): Promise<void> {
   process.stdout.write("Test - CW3 Member Proposes to Approve an Endowment");
@@ -77,7 +95,7 @@ export async function testProposalApprovingEndowment(
         {
           wasm: {
             execute: {
-              contract_addr: registrar,
+              contract_addr: accounts,
               funds: [],
               msg: toEncodedBinary({
                 update_endowment_status: {
@@ -132,6 +150,31 @@ export async function testCw3CastVote(
 
 
 //----------------------------------------------------------------------------------------
+// TEST: Cast vote on Charity Application poll
+//
+// SCENARIO:
+// AP Review Team CW3 member can vote on the open Charity Application poll
+//
+//----------------------------------------------------------------------------------------
+export async function testCw3CastApplicationVote(
+  juno: SigningCosmWasmClient,
+  apTeam: string,
+  cw3: string,
+  proposal_id: number,
+  vote: string,
+): Promise<void> {
+  process.stdout.write("Test - Cast vote");
+
+  await expect(
+    sendTransaction(juno, apTeam, cw3, {
+      vote_application: { proposal_id, vote },
+    })
+  );
+  console.log(chalk.green(" Passed!"));
+}
+
+
+//----------------------------------------------------------------------------------------
 // TEST: Execute a poll
 //
 // SCENARIO:
@@ -158,8 +201,9 @@ export async function testUpdateCw3Config(
   juno: SigningCosmWasmClient,
   apTeam: string,
   cw3: string,
-  threshold: number,
-  max_voting_period: number
+  threshold: string,  // decimal
+  max_voting_period: number,
+  require_execution: boolean,
 ): Promise<void> {
   process.stdout.write("Test - Endowment Member Proposes changing the CW3 configs");
 
@@ -177,6 +221,7 @@ export async function testUpdateCw3Config(
                 update_config: {
                   threshold: { absolute_percentage: { percentage: threshold } },
                   max_voting_period: { height: max_voting_period },
+                  require_execution: require_execution,
                 },
               }),
             },

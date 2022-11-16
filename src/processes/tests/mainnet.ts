@@ -2,15 +2,27 @@ import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing";
 import chalk from "chalk";
 import {
-  testBeneficiaryCanWithdrawFromLiquid,
+  testEndowmentCanWithdrawLiquid,
+  testCharityCanWithdrawLocked,
   testCharityCanUpdateStrategies,
   testRejectUnapprovedDonations,
+  testApTeamChangesEndowmentSettings,
+  testCreateEndowmentCw3s,
+  testSendDonationToEndowment,
   testQueryAccountsBalance,
   testQueryAccountsConfig,
   testQueryAccountsEndowment,
-  testSendDonationToEndowment,
+  testQueryAccountsProfile,
+  testQueryAccountsState,
+  testQueryAccountsTransactions,
+  testApproveInactiveEndowment,
   testUpdateEndowmentStatus,
+  testCreateEndowment,
   testQueryAccountsEndowmentList,
+  testEndowmentVaultsRedeem,
+  testQueryAccountsTokenAmount,
+  testSendRestitutionFundsToEndowments,
+  // buildNewEndowmentCw3sAndChangeOwner,
 } from "./core/accounts";
 import {
   testDonorSendsToIndexFund,
@@ -30,7 +42,15 @@ import {
   testQueryIndexFundInvolvedAddress,
 } from "./core/indexFunds";
 import {
+  testUpdateCw3Config,
   testAddMemberToC4Group,
+  testProposalApprovingEndowment,
+  testCw3CastVote,
+  testCw3ExecutePoll,
+  testQueryMultisigVoters,
+  testQueryMultisigThreshold,
+  testQueryGroupMembersList,
+  testCw3CastApplicationVote,
 } from "./core/multisig";
 import {
   testUpdatingRegistrarConfigs,
@@ -107,7 +127,6 @@ export async function testExecute(
   apTeamAddr: string,
   registrar: string,
   indexFund: string,
-  anchorVault: string,
   accounts: string,
   donationMatching: string,
   endowmentID: number,
@@ -115,9 +134,6 @@ export async function testExecute(
   cw3ApTeam: string,
   cw4GrpReviewTeam: string,
   cw3ReviewTeam: string,
-  junoswapFactory: string,
-  junoswapToken: string,
-  junoswapPair: string,
   haloAirdrop: string,
   haloCollector: string,
   haloCommunity: string,
@@ -127,6 +143,139 @@ export async function testExecute(
   haloVesting: string,
 ): Promise<void> {
   console.log(chalk.yellow("\nStep 3. Running Tests"));
+  // await testAddMemberToC4Group(juno, apTeamAddr, cw3ReviewTeam, cw4GrpReviewTeam, "juno1h27pex3z3mm97gwfdhan8cfak8yzvtvprjlcz7");
+  // await testCw3ExecutePoll(juno, apTeamAddr, cw3ApTeam, 2);
+  // await testCw3CastApplicationVote(juno, apTeamAddr, cw3ReviewTeam, 44, `yes`);
+  // await testQueryMultisigVoters(juno, cw3ReviewTeam);
+  // await testQueryMultisigThreshold(juno, cw3ReviewTeam);
+
+  /* --- REGISTRAR contract --- */
+  // await testUpdatingRegistrarUpdateOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, registrar, cw3ApTeam);
+  // await testUpdatingRegistrarConfigs(juno, apTeamAddr, cw3ApTeam, registrar, {
+  //   cw3_code: 1098,
+  // });
+  // await testUpdatingRegistrarNetworkConnections(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   registrar,
+  //   {
+  //     name: "Juno mainnet",
+  //     chain_id: "juno-1",
+  //     ibc_channel: undefined,
+  //     ica_address: undefined,
+  //     gas_limit: undefined,
+  //   },
+  //   "post", // action: "post" or "delete"
+  // );
+
+  /* --- INDEXFUND contract --- */
+  // await testUpdatingIndexFundOwner(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, cw3ApTeam);
+  // await testUpdatingIndexFundRegistrar(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, registrar);
+  // await testUpdatingIndexFundConfigs(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund);
+  // await testUpdateAllianceMembersList(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   actors.apTeam2.addr, // address #1
+  //   {
+  //     name: "Testnet Charity #2",
+  //     website:
+  //       "http://angelprotocol.io/app/charity/juno1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+  //     logo: "https://angelprotocol.io/favicon.ico",
+  //   }, // member #1`
+  //   // "juno178u9lz89f54njqz6nentst3m9nye2cc7ezssmq", // address #2
+  //   // { name: "Testnet Admin", webiste: "http://angelprotocol.io", logo: "" }, // member #2
+  //   "add" // action
+  // );
+  // await testUpdateAllianceMember(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   actors.apTeam2.addr, // member address
+  //   {
+  //     name: "Testnet Charity #2",
+  //     website:
+  //       "http://angelprotocol.io/app/charity/juno1w0fn5u7puxafp3g2mehe6xvt4w2x2eennm7tzf",
+  //     logo: "https://angelprotocol.io/favicon.ico",
+  //   },
+  // );
+  // await testCreateIndexFund(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   "Test Index Fund Name",
+  //   "Test Index Fund desc",
+  //   false,
+  //   []
+  // );
+  // await testRemoveIndexFund(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   7,
+  // );
+  // await testIndexFundRemoveMember(actors.apTeam.client, actors.apTeam.addr, cw3ApTeam, indexFund, 1); // INCOMPLETE: "remove_member" entry should be called from "accounts_contract".
+  // await testDonorSendsToIndexFund(actors.pleb.client, actors.pleb.addr, indexFund, 1, "0", "1000000");
+  // await testTcaMemberSendsToIndexFund(actors.tca.client, actors.tca.addr, indexFund);
+  // await testUpdateFundMembers(
+  //   actors.apTeam.client,
+  //   actors.apTeam.addr,
+  //   cw3ApTeam,
+  //   indexFund,
+  //   2,
+  //   [1, 2],
+  //   []
+  // );
+
+  /* --- ACCOUNTS & ENDOWMENTS --- */
+  // const endowments_batch = [];
+  // await testSendRestitutionFundsToEndowments(
+  //   juno,
+  //   apTeamAddr,
+  //   accounts,
+  //   endowments_batch,
+  //   "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034"
+  // );
+  // await testCreateEndowmentCw3s(juno, apTeamAddr, registrar, accounts, endowments_batch);
+  // await testApTeamChangesEndowmentSettings(juno, apTeamAddr, cw3ApTeam, accounts, endowments_batch);
+  // await testCreateNormalEndowment(juno, apTeamAddr, accounts, {
+  //   owner: apTeamAddr,
+  //   withdraw_before_maturity: true,
+  //   maturity_time: undefined,
+  //   maturity_height: undefined,
+  //   profile: {
+  //     name: "Test Normal Endowment",
+  //     overview: "Test normalized endowment created from the test-suite",
+  //     categories: { sdgs: [], general: [] },
+  //     tier: 3,
+  //     logo: "logo 1",
+  //     image: "logo 1",
+  //     url: "",
+  //     registration_number: undefined,
+  //     country_city_origin: undefined,
+  //     contact_email: "",
+  //     social_media_urls: {
+  //       facebook: undefined,
+  //       twitter: undefined,
+  //       linkedin: undefined,
+  //     },
+  //     number_of_employees: 1,
+  //     average_annual_budget: undefined,
+  //     annual_revenue: undefined,
+  //     charity_navigator_rating: undefined,
+  //     endow_type: "Normal",
+  //   },
+  //   cw4_members: [{ addr: apTeamAddr, weight: 1 }],
+  //   kyc_donors_only: false,
+  //   cw3_threshold: { absolute_percentage: { percentage: "0.5" } },
+  //   cw3_max_voting_period: 604800,
+  // });
+
   // await testAngelTeamCanTriggerVaultsHarvest(
   //   juno,
   //   apTeamAddr,
@@ -138,8 +287,9 @@ export async function testExecute(
   // await testSendDonationToEndowment(
   //   juno,
   //   apTeamAddr,
-  //   "juno1d6lkyls54z5rpqw8d4x738etn9zvt3cw35ya0r", // Coalition for Engaged Education
-  //   "1000000000"
+  //   accounts,
+  //   25,
+  //   { denom: "ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034", amount: "1371000000" }
   // );
   // await testRejectUnapprovedDonations(
   //   juno,
@@ -181,13 +331,11 @@ export async function testExecute(
   // await testUpdateFundMembers(juno, apTeamAddr, pleb, indexFund, 1, [], ["",""]);
   // await testUpdateFundMembers(juno, apTeamAddr, pleb, indexFund, 2, ["",""], []);
 
-  // await testUpdateEndowmentsStatus(juno, apTeamAddr, registrar, [
-  //   {
-  //     address: "juno1vqe93uv8lylkw4fc8m0xr89fv5xean29ftr0q2",
-  //     status: 3,
-  //     beneficiary: "juno1suxqzxtzztxvakvucc6u4s9833n4u0cyk9pmv8",
-  //   },
-  // ]);
+  // await testUpdateEndowmentStatus(juno, apTeamAddr, accounts, {
+  //   endowment_id: 1,
+  //   status: 3,
+  //   beneficiary: { wallet: { address: apTeamAddr } }
+  // });
 
   // Test query
   // await testQueryRegistrarConfig(juno, registrar);
@@ -195,10 +343,12 @@ export async function testExecute(
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVaultList(juno, registrar);
   // await testQueryRegistrarVault(juno, registrar, anchorVault);
-  // await testQueryAccountsEndowmentList(juno, accounts);
+  // await testQueryAccountsEndowmentList(juno, accounts, 1, 20);
+  // await testQueryAccountsState(juno, accounts, 1);
+  // await testQueryAccountsEndowment(juno, accounts, 1);
   // await testQueryAccountsBalance(juno, endowmentContract);
   // await testQueryVaultConfig(juno, anchorVault);
-  // await testQueryAccountsConfig(juno, endowmentContract);
+  // await testQueryAccountsConfig(juno, accounts);
   // await testQueryIndexFundConfig(juno, indexFund);
   // await testQueryIndexFundState(juno, indexFund);
   // await testQueryIndexFundTcaList(juno, indexFund);

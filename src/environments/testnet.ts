@@ -7,12 +7,13 @@ import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 
 import chalk from "chalk";
 import { testnet as config } from "../config/constants";
-import { datetimeStringToUTC, getWalletAddress } from "../utils/helpers";
+import { datetimeStringToUTC, getWalletAddress, Endowment } from "../utils/juno/helpers";
 
 import { migrateCore } from "../processes/migrate/core";
 // import { migrateHalo } from "../processes/migrate/halo";
 
 import { setupCore } from "../processes/setup/core/testnet";
+import { setupEndowments } from "../processes/setup/endowments/endowments";
 import { setupLoopSwap } from "../processes/setup/loopswap/localjuno";
 import { setupMockVaults } from "../processes/setup/vaults/mock-vault";
 import { setupLoopVaults } from "../processes/setup/vaults/loop";
@@ -20,12 +21,11 @@ import { setupLoopVaults } from "../processes/setup/vaults/loop";
 // import { setupHalo } from "../processes/setup/halo";
 
 import { testExecute } from "../processes/tests/testnet";
+import jsonData from "../processes/setup/endowments/endowments_list_testnet.json";
 
 // -------------------------------------------------------------------------------------
 // Variables
 // -------------------------------------------------------------------------------------
-let networkUrl: string;
-
 let juno: SigningCosmWasmClient;
 let apTeam: DirectSecp256k1HdWallet;
 let apTeam2: DirectSecp256k1HdWallet;
@@ -57,6 +57,7 @@ let cw3ReviewTeam: string;
 let indexFund: string;
 let accounts: string;
 let donationMatching: string;
+let swapRouter: string;
 let vaultLocked1: string;
 let vaultLiquid1: string;
 let vaultLocked2: string;
@@ -78,12 +79,24 @@ let loopswapInitialLoopSupply: string;
 let loopswapLoopLiquidity: string;
 let loopswapJunoLiquidity: string;
 
-let loopswapHaloTokenContract: string;
-let loopswapHaloJunoPairContract: string;
-let loopswapHaloJunoPairLpToken: string;
-let loopswapInitialHaloSupply: string;
-let loopswapHaloLiquidity: string;
-let loopswapNativeLiquidity: string;
+let loopswapMaloTokenContract: string;
+let loopswapMaloJunoPairContract: string;
+let loopswapMaloJunoPairLpToken: string;
+let loopswapInitialMaloSupply: string;
+let loopswapMaloJunoPairMaloLiquidity: string;
+let loopswapMaloJunoPairJunoLiquidity: string;
+
+let loopswapKaloTokenContract: string;
+let loopswapKaloJunoPairContract: string;
+let loopswapKaloJunoPairLpToken: string;
+let loopswapInitialKaloSupply: string;
+let loopswapKaloJunoPairKaloLiquidity: string;
+let loopswapKaloJunoPairJunoLiquidity: string;
+
+let loopswapMaloKaloPairContract: string;
+let loopswapMaloKaloPairLpToken: string;
+let loopswapMaloKaloPairMaloLiquidity: string;
+let loopswapMaloKaloPairKaloLiquidity: string;
 
 // Angel/HALO contracts
 let haloAirdrop: string;
@@ -99,15 +112,15 @@ let haloVesting: string;
 // initialize variables
 // -------------------------------------------------------------------------------------
 async function initialize() {
-  apTeam = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTeam, { prefix: "juno" });
-  apTeam2 = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTeam2, { prefix: "juno" });
-  apTeam3 = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTeam3, { prefix: "juno" });
-  apTreasury = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTreasury, { prefix: "juno" });
-  charity1 = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.charity1, { prefix: "juno" });
-  charity2 = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.charity2, { prefix: "juno" });
-  charity3 = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.charity3, { prefix: "juno" });
-  pleb = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.pleb, { prefix: "juno" });
-  tca = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.tca, { prefix: "juno" });
+  apTeam = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTeam, { prefix: config.networkInfo.walletPrefix });
+  apTeam2 = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTeam2, { prefix: config.networkInfo.walletPrefix });
+  apTeam3 = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTeam3, { prefix: config.networkInfo.walletPrefix });
+  apTreasury = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.apTreasury, { prefix: config.networkInfo.walletPrefix });
+  charity1 = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.charity1, { prefix: config.networkInfo.walletPrefix });
+  charity2 = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.charity2, { prefix: config.networkInfo.walletPrefix });
+  charity3 = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.charity3, { prefix: config.networkInfo.walletPrefix });
+  pleb = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.pleb, { prefix: config.networkInfo.walletPrefix });
+  tca = await DirectSecp256k1HdWallet.fromMnemonic(config.mnemonicKeys.tca, { prefix: config.networkInfo.walletPrefix });
 
   apTeamAccount = await getWalletAddress(apTeam);
   apTeam2Account = await getWalletAddress(apTeam2);
@@ -129,8 +142,6 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(plebAccount)} as Pleb`);
   console.log(`Using ${chalk.cyan(tcaAccount)} as TCA member`);
 
-  networkUrl = config.networkInfo.url;
-
   registrar = config.contracts.registrar;
   accounts = config.contracts.accounts;
   donationMatching = config.contracts.donationMatching;
@@ -140,6 +151,7 @@ async function initialize() {
   cw3ReviewTeam = config.contracts.cw3ReviewTeam;
   indexFund = config.contracts.indexFund;
   accounts = config.contracts.accounts;
+  swapRouter = config.contracts.swapRouter;
   vaultLocked1 = config.contracts.vaultLocked1;
   vaultLiquid1 = config.contracts.vaultLiquid1;
   vaultLocked2 = config.contracts.vaultLocked2;
@@ -160,6 +172,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(cw3ApTeam)} as CW3 AP Team MultiSig`);
   console.log(`Using ${chalk.cyan(cw4GrpReviewTeam)} as CW4 Review Team Group`);
   console.log(`Using ${chalk.cyan(cw3ReviewTeam)} as CW3 Review Team MultiSig`);
+  console.log(`Using ${chalk.cyan(swapRouter)} as SwapRouter`);
   console.log(`Using ${chalk.cyan(vaultLocked1)} as Vault_Locked_1`);
   console.log(`Using ${chalk.cyan(vaultLiquid1)} as Vault_Liquid_1`);
   console.log(`Using ${chalk.cyan(vaultLocked2)} as Vault_Locked_2`);
@@ -174,22 +187,34 @@ async function initialize() {
   loopswapLoopJunoPairContract = config.loopswap.loop_juno_pair_contract;
   loopswapLoopJunoPairLpToken = config.loopswap.loop_juno_pair_lp_token;
   loopswapInitialLoopSupply = config.loopswap.initial_loop_supply;
-  loopswapLoopLiquidity = config.loopswap.loop_liquidity;
-  loopswapJunoLiquidity = config.loopswap.juno_liquidity;
+  loopswapLoopLiquidity = config.loopswap.lj_pair_loop_liquidity;
+  loopswapJunoLiquidity = config.loopswap.lj_pair_juno_liquidity;
 
-  loopswapHaloTokenContract = config.loopswap.halo_token_contract;
-  loopswapHaloJunoPairContract = config.loopswap.halo_juno_pair_contract;
-  loopswapHaloJunoPairLpToken = config.loopswap.halo_juno_pair_lp_token;
-  loopswapInitialHaloSupply = config.loopswap.initial_halo_supply;
-  loopswapHaloLiquidity = config.loopswap.halo_liquidity;
-  loopswapNativeLiquidity = config.loopswap.native_liquidity;
+  loopswapMaloTokenContract = config.loopswap.malo_token_contract;
+  loopswapMaloJunoPairContract = config.loopswap.malo_juno_pair_contract;
+  loopswapMaloJunoPairLpToken = config.loopswap.malo_juno_pair_lp_token;
+  loopswapInitialMaloSupply = config.loopswap.initial_malo_supply;
+  loopswapMaloJunoPairMaloLiquidity = config.loopswap.mj_pair_malo_liquidity;
+  loopswapMaloJunoPairJunoLiquidity = config.loopswap.mj_pair_juno_liquidity;
+
+  loopswapKaloTokenContract = config.loopswap.kalo_token_contract;
+  loopswapKaloJunoPairContract = config.loopswap.kalo_juno_pair_contract;
+  loopswapKaloJunoPairLpToken = config.loopswap.kalo_juno_pair_lp_token;
+  loopswapInitialKaloSupply = config.loopswap.initial_kalo_supply;
+  loopswapKaloJunoPairKaloLiquidity = config.loopswap.kj_pair_kalo_liquidity;
+  loopswapKaloJunoPairJunoLiquidity = config.loopswap.kj_pair_juno_liquidity;
+
+  loopswapMaloKaloPairContract = config.loopswap.malo_kalo_pair_contract;
+  loopswapMaloKaloPairLpToken = config.loopswap.malo_kalo_pair_lp_token;
+  loopswapMaloKaloPairMaloLiquidity = config.loopswap.mk_pair_malo_liquidity;
+  loopswapMaloKaloPairKaloLiquidity = config.loopswap.mk_pair_kalo_liquidity;
 
   console.log(`Using ${chalk.cyan(loopswapTokenCode)} as loopSwap (cw20) Token Code`);
   console.log(`Using ${chalk.cyan(loopswapPairCode)} as loopSwap Pair Code`);
   console.log(`Using ${chalk.cyan(loopswapFactory)} as loopSwap Factory contract`);
   console.log(`Using ${chalk.cyan(loopswapFarming)} as loopSwap Farming contract`);
 
-  console.log(`Using ${chalk.cyan(loopswapHaloTokenContract)} as loopSwap LOOP Token`);
+  console.log(`Using ${chalk.cyan(loopswapLoopTokenContract)} as loopSwap LOOP Token`);
   console.log(
     `Using ${chalk.cyan(loopswapLoopJunoPairContract)} as loopSwap LOOP/JUNO Swap Pair`
   );
@@ -204,19 +229,47 @@ async function initialize() {
     `Using ${chalk.cyan(loopswapJunoLiquidity)} as loopSwap LOOP/JUNO Pair JUNO liquidity`
   );
 
-  console.log(`Using ${chalk.cyan(loopswapHaloTokenContract)} as loopSwap HALO Token`);
+  console.log(`Using ${chalk.cyan(loopswapMaloTokenContract)} as loopSwap MALO Token`);
   console.log(
-    `Using ${chalk.cyan(loopswapHaloJunoPairContract)} as loopSwap HALO/JUNO Swap Pair`
+    `Using ${chalk.cyan(loopswapMaloJunoPairContract)} as loopSwap MALO/JUNO Swap Pair`
   );
   console.log(
-    `Using ${chalk.cyan(loopswapHaloJunoPairLpToken)} as loopSwap HALO/JUNO Swap Pair LP Token`
+    `Using ${chalk.cyan(loopswapMaloJunoPairLpToken)} as loopSwap MALO/JUNO Swap Pair LP Token`
   );
-  console.log(`Using ${chalk.cyan(loopswapInitialHaloSupply)} as loopSwap HALO Initial Supply`);
+  console.log(`Using ${chalk.cyan(loopswapInitialMaloSupply)} as loopSwap MALO Initial Supply`);
   console.log(
-    `Using ${chalk.cyan(loopswapHaloLiquidity)} as loopSwap HALO/JUNO Pair HALO liquidity`
+    `Using ${chalk.cyan(loopswapMaloJunoPairMaloLiquidity)} as loopSwap MALO/JUNO Pair MALO liquidity`
   );
   console.log(
-    `Using ${chalk.cyan(loopswapNativeLiquidity)} as loopSwap HALO/JUNO Pair JUNO liquidity`
+    `Using ${chalk.cyan(loopswapMaloJunoPairJunoLiquidity)} as loopSwap MALO/JUNO Pair JUNO liquidity`
+  );
+
+  console.log(`Using ${chalk.cyan(loopswapKaloTokenContract)} as loopSwap KALO Token`);
+  console.log(
+    `Using ${chalk.cyan(loopswapKaloJunoPairContract)} as loopSwap KALO/JUNO Swap Pair`
+  );
+  console.log(
+    `Using ${chalk.cyan(loopswapKaloJunoPairLpToken)} as loopSwap KALO/JUNO Swap Pair LP Token`
+  );
+  console.log(`Using ${chalk.cyan(loopswapInitialKaloSupply)} as loopSwap KALO Initial Supply`);
+  console.log(
+    `Using ${chalk.cyan(loopswapKaloJunoPairKaloLiquidity)} as loopSwap KALO/JUNO Pair KALO liquidity`
+  );
+  console.log(
+    `Using ${chalk.cyan(loopswapKaloJunoPairJunoLiquidity)} as loopSwap KALO/JUNO Pair JUNO liquidity`
+  );
+
+  console.log(
+    `Using ${chalk.cyan(loopswapMaloKaloPairContract)} as loopSwap MALO/KALO Swap Pair`
+  );
+  console.log(
+    `Using ${chalk.cyan(loopswapMaloKaloPairLpToken)} as loopSwap MALO/KALO Swap Pair LP Token`
+  );
+  console.log(
+    `Using ${chalk.cyan(loopswapMaloKaloPairMaloLiquidity)} as loopSwap KALO/JUNO Pair MALO liquidity`
+  );
+  console.log(
+    `Using ${chalk.cyan(loopswapMaloKaloPairKaloLiquidity)} as loopSwap KALO/JUNO Pair KALO liquidity`
   );
 
   haloAirdrop = config.halo.airdrop_contract;
@@ -238,7 +291,7 @@ async function initialize() {
   console.log(`Using ${chalk.cyan(haloVesting)} as HALO vesting`);
 
   // setup client connection to the JUNO network
-  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString("0.025ujunox") });
+  juno = await SigningCosmWasmClient.connectWithSigner(config.networkInfo.url, apTeam, { gasPrice: GasPrice.fromString(config.networkInfo.gasPrice) });
 }
 
 
@@ -255,7 +308,7 @@ export async function startSetupCore(): Promise<void> {
   // Setup contracts
   console.log(chalk.yellow("\nStep 2. Contracts Setup"));
   await setupCore(
-    networkUrl,
+    config.networkInfo,
     juno,
     // wallets
     {
@@ -263,29 +316,53 @@ export async function startSetupCore(): Promise<void> {
       apTeam2,
       apTeam3,
       apTreasury,
-      charity1,
-      charity2,
-      charity3,
-      tca,
     },
     // config
     {
       tax_rate: "0.2", // tax rate
-      threshold_absolute_percentage: "0.5", // threshold absolute percentage for "ap-cw3"
-      max_voting_period_height: 1000, // max voting period height for "ap-cw3"
-      fund_rotation: 10, // index fund rotation
-      is_localjuno: false, // is LocalJuno
+      threshold_absolute_percentage: "0.5", // threshold absolute percentage for "apteam-cw3" & "reviewteam-cw3"
+      max_voting_period_height: 100000, // max voting period height for "apteam-cw3" & "reviewteam-cw3"
+      fund_rotation: undefined, // index fund rotation
       harvest_to_liquid: "0.75", // harvest to liquid percentage
-      tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
       funding_goal: "50000000", // funding goal
       fund_member_limit: 10,
       charity_cw3_threshold_abs_perc: "0.50", // threshold absolute percentage for "charity-cw3"
-      charity_cw3_max_voting_period: 60,      // max_voting_period time(unit: seconds) for "charity-cw3"
+      charity_cw3_max_voting_period: 604800, // 1 week max voting period time(unit: seconds) for "charity-cw3"
       accepted_tokens: {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', config.networkInfo.nativeToken],
         cw20: [],
       },
     }
+  );
+}
+
+// -------------------------------------------------------------------------------------
+// setup new charity endowments in the Accounts contract
+// -------------------------------------------------------------------------------------
+export async function startSetupEndowments(): Promise<void> {
+  console.log(chalk.blue(`\nTestNet ${config.networkInfo.chainId}`));
+
+  // Initialize environment information
+  console.log(chalk.yellow("\nStep 1. Environment Info"));
+  await initialize();
+
+  // parse endowment JSON data
+  const endowmentData: Endowment[] = [];
+  jsonData.data.forEach((el) => {
+    const item: Endowment = el;
+    endowmentData.push(item);
+  });
+
+  // Setup endowments
+  console.log(chalk.yellow("\nStep 2. Endowments Setup"));
+  await setupEndowments(
+    config.networkInfo,
+    endowmentData,
+    apTeam,
+    cw3ReviewTeam,
+    accounts,
+    "0.5", // threshold absolute percentage for "charity-cw3"
+    604800, // 1 week max voting period time(unit: seconds) for "charity-cw3"
   );
 }
 
@@ -303,6 +380,7 @@ export async function startSetupMockVaults(): Promise<void> {
   console.log(chalk.yellow("\nStep 2. Mock Vault Contracts Setup"));
   await setupMockVaults(
     config.networkInfo.chainId,
+    config.networkInfo.nativeToken,
     juno,
     // wallets
     {
@@ -319,7 +397,7 @@ export async function startSetupMockVaults(): Promise<void> {
       harvest_to_liquid: "0.75", // harvest to liquid percentage
       tax_per_block: "0.0000000259703196", // tax_per_block: 70% of Anchor's 19.5% earnings collected per block
       accepted_tokens: {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', config.networkInfo.nativeToken],
         cw20: [],
       },
     }
@@ -355,13 +433,15 @@ export async function startSetupLoopVaults(): Promise<void> {
     {
       loopswap_factory: loopswapFactory, // LoopSwap Factory contract
       loopswap_farming: loopswapFarming, // LoopSwap Farming contract
-      loopswap_loop_juno_pair: loopswapLoopJunoPairContract, // LoopSwap LOOP-JUNO pair contract
+      loopswap_malo_kalo_pair: loopswapMaloKaloPairContract, // LoopSwap LOOP-JUNO pair contract
       loopswap_lp_reward_token: loopswapLoopTokenContract, // LoopSwap Pair LP Staking reward token (LOOP token)
       harvest_to_liquid: "0.75", // harvest to liquid percentage
       accepted_tokens: {
-        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', 'ujunox'],
+        native: ['ibc/EAC38D55372F38F1AFD68DF7FE9EF762DCF69F26520643CF3F9D292A738D8034', config.networkInfo.nativeToken],
         cw20: [],
       },
+      swapRouter: swapRouter, // SwapRouter contract
+      nativeToken: { cw20: config.networkInfo.nativeToken }, // { native: config.networkInfo.nativeToken },
     }
   );
 }
@@ -447,6 +527,7 @@ export async function startMigrateCore(): Promise<void> {
     cw4GrpApTeam,
     cw3ApTeam,
     cw3ReviewTeam,
+    swapRouter,
     [vaultLocked1, vaultLiquid1, vaultLocked2, vaultLiquid2],
   );
 }
