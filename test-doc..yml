@@ -153,3 +153,32 @@
       endpoint-tested: deposit
       success: Accounts contract should return error when sending JUNO or other available funds to unapproved Endowment
     
+    testQueryAccountsEndowmentList:
+      description: "Tests the ability to query the Endowments in the Accounts contract"
+      endpoint-tested: endowment_list
+      success: Accounts contract returns the EndowmentListResponse struct(list of EndowmentEntry) or an Error if no Endowments in contract
+
+    testQueryAccountsBalance:
+      description: "Tests the ability to query the balance of Endowment with ID"
+      endpoint-tested: balance
+      success: Accounts contract returns the EndowmentBalanceResponse(details of TOH, locked, liquid balances) or an Error if Endowment or State not found in storage
+
+    testQueryAccountsConfig:
+      description: "Tests the ability to query the config of Accounts contract"
+      endpoint-tested: config
+      success: Accounts contract returns the ConfigResponse struct(config details) or an Error if config not found in storage
+
+    testQueryAccountsEndowment:
+      description: "Tests the ability to query the Endowment detail with ID"
+      endpoint-tested: endowment
+      success: Accounts contract returns the EndowmentDetails struct or an Error if Endowment not found in storage
+
+    testQueryAccountsState:
+      description: "Tests the ability to query the state of Endowment with ID"
+      endpoint-tested: state
+      success: Accounts contract returns the StateResponse struct(Endowment state details) or an Error if Endowment not found in storage
+
+    testQueryAccountsTokenAmount:
+      description: "Tests the ability to query the amount of specic asset(token) for Endowment with Endowment ID, asset info and AccountType"
+      endpoint-tested: token_amount
+      success: Accounts contract returns an amount(Uint128) or an Error if Endowment not found in storage
