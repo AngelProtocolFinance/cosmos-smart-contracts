@@ -56,4 +56,24 @@
       endpoint-tested: update_members
       success: IndeFund contract should have new members for index funds
 
+  - Registrar
+    testUpdatingRegistrarUpdateOwner:
+      description: "Tests that the Registrar contract owner can update the owner to a new address"
+      endpoint-tested: update_owner
+      success: Registrar contract should have a new owner
+
+    testUpdatingRegistrarConfigs:
+      description: "Tests that Registrar contract owner can update the contract config"
+      endpoint-tested: update_config
+      success: Registrar contract should have updated config
+
+    testUpdatingRegistrarNetworkConnections:
+      description: "Tests that the Registrar contract can add or remove the (IBC)network connection infos"
+      endpoint-tested: update_network_connections
+      success: Registrar contract should return success when add/remove the mock network connections
+
+    testUpdateFees:
+      description: "Tests that the Registrar contract can update/add the various kind of fees"
+      endpoint-tested: update_fees
+      success: Registrar contract should return success when adding "endowtype_charity" or "endowtype_normal" fee rates 
     
