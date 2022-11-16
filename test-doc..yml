@@ -77,3 +77,59 @@
       endpoint-tested: update_fees
       success: Registrar contract should return success when adding "endowtype_charity" or "endowtype_normal" fee rates 
     
+  - Accounts
+    testCreateEndowmentCw3s:
+      description: "Tests the ability to instantiate new CW3 multisig contracts for Endowments"
+      endpoint-tested: 
+      success: It should return success when instantiating Endowment CW3 multisigs in batch
+
+    testApTeamChangesEndowmentSettings:
+      description: "Tests that Endowment owner(cw3) can update the endowment settings"
+      endpoint-tested: update_endowment_settings
+      success: Endowments should have the new settings
+
+    testCreateEndowment:
+      description: "Tests the ability to create a new Endowment through CW3(cw3-application) multisig contract"
+      endpoint-tested: create_endowment
+      success: It should return a ID of new Endowment
+    
+    testCharityCanUpdateStrategies:
+      description: "Tests the ability to update the strategies of Endowments according ID and AccountType, through CW3 multisig contract"
+      endpoint-tested: update_strategies
+      success: Endowments should have the updated strategies
+
+    testSendDonationToEndowment:
+      description: "Tests that any charity wallet can send the donation to Endowments"
+      endpoint-tested: deposit
+      success: It should return success when any charity wallet donates/sends the JUNO funds
+
+    testEndowmentVaultsRedeem:
+      description: "Tests that the Endowment owner can redeem the funds from linked vaults"
+      endpoint-tested: vaults_redeem
+      success: Endowment should receive the redeemed funds from linked vault contracts
+
+    testEndowmentCanWithdrawLiquid:
+      description: "Tests that Endowment owner can withdraw the from available liquid balance"
+      endpoint-tested: withdraw
+      success: Beneficiary wallet indicated in call should receive the withdrawal funds
+
+    testCharityCanWithdrawLocked:
+      description: "Tests that Endowment charity member can withdraw from their Endowment's locked balance with AP Team approval" 
+      endpoint-tested: propose_locked_withdraw(endowCW3)
+      success: Beneficiary wallet indicated in call should receive the funds(assets)
+
+    testApproveInactiveEndowment:
+      description: "Tests that Accounts contract owner can approve the inactive Endowment.(update Endowment status)"
+      endpoint-tested: update_endowment_status
+      success: Endowment indicated in call (i.e. 1) should be approved
+
+    testUpdateEndowmentStatus:
+      description: "Tests that Accounts contract owner can update the Endowment status("Inactive", "Approved", "Frozen", "Closed")
+      endpoint-tested: update_endowment_status
+      success: Endowment indicated in call (i.e. 1) should have new status
+
+    testRejectUnapprovedDonations:
+      description: "Tests that the wallets cannot send the funds to an Endowment that is not approved for deposits"
+      endpoint-tested: deposit
+      success: Accounts contract should return error when sending JUNO or other available funds to unapproved Endowment
+    
