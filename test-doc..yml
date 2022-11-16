@@ -56,6 +56,46 @@
       endpoint-tested: update_members
       success: IndeFund contract should have new members for index funds
 
+    testQueryIndexFundConfig:
+      description: "Tests the ability to query the config of IndexFund contract"
+      endpoint-tested: config
+      success: IndexFund contracts returns the ConfigResponse struct(config details) or an Error if not found in storage
+
+    testQueryIndexFundState:
+      description: "Tests the ability to query the state of IndexFund contract"
+      endpoint-tested: state
+      success: IndexFund contract returns the StateResponse struct(state details) or an Error if not found in storage
+
+    testQueryIndexFundTcaList:
+      description: "Tests the ability to query the list of alliance members"
+      endpoint-tested: alliance_members
+      success: IndexFund contract returns the list of AllianceMemberResponse struct or an Error if not foudn in storage
+
+    testQueryIndexFundFundsList:
+      description: "Tests the ability to query the list of funds"
+      endpoint-tested: funds_list
+      success: IndexFund contract returns the FundListResponse struct(list of Fund details) or an Error if not found in storage
+
+    testQueryIndexFundFundDetails: 
+      description: "Tests the ability to query the fund detail with fund ID"
+      endpoint-tested: fund_details
+      success: IndexFund contract returns the FundDetailsResponse struct or an Error if fund not found in storage
+
+    testQueryIndexFundActiveFundDonations:
+      description: "Tests the ability to query the list of USDC amounts donated from every alliance members"
+      endpoint-tested: active_fund_donations
+      success: IndexFund contract returns the DonationListResponse struct or an Error if donations not found in storage
+
+    testQueryIndexFundDeposit:
+      description: "Tests the ability to create the CosmosMsg required for fund deposit with given details"
+      endpoint-tested: (QueryMsg::)deposit
+      success: IndexFund contract returns the CosmosMsg struct
+
+    testQueryIndexFundAllianceMember:
+      description: "Tests the ability to query the alliance member with address"
+      endpoint-tested: alliance_member
+      success: IndexFund contract returns the AllianceMemberResponse struct or an Error if address not found in storage
+
   - Registrar
     testUpdatingRegistrarUpdateOwner:
       description: "Tests that the Registrar contract owner can update the owner to a new address"
@@ -182,3 +222,7 @@
       description: "Tests the ability to query the amount of specic asset(token) for Endowment with Endowment ID, asset info and AccountType"
       endpoint-tested: token_amount
       success: Accounts contract returns an amount(Uint128) or an Error if Endowment not found in storage
+
+2. MultiSig contracts
+
+3. Vault contracts
