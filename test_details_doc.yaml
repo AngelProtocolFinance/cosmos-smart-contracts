@@ -167,6 +167,11 @@ Core contracts:
       endpoint-tested: vaults_redeem
       success: Endowment should receive the redeemed funds from linked vault contracts
 
+    testVaultReinvestToLocked:
+      description: "Tests that Endowment owner can reinvest the funds of locked vault to liquid vault contract"
+      endpoint-tested: reinvest_to_locked
+      success: Liquid vault contract should receive the funds from Locked vault contract
+
     testEndowmentCanWithdrawLiquid:
       description: "Tests that Endowment owner can withdraw the from available liquid balance"
       endpoint-tested: withdraw
@@ -274,3 +279,34 @@ MultiSig contracts:
     success: The CW4 contract returns a MemberListResponse struct(list of members)
 
 Vault contracts:
+  testVaultUpdateConfig:
+    description: "Tests that Vault contract owner can update the contract config"
+    endpoint-tested: update_config
+    success: The Vault contract should have a new config if contract owner tries to update,
+            or returns an Error if non-owner tries to update the config
+
+  testVaultHarvest: 
+    description: "Tests that Vault contract keeper wallet can harvest the yields from vault contract"
+    endpoint-tested: harvest
+    success: The Vault contract returns success and handles the yielded funds if Keeper wallet tries to harvest,
+            or returns an Error if non-Keeper wallet tries to harvest
+
+  testQueryVaultConfig:
+    description: "Tests the ability to query the vault contract config"
+    endpoint-tested: config
+    success: The Vault contract returns the ConfigResponse struct(config detail), or an Error if not found in storage
+
+  testQueryVaultEndowmentBalance:
+    description: "Tests the ability to query the vault token amount for Endowment with ID"
+    endpoint-tested: balance
+    success: The Vault contract returns the vault token balance(Uint128) for the given EndowmentID
+
+  testQueryVaultTotalBalance:
+    description: "Tests the ability to query the total amount of minted vault token"
+    endpoint-tested: total_balance
+    success: The Vault contract returns the total balance(Uint128)
+
+  testQueryVaultTokenInfo:
+    description: "Tests the ability to query the detail of vault token(cw20 token)"
+    endpoint-tested: token_info
+    success: The Vault contract returns the TokenInfoResponse struct(detail of vault token)
