@@ -1,6 +1,5 @@
-1. Core contracts
-
-  - IndexFund
+Core contracts:
+  IndexFund:
     testUpdatingIndexFundOwner:
       description: "Tests that IndexFund contract owner can update the owner to new address"
       endpoint-tested: update_owner
@@ -223,6 +222,6 @@
       endpoint-tested: token_amount
       success: Accounts contract returns an amount(Uint128) or an Error if Endowment not found in storage
 
-2. MultiSig contracts
+MultiSig contracts:
 
-3. Vault contracts
+Vault contracts:
