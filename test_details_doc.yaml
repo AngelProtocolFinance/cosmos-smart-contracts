@@ -1,311 +1,254 @@
-Core contracts:
+Core Contracts:
   IndexFund:
     testUpdatingIndexFundOwner:
       description: "Tests that IndexFund contract owner can update the owner to new address"
       endpoint-tested: update_owner
       success: IndexFund contract should have new owner address in config
-    
-    testUpdatingIndexFundRegistrar: 
+    testUpdatingIndexFundRegistrar:
       description: "Tests the ability to update the registrar contract address in config of IndexFund contract"
       endpoint-tested: update_registrar
       success: IndexFund contract should have new registrar contract address
-
     testUpdatingIndexFundConfigs:
       description: "Tests the ability to update the config of IndexFund contract"
       endpoint-tested: update_config
       success: IndexFund contract should have new config
-
     testUpdateAllianceMembersList:
       description: "Tests the ability to update the Angel Alliance members list"
       endpoint-tested: update_alliance_member_list
       success: IndexFund contract should have new Alliance members
-
     testUpdateAllianceMember:
       description: "Tests the ability to update the detail of Angel Alliance member"
       endpoint-tested: update_alliance_member
       success: IndexFund contract should have new detail for Alliance member
-
-    testCreateIndexFund: 
+    testCreateIndexFund:
       description: "Tests the ability to create new index fund"
       endpoint-tested: create_fund
       success: IndexFund contract should have new fund created
-
     testRemoveIndexFund:
       description: "Tests the ability to remove the existing index fund"
       endpoint-tested: remove_fund
       success: IndexFund contract should return success for removing the fund
-
-    testIndexFundRemoveMember: 
+    testIndexFundRemoveMember:
       description: "Tests the ability to remove the member of index fund"
       endpoint-tested: remove_member
       success: IndexFund contract should remove the fund member
-
-    testDonorSendsToIndexFund: 
+    testDonorSendsToIndexFund:
       description: "Tests that normal user sends funds to an IndexFund contract fund to have it split up amonst the fund's charity members"
       endpoint-tested: deposit
       success: IndexFund contract should return success when normal user sends JUNO funds
-
     testTcaMemberSendsToIndexFund:
       description: "Tests that TCA Member can send donations to the IndexFund contract"
       endpoint-tested: deposit
       success: IndexFund contract should return success when TCA member sends the JUNO funds
-
     testUpdateFundMembers:
       description: "Tests that IndexFund contract owner can update the fund members"
       endpoint-tested: update_members
       success: IndeFund contract should have new members for index funds
-
     testQueryIndexFundConfig:
       description: "Tests the ability to query the config of IndexFund contract"
       endpoint-tested: config
       success: IndexFund contracts returns the ConfigResponse struct(config details) or an Error if not found in storage
-
     testQueryIndexFundState:
       description: "Tests the ability to query the state of IndexFund contract"
       endpoint-tested: state
       success: IndexFund contract returns the StateResponse struct(state details) or an Error if not found in storage
-
     testQueryIndexFundTcaList:
       description: "Tests the ability to query the list of alliance members"
       endpoint-tested: alliance_members
       success: IndexFund contract returns the list of AllianceMemberResponse struct or an Error if not foudn in storage
-
     testQueryIndexFundFundsList:
       description: "Tests the ability to query the list of funds"
       endpoint-tested: funds_list
       success: IndexFund contract returns the FundListResponse struct(list of Fund details) or an Error if not found in storage
-
-    testQueryIndexFundFundDetails: 
+    testQueryIndexFundFundDetails:
       description: "Tests the ability to query the fund detail with fund ID"
       endpoint-tested: fund_details
       success: IndexFund contract returns the FundDetailsResponse struct or an Error if fund not found in storage
-
     testQueryIndexFundActiveFundDonations:
       description: "Tests the ability to query the list of USDC amounts donated from every alliance members"
       endpoint-tested: active_fund_donations
       success: IndexFund contract returns the DonationListResponse struct or an Error if donations not found in storage
-
     testQueryIndexFundDeposit:
       description: "Tests the ability to create the CosmosMsg required for fund deposit with given details"
       endpoint-tested: (QueryMsg::)deposit
       success: IndexFund contract returns the CosmosMsg struct
-
     testQueryIndexFundAllianceMember:
       description: "Tests the ability to query the alliance member with address"
       endpoint-tested: alliance_member
       success: IndexFund contract returns the AllianceMemberResponse struct or an Error if address not found in storage
-
-  - Registrar
+  Registrar:
     testUpdatingRegistrarUpdateOwner:
       description: "Tests that the Registrar contract owner can update the owner to a new address"
       endpoint-tested: update_owner
       success: Registrar contract should have a new owner
-
     testUpdatingRegistrarConfigs:
       description: "Tests that Registrar contract owner can update the contract config"
       endpoint-tested: update_config
       success: Registrar contract should have updated config
-
     testUpdatingRegistrarNetworkConnections:
       description: "Tests that the Registrar contract can add or remove the (IBC)network connection infos"
       endpoint-tested: update_network_connections
       success: Registrar contract should return success when add/remove the mock network connections
-
     testUpdateFees:
       description: "Tests that the Registrar contract can update/add the various kind of fees"
       endpoint-tested: update_fees
-      success: Registrar contract should return success when adding "endowtype_charity" or "endowtype_normal" fee rates 
-
-    testQueryRegistrarConfig: 
+      success: Registrar contract should return success when adding "endowtype_charity" or "endowtype_normal" fee rates
+    testQueryRegistrarConfig:
       description: "Tests the ability to query a config of Registrar contract"
       endpoint-tested: config
       success: Registrar contract returns the config details or an Error if not found in storage
-    
-    testQueryRegistrarVault:
+        testQueryRegistrarVault:
       description: "Tests the ability to query the detail fo vault contract with address"
       endpoint-tested: vault
       success: Registrar contract returns the VaultDetailResponse struct or an Error if vault not found in storage
-
-    testQueryRegistrarVaultList: 
+    testQueryRegistrarVaultList:
       description: "Tests the ability to query the vault contracts with various details(AccountType, EndowmentType ...)"
       endpoint-tested: vault_list
       success: Registrar contract returns the VaultListResponse struct(list of YieldVault detail)
-
     testQueryRegistrarNetworkConnection:
       description: "Tests the abilty to query the (IBC)network connection info with network ID"
       endpoint-tested: network_connection
       success: Registrar contract returns the NetworkConnectionResponse struct or an Error if network ID not found in storage
-    
-  - Accounts
+  Accounts:
     testCreateEndowmentCw3s:
       description: "Tests the ability to instantiate new CW3 multisig contracts for Endowments"
-      endpoint-tested: 
+      endpoint-tested:
       success: It should return success when instantiating Endowment CW3 multisigs in batch
-
     testApTeamChangesEndowmentSettings:
       description: "Tests that Endowment owner(cw3) can update the endowment settings"
       endpoint-tested: update_endowment_settings
       success: Endowments should have the new settings
-
     testCreateEndowment:
       description: "Tests the ability to create a new Endowment through CW3(cw3-application) multisig contract"
       endpoint-tested: create_endowment
       success: It should return a ID of new Endowment
-    
-    testCharityCanUpdateStrategies:
+        testCharityCanUpdateStrategies:
       description: "Tests the ability to update the strategies of Endowments according ID and AccountType, through CW3 multisig contract"
       endpoint-tested: update_strategies
       success: Endowments should have the updated strategies
-
     testSendDonationToEndowment:
       description: "Tests that any charity wallet can send the donation to Endowments"
       endpoint-tested: deposit
       success: It should return success when any charity wallet donates/sends the JUNO funds
-
     testEndowmentVaultsRedeem:
       description: "Tests that the Endowment owner can redeem the funds from linked vaults"
       endpoint-tested: vaults_redeem
       success: Endowment should receive the redeemed funds from linked vault contracts
-
     testVaultReinvestToLocked:
       description: "Tests that Endowment owner can reinvest the funds of locked vault to liquid vault contract"
       endpoint-tested: reinvest_to_locked
       success: Liquid vault contract should receive the funds from Locked vault contract
-
     testEndowmentCanWithdrawLiquid:
       description: "Tests that Endowment owner can withdraw the from available liquid balance"
       endpoint-tested: withdraw
       success: Beneficiary wallet indicated in call should receive the withdrawal funds
-
     testCharityCanWithdrawLocked:
-      description: "Tests that Endowment charity member can withdraw from their Endowment's locked balance with AP Team approval" 
+      description: "Tests that Endowment charity member can withdraw from their Endowment's locked balance with AP Team approval"
       endpoint-tested: propose_locked_withdraw(endowCW3)
       success: Beneficiary wallet indicated in call should receive the funds(assets)
-
     testApproveInactiveEndowment:
       description: "Tests that Accounts contract owner can approve the inactive Endowment.(update Endowment status)"
       endpoint-tested: update_endowment_status
       success: Endowment indicated in call (i.e. 1) should be approved
-
     testUpdateEndowmentStatus:
       description: "Tests that Accounts contract owner can update the Endowment status("Inactive", "Approved", "Frozen", "Closed")
       endpoint-tested: update_endowment_status
       success: Endowment indicated in call (i.e. 1) should have new status
-
     testRejectUnapprovedDonations:
       description: "Tests that the wallets cannot send the funds to an Endowment that is not approved for deposits"
       endpoint-tested: deposit
       success: Accounts contract should return error when sending JUNO or other available funds to unapproved Endowment
-    
-    testQueryAccountsEndowmentList:
+        testQueryAccountsEndowmentList:
       description: "Tests the ability to query the Endowments in the Accounts contract"
       endpoint-tested: endowment_list
       success: Accounts contract returns the EndowmentListResponse struct(list of EndowmentEntry) or an Error if no Endowments in contract
-
     testQueryAccountsBalance:
       description: "Tests the ability to query the balance of Endowment with ID"
       endpoint-tested: balance
       success: Accounts contract returns the EndowmentBalanceResponse(details of TOH, locked, liquid balances) or an Error if Endowment or State not found in storage
-
     testQueryAccountsConfig:
       description: "Tests the ability to query the config of Accounts contract"
       endpoint-tested: config
       success: Accounts contract returns the ConfigResponse struct(config details) or an Error if config not found in storage
-
     testQueryAccountsEndowment:
       description: "Tests the ability to query the Endowment detail with ID"
       endpoint-tested: endowment
       success: Accounts contract returns the EndowmentDetails struct or an Error if Endowment not found in storage
-
     testQueryAccountsState:
       description: "Tests the ability to query the state of Endowment with ID"
       endpoint-tested: state
       success: Accounts contract returns the StateResponse struct(Endowment state details) or an Error if Endowment not found in storage
-
     testQueryAccountsTokenAmount:
       description: "Tests the ability to query the amount of specic asset(token) for Endowment with Endowment ID, asset info and AccountType"
       endpoint-tested: token_amount
       success: Accounts contract returns an amount(Uint128) or an Error if Endowment not found in storage
 
-MultiSig contracts:
+MultiSig Contracts:
   testAddMemberToC4Group:
     description: "Tests the ability to add a new AP team member to the CW4 AP Team Group"
     endpoint-tested: update_members(cw4), propose(cw3)
     success: CW4 contract should have a new team member if the existing member sends & votes to proposal,
             or returns an Error if non-member tries to add the member to the group
-
   testUpdateCw3Config:
     description: "Tests that ability to update the CW3 multisig contract config through CW4 group & members"
     endpoint-tested: update_config(cw3), propose(cw3)
     success: CW3 contract should have a new config if the existing CW4 group member sends & votes to proposal,
             or returns an Error if non-member tries to update the config
-
   testProposalApprovingEndowment:
     description: "Tests that CW3 multisig contract can update the Endowment status of Accounts contract"
     endpoint-tested: update_endowment_status(accounts), propose(cw3)
     success: Endowment status should be updated if the CW3 member sends & votes to the proposal,
             or returns an Error if non-member tries to update the status
-    
-  testCw3CastVote: 
+  testCw3CastVote:
     description: "Tests that only CW3 multisig members can cast vote to the poll"
     endpoint-tested: vote(cw3)
     success: The CW3 multisig contrat returns success and vote count incremented if multisig member votes,
             or returns an Error if non-member tries to cast vote
-
-  testCw3ExecutePoll: 
+  testCw3ExecutePoll:
     description: "Tests the ability to execute the poll in CW3 multisig contract"
     endpoint-tested: execute(cw3)
     success: The poll of CW3 multisig contract is executed if the poll status(votes ...) passes the execution condition,
             or returns an Error if the poll does not meet the condition
-
-  testQueryMultisigVoters: 
+  testQueryMultisigVoters:
     description: "Tests the ability to query the voters(members) of the CW3 multisig contract"
     endpoint-tested: list_voters(cw3)
     success: The CW3 multisig contract returns a VoterListResponse struct(list of voters with weights), or an Error if not found in storage
-
   testQueryProposal:
     description: "Tests the ability to query the detail of proposal with proposal ID"
     endpoint-tested: proposal(cw3)
     success: The CW3 multisig contract returns a MetaProposalResponse struct(proposal detail), or an Error if proposal not found in storage
-
   testQueryMultisigThreshold:
     description: "Tests the ability to query the threshold value of CW3 multisig contract"
     endpoint-tested: threshold(cw3)
     success: The CW3 multisig contract returns a default threshold value configured inside contract, or an Error if not found in storage
-
   testQueryGroupMembersList:
     description: "Tests the ability to query the members list of CW4 Group contract"
     endpoint-tested: list_members(cw4)
     success: The CW4 contract returns a MemberListResponse struct(list of members)
 
-Vault contracts:
+Vault Contracts:
   testVaultUpdateConfig:
     description: "Tests that Vault contract owner can update the contract config"
     endpoint-tested: update_config
     success: The Vault contract should have a new config if contract owner tries to update,
             or returns an Error if non-owner tries to update the config
-
-  testVaultHarvest: 
+  testVaultHarvest:
     description: "Tests that Vault contract keeper wallet can harvest the yields from vault contract"
     endpoint-tested: harvest
     success: The Vault contract returns success and handles the yielded funds if Keeper wallet tries to harvest,
             or returns an Error if non-Keeper wallet tries to harvest
-
   testQueryVaultConfig:
     description: "Tests the ability to query the vault contract config"
     endpoint-tested: config
     success: The Vault contract returns the ConfigResponse struct(config detail), or an Error if not found in storage
-
   testQueryVaultEndowmentBalance:
     description: "Tests the ability to query the vault token amount for Endowment with ID"
     endpoint-tested: balance
     success: The Vault contract returns the vault token balance(Uint128) for the given EndowmentID
-
   testQueryVaultTotalBalance:
     description: "Tests the ability to query the total amount of minted vault token"
     endpoint-tested: total_balance
     success: The Vault contract returns the total balance(Uint128)
-
   testQueryVaultTokenInfo:
     description: "Tests the ability to query the detail of vault token(cw20 token)"
     endpoint-tested: token_info
