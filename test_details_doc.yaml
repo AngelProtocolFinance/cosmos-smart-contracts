@@ -223,5 +223,54 @@ Core contracts:
       success: Accounts contract returns an amount(Uint128) or an Error if Endowment not found in storage
 
 MultiSig contracts:
+  testAddMemberToC4Group:
+    description: "Tests the ability to add a new AP team member to the CW4 AP Team Group"
+    endpoint-tested: update_members(cw4), propose(cw3)
+    success: CW4 contract should have a new team member if the existing member sends & votes to proposal,
+            or returns an Error if non-member tries to add the member to the group
+
+  testUpdateCw3Config:
+    description: "Tests that ability to update the CW3 multisig contract config through CW4 group & members"
+    endpoint-tested: update_config(cw3), propose(cw3)
+    success: CW3 contract should have a new config if the existing CW4 group member sends & votes to proposal,
+            or returns an Error if non-member tries to update the config
+
+  testProposalApprovingEndowment:
+    description: "Tests that CW3 multisig contract can update the Endowment status of Accounts contract"
+    endpoint-tested: update_endowment_status(accounts), propose(cw3)
+    success: Endowment status should be updated if the CW3 member sends & votes to the proposal,
+            or returns an Error if non-member tries to update the status
+    
+  testCw3CastVote: 
+    description: "Tests that only CW3 multisig members can cast vote to the poll"
+    endpoint-tested: vote(cw3)
+    success: The CW3 multisig contrat returns success and vote count incremented if multisig member votes,
+            or returns an Error if non-member tries to cast vote
+
+  testCw3ExecutePoll: 
+    description: "Tests the ability to execute the poll in CW3 multisig contract"
+    endpoint-tested: execute(cw3)
+    success: The poll of CW3 multisig contract is executed if the poll status(votes ...) passes the execution condition,
+            or returns an Error if the poll does not meet the condition
+
+  testQueryMultisigVoters: 
+    description: "Tests the ability to query the voters(members) of the CW3 multisig contract"
+    endpoint-tested: list_voters(cw3)
+    success: The CW3 multisig contract returns a VoterListResponse struct(list of voters with weights), or an Error if not found in storage
+
+  testQueryProposal:
+    description: "Tests the ability to query the detail of proposal with proposal ID"
+    endpoint-tested: proposal(cw3)
+    success: The CW3 multisig contract returns a MetaProposalResponse struct(proposal detail), or an Error if proposal not found in storage
+
+  testQueryMultisigThreshold:
+    description: "Tests the ability to query the threshold value of CW3 multisig contract"
+    endpoint-tested: threshold(cw3)
+    success: The CW3 multisig contract returns a default threshold value configured inside contract, or an Error if not found in storage
+
+  testQueryGroupMembersList:
+    description: "Tests the ability to query the members list of CW4 Group contract"
+    endpoint-tested: list_members(cw4)
+    success: The CW4 contract returns a MemberListResponse struct(list of members)
 
 Vault contracts:
