@@ -147,7 +147,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
-pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, ContractError> {
+pub fn migrate(deps: DepsMut, _env: Env, msg: MigrateMsg) -> Result<Response, ContractError> {
     let ver = get_contract_version(deps.storage)?;
     // ensure we are migrating from an allowed contract
     if ver.contract != CONTRACT_NAME {
@@ -161,6 +161,11 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
             msg: "Cannot upgrade from a newer version".to_string(),
         }));
     }
+
+    // Get the collector addr from user input
+    let collector_addr = msg
+        .collector_addr
+        .map(|addr| deps.api.addr_validate(&addr).unwrap());
 
     // setup the new config struct and save to storage
     let data = deps
@@ -189,7 +194,7 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
             halo_token: old_config.halo_token,
             halo_token_lp_contract: None,
             gov_contract: old_config.gov_contract,
-            collector_addr: None,
+            collector_addr: collector_addr,
             collector_share: Decimal::zero(), // SHOULD be checked
             charity_shares_contract: old_config.charity_shares_contract,
             accepted_tokens: old_config.accepted_tokens,
@@ -202,6 +207,16 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 
     // setup first fees
     FEES.save(deps.storage, &"vault_harvest", &Decimal::percent(20))?; // Default to 0.2 or 20%
+    FEES.save(
+        deps.storage,
+        &"endowtype_charity",
+        &msg.endowtype_fees.endowtype_charity.unwrap_or_default(),
+    )?;
+    FEES.save(
+        deps.storage,
+        &"endowtype_normal",
+        &msg.endowtype_fees.endowtype_normal.unwrap_or_default(),
+    )?;
 
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
