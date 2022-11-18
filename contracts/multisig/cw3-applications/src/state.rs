@@ -16,14 +16,6 @@ use std::fmt;
 const PRECISION_FACTOR: u128 = 1_000_000_000;
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
-pub struct OldConfig {
-    pub registrar_contract: Addr,
-    pub threshold: Threshold,
-    pub max_voting_period: Duration,
-    pub group_addr: Cw4Contract,
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, JsonSchema, Debug)]
 pub struct Config {
     pub registrar_contract: Addr,
     pub threshold: Threshold,
