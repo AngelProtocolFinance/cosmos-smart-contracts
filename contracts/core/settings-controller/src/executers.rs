@@ -1,10 +1,10 @@
-use crate::state::{CONFIG, ENDOWMENTS};
+use crate::state::{CONFIG, ENDOWMENTSETTINGS};
 use angel_core::errors::core::ContractError;
-use angel_core::messages::accounts::*;
 use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
 use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
 use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
 use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
+use angel_core::messages::settings_controller::*;
 use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
 use angel_core::responses::registrar::{
     ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, VaultDetailResponse,
@@ -27,39 +27,6 @@ use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
 use cw4::Member;
 use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
 use cw_utils::{Duration, Expiration};
-
-pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
-    match msg {
-        SubMsgResult::Ok(subcall) => {
-            let mut id: u32 = 0;
-            let mut owner: Addr = Addr::unchecked("");
-            for event in subcall.events {
-                if event.ty == *"wasm" {
-                    for attrb in event.attributes {
-                        // This value comes from the custom attrbiute
-                        match attrb.key.as_str() {
-                            "multisig_addr" => {
-                                owner = deps.api.addr_validate(&attrb.value)?;
-                            }
-                            "endow_id" => id = attrb.value.parse().unwrap(),
-                            _ => (),
-                        }
-                    }
-                }
-            }
-            if id == 0 || owner == Addr::unchecked("") {
-                return Err(ContractError::AccountNotCreated {});
-            }
-            let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
-            endowment.owner = owner;
-            ENDOWMENTS.save(deps.storage, id, &endowment)?;
-
-            // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
-            Ok(Response::default().add_attribute("endow_owner", endowment.owner.to_string()))
-        }
-        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
-    }
-}
 
 pub fn dao_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
     match msg {
@@ -168,12 +135,7 @@ pub fn update_config(
         return Err(ContractError::Unauthorized {});
     }
 
-    config.registrar_contract = deps.api.addr_validate(&msg.new_registrar)?;
-    config.max_general_category_id = msg.max_general_category_id;
-    config.ibc_controller = match msg.ibc_controller {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.ibc_controller,
-    };
+    config.owner = deps.api.addr_validate(&msg.owner)?;
 
     CONFIG.save(deps.storage, &config)?;
     Ok(Response::default())
@@ -469,123 +431,6 @@ pub fn update_delegate(
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::default().add_attribute("action", "update_delegate"))
-}
-
-pub fn update_strategies(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    id: u32,
-    acct_type: AccountType,
-    strategies: Vec<Strategy>,
-) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
-    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
-
-    if info.sender != endowment.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let state = STATES.load(deps.storage, id)?;
-    if state.closing_endowment {
-        return Err(ContractError::UpdatesAfterClosed {});
-    }
-
-    if endowment.pending_redemptions != 0 {
-        return Err(ContractError::RedemptionInProgress {});
-    }
-
-    let mut addresses: Vec<Addr> = strategies
-        .iter()
-        .map(|strategy| deps.api.addr_validate(&strategy.vault).unwrap())
-        .collect();
-    addresses.sort();
-    addresses.dedup();
-
-    if addresses.len() < strategies.len() {
-        return Err(ContractError::StrategyComponentsNotUnique {});
-    };
-
-    // Check that all strategies supplied can be invested in by this type of Endowment
-    // ie. There are no restricted or non-approved vaults in the proposed Strategies setup
-    let allowed: VaultListResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
-        contract_addr: config.registrar_contract.to_string(),
-        msg: to_binary(&RegistrarQuerier::VaultList {
-            approved: Some(true),
-            endowment_type: Some(endowment.endow_type.clone()),
-            acct_type: Some(acct_type.clone()),
-            vault_type: None,
-            network: None,
-            start_after: None,
-            limit: None,
-        })?,
-    }))?;
-
-    let mut percentages_sum = Decimal::zero();
-    let mut new_strategies = vec![];
-    for strategy in strategies.iter() {
-        match allowed
-            .vaults
-            .iter()
-            .position(|v| v.address == strategy.vault)
-        {
-            None => return Err(ContractError::InvalidInputs {}),
-            Some(_) => {
-                percentages_sum += strategy.percentage;
-                // update endowment strategies attribute with all newly passed strategies
-                new_strategies.push(StrategyComponent {
-                    vault: deps.api.addr_validate(&strategy.vault.clone())?.to_string(),
-                    percentage: strategy.percentage,
-                });
-            }
-        }
-    }
-
-    // An endowment cannot have over 100% of strategy allocations
-    // Sub-100%: leftover goes into "Tokens on Hand"
-    if percentages_sum > Decimal::one() {
-        return Err(ContractError::InvalidStrategyAllocation {});
-    }
-
-    endowment
-        .strategies
-        .set(acct_type.clone(), new_strategies.clone());
-    ENDOWMENTS.save(deps.storage, id, &endowment)?;
-
-    Ok(Response::new().add_attribute("action", "update_strategies"))
-}
-
-pub fn copycat_strategies(
-    deps: DepsMut,
-    info: MessageInfo,
-    id: u32,
-    acct_type: AccountType,
-    id_to_copy: u32,
-) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
-    if endowment.owner != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let copied_endowment = ENDOWMENTS.load(deps.storage, id_to_copy)?;
-    if copied_endowment.strategies.get(acct_type).is_empty() {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Attempting to copy an endowment with no set strategy for that account type"
-                .to_string(),
-        }));
-    }
-
-    if endowment.copycat_strategy == Some(id_to_copy) {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Attempting re-set the same copycat endowment ID".to_string(),
-        }));
-    }
-
-    // set new copycat id
-    endowment.copycat_strategy = Some(id_to_copy);
-    ENDOWMENTS.save(deps.storage, id, &endowment)?;
-
-    Ok(Response::new())
 }
 
 pub fn update_endowment_fees(

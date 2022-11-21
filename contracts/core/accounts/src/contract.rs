@@ -131,17 +131,6 @@ pub fn execute(
         ExecuteMsg::CloseEndowment { id, beneficiary } => {
             executers::close_endowment(deps, env, info, id, beneficiary)
         }
-        ExecuteMsg::UpdateEndowmentFees(msg) => {
-            executers::update_endowment_fees(deps, env, info, msg)
-        }
-        ExecuteMsg::SetupDao {
-            endowment_id,
-            setup,
-        } => executers::setup_dao(deps, env, info, endowment_id, setup),
-        ExecuteMsg::SetupDonationMatch {
-            endowment_id,
-            setup,
-        } => executers::setup_donation_match(deps, env, info, endowment_id, setup),
         // Manage the allowances for the 3rd_party wallet to withdraw
         // the endowment TOH liquid balances without the proposal
         ExecuteMsg::Allowance {

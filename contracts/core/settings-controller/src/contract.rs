@@ -1,17 +1,16 @@
-use crate::executers;
-use crate::queriers;
-use crate::state::ENDOWMENTSETTINGS;
-use crate::state::{Config, CONFIG};
-use angel_core::errors::core::ContractError;
-use angel_core::messages::settings_controller::*;
-use angel_core::structs::SettingsController;
 use cosmwasm_std::{
     entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 use cw2::{get_contract_version, set_contract_version};
 
+use angel_core::errors::core::ContractError;
+use angel_core::messages::settings_controller::*;
+
+use crate::state::{Config, CONFIG};
+use crate::{executers, queriers};
+
 // version info for future migration info
-const CONTRACT_NAME: &str = "accounts";
+const CONTRACT_NAME: &str = "settings-controller";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[entry_point]
@@ -41,28 +40,39 @@ pub fn execute(
     info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-    todo!()
-
-    // match msg {
-    //     ExecuteMsg::UpdateEndowmentSettings(msg) => {
-    //         executers::update_endowment_settings(deps, env, info, msg)
-    //     }
-    //     ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
-    //     ExecuteMsg::UpdateOwner { new_owner } => {
-    //         executers::update_owner(deps, env, info, new_owner)
-    //     }
-    //     ExecuteMsg::UpdateEndowmentFees(msg) => {
-    //         executers::update_endowment_fees(deps, env, info, msg)
-    //     }
-    //     ExecuteMsg::SetupDao {
-    //         endowment_id,
-    //         setup,
-    //     } => executers::setup_dao(deps, env, info, endowment_id, setup),
-    //     ExecuteMsg::SetupDonationMatch {
-    //         endowment_id,
-    //         setup,
-    //     } => executers::setup_donation_match(deps, env, info, endowment_id, setup),
-    // }
+    match msg {
+        ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
+        ExecuteMsg::UpdateEndowmentSettings(msg) => {
+            executers::update_endowment_settings(deps, env, info, msg)
+        }
+        ExecuteMsg::UpdateEndowmentFees(msg) => {
+            executers::update_endowment_fees(deps, env, info, msg)
+        }
+        ExecuteMsg::SetupDao {
+            endowment_id,
+            setup,
+        } => executers::setup_dao(deps, env, info, endowment_id, setup),
+        ExecuteMsg::SetupDonationMatch {
+            endowment_id,
+            setup,
+        } => executers::setup_donation_match(deps, env, info, endowment_id, setup),
+        ExecuteMsg::UpdateDelegate {
+            endowment_id,
+            setting,
+            action,
+            delegate_address,
+            delegate_expiry,
+        } => executers::update_delegate(
+            deps,
+            env,
+            info,
+            endowment_id,
+            setting,
+            action,
+            delegate_address,
+            delegate_expiry,
+        ),
+    }
 }
 
 #[entry_point]

@@ -109,18 +109,6 @@ pub enum ExecuteMsg {
         acct_type: AccountType,
         strategies: Vec<Strategy>,
     },
-    // Update various "EndowmentFee"s
-    UpdateEndowmentFees(UpdateEndowmentFeesMsg),
-    // Set up dao token for "Endowment"
-    SetupDao {
-        endowment_id: u32,
-        setup: DaoSetup,
-    },
-    // Setup Donation match contract for the Endowment
-    SetupDonationMatch {
-        endowment_id: u32,
-        setup: DonationMatch,
-    },
     // Manage the allowances for the 3rd_party wallet to withdraw
     // the endowment TOH liquid balances without the proposal
     Allowance {
@@ -190,22 +178,13 @@ pub struct Strategy {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateMaturityWhitelist {
-    pub add: Vec<String>,
-    pub remove: Vec<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct UpdateEndowmentSettingsMsg {
     pub id: u32,
     pub owner: Option<String>,
-    pub whitelisted_beneficiaries: Option<Vec<String>>, // if populated, only the listed Addresses can withdraw/receive funds from the Endowment (if empty, anyone can receive)
-    pub whitelisted_contributors: Option<Vec<String>>, // if populated, only the listed Addresses can contribute to the Endowment (if empty, anyone can donate)
-    pub maturity_time: Option<Option<u64>>,            // datetime int of endowment maturity
+    pub maturity_time: Option<Option<u64>>, // datetime int of endowment maturity
     pub strategies: Option<Vec<StrategyComponent>>, // list of vaults and percentage for locked/liquid accounts
     pub locked_endowment_configs: Option<Vec<String>>, // list of endowment configs that cannot be changed/altered once set at creation
     pub rebalance: Option<RebalanceDetails>,
-    pub maturity_whitelist: Option<UpdateMaturityWhitelist>,
     pub kyc_donors_only: Option<bool>,
     pub endow_type: Option<String>,
     pub name: Option<String>,
@@ -213,7 +192,6 @@ pub struct UpdateEndowmentSettingsMsg {
     pub tier: Option<u8>,
     pub logo: Option<String>,
     pub image: Option<String>,
-    pub settings_controller: Option<SettingsController>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
@@ -239,15 +217,6 @@ pub struct DepositMsg {
     pub id: u32,
     pub locked_percentage: Decimal,
     pub liquid_percentage: Decimal,
-}
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct UpdateEndowmentFeesMsg {
-    pub id: u32,
-    pub earnings_fee: Option<EndowmentFee>,
-    pub deposit_fee: Option<EndowmentFee>,
-    pub withdraw_fee: Option<EndowmentFee>,
-    pub aum_fee: Option<EndowmentFee>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

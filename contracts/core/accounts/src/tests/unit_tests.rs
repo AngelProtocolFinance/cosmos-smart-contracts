@@ -6,7 +6,7 @@ use angel_core::errors::core::*;
 use angel_core::messages::accounts::UpdateConfigMsg;
 use angel_core::messages::accounts::{
     CreateEndowmentMsg, DepositMsg, ExecuteMsg, InstantiateMsg, QueryMsg, Strategy,
-    UpdateEndowmentSettingsMsg, UpdateEndowmentStatusMsg, UpdateMaturityWhitelist,
+    UpdateEndowmentSettingsMsg, UpdateEndowmentStatusMsg,
 };
 use angel_core::responses::accounts::{ConfigResponse, EndowmentDetailsResponse, StateResponse};
 use angel_core::structs::{
@@ -130,14 +130,10 @@ fn test_update_endowment_settings() {
         tier: Some(3),
         logo: Some("Some fancy logo".to_string()),
         image: Some("Nice banner image".to_string()),
-        whitelisted_beneficiaries: None,
-        whitelisted_contributors: None,
         maturity_time: None,
         strategies: None,
         locked_endowment_configs: None,
         rebalance: None,
-        maturity_whitelist: None,
-        settings_controller: None,
     };
     let res = execute(
         deps.as_mut(),
@@ -162,14 +158,10 @@ fn test_update_endowment_settings() {
         tier: Some(3),
         logo: Some("Some fancy logo".to_string()),
         image: Some("Nice banner image".to_string()),
-        whitelisted_beneficiaries: None,
-        whitelisted_contributors: None,
         maturity_time: None,
         strategies: None,
         locked_endowment_configs: None,
         rebalance: None,
-        maturity_whitelist: None,
-        settings_controller: None,
     };
     let info = mock_info(PLEB, &coins(100000, "earth "));
     // This should fail with an error!
@@ -609,16 +601,10 @@ fn test_withdraw() {
         ExecuteMsg::UpdateEndowmentSettings(UpdateEndowmentSettingsMsg {
             id: CHARITY_ID,
             owner: None,
-            whitelisted_beneficiaries: None,
-            whitelisted_contributors: None,
             maturity_time: None,
             strategies: None,
             locked_endowment_configs: None,
             rebalance: None,
-            maturity_whitelist: Some(UpdateMaturityWhitelist {
-                add: vec![endow_details.owner.to_string()],
-                remove: vec![],
-            }),
             kyc_donors_only: None,
             endow_type: None,
             name: None,
@@ -626,7 +612,6 @@ fn test_withdraw() {
             tier: None,
             logo: None,
             image: None,
-            settings_controller: None,
         }),
     )
     .unwrap();
