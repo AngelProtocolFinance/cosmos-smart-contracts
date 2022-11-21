@@ -218,8 +218,9 @@ fn test_change_configs_() {
         env.clone(),
         info.clone(),
         ExecuteMsg::UpdateConfig {
-            new_registrar: PLEB.to_string(),
-            max_general_category_id: 2 as u8,
+            new_owner: None,
+            new_registrar: Some(PLEB.to_string()),
+            max_general_category_id: Some(2),
             ibc_controller: None,
         },
     )
@@ -233,8 +234,9 @@ fn test_change_configs_() {
 
     // Check that the "PLEB" registrar contract should not be able to affect/update the configs
     let msg = ExecuteMsg::UpdateConfig {
-        new_registrar: PLEB.to_string(),
-        max_general_category_id: 100 as u8,
+        new_owner: None,
+        new_registrar: Some(PLEB.to_string()),
+        max_general_category_id: Some(100),
         ibc_controller: None,
     };
     let info = mock_info(PLEB, &coins(100000, "earth "));
@@ -253,8 +255,11 @@ fn test_change_admin() {
         deps.as_mut(),
         env.clone(),
         info.clone(),
-        ExecuteMsg::UpdateOwner {
-            new_owner: PLEB.to_string(),
+        ExecuteMsg::UpdateConfig {
+            new_owner: Some(PLEB.to_string()),
+            new_registrar: None,
+            max_general_category_id: None,
+            ibc_controller: None,
         },
     )
     .unwrap();
@@ -266,8 +271,11 @@ fn test_change_admin() {
     assert_eq!(PLEB, value.owner);
 
     // Original owner should not be able to update the configs now
-    let msg = ExecuteMsg::UpdateOwner {
-        new_owner: CHARITY_ADDR.to_string(),
+    let msg = ExecuteMsg::UpdateConfig {
+        new_owner: Some(CHARITY_ADDR.to_string()),
+        new_registrar: None,
+        max_general_category_id: None,
+        ibc_controller: None,
     };
     let info = mock_info(AP_TEAM, &coins(100000, "earth "));
     // This should fail with an error!

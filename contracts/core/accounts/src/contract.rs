@@ -118,6 +118,7 @@ pub fn execute(
             vaults,
         } => executers::vaults_redeem(deps, env, info, id, acct_type, vaults),
         ExecuteMsg::UpdateConfig {
+            new_owner,
             new_registrar,
             max_general_category_id,
             ibc_controller,
@@ -125,13 +126,11 @@ pub fn execute(
             deps,
             env,
             info,
+            new_owner,
             new_registrar,
             max_general_category_id,
             ibc_controller,
         ),
-        ExecuteMsg::UpdateOwner { new_owner } => {
-            executers::update_owner(deps, env, info, new_owner)
-        }
         ExecuteMsg::UpdateStrategies {
             id,
             acct_type,

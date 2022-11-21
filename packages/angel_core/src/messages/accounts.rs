@@ -80,14 +80,11 @@ pub enum ExecuteMsg {
     DistributeToBeneficiary {
         id: u32,
     },
-    // update owner addr
-    UpdateOwner {
-        new_owner: String,
-    },
     // Allows the SC owner (only!) to change ownership & upper limit of general categories ID allowed
     UpdateConfig {
-        new_registrar: String,
-        max_general_category_id: u8,
+        new_owner: Option<String>,
+        new_registrar: Option<String>,
+        max_general_category_id: Option<u8>,
         ibc_controller: Option<String>,
     },
     // Update an Endowment owner, beneficiary, and other settings
