@@ -1,4 +1,4 @@
-use crate::state::Config;
+use crate::state::{Config, Deposit};
 use angel_core::messages::accounts::DepositMsg;
 use angel_core::structs::GenericBalance;
 use cosmwasm_schema::QueryResponses;
@@ -55,4 +55,6 @@ pub enum QueryMsg {
     Balance { address: String },
     #[returns(Config)]
     Config {},
+    #[returns(Deposit)]
+    Deposit { deposit_id: u64 },
 }
