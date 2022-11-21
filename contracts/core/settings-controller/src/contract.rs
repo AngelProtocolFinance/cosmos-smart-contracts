@@ -1,6 +1,6 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::ENDOWMENTS;
+use crate::state::ENDOWMENTSETTINGS;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::settings_controller::*;
@@ -28,8 +28,6 @@ pub fn instantiate(
         deps.storage,
         &Config {
             owner: deps.api.addr_validate(&msg.owner_sc)?,
-            registrar_contract: deps.api.addr_validate(&msg.registrar_contract)?,
-            accounts_contract: deps.api.addr_validate(&msg.accounts_contract)?,
         },
     )?;
 

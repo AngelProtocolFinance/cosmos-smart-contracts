@@ -1,4 +1,4 @@
-use crate::state::{CONFIG, ENDOWMENTS};
+use crate::state::{CONFIG, ENDOWMENTSETTINGS};
 use angel_core::responses::settings_controller::*;
 use cosmwasm_std::{Deps, StdResult};
 
@@ -7,45 +7,27 @@ pub fn query_config(deps: Deps) -> StdResult<ConfigResponse> {
 
     Ok(ConfigResponse {
         owner: config.owner.to_string(),
-        registrar_contract: config.registrar_contract.to_string(),
     })
 }
 
-pub fn query_endowment_settings(deps: Deps, id: u32) -> StdResult<EndowmentDetailsResponse> {
+pub fn query_endowment_settings(deps: Deps, id: u32) -> StdResult<EndowmentSettingsResponse> {
     // this fails if no account is found
-    let endowment = ENDOWMENTS.load(deps.storage, id)?;
-    Ok(EndowmentDetailsResponse {
-        owner: endowment.owner,
-        status: endowment.status,
-        endow_type: endowment.endow_type,
-        maturity_time: endowment.maturity_time,
-        strategies: endowment.strategies,
-        oneoff_vaults: endowment.oneoff_vaults,
-        rebalance: endowment.rebalance,
-        donation_match_contract: endowment
-            .donation_match_contract
-            .map(|addr| addr.to_string())
-            .unwrap_or_else(|| "".to_string()),
-        kyc_donors_only: endowment.kyc_donors_only,
-        maturity_whitelist: endowment
-            .maturity_whitelist
-            .iter()
-            .map(|v| v.to_string())
-            .collect::<Vec<String>>(),
-        deposit_approved: endowment.deposit_approved,
-        withdraw_approved: endowment.withdraw_approved,
-        pending_redemptions: endowment.pending_redemptions,
-        dao: None,
-        dao_token: None,
-        description: "test endowment desc".to_string(),
-        copycat_strategy: endowment.copycat_strategy,
-        proposal_link: endowment.proposal_link,
-        name: endowment.name,
-        tier: endowment.tier,
-        categories: endowment.categories,
-        logo: endowment.logo,
-        image: endowment.image,
-        parent: endowment.parent,
+    let endowment = ENDOWMENTSETTINGS.load(deps.storage, id)?;
+    Ok(EndowmentSettingsResponse {
+        dao: endowment.dao,
+        dao_token: endowment.dao_token,
+        donation_match_contract: endowment.donation_match_contract,
+        donation_match_active: endowment.donation_match_active,
+        whitelisted_beneficiaries: endowment.whitelisted_beneficiaries,
+        whitelisted_contributors: endowment.whitelisted_contributors,
+        maturity_whitelist: endowment.maturity_whitelist,
+        earnings_fee: endowment.earnings_fee,
+        withdraw_fee: endowment.withdraw_fee,
+        deposit_fee: endowment.deposit_fee,
+        aum_fee: endowment.aum_fee,
         settings_controller: endowment.settings_controller,
+        parent: endowment.parent,
+        split_to_liquid: endowment.split_to_liquid,
+        ignore_user_splits: endowment.ignore_user_splits,
     })
 }

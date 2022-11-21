@@ -1,7 +1,6 @@
 use angel_core::structs::{
-    AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentFee,
-    EndowmentStatus, EndowmentType, OneOffVaults, RebalanceDetails, SettingsController,
-    SplitDetails,
+    AccountStrategies, BalanceInfo, Beneficiary, Categories, DonationsReceived, EndowmentStatus,
+    EndowmentType, OneOffVaults, RebalanceDetails,
 };
 use cosmwasm_std::{Addr, Env, Order, StdResult, Storage, Timestamp};
 use cw_asset::Asset;
