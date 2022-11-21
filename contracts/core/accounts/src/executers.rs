@@ -19,7 +19,7 @@ use angel_core::utils::{
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
-    ReplyOn, Response, StdError, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg, WasmQuery,
+    ReplyOn, Response, StdError, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw4::Member;
@@ -1517,9 +1517,7 @@ pub fn withdraw(
             if info.sender != endowment.owner {
                 return Err(ContractError::Unauthorized {});
             }
-            if endowment.maturity_time == None
-                || env.block.time < Timestamp::from_seconds(endowment.maturity_time.unwrap())
-            {
+            if !endowment.is_expired(&env) {
                 return Err(ContractError::Std(StdError::generic_err(
                     "Endowment is not mature. Cannot withdraw before maturity time is reached.",
                 )));
