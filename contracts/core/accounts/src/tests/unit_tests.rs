@@ -888,7 +888,7 @@ fn test_close_endowment() {
 
 #[test]
 fn test_swap_token() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _env, _acct_contract, _endow_details) = create_endowment();
 
     // Should deposit some funds before swap operation
     execute(
@@ -976,7 +976,7 @@ fn test_swap_token() {
 
 #[test]
 fn test_swap_receipt() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _env, _acct_contract, _endow_details) = create_endowment();
 
     // Fail to swap receipt since non-authorized call
     let info = mock_info("anyone", &[]);
@@ -1024,7 +1024,7 @@ fn test_swap_receipt() {
 
 #[test]
 fn test_vaults_invest() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _env, _acct_contract, _endow_details) = create_endowment();
 
     // Fail to invest to vaults since no endowment owner calls
     let info = mock_info("anyone", &[]);
@@ -1146,7 +1146,7 @@ fn test_vaults_invest() {
 
 #[test]
 fn test_vaults_redeem() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _env, _acct_contract, _endow_details) = create_endowment();
 
     // Fail to redeem vaults since no endowment owner calls
     let info = mock_info("anyone", &[]);
@@ -1231,7 +1231,7 @@ fn test_vaults_redeem() {
 
 #[test]
 fn test_reinvest_to_locked() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _env, _acct_contract, _endow_details) = create_endowment();
 
     // Fail to invest to locked since no endowment owner calls
     let info = mock_info("anyone", &[]);
@@ -1296,7 +1296,7 @@ fn test_reinvest_to_locked() {
 
 #[test]
 fn test_distribute_to_beneficiary() {
-    let (mut deps, env, _acct_contract, endow_details) = create_endowment();
+    let (mut deps, _env, _acct_contract, _endow_details) = create_endowment();
 
     // Only contract itself can call this entry. In other words, it is internal entry.
     let info = mock_info("anyone", &[]);
