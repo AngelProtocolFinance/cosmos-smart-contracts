@@ -312,6 +312,7 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::Balance { address } => to_binary(&query_balance(deps, address)?),
         QueryMsg::Config {} => to_binary(&query_config(deps)?),
+        QueryMsg::Deposit { deposit_id } => to_binary(&query_deposit(deps, deposit_id)?),
     }
 }
 
@@ -324,6 +325,11 @@ pub fn query_balance(deps: Deps, address: String) -> StdResult<GenericBalance> {
 pub fn query_config(deps: Deps) -> StdResult<Config> {
     let config = CONFIG.load(deps.storage)?;
     Ok(config)
+}
+
+pub fn query_deposit(deps: Deps, deposit_id: u64) -> StdResult<Deposit> {
+    let deposit = DEPOSITS.load(deps.storage, deposit_id)?;
+    Ok(deposit)
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
