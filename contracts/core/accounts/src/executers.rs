@@ -118,7 +118,6 @@ pub fn create_endowment(
                 status: EndowmentStatus::Approved,
                 deposit_approved: true,
                 withdraw_approved: true,
-                maturity_height: msg.maturity_height,
                 maturity_time: msg.maturity_time,
                 strategies: AccountStrategies::default(),
                 oneoff_vaults: OneOffVaults::default(),

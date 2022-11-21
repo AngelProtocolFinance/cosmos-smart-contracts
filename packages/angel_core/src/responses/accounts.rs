@@ -32,7 +32,6 @@ pub struct EndowmentDetailsResponse {
     pub status: EndowmentStatus,
     pub endow_type: EndowmentType,
     pub maturity_time: Option<u64>,
-    pub maturity_height: Option<u64>,
     pub strategies: AccountStrategies,
     pub oneoff_vaults: OneOffVaults,
     pub rebalance: RebalanceDetails,

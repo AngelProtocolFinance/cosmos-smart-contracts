@@ -138,7 +138,6 @@ impl WasmMockQuerier {
                         status: angel_core::structs::EndowmentStatus::Approved,
                         endow_type: angel_core::structs::EndowmentType::Charity,
                         maturity_time: None,
-                        maturity_height: None,
                         strategies: AccountStrategies::default(),
                         oneoff_vaults: OneOffVaults::default(),
                         rebalance: RebalanceDetails::default(),

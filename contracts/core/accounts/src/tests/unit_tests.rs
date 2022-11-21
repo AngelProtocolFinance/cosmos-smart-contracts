@@ -59,7 +59,6 @@ fn create_endowment() -> (
         logo: Some("Some fancy logo".to_string()),
         image: Some("Nice banner image".to_string()),
         maturity_time: None,
-        maturity_height: None,
         profile: profile,
         cw4_members: vec![],
         kyc_donors_only: true,

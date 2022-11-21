@@ -207,7 +207,6 @@ fn new_application_proposal() -> ExecuteMsg {
         owner: ENDOWMENTOWNER1.to_string(),
         endow_type: EndowmentType::Charity,
         maturity_time: None,
-        maturity_height: None,
         name: "Test Endowment".to_string(),
         categories: Categories {
             sdgs: vec![2],

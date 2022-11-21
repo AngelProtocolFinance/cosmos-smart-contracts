@@ -120,7 +120,6 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         status: endowment.status,
         endow_type: endowment.endow_type,
         maturity_time: endowment.maturity_time,
-        maturity_height: endowment.maturity_height,
         strategies: endowment.strategies,
         oneoff_vaults: endowment.oneoff_vaults,
         rebalance: endowment.rebalance,
