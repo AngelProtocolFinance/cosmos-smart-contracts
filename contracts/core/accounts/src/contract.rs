@@ -1,13 +1,8 @@
 use crate::executers;
 use crate::queriers;
-use crate::state::Endowment;
-use crate::state::OldEndowment;
-use crate::state::ENDOWMENTS;
 use crate::state::{Config, CONFIG};
 use angel_core::errors::core::ContractError;
 use angel_core::messages::accounts::*;
-use angel_core::structs::SettingsController;
-use cosmwasm_std::from_slice;
 use cosmwasm_std::{
     entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Reply, Response,
     StdError, StdResult,
@@ -273,60 +268,6 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
 
     // set the new version
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
-
-    // setup the new Endowment struct and save to storage
-    let data = deps
-        .storage
-        .get("config".as_bytes())
-        .ok_or_else(|| StdError::not_found("Config not found"))?;
-    let config: Config = from_slice(&data)?;
-
-    for endow_id in 1..config.next_account_id {
-        let key = ENDOWMENTS.key(endow_id);
-        let data = deps.storage.get(&key).ok_or_else(|| {
-            StdError::not_found(format!("Endowment not found for ID {}", endow_id))
-        })?;
-        let old_endow: OldEndowment = from_slice(&data)?;
-        ENDOWMENTS.save(
-            deps.storage,
-            endow_id,
-            &Endowment {
-                owner: old_endow.owner,
-                name: old_endow.name,
-                categories: old_endow.categories,
-                tier: old_endow.tier,
-                endow_type: old_endow.endow_type,
-                logo: old_endow.logo,
-                image: old_endow.image,
-                status: old_endow.status,
-                deposit_approved: old_endow.deposit_approved,
-                withdraw_approved: old_endow.withdraw_approved,
-                maturity_time: old_endow.maturity_time,
-                strategies: old_endow.strategies,
-                oneoff_vaults: old_endow.oneoff_vaults,
-                rebalance: old_endow.rebalance,
-                kyc_donors_only: old_endow.kyc_donors_only,
-                pending_redemptions: old_endow.pending_redemptions,
-                copycat_strategy: old_endow.copycat_strategy,
-                dao: None,
-                dao_token: None,
-                donation_match_active: false,
-                donation_match_contract: None,
-                whitelisted_beneficiaries: vec![],
-                whitelisted_contributors: vec![],
-                maturity_whitelist: vec![],
-                earnings_fee: None,
-                withdraw_fee: None,
-                deposit_fee: None,
-                aum_fee: None,
-                proposal_link: old_endow.proposal_link,
-                settings_controller: SettingsController::default(),
-                parent: None,
-                split_to_liquid: None,
-                ignore_user_splits: false,
-            },
-        )?;
-    }
 
     Ok(Response::default())
 }
