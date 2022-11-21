@@ -68,6 +68,7 @@ pub struct Endowment {
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
     pub pending_redemptions: u8, // number of vault redemptions currently pending for this endowment
     pub copycat_strategy: Option<u32>, // endowment ID to copy their strategy
+    pub proposal_link: Option<u64>, // link back the CW3 Proposal that created an endowment
     pub dao: Option<Addr>,     // subdao governance contract address
     pub dao_token: Option<Addr>, // dao gov token contract address
     pub donation_match_active: bool, // donation matching contract address (None set for Charity Endowments as they just phone home to Registrar to get the addr)
@@ -79,7 +80,6 @@ pub struct Endowment {
     pub withdraw_fee: Option<EndowmentFee>, // Withdraw Fee
     pub deposit_fee: Option<EndowmentFee>, // Deposit Fee
     pub aum_fee: Option<EndowmentFee>, // AUM(Assets Under Management) Fee
-    pub proposal_link: Option<u64>,    // link back the CW3 Proposal that created an endowment
     pub settings_controller: SettingsController,
     pub parent: Option<u64>,
     pub split_to_liquid: Option<SplitDetails>, // set of max, min, and default Split paramenters to check user defined split input against

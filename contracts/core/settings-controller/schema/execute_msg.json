@@ -1,0 +1,2101 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecuteMsg",
+  "oneOf": [
+    {
+      "type": "object",
+      "required": [
+        "receive"
+      ],
+      "properties": {
+        "receive": {
+          "$ref": "#/definitions/Cw20ReceiveMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "deposit"
+      ],
+      "properties": {
+        "deposit": {
+          "$ref": "#/definitions/DepositMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "description": "reinvest vault assets from Liquid to Locked",
+      "type": "object",
+      "required": [
+        "reinvest_to_locked"
+      ],
+      "properties": {
+        "reinvest_to_locked": {
+          "type": "object",
+          "required": [
+            "amount",
+            "id",
+            "vault_addr"
+          ],
+          "properties": {
+            "amount": {
+              "$ref": "#/definitions/Uint128"
+            },
+            "id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "vault_addr": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "withdraw"
+      ],
+      "properties": {
+        "withdraw": {
+          "type": "object",
+          "required": [
+            "acct_type",
+            "assets",
+            "beneficiary",
+            "id"
+          ],
+          "properties": {
+            "acct_type": {
+              "$ref": "#/definitions/AccountType"
+            },
+            "assets": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/AssetBase_for_String"
+              }
+            },
+            "beneficiary": {
+              "type": "string"
+            },
+            "id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "swap_token"
+      ],
+      "properties": {
+        "swap_token": {
+          "type": "object",
+          "required": [
+            "acct_type",
+            "amount",
+            "id",
+            "operations"
+          ],
+          "properties": {
+            "acct_type": {
+              "$ref": "#/definitions/AccountType"
+            },
+            "amount": {
+              "$ref": "#/definitions/Uint128"
+            },
+            "id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "operations": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/SwapOperation"
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "swap_receipt"
+      ],
+      "properties": {
+        "swap_receipt": {
+          "type": "object",
+          "required": [
+            "acct_type",
+            "final_asset",
+            "id"
+          ],
+          "properties": {
+            "acct_type": {
+              "$ref": "#/definitions/AccountType"
+            },
+            "final_asset": {
+              "$ref": "#/definitions/AssetBase_for_Addr"
+            },
+            "id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "vault_receipt"
+      ],
+      "properties": {
+        "vault_receipt": {
+          "type": "object",
+          "required": [
+            "acct_type",
+            "id"
+          ],
+          "properties": {
+            "acct_type": {
+              "$ref": "#/definitions/AccountType"
+            },
+            "id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "vaults_invest"
+      ],
+      "properties": {
+        "vaults_invest": {
+          "type": "object",
+          "required": [
+            "acct_type",
+            "id",
+            "vaults"
+          ],
+          "properties": {
+            "acct_type": {
+              "$ref": "#/definitions/AccountType"
+            },
+            "id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "vaults": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/definitions/AssetBase_for_Addr"
+                  }
+                ],
+                "maxItems": 2,
+                "minItems": 2
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "vaults_redeem"
+      ],
+      "properties": {
+        "vaults_redeem": {
+          "type": "object",
+          "required": [
+            "acct_type",
+            "id",
+            "vaults"
+          ],
+          "properties": {
+            "acct_type": {
+              "$ref": "#/definitions/AccountType"
+            },
+            "id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "vaults": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "$ref": "#/definitions/Uint128"
+                  }
+                ],
+                "maxItems": 2,
+                "minItems": 2
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "copycat_strategies"
+      ],
+      "properties": {
+        "copycat_strategies": {
+          "type": "object",
+          "required": [
+            "acct_type",
+            "id",
+            "id_to_copy"
+          ],
+          "properties": {
+            "acct_type": {
+              "$ref": "#/definitions/AccountType"
+            },
+            "id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "id_to_copy": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "create_endowment"
+      ],
+      "properties": {
+        "create_endowment": {
+          "$ref": "#/definitions/CreateEndowmentMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "close_endowment"
+      ],
+      "properties": {
+        "close_endowment": {
+          "type": "object",
+          "required": [
+            "beneficiary",
+            "id"
+          ],
+          "properties": {
+            "beneficiary": {
+              "$ref": "#/definitions/Beneficiary"
+            },
+            "id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "distribute_to_beneficiary"
+      ],
+      "properties": {
+        "distribute_to_beneficiary": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_owner"
+      ],
+      "properties": {
+        "update_owner": {
+          "type": "object",
+          "required": [
+            "new_owner"
+          ],
+          "properties": {
+            "new_owner": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_config"
+      ],
+      "properties": {
+        "update_config": {
+          "$ref": "#/definitions/UpdateConfigMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_endowment_settings"
+      ],
+      "properties": {
+        "update_endowment_settings": {
+          "$ref": "#/definitions/UpdateEndowmentSettingsMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_endowment_status"
+      ],
+      "properties": {
+        "update_endowment_status": {
+          "$ref": "#/definitions/UpdateEndowmentStatusMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_strategies"
+      ],
+      "properties": {
+        "update_strategies": {
+          "type": "object",
+          "required": [
+            "acct_type",
+            "id",
+            "strategies"
+          ],
+          "properties": {
+            "acct_type": {
+              "$ref": "#/definitions/AccountType"
+            },
+            "id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "strategies": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Strategy"
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_profile"
+      ],
+      "properties": {
+        "update_profile": {
+          "$ref": "#/definitions/UpdateProfileMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "update_endowment_fees"
+      ],
+      "properties": {
+        "update_endowment_fees": {
+          "$ref": "#/definitions/UpdateEndowmentFeesMsg"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "harvest"
+      ],
+      "properties": {
+        "harvest": {
+          "type": "object",
+          "required": [
+            "vault_addr"
+          ],
+          "properties": {
+            "vault_addr": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "harvest_aum"
+      ],
+      "properties": {
+        "harvest_aum": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "setup_dao"
+      ],
+      "properties": {
+        "setup_dao": {
+          "type": "object",
+          "required": [
+            "endowment_id",
+            "setup"
+          ],
+          "properties": {
+            "endowment_id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "setup": {
+              "$ref": "#/definitions/DaoSetup"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    {
+      "type": "object",
+      "required": [
+        "setup_donation_match"
+      ],
+      "properties": {
+        "setup_donation_match": {
+          "type": "object",
+          "required": [
+            "endowment_id",
+            "setup"
+          ],
+          "properties": {
+            "endowment_id": {
+              "type": "integer",
+              "format": "uint32",
+              "minimum": 0.0
+            },
+            "setup": {
+              "$ref": "#/definitions/DonationMatch"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  ],
+  "definitions": {
+    "AccountType": {
+      "type": "string",
+      "enum": [
+        "locked",
+        "liquid"
+      ]
+    },
+    "Addr": {
+      "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+      "type": "string"
+    },
+    "AssetBase_for_Addr": {
+      "description": "Represents a fungible asset with a known amount\n\nEach asset instance contains two values: [`info`], which specifies the asset's type (CW20 or native), and its [`amount`], which specifies the asset's amount",
+      "type": "object",
+      "required": [
+        "amount",
+        "info"
+      ],
+      "properties": {
+        "amount": {
+          "description": "Specifies the asset's amount",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Uint128"
+            }
+          ]
+        },
+        "info": {
+          "description": "Specifies the asset's type (CW20 or native)",
+          "allOf": [
+            {
+              "$ref": "#/definitions/AssetInfoBase_for_Addr"
+            }
+          ]
+        }
+      }
+    },
+    "AssetBase_for_String": {
+      "description": "Represents a fungible asset with a known amount\n\nEach asset instance contains two values: [`info`], which specifies the asset's type (CW20 or native), and its [`amount`], which specifies the asset's amount",
+      "type": "object",
+      "required": [
+        "amount",
+        "info"
+      ],
+      "properties": {
+        "amount": {
+          "description": "Specifies the asset's amount",
+          "allOf": [
+            {
+              "$ref": "#/definitions/Uint128"
+            }
+          ]
+        },
+        "info": {
+          "description": "Specifies the asset's type (CW20 or native)",
+          "allOf": [
+            {
+              "$ref": "#/definitions/AssetInfoBase_for_String"
+            }
+          ]
+        }
+      }
+    },
+    "AssetInfoBase_for_Addr": {
+      "description": "Represents the type of an fungible asset\n\nEach **asset info** instance can be one of three variants:\n\n- Native SDK coins. To create an **asset info** instance of this type, provide the denomination. - CW20 tokens. To create an **asset info** instance of this type, provide the contract address. - CW1155 tokens. To create an **asset info** instance of this type, provide the contract address and token ID.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "native"
+          ],
+          "properties": {
+            "native": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "cw20"
+          ],
+          "properties": {
+            "cw20": {
+              "$ref": "#/definitions/Addr"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "cw1155"
+          ],
+          "properties": {
+            "cw1155": {
+              "type": "array",
+              "items": [
+                {
+                  "$ref": "#/definitions/Addr"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "maxItems": 2,
+              "minItems": 2
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "AssetInfoBase_for_String": {
+      "description": "Represents the type of an fungible asset\n\nEach **asset info** instance can be one of three variants:\n\n- Native SDK coins. To create an **asset info** instance of this type, provide the denomination. - CW20 tokens. To create an **asset info** instance of this type, provide the contract address. - CW1155 tokens. To create an **asset info** instance of this type, provide the contract address and token ID.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "native"
+          ],
+          "properties": {
+            "native": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "cw20"
+          ],
+          "properties": {
+            "cw20": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "cw1155"
+          ],
+          "properties": {
+            "cw1155": {
+              "type": "array",
+              "items": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "maxItems": 2,
+              "minItems": 2
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Beneficiary": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "endowment"
+          ],
+          "properties": {
+            "endowment": {
+              "type": "object",
+              "required": [
+                "id"
+              ],
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "format": "uint32",
+                  "minimum": 0.0
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "index_fund"
+          ],
+          "properties": {
+            "index_fund": {
+              "type": "object",
+              "required": [
+                "id"
+              ],
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "format": "uint64",
+                  "minimum": 0.0
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "wallet"
+          ],
+          "properties": {
+            "wallet": {
+              "type": "object",
+              "required": [
+                "address"
+              ],
+              "properties": {
+                "address": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Binary": {
+      "description": "Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.\n\nThis is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>",
+      "type": "string"
+    },
+    "Categories": {
+      "type": "object",
+      "required": [
+        "general",
+        "sdgs"
+      ],
+      "properties": {
+        "general": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8",
+            "minimum": 0.0
+          }
+        },
+        "sdgs": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "format": "uint8",
+            "minimum": 0.0
+          }
+        }
+      }
+    },
+    "CreateEndowmentMsg": {
+      "type": "object",
+      "required": [
+        "categories",
+        "cw3_max_voting_period",
+        "cw3_threshold",
+        "cw4_members",
+        "endow_type",
+        "kyc_donors_only",
+        "name",
+        "owner",
+        "profile",
+        "split_default",
+        "split_max",
+        "split_min",
+        "whitelisted_beneficiaries",
+        "whitelisted_contributors"
+      ],
+      "properties": {
+        "aum_fee": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EndowmentFee"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "categories": {
+          "$ref": "#/definitions/Categories"
+        },
+        "cw3_max_voting_period": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "cw3_threshold": {
+          "$ref": "#/definitions/Threshold"
+        },
+        "cw4_members": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Member"
+          }
+        },
+        "dao": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/DaoSetup"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deposit_fee": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EndowmentFee"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "earnings_fee": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EndowmentFee"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "endow_type": {
+          "$ref": "#/definitions/EndowmentType"
+        },
+        "image": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kyc_donors_only": {
+          "type": "boolean"
+        },
+        "logo": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "maturity_time": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "name": {
+          "type": "string"
+        },
+        "owner": {
+          "type": "string"
+        },
+        "profile": {
+          "$ref": "#/definitions/Profile"
+        },
+        "proposal_link": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "split_default": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "split_max": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "split_min": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "tier": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "whitelisted_beneficiaries": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "whitelisted_contributors": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "withdraw_fee": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EndowmentFee"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "CurveType": {
+      "oneOf": [
+        {
+          "description": "Constant always returns `value * 10^-scale` as spot price",
+          "type": "object",
+          "required": [
+            "constant"
+          ],
+          "properties": {
+            "constant": {
+              "type": "object",
+              "required": [
+                "scale",
+                "value"
+              ],
+              "properties": {
+                "scale": {
+                  "type": "integer",
+                  "format": "uint32",
+                  "minimum": 0.0
+                },
+                "value": {
+                  "$ref": "#/definitions/Uint128"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "description": "Linear returns `slope * 10^-scale * supply` as spot price",
+          "type": "object",
+          "required": [
+            "linear"
+          ],
+          "properties": {
+            "linear": {
+              "type": "object",
+              "required": [
+                "scale",
+                "slope"
+              ],
+              "properties": {
+                "scale": {
+                  "type": "integer",
+                  "format": "uint32",
+                  "minimum": 0.0
+                },
+                "slope": {
+                  "$ref": "#/definitions/Uint128"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "description": "SquareRoot returns `slope * 10^-scale * supply^(power)` as spot price",
+          "type": "object",
+          "required": [
+            "square_root"
+          ],
+          "properties": {
+            "square_root": {
+              "type": "object",
+              "required": [
+                "power",
+                "scale",
+                "slope"
+              ],
+              "properties": {
+                "power": {
+                  "$ref": "#/definitions/Uint128"
+                },
+                "scale": {
+                  "type": "integer",
+                  "format": "uint32",
+                  "minimum": 0.0
+                },
+                "slope": {
+                  "$ref": "#/definitions/Uint128"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Cw20ReceiveMsg": {
+      "description": "Cw20ReceiveMsg should be de/serialized under `Receive()` variant in a ExecuteMsg",
+      "type": "object",
+      "required": [
+        "amount",
+        "msg",
+        "sender"
+      ],
+      "properties": {
+        "amount": {
+          "$ref": "#/definitions/Uint128"
+        },
+        "msg": {
+          "$ref": "#/definitions/Binary"
+        },
+        "sender": {
+          "type": "string"
+        }
+      }
+    },
+    "DaoSetup": {
+      "type": "object",
+      "required": [
+        "expiration_period",
+        "proposal_deposit",
+        "quorum",
+        "snapshot_period",
+        "threshold",
+        "timelock_period",
+        "token",
+        "voting_period"
+      ],
+      "properties": {
+        "expiration_period": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "proposal_deposit": {
+          "$ref": "#/definitions/Uint128"
+        },
+        "quorum": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "snapshot_period": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "threshold": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "timelock_period": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "token": {
+          "$ref": "#/definitions/DaoToken"
+        },
+        "voting_period": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        }
+      }
+    },
+    "DaoToken": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "existing_cw20"
+          ],
+          "properties": {
+            "existing_cw20": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "new_cw20"
+          ],
+          "properties": {
+            "new_cw20": {
+              "type": "object",
+              "required": [
+                "initial_supply",
+                "name",
+                "symbol"
+              ],
+              "properties": {
+                "initial_supply": {
+                  "$ref": "#/definitions/Uint128"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "symbol": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "bonding_curve"
+          ],
+          "properties": {
+            "bonding_curve": {
+              "type": "object",
+              "required": [
+                "curve_type",
+                "decimals",
+                "name",
+                "reserve_decimals",
+                "reserve_denom",
+                "symbol",
+                "unbonding_period"
+              ],
+              "properties": {
+                "curve_type": {
+                  "$ref": "#/definitions/CurveType"
+                },
+                "decimals": {
+                  "type": "integer",
+                  "format": "uint8",
+                  "minimum": 0.0
+                },
+                "name": {
+                  "type": "string"
+                },
+                "reserve_decimals": {
+                  "type": "integer",
+                  "format": "uint8",
+                  "minimum": 0.0
+                },
+                "reserve_denom": {
+                  "type": "string"
+                },
+                "symbol": {
+                  "type": "string"
+                },
+                "unbonding_period": {
+                  "type": "integer",
+                  "format": "uint64",
+                  "minimum": 0.0
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Decimal": {
+      "description": "A fixed-point decimal value with 18 fractional digits, i.e. Decimal(1_000_000_000_000_000_000) == 1.0\n\nThe greatest possible value that can be represented is 340282366920938463463.374607431768211455 (which is (2^128 - 1) / 10^18)",
+      "type": "string"
+    },
+    "Delegate": {
+      "type": "object",
+      "required": [
+        "address"
+      ],
+      "properties": {
+        "address": {
+          "$ref": "#/definitions/Addr"
+        },
+        "expires": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        }
+      }
+    },
+    "DepositMsg": {
+      "type": "object",
+      "required": [
+        "id",
+        "liquid_percentage",
+        "locked_percentage"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "liquid_percentage": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "locked_percentage": {
+          "$ref": "#/definitions/Decimal"
+        }
+      }
+    },
+    "DonationMatch": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "HaloTokenReserve"
+          ],
+          "properties": {
+            "HaloTokenReserve": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "Cw20TokenReserve"
+          ],
+          "properties": {
+            "Cw20TokenReserve": {
+              "type": "object",
+              "required": [
+                "lp_addr",
+                "reserve_addr"
+              ],
+              "properties": {
+                "lp_addr": {
+                  "type": "string"
+                },
+                "reserve_addr": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "EndowmentFee": {
+      "type": "object",
+      "required": [
+        "active",
+        "fee_percentage",
+        "payout_address"
+      ],
+      "properties": {
+        "active": {
+          "type": "boolean"
+        },
+        "fee_percentage": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "payout_address": {
+          "$ref": "#/definitions/Addr"
+        }
+      }
+    },
+    "EndowmentType": {
+      "type": "string",
+      "enum": [
+        "Charity",
+        "Normal"
+      ]
+    },
+    "Member": {
+      "description": "A group member has a weight associated with them. This may all be equal, or may have meaning in the app that makes use of the group (eg. voting power)",
+      "type": "object",
+      "required": [
+        "addr",
+        "weight"
+      ],
+      "properties": {
+        "addr": {
+          "type": "string"
+        },
+        "weight": {
+          "type": "integer",
+          "format": "uint64",
+          "minimum": 0.0
+        }
+      }
+    },
+    "Profile": {
+      "type": "object",
+      "required": [
+        "overview",
+        "social_media_urls"
+      ],
+      "properties": {
+        "annual_revenue": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "average_annual_budget": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "charity_navigator_rating": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "contact_email": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "country_of_origin": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "number_of_employees": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint16",
+          "minimum": 0.0
+        },
+        "overview": {
+          "type": "string"
+        },
+        "registration_number": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "social_media_urls": {
+          "$ref": "#/definitions/SocialMedialUrls"
+        },
+        "street_address": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "RebalanceDetails": {
+      "type": "object",
+      "required": [
+        "interest_distribution",
+        "locked_interests_to_liquid",
+        "locked_principle_to_liquid",
+        "principle_distribution",
+        "rebalance_liquid_invested_profits"
+      ],
+      "properties": {
+        "interest_distribution": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "locked_interests_to_liquid": {
+          "type": "boolean"
+        },
+        "locked_principle_to_liquid": {
+          "type": "boolean"
+        },
+        "principle_distribution": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "rebalance_liquid_invested_profits": {
+          "type": "boolean"
+        }
+      }
+    },
+    "SettingsController": {
+      "type": "object",
+      "required": [
+        "aum_fee",
+        "categories",
+        "deposit_fee",
+        "earnings_fee",
+        "image",
+        "kyc_donors_only",
+        "logo",
+        "maturity_time",
+        "name",
+        "profile",
+        "strategies",
+        "whitelisted_beneficiaries",
+        "whitelisted_contributors",
+        "withdraw_fee"
+      ],
+      "properties": {
+        "aum_fee": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "categories": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "deposit_fee": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "earnings_fee": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "image": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "kyc_donors_only": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "logo": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "maturity_time": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "name": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "profile": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "strategies": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "whitelisted_beneficiaries": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "whitelisted_contributors": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "withdraw_fee": {
+          "$ref": "#/definitions/SettingsPermissions"
+        }
+      }
+    },
+    "SettingsPermissions": {
+      "type": "object",
+      "required": [
+        "gov_controlled",
+        "modifiable_after_init",
+        "owner_controlled"
+      ],
+      "properties": {
+        "delegate": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Delegate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "gov_controlled": {
+          "type": "boolean"
+        },
+        "modifiable_after_init": {
+          "type": "boolean"
+        },
+        "owner_controlled": {
+          "type": "boolean"
+        }
+      }
+    },
+    "SocialMedialUrls": {
+      "type": "object",
+      "properties": {
+        "facebook": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "linkedin": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "twitter": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "Strategy": {
+      "type": "object",
+      "required": [
+        "percentage",
+        "vault"
+      ],
+      "properties": {
+        "percentage": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "vault": {
+          "type": "string"
+        }
+      }
+    },
+    "StrategyComponent": {
+      "type": "object",
+      "required": [
+        "percentage",
+        "vault"
+      ],
+      "properties": {
+        "percentage": {
+          "$ref": "#/definitions/Decimal"
+        },
+        "vault": {
+          "type": "string"
+        }
+      }
+    },
+    "SwapOperation": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "juno_swap"
+          ],
+          "properties": {
+            "juno_swap": {
+              "type": "object",
+              "required": [
+                "ask_asset_info",
+                "offer_asset_info"
+              ],
+              "properties": {
+                "ask_asset_info": {
+                  "$ref": "#/definitions/AssetInfoBase_for_Addr"
+                },
+                "offer_asset_info": {
+                  "$ref": "#/definitions/AssetInfoBase_for_Addr"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": [
+            "loop"
+          ],
+          "properties": {
+            "loop": {
+              "type": "object",
+              "required": [
+                "ask_asset_info",
+                "offer_asset_info"
+              ],
+              "properties": {
+                "ask_asset_info": {
+                  "$ref": "#/definitions/AssetInfoBase_for_Addr"
+                },
+                "offer_asset_info": {
+                  "$ref": "#/definitions/AssetInfoBase_for_Addr"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Threshold": {
+      "description": "This defines the different ways tallies can happen.\n\nThe total_weight used for calculating success as well as the weights of each individual voter used in tallying should be snapshotted at the beginning of the block at which the proposal starts (this is likely the responsibility of a correct cw4 implementation). See also `ThresholdResponse` in the cw3 spec.",
+      "oneOf": [
+        {
+          "description": "Declares that a fixed weight of Yes votes is needed to pass. See `ThresholdResponse.AbsoluteCount` in the cw3 spec for details.",
+          "type": "object",
+          "required": [
+            "absolute_count"
+          ],
+          "properties": {
+            "absolute_count": {
+              "type": "object",
+              "required": [
+                "weight"
+              ],
+              "properties": {
+                "weight": {
+                  "type": "integer",
+                  "format": "uint64",
+                  "minimum": 0.0
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "description": "Declares a percentage of the total weight that must cast Yes votes in order for a proposal to pass. See `ThresholdResponse.AbsolutePercentage` in the cw3 spec for details.",
+          "type": "object",
+          "required": [
+            "absolute_percentage"
+          ],
+          "properties": {
+            "absolute_percentage": {
+              "type": "object",
+              "required": [
+                "percentage"
+              ],
+              "properties": {
+                "percentage": {
+                  "$ref": "#/definitions/Decimal"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "description": "Declares a `quorum` of the total votes that must participate in the election in order for the vote to be considered at all. See `ThresholdResponse.ThresholdQuorum` in the cw3 spec for details.",
+          "type": "object",
+          "required": [
+            "threshold_quorum"
+          ],
+          "properties": {
+            "threshold_quorum": {
+              "type": "object",
+              "required": [
+                "quorum",
+                "threshold"
+              ],
+              "properties": {
+                "quorum": {
+                  "$ref": "#/definitions/Decimal"
+                },
+                "threshold": {
+                  "$ref": "#/definitions/Decimal"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "Uint128": {
+      "description": "A thin wrapper around u128 that is using strings for JSON encoding/decoding, such that the full u128 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.\n\n# Examples\n\nUse `from` to create instances of this and `u128` to get the value out:\n\n``` # use cosmwasm_std::Uint128; let a = Uint128::from(123u128); assert_eq!(a.u128(), 123);\n\nlet b = Uint128::from(42u64); assert_eq!(b.u128(), 42);\n\nlet c = Uint128::from(70u32); assert_eq!(c.u128(), 70); ```",
+      "type": "string"
+    },
+    "UpdateConfigMsg": {
+      "type": "object",
+      "required": [
+        "max_general_category_id",
+        "new_registrar"
+      ],
+      "properties": {
+        "ibc_controller": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "max_general_category_id": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "new_registrar": {
+          "type": "string"
+        },
+        "settings_controller": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/SettingsController"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "UpdateEndowmentFeesMsg": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "aum_fee": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EndowmentFee"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "deposit_fee": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EndowmentFee"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "earnings_fee": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EndowmentFee"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "id": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "withdraw_fee": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/EndowmentFee"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "UpdateEndowmentSettingsMsg": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "categories": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Categories"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "endow_type": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "image": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "kyc_donors_only": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "locked_endowment_configs": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "logo": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "maturity_time": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        },
+        "maturity_whitelist": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/UpdateMaturityWhitelist"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "name": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "owner": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "rebalance": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/RebalanceDetails"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "strategies": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "$ref": "#/definitions/StrategyComponent"
+          }
+        },
+        "tier": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint8",
+          "minimum": 0.0
+        },
+        "whitelisted_beneficiaries": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        },
+        "whitelisted_contributors": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "UpdateEndowmentStatusMsg": {
+      "type": "object",
+      "required": [
+        "endowment_id",
+        "status"
+      ],
+      "properties": {
+        "beneficiary": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Beneficiary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "endowment_id": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "status": {
+          "type": "integer",
+          "format": "uint8",
+          "minimum": 0.0
+        }
+      }
+    },
+    "UpdateMaturityWhitelist": {
+      "type": "object",
+      "required": [
+        "add",
+        "remove"
+      ],
+      "properties": {
+        "add": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "remove": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "UpdateProfileMsg": {
+      "type": "object",
+      "required": [
+        "id"
+      ],
+      "properties": {
+        "annual_revenue": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "average_annual_budget": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "charity_navigator_rating": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "contact_email": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "country_of_origin": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "facebook": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "id": {
+          "type": "integer",
+          "format": "uint32",
+          "minimum": 0.0
+        },
+        "linkedin": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "number_of_employees": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint16",
+          "minimum": 0.0
+        },
+        "overview": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "registration_number": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "street_address": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "twitter": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    }
+  }
+}

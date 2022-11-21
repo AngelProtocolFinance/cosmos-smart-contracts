@@ -1,0 +1,803 @@
+use crate::state::{CONFIG, ENDOWMENTS};
+use angel_core::errors::core::ContractError;
+use angel_core::messages::accounts::*;
+use angel_core::messages::cw3_multisig::EndowmentInstantiateMsg as Cw3InstantiateMsg;
+use angel_core::messages::registrar::QueryMsg as RegistrarQuerier;
+use angel_core::messages::registrar::QueryMsg::Config as RegistrarConfig;
+use angel_core::messages::router::ExecuteMsg as SwapRouterExecuteMsg;
+use angel_core::messages::subdao::InstantiateMsg as DaoInstantiateMsg;
+use angel_core::responses::registrar::{
+    ConfigResponse as RegistrarConfigResponse, NetworkConnectionResponse, VaultDetailResponse,
+    VaultListResponse,
+};
+use angel_core::structs::{
+    AccountStrategies, AccountType, BalanceInfo, Beneficiary, DaoSetup, DonationMatch,
+    DonationsReceived, EndowmentFee, EndowmentStatus, EndowmentType, GenericBalance, OneOffVaults,
+    RebalanceDetails, SettingsController, SplitDetails, StrategyComponent, SwapOperation,
+    VaultType, YieldVault,
+};
+use angel_core::utils::{
+    check_splits, deposit_to_vaults, validate_deposit_fund, vault_endowment_balance,
+};
+use cosmwasm_std::{
+    to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
+    ReplyOn, Response, StdError, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg, WasmQuery,
+};
+use cw20::{Balance, Cw20Coin, Cw20CoinVerified, Cw20ExecuteMsg};
+use cw4::Member;
+use cw_asset::{Asset, AssetInfo, AssetInfoBase, AssetUnchecked};
+use cw_utils::{Duration, Expiration};
+
+pub fn cw3_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
+    match msg {
+        SubMsgResult::Ok(subcall) => {
+            let mut id: u32 = 0;
+            let mut owner: Addr = Addr::unchecked("");
+            for event in subcall.events {
+                if event.ty == *"wasm" {
+                    for attrb in event.attributes {
+                        // This value comes from the custom attrbiute
+                        match attrb.key.as_str() {
+                            "multisig_addr" => {
+                                owner = deps.api.addr_validate(&attrb.value)?;
+                            }
+                            "endow_id" => id = attrb.value.parse().unwrap(),
+                            _ => (),
+                        }
+                    }
+                }
+            }
+            if id == 0 || owner == Addr::unchecked("") {
+                return Err(ContractError::AccountNotCreated {});
+            }
+            let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
+            endowment.owner = owner;
+            ENDOWMENTS.save(deps.storage, id, &endowment)?;
+
+            // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
+            Ok(Response::default().add_attribute("endow_owner", endowment.owner.to_string()))
+        }
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
+    }
+}
+
+pub fn dao_reply(deps: DepsMut, _env: Env, msg: SubMsgResult) -> Result<Response, ContractError> {
+    match msg {
+        SubMsgResult::Ok(subcall) => {
+            let mut id: u32 = 0;
+            let mut dao: Addr = Addr::unchecked("");
+            let mut dao_token: Addr = Addr::unchecked("");
+            for event in subcall.events {
+                if event.ty == *"wasm" {
+                    for attrb in event.attributes {
+                        // This value comes from the custom attrbiute
+                        match attrb.key.as_str() {
+                            "endow_id" => id = attrb.value.parse().unwrap(),
+                            "dao_addr" => dao = deps.api.addr_validate(&attrb.value)?,
+                            "dao_token_addr" => dao_token = deps.api.addr_validate(&attrb.value)?,
+                            _ => (),
+                        }
+                    }
+                }
+            }
+            if id == 0 || dao == Addr::unchecked("") || dao_token == Addr::unchecked("") {
+                return Err(ContractError::AccountNotCreated {});
+            }
+            let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
+            endowment.dao = Some(dao);
+            endowment.dao_token = Some(dao_token);
+            ENDOWMENTS.save(deps.storage, id, &endowment)?;
+
+            // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
+            Ok(Response::default()
+                .add_attribute("endow_dao", endowment.dao.unwrap())
+                .add_attribute("endow_dao_token", endowment.dao_token.unwrap()))
+        }
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
+    }
+}
+
+pub fn donation_match_reply(
+    deps: DepsMut,
+    _env: Env,
+    msg: SubMsgResult,
+) -> Result<Response, ContractError> {
+    match msg {
+        SubMsgResult::Ok(subcall) => {
+            let mut id: u32 = 0;
+            let mut donation_match_contract: Addr = Addr::unchecked("");
+            for event in subcall.events {
+                if event.ty == *"wasm" {
+                    for attrb in event.attributes {
+                        // This value comes from the custom attrbiute
+                        match attrb.key.as_str() {
+                            "donation_match_addr" => {
+                                donation_match_contract = deps.api.addr_validate(&attrb.value)?
+                            }
+                            "endow_id" => id = attrb.value.parse().unwrap(),
+                            _ => (),
+                        }
+                    }
+                }
+            }
+            if id == 0 || donation_match_contract == Addr::unchecked("") {
+                return Err(ContractError::AccountNotCreated {});
+            }
+            let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
+            endowment.donation_match_contract = Some(donation_match_contract);
+            ENDOWMENTS.save(deps.storage, id, &endowment)?;
+
+            // set new CW3 as endowment owner to be picked up by the Registrar (EndowmentEntry)
+            Ok(Response::default().add_attribute(
+                "endow_donation_match_contract",
+                endowment.donation_match_contract.unwrap(),
+            ))
+        }
+        SubMsgResult::Err(err) => Err(ContractError::Std(StdError::GenericErr { msg: err })),
+    }
+}
+
+pub fn update_owner(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    new_owner: String,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    config.owner = deps.api.addr_validate(&new_owner)?;
+    CONFIG.save(deps.storage, &config)?;
+
+    Ok(Response::default())
+}
+
+pub fn update_config(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    msg: UpdateConfigMsg,
+) -> Result<Response, ContractError> {
+    let mut config = CONFIG.load(deps.storage)?;
+
+    // only the accounts owner can update the config
+    if info.sender != config.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    config.registrar_contract = deps.api.addr_validate(&msg.new_registrar)?;
+    config.max_general_category_id = msg.max_general_category_id;
+    config.ibc_controller = match msg.ibc_controller {
+        Some(addr) => deps.api.addr_validate(&addr)?,
+        None => config.ibc_controller,
+    };
+
+    CONFIG.save(deps.storage, &config)?;
+    Ok(Response::default())
+}
+
+pub fn update_endowment_settings(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: UpdateEndowmentSettingsMsg,
+) -> Result<Response, ContractError> {
+    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
+    let config = CONFIG.load(deps.storage)?;
+
+    let state = STATES.load(deps.storage, msg.id)?;
+    if state.closing_endowment {
+        return Err(ContractError::UpdatesAfterClosed {});
+    }
+
+    if !(info.sender == config.owner || info.sender == endowment.owner) {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    // Only config.owner can update owner, tier and endowment_type fields
+    if info.sender == config.owner {
+        endowment.tier = msg.tier;
+        if let Some(owner) = msg.owner {
+            endowment.owner = deps.api.addr_validate(&owner)?;
+        }
+        if let Some(endow_type) = msg.endow_type {
+            endowment.endow_type = match endow_type.as_str() {
+                "charity" => EndowmentType::Charity,
+                "normal" => EndowmentType::Normal,
+                _ => return Err(ContractError::InvalidInputs {}),
+            };
+        }
+        ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
+        return Ok(Response::new().add_attribute("action", "update_endowment_settings"));
+    }
+
+    if info.sender.ne(&endowment.owner)
+        && (endowment.dao.is_some() && info.sender != *endowment.dao.as_ref().unwrap())
+    {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    endowment.owner = match msg.owner {
+        Some(i) => {
+            // only the endowment owner can update these configs
+            if info.sender != endowment.owner {
+                return Err(ContractError::Unauthorized {});
+            }
+            deps.api.addr_validate(&i)?
+        }
+        None => endowment.owner,
+    };
+
+    // only normalized endowments can update certain settings (ie. Charity Endowments have more fixed settings)
+    if endowment.endow_type != EndowmentType::Charity {
+        if let Some(whitelisted_beneficiaries) = msg.whitelisted_beneficiaries {
+            let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+            if env.block.time.seconds() < endow_mature_time {
+                if endowment
+                    .settings_controller
+                    .whitelisted_beneficiaries
+                    .can_change(
+                        &info.sender,
+                        &endowment.owner,
+                        endowment.dao.as_ref(),
+                        env.block.time,
+                    )
+                {
+                    endowment.whitelisted_beneficiaries = whitelisted_beneficiaries;
+                }
+            }
+        }
+        if let Some(whitelisted_contributors) = msg.whitelisted_contributors {
+            let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+            if env.block.time.seconds() < endow_mature_time {
+                if endowment
+                    .settings_controller
+                    .whitelisted_contributors
+                    .can_change(
+                        &info.sender,
+                        &endowment.owner,
+                        endowment.dao.as_ref(),
+                        env.block.time,
+                    )
+                {
+                    endowment.whitelisted_contributors = whitelisted_contributors;
+                }
+            }
+        }
+        endowment.maturity_time = match msg.maturity_time {
+            Some(i) => {
+                if endowment.settings_controller.maturity_time.can_change(
+                    &info.sender,
+                    &endowment.owner,
+                    endowment.dao.as_ref(),
+                    env.block.time,
+                ) {
+                    i
+                } else {
+                    endowment.maturity_time
+                }
+            }
+            None => endowment.maturity_time,
+        };
+        endowment.rebalance = match msg.rebalance {
+            Some(i) => i,
+            None => endowment.rebalance,
+        };
+    }
+
+    // validate address strings passed
+    if endowment.settings_controller.kyc_donors_only.can_change(
+        &info.sender,
+        &endowment.owner,
+        endowment.dao.as_ref(),
+        env.block.time,
+    ) {
+        endowment.kyc_donors_only = match msg.kyc_donors_only {
+            Some(i) => i,
+            None => endowment.kyc_donors_only,
+        };
+    }
+
+    if let Some(whitelist) = msg.maturity_whitelist {
+        let endow_mature_time = endowment.maturity_time.expect("Cannot get maturity time");
+        if env.block.time.seconds() < endow_mature_time {
+            let UpdateMaturityWhitelist { add, remove } = whitelist;
+            for addr in add {
+                let validated_addr = deps.api.addr_validate(&addr)?;
+                endowment.maturity_whitelist.push(validated_addr);
+            }
+            for addr in remove {
+                let validated_addr = deps.api.addr_validate(&addr)?;
+                let id = endowment
+                    .maturity_whitelist
+                    .iter()
+                    .position(|v| *v == validated_addr);
+                if let Some(id) = id {
+                    endowment.maturity_whitelist.swap_remove(id);
+                }
+            }
+        }
+    }
+
+    endowment.name = match msg.name.clone() {
+        Some(name) => {
+            if endowment.settings_controller.name.can_change(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+                env.block.time,
+            ) {
+                name
+            } else {
+                endowment.name
+            }
+        }
+        None => endowment.name,
+    };
+    endowment.categories = match msg.categories {
+        Some(categories) => {
+            if endowment.settings_controller.categories.can_change(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+                env.block.time,
+            ) {
+                // check that at least 1 SDG category is set for charity endowments
+                if endowment.endow_type == EndowmentType::Charity {
+                    if endowment.categories.sdgs.is_empty() {
+                        return Err(ContractError::InvalidInputs {});
+                    }
+                    endowment.categories.sdgs.sort();
+                    for item in endowment.categories.sdgs.clone().into_iter() {
+                        if item > 17 || item == 0 {
+                            return Err(ContractError::InvalidInputs {});
+                        }
+                    }
+                }
+                if !endowment.categories.general.is_empty() {
+                    endowment.categories.general.sort();
+                    if endowment.categories.general.last().unwrap()
+                        > &config.max_general_category_id
+                    {
+                        return Err(ContractError::InvalidInputs {});
+                    }
+                }
+                categories
+            } else {
+                endowment.categories
+            }
+        }
+        None => endowment.categories,
+    };
+    endowment.logo = match msg.logo.clone() {
+        Some(logo) => {
+            if endowment.settings_controller.logo.can_change(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+                env.block.time,
+            ) {
+                Some(logo)
+            } else {
+                endowment.logo
+            }
+        }
+        None => endowment.logo,
+    };
+    endowment.image = match msg.image.clone() {
+        Some(image) => {
+            if endowment.settings_controller.image.can_change(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+                env.block.time,
+            ) {
+                Some(image)
+            } else {
+                endowment.image
+            }
+        }
+        None => endowment.image,
+    };
+
+    endowment.settings_controller = match msg.settings_controller.clone() {
+        Some(controller) => {
+            if endowment.settings_controller.image.can_change(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+                env.block.time,
+            ) {
+                controller
+            } else {
+                endowment.settings_controller
+            }
+        }
+        None => endowment.settings_controller,
+    };
+    ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
+
+    Ok(Response::new().add_attribute("action", "update_endowment_settings"))
+}
+
+pub fn update_delegate(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    id: u32,
+    setting: String,
+    action: String,
+    delegate_address: String,
+    delegate_expiry: Option<u64>,
+) -> Result<Response, ContractError> {
+    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
+
+    // grab a setting's permissions from SettingsController
+    let mut permissions = endowment
+        .settings_controller
+        .get_permissions(setting.clone())?;
+
+    // update the delegate field appropraitely based on action
+    match action.as_str() {
+        "set" => {
+            permissions.set_delegate(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+                deps.api.addr_validate(&delegate_address)?,
+                delegate_expiry,
+            );
+        }
+        "revoke" => {
+            permissions.revoke_delegate(
+                &info.sender,
+                &endowment.owner,
+                endowment.dao.as_ref(),
+                env.block.time,
+            );
+        }
+        _ => unimplemented!(),
+    }
+
+    // save mutated permissions back to SettingsController
+    endowment
+        .settings_controller
+        .set_permissions(setting, permissions)?;
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
+
+    Ok(Response::default().add_attribute("action", "update_delegate"))
+}
+
+pub fn update_strategies(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    id: u32,
+    acct_type: AccountType,
+    strategies: Vec<Strategy>,
+) -> Result<Response, ContractError> {
+    let config = CONFIG.load(deps.storage)?;
+    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
+
+    if info.sender != endowment.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let state = STATES.load(deps.storage, id)?;
+    if state.closing_endowment {
+        return Err(ContractError::UpdatesAfterClosed {});
+    }
+
+    if endowment.pending_redemptions != 0 {
+        return Err(ContractError::RedemptionInProgress {});
+    }
+
+    let mut addresses: Vec<Addr> = strategies
+        .iter()
+        .map(|strategy| deps.api.addr_validate(&strategy.vault).unwrap())
+        .collect();
+    addresses.sort();
+    addresses.dedup();
+
+    if addresses.len() < strategies.len() {
+        return Err(ContractError::StrategyComponentsNotUnique {});
+    };
+
+    // Check that all strategies supplied can be invested in by this type of Endowment
+    // ie. There are no restricted or non-approved vaults in the proposed Strategies setup
+    let allowed: VaultListResponse = deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+        contract_addr: config.registrar_contract.to_string(),
+        msg: to_binary(&RegistrarQuerier::VaultList {
+            approved: Some(true),
+            endowment_type: Some(endowment.endow_type.clone()),
+            acct_type: Some(acct_type.clone()),
+            vault_type: None,
+            network: None,
+            start_after: None,
+            limit: None,
+        })?,
+    }))?;
+
+    let mut percentages_sum = Decimal::zero();
+    let mut new_strategies = vec![];
+    for strategy in strategies.iter() {
+        match allowed
+            .vaults
+            .iter()
+            .position(|v| v.address == strategy.vault)
+        {
+            None => return Err(ContractError::InvalidInputs {}),
+            Some(_) => {
+                percentages_sum += strategy.percentage;
+                // update endowment strategies attribute with all newly passed strategies
+                new_strategies.push(StrategyComponent {
+                    vault: deps.api.addr_validate(&strategy.vault.clone())?.to_string(),
+                    percentage: strategy.percentage,
+                });
+            }
+        }
+    }
+
+    // An endowment cannot have over 100% of strategy allocations
+    // Sub-100%: leftover goes into "Tokens on Hand"
+    if percentages_sum > Decimal::one() {
+        return Err(ContractError::InvalidStrategyAllocation {});
+    }
+
+    endowment
+        .strategies
+        .set(acct_type.clone(), new_strategies.clone());
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
+
+    Ok(Response::new().add_attribute("action", "update_strategies"))
+}
+
+pub fn copycat_strategies(
+    deps: DepsMut,
+    info: MessageInfo,
+    id: u32,
+    acct_type: AccountType,
+    id_to_copy: u32,
+) -> Result<Response, ContractError> {
+    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
+    if endowment.owner != info.sender {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    let copied_endowment = ENDOWMENTS.load(deps.storage, id_to_copy)?;
+    if copied_endowment.strategies.get(acct_type).is_empty() {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Attempting to copy an endowment with no set strategy for that account type"
+                .to_string(),
+        }));
+    }
+
+    if endowment.copycat_strategy == Some(id_to_copy) {
+        return Err(ContractError::Std(StdError::GenericErr {
+            msg: "Attempting re-set the same copycat endowment ID".to_string(),
+        }));
+    }
+
+    // set new copycat id
+    endowment.copycat_strategy = Some(id_to_copy);
+    ENDOWMENTS.save(deps.storage, id, &endowment)?;
+
+    Ok(Response::new())
+}
+
+pub fn update_endowment_fees(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    msg: UpdateEndowmentFeesMsg,
+) -> Result<Response, ContractError> {
+    let mut endowment = ENDOWMENTS.load(deps.storage, msg.id)?;
+
+    // only normalized endowments can update the additional fees
+    if endowment.endow_type != EndowmentType::Charity {
+        return Err(ContractError::Std(StdError::generic_err(
+            "Charity Endowments may not change endowment fees",
+        )));
+    }
+
+    // Update the "EndowmentFee"s
+    if endowment.settings_controller.earnings_fee.can_change(
+        &info.sender,
+        &endowment.owner,
+        endowment.dao.as_ref(),
+        env.block.time,
+    ) {
+        endowment.earnings_fee = msg.earnings_fee;
+    }
+
+    if endowment.settings_controller.deposit_fee.can_change(
+        &info.sender,
+        &endowment.owner,
+        endowment.dao.as_ref(),
+        env.block.time,
+    ) {
+        endowment.deposit_fee = msg.deposit_fee;
+    }
+
+    if endowment.settings_controller.withdraw_fee.can_change(
+        &info.sender,
+        &endowment.owner,
+        endowment.dao.as_ref(),
+        env.block.time,
+    ) {
+        endowment.withdraw_fee = msg.withdraw_fee;
+    }
+
+    if endowment.settings_controller.aum_fee.can_change(
+        &info.sender,
+        &endowment.owner,
+        endowment.dao.as_ref(),
+        env.block.time,
+    ) {
+        endowment.aum_fee = msg.aum_fee;
+    }
+
+    ENDOWMENTS.save(deps.storage, msg.id, &endowment)?;
+
+    Ok(Response::new()
+        .add_attribute("action", "update_endowment_fees")
+        .add_attribute("sender", info.sender.to_string()))
+}
+
+pub fn setup_dao(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    endowment_id: u32,
+    msg: DaoSetup,
+) -> Result<Response, ContractError> {
+    let endowment = ENDOWMENTS.load(deps.storage, endowment_id)?;
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender != endowment.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    if endowment.dao.is_some() {
+        return Err(ContractError::Std(StdError::generic_err(
+            "A DAO already exists for this Endowment",
+        )));
+    }
+
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+
+    Ok(Response::new().add_submessage(SubMsg {
+        id: 1,
+        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+            code_id: registrar_config.subdao_gov_code.unwrap(),
+            admin: None,
+            label: "new endowment dao contract".to_string(),
+            msg: to_binary(&DaoInstantiateMsg {
+                id: endowment_id,
+                quorum: msg.quorum,
+                threshold: msg.threshold,
+                voting_period: msg.voting_period,
+                timelock_period: msg.timelock_period,
+                expiration_period: msg.expiration_period,
+                proposal_deposit: msg.proposal_deposit,
+                snapshot_period: msg.snapshot_period,
+                token: msg.token,
+                endow_type: endowment.endow_type,
+                endow_owner: endowment.owner.to_string(),
+                registrar_contract: config.registrar_contract.to_string(),
+            })?,
+            funds: vec![],
+        }),
+        gas_limit: None,
+        reply_on: ReplyOn::Success,
+    }))
+}
+
+pub fn setup_donation_match(
+    deps: DepsMut,
+    _env: Env,
+    info: MessageInfo,
+    endowment_id: u32,
+    setup: DonationMatch,
+) -> Result<Response, ContractError> {
+    let endowment = ENDOWMENTS.load(deps.storage, endowment_id)?;
+    let config = CONFIG.load(deps.storage)?;
+
+    if info.sender != endowment.owner {
+        return Err(ContractError::Unauthorized {});
+    }
+
+    if endowment.dao.is_some() {
+        return Err(ContractError::Std(StdError::generic_err(
+            "A DAO does not exist yet for this Endowment. Please set that up first.",
+        )));
+    }
+
+    if endowment.donation_match_contract.is_some() {
+        return Err(ContractError::Std(StdError::generic_err(
+            "A Donation Match contract already exists for this Endowment",
+        )));
+    }
+
+    let registrar_config: RegistrarConfigResponse =
+        deps.querier.query(&QueryRequest::Wasm(WasmQuery::Smart {
+            contract_addr: config.registrar_contract.to_string(),
+            msg: to_binary(&RegistrarQuerier::Config {})?,
+        }))?;
+
+    let mut res = Response::default();
+    let match_code = match registrar_config.donation_match_code {
+        Some(match_code) => match_code,
+        None => {
+            return Err(ContractError::Std(StdError::GenericErr {
+                msg: "No code id for donation matching contract".to_string(),
+            }))
+        }
+    };
+    match setup {
+        DonationMatch::HaloTokenReserve {} => {
+            match (
+                registrar_config.halo_token,
+                registrar_config.halo_token_lp_contract,
+            ) {
+                (Some(reserve_addr), Some(lp_addr)) => {
+                    res = res.add_submessage(SubMsg {
+                        id: 2,
+                        msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                            code_id: match_code,
+                            admin: None,
+                            label: "new donation match contract".to_string(),
+                            msg: to_binary(
+                                &angel_core::messages::donation_match::InstantiateMsg {
+                                    id: endowment_id,
+                                    reserve_token: reserve_addr,
+                                    lp_pair: lp_addr,
+                                    registrar_contract: config.registrar_contract.to_string(),
+                                },
+                            )?,
+                            funds: vec![],
+                        }),
+                        gas_limit: None,
+                        reply_on: ReplyOn::Success,
+                    });
+                }
+                _ => {
+                    return Err(ContractError::Std(StdError::GenericErr {
+                        msg: "HALO Token is not setup to be a reserve token".to_string(),
+                    }))
+                }
+            }
+        }
+        DonationMatch::Cw20TokenReserve {
+            reserve_addr,
+            lp_addr,
+        } => {
+            res = res.add_submessage(SubMsg {
+                id: 2,
+                msg: CosmosMsg::Wasm(WasmMsg::Instantiate {
+                    code_id: match_code,
+                    admin: None,
+                    label: "new donation match contract".to_string(),
+                    msg: to_binary(&angel_core::messages::donation_match::InstantiateMsg {
+                        id: endowment_id,
+                        reserve_token: reserve_addr,
+                        lp_pair: lp_addr,
+                        registrar_contract: config.registrar_contract.to_string(),
+                    })?,
+                    funds: vec![],
+                }),
+                gas_limit: None,
+                reply_on: ReplyOn::Success,
+            });
+        }
+    }
+
+    Ok(res)
+}

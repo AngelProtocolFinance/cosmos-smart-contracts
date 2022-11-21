@@ -1,0 +1,144 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "InstantiateMsg",
+  "type": "object",
+  "required": [
+    "owner_sc",
+    "registrar_contract"
+  ],
+  "properties": {
+    "owner_sc": {
+      "type": "string"
+    },
+    "registrar_contract": {
+      "type": "string"
+    },
+    "settings_controller": {
+      "anyOf": [
+        {
+          "$ref": "#/definitions/SettingsController"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "Addr": {
+      "description": "A human readable address.\n\nIn Cosmos, this is typically bech32 encoded. But for multi-chain smart contracts no assumptions should be made other than being UTF-8 encoded and of reasonable length.\n\nThis type represents a validated address. It can be created in the following ways 1. Use `Addr::unchecked(input)` 2. Use `let checked: Addr = deps.api.addr_validate(input)?` 3. Use `let checked: Addr = deps.api.addr_humanize(canonical_addr)?` 4. Deserialize from JSON. This must only be done from JSON that was validated before such as a contract's state. `Addr` must not be used in messages sent by the user because this would result in unvalidated instances.\n\nThis type is immutable. If you really need to mutate it (Really? Are you sure?), create a mutable copy using `let mut mutable = Addr::to_string()` and operate on that `String` instance.",
+      "type": "string"
+    },
+    "Delegate": {
+      "type": "object",
+      "required": [
+        "address"
+      ],
+      "properties": {
+        "address": {
+          "$ref": "#/definitions/Addr"
+        },
+        "expires": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "format": "uint64",
+          "minimum": 0.0
+        }
+      }
+    },
+    "SettingsController": {
+      "type": "object",
+      "required": [
+        "aum_fee",
+        "categories",
+        "deposit_fee",
+        "earnings_fee",
+        "image",
+        "kyc_donors_only",
+        "logo",
+        "maturity_time",
+        "name",
+        "profile",
+        "strategies",
+        "whitelisted_beneficiaries",
+        "whitelisted_contributors",
+        "withdraw_fee"
+      ],
+      "properties": {
+        "aum_fee": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "categories": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "deposit_fee": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "earnings_fee": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "image": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "kyc_donors_only": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "logo": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "maturity_time": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "name": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "profile": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "strategies": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "whitelisted_beneficiaries": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "whitelisted_contributors": {
+          "$ref": "#/definitions/SettingsPermissions"
+        },
+        "withdraw_fee": {
+          "$ref": "#/definitions/SettingsPermissions"
+        }
+      }
+    },
+    "SettingsPermissions": {
+      "type": "object",
+      "required": [
+        "gov_controlled",
+        "modifiable_after_init",
+        "owner_controlled"
+      ],
+      "properties": {
+        "delegate": {
+          "anyOf": [
+            {
+              "$ref": "#/definitions/Delegate"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "gov_controlled": {
+          "type": "boolean"
+        },
+        "modifiable_after_init": {
+          "type": "boolean"
+        },
+        "owner_controlled": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
