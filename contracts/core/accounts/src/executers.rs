@@ -118,7 +118,6 @@ pub fn create_endowment(
                 status: EndowmentStatus::Approved,
                 deposit_approved: true,
                 withdraw_approved: true,
-                withdraw_before_maturity: msg.withdraw_before_maturity,
                 maturity_height: msg.maturity_height,
                 maturity_time: msg.maturity_time,
                 strategies: AccountStrategies::default(),
@@ -1530,9 +1529,8 @@ pub fn withdraw(
             if info.sender != endowment.owner {
                 return Err(ContractError::Unauthorized {});
             }
-            if !endowment.withdraw_before_maturity
-                || (endowment.maturity_time != None
-                    && Timestamp::from_seconds(endowment.maturity_time.unwrap()) <= env.block.time)
+            if endowment.maturity_time == None
+                || env.block.time < Timestamp::from_seconds(endowment.maturity_time.unwrap())
             {
                 return Err(ContractError::Std(StdError::generic_err(
                     "Endowment is not mature. Cannot withdraw before maturity time is reached.",

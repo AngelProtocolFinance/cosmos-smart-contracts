@@ -58,7 +58,6 @@ fn create_endowment() -> (
         tier: Some(3),
         logo: Some("Some fancy logo".to_string()),
         image: Some("Nice banner image".to_string()),
-        withdraw_before_maturity: false,
         maturity_time: None,
         maturity_height: None,
         profile: profile,

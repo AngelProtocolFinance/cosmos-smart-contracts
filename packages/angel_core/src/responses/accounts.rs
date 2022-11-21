@@ -31,7 +31,6 @@ pub struct EndowmentDetailsResponse {
     pub owner: Addr,
     pub status: EndowmentStatus,
     pub endow_type: EndowmentType,
-    pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
     pub maturity_height: Option<u64>,
     pub strategies: AccountStrategies,

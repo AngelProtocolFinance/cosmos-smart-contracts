@@ -277,7 +277,6 @@ pub fn migrate(deps: DepsMut, _env: Env, _msg: MigrateMsg) -> Result<Response, C
                 pending_redemptions: old_endow.pending_redemptions,
                 proposal_link: old_endow.proposal_link,
 
-                withdraw_before_maturity: old_endow.withdraw_before_maturity,
                 maturity_height: old_endow.maturity_height,
             },
         )?;
