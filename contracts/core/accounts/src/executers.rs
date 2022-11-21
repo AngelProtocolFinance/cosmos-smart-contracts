@@ -126,7 +126,6 @@ pub fn create_endowment(
                 rebalance: RebalanceDetails::default(),
                 kyc_donors_only: msg.kyc_donors_only,
                 pending_redemptions: 0_u8,
-                copycat_strategy: None,
                 tier: msg.tier.clone(),
                 logo: msg.logo.clone(),
                 image: msg.image.clone(),
@@ -536,39 +535,6 @@ pub fn update_strategies(
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new().add_attribute("action", "update_strategies"))
-}
-
-pub fn copycat_strategies(
-    deps: DepsMut,
-    info: MessageInfo,
-    id: u32,
-    acct_type: AccountType,
-    id_to_copy: u32,
-) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
-    if endowment.owner != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let copied_endowment = ENDOWMENTS.load(deps.storage, id_to_copy)?;
-    if copied_endowment.strategies.get(acct_type).is_empty() {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Attempting to copy an endowment with no set strategy for that account type"
-                .to_string(),
-        }));
-    }
-
-    if endowment.copycat_strategy == Some(id_to_copy) {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Attempting re-set the same copycat endowment ID".to_string(),
-        }));
-    }
-
-    // set new copycat id
-    endowment.copycat_strategy = Some(id_to_copy);
-    ENDOWMENTS.save(deps.storage, id, &endowment)?;
-
-    Ok(Response::new())
 }
 
 pub fn swap_token(

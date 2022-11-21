@@ -22,6 +22,31 @@ pub struct Config {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
+pub struct OldEndowment {
+    pub owner: Addr,
+    pub name: String,
+    pub categories: Categories,
+    pub tier: Option<u8>,
+    pub endow_type: EndowmentType,
+    pub logo: Option<String>,
+    pub image: Option<String>,
+    pub status: EndowmentStatus,
+    pub deposit_approved: bool,
+    pub withdraw_approved: bool,
+    pub withdraw_before_maturity: bool,
+    pub maturity_time: Option<u64>,
+    pub maturity_height: Option<u64>,
+    pub strategies: AccountStrategies,
+    pub oneoff_vaults: OneOffVaults,
+    pub rebalance: RebalanceDetails,
+    pub kyc_donors_only: bool,
+    pub pending_redemptions: u8,
+    pub copycat_strategy: Option<u32>,
+    pub proposal_link: Option<u64>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
+#[serde(rename_all = "snake_case")]
 pub struct Endowment {
     pub owner: Addr,
     pub name: String,           // name of the Endowment
@@ -41,7 +66,6 @@ pub struct Endowment {
     pub rebalance: RebalanceDetails, // parameters to guide rebalancing & harvesting of gains from locked/liquid accounts
     pub kyc_donors_only: bool, // allow owner to state a preference for receiving only kyc'd donations (where possible)
     pub pending_redemptions: u8, // number of vault redemptions currently pending for this endowment
-    pub copycat_strategy: Option<u32>, // endowment ID to copy their strategy
     pub proposal_link: Option<u64>, // link back the CW3 Proposal that created an endowment
 }
 

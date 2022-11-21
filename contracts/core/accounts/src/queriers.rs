@@ -129,7 +129,6 @@ pub fn query_endowment_details(deps: Deps, id: u32) -> StdResult<EndowmentDetail
         deposit_approved: endowment.deposit_approved,
         withdraw_approved: endowment.withdraw_approved,
         pending_redemptions: endowment.pending_redemptions,
-        copycat_strategy: endowment.copycat_strategy,
         proposal_link: endowment.proposal_link,
         name: endowment.name,
         tier: endowment.tier,

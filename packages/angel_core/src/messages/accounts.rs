@@ -69,12 +69,6 @@ pub enum ExecuteMsg {
         acct_type: AccountType,
         vaults: Vec<(String, Uint128)>,
     },
-    // set another endowment's strategy to "copycat" as your own
-    CopycatStrategies {
-        id: u32,
-        acct_type: AccountType,
-        id_to_copy: u32,
-    },
     // create a new endowment
     CreateEndowment(CreateEndowmentMsg),
     // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.

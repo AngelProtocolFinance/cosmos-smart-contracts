@@ -46,7 +46,6 @@ pub struct EndowmentDetailsResponse {
     pub name: String,
     pub categories: Categories,
     pub tier: Option<u8>,
-    pub copycat_strategy: Option<u32>,
     pub proposal_link: Option<u64>,
 }
 

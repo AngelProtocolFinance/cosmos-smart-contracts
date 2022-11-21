@@ -410,7 +410,6 @@ fn test_update_strategy() {
             percentage: Decimal::percent(100),
         }]
     );
-    assert_eq!(endowment.copycat_strategy, None);
 }
 
 #[test]
@@ -879,124 +878,6 @@ fn test_close_endowment() {
             address: CHARITY_ADDR.to_string()
         })
     );
-}
-
-#[test]
-fn test_copycat_strategies() {
-    let TEST_ENDOWMENT_ID = 2_u32;
-
-    let (mut deps, env, _acct_contract, _endow_details) = create_endowment();
-
-    // Create one more endowment for tests
-    let profile: Profile = Profile {
-        overview: "Endowment to power an amazing charity".to_string(),
-        url: Some("nice-charity.org".to_string()),
-        registration_number: Some("1234567".to_string()),
-        country_of_origin: Some("GB".to_string()),
-        street_address: Some("10 Downing St".to_string()),
-        contact_email: Some("admin@nice-charity.org".to_string()),
-        social_media_urls: SocialMedialUrls {
-            facebook: None,
-            twitter: Some("https://twitter.com/nice-charity".to_string()),
-            linkedin: None,
-        },
-        number_of_employees: Some(10),
-        average_annual_budget: Some("1 Million Pounds".to_string()),
-        annual_revenue: Some("Not enough".to_string()),
-        charity_navigator_rating: None,
-    };
-
-    let create_endowment_msg = CreateEndowmentMsg {
-        owner: CHARITY_ADDR.to_string(),
-        name: "Test Endowment".to_string(),
-        withdraw_before_maturity: false,
-        maturity_time: None,
-        maturity_height: None,
-        profile: profile,
-        cw4_members: vec![],
-        kyc_donors_only: true,
-        cw3_threshold: Threshold::AbsolutePercentage {
-            percentage: Decimal::percent(10),
-        },
-        cw3_max_voting_period: 60,
-        proposal_link: None,
-        categories: Categories {
-            sdgs: vec![2],
-            general: vec![],
-        },
-        tier: Some(3),
-        logo: Some("Some fancy logo".to_string()),
-        image: Some("Nice banner image".to_string()),
-        endow_type: EndowmentType::Normal,
-    };
-    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
-    let _ = execute(
-        deps.as_mut(),
-        env.clone(),
-        info,
-        ExecuteMsg::CreateEndowment(create_endowment_msg),
-    )
-    .unwrap();
-
-    // Fail to copycat the strategy since unauthorized call
-    let info = mock_info("anyone", &[]);
-    let msg = ExecuteMsg::CopycatStrategies {
-        id: TEST_ENDOWMENT_ID,
-        acct_type: AccountType::Locked,
-        id_to_copy: CHARITY_ID,
-    };
-    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-    assert_eq!(err, ContractError::Unauthorized {});
-
-    // Fail to copycat the strategies since stratgies to be copied are empty
-    let info = mock_info(CHARITY_ADDR, &[]);
-    let msg = ExecuteMsg::CopycatStrategies {
-        id: TEST_ENDOWMENT_ID,
-        acct_type: AccountType::Locked,
-        id_to_copy: CHARITY_ID,
-    };
-    let err = execute(deps.as_mut(), mock_env(), info, msg).unwrap_err();
-    assert_eq!(
-        err,
-        ContractError::Std(StdError::GenericErr {
-            msg: "Attempting to copy an endowment with no set strategy for that account type"
-                .to_string(),
-        })
-    );
-
-    // Suceed to copycat the strategies
-    // First, update the strategies for CHARITY_ID endowment
-    let msg = ExecuteMsg::UpdateStrategies {
-        id: CHARITY_ID,
-        acct_type: AccountType::Locked,
-        strategies: vec![Strategy {
-            vault: "tech_strategy_component_addr".to_string(),
-            percentage: Decimal::percent(100),
-        }],
-    };
-    let info = mock_info(CHARITY_ADDR, &coins(100000, "earth"));
-    let _ = execute(deps.as_mut(), env.clone(), info, msg).unwrap();
-
-    // Try to copycat the strategies
-    let info = mock_info(CHARITY_ADDR, &[]);
-    let msg = ExecuteMsg::CopycatStrategies {
-        id: TEST_ENDOWMENT_ID,
-        acct_type: AccountType::Locked,
-        id_to_copy: CHARITY_ID,
-    };
-    let _res = execute(deps.as_mut(), mock_env(), info, msg).unwrap();
-
-    // Check the result
-    let res = query(
-        deps.as_ref(),
-        mock_env(),
-        QueryMsg::Endowment {
-            id: TEST_ENDOWMENT_ID,
-        },
-    )
-    .unwrap();
-    let endow_detail: EndowmentDetailsResponse = from_binary(&res).unwrap();
-    assert_eq!(endow_detail.copycat_strategy, Some(CHARITY_ID));
 }
 
 #[test]
