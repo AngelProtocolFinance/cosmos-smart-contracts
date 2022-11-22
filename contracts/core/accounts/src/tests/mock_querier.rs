@@ -70,7 +70,6 @@ pub fn mock_dependencies(
 pub struct WasmMockQuerier {
     base: MockQuerier<Empty>,
     token_querier: TokenQuerier,
-    terraswap_factory_querier: TerraswapFactoryQuerier,
     oracle_price_querier: OraclePriceQuerier,
     oracle_prices_querier: OraclePricesQuerier,
 }
@@ -178,19 +177,6 @@ pub(crate) fn oracle_prices_to_map(
     }
 
     oracle_prices_map
-}
-
-#[derive(Clone, Default)]
-pub struct TerraswapFactoryQuerier {
-    pairs: HashMap<String, String>,
-}
-
-impl TerraswapFactoryQuerier {
-    pub fn new(pairs: &[(&String, &String)]) -> Self {
-        TerraswapFactoryQuerier {
-            pairs: pairs_to_map(pairs),
-        }
-    }
 }
 
 pub(crate) fn pairs_to_map(pairs: &[(&String, &String)]) -> HashMap<String, String> {
@@ -457,7 +443,6 @@ impl WasmMockQuerier {
         WasmMockQuerier {
             base,
             token_querier: TokenQuerier::default(),
-            terraswap_factory_querier: TerraswapFactoryQuerier::default(),
             oracle_price_querier: OraclePriceQuerier::default(),
             oracle_prices_querier: OraclePricesQuerier::default(),
         }
@@ -466,11 +451,6 @@ impl WasmMockQuerier {
     // configure the mint whitelist mock querier
     pub fn with_token_balances(&mut self, balances: &[(&String, &[(&String, &Uint128)])]) {
         self.token_querier = TokenQuerier::new(balances);
-    }
-
-    // configure the terraswap pair
-    pub fn with_terraswap_pairs(&mut self, pairs: &[(&String, &String)]) {
-        self.terraswap_factory_querier = TerraswapFactoryQuerier::new(pairs);
     }
 
     //  Configure oracle price

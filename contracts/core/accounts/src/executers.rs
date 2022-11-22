@@ -19,8 +19,7 @@ use angel_core::utils::{
 };
 use cosmwasm_std::{
     to_binary, Addr, BankMsg, Coin, CosmosMsg, Decimal, DepsMut, Env, MessageInfo, QueryRequest,
-    ReplyOn, Response, StdError, StdResult, SubMsg, SubMsgResult, Timestamp, Uint128, WasmMsg,
-    WasmQuery,
+    ReplyOn, Response, StdError, SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
 };
 use cw20::{Balance, Cw20Coin, Cw20CoinVerified};
 use cw4::Member;
@@ -118,15 +117,12 @@ pub fn create_endowment(
                 status: EndowmentStatus::Approved,
                 deposit_approved: true,
                 withdraw_approved: true,
-                withdraw_before_maturity: msg.withdraw_before_maturity,
-                maturity_height: msg.maturity_height,
                 maturity_time: msg.maturity_time,
                 strategies: AccountStrategies::default(),
                 oneoff_vaults: OneOffVaults::default(),
                 rebalance: RebalanceDetails::default(),
                 kyc_donors_only: msg.kyc_donors_only,
                 pending_redemptions: 0_u8,
-                copycat_strategy: None,
                 tier: msg.tier.clone(),
                 logo: msg.logo.clone(),
                 image: msg.image.clone(),
@@ -331,51 +327,41 @@ pub fn update_endowment_status(
         .add_attribute("action", "update_endowment_status"))
 }
 
-pub fn update_owner(
-    deps: DepsMut,
-    _env: Env,
-    info: MessageInfo,
-    new_owner: String,
-) -> Result<Response, ContractError> {
-    let mut config = CONFIG.load(deps.storage)?;
-
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    config.owner = deps.api.addr_validate(&new_owner)?;
-    CONFIG.save(deps.storage, &config)?;
-
-    Ok(Response::default())
-}
-
 pub fn update_config(
     deps: DepsMut,
     _env: Env,
     info: MessageInfo,
-    new_registrar: String,
-    max_general_category_id: u8,
+    new_owner: Option<String>,
+    new_registrar: Option<String>,
+    max_general_category_id: Option<u8>,
     ibc_controller: Option<String>,
 ) -> Result<Response, ContractError> {
-    let config = CONFIG.load(deps.storage)?;
+    let mut config = CONFIG.load(deps.storage)?;
 
     // only the accounts owner can update the config
     if info.sender != config.owner {
         return Err(ContractError::Unauthorized {});
     }
 
-    let new_registrar = deps.api.addr_validate(&new_registrar)?;
-    let mut controller = config.ibc_controller;
-    if ibc_controller != None {
-        controller = deps.api.addr_validate(&ibc_controller.unwrap())?;
-    }
-    // update config attributes with newly passed args
-    CONFIG.update(deps.storage, |mut config| -> StdResult<_> {
-        config.registrar_contract = new_registrar;
-        config.max_general_category_id = max_general_category_id;
-        config.ibc_controller = controller;
-        Ok(config)
-    })?;
+    // Update the config
+    config.owner = match new_owner {
+        Some(new_owner) => deps.api.addr_validate(&new_owner)?,
+        None => config.owner,
+    };
+    config.registrar_contract = match new_registrar {
+        Some(registrar) => deps.api.addr_validate(&registrar)?,
+        None => config.registrar_contract,
+    };
+    config.max_general_category_id = match max_general_category_id {
+        Some(id) => id,
+        None => config.max_general_category_id,
+    };
+    config.ibc_controller = match ibc_controller {
+        Some(ibc_controller) => deps.api.addr_validate(&ibc_controller)?,
+        None => config.ibc_controller,
+    };
+
+    CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::default())
 }
@@ -536,39 +522,6 @@ pub fn update_strategies(
     ENDOWMENTS.save(deps.storage, id, &endowment)?;
 
     Ok(Response::new().add_attribute("action", "update_strategies"))
-}
-
-pub fn copycat_strategies(
-    deps: DepsMut,
-    info: MessageInfo,
-    id: u32,
-    acct_type: AccountType,
-    id_to_copy: u32,
-) -> Result<Response, ContractError> {
-    let mut endowment = ENDOWMENTS.load(deps.storage, id)?;
-    if endowment.owner != info.sender {
-        return Err(ContractError::Unauthorized {});
-    }
-
-    let copied_endowment = ENDOWMENTS.load(deps.storage, id_to_copy)?;
-    if copied_endowment.strategies.get(acct_type).is_empty() {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Attempting to copy an endowment with no set strategy for that account type"
-                .to_string(),
-        }));
-    }
-
-    if endowment.copycat_strategy == Some(id_to_copy) {
-        return Err(ContractError::Std(StdError::GenericErr {
-            msg: "Attempting re-set the same copycat endowment ID".to_string(),
-        }));
-    }
-
-    // set new copycat id
-    endowment.copycat_strategy = Some(id_to_copy);
-    ENDOWMENTS.save(deps.storage, id, &endowment)?;
-
-    Ok(Response::new())
 }
 
 pub fn swap_token(
@@ -1564,10 +1517,7 @@ pub fn withdraw(
             if info.sender != endowment.owner {
                 return Err(ContractError::Unauthorized {});
             }
-            if !endowment.withdraw_before_maturity
-                || (endowment.maturity_time != None
-                    && Timestamp::from_seconds(endowment.maturity_time.unwrap()) <= env.block.time)
-            {
+            if !endowment.is_expired(&env) {
                 return Err(ContractError::Std(StdError::generic_err(
                     "Endowment is not mature. Cannot withdraw before maturity time is reached.",
                 )));

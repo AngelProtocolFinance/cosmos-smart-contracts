@@ -31,9 +31,7 @@ pub struct EndowmentDetailsResponse {
     pub owner: Addr,
     pub status: EndowmentStatus,
     pub endow_type: EndowmentType,
-    pub withdraw_before_maturity: bool,
     pub maturity_time: Option<u64>,
-    pub maturity_height: Option<u64>,
     pub strategies: AccountStrategies,
     pub oneoff_vaults: OneOffVaults,
     pub rebalance: RebalanceDetails,
@@ -46,7 +44,6 @@ pub struct EndowmentDetailsResponse {
     pub name: String,
     pub categories: Categories,
     pub tier: Option<u8>,
-    pub copycat_strategy: Option<u32>,
     pub proposal_link: Option<u64>,
 }
 

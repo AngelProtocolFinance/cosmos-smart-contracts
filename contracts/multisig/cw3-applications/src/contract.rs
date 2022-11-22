@@ -19,7 +19,7 @@ use angel_core::utils::validate_deposit_fund;
 use cosmwasm_std::{
     entry_point, from_slice, to_binary, BankMsg, Binary, BlockInfo, Coin, CosmosMsg, Decimal, Deps,
     DepsMut, Empty, Env, MessageInfo, Order, QueryRequest, Reply, Response, StdError, StdResult,
-    SubMsg, SubMsgResult, Uint128, WasmMsg, WasmQuery,
+    SubMsg, SubMsgResult, WasmMsg, WasmQuery,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw3::{
@@ -379,8 +379,6 @@ pub fn execute_propose_application(
     }
 
     // ensure charity specific params are set correctly (regardless of what user passes)
-    msg.withdraw_before_maturity = false;
-    msg.maturity_height = None;
     msg.maturity_time = None;
 
     let registrar_config: RegistrarConfigResponse =

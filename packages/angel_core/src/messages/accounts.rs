@@ -69,12 +69,6 @@ pub enum ExecuteMsg {
         acct_type: AccountType,
         vaults: Vec<(String, Uint128)>,
     },
-    // set another endowment's strategy to "copycat" as your own
-    CopycatStrategies {
-        id: u32,
-        acct_type: AccountType,
-        id_to_copy: u32,
-    },
     // create a new endowment
     CreateEndowment(CreateEndowmentMsg),
     // Winding up / closing of an endowment. Returns all funds to a specified Beneficiary address if provided.
@@ -86,14 +80,11 @@ pub enum ExecuteMsg {
     DistributeToBeneficiary {
         id: u32,
     },
-    // update owner addr
-    UpdateOwner {
-        new_owner: String,
-    },
     // Allows the SC owner (only!) to change ownership & upper limit of general categories ID allowed
     UpdateConfig {
-        new_registrar: String,
-        max_general_category_id: u8,
+        new_owner: Option<String>,
+        new_registrar: Option<String>,
+        max_general_category_id: Option<u8>,
         ibc_controller: Option<String>,
     },
     // Update an Endowment owner, beneficiary, and other settings
@@ -113,10 +104,8 @@ pub enum ExecuteMsg {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct CreateEndowmentMsg {
     pub owner: String, // address that originally setup the endowment account
-    pub withdraw_before_maturity: bool, // endowment allowed to withdraw funds from locked acct before maturity date
-    pub maturity_time: Option<u64>,     // datetime int of endowment maturity
-    pub maturity_height: Option<u64>,   // block equiv of the maturity_datetime
-    pub name: String,                   // name of the Endowment
+    pub maturity_time: Option<u64>, // datetime int of endowment maturity
+    pub name: String,  // name of the Endowment
     pub categories: Categories, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
     pub tier: Option<u8>, // SHOULD NOT be editable for now (only the Config.owner, ie via the Gov contract or AP CW3 Multisig can set/update)
     pub endow_type: EndowmentType,
