@@ -269,6 +269,10 @@ pub fn restake_claim_reward(
         .checked_sub(reward_token_bal_before)
         .map_err(|e| ContractError::Std(StdError::overflow(e)))?;
 
+    if reward_amount.is_zero() {
+        return Err(ContractError::InvalidZeroAmount {});
+    }
+
     // Re-stake the `reward token`s for more yield
     // NOTE: This logic is similar to the `Deposit` entry logic, taking care of 2 cases.
     let reward_asset_info = AssetInfo::Token {

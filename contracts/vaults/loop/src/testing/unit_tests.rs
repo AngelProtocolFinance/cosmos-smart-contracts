@@ -471,7 +471,7 @@ fn test_stake_lp_token_entry() {
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
     assert_eq!(state.total_lp_amount, (100 + 100).to_string());
-    let expected_total_share: u128 = 1000000 + 100 * 1000000 / 200;
+    let expected_total_share: u128 = 1000000 + 100 * 1000000 / 100;
     assert_eq!(state.total_shares, expected_total_share.to_string());
 
     let res = query(
@@ -510,8 +510,8 @@ fn test_stake_lp_token_entry() {
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
     assert_eq!(state.total_lp_amount, (200 + 100).to_string());
-    let minted_amount: u128 = 100 * 1500000 / 300;
-    let expected_total_share: u128 = 1500000 + minted_amount;
+    let minted_amount: u128 = 100 * 2000000 / 200;
+    let expected_total_share: u128 = 2000000 + minted_amount;
     assert_eq!(state.total_shares, expected_total_share.to_string());
 
     let res = query(
