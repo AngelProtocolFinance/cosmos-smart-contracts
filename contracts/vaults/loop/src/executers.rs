@@ -20,6 +20,9 @@ use terraswap::querier::query_pair_info_from_pair;
 
 use crate::state::{Config, State, APTAX, BALANCES, CONFIG, STATE, TOKEN_INFO};
 
+// Initial VT(vault token) mint amount
+const INIT_VT_MINT_AMOUNT: u128 = 1000000; // 1 VT
+
 /// Contract entry: **UpdateOwner**
 pub fn update_owner(
     deps: DepsMut,
@@ -699,7 +702,7 @@ pub fn reinvest_to_locked_receive(
     //
     //   s = (a * T) / B = a * (T / B)
     let vt_mint_amount = match state.total_shares.u128() {
-        0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
+        0 => Uint128::from(INIT_VT_MINT_AMOUNT),
         _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
     };
     state.total_lp_amount += lp_amount;
@@ -917,7 +920,7 @@ pub fn stake_lp_token(
             //
             //   s = (a * T) / B = a * (T / B)
             let vt_mint_amount = match state.total_shares.u128() {
-                0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
+                0 => Uint128::from(INIT_VT_MINT_AMOUNT),
                 _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
             };
             state.total_lp_amount += lp_amount;
@@ -949,7 +952,7 @@ pub fn stake_lp_token(
             //
             //   s = (a * T) / B = a * (T / B)
             let vt_mint_amount = match state.total_shares.u128() {
-                0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
+                0 => Uint128::from(INIT_VT_MINT_AMOUNT),
                 _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
             };
             state.total_lp_amount += lp_amount;

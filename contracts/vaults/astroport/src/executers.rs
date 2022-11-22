@@ -26,6 +26,9 @@ use crate::msg::{
 use crate::responses::ConfigResponse;
 use crate::state::{Config, State, APTAX, BALANCES, CONFIG, STATE, TOKEN_INFO};
 
+// Initial VT(vault token) mint amount
+const INIT_VT_MINT_AMOUNT: u128 = 1000000; // 1 VT
+
 pub fn execute_receive_ibc_response(
     deps: DepsMut,
     _env: Env,
@@ -691,7 +694,7 @@ pub fn reinvest_to_locked_receive(
     //
     //   s = (a * T) / B = a * (T / B)
     let vt_mint_amount = match state.total_shares.u128() {
-        0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
+        0 => Uint128::from(INIT_VT_MINT_AMOUNT),
         _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
     };
     state.total_lp_amount += lp_amount;
@@ -915,7 +918,7 @@ pub fn stake_lp_token(
             //
             //   s = (a * T) / B = a * (T / B)
             let vt_mint_amount = match state.total_shares.u128() {
-                0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
+                0 => Uint128::from(INIT_VT_MINT_AMOUNT),
                 _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
             };
             state.total_lp_amount += lp_amount;
@@ -947,7 +950,7 @@ pub fn stake_lp_token(
             //
             //   s = (a * T) / B = a * (T / B)
             let vt_mint_amount = match state.total_shares.u128() {
-                0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
+                0 => Uint128::from(INIT_VT_MINT_AMOUNT),
                 _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
             };
             state.total_lp_amount += lp_amount;
