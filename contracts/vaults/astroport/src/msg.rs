@@ -33,6 +33,8 @@ pub struct InstantiateMsg {
     pub native_to_lp0_route: Vec<SwapOperation>,
     pub native_to_lp1_route: Vec<SwapOperation>,
 
+    pub minimum_initial_deposit: Uint128,
+
     pub name: String,
     pub symbol: String,
     pub decimals: u8,
@@ -107,6 +109,8 @@ pub struct UpdateConfigMsg {
     pub reward_to_native_route: Option<Vec<SwapOperation>>,
     pub native_to_lp0_route: Option<Vec<SwapOperation>>,
     pub native_to_lp1_route: Option<Vec<SwapOperation>>,
+
+    pub minimum_initial_deposit: Option<Uint128>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]

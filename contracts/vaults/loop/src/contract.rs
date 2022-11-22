@@ -64,6 +64,8 @@ pub fn instantiate(
         lp_factory_contract: deps.api.addr_validate(&msg.lp_factory_contract)?,
         lp_staking_contract: deps.api.addr_validate(&msg.lp_staking_contract)?,
         lp_pair_contract: pair_contract,
+
+        minimum_initial_deposit: msg.minimum_initial_deposit,
     };
     CONFIG.save(deps.storage, &config)?;
 

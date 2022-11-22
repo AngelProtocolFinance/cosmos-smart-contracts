@@ -38,6 +38,8 @@ pub struct Config {
     pub lp_factory_contract: Addr, // astroport factory contract address
     pub lp_staking_contract: Addr, // astroport generator contract address
     pub lp_pair_contract: Addr,    // astroport pair contract address
+
+    pub minimum_initial_deposit: Uint128, // Minimum deposit LP amount limit when `total_shares` = 0
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

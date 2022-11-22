@@ -125,6 +125,11 @@ pub fn update_config(
         None => config.native_to_lp1_route,
     };
 
+    config.minimum_initial_deposit = match msg.minimum_initial_deposit {
+        Some(v) => v,
+        None => config.minimum_initial_deposit,
+    };
+
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::default())
@@ -677,7 +682,17 @@ pub fn reinvest_to_locked_receive(
     //
     //   s = (a * T) / B = a * (T / B)
     let vt_mint_amount = match state.total_shares.u128() {
-        0 => Uint128::from(INIT_VT_MINT_AMOUNT),
+        0 => {
+            if lp_amount < config.minimum_initial_deposit {
+                return Err(ContractError::Std(StdError::GenericErr {
+                    msg: format!(
+                        "Received {}, should be bigger than {}.",
+                        lp_amount, config.minimum_initial_deposit
+                    ),
+                }));
+            }
+            Uint128::from(INIT_VT_MINT_AMOUNT)
+        }
         _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
     };
     state.total_lp_amount += lp_amount;
@@ -901,7 +916,17 @@ pub fn stake_lp_token(
             //
             //   s = (a * T) / B = a * (T / B)
             let vt_mint_amount = match state.total_shares.u128() {
-                0 => Uint128::from(INIT_VT_MINT_AMOUNT),
+                0 => {
+                    if lp_amount < config.minimum_initial_deposit {
+                        return Err(ContractError::Std(StdError::GenericErr {
+                            msg: format!(
+                                "Received {}, should be bigger than {}.",
+                                lp_amount, config.minimum_initial_deposit
+                            ),
+                        }));
+                    }
+                    Uint128::from(INIT_VT_MINT_AMOUNT)
+                }
                 _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
             };
             state.total_lp_amount += lp_amount;
@@ -933,7 +958,17 @@ pub fn stake_lp_token(
             //
             //   s = (a * T) / B = a * (T / B)
             let vt_mint_amount = match state.total_shares.u128() {
-                0 => Uint128::from(INIT_VT_MINT_AMOUNT),
+                0 => {
+                    if lp_amount < config.minimum_initial_deposit {
+                        return Err(ContractError::Std(StdError::GenericErr {
+                            msg: format!(
+                                "Received {}, should be bigger than {}.",
+                                lp_amount, config.minimum_initial_deposit
+                            ),
+                        }));
+                    }
+                    Uint128::from(INIT_VT_MINT_AMOUNT)
+                }
                 _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
             };
             state.total_lp_amount += lp_amount;

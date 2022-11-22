@@ -43,6 +43,8 @@ fn create_mock_vault(
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
+
+        minimum_initial_deposit: Uint128::from(100_u128),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -80,6 +82,8 @@ fn proper_instantiation() {
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
+
+        minimum_initial_deposit: Uint128::from(100_u128),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -142,6 +146,8 @@ fn test_update_config() {
         reward_to_native_route: None,
         native_to_lp0_route: None,
         native_to_lp1_route: None,
+
+        minimum_initial_deposit: Some(Uint128::from(200_u128)),
     };
 
     // Only "config.owner" can update the config, otherwise fails
@@ -172,6 +178,7 @@ fn test_update_config() {
     assert_eq!(config.ibc_controller, "new-ibc-sender".to_string());
     assert_eq!(config.keeper, "new-keeper".to_string());
     assert_eq!(config.tax_collector, "new-tax-collector".to_string());
+    assert_eq!(config.minimum_initial_deposit, "200".to_string());
 }
 
 #[test]
@@ -234,6 +241,8 @@ fn test_deposit_cw20_token() {
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
+
+        minimum_initial_deposit: Uint128::from(100_u128),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();

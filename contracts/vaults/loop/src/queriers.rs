@@ -42,6 +42,8 @@ pub fn query_config(deps: Deps) -> ConfigResponse {
         lp_factory_contract: config.lp_factory_contract.to_string(),
         lp_staking_contract: config.lp_staking_contract.to_string(),
         lp_pair_contract: config.lp_pair_contract.to_string(),
+
+        minimum_initial_deposit: config.minimum_initial_deposit.to_string(),
     }
 }
 

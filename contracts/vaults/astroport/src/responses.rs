@@ -30,6 +30,8 @@ pub struct ConfigResponse {
     pub lp_factory_contract: String,
     pub lp_staking_contract: String,
     pub lp_pair_contract: String,
+
+    pub minimum_initial_deposit: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
