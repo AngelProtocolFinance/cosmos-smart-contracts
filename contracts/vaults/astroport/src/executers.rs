@@ -683,16 +683,12 @@ pub fn reinvest_to_locked_receive(
     //   s = vault shares to mint <<< what we need to calculate given some # of LP tokens created from despoit
     //   T = vault shares total (before mint)
     //   a = LP tokens added to Vault's balance
-    //   B = Vault's total LP Token balance
+    //   B = Vault's total LP Token balance (before deposit)
     //
-    //   s = (a * T) / B
+    //   s = (a * T) / B = a * (T / B)
     let vt_mint_amount = match state.total_shares.u128() {
         0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
-        _ => {
-            let increased_total_lp = state.total_lp_amount + lp_amount;
-            let vt_2_lp_rate = Decimal::from_ratio(state.total_shares, increased_total_lp);
-            lp_amount * vt_2_lp_rate
-        }
+        _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
     };
     state.total_lp_amount += lp_amount;
     state.total_shares += vt_mint_amount;
@@ -911,16 +907,12 @@ pub fn stake_lp_token(
             //   s = vault shares to mint <<< what we need to calculate given some # of LP tokens created from despoit
             //   T = vault shares total (before mint)
             //   a = LP tokens added to Vault's balance
-            //   B = Vault's total LP Token balance
+            //   B = Vault's total LP Token balance (before deposit)
             //
-            //   s = (a * T) / B
+            //   s = (a * T) / B = a * (T / B)
             let vt_mint_amount = match state.total_shares.u128() {
                 0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
-                _ => {
-                    let increased_total_lp = state.total_lp_amount + lp_amount;
-                    let vt_2_lp_rate = Decimal::from_ratio(state.total_shares, increased_total_lp);
-                    lp_amount * vt_2_lp_rate
-                }
+                _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
             };
             state.total_lp_amount += lp_amount;
             state.total_shares += vt_mint_amount;
@@ -947,16 +939,12 @@ pub fn stake_lp_token(
             //   s = vault shares to mint <<< what we need to calculate given some # of LP tokens created from despoit
             //   T = vault shares total (before mint)
             //   a = LP tokens added to Vault's balance
-            //   B = Vault's total LP Token balance
+            //   B = Vault's total LP Token balance (before deposit)
             //
-            //   s = (a * T) / B
+            //   s = (a * T) / B = a * (T / B)
             let vt_mint_amount = match state.total_shares.u128() {
                 0 => Uint128::from(1000000_u128), // Here, the original mint amount should be 1 VT.
-                _ => {
-                    let increased_total_lp = state.total_lp_amount + lp_amount;
-                    let vt_2_lp_rate = Decimal::from_ratio(state.total_shares, increased_total_lp);
-                    lp_amount * vt_2_lp_rate
-                }
+                _ => lp_amount * Decimal::from_ratio(state.total_shares, state.total_lp_amount),
             };
             state.total_lp_amount += lp_amount;
             state.total_shares += vt_mint_amount;
