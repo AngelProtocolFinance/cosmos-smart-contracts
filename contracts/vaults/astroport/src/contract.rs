@@ -1,6 +1,6 @@
 use cosmwasm_std::{
-    entry_point, from_binary, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response,
-    StdError, StdResult, Uint128,
+    entry_point, from_binary, to_binary, Binary, Decimal, Deps, DepsMut, Env, MessageInfo,
+    Response, StdError, StdResult, Uint128,
 };
 use cw2::{get_contract_version, set_contract_version};
 use cw20::Cw20ReceiveMsg;
@@ -30,6 +30,20 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> Result<Response, ContractError> {
     set_contract_version(deps.storage, CONTRACT_NAME, CONTRACT_VERSION)?;
+
+    // Some validations
+    if msg.ap_tax_rate > Decimal::one() {
+        return Err(ContractError::Std(StdError::generic_err(format!(
+            "Invalid ap_tax_rate: {}",
+            msg.ap_tax_rate
+        ))));
+    }
+    if msg.interest_distribution > Decimal::one() {
+        return Err(ContractError::Std(StdError::generic_err(format!(
+            "Invalid interest_distribution rate: {}",
+            msg.interest_distribution
+        ))));
+    }
 
     // Store the configuration
     let sibling_vault = match msg.sibling_vault {
