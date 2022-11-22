@@ -161,8 +161,6 @@ fn test_update_config() {
 
     // Try to update the "config"
     let update_config_msg = UpdateConfigMsg {
-        lp_staking_contract: Some("new-loop-farming".to_string()),
-        lp_pair_contract: Some("new-loop-pair".to_string()),
         keeper: Some("new-keeper".to_string()),
         sibling_vault: None,
         tax_collector: Some("new-tax-collector".to_string()),
@@ -197,11 +195,6 @@ fn test_update_config() {
     // Check the "config" update
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
     let config_resp: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config_resp.lp_pair_contract, "new-loop-pair".to_string());
-    assert_eq!(
-        config_resp.lp_staking_contract,
-        "new-loop-farming".to_string()
-    );
     assert_eq!(config_resp.keeper, "new-keeper".to_string());
     assert_eq!(config_resp.tax_collector, "new-tax-collector".to_string());
 }

@@ -134,8 +134,6 @@ fn test_update_config() {
         ibc_host: Some("new-ibc-relayer".to_string()),
         ibc_controller: Some("new-ibc-sender".to_string()),
 
-        lp_staking_contract: Some("new-astroport-generator".to_string()),
-        lp_pair_contract: Some("new-astroport-pair".to_string()),
         keeper: Some("new-keeper".to_string()),
         sibling_vault: None,
         tax_collector: Some("new-tax-collector".to_string()),
@@ -172,11 +170,6 @@ fn test_update_config() {
     let config: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(config.ibc_host, "new-ibc-relayer".to_string());
     assert_eq!(config.ibc_controller, "new-ibc-sender".to_string());
-    assert_eq!(config.lp_pair_contract, "new-astroport-pair".to_string());
-    assert_eq!(
-        config.lp_staking_contract,
-        "new-astroport-generator".to_string()
-    );
     assert_eq!(config.keeper, "new-keeper".to_string());
     assert_eq!(config.tax_collector, "new-tax-collector".to_string());
 }

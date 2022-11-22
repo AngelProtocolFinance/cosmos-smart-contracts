@@ -96,21 +96,6 @@ pub fn update_config(
         None => config.tax_collector,
     };
 
-    config.lp_staking_contract = match msg.lp_staking_contract {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.lp_staking_contract,
-    };
-
-    config.lp_pair_contract = match msg.lp_pair_contract {
-        Some(addr) => deps.api.addr_validate(&addr)?,
-        None => config.lp_pair_contract,
-    };
-
-    let pair_info: PairInfo =
-        query_pair_info_from_pair(&deps.querier, config.lp_pair_contract.clone())?;
-    config.lp_token = deps.api.addr_validate(&pair_info.liquidity_token)?;
-    config.lp_pair_token0 = pair_info.asset_infos[0].clone();
-    config.lp_pair_token1 = pair_info.asset_infos[1].clone();
     config.native_token = match msg.native_token {
         None => config.native_token,
         Some(CwAssetInfoBase::Native(denom)) => AssetInfo::NativeToken { denom },

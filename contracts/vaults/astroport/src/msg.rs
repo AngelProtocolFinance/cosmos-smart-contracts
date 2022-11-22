@@ -107,9 +107,6 @@ pub struct UpdateConfigMsg {
     pub reward_to_native_route: Option<Vec<SwapOperation>>,
     pub native_to_lp0_route: Option<Vec<SwapOperation>>,
     pub native_to_lp1_route: Option<Vec<SwapOperation>>,
-
-    pub lp_staking_contract: Option<String>,
-    pub lp_pair_contract: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq, JsonSchema)]
