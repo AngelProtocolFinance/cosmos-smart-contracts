@@ -3,6 +3,7 @@ use cosmwasm_std::{
     coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, StdError, Uint128,
 };
 
+use crate::executers::PENDING_OWNER_DEADLINE;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UpdateConfigMsg};
 use crate::responses::{ConfigResponse, StateResponse};
 use angel_core::errors::vault::ContractError;
@@ -122,10 +123,33 @@ fn test_update_owner() {
     )
     .unwrap();
 
+    // Check the `pending_owner` & `pending_owner_deadline` settings
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config.owner, "creator".to_string());
+    assert_eq!(config.pending_owner, "new-owner".to_string());
+    assert_eq!(
+        config.pending_owner_deadline,
+        mock_env().block.height + PENDING_OWNER_DEADLINE
+    );
+
+    let info = mock_info("new-owner", &[]);
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateOwner {
+            new_owner: "new-owner".to_string(),
+        },
+    )
+    .unwrap();
+
     // Check if the "owner" has been changed
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config_resp: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config_resp.owner, "new-owner".to_string());
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config.owner, "new-owner".to_string());
+    assert_eq!(config.pending_owner, "".to_string());
+    assert_eq!(config.pending_owner_deadline, 0);
 }
 
 #[test]

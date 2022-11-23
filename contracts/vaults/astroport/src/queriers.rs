@@ -46,6 +46,11 @@ pub fn query_config(deps: Deps) -> ConfigResponse {
         lp_pair_contract: config.lp_pair_contract.to_string(),
 
         minimum_initial_deposit: config.minimum_initial_deposit.to_string(),
+        pending_owner: config
+            .pending_owner
+            .map(|addr| addr.to_string())
+            .unwrap_or("".to_string()),
+        pending_owner_deadline: config.pending_owner_deadline.unwrap_or_default(),
     }
 }
 

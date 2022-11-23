@@ -8,6 +8,7 @@ use angel_core::structs::AccountType;
 use cw20::TokenInfoResponse;
 
 use crate::contract::{execute, instantiate, query};
+use crate::executers::PENDING_OWNER_DEADLINE;
 use crate::testing::mock_querier::{mock_dependencies, WasmMockQuerier};
 
 fn create_mock_vault(
@@ -110,15 +111,33 @@ fn test_update_owner() {
     )
     .unwrap();
 
-    // Check if the "owner" has been changed
-    let res = query(
-        deps.as_ref(),
+    // Check the `pending_owner` & `pending_owner_deadline` settings
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config.owner, "creator".to_string());
+    assert_eq!(config.pending_owner, "new-owner".to_string());
+    assert_eq!(
+        config.pending_owner_deadline,
+        mock_env().block.height + PENDING_OWNER_DEADLINE
+    );
+
+    let info = mock_info("new-owner", &[]);
+    let _ = execute(
+        deps.as_mut(),
         mock_env(),
-        angel_core::messages::vault::QueryMsg::Config {},
+        info,
+        ExecuteMsg::UpdateOwner {
+            new_owner: "new-owner".to_string(),
+        },
     )
     .unwrap();
-    let config_resp: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config_resp.owner, "new-owner".to_string());
+
+    // Check if the "owner" has been changed
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config.owner, "new-owner".to_string());
+    assert_eq!(config.pending_owner, "".to_string());
+    assert_eq!(config.pending_owner_deadline, 0);
 }
 
 #[test]

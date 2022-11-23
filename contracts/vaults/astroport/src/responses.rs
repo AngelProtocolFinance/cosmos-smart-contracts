@@ -32,6 +32,8 @@ pub struct ConfigResponse {
     pub lp_pair_contract: String,
 
     pub minimum_initial_deposit: String,
+    pub pending_owner: String,
+    pub pending_owner_deadline: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]

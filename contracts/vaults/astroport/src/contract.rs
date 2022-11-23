@@ -88,6 +88,8 @@ pub fn instantiate(
         lp_pair_contract: pair_contract,
 
         minimum_initial_deposit: msg.minimum_initial_deposit,
+        pending_owner: None,
+        pending_owner_deadline: None,
     };
     CONFIG.save(deps.storage, &config)?;
 
@@ -129,7 +131,9 @@ pub fn execute(
         ExecuteMsg::ReceiveIbcResponse(resp) => {
             executers::execute_receive_ibc_response(deps, env, info, resp)
         }
-        ExecuteMsg::UpdateOwner { new_owner } => executers::update_owner(deps, info, new_owner),
+        ExecuteMsg::UpdateOwner { new_owner } => {
+            executers::update_owner(deps, env, info, new_owner)
+        }
         ExecuteMsg::UpdateConfig(msg) => executers::update_config(deps, env, info, msg),
         // -Input token(eg. USDC) (Account) --> +Deposit Token/Yield Token (Vault)
         ExecuteMsg::Deposit { endowment_id } => {

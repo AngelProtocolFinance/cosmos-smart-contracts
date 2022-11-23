@@ -29,6 +29,9 @@ use crate::state::{Config, State, APTAX, BALANCES, CONFIG, STATE, TOKEN_INFO};
 // Initial VT(vault token) mint amount
 const INIT_VT_MINT_AMOUNT: u128 = 1000000; // 1 VT
 
+// Number of blocks until pending owner update is valid
+pub const PENDING_OWNER_DEADLINE: u64 = 42069;
+
 pub fn execute_receive_ibc_response(
     deps: DepsMut,
     _env: Env,
@@ -48,18 +51,51 @@ pub fn execute_receive_ibc_response(
 /// Contract entry: **UpdateOwner**
 pub fn update_owner(
     deps: DepsMut,
+    env: Env,
     info: MessageInfo,
     new_owner: String,
 ) -> Result<Response, ContractError> {
     let mut config = CONFIG.load(deps.storage)?;
 
-    // only the owner/admin of the contract can update their address in the configs
-    if info.sender != config.owner {
-        return Err(ContractError::Unauthorized {});
+    // 2-step process of updating `config.owner`
+    //
+    // 1. Current `config.owner` suggests `new_owner` address
+    //    - At this moment, the `pending_owner` is set with `new_owner` address.
+    //    - Also, the `pending_owner_deadline` is set as current block height + constant DEADLINE height
+    //
+    // 2. The `pending_owner`(new_owner) completes the process & becomes the `config.owner`,
+    //    OR the settings are unset for future process.
+    //    - `pending_owner` address calls this entry(update_owner)
+    //    - If the `pending_owner_deadline` is NOT reached at the moment of execution,
+    //         the `pending_owner` becomes `config.owner`.
+    //      If not, the `config.owner` remains unchanged.
+    //    - All settings(`pending_owner` & `pending_owner_deadline`) are unset for future.
+
+    match (config.pending_owner, config.pending_owner_deadline) {
+        (None, None) => {
+            if info.sender != config.owner {
+                return Err(ContractError::Unauthorized {});
+            }
+            let new_owner = deps.api.addr_validate(&new_owner)?;
+            config.pending_owner = Some(new_owner);
+            config.pending_owner_deadline = Some(env.block.height + PENDING_OWNER_DEADLINE);
+        }
+        (Some(pending_owner), Some(deadline)) => {
+            if info.sender != pending_owner {
+                return Err(ContractError::Unauthorized {});
+            }
+            if env.block.height <= deadline {
+                config.owner = pending_owner;
+            }
+            config.pending_owner = None;
+            config.pending_owner_deadline = None;
+        }
+        _ => {
+            return Err(ContractError::Std(StdError::generic_err(
+                "Invalid owner update settings",
+            )))
+        }
     }
-    let new_owner = deps.api.addr_validate(&new_owner)?;
-    // update config attributes with newly passed args
-    config.owner = new_owner;
     CONFIG.save(deps.storage, &config)?;
 
     Ok(Response::default())

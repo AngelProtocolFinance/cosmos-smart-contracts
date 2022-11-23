@@ -66,6 +66,8 @@ pub fn instantiate(
         lp_pair_contract: pair_contract,
 
         minimum_initial_deposit: msg.minimum_initial_deposit,
+        pending_owner: None,
+        pending_owner_deadline: None,
     };
     CONFIG.save(deps.storage, &config)?;
 
@@ -104,7 +106,9 @@ pub fn execute(
 ) -> Result<Response, ContractError> {
     match msg {
         ExecuteMsg::Receive(msg) => receive_cw20(deps, env, info, msg),
-        ExecuteMsg::UpdateOwner { new_owner } => executers::update_owner(deps, info, new_owner),
+        ExecuteMsg::UpdateOwner { new_owner } => {
+            executers::update_owner(deps, env, info, new_owner)
+        }
         ExecuteMsg::UpdateRegistrar { new_registrar } => {
             executers::update_registrar(deps, env, info, new_registrar)
         }
