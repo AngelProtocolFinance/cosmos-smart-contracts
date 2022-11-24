@@ -717,3 +717,185 @@ fn test_reinvest_to_locked() {
     );
     assert_eq!(state.total_shares, (1000000 - 1000000).to_string());
 }
+
+#[test]
+fn test_restake_claim_reward() {
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
+
+    // Only the contract itself can call the entry
+    let info = mock_info("non-contract", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::RestakeClaimReward {
+            reward_token_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // If the computed `reward_token` amount is zero, then it outputs error.
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::RestakeClaimReward {
+            reward_token_bal_before: Uint128::from(100_u128),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::InvalidZeroAmount {});
+
+    // Successful run returns several messages
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::RestakeClaimReward {
+            reward_token_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 2 + 2 + 1);
+}
+
+#[test]
+fn test_add_liquidity() {
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
+
+    // Only the contract itself can call the entry
+    let info = mock_info("non-contract", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::AddLiquidity {
+            endowment_id: None,
+            lp_pair_token0_bal_before: Uint128::zero(),
+            lp_pair_token1_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Successful run returns several messages
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::AddLiquidity {
+            endowment_id: None,
+            lp_pair_token0_bal_before: Uint128::zero(),
+            lp_pair_token1_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 2 + 1);
+}
+
+#[test]
+fn test_remove_liquidity() {
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
+
+    // Only the contract itself can call the entry
+    let info = mock_info("non-contract", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::RemoveLiquidity {
+            lp_token_bal_before: Uint128::zero(),
+            beneficiary: Addr::unchecked("beneficiary"),
+            id: None,
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Successful run returns several messages
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::RemoveLiquidity {
+            lp_token_bal_before: Uint128::zero(),
+            beneficiary: Addr::unchecked("beneficiary"),
+            id: None,
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1 + 1 + 1);
+}
+
+#[test]
+fn test_send_asset() {
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
+
+    // Only the contract itself can call the entry
+    let info = mock_info("non-contract", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SendAsset {
+            beneficiary: Addr::unchecked("beneficiary"),
+            id: None,
+            native_token_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Successful run returns several messages
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SendAsset {
+            beneficiary: Addr::unchecked("beneficiary"),
+            id: None,
+            native_token_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 1);
+}
+
+#[test]
+fn test_swap_back() {
+    let mut deps = create_mock_vault(AccountType::Locked, vec![]);
+
+    // Only the contract itself can call the entry
+    let info = mock_info("non-contract", &[]);
+    let err = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapBack {
+            lp_pair_token0_bal_before: Uint128::zero(),
+            lp_pair_token1_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap_err();
+    assert_eq!(err, ContractError::Unauthorized {});
+
+    // Successful run returns several messages
+    let info = mock_info(MOCK_CONTRACT_ADDR, &[]);
+    let res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::SwapBack {
+            lp_pair_token0_bal_before: Uint128::zero(),
+            lp_pair_token1_bal_before: Uint128::zero(),
+        },
+    )
+    .unwrap();
+    assert_eq!(res.messages.len(), 2);
+}
