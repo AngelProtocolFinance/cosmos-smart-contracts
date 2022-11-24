@@ -262,6 +262,7 @@ export async function startMigrateCore(): Promise<void> {
     cw3ApTeam,
     cw3ReviewTeam,
     swapRouter,
+    giftcards,
     [],
   );
 }
