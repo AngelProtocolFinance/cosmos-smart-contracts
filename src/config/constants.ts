@@ -3,7 +3,7 @@
 // ---------------------------------------------------------------------------------------------------
 export const testnet = {
   networkInfo: {
-    url: "https://rpc.uni.juno.deuslabs.fi",
+    url: "https://rpc.uni.junonetwork.io",
     chainId: "uni-5",
     walletPrefix: "juno",
     nativeToken: "ujunox",

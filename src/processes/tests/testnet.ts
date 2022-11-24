@@ -232,9 +232,9 @@ export async function testExecute(
 
   /* --- GIFTCARD contract --- */
   // await testSendDepositToGiftcards(actors.apTeam.client, actors.apTeam.addr, giftcards, { denom: "ujunox", amount: "4206900" });
-  // await testClaimGiftcardsDeposit(actors.apTeam.client, actors.apTeam.addr, giftcards, 1, "juno...34251"); 
+  // await testClaimGiftcardsDeposit(actors.apTeam.client, actors.apTeam.addr, giftcards, 1, actors.apTeam2.addr);
   // await testQueryGiftcardsConfig(actors.apTeam.client, giftcards);
-  // await testQueryGiftcardsBalance(actors.apTeam.client, giftcards, config.mnemonicKeys.keeper);
+  // await testQueryGiftcardsBalance(actors.apTeam.client, giftcards, actors.apTeam2.addr);
   // await testQueryGiftcardsDeposit(actors.apTeam.client, giftcards, 1);
 
   /* --- REGISTRAR contract --- */
