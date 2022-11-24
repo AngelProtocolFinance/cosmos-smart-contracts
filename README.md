@@ -1,4 +1,5 @@
 # Angel Protocol Smart Contracts
+[![codecov](https://codecov.io/gh/AngelProtocolFinance/angelprotocol-smart-contracts/branch/main/graph/badge.svg?token=8L28IXSN58)](https://codecov.io/gh/AngelProtocolFinance/angelprotocol-smart-contracts)
 
 ![Angel Protocol Endowment Smart Contracts - v1 8 Overview](https://user-images.githubusercontent.com/85138450/191880770-7518d238-45a9-4f9b-9da1-cd94753a64b8.png)
 
