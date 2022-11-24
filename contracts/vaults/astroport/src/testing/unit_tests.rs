@@ -3,6 +3,7 @@ use cosmwasm_std::{
     coins, from_binary, to_binary, Addr, Coin, Decimal, OwnedDeps, StdError, Uint128,
 };
 
+use crate::executers::PENDING_OWNER_DEADLINE;
 use crate::msg::{ExecuteMsg, InstantiateMsg, QueryMsg, UpdateConfigMsg};
 use crate::responses::{ConfigResponse, StateResponse};
 use angel_core::errors::vault::ContractError;
@@ -43,6 +44,8 @@ fn create_mock_vault(
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
+
+        minimum_initial_deposit: Uint128::from(100_u128),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -80,6 +83,8 @@ fn proper_instantiation() {
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
+
+        minimum_initial_deposit: Uint128::from(100_u128),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -118,10 +123,33 @@ fn test_update_owner() {
     )
     .unwrap();
 
+    // Check the `pending_owner` & `pending_owner_deadline` settings
+    let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config.owner, "creator".to_string());
+    assert_eq!(config.pending_owner, "new-owner".to_string());
+    assert_eq!(
+        config.pending_owner_deadline,
+        mock_env().block.height + PENDING_OWNER_DEADLINE
+    );
+
+    let info = mock_info("new-owner", &[]);
+    let _res = execute(
+        deps.as_mut(),
+        mock_env(),
+        info,
+        ExecuteMsg::UpdateOwner {
+            new_owner: "new-owner".to_string(),
+        },
+    )
+    .unwrap();
+
     // Check if the "owner" has been changed
     let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
-    let config_resp: ConfigResponse = from_binary(&res).unwrap();
-    assert_eq!(config_resp.owner, "new-owner".to_string());
+    let config: ConfigResponse = from_binary(&res).unwrap();
+    assert_eq!(config.owner, "new-owner".to_string());
+    assert_eq!(config.pending_owner, "".to_string());
+    assert_eq!(config.pending_owner_deadline, 0);
 }
 
 #[test]
@@ -134,8 +162,6 @@ fn test_update_config() {
         ibc_host: Some("new-ibc-relayer".to_string()),
         ibc_controller: Some("new-ibc-sender".to_string()),
 
-        lp_staking_contract: Some("new-astroport-generator".to_string()),
-        lp_pair_contract: Some("new-astroport-pair".to_string()),
         keeper: Some("new-keeper".to_string()),
         sibling_vault: None,
         tax_collector: Some("new-tax-collector".to_string()),
@@ -144,6 +170,8 @@ fn test_update_config() {
         reward_to_native_route: None,
         native_to_lp0_route: None,
         native_to_lp1_route: None,
+
+        minimum_initial_deposit: Some(Uint128::from(200_u128)),
     };
 
     // Only "config.owner" can update the config, otherwise fails
@@ -172,13 +200,9 @@ fn test_update_config() {
     let config: ConfigResponse = from_binary(&res).unwrap();
     assert_eq!(config.ibc_host, "new-ibc-relayer".to_string());
     assert_eq!(config.ibc_controller, "new-ibc-sender".to_string());
-    assert_eq!(config.lp_pair_contract, "new-astroport-pair".to_string());
-    assert_eq!(
-        config.lp_staking_contract,
-        "new-astroport-generator".to_string()
-    );
     assert_eq!(config.keeper, "new-keeper".to_string());
     assert_eq!(config.tax_collector, "new-tax-collector".to_string());
+    assert_eq!(config.minimum_initial_deposit, "200".to_string());
 }
 
 #[test]
@@ -241,6 +265,8 @@ fn test_deposit_cw20_token() {
         name: "Cash Token".to_string(),
         symbol: "CASH".to_string(),
         decimals: 6,
+
+        minimum_initial_deposit: Uint128::from(100_u128),
     };
     let info = mock_info("creator", &[]);
     let env = mock_env();
@@ -451,7 +477,7 @@ fn test_stake_lp_token_entry() {
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
     assert_eq!(state.total_lp_amount, (100 + 100).to_string());
-    let expected_total_share: u128 = 1000000 + 100 * 1000000 / 200;
+    let expected_total_share: u128 = 1000000 + 100 * 1000000 / 100;
     assert_eq!(state.total_shares, expected_total_share.to_string());
 
     let res = query(
@@ -490,8 +516,8 @@ fn test_stake_lp_token_entry() {
     let res = query(deps.as_ref(), mock_env(), QueryMsg::State {}).unwrap();
     let state: StateResponse = from_binary(&res).unwrap();
     assert_eq!(state.total_lp_amount, (200 + 100).to_string());
-    let minted_amount: u128 = 100 * 1500000 / 300;
-    let expected_total_share: u128 = 1500000 + minted_amount;
+    let minted_amount: u128 = 100 * 2000000 / 200;
+    let expected_total_share: u128 = 2000000 + minted_amount;
     assert_eq!(state.total_shares, expected_total_share.to_string());
 
     let res = query(
