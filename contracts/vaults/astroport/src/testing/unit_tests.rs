@@ -323,7 +323,7 @@ fn test_deposit_cw20_token() {
         ExecuteMsg::Receive(deposit_msg),
     )
     .unwrap();
-    assert_eq!(res.messages.len(), 3);
+    assert_eq!(res.messages.len(), 2);
 }
 
 #[test]
@@ -759,7 +759,7 @@ fn test_restake_claim_reward() {
         },
     )
     .unwrap();
-    assert_eq!(res.messages.len(), 2 + 2 + 1);
+    assert_eq!(res.messages.len(), 1 + 1 + 1);
 }
 
 #[test]
@@ -897,5 +897,5 @@ fn test_swap_back() {
         },
     )
     .unwrap();
-    assert_eq!(res.messages.len(), 2);
+    assert_eq!(res.messages.len(), 1);
 }

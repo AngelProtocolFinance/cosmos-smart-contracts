@@ -219,26 +219,15 @@ pub fn execute_swap_operation(
             }],
             msg: binary_msg,
         })],
-        AssetInfo::Cw20(ref contract_addr) => vec![
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                funds: vec![],
-                msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                    spender: pair.contract_address.to_string(),
-                    amount: offer_asset.amount,
-                    expires: None,
-                })?,
-            }),
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                funds: vec![],
-                msg: to_binary(&Cw20ExecuteMsg::Send {
-                    contract: pair.contract_address.to_string(),
-                    amount: offer_asset.amount,
-                    msg: binary_msg,
-                })?,
-            }),
-        ],
+        AssetInfo::Cw20(ref contract_addr) => vec![CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: contract_addr.to_string(),
+            funds: vec![],
+            msg: to_binary(&Cw20ExecuteMsg::Send {
+                contract: pair.contract_address.to_string(),
+                amount: offer_asset.amount,
+                msg: binary_msg,
+            })?,
+        })],
         _ => vec![],
     };
 

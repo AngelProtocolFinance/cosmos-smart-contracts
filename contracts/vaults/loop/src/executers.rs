@@ -1193,28 +1193,16 @@ pub fn remove_liquidity(
         .map_err(|e| ContractError::Std(StdError::Overflow { source: e }))?;
 
     // Prepare the "remove_liquidity" messages
-    let withdraw_liquidity_msgs = vec![
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.lp_token.to_string(),
-            msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: config.lp_factory_contract.to_string(),
-                amount: lp_token_amount,
-                expires: None,
-            })
-            .unwrap(),
-            funds: vec![],
-        }),
-        CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: config.lp_token.to_string(),
-            msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                contract: config.lp_pair_contract.to_string(),
-                amount: lp_token_amount,
-                msg: to_binary(&LoopPairExecuteMsg::WithdrawLiquidity {}).unwrap(),
-            })
-            .unwrap(),
-            funds: vec![],
-        }),
-    ];
+    let withdraw_liquidity_msgs = vec![CosmosMsg::Wasm(WasmMsg::Execute {
+        contract_addr: config.lp_token.to_string(),
+        msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+            contract: config.lp_pair_contract.to_string(),
+            amount: lp_token_amount,
+            msg: to_binary(&LoopPairExecuteMsg::WithdrawLiquidity {}).unwrap(),
+        })
+        .unwrap(),
+        funds: vec![],
+    })];
 
     // Convert the returning token pairs to the `native_token`
     // & send back to `accounts_contract`.
@@ -1307,16 +1295,6 @@ pub fn send_asset(
         },
         AssetInfo::Token { contract_addr } => match id {
             Some(id) => {
-                msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-                    contract_addr: contract_addr.clone(),
-                    msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                        spender: beneficiary.to_string(),
-                        amount: send_amount,
-                        expires: None,
-                    })
-                    .unwrap(),
-                    funds: vec![],
-                }));
                 msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
                     contract_addr,
                     msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
@@ -1452,34 +1430,22 @@ fn prepare_swap_router_swap_msgs(
             .unwrap(),
             funds: coins(swap_amount.u128(), denom.to_string()),
         })],
-        AssetInfo::Token { ref contract_addr } => vec![
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                    spender: swap_router.to_string(),
-                    amount: swap_amount,
-                    expires: None,
+        AssetInfo::Token { ref contract_addr } => vec![CosmosMsg::Wasm(WasmMsg::Execute {
+            contract_addr: contract_addr.to_string(),
+            msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
+                contract: swap_router,
+                amount: swap_amount,
+                msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
+                    operations,
+                    minimum_receive: None,
+                    endowment_id: 1,                // Placeholder value
+                    acct_type: AccountType::Locked, // Placeholder value
                 })
                 .unwrap(),
-                funds: vec![],
-            }),
-            CosmosMsg::Wasm(WasmMsg::Execute {
-                contract_addr: contract_addr.to_string(),
-                msg: to_binary(&cw20::Cw20ExecuteMsg::Send {
-                    contract: swap_router,
-                    amount: swap_amount,
-                    msg: to_binary(&SwapRouterExecuteMsg::ExecuteSwapOperations {
-                        operations,
-                        minimum_receive: None,
-                        endowment_id: 1,                // Placeholder value
-                        acct_type: AccountType::Locked, // Placeholder value
-                    })
-                    .unwrap(),
-                })
-                .unwrap(),
-                funds: vec![],
-            }),
-        ],
+            })
+            .unwrap(),
+            funds: vec![],
+        })],
     };
     Ok(msgs)
 }
@@ -1536,18 +1502,6 @@ fn prepare_loop_pair_swap_msg(
     input_amount: Uint128,
 ) -> StdResult<Vec<CosmosMsg>> {
     let mut msgs: Vec<CosmosMsg> = vec![];
-    if let AssetInfo::Token { contract_addr } = input_asset_info {
-        msgs.push(CosmosMsg::Wasm(WasmMsg::Execute {
-            contract_addr: contract_addr.to_string(),
-            msg: to_binary(&cw20::Cw20ExecuteMsg::IncreaseAllowance {
-                spender: pair_contract.to_string(),
-                amount: input_amount,
-                expires: None,
-            })
-            .unwrap(),
-            funds: vec![],
-        }));
-    }
 
     match input_asset_info {
         AssetInfo::NativeToken { denom } => {
