@@ -2,9 +2,9 @@ name: Rust
 
 on:
   push:
-    branches: [ main, RC-v1.6, RC-v1.7, RC-v2 ]
+    branches: [ main, RC-v1.9, RC-v2 ]
   pull_request:
-    branches: [ main, RC-v1.6, RC-v1.7, RC-v2 ]
+    branches: [ main, RC-v1.9, RC-v2 ]
 
 env:
   CARGO_TERM_COLOR: always
@@ -18,31 +18,19 @@ jobs:
           - nightly
     steps:
     - uses: actions/checkout@v3
-    - name: Build
-      run: cargo build --verbose
-  tests:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain:
-          - nightly
-    steps:
-    - uses: actions/checkout@v3
-    - name: Build
-      run: cargo tarpulin
-  codecov:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        toolchain:
-          - nightly
-    steps:
-    - uses: actions/checkout@v3
-    - uses: codecov/codecov-action@v3
+    - name: Run cargo-tarpaulin
+      uses: actions-rs/tarpaulin@v0.1
       with:
-        token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
-        files: ./target/tarpulin
-        flags: unittests # optional
-        name: codecov-umbrella # optional
-        fail_ci_if_error: true # optional (default = false)
-        verbose: true # optional (default = false)
+        version: '0.15.0'
+        args: '-- --test-threads 1'
+
+    - name: Upload to codecov.io
+      uses: codecov/codecov-action@v1.0.2
+      with:
+        token: ${{secrets.CODECOV_TOKEN}}
+
+    - name: Archive code coverage results
+      uses: actions/upload-artifact@v1
+      with:
+        name: code-coverage-report
+        path: target/tarpulin/coverage.json
